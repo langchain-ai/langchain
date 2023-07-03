@@ -20,6 +20,7 @@ from langchain.vectorstores.faiss import FAISS
 from langchain.vectorstores.hologres import Hologres
 from langchain.vectorstores.lancedb import LanceDB
 from langchain.vectorstores.matching_engine import MatchingEngine
+from langchain.vectorstores.marqo import Marqo
 from langchain.vectorstores.milvus import Milvus
 from langchain.vectorstores.mongodb_atlas import MongoDBAtlasVectorSearch
 from langchain.vectorstores.myscale import MyScale, MyScaleSettings
@@ -59,6 +60,11 @@ __all__ = [
     "Hologres",
     "LanceDB",
     "MatchingEngine",
+    "VectorStore",
+    "Pinecone",
+    "Marqo",
+    "Weaviate",
+    "Qdrant",
     "Milvus",
     "Zilliz",
     "SingleStoreDB",
