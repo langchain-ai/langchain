@@ -146,7 +146,7 @@ def test_ignore_retriever() -> None:
     handler1 = FakeCallbackHandler(ignore_retriever_=True)
     handler2 = FakeCallbackHandler()
     manager = CallbackManager(handlers=[handler1, handler2])
-    run_manager = manager.on_retriever_start("")
+    run_manager = manager.on_retriever_start({}, "")
     run_manager.on_retriever_end([])
     run_manager.on_retriever_error(Exception())
     assert handler1.starts == 0
