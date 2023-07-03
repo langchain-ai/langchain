@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, List, Optional, Sequence, Set
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Set
 
-from langchain.callbacks.manager import Callbacks
 from langchain.load.serializable import Serializable
-from langchain.schema import BaseMessage, LLMResult, PromptValue, get_buffer_string
+from langchain.schema.messages import BaseMessage, get_buffer_string
+from langchain.schema.output import LLMResult
+from langchain.schema.prompt import PromptValue
+
+if TYPE_CHECKING:
+    from langchain.callbacks.manager import Callbacks
 
 
 def _get_token_ids_default_method(text: str) -> List[int]:
