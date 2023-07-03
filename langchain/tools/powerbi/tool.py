@@ -209,7 +209,7 @@ class QueryPowerBITool(BaseTool):
             ):
                 return None, pbi_result["error"]["pbi.error"]["details"][0]["detail"]
             return None, pbi_result["error"]
-        return None, "Unknown error"
+        return None, pbi_result
 
     def _result_too_large(self, result: str) -> Tuple[bool, int]:
         """Tokenize the output of the query."""
