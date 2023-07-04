@@ -2,6 +2,8 @@
 import warnings
 from typing import Any, Dict, List, Optional
 
+from pydantic import root_validator
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
@@ -9,7 +11,6 @@ from langchain.callbacks.manager import (
 from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseRetriever, Document
 from langchain.vectorstores.milvus import Milvus
-from pydantic import root_validator
 
 # TODO: Update to MilvusClient + Hybrid Search when available
 
