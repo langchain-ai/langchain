@@ -3,6 +3,10 @@ from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Extra
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.docstore.document import Document
 from langchain.schema import BaseRetriever
 
@@ -32,16 +36,17 @@ class TextWithHighLights(BaseModel, extra=Extra.allow):
     Highlights: Optional[Any]
 
 
+class AdditionalResultAttributeValue(BaseModel, extra=Extra.allow):
+    TextWithHighlightsValue: TextWithHighLights
+
+
 class AdditionalResultAttribute(BaseModel, extra=Extra.allow):
     Key: str
     ValueType: Literal["TEXT_WITH_HIGHLIGHTS_VALUE"]
-    Value: Optional[TextWithHighLights]
+    Value: AdditionalResultAttributeValue
 
     def get_value_text(self) -> str:
-        if not self.Value:
-            return ""
-        else:
-            return self.Value.Text
+        return self.Value.TextWithHighlightsValue.Text
 
 
 class QueryResultItem(BaseModel, extra=Extra.allow):
@@ -256,7 +261,12 @@ class AmazonKendraRetriever(BaseRetriever):
             docs = r_result.get_top_k_docs(top_k)
         return docs
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def _get_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: CallbackManagerForRetrieverRun,
+    ) -> List[Document]:
         """Run search on Kendra index and get top k documents
 
         Example:
@@ -268,5 +278,10 @@ class AmazonKendraRetriever(BaseRetriever):
         docs = self._kendra_query(query, self.top_k, self.attribute_filter)
         return docs
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def _aget_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
+    ) -> List[Document]:
         raise NotImplementedError("Async version is not implemented for Kendra yet.")

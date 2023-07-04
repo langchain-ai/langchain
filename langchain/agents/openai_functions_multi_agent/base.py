@@ -11,7 +11,6 @@ from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import Callbacks
 from langchain.chat_models.openai import ChatOpenAI
-from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.chat import (
     BaseMessagePromptTemplate,
     ChatPromptTemplate,
@@ -21,10 +20,13 @@ from langchain.prompts.chat import (
 from langchain.schema import (
     AgentAction,
     AgentFinish,
+    BasePromptTemplate,
+    OutputParserException,
+)
+from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
     FunctionMessage,
-    OutputParserException,
     SystemMessage,
 )
 from langchain.tools import BaseTool
@@ -68,7 +70,7 @@ def _create_function_message(
     """
     if not isinstance(observation, str):
         try:
-            content = json.dumps(observation)
+            content = json.dumps(observation, ensure_ascii=False)
         except Exception:
             content = str(observation)
     else:
@@ -152,7 +154,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         tools: The tools this agent has access to.
         prompt: The prompt for this agent, should support agent_scratchpad as one
             of the variables. For an easy way to construct this prompt, use
-            `OpenAIFunctionsAgent.create_prompt(...)`
+            `OpenAIMultiFunctionsAgent.create_prompt(...)`
     """
 
     llm: BaseLanguageModel
@@ -296,7 +298,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         prompt = self.prompt.format_prompt(**full_inputs)
         messages = prompt.to_messages()
         predicted_message = await self.llm.apredict_messages(
-            messages, functions=self.functions
+            messages, functions=self.functions, callbacks=callbacks
         )
         agent_decision = _parse_ai_message(predicted_message)
         return agent_decision

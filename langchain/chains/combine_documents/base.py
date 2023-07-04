@@ -11,7 +11,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains.base import Chain
 from langchain.docstore.document import Document
-from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import BasePromptTemplate
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
 

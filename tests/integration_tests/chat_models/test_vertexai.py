@@ -13,11 +13,7 @@ import pytest
 
 from langchain.chat_models import ChatVertexAI
 from langchain.chat_models.vertexai import _MessagePair, _parse_chat_history
-from langchain.schema import (
-    AIMessage,
-    HumanMessage,
-    SystemMessage,
-)
+from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
 
 
 def test_vertexai_single_call() -> None:
