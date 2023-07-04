@@ -142,7 +142,7 @@ async def test_fake_retriever_v1_with_kwargs_upgrade_async(
 
 
 class FakeRetrieverV2(BaseRetriever):
-    throw_error: bool
+    throw_error: bool = False
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun | None
