@@ -136,7 +136,8 @@ def start_api_with_nested_schema():
     time.sleep(0.5)
     return "http://localhost:5052/"
 
-
+@pytest.mark.requires("fastapi")
+@pytest.mark.requires("uvicorn")
 def test_happy_no_schema(start_api_no_schema):
     llm = SelfHostedApi(
         endpoint_url=start_api_no_schema,
@@ -146,6 +147,8 @@ def test_happy_no_schema(start_api_no_schema):
     assert output == "Processed: Test prompt"
 
 
+@pytest.mark.requires("fastapi")
+@pytest.mark.requires("uvicorn")
 def test_wrong_prompt_key_no_schema(start_api_no_schema):
     llm = SelfHostedApi(
         endpoint_url=start_api_no_schema,
@@ -156,6 +159,8 @@ def test_wrong_prompt_key_no_schema(start_api_no_schema):
         output = llm._call(prompt="Test prompt")
 
 
+@pytest.mark.requires("fastapi")
+@pytest.mark.requires("uvicorn")
 def test_wrong_response_key_no_schema(start_api_no_schema):
     llm = SelfHostedApi(
         endpoint_url=start_api_no_schema,
@@ -167,6 +172,8 @@ def test_wrong_response_key_no_schema(start_api_no_schema):
         output = llm._call(prompt="Test prompt")
 
 
+@pytest.mark.requires("fastapi")
+@pytest.mark.requires("uvicorn")
 def test_happy_with_schema_and_model_kwargs(start_api_with_schema):
     llm = SelfHostedApi(
         endpoint_url=start_api_with_schema,
@@ -182,6 +189,8 @@ def test_happy_with_schema_and_model_kwargs(start_api_with_schema):
     assert output == "Processed at temp 0.2: Test prompt"
 
 
+@pytest.mark.requires("fastapi")
+@pytest.mark.requires("uvicorn")
 def test_happy_with_schema_and_call_kwargs(start_api_with_schema):
     llm = SelfHostedApi(
         endpoint_url=start_api_with_schema,
@@ -196,6 +205,8 @@ def test_happy_with_schema_and_call_kwargs(start_api_with_schema):
     assert output == "Processed at temp 0.2: Test prompt"
 
 
+@pytest.mark.requires("fastapi")
+@pytest.mark.requires("uvicorn")
 def test_model_kwargs_not_in_input_schema(start_api_with_schema):
     with pytest.raises(ValueError):
         llm = SelfHostedApi(
@@ -209,6 +220,8 @@ def test_model_kwargs_not_in_input_schema(start_api_with_schema):
         )
 
 
+@pytest.mark.requires("fastapi")
+@pytest.mark.requires("uvicorn")
 def test_prompt_key_not_in_input_schema(start_api_with_schema):
     with pytest.raises(ValueError):
         llm = SelfHostedApi(
@@ -222,6 +235,8 @@ def test_prompt_key_not_in_input_schema(start_api_with_schema):
         )
 
 
+@pytest.mark.requires("fastapi")
+@pytest.mark.requires("uvicorn")
 def test_response_key_not_in_output_schema(start_api_with_schema):
     llm = SelfHostedApi(
         endpoint_url=start_api_with_schema,
@@ -236,6 +251,8 @@ def test_response_key_not_in_output_schema(start_api_with_schema):
         llm._call(prompt="Test prompt")
 
 
+@pytest.mark.requires("fastapi")
+@pytest.mark.requires("uvicorn")
 def test_nested_response_key(start_api_with_nested_schema):
     llm = SelfHostedApi(
         endpoint_url=start_api_with_nested_schema,
@@ -251,6 +268,8 @@ def test_nested_response_key(start_api_with_nested_schema):
     assert output == "Processed at temp 0.2: Test prompt"
 
 
+@pytest.mark.requires("fastapi")
+@pytest.mark.requires("uvicorn")
 @pytest.mark.parametrize(
     "endpoint",
     [
@@ -272,6 +291,8 @@ def test_endpoint_dne(endpoint):
         llm._call(prompt="Test prompt")
 
 
+@pytest.mark.requires("fastapi")
+@pytest.mark.requires("uvicorn")
 def test_task_invalid(start_api_with_schema):
     with pytest.raises(ValueError):
         llm = SelfHostedApi(
@@ -285,7 +306,9 @@ def test_task_invalid(start_api_with_schema):
         )
 
 
-def model_kwargs_no_input_schema(start_api_no_schema):
+@pytest.mark.requires("fastapi")
+@pytest.mark.requires("uvicorn")
+def test_model_kwargs_no_input_schema(start_api_no_schema):
     with pytest.raises(ValueError):
         llm = SelfHostedApi(
             endpoint_url=start_api_no_schema,
@@ -307,6 +330,8 @@ def model_kwargs_no_input_schema(start_api_no_schema):
 #         llm._call(prompt='Test prompt')
 
 
+@pytest.mark.requires("fastapi")
+@pytest.mark.requires("uvicorn")
 def test_enforce_stop_tokens(start_api_no_schema):
     llm = SelfHostedApi(
         endpoint_url=start_api_no_schema,
