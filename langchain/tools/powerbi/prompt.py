@@ -1,5 +1,5 @@
 # flake8: noqa
-QUESTION_TO_QUERY = """
+QUESTION_TO_QUERY_BASE = """
 Answer the question below with a DAX query that can be sent to Power BI. DAX queries have a simple syntax comprised of just one required keyword, EVALUATE, and several optional keywords: ORDER BY, START AT, DEFINE, MEASURE, VAR, TABLE, and COLUMN. Each keyword defines a statement used for the duration of the query. Any time < or > are used in the text below it means that those values need to be replaced by table, columns or other things. If the question is not something you can answer with a DAX query, reply with "I cannot answer this" and the question will be escalated to a human.
 
 Some DAX functions return a table instead of a scalar, and must be wrapped in a function that evaluates the table and returns a scalar; unless the table is a single column, single row table, then it is treated as a scalar value. Most DAX functions require one or more arguments, which can include tables, columns, expressions, and values. However, some functions, such as PI, do not require any arguments, but always require parentheses to indicate the null argument. For example, you must always type PI(), not PI. You can also nest functions within other functions. 
@@ -41,10 +41,14 @@ and the schema's for some are given here:
 
 Examples:
 {examples}
+"""
 
+USER_INPUT = """
 Question: {tool_input}
 DAX: 
 """
+
+SINGLE_QUESTION_TO_QUERY = f"{QUESTION_TO_QUERY_BASE}{USER_INPUT}"
 
 DEFAULT_FEWSHOT_EXAMPLES = """
 Question: How many rows are in the table <table>?

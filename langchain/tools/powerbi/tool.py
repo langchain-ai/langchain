@@ -14,7 +14,6 @@ from langchain.tools.base import BaseTool
 from langchain.tools.powerbi.prompt import (
     BAD_REQUEST_RESPONSE,
     DEFAULT_FEWSHOT_EXAMPLES,
-    QUESTION_TO_QUERY,
     RETRY_RESPONSE,
 )
 from langchain.utilities.powerbi import PowerBIDataset, json_to_md
@@ -37,7 +36,6 @@ class QueryPowerBITool(BaseTool):
     """  # noqa: E501
     llm_chain: LLMChain
     powerbi: PowerBIDataset = Field(exclude=True)
-    template: Optional[str] = QUESTION_TO_QUERY
     examples: Optional[str] = DEFAULT_FEWSHOT_EXAMPLES
     session_cache: Dict[str, Any] = Field(default_factory=dict, exclude=True)
     max_iterations: int = 5
@@ -137,7 +135,7 @@ class QueryPowerBITool(BaseTool):
         """Execute the query, return the results or an error message."""
         if cache := self._check_cache(tool_input):
             logger.debug("Found cached result for %s: %s", tool_input, cache)
-            return cache
+            return f"{cache}, from cache, you have already asked this question."
         try:
             logger.info("Running PBI Query Tool with input: %s", tool_input)
             query = await self.llm_chain.apredict(

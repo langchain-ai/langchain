@@ -42,7 +42,7 @@ def create_pbi_agent(
             llm=llm,
             prompt=ZeroShotAgent.create_prompt(
                 tools,
-                prefix=prefix.format(top_k=top_k),
+                prefix=prefix.format(top_k=top_k).format(tables=powerbi.table_names),
                 suffix=suffix,
                 format_instructions=format_instructions,
                 input_variables=input_variables,

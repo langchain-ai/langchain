@@ -44,7 +44,7 @@ def create_pbi_chat_agent(
     agent = ConversationalChatAgent.from_llm_and_tools(
         llm=llm,
         tools=tools,
-        system_message=prefix.format(top_k=top_k),
+        system_message=prefix.format(top_k=top_k).format(tables=powerbi.table_names),
         human_message=suffix,
         input_variables=input_variables,
         callback_manager=callback_manager,
