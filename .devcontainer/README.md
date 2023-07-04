@@ -1,141 +1,37 @@
-# Cheat sheet
+# Dev container
 
-Build with the base dev image plus my snowflake dependencies
+This project includes a [dev container](https://containers.dev/), which lets you use a container as a full-featured dev environment.
 
-```
-docker-compose -f docker-compose.yaml -f compose.local.yaml build
-```
+You can use the dev container configuration in this folder to build and run the app without needing to install any of its tools locally! You can use it in [GitHub Codespaces](https://github.com/features/codespaces) or the [VS Code Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers).
 
-Start container using azure LLM or openai LLM and the run test
+## GitHub Codespaces
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/hwchase17/langchain)
 
-## Azure LLM
+You may use the button above, or follow these steps to open this repo in a Codespace:
+1. Click the **Code** drop-down menu at the top of https://github.com/hwchase17/langchain.
+1. Click on the **Codespaces** tab.
+1. Click **Create codespace on master** .
 
-```
-docker-compose -f docker-compose.yaml -f compose.local.yaml -f compose.azure.yaml up
-docker exec -it langchain_azure pytest --pdb -s ../tests/integration_tests/chains/test_cpal.py
-```
+For more info, check out the [GitHub documentation](https://docs.github.com/en/free-pro-team@latest/github/developing-online-with-codespaces/creating-a-codespace#creating-a-codespace).
+  
+## VS Code Dev Containers
+[![Open in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/hwchase17/langchain)
 
-## OpenAI LLM for Jupyter notebook development
+If you already have VS Code and Docker installed, you can use the button above to get started. This will cause VS Code to automatically install the Dev Containers extension if needed, clone the source code into a container volume, and spin up a dev container for use.
 
-```
-docker-compose -f docker-compose.yaml -f compose.local.yaml -f compose.openai.yaml up
-docker exec -it langchain_openai pytest --pdb -s ../tests/integration_tests/chains/test_cpal.py
-```
+You can also follow these steps to open this repo in a container using the VS Code Dev Containers extension:
 
+1. If this is your first time using a development container, please ensure your system meets the pre-reqs (i.e. have Docker installed) in the [getting started steps](https://aka.ms/vscode-remote/containers/getting-started).
 
-## Patch `pyproject.toml` 
+2. Open a locally cloned copy of the code:
 
-**Problem:** `poetry install` timeout error on MS URL to `azure-sdk-dev` in the `pyproject.toml`
+   - Clone this repository to your local filesystem.
+   - Press <kbd>F1</kbd> and select the **Dev Containers: Open Folder in Container...** command.
+   - Select the cloned copy of this folder, wait for the container to start, and try things out!
 
+You can learn more in the [Dev Containers documentation](https://code.visualstudio.com/docs/devcontainers/containers).
 
-**Solution:** comment out lines with `azure-sdk-dev` in the `pyproject.toml`
+## Tips and tricks
 
-or run this `patch` command
-
-```
-cd ~/workspace/langchain
-patch pyproject.toml ~/workspace/my-langchain-tooling/pyproject.toml.diff
-```
-
-Here is the `pyproject.toml.diff` patch rendered in color!
-
-```diff
-110c110
-< azure-search-documents = {version = "11.4.0a20230509004", source = "azure-sdk-dev", optional = true}
----
-> # azure-search-documents = {version = "11.4.0a20230509004", source = "azure-sdk-dev", optional = true}
-337,340c337,340
-< [[tool.poetry.source]]
-< name = "azure-sdk-dev"
-< url = "https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-python/pypi/simple/"
-< secondary = true
----
-> #[[tool.poetry.source]]
-> #name = "azure-sdk-dev"
-> #url = "https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-python/pypi/simple/"
-> #secondary = true
-```
-
-
-## Point `pyright` language server to container's packages
-
-#### Problem
-
-`pyright` checks the laptop's python packages, rather than the
-container's python packages. Because of this my neovim editor displays noisy
-hints.
-
-```
-    3 from typing import Optional, Any  # , Union
-E   4 import networkx as nx     ■ Import "networkx" could not be resolved
-E   5 import pandas as pd     ■ Import "pandas" could not be resolved
-E   6 from pydantic import (     ■ Import "pydantic" could not be resolved
-    7     BaseModel,
-    8     Field,
-    9     validator,
-   10     root_validator,
-```
-
-
-#### Solution
-
-##### pyright config
-
-```
-ln -s /Users/borisdev/workspace/my-langchain-tooling/pyrightconfig.json /Users/borisdev/workspace/langchain/pyrightconfig.json
-```
-
-##### Cuda
-```
-docker exec -it langchain bash
-pip install -E ### BREAKS WITH MAC M1 no CUDA
-```
-
-## CPAL Ideas Backlog
-
-### CPAL code enhancements
-
-- [ ] include DB table schema context with SQL prompt
-- [ ] multivariate
-- [ ] PAL-to-LLM feedback. Send failed unit test results back to LLM to give better code
-- [ ] from list to stack of operations 
-- [ ] Nested causal models: Each entity can depend on an entire causal system (recursion)
-- [ ] acyclical (carry over after leaves, feedback, indirect effects)
-- [ ] add time reference `x[t+1] = x[t] + y[t]`
-- [ ] report both ancestors and descendants 
-
-### CPAL potential applications
-
-- Plan as Code
-- Simulate crypto trades under diff block conditions
-
-## Github Codespace 
-
-### Why?
-
-- Live interactive demos
-- Code from any browser 
-
-### How?
-
-Use my terminal (`zsh`) and editor `neovim` setup 
-
-Move these two files into my the dir of my langchain clone.
-
-- `.devcontainer/devcontainer.json`
-- `.devcontainer/bootstrap.sh`
-
-[Trouble shooting codespaces](https://docs.github.com/en/codespaces/troubleshooting/troubleshooting-personalization-for-codespaces)
-
-### Github CLI
-
-Optional: ssh into codespace with [github cli](https://github.com/cli/cli#installation) on mac to ssh into container
-
-```console
-brew install gh
-gh codespace list
-gh codespace list | head -n1
-gh codespace ssh -c borisdev-improved-memory-4v4j5xx972jp7r
-gh codespace list | head -n1 | cut -f1 | xargs -I {} gh codespace ssh -c {}
-pytest -s tests/integration_tests/chains/test_pal.py
-```
+* If you are working with the same repository folder in a container and Windows, you'll want consistent line endings (otherwise you may see hundreds of changes in the SCM view). The `.gitattributes` file in the root of this repo will disable line ending conversion and should prevent this. See [tips and tricks](https://code.visualstudio.com/docs/devcontainers/tips-and-tricks#_resolving-git-line-ending-issues-in-containers-resulting-in-many-modified-files) for more info.
+* If you'd like to review the contents of the image used in this dev container, you can check it out in the [devcontainers/images](https://github.com/devcontainers/images/tree/main/src/python) repo.
