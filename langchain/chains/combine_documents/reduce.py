@@ -81,16 +81,16 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     """Combining documents by recursively reducing them.
 
     This involves
-    - combine_document_chain
-    - collapse_document_chain
+    - combine_documents_chain
+    - collapse_documents_chain
 
-    `combine_document_chain` is ALWAYS provided. This is final chain that is called.
+    `combine_documents_chain` is ALWAYS provided. This is final chain that is called.
     We pass all previous results to this chain, and the output of this chain is
     returned as a final result.
 
-    `collapse_document_chain` is used if the documents passed in are too many to all
-    be passed to `combine_document_chain` in one go. In this case,
-    `collapse_document_chain` is called recursively on as big of groups of documents
+    `collapse_documents_chain` is used if the documents passed in are too many to all
+    be passed to `combine_documents_chain` in one go. In this case,
+    `collapse_documents_chain` is called recursively on as big of groups of documents
     as are allowed.
 
     Example:
@@ -117,37 +117,38 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
                 "Summarize this content: {context}"
             )
             llm_chain = LLMChain(llm=llm, prompt=prompt)
-            combine_document_chain = StuffDocumentsChain(
+            combine_documents_chain = StuffDocumentsChain(
                 llm_chain=llm_chain,
                 document_prompt=document_prompt,
                 document_variable_name=document_variable_name
             )
             chain = ReduceDocumentsChain(
-                combine_document_chain=combine_document_chain,
+                combine_documents_chain=combine_documents_chain,
             )
-            # If we wanted to, we could also pass in collapse_document_chain
+            # If we wanted to, we could also pass in collapse_documents_chain
             # which is specifically aimed at collapsing documents BEFORE
             # the final call.
             prompt = PromptTemplate.from_template(
                 "Collapse this content: {context}"
             )
-            collapse_document_chain = StuffDocumentsChain(
+            llm_chain = LLMChain(llm=llm, prompt=prompt)
+            collapse_documents_chain = StuffDocumentsChain(
                 llm_chain=llm_chain,
                 document_prompt=document_prompt,
                 document_variable_name=document_variable_name
             )
             chain = ReduceDocumentsChain(
-                combine_document_chain=combine_document_chain,
-                collapse_document_chain=collapse_document_chain,
+                combine_documents_chain=combine_documents_chain,
+                collapse_documents_chain=collapse_documents_chain,
             )
     """
 
-    combine_document_chain: BaseCombineDocumentsChain
+    combine_documents_chain: BaseCombineDocumentsChain
     """Final chain to call to combine documents.
     This is typically a StuffDocumentsChain."""
-    collapse_document_chain: Optional[BaseCombineDocumentsChain] = None
+    collapse_documents_chain: Optional[BaseCombineDocumentsChain] = None
     """Chain to use to collapse documents if needed until they can all fit.
-    If None, will use the combine_document_chain.
+    If None, will use the combine_documents_chain.
     This is typically a StuffDocumentsChain."""
 
     class Config:
@@ -158,10 +159,10 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
 
     @property
     def _collapse_chain(self) -> BaseCombineDocumentsChain:
-        if self.collapse_document_chain is not None:
-            return self.collapse_document_chain
+        if self.collapse_documents_chain is not None:
+            return self.collapse_documents_chain
         else:
-            return self.combine_document_chain
+            return self.combine_documents_chain
 
     def combine_docs(
         self,
@@ -188,7 +189,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
         result_docs, extra_return_dict = self._collapse(
             docs, token_max, callbacks=callbacks, **kwargs
         )
-        return self.combine_document_chain.combine_docs(
+        return self.combine_documents_chain.combine_docs(
             docs=result_docs, callbacks=callbacks, **kwargs
         )
 
@@ -213,7 +214,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
         result_docs, extra_return_dict = await self._acollapse(
             docs, callbacks=callbacks, **kwargs
         )
-        return await self.combine_document_chain.acombine_docs(
+        return await self.combine_documents_chain.acombine_docs(
             docs=result_docs, callbacks=callbacks, **kwargs
         )
 
@@ -225,7 +226,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
         **kwargs: Any,
     ) -> Tuple[List[Document], dict]:
         result_docs = docs
-        length_func = self.combine_document_chain.prompt_length
+        length_func = self.combine_documents_chain.prompt_length
         num_tokens = length_func(result_docs, **kwargs)
 
         def _collapse_docs_func(docs: List[Document], **kwargs: Any) -> str:
@@ -252,7 +253,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
         **kwargs: Any,
     ) -> Tuple[List[Document], dict]:
         result_docs = docs
-        length_func = self.combine_document_chain.prompt_length
+        length_func = self.combine_documents_chain.prompt_length
         num_tokens = length_func(result_docs, **kwargs)
 
         async def _collapse_docs_func(docs: List[Document], **kwargs: Any) -> str:

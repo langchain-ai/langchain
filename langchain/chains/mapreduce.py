@@ -51,7 +51,7 @@ class MapReduceChain(Chain):
         )
         combine_documents_chain = MapReduceDocumentsChain(
             llm_chain=llm_chain,
-            combine_document_chain=reduce_chain,
+            combine_documents_chain=reduce_chain,
             callbacks=callbacks,
             **(combine_chain_kwargs if combine_chain_kwargs else {}),
         )
