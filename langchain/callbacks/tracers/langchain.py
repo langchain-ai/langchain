@@ -17,7 +17,7 @@ from langchain.callbacks.tracers.schemas import (
     TracerSession,
 )
 from langchain.env import get_runtime_environment
-from langchain.schema import BaseMessage, messages_to_dict
+from langchain.schema.messages import BaseMessage, messages_to_dict
 
 logger = logging.getLogger(__name__)
 _LOGGED = set()
@@ -78,13 +78,15 @@ class LangChainTracer(BaseTracer):
         """Start a trace for an LLM run."""
         parent_run_id_ = str(parent_run_id) if parent_run_id else None
         execution_order = self._get_execution_order(parent_run_id_)
+        start_time = datetime.utcnow()
         chat_model_run = Run(
             id=run_id,
             parent_run_id=parent_run_id,
             serialized=serialized,
             inputs={"messages": [messages_to_dict(batch) for batch in messages]},
             extra=kwargs,
-            start_time=datetime.utcnow(),
+            events=[{"name": "start", "time": start_time}],
+            start_time=start_time,
             execution_order=execution_order,
             child_execution_order=execution_order,
             run_type=RunTypeEnum.llm,
@@ -176,6 +178,24 @@ class LangChainTracer(BaseTracer):
 
     def _on_tool_error(self, run: Run) -> None:
         """Process the Tool Run upon error."""
+        self._futures.add(
+            self.executor.submit(self._update_run_single, run.copy(deep=True))
+        )
+
+    def _on_retriever_start(self, run: Run) -> None:
+        """Process the Retriever Run upon start."""
+        self._futures.add(
+            self.executor.submit(self._persist_run_single, run.copy(deep=True))
+        )
+
+    def _on_retriever_end(self, run: Run) -> None:
+        """Process the Retriever Run."""
+        self._futures.add(
+            self.executor.submit(self._update_run_single, run.copy(deep=True))
+        )
+
+    def _on_retriever_error(self, run: Run) -> None:
+        """Process the Retriever Run upon error."""
         self._futures.add(
             self.executor.submit(self._update_run_single, run.copy(deep=True))
         )

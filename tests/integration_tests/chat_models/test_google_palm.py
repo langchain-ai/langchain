@@ -8,13 +8,11 @@ import pytest
 
 from langchain.chat_models import ChatGooglePalm
 from langchain.schema import (
-    BaseMessage,
     ChatGeneration,
     ChatResult,
-    HumanMessage,
     LLMResult,
-    SystemMessage,
 )
+from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
 
 
 def test_chat_google_palm() -> None:

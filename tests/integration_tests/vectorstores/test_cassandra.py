@@ -84,7 +84,7 @@ def test_cassandra_max_marginal_relevance_search() -> None:
     With fetch_k==3 and k==2, when query is at (1, ),
     one expects that v2 and v0 are returned (in some order).
     """
-    texts = ["-0.125", "+0.125", "+0.25", "+1.0"]
+    texts = ["-0.124", "+0.127", "+0.25", "+1.0"]
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = _vectorstore_from_texts(
         texts, metadatas=metadatas, embedding_class=AngularTwoDimensionalEmbeddings
@@ -95,7 +95,7 @@ def test_cassandra_max_marginal_relevance_search() -> None:
     }
     assert output_set == {
         ("+0.25", 2),
-        ("-0.125", 0),
+        ("-0.124", 0),
     }
 
 
@@ -105,9 +105,9 @@ def test_cassandra_add_extra() -> None:
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = _vectorstore_from_texts(texts, metadatas=metadatas)
 
-    docsearch.add_texts(texts, metadatas)
     texts2 = ["foo2", "bar2", "baz2"]
-    docsearch.add_texts(texts2, metadatas)
+    metadatas2 = [{"page": i + 3} for i in range(len(texts))]
+    docsearch.add_texts(texts2, metadatas2)
 
     output = docsearch.similarity_search("foo", k=10)
     assert len(output) == 6
@@ -127,9 +127,37 @@ def test_cassandra_no_drop() -> None:
     assert len(output) == 6
 
 
+def test_cassandra_delete() -> None:
+    """Test delete methods from vector store."""
+    texts = ["foo", "bar", "baz", "gni"]
+    metadatas = [{"page": i} for i in range(len(texts))]
+    docsearch = _vectorstore_from_texts([], metadatas=metadatas)
+
+    ids = docsearch.add_texts(texts, metadatas)
+    output = docsearch.similarity_search("foo", k=10)
+    assert len(output) == 4
+
+    docsearch.delete_by_document_id(ids[0])
+    output = docsearch.similarity_search("foo", k=10)
+    assert len(output) == 3
+
+    docsearch.delete(ids[1:3])
+    output = docsearch.similarity_search("foo", k=10)
+    assert len(output) == 1
+
+    docsearch.delete(["not-existing"])
+    output = docsearch.similarity_search("foo", k=10)
+    assert len(output) == 1
+
+    docsearch.clear()
+    output = docsearch.similarity_search("foo", k=10)
+    assert len(output) == 0
+
+
 # if __name__ == "__main__":
 #     test_cassandra()
 #     test_cassandra_with_score()
 #     test_cassandra_max_marginal_relevance_search()
 #     test_cassandra_add_extra()
 #     test_cassandra_no_drop()
+#     test_cassandra_delete()

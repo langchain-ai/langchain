@@ -13,7 +13,7 @@ from langchain.agents.utils import validate_tools_single_input
 from langchain.base_language import BaseLanguageModel
 from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
-from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import BasePromptTemplate
 from langchain.tools.base import BaseTool
 
 
