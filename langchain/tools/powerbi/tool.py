@@ -1,7 +1,7 @@
 """Tools for interacting with a Power BI dataset."""
 import logging
 from time import perf_counter
-from typing import Any, Dict, Optional, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
 from pydantic import Field, validator
 
@@ -10,6 +10,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForToolRun,
 )
 from langchain.chains.llm import LLMChain
+from langchain.chat_models.openai import _import_tiktoken
 from langchain.tools.base import BaseTool
 from langchain.tools.powerbi.prompt import (
     BAD_REQUEST_RESPONSE,
@@ -17,10 +18,9 @@ from langchain.tools.powerbi.prompt import (
     RETRY_RESPONSE,
 )
 from langchain.utilities.powerbi import PowerBIDataset, json_to_md
-from langchain.chat_models.openai import _import_tiktoken
 
 if TYPE_CHECKING:
-    import tiktoken
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -157,7 +157,7 @@ class QueryPowerBITool(BaseTool):
         if error is not None and ("TokenExpired" in error or "TokenError" in error):
             self.session_cache[
                 tool_input
-            ] = "Authentication token expired or invalid, please try to reauthenticate or check the scope of the credential."
+            ] = "Authentication token expired or invalid, please try to reauthenticate or check the scope of the credential."  # noqa: E501
             return self.session_cache[tool_input]
 
         iterations = kwargs.get("iterations", 0)
@@ -185,13 +185,13 @@ class QueryPowerBITool(BaseTool):
                 logger.info("0 records in result, query was valid.")
                 return (
                     None,
-                    "0 rows returned, this might be correct, but please validate if all filter values were correct?",
+                    "0 rows returned, this might be correct, but please validate if all filter values were correct?",  # noqa: E501
                 )
             result = json_to_md(rows)
             too_long, length = self._result_too_large(result)
             if too_long:
                 return (
-                    f"Result too large, please try to be more specific or use the `TOPN` function. The result is {length} tokens long, the limit is {self.output_token_limit} tokens.",
+                    f"Result too large, please try to be more specific or use the `TOPN` function. The result is {length} tokens long, the limit is {self.output_token_limit} tokens.",  # noqa: E501
                     None,
                 )
             return result, None

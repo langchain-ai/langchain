@@ -8,16 +8,16 @@ from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 from langchain.chat_models.base import BaseChatModel
+from langchain.prompts import PromptTemplate
 from langchain.prompts.chat import (
     ChatPromptTemplate,
-    SystemMessagePromptTemplate,
     HumanMessagePromptTemplate,
+    SystemMessagePromptTemplate,
 )
-from langchain.prompts import PromptTemplate
 from langchain.tools import BaseTool
 from langchain.tools.powerbi.prompt import (
-    SINGLE_QUESTION_TO_QUERY,
     QUESTION_TO_QUERY_BASE,
+    SINGLE_QUESTION_TO_QUERY,
     USER_INPUT,
 )
 from langchain.tools.powerbi.tool import (
