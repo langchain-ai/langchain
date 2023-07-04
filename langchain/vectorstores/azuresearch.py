@@ -220,14 +220,14 @@ class AzureSearch(VectorStore):
                 ).tolist(),
                 FIELDS_METADATA: json.dumps(metadata),
             }
-
-            # Add the extra fields to the data item dictionary
-            for field_list in extra_fields:
-                if len(field_list) > i:
-                    field_dict = field_list[i]
-                    for field_key, field_value in field_dict.items():
-                        data_item[field_key] = field_value
-            data.append(data_item)
+            if extra_fields:
+                # Add the extra fields to the data item dictionary
+                for field_list in extra_fields:
+                    if len(field_list) > i:
+                        field_dict = field_list[i]
+                        for field_key, field_value in field_dict.items():
+                            data_item[field_key] = field_value
+                data.append(data_item)
             ids.append(key)
             # Upload data in batches
             if len(data) == MAX_UPLOAD_BATCH_SIZE:
