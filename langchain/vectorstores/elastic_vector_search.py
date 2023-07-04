@@ -574,3 +574,118 @@ class ElasticKnnSearch(ElasticVectorSearch):
             source=source,
         )
         return dict(res)
+
+
+    def create_index(self) -> None:
+         """
+         Creates an Elasticsearch index. The name of the index is specified during the instantiation of the class.
+         """
+         self.client.indices.create(
+             index=self.index_name,
+             mappings= self.mapping
+         )
+
+
+    def add_texts(self,
+               texts: Iterable[str],
+               metadatas: Optional[List[Dict[Any, Any]]] = None,
+               model_id: Optional[str] = None,
+               refresh_indices: bool = False,
+               **kwargs: Any
+               ) -> None:
+  #             ) -> List[str]:
+
+         """
+         Adds the provided texts to the Elasticsearch index.
+         This assumes the index already exists. if you wish to create a new index while indexing texts
+         call `from_texts` method
+         Parameters
+         ----------
+         texts : list of str
+             The texts to add to the index.
+         model_id : str, optional
+             The ID of the model to use for generating text embeddings. If not provided, the default embedding model is used.
+         """
+
+         try:
+             from elasticsearch.helpers import bulk
+         except ImportError:
+             raise ImportError(
+                 "Could not import elasticsearch python package. "
+                 "Please install it with `pip install elasticsearch`."
+             )
+
+         # Check if the index exists.
+         if not self.client.indices.exists(index=self.index_name):
+             # If the index does not exist, raise an exception.
+             raise Exception(f"The index '{self.index_name}' does not exist. If you want to create a new index while encoding texts, call 'from_texts' instead.")
+
+         # Assign the encoding function from the instance's 'embedding' attribute to 'emb_func'
+         emb_func = self.embedding.embed_documents
+
+         # Generate embeddings for the input texts.
+         # If 'model_id' is provided, use it as an argument to 'emb_func'.
+         # Otherwise, call 'emb_func' with 'texts' as the only argument.
+         #embeddings = emb_func(list(texts)) if not model_id else emb_func(list(texts), model_id=model_id)
+         if model_id:
+             if isinstance(emb_func, ElasticsearchEmbeddings):
+                 embeddings = emb_func(list(texts), model_id=model_id)
+             else:
+                 raise ValueError("model_id is only supported with ElasticsearchEmbeddings")
+         else:
+             embeddings = emb_func(list(texts))
+
+
+
+         # Create a list of dictionaries, each containing a text and its corresponding embedding.
+         # 'zip(texts, embeddings)' is used to iterate over 'texts' and 'embeddings' in parallel.
+         body = [
+             {
+                 '_op_type': 'index',
+                 '_index': self.index_name,
+                 "text": text,
+                 "vector": vector
+             }
+             for text, vector in zip(texts, embeddings)
+         ]
+
+         # Add the list of text-embedding pairs to the Elasticsearch index.
+         bulk(self.client, body)
+
+
+
+    def from_texts(
+             self, texts: List[str],
+             dims: int,
+             model_id: Optional[str] = None
+         ) -> None:
+
+         """
+         Creates a new Elasticsearch index and adds the provided texts to it.
+         This method first generates a default index mapping for k-NN search, using the provided dimensions. It then
+         creates a new Elasticsearch index with this mapping. Finally, it encodes the provided texts and adds them
+         to the newly created index.
+         Parameters
+         ----------
+         texts : list of str
+             The texts to add to the index.
+         dims : int
+             The dimensionality of the vector space in which the embeddings lie. This is used to generate
+             the index mapping for k-NN search.
+         model_id : str, optional
+             The ID of the model to use for generating text embeddings. If not provided, the default embedding
+             model is used.
+         Raises
+         ------
+         Exception
+             If the Elasticsearch index does not exist.
+         """
+
+         # Create the mapping using the provided dimensions.
+         self.mapping = self._default_knn_mapping(dims=dims)
+
+         # Create a new Elasticsearch index.
+         self.create_index()
+
+         # Encode the provided texts and add them to the newly created index.
+         self.add_texts(texts, model_id=model_id)
