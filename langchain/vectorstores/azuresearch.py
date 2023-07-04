@@ -195,6 +195,8 @@ class AzureSearch(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
+        extra_fields: Optional[Dict[str, str]] = None,
+        """Allows adding extra fields which can be retrieved or filtered """
         **kwargs: Any,
     ) -> List[str]:
         """Add texts data to an existing index."""
@@ -209,17 +211,23 @@ class AzureSearch(VectorStore):
             key = base64.urlsafe_b64encode(bytes(key, "utf-8")).decode("ascii")
             metadata = metadatas[i] if metadatas else {}
             # Add data to index
-            data.append(
-                {
-                    "@search.action": "upload",
-                    FIELDS_ID: key,
-                    FIELDS_CONTENT: text,
-                    FIELDS_CONTENT_VECTOR: np.array(
-                        self.embedding_function(text), dtype=np.float32
-                    ).tolist(),
-                    FIELDS_METADATA: json.dumps(metadata),
-                }
-            )
+            data_item = {
+                "@search.action": "upload",
+                FIELDS_ID: key,
+                FIELDS_CONTENT: text,
+                FIELDS_CONTENT_VECTOR: np.array(
+                    self.embedding_function(text), dtype=np.float32
+                ).tolist(),
+                FIELDS_METADATA: json.dumps(metadata),
+            }
+
+            # Add the extra fields to the data item dictionary
+            for field_list in extra_fields:
+                if len(field_list) > i:
+                    field_dict = field_list[i]
+                    for field_key, field_value in field_dict.items():
+                        data_item[field_key] = field_value
+            data.append(data_item)
             ids.append(key)
             # Upload data in batches
             if len(data) == MAX_UPLOAD_BATCH_SIZE:
