@@ -99,7 +99,10 @@ class ContextCallbackHandler(BaseCallbackHandler):
 
     def on_chat_model_start(
         self,
+        serialized: Dict[str, Any],
         messages: List[List[BaseMessage]],
+        *,
+        run_id: UUID,
         **kwargs: Any,
     ) -> Any:
         """Run when the chat model is started."""
@@ -131,7 +134,6 @@ class ContextCallbackHandler(BaseCallbackHandler):
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Run when LLM ends."""
-        print("on_llm_end", response, kwargs)
         self.within_chat_model = False
         if len(response.generations) == 0 and len(response.generations[0]) == 0:
             return
@@ -147,7 +149,9 @@ class ContextCallbackHandler(BaseCallbackHandler):
 
             self._log_conversation()
 
-    def on_chain_start(self, **kwargs: Any) -> None:
+    def on_chain_start(
+        self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
+    ) -> None:
         """Run when chain starts."""
         self.chain_run_id = kwargs.get("run_id", None)
 
