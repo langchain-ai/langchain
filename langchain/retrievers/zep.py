@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -26,6 +26,12 @@ class ZepRetriever(BaseRetriever):
     For server installation instructions, see:
     https://docs.getzep.com/deployment/quickstart/
     """
+
+    zep_client: Any
+
+    session_id: str
+
+    top_k: Optional[int]
 
     def __init__(
         self,
