@@ -5,6 +5,8 @@ import warnings
 from typing import Any, Iterable, List, Optional
 
 import sqlalchemy
+from sqlalchemy.sql.base import ColumnCollection, DedupeColumnCollection
+from sqlalchemy.types import NullType
 from sqlalchemy import MetaData, Table, create_engine, inspect, select, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
@@ -274,6 +276,11 @@ class SQLDatabase:
             if self._custom_table_info and table.name in self._custom_table_info:
                 tables.append(self._custom_table_info[table.name])
                 continue
+            
+            # Ignore JSON datatyped columns
+            not_nulltype_columns = [(k, v) for k, v in table.columns.items() if type(v.type) is not NullType]
+            table.columns = ColumnCollection(columns=not_nulltype_columns).as_immutable()
+            table._columns = DedupeColumnCollection(columns=not_nulltype_columns)
 
             # add create table command
             create_table = str(CreateTable(table).compile(self._engine))
@@ -316,7 +323,7 @@ class SQLDatabase:
                 )
 
             # save the sample rows in string format
-            sample_rows_str = "\n".join(["\t".join(row) for row in sample_rows])
+            sample_rows_str = "\n".join(["\t".join(row) for row in sample_rows]).replace('"', "'")
 
         # in some dialects when there are no rows in the table a
         # 'ProgrammingError' is returned
