@@ -37,5 +37,6 @@ ARG PYTHON_VIRTUALENV_HOME
 # Copy only the dependency files for installation
 COPY pyproject.toml poetry.toml ./
 
+RUN poetry install
 # Install the Poetry dependencies (this layer will be cached as long as the dependencies don't change)
-RUN poetry install --no-interaction --no-ansi --with dev,test,docs
+#RUN poetry install --no-interaction --no-ansi --with dev,test,docs

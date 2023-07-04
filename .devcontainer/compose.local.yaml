@@ -2,7 +2,7 @@ services:
   langchain:
     container_name: langchain
     build:
-      dockerfile: cpal.Dockerfile
+      dockerfile: dev.Dockerfile
       context: ..
     # keep container alive
     tty: true
@@ -10,8 +10,8 @@ services:
       - PYTHONBREAKPOINT=ipdb.set_trace
     ports:
       - 8888:8888
-    command: > 
-      bash -c "cd .. && jupyter lab --ip='*' --no-browser --NotebookApp.token='' --NotebookApp.password=''"
+        #command: > 
+        #bash -c "cd .. && jupyter lab --ip='*' --no-browser --NotebookApp.token='' --NotebookApp.password=''"
     volumes:
       # `bind volume` so container can read host's src code
       - ..:/workspaces
