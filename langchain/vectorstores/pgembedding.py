@@ -91,9 +91,10 @@ class QueryResult:
     distance: float
 
 
-class HNSWVectoreStore(VectorStore):
+class PGEmbedding(VectorStore):
     """
-    VectorStore implementation using Postgres and the HNSW extension.
+    VectorStore implementation using Postgres and the pg_embedding extension.
+    pg_embedding uses sequential scan by default, but you can create a HNSW index using the create_hnsw_index method.
     - `connection_string` is a postgres connection string.
     - `embedding_function` any embedding function implementing
         `langchain.embeddings.base.Embeddings` interface.
@@ -141,7 +142,7 @@ class HNSWVectoreStore(VectorStore):
     def create_hnsw_extension(self) -> None:
         try:
             with Session(self._conn) as session:
-                statement = sqlalchemy.text("CREATE EXTENSION IF NOT EXISTS hnsw")
+                statement = sqlalchemy.text("CREATE EXTENSION IF NOT EXISTS pg_embedding")
                 session.execute(statement)
                 session.commit()
         except Exception as e:
@@ -212,7 +213,7 @@ class HNSWVectoreStore(VectorStore):
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         pre_delete_collection: bool = False,
         **kwargs: Any,
-    ) -> HNSWVectoreStore:
+    ) -> PGEmbedding:
         if ids is None:
             ids = [str(uuid.uuid1()) for _ in texts]
 
@@ -391,7 +392,7 @@ class HNSWVectoreStore(VectorStore):
 
     @classmethod
     def from_texts(
-        cls: Type[HNSWVectoreStore],
+        cls: Type[PGEmbedding],
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
@@ -399,7 +400,7 @@ class HNSWVectoreStore(VectorStore):
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
         **kwargs: Any,
-    ) -> HNSWVectoreStore:
+    ) -> PGEmbedding:
         embeddings = embedding.embed_documents(list(texts))
 
         return cls._initialize_from_embeddings(
@@ -423,7 +424,7 @@ class HNSWVectoreStore(VectorStore):
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
         **kwargs: Any,
-    ) -> HNSWVectoreStore:
+    ) -> PGEmbedding:
         texts = [t[0] for t in text_embeddings]
         embeddings = [t[1] for t in text_embeddings]
 
@@ -440,12 +441,12 @@ class HNSWVectoreStore(VectorStore):
 
     @classmethod
     def from_existing_index(
-        cls: Type[HNSWVectoreStore],
+        cls: Type[PGEmbedding],
         embedding: Embeddings,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         pre_delete_collection: bool = False,
         **kwargs: Any,
-    ) -> HNSWVectoreStore:
+    ) -> PGEmbedding:
         connection_string = cls.get_connection_string(kwargs)
 
         store = cls(
@@ -476,14 +477,14 @@ class HNSWVectoreStore(VectorStore):
 
     @classmethod
     def from_documents(
-        cls: Type[HNSWVectoreStore],
+        cls: Type[PGEmbedding],
         documents: List[Document],
         embedding: Embeddings,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
         **kwargs: Any,
-    ) -> HNSWVectoreStore:
+    ) -> PGEmbedding:
         texts = [d.page_content for d in documents]
         metadatas = [d.metadata for d in documents]
         connection_string = cls.get_connection_string(kwargs)
