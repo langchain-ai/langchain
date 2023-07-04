@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.221"
+version = "0.0.222"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -106,7 +106,7 @@ pyspark = {version = "^3.4.0", optional = true}
 clarifai = {version = "9.1.0", optional = true}
 tigrisdb = {version = "^1.0.0b6", optional = true}
 nebula3-python = {version = "^3.4.0", optional = true}
-langchainplus-sdk = ">=0.0.17"
+langchainplus-sdk = "^0.0.20"
 awadb = {version = "^0.3.3", optional = true}
 azure-search-documents = {version = "11.4.0a20230509004", source = "azure-sdk-dev", optional = true}
 esprima = {version = "^4.0.1", optional = true}
