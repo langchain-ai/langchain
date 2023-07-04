@@ -458,7 +458,7 @@ class RunManager(BaseRunManager):
 class ParentRunManager(RunManager):
     """Sync Parent Run Manager."""
 
-    def get_child(self, tag: Optional[str] = None) -> AsyncCallbackManager:
+    def get_child(self, tag: Optional[str] = None) -> CallbackManager:
         """Get a child callback manager.
 
         Args:
@@ -466,9 +466,9 @@ class ParentRunManager(RunManager):
                 Defaults to None.
 
         Returns:
-            AsyncCallbackManager: The child callback manager.
+            CallbackManager: The child callback manager.
         """
-        manager = AsyncCallbackManager(handlers=[], parent_run_id=self.run_id)
+        manager = CallbackManager(handlers=[], parent_run_id=self.run_id)
         manager.set_handlers(self.inheritable_handlers)
         manager.add_tags(self.inheritable_tags)
         manager.add_metadata(self.inheritable_metadata)
