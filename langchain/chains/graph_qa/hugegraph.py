@@ -8,7 +8,10 @@ from pydantic import Field
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
-from langchain.chains.graph_qa.prompts import CYPHER_QA_PROMPT, GREMLIN_GENERATION_PROMPT
+from langchain.chains.graph_qa.prompts import (
+    CYPHER_QA_PROMPT,
+    GREMLIN_GENERATION_PROMPT,
+)
 from langchain.chains.llm import LLMChain
 from langchain.graphs.huge_graph import HugeGraph
 from langchain.schema import BasePromptTemplate

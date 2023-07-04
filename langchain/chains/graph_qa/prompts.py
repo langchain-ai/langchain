@@ -90,9 +90,7 @@ KUZU_GENERATION_PROMPT = PromptTemplate(
     input_variables=["schema", "question"], template=KUZU_GENERATION_TEMPLATE
 )
 
-GREMLIN_GENERATION_TEMPLATE = CYPHER_GENERATION_TEMPLATE.replace(
-    "Cypher", "Gremlin"
-)
+GREMLIN_GENERATION_TEMPLATE = CYPHER_GENERATION_TEMPLATE.replace("Cypher", "Gremlin")
 
 GREMLIN_GENERATION_PROMPT = PromptTemplate(
     input_variables=["schema", "question"], template=GREMLIN_GENERATION_TEMPLATE

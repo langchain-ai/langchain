@@ -18,11 +18,7 @@ class TestHugeGraph(unittest.TestCase):
     def test_init(self, mock_client: Any) -> None:
         mock_client.return_value = MagicMock()
         huge_graph = HugeGraph(
-            self.username,
-            self.password,
-            self.address,
-            self.port,
-            self.graph
+            self.username, self.password, self.address, self.port, self.graph
         )
         self.assertEqual(huge_graph.username, self.username)
         self.assertEqual(huge_graph.password, self.password)
@@ -34,11 +30,7 @@ class TestHugeGraph(unittest.TestCase):
     def test_execute(self, mock_client: Any) -> None:
         mock_client.return_value = MagicMock()
         huge_graph = HugeGraph(
-            self.username,
-            self.password,
-            self.address,
-            self.port,
-            self.graph
+            self.username, self.password, self.address, self.port, self.graph
         )
         query = "g.V().limit(10)"
         result = huge_graph.query(query)
@@ -48,11 +40,7 @@ class TestHugeGraph(unittest.TestCase):
     def test_refresh_schema(self, mock_client: Any) -> None:
         mock_client.return_value = MagicMock()
         huge_graph = HugeGraph(
-            self.username,
-            self.password,
-            self.address,
-            self.port,
-            self.graph
+            self.username, self.password, self.address, self.port, self.graph
         )
         huge_graph.refresh_schema()
         self.assertNotEqual(huge_graph.get_schema, "")

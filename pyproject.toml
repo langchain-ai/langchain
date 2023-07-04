@@ -311,6 +311,7 @@ all = [
     "awadb",
     "esprima",
     "octoai-sdk",
+    "hugegraph-python",
 ]
 
 # An extra used to be able to add extended testing.

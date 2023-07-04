@@ -1,5 +1,3 @@
-import logging
-from string import Template
 from typing import Any, Dict, List
 
 
@@ -12,7 +10,7 @@ class HugeGraph:
         password: str = "default",
         address: str = "127.0.0.1",
         port: int = 8081,
-        graph: str = "hugegraph"
+        graph: str = "hugegraph",
     ) -> None:
         """Create a new HugeGraph wrapper instance."""
         try:
@@ -28,7 +26,9 @@ class HugeGraph:
         self.address = address
         self.port = port
         self.graph = graph
-        self.client = PyHugeGraph(address, port, user=username, pwd=password, graph=graph)
+        self.client = PyHugeGraph(
+            address, port, user=username, pwd=password, graph=graph
+        )
         self.schema = ""
         # Set schema
         try:
