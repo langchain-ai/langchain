@@ -196,7 +196,7 @@ class AzureSearch(VectorStore):
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         extra_fields: Optional[Dict[str, str]] = None,
-        """Allows adding extra fields which can be retrieved or filtered """
+        """Allows adding extra fields as a list of dictionaries, which can be retrieved or filtered """
         **kwargs: Any,
     ) -> List[str]:
         """Add texts data to an existing index."""
