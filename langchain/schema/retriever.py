@@ -5,6 +5,8 @@ from abc import ABC, abstractmethod
 from inspect import signature
 from typing import TYPE_CHECKING, Any, List
 
+from pydantic import PrivateAttr
+
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
 from langchain.schema.document import Document
@@ -48,8 +50,8 @@ class BaseRetriever(Serializable, ABC):
                     raise NotImplementedError
     """  # noqa: E501
 
-    _new_arg_supported: bool = False
-    _expects_other_args: bool = False
+    _new_arg_supported: bool = PrivateAttr(default=False)
+    _expects_other_args: bool = PrivateAttr(default=False)
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
