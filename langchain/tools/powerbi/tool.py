@@ -52,16 +52,12 @@ class QueryPowerBITool(BaseTool):
         cls, llm_chain: LLMChain
     ) -> LLMChain:
         """Make sure the LLM chain has the correct input variables."""
-        if llm_chain.prompt.input_variables != [
-            "tables",
-            "schemas",
-            "tool_input",
-            "examples",
-        ]:
-            raise ValueError(
-                "LLM chain for QueryPowerBITool must have input variables ['tool_input', 'tables', 'schemas', 'examples'], found %s",  # noqa: C0301 E501 # pylint: disable=C0301
-                llm_chain.prompt.input_variables,
-            )
+        for var in llm_chain.prompt.input_variables:
+            if var not in ["tool_input", "tables", "schemas", "examples"]:
+                raise ValueError(
+                    "LLM chain for QueryPowerBITool must have input variables ['tool_input', 'tables', 'schemas', 'examples'], found %s",  # noqa: C0301 E501 # pylint: disable=C0301
+                    llm_chain.prompt.input_variables,
+                )
         return llm_chain
 
     def _check_cache(self, tool_input: str) -> Optional[str]:
@@ -188,8 +184,8 @@ class QueryPowerBITool(BaseTool):
             if len(rows) == 0:
                 logger.info("0 records in result, query was valid.")
                 return (
-                    "0 rows returned, this might be correct, but please validate if all filter values were correct?",
                     None,
+                    "0 rows returned, this might be correct, but please validate if all filter values were correct?",
                 )
             result = json_to_md(rows)
             too_long, length = self._result_too_large(result)
