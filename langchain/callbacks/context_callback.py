@@ -1,29 +1,29 @@
 """Callback handler for Context AI"""
-from uuid import UUID
-
 from typing import Any, Dict, List
+from uuid import UUID
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import (
-    LLMResult,
     BaseMessage,
+    LLMResult,
 )
 
 
 def import_context() -> Any:
     try:
         import getcontext  # noqa: F401
-        from getcontext.token import Credential  # noqa: F401
         from getcontext.generated.models import (
             Conversation,
             Message,
             MessageRole,
             Rating,
         )
+        from getcontext.token import Credential  # noqa: F401
     except ImportError:
         raise ImportError(
-            "To use the context callback manager you need to have the `getcontext`  python "
-            "package installed (version >=0.3.0). Please install it with `pip install --upgrade python-context`"
+            "To use the context callback manager you need to have the "
+            "`getcontext` python package installed (version >=0.3.0). "
+            "Please install it with `pip install --upgrade python-context`"
         )
     return getcontext, Credential, Conversation, Message, MessageRole, Rating
 
@@ -51,7 +51,7 @@ class ContextCallbackHandler(BaseCallbackHandler):
         ...     openai_api_key="API_KEY_HERE",
         ... )
         >>> messages = [
-        ...     SystemMessage(content="You are a helpful assistant that translates English to French."),
+        ...     SystemMessage(content="You translate English to French."),
         ...     HumanMessage(content="I love programming with LangChain."),
         ... ]
         >>> chat(messages)
@@ -69,11 +69,18 @@ class ContextCallbackHandler(BaseCallbackHandler):
         ...         input_variables=["product"],
         ...    ),
         ... )
-        >>> chat_prompt_template = ChatPromptTemplate.from_messages([human_message_prompt])
+        >>> chat_prompt_template = ChatPromptTemplate.from_messages(
+        ...   [human_message_prompt]
+        ... )
         >>> callback = ContextCallbackHandler(token)
-        >>> # Note: the same callback object must be shared between the LLM and the chain.
+        >>> # Note: the same callback object must be shared between the
+        ...   LLM and the chain.
         >>> chat = ChatOpenAI(temperature=0.9, callbacks=[callback])
-        >>> chain = LLMChain(llm=chat, prompt=chat_prompt_template, callbacks=[callback])
+        >>> chain = LLMChain(
+        ...   llm=chat,
+        ...   prompt=chat_prompt_template,
+        ...   callbacks=[callback]
+        ... )
         >>> chain.run("colorful socks")
     """
 
@@ -94,8 +101,8 @@ class ContextCallbackHandler(BaseCallbackHandler):
         self.within_chat_model = False
         self.llm_model = None
 
-        self.messages = []
-        self.metadata = {}
+        self.messages: List[Any] = []
+        self.metadata: Dict[str, str] = {}
 
     def on_chat_model_start(
         self,
