@@ -6,4 +6,11 @@ from langchain.graphs.neo4j_graph import Neo4jGraph
 from langchain.graphs.networkx_graph import NetworkxEntityGraph
 from langchain.graphs.rdf_graph import RdfGraph
 
-__all__ = ["NetworkxEntityGraph", "Neo4jGraph", "NebulaGraph", "KuzuGraph", "HugeGraph", "RdfGraph"]
+__all__ = [
+    "NetworkxEntityGraph",
+    "Neo4jGraph",
+    "NebulaGraph",
+    "KuzuGraph",
+    "HugeGraph",
+    "RdfGraph",
+]
