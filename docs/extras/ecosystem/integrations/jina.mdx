@@ -17,12 +17,11 @@ from langchain.embeddings import JinaEmbeddings
 ```
 For a more detailed walkthrough of this, see [this notebook](/docs/modules/data_connection/text_embedding/integrations/jina.html)
 
-
-### Deployment
+## Deployment
 
 [Langchain-serve](https://github.com/jina-ai/langchain-serve), powered by Jina, helps take LangChain apps to production with easy to use REST/WebSocket APIs and Slack bots. 
 
-#### Usage
+### Usage
 
 Install the package from PyPI. 
 
@@ -64,7 +63,7 @@ curl -X 'POST' 'https://<your-app>.wolf.jina.ai/ask' \
  -d '{
   "input": "Your Quesion here?",
   "envs": {
-     "OPENAI_API_KEY": "'"sk-***"'"
+     "OPENAI_API_KEY": "sk-***"
   }
 }'
 ```
