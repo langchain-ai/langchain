@@ -214,7 +214,7 @@ class PowerBIDataset(BaseModel):
             headers=self.headers,
             timeout=10,
         )
-        if response.status == 403:
+        if response.status_code == 403:
             return (
                 "TokenError: Could not login to PowerBI, please check your credentials."
             )

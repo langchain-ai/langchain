@@ -1,5 +1,5 @@
 """Toolkit for interacting with a Power BI dataset."""
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from pydantic import Field
 
@@ -32,7 +32,7 @@ class PowerBIToolkit(BaseToolkit):
     """Toolkit for interacting with PowerBI dataset."""
 
     powerbi: PowerBIDataset = Field(exclude=True)
-    llm: BaseLanguageModel | BaseChatModel = Field(exclude=True)
+    llm: Union[BaseLanguageModel, BaseChatModel] = Field(exclude=True)
     examples: Optional[str] = None
     max_iterations: int = 5
     callback_manager: Optional[BaseCallbackManager] = None
@@ -61,27 +61,32 @@ class PowerBIToolkit(BaseToolkit):
 
     def _get_chain(self) -> LLMChain:
         """Construct the chain based on the callback manager and model type."""
-        if isinstance(self.llm, BaseChatModel):
-            system_prompt = SystemMessagePromptTemplate(
+        if isinstance(self.llm, BaseLanguageModel):
+            return LLMChain(
+                llm=self.llm,
+                callback_manager=self.callback_manager
+                if self.callback_manager
+                else None,
                 prompt=PromptTemplate(
-                    template=QUESTION_TO_QUERY_BASE,
-                    input_variables=["tables", "schemas", "examples"],
-                )
+                    template=SINGLE_QUESTION_TO_QUERY,
+                    input_variables=["tool_input", "tables", "schemas", "examples"],
+                ),
             )
-            human_prompt = HumanMessagePromptTemplate(
-                prompt=PromptTemplate(
-                    template=USER_INPUT,
-                    input_variables=["tool_input"],
-                )
+
+        system_prompt = SystemMessagePromptTemplate(
+            prompt=PromptTemplate(
+                template=QUESTION_TO_QUERY_BASE,
+                input_variables=["tables", "schemas", "examples"],
             )
-            prompt = ChatPromptTemplate.from_messages([system_prompt, human_prompt])
-        else:
-            prompt = PromptTemplate(
-                template=SINGLE_QUESTION_TO_QUERY,
-                input_variables=["tool_input", "tables", "schemas", "examples"],
+        )
+        human_prompt = HumanMessagePromptTemplate(
+            prompt=PromptTemplate(
+                template=USER_INPUT,
+                input_variables=["tool_input"],
             )
+        )
         return LLMChain(
             llm=self.llm,
             callback_manager=self.callback_manager if self.callback_manager else None,
-            prompt=prompt,
+            prompt=ChatPromptTemplate.from_messages([system_prompt, human_prompt]),
         )

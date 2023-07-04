@@ -177,7 +177,7 @@ class QueryPowerBITool(BaseTool):
 
     def _parse_output(
         self, pbi_result: Dict[str, Any]
-    ) -> Tuple[Optional[str], Optional[str]]:
+    ) -> Tuple[Optional[str], Optional[Any]]:
         """Parse the output of the query to a markdown table."""
         if "results" in pbi_result:
             rows = pbi_result["results"][0]["tables"][0]["rows"]
