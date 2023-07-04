@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from pydantic import root_validator
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
@@ -33,13 +35,8 @@ class ZepRetriever(BaseRetriever):
 
     top_k: Optional[int]
 
-    def __init__(
-        self,
-        session_id: str,
-        url: str,
-        api_key: Optional[str] = None,
-        top_k: Optional[int] = None,
-    ):
+    @root_validator(pre=True)
+    def create_client(cls, values: dict) -> dict:
         try:
             from zep_python import ZepClient
         except ImportError:
@@ -47,10 +44,10 @@ class ZepRetriever(BaseRetriever):
                 "Could not import zep-python package. "
                 "Please install it with `pip install zep-python`."
             )
-
-        self.zep_client = ZepClient(base_url=url, api_key=api_key)
-        self.session_id = session_id
-        self.top_k = top_k
+        values["zep_client"] = ZepClient(
+            base_url=values["url"], api_key=values["api_key"]
+        )
+        return values
 
     def _search_result_to_doc(
         self, results: List[MemorySearchResult]
