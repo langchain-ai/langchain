@@ -168,10 +168,12 @@ class CallbackManagerMixin:
 
     def on_retriever_start(
         self,
+        serialized: Dict[str, Any],
         query: str,
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
+        tags: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when Retriever starts running."""
