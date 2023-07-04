@@ -4,6 +4,7 @@ from langchain.chains.api.openapi.chain import OpenAPIEndpointChain
 from langchain.chains.combine_documents.base import AnalyzeDocumentChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
 from langchain.chains.combine_documents.map_rerank import MapRerankDocumentsChain
+from langchain.chains.combine_documents.reduce import ReduceDocumentsChain
 from langchain.chains.combine_documents.refine import RefineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.constitutional_ai.base import ConstitutionalChain
@@ -15,6 +16,7 @@ from langchain.chains.conversational_retrieval.base import (
 from langchain.chains.flare.base import FlareChain
 from langchain.chains.graph_qa.base import GraphQAChain
 from langchain.chains.graph_qa.cypher import GraphCypherQAChain
+from langchain.chains.graph_qa.hugegraph import HugeGraphQAChain
 from langchain.chains.graph_qa.kuzu import KuzuQAChain
 from langchain.chains.graph_qa.nebulagraph import NebulaGraphQAChain
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
@@ -69,6 +71,7 @@ __all__ = [
     "GraphQAChain",
     "HypotheticalDocumentEmbedder",
     "KuzuQAChain",
+    "HugeGraphQAChain",
     "LLMBashChain",
     "LLMChain",
     "LLMCheckerChain",
@@ -109,4 +112,5 @@ __all__ = [
     "MapRerankDocumentsChain",
     "MapReduceDocumentsChain",
     "RefineDocumentsChain",
+    "ReduceDocumentsChain",
 ]
