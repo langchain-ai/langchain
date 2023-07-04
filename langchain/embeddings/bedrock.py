@@ -66,7 +66,7 @@ class BedrockEmbeddings(BaseModel, Embeddings):
         extra = Extra.forbid
 
     @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    def validate_environment(self, cls, values: Dict) -> Dict:
         """Validate that AWS credentials to and python package exists in environment."""
 
         if values["client"] is not None:
