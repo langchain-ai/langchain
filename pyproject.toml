@@ -309,15 +309,7 @@ all = [
     "nebula3-python",
     "awadb",
     "esprima",
-<<<<<<< HEAD
-<<<<<<< HEAD
     "octoai-sdk",
-=======
-    "pygraphviz",
->>>>>>> 187fbb99 (univariate prompt and CPAL unit tests)
-=======
-    "octoai-sdk",
->>>>>>> 521b380e (revert temp prproject.toml)
 ]
 
 # An extra used to be able to add extended testing.
