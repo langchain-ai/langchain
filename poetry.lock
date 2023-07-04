@@ -3654,6 +3654,23 @@ http2 = ["h2 (>=3,<5)"]
 socks = ["socksio (>=1.0.0,<2.0.0)"]
 
 [[package]]
+name = "hugegraph-python"
+version = "1.0.0.12"
+description = "Python client for HugeGraph"
+optional = true
+python-versions = "*"
+files = [
+    {file = "hugegraph-python-1.0.0.12.tar.gz", hash = "sha256:06b2dded70c4f4570083f8b6e3a9edfebcf5ac4f07300727afad72389917ab85"},
+    {file = "hugegraph_python-1.0.0.12-py3-none-any.whl", hash = "sha256:69fe20edbe1a392d16afc74df5c94b3b96bc02c848e9ab5b5f18c112a9bc3ebe"},
+]
+
+[package.dependencies]
+decorator = "5.1.1"
+Requests = "2.31.0"
+setuptools = "67.6.1"
+urllib3 = "2.0.3"
+
+[[package]]
 name = "huggingface-hub"
 version = "0.15.1"
 description = "Client library to download and publish models, datasets and other repos on the huggingface.co hub"
