@@ -164,12 +164,13 @@ def format_document(doc: Document, prompt: BasePromptTemplate) -> str:
 
     Example:
         .. code-block:: python
-        from langchain.schema import Document
-        from langchain.prompts import PromptTemplate
-        doc = Document(page_content="This is a joke", metadata={"page": "1"})
-        prompt = PromptTemplate.from_template("Page {page}: {page_content}")
-        format_document(doc, prompt)
-        >>> "Page 1: This is a joke"
+
+            from langchain.schema import Document
+            from langchain.prompts import PromptTemplate
+            doc = Document(page_content="This is a joke", metadata={"page": "1"})
+            prompt = PromptTemplate.from_template("Page {page}: {page_content}")
+            format_document(doc, prompt)
+            >>> "Page 1: This is a joke"
     """
     base_info = {"page_content": doc.page_content, **doc.metadata}
     missing_metadata = set(prompt.input_variables).difference(base_info)
