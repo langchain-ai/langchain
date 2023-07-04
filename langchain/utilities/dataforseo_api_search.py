@@ -51,11 +51,11 @@ class DataForSeoAPIWrapper(BaseModel):
 
     def results(self, url: str) -> list:
         res = self._response_json(url)
-        return self._filter_results(res, self.json_result_types)
+        return self._filter_results(res)
 
     async def aresults(self, url: str) -> list:
         res = await self._aresponse_json(url)
-        return self._filter_results(res, self.json_result_types)
+        return self._filter_results(res)
 
     def _prepare_request(self, keyword: str) -> dict:
         """Prepare the request details for the DataForSEO SERP API."""
@@ -98,12 +98,13 @@ class DataForSeoAPIWrapper(BaseModel):
                 res = await response.json()
         return self._check_response(res)
 
-    def _filter_results(self, res: dict, types: list) -> list:
+    def _filter_results(self, res: dict) -> list:
         output = []
+        types = self.json_result_types if self.json_result_types is not None else []
         for task in res.get('tasks', []):
             for result in task.get('result', []):
                 for item in result.get('items', []):
-                    if types is None or len(types) == 0 or item.get('type', '') in types:
+                    if len(types) == 0 or item.get('type', '') in types:
                         self._cleanup_unnecessary_items(item)
                         if len(item) != 0:
                             output.append(item)
@@ -112,13 +113,14 @@ class DataForSeoAPIWrapper(BaseModel):
         return output
 
     def _cleanup_unnecessary_items(self, d: dict) -> dict:
-        if self.json_result_fields is not None:
+        fields = self.json_result_fields if self.json_result_fields is not None else []
+        if len(fields) > 0:
             for k, v in list(d.items()):
                 if isinstance(v, dict):
                     self._cleanup_unnecessary_items(v)
                     if len(v) == 0:
                         del d[k]
-                elif k not in self.json_result_fields:
+                elif k not in fields:
                     del d[k]
 
         if "xpath" in d:
@@ -146,7 +148,7 @@ class DataForSeoAPIWrapper(BaseModel):
                 elif 'featured_snippet' in item_types:
                     toret = next(item for item in items if item.get("type") == "featured_snippet").get('description')
                 elif 'shopping' in item_types:
-                    toret = next(item for item in items if item.get("type") == "price").get('price')
+                    toret = next(item for item in items if item.get("type") == "shopping").get('price')
                 elif 'organic' in item_types:
                     toret = next(item for item in items if item.get("type") == "organic").get('description')
                 if toret:
