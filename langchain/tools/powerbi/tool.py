@@ -53,9 +53,9 @@ class QueryPowerBITool(BaseTool):
     ) -> LLMChain:
         """Make sure the LLM chain has the correct input variables."""
         if llm_chain.prompt.input_variables != [
-            "tool_input",
             "tables",
             "schemas",
+            "tool_input",
             "examples",
         ]:
             raise ValueError(
