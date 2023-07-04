@@ -1,5 +1,5 @@
 """Graph implementations."""
-from langchain.graphs.huge_graph import HugeGraph
+from langchain.graphs.hugegraph import HugeGraph
 from langchain.graphs.kuzu_graph import KuzuGraph
 from langchain.graphs.nebula_graph import NebulaGraph
 from langchain.graphs.neo4j_graph import Neo4jGraph

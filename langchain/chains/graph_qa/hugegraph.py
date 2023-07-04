@@ -13,7 +13,7 @@ from langchain.chains.graph_qa.prompts import (
     GREMLIN_GENERATION_PROMPT,
 )
 from langchain.chains.llm import LLMChain
-from langchain.graphs.huge_graph import HugeGraph
+from langchain.graphs.hugegraph import HugeGraph
 from langchain.schema import BasePromptTemplate
 
 
