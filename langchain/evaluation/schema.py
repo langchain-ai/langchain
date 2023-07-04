@@ -11,6 +11,10 @@ from langchain.base_language import BaseLanguageModel
 from langchain.chains.base import Chain
 
 logger = logging.getLogger(__name__)
+from abc import ABC, abstractmethod
+from typing import Any, Optional, Protocol, Sequence, Tuple, runtime_checkable
+
+from langchain.schema.agent import AgentAction
 
 
 class EvaluatorType(str, Enum):
@@ -308,4 +312,57 @@ class PairwiseStringEvaluator(_EvalArgsMixin, ABC):
             reference=reference,
             input=input,
             **kwargs,
+        )
+
+
+class TrajectoryEvaluator(ABC):
+    """Interface for evaluating agent trajectories."""
+
+    @abstractmethod
+    def evaluate_agent_trajectory(
+        self,
+        *,
+        prediction: str,
+        input: str,
+        agent_trajectory: Sequence[Tuple[AgentAction, str]],
+        reference: Optional[str] = None,
+        **kwargs: Any,
+    ) -> dict:
+        """Evaluate a trajectory.
+
+        Args:
+            prediction (str): The final predicted response.
+            input (str): The input to the agent.
+            agent_trajectory (List[Tuple[AgentAction, str]]):
+                The intermediate steps forming the agent trajectory.
+            reference (Optional[str]): The reference answer.
+
+        Returns:
+            dict: The evaluation result.
+        """
+
+    async def aevaluate_agent_trajectory(
+        self,
+        *,
+        prediction: str,
+        input: str,
+        agent_trajectory: Sequence[Tuple[AgentAction, str]],
+        reference: Optional[str] = None,
+        **kwargs: Any,
+    ) -> dict:
+        """Asynchronously evaluate a trajectory.
+
+        Args:
+            prediction (str): The final predicted response.
+            input (str): The input to the agent.
+            agent_trajectory (List[Tuple[AgentAction, str]]):
+                The intermediate steps forming the agent trajectory.
+            reference (Optional[str]): The reference answer.
+
+        Returns:
+            dict: The evaluation result.
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} hasn't implemented an async "
+            "aevaluate_agent_trajectory method."
         )
