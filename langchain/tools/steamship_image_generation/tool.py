@@ -25,6 +25,7 @@ from langchain.callbacks.manager import (
 from langchain.tools import BaseTool
 from langchain.tools.steamship_image_generation.utils import make_image_public
 from langchain.utils import get_from_dict_or_env
+from steamship import Steamship
 
 if TYPE_CHECKING:
     pass
@@ -44,10 +45,6 @@ SUPPORTED_IMAGE_SIZES = {
 
 
 class SteamshipImageGenerationTool(BaseTool):
-    try:
-        from steamship import Steamship
-    except ImportError:
-        pass
 
     """Tool used to generate images from a text-prompt."""
     model_name: ModelName
