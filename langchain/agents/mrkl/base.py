@@ -54,7 +54,7 @@ class ZeroShotAgent(Agent):
     @property
     def llm_prefix(self) -> str:
         """Prefix to append the llm call with."""
-        return "Thought:"
+        return "Thought: "
 
     @classmethod
     def create_prompt(
