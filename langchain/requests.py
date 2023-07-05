@@ -45,18 +45,18 @@ class Requests(BaseModel):
 
     @asynccontextmanager
     async def _arequest(
-        self, method: str, url: str, data: Dict[str, Any], **kwargs: Any
+        self, method: str, url: str, **kwargs: Any
     ) -> AsyncGenerator[aiohttp.ClientResponse, None]:
         """Make an async request."""
         if not self.aiosession:
             async with aiohttp.ClientSession() as session:
                 async with session.request(
-                    method, url, json=data, headers=self.headers, **kwargs
+                    method, url, headers=self.headers, **kwargs
                 ) as response:
                     yield response
         else:
             async with self.aiosession.request(
-                method, url, json=data, headers=self.headers, **kwargs
+                method, url, headers=self.headers, **kwargs
             ) as response:
                 yield response
 
@@ -73,7 +73,7 @@ class Requests(BaseModel):
         self, url: str, data: Dict[str, Any], **kwargs: Any
     ) -> AsyncGenerator[aiohttp.ClientResponse, None]:
         """POST to the URL and return the text asynchronously."""
-        async with self._arequest("POST", url, data, **kwargs) as response:
+        async with self._arequest("POST", url, json=data, **kwargs) as response:
             yield response
 
     @asynccontextmanager
@@ -81,7 +81,7 @@ class Requests(BaseModel):
         self, url: str, data: Dict[str, Any], **kwargs: Any
     ) -> AsyncGenerator[aiohttp.ClientResponse, None]:
         """PATCH the URL and return the text asynchronously."""
-        async with self._arequest("PATCH", url, data, **kwargs) as response:
+        async with self._arequest("PATCH", url, json=data, **kwargs) as response:
             yield response
 
     @asynccontextmanager
@@ -89,7 +89,7 @@ class Requests(BaseModel):
         self, url: str, data: Dict[str, Any], **kwargs: Any
     ) -> AsyncGenerator[aiohttp.ClientResponse, None]:
         """PUT the URL and return the text asynchronously."""
-        async with self._arequest("PUT", url, data, **kwargs) as response:
+        async with self._arequest("PUT", url, json=data, **kwargs) as response:
             yield response
 
     @asynccontextmanager
