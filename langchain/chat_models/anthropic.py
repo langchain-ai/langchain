@@ -104,10 +104,10 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
 
         if self.streaming:
             completion = ""
-            stream_resp = self.client.completion_stream(**params)
+            stream_resp = self.client.completions.create(**params, stream=True)
             for data in stream_resp:
-                delta = data["completion"][len(completion) :]
-                completion = data["completion"]
+                delta = data.completion
+                completion += delta
                 if run_manager:
                     run_manager.on_llm_new_token(
                         delta,
@@ -132,10 +132,10 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
 
         if self.streaming:
             completion = ""
-            stream_resp = await self.client.acompletion_stream(**params)
+            stream_resp = await self.async_client.completions.create(**params, stream=True)
             async for data in stream_resp:
-                delta = data["completion"][len(completion) :]
-                completion = data["completion"]
+                delta = data.completion
+                completion += delta
                 if run_manager:
                     await run_manager.on_llm_new_token(
                         delta,
