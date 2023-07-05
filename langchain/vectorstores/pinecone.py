@@ -181,7 +181,8 @@ class Pinecone(VectorStore):
             return self._euclidean_relevance_score_fn
         else:
             raise ValueError(
-                "Unknown distance strategy, must be cosine, max_inner_product (dot product), or euclidean"
+                "Unknown distance strategy, must be cosine, max_inner_product "
+                "(dot product), or euclidean"
             )
 
     def max_marginal_relevance_search_by_vector(

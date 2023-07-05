@@ -145,7 +145,8 @@ class VectorStore(ABC):
         # The 'correct' relevance function
         # may differ depending on a few things, including:
         # - the distance / similarity metric used by the VectorStore
-        # - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
+        # - the scale of your embeddings (OpenAI's are unit normed. Many
+        #  others are not!)
         # - embedding dimensionality
         # - etc.
         # This function converts the euclidean norm of normalized embeddings
@@ -193,7 +194,8 @@ class VectorStore(ABC):
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """
-        Default similarity search with relevance scores. Modify if necessary in subclass.
+        Default similarity search with relevance scores. Modify if necessary
+        in subclass.
         Return docs and relevance scores in the range [0, 1].
 
         0 is dissimilar, 1 is most similar.

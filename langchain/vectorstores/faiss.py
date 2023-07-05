@@ -1,7 +1,6 @@
 """Wrapper around FAISS vector database."""
 from __future__ import annotations
 
-import math
 import operator
 import os
 import pickle
@@ -83,7 +82,9 @@ class FAISS(VectorStore):
             and self._normalize_L2
         ):
             warnings.warn(
-                f"Normalizing L2 is not applicable for metric type: {self.distance_strategy}"
+                "Normalizing L2 is not applicable for metric type: {strategy}".format(
+                    strategy=self.distance_strategy
+                )
             )
 
     def __add(
@@ -662,7 +663,8 @@ class FAISS(VectorStore):
         if self.override_relevance_score_fn is not None:
             return self.override_relevance_score_fn
 
-        # Default strategy is to rely on distance strategy provided in vectorstore constructor
+        # Default strategy is to rely on distance strategy provided in
+        # vectorstore constructor
         if self.distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
             return self._max_inner_product_relevance_score_fn
         elif self.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
@@ -670,7 +672,8 @@ class FAISS(VectorStore):
             return self._euclidean_relevance_score_fn
         else:
             raise ValueError(
-                "Unknown distance strategy, must be cosine, max_inner_product, or euclidean"
+                "Unknown distance strategy, must be cosine, max_inner_product,"
+                " or euclidean"
             )
 
     def _similarity_search_with_relevance_scores(

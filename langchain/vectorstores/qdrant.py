@@ -440,7 +440,8 @@ class Qdrant(VectorStore):
             return self._euclidean_relevance_score_fn
         else:
             raise ValueError(
-                "Unknown distance strategy, must be cosine, max_inner_product, or euclidean"
+                "Unknown distance strategy, must be cosine, "
+                "max_inner_product, or euclidean"
             )
 
     def _similarity_search_with_relevance_scores(

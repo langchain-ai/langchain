@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import enum
 import json
 from typing import (
     Any,

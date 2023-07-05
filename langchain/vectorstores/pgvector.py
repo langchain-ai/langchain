@@ -611,7 +611,8 @@ class PGVector(VectorStore):
         if self.override_relevance_score_fn is not None:
             return self.override_relevance_score_fn
 
-        # Default strategy is to rely on distance strategy provided in vectorstore constructor
+        # Default strategy is to rely on distance strategy provided
+        # in vectorstore constructor
         if self.distance_strategy == DistanceStrategy.COSINE:
             return self._cosine_relevance_score_fn
         elif self.distance_strategy == DistanceStrategy.EUCLIDEAN:
