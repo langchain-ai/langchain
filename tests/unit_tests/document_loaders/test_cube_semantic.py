@@ -72,7 +72,7 @@ class TestCubeSemanticLoader:
             },
         )
 
-    def test_load_failure():
+    def test_load_failure() -> None:
         # Arrange
         cube_api_url = "https://example.com/cube_api"
         cube_api_token = "abc123"
