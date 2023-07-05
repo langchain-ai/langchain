@@ -44,8 +44,9 @@ class ZepRetriever(BaseRetriever):
                 "Could not import zep-python package. "
                 "Please install it with `pip install zep-python`."
             )
-        values["zep_client"] = values["zep_client"] or ZepClient(
-            base_url=values["url"], api_key=values.get("api_key")
+        values["zep_client"] = values.get(
+            "zep_client",
+            ZepClient(base_url=values["url"], api_key=values.get("api_key")),
         )
         return values
 
