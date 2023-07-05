@@ -17,7 +17,7 @@ class InMemoryDocstore(Docstore, AddableMixin):
         overlapping = set(texts).intersection(self._dict)
         if overlapping:
             raise ValueError(f"Tried to add ids that already exist: {overlapping}")
-        self._dict = dict(self._dict, **texts)
+        self._dict = {**self._dict, **texts}
 
     def search(self, search: str) -> Union[str, Document]:
         """Search via direct lookup."""
