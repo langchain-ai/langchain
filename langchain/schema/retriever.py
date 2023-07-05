@@ -5,8 +5,6 @@ from abc import ABC, abstractmethod
 from inspect import signature
 from typing import TYPE_CHECKING, Any, List
 
-from pydantic import PrivateAttr
-
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
 from langchain.schema.document import Document
