@@ -61,7 +61,7 @@ class DeepLake(VectorStore):
         ingestion_batch_size: int = 1000,
         num_workers: int = 0,
         verbose: bool = True,
-        exec_option: str = "python",
+        exec_option: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Creates an empty DeepLakeVectorStore or loads an existing one.
@@ -96,19 +96,21 @@ class DeepLake(VectorStore):
                 Default is 0.
             verbose (bool): Print dataset summary after each operation.
                 Default is True.
-            exec_option (str): DeepLakeVectorStore supports 3 ways to perform
-                searching - "python", "compute_engine", "tensor_db".
-                Default is "python".
+            exec_option (str, optional): DeepLakeVectorStore supports 3 ways to perform
+                searching - "python", "compute_engine", "tensor_db" and auto.
+                Default is None.
+                - ``auto``- Selects the best execution method based on the storage
+                    location of the Vector Store. It is the default option.
                 - ``python`` - Pure-python implementation that runs on the client.
-                WARNING: using this with big datasets can lead to memory
-                issues. Data can be stored anywhere.
+                    WARNING: using this with big datasets can lead to memory
+                    issues. Data can be stored anywhere.
                 - ``compute_engine`` - C++ implementation of the Deep Lake Compute
-                Engine that runs on the client. Can be used for any data stored in
-                or connected to Deep Lake. Not for in-memory or local datasets.
+                    Engine that runs on the client. Can be used for any data stored in
+                    or connected to Deep Lake. Not for in-memory or local datasets.
                 - ``tensor_db`` - Hosted Managed Tensor Database that is
-                responsible for storage and query execution. Only for data stored in
-                the Deep Lake Managed Database. Use runtime = {"db_engine": True} during
-                dataset creation.
+                    responsible for storage and query execution. Only for data stored in
+                    the Deep Lake Managed Database. Use runtime = {"db_engine": True}
+                    during dataset creation.
             **kwargs: Other optional keyword arguments.
 
         Raises:
@@ -122,7 +124,7 @@ class DeepLake(VectorStore):
         if _DEEPLAKE_INSTALLED is False:
             raise ValueError(
                 "Could not import deeplake python package. "
-                "Please install it with `pip install deeplake`."
+                "Please install it with `pip install deeplake[enterprise]`."
             )
 
         if (
