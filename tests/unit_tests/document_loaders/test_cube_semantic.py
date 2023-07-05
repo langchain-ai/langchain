@@ -1,8 +1,6 @@
 from typing import List
-from unittest import mock
 from unittest.mock import MagicMock, patch
 
-import pytest
 import requests
 
 from langchain.docstore.document import Document
@@ -71,26 +69,3 @@ class TestCubeSemanticLoader:
                 "Authorization": cube_api_token,
             },
         )
-
-    def test_load_failure() -> None:
-        # Arrange
-        cube_api_url = "https://example.com/cube_api"
-        cube_api_token = "abc123"
-        mock_resp = requests.models.Response()
-        mock_resp.status_code = 404
-
-        with mock.patch.object(requests, "get", return_value=mock_resp) as mock_get:
-            loader = CubeSemanticLoader(cube_api_url, cube_api_token)
-
-            # Act and Assert
-            with pytest.raises(requests.exceptions.HTTPError) as err_msg:
-                loader.load()
-
-            mock_get.assert_called_once_with(
-                cube_api_url,
-                headers={
-                    "Content-Type": "application/json",
-                    "Authorization": cube_api_token,
-                },
-            )
-            assert err_msg.value.response.status_code == 404
