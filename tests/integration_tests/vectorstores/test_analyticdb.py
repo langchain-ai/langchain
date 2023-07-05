@@ -47,6 +47,22 @@ def test_analyticdb() -> None:
     assert output == [Document(page_content="foo")]
 
 
+def test_analyticdb_with_engine_args() -> None:
+    engine_args = {"pool_recycle": 3600, "pool_size": 50}
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = AnalyticDB.from_texts(
+        texts=texts,
+        collection_name="test_collection",
+        embedding=FakeEmbeddingsWithAdaDimension(),
+        connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
+        engine_args=engine_args,
+    )
+    output = docsearch.similarity_search("foo", k=1)
+    assert output == [Document(page_content="foo")]
+
+
 def test_analyticdb_with_metadatas() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]

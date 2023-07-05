@@ -327,6 +327,36 @@ class AnalyticDB(VectorStore):
         )
         return [doc for doc, _ in docs_and_scores]
 
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+        """Delete by vector IDs.
+
+        Args:
+            ids: List of ids to delete.
+        """
+        if ids is None:
+            raise ValueError("No ids provided to delete.")
+
+        # Define the table schema
+        chunks_table = Table(
+            self.collection_name,
+            Base.metadata,
+            Column("id", TEXT, primary_key=True),
+            Column("embedding", ARRAY(REAL)),
+            Column("document", String, nullable=True),
+            Column("metadata", JSON, nullable=True),
+            extend_existing=True,
+        )
+
+        try:
+            with self.engine.connect() as conn:
+                with conn.begin():
+                    delete_condition = chunks_table.c.id.in_(ids)
+                    conn.execute(chunks_table.delete().where(delete_condition))
+                    return True
+        except Exception as e:
+            print("Delete operation failed:", str(e))
+            return False
+
     @classmethod
     def from_texts(
         cls: Type[AnalyticDB],
