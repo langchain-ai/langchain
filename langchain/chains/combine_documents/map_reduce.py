@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import Extra, root_validator
 
@@ -198,7 +198,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
     def combine_docs(
         self,
         docs: List[Document],
-        token_max: int = 3000,
+        token_max: Optional[int] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Tuple[str, dict]:
@@ -229,7 +229,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
     async def acombine_docs(
         self,
         docs: List[Document],
-        token_max: int = 3000,
+        token_max: Optional[int] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Tuple[str, dict]:
