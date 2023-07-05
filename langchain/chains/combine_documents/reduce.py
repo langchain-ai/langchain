@@ -196,7 +196,11 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
         )
 
     async def acombine_docs(
-        self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
+        self,
+        docs: List[Document],
+        token_max: int = 3000,
+        callbacks: Callbacks = None,
+        **kwargs: Any,
     ) -> Tuple[str, dict]:
         """Combine multiple documents recursively.
 
