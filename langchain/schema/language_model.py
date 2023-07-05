@@ -75,7 +75,8 @@ class BaseLanguageModel(Serializable, ABC):
                 first occurrence of any of these substrings.
             callbacks: Callbacks to pass through. Used for executing additional
                 functionality, such as logging or streaming, throughout generation.
-            **kwargs: Arbitrary additional keyword arguments.
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the model provider API call.
 
         Returns:
             An LLMResult, which contains a list of candidate Generations for each input
@@ -109,7 +110,8 @@ class BaseLanguageModel(Serializable, ABC):
                 first occurrence of any of these substrings.
             callbacks: Callbacks to pass through. Used for executing additional
                 functionality, such as logging or streaming, throughout generation.
-            **kwargs: Arbitrary additional keyword arguments.
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the model provider API call.
 
         Returns:
             An LLMResult, which contains a list of candidate Generations for each input
@@ -122,14 +124,15 @@ class BaseLanguageModel(Serializable, ABC):
     ) -> str:
         """Pass a single string input to the model and return a string prediction.
 
-        Use this method when calling pure text generation models and only the top
-            candidate generation is needed.
+         Use this method when passing in raw text. If you want to pass in specific
+            types of chat messages, use predict_messages.
 
         Args:
             text: String input to pass to the model.
             stop: Stop words to use when generating. Model output is cut off at the
                 first occurrence of any of these substrings.
-            **kwargs: Arbitrary additional keyword arguments.
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the model provider API call.
 
         Returns:
             Top model prediction as a string.
@@ -145,14 +148,15 @@ class BaseLanguageModel(Serializable, ABC):
     ) -> BaseMessage:
         """Pass a message sequence to the model and return a message prediction.
 
-        Use this method when calling chat models and only the top
-            candidate generation is needed.
+        Use this method when passing in chat messages. If you want to pass in raw text,
+            use predict.
 
         Args:
             messages: A sequence of chat messages corresponding to a single model input.
             stop: Stop words to use when generating. Model output is cut off at the
                 first occurrence of any of these substrings.
-            **kwargs: Arbitrary additional keyword arguments.
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the model provider API call.
 
         Returns:
             Top model prediction as a message.
@@ -171,7 +175,8 @@ class BaseLanguageModel(Serializable, ABC):
             text: String input to pass to the model.
             stop: Stop words to use when generating. Model output is cut off at the
                 first occurrence of any of these substrings.
-            **kwargs: Arbitrary additional keyword arguments.
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the model provider API call.
 
         Returns:
             Top model prediction as a string.
@@ -194,7 +199,8 @@ class BaseLanguageModel(Serializable, ABC):
             messages: A sequence of chat messages corresponding to a single model input.
             stop: Stop words to use when generating. Model output is cut off at the
                 first occurrence of any of these substrings.
-            **kwargs: Arbitrary additional keyword arguments.
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the model provider API call.
 
         Returns:
             Top model prediction as a message.
