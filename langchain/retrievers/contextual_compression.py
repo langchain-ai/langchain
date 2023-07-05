@@ -2,8 +2,6 @@
 
 from typing import Any, List
 
-from pydantic import Extra
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
