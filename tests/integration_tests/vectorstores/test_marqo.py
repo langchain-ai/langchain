@@ -1,8 +1,8 @@
 """Test Marqo functionality."""
+from typing import Dict
+
 import marqo
 import pytest
-
-from typing import Dict
 
 from langchain.docstore.document import Document
 from langchain.vectorstores.marqo import Marqo

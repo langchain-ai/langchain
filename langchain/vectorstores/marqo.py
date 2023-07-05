@@ -12,8 +12,8 @@ from typing import (
     List,
     Optional,
     Tuple,
+    Type,
     Union,
-    Type
 )
 
 from langchain.docstore.document import Document
@@ -68,7 +68,9 @@ class Marqo(VectorStore):
             )
         self._client = client
         self._index_name = index_name
-        self._add_documents_settings = {} if add_documents_settings is None else add_documents_settings
+        self._add_documents_settings = (
+            {} if add_documents_settings is None else add_documents_settings
+        )
         self._searchable_attributes = searchable_attributes
         self.page_content_builder = page_content_builder
 
@@ -109,20 +111,25 @@ class Marqo(VectorStore):
 
         num_docs = 0
         for i, text in enumerate(texts):
-            doc = {"text": text, "metadata": json.dumps(metadatas[i]) if metadatas else json.dumps({})}
+            doc = {
+                "text": text,
+                "metadata": json.dumps(metadatas[i]) if metadatas else json.dumps({}),
+            }
             documents.append(doc)
             num_docs += 1
 
         ids = []
         for i in range(0, num_docs, self._document_batch_size):
             response = self._client.index(self._index_name).add_documents(
-                documents[i: i + self._document_batch_size],
+                documents[i : i + self._document_batch_size],
                 non_tensor_fields=self._non_tensor_fields,
                 **self._add_documents_settings,
             )
             if response["errors"]:
-                err_msg = f"Error in upload for documents in index range [{i},{i+self._document_batch_size}], " \
-                          f"check Marqo logs."
+                err_msg = (
+                    f"Error in upload for documents in index range [{i},{i+self._document_batch_size}], "
+                    f"check Marqo logs."
+                )
                 raise RuntimeError(err_msg)
 
             ids += [item["_id"] for item in response["items"]]
@@ -146,9 +153,7 @@ class Marqo(VectorStore):
         """
         results = self.marqo_similarity_search(query=query, k=k)
 
-        documents = self._construct_documents_from_results_without_score(
-            results
-        )
+        documents = self._construct_documents_from_results_without_score(results)
         return documents
 
     def similarity_search_with_score(
@@ -167,9 +172,7 @@ class Marqo(VectorStore):
         """
         results = self.marqo_similarity_search(query=query, k=k)
 
-        scored_documents = self._construct_documents_from_results_with_score(
-            results
-        )
+        scored_documents = self._construct_documents_from_results_with_score(results)
         return scored_documents
 
     def bulk_similarity_search(
@@ -190,9 +193,7 @@ class Marqo(VectorStore):
         bulk_results = self.marqo_bulk_similarity_search(queries=queries, k=k)
         bulk_documents: List[List[Document]] = []
         for results in bulk_results["result"]:
-            documents = self._construct_documents_from_results_without_score(
-                results
-            )
+            documents = self._construct_documents_from_results_without_score(results)
             bulk_documents.append(documents)
 
         return bulk_documents
@@ -216,16 +217,13 @@ class Marqo(VectorStore):
         bulk_results = self.marqo_bulk_similarity_search(queries=queries, k=k)
         bulk_documents: List[List[Tuple[Document, float]]] = []
         for results in bulk_results["result"]:
-            documents = self._construct_documents_from_results_with_score(
-                results
-            )
+            documents = self._construct_documents_from_results_with_score(results)
             bulk_documents.append(documents)
 
         return bulk_documents
 
     def _construct_documents_from_results_with_score(
-        self,
-        results: Dict[str, List[Dict[str, str]]]
+        self, results: Dict[str, List[Dict[str, str]]]
     ) -> List[Tuple[Document, Any]]:
         """Helper to convert Marqo results into documents.
 
@@ -250,8 +248,7 @@ class Marqo(VectorStore):
         return documents
 
     def _construct_documents_from_results_without_score(
-        self,
-        results: Dict[str, List[Dict[str, str]]]
+        self, results: Dict[str, List[Dict[str, str]]]
     ) -> List[Document]:
         """Helper to convert Marqo results into documents.
 
