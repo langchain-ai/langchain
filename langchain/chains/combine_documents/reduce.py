@@ -81,7 +81,9 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     """Combining documents by recursively reducing them.
 
     This involves
+
     - combine_documents_chain
+
     - collapse_documents_chain
 
     `combine_documents_chain` is ALWAYS provided. This is final chain that is called.
