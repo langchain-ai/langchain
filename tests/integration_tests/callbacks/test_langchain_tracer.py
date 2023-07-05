@@ -206,7 +206,10 @@ async def test_tracing_v2_async_agent_with_metadata() -> None:
         async_tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
     )
     chat_agent = initialize_agent(
-        async_tools, chat, agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True
+        async_tools,
+        chat,
+        agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=True,
     )
     await agent.arun(questions[0], tags=["a-tag"], metadata={"a": "b", "c": "d"})
     await chat_agent.arun(questions[0], tags=["a-tag"], metadata={"a": "b", "c": "d"})
