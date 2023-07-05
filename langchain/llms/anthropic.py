@@ -62,7 +62,7 @@ class _AnthropicCommon(BaseModel):
             import anthropic
 
             values["client"] = anthropic.Client(
-                api_url=anthropic_api_url,
+                base_url=anthropic_api_url,
                 api_key=anthropic_api_key,
                 default_request_timeout=values["default_request_timeout"],
             )
