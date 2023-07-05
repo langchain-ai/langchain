@@ -73,7 +73,7 @@ class Requests(BaseModel):
         self, url: str, data: Dict[str, Any], **kwargs: Any
     ) -> AsyncGenerator[aiohttp.ClientResponse, None]:
         """POST to the URL and return the text asynchronously."""
-        async with self._arequest("POST", url, **kwargs) as response:
+        async with self._arequest("POST", url, data, **kwargs) as response:
             yield response
 
     @asynccontextmanager
@@ -81,7 +81,7 @@ class Requests(BaseModel):
         self, url: str, data: Dict[str, Any], **kwargs: Any
     ) -> AsyncGenerator[aiohttp.ClientResponse, None]:
         """PATCH the URL and return the text asynchronously."""
-        async with self._arequest("PATCH", url, **kwargs) as response:
+        async with self._arequest("PATCH", url, data, **kwargs) as response:
             yield response
 
     @asynccontextmanager
@@ -89,7 +89,7 @@ class Requests(BaseModel):
         self, url: str, data: Dict[str, Any], **kwargs: Any
     ) -> AsyncGenerator[aiohttp.ClientResponse, None]:
         """PUT the URL and return the text asynchronously."""
-        async with self._arequest("PUT", url, **kwargs) as response:
+        async with self._arequest("PUT", url, data, **kwargs) as response:
             yield response
 
     @asynccontextmanager
