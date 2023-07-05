@@ -259,7 +259,7 @@ class PGVector(VectorStore):
                 )
                 session.add(embedding_store)
             session.commit()
-        
+
         return ids
 
     def add_texts(
