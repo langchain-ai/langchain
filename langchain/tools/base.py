@@ -71,7 +71,7 @@ def _create_subset_model(
     fields = {}
     for field_name in field_names:
         field = model.__fields__[field_name]
-        fields[field_name] = (field.type_, field.field_info)
+        fields[field_name] = (field.outer_type_, field.field_info)
     return create_model(name, **fields)  # type: ignore
 
 
