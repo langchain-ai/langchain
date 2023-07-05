@@ -20,8 +20,8 @@ class LlamaCpp(LLM):
     Example:
         .. code-block:: python
 
-            from langchain.llms import LlamaCppEmbeddings
-            llm = LlamaCppEmbeddings(model_path="/path/to/llama/model")
+            from langchain.llms import LlamaCpp
+            llm = LlamaCpp(model_path="/path/to/llama/model")
     """
 
     client: Any  #: :meta private:

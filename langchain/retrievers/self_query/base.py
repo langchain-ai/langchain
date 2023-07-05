@@ -117,7 +117,7 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         return docs
 
     async def _aget_relevant_documents(
-        self, query: str, *, run_manager: Optional[AsyncCallbackManagerForRetrieverRun]
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         raise NotImplementedError
 
