@@ -331,6 +331,9 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         start_color: Optional[str] = "green",
         color: Optional[str] = "green",
         callbacks: Callbacks = None,
+        *,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Any:
         """Run the tool asynchronously."""
@@ -340,7 +343,7 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         else:
             verbose_ = self.verbose
         callback_manager = AsyncCallbackManager.configure(
-            callbacks, self.callbacks, verbose=verbose_
+            callbacks, self.callbacks, verbose_, tags, self.tags, metadata, self.metadata
         )
         new_arg_supported = signature(self._arun).parameters.get("run_manager")
         run_manager = await callback_manager.on_tool_start(
