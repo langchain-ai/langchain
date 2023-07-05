@@ -3,7 +3,7 @@ from __future__ import annotations
 import warnings
 from abc import ABC, abstractmethod
 from inspect import signature
-from typing import TYPE_CHECKING, Any, List
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
@@ -55,6 +55,20 @@ class BaseRetriever(Serializable, ABC):
 
     _new_arg_supported: bool = False
     _expects_other_args: bool = False
+    tags: Optional[List[str]] = None
+    """Optional list of tags associated with the retriever. Defaults to None
+    These tags will be associated with each call to this retriever,
+    and passed as arguments to the handlers defined in `callbacks`.
+    You can use these to eg identify a specific instance of a retriever with its 
+    use case.
+    """
+    metadata: Optional[Dict[str, Any]] = None
+    """Optional metadata associated with the retriever. Defaults to None
+    This metadata will be associated with each call to this retriever,
+    and passed as arguments to the handlers defined in `callbacks`.
+    You can use these to eg identify a specific instance of a retriever with its 
+    use case.
+    """
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
@@ -117,19 +131,37 @@ class BaseRetriever(Serializable, ABC):
         """
 
     def get_relevant_documents(
-        self, query: str, *, callbacks: Callbacks = None, **kwargs: Any
+        self,
+        query: str,
+        *,
+        callbacks: Callbacks = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Retrieve documents relevant to a query.
         Args:
             query: string to find relevant documents for
             callbacks: Callback manager or list of callbacks
+            tags: Optional list of tags associated with the retriever. Defaults to None
+                These tags will be associated with each call to this retriever,
+                and passed as arguments to the handlers defined in `callbacks`.
+            metadata: Optional metadata associated with the retriever. Defaults to None
+                This metadata will be associated with each call to this retriever,
+                and passed as arguments to the handlers defined in `callbacks`.
         Returns:
             List of relevant documents
         """
         from langchain.callbacks.manager import CallbackManager
 
         callback_manager = CallbackManager.configure(
-            callbacks, None, verbose=kwargs.get("verbose", False)
+            callbacks,
+            None,
+            verbose=kwargs.get("verbose", False),
+            inheritable_tags=tags,
+            local_tags=self.tags,
+            inheritable_metadata=metadata,
+            local_metadata=self.metadata,
         )
         run_manager = callback_manager.on_retriever_start(
             dumpd(self),
@@ -155,19 +187,37 @@ class BaseRetriever(Serializable, ABC):
             return result
 
     async def aget_relevant_documents(
-        self, query: str, *, callbacks: Callbacks = None, **kwargs: Any
+        self,
+        query: str,
+        *,
+        callbacks: Callbacks = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Asynchronously get documents relevant to a query.
         Args:
             query: string to find relevant documents for
             callbacks: Callback manager or list of callbacks
+            tags: Optional list of tags associated with the retriever. Defaults to None
+                These tags will be associated with each call to this retriever,
+                and passed as arguments to the handlers defined in `callbacks`.
+            metadata: Optional metadata associated with the retriever. Defaults to None
+                This metadata will be associated with each call to this retriever,
+                and passed as arguments to the handlers defined in `callbacks`.
         Returns:
             List of relevant documents
         """
         from langchain.callbacks.manager import AsyncCallbackManager
 
         callback_manager = AsyncCallbackManager.configure(
-            callbacks, None, verbose=kwargs.get("verbose", False)
+            callbacks,
+            None,
+            verbose=kwargs.get("verbose", False),
+            inheritable_tags=tags,
+            local_tags=self.tags,
+            inheritable_metadata=metadata,
+            local_metadata=self.metadata,
         )
         run_manager = await callback_manager.on_retriever_start(
             dumpd(self),
