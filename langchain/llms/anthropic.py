@@ -15,6 +15,7 @@ from langchain.utils import get_from_dict_or_env
 
 class _AnthropicCommon(BaseModel):
     client: Any = None  #: :meta private:
+    async_client: Any = None  #: :meta private:
     model: str = "claude-v1"
     """Model name to use."""
 
@@ -33,7 +34,7 @@ class _AnthropicCommon(BaseModel):
     streaming: bool = False
     """Whether to stream the results."""
 
-    default_request_timeout: Optional[Union[float, Tuple[float, float]]] = None
+    default_request_timeout: Optional[float] = None
     """Timeout for requests to Anthropic Completion API. Default is 600 seconds."""
 
     anthropic_api_url: Optional[str] = None
@@ -61,14 +62,19 @@ class _AnthropicCommon(BaseModel):
         try:
             import anthropic
 
-            values["client"] = anthropic.Client(
-                api_url=anthropic_api_url,
+            values["client"] = anthropic.Anthropic(
+                base_url=anthropic_api_url,
                 api_key=anthropic_api_key,
-                default_request_timeout=values["default_request_timeout"],
+                timeout=values["default_request_timeout"],
+            )
+            values["async_client"] = anthropic.AsyncAnthropic(
+                base_url=anthropic_api_url,
+                api_key=anthropic_api_key,
+                timeout=values["default_request_timeout"],
             )
             values["HUMAN_PROMPT"] = anthropic.HUMAN_PROMPT
             values["AI_PROMPT"] = anthropic.AI_PROMPT
-            values["count_tokens"] = anthropic.count_tokens
+            values["count_tokens"] = values["client"].count_tokens
         except ImportError:
             raise ImportError(
                 "Could not import anthropic python package. "

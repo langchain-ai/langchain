@@ -113,8 +113,8 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
                         delta,
                     )
         else:
-            response = self.client.completion(**params)
-            completion = response["completion"]
+            response = self.client.completions.create(**params)
+            completion = response.completion
         message = AIMessage(content=completion)
         return ChatResult(generations=[ChatGeneration(message=message)])
 
@@ -141,8 +141,8 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
                         delta,
                     )
         else:
-            response = await self.client.acompletion(**params)
-            completion = response["completion"]
+            response = await self.async_client.completions.create(**params)
+            completion = response.completion
         message = AIMessage(content=completion)
         return ChatResult(generations=[ChatGeneration(message=message)])
 
