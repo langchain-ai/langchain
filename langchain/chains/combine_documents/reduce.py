@@ -152,6 +152,10 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     """Chain to use to collapse documents if needed until they can all fit.
     If None, will use the combine_documents_chain.
     This is typically a StuffDocumentsChain."""
+    token_max: int = 3000
+    """The maximum number of tokens to group documents into. For example, if
+    set to 3000 then documents will be grouped into chunks of no greater than
+    3000 tokens before trying to combine them into a smaller chunk."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -169,7 +173,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     def combine_docs(
         self,
         docs: List[Document],
-        token_max: int = 3000,
+        token_max: Optional[int] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Tuple[str, dict]:
@@ -198,7 +202,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     async def acombine_docs(
         self,
         docs: List[Document],
-        token_max: int = 3000,
+        token_max: Optional[int] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Tuple[str, dict]:
@@ -227,7 +231,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     def _collapse(
         self,
         docs: List[Document],
-        token_max: int = 3000,
+        token_max: Optional[int] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Tuple[List[Document], dict]:
@@ -240,9 +244,10 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
                 input_documents=docs, callbacks=callbacks, **kwargs
             )
 
-        while num_tokens is not None and num_tokens > token_max:
+        _token_max = token_max or self.token_max
+        while num_tokens is not None and num_tokens > _token_max:
             new_result_doc_list = _split_list_of_docs(
-                result_docs, length_func, token_max, **kwargs
+                result_docs, length_func, _token_max, **kwargs
             )
             result_docs = []
             for docs in new_result_doc_list:
@@ -254,7 +259,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     async def _acollapse(
         self,
         docs: List[Document],
-        token_max: int = 3000,
+        token_max: Optional[int] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Tuple[List[Document], dict]:
@@ -267,9 +272,10 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
                 input_documents=docs, callbacks=callbacks, **kwargs
             )
 
-        while num_tokens is not None and num_tokens > token_max:
+        _token_max = token_max or self.token_max
+        while num_tokens is not None and num_tokens > _token_max:
             new_result_doc_list = _split_list_of_docs(
-                result_docs, length_func, token_max, **kwargs
+                result_docs, length_func, _token_max, **kwargs
             )
             result_docs = []
             for docs in new_result_doc_list:
