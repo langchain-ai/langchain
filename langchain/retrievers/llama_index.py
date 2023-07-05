@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, cast
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -9,7 +9,7 @@ from langchain.callbacks.manager import (
 from langchain.schema import BaseRetriever, Document
 
 
-class LlamaIndexRetriever(BaseRetriever, BaseModel):
+class LlamaIndexRetriever(BaseRetriever):
     """Question-answering with sources over an LlamaIndex data structure."""
 
     index: Any
@@ -45,7 +45,7 @@ class LlamaIndexRetriever(BaseRetriever, BaseModel):
         raise NotImplementedError("LlamaIndexRetriever does not support async")
 
 
-class LlamaIndexGraphRetriever(BaseRetriever, BaseModel):
+class LlamaIndexGraphRetriever(BaseRetriever):
     """Question-answering with sources over an LlamaIndex graph data structure."""
 
     graph: Any
