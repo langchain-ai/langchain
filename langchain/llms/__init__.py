@@ -34,6 +34,7 @@ from langchain.llms.manifest import ManifestWrapper
 from langchain.llms.modal import Modal
 from langchain.llms.mosaicml import MosaicML
 from langchain.llms.nlpcloud import NLPCloud
+from langchain.llms.octoai_endpoint import OctoAIEndpoint
 from langchain.llms.openai import AzureOpenAI, OpenAI, OpenAIChat
 from langchain.llms.openllm import OpenLLM
 from langchain.llms.openlm import OpenLM
@@ -44,6 +45,7 @@ from langchain.llms.promptlayer_openai import PromptLayerOpenAI, PromptLayerOpen
 from langchain.llms.replicate import Replicate
 from langchain.llms.rwkv import RWKV
 from langchain.llms.sagemaker_endpoint import SagemakerEndpoint
+from langchain.llms.salesforce_xgen import SalesforceXGen
 from langchain.llms.self_hosted import SelfHostedPipeline
 from langchain.llms.self_hosted_hugging_face import SelfHostedHuggingFaceLLM
 from langchain.llms.stochasticai import StochasticAI
@@ -98,11 +100,13 @@ __all__ = [
     "RWKV",
     "Replicate",
     "SagemakerEndpoint",
+    "SalesforceXGen",
     "SelfHostedHuggingFaceLLM",
     "SelfHostedPipeline",
     "StochasticAI",
     "VertexAI",
     "Writer",
+    "OctoAIEndpoint",
 ]
 
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
@@ -152,5 +156,6 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "vertexai": VertexAI,
     "openllm": OpenLLM,
     "openllm_client": OpenLLM,
+    "salesforce_xgen": SalesforceXGen,
     "writer": Writer,
 }
