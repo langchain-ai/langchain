@@ -70,12 +70,15 @@ class LangChainTracer(BaseTracer):
         run_id: UUID,
         tags: Optional[List[str]] = None,
         parent_run_id: Optional[UUID] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Start a trace for an LLM run."""
         parent_run_id_ = str(parent_run_id) if parent_run_id else None
         execution_order = self._get_execution_order(parent_run_id_)
         start_time = datetime.utcnow()
+        if metadata:
+            kwargs.update({"metadata": metadata})
         chat_model_run = Run(
             id=run_id,
             parent_run_id=parent_run_id,

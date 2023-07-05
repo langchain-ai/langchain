@@ -219,9 +219,14 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
     2. This new question is passed to the retriever and relevant documents are
     returned.
 
+<<<<<<< HEAD
     3. The retrieved documents are passed to an LLM along with either the new question
     (default behavior) or the original question and chat history to generate a final
     response.
+=======
+    3. The retrieved documents are passed to an LLM along with the new question to
+    generate a final answer.
+>>>>>>> master
 
     Example:
         .. code-block:: python

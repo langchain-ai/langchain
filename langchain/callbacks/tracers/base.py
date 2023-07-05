@@ -89,12 +89,15 @@ class BaseTracer(BaseCallbackHandler, ABC):
         run_id: UUID,
         tags: Optional[List[str]] = None,
         parent_run_id: Optional[UUID] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Start a trace for an LLM run."""
         parent_run_id_ = str(parent_run_id) if parent_run_id else None
         execution_order = self._get_execution_order(parent_run_id_)
         start_time = datetime.utcnow()
+        if metadata:
+            kwargs.update({"metadata": metadata})
         llm_run = Run(
             id=run_id,
             parent_run_id=parent_run_id,
@@ -186,12 +189,15 @@ class BaseTracer(BaseCallbackHandler, ABC):
         run_id: UUID,
         tags: Optional[List[str]] = None,
         parent_run_id: Optional[UUID] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Start a trace for a chain run."""
         parent_run_id_ = str(parent_run_id) if parent_run_id else None
         execution_order = self._get_execution_order(parent_run_id_)
         start_time = datetime.utcnow()
+        if metadata:
+            kwargs.update({"metadata": metadata})
         chain_run = Run(
             id=run_id,
             parent_run_id=parent_run_id,
@@ -253,12 +259,15 @@ class BaseTracer(BaseCallbackHandler, ABC):
         run_id: UUID,
         tags: Optional[List[str]] = None,
         parent_run_id: Optional[UUID] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Start a trace for a tool run."""
         parent_run_id_ = str(parent_run_id) if parent_run_id else None
         execution_order = self._get_execution_order(parent_run_id_)
         start_time = datetime.utcnow()
+        if metadata:
+            kwargs.update({"metadata": metadata})
         tool_run = Run(
             id=run_id,
             parent_run_id=parent_run_id,
@@ -312,20 +321,25 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
     def on_retriever_start(
         self,
+        serialized: Dict[str, Any],
         query: str,
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Run when Retriever starts running."""
         parent_run_id_ = str(parent_run_id) if parent_run_id else None
         execution_order = self._get_execution_order(parent_run_id_)
         start_time = datetime.utcnow()
+        if metadata:
+            kwargs.update({"metadata": metadata})
         retrieval_run = Run(
             id=run_id,
             name="Retriever",
             parent_run_id=parent_run_id,
+            serialized=serialized,
             inputs={"query": query},
             extra=kwargs,
             events=[{"name": "start", "time": start_time}],

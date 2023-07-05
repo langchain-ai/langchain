@@ -2,7 +2,6 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
-from pydantic import BaseModel
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -20,7 +19,7 @@ class SearchType(str, Enum):
     mmr = "mmr"
 
 
-class DocArrayRetriever(BaseRetriever, BaseModel):
+class DocArrayRetriever(BaseRetriever):
     """
     Retriever class for DocArray Document Indices.
 
