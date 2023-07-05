@@ -49,6 +49,7 @@ class AnalyticDB(VectorStore):
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         pre_delete_collection: bool = False,
         logger: Optional[logging.Logger] = None,
+        engine_args: Optional[dict] = None,
     ) -> None:
         self.connection_string = connection_string
         self.embedding_function = embedding_function
@@ -56,15 +57,17 @@ class AnalyticDB(VectorStore):
         self.collection_name = collection_name
         self.pre_delete_collection = pre_delete_collection
         self.logger = logger or logging.getLogger(__name__)
-        self.__post_init__()
+        self.__post_init__(engine_args)
 
     def __post_init__(
         self,
+        engine_args: Optional[dict] = None,
     ) -> None:
         """
         Initialize the store.
         """
-        self.engine = create_engine(self.connection_string)
+        _engine_args = engine_args or {}
+        self.engine = create_engine(self.connection_string, **_engine_args)
         self.create_collection()
 
     def create_table_if_not_exists(self) -> None:
@@ -334,6 +337,7 @@ class AnalyticDB(VectorStore):
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
+        engine_args: Optional[dict] = None,
         **kwargs: Any,
     ) -> AnalyticDB:
         """
@@ -351,6 +355,7 @@ class AnalyticDB(VectorStore):
             embedding_function=embedding,
             embedding_dimension=embedding_dimension,
             pre_delete_collection=pre_delete_collection,
+            engine_args=engine_args,
         )
 
         store.add_texts(texts=texts, metadatas=metadatas, ids=ids, **kwargs)
@@ -382,6 +387,7 @@ class AnalyticDB(VectorStore):
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
+        engine_args: Optional[dict] = None,
         **kwargs: Any,
     ) -> AnalyticDB:
         """
@@ -405,6 +411,7 @@ class AnalyticDB(VectorStore):
             metadatas=metadatas,
             ids=ids,
             collection_name=collection_name,
+            engine_args=engine_args,
             **kwargs,
         )
 

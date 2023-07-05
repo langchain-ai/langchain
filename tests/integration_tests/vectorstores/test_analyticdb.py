@@ -126,3 +126,25 @@ def test_analyticdb_with_filter_no_match() -> None:
     )
     output = docsearch.similarity_search_with_score("foo", k=1, filter={"page": "5"})
     assert output == []
+
+
+def test_analyticdb_delete() -> None:
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    ids = ["fooid", "barid", "bazid"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    docsearch = AnalyticDB.from_texts(
+        texts=texts,
+        collection_name="test_collection_delete",
+        embedding=FakeEmbeddingsWithAdaDimension(),
+        metadatas=metadatas,
+        connection_string=CONNECTION_STRING,
+        ids=ids,
+        pre_delete_collection=True,
+    )
+    output = docsearch.similarity_search_with_score("foo", k=1, filter={"page": "2"})
+    print(output)
+    assert output == [(Document(page_content="baz", metadata={"page": "2"}), 4.0)]
+    docsearch.delete(ids=ids)
+    output = docsearch.similarity_search_with_score("foo", k=1, filter={"page": "2"})
+    assert output == []
