@@ -239,7 +239,7 @@ class AzureSearch(VectorStore):
                         field_dict = field_list[i]
                         for field_key, field_value in field_dict.items():
                             data_item[field_key] = field_value
-                data.append(data_item)
+            data.append(data_item)
             ids.append(key)
             # Upload data in batches
             if len(data) == MAX_UPLOAD_BATCH_SIZE:
