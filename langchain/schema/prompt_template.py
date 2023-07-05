@@ -9,7 +9,9 @@ import yaml
 from pydantic import Field, root_validator
 
 from langchain.load.serializable import Serializable
-from langchain.schema import BaseOutputParser, PromptValue
+from langchain.schema.document import Document
+from langchain.schema.output_parser import BaseOutputParser
+from langchain.schema.prompt import PromptValue
 
 
 class BasePromptTemplate(Serializable, ABC):
@@ -137,3 +139,49 @@ class BasePromptTemplate(Serializable, ABC):
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
             raise ValueError(f"{save_path} must be json or yaml")
+
+
+def format_document(doc: Document, prompt: BasePromptTemplate) -> str:
+    """Format a document into a string based on a prompt template.
+
+    First, this pulls information from the document from two sources:
+
+    1. `page_content`: this takes the information from the `document.page_content`
+        and assigns it to a variable named `page_content`.
+    2. metadata: this takes information from `document.metadata` and assigns
+        it to variables of the same name.
+
+    Those variables are then passed into the `prompt` to produce a formatted string.
+
+    Args:
+        doc: Document, the page_content and metadata will be used to create
+            the final string.
+        prompt: BasePromptTemplate, will be used to format the page_content
+            and metadata into the final string.
+
+    Returns:
+        string of the document formatted.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.schema import Document
+            from langchain.prompts import PromptTemplate
+            doc = Document(page_content="This is a joke", metadata={"page": "1"})
+            prompt = PromptTemplate.from_template("Page {page}: {page_content}")
+            format_document(doc, prompt)
+            >>> "Page 1: This is a joke"
+    """
+    base_info = {"page_content": doc.page_content, **doc.metadata}
+    missing_metadata = set(prompt.input_variables).difference(base_info)
+    if len(missing_metadata) > 0:
+        required_metadata = [
+            iv for iv in prompt.input_variables if iv != "page_content"
+        ]
+        raise ValueError(
+            f"Document prompt requires documents to have metadata variables: "
+            f"{required_metadata}. Received document with missing metadata: "
+            f"{list(missing_metadata)}."
+        )
+    document_info = {k: base_info[k] for k in prompt.input_variables}
+    return prompt.format(**document_info)
