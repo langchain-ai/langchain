@@ -5,7 +5,7 @@ import urllib.error
 import urllib.request
 from typing import List
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel
 
 from langchain.schema import Document
 
@@ -41,11 +41,6 @@ class PubMedAPIWrapper(BaseModel):
     doc_content_chars_max: int = 2000
     load_all_available_meta: bool = False
     email: str = "your_email@example.com"
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
 
     def run(self, query: str) -> str:
         """

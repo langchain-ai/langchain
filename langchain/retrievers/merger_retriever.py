@@ -15,18 +15,7 @@ class MergerRetriever(BaseRetriever):
         retrievers: A list of retrievers to merge.
     """
 
-    def __init__(
-        self,
-        retrievers: List[BaseRetriever],
-    ):
-        """
-        Initialize the MergerRetriever class.
-
-        Args:
-            retrievers: A list of retrievers to merge.
-        """
-
-        self.retrievers = retrievers
+    retrievers: List[BaseRetriever]
 
     def _get_relevant_documents(
         self,

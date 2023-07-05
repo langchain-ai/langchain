@@ -312,6 +312,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
     def on_retriever_start(
         self,
+        serialized: Dict[str, Any],
         query: str,
         *,
         run_id: UUID,
@@ -326,6 +327,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             id=run_id,
             name="Retriever",
             parent_run_id=parent_run_id,
+            serialized=serialized,
             inputs={"query": query},
             extra=kwargs,
             events=[{"name": "start", "time": start_time}],
