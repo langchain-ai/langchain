@@ -50,6 +50,11 @@ class BaseRetriever(Serializable, ABC):
                     raise NotImplementedError
     """  # noqa: E501
 
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
+
     _new_arg_supported: bool = PrivateAttr(default=False)
     _expects_other_args: bool = PrivateAttr(default=False)
 
