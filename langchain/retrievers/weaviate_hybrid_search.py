@@ -17,6 +17,7 @@ from langchain.schema import BaseRetriever
 
 class WeaviateHybridSearchRetriever(BaseRetriever):
     """Retriever that uses Weaviate's hybrid search to retrieve documents."""
+
     client: Any
     """keyword arguments to pass to the Weaviate client."""
     index_name: str
