@@ -8,7 +8,37 @@ from typing import Any, List, Union
 from langchain.schema import BaseOutputParser, OutputParserException
 
 
-def parse_json_markdown(json_string: str) -> Union[dict, List[dict]]:
+def parse_json_markdown(json_string: str) -> dict:
+    """
+    Parse a single JSON string from a Markdown string.
+    It will parse the first JSON object it encounters in the string.
+
+    Args:
+        json_string: The Markdown string.
+
+    Returns:
+        The parsed JSON object as a Python dictionary.
+    """
+    # Try to find JSON string within triple backticks
+    match = re.search(r"```(json)?(.*?)```", json_string, re.DOTALL)
+
+    # If no match found, assume the entire string is a JSON string
+    if match is None:
+        json_str = json_string
+    else:
+        # If match found, use the content within the backticks
+        json_str = match.group(2)
+
+    # Strip whitespace and newlines from the start and end
+    json_str = json_str.strip()
+
+    # Parse the JSON string into a Python dictionary
+    parsed = json.loads(json_str)
+
+    return parsed
+
+
+def parse_multiple_json_markdown(json_string: str) -> Union[dict, List[dict]]:
     """
     Parse JSON objects from a Markdown string.
 
@@ -24,11 +54,11 @@ def parse_json_markdown(json_string: str) -> Union[dict, List[dict]]:
     # Parse each JSON string into a Python dictionary
     parsed_objects = [json.loads(match) for match in matches]
 
-    # If there's only one JSON object, return it as a dictionary; else, return a list of dictionaries
+    # If one JSON object, return a dictionary; else, return a list of dict
     return parsed_objects[0] if len(parsed_objects) == 1 else parsed_objects
 
 
-def valdate_obj(json_obj: str, expected_keys: List[str]) -> None:
+def valdate_obj(json_obj: dict, expected_keys: List[str]) -> None:
     """
     Validate JSON object
 
@@ -47,7 +77,27 @@ def valdate_obj(json_obj: str, expected_keys: List[str]) -> None:
             )
 
 
-def parse_and_check_json_markdown(
+def parse_and_check_json_markdown(text: str, expected_keys: List[str]) -> dict:
+    """
+    Parse a JSON string from a Markdown string and check that it
+    contains the expected keys.
+
+    Args:
+        text: The Markdown string.
+        expected_keys: The expected keys in the JSON string.
+
+    Returns:
+        The parsed JSON object as a Python dictionary.
+    """
+    try:
+        json_obj = parse_json_markdown(text)
+    except json.JSONDecodeError as e:
+        raise OutputParserException(f"Got invalid JSON object. Error: {e}")
+    valdate_obj(json_obj, expected_keys)
+    return json_obj
+
+
+def parse_and_check_multiple_json_markdown(
     text: str, expected_keys: List[str]
 ) -> Union[dict, List[dict]]:
     """
@@ -62,7 +112,7 @@ def parse_and_check_json_markdown(
         The parsed JSON object(s) as a Python dictionary or a list of dictionaries.
     """
     try:
-        json_object = parse_json_markdown(text)
+        json_obj = parse_multiple_json_markdown(text)
     except json.JSONDecodeError as e:
         raise OutputParserException(f"Got invalid JSON object. Error: {e}")
     for key in expected_keys:

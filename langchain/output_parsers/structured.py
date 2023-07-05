@@ -8,6 +8,7 @@ from langchain.output_parsers.format_instructions import (
     STRUCTURED_FORMAT_INSTRUCTIONS,
     STRUCTURED_FORMAT_SIMPLE_INSTRUCTIONS,
 )
+from langchain.output_parsers.json import parse_and_check_multiple_json_markdown
 from langchain.output_parsers.json import parse_and_check_json_markdown
 from langchain.schema import BaseOutputParser
 
@@ -86,7 +87,8 @@ class StructuredOutputParser(BaseOutputParser):
 
     def parse(self, text: str) -> Any:
         expected_keys = [rs.name for rs in self.response_schemas]
-        return parse_and_check_json_markdown(text, expected_keys)
+        # LLM output can contain multiple JSON objects
+        return parse_and_check_multiple_json_markdown(text, expected_keys)
 
     @property
     def _type(self) -> str:
