@@ -4,7 +4,6 @@ from typing import List, Optional
 
 import aiohttp
 import requests
-from pydantic import BaseModel
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -13,7 +12,7 @@ from langchain.callbacks.manager import (
 from langchain.schema import BaseRetriever, Document
 
 
-class ChatGPTPluginRetriever(BaseRetriever, BaseModel):
+class ChatGPTPluginRetriever(BaseRetriever):
     url: str
     bearer_token: str
     top_k: int = 3
