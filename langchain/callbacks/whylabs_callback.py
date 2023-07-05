@@ -48,7 +48,27 @@ def import_langkit(
 
 
 class WhyLabsCallbackHandler(BaseCallbackHandler):
-    """WhyLabs CallbackHandler."""
+    """
+    Callback Handler for logging to WhyLabs. This callback handler utilizes
+    langkit  to extract features from the prompts & responses when interacting with
+    an LLM. These features can be used to guardrail, evaluate, and observe interactions
+    over time to detect issues relating to hallucinations, prompt engineering,
+    or output validation.
+    
+    Parameters:
+        api_key (Optional[str]): WhyLabs API key. Optional because the preferred
+            way to specify the API key is with environment variable
+            WHYLABS_API_KEY.
+        org_id (Optional[str]): WhyLabs organization id to write profiles to.
+            Optional because the preferred way to specify the organization id is
+            with environment variable WHYLABS_ORG_ID.
+        dataset_id (Optional[str]): WhyLabs dataset id to write profiles to.
+            Optional because the preferred way to specify the dataset id is
+            with environment variable WHYLABS_DATASET_ID.
+        sentiment (bool): Whether to enable sentiment analysis. Defaults to False.
+        toxicity (bool): Whether to enable toxicity analysis. Defaults to False.
+        themes (bool): Whether to enable theme analysis. Defaults to False.
+    """
 
     def __init__(self, logger: Logger):
         """Initiate the rolling logger"""
