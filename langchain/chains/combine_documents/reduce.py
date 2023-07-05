@@ -222,7 +222,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
             element returned is a dictionary of other keys to return.
         """
         result_docs, extra_return_dict = await self._acollapse(
-            docs, callbacks=callbacks, **kwargs
+            docs, token_max, callbacks=callbacks, **kwargs
         )
         return await self.combine_documents_chain.acombine_docs(
             docs=result_docs, callbacks=callbacks, **kwargs
