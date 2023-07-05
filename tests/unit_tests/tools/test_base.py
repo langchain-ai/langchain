@@ -364,13 +364,13 @@ def test_structured_tool_from_function_docstring_complex_args() -> None:
     assert structured_tool.name == "foo"
     assert structured_tool.args == {
         "bar": {"title": "Bar", "type": "integer"},
-        "baz": {"title": "Baz", "type": "array", "items": {"type": "string"}}
+        "baz": {"title": "Baz", "type": "array", "items": {"type": "string"}},
     }
 
     assert structured_tool.args_schema.schema() == {
         "properties": {
             "bar": {"title": "Bar", "type": "integer"},
-            "baz": {'title': 'Baz', 'type': 'array', 'items': {'type': 'string'}}
+            "baz": {"title": "Baz", "type": "array", "items": {"type": "string"}},
         },
         "title": "fooSchemaSchema",
         "type": "object",
