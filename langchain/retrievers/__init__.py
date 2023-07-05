@@ -16,7 +16,7 @@ from langchain.retrievers.metal import MetalRetriever
 from langchain.retrievers.milvus import MilvusRetriever
 from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain.retrievers.pinecone_hybrid_search import PineconeHybridSearchRetriever
-from langchain.retrievers.pupmed import PubMedRetriever
+from langchain.retrievers.pubmed import PubMedRetriever
 from langchain.retrievers.remote_retriever import RemoteLangChainRetriever
 from langchain.retrievers.self_query.base import SelfQueryRetriever
 from langchain.retrievers.svm import SVMRetriever

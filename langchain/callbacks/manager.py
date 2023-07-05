@@ -14,6 +14,7 @@ from typing import (
     Generator,
     List,
     Optional,
+    Sequence,
     Type,
     TypeVar,
     Union,
@@ -27,6 +28,7 @@ from langchain.callbacks.base import (
     BaseCallbackManager,
     ChainManagerMixin,
     LLMManagerMixin,
+    RetrieverManagerMixin,
     RunManagerMixin,
     ToolManagerMixin,
 )
@@ -39,10 +41,10 @@ from langchain.callbacks.tracers.wandb import WandbTracer
 from langchain.schema import (
     AgentAction,
     AgentFinish,
-    BaseMessage,
+    Document,
     LLMResult,
-    get_buffer_string,
 )
+from langchain.schema.messages import BaseMessage, get_buffer_string
 
 logger = logging.getLogger(__name__)
 Callbacks = Optional[Union[List[BaseCallbackHandler], BaseCallbackManager]]
@@ -379,8 +381,8 @@ class BaseRunManager(RunManagerMixin):
         handlers: List[BaseCallbackHandler],
         inheritable_handlers: List[BaseCallbackHandler],
         parent_run_id: Optional[UUID] = None,
-        tags: List[str],
-        inheritable_tags: List[str],
+        tags: Optional[List[str]] = None,
+        inheritable_tags: Optional[List[str]] = None,
     ) -> None:
         """Initialize the run manager.
 
@@ -391,15 +393,15 @@ class BaseRunManager(RunManagerMixin):
                 The list of inheritable handlers.
             parent_run_id (UUID, optional): The ID of the parent run.
                 Defaults to None.
-            tags (List[str]): The list of tags.
-            inheritable_tags (List[str]): The list of inheritable tags.
+            tags (Optional[List[str]]): The list of tags.
+            inheritable_tags (Optional[List[str]]): The list of inheritable tags.
         """
         self.run_id = run_id
         self.handlers = handlers
         self.inheritable_handlers = inheritable_handlers
-        self.tags = tags
-        self.inheritable_tags = inheritable_tags
         self.parent_run_id = parent_run_id
+        self.tags = tags or []
+        self.inheritable_tags = inheritable_tags or []
 
     @classmethod
     def get_noop_manager(cls: Type[BRM]) -> BRM:
@@ -440,6 +442,7 @@ class RunManager(BaseRunManager):
             text,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -467,6 +470,7 @@ class AsyncRunManager(BaseRunManager):
             text,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -491,6 +495,7 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
             token=token,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -507,6 +512,7 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
             response,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -527,6 +533,7 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
             error,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -551,6 +558,7 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
             token,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -567,6 +575,7 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
             response,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -587,6 +596,7 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
             error,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -624,6 +634,7 @@ class CallbackManagerForChainRun(RunManager, ChainManagerMixin):
             outputs,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -644,6 +655,7 @@ class CallbackManagerForChainRun(RunManager, ChainManagerMixin):
             error,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -663,6 +675,7 @@ class CallbackManagerForChainRun(RunManager, ChainManagerMixin):
             action,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -682,6 +695,7 @@ class CallbackManagerForChainRun(RunManager, ChainManagerMixin):
             finish,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -719,6 +733,7 @@ class AsyncCallbackManagerForChainRun(AsyncRunManager, ChainManagerMixin):
             outputs,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -739,6 +754,7 @@ class AsyncCallbackManagerForChainRun(AsyncRunManager, ChainManagerMixin):
             error,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -758,6 +774,7 @@ class AsyncCallbackManagerForChainRun(AsyncRunManager, ChainManagerMixin):
             action,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -777,6 +794,7 @@ class AsyncCallbackManagerForChainRun(AsyncRunManager, ChainManagerMixin):
             finish,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -818,6 +836,7 @@ class CallbackManagerForToolRun(RunManager, ToolManagerMixin):
             output,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -838,6 +857,7 @@ class CallbackManagerForToolRun(RunManager, ToolManagerMixin):
             error,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -875,6 +895,7 @@ class AsyncCallbackManagerForToolRun(AsyncRunManager, ToolManagerMixin):
             output,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -895,6 +916,102 @@ class AsyncCallbackManagerForToolRun(AsyncRunManager, ToolManagerMixin):
             error,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            **kwargs,
+        )
+
+
+class CallbackManagerForRetrieverRun(RunManager, RetrieverManagerMixin):
+    """Callback manager for retriever run."""
+
+    def get_child(self, tag: Optional[str] = None) -> CallbackManager:
+        """Get a child callback manager."""
+        manager = CallbackManager([], parent_run_id=self.run_id)
+        manager.set_handlers(self.inheritable_handlers)
+        manager.add_tags(self.inheritable_tags)
+        if tag is not None:
+            manager.add_tags([tag], False)
+        return manager
+
+    def on_retriever_end(
+        self,
+        documents: Sequence[Document],
+        **kwargs: Any,
+    ) -> None:
+        """Run when retriever ends running."""
+        _handle_event(
+            self.handlers,
+            "on_retriever_end",
+            "ignore_retriever",
+            documents,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            **kwargs,
+        )
+
+    def on_retriever_error(
+        self,
+        error: Union[Exception, KeyboardInterrupt],
+        **kwargs: Any,
+    ) -> None:
+        """Run when retriever errors."""
+        _handle_event(
+            self.handlers,
+            "on_retriever_error",
+            "ignore_retriever",
+            error,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            **kwargs,
+        )
+
+
+class AsyncCallbackManagerForRetrieverRun(
+    AsyncRunManager,
+    RetrieverManagerMixin,
+):
+    """Async callback manager for retriever run."""
+
+    def get_child(self, tag: Optional[str] = None) -> AsyncCallbackManager:
+        """Get a child callback manager."""
+        manager = AsyncCallbackManager([], parent_run_id=self.run_id)
+        manager.set_handlers(self.inheritable_handlers)
+        manager.add_tags(self.inheritable_tags)
+        if tag is not None:
+            manager.add_tags([tag], False)
+        return manager
+
+    async def on_retriever_end(
+        self, documents: Sequence[Document], **kwargs: Any
+    ) -> None:
+        """Run when retriever ends running."""
+        await _ahandle_event(
+            self.handlers,
+            "on_retriever_end",
+            "ignore_retriever",
+            documents,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            **kwargs,
+        )
+
+    async def on_retriever_error(
+        self,
+        error: Union[Exception, KeyboardInterrupt],
+        **kwargs: Any,
+    ) -> None:
+        """Run when retriever errors."""
+        await _ahandle_event(
+            self.handlers,
+            "on_retriever_error",
+            "ignore_retriever",
+            error,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
             **kwargs,
         )
 
@@ -1069,6 +1186,37 @@ class CallbackManager(BaseCallbackManager):
         )
 
         return CallbackManagerForToolRun(
+            run_id=run_id,
+            handlers=self.handlers,
+            inheritable_handlers=self.inheritable_handlers,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            inheritable_tags=self.inheritable_tags,
+        )
+
+    def on_retriever_start(
+        self,
+        query: str,
+        run_id: Optional[UUID] = None,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> CallbackManagerForRetrieverRun:
+        """Run when retriever starts running."""
+        if run_id is None:
+            run_id = uuid4()
+
+        _handle_event(
+            self.handlers,
+            "on_retriever_start",
+            "ignore_retriever",
+            query,
+            run_id=run_id,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            **kwargs,
+        )
+
+        return CallbackManagerForRetrieverRun(
             run_id=run_id,
             handlers=self.handlers,
             inheritable_handlers=self.inheritable_handlers,
@@ -1305,6 +1453,37 @@ class AsyncCallbackManager(BaseCallbackManager):
         )
 
         return AsyncCallbackManagerForToolRun(
+            run_id=run_id,
+            handlers=self.handlers,
+            inheritable_handlers=self.inheritable_handlers,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            inheritable_tags=self.inheritable_tags,
+        )
+
+    async def on_retriever_start(
+        self,
+        query: str,
+        run_id: Optional[UUID] = None,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> AsyncCallbackManagerForRetrieverRun:
+        """Run when retriever starts running."""
+        if run_id is None:
+            run_id = uuid4()
+
+        await _ahandle_event(
+            self.handlers,
+            "on_retriever_start",
+            "ignore_retriever",
+            query,
+            run_id=run_id,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            **kwargs,
+        )
+
+        return AsyncCallbackManagerForRetrieverRun(
             run_id=run_id,
             handlers=self.handlers,
             inheritable_handlers=self.inheritable_handlers,
