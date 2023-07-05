@@ -3,8 +3,10 @@ from __future__ import annotations
 import warnings
 from abc import ABC, abstractmethod
 from inspect import signature
-from typing import TYPE_CHECKING, Any, List
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from langchain.load.dump import dumpd
+from langchain.load.serializable import Serializable
 from langchain.schema.document import Document
 
 if TYPE_CHECKING:
@@ -15,7 +17,7 @@ if TYPE_CHECKING:
     )
 
 
-class BaseRetriever(ABC):
+class BaseRetriever(Serializable, ABC):
     """Abstract base class for a Document retrieval system.
 
     A retrieval system is defined as something that can take string queries and return
@@ -46,8 +48,27 @@ class BaseRetriever(ABC):
                     raise NotImplementedError
     """  # noqa: E501
 
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
+
     _new_arg_supported: bool = False
     _expects_other_args: bool = False
+    tags: Optional[List[str]] = None
+    """Optional list of tags associated with the retriever. Defaults to None
+    These tags will be associated with each call to this retriever,
+    and passed as arguments to the handlers defined in `callbacks`.
+    You can use these to eg identify a specific instance of a retriever with its 
+    use case.
+    """
+    metadata: Optional[Dict[str, Any]] = None
+    """Optional metadata associated with the retriever. Defaults to None
+    This metadata will be associated with each call to this retriever,
+    and passed as arguments to the handlers defined in `callbacks`.
+    You can use these to eg identify a specific instance of a retriever with its 
+    use case.
+    """
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
@@ -81,7 +102,9 @@ class BaseRetriever(ABC):
         parameters = signature(cls._get_relevant_documents).parameters
         cls._new_arg_supported = parameters.get("run_manager") is not None
         # If a V1 retriever broke the interface and expects additional arguments
-        cls._expects_other_args = (not cls._new_arg_supported) and len(parameters) > 2
+        cls._expects_other_args = (
+            len(set(parameters.keys()) - {"self", "query", "run_manager"}) > 0
+        )
 
     @abstractmethod
     def _get_relevant_documents(
@@ -108,21 +131,40 @@ class BaseRetriever(ABC):
         """
 
     def get_relevant_documents(
-        self, query: str, *, callbacks: Callbacks = None, **kwargs: Any
+        self,
+        query: str,
+        *,
+        callbacks: Callbacks = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Retrieve documents relevant to a query.
         Args:
             query: string to find relevant documents for
             callbacks: Callback manager or list of callbacks
+            tags: Optional list of tags associated with the retriever. Defaults to None
+                These tags will be associated with each call to this retriever,
+                and passed as arguments to the handlers defined in `callbacks`.
+            metadata: Optional metadata associated with the retriever. Defaults to None
+                This metadata will be associated with each call to this retriever,
+                and passed as arguments to the handlers defined in `callbacks`.
         Returns:
             List of relevant documents
         """
         from langchain.callbacks.manager import CallbackManager
 
         callback_manager = CallbackManager.configure(
-            callbacks, None, verbose=kwargs.get("verbose", False)
+            callbacks,
+            None,
+            verbose=kwargs.get("verbose", False),
+            inheritable_tags=tags,
+            local_tags=self.tags,
+            inheritable_metadata=metadata,
+            local_metadata=self.metadata,
         )
         run_manager = callback_manager.on_retriever_start(
+            dumpd(self),
             query,
             **kwargs,
         )
@@ -145,21 +187,40 @@ class BaseRetriever(ABC):
             return result
 
     async def aget_relevant_documents(
-        self, query: str, *, callbacks: Callbacks = None, **kwargs: Any
+        self,
+        query: str,
+        *,
+        callbacks: Callbacks = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Asynchronously get documents relevant to a query.
         Args:
             query: string to find relevant documents for
             callbacks: Callback manager or list of callbacks
+            tags: Optional list of tags associated with the retriever. Defaults to None
+                These tags will be associated with each call to this retriever,
+                and passed as arguments to the handlers defined in `callbacks`.
+            metadata: Optional metadata associated with the retriever. Defaults to None
+                This metadata will be associated with each call to this retriever,
+                and passed as arguments to the handlers defined in `callbacks`.
         Returns:
             List of relevant documents
         """
         from langchain.callbacks.manager import AsyncCallbackManager
 
         callback_manager = AsyncCallbackManager.configure(
-            callbacks, None, verbose=kwargs.get("verbose", False)
+            callbacks,
+            None,
+            verbose=kwargs.get("verbose", False),
+            inheritable_tags=tags,
+            local_tags=self.tags,
+            inheritable_metadata=metadata,
+            local_metadata=self.metadata,
         )
         run_manager = await callback_manager.on_retriever_start(
+            dumpd(self),
             query,
             **kwargs,
         )

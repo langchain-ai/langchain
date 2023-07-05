@@ -107,7 +107,6 @@ def _parse_ai_message(message: BaseMessage) -> Union[List[AgentAction], AgentFin
     function_call = message.additional_kwargs.get("function_call", {})
 
     if function_call:
-        function_call = message.additional_kwargs["function_call"]
         try:
             tools = json.loads(function_call["arguments"])["actions"]
         except JSONDecodeError:

@@ -55,12 +55,21 @@ class BaseConversationalRetrievalChain(Chain):
     """Chain for chatting with an index."""
 
     combine_docs_chain: BaseCombineDocumentsChain
+    """The chain used to combine any retrieved documents."""
     question_generator: LLMChain
+    """The chain used to generate a new question for the sake of retrieval.
+    This chain will take in the current question (with variable `question`)
+    and any chat history (with variable `chat_history`) and will produce
+    a new standalone question to be used later on."""
     output_key: str = "answer"
+    """The output key to return the final answer of this chain in."""
     return_source_documents: bool = False
+    """Return the retrieved source documents as part of the final result."""
     return_generated_question: bool = False
+    """Return the generated question as part of the final result."""
     get_chat_history: Optional[Callable[[CHAT_TURN_TYPE], str]] = None
-    """Return the source documents."""
+    """An optional function to get a string of the chat history.
+    If None is provided, will use a default."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -188,13 +197,59 @@ class BaseConversationalRetrievalChain(Chain):
 
 
 class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
-    """Chain for chatting with an index."""
+    """Chain for having a conversation based on retrieved documents.
+
+    This chain takes in chat history (a list of messages) and new questions,
+    and then returns an answer to that question.
+    The algorithm for this chain consists of three parts:
+
+    1. Use the chat history and the new question to create a "standalone question".
+    This is done so that this question can be passed into the retrieval step to fetch
+    relevant documents. If only the new question was passed in, then relevant context
+    may be lacking. If the whole conversation was passed into retrieval, there may
+    be unnecessary information there that would distract from retrieval.
+
+    2. This new question is passed to the retriever and relevant documents are
+    returned.
+
+    3. The retrieved documents are passed to an LLM along with the new question to
+    generate a final answer.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.chains import (
+                StuffDocumentsChain, LLMChain, ConversationalRetrievalChain
+            )
+            from langchain.prompts import PromptTemplate
+            from langchain.llms import OpenAI
+
+            combine_docs_chain = StuffDocumentsChain(...)
+            vectorstore = ...
+            retriever = vectorstore.as_retriever()
+
+            # This controls how the standalone question is generated.
+            # Should take `chat_history` and `question` as input variables.
+            template = (
+                "Combine the chat history and follow up question into "
+                "a standalone question.\n\nChat History: {chat_history}"
+                "\n\n{question}"
+            )
+            prompt = PromptTemplate.from_template(template)
+            llm = OpenAI()
+            llm_chain = LLMChain(llm=llm, prompt=prompt)
+            chain = ConversationalRetrievalChain(
+                combine_docs_chain=combine_docs_chain,
+                retriever=retriever,
+                question_generator=question_generator,
+            )
+    """
 
     retriever: BaseRetriever
-    """Index to connect to."""
+    """Retriever to use to fetch documents."""
     max_tokens_limit: Optional[int] = None
-    """If set, restricts the docs to return from store based on tokens, enforced only
-    for StuffDocumentChain"""
+    """If set, enforces that the documents returned are less than this limit.
+    This is only enforced if `combine_docs_chain` is of type StuffDocumentsChain."""
 
     def _reduce_tokens_below_limit(self, docs: List[Document]) -> List[Document]:
         num_docs = len(docs)
@@ -252,7 +307,29 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> BaseConversationalRetrievalChain:
-        """Load chain from LLM."""
+        """Convenience method to load chain from LLM and retriever.
+
+        This provides some logic to create the `question_generator` chain
+        as well as the combine_docs_chain.
+
+        Args:
+            llm: The default language model to use at every part of this chain
+                (eg in both the question generation and the answering)
+            retriever: The retriever to use to fetch relevant documents from.
+            condense_question_prompt: The prompt to use to condense the chat history
+                and new question into a standalone question.
+            chain_type: The chain type to use to create the combine_docs_chain, will
+                be sent to `load_qa_chain`.
+            verbose: Verbosity flag for logging to stdout.
+            condense_question_llm: The language model to use for condensing the chat
+                history and new question into a standalone question. If none is
+                provided, will default to `llm`.
+            combine_docs_chain_kwargs: Parameters to pass as kwargs to `load_qa_chain`
+                when constructing the combine_docs_chain.
+            callbacks: Callbacks to pass to all subchains.
+            **kwargs: Additional parameters to pass when initializing
+                ConversationalRetrievalChain
+        """
         combine_docs_chain_kwargs = combine_docs_chain_kwargs or {}
         doc_chain = load_qa_chain(
             llm,
