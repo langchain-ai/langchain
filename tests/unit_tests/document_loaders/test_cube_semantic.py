@@ -36,21 +36,23 @@ class TestCubeSemanticLoader:
 
         expected_docs: List[Document] = [
             Document(
-                page_content="sales",
+                page_content="table name: cube1, column name: sales, column data type: sum, column title: Sales, column description: None",
                 metadata={
                     "table_name": "cube1",
-                    "type": "sum",
                     "column_name": "sales",
-                    "title": "Sales",
+                    "column_data_type": "sum",
+                    "column_title": "Sales",
+                    "column_description": None,
                 },
             ),
             Document(
-                page_content="product_name",
+                page_content="table name: cube1, column name: product_name, column data type: string, column title: Product Name, column description: None",
                 metadata={
                     "table_name": "cube1",
-                    "type": "string",
                     "column_name": "product_name",
-                    "title": "Product Name",
+                    "column_data_type": "string",
+                    "column_title": "Product Name",
+                    "column_description": None,
                 },
             ),
         ]
