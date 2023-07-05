@@ -264,6 +264,15 @@ class Chain(Serializable, ABC):
         """Call the chain on all inputs in the list."""
         return [self(inputs, callbacks=callbacks) for inputs in input_list]
 
+    async def aapply(
+        self, input_list: List[Dict[str, Any]], callbacks: Callbacks = None
+    ) -> List[Dict[str, str]]:
+        results = []
+        for inp in input_list:
+            output = await self.acall(inp, callbacks=callbacks)
+            results.append(output)
+        return results
+
     @property
     def _run_output_key(self) -> str:
         if len(self.output_keys) != 1:
