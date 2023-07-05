@@ -86,13 +86,23 @@ def _async_retry_decorator(embeddings: OpenAIEmbeddings) -> Any:
     return wrap
 
 
+# https://stackoverflow.com/questions/76469415/getting-embeddings-of-length-1-from-langchain-openaiembeddings
+def _check_response(response: dict) -> dict:
+    if any(len(d["embedding"]) == 1 for d in response["data"]):
+        import openai
+
+        raise openai.error.APIError("OpenAI API returned an empty embedding")
+    return response
+
+
 def embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) -> Any:
     """Use tenacity to retry the embedding call."""
     retry_decorator = _create_retry_decorator(embeddings)
 
     @retry_decorator
     def _embed_with_retry(**kwargs: Any) -> Any:
-        return embeddings.client.create(**kwargs)
+        response = embeddings.client.create(**kwargs)
+        return _check_response(response)
 
     return _embed_with_retry(**kwargs)
 
@@ -102,7 +112,8 @@ async def async_embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) ->
 
     @_async_retry_decorator(embeddings)
     async def _async_embed_with_retry(**kwargs: Any) -> Any:
-        return await embeddings.client.acreate(**kwargs)
+        response = await embeddings.client.acreate(**kwargs)
+        return _check_response(response)
 
     return await _async_embed_with_retry(**kwargs)
 
