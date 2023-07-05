@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import warnings
-
 from abc import ABC
 from typing import Any, Callable, Dict, List, Set
 
