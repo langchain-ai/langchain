@@ -147,17 +147,17 @@ class TextRequestsWrapper(BaseModel):
 
     async def apost(self, url: str, data: Dict[str, Any], **kwargs: Any) -> str:
         """POST to the URL and return the text asynchronously."""
-        async with self.requests.apost(url, **kwargs) as response:
+        async with self.requests.apost(url, data, **kwargs) as response:
             return await response.text()
 
     async def apatch(self, url: str, data: Dict[str, Any], **kwargs: Any) -> str:
         """PATCH the URL and return the text asynchronously."""
-        async with self.requests.apatch(url, **kwargs) as response:
+        async with self.requests.apatch(url, data, **kwargs) as response:
             return await response.text()
 
     async def aput(self, url: str, data: Dict[str, Any], **kwargs: Any) -> str:
         """PUT the URL and return the text asynchronously."""
-        async with self.requests.aput(url, **kwargs) as response:
+        async with self.requests.aput(url, data, **kwargs) as response:
             return await response.text()
 
     async def adelete(self, url: str, **kwargs: Any) -> str:
