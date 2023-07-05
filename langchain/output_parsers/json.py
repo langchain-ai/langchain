@@ -2,12 +2,8 @@ from __future__ import annotations
 
 import json
 import re
-<<<<<<< HEAD
 from json import JSONDecodeError
-from typing import Any, List
-=======
-from typing import List, Union
->>>>>>> 951522c6 (Update JSON parser to work w/ multiple JSON objects in markdown)
+from typing import Any, List, Union
 
 from langchain.schema import BaseOutputParser, OutputParserException
 
@@ -31,7 +27,26 @@ def parse_json_markdown(json_string: str) -> Union[dict, List[dict]]:
     # If there's only one JSON object, return it as a dictionary; else, return a list of dictionaries
     return parsed_objects[0] if len(parsed_objects) == 1 else parsed_objects
 
- 
+
+def valdate_obj(json_obj: str, expected_keys: List[str]) -> None:
+    """
+    Validate JSON object
+
+    Args:
+        json_obj: JSON object.
+        expected_keys: The expected keys in the JSON objects.
+
+    Returns:
+        None.
+    """
+    for key in expected_keys:
+        if key not in json_obj:
+            raise OutputParserException(
+                f"Got invalid return object. Expected key `{key}` "
+                f"to be present, but got {json_obj}"
+            )
+
+
 def parse_and_check_json_markdown(
     text: str, expected_keys: List[str]
 ) -> Union[dict, List[dict]]:
@@ -47,7 +62,7 @@ def parse_and_check_json_markdown(
         The parsed JSON object(s) as a Python dictionary or a list of dictionaries.
     """
     try:
-        json_objects = parse_json_markdown(text)
+        json_object = parse_json_markdown(text)
     except json.JSONDecodeError as e:
         raise OutputParserException(f"Got invalid JSON object. Error: {e}")
     for key in expected_keys:
