@@ -1,5 +1,6 @@
 from typing import List
 from unittest.mock import MagicMock, patch
+from unittest import TestCase
 
 import requests
 
@@ -7,7 +8,7 @@ from langchain.docstore.document import Document
 from langchain.document_loaders import CubeSemanticLoader
 
 
-class TestCubeSemanticLoader:
+class TestCubeSemanticLoader(TestCase):
     @patch.object(requests, "get")
     def test_load_success(self, mock_get: MagicMock) -> None:
         # Arrange
