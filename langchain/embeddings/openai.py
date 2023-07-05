@@ -87,7 +87,7 @@ def _async_retry_decorator(embeddings: OpenAIEmbeddings) -> Any:
 
 
 # https://stackoverflow.com/questions/76469415/getting-embeddings-of-length-1-from-langchain-openaiembeddings
-def _check_response(response):
+def _check_response(response: dict) -> dict:
     if any(len(d["embedding"]) == 1 for d in response["data"]):
         import openai
 
