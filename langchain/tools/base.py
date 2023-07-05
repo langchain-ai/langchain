@@ -154,16 +154,16 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     """Deprecated. Please use callbacks instead."""
     tags: Optional[List[str]] = None
-    """Optional list of tags associated with the chain. Defaults to None
-    These tags will be associated with each call to this chain,
+    """Optional list of tags associated with the tool. Defaults to None
+    These tags will be associated with each call to this tool,
     and passed as arguments to the handlers defined in `callbacks`.
-    You can use these to eg identify a specific instance of a chain with its use case.
+    You can use these to eg identify a specific instance of a tool with its use case.
     """
     metadata: Optional[Dict[str, Any]] = None
-    """Optional metadata associated with the chain. Defaults to None
-    This metadata will be associated with each call to this chain,
+    """Optional metadata associated with the tool. Defaults to None
+    This metadata will be associated with each call to this tool,
     and passed as arguments to the handlers defined in `callbacks`.
-    You can use these to eg identify a specific instance of a chain with its use case.
+    You can use these to eg identify a specific instance of a tool with its use case.
     """
 
     handle_tool_error: Optional[
@@ -343,7 +343,13 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         else:
             verbose_ = self.verbose
         callback_manager = AsyncCallbackManager.configure(
-            callbacks, self.callbacks, verbose_, tags, self.tags, metadata, self.metadata
+            callbacks,
+            self.callbacks,
+            verbose_,
+            tags,
+            self.tags,
+            metadata,
+            self.metadata,
         )
         new_arg_supported = signature(self._arun).parameters.get("run_manager")
         run_manager = await callback_manager.on_tool_start(
