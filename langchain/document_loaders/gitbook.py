@@ -51,14 +51,14 @@ class GitbookLoader(WebBaseLoader):
             relative_paths = self._get_paths(soup_info)
             urls = [urljoin(self.base_url, path) for path in relative_paths]
             soup_infos = self.scrape_all(urls)
-            documents = [
+            _documents = [
                 self._get_document(soup_info, url)
                 for soup_info, url in zip(soup_infos, urls)
             ]
         else:
             soup_info = self.scrape()
-            documents = [self._get_document(soup_info, self.web_path)]
-        documents = [d for d in documents if d]
+            _documents = [self._get_document(soup_info, self.web_path)]
+        documents = [d for d in _documents if d]
 
         return documents
 
