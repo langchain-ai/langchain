@@ -45,18 +45,18 @@ class Requests(BaseModel):
 
     @asynccontextmanager
     async def _arequest(
-        self, method: str, url: str, **kwargs: Any
+        self, method: str, url: str, data: Dict[str, Any], **kwargs: Any
     ) -> AsyncGenerator[aiohttp.ClientResponse, None]:
         """Make an async request."""
         if not self.aiosession:
             async with aiohttp.ClientSession() as session:
                 async with session.request(
-                    method, url, headers=self.headers, **kwargs
+                    method, url, json=data, headers=self.headers, **kwargs
                 ) as response:
                     yield response
         else:
             async with self.aiosession.request(
-                method, url, headers=self.headers, **kwargs
+                method, url, json=data, headers=self.headers, **kwargs
             ) as response:
                 yield response
 
