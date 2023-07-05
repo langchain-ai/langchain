@@ -53,7 +53,6 @@ def analyze_text(
     """
     resp: Dict[str, Any] = {}
     if textstat is not None:
-        textstat = import_textstat()
         text_complexity_metrics = {
             "flesch_reading_ease": textstat.flesch_reading_ease(text),
             "flesch_kincaid_grade": textstat.flesch_kincaid_grade(text),
