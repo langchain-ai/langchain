@@ -1,8 +1,10 @@
 import unittest
-import requests
-from unittest.mock import patch, MagicMock
-from langchain.docstore.document import Document
 from typing import List
+from unittest.mock import MagicMock, patch
+
+import requests
+
+from langchain.docstore.document import Document
 from langchain.document_loaders import CubeSemanticLoader
 
 

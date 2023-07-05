@@ -1,8 +1,10 @@
+from typing import List
+
 import requests
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
-from typing import List
+
 
 class CubeSemanticLoader(BaseLoader):
     """Load Cube semantic layer metadata."""
@@ -25,7 +27,7 @@ class CubeSemanticLoader(BaseLoader):
 
     def load(self) -> List[Document]:
         """Makes a call to Cube's REST API metadata endpoint.
-        
+
         Returns:
             A list of documents with attributes:
                 - page_content=column_name
@@ -36,8 +38,8 @@ class CubeSemanticLoader(BaseLoader):
                     - column_description
         """
         headers = {
-            'Content-Type': 'application/json',
-            'Authorization': self.cube_api_token
+            "Content-Type": "application/json",
+            "Authorization": self.cube_api_token,
         }
 
         response = requests.get(self.cube_api_url, headers=headers)
@@ -62,7 +64,8 @@ class CubeSemanticLoader(BaseLoader):
                     column_name=str(item.get("name")),
                     title=str(item.get("title")),
                 )
-                docs.append(Document(page_content=str(item.get("name")), metadata=metadata))
-                
-        return docs
+                docs.append(
+                    Document(page_content=str(item.get("name")), metadata=metadata)
+                )
 
+        return docs
