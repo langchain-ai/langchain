@@ -21,7 +21,7 @@ from typing import (
     TypeVar,
 )
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic import Field, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -438,7 +438,7 @@ class VectorStore(ABC):
         return VectorStoreRetriever(vectorstore=self, **kwargs)
 
 
-class VectorStoreRetriever(BaseRetriever, BaseModel):
+class VectorStoreRetriever(BaseRetriever):
     vectorstore: VectorStore
     search_type: str = "similarity"
     search_kwargs: dict = Field(default_factory=dict)

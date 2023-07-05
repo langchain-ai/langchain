@@ -629,7 +629,11 @@ class FAISS(VectorStore):
 
     @classmethod
     def load_local(
-        cls, folder_path: str, embeddings: Embeddings, index_name: str = "index"
+        cls,
+        folder_path: str,
+        embeddings: Embeddings,
+        index_name: str = "index",
+        **kwargs: Any,
     ) -> FAISS:
         """Load FAISS index, docstore, and index_to_docstore_id from disk.
 
@@ -649,7 +653,9 @@ class FAISS(VectorStore):
         # load docstore and index_to_docstore_id
         with open(path / "{index_name}.pkl".format(index_name=index_name), "rb") as f:
             docstore, index_to_docstore_id = pickle.load(f)
-        return cls(embeddings.embed_query, index, docstore, index_to_docstore_id)
+        return cls(
+            embeddings.embed_query, index, docstore, index_to_docstore_id, **kwargs
+        )
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """
