@@ -55,8 +55,8 @@ class BaseRetriever(Serializable, ABC):
 
         arbitrary_types_allowed = True
 
-    _new_arg_supported: bool = PrivateAttr(default=False)
-    _expects_other_args: bool = PrivateAttr(default=False)
+    _new_arg_supported: bool = False
+    _expects_other_args: bool = False
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
@@ -90,7 +90,9 @@ class BaseRetriever(Serializable, ABC):
         parameters = signature(cls._get_relevant_documents).parameters
         cls._new_arg_supported = parameters.get("run_manager") is not None
         # If a V1 retriever broke the interface and expects additional arguments
-        cls._expects_other_args = (not cls._new_arg_supported) and len(parameters) > 2
+        cls._expects_other_args = (
+            len(set(parameters.keys()) - {"self", "query", "run_manager"}) > 0
+        )
 
     @abstractmethod
     def _get_relevant_documents(
