@@ -52,7 +52,7 @@ class AmazonAPIGateway(LLM):
         """Get the identifying parameters."""
         _model_kwargs = self.model_kwargs or {}
         return {
-            **{"endpoint_name": self.api_url},
+            **{"api_url": self.api_url, "headers": self.headers},
             **{"model_kwargs": _model_kwargs},
         }
 
