@@ -63,7 +63,7 @@ class BaseConversationalRetrievalChain(Chain):
     a new standalone question to be used later on."""
     output_key: str = "answer"
     """The output key to return the final answer of this chain in."""
-    use_new_question: bool = True
+    rephrase_question: bool = True
     """Whether or not to pass the new generated question to the combine_docs_chain.
     If True, will pass the new generated question along.
     If False, will only use the new generated question for retrieval and pass the
@@ -136,7 +136,7 @@ class BaseConversationalRetrievalChain(Chain):
         else:
             docs = self._get_docs(new_question, inputs)  # type: ignore[call-arg]
         new_inputs = inputs.copy()
-        if self.use_new_question:
+        if self.rephrase_question:
             new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
         answer = self.combine_docs_chain.run(
@@ -184,7 +184,7 @@ class BaseConversationalRetrievalChain(Chain):
             docs = await self._aget_docs(new_question, inputs)  # type: ignore[call-arg]
 
         new_inputs = inputs.copy()
-        if self.use_new_question:
+        if self.rephrase_question:
             new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
         answer = await self.combine_docs_chain.arun(
@@ -219,14 +219,9 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
     2. This new question is passed to the retriever and relevant documents are
     returned.
 
-<<<<<<< HEAD
     3. The retrieved documents are passed to an LLM along with either the new question
     (default behavior) or the original question and chat history to generate a final
     response.
-=======
-    3. The retrieved documents are passed to an LLM along with the new question to
-    generate a final answer.
->>>>>>> master
 
     Example:
         .. code-block:: python
