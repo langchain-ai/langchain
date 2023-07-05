@@ -8,13 +8,13 @@ from langchain.document_loaders import CubeSemanticLoader
 
 class TestCubeSemanticLoader(unittest.TestCase):
     @patch.object(requests, "get")
-    def test_load_success(self, mock_get):
+    def test_load_success(self, mock_get) -> None:
         # Arrange
-        cube_api_url = "https://example.com/cube_api"
-        cube_api_token = "abc123"
-        mock_response = MagicMock()
+        cube_api_url: str = "https://example.com/cube_api"
+        cube_api_token: str = "abc123"
+        mock_response: MagicMock = MagicMock()
         mock_response.status_code = 200
-        mock_response_json = {
+        mock_response_json: dict = {
             "cubes": [
                 {
                     "type": "view",
@@ -33,7 +33,7 @@ class TestCubeSemanticLoader(unittest.TestCase):
         mock_response.json.return_value = mock_response_json
         mock_get.return_value = mock_response
 
-        expected_docs = [
+        expected_docs: List[Document] = [
             Document(
                 page_content="sales",
                 metadata={
@@ -54,10 +54,10 @@ class TestCubeSemanticLoader(unittest.TestCase):
             ),
         ]
 
-        loader = CubeSemanticLoader(cube_api_url, cube_api_token)
+        loader: CubeSemanticLoader = CubeSemanticLoader(cube_api_url, cube_api_token)
 
         # Act
-        result = loader.load()
+        result: List[Document] = loader.load()
 
         # Assert
         self.assertEqual(result, expected_docs)
@@ -70,15 +70,15 @@ class TestCubeSemanticLoader(unittest.TestCase):
         )
 
     @patch.object(requests, "get")
-    def test_load_failure(self, mock_get):
+    def test_load_failure(self, mock_get) -> None:
         # Arrange
-        cube_api_url = "https://example.com/cube_api"
-        cube_api_token = "abc123"
-        mock_response = MagicMock()
+        cube_api_url: str = "https://example.com/cube_api"
+        cube_api_token: str = "abc123"
+        mock_response: MagicMock = MagicMock()
         mock_response.status_code = 404
         mock_get.return_value = mock_response
 
-        loader = CubeSemanticLoader(cube_api_url, cube_api_token)
+        loader: CubeSemanticLoader = CubeSemanticLoader(cube_api_url, cube_api_token)
 
         # Act and Assert
         with self.assertRaises(requests.HTTPError):
