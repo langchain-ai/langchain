@@ -145,12 +145,14 @@ def test_marqo_multimodal() -> None:
             # image of a bus
             {
                 "caption": "Bus",
-                "image": "https://raw.githubusercontent.com/marqo-ai/marqo/mainline/examples/ImageSearchGuide/data/image4.jpg",
+                "image": "https://raw.githubusercontent.com/marqo-ai/marqo/mainline/"
+                         "examples/ImageSearchGuide/data/image4.jpg",
             },
             # image of a plane
             {
                 "caption": "Plane",
-                "image": "https://raw.githubusercontent.com/marqo-ai/marqo/mainline/examples/ImageSearchGuide/data/image2.jpg",
+                "image": "https://raw.githubusercontent.com/marqo-ai/marqo/"
+                         "mainline/examples/ImageSearchGuide/data/image2.jpg",
             },
         ],
     )

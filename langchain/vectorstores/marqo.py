@@ -27,14 +27,18 @@ if TYPE_CHECKING:
 class Marqo(VectorStore):
     """Wrapper around Marqo database.
 
-    Marqo indexes have their own models associated with them to generate your embeddings. This means that
-    you can selected from a range of different models and also use CLIP models to create multimodal indexes
+    Marqo indexes have their own models associated with them to generate your
+    embeddings. This means that you can selected from a range of different models
+    and also use CLIP models to create multimodal indexes
     with images and text together.
 
-    Marqo also supports more advanced queries with mutliple weighted terms, see See https://docs.marqo.ai/latest/#searching-using-weights-in-queries.
-    This class can flexibly take strings or dictionaries for weighted queries in its similarity search methods.
+    Marqo also supports more advanced queries with mutliple weighted terms, see See
+    https://docs.marqo.ai/latest/#searching-using-weights-in-queries.
+    This class can flexibly take strings or dictionaries for weighted queries
+    in its similarity search methods.
 
-    To use, you should have the `marqo` python package installed, you can do this with `pip install marqo`.
+    To use, you should have the `marqo` python package installed, you can do this with
+    `pip install marqo`.
 
     Example:
         .. code-block:: python
@@ -86,15 +90,17 @@ class Marqo(VectorStore):
     ) -> List[str]:
         """Upload texts with metadata (properties) to Marqo.
 
-        You can either have marqo generate ids for each document or you can provide your own by including
-        a "_id" field in the metadata objects.
+        You can either have marqo generate ids for each document or you can provide
+        your own by including a "_id" field in the metadata objects.
 
         Args:
-            texts (Iterable[str]): am iterator of texts - assumed to preserve an order that matches the metadatas.
+            texts (Iterable[str]): am iterator of texts - assumed to preserve an
+            order that matches the metadatas.
             metadatas (Optional[List[dict]], optional): a list of metadatas.
 
         Raises:
-            ValueError: if metadatas is provided and the number of metadatas differs from the number of texts.
+            ValueError: if metadatas is provided and the number of metadatas differs
+            from the number of texts.
 
         Returns:
             List[str]: The list of ids that were added.
@@ -127,7 +133,8 @@ class Marqo(VectorStore):
             )
             if response["errors"]:
                 err_msg = (
-                    f"Error in upload for documents in index range [{i},{i+self._document_batch_size}], "
+                    f"Error in upload for documents in index range [{i},"
+                    f"{i + self._document_batch_size}], "
                     f"check Marqo logs."
                 )
                 raise RuntimeError(err_msg)
@@ -145,7 +152,8 @@ class Marqo(VectorStore):
         """Search the marqo index for the most similar documents.
 
         Args:
-            query (Union[str, Dict[str, float]]): The query for the search, either as a string or a weighted query.
+            query (Union[str, Dict[str, float]]): The query for the search, either
+            as a string or a weighted query.
             k (int, optional): The number of documents to return. Defaults to 4.
 
         Returns:
@@ -161,14 +169,17 @@ class Marqo(VectorStore):
         query: Union[str, Dict[str, float]],
         k: int = 4,
     ) -> List[Tuple[Document, float]]:
-        """Return documents from Marqo that are similar to the query as well as their scores.
+        """Return documents from Marqo that are similar to the query as well
+        as their scores.
 
         Args:
-            query (str): The query to search with, either as a string or a weighted query.
+            query (str): The query to search with, either as a string or a weighted
+            query.
             k (int, optional): The number of documents to return. Defaults to 4.
 
         Returns:
-            List[Tuple[Document, float]]: The matching documents and their scores, ordered by descending score.
+            List[Tuple[Document, float]]: The matching documents and their scores,
+            ordered by descending score.
         """
         results = self.marqo_similarity_search(query=query, k=k)
 
@@ -181,11 +192,15 @@ class Marqo(VectorStore):
         k: int = 4,
         **kwargs: Any,
     ) -> List[List[Document]]:
-        """Search the marqo index for the most similar documents in bulk with multiple queries.
+        """Search the marqo index for the most similar documents in bulk with multiple
+        queries.
 
         Args:
-            queries (Iterable[Union[str, Dict[str, float]]]): An iterable of queries to execute in bulk, queries in the list can be strings or dictonaries of weighted queries.
-            k (int, optional): The number of documents to return for each query. Defaults to 4.
+            queries (Iterable[Union[str, Dict[str, float]]]): An iterable of queries to
+            execute in bulk, queries in the list can be strings or dictonaries of
+            weighted queries.
+            k (int, optional): The number of documents to return for each query.
+            Defaults to 4.
 
         Returns:
             List[List[Document]]: A list of results for each query.
@@ -204,15 +219,18 @@ class Marqo(VectorStore):
         k: int = 4,
         **kwargs: Any,
     ) -> List[List[Tuple[Document, float]]]:
-        """Return documents from Marqo that are similar to the query as well as their scores using
-        a batch of queries.
+        """Return documents from Marqo that are similar to the query as well as
+        their scores using a batch of queries.
 
         Args:
-            query (Iterable[Union[str, Dict[str, float]]]): An iterable of queries to execute in bulk, queries in the list can be strings or dictonaries of weighted queries.
+            query (Iterable[Union[str, Dict[str, float]]]): An iterable of queries
+            to execute in bulk, queries in the list can be strings or dictonaries
+            of weighted queries.
             k (int, optional): The number of documents to return. Defaults to 4.
 
         Returns:
-            List[Tuple[Document, float]]: A list of lists of the matching documents and their scores for each query
+            List[Tuple[Document, float]]: A list of lists of the matching
+            documents and their scores for each query
         """
         bulk_results = self.marqo_bulk_similarity_search(queries=queries, k=k)
         bulk_documents: List[List[Tuple[Document, float]]] = []
@@ -229,10 +247,12 @@ class Marqo(VectorStore):
 
         Args:
             results (List[dict]): A marqo results object with the 'hits'.
-            include_scores (bool, optional): Include scores alongside documents. Defaults to False.
+            include_scores (bool, optional): Include scores alongside documents.
+            Defaults to False.
 
         Returns:
-            Union[List[Document], List[Tuple[Document, float]]]: The documents or document score pairs if `include_scores` is true.
+            Union[List[Document], List[Tuple[Document, float]]]: The documents or
+            document score pairs if `include_scores` is true.
         """
         documents: List[Tuple[Document, Any]] = []
         for res in results["hits"]:
@@ -254,10 +274,12 @@ class Marqo(VectorStore):
 
         Args:
             results (List[dict]): A marqo results object with the 'hits'.
-            include_scores (bool, optional): Include scores alongside documents. Defaults to False.
+            include_scores (bool, optional): Include scores alongside documents.
+            Defaults to False.
 
         Returns:
-            Union[List[Document], List[Tuple[Document, float]]]: The documents or document score pairs if `include_scores` is true.
+            Union[List[Document], List[Tuple[Document, float]]]: The documents or
+            document score pairs if `include_scores` is true.
         """
         documents: List[Document] = []
         for res in results["hits"]:
@@ -292,14 +314,17 @@ class Marqo(VectorStore):
     def marqo_bulk_similarity_search(
         self, queries: Iterable[Union[str, Dict[str, float]]], k: int = 4
     ) -> Dict[str, List[Dict[str, List[Dict[str, str]]]]]:
-        """Return documents from Marqo using a bulk search, exposes Marqo's output directly
+        """Return documents from Marqo using a bulk search, exposes Marqo's
+        output directly
 
         Args:
             queries (Iterable[Union[str, Dict[str, float]]]): A list of queries.
-            k (int, optional): The number of documents to return for each query. Defaults to 4.
+            k (int, optional): The number of documents to return for each query.
+            Defaults to 4.
 
         Returns:
-            Dict[str, Dict[List[Dict[str, Dict[str, Any]]]]]: A bulk search results object
+            Dict[str, Dict[List[Dict[str, Dict[str, Any]]]]]: A bulk search results
+            object
         """
         bulk_results = self._client.bulk_search(
             [
@@ -321,8 +346,9 @@ class Marqo(VectorStore):
         embedding: Embeddings,
         **kwargs: Any,
     ) -> Marqo:
-        """Return VectorStore initialized from documents. Note that Marqo does not need embeddings, we retain the
-        parameter to adhere to the Liskov substitution principle.
+        """Return VectorStore initialized from documents. Note that Marqo does not
+        need embeddings, we retain the parameter to adhere to the Liskov substitution
+        principle.
 
 
         Args:
@@ -353,32 +379,45 @@ class Marqo(VectorStore):
         verbose: bool = True,
         **kwargs: Any,
     ) -> Marqo:
-        """Return Marqo initialized from texts. Note that Marqo does not need embeddings, we retain the
-        parameter to adhere to the Liskov substitution principle.
+        """Return Marqo initialized from texts. Note that Marqo does not need
+        embeddings, we retain the parameter to adhere to the Liskov
+        substitution principle.
 
-        This is a quick way to get started with marqo - simply provide your texts and metadatas and this
-        will create an instance of the data store and index the provided data.
+        This is a quick way to get started with marqo - simply provide your texts and
+        metadatas and this will create an instance of the data store and index the
+        provided data.
 
-        To know the ids of your documents with this approach you will need to include them in under the key "_id"
-        in your metadatas for each text
+        To know the ids of your documents with this approach you will need to include
+        them in under the key "_id" in your metadatas for each text
 
         Example:
         .. code-block:: python
 
                 from langchain.vectorstores import Marqo
 
-                datastore = Marqo(texts=['text'], index_name='my-first-index', url='http://localhost:8882')
+                datastore = Marqo(texts=['text'], index_name='my-first-index',
+                url='http://localhost:8882')
 
         Args:
             texts (List[str]): A list of texts to index into marqo upon creation.
             embedding (Any, optional): Embeddings (not required). Defaults to None.
-            index_name (str, optional): The name of the index to use, if none is provided then one will be created with a UUID. Defaults to None.
+            index_name (str, optional): The name of the index to use, if none is
+            provided then one will be created with a UUID. Defaults to None.
             url (str, optional): The URL for Marqo. Defaults to "http://localhost:8882".
             api_key (str, optional): The API key for Marqo. Defaults to "".
-            metadatas (Optional[List[dict]], optional): A list of metadatas, to accompany the texts. Defaults to None.
-            marqo_device (str, optional): The device for the marqo to use on the server, this is only used when a new index is being created. Defaults to "cpu". Can be "cpu" or "cuda".
-            add_documents_settings (Optional[Dict[str, Any]], optional): Settings for adding documents, see https://docs.marqo.ai/0.0.16/API-Reference/documents/#query-parameters. Defaults to {}.
-            index_settings (Optional[Dict[str, Any]], optional): Index settings if the index doesn't exist, see https://docs.marqo.ai/0.0.16/API-Reference/indexes/#index-defaults-object. Defaults to {}.
+            metadatas (Optional[List[dict]], optional): A list of metadatas, to
+            accompany the texts. Defaults to None.
+            marqo_device (str, optional): The device for the marqo to use on the server,
+            this is only used when a new index is being created. Defaults to "cpu". Can
+            be "cpu" or "cuda".
+            add_documents_settings (Optional[Dict[str, Any]], optional): Settings
+            for adding documents, see
+            https://docs.marqo.ai/0.0.16/API-Reference/documents/#query-parameters.
+            Defaults to {}.
+            index_settings (Optional[Dict[str, Any]], optional): Index settings if
+            the index doesn't exist, see
+            https://docs.marqo.ai/0.0.16/API-Reference/indexes/#index-defaults-object.
+            Defaults to {}.
 
         Returns:
             Marqo: An instance of the Marqo vector store
