@@ -49,7 +49,7 @@ class TestCubeSemanticLoader(TestCase):
                     "column_name": "sales",
                     "column_data_type": "sum",
                     "column_title": "Sales",
-                    "column_description": None,
+                    "column_description": "None",
                 },
             ),
             Document(
@@ -65,7 +65,7 @@ class TestCubeSemanticLoader(TestCase):
                     "column_name": "product_name",
                     "column_data_type": "string",
                     "column_title": "Product Name",
-                    "column_description": None,
+                    "column_description": "None",
                 },
             ),
         ]
