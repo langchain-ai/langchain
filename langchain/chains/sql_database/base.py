@@ -15,6 +15,7 @@ from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BasePromptTemplate
 from langchain.sql_database import SQLDatabase
 from langchain.tools.sql_database.prompt import QUERY_CHECKER
+from langchain.schema import BaseOutputParser
 
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 
@@ -50,6 +51,7 @@ class SQLDatabaseChain(Chain):
     to fix the initial SQL from the LLM."""
     query_checker_prompt: Optional[BasePromptTemplate] = None
     """The prompt template that should be used by the query checker"""
+    sql_cmd_parser: Optional[BaseOutputParser] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -123,6 +125,8 @@ class SQLDatabaseChain(Chain):
                     sql_cmd
                 )  # output: sql generation (no checker)
                 intermediate_steps.append({"sql_cmd": sql_cmd})  # input: sql exec
+                if self.sql_cmd_parser:
+                    sql_cmd = self.sql_cmd_parser.parse(sql_cmd)
                 result = self.database.run(sql_cmd)
                 intermediate_steps.append(str(result))  # output: sql exec
             else:
@@ -148,6 +152,8 @@ class SQLDatabaseChain(Chain):
                 intermediate_steps.append(
                     {"sql_cmd": checked_sql_command}
                 )  # input: sql exec
+                if self.sql_cmd_parser:
+                    checked_sql_command = self.sql_cmd_parser.parse(checked_sql_command)
                 result = self.database.run(checked_sql_command)
                 intermediate_steps.append(str(result))  # output: sql exec
                 sql_cmd = checked_sql_command
