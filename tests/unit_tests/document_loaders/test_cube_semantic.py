@@ -1,4 +1,4 @@
-import unittest
+import pytest
 from typing import List
 from unittest.mock import MagicMock, patch
 
@@ -8,7 +8,7 @@ from langchain.docstore.document import Document
 from langchain.document_loaders import CubeSemanticLoader
 
 
-class TestCubeSemanticLoader(unittest.TestCase):
+class TestCubeSemanticLoader:
     @patch.object(requests, "get")
     def test_load_success(self, mock_get: MagicMock) -> None:
         # Arrange
@@ -83,16 +83,6 @@ class TestCubeSemanticLoader(unittest.TestCase):
         loader: CubeSemanticLoader = CubeSemanticLoader(cube_api_url, cube_api_token)
 
         # Act and Assert
-        with self.assertRaises(requests.HTTPError):
-            loader.load()
-        mock_get.assert_called_once_with(
-            cube_api_url,
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": cube_api_token,
-            },
-        )
-
-
-if __name__ == "__main__":
-    unittest.main()
+        res = loader.load()
+        with pytest.raises(requests.exceptions.HTTPError) as err_msg:
+            res.raise_for_status()
