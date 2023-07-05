@@ -298,7 +298,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
         batched_embeddings = []
         _chunk_size = chunk_size or self.chunk_size
-        for i in range(0, len(tokens), _chunk_size):
+        try:
+            import tqdm
+
+            _iter = tqdm.tqdm(range(0, len(tokens), _chunk_size))
+        except ImportError:
+            _iter = range(0, len(tokens), _chunk_size)
+        for i in _iter:
             response = embed_with_retry(
                 self,
                 input=tokens[i : i + _chunk_size],
