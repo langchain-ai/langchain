@@ -99,6 +99,7 @@ def _load_map_reduce_chain(
     verbose: Optional[bool] = None,
     callback_manager: Optional[BaseCallbackManager] = None,
     callbacks: Callbacks = None,
+    token_max: int = 3000,
     **kwargs: Any,
 ) -> MapReduceDocumentsChain:
     _question_prompt = (
@@ -154,6 +155,8 @@ def _load_map_reduce_chain(
     reduce_documents_chain = ReduceDocumentsChain(
         combine_documents_chain=combine_documents_chain,
         collapse_documents_chain=collapse_chain,
+        token_max=token_max,
+        verbose=verbose,
     )
     return MapReduceDocumentsChain(
         llm_chain=map_chain,

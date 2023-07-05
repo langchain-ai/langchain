@@ -48,6 +48,7 @@ def _load_map_reduce_chain(
     reduce_llm: Optional[BaseLanguageModel] = None,
     collapse_llm: Optional[BaseLanguageModel] = None,
     verbose: Optional[bool] = None,
+    token_max: int = 3000,
     **kwargs: Any,
 ) -> MapReduceDocumentsChain:
     map_chain = LLMChain(llm=llm, prompt=map_prompt, verbose=verbose)
@@ -79,6 +80,8 @@ def _load_map_reduce_chain(
     reduce_documents_chain = ReduceDocumentsChain(
         combine_documents_chain=combine_documents_chain,
         collapse_documents_chain=collapse_chain,
+        token_max=token_max,
+        verbose=verbose,
     )
     return MapReduceDocumentsChain(
         llm_chain=map_chain,

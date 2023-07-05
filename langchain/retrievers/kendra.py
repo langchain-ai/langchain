@@ -1,7 +1,7 @@
 import re
 from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel, Extra, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -179,37 +179,34 @@ class AmazonKendraRetriever(BaseRetriever):
 
     """
 
-    def __init__(
-        self,
-        index_id: str,
-        region_name: Optional[str] = None,
-        credentials_profile_name: Optional[str] = None,
-        top_k: int = 3,
-        attribute_filter: Optional[Dict] = None,
-        client: Optional[Any] = None,
-    ):
-        self.index_id = index_id
-        self.top_k = top_k
-        self.attribute_filter = attribute_filter
+    index_id: str
+    region_name: Optional[str] = None
+    credentials_profile_name: Optional[str] = None
+    top_k: int = 3
+    attribute_filter: Optional[Dict] = None
+    client: Any
 
-        if client is not None:
-            self.client = client
-            return
+    @root_validator(pre=True)
+    def create_client(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        if values["client"] is not None:
+            return values
 
         try:
             import boto3
 
-            if credentials_profile_name is not None:
-                session = boto3.Session(profile_name=credentials_profile_name)
+            if values["credentials_profile_name"] is not None:
+                session = boto3.Session(profile_name=values["credentials_profile_name"])
             else:
                 # use default credentials
                 session = boto3.Session()
 
             client_params = {}
-            if region_name is not None:
-                client_params["region_name"] = region_name
+            if values["region_name"] is not None:
+                client_params["region_name"] = values["region_name"]
 
-            self.client = session.client("kendra", **client_params)
+            values["client"] = session.client("kendra", **client_params)
+
+            return values
         except ImportError:
             raise ModuleNotFoundError(
                 "Could not import boto3 python package. "

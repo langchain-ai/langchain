@@ -387,6 +387,8 @@ class BaseRunManager(RunManagerMixin):
         parent_run_id: Optional[UUID] = None,
         tags: Optional[List[str]] = None,
         inheritable_tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        inheritable_metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Initialize the run manager.
 
@@ -399,6 +401,8 @@ class BaseRunManager(RunManagerMixin):
                 Defaults to None.
             tags (Optional[List[str]]): The list of tags.
             inheritable_tags (Optional[List[str]]): The list of inheritable tags.
+            metadata (Optional[Dict[str, Any]]): The metadata.
+            inheritable_metadata (Optional[Dict[str, Any]]): The inheritable metadata.
         """
         self.run_id = run_id
         self.handlers = handlers
@@ -406,6 +410,8 @@ class BaseRunManager(RunManagerMixin):
         self.parent_run_id = parent_run_id
         self.tags = tags or []
         self.inheritable_tags = inheritable_tags or []
+        self.metadata = metadata or {}
+        self.inheritable_metadata = inheritable_metadata or {}
 
     @classmethod
     def get_noop_manager(cls: Type[BRM]) -> BRM:
@@ -420,6 +426,8 @@ class BaseRunManager(RunManagerMixin):
             inheritable_handlers=[],
             tags=[],
             inheritable_tags=[],
+            metadata={},
+            inheritable_metadata={},
         )
 
 
@@ -451,6 +459,28 @@ class RunManager(BaseRunManager):
         )
 
 
+class ParentRunManager(RunManager):
+    """Sync Parent Run Manager."""
+
+    def get_child(self, tag: Optional[str] = None) -> CallbackManager:
+        """Get a child callback manager.
+
+        Args:
+            tag (str, optional): The tag for the child callback manager.
+                Defaults to None.
+
+        Returns:
+            CallbackManager: The child callback manager.
+        """
+        manager = CallbackManager(handlers=[], parent_run_id=self.run_id)
+        manager.set_handlers(self.inheritable_handlers)
+        manager.add_tags(self.inheritable_tags)
+        manager.add_metadata(self.inheritable_metadata)
+        if tag is not None:
+            manager.add_tags([tag], False)
+        return manager
+
+
 class AsyncRunManager(BaseRunManager):
     """Async Run Manager."""
 
@@ -477,6 +507,28 @@ class AsyncRunManager(BaseRunManager):
             tags=self.tags,
             **kwargs,
         )
+
+
+class AsyncParentRunManager(AsyncRunManager):
+    """Async Parent Run Manager."""
+
+    def get_child(self, tag: Optional[str] = None) -> AsyncCallbackManager:
+        """Get a child callback manager.
+
+        Args:
+            tag (str, optional): The tag for the child callback manager.
+                Defaults to None.
+
+        Returns:
+            AsyncCallbackManager: The child callback manager.
+        """
+        manager = AsyncCallbackManager(handlers=[], parent_run_id=self.run_id)
+        manager.set_handlers(self.inheritable_handlers)
+        manager.add_tags(self.inheritable_tags)
+        manager.add_metadata(self.inheritable_metadata)
+        if tag is not None:
+            manager.add_tags([tag], False)
+        return manager
 
 
 class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
@@ -605,25 +657,8 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
         )
 
 
-class CallbackManagerForChainRun(RunManager, ChainManagerMixin):
+class CallbackManagerForChainRun(ParentRunManager, ChainManagerMixin):
     """Callback manager for chain run."""
-
-    def get_child(self, tag: Optional[str] = None) -> CallbackManager:
-        """Get a child callback manager.
-
-        Args:
-            tag (str, optional): The tag for the child callback manager.
-                Defaults to None.
-
-        Returns:
-            CallbackManager: The child callback manager.
-        """
-        manager = CallbackManager(handlers=[], parent_run_id=self.run_id)
-        manager.set_handlers(self.inheritable_handlers)
-        manager.add_tags(self.inheritable_tags)
-        if tag is not None:
-            manager.add_tags([tag], False)
-        return manager
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Run when chain ends running.
@@ -704,25 +739,8 @@ class CallbackManagerForChainRun(RunManager, ChainManagerMixin):
         )
 
 
-class AsyncCallbackManagerForChainRun(AsyncRunManager, ChainManagerMixin):
+class AsyncCallbackManagerForChainRun(AsyncParentRunManager, ChainManagerMixin):
     """Async callback manager for chain run."""
-
-    def get_child(self, tag: Optional[str] = None) -> AsyncCallbackManager:
-        """Get a child callback manager.
-
-        Args:
-            tag (str, optional): The tag for the child callback manager.
-                Defaults to None.
-
-        Returns:
-            AsyncCallbackManager: The child callback manager.
-        """
-        manager = AsyncCallbackManager(handlers=[], parent_run_id=self.run_id)
-        manager.set_handlers(self.inheritable_handlers)
-        manager.add_tags(self.inheritable_tags)
-        if tag is not None:
-            manager.add_tags([tag], False)
-        return manager
 
     async def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Run when chain ends running.
@@ -803,25 +821,8 @@ class AsyncCallbackManagerForChainRun(AsyncRunManager, ChainManagerMixin):
         )
 
 
-class CallbackManagerForToolRun(RunManager, ToolManagerMixin):
+class CallbackManagerForToolRun(ParentRunManager, ToolManagerMixin):
     """Callback manager for tool run."""
-
-    def get_child(self, tag: Optional[str] = None) -> CallbackManager:
-        """Get a child callback manager.
-
-        Args:
-            tag (str, optional): The tag for the child callback manager.
-                Defaults to None.
-
-        Returns:
-            CallbackManager: The child callback manager.
-        """
-        manager = CallbackManager(handlers=[], parent_run_id=self.run_id)
-        manager.set_handlers(self.inheritable_handlers)
-        manager.add_tags(self.inheritable_tags)
-        if tag is not None:
-            manager.add_tags([tag], False)
-        return manager
 
     def on_tool_end(
         self,
@@ -866,25 +867,8 @@ class CallbackManagerForToolRun(RunManager, ToolManagerMixin):
         )
 
 
-class AsyncCallbackManagerForToolRun(AsyncRunManager, ToolManagerMixin):
+class AsyncCallbackManagerForToolRun(AsyncParentRunManager, ToolManagerMixin):
     """Async callback manager for tool run."""
-
-    def get_child(self, tag: Optional[str] = None) -> AsyncCallbackManager:
-        """Get a child callback manager.
-
-        Args:
-            tag (str, optional): The tag to add to the child
-                 callback manager. Defaults to None.
-
-        Returns:
-            AsyncCallbackManager: The child callback manager.
-        """
-        manager = AsyncCallbackManager(handlers=[], parent_run_id=self.run_id)
-        manager.set_handlers(self.inheritable_handlers)
-        manager.add_tags(self.inheritable_tags)
-        if tag is not None:
-            manager.add_tags([tag], False)
-        return manager
 
     async def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running.
@@ -925,17 +909,8 @@ class AsyncCallbackManagerForToolRun(AsyncRunManager, ToolManagerMixin):
         )
 
 
-class CallbackManagerForRetrieverRun(RunManager, RetrieverManagerMixin):
+class CallbackManagerForRetrieverRun(ParentRunManager, RetrieverManagerMixin):
     """Callback manager for retriever run."""
-
-    def get_child(self, tag: Optional[str] = None) -> CallbackManager:
-        """Get a child callback manager."""
-        manager = CallbackManager([], parent_run_id=self.run_id)
-        manager.set_handlers(self.inheritable_handlers)
-        manager.add_tags(self.inheritable_tags)
-        if tag is not None:
-            manager.add_tags([tag], False)
-        return manager
 
     def on_retriever_end(
         self,
@@ -973,19 +948,10 @@ class CallbackManagerForRetrieverRun(RunManager, RetrieverManagerMixin):
 
 
 class AsyncCallbackManagerForRetrieverRun(
-    AsyncRunManager,
+    AsyncParentRunManager,
     RetrieverManagerMixin,
 ):
     """Async callback manager for retriever run."""
-
-    def get_child(self, tag: Optional[str] = None) -> AsyncCallbackManager:
-        """Get a child callback manager."""
-        manager = AsyncCallbackManager([], parent_run_id=self.run_id)
-        manager.set_handlers(self.inheritable_handlers)
-        manager.add_tags(self.inheritable_tags)
-        if tag is not None:
-            manager.add_tags([tag], False)
-        return manager
 
     async def on_retriever_end(
         self, documents: Sequence[Document], **kwargs: Any
@@ -1052,6 +1018,7 @@ class CallbackManager(BaseCallbackManager):
                 run_id=run_id_,
                 parent_run_id=self.parent_run_id,
                 tags=self.tags,
+                metadata=self.metadata,
                 **kwargs,
             )
 
@@ -1063,6 +1030,8 @@ class CallbackManager(BaseCallbackManager):
                     parent_run_id=self.parent_run_id,
                     tags=self.tags,
                     inheritable_tags=self.inheritable_tags,
+                    metadata=self.metadata,
+                    inheritable_metadata=self.inheritable_metadata,
                 )
             )
 
@@ -1098,6 +1067,7 @@ class CallbackManager(BaseCallbackManager):
                 run_id=run_id_,
                 parent_run_id=self.parent_run_id,
                 tags=self.tags,
+                metadata=self.metadata,
                 **kwargs,
             )
 
@@ -1109,6 +1079,8 @@ class CallbackManager(BaseCallbackManager):
                     parent_run_id=self.parent_run_id,
                     tags=self.tags,
                     inheritable_tags=self.inheritable_tags,
+                    metadata=self.metadata,
+                    inheritable_metadata=self.inheritable_metadata,
                 )
             )
 
@@ -1143,6 +1115,7 @@ class CallbackManager(BaseCallbackManager):
             run_id=run_id,
             parent_run_id=self.parent_run_id,
             tags=self.tags,
+            metadata=self.metadata,
             **kwargs,
         )
 
@@ -1153,6 +1126,8 @@ class CallbackManager(BaseCallbackManager):
             parent_run_id=self.parent_run_id,
             tags=self.tags,
             inheritable_tags=self.inheritable_tags,
+            metadata=self.metadata,
+            inheritable_metadata=self.inheritable_metadata,
         )
 
     def on_tool_start(
@@ -1186,6 +1161,7 @@ class CallbackManager(BaseCallbackManager):
             run_id=run_id,
             parent_run_id=self.parent_run_id,
             tags=self.tags,
+            metadata=self.metadata,
             **kwargs,
         )
 
@@ -1196,10 +1172,13 @@ class CallbackManager(BaseCallbackManager):
             parent_run_id=self.parent_run_id,
             tags=self.tags,
             inheritable_tags=self.inheritable_tags,
+            metadata=self.metadata,
+            inheritable_metadata=self.inheritable_metadata,
         )
 
     def on_retriever_start(
         self,
+        serialized: Dict[str, Any],
         query: str,
         run_id: Optional[UUID] = None,
         parent_run_id: Optional[UUID] = None,
@@ -1213,10 +1192,12 @@ class CallbackManager(BaseCallbackManager):
             self.handlers,
             "on_retriever_start",
             "ignore_retriever",
+            serialized,
             query,
             run_id=run_id,
             parent_run_id=self.parent_run_id,
             tags=self.tags,
+            metadata=self.metadata,
             **kwargs,
         )
 
@@ -1227,6 +1208,8 @@ class CallbackManager(BaseCallbackManager):
             parent_run_id=self.parent_run_id,
             tags=self.tags,
             inheritable_tags=self.inheritable_tags,
+            metadata=self.metadata,
+            inheritable_metadata=self.inheritable_metadata,
         )
 
     @classmethod
@@ -1237,6 +1220,8 @@ class CallbackManager(BaseCallbackManager):
         verbose: bool = False,
         inheritable_tags: Optional[List[str]] = None,
         local_tags: Optional[List[str]] = None,
+        inheritable_metadata: Optional[Dict[str, Any]] = None,
+        local_metadata: Optional[Dict[str, Any]] = None,
     ) -> CallbackManager:
         """Configure the callback manager.
 
@@ -1250,6 +1235,10 @@ class CallbackManager(BaseCallbackManager):
                 Defaults to None.
             local_tags (Optional[List[str]], optional): The local tags.
                 Defaults to None.
+            inheritable_metadata (Optional[Dict[str, Any]], optional): The inheritable
+                metadata. Defaults to None.
+            local_metadata (Optional[Dict[str, Any]], optional): The local metadata.
+                Defaults to None.
 
         Returns:
             CallbackManager: The configured callback manager.
@@ -1261,6 +1250,8 @@ class CallbackManager(BaseCallbackManager):
             verbose,
             inheritable_tags,
             local_tags,
+            inheritable_metadata,
+            local_metadata,
         )
 
 
@@ -1307,6 +1298,7 @@ class AsyncCallbackManager(BaseCallbackManager):
                     run_id=run_id_,
                     parent_run_id=self.parent_run_id,
                     tags=self.tags,
+                    metadata=self.metadata,
                     **kwargs,
                 )
             )
@@ -1319,6 +1311,8 @@ class AsyncCallbackManager(BaseCallbackManager):
                     parent_run_id=self.parent_run_id,
                     tags=self.tags,
                     inheritable_tags=self.inheritable_tags,
+                    metadata=self.metadata,
+                    inheritable_metadata=self.inheritable_metadata,
                 )
             )
 
@@ -1360,6 +1354,7 @@ class AsyncCallbackManager(BaseCallbackManager):
                     run_id=run_id_,
                     parent_run_id=self.parent_run_id,
                     tags=self.tags,
+                    metadata=self.metadata,
                     **kwargs,
                 )
             )
@@ -1372,6 +1367,8 @@ class AsyncCallbackManager(BaseCallbackManager):
                     parent_run_id=self.parent_run_id,
                     tags=self.tags,
                     inheritable_tags=self.inheritable_tags,
+                    metadata=self.metadata,
+                    inheritable_metadata=self.inheritable_metadata,
                 )
             )
 
@@ -1408,6 +1405,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             run_id=run_id,
             parent_run_id=self.parent_run_id,
             tags=self.tags,
+            metadata=self.metadata,
             **kwargs,
         )
 
@@ -1418,6 +1416,8 @@ class AsyncCallbackManager(BaseCallbackManager):
             parent_run_id=self.parent_run_id,
             tags=self.tags,
             inheritable_tags=self.inheritable_tags,
+            metadata=self.metadata,
+            inheritable_metadata=self.inheritable_metadata,
         )
 
     async def on_tool_start(
@@ -1453,6 +1453,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             run_id=run_id,
             parent_run_id=self.parent_run_id,
             tags=self.tags,
+            metadata=self.metadata,
             **kwargs,
         )
 
@@ -1463,10 +1464,13 @@ class AsyncCallbackManager(BaseCallbackManager):
             parent_run_id=self.parent_run_id,
             tags=self.tags,
             inheritable_tags=self.inheritable_tags,
+            metadata=self.metadata,
+            inheritable_metadata=self.inheritable_metadata,
         )
 
     async def on_retriever_start(
         self,
+        serialized: Dict[str, Any],
         query: str,
         run_id: Optional[UUID] = None,
         parent_run_id: Optional[UUID] = None,
@@ -1480,10 +1484,12 @@ class AsyncCallbackManager(BaseCallbackManager):
             self.handlers,
             "on_retriever_start",
             "ignore_retriever",
+            serialized,
             query,
             run_id=run_id,
             parent_run_id=self.parent_run_id,
             tags=self.tags,
+            metadata=self.metadata,
             **kwargs,
         )
 
@@ -1494,6 +1500,8 @@ class AsyncCallbackManager(BaseCallbackManager):
             parent_run_id=self.parent_run_id,
             tags=self.tags,
             inheritable_tags=self.inheritable_tags,
+            metadata=self.metadata,
+            inheritable_metadata=self.inheritable_metadata,
         )
 
     @classmethod
@@ -1504,6 +1512,8 @@ class AsyncCallbackManager(BaseCallbackManager):
         verbose: bool = False,
         inheritable_tags: Optional[List[str]] = None,
         local_tags: Optional[List[str]] = None,
+        inheritable_metadata: Optional[Dict[str, Any]] = None,
+        local_metadata: Optional[Dict[str, Any]] = None,
     ) -> AsyncCallbackManager:
         """Configure the async callback manager.
 
@@ -1517,6 +1527,10 @@ class AsyncCallbackManager(BaseCallbackManager):
                 Defaults to None.
             local_tags (Optional[List[str]], optional): The local tags.
                 Defaults to None.
+            inheritable_metadata (Optional[Dict[str, Any]], optional): The inheritable
+                metadata. Defaults to None.
+            local_metadata (Optional[Dict[str, Any]], optional): The local metadata.
+                Defaults to None.
 
         Returns:
             AsyncCallbackManager: The configured async callback manager.
@@ -1528,6 +1542,8 @@ class AsyncCallbackManager(BaseCallbackManager):
             verbose,
             inheritable_tags,
             local_tags,
+            inheritable_metadata,
+            local_metadata,
         )
 
 
@@ -1558,6 +1574,8 @@ def _configure(
     verbose: bool = False,
     inheritable_tags: Optional[List[str]] = None,
     local_tags: Optional[List[str]] = None,
+    inheritable_metadata: Optional[Dict[str, Any]] = None,
+    local_metadata: Optional[Dict[str, Any]] = None,
 ) -> T:
     """Configure the callback manager.
 
@@ -1571,6 +1589,10 @@ def _configure(
         inheritable_tags (Optional[List[str]], optional): The inheritable tags.
             Defaults to None.
         local_tags (Optional[List[str]], optional): The local tags. Defaults to None.
+        inheritable_metadata (Optional[Dict[str, Any]], optional): The inheritable
+            metadata. Defaults to None.
+        local_metadata (Optional[Dict[str, Any]], optional): The local metadata.
+            Defaults to None.
 
     Returns:
         T: The configured callback manager.
@@ -1590,6 +1612,8 @@ def _configure(
                 parent_run_id=inheritable_callbacks.parent_run_id,
                 tags=inheritable_callbacks.tags,
                 inheritable_tags=inheritable_callbacks.inheritable_tags,
+                metadata=inheritable_callbacks.metadata,
+                inheritable_metadata=inheritable_callbacks.inheritable_metadata,
             )
         local_handlers_ = (
             local_callbacks
@@ -1601,6 +1625,9 @@ def _configure(
     if inheritable_tags or local_tags:
         callback_manager.add_tags(inheritable_tags or [])
         callback_manager.add_tags(local_tags or [], False)
+    if inheritable_metadata or local_metadata:
+        callback_manager.add_metadata(inheritable_metadata or {})
+        callback_manager.add_metadata(local_metadata or {}, False)
 
     tracer = tracing_callback_var.get()
     wandb_tracer = wandb_tracing_callback_var.get()

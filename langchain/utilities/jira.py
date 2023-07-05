@@ -188,10 +188,15 @@ class JiraAPIWrapper(BaseModel):
         return self.confluence.create_page(**dict(params))
 
     def other(self, query: str) -> str:
-        context = {"self": self}
-        exec(f"result = {query}", context)
-        result = context["result"]
-        return str(result)
+        try:
+            import json
+        except ImportError:
+            raise ImportError(
+                "json is not installed. Please install it with `pip install json`"
+            )
+        params = json.loads(query)
+        jira_function = getattr(self.jira, params["function"])
+        return jira_function(*params.get("args", []), **params.get("kwargs", {}))
 
     def run(self, mode: str, query: str) -> str:
         if mode == "jql":
