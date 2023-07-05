@@ -6,9 +6,9 @@ import uuid
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 
 import sqlalchemy
+from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import Session, declarative_base, relationship
-from sqlalchemy import func
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -94,7 +94,8 @@ class QueryResult:
 class PGEmbedding(VectorStore):
     """
     VectorStore implementation using Postgres and the pg_embedding extension.
-    pg_embedding uses sequential scan by default, but you can create a HNSW index using the create_hnsw_index method.
+    pg_embedding uses sequential scan by default. but you can create a HNSW index
+    using the create_hnsw_index method.
     - `connection_string` is a postgres connection string.
     - `embedding_function` any embedding function implementing
         `langchain.embeddings.base.Embeddings` interface.
@@ -174,11 +175,16 @@ class PGEmbedding(VectorStore):
         ef_construction: int = 16,
         ef_search: int = 16,
     ) -> None:
-        # Define the SQL queries for creating the HNSW extension and index
         create_index_query = sqlalchemy.text(
-            "CREATE INDEX IF NOT EXISTS langchain_pg_embedding_idx ON langchain_pg_embedding USING hnsw (embedding) WITH (maxelements = {}, dims={}, m={}, efconstruction={}, efsearch={});".format(
-                max_elements, dims, m, ef_construction, ef_search
-            )
+            "CREATE INDEX IF NOT EXISTS langchain_pg_embedding_idx "
+            "ON langchain_pg_embedding USING hnsw (embedding) "
+            "WITH ("
+            "maxelements = {}, "
+            "dims = {}, "
+            "m = {}, "
+            "efconstruction = {}, "
+            "efsearch = {}"
+            ");".format(max_elements, dims, m, ef_construction, ef_search)
         )
 
         # Execute the queries
