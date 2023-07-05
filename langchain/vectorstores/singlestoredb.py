@@ -198,13 +198,9 @@ class SingleStoreDB(VectorStore):
         """Add program name and version to connection attributes."""
         if "conn_attrs" not in self.connection_kwargs:
             self.connection_kwargs["conn_attrs"] = dict()
-        if "program_name" not in self.connection_kwargs["conn_attrs"]:
-            self.connection_kwargs["conn_attrs"][
-                "program_name"
-            ] = "langchain python sdk"
-            self.connection_kwargs["conn_attrs"][
-                "program_version"
-            ] = "0.0.205"  # the version of SingleStoreDB VectorStore implementation
+
+        self.connection_kwargs["conn_attrs"]["_connector_name"] = "langchain python sdk"
+        self.connection_kwargs["conn_attrs"]["_connector_version"] = "1.0.0"
 
         """Create connection pool."""
         self.connection_pool = QueuePool(

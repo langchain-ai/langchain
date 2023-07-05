@@ -15,8 +15,8 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 def test_openai_call() -> None:
     """Test valid call to openai."""
-    llm = OpenAI(max_tokens=10)
-    output = llm("Say foo:")
+    llm = OpenAI(max_tokens=10, n=3)
+    output = llm("Say something nice:")
     assert isinstance(output, str)
 
 

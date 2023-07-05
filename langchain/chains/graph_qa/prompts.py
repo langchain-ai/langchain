@@ -90,6 +90,12 @@ KUZU_GENERATION_PROMPT = PromptTemplate(
     input_variables=["schema", "question"], template=KUZU_GENERATION_TEMPLATE
 )
 
+GREMLIN_GENERATION_TEMPLATE = CYPHER_GENERATION_TEMPLATE.replace("Cypher", "Gremlin")
+
+GREMLIN_GENERATION_PROMPT = PromptTemplate(
+    input_variables=["schema", "question"], template=GREMLIN_GENERATION_TEMPLATE
+)
+
 CYPHER_QA_TEMPLATE = """You are an assistant that helps to form nice and human understandable answers.
 The information part contains the provided information that you must use to construct an answer.
 The provided information is authorative, you must never doubt it or try to use your internal knowledge to correct it.
