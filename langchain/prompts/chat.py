@@ -8,7 +8,7 @@ from typing import Any, Callable, List, Sequence, Tuple, Type, TypeVar, Union
 from pydantic import Field, root_validator
 
 from langchain.load.serializable import Serializable
-from langchain.prompts.base import StringPromptTemplate
+from langchain.prompts.base import StringPromptTemplate, StringPromptValueString
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
     BasePromptTemplate,
@@ -111,7 +111,9 @@ class ChatMessagePromptTemplate(BaseStringMessagePromptTemplate):
     role: str
 
     def format(self, **kwargs: Any) -> BaseMessage:
-        text = self.prompt.format(**kwargs)
+        text = StringPromptValueString(
+            self.prompt.format(**kwargs), kwargs, self.prompt
+        )
         return ChatMessage(
             content=text, role=self.role, additional_kwargs=self.additional_kwargs
         )
@@ -119,19 +121,25 @@ class ChatMessagePromptTemplate(BaseStringMessagePromptTemplate):
 
 class HumanMessagePromptTemplate(BaseStringMessagePromptTemplate):
     def format(self, **kwargs: Any) -> BaseMessage:
-        text = self.prompt.format(**kwargs)
+        text = StringPromptValueString(
+            self.prompt.format(**kwargs), kwargs, self.prompt
+        )
         return HumanMessage(content=text, additional_kwargs=self.additional_kwargs)
 
 
 class AIMessagePromptTemplate(BaseStringMessagePromptTemplate):
     def format(self, **kwargs: Any) -> BaseMessage:
-        text = self.prompt.format(**kwargs)
+        text = StringPromptValueString(
+            self.prompt.format(**kwargs), kwargs, self.prompt
+        )
         return AIMessage(content=text, additional_kwargs=self.additional_kwargs)
 
 
 class SystemMessagePromptTemplate(BaseStringMessagePromptTemplate):
     def format(self, **kwargs: Any) -> BaseMessage:
-        text = self.prompt.format(**kwargs)
+        text = StringPromptValueString(
+            self.prompt.format(**kwargs), kwargs, self.prompt
+        )
         return SystemMessage(content=text, additional_kwargs=self.additional_kwargs)
 
 
