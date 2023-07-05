@@ -35,6 +35,7 @@ class CubeSemanticLoader(BaseLoader):
                     - table_name
                     - column_name
                     - column_data_type
+                    - column_title
                     - column_description
         """
         headers = {
@@ -60,12 +61,18 @@ class CubeSemanticLoader(BaseLoader):
             for item in measures + dimensions:
                 metadata = dict(
                     table_name=str(cube_name),
-                    type=str(item.get("type")),
                     column_name=str(item.get("name")),
-                    title=str(item.get("title")),
+                    column_data_type=str(item.get("type")),
+                    column_title=str(item.get("title")),
+                    column_description=str(item.get("description")),
                 )
-                docs.append(
-                    Document(page_content=str(item.get("name")), metadata=metadata)
-                )
+
+                page_content = f"table name: {str(cube_name)}, "
+                page_content += f"column name: {str(item.get('name'))}, "
+                page_content += f"column data type: {str(item.get('type'))}, "
+                page_content += f"column title: {str(item.get('title'))}, "
+                page_content += f"column description: {str(item.get('description'))}"
+
+                docs.append(Document(page_content=page_content, metadata=metadata))
 
         return docs
