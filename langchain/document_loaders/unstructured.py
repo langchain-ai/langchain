@@ -261,8 +261,8 @@ class UnstructuredAPIFileLoader(UnstructuredFileLoader):
 
 
 class UnstructuredFileIOLoader(UnstructuredBaseLoader):
-    """UnstructuredFileIOLoader uses unstructured to load files. The file loader uses the
-    unstructured partition function and will automatically detect the file
+    """UnstructuredFileIOLoader uses unstructured to load files. The file loader
+    uses the unstructured partition function and will automatically detect the file
     type. You can run the loader in one of two modes: "single" and "elements".
     If you use "single" mode, the document will be returned as a single
     langchain Document object. If you use "elements" mode, the unstructured
