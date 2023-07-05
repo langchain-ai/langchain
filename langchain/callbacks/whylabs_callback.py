@@ -53,8 +53,28 @@ class WhyLabsCallbackHandler(BaseCallbackHandler):
     langkit  to extract features from the prompts & responses when interacting with
     an LLM. These features can be used to guardrail, evaluate, and observe interactions
     over time to detect issues relating to hallucinations, prompt engineering,
-    or output validation.
+    or output validation. Langkit is an LLM monitoring toolkit developed by WhyLabs.
     
+    Here are some examples of what can be monitored with LangKit:
+    * Text Quality
+      - readability score
+      - complexity and grade scores
+    * Text Relevance
+      - Similarity scores between prompt/responses
+      - Similarity scores against user-defined themes
+      - Topic classification
+    * Security and Privacy
+      - patterns - count of strings matching a user-defined regex pattern group
+      - jailbreaks - similarity scores with respect to known jailbreak attempts
+      - prompt injection - similarity scores with respect to known prompt injection attacks
+      - refusals - similarity scores with respect to known LLM refusal of service responses
+    * Sentiment and Toxicity
+      - sentiment analysis
+      - toxicity analysis
+    
+    For more information, see https://docs.whylabs.ai/docs/language-model-monitoring
+
+    ---
     Parameters:
         api_key (Optional[str]): WhyLabs API key. Optional because the preferred
             way to specify the API key is with environment variable
