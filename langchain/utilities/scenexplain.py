@@ -25,7 +25,7 @@ class SceneXplainAPIWrapper(BaseSettings, BaseModel):
 
     scenex_api_key: str = Field(..., env="SCENEX_API_KEY")
     scenex_api_url: str = (
-        "https://us-central1-causal-diffusion.cloudfunctions.net/describe"
+        "https://api.scenex.jina.ai/v1/describe"
     )
 
     def _describe_image(self, image: str) -> str:
