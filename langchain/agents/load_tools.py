@@ -280,8 +280,10 @@ def _get_graphql_tool(**kwargs: Any) -> BaseTool:
 def _get_openweathermap(**kwargs: Any) -> BaseTool:
     return OpenWeatherMapQueryRun(api_wrapper=OpenWeatherMapAPIWrapper(**kwargs))
 
+
 def _get_dataforseo_api_search(**kwargs: Any) -> BaseTool:
     return DataForSeoAPISearchRun(api_wrapper=DataForSeoAPIWrapper(**kwargs))
+
 
 def _get_dataforseo_api_search_json(**kwargs: Any) -> BaseTool:
     return DataForSeoAPISearchResults(api_wrapper=DataForSeoAPIWrapper(**kwargs))
@@ -335,8 +337,14 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     "sceneXplain": (_get_scenexplain, []),
     "graphql": (_get_graphql_tool, ["graphql_endpoint"]),
     "openweathermap-api": (_get_openweathermap, ["openweathermap_api_key"]),
-    "dataforseo-api-search": (_get_dataforseo_api_search, ["api_login", "api_password", "aiosession"]),
-    "dataforseo-api-search-json": (_get_dataforseo_api_search_json, ["api_login", "api_password", "aiosession"]),
+    "dataforseo-api-search": (
+        _get_dataforseo_api_search,
+        ["api_login", "api_password", "aiosession"],
+    ),
+    "dataforseo-api-search-json": (
+        _get_dataforseo_api_search_json,
+        ["api_login", "api_password", "aiosession"],
+    ),
 }
 
 

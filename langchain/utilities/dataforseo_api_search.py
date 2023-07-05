@@ -1,13 +1,15 @@
-import aiohttp
 import base64
-import requests
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 from urllib.parse import quote
-from langchain.utils import get_from_dict_or_env
+
+import aiohttp
+import requests
 from pydantic import BaseModel, Extra, Field, root_validator
 
+from langchain.utils import get_from_dict_or_env
+
+
 class DataForSeoAPIWrapper(BaseModel):
-    
     class Config:
         """Configuration for this pydantic object."""
 
@@ -20,7 +22,7 @@ class DataForSeoAPIWrapper(BaseModel):
             "language_code": "en",
             "depth": 10,
             "se_name": "google",
-            "se_type": "organic"
+            "se_type": "organic",
         }
     )
     params: dict = Field(default={})
@@ -30,7 +32,7 @@ class DataForSeoAPIWrapper(BaseModel):
     json_result_fields: Optional[list] = None
     top_count: Optional[int] = None
     aiosession: Optional[aiohttp.ClientSession] = None
-    
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that login and password exists in environment."""
@@ -40,11 +42,10 @@ class DataForSeoAPIWrapper(BaseModel):
         values["api_password"] = password
         return values
 
-
     async def arun(self, url: str) -> str:
         """Run request to DataForSEO SERP API and parse result async."""
         return self._process_response(await self._aresponse_json(url))
-    
+
     def run(self, url: str) -> str:
         """Run request to DataForSEO SERP API and parse result async."""
         return self._process_response(self._response_json(url))
@@ -61,50 +62,69 @@ class DataForSeoAPIWrapper(BaseModel):
         """Prepare the request details for the DataForSEO SERP API."""
         if self.api_login is None or self.api_password is None:
             raise ValueError("api_login or api_password is not provided")
-        cred = base64.b64encode(f"{self.api_login}:{self.api_password}".encode("utf-8")).decode("utf-8")
+        cred = base64.b64encode(
+            f"{self.api_login}:{self.api_password}".encode("utf-8")
+        ).decode("utf-8")
         headers = {"Authorization": f"Basic {cred}", "Content-Type": "application/json"}
-        obj = { "keyword": quote(keyword) }
-        obj = { **obj, **self.default_params, **self.params }
+        obj = {"keyword": quote(keyword)}
+        obj = {**obj, **self.default_params, **self.params}
         data = [obj]
-        return {"url": f"https://api.dataforseo.com/v3/serp/{obj['se_name']}/{obj['se_type']}/live/advanced", 
-                "headers": headers, 
-                "data": data}
+        _url = (
+            f"https://api.dataforseo.com/v3/serp/{obj['se_name']}"
+            f"/{obj['se_type']}/live/advanced"
+        )
+        return {
+            "url": _url,
+            "headers": headers,
+            "data": data,
+        }
 
     def _check_response(self, response: dict) -> dict:
         """Check the response from the DataForSEO SERP API for errors."""
         if response.get("status_code") != 20000:
-            raise ValueError(f"Got error from DataForSEO SERP API: {response.get('status_message')}")
+            raise ValueError(
+                f"Got error from DataForSEO SERP API: {response.get('status_message')}"
+            )
         return response
 
     def _response_json(self, url: str) -> dict:
-        """Use requests to run request to DataForSEO SERP API and return the results."""
+        """Use requests to run request to DataForSEO SERP API and return results."""
         request_details = self._prepare_request(url)
-        response = requests.post(request_details["url"], headers=request_details["headers"], 
-                                 json=request_details["data"])
+        response = requests.post(
+            request_details["url"],
+            headers=request_details["headers"],
+            json=request_details["data"],
+        )
         response.raise_for_status()
         return self._check_response(response.json())
 
     async def _aresponse_json(self, url: str) -> dict:
-        """Use aiohttp to run request to DataForSEO SERP API and return the results async."""
+        """Use aiohttp to request DataForSEO SERP API and return results async."""
         request_details = self._prepare_request(url)
         if not self.aiosession:
             async with aiohttp.ClientSession() as session:
-                async with session.post(request_details["url"], headers=request_details["headers"], 
-                                        json=request_details["data"]) as response:
+                async with session.post(
+                    request_details["url"],
+                    headers=request_details["headers"],
+                    json=request_details["data"],
+                ) as response:
                     res = await response.json()
         else:
-            async with self.aiosession.post(request_details["url"], headers=request_details["headers"], 
-                                            json=request_details["data"]) as response:
+            async with self.aiosession.post(
+                request_details["url"],
+                headers=request_details["headers"],
+                json=request_details["data"],
+            ) as response:
                 res = await response.json()
         return self._check_response(res)
 
     def _filter_results(self, res: dict) -> list:
         output = []
         types = self.json_result_types if self.json_result_types is not None else []
-        for task in res.get('tasks', []):
-            for result in task.get('result', []):
-                for item in result.get('items', []):
-                    if len(types) == 0 or item.get('type', '') in types:
+        for task in res.get("tasks", []):
+            for result in task.get("result", []):
+                for item in result.get("items", []):
+                    if len(types) == 0 or item.get("type", "") in types:
                         self._cleanup_unnecessary_items(item)
                         if len(item) != 0:
                             output.append(item)
@@ -137,20 +157,30 @@ class DataForSeoAPIWrapper(BaseModel):
     def _process_response(self, res: dict) -> str:
         """Process response from DataForSEO SERP API."""
         toret = "No good search result found"
-        for task in res.get('tasks', []):
-            for result in task.get('result', []):
-                item_types = result.get('item_types')
-                items = result.get('items', [])
-                if 'answer_box' in item_types:
-                    toret = next(item for item in items if item.get("type") == "answer_box").get('text')
-                elif 'knowledge_graph' in item_types:
-                    toret = next(item for item in items if item.get("type") == "knowledge_graph").get('description')
-                elif 'featured_snippet' in item_types:
-                    toret = next(item for item in items if item.get("type") == "featured_snippet").get('description')
-                elif 'shopping' in item_types:
-                    toret = next(item for item in items if item.get("type") == "shopping").get('price')
-                elif 'organic' in item_types:
-                    toret = next(item for item in items if item.get("type") == "organic").get('description')
+        for task in res.get("tasks", []):
+            for result in task.get("result", []):
+                item_types = result.get("item_types")
+                items = result.get("items", [])
+                if "answer_box" in item_types:
+                    toret = next(
+                        item for item in items if item.get("type") == "answer_box"
+                    ).get("text")
+                elif "knowledge_graph" in item_types:
+                    toret = next(
+                        item for item in items if item.get("type") == "knowledge_graph"
+                    ).get("description")
+                elif "featured_snippet" in item_types:
+                    toret = next(
+                        item for item in items if item.get("type") == "featured_snippet"
+                    ).get("description")
+                elif "shopping" in item_types:
+                    toret = next(
+                        item for item in items if item.get("type") == "shopping"
+                    ).get("price")
+                elif "organic" in item_types:
+                    toret = next(
+                        item for item in items if item.get("type") == "organic"
+                    ).get("description")
                 if toret:
                     break
         return toret

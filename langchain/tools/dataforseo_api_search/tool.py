@@ -18,7 +18,8 @@ class DataForSeoAPISearchRun(BaseTool):
     name = "dataforseo_api_search"
     description = (
         "A robust Google Search API provided by DataForSeo."
-        "This tool is handy when you need information about trending topics or current events."
+        "This tool is handy when you need information about trending topics "
+        "or current events."
     )
     api_wrapper: DataForSeoAPIWrapper
 
@@ -46,8 +47,10 @@ class DataForSeoAPISearchResults(BaseTool):
     name = "DataForSeo Results JSON"
     description = (
         "A comprehensive Google Search API provided by DataForSeo."
-        "This tool is useful for obtaining real-time data on current events or popular searches."
-        "The input should be a search query and the output is a JSON object of the query results."
+        "This tool is useful for obtaining real-time data on current events "
+        "or popular searches."
+        "The input should be a search query and the output is a JSON object "
+        "of the query results."
     )
     api_wrapper: DataForSeoAPIWrapper = Field(default_factory=DataForSeoAPIWrapper)
 
