@@ -1,5 +1,6 @@
 import pytest
 from typing import List
+from unittest import mock
 from unittest.mock import MagicMock, patch
 
 import requests
@@ -71,18 +72,25 @@ class TestCubeSemanticLoader:
             },
         )
 
-    @patch.object(requests, "get")
-    def test_load_failure(self, mock_get: MagicMock) -> None:
+    def test_load_failure():
         # Arrange
-        cube_api_url: str = "https://example.com/cube_api"
-        cube_api_token: str = "abc123"
-        mock_response: MagicMock = MagicMock()
-        mock_response.status_code = 404
-        mock_get.return_value = mock_response
+        cube_api_url = "https://example.com/cube_api"
+        cube_api_token = "abc123"
+        mock_resp = requests.models.Response()
+        mock_resp.status_code = 404
 
-        loader: CubeSemanticLoader = CubeSemanticLoader(cube_api_url, cube_api_token)
+        with mock.patch.object(requests, "get", return_value=mock_resp) as mock_get:
+            loader = CubeSemanticLoader(cube_api_url, cube_api_token)
 
-        # Act and Assert
-        res = loader.load()
-        with pytest.raises(requests.exceptions.HTTPError) as err_msg:
-            res.raise_for_status()
+            # Act and Assert
+            with pytest.raises(requests.exceptions.HTTPError) as err_msg:
+                loader.load()
+
+            mock_get.assert_called_once_with(
+                cube_api_url,
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": cube_api_token,
+                },
+            )
+            assert err_msg.value.response.status_code == 404
