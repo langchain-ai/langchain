@@ -1,6 +1,6 @@
 from typing import List
-from unittest.mock import MagicMock, patch
 from unittest import TestCase
+from unittest.mock import MagicMock, patch
 
 import requests
 
