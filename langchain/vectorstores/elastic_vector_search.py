@@ -576,7 +576,7 @@ class ElasticKnnSearch(ElasticVectorSearch):
         return dict(res)
 
 
-    def create_index(self) -> None:
+    def create_knn_index(self) -> None:
          """
          Creates an Elasticsearch index. The name of the index is specified during the instantiation of the class.
          """
@@ -685,7 +685,7 @@ class ElasticKnnSearch(ElasticVectorSearch):
          self.mapping = self._default_knn_mapping(dims=dims)
 
          # Create a new Elasticsearch index.
-         self.create_index()
+         self.create_knn_index()
 
          # Encode the provided texts and add them to the newly created index.
          self.add_texts(texts, model_id=model_id)
