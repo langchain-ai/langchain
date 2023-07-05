@@ -4,6 +4,7 @@ from typing import Any, Mapping, Optional, Protocol
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import Callbacks
+from langchain.chains import ReduceDocumentsChain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
 from langchain.chains.combine_documents.map_rerank import MapRerankDocumentsChain
@@ -122,7 +123,7 @@ def _load_map_reduce_chain(
         callbacks=callbacks,
     )
     # TODO: document prompt
-    combine_document_chain = StuffDocumentsChain(
+    combine_documents_chain = StuffDocumentsChain(
         llm_chain=reduce_chain,
         document_variable_name=combine_document_variable_name,
         verbose=verbose,
@@ -150,11 +151,14 @@ def _load_map_reduce_chain(
             verbose=verbose,
             callback_manager=callback_manager,
         )
+    reduce_documents_chain = ReduceDocumentsChain(
+        combine_documents_chain=combine_documents_chain,
+        collapse_documents_chain=collapse_chain,
+    )
     return MapReduceDocumentsChain(
         llm_chain=map_chain,
-        combine_document_chain=combine_document_chain,
         document_variable_name=map_reduce_document_variable_name,
-        collapse_document_chain=collapse_chain,
+        reduce_documents_chain=reduce_documents_chain,
         verbose=verbose,
         callback_manager=callback_manager,
         callbacks=callbacks,
