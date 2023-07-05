@@ -4,10 +4,29 @@ sidebar_position: 1
 
 # Evaluation
 
+Testing and Evaluation of language model applications is challenging for a number of reasons, including the 
+
+
 Blah Blah Blah TODO
 
-Different types of evaluators:
+LangChain provides different types of evaluators. Each type has off-the-shelpf implementations you can use to get started, as well as an
+ easily-extensible API for creating your own.
 
-- [String Evaluators](/docs/modules/evaluation/string/): Evaluators that evaluate the predicted strings for a single run
-- [Trajectory Evaluators](/docs/modules/evaluation/trajectory/): Evaluators that evaluate the whole trajectory of agent actions
-- [Comparison Evaluators](/docs/modules/evaluation/comparison/): Evaluators that compare predictions from two runs
+- [String Evaluators](/docs/modules/evaluation/string/): Evaluate the predicted strings for a single run
+- [Trajectory Evaluators](/docs/modules/evaluation/trajectory/): Evaluate the whole trajectory of agent actions
+- [Comparison Evaluators](/docs/modules/evaluation/comparison/): Compare predictions from two runs
+
+
+## How-to
+
+Check out the "[How-to](/docs/modules/evaluation/how_to/)" section for tactics and framing for common testing and evaluation scenarios, including:
+
+- [Regression Testing](/docs/modules/evaluation/how_to/regression_testing). Check that a model API isn't regressing or that your prompts and chain configurations are still valid
+TODO
+
+
+## Examples
+
+Additional ex of how you could use these evaluators for different scenarios and chain implementations in the LangChain library:
+
+TODO
