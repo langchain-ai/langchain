@@ -84,7 +84,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         try:
             if self.project_name is None:
                 self.client.evaluate_run(run, evaluator)
-            with tracing_v2_enabled(project_name=self.project_name):
+            with tracing_v2_enabled(project_name=self.project_name, tags=["eval"]):
                 self.client.evaluate_run(run, evaluator)
         except Exception as e:
             logger.error(
