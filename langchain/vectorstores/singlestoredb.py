@@ -1,21 +1,17 @@
 """Wrapper around SingleStore DB."""
+
 from __future__ import annotations
 
 import enum
 import json
-from typing import (
-    Any,
-    ClassVar,
-    Collection,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Type,
-)
+from typing import Any, ClassVar, Collection, Iterable, List, Optional, Tuple, Type
 
 from sqlalchemy.pool import QueuePool
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
@@ -202,13 +198,9 @@ class SingleStoreDB(VectorStore):
         """Add program name and version to connection attributes."""
         if "conn_attrs" not in self.connection_kwargs:
             self.connection_kwargs["conn_attrs"] = dict()
-        if "program_name" not in self.connection_kwargs["conn_attrs"]:
-            self.connection_kwargs["conn_attrs"][
-                "program_name"
-            ] = "langchain python sdk"
-            self.connection_kwargs["conn_attrs"][
-                "program_version"
-            ] = "0.0.205"  # the version of SingleStoreDB VectorStore implementation
+
+        self.connection_kwargs["conn_attrs"]["_connector_name"] = "langchain python sdk"
+        self.connection_kwargs["conn_attrs"]["_connector_version"] = "1.0.0"
 
         """Create connection pool."""
         self.connection_pool = QueuePool(
@@ -454,14 +446,18 @@ class SingleStoreDBRetriever(VectorStoreRetriever):
     k: int = 4
     allowed_search_types: ClassVar[Collection[str]] = ("similarity",)
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> List[Document]:
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(query, k=self.k)
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def _aget_relevant_documents(
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
+    ) -> List[Document]:
         raise NotImplementedError(
             "SingleStoreDBVectorStoreRetriever does not support async"
         )

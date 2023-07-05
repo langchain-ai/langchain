@@ -60,8 +60,8 @@ class PairwiseStringEvalChain(LLMChain):
     >>> chain = PairwiseStringEvalChain.from_llm(llm=llm)
     >>> result = chain.evaluate_string_pairs(
     ...     input = "What is the chemical formula for water?",
-    ...     output_a = "H2O",
-    ...     output_b = (
+    ...     prediction = "H2O",
+    ...     prediction_b = (
     ...        "The chemical formula for water is H2O, which means"
     ...        " there are two hydrogen atoms and one oxygen atom."
     ...     referenc = "The chemical formula for water is H2O.",
@@ -101,7 +101,7 @@ class PairwiseStringEvalChain(LLMChain):
         Returns:
             PairwiseStringEvalChain: The initialized PairwiseStringEvalChain.
         """
-        expected_input_vars = {"output_a", "output_b", "input"}
+        expected_input_vars = {"prediction", "prediction_b", "input"}
         if prompt is None:
             if require_reference:
                 expected_input_vars.add("reference")
@@ -121,11 +121,11 @@ class PairwiseStringEvalChain(LLMChain):
         return cls(llm=llm, prompt=prompt_, **kwargs)
 
     def _prepare_input(
-        self, output_a: str, output_b: str, input: str, reference: Optional[str]
+        self, prediction: str, prediction_b: str, input: str, reference: Optional[str]
     ) -> dict:
         input_ = {
-            "output_a": output_a,
-            "output_b": output_b,
+            "prediction": prediction,
+            "prediction_b": prediction_b,
             "input": input,
         }
         if reference is not None and "reference" in self.prompt.input_variables:
@@ -135,8 +135,8 @@ class PairwiseStringEvalChain(LLMChain):
     def evaluate_string_pairs(
         self,
         *,
-        output_a: str,
-        output_b: str,
+        prediction: str,
+        prediction_b: str,
         input: str,
         reference: Optional[str] = None,
         callbacks: Callbacks = None,
@@ -145,8 +145,8 @@ class PairwiseStringEvalChain(LLMChain):
         """Evaluate whether output A is preferred to output B.
 
         Args:
-            output_a (str): The output string from the first model.
-            output_b (str): The output string from the second model.
+            prediction (str): The output string from the first model.
+            prediction_b (str): The output string from the second model.
             input (str): The input or task string.
             callbacks (Callbacks, optional): The callbacks to use.
             reference (str, optional): The reference string, if any.
@@ -160,7 +160,7 @@ class PairwiseStringEvalChain(LLMChain):
                 - score: The preference score, which is 1 for 'A', 0 for 'B',
                     and 0.5 for None.
         """
-        input_ = self._prepare_input(output_a, output_b, input, reference)
+        input_ = self._prepare_input(prediction, prediction_b, input, reference)
         result = self(
             inputs=input_,
             callbacks=callbacks,
@@ -171,8 +171,8 @@ class PairwiseStringEvalChain(LLMChain):
     async def aevaluate_string_pairs(
         self,
         *,
-        output_a: str,
-        output_b: str,
+        prediction: str,
+        prediction_b: str,
         input: str,
         reference: Optional[str] = None,
         callbacks: Callbacks = None,
@@ -181,8 +181,8 @@ class PairwiseStringEvalChain(LLMChain):
         """Asynchronously evaluate whether output A is preferred to output B.
 
         Args:
-            output_a (str): The output string from the first model.
-            output_b (str): The output string from the second model.
+            prediction (str): The output string from the first model.
+            prediction_b (str): The output string from the second model.
             input (str): The input or task string.
             callbacks (Callbacks, optional): The callbacks to use.
             reference (str, optional): The reference string, if any.
@@ -196,7 +196,7 @@ class PairwiseStringEvalChain(LLMChain):
                 - score: The preference score, which is 1 for 'A', 0 for 'B',
                     and 0.5 for None.
         """
-        input_ = self._prepare_input(output_a, output_b, input, reference)
+        input_ = self._prepare_input(prediction, prediction_b, input, reference)
         result = await self.acall(
             inputs=input_,
             callbacks=callbacks,
