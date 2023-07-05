@@ -1196,6 +1196,7 @@ class CallbackManager(BaseCallbackManager):
 
     def on_retriever_start(
         self,
+        serialized: Dict[str, Any],
         query: str,
         run_id: Optional[UUID] = None,
         parent_run_id: Optional[UUID] = None,
@@ -1209,6 +1210,7 @@ class CallbackManager(BaseCallbackManager):
             self.handlers,
             "on_retriever_start",
             "ignore_retriever",
+            serialized,
             query,
             run_id=run_id,
             parent_run_id=self.parent_run_id,
@@ -1463,6 +1465,7 @@ class AsyncCallbackManager(BaseCallbackManager):
 
     async def on_retriever_start(
         self,
+        serialized: Dict[str, Any],
         query: str,
         run_id: Optional[UUID] = None,
         parent_run_id: Optional[UUID] = None,
@@ -1476,6 +1479,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             self.handlers,
             "on_retriever_start",
             "ignore_retriever",
+            serialized,
             query,
             run_id=run_id,
             parent_run_id=self.parent_run_id,

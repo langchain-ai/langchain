@@ -5,6 +5,8 @@ from abc import ABC, abstractmethod
 from inspect import signature
 from typing import TYPE_CHECKING, Any, List
 
+from langchain.load.dump import dumpd
+from langchain.load.serializable import Serializable
 from langchain.schema.document import Document
 
 if TYPE_CHECKING:
@@ -15,7 +17,7 @@ if TYPE_CHECKING:
     )
 
 
-class BaseRetriever(ABC):
+class BaseRetriever(Serializable, ABC):
     """Abstract base class for a Document retrieval system.
 
     A retrieval system is defined as something that can take string queries and return
@@ -45,6 +47,11 @@ class BaseRetriever(ABC):
                 async def aget_relevant_documents(self, query: str) -> List[Document]:
                     raise NotImplementedError
     """  # noqa: E501
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
 
     _new_arg_supported: bool = False
     _expects_other_args: bool = False
@@ -81,7 +88,9 @@ class BaseRetriever(ABC):
         parameters = signature(cls._get_relevant_documents).parameters
         cls._new_arg_supported = parameters.get("run_manager") is not None
         # If a V1 retriever broke the interface and expects additional arguments
-        cls._expects_other_args = (not cls._new_arg_supported) and len(parameters) > 2
+        cls._expects_other_args = (
+            len(set(parameters.keys()) - {"self", "query", "run_manager"}) > 0
+        )
 
     @abstractmethod
     def _get_relevant_documents(
@@ -123,6 +132,7 @@ class BaseRetriever(ABC):
             callbacks, None, verbose=kwargs.get("verbose", False)
         )
         run_manager = callback_manager.on_retriever_start(
+            dumpd(self),
             query,
             **kwargs,
         )
@@ -160,6 +170,7 @@ class BaseRetriever(ABC):
             callbacks, None, verbose=kwargs.get("verbose", False)
         )
         run_manager = await callback_manager.on_retriever_start(
+            dumpd(self),
             query,
             **kwargs,
         )
