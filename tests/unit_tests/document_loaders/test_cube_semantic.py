@@ -37,7 +37,13 @@ class TestCubeSemanticLoader(TestCase):
 
         expected_docs: List[Document] = [
             Document(
-                page_content="table name: cube1, column name: sales, column data type: sum, column title: Sales, column description: None",
+                page_content=(
+                    "table name: cube1, "
+                    "column name: sales, "
+                    "column data type: sum, "
+                    "column title: Sales, "
+                    "column description: None"
+                ),
                 metadata={
                     "table_name": "cube1",
                     "column_name": "sales",
@@ -47,7 +53,13 @@ class TestCubeSemanticLoader(TestCase):
                 },
             ),
             Document(
-                page_content="table name: cube1, column name: product_name, column data type: string, column title: Product Name, column description: None",
+                page_content=(
+                    "table name: cube1, "
+                    "column name: product_name, "
+                    "column data type: string, "
+                    "column title: Product Name, "
+                    "column description: None"
+                ),
                 metadata={
                     "table_name": "cube1",
                     "column_name": "product_name",
