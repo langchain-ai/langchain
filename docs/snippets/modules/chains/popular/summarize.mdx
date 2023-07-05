@@ -174,6 +174,22 @@ chain({"input_documents": docs}, return_only_outputs=True)
 
 </CodeOutputBlock>
 
+## `MapReduceChain` - Adjusting for different context sizes and `token_max`
+
+The MapReduceChain uses a `token_max` arg to decide the limit of tokens the reduce step can take in. The chain effectively chunks up and condenses inputs until they drop below the `token_max` threshold.
+Once below this `token_max`, the chain will run the reduce step. By default `token_max` is set to `3000` tokens.
+
+You may want to change this when dealing with models with larger/smaller context sizes. This arg also acts as a sliding scale between how much you want to condense inputs before passing them to the reduce step vs how many tokens you want to leave for generation in the reduce step.
+Eg: If you have 16k tokens and you set the `token_max` to 5k, your inputs will be condensed until they together are at most 5k tokens, but leave 11k tokens for the final output generation.
+
+Do not confuse this with `max_tokens` which is the maximum tokens you can get from a model's generation.
+
+You can set the `token_max` like so:
+
+```python
+chain({"input_documents": docs, 'token_max': 12000}, return_only_outputs=True)
+```
+
 ## The custom `MapReduceChain`
 
 **Multi input prompt**
