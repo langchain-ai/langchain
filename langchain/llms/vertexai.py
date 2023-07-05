@@ -23,6 +23,13 @@ if TYPE_CHECKING:
 
 
 def is_codey_model(model_name: str) -> bool:
+    """Returns True if the model name is a Codey model.
+
+    Args:
+        model_name: The model name to check.
+
+    Returns: True if the model name is a Codey model.
+    """
     return "code" in model_name
 
 
