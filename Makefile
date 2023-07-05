@@ -38,19 +38,19 @@ lint lint_diff:
 TEST_FILE ?= tests/unit_tests/
 
 test:
-	poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE)
+	poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE) -v
 
 tests: 
-	poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE)
+	poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE) -v
 
 extended_tests:
-	poetry run pytest --disable-socket --allow-unix-socket --only-extended tests/unit_tests
+	poetry run pytest --disable-socket --allow-unix-socket --only-extended tests/unit_tests -v
 
 test_watch:
 	poetry run ptw --now . -- tests/unit_tests
 
 integration_tests:
-	poetry run pytest tests/integration_tests
+	poetry run pytest tests/integration_tests -v
 
 docker_tests:
 	docker build -t my-langchain-image:test .
