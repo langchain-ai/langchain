@@ -4,12 +4,14 @@ from __future__ import annotations
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Union, cast
 from uuid import UUID
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.tracers.schemas import Run, RunTypeEnum
-from langchain.schema import Document, LLMResult
+from langchain.load.dump import dumpd
+from langchain.schema.document import Document
+from langchain.schema.output import ChatGeneration, LLMResult
 
 logger = logging.getLogger(__name__)
 
@@ -146,6 +148,13 @@ class BaseTracer(BaseCallbackHandler, ABC):
         if llm_run is None or llm_run.run_type != RunTypeEnum.llm:
             raise TracerException("No LLM Run found to be traced")
         llm_run.outputs = response.dict()
+        for i, generations in enumerate(response.generations):
+            for j, generation in enumerate(generations):
+                output_generation = llm_run.outputs["generations"][i][j]
+                if "message" in output_generation:
+                    output_generation["message"] = dumpd(
+                        cast(ChatGeneration, generation).message
+                    )
         llm_run.end_time = datetime.utcnow()
         llm_run.events.append({"name": "end", "time": llm_run.end_time})
         self._end_trace(llm_run)
@@ -312,6 +321,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
     def on_retriever_start(
         self,
+        serialized: Dict[str, Any],
         query: str,
         *,
         run_id: UUID,
@@ -329,6 +339,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             id=run_id,
             name="Retriever",
             parent_run_id=parent_run_id,
+            serialized=serialized,
             inputs={"query": query},
             extra=kwargs,
             events=[{"name": "start", "time": start_time}],

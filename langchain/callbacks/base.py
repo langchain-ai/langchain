@@ -170,6 +170,7 @@ class CallbackManagerMixin:
 
     def on_retriever_start(
         self,
+        serialized: Dict[str, Any],
         query: str,
         *,
         run_id: UUID,
@@ -431,11 +432,13 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
     async def on_retriever_start(
         self,
+        serialized: Dict[str, Any],
         query: str,
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
         tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Run on retriever start."""
