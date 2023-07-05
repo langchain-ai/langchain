@@ -97,7 +97,12 @@ def check_valid_template(
 class StringPromptValueString(str):
     """Wrapper around a string that also stores the template args and template."""
 
-    def __new__(cls, text: str, template_args: Dict[str, Any], template: str):
+    template_args: Dict[str, Any]
+    template: BasePromptTemplate
+
+    def __new__(
+        cls, text: str, template_args: Dict[str, Any], template: BasePromptTemplate
+    ) -> StringPromptValueString:
         instance = super().__new__(cls, text)
         instance.template_args = template_args
         instance.template = template
@@ -107,7 +112,7 @@ class StringPromptValueString(str):
 class StringPromptValue(PromptValue):
     text: str
     template_args: Dict[str, Any]
-    template: str
+    template: BasePromptTemplate
 
     def to_string(self) -> str:
         """Return prompt as string."""
@@ -130,5 +135,5 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
     def format_prompt(self, **kwargs: Any) -> PromptValue:
         """Create Chat Messages."""
         return StringPromptValue(
-            text=self.format(**kwargs), template_args=kwargs, template=self.template
+            text=self.format(**kwargs), template_args=kwargs, template=self
         )
