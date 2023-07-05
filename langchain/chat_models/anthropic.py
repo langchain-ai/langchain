@@ -132,7 +132,9 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
 
         if self.streaming:
             completion = ""
-            stream_resp = await self.async_client.completions.create(**params, stream=True)
+            stream_resp = await self.async_client.completions.create(
+                **params, stream=True
+            )
             async for data in stream_resp:
                 delta = data.completion
                 completion += delta

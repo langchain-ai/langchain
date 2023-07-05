@@ -1,8 +1,10 @@
 """Wrapper around Anthropic APIs."""
 import re
 import warnings
-from typing import Any, Callable, Dict, Generator, List, Mapping, Optional, Tuple, Union
+from importlib.metadata import version
+from typing import Any, Callable, Dict, Generator, List, Mapping, Optional
 
+import packaging
 from pydantic import BaseModel, root_validator
 
 from langchain.callbacks.manager import (
@@ -51,7 +53,7 @@ class _AnthropicCommon(BaseModel):
         anthropic_api_key = get_from_dict_or_env(
             values, "anthropic_api_key", "ANTHROPIC_API_KEY"
         )
-        """Get custom api url from environment."""
+        # Get custom api url from environment.
         anthropic_api_url = get_from_dict_or_env(
             values,
             "anthropic_api_url",
@@ -62,6 +64,13 @@ class _AnthropicCommon(BaseModel):
         try:
             import anthropic
 
+            anthropic_version = packaging.version.parse(version("anthropic"))
+            if anthropic_version < packaging.version.parse("0.3"):
+                raise ValueError(
+                    f"Anthropic client version must be > 0.3, got {anthropic_version}. "
+                    f"To update the client, please run "
+                    f"`pip install -U anthropic`"
+                )
             values["client"] = anthropic.Anthropic(
                 base_url=anthropic_api_url,
                 api_key=anthropic_api_key,
@@ -196,24 +205,27 @@ class Anthropic(LLM, _AnthropicCommon):
         stop = self._get_anthropic_stop(stop)
         params = {**self._default_params, **kwargs}
         if self.streaming:
-            stream_resp = self.client.completion_stream(
+            stream_resp = self.client.completions.create(
                 prompt=self._wrap_prompt(prompt),
                 stop_sequences=stop,
+                stream=True,
                 **params,
             )
             current_completion = ""
             for data in stream_resp:
-                delta = data["completion"][len(current_completion) :]
-                current_completion = data["completion"]
+                delta = data.completion
+                current_completion += delta
                 if run_manager:
-                    run_manager.on_llm_new_token(delta, **data)
+                    run_manager.on_llm_new_token(
+                        delta,
+                    )
             return current_completion
-        response = self.client.completion(
+        response = self.client.completions.create(
             prompt=self._wrap_prompt(prompt),
             stop_sequences=stop,
             **params,
         )
-        return response["completion"]
+        return response.completion
 
     async def _acall(
         self,
@@ -226,24 +238,25 @@ class Anthropic(LLM, _AnthropicCommon):
         stop = self._get_anthropic_stop(stop)
         params = {**self._default_params, **kwargs}
         if self.streaming:
-            stream_resp = await self.client.acompletion_stream(
+            stream_resp = await self.async_client.completions.create(
                 prompt=self._wrap_prompt(prompt),
                 stop_sequences=stop,
+                stream=True,
                 **params,
             )
             current_completion = ""
             async for data in stream_resp:
-                delta = data["completion"][len(current_completion) :]
-                current_completion = data["completion"]
+                delta = data.completion
+                current_completion += delta
                 if run_manager:
-                    await run_manager.on_llm_new_token(delta, **data)
+                    await run_manager.on_llm_new_token(delta)
             return current_completion
-        response = await self.client.acompletion(
+        response = await self.async_client.completions.create(
             prompt=self._wrap_prompt(prompt),
             stop_sequences=stop,
             **params,
         )
-        return response["completion"]
+        return response.completion
 
     def stream(self, prompt: str, stop: Optional[List[str]] = None) -> Generator:
         r"""Call Anthropic completion_stream and return the resulting generator.
@@ -269,9 +282,10 @@ class Anthropic(LLM, _AnthropicCommon):
                     yield token
         """
         stop = self._get_anthropic_stop(stop)
-        return self.client.completion_stream(
+        return self.client.completions.create(
             prompt=self._wrap_prompt(prompt),
             stop_sequences=stop,
+            stream=True,
             **self._default_params,
         )
 
