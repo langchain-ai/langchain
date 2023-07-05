@@ -4,10 +4,10 @@ from typing import TypeVar
 
 from langchain.base_language import BaseLanguageModel
 from langchain.chains.llm import LLMChain
-from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
     BaseOutputParser,
+    BasePromptTemplate,
     OutputParserException,
     PromptValue,
 )

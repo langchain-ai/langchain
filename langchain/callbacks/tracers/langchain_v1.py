@@ -16,7 +16,7 @@ from langchain.callbacks.tracers.schemas import (
     TracerSessionV1,
     TracerSessionV1Base,
 )
-from langchain.schema import get_buffer_string
+from langchain.schema.messages import get_buffer_string
 from langchain.utils import raise_for_status_with_text
 
 

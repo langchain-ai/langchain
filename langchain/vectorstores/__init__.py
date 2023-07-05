@@ -24,6 +24,7 @@ from langchain.vectorstores.milvus import Milvus
 from langchain.vectorstores.mongodb_atlas import MongoDBAtlasVectorSearch
 from langchain.vectorstores.myscale import MyScale, MyScaleSettings
 from langchain.vectorstores.opensearch_vector_search import OpenSearchVectorSearch
+from langchain.vectorstores.pgembedding import PGEmbedding
 from langchain.vectorstores.pinecone import Pinecone
 from langchain.vectorstores.qdrant import Qdrant
 from langchain.vectorstores.redis import Redis
@@ -56,6 +57,7 @@ __all__ = [
     "DocArrayInMemorySearch",
     "ElasticVectorSearch",
     "FAISS",
+    "PGEmbedding",
     "Hologres",
     "LanceDB",
     "MatchingEngine",

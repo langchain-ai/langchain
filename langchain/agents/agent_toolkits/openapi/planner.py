@@ -34,8 +34,8 @@ from langchain.chains.llm import LLMChain
 from langchain.llms.openai import OpenAI
 from langchain.memory import ReadOnlySharedMemory
 from langchain.prompts import PromptTemplate
-from langchain.prompts.base import BasePromptTemplate
 from langchain.requests import RequestsWrapper
+from langchain.schema import BasePromptTemplate
 from langchain.tools.base import BaseTool
 from langchain.tools.requests.tool import BaseRequestsTool
 
