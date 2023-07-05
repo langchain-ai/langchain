@@ -19,6 +19,7 @@ from langchain.chains.graph_qa.cypher import GraphCypherQAChain
 from langchain.chains.graph_qa.hugegraph import HugeGraphQAChain
 from langchain.chains.graph_qa.kuzu import KuzuQAChain
 from langchain.chains.graph_qa.nebulagraph import NebulaGraphQAChain
+from langchain.chains.graph_qa.sparql import GraphSparqlQAChain
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_bash.base import LLMBashChain
@@ -69,6 +70,7 @@ __all__ = [
     "FlareChain",
     "GraphCypherQAChain",
     "GraphQAChain",
+    "GraphSparqlQAChain",
     "HypotheticalDocumentEmbedder",
     "KuzuQAChain",
     "HugeGraphQAChain",
