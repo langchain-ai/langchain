@@ -620,7 +620,7 @@ class RedisVectorStoreRetriever(VectorStoreRetriever, BaseModel):
         return values
 
     def _get_relevant_documents(
-        self, query: str, *, run_manager: Optional[CallbackManagerForRetrieverRun]
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(query, k=self.k)
@@ -633,7 +633,7 @@ class RedisVectorStoreRetriever(VectorStoreRetriever, BaseModel):
         return docs
 
     async def _aget_relevant_documents(
-        self, query: str, *, run_manager: Optional[AsyncCallbackManagerForRetrieverRun]
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         raise NotImplementedError("RedisVectorStoreRetriever does not support async")
 
