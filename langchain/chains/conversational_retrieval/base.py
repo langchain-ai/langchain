@@ -71,7 +71,6 @@ class BaseConversationalRetrievalChain(Chain):
     """An optional function to get a string of the chat history.
     If None is provided, will use a default."""
 
-
     class Config:
         """Configuration for this pydantic object."""
 

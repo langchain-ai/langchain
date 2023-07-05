@@ -54,33 +54,37 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
                 "Combine these summaries: {context}"
             )
             reduce_llm_chain = LLMChain(llm=llm, prompt=reduce_prompt)
-            combine_document_chain = StuffDocumentsChain(
+            combine_documents_chain = StuffDocumentsChain(
                 llm_chain=reduce_llm_chain,
                 document_prompt=document_prompt,
                 document_variable_name=document_variable_name
             )
-            reduce_document_chain = ReduceDocumentsChain(
-                combine_document_chain=combine_document_chain,
+            reduce_documents_chain = ReduceDocumentsChain(
+                combine_documents_chain=combine_documents_chain,
             )
             chain = MapReduceDocumentsChain(
                 llm_chain=llm_chain,
-                reduce_document_chain=reduce_document_chain,
+                reduce_documents_chain=reduce_documents_chain,
             )
-            # If we wanted to, we could also pass in collapse_document_chain
+            # If we wanted to, we could also pass in collapse_documents_chain
             # which is specifically aimed at collapsing documents BEFORE
             # the final call.
             prompt = PromptTemplate.from_template(
                 "Collapse this content: {context}"
             )
-            collapse_document_chain = StuffDocumentsChain(
+            llm_chain = LLMChain(llm=llm, prompt=prompt)
+            collapse_documents_chain = StuffDocumentsChain(
                 llm_chain=llm_chain,
                 document_prompt=document_prompt,
                 document_variable_name=document_variable_name
             )
-            chain = ReduceDocumentsChain(
-                combine_document_chain=combine_document_chain,
-                collapse_document_chain=collapse_document_chain,
-                document_variable_name=document_variable_name,
+            reduce_documents_chain = ReduceDocumentsChain(
+                combine_documents_chain=combine_documents_chain,
+                collapse_documents_chain=collapse_documents_chain,
+            )
+            chain = MapReduceDocumentsChain(
+                llm_chain=llm_chain,
+                reduce_documents_chain=reduce_documents_chain,
             )
     """
 
@@ -118,15 +122,15 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         if "combine_document_chain" in values:
             if "reduce_documents_chain" in values:
                 raise ValueError(
-                    "Both `reduce_document_chain` and `combine_document_chain` "
+                    "Both `reduce_documents_chain` and `combine_document_chain` "
                     "cannot be provided at the same time. `combine_document_chain` "
                     "is deprecated, please only provide `reduce_documents_chain`"
                 )
             combine_chain = values["combine_document_chain"]
             collapse_chain = values.get("collapse_document_chain")
             reduce_chain = ReduceDocumentsChain(
-                combine_document_chain=combine_chain,
-                collapse_document_chain=collapse_chain,
+                combine_documents_chain=combine_chain,
+                collapse_documents_chain=collapse_chain,
             )
             values["reduce_documents_chain"] = reduce_chain
             del values["combine_document_chain"]
@@ -166,25 +170,27 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
 
     @property
     def collapse_document_chain(self) -> BaseCombineDocumentsChain:
+        """Kept for backward compatibility."""
         if isinstance(self.reduce_documents_chain, ReduceDocumentsChain):
-            if self.reduce_documents_chain.collapse_document_chain:
-                return self.reduce_documents_chain.collapse_document_chain
+            if self.reduce_documents_chain.collapse_documents_chain:
+                return self.reduce_documents_chain.collapse_documents_chain
             else:
-                return self.reduce_documents_chain.combine_document_chain
+                return self.reduce_documents_chain.combine_documents_chain
         else:
             raise ValueError(
-                f"`reduce_document_chain` is of type "
+                f"`reduce_documents_chain` is of type "
                 f"{type(self.reduce_documents_chain)} so it does not have "
                 f"this attribute."
             )
 
     @property
     def combine_document_chain(self) -> BaseCombineDocumentsChain:
+        """Kept for backward compatibility."""
         if isinstance(self.reduce_documents_chain, ReduceDocumentsChain):
-            return self.reduce_documents_chain.combine_document_chain
+            return self.reduce_documents_chain.combine_documents_chain
         else:
             raise ValueError(
-                f"`reduce_document_chain` is of type "
+                f"`reduce_documents_chain` is of type "
                 f"{type(self.reduce_documents_chain)} so it does not have "
                 f"this attribute."
             )
