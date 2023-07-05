@@ -43,6 +43,9 @@ class EvaluatorCallbackHandler(BaseTracer):
         The thread pool executor used for running the evaluators.
     futures : Set[Future]
         The set of futures representing the running evaluators.
+    skip_unfinished : bool
+        Whether to skip runs that are not finished or raised
+        an error.
     project_name : Optional[str]
         The LangSmith project name to be organize eval chain runs under.
     """
@@ -55,6 +58,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         max_workers: Optional[int] = None,
         client: Optional[LangChainPlusClient] = None,
         example_id: Optional[Union[UUID, str]] = None,
+        skip_unfinished: bool = True,
         project_name: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
@@ -68,6 +72,7 @@ class EvaluatorCallbackHandler(BaseTracer):
             max_workers=max(max_workers or len(evaluators), 1)
         )
         self.futures: Set[Future] = set()
+        self.skip_unfinished = skip_unfinished
         self.project_name = project_name
 
     def _evaluate_in_project(self, run: Run, evaluator: RunEvaluator) -> None:
@@ -103,6 +108,9 @@ class EvaluatorCallbackHandler(BaseTracer):
             The run to be evaluated.
 
         """
+        if self.skip_unfinished and not run.outputs:
+            logger.debug(f"Skipping unfinished run {run.id}")
+            return
         run_ = run.copy()
         run_.reference_example_id = self.example_id
         for evaluator in self.evaluators:
