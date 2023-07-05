@@ -46,8 +46,6 @@ class EvaluatorCallbackHandler(BaseTracer):
     skip_unfinished : bool
         Whether to skip runs that are not finished or raised
         an error.
-    project_name : Optional[str]
-        The LangSmith project name to be organize eval chain runs under.
     """
 
     name = "evaluator_callback_handler"
