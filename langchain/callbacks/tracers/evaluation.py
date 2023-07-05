@@ -40,6 +40,9 @@ class EvaluatorCallbackHandler(BaseTracer):
         The thread pool executor used for running the evaluators.
     futures : Set[Future]
         The set of futures representing the running evaluators.
+    skip_unfinished : bool
+        Whether to skip runs that are not finished or raised
+        an error.
     """
 
     name = "evaluator_callback_handler"
@@ -50,6 +53,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         max_workers: Optional[int] = None,
         client: Optional[LangChainPlusClient] = None,
         example_id: Optional[Union[UUID, str]] = None,
+        skip_unfinished: bool = True,
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
@@ -62,6 +66,7 @@ class EvaluatorCallbackHandler(BaseTracer):
             max_workers=max(max_workers or len(evaluators), 1)
         )
         self.futures: Set[Future] = set()
+        self.skip_unfinished = skip_unfinished
 
     def _evaluate_run(self, run: Run, evaluator: RunEvaluator) -> None:
         try:
@@ -70,7 +75,6 @@ class EvaluatorCallbackHandler(BaseTracer):
             logger.error(
                 f"Error evaluating run {run.id} with "
                 f"{evaluator.__class__.__name__}: {e}",
-                exc_info=True,
             )
             raise e
 
@@ -83,6 +87,8 @@ class EvaluatorCallbackHandler(BaseTracer):
             The run to be evaluated.
 
         """
+        if self.skip_unfinished and not run.outputs:
+            return
         run_ = run.copy()
         run_.reference_example_id = self.example_id
         for evaluator in self.evaluators:
