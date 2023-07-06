@@ -1,4 +1,4 @@
-.PHONY: all clean format lint test tests test_watch integration_tests docker_tests help extended_tests
+.PHONY: all clean docs_build docs_clean docs_link_check api_docs_build api_docs_clean api_docs_linkcheck format lint test tests test_watch integration_tests docker_tests help extended_tests
 
 all: help
 
@@ -8,19 +8,27 @@ coverage:
 		--cov-report xml \
 		--cov-report term-missing:skip-covered
 
-clean: docs_clean
-
-docs_compile:
-	poetry run nbdoc_build --srcdir $(srcdir)
+clean: docs_clean api_docs_clean
 
 docs_build:
-	cd docs && poetry run make html
+	docs/.local_build.sh
 
 docs_clean:
-	cd docs && poetry run make clean
+	rm -r docs/_dist
 
-docs_linkcheck:
-	poetry run linkchecker docs/_build/html/index.html
+docs_link_check:
+	poetry run linkchecker docs/_dist/docs_skeleton/ --ignore-url node_modules
+
+api_docs_build:
+	poetry run python docs/api_reference/create_api_rst.py
+	cd docs/api_reference && poetry run make html
+
+api_docs_clean:
+	rm -f docs/api_reference/api_reference.rst
+	cd docs/api_reference && poetry run make clean
+
+api_docs_linkcheck:
+	poetry run linkchecker docs/api_reference/_build/html/index.html
 
 format:
 	poetry run black .
