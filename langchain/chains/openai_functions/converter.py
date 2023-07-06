@@ -18,13 +18,13 @@ def from_pydantic_create_openai_function_dict(
     The kwargs for the LLMChain constructor.
 
     """
-    function_description = {
+    function_props = {
         "name": func_name,
         "description": func_description,
         "parameters": _convert_schema(pydantic_schema.schema()),
     }
 
-    llm_kwargs = get_llm_kwargs(function_description)
+    llm_kwargs = get_llm_kwargs(function_props)
 
     return llm_kwargs
 
@@ -38,7 +38,7 @@ def from_json_create_openai_function_dict(
     for the llm_kwargs prop for LLMChain
 
     Args:
-    json_schema: json schema
+    json_schema: json schema of output
     func_name: str
     func_description: str
 
@@ -47,13 +47,13 @@ def from_json_create_openai_function_dict(
     """
 
     json_dict = json.loads(json_schema)
-
-    function_description = {
+    json_dict["type"] = "object"
+    function_props = {
         "name": func_name,
         "description": func_description,
-        "parameters": _convert_schema(),
+        "parameters": json_dict,
     }
 
-    llm_kwargs = get_llm_kwargs(function_description)
+    llm_kwargs = get_llm_kwargs(function_props)
 
     return llm_kwargs
