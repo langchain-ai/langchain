@@ -1,25 +1,30 @@
 import json
-from typing import Any, List, Union, Dict, Optional
+from typing import Any, Dict, List, Type, Union
 
-from pydantic import BaseModel, root_validator, validator
+from pydantic import BaseModel, root_validator
 
-from langchain.schema import BaseLLMOutputParser, ChatGeneration, Generation
+from langchain.schema import (
+    BaseLLMOutputParser,
+    ChatGeneration,
+    Generation,
+    OutputParserException,
+)
 
 
 class OutputFunctionsParser(BaseLLMOutputParser[Any]):
-    args_only: bool = False
+    args_only: bool = True
 
     def parse_result(self, result: List[Generation]) -> Any:
         generation = result[0]
         if not isinstance(generation, ChatGeneration):
-            raise ValueError(
+            raise OutputParserException(
                 "This output parser can only be used with a chat generation."
             )
         message = generation.message
         try:
             func_call = message.additional_kwargs["function_call"]
         except ValueError as exc:
-            raise ValueError(f"Could not parse function call: {exc}")
+            raise OutputParserException(f"Could not parse function call: {exc}")
 
         if self.args_only:
             return func_call["arguments"]
@@ -44,13 +49,15 @@ class JsonKeyOutputFunctionsParser(JsonOutputFunctionsParser):
 
 
 class PydanticOutputFunctionsParser(OutputFunctionsParser):
-    pydantic_schema: Union[BaseModel, Dict[str, BaseModel]]
+    pydantic_schema: Union[Type[BaseModel], Dict[str, Type[BaseModel]]]
 
     @root_validator(pre=True)
-    def validate_schema(self, values: Dict) -> Dict:
+    def validate_schema(cls, values: Dict) -> Dict:
         schema = values["pydantic_schema"]
         if "args_only" not in values:
-            values["args_only"] = isinstance(schema, BaseModel)
+            values["args_only"] = isinstance(schema, type) and issubclass(
+                schema, BaseModel
+            )
         elif values["args_only"] and isinstance(schema, Dict):
             raise ValueError(
                 "If multiple pydantic schemas are provided then args_only should be"
