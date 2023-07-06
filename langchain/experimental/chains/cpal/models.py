@@ -126,7 +126,7 @@ class QueryModel(BaseModel):
 class StoryModel(BaseModel):
     """the output of calling a StoryChain instance"""
 
-    causal_mental_model: Any = Field(required=True)  # story's plot
+    causal_operations: Any = Field(required=True)  # story's plot
     intervention: Any = Field(required=True)  # reset of story initial conditions
     query: Any = Field(required=True)  # question about the story outcome
     _outcome_table: pd.DataFrame = PrivateAttr(default=None)
@@ -142,7 +142,7 @@ class StoryModel(BaseModel):
 
     @root_validator
     def check_intervention_is_valid(cls, values):
-        valid_names = [e.name for e in values["causal_mental_model"].entities]
+        valid_names = [e.name for e in values["causal_operations"].entities]
         for setting in values["intervention"].entity_settings:
             if setting.name not in valid_names:
                 error_msg = f"""
@@ -157,42 +157,42 @@ class StoryModel(BaseModel):
         intervention_entities = [
             entity_setting.name for entity_setting in self.intervention.entity_settings
         ]
-        for entity in self.causal_mental_model.entities:
+        for entity in self.causal_operations.entities:
             if entity.name in intervention_entities:
                 entity.depends_on = []
                 entity.code = "pass"
 
     def _set_initial_conditions(self) -> None:
         for entity_setting in self.intervention.entity_settings:
-            for entity in self.causal_mental_model.entities:
+            for entity in self.causal_operations.entities:
                 if entity.name == entity_setting.name:
                     entity.value = entity_setting.value
 
     def _make_graph(self) -> None:
         self._networkx_wrapper = NetworkxEntityGraph()
-        for entity in self.causal_mental_model.entities:
+        for entity in self.causal_operations.entities:
             for parent_name in entity.depends_on:
                 self._networkx_wrapper._graph.add_edge(
                     parent_name, entity.name, relation=entity.code
                 )
 
         # TODO: is it correct to drop entities with no impact on the outcome (?)
-        self.causal_mental_model.entities = [
+        self.causal_operations.entities = [
             entity
-            for entity in self.causal_mental_model.entities
+            for entity in self.causal_operations.entities
             if entity.name in self._networkx_wrapper.get_topological_sort()
         ]
 
     def _sort_entities(self) -> None:
         # order the sequence of causal actions
         sorted_nodes = self._networkx_wrapper.get_topological_sort()
-        self.causal_mental_model.entities.sort(key=lambda x: sorted_nodes.index(x.name))
+        self.causal_operations.entities.sort(key=lambda x: sorted_nodes.index(x.name))
 
     def _forward_propagate(self) -> None:
         entity_scope = {
-            entity.name: entity for entity in self.causal_mental_model.entities
+            entity.name: entity for entity in self.causal_operations.entities
         }
-        for entity in self.causal_mental_model.entities:
+        for entity in self.causal_operations.entities:
             if entity.code == "pass":
                 continue
             else:

@@ -273,7 +273,7 @@ class CPALChain(_BaseStoryElementChain):
         ]
 
         story = StoryModel(
-            causal_mental_model=self.causal_chain(narrative.story_plot)[
+            causal_operations=self.causal_chain(narrative.story_plot)[
                 Constant.chain_data.value
             ],
             intervention=self.intervention_chain(narrative.story_hypothetical)[

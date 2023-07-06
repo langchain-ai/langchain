@@ -177,7 +177,7 @@ class TestCPALChain_MathWordProblems(unittest.TestCase):
         data = output[Constant.chain_data.value]
 
         expected_output = {
-            "causal_mental_model": {
+            "causal_operations": {
                 "attribute": "pet_count",
                 "entities": [
                     {"code": "pass", "depends_on": [], "name": "cindy", "value": 10.0},
