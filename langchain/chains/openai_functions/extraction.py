@@ -41,7 +41,7 @@ If a property is not present and is not required in the function parameters, do 
 
 Passage:
 {input}
-"""
+"""  # noqa: E501
 
 
 def create_extraction_chain(schema: dict, llm: BaseLanguageModel) -> Chain:
