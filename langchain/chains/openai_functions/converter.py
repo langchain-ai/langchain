@@ -51,7 +51,7 @@ def from_json_create_openai_function_dict(
     try:
         json_dict = json.loads(json_schema)
     except:
-        raise TypeError("json_schema must be a valid json string")
+        raise json.JSONDecodeError("json_schema must be a valid json string")
     json_dict["type"] = "object"
     function_props = {
         "name": func_name,
@@ -79,7 +79,7 @@ def from_dict_create_openai_function_dict(
     Returns:
     The kwargs for the LLMChain constructor.
     """
-    if type(dict_schema) != dict:
+    if not isinstance(dict_schema, dict):
         raise TypeError("dict_schema must be a dictionary")
     dict_schema["type"] = "object"
     function_props = {
