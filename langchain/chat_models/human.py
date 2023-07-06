@@ -23,7 +23,6 @@ from langchain.schema.output import ChatGeneration, ChatResult
 
 
 def _display_messages(messages: List[BaseMessage]) -> None:
-    """ChatModel wrapper which returns user input as the response.."""
     dict_messages = messages_to_dict(messages)
     for message in dict_messages:
         yaml_string = yaml.dump(
@@ -68,7 +67,7 @@ def _collect_yaml_input(
 
 
 class HumanInputChatModel(BaseChatModel):
-    """Fake ChatModel for testing purposes."""
+    """ChatModel wrapper which returns user input as the response.."""
 
     input_func: Callable = Field(default_factory=lambda: _collect_yaml_input)
     message_func: Callable = Field(default_factory=lambda: _display_messages)
