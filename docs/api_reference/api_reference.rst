@@ -645,6 +645,7 @@ Classes
     document_loaders.word_document.Docx2txtLoader
     document_loaders.word_document.UnstructuredWordDocumentLoader
     document_loaders.xml.UnstructuredXMLLoader
+    document_loaders.xorbits.xorbits.XorbitsDataFrameLoader
     document_loaders.youtube.GoogleApiYoutubeLoader
     document_loaders.youtube.YoutubeLoader
 
