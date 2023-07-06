@@ -48,9 +48,9 @@ def update_token_usage(
 def _update_response(response: Dict[str, Any], stream_response: Dict[str, Any]) -> None:
     """Update response from the stream response."""
     response["choices"][0]["text"] += stream_response["choices"][0]["text"]
-    response["choices"][0]["finish_reason"] = stream_response["choices"][0][
-        "finish_reason"
-    ]
+    response["choices"][0]["finish_reason"] = stream_response["choices"][0].get(
+        "finish_reason", None
+    )
     response["choices"][0]["logprobs"] = stream_response["choices"][0]["logprobs"]
 
 
