@@ -66,8 +66,8 @@ class WhyLabsCallbackHandler(BaseCallbackHandler):
     * Security and Privacy
       - patterns - count of strings matching a user-defined regex pattern group
       - jailbreaks - similarity scores with respect to known jailbreak attempts
-      - prompt injection - similarity scores with respect to known prompt injection attacks
-      - refusals - similarity scores with respect to known LLM refusal of service responses
+      - prompt injection - similarity scores with respect to known prompt attacks
+      - refusals - similarity scores with respect to known LLM refusal responses
     * Sentiment and Toxicity
       - sentiment analysis
       - toxicity analysis
