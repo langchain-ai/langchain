@@ -13,11 +13,13 @@ from langchain.callbacks.manager import (
 from langchain.chains.base import Chain
 from langchain.embeddings.base import Embeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.evaluation.schema import PairwiseStringEvaluator
+from langchain.evaluation.schema import PairwiseStringEvaluator, StringEvaluator
 from langchain.math_utils import cosine_similarity
 
 
 class EmbeddingDistance(str, Enum):
+    """Embedding Distance Metric."""
+
     COSINE = "cosine"
     EUCLIDEAN = "euclidean"
     MANHATTAN = "manhattan"
@@ -25,13 +27,22 @@ class EmbeddingDistance(str, Enum):
     HAMMING = "hamming"
 
 
-class PairwiseEmbeddingStringEvalChain(Chain, PairwiseStringEvaluator):
-    """A chain for comparing the output of two models using embeddings."""
+class _EmbeddingDistanceChainMixin(Chain):
+    """Shared functionality for embedding distance evaluators."""
 
     embeddings: Embeddings = Field(default_factory=OpenAIEmbeddings)
     """The embedding objects to vectorize the outputs."""
     distance_metric: EmbeddingDistance = Field(default=EmbeddingDistance.COSINE)
     """The distance metric to use for comparing the embeddings."""
+
+    class Config:
+        """Permit embeddings to go unvalidated."""
+
+        arbitrary_types_allowed: bool = True
+
+    @property
+    def output_keys(self) -> List[str]:
+        return ["score"]
 
     @root_validator
     def _validate_distance_metric(cls, values: dict) -> dict:
@@ -92,13 +103,18 @@ class PairwiseEmbeddingStringEvalChain(Chain, PairwiseStringEvaluator):
         score = metric(vectors[0].reshape(1, -1), vectors[1].reshape(1, -1)).item()
         return score
 
-    @property
-    def input_keys(self) -> List[str]:
-        return ["prediction", "prediction_b"]
+
+class EmbeddingEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
+    """Use embedding distances to score semantic difference between
+    a prediction and reference."""
 
     @property
-    def output_keys(self) -> List[str]:
-        return ["score"]
+    def requires_reference(self) -> bool:
+        return True
+
+    @property
+    def input_keys(self) -> List[str]:
+        return ["prediction", "reference"]
 
     def _call(
         self,
@@ -125,24 +141,22 @@ class PairwiseEmbeddingStringEvalChain(Chain, PairwiseStringEvaluator):
         score = self._compute_score(vectors)
         return {"score": score}
 
-    def evaluate_string_pairs(
+    def _evaluate_strings(
         self,
         *,
         prediction: str,
-        prediction_b: str,
-        input: Optional[str] = None,
         reference: Optional[str] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> dict:
-        """Evaluate the embedding distance between two predictions.
+        """Evaluate the embedding distance between a prediction and
+        reference.
 
         Args:
             prediction (str): The output string from the first model.
-            prediction_b (str): The output string from the second model.
-            input (str): The input or task string.
+            reference (str): The reference string (required)
+            input: ignored
             callbacks (Callbacks, optional): The callbacks to use.
-            reference (str, optional): The reference string, if any.
             **kwargs (Any): Additional keyword arguments.
 
         Returns:
@@ -151,28 +165,25 @@ class PairwiseEmbeddingStringEvalChain(Chain, PairwiseStringEvaluator):
                     predictions.
         """
         return self(
-            inputs={"prediction": prediction, "prediction_b": prediction_b},
+            inputs={"prediction": prediction, "reference": reference},
             callbacks=callbacks,
         )
 
-    async def aevaluate_string_pairs(
+    async def _aevaluate_strings(
         self,
         *,
         prediction: str,
-        prediction_b: str,
-        input: Optional[str] = None,
         reference: Optional[str] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> dict:
-        """Asynchronously evaluate the embedding distance
-
-        between two predictions.
+        """Asynchronously evaluate the embedding distance between
+        a prediction and reference.
 
         Args:
             prediction (str): The output string from the first model.
             prediction_b (str): The output string from the second model.
-            input (str): The input or task string.
+            input: ignored
             callbacks (Callbacks, optional): The callbacks to use.
             reference (str, optional): The reference string, if any.
             **kwargs (Any): Additional keyword arguments.
@@ -183,6 +194,107 @@ class PairwiseEmbeddingStringEvalChain(Chain, PairwiseStringEvaluator):
                     predictions.
         """
         return await self.acall(
-            inputs={"prediction": prediction, "prediction_b": prediction_b},
+            inputs={"prediction": prediction, "reference": reference},
             callbacks=callbacks,
         )
+
+
+class PairwiseEmbeddingEvalChain(_EmbeddingDistanceChainMixin, PairwiseStringEvaluator):
+    """Use embedding distances to score semantic difference between two predictions."""
+
+    @property
+    def input_keys(self) -> List[str]:
+        return ["prediction", "prediction_b"]
+
+    def _call(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: CallbackManagerForChainRun | None = None,
+    ) -> Dict[str, Any]:
+        vectors = np.array(
+            self.embeddings.embed_documents(
+                [inputs["prediction"], inputs["prediction_b"]]
+            )
+        )
+        score = self._compute_score(vectors)
+        return {"score": score}
+
+    async def _acall(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: AsyncCallbackManagerForChainRun | None = None,
+    ) -> Dict[str, Any]:
+        embedded = await self.embeddings.aembed_documents(
+            [inputs["prediction"], inputs["prediction_b"]]
+        )
+        vectors = np.array(embedded)
+        score = self._compute_score(vectors)
+        return {"score": score}
+
+    def _evaluate_string_pairs(
+        self,
+        *,
+        prediction: str,
+        prediction_b: str,
+        callbacks: Callbacks = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> dict:
+        """Evaluate the embedding distance between two predictions.
+
+        Args:
+            prediction (str): The output string from the first model.
+            prediction_b (str): The output string from the second model.
+            callbacks (Callbacks, optional): The callbacks to use.
+            tags (List[str], optional): Tags to apply to traces
+            metadata (Dict[str, Any], optional): metadata to apply to
+            **kwargs (Any): Additional keyword arguments.
+
+        Returns:
+            dict: A dictionary containing:
+                - score: The embedding distance between the two
+                    predictions.
+        """
+        result = self(
+            inputs={"prediction": prediction, "prediction_b": prediction_b},
+            callbacks=callbacks,
+            tags=tags,
+            metadata=metadata,
+        )
+        return {"score": result["score"]}
+
+    async def _aevaluate_string_pairs(
+        self,
+        *,
+        prediction: str,
+        prediction_b: str,
+        callbacks: Callbacks = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> dict:
+        """Asynchronously evaluate the embedding distance
+
+        between two predictions.
+
+        Args:
+            prediction (str): The output string from the first model.
+            prediction_b (str): The output string from the second model.
+            callbacks (Callbacks, optional): The callbacks to use.
+            tags (List[str], optional): Tags to apply to traces
+            metadata (Dict[str, Any], optional): metadata to apply to traces
+            **kwargs (Any): Additional keyword arguments.
+
+        Returns:
+            dict: A dictionary containing:
+                - score: The embedding distance between the two
+                    predictions.
+        """
+        result = await self.acall(
+            inputs={"prediction": prediction, "prediction_b": prediction_b},
+            callbacks=callbacks,
+            tags=tags,
+            metadata=metadata,
+        )
+        return {"score": result["score"]}

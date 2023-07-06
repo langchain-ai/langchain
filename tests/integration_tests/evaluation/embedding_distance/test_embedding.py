@@ -3,30 +3,55 @@ from typing import Tuple
 import numpy as np
 import pytest
 
-from langchain.evaluation.comparison.embedding import (
+from langchain.evaluation.embedding_distance import (
     EmbeddingDistance,
-    PairwiseEmbeddingStringEvalChain,
+    PairwiseEmbeddingEvalChain,
 )
 
 
 @pytest.fixture
 def vectors() -> Tuple[np.ndarray, np.ndarray]:
     """Create two random vectors."""
-    np.random.seed(0)
-    vector_a = np.random.rand(10)
-    vector_b = np.random.rand(10)
+    vector_a = np.array(
+        [
+            0.5488135,
+            0.71518937,
+            0.60276338,
+            0.54488318,
+            0.4236548,
+            0.64589411,
+            0.43758721,
+            0.891773,
+            0.96366276,
+            0.38344152,
+        ]
+    )
+    vector_b = np.array(
+        [
+            0.79172504,
+            0.52889492,
+            0.56804456,
+            0.92559664,
+            0.07103606,
+            0.0871293,
+            0.0202184,
+            0.83261985,
+            0.77815675,
+            0.87001215,
+        ]
+    )
     return vector_a, vector_b
 
 
 @pytest.fixture
-def chain() -> PairwiseEmbeddingStringEvalChain:
-    """Create a PairwiseEmbeddingStringEvalChain."""
-    return PairwiseEmbeddingStringEvalChain()
+def chain() -> PairwiseEmbeddingEvalChain:
+    """Create a PairwiseEmbeddingEvalChain."""
+    return PairwiseEmbeddingEvalChain()
 
 
 @pytest.mark.requires("scipy")
 def test_cosine_similarity(
-    chain: PairwiseEmbeddingStringEvalChain, vectors: Tuple[np.ndarray, np.ndarray]
+    chain: PairwiseEmbeddingEvalChain, vectors: Tuple[np.ndarray, np.ndarray]
 ) -> None:
     """Test the cosine similarity."""
     chain.distance_metric = EmbeddingDistance.COSINE
@@ -39,7 +64,7 @@ def test_cosine_similarity(
 
 @pytest.mark.requires("scipy")
 def test_euclidean_distance(
-    chain: PairwiseEmbeddingStringEvalChain, vectors: Tuple[np.ndarray, np.ndarray]
+    chain: PairwiseEmbeddingEvalChain, vectors: Tuple[np.ndarray, np.ndarray]
 ) -> None:
     """Test the euclidean distance."""
     from scipy.spatial.distance import euclidean
@@ -52,7 +77,7 @@ def test_euclidean_distance(
 
 @pytest.mark.requires("scipy")
 def test_manhattan_distance(
-    chain: PairwiseEmbeddingStringEvalChain, vectors: Tuple[np.ndarray, np.ndarray]
+    chain: PairwiseEmbeddingEvalChain, vectors: Tuple[np.ndarray, np.ndarray]
 ) -> None:
     """Test the manhattan distance."""
     from scipy.spatial.distance import cityblock
@@ -65,7 +90,7 @@ def test_manhattan_distance(
 
 @pytest.mark.requires("scipy")
 def test_chebyshev_distance(
-    chain: PairwiseEmbeddingStringEvalChain, vectors: Tuple[np.ndarray, np.ndarray]
+    chain: PairwiseEmbeddingEvalChain, vectors: Tuple[np.ndarray, np.ndarray]
 ) -> None:
     """Test the chebyshev distance."""
     from scipy.spatial.distance import chebyshev
@@ -78,7 +103,7 @@ def test_chebyshev_distance(
 
 @pytest.mark.requires("scipy")
 def test_hamming_distance(
-    chain: PairwiseEmbeddingStringEvalChain, vectors: Tuple[np.ndarray, np.ndarray]
+    chain: PairwiseEmbeddingEvalChain, vectors: Tuple[np.ndarray, np.ndarray]
 ) -> None:
     """Test the hamming distance."""
     from scipy.spatial.distance import hamming
@@ -90,7 +115,7 @@ def test_hamming_distance(
 
 
 @pytest.mark.requires("openai", "tiktoken")
-def test_embedding_distance(chain: PairwiseEmbeddingStringEvalChain) -> None:
+def test_embedding_distance(chain: PairwiseEmbeddingEvalChain) -> None:
     """Test the embedding distance."""
     result = chain.evaluate_string_pairs(
         prediction="A single cat", prediction_b="A single cat"

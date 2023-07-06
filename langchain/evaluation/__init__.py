@@ -20,8 +20,18 @@ custom evaluation task. These include:
 from langchain.evaluation.agents.trajectory_eval_chain import TrajectoryEvalChain
 from langchain.evaluation.comparison import PairwiseStringEvalChain
 from langchain.evaluation.criteria.eval_chain import CriteriaEvalChain
+from langchain.evaluation.embedding_distance import (
+    EmbeddingDistance,
+    EmbeddingEvalChain,
+    PairwiseEmbeddingEvalChain,
+)
 from langchain.evaluation.qa import ContextQAEvalChain, CotQAEvalChain, QAEvalChain
 from langchain.evaluation.schema import PairwiseStringEvaluator, StringEvaluator
+from langchain.evaluation.string_distance import (
+    PairwiseStringDistanceEvalChain,
+    StringDistance,
+    StringDistanceEvalChain,
+)
 
 __all__ = [
     "PairwiseStringEvalChain",
@@ -32,4 +42,10 @@ __all__ = [
     "PairwiseStringEvaluator",
     "TrajectoryEvalChain",
     "CriteriaEvalChain",
+    "EmbeddingDistance",
+    "EmbeddingEvalChain",
+    "PairwiseEmbeddingEvalChain",
+    "StringDistance",
+    "StringDistanceEvalChain",
+    "PairwiseStringDistanceEvalChain",
 ]
