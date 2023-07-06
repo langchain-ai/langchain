@@ -19,7 +19,6 @@ from langchain.experimental.chains.cpal.models import (
 )
 from langchain.experimental.chains.cpal.constants import Constant
 
-import pygraphviz
 
 # allow local env to override default LLM client setting
 load_dotenv()
@@ -275,7 +274,7 @@ class TestCPALChain_MathWordProblems(unittest.TestCase):
         self.assertEqual(answer, 30.0)
 
     @pytest.mark.skip(reason="requires `sudo apt-get install graphviz-dev`")
-    @pytest.mark.requires(pygraphviz)
+    # @pytest.mark.requires(pygraphviz)
     def test_graph(self) -> None:
         """
         Test CPAL makes a graphviz diagram.
@@ -285,6 +284,7 @@ class TestCPALChain_MathWordProblems(unittest.TestCase):
         - if graphviz is not installed
         - if pygraphviz is not installed
         """
+        import pygraphviz
 
         narrative_input = (
             "Jan has three times the number of pets as Marcia."

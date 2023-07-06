@@ -1,7 +1,6 @@
 from __future__ import annotations  # allows pydantic model to reference itself
 
 from typing import Optional, Any  # , Union
-import networkx as nx
 import pandas as pd
 from pydantic import (
     BaseModel,
@@ -12,6 +11,7 @@ from pydantic import (
 )  # , ValidationError
 import duckdb
 from langchain.experimental.chains.cpal.constants import Constant
+from langchain.graphs.networkx_graph import NetworkxEntityGraph
 
 # import pydantic
 
@@ -130,35 +130,14 @@ class StoryModel(BaseModel):
     intervention: Any = Field(required=True)  # reset of story initial conditions
     query: Any = Field(required=True)  # question about the story outcome
     _outcome_table: pd.DataFrame = PrivateAttr(default=None)
-    _DAG: nx.DiGraph = PrivateAttr(default=None)
-
-    """
-    @root_validator
-    def validate_subclass(cls, values):
-        required_base_models = {
-            "causal_mental_model": CausalModel,
-            "intervention": InterventionModel,
-            .query": QueryModel,
-        }
-        for field, required_base_model in required_base_models.items():
-            given_pydantic_object = values[field]
-            if issubclass(
-                type(given_pydantic_object), type(required_base_model)
-            ) or isinstance(given_pydantic_object, type(required_base_model)):
-                return values
-            else:
-                raise TypeError(
-                    f"Wrong type for '{field}', "
-                    f"must be subclass of '{required_base_model}'"
-                )
-    """
+    _networkx_wrapper: Any = PrivateAttr(default=None)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._compute()
 
         # TODO: replace with  `__post_init__` when pydantic v2 is adopted
-        # This overriding of init results in missing constructor parameter hints
+        # by override we loose constructor parameter hints
         # https://github.com/pydantic/pydantic/issues/1729#issuecomment-1300576214
 
     @root_validator
@@ -190,21 +169,23 @@ class StoryModel(BaseModel):
                     entity.value = entity_setting.value
 
     def _make_graph(self) -> None:
-        self._DAG = nx.DiGraph()
+        self._networkx_wrapper = NetworkxEntityGraph()
         for entity in self.causal_mental_model.entities:
             for parent_name in entity.depends_on:
-                self._DAG.add_edge(parent_name, entity.name)
+                self._networkx_wrapper._graph.add_edge(
+                    parent_name, entity.name, relation=entity.code
+                )
 
-        # entities that have no interdependent relations are dropped
+        # TODO: is it correct to drop entities with no impact on the outcome (?)
         self.causal_mental_model.entities = [
             entity
             for entity in self.causal_mental_model.entities
-            if entity.name in self._DAG.nodes
+            if entity.name in self._networkx_wrapper.get_topological_sort()
         ]
 
     def _sort_entities(self) -> None:
         # order the sequence of causal actions
-        sorted_nodes = list(nx.topological_sort(self._DAG))
+        sorted_nodes = self._networkx_wrapper.get_topological_sort()
         self.causal_mental_model.entities.sort(key=lambda x: sorted_nodes.index(x.name))
 
     def _forward_propagate(self) -> None:

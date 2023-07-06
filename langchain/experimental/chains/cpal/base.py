@@ -1,12 +1,11 @@
 """
-Translate a human author's narrative into story elements as code.
+CPAL Chain and its subchains
 """
 from __future__ import annotations
 
 import json
 from typing import Any, Dict, List, Type, Optional
 import pydantic
-from networkx.drawing.nx_agraph import to_agraph
 
 from langchain.base_language import BaseLanguageModel
 from langchain.prompts.prompt import PromptTemplate
@@ -327,36 +326,3 @@ class CPALChain(_BaseStoryElementChain):
             **kwargs,
         }
         return output
-
-    def graph(self) -> None:  # return type is wrong TODO: fix
-        """graph diagram
-
-        Dependencies:
-
-        - networkx's func to_graphviz requires pygraphviz
-        - and pygraphviz requires graphviz debian package
-        """
-        try:
-            import pygraphviz  # noqa: F401
-
-        except ImportError as e:
-            if e.name == "_graphviz":
-                """
-                >>> e.msg  # pygraphviz throws this error
-                ImportError: libcgraph.so.6: cannot open shared object file
-                """
-                raise ImportError(
-                    "Could not import graphviz debian package. "
-                    "Please install it with:"
-                    "`sudo apt-get update`"
-                    "`sudo apt-get install graphviz graphviz-dev`"
-                )
-            else:
-                raise ImportError(
-                    "Could not import pygraphviz python package. "
-                    "Please install it with:"
-                    "`pip install pygraphviz`."
-                )
-
-        graph = to_agraph(self._story._DAG)  # convert to graphviz graph
-        return graph
