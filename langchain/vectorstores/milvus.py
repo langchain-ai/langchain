@@ -24,7 +24,79 @@ DEFAULT_MILVUS_CONNECTION = {
 
 
 class Milvus(VectorStore):
-    """Wrapper around the Milvus vector database."""
+    """Initialize wrapper around the milvus vector database.
+
+    In order to use this you need to have `pymilvus` installed and a
+    running Milvus
+
+    See the following documentation for how to run a Milvus instance:
+    https://milvus.io/docs/install_standalone-docker.md
+
+    If looking for a hosted Milvus, take a look at this documentation:
+    https://zilliz.com/cloud and make use of the Zilliz vectorstore found in
+    this project,
+
+    IF USING L2/IP metric IT IS HIGHLY SUGGESTED TO NORMALIZE YOUR DATA.
+
+    Args:
+        embedding_function (Embeddings): Function used to embed the text.
+        collection_name (str): Which Milvus collection to use. Defaults to
+            "LangChainCollection".
+        connection_args (Optional[dict[str, any]]): The connection args used for
+            this class comes in the form of a dict.
+        consistency_level (str): The consistency level to use for a collection.
+            Defaults to "Session".
+        index_params (Optional[dict]): Which index params to use. Defaults to
+            HNSW/AUTOINDEX depending on service.
+        search_params (Optional[dict]): Which search params to use. Defaults to
+            default of index.
+        drop_old (Optional[bool]): Whether to drop the current collection. Defaults
+            to False.
+
+    The connection args used for this class comes in the form of a dict,
+    here are a few of the options:
+        address (str): The actual address of Milvus
+            instance. Example address: "localhost:19530"
+        uri (str): The uri of Milvus instance. Example uri:
+            "http://randomwebsite:19530",
+            "tcp:foobarsite:19530",
+            "https://ok.s3.south.com:19530".
+        host (str): The host of Milvus instance. Default at "localhost",
+            PyMilvus will fill in the default host if only port is provided.
+        port (str/int): The port of Milvus instance. Default at 19530, PyMilvus
+            will fill in the default port if only host is provided.
+        user (str): Use which user to connect to Milvus instance. If user and
+            password are provided, we will add related header in every RPC call.
+        password (str): Required when user is provided. The password
+            corresponding to the user.
+        secure (bool): Default is false. If set to true, tls will be enabled.
+        client_key_path (str): If use tls two-way authentication, need to
+            write the client.key path.
+        client_pem_path (str): If use tls two-way authentication, need to
+            write the client.pem path.
+        ca_pem_path (str): If use tls two-way authentication, need to write
+            the ca.pem path.
+        server_pem_path (str): If use tls one-way authentication, need to
+            write the server.pem path.
+        server_name (str): If use tls, need to write the common name.
+
+    Example:
+        .. code-block:: python
+
+        from langchain import Milvus
+        from langchain.embeddings import OpenAIEmbeddings
+
+        embedding = OpenAIEmbeddings()
+        # Connect to a milvus instance on localhost
+        milvus_store = Milvus(
+            embedding_function: Embeddings,
+            collection_name = "LangChainCollection",
+            drop_old: True,
+        )
+
+    Raises:
+        ValueError: If the pymilvus python package is not installed.
+    """
 
     def __init__(
         self,
@@ -36,86 +108,7 @@ class Milvus(VectorStore):
         search_params: Optional[dict] = None,
         drop_old: Optional[bool] = False,
     ):
-        """Initialize wrapper around the milvus vector database.
-
-        In order to use this you need to have `pymilvus` installed and a
-        running Milvus/Zilliz Cloud instance.
-
-        See the following documentation for how to run a Milvus instance:
-        https://milvus.io/docs/install_standalone-docker.md
-
-        If looking for a hosted Milvus, take a looka this documentation:
-        https://zilliz.com/cloud
-
-        IF USING L2/IP metric IT IS HIGHLY SUGGESTED TO NORMALIZE YOUR DATA.
-
-        Args:
-            embedding_function (Embeddings): Function used to embed the text.
-            collection_name (str): Which Milvus collection to use. Defaults to
-                "LangChainCollection".
-            connection_args (Optional[dict[str, any]]): The connection args used for
-                this class comes in the form of a dict, here are a few of the options:
-                address (str): The actual address of Milvus
-                    instance. Example address: "localhost:19530"
-                uri (str): The uri of Milvus instance. Example uri:
-                    "http://randomwebsite:19530",
-                    "tcp:foobarsite:19530",
-                    "https://ok.s3.south.com:19530".
-                host (str): The host of Milvus instance. Default at "localhost",
-                    PyMilvus will fill in the default host if only port is provided.
-                port (str/int): The port of Milvus instance. Default at 19530, PyMilvus
-                    will fill in the default port if only host is provided.
-                user (str): Use which user to connect to Milvus instance. If user and
-                    password are provided, we will add related header in every RPC call.
-                password (str): Required when user is provided. The password
-                    corresponding to the user.
-                secure (bool): Default is false. If set to true, tls will be enabled.
-                client_key_path (str): If use tls two-way authentication, need to
-                    write the client.key path.
-                client_pem_path (str): If use tls two-way authentication, need to
-                    write the client.pem path.
-                ca_pem_path (str): If use tls two-way authentication, need to write
-                    the ca.pem path.
-                server_pem_path (str): If use tls one-way authentication, need to
-                    write the server.pem path.
-                server_name (str): If use tls, need to write the common name.
-            consistency_level (str): The consistency level to use for a collection.
-                Defaults to "Session".
-            index_params (Optional[dict]): Which index params to use. Defaults to
-                HNSW/AUTOINDEX depending on service.
-            search_params (Optional[dict]): Which search params to use. Defaults to
-                default of index.
-            drop_old (Optional[bool]): Whether to drop the current collection. Defaults
-                to False.
-
-        The connection args used for this class comes in the form of a dict,
-        here are a few of the options:
-            address (str): The actual address of Milvus
-                instance. Example address: "localhost:19530"
-            uri (str): The uri of Milvus instance. Example uri:
-                "http://randomwebsite:19530",
-                "tcp:foobarsite:19530",
-                "https://ok.s3.south.com:19530".
-            host (str): The host of Milvus instance. Default at "localhost",
-                PyMilvus will fill in the default host if only port is provided.
-            port (str/int): The port of Milvus instance. Default at 19530, PyMilvus
-                will fill in the default port if only host is provided.
-            user (str): Use which user to connect to Milvus instance. If user and
-                password are provided, we will add related header in every RPC call.
-            password (str): Required when user is provided. The password
-                corresponding to the user.
-            secure (bool): Default is false. If set to true, tls will be enabled.
-            client_key_path (str): If use tls two-way authentication, need to
-                write the client.key path.
-            client_pem_path (str): If use tls two-way authentication, need to
-                write the client.pem path.
-            ca_pem_path (str): If use tls two-way authentication, need to write
-                the ca.pem path.
-            server_pem_path (str): If use tls one-way authentication, need to
-                write the server.pem path.
-            server_name (str): If use tls, need to write the common name.
-
-        """
+        """Initialize the Milvus vector store."""
         try:
             from pymilvus import Collection, utility
         except ImportError:
