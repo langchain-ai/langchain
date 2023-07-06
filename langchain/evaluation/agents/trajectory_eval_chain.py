@@ -244,6 +244,7 @@ The following is the expected answer. Use this to measure correctness:
         callbacks: Callbacks = None,
         *,
         tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         include_run_info: bool = False,
     ) -> Dict[str, Any]:
         """Run the logic of this chain and add to output if desired.
@@ -257,6 +258,8 @@ The following is the expected answer. Use this to measure correctness:
                 chain will be returned. Defaults to False.
             callbacks: Callbacks to use for this chain run. If not provided, will
                 use the callbacks provided to the chain.
+            tags: Tags to add to the chain run.
+            metadata: Metadata to add to the chain run.
             include_run_info: Whether to include run info in the response. Defaults
                 to False.
         """
