@@ -107,8 +107,7 @@ class BedrockEmbeddings(BaseModel, Embeddings):
         text = text.replace(os.linesep, " ")
         _model_kwargs = self.model_kwargs or {}
 
-        input_body = {**_model_kwargs}
-        input_body["inputText"] = text
+        input_body = {**_model_kwargs, "inputText": text}
         body = json.dumps(input_body)
 
         embeddings = []
