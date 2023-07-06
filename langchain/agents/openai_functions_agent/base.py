@@ -11,7 +11,6 @@ from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import Callbacks
 from langchain.chat_models.openai import ChatOpenAI
-from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.chat import (
     BaseMessagePromptTemplate,
     ChatPromptTemplate,
@@ -21,10 +20,13 @@ from langchain.prompts.chat import (
 from langchain.schema import (
     AgentAction,
     AgentFinish,
+    BasePromptTemplate,
+    OutputParserException,
+)
+from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
     FunctionMessage,
-    OutputParserException,
     SystemMessage,
 )
 from langchain.tools import BaseTool
@@ -106,7 +108,6 @@ def _parse_ai_message(message: BaseMessage) -> Union[AgentAction, AgentFinish]:
     function_call = message.additional_kwargs.get("function_call", {})
 
     if function_call:
-        function_call = message.additional_kwargs["function_call"]
         function_name = function_call["name"]
         try:
             _tool_input = json.loads(function_call["arguments"])

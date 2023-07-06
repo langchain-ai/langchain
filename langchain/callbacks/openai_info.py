@@ -96,7 +96,7 @@ def get_openai_token_cost_for_model(
             f"Unknown model: {model_name}. Please provide a valid OpenAI model name."
             "Known models are: " + ", ".join(MODEL_COST_PER_1K_TOKENS.keys())
         )
-    return MODEL_COST_PER_1K_TOKENS[model_name] * num_tokens / 1000
+    return MODEL_COST_PER_1K_TOKENS[model_name] * (num_tokens / 1000)
 
 
 class OpenAICallbackHandler(BaseCallbackHandler):

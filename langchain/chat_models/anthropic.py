@@ -7,11 +7,13 @@ from langchain.callbacks.manager import (
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.anthropic import _AnthropicCommon
 from langchain.schema import (
+    ChatGeneration,
+    ChatResult,
+)
+from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
-    ChatGeneration,
     ChatMessage,
-    ChatResult,
     HumanMessage,
     SystemMessage,
 )
@@ -102,17 +104,17 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
 
         if self.streaming:
             completion = ""
-            stream_resp = self.client.completion_stream(**params)
+            stream_resp = self.client.completions.create(**params, stream=True)
             for data in stream_resp:
-                delta = data["completion"][len(completion) :]
-                completion = data["completion"]
+                delta = data.completion
+                completion += delta
                 if run_manager:
                     run_manager.on_llm_new_token(
                         delta,
                     )
         else:
-            response = self.client.completion(**params)
-            completion = response["completion"]
+            response = self.client.completions.create(**params)
+            completion = response.completion
         message = AIMessage(content=completion)
         return ChatResult(generations=[ChatGeneration(message=message)])
 
@@ -130,17 +132,19 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
 
         if self.streaming:
             completion = ""
-            stream_resp = await self.client.acompletion_stream(**params)
+            stream_resp = await self.async_client.completions.create(
+                **params, stream=True
+            )
             async for data in stream_resp:
-                delta = data["completion"][len(completion) :]
-                completion = data["completion"]
+                delta = data.completion
+                completion += delta
                 if run_manager:
                     await run_manager.on_llm_new_token(
                         delta,
                     )
         else:
-            response = await self.client.acompletion(**params)
-            completion = response["completion"]
+            response = await self.async_client.completions.create(**params)
+            completion = response.completion
         message = AIMessage(content=completion)
         return ChatResult(generations=[ChatGeneration(message=message)])
 

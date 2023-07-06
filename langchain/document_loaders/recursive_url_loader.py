@@ -7,7 +7,7 @@ from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 
-class RecusiveUrlLoader(BaseLoader):
+class RecursiveUrlLoader(BaseLoader):
     """Loader that loads all child links from a given url."""
 
     def __init__(self, url: str, exclude_dirs: Optional[str] = None) -> None:
@@ -24,7 +24,7 @@ class RecusiveUrlLoader(BaseLoader):
             from bs4 import BeautifulSoup
         except ImportError:
             raise ImportError(
-                "The BeautifulSoup package is required for the RecusiveUrlLoader."
+                "The BeautifulSoup package is required for the RecursiveUrlLoader."
             )
 
         # Construct the base and parent URLs

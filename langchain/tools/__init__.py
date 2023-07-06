@@ -38,6 +38,12 @@ from langchain.tools.interaction.tool import StdInInquireTool
 from langchain.tools.jira.tool import JiraAction
 from langchain.tools.json.tool import JsonGetValueTool, JsonListKeysTool
 from langchain.tools.metaphor_search import MetaphorSearchResults
+from langchain.tools.office365.create_draft_message import O365CreateDraftMessage
+from langchain.tools.office365.events_search import O365SearchEvents
+from langchain.tools.office365.messages_search import O365SearchEmails
+from langchain.tools.office365.send_event import O365SendEvent
+from langchain.tools.office365.send_message import O365SendMessage
+from langchain.tools.office365.utils import authenticate
 from langchain.tools.openapi.utils.api_models import APIOperation
 from langchain.tools.openapi.utils.openapi_utils import OpenAPISpec
 from langchain.tools.openweathermap.tool import OpenWeatherMapQueryRun
@@ -148,6 +154,12 @@ __all__ = [
     "MoveFileTool",
     "NavigateBackTool",
     "NavigateTool",
+    "O365SearchEmails",
+    "O365SearchEvents",
+    "O365CreateDraftMessage",
+    "O365SendMessage",
+    "O365SendEvent",
+    "authenticate",
     "OpenAPISpec",
     "OpenWeatherMapQueryRun",
     "PubmedQueryRun",

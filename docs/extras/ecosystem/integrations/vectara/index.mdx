@@ -39,6 +39,21 @@ vectara = Vectara(
 ```
 The customer_id, corpus_id and api_key are optional, and if they are not supplied will be read from the environment variables `VECTARA_CUSTOMER_ID`, `VECTARA_CORPUS_ID` and `VECTARA_API_KEY`, respectively.
 
+Afer you have the vectorstore, you can `add_texts` or `add_documents` as per the standard `VectorStore` interface, for example:
+
+```python
+vectara.add_texts(["to be or not to be", "that is the question"])
+```
+
+
+Since Vectara supports file-upload, we also added the ability to upload files (PDF, TXT, HTML, PPT, DOC, etc) directly as file. When using this method, the file is uploaded directly to the Vectara backend, processed and chunked optimally there, so you don't have to use the LangChain document loader or chunking mechanism.
+
+As an example:
+
+```python
+vectara.add_files(["path/to/file1.pdf", "path/to/file2.pdf",...])
+```
+
 To query the vectorstore, you can use the `similarity_search` method (or `similarity_search_with_score`), which takes a query string and returns a list of results:
 ```python
 results = vectara.similarity_score("what is LangChain?")

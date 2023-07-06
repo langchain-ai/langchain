@@ -19,15 +19,13 @@ from langchain.callbacks.manager import (
 )
 from langchain.load.dump import dumpd, dumps
 from langchain.schema import (
-    AIMessage,
-    BaseMessage,
     ChatGeneration,
     ChatResult,
-    HumanMessage,
     LLMResult,
     PromptValue,
     RunInfo,
 )
+from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
 
 
 def _get_verbosity() -> bool:
@@ -42,6 +40,8 @@ class BaseChatModel(BaseLanguageModel, ABC):
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     tags: Optional[List[str]] = Field(default=None, exclude=True)
     """Tags to add to the run trace."""
+    metadata: Optional[Dict[str, Any]] = Field(default=None, exclude=True)
+    """Metadata to add to the run trace."""
 
     @root_validator()
     def raise_deprecation(cls, values: Dict) -> Dict:
@@ -88,6 +88,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
         callbacks: Callbacks = None,
         *,
         tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Top Level call"""
@@ -100,6 +101,8 @@ class BaseChatModel(BaseLanguageModel, ABC):
             self.verbose,
             tags,
             self.tags,
+            metadata,
+            self.metadata,
         )
         run_managers = callback_manager.on_chat_model_start(
             dumpd(self), messages, invocation_params=params, options=options
@@ -141,6 +144,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
         callbacks: Callbacks = None,
         *,
         tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Top Level call"""
@@ -153,6 +157,8 @@ class BaseChatModel(BaseLanguageModel, ABC):
             self.verbose,
             tags,
             self.tags,
+            metadata,
+            self.metadata,
         )
 
         run_managers = await callback_manager.on_chat_model_start(
