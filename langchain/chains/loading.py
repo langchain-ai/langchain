@@ -352,6 +352,9 @@ def _load_sql_database_chain(config: dict, **kwargs: Any) -> SQLDatabaseChain:
         llm = load_llm_from_config(llm_config)
     elif "llm_path" in config:
         llm = load_llm(config.pop("llm_path"))
+    elif "llm_chain" in config:
+        llm_config = config.pop("llm_chain").pop("llm")
+        llm = load_llm_from_config(llm_config)
     else:
         raise ValueError("One of `llm` or `llm_path` must be present.")
     if "prompt" in config:
@@ -359,8 +362,6 @@ def _load_sql_database_chain(config: dict, **kwargs: Any) -> SQLDatabaseChain:
         prompt = load_prompt_from_config(prompt_config)
     else:
         prompt = None
-    # in case of duplicate key error
-    config.pop("llm_chain")
     return SQLDatabaseChain.from_llm(llm, database, prompt=prompt, **config)
 
 
