@@ -20,7 +20,7 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import BaseModel, root_validator
+from pydantic import root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -599,7 +599,7 @@ class Redis(VectorStore):
         return RedisVectorStoreRetriever(vectorstore=self, **kwargs)
 
 
-class RedisVectorStoreRetriever(VectorStoreRetriever, BaseModel):
+class RedisVectorStoreRetriever(VectorStoreRetriever):
     vectorstore: Redis
     search_type: str = "similarity"
     k: int = 4

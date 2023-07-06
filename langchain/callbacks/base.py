@@ -147,6 +147,7 @@ class CallbackManagerMixin:
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
         tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when LLM starts running."""
@@ -159,6 +160,7 @@ class CallbackManagerMixin:
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
         tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when a chat model starts running."""
@@ -168,10 +170,13 @@ class CallbackManagerMixin:
 
     def on_retriever_start(
         self,
+        serialized: Dict[str, Any],
         query: str,
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when Retriever starts running."""
@@ -184,6 +189,7 @@ class CallbackManagerMixin:
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
         tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when chain starts running."""
@@ -196,6 +202,7 @@ class CallbackManagerMixin:
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
         tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when tool starts running."""
@@ -266,6 +273,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
         tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Run when LLM starts running."""
@@ -278,6 +286,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
         tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when a chat model starts running."""
@@ -326,6 +335,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
         tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Run when chain starts running."""
@@ -360,6 +370,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
         tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Run when tool starts running."""
@@ -421,11 +432,13 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
     async def on_retriever_start(
         self,
+        serialized: Dict[str, Any],
         query: str,
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
         tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Run on retriever start."""
@@ -464,6 +477,8 @@ class BaseCallbackManager(CallbackManagerMixin):
         *,
         tags: Optional[List[str]] = None,
         inheritable_tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        inheritable_metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Initialize callback manager."""
         self.handlers: List[BaseCallbackHandler] = handlers
@@ -473,6 +488,8 @@ class BaseCallbackManager(CallbackManagerMixin):
         self.parent_run_id: Optional[UUID] = parent_run_id
         self.tags = tags or []
         self.inheritable_tags = inheritable_tags or []
+        self.metadata = metadata or {}
+        self.inheritable_metadata = inheritable_metadata or {}
 
     @property
     def is_async(self) -> bool:
@@ -515,3 +532,13 @@ class BaseCallbackManager(CallbackManagerMixin):
         for tag in tags:
             self.tags.remove(tag)
             self.inheritable_tags.remove(tag)
+
+    def add_metadata(self, metadata: Dict[str, Any], inherit: bool = True) -> None:
+        self.metadata.update(metadata)
+        if inherit:
+            self.inheritable_metadata.update(metadata)
+
+    def remove_metadata(self, keys: List[str]) -> None:
+        for key in keys:
+            self.metadata.pop(key)
+            self.inheritable_metadata.pop(key)

@@ -81,7 +81,9 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     """Combining documents by recursively reducing them.
 
     This involves
+
     - combine_documents_chain
+
     - collapse_documents_chain
 
     `combine_documents_chain` is ALWAYS provided. This is final chain that is called.
@@ -150,6 +152,10 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     """Chain to use to collapse documents if needed until they can all fit.
     If None, will use the combine_documents_chain.
     This is typically a StuffDocumentsChain."""
+    token_max: int = 3000
+    """The maximum number of tokens to group documents into. For example, if
+    set to 3000 then documents will be grouped into chunks of no greater than
+    3000 tokens before trying to combine them into a smaller chunk."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -167,7 +173,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     def combine_docs(
         self,
         docs: List[Document],
-        token_max: int = 3000,
+        token_max: Optional[int] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Tuple[str, dict]:
@@ -187,14 +193,18 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
             element returned is a dictionary of other keys to return.
         """
         result_docs, extra_return_dict = self._collapse(
-            docs, token_max, callbacks=callbacks, **kwargs
+            docs, token_max=token_max, callbacks=callbacks, **kwargs
         )
         return self.combine_documents_chain.combine_docs(
             docs=result_docs, callbacks=callbacks, **kwargs
         )
 
     async def acombine_docs(
-        self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
+        self,
+        docs: List[Document],
+        token_max: Optional[int] = None,
+        callbacks: Callbacks = None,
+        **kwargs: Any,
     ) -> Tuple[str, dict]:
         """Combine multiple documents recursively.
 
@@ -212,7 +222,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
             element returned is a dictionary of other keys to return.
         """
         result_docs, extra_return_dict = await self._acollapse(
-            docs, callbacks=callbacks, **kwargs
+            docs, token_max=token_max, callbacks=callbacks, **kwargs
         )
         return await self.combine_documents_chain.acombine_docs(
             docs=result_docs, callbacks=callbacks, **kwargs
@@ -221,7 +231,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     def _collapse(
         self,
         docs: List[Document],
-        token_max: int = 3000,
+        token_max: Optional[int] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Tuple[List[Document], dict]:
@@ -234,9 +244,10 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
                 input_documents=docs, callbacks=callbacks, **kwargs
             )
 
-        while num_tokens is not None and num_tokens > token_max:
+        _token_max = token_max or self.token_max
+        while num_tokens is not None and num_tokens > _token_max:
             new_result_doc_list = _split_list_of_docs(
-                result_docs, length_func, token_max, **kwargs
+                result_docs, length_func, _token_max, **kwargs
             )
             result_docs = []
             for docs in new_result_doc_list:
@@ -248,7 +259,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     async def _acollapse(
         self,
         docs: List[Document],
-        token_max: int = 3000,
+        token_max: Optional[int] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Tuple[List[Document], dict]:
@@ -261,9 +272,10 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
                 input_documents=docs, callbacks=callbacks, **kwargs
             )
 
-        while num_tokens is not None and num_tokens > token_max:
+        _token_max = token_max or self.token_max
+        while num_tokens is not None and num_tokens > _token_max:
             new_result_doc_list = _split_list_of_docs(
-                result_docs, length_func, token_max, **kwargs
+                result_docs, length_func, _token_max, **kwargs
             )
             result_docs = []
             for docs in new_result_doc_list:

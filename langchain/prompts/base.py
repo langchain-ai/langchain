@@ -1,6 +1,7 @@
 """BasePrompt schema definition."""
 from __future__ import annotations
 
+import warnings
 from abc import ABC
 from typing import Any, Callable, Dict, List, Set
 
@@ -26,7 +27,7 @@ def jinja2_formatter(template: str, **kwargs: Any) -> str:
 def validate_jinja2(template: str, input_variables: List[str]) -> None:
     """
     Validate that the input variables are valid for the template.
-    Raise an exception if missing or extra variables are found.
+    Issues an warning if missing or extra variables are found.
 
     Args:
         template: The template string.
@@ -37,15 +38,15 @@ def validate_jinja2(template: str, input_variables: List[str]) -> None:
     missing_variables = valid_variables - input_variables_set
     extra_variables = input_variables_set - valid_variables
 
-    error_message = ""
+    warning_message = ""
     if missing_variables:
-        error_message += f"Missing variables: {missing_variables} "
+        warning_message += f"Missing variables: {missing_variables} "
 
     if extra_variables:
-        error_message += f"Extra variables: {extra_variables}"
+        warning_message += f"Extra variables: {extra_variables}"
 
-    if error_message:
-        raise KeyError(error_message.strip())
+    if warning_message:
+        warnings.warn(warning_message.strip())
 
 
 def _get_jinja2_variables_from_template(template: str) -> Set[str]:
