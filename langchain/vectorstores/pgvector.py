@@ -594,9 +594,9 @@ class PGVector(VectorStore):
         database: str,
         user: str,
         password: str,
-        **kwargs
+        query_params: dict = {}
     ) -> str:
         """Return connection string from database parameters."""
-        query_params = f"?{urlencode(kwargs)}" if kwargs else ""
+        query_params = f"?{urlencode(query_params)}" if query_params else ""
         driver = driver if driver == "sqlalchemy" else f"+{driver}"
         return f"postgresql{driver}://{user}:{password}@{host}:{port}/{database}{query_params}"
