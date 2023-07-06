@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any, Optional, Sequence, Tuple
 from warnings import warn
+
+from langchain.schema.agent import AgentAction
 
 logger = logging.getLogger(__name__)
 
@@ -273,5 +275,122 @@ class PairwiseStringEvaluator(_EvalArgsMixin, ABC):
             prediction_b=prediction_b,
             reference=reference,
             input=input,
+            **kwargs,
+        )
+
+
+class AgentTrajectoryEvaluator(_EvalArgsMixin, ABC):
+    """Interface for evaluating agent trajectories."""
+
+    @property
+    def requires_input(self) -> bool:
+        return True
+
+    @abstractmethod
+    def _evaluate_agent_trajectory(
+        self,
+        *,
+        prediction: str,
+        agent_trajectory: Sequence[Tuple[AgentAction, str]],
+        input: str,
+        reference: Optional[str] = None,
+        **kwargs: Any,
+    ) -> dict:
+        """Evaluate a trajectory.
+
+        Args:
+            prediction (str): The final predicted response.
+            agent_trajectory (List[Tuple[AgentAction, str]]):
+                The intermediate steps forming the agent trajectory.
+            input (str): The input to the agent.
+            reference (Optional[str]): The reference answer.
+
+        Returns:
+            dict: The evaluation result.
+        """
+
+    async def _aevaluate_agent_trajectory(
+        self,
+        *,
+        prediction: str,
+        agent_trajectory: Sequence[Tuple[AgentAction, str]],
+        input: str,
+        reference: Optional[str] = None,
+        **kwargs: Any,
+    ) -> dict:
+        """Asynchronously evaluate a trajectory.
+
+        Args:
+            prediction (str): The final predicted response.
+            agent_trajectory (List[Tuple[AgentAction, str]]):
+                The intermediate steps forming the agent trajectory.
+            input (str): The input to the agent.
+            reference (Optional[str]): The reference answer.
+
+        Returns:
+            dict: The evaluation result.
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} hasn't implemented an async "
+            "aevaluate_agent_trajectory method."
+        )
+
+    def evaluate_agent_trajectory(
+        self,
+        *,
+        prediction: str,
+        agent_trajectory: Sequence[Tuple[AgentAction, str]],
+        input: str,
+        reference: Optional[str] = None,
+        **kwargs: Any,
+    ) -> dict:
+        """Evaluate a trajectory.
+
+        Args:
+            prediction (str): The final predicted response.
+            agent_trajectory (List[Tuple[AgentAction, str]]):
+                The intermediate steps forming the agent trajectory.
+            input (str): The input to the agent.
+            reference (Optional[str]): The reference answer.
+
+        Returns:
+            dict: The evaluation result.
+        """
+        self._check_evaluation_args(reference=reference, input=input)
+        return self._evaluate_agent_trajectory(
+            prediction=prediction,
+            input=input,
+            agent_trajectory=agent_trajectory,
+            reference=reference,
+            **kwargs,
+        )
+
+    async def aevaluate_agent_trajectory(
+        self,
+        *,
+        prediction: str,
+        agent_trajectory: Sequence[Tuple[AgentAction, str]],
+        input: str,
+        reference: Optional[str] = None,
+        **kwargs: Any,
+    ) -> dict:
+        """Asynchronously evaluate a trajectory.
+
+        Args:
+            prediction (str): The final predicted response.
+            agent_trajectory (List[Tuple[AgentAction, str]]):
+                The intermediate steps forming the agent trajectory.
+            input (str): The input to the agent.
+            reference (Optional[str]): The reference answer.
+
+        Returns:
+            dict: The evaluation result.
+        """
+        self._check_evaluation_args(reference=reference, input=input)
+        return await self._aevaluate_agent_trajectory(
+            prediction=prediction,
+            input=input,
+            agent_trajectory=agent_trajectory,
+            reference=reference,
             **kwargs,
         )

@@ -21,7 +21,11 @@ from langchain.evaluation.agents.trajectory_eval_chain import TrajectoryEvalChai
 from langchain.evaluation.comparison import PairwiseStringEvalChain
 from langchain.evaluation.criteria.eval_chain import CriteriaEvalChain
 from langchain.evaluation.qa import ContextQAEvalChain, CotQAEvalChain, QAEvalChain
-from langchain.evaluation.schema import PairwiseStringEvaluator, StringEvaluator
+from langchain.evaluation.schema import (
+    AgentTrajectoryEvaluator,
+    PairwiseStringEvaluator,
+    StringEvaluator,
+)
 
 __all__ = [
     "PairwiseStringEvalChain",
@@ -32,4 +36,5 @@ __all__ = [
     "PairwiseStringEvaluator",
     "TrajectoryEvalChain",
     "CriteriaEvalChain",
+    "AgentTrajectoryEvaluator",
 ]
