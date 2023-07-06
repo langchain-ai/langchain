@@ -63,10 +63,12 @@ class PipelineStep(BaseModel):
             input_ (Union[str, Dict[str, Any]]): The input to the step function.
 
         Raises:
-            ValueError: Raised when there is a mismatch between the input and input_expression.
+            ValueError: Raised when there is a mismatch between the input and
+                        input_expression.
 
         Returns:
-            Union[str, Dict[str, Any]]: The extracted output based on the output_expression.
+            Union[str, Dict[str, Any]]: The extracted output based on the
+                                        output_expression.
         """
         if self.input_expression is not None:
             if isinstance(input_, str):
