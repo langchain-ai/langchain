@@ -105,6 +105,7 @@ class Chroma(VectorStore):
             else None,
             metadata=collection_metadata,
         )
+        
 
     @xor_args(("query_texts", "query_embeddings"))
     def __query_collection(
