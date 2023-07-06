@@ -1,11 +1,13 @@
 import json
-from typing import Any, List
+from typing import Any, List, Union, Dict, Optional
+
+from pydantic import BaseModel, root_validator, validator
 
 from langchain.schema import BaseLLMOutputParser, ChatGeneration, Generation
 
 
 class OutputFunctionsParser(BaseLLMOutputParser[Any]):
-    args_only: bool = True
+    args_only: bool = False
 
     def parse_result(self, result: List[Generation]) -> Any:
         generation = result[0]
@@ -42,11 +44,28 @@ class JsonKeyOutputFunctionsParser(JsonOutputFunctionsParser):
 
 
 class PydanticOutputFunctionsParser(OutputFunctionsParser):
-    pydantic_schema: Any
+    pydantic_schema: Union[BaseModel, Dict[str, BaseModel]]
+
+    @root_validator(pre=True)
+    def validate_schema(self, values: Dict) -> Dict:
+        schema = values["pydantic_schema"]
+        if "args_only" not in values:
+            values["args_only"] = isinstance(schema, BaseModel)
+        elif values["args_only"] and isinstance(schema, Dict):
+            raise ValueError(
+                "If multiple pydantic schemas are provided then args_only should be"
+                " False."
+            )
+        return values
 
     def parse_result(self, result: List[Generation]) -> Any:
-        _args = super().parse_result(result)
-        pydantic_args = self.pydantic_schema.parse_raw(_args)
+        _result = super().parse_result(result)
+        if self.args_only:
+            pydantic_args = self.pydantic_schema.parse_raw(_result)
+        else:
+            fn_name = _result["name"]
+            _args = _result["arguments"]
+            pydantic_args = self.pydantic_schema[fn_name].parse_raw(_args)
         return pydantic_args
 
 
