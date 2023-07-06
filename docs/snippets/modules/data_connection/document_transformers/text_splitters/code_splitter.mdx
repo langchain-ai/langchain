@@ -253,7 +253,7 @@ html_text = """
 
 ```python
 html_splitter = RecursiveCharacterTextSplitter.from_language(
-    language=Language.MARKDOWN, chunk_size=60, chunk_overlap=0
+    language=Language.HTML, chunk_size=60, chunk_overlap=0
 )
 html_docs = html_splitter.create_documents([html_text])
 html_docs
