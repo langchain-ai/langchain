@@ -104,7 +104,7 @@ class _EmbeddingDistanceChainMixin(Chain):
         return score
 
 
-class EmbeddingEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
+class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
     """Use embedding distances to score semantic difference between
     a prediction and reference."""
 
@@ -199,7 +199,9 @@ class EmbeddingEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         )
 
 
-class PairwiseEmbeddingEvalChain(_EmbeddingDistanceChainMixin, PairwiseStringEvaluator):
+class PairwiseEmbeddingDistanceEvalChain(
+    _EmbeddingDistanceChainMixin, PairwiseStringEvaluator
+):
     """Use embedding distances to score semantic difference between two predictions."""
 
     @property

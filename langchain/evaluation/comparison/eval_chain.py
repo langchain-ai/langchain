@@ -3,13 +3,13 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from pydantic import Field
+from pydantic import Extra, Field
 
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.comparison.prompt import PROMPT, PROMPT_WITH_REFERENCE
-from langchain.evaluation.schema import PairwiseStringEvaluator
+from langchain.evaluation.schema import LLMEvalChain, PairwiseStringEvaluator
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseOutputParser
 
@@ -51,7 +51,7 @@ class PairwiseStringResultOutputParser(BaseOutputParser[dict]):
         }
 
 
-class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMChain):
+class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
     """A chain for comparing the output of two models.
 
     Example:
@@ -80,6 +80,11 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMChain):
     output_parser: BaseOutputParser = Field(
         default_factory=PairwiseStringResultOutputParser
     )
+
+    class Config:
+        """Configuration for the QAEvalChain."""
+
+        extra = Extra.ignore
 
     @property
     def requires_reference(self) -> bool:
