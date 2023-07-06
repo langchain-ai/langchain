@@ -18,7 +18,15 @@ from langchain.math_utils import cosine_similarity
 
 
 class EmbeddingDistance(str, Enum):
-    """Embedding Distance Metric."""
+    """Embedding Distance Metric.
+
+    Attributes:
+        COSINE: Cosine distance metric.
+        EUCLIDEAN: Euclidean distance metric.
+        MANHATTAN: Manhattan distance metric.
+        CHEBYSHEV: Chebyshev distance metric.
+        HAMMING: Hamming distance metric.
+    """
 
     COSINE = "cosine"
     EUCLIDEAN = "euclidean"
@@ -28,12 +36,16 @@ class EmbeddingDistance(str, Enum):
 
 
 class _EmbeddingDistanceChainMixin(Chain):
-    """Shared functionality for embedding distance evaluators."""
+    """Shared functionality for embedding distance evaluators.
+
+    Attributes:
+        embeddings (Embeddings): The embedding objects to vectorize the outputs.
+        distance_metric (EmbeddingDistance): The distance metric to use
+                                            for comparing the embeddings.
+    """
 
     embeddings: Embeddings = Field(default_factory=OpenAIEmbeddings)
-    """The embedding objects to vectorize the outputs."""
     distance_metric: EmbeddingDistance = Field(default=EmbeddingDistance.COSINE)
-    """The distance metric to use for comparing the embeddings."""
 
     class Config:
         """Permit embeddings to go unvalidated."""
@@ -42,6 +54,11 @@ class _EmbeddingDistanceChainMixin(Chain):
 
     @property
     def output_keys(self) -> List[str]:
+        """Return the output keys of the chain.
+
+        Returns:
+            List[str]: The output keys.
+        """
         return ["score"]
 
     @root_validator
@@ -61,7 +78,7 @@ class _EmbeddingDistanceChainMixin(Chain):
         """Get the metric function for the given metric name.
 
         Args:
-            metric (str): The metric name.
+            metric (EmbeddingDistance): The metric name.
 
         Returns:
             Any: The metric function.
@@ -80,25 +97,78 @@ class _EmbeddingDistanceChainMixin(Chain):
 
     @staticmethod
     def _cosine_distance(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+        """Compute the cosine distance between two vectors.
+
+        Args:
+            a (np.ndarray): The first vector.
+            b (np.ndarray): The second vector.
+
+        Returns:
+            np.ndarray: The cosine distance.
+        """
         return 1.0 - cosine_similarity(a, b)
 
     @staticmethod
     def _euclidean_distance(a: np.ndarray, b: np.ndarray) -> np.floating:
+        """Compute the Euclidean distance between two vectors.
+
+        Args:
+            a (np.ndarray): The first vector.
+            b (np.ndarray): The second vector.
+
+        Returns:
+            np.floating: The Euclidean distance.
+        """
         return np.linalg.norm(a - b)
 
     @staticmethod
     def _manhattan_distance(a: np.ndarray, b: np.ndarray) -> np.floating:
+        """Compute the Manhattan distance between two vectors.
+
+        Args:
+            a (np.ndarray): The first vector.
+            b (np.ndarray): The second vector.
+
+        Returns:
+            np.floating: The Manhattan distance.
+        """
         return np.sum(np.abs(a - b))
 
     @staticmethod
     def _chebyshev_distance(a: np.ndarray, b: np.ndarray) -> np.floating:
+        """Compute the Chebyshev distance between two vectors.
+
+        Args:
+            a (np.ndarray): The first vector.
+            b (np.ndarray): The second vector.
+
+        Returns:
+            np.floating: The Chebyshev distance.
+        """
         return np.max(np.abs(a - b))
 
     @staticmethod
     def _hamming_distance(a: np.ndarray, b: np.ndarray) -> np.floating:
+        """Compute the Hamming distance between two vectors.
+
+        Args:
+            a (np.ndarray): The first vector.
+            b (np.ndarray): The second vector.
+
+        Returns:
+            np.floating: The Hamming distance.
+        """
         return np.mean(a != b)
 
     def _compute_score(self, vectors: np.ndarray) -> float:
+        """Compute the score based on the distance metric.
+
+        Args:
+            vectors (np.ndarray): The input vectors.
+
+        Returns:
+            float: The computed score.
+        """
         metric = self._get_metric(self.distance_metric)
         score = metric(vectors[0].reshape(1, -1), vectors[1].reshape(1, -1)).item()
         return score
@@ -106,21 +176,48 @@ class _EmbeddingDistanceChainMixin(Chain):
 
 class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
     """Use embedding distances to score semantic difference between
-    a prediction and reference."""
+    a prediction and reference.
+
+    Examples:
+        >>> chain = EmbeddingDistanceEvalChain()
+        >>> result = chain.evaluate_strings(prediction="Hello", reference="Hi")
+        >>> print(result)
+        {'score': 0.5}
+    """
 
     @property
     def requires_reference(self) -> bool:
+        """Return whether the chain requires a reference.
+
+        Returns:
+            bool: True if a reference is required, False otherwise.
+        """
         return True
 
     @property
     def input_keys(self) -> List[str]:
+        """Return the input keys of the chain.
+
+        Returns:
+            List[str]: The input keys.
+        """
         return ["prediction", "reference"]
 
     def _call(
         self,
         inputs: Dict[str, Any],
-        run_manager: CallbackManagerForChainRun | None = None,
+        run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
+        """Compute the score for a prediction and reference.
+
+        Args:
+            inputs (Dict[str, Any]): The input data.
+            run_manager (Optional[CallbackManagerForChainRun], optional):
+                The callback manager.
+
+        Returns:
+            Dict[str, Any]: The computed score.
+        """
         vectors = np.array(
             self.embeddings.embed_documents(
                 [inputs["prediction"], inputs["prediction_b"]]
@@ -132,8 +229,18 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
     async def _acall(
         self,
         inputs: Dict[str, Any],
-        run_manager: AsyncCallbackManagerForChainRun | None = None,
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
+        """Asynchronously compute the score for a prediction and reference.
+
+        Args:
+            inputs (Dict[str, Any]): The input data.
+            run_manager (AsyncCallbackManagerForChainRun, optional):
+                The callback manager.
+
+        Returns:
+            Dict[str, Any]: The computed score.
+        """
         embedded = await self.embeddings.aembed_documents(
             [inputs["prediction"], inputs["prediction_b"]]
         )
@@ -155,7 +262,6 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         Args:
             prediction (str): The output string from the first model.
             reference (str): The reference string (required)
-            input: ignored
             callbacks (Callbacks, optional): The callbacks to use.
             **kwargs (Any): Additional keyword arguments.
 
@@ -182,10 +288,8 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
 
         Args:
             prediction (str): The output string from the first model.
-            prediction_b (str): The output string from the second model.
-            input: ignored
+            reference (str): The output string from the second model.
             callbacks (Callbacks, optional): The callbacks to use.
-            reference (str, optional): The reference string, if any.
             **kwargs (Any): Additional keyword arguments.
 
         Returns:
@@ -202,17 +306,39 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
 class PairwiseEmbeddingDistanceEvalChain(
     _EmbeddingDistanceChainMixin, PairwiseStringEvaluator
 ):
-    """Use embedding distances to score semantic difference between two predictions."""
+    """Use embedding distances to score semantic difference between two predictions.
+
+    Examples:
+        >>> chain = PairwiseEmbeddingDistanceEvalChain()
+        >>> result = chain.evaluate_string_pairs(prediction="Hello", prediction_b="Hi")
+        >>> print(result)
+        {'score': 0.5}
+    """
 
     @property
     def input_keys(self) -> List[str]:
+        """Return the input keys of the chain.
+
+        Returns:
+            List[str]: The input keys.
+        """
         return ["prediction", "prediction_b"]
 
     def _call(
         self,
         inputs: Dict[str, Any],
-        run_manager: CallbackManagerForChainRun | None = None,
+        run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
+        """Compute the score for two predictions.
+
+        Args:
+            inputs (Dict[str, Any]): The input data.
+            run_manager (CallbackManagerForChainRun, optional):
+                The callback manager.
+
+        Returns:
+            Dict[str, Any]: The computed score.
+        """
         vectors = np.array(
             self.embeddings.embed_documents(
                 [inputs["prediction"], inputs["prediction_b"]]
@@ -224,8 +350,18 @@ class PairwiseEmbeddingDistanceEvalChain(
     async def _acall(
         self,
         inputs: Dict[str, Any],
-        run_manager: AsyncCallbackManagerForChainRun | None = None,
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
+        """Asynchronously compute the score for two predictions.
+
+        Args:
+            inputs (Dict[str, Any]): The input data.
+            run_manager (AsyncCallbackManagerForChainRun, optional):
+                The callback manager.
+
+        Returns:
+            Dict[str, Any]: The computed score.
+        """
         embedded = await self.embeddings.aembed_documents(
             [inputs["prediction"], inputs["prediction_b"]]
         )
