@@ -1,5 +1,5 @@
 import importlib.util
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from pydantic import BaseModel, Extra, root_validator
 from langchain.embeddings.base import Embeddings
 
@@ -38,7 +38,8 @@ class SpacyEmbeddings(BaseModel, Embeddings):
             The validated values.
 
         Raises:
-            ValueError: If the Spacy package or the 'en_core_web_sm' model are not installed.
+            ValueError: If the Spacy package or the 'en_core_web_sm' 
+            model are not installed.
         """
         # Check if the Spacy package is installed
         if importlib.util.find_spec("spacy") is None:
@@ -56,7 +57,7 @@ class SpacyEmbeddings(BaseModel, Embeddings):
             raise ValueError(
                 "Spacy model 'en_core_web_sm' not found. "
                 "Please install it with"
-                    "`python -m spacy download en_core_web_sm`."
+                " `python -m spacy download en_core_web_sm`."
             )
         return values  # Return the validated values
 
