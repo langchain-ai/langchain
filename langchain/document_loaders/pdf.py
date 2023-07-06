@@ -67,6 +67,7 @@ class BasePDFLoader(BaseLoader, ABC):
             with open(temp_pdf, mode="wb") as f:
                 f.write(r.content)
             self.file_path = str(temp_pdf)
+            
         elif not os.path.isfile(self.file_path):
             raise ValueError("File path %s is not a valid file or url" % self.file_path)
 
@@ -272,6 +273,7 @@ class PyMuPDFLoader(BasePDFLoader):
 
         parser = PyMuPDFParser(text_kwargs=kwargs)
         blob = Blob.from_path(self.file_path)
+        blob.source = self.source
         return parser.parse(blob)
 
 
