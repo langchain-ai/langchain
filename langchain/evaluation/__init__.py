@@ -19,8 +19,11 @@ Some common use cases for evaluation include:
 This module also contains low-level APIs for creating custom evaluators for
 specific evaluation tasks. These include:
 
-- :class:`StringEvaluator <langchain.evaluation.schema.StringEvaluator>`: Evaluates an output string against a reference and/or input context.
-- :class:`PairwiseStringEvaluator <langchain.evaluation.schema.PairwiseStringEvaluator>`: Evaluates two strings against each other.
+- :class:`StringEvaluator <langchain.evaluation.schema.StringEvaluator>`: Evaluate a prediction string against a reference label and/or input context.
+- :class:`PairwiseStringEvaluator <langchain.evaluation.schema.PairwiseStringEvaluator>`: Evaluate two prediction strings against each other.
+    Useful for scoring preferences, measuring similarity between two chain or llm agents, or comparing outputs on similar inputs.
+- :class:`AgentTrajectoryEvaluator <langchain.evaluation.schema.AgentTrajectoryEvaluator>`: Evaluate the full sequence of actions
+    taken by an agent.
 
 """  # noqa: E501
 from langchain.evaluation.agents import TrajectoryEvalChain
