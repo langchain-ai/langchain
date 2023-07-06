@@ -88,6 +88,7 @@ class TelegramChatApiLoader(BaseLoader):
         api_hash: Optional[str] = None,
         username: Optional[str] = None,
         file_path: str = "telegram_data.json",
+        allow_cache: bool = False,
     ):
         """Initialize with API parameters."""
         self.chat_entity = chat_entity
@@ -95,6 +96,7 @@ class TelegramChatApiLoader(BaseLoader):
         self.api_hash = api_hash
         self.username = username
         self.file_path = file_path
+        self.allow_cache = allow_cache
 
     async def fetch_data_from_telegram(self) -> None:
         """Fetch data from Telegram API and save it as a JSON file."""
@@ -218,21 +220,22 @@ class TelegramChatApiLoader(BaseLoader):
 
     def load(self) -> List[Document]:
         """Load documents."""
-
-        if self.chat_entity is not None:
-            try:
-                import nest_asyncio
-
-                nest_asyncio.apply()
-                asyncio.run(self.fetch_data_from_telegram())
-            except ImportError:
-                raise ImportError(
-                    """`nest_asyncio` package not found.
-                    please install with `pip install nest_asyncio`
-                    """
-                )
-
+        
         p = Path(self.file_path)
+        
+        if not p.exists() or not self.allow_cache:
+            if self.chat_entity is not None:
+                try:
+                    import nest_asyncio
+
+                    nest_asyncio.apply()
+                    asyncio.run(self.fetch_data_from_telegram())
+                except ImportError:
+                    raise ImportError(
+                        """`nest_asyncio` package not found.
+                        please install with `pip install nest_asyncio`
+                        """
+                    )
 
         with open(p, encoding="utf8") as f:
             d = json.load(f)
