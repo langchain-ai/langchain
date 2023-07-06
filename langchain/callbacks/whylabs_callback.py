@@ -54,7 +54,7 @@ class WhyLabsCallbackHandler(BaseCallbackHandler):
     an LLM. These features can be used to guardrail, evaluate, and observe interactions
     over time to detect issues relating to hallucinations, prompt engineering,
     or output validation. LangKit is an LLM monitoring toolkit developed by WhyLabs.
-    
+
     Here are some examples of what can be monitored with LangKit:
     * Text Quality
       - readability score
@@ -71,7 +71,7 @@ class WhyLabsCallbackHandler(BaseCallbackHandler):
     * Sentiment and Toxicity
       - sentiment analysis
       - toxicity analysis
-    
+
     For more information, see https://docs.whylabs.ai/docs/language-model-monitoring
     or check out the LangKit repo here: https://github.com/whylabs/langkit
 
