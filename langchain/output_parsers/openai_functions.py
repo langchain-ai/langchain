@@ -68,11 +68,11 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
     def parse_result(self, result: List[Generation]) -> Any:
         _result = super().parse_result(result)
         if self.args_only:
-            pydantic_args = self.pydantic_schema.parse_raw(_result)
+            pydantic_args = self.pydantic_schema.parse_raw(_result)  # type: ignore
         else:
             fn_name = _result["name"]
             _args = _result["arguments"]
-            pydantic_args = self.pydantic_schema[fn_name].parse_raw(_args)
+            pydantic_args = self.pydantic_schema[fn_name].parse_raw(_args)  # type: ignore  # noqa: E501
         return pydantic_args
 
 

@@ -1,7 +1,7 @@
-""""""
+"""Methods for creating chains that use OpenAI function-calling APIs."""
 import inspect
 import re
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from pydantic import BaseModel
 
@@ -24,12 +24,16 @@ PYTHON_TO_JSON_TYPES = {
 
 
 def _get_python_function_name(function: Callable) -> str:
+    """Get the name of a Python function."""
     source = inspect.getsource(function)
     return re.search(r"^def (.*)\(", source).groups()[0]  # type: ignore
 
 
 def _parse_python_function_docstring(function: Callable) -> Tuple[str, dict]:
-    """"""
+    """Parse the function and argument descriptions from the docstring of a function.
+
+    Assumes the function docstring follows Google Python style guide.
+    """
     docstring = inspect.getdoc(function)
     if docstring:
         docstring_blocks = docstring.split("\n\n")
@@ -64,7 +68,11 @@ def _parse_python_function_docstring(function: Callable) -> Tuple[str, dict]:
 
 
 def _get_python_function_arguments(function: Callable, arg_descriptions: dict) -> dict:
-    """"""
+    """Get JsonSchema describing a Python functions arguments.
+
+    Assumes all function arguments are of primitive types (int, float, str, bool) or
+    are subclasses of pydantic.BaseModel.
+    """
     properties = {}
     annotations = inspect.get_annotations(function)
     for arg, arg_type in annotations.items():
@@ -127,8 +135,8 @@ def convert_to_openai_function(
 
 
 def _get_openai_output_parser(
-    functions: List[Union[Dict[str, Any], BaseModel, Callable]],
-    function_names: List[str],
+    functions: Sequence[Union[Dict[str, Any], BaseModel, Callable]],
+    function_names: Sequence[str],
 ) -> BaseLLMOutputParser:
     if isinstance(functions[0], type) and issubclass(functions[0], BaseModel):
         if len(functions) > 1:
@@ -141,12 +149,12 @@ def _get_openai_output_parser(
             pydantic_schema=pydantic_schema
         )
     else:
-        output_parser = JsonOutputFunctionsParser(args_only=False)
+        output_parser = JsonOutputFunctionsParser(args_only=len(functions) <= 1)
     return output_parser
 
 
 def create_openai_fn_chain(
-    functions: List[Union[Dict[str, Any], BaseModel, Callable]],
+    functions: Sequence[Union[Dict[str, Any], BaseModel, Callable]],
     llm: Optional[BaseLanguageModel] = None,
     prompt: Optional[BasePromptTemplate] = None,
     output_parser: Optional[BaseLLMOutputParser] = None,
@@ -174,3 +182,16 @@ def create_openai_fn_chain(
         **kwargs,
     )
     return llm_chain
+
+
+def create_structured_output_chain(
+    function: Union[Dict[str, Any], BaseModel],
+    llm: Optional[BaseLanguageModel] = None,
+    prompt: Optional[BasePromptTemplate] = None,
+    output_parser: Optional[BaseLLMOutputParser] = None,
+    **kwargs: Any,
+) -> LLMChain:
+    """"""
+    return create_openai_fn_chain(
+        [function], llm=llm, prompt=prompt, output_parser=output_parser, **kwargs
+    )
