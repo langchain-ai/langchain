@@ -21,7 +21,7 @@ from langchain.evaluation.agents.trajectory_eval_prompt import (
     EVAL_CHAT_PROMPT,
     TOOL_FREE_EVAL_CHAT_PROMPT,
 )
-from langchain.evaluation.schema import LLMEvalChain, TrajectoryEvaluator
+from langchain.evaluation.schema import AgentTrajectoryEvaluator, LLMEvalChain
 from langchain.schema import AgentAction, BaseOutputParser, OutputParserException
 from langchain.tools.base import BaseTool
 
@@ -70,7 +70,7 @@ class TrajectoryOutputParser(BaseOutputParser):
         return TrajectoryEval(score=int(score_str), reasoning=reasoning)
 
 
-class TrajectoryEvalChain(TrajectoryEvaluator, LLMEvalChain):
+class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
     """A chain for evaluating ReAct style agents.
 
     This chain is used to evaluate ReAct style agents by reasoning about
@@ -315,7 +315,7 @@ The following is the expected answer. Use this to measure correctness:
 
         return {"score": parsed_output.score}
 
-    def evaluate_agent_trajectory(
+    def _evaluate_agent_trajectory(
         self,
         *,
         prediction: str,
@@ -346,7 +346,7 @@ The following is the expected answer. Use this to measure correctness:
         }
         return self(inputs=inputs, callbacks=callbacks, **kwargs)
 
-    async def aevaluate_agent_trajectory(
+    async def _aevaluate_agent_trajectory(
         self,
         *,
         prediction: str,

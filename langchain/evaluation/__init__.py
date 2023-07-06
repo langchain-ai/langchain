@@ -29,6 +29,7 @@ from langchain.evaluation.criteria import CriteriaEvalChain
 from langchain.evaluation.loading import load_dataset, load_evaluator, load_evaluators
 from langchain.evaluation.qa import ContextQAEvalChain, CotQAEvalChain, QAEvalChain
 from langchain.evaluation.schema import (
+    AgentTrajectoryEvaluator,
     EvaluatorType,
     PairwiseStringEvaluator,
     StringEvaluator,
@@ -47,4 +48,5 @@ __all__ = [
     "load_evaluators",
     "load_evaluator",
     "load_dataset",
+    "AgentTrajectoryEvaluator",
 ]
