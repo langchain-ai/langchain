@@ -60,17 +60,15 @@ class LLMStringRunMapper(StringRunMapper):
     def serialize_outputs(self, outputs: Dict) -> str:
         if not outputs.get("generations"):
             raise ValueError("LLM Run must have generations as outputs.")
-        generations: List[Dict] = outputs["generations"]
-        if "messages" in generations[0]:
-            output_ = self.serialize_chat_messages(generations[0]["messages"])
+        first_generation: Dict = outputs["generations"][0]
+        if isinstance(first_generation, list):
+            # Runs from Tracer have generations as a list of lists of dicts
+            # Whereas Runs from the API have a list of dicts
+            first_generation = first_generation[0]
+        if "message" in first_generation:
+            output_ = self.serialize_chat_messages([first_generation["message"]])
         else:
-            output_ = "\n\n".join(
-                [
-                    generation["text"]
-                    for gen_batch in generations
-                    for generation in gen_batch
-                ]
-            )
+            output_ = first_generation["text"]
         return output_
 
     def map(self, run: Run) -> Dict[str, Any]:
@@ -84,7 +82,7 @@ class LLMStringRunMapper(StringRunMapper):
                 )
             else:
                 raise ValueError(
-                    f"Run {run.id} outputs not found. Please make sure this"
+                    f"Run {run.id} has no outputs. Cannot evaluate this run."
                 )
         else:
             try:
@@ -190,6 +188,11 @@ class StringExampleMapper(Serializable):
         """The keys to extract from the run."""
         return ["reference"]
 
+    def serialize_chat_messages(self, messages: List[Dict]) -> str:
+        """Extract the input messages from the run."""
+        chat_messages = messages_from_dict(messages)
+        return get_buffer_string(chat_messages)
+
     def map(self, example: Example) -> Dict[str, Any]:
         """Maps the Example, or dataset row to a dictionary."""
         if not example.outputs:
@@ -203,7 +206,12 @@ class StringExampleMapper(Serializable):
                     " specify a reference_key."
                 )
             else:
-                return {"reference": list(example.outputs.values())[0]}
+                output = list(example.outputs.values())[0]
+                return {
+                    "reference": output
+                    if type(output) == str
+                    else self.serialize_chat_messages([output])
+                }
         elif self.reference_key not in example.outputs:
             raise ValueError(
                 f"Example {example.id} does not have reference key"
@@ -331,7 +339,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
                 " not yet implemented."
                 "Expected one of [BaseLanguageModel, Chain, Tool]."
             )
-        if reference_key is not None:
+        if reference_key is not None or isinstance(model, BaseLanguageModel):
             example_mapper = StringExampleMapper(reference_key=reference_key)
         elif evaluator.requires_reference:
             raise ValueError(
