@@ -3,12 +3,14 @@ from __future__ import annotations
 
 from typing import Any, List, Optional, Sequence
 
+from pydantic import Extra
+
 from langchain import PromptTemplate
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.qa.eval_prompt import CONTEXT_PROMPT, COT_PROMPT, PROMPT
-from langchain.evaluation.schema import StringEvaluator
+from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
 
 
 def _parse_string_eval_output(text: str) -> dict:
@@ -39,8 +41,13 @@ def _parse_string_eval_output(text: str) -> dict:
     }
 
 
-class QAEvalChain(LLMChain, StringEvaluator):
+class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
     """LLM Chain specifically for evaluating question answering."""
+
+    class Config:
+        """Configuration for the QAEvalChain."""
+
+        extra = Extra.ignore
 
     @property
     def requires_reference(self) -> bool:
@@ -143,7 +150,7 @@ class QAEvalChain(LLMChain, StringEvaluator):
         return _parse_string_eval_output(result["text"])
 
 
-class ContextQAEvalChain(LLMChain, StringEvaluator):
+class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
     """LLM Chain specifically for evaluating QA w/o GT based on context"""
 
     @property
