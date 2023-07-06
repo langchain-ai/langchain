@@ -13,7 +13,13 @@ from langchain.evaluation.schema import EvaluatorType, LLMEvalChain
 
 def load_dataset(uri: str) -> List[Dict]:
     """Load a dataset from the LangChainDatasets HuggingFace org."""
-    from datasets import load_dataset
+    try:
+        from datasets import load_dataset
+    except ImportError:
+        raise ImportError(
+            "load_dataset requires the `datasets` package."
+            " Please install with `pip install datasets`"
+        )
 
     dataset = load_dataset(f"LangChainDatasets/{uri}")
     return [d for d in dataset["train"]]
@@ -29,7 +35,7 @@ _EVALUATOR_MAP: Dict[EvaluatorType, Type[LLMEvalChain]] = {
 }
 
 
-def _load_evaluator(
+def load_evaluator(
     evaluator: EvaluatorType,
     *,
     llm: Optional[BaseLanguageModel] = None,
@@ -54,7 +60,7 @@ def _load_evaluator(
     Examples
     --------
     >>> llm = ChatOpenAI(model="gpt-4", temperature=0)
-    >>> evaluator = _load_evaluator(EvaluatorType.QA, llm=llm)
+    >>> evaluator = load_evaluator(EvaluatorType.QA, llm=llm)
     """
     llm = llm or ChatOpenAI(model="gpt-4", temperature=0)
     return _EVALUATOR_MAP[evaluator].from_llm(llm=llm, **kwargs)
@@ -98,5 +104,5 @@ def load_evaluators(
     loaded = []
     for evaluator in evaluators:
         _kwargs = config.get(evaluator, {}) if config else {}
-        loaded.append(_load_evaluator(evaluator, llm=llm, **{**kwargs, **_kwargs}))
+        loaded.append(load_evaluator(evaluator, llm=llm, **{**kwargs, **_kwargs}))
     return loaded

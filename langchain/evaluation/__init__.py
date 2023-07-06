@@ -4,7 +4,7 @@ This module contains off-the-shelf evaluation chains for grading the output of
 LangChain primitives such as language models and chains.
 
 To load an evaluator, you can use the :func:`load_evaluators <langchain.evaluation.loading.load_evaluators>` function with the
-name of the evaluator to load.
+names of the evaluators to load.
 
 To load one of the LangChain HuggingFace datasets, you can use the :func:`load_dataset <langchain.evaluation.loading.load_dataset>` function with the
 name of the dataset to load.
@@ -26,7 +26,7 @@ specific evaluation tasks. These include:
 from langchain.evaluation.agents import TrajectoryEvalChain
 from langchain.evaluation.comparison import PairwiseStringEvalChain
 from langchain.evaluation.criteria import CriteriaEvalChain
-from langchain.evaluation.loading import load_dataset, load_evaluators
+from langchain.evaluation.loading import load_dataset, load_evaluator, load_evaluators
 from langchain.evaluation.qa import ContextQAEvalChain, CotQAEvalChain, QAEvalChain
 from langchain.evaluation.schema import (
     EvaluatorType,
@@ -45,5 +45,6 @@ __all__ = [
     "TrajectoryEvalChain",
     "CriteriaEvalChain",
     "load_evaluators",
+    "load_evaluator",
     "load_dataset",
 ]
