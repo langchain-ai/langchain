@@ -1,12 +1,13 @@
 """Interfaces to be implemented by general evaluators."""
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Protocol, Sequence, Tuple, runtime_checkable
+from typing import Any, Optional, Sequence, Tuple
 
 from langchain.schema.agent import AgentAction
 
 
-@runtime_checkable
-class StringEvaluator(Protocol):
+class StringEvaluator(ABC):
     """Protocol for evaluating strings."""
 
     @abstractmethod
@@ -56,8 +57,7 @@ class StringEvaluator(Protocol):
         )
 
 
-@runtime_checkable
-class PairwiseStringEvaluator(Protocol):
+class PairwiseStringEvaluator(ABC):
     """A protocol for comparing the output of two models."""
 
     @abstractmethod
@@ -88,6 +88,7 @@ class PairwiseStringEvaluator(Protocol):
 
     async def aevaluate_string_pairs(
         self,
+        *,
         prediction: str,
         prediction_b: str,
         reference: Optional[str] = None,
@@ -115,7 +116,7 @@ class PairwiseStringEvaluator(Protocol):
         )
 
 
-class TrajectoryEvaluator(ABC):
+class AgentTrajectoryEvaluator(ABC):
     """Interface for evaluating agent trajectories."""
 
     @abstractmethod

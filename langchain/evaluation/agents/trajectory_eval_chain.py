@@ -9,6 +9,7 @@ from typing import Any, Dict, List, NamedTuple, Optional, Sequence, Tuple, Union
 
 from pydantic import Field
 
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
@@ -21,7 +22,7 @@ from langchain.evaluation.agents.trajectory_eval_prompt import (
     EVAL_CHAT_PROMPT,
     TOOL_FREE_EVAL_CHAT_PROMPT,
 )
-from langchain.evaluation.schema import TrajectoryEvaluator
+from langchain.evaluation.schema import AgentTrajectoryEvaluator
 from langchain.schema import AgentAction, BaseOutputParser, OutputParserException
 from langchain.tools.base import BaseTool
 
@@ -70,7 +71,7 @@ class TrajectoryOutputParser(BaseOutputParser):
         return TrajectoryEval(score=int(score_str), reasoning=reasoning)
 
 
-class TrajectoryEvalChain(TrajectoryEvaluator, Chain):
+class TrajectoryEvalChain(AgentTrajectoryEvaluator, Chain):
     """A chain for evaluating ReAct style agents.
 
     This chain is used to evaluate ReAct style agents by reasoning about
@@ -189,10 +190,11 @@ The following is the expected answer. Use this to measure correctness:
     @classmethod
     def from_llm(
         cls,
-        llm: BaseChatModel,
+        llm: BaseLanguageModel,
         agent_tools: Optional[Sequence[BaseTool]] = None,
         output_parser: Optional[TrajectoryOutputParser] = None,
         return_reasoning: bool = False,
+        **kwargs: Any,
     ) -> "TrajectoryEvalChain":
         """Create a TrajectoryEvalChain object from a language model chain.
 
@@ -208,6 +210,10 @@ The following is the expected answer. Use this to measure correctness:
         Returns:
             TrajectoryEvalChain: The TrajectoryEvalChain object.
         """
+        if not isinstance(llm, BaseChatModel):
+            raise NotImplementedError(
+                "Only chat models supported by the current trajectory eval"
+            )
         if agent_tools:
             prompt = EVAL_CHAT_PROMPT
         else:
@@ -218,6 +224,7 @@ The following is the expected answer. Use this to measure correctness:
             return_reasoning=return_reasoning,
             eval_chain=eval_chain,
             output_parser=output_parser or TrajectoryOutputParser(),
+            **kwargs,
         )
 
     @property
