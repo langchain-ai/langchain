@@ -1,7 +1,7 @@
 """Tools for interacting with a Power BI dataset."""
 import logging
 from time import perf_counter
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from pydantic import Field, validator
 
@@ -18,9 +18,6 @@ from langchain.tools.powerbi.prompt import (
     RETRY_RESPONSE,
 )
 from langchain.utilities.powerbi import PowerBIDataset, json_to_md
-
-if TYPE_CHECKING:
-    pass
 
 logger = logging.getLogger(__name__)
 
