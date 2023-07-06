@@ -259,8 +259,6 @@ class BaseOpenAI(BaseLLM):
             "n": self.n,
             "request_timeout": self.request_timeout,
             "logit_bias": self.logit_bias,
-            "openai_api_key": self.openai_api_key,
-            "openai_api_base": self.openai_api_base,
         }
 
         # Azure gpt-35-turbo doesn't support best_of
