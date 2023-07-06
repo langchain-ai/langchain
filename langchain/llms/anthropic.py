@@ -50,11 +50,11 @@ class _AnthropicCommon(BaseModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        anthropic_api_key = get_from_dict_or_env(
+        values["anthropic_api_key"] = get_from_dict_or_env(
             values, "anthropic_api_key", "ANTHROPIC_API_KEY"
         )
         # Get custom api url from environment.
-        anthropic_api_url = get_from_dict_or_env(
+        values["anthropic_api_url"] = get_from_dict_or_env(
             values,
             "anthropic_api_url",
             "ANTHROPIC_API_URL",
@@ -72,13 +72,13 @@ class _AnthropicCommon(BaseModel):
                     f"`pip install -U anthropic`"
                 )
             values["client"] = anthropic.Anthropic(
-                base_url=anthropic_api_url,
-                api_key=anthropic_api_key,
+                base_url=values["anthropic_api_url"],
+                api_key=values["anthropic_api_key"],
                 timeout=values["default_request_timeout"],
             )
             values["async_client"] = anthropic.AsyncAnthropic(
-                base_url=anthropic_api_url,
-                api_key=anthropic_api_key,
+                base_url=values["anthropic_api_url"],
+                api_key=values["anthropic_api_key"],
                 timeout=values["default_request_timeout"],
             )
             values["HUMAN_PROMPT"] = anthropic.HUMAN_PROMPT
