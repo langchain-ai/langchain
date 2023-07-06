@@ -19,10 +19,10 @@ if TYPE_CHECKING:
 PRINT_WARNINGS = True
 
 
-def _serialize_inputs(run_inputs: dict) -> Union[dict, list]:
+def _serialize_inputs(run_inputs: dict) -> dict:
     if "input_documents" in run_inputs:
         docs = run_inputs["input_documents"]
-        return [doc.json() for doc in docs]
+        return {f"input_document_{i}": doc.json() for i, doc in enumerate(docs)}
     else:
         return run_inputs
 
