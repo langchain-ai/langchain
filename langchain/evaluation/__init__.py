@@ -23,9 +23,9 @@ specific evaluation tasks. These include:
 - :class:`PairwiseStringEvaluator <langchain.evaluation.schema.PairwiseStringEvaluator>`: Evaluates two strings against each other.
 
 """  # noqa: E501
-from langchain.evaluation.agents.trajectory_eval_chain import TrajectoryEvalChain
-from langchain.evaluation.comparison.eval_chain import PairwiseStringEvalChain
-from langchain.evaluation.criteria.eval_chain import CriteriaEvalChain
+from langchain.evaluation.agents import TrajectoryEvalChain
+from langchain.evaluation.comparison import PairwiseStringEvalChain
+from langchain.evaluation.criteria import CriteriaEvalChain
 from langchain.evaluation.loading import load_dataset, load_evaluators
 from langchain.evaluation.qa import ContextQAEvalChain, CotQAEvalChain, QAEvalChain
 from langchain.evaluation.schema import (

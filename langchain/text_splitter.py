@@ -47,7 +47,7 @@ def _split_text_with_regex(
                 splits += _splits[-1:]
             splits = [_splits[0]] + splits
         else:
-            splits = text.split(separator)
+            splits = re.split(separator, text)
     else:
         splits = list(text)
     return [s for s in splits if s != ""]

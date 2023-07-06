@@ -191,6 +191,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     when using one of the many model providers that expose an OpenAI-like 
     API but with different models. In those cases, in order to avoid erroring 
     when tiktoken is called, you can specify a model name to use here."""
+    show_progress_bar: bool = False
+    """Whether to show a progress bar when embedding."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -309,12 +311,17 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
         batched_embeddings = []
         _chunk_size = chunk_size or self.chunk_size
-        try:
-            import tqdm
 
-            _iter = tqdm.tqdm(range(0, len(tokens), _chunk_size))
-        except ImportError:
+        if self.show_progress_bar:
+            try:
+                import tqdm
+
+                _iter = tqdm.tqdm(range(0, len(tokens), _chunk_size))
+            except ImportError:
+                _iter = range(0, len(tokens), _chunk_size)
+        else:
             _iter = range(0, len(tokens), _chunk_size)
+
         for i in _iter:
             response = embed_with_retry(
                 self,
