@@ -108,7 +108,6 @@ def _parse_ai_message(message: BaseMessage) -> Union[AgentAction, AgentFinish]:
     function_call = message.additional_kwargs.get("function_call", {})
 
     if function_call:
-        function_call = message.additional_kwargs["function_call"]
         function_name = function_call["name"]
         try:
             _tool_input = json.loads(function_call["arguments"])

@@ -16,6 +16,14 @@ class ChromaTranslator(Visitor):
 
     allowed_operators = [Operator.AND, Operator.OR]
     """Subset of allowed logical operators."""
+    allowed_comparators = [
+        Comparator.EQ,
+        Comparator.GT,
+        Comparator.GTE,
+        Comparator.LT,
+        Comparator.LTE,
+    ]
+    """Subset of allowed logical comparators."""
 
     def _format_func(self, func: Union[Operator, Comparator]) -> str:
         self._validate_func(func)
