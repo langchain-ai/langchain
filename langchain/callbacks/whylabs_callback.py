@@ -76,7 +76,7 @@ class WhyLabsCallbackHandler(BaseCallbackHandler):
     or check out the LangKit repo here: https://github.com/whylabs/langkit
 
     ---
-    Parameters:
+    Args:
         api_key (Optional[str]): WhyLabs API key. Optional because the preferred
             way to specify the API key is with environment variable
             WHYLABS_API_KEY.
