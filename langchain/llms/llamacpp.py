@@ -121,6 +121,7 @@ class LlamaCpp(LLM):
             "n_batch",
             "use_mmap",
             "last_n_tokens_size",
+            "verbose",
         ]
         model_params = {k: values[k] for k in model_param_names}
         # For backwards compatibility, only include if non-null.
