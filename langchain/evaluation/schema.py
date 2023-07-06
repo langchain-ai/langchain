@@ -3,12 +3,45 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
+from enum import Enum
 from typing import Any, Optional, Sequence, Tuple
 from warnings import warn
 
+from langchain.base_language import BaseLanguageModel
+from langchain.chains.base import Chain
 from langchain.schema.agent import AgentAction
 
 logger = logging.getLogger(__name__)
+
+
+class EvaluatorType(str, Enum):
+    """The types of the evaluators."""
+
+    QA = "qa"
+    """Question answering evaluator, which grades answers to questions
+    directly using an LLM."""
+    COT_QA = "cot_qa"
+    """Chain of thought question answering evaluator, which grades
+    answers to questions using
+    chain of thought 'reasoning'."""
+    CONTEXT_QA = "context_qa"
+    """Question answering evaluator that incorporates 'context' in the response."""
+    PAIRWISE_STRING = "pairwise_string"
+    """The pairwise string evaluator, which compares the output of two models."""
+    AGENT_TRAJECTORY = "trajectory"
+    """The agent trajectory evaluator, which grades the agent's intermediate steps."""
+    CRITERIA = "criteria"
+    """The criteria evaluator, which evaluates a model based on a
+    custom set of criteria."""
+
+
+class LLMEvalChain(Chain):
+    """A base class for evaluators that use an LLM."""
+
+    @classmethod
+    @abstractmethod
+    def from_llm(cls, llm: BaseLanguageModel, **kwargs: Any) -> LLMEvalChain:
+        """Create a new evaluator from an LLM."""
 
 
 class _EvalArgsMixin:

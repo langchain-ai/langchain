@@ -7,7 +7,7 @@ chain (LLMChain) to generate the reasoning and scores.
 
 from typing import Any, Dict, List, NamedTuple, Optional, Sequence, Tuple, Union
 
-from pydantic import Field
+from pydantic import Extra, Field
 
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
@@ -15,14 +15,13 @@ from langchain.callbacks.manager import (
     CallbackManagerForChainRun,
     Callbacks,
 )
-from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chat_models.base import BaseChatModel
 from langchain.evaluation.agents.trajectory_eval_prompt import (
     EVAL_CHAT_PROMPT,
     TOOL_FREE_EVAL_CHAT_PROMPT,
 )
-from langchain.evaluation.schema import AgentTrajectoryEvaluator
+from langchain.evaluation.schema import AgentTrajectoryEvaluator, LLMEvalChain
 from langchain.schema import AgentAction, BaseOutputParser, OutputParserException
 from langchain.tools.base import BaseTool
 
@@ -71,7 +70,7 @@ class TrajectoryOutputParser(BaseOutputParser):
         return TrajectoryEval(score=int(score_str), reasoning=reasoning)
 
 
-class TrajectoryEvalChain(AgentTrajectoryEvaluator, Chain):
+class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
     """A chain for evaluating ReAct style agents.
 
     This chain is used to evaluate ReAct style agents by reasoning about
@@ -124,6 +123,11 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, Chain):
     """The output parser used to parse the output."""
     return_reasoning: bool = False
     """Whether to return the reasoning along with the score."""
+
+    class Config:
+        """Configuration for the QAEvalChain."""
+
+        extra = Extra.ignore
 
     @property
     def _tools_description(self) -> str:
