@@ -181,6 +181,40 @@ def test_tracing_v2_chain_with_tags() -> None:
         chain.run("what is the meaning of life", tags=["a-tag"])
 
 
+def test_tracing_v2_agent_with_metadata() -> None:
+    os.environ["LANGCHAIN_TRACING_V2"] = "true"
+    llm = OpenAI(temperature=0)
+    chat = ChatOpenAI(temperature=0)
+    tools = load_tools(["llm-math", "serpapi"], llm=llm)
+    agent = initialize_agent(
+        tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
+    )
+    chat_agent = initialize_agent(
+        tools, chat, agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True
+    )
+    agent.run(questions[0], tags=["a-tag"], metadata={"a": "b", "c": "d"})
+    chat_agent.run(questions[0], tags=["a-tag"], metadata={"a": "b", "c": "d"})
+
+
+@pytest.mark.asyncio
+async def test_tracing_v2_async_agent_with_metadata() -> None:
+    os.environ["LANGCHAIN_TRACING_V2"] = "true"
+    llm = OpenAI(temperature=0, metadata={"f": "g", "h": "i"})
+    chat = ChatOpenAI(temperature=0, metadata={"f": "g", "h": "i"})
+    async_tools = load_tools(["llm-math", "serpapi"], llm=llm)
+    agent = initialize_agent(
+        async_tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
+    )
+    chat_agent = initialize_agent(
+        async_tools,
+        chat,
+        agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=True,
+    )
+    await agent.arun(questions[0], tags=["a-tag"], metadata={"a": "b", "c": "d"})
+    await chat_agent.arun(questions[0], tags=["a-tag"], metadata={"a": "b", "c": "d"})
+
+
 def test_trace_as_group() -> None:
     llm = OpenAI(temperature=0.9)
     prompt = PromptTemplate(
