@@ -20,7 +20,14 @@ from langchain.evaluation.string_distance.base import (
 
 
 def load_dataset(uri: str) -> List[Dict]:
-    """Load a dataset from the LangChainDatasets HuggingFace org."""
+    """Load a dataset from the `LangChainDatasets HuggingFace org <https://huggingface.co/LangChainDatasets>`.
+
+    Examples
+    --------
+    # !pip install datasets
+    >>> from langchain.evaluation import load_dataset
+    >>> ds = load_dataset("llm-math")
+    """  # noqa: E501
     try:
         from datasets import load_dataset
     except ImportError:
@@ -71,8 +78,8 @@ def load_evaluator(
 
     Examples
     --------
-    >>> llm = ChatOpenAI(model="gpt-4", temperature=0)
-    >>> evaluator = load_evaluator(EvaluatorType.QA, llm=llm)
+    >>> from langchain.evaluation import load_evaluator, EvaluatorType
+    >>> evaluator = load_evaluator(EvaluatorType.QA)
     """
     llm = llm or ChatOpenAI(model="gpt-4", temperature=0)
     evaluator_cls = _EVALUATOR_MAP[evaluator]
@@ -111,10 +118,9 @@ def load_evaluators(
 
     Examples
     --------
-    .. code-block:: python
-        from langchain.evaluation import load_evaluators, EvaluatorType
-        evaluators = [EvaluatorType.QA, EvaluatorType.CRITERIA]
-        loaded_evaluators = load_evaluators(evaluators, criteria="helpfulness")
+    >>> from langchain.evaluation import load_evaluators, EvaluatorType
+    >>> evaluators = [EvaluatorType.QA, EvaluatorType.CRITERIA]
+    >>> loaded_evaluators = load_evaluators(evaluators, criteria="helpfulness")
     """
     llm = llm or ChatOpenAI(model="gpt-4", temperature=0)
     loaded = []

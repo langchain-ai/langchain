@@ -97,7 +97,8 @@ class _EvalArgsMixin:
 
 
 class StringEvaluator(_EvalArgsMixin, ABC):
-    """Protocol for evaluating strings."""
+    """Grade, tag, or otherwise evaluate predictions relative to their inputs
+    and/or reference labels."""
 
     @abstractmethod
     def _evaluate_strings(
@@ -196,7 +197,7 @@ class StringEvaluator(_EvalArgsMixin, ABC):
 
 
 class PairwiseStringEvaluator(_EvalArgsMixin, ABC):
-    """A protocol for comparing the output of two models."""
+    """Compare the output of two models (or two outputs of the same model)."""
 
     @abstractmethod
     def _evaluate_string_pairs(
