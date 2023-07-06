@@ -29,7 +29,7 @@ _DEFAULT_GRAPH_QA_TEMPLATE = """Use the following knowledge triplets to answer t
 
 Question: {question}
 Helpful Answer:"""
-PROMPT = PromptTemplate(
+GRAPH_QA_PROMPT = PromptTemplate(
     template=_DEFAULT_GRAPH_QA_TEMPLATE, input_variables=["context", "question"]
 )
 
