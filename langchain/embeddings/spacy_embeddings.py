@@ -38,7 +38,7 @@ class SpacyEmbeddings(BaseModel, Embeddings):
             The validated values.
 
         Raises:
-            ValueError: If the Spacy package or the 'en_core_web_sm' 
+            ValueError: If the Spacy package or the 'en_core_web_sm'
             model are not installed.
         """
         # Check if the Spacy package is installed
