@@ -73,18 +73,17 @@ class Clarifai(LLM):
     try:
       from clarifai.auth.helper import ClarifaiAuthHelper
       from clarifai.client import create_stub
-
-      auth = ClarifaiAuthHelper(
-          user_id=user_id,
-          app_id=app_id,
-          pat=values["pat"],
-          base=values["api_base"],
-      )
-      values["userDataObject"] = auth.get_user_app_id_proto()
-      values["stub"] = create_stub(auth)
     except ImportError:
       raise ImportError("Could not import clarifai python package. "
                         "Please install it with `pip install clarifai`.")
+    auth = ClarifaiAuthHelper(
+        user_id=user_id,
+        app_id=app_id,
+        pat=values["pat"],
+        base=values["api_base"],
+    )
+    values["userDataObject"] = auth.get_user_app_id_proto()
+    values["stub"] = create_stub(auth)
 
     return values
 
