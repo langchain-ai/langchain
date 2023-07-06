@@ -4,7 +4,7 @@ import warnings
 from importlib.metadata import version
 from typing import Any, Callable, Dict, Generator, List, Mapping, Optional
 
-import packaging
+from packaging.version import parse
 from pydantic import BaseModel, root_validator
 
 from langchain.callbacks.manager import (
@@ -64,8 +64,8 @@ class _AnthropicCommon(BaseModel):
         try:
             import anthropic
 
-            anthropic_version = packaging.version.parse(version("anthropic"))
-            if anthropic_version < packaging.version.parse("0.3"):
+            anthropic_version = parse(version("anthropic"))
+            if anthropic_version < parse("0.3"):
                 raise ValueError(
                     f"Anthropic client version must be > 0.3, got {anthropic_version}. "
                     f"To update the client, please run "
