@@ -144,6 +144,7 @@ def tracing_v2_enabled(
     project_name: Optional[str] = None,
     *,
     example_id: Optional[Union[str, UUID]] = None,
+    tags: Optional[List[str]] = None,
 ) -> Generator[None, None, None]:
     """Instruct LangChain to log all runs in context to LangSmith.
 
@@ -151,6 +152,8 @@ def tracing_v2_enabled(
         project_name (str, optional): The name of the project.
             Defaults to "default".
         example_id (str or UUID, optional): The ID of the example.
+            Defaults to None.
+        tags (List[str], optional): The tags to add to the run.
             Defaults to None.
 
     Returns:
@@ -170,6 +173,7 @@ def tracing_v2_enabled(
     cb = LangChainTracer(
         example_id=example_id,
         project_name=project_name,
+        tags=tags,
     )
     tracing_v2_callback_var.set(cb)
     yield
