@@ -23,7 +23,7 @@ from langchain.schema.output import ChatGeneration, ChatResult
 
 
 def _display_messages(messages: List[BaseMessage]) -> None:
-    """Displays the given messages to the user."""
+    """ChatModel wrapper which returns user input as the response.."""
     dict_messages = messages_to_dict(messages)
     for message in dict_messages:
         yaml_string = yaml.dump(
