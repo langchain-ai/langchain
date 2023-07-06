@@ -4,12 +4,14 @@ from __future__ import annotations
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Union, cast
 from uuid import UUID
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.tracers.schemas import Run, RunTypeEnum
-from langchain.schema import Document, LLMResult
+from langchain.load.dump import dumpd
+from langchain.schema.document import Document
+from langchain.schema.output import ChatGeneration, LLMResult
 
 logger = logging.getLogger(__name__)
 
@@ -87,12 +89,15 @@ class BaseTracer(BaseCallbackHandler, ABC):
         run_id: UUID,
         tags: Optional[List[str]] = None,
         parent_run_id: Optional[UUID] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Start a trace for an LLM run."""
         parent_run_id_ = str(parent_run_id) if parent_run_id else None
         execution_order = self._get_execution_order(parent_run_id_)
         start_time = datetime.utcnow()
+        if metadata:
+            kwargs.update({"metadata": metadata})
         llm_run = Run(
             id=run_id,
             parent_run_id=parent_run_id,
@@ -143,6 +148,13 @@ class BaseTracer(BaseCallbackHandler, ABC):
         if llm_run is None or llm_run.run_type != RunTypeEnum.llm:
             raise TracerException("No LLM Run found to be traced")
         llm_run.outputs = response.dict()
+        for i, generations in enumerate(response.generations):
+            for j, generation in enumerate(generations):
+                output_generation = llm_run.outputs["generations"][i][j]
+                if "message" in output_generation:
+                    output_generation["message"] = dumpd(
+                        cast(ChatGeneration, generation).message
+                    )
         llm_run.end_time = datetime.utcnow()
         llm_run.events.append({"name": "end", "time": llm_run.end_time})
         self._end_trace(llm_run)
@@ -177,12 +189,15 @@ class BaseTracer(BaseCallbackHandler, ABC):
         run_id: UUID,
         tags: Optional[List[str]] = None,
         parent_run_id: Optional[UUID] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Start a trace for a chain run."""
         parent_run_id_ = str(parent_run_id) if parent_run_id else None
         execution_order = self._get_execution_order(parent_run_id_)
         start_time = datetime.utcnow()
+        if metadata:
+            kwargs.update({"metadata": metadata})
         chain_run = Run(
             id=run_id,
             parent_run_id=parent_run_id,
@@ -244,12 +259,15 @@ class BaseTracer(BaseCallbackHandler, ABC):
         run_id: UUID,
         tags: Optional[List[str]] = None,
         parent_run_id: Optional[UUID] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Start a trace for a tool run."""
         parent_run_id_ = str(parent_run_id) if parent_run_id else None
         execution_order = self._get_execution_order(parent_run_id_)
         start_time = datetime.utcnow()
+        if metadata:
+            kwargs.update({"metadata": metadata})
         tool_run = Run(
             id=run_id,
             parent_run_id=parent_run_id,
@@ -303,20 +321,25 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
     def on_retriever_start(
         self,
+        serialized: Dict[str, Any],
         query: str,
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Run when Retriever starts running."""
         parent_run_id_ = str(parent_run_id) if parent_run_id else None
         execution_order = self._get_execution_order(parent_run_id_)
         start_time = datetime.utcnow()
+        if metadata:
+            kwargs.update({"metadata": metadata})
         retrieval_run = Run(
             id=run_id,
             name="Retriever",
             parent_run_id=parent_run_id,
+            serialized=serialized,
             inputs={"query": query},
             extra=kwargs,
             events=[{"name": "start", "time": start_time}],

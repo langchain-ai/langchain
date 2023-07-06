@@ -9,11 +9,16 @@ import pytest
 
 from langchain.tools.base import BaseTool
 from langchain.tools.gmail.base import GmailBaseTool
+from langchain.tools.office365.base import O365BaseTool
 from langchain.tools.playwright.base import BaseBrowserTool
 
 
 def get_non_abstract_subclasses(cls: Type[BaseTool]) -> List[Type[BaseTool]]:
-    to_skip = {BaseBrowserTool, GmailBaseTool}  # Abstract but not recognized
+    to_skip = {
+        BaseBrowserTool,
+        GmailBaseTool,
+        O365BaseTool,
+    }  # Abstract but not recognized
     subclasses = []
     for subclass in cls.__subclasses__():
         if (

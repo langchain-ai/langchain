@@ -7,8 +7,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, Iterable, List, Optional
 
-from pydantic import BaseModel
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
@@ -16,7 +14,7 @@ from langchain.callbacks.manager import (
 from langchain.schema import BaseRetriever, Document
 
 
-class TFIDFRetriever(BaseRetriever, BaseModel):
+class TFIDFRetriever(BaseRetriever):
     vectorizer: Any
     docs: List[Document]
     tfidf_array: Any

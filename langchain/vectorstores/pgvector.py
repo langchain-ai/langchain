@@ -207,12 +207,6 @@ class PGVector(VectorStore):
         pre_delete_collection: bool = False,
         **kwargs: Any,
     ) -> PGVector:
-        if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
-
-        if not metadatas:
-            metadatas = [{} for _ in texts]
-
         connection_string = cls.get_connection_string(kwargs)
 
         store = cls(
@@ -231,12 +225,12 @@ class PGVector(VectorStore):
 
     def add_embeddings(
         self,
-        texts: List[str],
+        texts: Iterable[str],
         embeddings: List[List[float]],
-        metadatas: List[dict],
-        ids: List[str],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
-    ) -> None:
+    ) -> List[str]:
         """Add embeddings to the vectorstore.
 
         Args:
@@ -245,6 +239,12 @@ class PGVector(VectorStore):
             metadatas: List of metadatas associated with the texts.
             kwargs: vectorstore specific parameters
         """
+        if ids is None:
+            ids = [str(uuid.uuid1()) for _ in texts]
+
+        if not metadatas:
+            metadatas = [{} for _ in texts]
+
         with Session(self._conn) as session:
             collection = self.get_collection(session)
             if not collection:
@@ -255,10 +255,12 @@ class PGVector(VectorStore):
                     document=text,
                     cmetadata=metadata,
                     custom_id=id,
+                    collection_id=collection.uuid,
                 )
-                collection.embeddings.append(embedding_store)
                 session.add(embedding_store)
             session.commit()
+
+        return ids
 
     def add_texts(
         self,
@@ -277,30 +279,10 @@ class PGVector(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
-
         embeddings = self.embedding_function.embed_documents(list(texts))
-
-        if not metadatas:
-            metadatas = [{} for _ in texts]
-
-        with Session(self._conn) as session:
-            collection = self.get_collection(session)
-            if not collection:
-                raise ValueError("Collection not found")
-            for text, metadata, embedding, id in zip(texts, metadatas, embeddings, ids):
-                embedding_store = EmbeddingStore(
-                    embedding=embedding,
-                    document=text,
-                    cmetadata=metadata,
-                    custom_id=id,
-                )
-                collection.embeddings.append(embedding_store)
-                session.add(embedding_store)
-            session.commit()
-
-        return ids
+        return self.add_embeddings(
+            texts=texts, embeddings=embeddings, metadatas=metadatas, ids=ids, **kwargs
+        )
 
     def similarity_search(
         self,

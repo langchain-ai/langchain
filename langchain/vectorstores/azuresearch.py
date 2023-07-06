@@ -18,7 +18,7 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import BaseModel, root_validator
+from pydantic import root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -475,7 +475,7 @@ class AzureSearch(VectorStore):
         return azure_search
 
 
-class AzureSearchVectorStoreRetriever(BaseRetriever, BaseModel):
+class AzureSearchVectorStoreRetriever(BaseRetriever):
     vectorstore: AzureSearch
     search_type: str = "hybrid"
     k: int = 4
