@@ -263,7 +263,7 @@ class StringDistanceEvalChain(_RapidFuzzChainMixin, StringEvaluator):
 
 
 class PairwiseStringDistanceEvalChain(_RapidFuzzChainMixin, PairwiseStringEvaluator):
-    """Compute string edit distances between the prediction and the reference."""
+    """Compute string edit distances between two predictions."""
 
     @property
     def input_keys(self) -> List[str]:

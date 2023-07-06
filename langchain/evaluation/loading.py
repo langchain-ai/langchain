@@ -20,13 +20,20 @@ from langchain.evaluation.string_distance.base import (
 
 
 def load_dataset(uri: str) -> List[Dict]:
-    """Load a dataset from the `LangChainDatasets HuggingFace org <https://huggingface.co/LangChainDatasets>`.
+    """Load a dataset from the `LangChainDatasets HuggingFace org <https://huggingface.co/LangChainDatasets>`_.
+
+    **Prerequisites**
+
+    .. code-block:: shell
+
+        pip install datasets
 
     Examples
     --------
-    # !pip install datasets
-    >>> from langchain.evaluation import load_dataset
-    >>> ds = load_dataset("llm-math")
+    .. code-block:: python
+
+        from langchain.evaluation import load_dataset
+        ds = load_dataset("llm-math")
     """  # noqa: E501
     try:
         from datasets import load_dataset

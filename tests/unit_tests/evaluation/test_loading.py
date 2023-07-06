@@ -6,6 +6,7 @@ from langchain.evaluation.loading import EvaluatorType, load_evaluators
 from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 
 
+@pytest.mark.requires("rapidfuzz")
 @pytest.mark.parametrize("evaluator_type", EvaluatorType)
 def test_load_evaluators(evaluator_type: EvaluatorType) -> None:
     """Test loading evaluators."""
