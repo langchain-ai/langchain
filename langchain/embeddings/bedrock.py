@@ -110,7 +110,6 @@ class BedrockEmbeddings(BaseModel, Embeddings):
         input_body = {**_model_kwargs, "inputText": text}
         body = json.dumps(input_body)
 
-        embeddings = []
         try:
             response = self.client.invoke_model(
                 body=body,
@@ -119,11 +118,9 @@ class BedrockEmbeddings(BaseModel, Embeddings):
                 contentType="application/json",
             )
             response_body = json.loads(response.get("body").read())
-            embeddings = response_body.get("embedding")
+            return response_body.get("embedding")
         except Exception as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
-
-        return embeddings
 
     def embed_documents(
         self, texts: List[str], chunk_size: int = 1
