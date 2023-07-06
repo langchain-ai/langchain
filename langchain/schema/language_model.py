@@ -221,6 +221,8 @@ class BaseLanguageModel(Serializable, ABC):
     def get_num_tokens(self, text: str) -> int:
         """Get the number of tokens present in the text.
 
+        Useful for checking if an input will fit in a model's context window.
+
         Args:
             text: The string input to tokenize.
 
@@ -231,6 +233,8 @@ class BaseLanguageModel(Serializable, ABC):
 
     def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
         """Get the number of tokens in the messages.
+
+        Useful for checking if an input will fit in a model's context window.
 
         Args:
             messages: The message inputs to tokenize.
