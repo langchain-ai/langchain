@@ -41,7 +41,6 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain.tools.convert_to_openai import format_tool_to_openai_function
 from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
@@ -458,16 +457,11 @@ class ChatOpenAI(BaseChatModel):
         self, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> Dict[str, Any]:
         """Get the parameters used to invoke the model FOR THE CALLBACKS."""
-        functions = kwargs.get("functions") or (
-            [format_tool_to_openai_function(tool) for tool in kwargs["tools"]]
-            if kwargs.get("tools")
-            else None
-        )
         return {
             **super()._get_invocation_params(stop=stop, **kwargs),
             **self._default_params,
             "model": self.model_name,
-            "function": functions,
+            "function": kwargs.get("functions"),
         }
 
     @property
