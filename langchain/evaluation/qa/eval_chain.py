@@ -10,7 +10,7 @@ from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.qa.eval_prompt import CONTEXT_PROMPT, COT_PROMPT, PROMPT
-from langchain.evaluation.schema import EvalChain, StringEvaluator
+from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
 
 
 def _parse_string_eval_output(text: str) -> dict:
@@ -41,7 +41,7 @@ def _parse_string_eval_output(text: str) -> dict:
     }
 
 
-class QAEvalChain(LLMChain, StringEvaluator, EvalChain):
+class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
     """LLM Chain specifically for evaluating question answering."""
 
     class Config:
@@ -142,7 +142,7 @@ class QAEvalChain(LLMChain, StringEvaluator, EvalChain):
         return _parse_string_eval_output(result["text"])
 
 
-class ContextQAEvalChain(LLMChain, StringEvaluator, EvalChain):
+class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
     """LLM Chain specifically for evaluating QA w/o GT based on context"""
 
     @classmethod

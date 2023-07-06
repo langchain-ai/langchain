@@ -30,12 +30,12 @@ class EvaluatorType(str, Enum):
     custom set of criteria."""
 
 
-class EvalChain(Chain):
+class LLMEvalChain(Chain):
     """A base class for evaluators that use an LLM."""
 
     @classmethod
     @abstractmethod
-    def from_llm(cls, llm: BaseLanguageModel, **kwargs: Any) -> EvalChain:
+    def from_llm(cls, llm: BaseLanguageModel, **kwargs: Any) -> LLMEvalChain:
         """Create a new evaluator from an LLM."""
 
 

@@ -21,7 +21,7 @@ from langchain.evaluation.agents.trajectory_eval_prompt import (
     EVAL_CHAT_PROMPT,
     TOOL_FREE_EVAL_CHAT_PROMPT,
 )
-from langchain.evaluation.schema import EvalChain
+from langchain.evaluation.schema import LLMEvalChain
 from langchain.schema import AgentAction, BaseOutputParser, OutputParserException
 from langchain.tools.base import BaseTool
 
@@ -70,7 +70,7 @@ class TrajectoryOutputParser(BaseOutputParser):
         return TrajectoryEval(score=int(score_str), reasoning=reasoning)
 
 
-class TrajectoryEvalChain(EvalChain):
+class TrajectoryEvalChain(LLMEvalChain):
     """A chain for evaluating ReAct style agents.
 
     This chain is used to evaluate ReAct style agents by reasoning about
