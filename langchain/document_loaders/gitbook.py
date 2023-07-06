@@ -49,17 +49,18 @@ class GitbookLoader(WebBaseLoader):
         if self.load_all_paths:
             soup_info = self.scrape()
             relative_paths = self._get_paths(soup_info)
-            documents = []
-            for path in relative_paths:
-                url = urljoin(self.base_url, path)
-                print(f"Fetching text from {url}")
-                soup_info = self._scrape(url)
-                documents.append(self._get_document(soup_info, url))
-            return [d for d in documents if d]
+            urls = [urljoin(self.base_url, path) for path in relative_paths]
+            soup_infos = self.scrape_all(urls)
+            _documents = [
+                self._get_document(soup_info, url)
+                for soup_info, url in zip(soup_infos, urls)
+            ]
         else:
             soup_info = self.scrape()
-            documents = [self._get_document(soup_info, self.web_path)]
-            return [d for d in documents if d]
+            _documents = [self._get_document(soup_info, self.web_path)]
+        documents = [d for d in _documents if d]
+
+        return documents
 
     def _get_document(
         self, soup: Any, custom_url: Optional[str] = None
