@@ -7,8 +7,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, Iterable, List, Optional
 
-from pydantic import BaseModel
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
@@ -16,7 +14,7 @@ from langchain.callbacks.manager import (
 from langchain.schema import BaseRetriever, Document
 
 
-class TFIDFRetriever(BaseRetriever, BaseModel):
+class TFIDFRetriever(BaseRetriever):
     vectorizer: Any
     docs: List[Document]
     tfidf_array: Any
@@ -64,11 +62,7 @@ class TFIDFRetriever(BaseRetriever, BaseModel):
         )
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         from sklearn.metrics.pairwise import cosine_similarity
 
@@ -82,10 +76,6 @@ class TFIDFRetriever(BaseRetriever, BaseModel):
         return return_docs
 
     async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: AsyncCallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         raise NotImplementedError

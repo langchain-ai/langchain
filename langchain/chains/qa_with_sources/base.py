@@ -14,6 +14,7 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
+from langchain.chains import ReduceDocumentsChain
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
@@ -26,7 +27,7 @@ from langchain.chains.qa_with_sources.map_reduce_prompt import (
     QUESTION_PROMPT,
 )
 from langchain.docstore.document import Document
-from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import BasePromptTemplate
 
 
 class BaseQAWithSourcesChain(Chain, ABC):
@@ -58,13 +59,16 @@ class BaseQAWithSourcesChain(Chain, ABC):
             document_prompt=document_prompt,
             document_variable_name="summaries",
         )
-        combine_document_chain = MapReduceDocumentsChain(
+        reduce_documents_chain = ReduceDocumentsChain(
+            combine_documents_chain=combine_results_chain
+        )
+        combine_documents_chain = MapReduceDocumentsChain(
             llm_chain=llm_question_chain,
-            combine_document_chain=combine_results_chain,
+            reduce_documents_chain=reduce_documents_chain,
             document_variable_name="context",
         )
         return cls(
-            combine_documents_chain=combine_document_chain,
+            combine_documents_chain=combine_documents_chain,
             **kwargs,
         )
 
@@ -78,10 +82,10 @@ class BaseQAWithSourcesChain(Chain, ABC):
     ) -> BaseQAWithSourcesChain:
         """Load chain from chain type."""
         _chain_kwargs = chain_type_kwargs or {}
-        combine_document_chain = load_qa_with_sources_chain(
+        combine_documents_chain = load_qa_with_sources_chain(
             llm, chain_type=chain_type, **_chain_kwargs
         )
-        return cls(combine_documents_chain=combine_document_chain, **kwargs)
+        return cls(combine_documents_chain=combine_documents_chain, **kwargs)
 
     class Config:
         """Configuration for this pydantic object."""
@@ -110,7 +114,7 @@ class BaseQAWithSourcesChain(Chain, ABC):
 
     @root_validator(pre=True)
     def validate_naming(cls, values: Dict) -> Dict:
-        """Fix backwards compatability in naming."""
+        """Fix backwards compatibility in naming."""
         if "combine_document_chain" in values:
             values["combine_documents_chain"] = values.pop("combine_document_chain")
         return values

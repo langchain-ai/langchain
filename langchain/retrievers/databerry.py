@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import List, Optional
 
 import aiohttp
 import requests
@@ -17,22 +17,8 @@ class DataberryRetriever(BaseRetriever):
     top_k: Optional[int]
     api_key: Optional[str]
 
-    def __init__(
-        self,
-        datastore_url: str,
-        top_k: Optional[int] = None,
-        api_key: Optional[str] = None,
-    ):
-        self.datastore_url = datastore_url
-        self.api_key = api_key
-        self.top_k = top_k
-
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         response = requests.post(
             self.datastore_url,
@@ -59,11 +45,7 @@ class DataberryRetriever(BaseRetriever):
         ]
 
     async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: AsyncCallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         async with aiohttp.ClientSession() as session:
             async with session.request(

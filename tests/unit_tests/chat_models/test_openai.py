@@ -5,9 +5,7 @@ import json
 from langchain.chat_models.openai import (
     _convert_dict_to_message,
 )
-from langchain.schema import (
-    FunctionMessage,
-)
+from langchain.schema.messages import FunctionMessage
 
 
 def test_function_message_dict_to_function_message() -> None:

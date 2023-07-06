@@ -4,7 +4,7 @@ import datetime
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -19,7 +19,7 @@ def _get_hours_passed(time: datetime.datetime, ref_time: datetime.datetime) -> f
     return (time - ref_time).total_seconds() / 3600
 
 
-class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
+class TimeWeightedVectorStoreRetriever(BaseRetriever):
     """Retriever combining embedding similarity with recency."""
 
     vectorstore: VectorStore
@@ -86,11 +86,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
         return results
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Return documents that are relevant to the query."""
         current_time = datetime.datetime.now()
@@ -115,11 +111,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
         return result
 
     async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: AsyncCallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Return documents that are relevant to the query."""
         raise NotImplementedError

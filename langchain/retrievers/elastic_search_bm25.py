@@ -40,9 +40,8 @@ class ElasticSearchBM25Retriever(BaseRetriever):
     https://username:password@cluster_id.region_id.gcp.cloud.es.io:9243.
     """
 
-    def __init__(self, client: Any, index_name: str):
-        self.client = client
-        self.index_name = index_name
+    client: Any
+    index_name: str
 
     @classmethod
     def create(
@@ -75,7 +74,7 @@ class ElasticSearchBM25Retriever(BaseRetriever):
 
         # Create the index with the specified settings and mappings
         es.indices.create(index=index_name, mappings=mappings, settings=settings)
-        return cls(es, index_name)
+        return cls(client=es, index_name=index_name)
 
     def add_texts(
         self,
@@ -117,11 +116,7 @@ class ElasticSearchBM25Retriever(BaseRetriever):
         return ids
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         query_dict = {"query": {"match": {"content": query}}}
         res = self.client.search(index=self.index_name, body=query_dict)
@@ -132,10 +127,6 @@ class ElasticSearchBM25Retriever(BaseRetriever):
         return docs
 
     async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: AsyncCallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         raise NotImplementedError

@@ -1,8 +1,7 @@
-from typing import Any, List, Optional
+from typing import List, Optional
 
 import aiohttp
 import requests
-from pydantic import BaseModel
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -11,7 +10,7 @@ from langchain.callbacks.manager import (
 from langchain.schema import BaseRetriever, Document
 
 
-class RemoteLangChainRetriever(BaseRetriever, BaseModel):
+class RemoteLangChainRetriever(BaseRetriever):
     url: str
     headers: Optional[dict] = None
     input_key: str = "message"
@@ -20,11 +19,7 @@ class RemoteLangChainRetriever(BaseRetriever, BaseModel):
     metadata_key: str = "metadata"
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         response = requests.post(
             self.url, json={self.input_key: query}, headers=self.headers
@@ -38,11 +33,7 @@ class RemoteLangChainRetriever(BaseRetriever, BaseModel):
         ]
 
     async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: AsyncCallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         async with aiohttp.ClientSession() as session:
             async with session.request(

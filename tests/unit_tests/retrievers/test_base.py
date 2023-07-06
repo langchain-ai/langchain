@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import pytest
 
@@ -141,45 +141,47 @@ async def test_fake_retriever_v1_with_kwargs_upgrade_async(
     assert callbacks.retriever_errors == 0
 
 
+class FakeRetrieverV2(BaseRetriever):
+    throw_error: bool = False
+
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun | None
+    ) -> List[Document]:
+        assert isinstance(self, FakeRetrieverV2)
+        assert run_manager is not None
+        assert isinstance(run_manager, CallbackManagerForRetrieverRun)
+        if self.throw_error:
+            raise ValueError("Test error")
+        return [
+            Document(page_content=query),
+        ]
+
+    async def _aget_relevant_documents(
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun | None
+    ) -> List[Document]:
+        assert isinstance(self, FakeRetrieverV2)
+        assert run_manager is not None
+        assert isinstance(run_manager, AsyncCallbackManagerForRetrieverRun)
+        if self.throw_error:
+            raise ValueError("Test error")
+        return [
+            Document(page_content=f"Async query {query}"),
+        ]
+
+
 @pytest.fixture
 def fake_retriever_v2() -> BaseRetriever:
-    class FakeRetrieverV2(BaseRetriever):
-        def _get_relevant_documents(
-            self,
-            query: str,
-            *,
-            run_manager: CallbackManagerForRetrieverRun | None = None,
-            **kwargs: Any,
-        ) -> List[Document]:
-            assert isinstance(self, FakeRetrieverV2)
-            assert run_manager is not None
-            assert isinstance(run_manager, CallbackManagerForRetrieverRun)
-            if "throw_error" in kwargs:
-                raise ValueError("Test error")
-            return [
-                Document(page_content=query, metadata=kwargs),
-            ]
-
-        async def _aget_relevant_documents(
-            self,
-            query: str,
-            *,
-            run_manager: AsyncCallbackManagerForRetrieverRun | None = None,
-            **kwargs: Any,
-        ) -> List[Document]:
-            assert isinstance(self, FakeRetrieverV2)
-            assert run_manager is not None
-            assert isinstance(run_manager, AsyncCallbackManagerForRetrieverRun)
-            if "throw_error" in kwargs:
-                raise ValueError("Test error")
-            return [
-                Document(page_content=f"Async query {query}", metadata=kwargs),
-            ]
-
     return FakeRetrieverV2()  # type: ignore[abstract]
 
 
-def test_fake_retriever_v2(fake_retriever_v2: BaseRetriever) -> None:
+@pytest.fixture
+def fake_erroring_retriever_v2() -> BaseRetriever:
+    return FakeRetrieverV2(throw_error=True)  # type: ignore[abstract]
+
+
+def test_fake_retriever_v2(
+    fake_retriever_v2: BaseRetriever, fake_erroring_retriever_v2: BaseRetriever
+) -> None:
     callbacks = FakeCallbackHandler()
     assert fake_retriever_v2._new_arg_supported is True
     results = fake_retriever_v2.get_relevant_documents("Foo", callbacks=[callbacks])
@@ -187,20 +189,17 @@ def test_fake_retriever_v2(fake_retriever_v2: BaseRetriever) -> None:
     assert callbacks.retriever_starts == 1
     assert callbacks.retriever_ends == 1
     assert callbacks.retriever_errors == 0
-    results2 = fake_retriever_v2.get_relevant_documents(
-        "Foo", callbacks=[callbacks], foo="bar"
-    )
-    assert results2[0].metadata == {"foo": "bar"}
+    fake_retriever_v2.get_relevant_documents("Foo", callbacks=[callbacks])
 
     with pytest.raises(ValueError, match="Test error"):
-        fake_retriever_v2.get_relevant_documents(
-            "Foo", callbacks=[callbacks], throw_error=True
-        )
+        fake_erroring_retriever_v2.get_relevant_documents("Foo", callbacks=[callbacks])
     assert callbacks.retriever_errors == 1
 
 
 @pytest.mark.asyncio
-async def test_fake_retriever_v2_async(fake_retriever_v2: BaseRetriever) -> None:
+async def test_fake_retriever_v2_async(
+    fake_retriever_v2: BaseRetriever, fake_erroring_retriever_v2: BaseRetriever
+) -> None:
     callbacks = FakeCallbackHandler()
     assert fake_retriever_v2._new_arg_supported is True
     results = await fake_retriever_v2.aget_relevant_documents(
@@ -210,11 +209,8 @@ async def test_fake_retriever_v2_async(fake_retriever_v2: BaseRetriever) -> None
     assert callbacks.retriever_starts == 1
     assert callbacks.retriever_ends == 1
     assert callbacks.retriever_errors == 0
-    results2 = await fake_retriever_v2.aget_relevant_documents(
-        "Foo", callbacks=[callbacks], foo="bar"
-    )
-    assert results2[0].metadata == {"foo": "bar"}
+    await fake_retriever_v2.aget_relevant_documents("Foo", callbacks=[callbacks])
     with pytest.raises(ValueError, match="Test error"):
-        await fake_retriever_v2.aget_relevant_documents(
-            "Foo", callbacks=[callbacks], throw_error=True
+        await fake_erroring_retriever_v2.aget_relevant_documents(
+            "Foo", callbacks=[callbacks]
         )

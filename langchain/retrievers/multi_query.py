@@ -1,5 +1,5 @@
 import logging
-from typing import Any, List
+from typing import List
 
 from pydantic import BaseModel, Field
 
@@ -47,28 +47,10 @@ class MultiQueryRetriever(BaseRetriever):
     """Given a user query, use an LLM to write a set of queries.
     Retrieve docs for each query. Rake the unique union of all retrieved docs."""
 
-    def __init__(
-        self,
-        retriever: BaseRetriever,
-        llm_chain: LLMChain,
-        verbose: bool = True,
-        parser_key: str = "lines",
-    ) -> None:
-        """Initialize MultiQueryRetriever.
-
-        Args:
-            retriever: retriever to query documents from
-            llm_chain: llm_chain for query generation
-            verbose: show the queries that we generated to the user
-            parser_key: attribute name for the parsed output
-
-        Returns:
-            MultiQueryRetriever
-        """
-        self.retriever = retriever
-        self.llm_chain = llm_chain
-        self.verbose = verbose
-        self.parser_key = parser_key
+    retriever: BaseRetriever
+    llm_chain: LLMChain
+    verbose: bool = True
+    parser_key: str = "lines"
 
     @classmethod
     def from_llm(
@@ -98,8 +80,8 @@ class MultiQueryRetriever(BaseRetriever):
     def _get_relevant_documents(
         self,
         query: str,
+        *,
         run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
     ) -> List[Document]:
         """Get relevated documents given a user query.
 
@@ -117,8 +99,8 @@ class MultiQueryRetriever(BaseRetriever):
     async def _aget_relevant_documents(
         self,
         query: str,
+        *,
         run_manager: AsyncCallbackManagerForRetrieverRun,
-        **kwargs: Any,
     ) -> List[Document]:
         raise NotImplementedError
 

@@ -2,7 +2,6 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
-from pydantic import BaseModel
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -20,7 +19,7 @@ class SearchType(str, Enum):
     mmr = "mmr"
 
 
-class DocArrayRetriever(BaseRetriever, BaseModel):
+class DocArrayRetriever(BaseRetriever):
     """
     Retriever class for DocArray Document Indices.
 
@@ -56,8 +55,8 @@ class DocArrayRetriever(BaseRetriever, BaseModel):
     def _get_relevant_documents(
         self,
         query: str,
+        *,
         run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
     ) -> List[Document]:
         """Get documents relevant for a query.
 
@@ -213,7 +212,7 @@ class DocArrayRetriever(BaseRetriever, BaseModel):
     async def _aget_relevant_documents(
         self,
         query: str,
+        *,
         run_manager: AsyncCallbackManagerForRetrieverRun,
-        **kwargs: Any,
     ) -> List[Document]:
         raise NotImplementedError

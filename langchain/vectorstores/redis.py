@@ -20,7 +20,7 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import BaseModel, root_validator
+from pydantic import root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -469,7 +469,7 @@ class Redis(VectorStore):
 
     @staticmethod
     def delete(
-        ids: List[str],
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> bool:
         """
@@ -599,7 +599,7 @@ class Redis(VectorStore):
         return RedisVectorStoreRetriever(vectorstore=self, **kwargs)
 
 
-class RedisVectorStoreRetriever(VectorStoreRetriever, BaseModel):
+class RedisVectorStoreRetriever(VectorStoreRetriever):
     vectorstore: Redis
     search_type: str = "similarity"
     k: int = 4
@@ -620,11 +620,7 @@ class RedisVectorStoreRetriever(VectorStoreRetriever, BaseModel):
         return values
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
-        **kwargs: Any,
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(query, k=self.k)
@@ -637,11 +633,7 @@ class RedisVectorStoreRetriever(VectorStoreRetriever, BaseModel):
         return docs
 
     async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: Optional[AsyncCallbackManagerForRetrieverRun] = None,
-        **kwargs: Any,
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         raise NotImplementedError("RedisVectorStoreRetriever does not support async")
 

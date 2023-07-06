@@ -3,7 +3,7 @@
 import hashlib
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -98,7 +98,7 @@ def create_index(
         index.upsert(vectors)
 
 
-class PineconeHybridSearchRetriever(BaseRetriever, BaseModel):
+class PineconeHybridSearchRetriever(BaseRetriever):
     embeddings: Embeddings
     """description"""
     sparse_encoder: Any
@@ -143,11 +143,7 @@ class PineconeHybridSearchRetriever(BaseRetriever, BaseModel):
         return values
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         from pinecone_text.hybrid import hybrid_convex_scale
 
@@ -174,10 +170,6 @@ class PineconeHybridSearchRetriever(BaseRetriever, BaseModel):
         return final_result
 
     async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: AsyncCallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         raise NotImplementedError
