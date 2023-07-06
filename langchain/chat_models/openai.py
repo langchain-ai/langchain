@@ -24,6 +24,7 @@ from tenacity import (
     wait_exponential,
 )
 
+from langchain.callbacks.base import NewTokenIndicies
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -81,6 +82,39 @@ def _create_retry_decorator(llm: ChatOpenAI) -> Callable[[Any], Any]:
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
+
+
+def _update_response(
+    response: dict[int, Any],
+    part: dict[str, Any],
+) -> None:
+    choice = response.get(part["index"])
+
+    if choice is None:
+        choice = {
+            "finish_reason": part["finish_reason"],
+            "message": {
+                "content": "",
+                "role": "assistant",
+                "function_call": None,
+            },
+        }
+        response[part["index"]] = choice
+
+    token = part["delta"].get("content", "")
+
+    choice["finish_reason"] = part["finish_reason"]
+    choice["message"]["content"] += token
+    choice["message"]["role"] = part["delta"].get("role", choice["message"]["role"])
+
+    _function_call = part["delta"].get("function_call")
+    if _function_call:
+        if choice["message"]["function_call"] is None:
+            choice["message"]["function_call"] = _function_call
+        else:
+            choice["message"]["function_call"]["arguments"] += _function_call[
+                "arguments"
+            ]
 
 
 async def acompletion_with_retry(llm: ChatOpenAI, **kwargs: Any) -> Any:
@@ -270,8 +304,6 @@ class ChatOpenAI(BaseChatModel):
             )
         if values["n"] < 1:
             raise ValueError("n must be at least 1.")
-        if values["n"] > 1 and values["streaming"]:
-            raise ValueError("n must be 1 when streaming.")
         return values
 
     @property
@@ -321,7 +353,7 @@ class ChatOpenAI(BaseChatModel):
     def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
         overall_token_usage: dict = {}
         for output in llm_outputs:
-            if output is None:
+            if output is None or output.get("token_usage") is None:
                 # Happens in streaming
                 continue
             token_usage = output["token_usage"]
@@ -337,37 +369,31 @@ class ChatOpenAI(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        prompt_index: Optional[int] = None,
         **kwargs: Any,
     ) -> ChatResult:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         if self.streaming:
-            inner_completion = ""
-            role = "assistant"
             params["stream"] = True
-            function_call: Optional[dict] = None
+            result: dict[int, Any] = dict()
             for stream_resp in self.completion_with_retry(
                 messages=message_dicts, **params
             ):
-                role = stream_resp["choices"][0]["delta"].get("role", role)
-                token = stream_resp["choices"][0]["delta"].get("content") or ""
-                inner_completion += token
-                _function_call = stream_resp["choices"][0]["delta"].get("function_call")
-                if _function_call:
-                    if function_call is None:
-                        function_call = _function_call
-                    else:
-                        function_call["arguments"] += _function_call["arguments"]
-                if run_manager:
-                    run_manager.on_llm_new_token(token)
-            message = _convert_dict_to_message(
-                {
-                    "content": inner_completion,
-                    "role": role,
-                    "function_call": function_call,
-                }
+                for part in stream_resp["choices"]:
+                    _update_response(result, part)
+                    if run_manager:
+                        run_manager.on_llm_new_token(
+                            part["delta"].get("content", ""),
+                            idx=NewTokenIndicies(
+                                prompt=prompt_index or 0,
+                                completion=part["index"],
+                            ),
+                        )
+
+            return self._create_chat_result(
+                {"choices": [result[idx] for idx in sorted(result)]}
             )
-            return ChatResult(generations=[ChatGeneration(message=message)])
         response = self.completion_with_retry(messages=message_dicts, **params)
         return self._create_chat_result(response)
 
@@ -388,7 +414,9 @@ class ChatOpenAI(BaseChatModel):
             message = _convert_dict_to_message(res["message"])
             gen = ChatGeneration(message=message)
             generations.append(gen)
-        llm_output = {"token_usage": response["usage"], "model_name": self.model_name}
+        llm_output = dict({"model_name": self.model_name})
+        if response.get("usage") is not None:
+            llm_output["token_usage"] = response["usage"]
         return ChatResult(generations=generations, llm_output=llm_output)
 
     async def _agenerate(
@@ -396,37 +424,30 @@ class ChatOpenAI(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        prompt_index: Optional[int] = None,
         **kwargs: Any,
     ) -> ChatResult:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         if self.streaming:
-            inner_completion = ""
-            role = "assistant"
             params["stream"] = True
-            function_call: Optional[dict] = None
+            result: dict[int, Any] = dict()
             async for stream_resp in await acompletion_with_retry(
                 self, messages=message_dicts, **params
             ):
-                role = stream_resp["choices"][0]["delta"].get("role", role)
-                token = stream_resp["choices"][0]["delta"].get("content", "")
-                inner_completion += token or ""
-                _function_call = stream_resp["choices"][0]["delta"].get("function_call")
-                if _function_call:
-                    if function_call is None:
-                        function_call = _function_call
-                    else:
-                        function_call["arguments"] += _function_call["arguments"]
-                if run_manager:
-                    await run_manager.on_llm_new_token(token)
-            message = _convert_dict_to_message(
-                {
-                    "content": inner_completion,
-                    "role": role,
-                    "function_call": function_call,
-                }
+                for part in stream_resp["choices"]:
+                    _update_response(result, part)
+                    if run_manager:
+                        await run_manager.on_llm_new_token(
+                            part["delta"].get("content", ""),
+                            idx=NewTokenIndicies(
+                                prompt=prompt_index or 0,
+                                completion=part["index"],
+                            ),
+                        )
+            return self._create_chat_result(
+                {"choices": [result[idx] for idx in sorted(result)]}
             )
-            return ChatResult(generations=[ChatGeneration(message=message)])
         else:
             response = await acompletion_with_retry(
                 self, messages=message_dicts, **params

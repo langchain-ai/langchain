@@ -22,6 +22,7 @@ from typing import (
 
 from pydantic import Field, root_validator
 
+from langchain.callbacks.base import NewTokenIndicies
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -45,25 +46,21 @@ def update_token_usage(
             token_usage[_key] += response["usage"][_key]
 
 
-def _update_response(response: Dict[str, Any], stream_response: Dict[str, Any]) -> None:
+def _update_response(response: Dict[int, Any], part: Dict[str, Any]) -> None:
+    choice: Optional[dict[str, Any]] = response.get(part["index"])
+
+    if choice is None:
+        choice = {
+            "text": "",
+            "finish_reason": None,
+            "logprobs": None,
+        }
+        response[part["index"]] = choice
+
     """Update response from the stream response."""
-    response["choices"][0]["text"] += stream_response["choices"][0]["text"]
-    response["choices"][0]["finish_reason"] = stream_response["choices"][0][
-        "finish_reason"
-    ]
-    response["choices"][0]["logprobs"] = stream_response["choices"][0]["logprobs"]
-
-
-def _streaming_response_template() -> Dict[str, Any]:
-    return {
-        "choices": [
-            {
-                "text": "",
-                "finish_reason": None,
-                "logprobs": None,
-            }
-        ]
-    }
+    choice["text"] += part["text"] or ""
+    choice["finish_reason"] = part["finish_reason"]
+    choice["logprobs"] = part["logprobs"]
 
 
 def _create_retry_decorator(llm: Union[BaseOpenAI, OpenAIChat]) -> Callable[[Any], Any]:
@@ -242,8 +239,6 @@ class BaseOpenAI(BaseLLM):
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
-        if values["streaming"] and values["n"] > 1:
-            raise ValueError("Cannot stream results when n > 1.")
         if values["streaming"] and values["best_of"] > 1:
             raise ValueError("Cannot stream results when best_of > 1.")
         return values
@@ -274,6 +269,7 @@ class BaseOpenAI(BaseLLM):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        prompt_index: Optional[int] = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Call out to OpenAI's endpoint with k unique prompts.
@@ -301,21 +297,24 @@ class BaseOpenAI(BaseLLM):
         _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
         for _prompts in sub_prompts:
             if self.streaming:
-                if len(_prompts) > 1:
-                    raise ValueError("Cannot stream results with multiple prompts.")
                 params["stream"] = True
-                response = _streaming_response_template()
+                partial: dict[int, Any] = dict()
                 for stream_resp in completion_with_retry(
                     self, prompt=_prompts, **params
                 ):
-                    if run_manager:
-                        run_manager.on_llm_new_token(
-                            stream_resp["choices"][0]["text"],
-                            verbose=self.verbose,
-                            logprobs=stream_resp["choices"][0]["logprobs"],
-                        )
-                    _update_response(response, stream_resp)
-                choices.extend(response["choices"])
+                    for part in stream_resp["choices"]:
+                        _update_response(partial, part)
+                        if run_manager:
+                            run_manager.on_llm_new_token(
+                                part["text"],
+                                idx=NewTokenIndicies(
+                                    prompt=prompt_index or 0,
+                                    completion=part["index"],
+                                ),
+                                verbose=self.verbose,
+                                logprobs=part["logprobs"],
+                            )
+                choices.extend([partial[key] for key in sorted(partial)])
             else:
                 response = completion_with_retry(self, prompt=_prompts, **params)
                 choices.extend(response["choices"])
@@ -329,6 +328,7 @@ class BaseOpenAI(BaseLLM):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        prompt_index: Optional[int] = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Call out to OpenAI's endpoint async with k unique prompts."""
@@ -345,18 +345,23 @@ class BaseOpenAI(BaseLLM):
                 if len(_prompts) > 1:
                     raise ValueError("Cannot stream results with multiple prompts.")
                 params["stream"] = True
-                response = _streaming_response_template()
+                partial: dict[int, Any] = dict()
                 async for stream_resp in await acompletion_with_retry(
                     self, prompt=_prompts, **params
                 ):
-                    if run_manager:
-                        await run_manager.on_llm_new_token(
-                            stream_resp["choices"][0]["text"],
-                            verbose=self.verbose,
-                            logprobs=stream_resp["choices"][0]["logprobs"],
-                        )
-                    _update_response(response, stream_resp)
-                choices.extend(response["choices"])
+                    for part in stream_resp["choices"]:
+                        _update_response(partial, part)
+                        if run_manager:
+                            await run_manager.on_llm_new_token(
+                                part["text"],
+                                idx=NewTokenIndicies(
+                                    prompt=prompt_index or 0,
+                                    completion=part["index"],
+                                ),
+                                verbose=self.verbose,
+                                logprobs=part["logprobs"],
+                            )
+                choices.extend([partial[key] for key in sorted(partial)])
             else:
                 response = await acompletion_with_retry(self, prompt=_prompts, **params)
                 choices.extend(response["choices"])
@@ -785,22 +790,35 @@ class OpenAIChat(BaseLLM):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        prompt_index: Optional[int] = None,
         **kwargs: Any,
     ) -> LLMResult:
         messages, params = self._get_chat_params(prompts, stop)
         params = {**params, **kwargs}
         if self.streaming:
-            response = ""
+            response: dict[int, str] = dict()
             params["stream"] = True
             for stream_resp in completion_with_retry(self, messages=messages, **params):
-                token = stream_resp["choices"][0]["delta"].get("content", "")
-                response += token
-                if run_manager:
-                    run_manager.on_llm_new_token(
-                        token,
-                    )
+                for part in stream_resp["choices"]:
+                    token = part["delta"].get("content", "")
+
+                    if response.get(part["index"]) is None:
+                        response[part["index"]] = ""
+
+                    token = part["delta"].get("content", "")
+                    response[part["index"]] += token
+                    if run_manager:
+                        run_manager.on_llm_new_token(
+                            token,
+                            idx=NewTokenIndicies(
+                                prompt=prompt_index or 0,
+                                completion=part["index"],
+                            ),
+                        )
             return LLMResult(
-                generations=[[Generation(text=response)]],
+                generations=[
+                    [Generation(text=response[idx]) for idx in sorted(response)]
+                ],
             )
         else:
             full_response = completion_with_retry(self, messages=messages, **params)
@@ -820,24 +838,36 @@ class OpenAIChat(BaseLLM):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        prompt_index: Optional[int] = None,
         **kwargs: Any,
     ) -> LLMResult:
         messages, params = self._get_chat_params(prompts, stop)
         params = {**params, **kwargs}
         if self.streaming:
-            response = ""
+            response: dict[int, str] = dict()
             params["stream"] = True
             async for stream_resp in await acompletion_with_retry(
                 self, messages=messages, **params
             ):
-                token = stream_resp["choices"][0]["delta"].get("content", "")
-                response += token
-                if run_manager:
-                    await run_manager.on_llm_new_token(
-                        token,
-                    )
+                for part in stream_resp["choices"]:
+                    token = part["delta"].get("content", "")
+
+                    if response.get(part["index"]) is None:
+                        response[part["index"]] = ""
+
+                    response[part["index"]] += token
+                    if run_manager:
+                        await run_manager.on_llm_new_token(
+                            token,
+                            idx=NewTokenIndicies(
+                                prompt=prompt_index or 0,
+                                completion=part["index"],
+                            ),
+                        )
             return LLMResult(
-                generations=[[Generation(text=response)]],
+                generations=[
+                    [Generation(text=response[idx]) for idx in sorted(response)]
+                ],
             )
         else:
             full_response = await acompletion_with_retry(

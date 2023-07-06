@@ -115,6 +115,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
                         m,
                         stop=stop,
                         run_manager=run_managers[i] if run_managers else None,
+                        prompt_index=i,
                         **kwargs,
                     )
                 )
@@ -171,6 +172,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
                     m,
                     stop=stop,
                     run_manager=run_managers[i] if run_managers else None,
+                    prompt_index=i,
                     **kwargs,
                 )
                 for i, m in enumerate(messages)
@@ -245,6 +247,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        prompt_index: Optional[int] = None,
         **kwargs: Any,
     ) -> ChatResult:
         new_arg_supported = inspect.signature(self._generate).parameters.get(
@@ -259,10 +262,16 @@ class BaseChatModel(BaseLanguageModel, ABC):
                 )
             if new_arg_supported:
                 return self._generate(
-                    messages, stop=stop, run_manager=run_manager, **kwargs
+                    messages,
+                    stop=stop,
+                    run_manager=run_manager,
+                    prompt_index=prompt_index,
+                    **kwargs,
                 )
             else:
-                return self._generate(messages, stop=stop, **kwargs)
+                return self._generate(
+                    messages, stop=stop, prompt_index=prompt_index, **kwargs
+                )
         else:
             llm_string = self._get_llm_string(stop=stop, **kwargs)
             prompt = dumps(messages)
@@ -272,10 +281,16 @@ class BaseChatModel(BaseLanguageModel, ABC):
             else:
                 if new_arg_supported:
                     result = self._generate(
-                        messages, stop=stop, run_manager=run_manager, **kwargs
+                        messages,
+                        stop=stop,
+                        run_manager=run_manager,
+                        prompt_index=prompt_index,
+                        **kwargs,
                     )
                 else:
-                    result = self._generate(messages, stop=stop, **kwargs)
+                    result = self._generate(
+                        messages, stop=stop, prompt_index=prompt_index, **kwargs
+                    )
                 langchain.llm_cache.update(prompt, llm_string, result.generations)
                 return result
 
@@ -284,6 +299,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        prompt_index: Optional[int] = None,
         **kwargs: Any,
     ) -> ChatResult:
         new_arg_supported = inspect.signature(self._agenerate).parameters.get(
@@ -298,10 +314,16 @@ class BaseChatModel(BaseLanguageModel, ABC):
                 )
             if new_arg_supported:
                 return await self._agenerate(
-                    messages, stop=stop, run_manager=run_manager, **kwargs
+                    messages,
+                    stop=stop,
+                    run_manager=run_manager,
+                    prompt_index=prompt_index,
+                    **kwargs,
                 )
             else:
-                return await self._agenerate(messages, stop=stop, **kwargs)
+                return await self._agenerate(
+                    messages, stop=stop, prompt_index=prompt_index, **kwargs
+                )
         else:
             llm_string = self._get_llm_string(stop=stop, **kwargs)
             prompt = dumps(messages)
@@ -311,10 +333,16 @@ class BaseChatModel(BaseLanguageModel, ABC):
             else:
                 if new_arg_supported:
                     result = await self._agenerate(
-                        messages, stop=stop, run_manager=run_manager, **kwargs
+                        messages,
+                        stop=stop,
+                        run_manager=run_manager,
+                        prompt_index=prompt_index,
+                        **kwargs,
                     )
                 else:
-                    result = await self._agenerate(messages, stop=stop, **kwargs)
+                    result = await self._agenerate(
+                        messages, stop=stop, prompt_index=prompt_index, **kwargs
+                    )
                 langchain.llm_cache.update(prompt, llm_string, result.generations)
                 return result
 

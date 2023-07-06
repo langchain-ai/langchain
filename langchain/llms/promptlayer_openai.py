@@ -42,13 +42,16 @@ class PromptLayerOpenAI(OpenAI):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        prompt_index: Optional[int] = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Call OpenAI generate and then call PromptLayer API to log the request."""
         from promptlayer.utils import get_api_key, promptlayer_api_request
 
         request_start_time = datetime.datetime.now().timestamp()
-        generated_responses = super()._generate(prompts, stop, run_manager)
+        generated_responses = super()._generate(
+            prompts, stop, run_manager, prompt_index
+        )
         request_end_time = datetime.datetime.now().timestamp()
         for i in range(len(prompts)):
             prompt = prompts[i]
@@ -83,12 +86,15 @@ class PromptLayerOpenAI(OpenAI):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        prompt_index: Optional[int] = None,
         **kwargs: Any,
     ) -> LLMResult:
         from promptlayer.utils import get_api_key, promptlayer_api_request_async
 
         request_start_time = datetime.datetime.now().timestamp()
-        generated_responses = await super()._agenerate(prompts, stop, run_manager)
+        generated_responses = await super()._agenerate(
+            prompts, stop, run_manager, prompt_index
+        )
         request_end_time = datetime.datetime.now().timestamp()
         for i in range(len(prompts)):
             prompt = prompts[i]
@@ -151,13 +157,16 @@ class PromptLayerOpenAIChat(OpenAIChat):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        prompt_index: Optional[int] = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Call OpenAI generate and then call PromptLayer API to log the request."""
         from promptlayer.utils import get_api_key, promptlayer_api_request
 
         request_start_time = datetime.datetime.now().timestamp()
-        generated_responses = super()._generate(prompts, stop, run_manager)
+        generated_responses = super()._generate(
+            prompts, stop, run_manager, prompt_index
+        )
         request_end_time = datetime.datetime.now().timestamp()
         for i in range(len(prompts)):
             prompt = prompts[i]
@@ -192,12 +201,15 @@ class PromptLayerOpenAIChat(OpenAIChat):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        prompt_index: Optional[int] = None,
         **kwargs: Any,
     ) -> LLMResult:
         from promptlayer.utils import get_api_key, promptlayer_api_request_async
 
         request_start_time = datetime.datetime.now().timestamp()
-        generated_responses = await super()._agenerate(prompts, stop, run_manager)
+        generated_responses = await super()._agenerate(
+            prompts, stop, run_manager, prompt_index
+        )
         request_end_time = datetime.datetime.now().timestamp()
         for i in range(len(prompts)):
             prompt = prompts[i]

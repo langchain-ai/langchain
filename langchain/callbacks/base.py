@@ -34,6 +34,20 @@ class RetrieverManagerMixin:
         """Run when Retriever ends running."""
 
 
+class NewTokenIndicies:
+    # index of the prompt that produced the token
+    # (if there are multiple prompts)
+    prompt: int
+
+    # the index of the completion that produced the token
+    # (if multiple completions per prompt are requested)
+    completion: int
+
+    def __init__(self, prompt: int, completion: int) -> None:
+        self.prompt = prompt
+        self.completion = completion
+
+
 class LLMManagerMixin:
     """Mixin for LLM callbacks."""
 
@@ -41,6 +55,7 @@ class LLMManagerMixin:
         self,
         token: str,
         *,
+        idx: NewTokenIndicies,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
