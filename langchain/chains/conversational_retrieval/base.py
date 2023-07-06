@@ -240,8 +240,8 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
             # Should take `chat_history` and `question` as input variables.
             template = (
                 "Combine the chat history and follow up question into "
-                "a standalone question.\n\nChat History: {chat_history}"
-                "\n\n{question}"
+                "a standalone question. Chat History: {chat_history}"
+                "Follow up question: {question}"
             )
             prompt = PromptTemplate.from_template(template)
             llm = OpenAI()
