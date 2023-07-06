@@ -102,7 +102,9 @@ def _get_single_prompt(
 
     partial_prompt = prompt.partial()
     if "df_head" in input_variables:
-        partial_prompt = partial_prompt.partial(df_head=str(df.head(number_of_head_rows).to_markdown()))
+        partial_prompt = partial_prompt.partial(
+            df_head=str(df.head(number_of_head_rows).to_markdown())
+        )
     return partial_prompt, tools
 
 
@@ -159,9 +161,13 @@ def _get_functions_single_prompt(
     if suffix is not None:
         suffix_to_use = suffix
         if include_df_in_prompt:
-            suffix_to_use = suffix_to_use.format(df_head=str(df.head(number_of_head_rows).to_markdown()))
+            suffix_to_use = suffix_to_use.format(
+                df_head=str(df.head(number_of_head_rows).to_markdown())
+            )
     elif include_df_in_prompt:
-        suffix_to_use = FUNCTIONS_WITH_DF.format(df_head=str(df.head(number_of_head_rows).to_markdown()))
+        suffix_to_use = FUNCTIONS_WITH_DF.format(
+            df_head=str(df.head(number_of_head_rows).to_markdown())
+        )
     else:
         suffix_to_use = ""
 
@@ -184,7 +190,9 @@ def _get_functions_multi_prompt(
     if suffix is not None:
         suffix_to_use = suffix
         if include_df_in_prompt:
-            dfs_head = "\n\n".join([d.head(number_of_head_rows).to_markdown() for d in dfs])
+            dfs_head = "\n\n".join(
+                [d.head(number_of_head_rows).to_markdown() for d in dfs]
+            )
             suffix_to_use = suffix_to_use.format(
                 dfs_head=dfs_head,
             )
