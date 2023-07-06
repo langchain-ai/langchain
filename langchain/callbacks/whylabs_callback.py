@@ -82,10 +82,10 @@ class WhyLabsCallbackHandler(BaseCallbackHandler):
             WHYLABS_API_KEY.
         org_id (Optional[str]): WhyLabs organization id to write profiles to.
             Optional because the preferred way to specify the organization id is
-            with environment variable WHYLABS_ORG_ID.
+            with environment variable WHYLABS_DEFAULT_ORG_ID.
         dataset_id (Optional[str]): WhyLabs dataset id to write profiles to.
             Optional because the preferred way to specify the dataset id is
-            with environment variable WHYLABS_DATASET_ID.
+            with environment variable WHYLABS_DEFAULT_DATASET_ID.
         sentiment (bool): Whether to enable sentiment analysis. Defaults to False.
         toxicity (bool): Whether to enable toxicity analysis. Defaults to False.
         themes (bool): Whether to enable theme analysis. Defaults to False.
