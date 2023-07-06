@@ -1,11 +1,24 @@
 from typing import Any
-from langchain.schema import BaseModel
+from langchain.embeddings.base import Embeddings
+
 from langchain.schema import BaseOutputParser
 
 class VectorSQLOutputParser(BaseOutputParser):
-    model: BaseModel
+    """Output Parser for Vector SQL
+    1. finds for `NeuralArray()` and replace it with the embedding
+    2. finds for `DISTANCE()` and replace it with the distance name in backend SQL
+    """
+    
+    model: Embeddings
+    """Embedding model to extract embedding for entity"""
     distance_func_name: str = 'distance'
-    def from_embeddings(cls, model: BaseModel, distance_func_name: str ='distane', **kwargs: Any):
+    """Distance name for vector SQL"""
+    
+    class Config:
+        arbitrary_types_allowed = 1
+    
+    @classmethod
+    def from_embeddings(cls, model: Embeddings, distance_func_name: str ='distance', **kwargs: Any):
         return cls(model=model, distance_func_name=distance_func_name, **kwargs)
     
     def parse(self, text: str):
