@@ -1,4 +1,4 @@
-.PHONY: all clean docs_build docs_clean docs_link_check api_docs_build api_docs_clean api_docs_linkcheck format lint test tests test_watch integration_tests docker_tests help extended_tests
+.PHONY: all clean docs_build docs_clean docs_linkcheck api_docs_build api_docs_clean api_docs_linkcheck format lint test tests test_watch integration_tests docker_tests help extended_tests
 
 all: help
 
@@ -16,7 +16,7 @@ docs_build:
 docs_clean:
 	rm -r docs/_dist
 
-docs_link_check:
+docs_linkcheck:
 	poetry run linkchecker docs/_dist/docs_skeleton/ --ignore-url node_modules
 
 api_docs_build:
