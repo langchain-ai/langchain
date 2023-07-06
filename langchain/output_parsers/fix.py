@@ -13,6 +13,10 @@ T = TypeVar("T")
 class OutputFixingParser(BaseOutputParser[T]):
     """Wraps a parser and tries to fix parsing errors."""
 
+    @property
+    def lc_serializable(self) -> bool:
+        return True
+
     parser: BaseOutputParser[T]
     retry_chain: LLMChain
 

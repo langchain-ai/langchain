@@ -21,6 +21,10 @@ class ListOutputParser(BaseOutputParser):
 class CommaSeparatedListOutputParser(ListOutputParser):
     """Parse out comma separated lists."""
 
+    @property
+    def lc_serializable(self) -> bool:
+        return True
+
     def get_format_instructions(self) -> str:
         return (
             "Your response should be a list of comma separated values, "

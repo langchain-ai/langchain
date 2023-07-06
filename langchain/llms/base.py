@@ -80,6 +80,8 @@ class BaseLLM(BaseLanguageModel, ABC):
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     tags: Optional[List[str]] = Field(default=None, exclude=True)
     """Tags to add to the run trace."""
+    metadata: Optional[Dict[str, Any]] = Field(default=None, exclude=True)
+    """Metadata to add to the run trace."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -190,6 +192,7 @@ class BaseLLM(BaseLanguageModel, ABC):
         callbacks: Callbacks = None,
         *,
         tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
@@ -209,7 +212,13 @@ class BaseLLM(BaseLanguageModel, ABC):
         ) = get_prompts(params, prompts)
         disregard_cache = self.cache is not None and not self.cache
         callback_manager = CallbackManager.configure(
-            callbacks, self.callbacks, self.verbose, tags, self.tags
+            callbacks,
+            self.callbacks,
+            self.verbose,
+            tags,
+            self.tags,
+            metadata,
+            self.metadata,
         )
         new_arg_supported = inspect.signature(self._generate).parameters.get(
             "run_manager"
@@ -293,6 +302,7 @@ class BaseLLM(BaseLanguageModel, ABC):
         callbacks: Callbacks = None,
         *,
         tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
@@ -307,7 +317,13 @@ class BaseLLM(BaseLanguageModel, ABC):
         ) = get_prompts(params, prompts)
         disregard_cache = self.cache is not None and not self.cache
         callback_manager = AsyncCallbackManager.configure(
-            callbacks, self.callbacks, self.verbose, tags, self.tags
+            callbacks,
+            self.callbacks,
+            self.verbose,
+            tags,
+            self.tags,
+            metadata,
+            self.metadata,
         )
         new_arg_supported = inspect.signature(self._agenerate).parameters.get(
             "run_manager"
@@ -350,6 +366,9 @@ class BaseLLM(BaseLanguageModel, ABC):
         prompt: str,
         stop: Optional[List[str]] = None,
         callbacks: Callbacks = None,
+        *,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> str:
         """Check Cache and run the LLM on the given prompt and input."""
@@ -360,7 +379,14 @@ class BaseLLM(BaseLanguageModel, ABC):
                 "`generate` instead."
             )
         return (
-            self.generate([prompt], stop=stop, callbacks=callbacks, **kwargs)
+            self.generate(
+                [prompt],
+                stop=stop,
+                callbacks=callbacks,
+                tags=tags,
+                metadata=metadata,
+                **kwargs,
+            )
             .generations[0][0]
             .text
         )
@@ -370,11 +396,19 @@ class BaseLLM(BaseLanguageModel, ABC):
         prompt: str,
         stop: Optional[List[str]] = None,
         callbacks: Callbacks = None,
+        *,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> str:
         """Check Cache and run the LLM on the given prompt and input."""
         result = await self.agenerate(
-            [prompt], stop=stop, callbacks=callbacks, **kwargs
+            [prompt],
+            stop=stop,
+            callbacks=callbacks,
+            tags=tags,
+            metadata=metadata,
+            **kwargs,
         )
         return result.generations[0][0].text
 

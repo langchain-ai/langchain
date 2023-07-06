@@ -55,7 +55,8 @@ class SpacyEmbeddings(BaseModel, Embeddings):
             # If the model is not found, raise a ValueError
             raise ValueError(
                 "Spacy model 'en_core_web_sm' not found. "
-                "Please install it with `python -m spacy download en_core_web_sm`."
+                "Please install it with"
+                    "`python -m spacy download en_core_web_sm`."
             )
         return values  # Return the validated values
 
