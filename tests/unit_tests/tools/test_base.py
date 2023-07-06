@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 from enum import Enum
 from functools import partial
-from typing import Any, Optional, Type, Union, List
+from typing import Any, List, Optional, Type, Union
 
 import pytest
 from pydantic import BaseModel
