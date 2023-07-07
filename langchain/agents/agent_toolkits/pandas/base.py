@@ -30,7 +30,7 @@ def _get_multi_prompt(
     suffix: Optional[str] = None,
     input_variables: Optional[List[str]] = None,
     include_df_in_prompt: Optional[bool] = True,
-    number_of_head_rows: Optional[int] = 5,
+    number_of_head_rows: int = 5,
 ) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
     num_dfs = len(dfs)
     if suffix is not None:
@@ -74,7 +74,7 @@ def _get_single_prompt(
     suffix: Optional[str] = None,
     input_variables: Optional[List[str]] = None,
     include_df_in_prompt: Optional[bool] = True,
-    number_of_head_rows: Optional[int] = 5,
+    number_of_head_rows: int = 5,
 ) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
     if suffix is not None:
         suffix_to_use = suffix
@@ -114,7 +114,7 @@ def _get_prompt_and_tools(
     suffix: Optional[str] = None,
     input_variables: Optional[List[str]] = None,
     include_df_in_prompt: Optional[bool] = True,
-    number_of_head_rows: Optional[int] = 5,
+    number_of_head_rows: int = 5,
 ) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
     try:
         import pandas as pd
@@ -156,7 +156,7 @@ def _get_functions_single_prompt(
     prefix: Optional[str] = None,
     suffix: Optional[str] = None,
     include_df_in_prompt: Optional[bool] = True,
-    number_of_head_rows: Optional[int] = 5,
+    number_of_head_rows: int = 5,
 ) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
     if suffix is not None:
         suffix_to_use = suffix
@@ -185,7 +185,7 @@ def _get_functions_multi_prompt(
     prefix: Optional[str] = None,
     suffix: Optional[str] = None,
     include_df_in_prompt: Optional[bool] = True,
-    number_of_head_rows: Optional[int] = 5,
+    number_of_head_rows: int = 5,
 ) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
     if suffix is not None:
         suffix_to_use = suffix
@@ -223,7 +223,7 @@ def _get_functions_prompt_and_tools(
     suffix: Optional[str] = None,
     input_variables: Optional[List[str]] = None,
     include_df_in_prompt: Optional[bool] = True,
-    number_of_head_rows: Optional[int] = 5,
+    number_of_head_rows: int = 5,
 ) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
     try:
         import pandas as pd
@@ -275,7 +275,7 @@ def create_pandas_dataframe_agent(
     early_stopping_method: str = "force",
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     include_df_in_prompt: Optional[bool] = True,
-    number_of_head_rows: Optional[int] = 5,
+    number_of_head_rows: int = 5,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Construct a pandas agent from an LLM and dataframe."""
