@@ -298,7 +298,7 @@ class Redis(VectorStore):
         base_query = (
             f"{hybrid_fields}=>[KNN {k} @{self.vector_key} $vector AS vector_score]"
         )
-        return_fields = [self.metadata_key, self.content_key, "vector_score"]
+        return_fields = [self.metadata_key, self.content_key, "vector_score","id"]
         return (
             Query(base_query)
             .return_fields(*return_fields)
@@ -341,6 +341,7 @@ class Redis(VectorStore):
                     page_content=result.content, metadata=json.loads(result.metadata)
                 ),
                 float(result.vector_score),
+                result.id
             )
             for result in results.docs
         ]
