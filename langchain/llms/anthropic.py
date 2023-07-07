@@ -1,10 +1,8 @@
 """Wrapper around Anthropic APIs."""
 import re
 import warnings
-from importlib.metadata import version
 from typing import Any, Callable, Dict, Generator, List, Mapping, Optional
 
-from packaging.version import parse
 from pydantic import BaseModel, root_validator
 
 from langchain.callbacks.manager import (
@@ -12,7 +10,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import LLM
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import check_package_version, get_from_dict_or_env
 
 
 class _AnthropicCommon(BaseModel):
@@ -64,13 +62,7 @@ class _AnthropicCommon(BaseModel):
         try:
             import anthropic
 
-            anthropic_version = parse(version("anthropic"))
-            if anthropic_version < parse("0.3"):
-                raise ValueError(
-                    f"Anthropic client version must be > 0.3, got {anthropic_version}. "
-                    f"To update the client, please run "
-                    f"`pip install -U anthropic`"
-                )
+            check_package_version("anthropic", gte_version="0.3")
             values["client"] = anthropic.Anthropic(
                 base_url=values["anthropic_api_url"],
                 api_key=values["anthropic_api_key"],
