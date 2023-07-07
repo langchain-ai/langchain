@@ -557,6 +557,16 @@ class PGVector(VectorStore):
         Postgres connection string is required
         "Either pass it as a parameter
         or set the PGVECTOR_CONNECTION_STRING environment variable.
+
+        Args:
+            documents: List of Documents to add to the vectorstore.
+            embedding: Which embedding to use. Must be an instance of a subclass of Embeddings (e.g. OpenAIEmbeddings()).
+            collection_name: Name of the collection. If you want to use multiple separate collections, you must specify a different name for each. Default is "langchain".
+            distance_strategy: DistanceStrategy to use, either DistanceStrategy.COSINE, DistanceStrategy.EUCLIDEAN or DistanceStrategy.MAX_INNER_PRODUCT. Default is DistanceStrategy.EUCLIDIAN.
+            metadatas: List of metadatas associated with the texts.
+            ids (list, optional): The IDs of the embeddings. If provided, will update or create the embeddings, otherwise will just add them. IDs must be sorted.
+            pre_delete_collection (bool, optional): Whether to delete the collection before adding the embeddings. Default is False.
+            kwargs: vectorstore specific parameters
         """
 
         texts = [d.page_content for d in documents]
