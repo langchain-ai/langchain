@@ -20,7 +20,7 @@ class LLMInputOutputAdapter:
         input_body = {**model_kwargs}
         if provider == "anthropic" or provider == "ai21":
             input_body["prompt"] = prompt
-        elif provider =="stability":
+        elif provider == "stability":
             input_body["text_prompts"] = json.loads(prompt)
         elif provider == "amazon":
             input_body = dict()
@@ -45,11 +45,9 @@ class LLMInputOutputAdapter:
         if provider == "ai21":
             return response_body.get("completions")[0].get("data").get("text")
         elif provider == "stability":
-            return response_body.get('artifacts')[0].get('base64')
+            return response_body.get("artifacts")[0].get("base64")
         else:
             return response_body.get("results")[0].get("outputText")
-
-
 
 
 class Bedrock(LLM):
