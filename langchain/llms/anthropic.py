@@ -4,7 +4,7 @@ import warnings
 from importlib.metadata import version
 from typing import Any, Callable, Dict, Generator, List, Mapping, Optional
 
-import packaging
+from packaging.version import parse
 from pydantic import BaseModel, root_validator
 
 from langchain.callbacks.manager import (
@@ -50,11 +50,11 @@ class _AnthropicCommon(BaseModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        anthropic_api_key = get_from_dict_or_env(
+        values["anthropic_api_key"] = get_from_dict_or_env(
             values, "anthropic_api_key", "ANTHROPIC_API_KEY"
         )
         # Get custom api url from environment.
-        anthropic_api_url = get_from_dict_or_env(
+        values["anthropic_api_url"] = get_from_dict_or_env(
             values,
             "anthropic_api_url",
             "ANTHROPIC_API_URL",
@@ -64,21 +64,21 @@ class _AnthropicCommon(BaseModel):
         try:
             import anthropic
 
-            anthropic_version = packaging.version.parse(version("anthropic"))
-            if anthropic_version < packaging.version.parse("0.3"):
+            anthropic_version = parse(version("anthropic"))
+            if anthropic_version < parse("0.3"):
                 raise ValueError(
                     f"Anthropic client version must be > 0.3, got {anthropic_version}. "
                     f"To update the client, please run "
                     f"`pip install -U anthropic`"
                 )
             values["client"] = anthropic.Anthropic(
-                base_url=anthropic_api_url,
-                api_key=anthropic_api_key,
+                base_url=values["anthropic_api_url"],
+                api_key=values["anthropic_api_key"],
                 timeout=values["default_request_timeout"],
             )
             values["async_client"] = anthropic.AsyncAnthropic(
-                base_url=anthropic_api_url,
-                api_key=anthropic_api_key,
+                base_url=values["anthropic_api_url"],
+                api_key=values["anthropic_api_key"],
                 timeout=values["default_request_timeout"],
             )
             values["HUMAN_PROMPT"] = anthropic.HUMAN_PROMPT
