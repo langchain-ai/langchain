@@ -2,9 +2,10 @@ import json
 import re
 from typing import Type, TypeVar
 
+from pydantic import BaseModel, ValidationError
+
 from langchain.output_parsers.format_instructions import PYDANTIC_FORMAT_INSTRUCTIONS
 from langchain.schema import BaseOutputParser, OutputParserException
-from pydantic import BaseModel, ValidationError
 
 T = TypeVar("T", bound=BaseModel)
 
