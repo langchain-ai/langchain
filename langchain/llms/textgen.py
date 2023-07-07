@@ -33,7 +33,7 @@ class TextGen(LLM):
     model_url: str
     """The full URL to the textgen webui including http[s]://host:port """
 
-    preset: str = None
+    preset: Optional[str] = None
     """The preset to use in the textgen webui """
 
     max_new_tokens: Optional[int] = 250
