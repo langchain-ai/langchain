@@ -7,12 +7,11 @@ from pydantic import BaseModel
 
 from langchain.base_language import BaseLanguageModel
 from langchain.chains import LLMChain
-from langchain.chat_models import ChatOpenAI
 from langchain.output_parsers.openai_functions import (
     JsonOutputFunctionsParser,
     PydanticOutputFunctionsParser,
 )
-from langchain.prompts import BasePromptTemplate, ChatPromptTemplate
+from langchain.prompts import BasePromptTemplate
 from langchain.schema import BaseLLMOutputParser
 
 PYTHON_TO_JSON_TYPES = {
