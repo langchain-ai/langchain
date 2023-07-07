@@ -222,6 +222,7 @@ class AzureSearch(VectorStore):
             # Encoding key for Azure Search valid characters
             key = base64.urlsafe_b64encode(bytes(key, "utf-8")).decode("ascii")
             metadata = metadatas[i] if metadatas else {}
+            _extra_fields = extra_fields or {}
             # Add data to index
             data_item = {
                 "@search.action": "upload",
@@ -232,13 +233,12 @@ class AzureSearch(VectorStore):
                 ).tolist(),
                 FIELDS_METADATA: json.dumps(metadata),
             }
-            if extra_fields:
-                # Add the extra fields to the data item dictionary
-                for field_list in extra_fields:
-                    if len(field_list) > i:
-                        field_dict = field_list[i]
-                        for field_key, field_value in field_dict.items():
-                            data_item[field_key] = field_value
+            # Add the extra fields to the data item dictionary
+            for field_list in _extra_fields:
+                if len(field_list) > i:
+                    field_dict = field_list[i]
+                    for field_key, field_value in field_dict.items():
+                        data_item[field_key] = field_value
             data.append(data_item)
             ids.append(key)
             # Upload data in batches
