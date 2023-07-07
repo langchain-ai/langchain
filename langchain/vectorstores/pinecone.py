@@ -92,7 +92,7 @@ class Pinecone(VectorStore):
             metadata[self._text_key] = text
             docs.append((ids[i], embedding, metadata))
         # upsert to Pinecone
-        self._index.upsert(vectors=docs, namespace=namespace, batch_size=batch_size)
+        self._index.upsert(vectors=docs, namespace=namespace, batch_size=batch_size, **kwargs)
         return ids
 
     def similarity_search_with_score(
@@ -330,7 +330,7 @@ class Pinecone(VectorStore):
             to_upsert = zip(ids_batch, embeds, metadata)
 
             # upsert to Pinecone
-            index.upsert(vectors=list(to_upsert), namespace=namespace)
+            index.upsert(vectors=list(to_upsert), namespace=namespace, **kwargs)
         return cls(index, embedding.embed_query, text_key, namespace)
 
     @classmethod
