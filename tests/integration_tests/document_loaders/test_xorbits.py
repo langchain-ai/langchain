@@ -1,4 +1,4 @@
-from langchain.document_loaders import XorbitsDataFrameLoader
+from langchain.document_loaders import XorbitsLoader
 from langchain.schema import Document
 import pytest
 
@@ -14,7 +14,7 @@ def sample_data_frame():
 
 
 def test_load_returns_list_of_documents(sample_data_frame) -> None:
-    loader = XorbitsDataFrameLoader(sample_data_frame)
+    loader = XorbitsLoader(sample_data_frame)
     docs = loader.load()
     assert isinstance(docs, list)
     assert all(isinstance(doc, Document) for doc in docs)
@@ -24,7 +24,7 @@ def test_load_returns_list_of_documents(sample_data_frame) -> None:
 def test_load_converts_dataframe_columns_to_document_metadata(
     sample_data_frame,
 ) -> None:
-    loader = XorbitsDataFrameLoader(sample_data_frame)
+    loader = XorbitsLoader(sample_data_frame)
     docs = loader.load()
     expected = {"author": ["Alice", "Bob"],
                 "date": ["2022-01-01", "2022-01-02"],}
@@ -37,7 +37,7 @@ def test_load_uses_page_content_column_to_create_document_text(
     sample_data_frame,
 ) -> None:
     sample_data_frame = sample_data_frame.rename(columns={"text": "dummy_test_column"})
-    loader = XorbitsDataFrameLoader(sample_data_frame, page_content_column="dummy_test_column")
+    loader = XorbitsLoader(sample_data_frame, page_content_column="dummy_test_column")
     docs = loader.load()
     assert docs[0].page_content == "Hello"
     assert docs[1].page_content == "World"

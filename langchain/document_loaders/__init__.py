@@ -146,7 +146,7 @@ from langchain.document_loaders.youtube import (
     GoogleApiYoutubeLoader,
     YoutubeLoader,
 )
-from langchain.document_loaders.xorbits import XorbitsDataFrameLoader
+from langchain.document_loaders.xorbits import XorbitsLoader
 
 # Legacy: only for backwards compatibility. Use PyPDFLoader instead
 PagedPDFSplitter = PyPDFLoader
@@ -286,7 +286,7 @@ __all__ = [
     "WebBaseLoader",
     "WhatsAppChatLoader",
     "WikipediaLoader",
-    "XorbitsDataFrameLoader",
+    "XorbitsLoader",
     "YoutubeAudioLoader",
     "YoutubeLoader",
 ]

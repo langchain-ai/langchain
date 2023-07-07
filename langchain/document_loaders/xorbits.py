@@ -4,7 +4,7 @@ from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 
-class XorbitsDataFrameLoader(BaseLoader):
+class XorbitsLoader(BaseLoader):
     """Load Xorbits DataFrame."""
 
     def __init__(self, data_frame: Any, page_content_column: str = "text"):
