@@ -31,6 +31,7 @@ def log_error_once(method: str, exception: Exception) -> None:
 
 
 def wait_for_all_tracers() -> None:
+    """Wait for all tracers to finish."""
     global _TRACERS
     for tracer in _TRACERS:
         tracer.wait_for_futures()

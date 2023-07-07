@@ -3,12 +3,13 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from pydantic import Field
+from pydantic import Extra, Field
 
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.comparison.prompt import PROMPT, PROMPT_WITH_REFERENCE
+from langchain.evaluation.schema import LLMEvalChain, PairwiseStringEvaluator
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseOutputParser
 
@@ -50,7 +51,7 @@ class PairwiseStringResultOutputParser(BaseOutputParser[dict]):
         }
 
 
-class PairwiseStringEvalChain(LLMChain):
+class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
     """A chain for comparing the output of two models.
 
     Example:
@@ -80,13 +81,36 @@ class PairwiseStringEvalChain(LLMChain):
         default_factory=PairwiseStringResultOutputParser
     )
 
+    class Config:
+        """Configuration for the QAEvalChain."""
+
+        extra = Extra.ignore
+
+    @property
+    def requires_reference(self) -> bool:
+        return "reference" in self.prompt.input_variables
+
+    @property
+    def requires_input(self) -> bool:
+        return True
+
+    @property
+    def _skip_reference_warning(self) -> str:
+        """Warning to show when reference is ignored."""
+        return (
+            f"Ignoring reference in {self.__class__.__name__}, as it is not expected."
+            "\nTo use a reference, initialize PairwiseStringEvalChain with"
+            " `requires_reference=True` or with a prompt with 'reference' as an"
+            " input variable."
+        )
+
     @classmethod
     def from_llm(
         cls,
-        *,
         llm: BaseLanguageModel,
+        *,
         prompt: Optional[PromptTemplate] = None,
-        require_reference: bool = False,
+        requires_reference: bool = False,
         **kwargs: Any,
     ) -> PairwiseStringEvalChain:
         """Initialize the PairwiseStringEvalChain from an LLM.
@@ -94,7 +118,7 @@ class PairwiseStringEvalChain(LLMChain):
         Args:
             llm (BaseLanguageModel): The LLM to use.
             prompt (PromptTemplate, optional): The prompt to use.
-            require_reference (bool, optional): Whether to require a reference
+            requires_reference (bool, optional): Whether to require a reference
                 string. Defaults to False.
             **kwargs (Any): Additional keyword arguments.
 
@@ -103,13 +127,13 @@ class PairwiseStringEvalChain(LLMChain):
         """
         expected_input_vars = {"prediction", "prediction_b", "input"}
         if prompt is None:
-            if require_reference:
+            if requires_reference:
                 expected_input_vars.add("reference")
                 prompt_ = PROMPT_WITH_REFERENCE
             else:
                 prompt_ = PROMPT
         else:
-            if require_reference:
+            if requires_reference:
                 expected_input_vars.add("reference")
             prompt_ = prompt
 
@@ -121,23 +145,32 @@ class PairwiseStringEvalChain(LLMChain):
         return cls(llm=llm, prompt=prompt_, **kwargs)
 
     def _prepare_input(
-        self, prediction: str, prediction_b: str, input: str, reference: Optional[str]
+        self,
+        prediction: str,
+        prediction_b: str,
+        input: Optional[str],
+        reference: Optional[str],
     ) -> dict:
         input_ = {
             "prediction": prediction,
             "prediction_b": prediction_b,
-            "input": input,
         }
-        if reference is not None and "reference" in self.prompt.input_variables:
+        if self.requires_input:
+            if not input:
+                raise ValueError("Input is require for this comparison evaluator")
+            input_["input"] = input
+        if self.requires_reference:
+            if reference is None:
+                raise ValueError("Reference is required for this comparison evaluator")
             input_["reference"] = reference
         return input_
 
-    def evaluate_string_pairs(
+    def _evaluate_string_pairs(
         self,
         *,
         prediction: str,
         prediction_b: str,
-        input: str,
+        input: Optional[str] = None,
         reference: Optional[str] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
@@ -168,13 +201,13 @@ class PairwiseStringEvalChain(LLMChain):
         )
         return result["text"]
 
-    async def aevaluate_string_pairs(
+    async def _aevaluate_string_pairs(
         self,
         *,
         prediction: str,
         prediction_b: str,
-        input: str,
         reference: Optional[str] = None,
+        input: Optional[str] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> dict:
