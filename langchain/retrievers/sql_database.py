@@ -2,7 +2,7 @@
 from typing import Any, List, Dict, Any
 
 from langchain.callbacks.manager import (
-    BaseCallbackHandler,
+    AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
 
@@ -40,3 +40,8 @@ class SQLDatabaseChainRetriever(BaseRetriever):
         return [
             Document(page_content=r[self.page_content_key], metadata=r) for r in ret
         ]
+
+    async def _aget_relevant_documents(
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
+    ) -> List[Document]:
+        raise NotImplementedError
