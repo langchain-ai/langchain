@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 class HTTPVerb(str, Enum):
-    """HTTP verbs."""
+    """Enumerator of the HTTP verbs."""
 
     GET = "get"
     PUT = "put"

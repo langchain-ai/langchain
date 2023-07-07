@@ -1,8 +1,115 @@
-from typing import Dict, List
+"""Loading datasets and evaluators."""
+from typing import Any, Dict, List, Optional, Sequence, Type
+
+from langchain.base_language import BaseLanguageModel
+from langchain.chains.base import Chain
+from langchain.chat_models.openai import ChatOpenAI
+from langchain.evaluation.agents.trajectory_eval_chain import TrajectoryEvalChain
+from langchain.evaluation.comparison import PairwiseStringEvalChain
+from langchain.evaluation.criteria.eval_chain import CriteriaEvalChain
+from langchain.evaluation.qa import ContextQAEvalChain, CotQAEvalChain, QAEvalChain
+from langchain.evaluation.schema import EvaluatorType, LLMEvalChain
 
 
 def load_dataset(uri: str) -> List[Dict]:
-    from datasets import load_dataset
+    """Load a dataset from the LangChainDatasets HuggingFace org.
+
+    Args:
+        uri: The uri of the dataset to load.
+
+    Returns:
+        A list of dictionaries, each representing a row in the dataset.
+    """
+    try:
+        from datasets import load_dataset
+    except ImportError:
+        raise ImportError(
+            "load_dataset requires the `datasets` package."
+            " Please install with `pip install datasets`"
+        )
 
     dataset = load_dataset(f"LangChainDatasets/{uri}")
     return [d for d in dataset["train"]]
+
+
+_EVALUATOR_MAP: Dict[EvaluatorType, Type[LLMEvalChain]] = {
+    EvaluatorType.QA: QAEvalChain,
+    EvaluatorType.COT_QA: CotQAEvalChain,
+    EvaluatorType.CONTEXT_QA: ContextQAEvalChain,
+    EvaluatorType.PAIRWISE_STRING: PairwiseStringEvalChain,
+    EvaluatorType.AGENT_TRAJECTORY: TrajectoryEvalChain,
+    EvaluatorType.CRITERIA: CriteriaEvalChain,
+}
+
+
+def load_evaluator(
+    evaluator: EvaluatorType,
+    *,
+    llm: Optional[BaseLanguageModel] = None,
+    **kwargs: Any,
+) -> Chain:
+    """Load the requested evaluation chain specified by a string.
+
+    Parameters
+    ----------
+    evaluator : EvaluatorType
+        The type of evaluator to load.
+    llm : BaseLanguageModel, optional
+        The language model to use for evaluation, by default None
+    **kwargs : Any
+        Additional keyword arguments to pass to the evaluator.
+
+    Returns
+    -------
+    Chain
+        The loaded evaluation chain.
+
+    Examples
+    --------
+    >>> llm = ChatOpenAI(model="gpt-4", temperature=0)
+    >>> evaluator = load_evaluator(EvaluatorType.QA, llm=llm)
+    """
+    llm = llm or ChatOpenAI(model="gpt-4", temperature=0)
+    return _EVALUATOR_MAP[evaluator].from_llm(llm=llm, **kwargs)
+
+
+def load_evaluators(
+    evaluators: Sequence[EvaluatorType],
+    *,
+    llm: Optional[BaseLanguageModel] = None,
+    config: Optional[dict] = None,
+    **kwargs: Any,
+) -> List[Chain]:
+    """Load evaluators specified by a list of evaluator types.
+
+    Parameters
+    ----------
+    evaluators : Sequence[EvaluatorType]
+        The list of evaluator types to load.
+    llm : BaseLanguageModel, optional
+        The language model to use for evaluation, if none is provided, a default
+        ChatOpenAI gpt-4 model will be used.
+    config : dict, optional
+        A dictionary mapping evaluator types to additional keyword arguments,
+        by default None
+    **kwargs : Any
+        Additional keyword arguments to pass to all evaluators.
+
+    Returns
+    -------
+    List[Chain]
+        The loaded evaluators.
+
+    Examples
+    --------
+    .. code-block:: python
+        from langchain.evaluation import load_evaluators, EvaluatorType
+        evaluators = [EvaluatorType.QA, EvaluatorType.CRITERIA]
+        loaded_evaluators = load_evaluators(evaluators, criteria="helpfulness")
+    """
+    llm = llm or ChatOpenAI(model="gpt-4", temperature=0)
+    loaded = []
+    for evaluator in evaluators:
+        _kwargs = config.get(evaluator, {}) if config else {}
+        loaded.append(load_evaluator(evaluator, llm=llm, **{**kwargs, **_kwargs}))
+    return loaded
