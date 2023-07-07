@@ -379,7 +379,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
 
 
 class FakeCompletionsCallbackHandler(FakeCallbackHandler):
-    completions: dict[int, dict[int, str]] = defaultdict(lambda: defaultdict(str))
+    completions: Dict[int, Dict[int, str]] = defaultdict(lambda: defaultdict(str))
 
     def on_llm_new_token(
         self,
@@ -395,7 +395,7 @@ class FakeCompletionsCallbackHandler(FakeCallbackHandler):
 
 
 class FakeAsyncCompletionsCallbackHandler(FakeAsyncCallbackHandler):
-    completions: dict[int, dict[int, str]] = defaultdict(lambda: defaultdict(str))
+    completions: Dict[int, Dict[int, str]] = defaultdict(lambda: defaultdict(str))
 
     async def on_llm_new_token(
         self,
