@@ -19,7 +19,8 @@ class XorbitsLoader(BaseLoader):
 
         if not isinstance(data_frame, pd.DataFrame):
             raise ValueError(
-                f"Expected data_frame to be a xorbits.pandas.DataFrame, got {type(data_frame)}"
+                f"Expected data_frame to be a xorbits.pandas.DataFrame, \
+                  got {type(data_frame)}"
             )
         self.data_frame = data_frame
         self.page_content_column = page_content_column
