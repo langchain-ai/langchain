@@ -21,6 +21,11 @@ def _format_index(index: sqlalchemy.engine.interfaces.ReflectedIndex) -> str:
         f' Columns: {str(index["column_names"])}'
     )
 
+def _try_eval(x):
+    try:
+        return eval(x)
+    except:
+        return x
 
 def truncate_word(content: Any, *, length: int, suffix: str = "...") -> str:
     """
@@ -336,11 +341,13 @@ class SQLDatabase:
             f"{sample_rows_str}"
         )
 
-    def run(self, command: str, fetch: str = "all") -> str:
+    def run(self, command: str, fetch: str = "all", native_format: bool = False) -> str:
         """Execute a SQL command and return a string representing the results.
-
-        If the statement returns rows, a string of the results is returned.
-        If the statement returns no rows, an empty string is returned.
+        
+        If return_direct is set to true, then the result will be directly returned,
+        Otherwise:
+            If the statement returns rows, a string of the results is returned.
+            If the statement returns no rows, an empty string is returned.
 
         """
         with self._engine.begin() as connection:
@@ -361,7 +368,13 @@ class SQLDatabase:
                     result = cursor.fetchone()  # type: ignore
                 else:
                     raise ValueError("Fetch parameter must be either 'one' or 'all'")
-
+                
+                # If return_direct then directly return the result
+                if native_format:
+                    if isinstance(result, list):
+                        return [{k: _try_eval(v) for k, v in dict(d).items()} for d in result]
+                    return {k: _try_eval(v) for k, v in dict(result).items()}
+                
                 # Convert columns values to string to avoid issues with sqlalchmey
                 # trunacating text
                 if isinstance(result, list):

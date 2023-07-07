@@ -52,6 +52,9 @@ class SQLDatabaseChain(Chain):
     query_checker_prompt: Optional[BasePromptTemplate] = None
     """The prompt template that should be used by the query checker"""
     sql_cmd_parser: Optional[BaseOutputParser] = None
+    """Output parser that reformat the generated SQL"""
+    native_format: bool = False
+    """If return_direct, controls whether to return in python native format instead of strings"""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -127,7 +130,8 @@ class SQLDatabaseChain(Chain):
                 intermediate_steps.append({"sql_cmd": sql_cmd})  # input: sql exec
                 if self.sql_cmd_parser:
                     sql_cmd = self.sql_cmd_parser.parse(sql_cmd)
-                result = self.database.run(sql_cmd)
+                result = self.database.run(sql_cmd, 
+                                           native_format=self.native_format if self.return_direct else False)
                 intermediate_steps.append(str(result))  # output: sql exec
             else:
                 query_checker_prompt = self.query_checker_prompt or PromptTemplate(
@@ -154,7 +158,8 @@ class SQLDatabaseChain(Chain):
                 )  # input: sql exec
                 if self.sql_cmd_parser:
                     checked_sql_command = self.sql_cmd_parser.parse(checked_sql_command)
-                result = self.database.run(checked_sql_command)
+                result = self.database.run(checked_sql_command, 
+                                           native_format=self.native_format if self.return_direct else False)
                 intermediate_steps.append(str(result))  # output: sql exec
                 sql_cmd = checked_sql_command
 
