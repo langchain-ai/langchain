@@ -208,9 +208,11 @@ class StringExampleMapper(Serializable):
             else:
                 output = list(example.outputs.values())[0]
                 return {
-                    "reference": output
-                    if type(output) == str
-                    else self.serialize_chat_messages([output])
+                    "reference": self.serialize_chat_messages([output])
+                    if type(output) == dict
+                    and output.get("type")
+                    and output.get("data")
+                    else output
                 }
         elif self.reference_key not in example.outputs:
             raise ValueError(
