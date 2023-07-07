@@ -28,10 +28,10 @@ class StringRunMapper(Serializable):
         return ["prediction", "input"]
 
     @abstractmethod
-    def map(self, run: Run) -> Dict[str, Any]:
+    def map(self, run: Run) -> Dict[str, str]:
         """Maps the Run to a dictionary."""
 
-    def __call__(self, run: Run) -> Dict[str, Any]:
+    def __call__(self, run: Run) -> Dict[str, str]:
         """Maps the Run to a dictionary."""
         if not run.outputs:
             raise ValueError(f"Run {run.id} has no outputs to evaluate.")
@@ -73,7 +73,7 @@ class LLMStringRunMapper(StringRunMapper):
             )
         return output_
 
-    def map(self, run: Run) -> Dict[str, Any]:
+    def map(self, run: Run) -> Dict[str, str]:
         """Maps the Run to a dictionary."""
         if run.run_type != "llm":
             raise ValueError("LLM RunMapper only supports LLM runs.")
@@ -152,7 +152,7 @@ class ChainStringRunMapper(StringRunMapper):
             raise ValueError(f"Chain {model.lc_namespace} has no input or output keys.")
         return cls(input_key=input_key, prediction_key=prediction_key)
 
-    def map(self, run: Run) -> Dict[str, Any]:
+    def map(self, run: Run) -> Dict[str, str]:
         """Maps the Run to a dictionary."""
         if not run.outputs:
             raise ValueError(f"Run {run.id} has no outputs to evaluate.")
@@ -174,7 +174,7 @@ class ChainStringRunMapper(StringRunMapper):
 class ToolStringRunMapper(StringRunMapper):
     """Map an input to the tool."""
 
-    def map(self, run: Run) -> Dict[str, Any]:
+    def map(self, run: Run) -> Dict[str, str]:
         if not run.outputs:
             raise ValueError(f"Run {run.id} has no outputs to evaluate.")
         return {"input": run.inputs["input"], "prediction": run.outputs["output"]}
@@ -190,7 +190,7 @@ class StringExampleMapper(Serializable):
         """The keys to extract from the run."""
         return ["reference"]
 
-    def map(self, example: Example) -> Dict[str, Any]:
+    def map(self, example: Example) -> Dict[str, str]:
         """Maps the Example, or dataset row to a dictionary."""
         if not example.outputs:
             raise ValueError(
@@ -211,7 +211,7 @@ class StringExampleMapper(Serializable):
             )
         return {"reference": example.outputs[self.reference_key]}
 
-    def __call__(self, example: Example) -> Dict[str, Any]:
+    def __call__(self, example: Example) -> Dict[str, str]:
         """Maps the Run and Example to a dictionary."""
         if not example.outputs:
             raise ValueError(
@@ -241,7 +241,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
     def output_keys(self) -> List[str]:
         return ["feedback"]
 
-    def _prepare_input(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    def _prepare_input(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         run: Run = inputs["run"]
         example: Optional[Example] = inputs.get("example")
         evaluate_strings_inputs = self.run_mapper(run)
@@ -264,7 +264,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
 
     def _call(
         self,
-        inputs: Dict[str, Any],
+        inputs: Dict[str, str],
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         """Call the evaluation chain."""
@@ -280,7 +280,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
 
     async def _acall(
         self,
-        inputs: Dict[str, Any],
+        inputs: Dict[str, str],
         run_manager: AsyncCallbackManagerForChainRun | None = None,
     ) -> Dict[str, Any]:
         """Call the evaluation chain."""
