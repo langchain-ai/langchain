@@ -47,28 +47,10 @@ class MultiQueryRetriever(BaseRetriever):
     """Given a user query, use an LLM to write a set of queries.
     Retrieve docs for each query. Rake the unique union of all retrieved docs."""
 
-    def __init__(
-        self,
-        retriever: BaseRetriever,
-        llm_chain: LLMChain,
-        verbose: bool = True,
-        parser_key: str = "lines",
-    ) -> None:
-        """Initialize MultiQueryRetriever.
-
-        Args:
-            retriever: retriever to query documents from
-            llm_chain: llm_chain for query generation
-            verbose: show the queries that we generated to the user
-            parser_key: attribute name for the parsed output
-
-        Returns:
-            MultiQueryRetriever
-        """
-        self.retriever = retriever
-        self.llm_chain = llm_chain
-        self.verbose = verbose
-        self.parser_key = parser_key
+    retriever: BaseRetriever
+    llm_chain: LLMChain
+    verbose: bool = True
+    parser_key: str = "lines"
 
     @classmethod
     def from_llm(

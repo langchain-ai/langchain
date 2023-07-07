@@ -7,6 +7,7 @@ from langchain.embeddings.aleph_alpha import (
     AlephAlphaSymmetricSemanticEmbedding,
 )
 from langchain.embeddings.bedrock import BedrockEmbeddings
+from langchain.embeddings.clarifai import ClarifaiEmbeddings
 from langchain.embeddings.cohere import CohereEmbeddings
 from langchain.embeddings.dashscope import DashScopeEmbeddings
 from langchain.embeddings.deepinfra import DeepInfraEmbeddings
@@ -43,6 +44,7 @@ __all__ = [
     "OpenAIEmbeddings",
     "HuggingFaceEmbeddings",
     "CohereEmbeddings",
+    "ClarifaiEmbeddings",
     "ElasticsearchEmbeddings",
     "JinaEmbeddings",
     "LlamaCppEmbeddings",

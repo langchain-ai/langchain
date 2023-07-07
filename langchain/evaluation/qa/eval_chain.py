@@ -3,11 +3,14 @@ from __future__ import annotations
 
 from typing import Any, List, Optional, Sequence
 
+from pydantic import Extra
+
 from langchain import PromptTemplate
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.qa.eval_prompt import CONTEXT_PROMPT, COT_PROMPT, PROMPT
+from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
 
 
 def _parse_string_eval_output(text: str) -> dict:
@@ -38,8 +41,21 @@ def _parse_string_eval_output(text: str) -> dict:
     }
 
 
-class QAEvalChain(LLMChain):
+class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
     """LLM Chain specifically for evaluating question answering."""
+
+    class Config:
+        """Configuration for the QAEvalChain."""
+
+        extra = Extra.ignore
+
+    @property
+    def requires_reference(self) -> bool:
+        return True
+
+    @property
+    def requires_input(self) -> bool:
+        return True
 
     @classmethod
     def from_llm(
@@ -90,7 +106,7 @@ class QAEvalChain(LLMChain):
 
         return self.apply(inputs, callbacks=callbacks)
 
-    def evaluate_strings(
+    def _evaluate_strings(
         self,
         *,
         prediction: str,
@@ -118,7 +134,7 @@ class QAEvalChain(LLMChain):
         )[0]
         return _parse_string_eval_output(result["text"])
 
-    async def aevaluate_strings(
+    async def _aevaluate_strings(
         self,
         *,
         prediction: str,
@@ -134,8 +150,16 @@ class QAEvalChain(LLMChain):
         return _parse_string_eval_output(result["text"])
 
 
-class ContextQAEvalChain(LLMChain):
+class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
     """LLM Chain specifically for evaluating QA w/o GT based on context"""
+
+    @property
+    def requires_reference(self) -> bool:
+        return True
+
+    @property
+    def requires_input(self) -> bool:
+        return True
 
     @classmethod
     def _validate_input_vars(cls, prompt: PromptTemplate) -> None:
@@ -193,7 +217,7 @@ class ContextQAEvalChain(LLMChain):
 
         return self.apply(inputs, callbacks=callbacks)
 
-    def evaluate_strings(
+    def _evaluate_strings(
         self,
         *,
         prediction: str,
@@ -208,7 +232,7 @@ class ContextQAEvalChain(LLMChain):
         )[0]
         return _parse_string_eval_output(result["text"])
 
-    async def aevaluate_strings(
+    async def _aevaluate_strings(
         self,
         *,
         prediction: str,

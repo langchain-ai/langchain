@@ -77,6 +77,12 @@ class Chain(Serializable, ABC):
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a chain with its use case.
     """
+    metadata: Optional[Dict[str, Any]] = None
+    """Optional metadata associated with the chain. Defaults to None
+    This metadata will be associated with each call to this chain,
+    and passed as arguments to the handlers defined in `callbacks`.
+    You can use these to eg identify a specific instance of a chain with its use case.
+    """
 
     class Config:
         """Configuration for this pydantic object."""
@@ -183,6 +189,7 @@ class Chain(Serializable, ABC):
         callbacks: Callbacks = None,
         *,
         tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         include_run_info: bool = False,
     ) -> Dict[str, Any]:
         """Execute the chain.
@@ -202,6 +209,7 @@ class Chain(Serializable, ABC):
             tags: List of string tags to pass to all callbacks. These will be passed in
                 addition to tags passed to the chain during construction, but only
                 these runtime tags will propagate to calls to other objects.
+            metadata: Optional metadata associated with the chain. Defaults to None
             include_run_info: Whether to include run info in the response. Defaults
                 to False.
 
@@ -211,7 +219,13 @@ class Chain(Serializable, ABC):
         """
         inputs = self.prep_inputs(inputs)
         callback_manager = CallbackManager.configure(
-            callbacks, self.callbacks, self.verbose, tags, self.tags
+            callbacks,
+            self.callbacks,
+            self.verbose,
+            tags,
+            self.tags,
+            metadata,
+            self.metadata,
         )
         new_arg_supported = inspect.signature(self._call).parameters.get("run_manager")
         run_manager = callback_manager.on_chain_start(
@@ -242,6 +256,7 @@ class Chain(Serializable, ABC):
         callbacks: Callbacks = None,
         *,
         tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         include_run_info: bool = False,
     ) -> Dict[str, Any]:
         """Asynchronously execute the chain.
@@ -261,6 +276,7 @@ class Chain(Serializable, ABC):
             tags: List of string tags to pass to all callbacks. These will be passed in
                 addition to tags passed to the chain during construction, but only
                 these runtime tags will propagate to calls to other objects.
+            metadata: Optional metadata associated with the chain. Defaults to None
             include_run_info: Whether to include run info in the response. Defaults
                 to False.
 
@@ -270,7 +286,13 @@ class Chain(Serializable, ABC):
         """
         inputs = self.prep_inputs(inputs)
         callback_manager = AsyncCallbackManager.configure(
-            callbacks, self.callbacks, self.verbose, tags, self.tags
+            callbacks,
+            self.callbacks,
+            self.verbose,
+            tags,
+            self.tags,
+            metadata,
+            self.metadata,
         )
         new_arg_supported = inspect.signature(self._acall).parameters.get("run_manager")
         run_manager = await callback_manager.on_chain_start(
@@ -366,6 +388,7 @@ class Chain(Serializable, ABC):
         *args: Any,
         callbacks: Callbacks = None,
         tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> str:
         """Convenience method for executing chain when there's a single string output.
@@ -414,10 +437,16 @@ class Chain(Serializable, ABC):
         if args and not kwargs:
             if len(args) != 1:
                 raise ValueError("`run` supports only one positional argument.")
-            return self(args[0], callbacks=callbacks, tags=tags)[_output_key]
-        elif kwargs and not args:
-            return self(kwargs, callbacks=callbacks, tags=tags)[_output_key]
-        elif not kwargs and not args:
+            return self(args[0], callbacks=callbacks, tags=tags, metadata=metadata)[
+                _output_key
+            ]
+
+        if kwargs and not args:
+            return self(kwargs, callbacks=callbacks, tags=tags, metadata=metadata)[
+                _output_key
+            ]
+
+        if not kwargs and not args:
             raise ValueError(
                 "`run` supported with either positional arguments or keyword arguments,"
                 " but none were provided."
@@ -433,6 +462,7 @@ class Chain(Serializable, ABC):
         *args: Any,
         callbacks: Callbacks = None,
         tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> str:
         """Convenience method for executing chain when there's a single string output.
@@ -483,18 +513,23 @@ class Chain(Serializable, ABC):
         elif args and not kwargs:
             if len(args) != 1:
                 raise ValueError("`run` supports only one positional argument.")
-            return (await self.acall(args[0], callbacks=callbacks, tags=tags))[
-                self.output_keys[0]
-            ]
-        elif kwargs and not args:
-            return (await self.acall(kwargs, callbacks=callbacks, tags=tags))[
-                self.output_keys[0]
-            ]
-        else:
-            raise ValueError(
-                f"`run` supported with either positional arguments or keyword arguments"
-                f" but not both. Got args: {args} and kwargs: {kwargs}."
-            )
+            return (
+                await self.acall(
+                    args[0], callbacks=callbacks, tags=tags, metadata=metadata
+                )
+            )[self.output_keys[0]]
+
+        if kwargs and not args:
+            return (
+                await self.acall(
+                    kwargs, callbacks=callbacks, tags=tags, metadata=metadata
+                )
+            )[self.output_keys[0]]
+
+        raise ValueError(
+            f"`run` supported with either positional arguments or keyword arguments"
+            f" but not both. Got args: {args} and kwargs: {kwargs}."
+        )
 
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of chain.
@@ -559,6 +594,5 @@ class Chain(Serializable, ABC):
     def apply(
         self, input_list: List[Dict[str, Any]], callbacks: Callbacks = None
     ) -> List[Dict[str, str]]:
-        """*DEPRECATED* Call the chain on all inputs in the list."""
-        logger.info("Method `Chain.apply` is deprecated.")
+        """Call the chain on all inputs in the list."""
         return [self(inputs, callbacks=callbacks) for inputs in input_list]
