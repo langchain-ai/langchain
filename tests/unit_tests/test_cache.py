@@ -47,6 +47,7 @@ def set_cache_and_teardown(request: FixtureRequest) -> Generator[None, None, Non
     # Will be run after each test
     if langchain.llm_cache:
         langchain.llm_cache.clear()
+        langchain.llm_cache = None
     else:
         raise ValueError("Cache not set. This should never happen.")
 

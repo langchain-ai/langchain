@@ -15,7 +15,8 @@ from langchain.callbacks.manager import (
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import StringEvaluator
 from langchain.load.serializable import Serializable
-from langchain.schema import RUN_KEY, get_buffer_string, messages_from_dict
+from langchain.schema import RUN_KEY, messages_from_dict
+from langchain.schema.messages import BaseMessage, get_buffer_string
 from langchain.tools.base import Tool
 
 
@@ -28,10 +29,10 @@ class StringRunMapper(Serializable):
         return ["prediction", "input"]
 
     @abstractmethod
-    def map(self, run: Run) -> Dict[str, Any]:
+    def map(self, run: Run) -> Dict[str, str]:
         """Maps the Run to a dictionary."""
 
-    def __call__(self, run: Run) -> Dict[str, Any]:
+    def __call__(self, run: Run) -> Dict[str, str]:
         """Maps the Run to a dictionary."""
         if not run.outputs:
             raise ValueError(f"Run {run.id} has no outputs to evaluate.")
@@ -43,8 +44,16 @@ class LLMStringRunMapper(StringRunMapper):
 
     def serialize_chat_messages(self, messages: List[Dict]) -> str:
         """Extract the input messages from the run."""
-        chat_messages = messages_from_dict(messages)
-        return get_buffer_string(chat_messages)
+        if isinstance(messages, list) and messages:
+            if isinstance(messages[0], BaseMessage):
+                chat_messages = messages_from_dict(messages)
+            elif isinstance(messages[0], list):
+                # Runs from Tracer have messages as a list of lists of dicts
+                chat_messages = messages_from_dict(messages[0])
+            else:
+                raise ValueError(f"Could not extract messages to evaluate {messages}")
+            return get_buffer_string(chat_messages)
+        raise ValueError(f"Could not extract messages to evaluate {messages}")
 
     def serialize_inputs(self, inputs: Dict) -> str:
         if "prompts" in inputs:  # Should we even accept this?
@@ -59,8 +68,11 @@ class LLMStringRunMapper(StringRunMapper):
 
     def serialize_outputs(self, outputs: Dict) -> str:
         if not outputs.get("generations"):
-            raise ValueError("LLM Run must have generations as outputs.")
-        first_generation: Dict = outputs["generations"][0]
+            raise ValueError("Cannot evaluate LLM Run without generations.")
+        generations: List[Dict] = outputs["generations"]
+        if not generations:
+            raise ValueError("Cannot evaluate LLM run with empty generations.")
+        first_generation: Dict = generations[0]
         if isinstance(first_generation, list):
             # Runs from Tracer have generations as a list of lists of dicts
             # Whereas Runs from the API have a list of dicts
@@ -71,7 +83,7 @@ class LLMStringRunMapper(StringRunMapper):
             output_ = first_generation["text"]
         return output_
 
-    def map(self, run: Run) -> Dict[str, Any]:
+    def map(self, run: Run) -> Dict[str, str]:
         """Maps the Run to a dictionary."""
         if run.run_type != "llm":
             raise ValueError("LLM RunMapper only supports LLM runs.")
@@ -150,7 +162,7 @@ class ChainStringRunMapper(StringRunMapper):
             raise ValueError(f"Chain {model.lc_namespace} has no input or output keys.")
         return cls(input_key=input_key, prediction_key=prediction_key)
 
-    def map(self, run: Run) -> Dict[str, Any]:
+    def map(self, run: Run) -> Dict[str, str]:
         """Maps the Run to a dictionary."""
         if not run.outputs:
             raise ValueError(f"Run {run.id} has no outputs to evaluate.")
@@ -172,7 +184,7 @@ class ChainStringRunMapper(StringRunMapper):
 class ToolStringRunMapper(StringRunMapper):
     """Map an input to the tool."""
 
-    def map(self, run: Run) -> Dict[str, Any]:
+    def map(self, run: Run) -> Dict[str, str]:
         if not run.outputs:
             raise ValueError(f"Run {run.id} has no outputs to evaluate.")
         return {"input": run.inputs["input"], "prediction": run.outputs["output"]}
@@ -193,7 +205,7 @@ class StringExampleMapper(Serializable):
         chat_messages = messages_from_dict(messages)
         return get_buffer_string(chat_messages)
 
-    def map(self, example: Example) -> Dict[str, Any]:
+    def map(self, example: Example) -> Dict[str, str]:
         """Maps the Example, or dataset row to a dictionary."""
         if not example.outputs:
             raise ValueError(
@@ -209,7 +221,7 @@ class StringExampleMapper(Serializable):
                 output = list(example.outputs.values())[0]
                 return {
                     "reference": self.serialize_chat_messages([output])
-                    if type(output) == dict
+                    if isinstance(output, dict)
                     and output.get("type")
                     and output.get("data")
                     else output
@@ -221,7 +233,7 @@ class StringExampleMapper(Serializable):
             )
         return {"reference": example.outputs[self.reference_key]}
 
-    def __call__(self, example: Example) -> Dict[str, Any]:
+    def __call__(self, example: Example) -> Dict[str, str]:
         """Maps the Run and Example to a dictionary."""
         if not example.outputs:
             raise ValueError(
@@ -251,7 +263,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
     def output_keys(self) -> List[str]:
         return ["feedback"]
 
-    def _prepare_input(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    def _prepare_input(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         run: Run = inputs["run"]
         example: Optional[Example] = inputs.get("example")
         evaluate_strings_inputs = self.run_mapper(run)
@@ -274,7 +286,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
 
     def _call(
         self,
-        inputs: Dict[str, Any],
+        inputs: Dict[str, str],
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         """Call the evaluation chain."""
@@ -290,7 +302,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
 
     async def _acall(
         self,
-        inputs: Dict[str, Any],
+        inputs: Dict[str, str],
         run_manager: AsyncCallbackManagerForChainRun | None = None,
     ) -> Dict[str, Any]:
         """Call the evaluation chain."""
@@ -341,9 +353,14 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
                 " not yet implemented."
                 "Expected one of [BaseLanguageModel, Chain, Tool]."
             )
-        if reference_key is not None or isinstance(model, BaseLanguageModel):
+        if reference_key is not None:
             example_mapper = StringExampleMapper(reference_key=reference_key)
+        elif evaluator.requires_reference and isinstance(model, BaseLanguageModel):
+            # Datasets have an LLM type so we can auto-infer
+            example_mapper = StringExampleMapper()
         elif evaluator.requires_reference:
+            # We could potentially auto-infer if there is only one string in the
+            # example, but it's preferred to raise earlier.
             raise ValueError(
                 f"Evaluator {evaluator.evaluation_name} requires a reference"
                 " example from the dataset. Please specify the reference key from"

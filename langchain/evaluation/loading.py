@@ -8,18 +8,31 @@ from langchain.evaluation.agents.trajectory_eval_chain import TrajectoryEvalChai
 from langchain.evaluation.comparison import PairwiseStringEvalChain
 from langchain.evaluation.criteria.eval_chain import CriteriaEvalChain
 from langchain.evaluation.qa import ContextQAEvalChain, CotQAEvalChain, QAEvalChain
-from langchain.evaluation.schema import EvalChain, EvaluatorType
+from langchain.evaluation.schema import EvaluatorType, LLMEvalChain
 
 
 def load_dataset(uri: str) -> List[Dict]:
-    """Load a dataset from the LangChainDatasets HuggingFace org."""
-    from datasets import load_dataset
+    """Load a dataset from the LangChainDatasets HuggingFace org.
+
+    Args:
+        uri: The uri of the dataset to load.
+
+    Returns:
+        A list of dictionaries, each representing a row in the dataset.
+    """
+    try:
+        from datasets import load_dataset
+    except ImportError:
+        raise ImportError(
+            "load_dataset requires the `datasets` package."
+            " Please install with `pip install datasets`"
+        )
 
     dataset = load_dataset(f"LangChainDatasets/{uri}")
     return [d for d in dataset["train"]]
 
 
-_EVALUATOR_MAP: Dict[EvaluatorType, Type[EvalChain]] = {
+_EVALUATOR_MAP: Dict[EvaluatorType, Type[LLMEvalChain]] = {
     EvaluatorType.QA: QAEvalChain,
     EvaluatorType.COT_QA: CotQAEvalChain,
     EvaluatorType.CONTEXT_QA: ContextQAEvalChain,
@@ -29,7 +42,7 @@ _EVALUATOR_MAP: Dict[EvaluatorType, Type[EvalChain]] = {
 }
 
 
-def _load_evaluator(
+def load_evaluator(
     evaluator: EvaluatorType,
     *,
     llm: Optional[BaseLanguageModel] = None,
@@ -103,5 +116,5 @@ def load_evaluators(
     loaded = []
     for evaluator in evaluators:
         _kwargs = config.get(evaluator, {}) if config else {}
-        loaded.append(_load_evaluator(evaluator, llm=llm, **{**kwargs, **_kwargs}))
+        loaded.append(load_evaluator(evaluator, llm=llm, **{**kwargs, **_kwargs}))
     return loaded

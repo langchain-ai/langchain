@@ -8,7 +8,7 @@ from langchain.base_language import BaseLanguageModel
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.criteria.prompt import PROMPT, PROMPT_WITH_REFERENCES
-from langchain.evaluation.schema import EvalChain, StringEvaluator
+from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
 from langchain.schema import BaseOutputParser, BasePromptTemplate
 
 _SUPPORTED_CRITERIA = {
@@ -60,7 +60,7 @@ CRITERIA_TYPE = Union[
 ]
 
 
-class CriteriaEvalChain(StringEvaluator, EvalChain, LLMChain):
+class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     """LLM Chain for evaluating runs against criteria.
 
     Parameters
@@ -100,6 +100,7 @@ class CriteriaEvalChain(StringEvaluator, EvalChain, LLMChain):
     output_parser: BaseOutputParser = Field(default_factory=CriteriaResultOutputParser)
     """The parser to use to map the output to a structured result."""
     criteria_names: List[str] = Field(default_factory=list)
+    """The names of the criteria being evaluated."""
 
     class Config:
         """Configuration for the QAEvalChain."""
@@ -112,6 +113,10 @@ class CriteriaEvalChain(StringEvaluator, EvalChain, LLMChain):
         return "reference" in self.prompt.input_variables
 
     @property
+    def requires_input(self) -> bool:
+        return True
+
+    @property
     def evaluation_name(self) -> str:
         """Get the name of the evaluation.
 
@@ -121,6 +126,16 @@ class CriteriaEvalChain(StringEvaluator, EvalChain, LLMChain):
             The name of the evaluation.
         """
         return " ".join(self.criteria_names)
+
+    @property
+    def _skip_reference_warning(self) -> str:
+        """Warning to show when reference is ignored."""
+        return (
+            f"Ignoring reference in {self.__class__.__name__}, as it is not expected."
+            "\nTo use a reference, initialize CriteriaEvalChain with"
+            " `require_reference=True` or with a prompt with 'reference'"
+            " as an input variable."
+        )
 
     @staticmethod
     def get_supported_default_criteria() -> List[str]:
@@ -250,11 +265,20 @@ class CriteriaEvalChain(StringEvaluator, EvalChain, LLMChain):
                 requires_reference=True,
             )
         """
+        expected_input_vars = {"input", "output", "criteria"}
         if prompt is None:
             if requires_reference:
                 prompt = PROMPT_WITH_REFERENCES
             else:
                 prompt = PROMPT
+        if requires_reference:
+            expected_input_vars.add("reference")
+        if expected_input_vars != set(prompt.input_variables):
+            raise ValueError(
+                f"Input variables should be {expected_input_vars}, "
+                f"but got {prompt.input_variables}"
+            )
+
         criteria_ = cls.resolve_criteria(criteria)
         criteria_names = list(criteria_.keys())
         criteria_str = " ".join(f"{k}: {v}" for k, v in criteria_.items())
@@ -281,7 +305,7 @@ class CriteriaEvalChain(StringEvaluator, EvalChain, LLMChain):
             input_["reference"] = reference
         return input_
 
-    def evaluate_strings(
+    def _evaluate_strings(
         self,
         *,
         prediction: str,
@@ -325,7 +349,7 @@ class CriteriaEvalChain(StringEvaluator, EvalChain, LLMChain):
         input_ = self._get_eval_input(prediction, reference, input)
         return self(input_, **kwargs)["text"]
 
-    async def aevaluate_strings(
+    async def _aevaluate_strings(
         self,
         *,
         prediction: str,

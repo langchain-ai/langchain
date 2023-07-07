@@ -327,23 +327,22 @@ dev = ["black", "docutils", "flake8", "ipython", "m2r", "mistune (<2.0.0)", "pyt
 
 [[package]]
 name = "anthropic"
-version = "0.2.10"
-description = "Library for accessing the anthropic API"
+version = "0.3.2"
+description = "Client library for the anthropic API"
 optional = true
-python-versions = ">=3.8"
+python-versions = ">=3.7,<4.0"
 files = [
-    {file = "anthropic-0.2.10-py3-none-any.whl", hash = "sha256:a007496207fd186b0bcb9592b00ca130069d2a427f3d6f602a61dbbd1ac6316e"},
-    {file = "anthropic-0.2.10.tar.gz", hash = "sha256:e4da061a86d8ffb86072c0b0feaf219a3a4f7dfddd4224df9ba769e469498c19"},
+    {file = "anthropic-0.3.2-py3-none-any.whl", hash = "sha256:43ad86df406bf91419e3c651e20dcc69ae273c932c92c26973a1621a72ff1d86"},
+    {file = "anthropic-0.3.2.tar.gz", hash = "sha256:f968e970bb0dfa38b1ec59db7bb4162fd1e0f2bef95c3203e926effe62bfcf38"},
 ]
 
 [package.dependencies]
-aiohttp = "*"
-httpx = "*"
-requests = "*"
-tokenizers = "*"
-
-[package.extras]
-dev = ["black (>=22.3.0)", "pytest"]
+anyio = ">=3.5.0"
+distro = ">=1.7.0"
+httpx = ">=0.23.0"
+pydantic = ">=1.9.0,<2.0.0"
+tokenizers = ">=0.13.0"
+typing-extensions = ">=4.1.1"
 
 [[package]]
 name = "anyio"
@@ -2197,6 +2196,17 @@ files = [
 
 [package.extras]
 graph = ["objgraph (>=1.7.2)"]
+
+[[package]]
+name = "distro"
+version = "1.8.0"
+description = "Distro - an OS platform information API"
+optional = true
+python-versions = ">=3.6"
+files = [
+    {file = "distro-1.8.0-py3-none-any.whl", hash = "sha256:99522ca3e365cac527b44bde033f64c6945d90eb9f769703caaec52b09bbd3ff"},
+    {file = "distro-1.8.0.tar.gz", hash = "sha256:02e111d1dc6a50abb8eed6bf31c3e48ed8b0830d1ea2a1b78c61765c2513fdd8"},
+]
 
 [[package]]
 name = "dnspython"
@@ -4396,13 +4406,13 @@ tests = ["doctest", "pytest", "pytest-mock"]
 
 [[package]]
 name = "langchainplus-sdk"
-version = "0.0.17"
+version = "0.0.20"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langchainplus_sdk-0.0.17-py3-none-any.whl", hash = "sha256:899675fe850bb0829691ce7643d5c3b4425de1535b6f2d6ce1e5f5457ffb05bf"},
-    {file = "langchainplus_sdk-0.0.17.tar.gz", hash = "sha256:6520c864a23dcadbe6fb7233a117347f6acc32725a97758e59354704c50de303"},
+    {file = "langchainplus_sdk-0.0.20-py3-none-any.whl", hash = "sha256:07a869d476755803aa04c4986ce78d00c2fe4ff584c0eaa57d7570c9664188db"},
+    {file = "langchainplus_sdk-0.0.20.tar.gz", hash = "sha256:3d300e2e3290f68cc9d842c059f9458deba60e776c9e790309688cad1bfbb219"},
 ]
 
 [package.dependencies]
@@ -4785,6 +4795,22 @@ files = [
     {file = "MarkupSafe-2.1.3-cp39-cp39-win_amd64.whl", hash = "sha256:3fd4abcb888d15a94f32b75d8fd18ee162ca0c064f35b11134be77050296d6ba"},
     {file = "MarkupSafe-2.1.3.tar.gz", hash = "sha256:af598ed32d6ae86f1b747b82783958b1a4ab8f617b06fe68795c7f026abbdcad"},
 ]
+
+[[package]]
+name = "marqo"
+version = "0.11.0"
+description = "Tensor search for humans"
+optional = true
+python-versions = ">=3"
+files = [
+    {file = "marqo-0.11.0-py3-none-any.whl", hash = "sha256:e1a5409beeb02dcec725566cfbc5fd88a84ce65ca7bce08a1120f8082badeab4"},
+    {file = "marqo-0.11.0.tar.gz", hash = "sha256:808e691cf06f5f7d67d422dc7f5f6fcc53b9acc6a4bc000abbcae8a817fd765d"},
+]
+
+[package.dependencies]
+pydantic = "*"
+requests = "*"
+urllib3 = "*"
 
 [[package]]
 name = "marshmallow"
@@ -8542,6 +8568,27 @@ files = [
 test = ["pytest (>=3.0)", "pytest-asyncio"]
 
 [[package]]
+name = "rdflib"
+version = "6.3.2"
+description = "RDFLib is a Python library for working with RDF, a simple yet powerful language for representing information."
+optional = true
+python-versions = ">=3.7,<4.0"
+files = [
+    {file = "rdflib-6.3.2-py3-none-any.whl", hash = "sha256:36b4e74a32aa1e4fa7b8719876fb192f19ecd45ff932ea5ebbd2e417a0247e63"},
+    {file = "rdflib-6.3.2.tar.gz", hash = "sha256:72af591ff704f4caacea7ecc0c5a9056b8553e0489dd4f35a9bc52dbd41522e0"},
+]
+
+[package.dependencies]
+isodate = ">=0.6.0,<0.7.0"
+pyparsing = ">=2.1.0,<4"
+
+[package.extras]
+berkeleydb = ["berkeleydb (>=18.1.0,<19.0.0)"]
+html = ["html5lib (>=1.0,<2.0)"]
+lxml = ["lxml (>=4.3.0,<5.0.0)"]
+networkx = ["networkx (>=2.0.0,<3.0.0)"]
+
+[[package]]
 name = "redis"
 version = "4.5.5"
 description = "Python client for Redis database and key-value store"
@@ -11848,7 +11895,7 @@ cffi = {version = ">=1.11", markers = "platform_python_implementation == \"PyPy\
 cffi = ["cffi (>=1.11)"]
 
 [extras]
-all = ["O365", "aleph-alpha-client", "anthropic", "arxiv", "atlassian-python-api", "awadb", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-cosmos", "azure-identity", "beautifulsoup4", "clarifai", "clickhouse-connect", "cohere", "deeplake", "docarray", "duckduckgo-search", "elasticsearch", "esprima", "faiss-cpu", "google-api-python-client", "google-auth", "google-search-results", "gptcache", "html2text", "huggingface_hub", "jina", "jinja2", "jq", "lancedb", "langkit", "lark", "lxml", "manifest-ml", "momento", "nebula3-python", "neo4j", "networkx", "nlpcloud", "nltk", "nomic", "octoai-sdk", "openai", "openlm", "opensearch-py", "pdfminer-six", "pexpect", "pgvector", "pinecone-client", "pinecone-text", "psycopg2-binary", "pymongo", "pyowm", "pypdf", "pytesseract", "pyvespa", "qdrant-client", "redis", "requests-toolbelt", "sentence-transformers", "singlestoredb", "spacy", "steamship", "tensorflow-text", "tigrisdb", "tiktoken", "torch", "transformers", "weaviate-client", "wikipedia", "wolframalpha"]
+all = ["O365", "aleph-alpha-client", "anthropic", "arxiv", "atlassian-python-api", "awadb", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-cosmos", "azure-identity", "beautifulsoup4", "clarifai", "clickhouse-connect", "cohere", "deeplake", "docarray", "duckduckgo-search", "elasticsearch", "esprima", "faiss-cpu", "google-api-python-client", "google-auth", "google-search-results", "gptcache", "html2text", "huggingface_hub", "jina", "jinja2", "jq", "lancedb", "langkit", "lark", "lxml", "manifest-ml", "marqo", "momento", "nebula3-python", "neo4j", "networkx", "nlpcloud", "nltk", "nomic", "octoai-sdk", "openai", "openlm", "opensearch-py", "pdfminer-six", "pexpect", "pgvector", "pinecone-client", "pinecone-text", "psycopg2-binary", "pymongo", "pyowm", "pypdf", "pytesseract", "pyvespa", "qdrant-client", "rdflib", "redis", "requests-toolbelt", "sentence-transformers", "singlestoredb", "spacy", "steamship", "tensorflow-text", "tigrisdb", "tiktoken", "torch", "transformers", "weaviate-client", "wikipedia", "wolframalpha"]
 azure = ["azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-core", "azure-cosmos", "azure-identity", "azure-search-documents", "openai"]
 clarifai = ["clarifai"]
 cohere = ["cohere"]
@@ -11864,4 +11911,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "16f392bdfbd91c64ba902623ec635c2f7e371c9aa747e4480b051d85c0f1809c"
+content-hash = "cc95f4e0d4bee4ba19cf539be5ffd81f1ddb33229ace936ef3b6cbd4122493ca"
