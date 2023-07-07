@@ -555,7 +555,8 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         if "name" in on_llm_start_records_df.columns:
             llm_input_columns.append("name")
         elif "id" in on_llm_start_records_df.columns:
-            # id is llm class's full import path. ex. ["langchain", "llms", "openai", "AzureOpenAI"]
+            # id is llm class's full import path. For example:
+            # ["langchain", "llms", "openai", "AzureOpenAI"]
             on_llm_start_records_df["name"] = on_llm_start_records_df["id"].apply(
                 lambda id_: id_[-1]
             )
