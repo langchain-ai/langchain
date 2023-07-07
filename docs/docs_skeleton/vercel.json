@@ -137,7 +137,11 @@
       "destination": "/docs/ecosystem/integrations/ctransformers"
     },
     {
-      "source": "/en/latest/integrations/chaindesk.html",
+      "source": "/en/latest/integrations/databerry.html",
+      "destination": "/docs/ecosystem/integrations/chaindesk"
+    },
+    {
+      "source": "/docs/ecosystem/integrations/databerry",
       "destination": "/docs/ecosystem/integrations/chaindesk"
     },
     {
@@ -1329,7 +1333,11 @@
       "destination": "/docs/modules/data_connection/retrievers/integrations/cohere-reranker"
     },
     {
-      "source": "/en/latest/modules/indexes/retrievers/examples/chaindesk.html",
+      "source": "/en/latest/modules/indexes/retrievers/examples/databerry.html",
+      "destination": "/docs/modules/data_connection/retrievers/integrations/chaindesk"
+    },
+    {
+      "source": "/docs/modules/data_connection/retrievers/integrations/databerry",
       "destination": "/docs/modules/data_connection/retrievers/integrations/chaindesk"
     },
     {
