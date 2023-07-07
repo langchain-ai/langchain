@@ -17,7 +17,9 @@ class GraphIndexCreator(BaseModel):
     llm: Optional[BaseLanguageModel] = None
     graph_type: Type[NetworkxEntityGraph] = NetworkxEntityGraph
 
-    def from_text(self, text: str, prompt=KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT) -> NetworkxEntityGraph:
+    def from_text(
+        self, text: str, prompt=KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT
+    ) -> NetworkxEntityGraph:
         """Create graph index from text."""
         if self.llm is None:
             raise ValueError("llm should not be None")
@@ -29,7 +31,9 @@ class GraphIndexCreator(BaseModel):
             graph.add_triple(triple)
         return graph
 
-    async def afrom_text(self, text: str, prompt=KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT) -> NetworkxEntityGraph:
+    async def afrom_text(
+        self, text: str, prompt=KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT
+    ) -> NetworkxEntityGraph:
         """Create graph index from text asynchronously."""
         if self.llm is None:
             raise ValueError("llm should not be None")
