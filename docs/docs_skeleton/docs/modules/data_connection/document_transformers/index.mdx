@@ -29,3 +29,18 @@ That means there are two different axes along which you can customize your text 
 import GetStarted from "@snippets/modules/data_connection/document_transformers/get_started.mdx"
 
 <GetStarted/>
+
+## Filter redundant embeddings
+When documents have similar (even identical) content, it's not necessary to index every document. The `EmbeddingsRedundantFilter` filters out redundant documents based a semantic similarity threshold.
+
+## Convert text to Q&A format
+Often, text is presented in narrative or conversational format, but the user's query is typically formatted as a question. Converting documents to
+question and answer format ("interrogating" documents) before vectorization can help improve the reliability of the vector retrieval step.
+
+LangChain uses the [doctran](https://github.com/psychic-api/doctran/tree/main) library to interrogate documents, which itself depends on (OpenAI function calling)[https://openai.com/blog/function-calling-and-other-api-updates].
+
+## Translate text
+Sometimes, it's useful to translate documents into mulitple languages before generating embeddings from it, particularly for use cases
+where queries in more than one language are expected.
+
+LangChain uses the [doctran](https://github.com/psychic-api/doctran/tree/main) library to translate documents, which itself depends on (OpenAI function calling)[https://openai.com/blog/function-calling-and-other-api-updates].
