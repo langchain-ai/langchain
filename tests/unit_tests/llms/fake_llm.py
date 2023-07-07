@@ -24,6 +24,10 @@ class FakeLLM(LLM):
             )
         return queries
 
+    def get_num_tokens(self, text: str) -> int:
+        """Return number of tokens."""
+        return len(text.split())
+
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
@@ -34,6 +38,7 @@ class FakeLLM(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         if self.sequential_responses:
             return self._get_next_response_in_sequence

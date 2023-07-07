@@ -18,6 +18,15 @@ logger = logging.getLogger()
 
 
 def has_mul_sub_str(s: str, *args: Any) -> bool:
+    """
+    Check if a string contains multiple substrings.
+    Args:
+        s: string to check.
+        *args: substrings to check.
+
+    Returns:
+        True if all substrings are in the string, False otherwise.
+    """
     for a in args:
         if a not in s:
             return False
@@ -68,7 +77,7 @@ class ClickhouseSettings(BaseSettings):
 
     index_type: str = "annoy"
     # Annoy supports L2Distance and cosineDistance.
-    index_param: Optional[Union[List, Dict]] = [100, "'L2Distance'"]
+    index_param: Optional[Union[List, Dict]] = ["'L2Distance'", 100]
     index_query_params: Dict[str, str] = {}
 
     column_map: Dict[str, str] = {

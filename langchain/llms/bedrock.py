@@ -155,6 +155,7 @@ class Bedrock(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call out to Bedrock service model.
 
@@ -173,10 +174,8 @@ class Bedrock(LLM):
         _model_kwargs = self.model_kwargs or {}
 
         provider = self.model_id.split(".")[0]
-
-        input_body = LLMInputOutputAdapter.prepare_input(
-            provider, prompt, _model_kwargs
-        )
+        params = {**_model_kwargs, **kwargs}
+        input_body = LLMInputOutputAdapter.prepare_input(provider, prompt, params)
         body = json.dumps(input_body)
         accept = "application/json"
         contentType = "application/json"

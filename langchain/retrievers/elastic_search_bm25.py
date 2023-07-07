@@ -1,9 +1,14 @@
 """Wrapper around Elasticsearch vector database."""
+
 from __future__ import annotations
 
 import uuid
 from typing import Any, Iterable, List
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.docstore.document import Document
 from langchain.schema import BaseRetriever
 
@@ -35,9 +40,8 @@ class ElasticSearchBM25Retriever(BaseRetriever):
     https://username:password@cluster_id.region_id.gcp.cloud.es.io:9243.
     """
 
-    def __init__(self, client: Any, index_name: str):
-        self.client = client
-        self.index_name = index_name
+    client: Any
+    index_name: str
 
     @classmethod
     def create(
@@ -70,14 +74,14 @@ class ElasticSearchBM25Retriever(BaseRetriever):
 
         # Create the index with the specified settings and mappings
         es.indices.create(index=index_name, mappings=mappings, settings=settings)
-        return cls(es, index_name)
+        return cls(client=es, index_name=index_name)
 
     def add_texts(
         self,
         texts: Iterable[str],
         refresh_indices: bool = True,
     ) -> List[str]:
-        """Run more texts through the embeddings and add to the retriver.
+        """Run more texts through the embeddings and add to the retriever.
 
         Args:
             texts: Iterable of strings to add to the retriever.
@@ -111,7 +115,9 @@ class ElasticSearchBM25Retriever(BaseRetriever):
             self.client.indices.refresh(index=self.index_name)
         return ids
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> List[Document]:
         query_dict = {"query": {"match": {"content": query}}}
         res = self.client.search(index=self.index_name, body=query_dict)
 
@@ -120,5 +126,7 @@ class ElasticSearchBM25Retriever(BaseRetriever):
             docs.append(Document(page_content=r["_source"]["content"]))
         return docs
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def _aget_relevant_documents(
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
+    ) -> List[Document]:
         raise NotImplementedError

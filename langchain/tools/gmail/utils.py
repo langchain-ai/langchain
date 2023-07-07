@@ -16,12 +16,17 @@ logger = logging.getLogger(__name__)
 
 
 def import_google() -> Tuple[Request, Credentials]:
+    """Import google libraries.
+
+    Returns:
+        Tuple[Request, Credentials]: Request and Credentials classes.
+    """
     # google-auth-httplib2
     try:
         from google.auth.transport.requests import Request  # noqa: F401
         from google.oauth2.credentials import Credentials  # noqa: F401
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "You need to install google-auth-httplib2 to use this toolkit. "
             "Try running pip install --upgrade google-auth-httplib2"
         )
@@ -29,6 +34,11 @@ def import_google() -> Tuple[Request, Credentials]:
 
 
 def import_installed_app_flow() -> InstalledAppFlow:
+    """Import InstalledAppFlow class.
+
+    Returns:
+        InstalledAppFlow: InstalledAppFlow class.
+    """
     try:
         from google_auth_oauthlib.flow import InstalledAppFlow
     except ImportError:
@@ -40,6 +50,11 @@ def import_installed_app_flow() -> InstalledAppFlow:
 
 
 def import_googleapiclient_resource_builder() -> build_resource:
+    """Import googleapiclient.discovery.build function.
+
+    Returns:
+        build_resource: googleapiclient.discovery.build function.
+    """
     try:
         from googleapiclient.discovery import build
     except ImportError:

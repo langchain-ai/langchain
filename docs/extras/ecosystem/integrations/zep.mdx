@@ -1,0 +1,28 @@
+# Zep
+
+>[Zep](https://docs.getzep.com/) - A long-term memory store for LLM applications.
+
+>`Zep` stores, summarizes, embeds, indexes, and enriches conversational AI chat histories, and exposes them via simple, low-latency APIs.
+>- Long-term memory persistence, with access to historical messages irrespective of your summarization strategy.
+>- Auto-summarization of memory messages based on a configurable message window. A series of summaries are stored, providing flexibility for future summarization strategies.
+>- Vector search over memories, with messages automatically embedded on creation.
+>- Auto-token counting of memories and summaries, allowing finer-grained control over prompt assembly.
+>- Python and JavaScript SDKs.
+
+
+`Zep` [project](https://github.com/getzep/zep) 
+
+## Installation and Setup
+
+```bash
+pip install zep_python
+```
+
+
+## Retriever
+
+See a [usage example](/docs/modules/data_connection/retrievers/integrations/zep_memorystore.html).
+
+```python
+from langchain.retrievers import ZepRetriever
+```

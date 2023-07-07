@@ -3,7 +3,7 @@
 In order to set this up, follow instructions at:
 """
 import json
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import aiohttp
 import requests
@@ -25,9 +25,28 @@ class MetaphorSearchAPIWrapper(BaseModel):
 
         extra = Extra.forbid
 
-    def _metaphor_search_results(self, query: str, num_results: int) -> List[dict]:
+    def _metaphor_search_results(
+        self,
+        query: str,
+        num_results: int,
+        include_domains: Optional[List[str]] = None,
+        exclude_domains: Optional[List[str]] = None,
+        start_crawl_date: Optional[str] = None,
+        end_crawl_date: Optional[str] = None,
+        start_published_date: Optional[str] = None,
+        end_published_date: Optional[str] = None,
+    ) -> List[dict]:
         headers = {"X-Api-Key": self.metaphor_api_key}
-        params = {"numResults": num_results, "query": query}
+        params = {
+            "numResults": num_results,
+            "query": query,
+            "includeDomains": include_domains,
+            "excludeDomains": exclude_domains,
+            "startCrawlDate": start_crawl_date,
+            "endCrawlDate": end_crawl_date,
+            "startPublishedDate": start_published_date,
+            "endPublishedDate": end_published_date,
+        }
         response = requests.post(
             # type: ignore
             f"{METAPHOR_API_URL}/search",
@@ -50,7 +69,17 @@ class MetaphorSearchAPIWrapper(BaseModel):
 
         return values
 
-    def results(self, query: str, num_results: int) -> List[Dict]:
+    def results(
+        self,
+        query: str,
+        num_results: int,
+        include_domains: Optional[List[str]] = None,
+        exclude_domains: Optional[List[str]] = None,
+        start_crawl_date: Optional[str] = None,
+        end_crawl_date: Optional[str] = None,
+        start_published_date: Optional[str] = None,
+        end_published_date: Optional[str] = None,
+    ) -> List[Dict]:
         """Run query through Metaphor Search and return metadata.
 
         Args:
@@ -62,21 +91,47 @@ class MetaphorSearchAPIWrapper(BaseModel):
                 title - The title of the
                 url - The url
                 author - Author of the content, if applicable. Otherwise, None.
-                date_created - Estimated date created,
+                published_date - Estimated date published
                     in YYYY-MM-DD format. Otherwise, None.
         """
         raw_search_results = self._metaphor_search_results(
-            query, num_results=num_results
+            query,
+            num_results=num_results,
+            include_domains=include_domains,
+            exclude_domains=exclude_domains,
+            start_crawl_date=start_crawl_date,
+            end_crawl_date=end_crawl_date,
+            start_published_date=start_published_date,
+            end_published_date=end_published_date,
         )
         return self._clean_results(raw_search_results)
 
-    async def results_async(self, query: str, num_results: int) -> List[Dict]:
+    async def results_async(
+        self,
+        query: str,
+        num_results: int,
+        include_domains: Optional[List[str]] = None,
+        exclude_domains: Optional[List[str]] = None,
+        start_crawl_date: Optional[str] = None,
+        end_crawl_date: Optional[str] = None,
+        start_published_date: Optional[str] = None,
+        end_published_date: Optional[str] = None,
+    ) -> List[Dict]:
         """Get results from the Metaphor Search API asynchronously."""
 
         # Function to perform the API call
         async def fetch() -> str:
             headers = {"X-Api-Key": self.metaphor_api_key}
-            params = {"numResults": num_results, "query": query}
+            params = {
+                "numResults": num_results,
+                "query": query,
+                "includeDomains": include_domains,
+                "excludeDomains": exclude_domains,
+                "startCrawlDate": start_crawl_date,
+                "endCrawlDate": end_crawl_date,
+                "startPublishedDate": start_published_date,
+                "endPublishedDate": end_published_date,
+            }
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                     f"{METAPHOR_API_URL}/search", json=params, headers=headers
@@ -99,7 +154,7 @@ class MetaphorSearchAPIWrapper(BaseModel):
                     "title": result["title"],
                     "url": result["url"],
                     "author": result["author"],
-                    "date_created": result["dateCreated"],
+                    "published_date": result["publishedDate"],
                 }
             )
         return cleaned_results

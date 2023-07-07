@@ -54,6 +54,7 @@ class Baseten(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call to Baseten deployed model endpoint."""
         try:

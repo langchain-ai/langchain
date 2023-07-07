@@ -13,7 +13,7 @@ from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 class WolframAlphaQueryRun(BaseTool):
     """Tool that adds the capability to query using the Wolfram Alpha SDK."""
 
-    name = "Wolfram Alpha"
+    name = "wolfram_alpha"
     description = (
         "A wrapper around Wolfram Alpha. "
         "Useful for when you need to answer questions about Math, "

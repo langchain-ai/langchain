@@ -7,11 +7,7 @@ from langchain.chat_models.google_palm import (
     ChatGooglePalmError,
     _messages_to_prompt_dict,
 )
-from langchain.schema import (
-    AIMessage,
-    HumanMessage,
-    SystemMessage,
-)
+from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
 
 
 def test_messages_to_prompt_dict_with_valid_messages() -> None:

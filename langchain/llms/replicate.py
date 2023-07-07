@@ -72,6 +72,7 @@ class Replicate(LLM):
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         return {
+            "model": self.model,
             **{"model_kwargs": self.model_kwargs},
         }
 
@@ -85,6 +86,7 @@ class Replicate(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call to replicate endpoint."""
         try:
@@ -110,6 +112,6 @@ class Replicate(LLM):
         first_input_name = input_properties[0][0]
 
         inputs = {first_input_name: prompt, **self.input}
-        iterator = replicate_python.run(self.model, input={**inputs})
+        iterator = replicate_python.run(self.model, input={**inputs, **kwargs})
 
         return "".join([output for output in iterator])

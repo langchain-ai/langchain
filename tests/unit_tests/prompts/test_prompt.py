@@ -218,7 +218,7 @@ def test_prompt_jinja2_missing_input_variables() -> None:
     """Test error is raised when input variables are not provided."""
     template = "This is a {{ foo }} test."
     input_variables: list = []
-    with pytest.raises(ValueError):
+    with pytest.warns(UserWarning):
         PromptTemplate(
             input_variables=input_variables, template=template, template_format="jinja2"
         )
@@ -228,7 +228,7 @@ def test_prompt_jinja2_extra_input_variables() -> None:
     """Test error is raised when there are too many input variables."""
     template = "This is a {{ foo }} test."
     input_variables = ["foo", "bar"]
-    with pytest.raises(ValueError):
+    with pytest.warns(UserWarning):
         PromptTemplate(
             input_variables=input_variables, template=template, template_format="jinja2"
         )
@@ -238,7 +238,7 @@ def test_prompt_jinja2_wrong_input_variables() -> None:
     """Test error is raised when name of input variable is wrong."""
     template = "This is a {{ foo }} test."
     input_variables = ["bar"]
-    with pytest.raises(ValueError):
+    with pytest.warns(UserWarning):
         PromptTemplate(
             input_variables=input_variables, template=template, template_format="jinja2"
         )

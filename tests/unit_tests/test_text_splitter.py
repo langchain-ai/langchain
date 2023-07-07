@@ -1,10 +1,13 @@
 """Test text splitting functionality."""
+from typing import List
+
 import pytest
 
 from langchain.docstore.document import Document
 from langchain.text_splitter import (
     CharacterTextSplitter,
     Language,
+    MarkdownHeaderTextSplitter,
     PythonCodeTextSplitter,
     RecursiveCharacterTextSplitter,
 )
@@ -72,6 +75,31 @@ def test_character_text_splitter_longer_words() -> None:
     """Test splitting by characters when splits not found easily."""
     text = "foo bar baz 123"
     splitter = CharacterTextSplitter(separator=" ", chunk_size=1, chunk_overlap=1)
+    output = splitter.split_text(text)
+    expected_output = ["foo", "bar", "baz", "123"]
+    assert output == expected_output
+
+
+def test_character_text_splitter_keep_separator_regex() -> None:
+    """Test splitting by characters while keeping the separator
+    that is a regex special character.
+    """
+    text = "foo.bar.baz.123"
+    splitter = CharacterTextSplitter(
+        separator=r"\.", chunk_size=1, chunk_overlap=0, keep_separator=True
+    )
+    output = splitter.split_text(text)
+    expected_output = ["foo", ".bar", ".baz", ".123"]
+    assert output == expected_output
+
+
+def test_character_text_splitter_discard_separator_regex() -> None:
+    """Test splitting by characters discarding the separator
+    that is a regex special character."""
+    text = "foo.bar.baz.123"
+    splitter = CharacterTextSplitter(
+        separator=r"\.", chunk_size=1, chunk_overlap=0, keep_separator=False
+    )
     output = splitter.split_text(text)
     expected_output = ["foo", "bar", "baz", "123"]
     assert output == expected_output
@@ -146,6 +174,48 @@ def test_metadata_not_shallow() -> None:
     docs[0].metadata["foo"] = 1
     assert docs[0].metadata == {"source": "1", "foo": 1}
     assert docs[1].metadata == {"source": "1"}
+
+
+def test_iterative_text_splitter_keep_separator() -> None:
+    chunk_size = 5
+    output = __test_iterative_text_splitter(chunk_size=chunk_size, keep_separator=True)
+
+    assert output == [
+        "....5",
+        "X..3",
+        "Y...4",
+        "X....5",
+        "Y...",
+    ]
+
+
+def test_iterative_text_splitter_discard_separator() -> None:
+    chunk_size = 5
+    output = __test_iterative_text_splitter(chunk_size=chunk_size, keep_separator=False)
+
+    assert output == [
+        "....5",
+        "..3",
+        "...4",
+        "....5",
+        "...",
+    ]
+
+
+def __test_iterative_text_splitter(chunk_size: int, keep_separator: bool) -> List[str]:
+    chunk_size += 1 if keep_separator else 0
+
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=0,
+        separators=["X", "Y"],
+        keep_separator=keep_separator,
+    )
+    text = "....5X..3Y...4X....5Y..."
+    output = splitter.split_text(text)
+    for chunk in output:
+        assert len(chunk) <= chunk_size, f"Chunk is larger than {chunk_size}"
+    return output
 
 
 def test_iterative_text_splitter() -> None:
@@ -626,4 +696,158 @@ def test_html_code_splitter() -> None:
         '<div class="amazing">',
         "<p>Some text</p>",
         "<p>Some more text</p>\n            </div>",
+    ]
+
+
+def test_md_header_text_splitter_1() -> None:
+    """Test markdown splitter by header: Case 1."""
+
+    markdown_document = (
+        "# Foo\n\n"
+        "    ## Bar\n\n"
+        "Hi this is Jim\n\n"
+        "Hi this is Joe\n\n"
+        " ## Baz\n\n"
+        " Hi this is Molly"
+    )
+    headers_to_split_on = [
+        ("#", "Header 1"),
+        ("##", "Header 2"),
+    ]
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+    expected_output = [
+        Document(
+            page_content="Hi this is Jim  \nHi this is Joe",
+            metadata={"Header 1": "Foo", "Header 2": "Bar"},
+        ),
+        Document(
+            page_content="Hi this is Molly",
+            metadata={"Header 1": "Foo", "Header 2": "Baz"},
+        ),
+    ]
+    assert output == expected_output
+
+
+def test_md_header_text_splitter_2() -> None:
+    """Test markdown splitter by header: Case 2."""
+    markdown_document = (
+        "# Foo\n\n"
+        "    ## Bar\n\n"
+        "Hi this is Jim\n\n"
+        "Hi this is Joe\n\n"
+        " ### Boo \n\n"
+        " Hi this is Lance \n\n"
+        " ## Baz\n\n"
+        " Hi this is Molly"
+    )
+
+    headers_to_split_on = [
+        ("#", "Header 1"),
+        ("##", "Header 2"),
+        ("###", "Header 3"),
+    ]
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+    expected_output = [
+        Document(
+            page_content="Hi this is Jim  \nHi this is Joe",
+            metadata={"Header 1": "Foo", "Header 2": "Bar"},
+        ),
+        Document(
+            page_content="Hi this is Lance",
+            metadata={"Header 1": "Foo", "Header 2": "Bar", "Header 3": "Boo"},
+        ),
+        Document(
+            page_content="Hi this is Molly",
+            metadata={"Header 1": "Foo", "Header 2": "Baz"},
+        ),
+    ]
+    assert output == expected_output
+
+
+def test_md_header_text_splitter_3() -> None:
+    """Test markdown splitter by header: Case 3."""
+
+    markdown_document = (
+        "# Foo\n\n"
+        "    ## Bar\n\n"
+        "Hi this is Jim\n\n"
+        "Hi this is Joe\n\n"
+        " ### Boo \n\n"
+        " Hi this is Lance \n\n"
+        " #### Bim \n\n"
+        " Hi this is John \n\n"
+        " ## Baz\n\n"
+        " Hi this is Molly"
+    )
+
+    headers_to_split_on = [
+        ("#", "Header 1"),
+        ("##", "Header 2"),
+        ("###", "Header 3"),
+        ("####", "Header 4"),
+    ]
+
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+
+    expected_output = [
+        Document(
+            page_content="Hi this is Jim  \nHi this is Joe",
+            metadata={"Header 1": "Foo", "Header 2": "Bar"},
+        ),
+        Document(
+            page_content="Hi this is Lance",
+            metadata={"Header 1": "Foo", "Header 2": "Bar", "Header 3": "Boo"},
+        ),
+        Document(
+            page_content="Hi this is John",
+            metadata={
+                "Header 1": "Foo",
+                "Header 2": "Bar",
+                "Header 3": "Boo",
+                "Header 4": "Bim",
+            },
+        ),
+        Document(
+            page_content="Hi this is Molly",
+            metadata={"Header 1": "Foo", "Header 2": "Baz"},
+        ),
+    ]
+
+    assert output == expected_output
+
+
+def test_solidity_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.SOL, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """pragma solidity ^0.8.20;
+  contract HelloWorld {
+    function add(uint a, uint b) pure public returns(uint) {
+      return  a + b;
+    }
+  }
+  """
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "pragma solidity",
+        "^0.8.20;",
+        "contract",
+        "HelloWorld {",
+        "function",
+        "add(uint a,",
+        "uint b) pure",
+        "public",
+        "returns(uint) {",
+        "return  a",
+        "+ b;",
+        "}\n  }",
     ]
