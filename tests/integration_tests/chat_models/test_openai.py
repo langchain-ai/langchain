@@ -74,7 +74,6 @@ def test_chat_openai_multiple_completions() -> None:
 
 def test_chat_openai_streaming() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
-
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
     chat = ChatOpenAI(
@@ -91,6 +90,7 @@ def test_chat_openai_streaming() -> None:
 
 
 def test_chat_openai_streaming_multiple_prompts_and_completions() -> None:
+    """Test that ChatOpenAI streams tokens for multiple prompts and/or completions."""
     callback_handler = FakeCompletionsCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
     chat = ChatOpenAI(
@@ -180,6 +180,7 @@ async def test_async_chat_openai_streaming() -> None:
 
 @pytest.mark.asyncio
 async def test_async_chat_openai_streaming_multiple_prompts_and_completions() -> None:
+    """Test async ChatOpenAI with multiple prompts and completions."""
     callback_handler = FakeAsyncCompletionsCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
     chat = ChatOpenAI(

@@ -259,7 +259,7 @@ def test_openai_chat_streaming_callback() -> None:
 
 
 def test_openai_chat_streaming_multi_completions() -> None:
-    """Test OpenAIChat with multi completions."""
+    """Test streaming OpenAIChat with multiple completions."""
     llm = OpenAIChat(max_tokens=10, n=2, streaming=True)
     output = llm.generate(["Hello, how are you?"])
     assert isinstance(output, LLMResult)
@@ -281,7 +281,7 @@ async def test_openai_chat_async_generate() -> None:
 
 @pytest.mark.asyncio
 async def test_openai_chat_async_generate_multi_completions() -> None:
-    """Test async chat."""
+    """Test async OpenAI chat with multiple completions."""
     llm = OpenAIChat(max_tokens=10, n=2)
     output = await llm.agenerate(["Hello, how are you?"])
     assert isinstance(output, LLMResult)
@@ -312,7 +312,7 @@ async def test_openai_chat_async_streaming_callback() -> None:
 
 @pytest.mark.asyncio
 async def test_openai_chat_async_streaming_multi_completions() -> None:
-    """Test async chat."""
+    """Test async streaming of OpenAI chat with multiple completions."""
     llm = OpenAIChat(max_tokens=10, n=3, streaming=True)
     output = await llm.agenerate(["Give me a 100 word sentence."])
     assert isinstance(output, LLMResult)

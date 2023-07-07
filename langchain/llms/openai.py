@@ -269,7 +269,6 @@ class BaseOpenAI(BaseLLM):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        prompt_index: Optional[int] = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Call out to OpenAI's endpoint with k unique prompts.
@@ -328,7 +327,6 @@ class BaseOpenAI(BaseLLM):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        prompt_index: Optional[int] = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Call out to OpenAI's endpoint async with k unique prompts."""
@@ -788,34 +786,34 @@ class OpenAIChat(BaseLLM):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        prompt_index: Optional[int] = None,
         **kwargs: Any,
     ) -> LLMResult:
         messages, params = self._get_chat_params(prompts, stop)
         params = {**params, **kwargs}
         if self.streaming:
-            response: dict[int, str] = dict()
+            partial: dict[int, str] = dict()
             params["stream"] = True
             for stream_resp in completion_with_retry(self, messages=messages, **params):
                 for part in stream_resp["choices"]:
                     token = part["delta"].get("content", "")
 
-                    if response.get(part["index"]) is None:
-                        response[part["index"]] = ""
+                    if partial.get(part["index"]) is None:
+                        partial[part["index"]] = ""
 
                     token = part["delta"].get("content", "")
-                    response[part["index"]] += token
+                    partial[part["index"]] += token
                     if run_manager:
                         run_manager.on_llm_new_token(
                             token,
                             idx=NewTokenIndicies(
-                                prompt=prompt_index or 0,
+                                # Only supports single prompt
+                                prompt=0,
                                 completion=part["index"],
                             ),
                         )
             return LLMResult(
                 generations=[
-                    [Generation(text=response[idx]) for idx in sorted(response)]
+                    [Generation(text=partial[idx]) for idx in sorted(partial)]
                 ],
             )
         else:
@@ -839,13 +837,12 @@ class OpenAIChat(BaseLLM):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        prompt_index: Optional[int] = None,
         **kwargs: Any,
     ) -> LLMResult:
         messages, params = self._get_chat_params(prompts, stop)
         params = {**params, **kwargs}
         if self.streaming:
-            response: dict[int, str] = dict()
+            partial: dict[int, str] = dict()
             params["stream"] = True
             async for stream_resp in await acompletion_with_retry(
                 self, messages=messages, **params
@@ -853,21 +850,22 @@ class OpenAIChat(BaseLLM):
                 for part in stream_resp["choices"]:
                     token = part["delta"].get("content", "")
 
-                    if response.get(part["index"]) is None:
-                        response[part["index"]] = ""
+                    if partial.get(part["index"]) is None:
+                        partial[part["index"]] = ""
 
-                    response[part["index"]] += token
+                    partial[part["index"]] += token
                     if run_manager:
                         await run_manager.on_llm_new_token(
                             token,
                             idx=NewTokenIndicies(
-                                prompt=prompt_index or 0,
+                                # Only supports single prompt
+                                prompt=0,
                                 completion=part["index"],
                             ),
                         )
             return LLMResult(
                 generations=[
-                    [Generation(text=response[idx]) for idx in sorted(response)]
+                    [Generation(text=partial[idx]) for idx in sorted(partial)]
                 ],
             )
         else:

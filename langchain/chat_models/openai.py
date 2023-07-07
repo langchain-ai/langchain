@@ -376,12 +376,12 @@ class ChatOpenAI(BaseChatModel):
         params = {**params, **kwargs}
         if self.streaming:
             params["stream"] = True
-            result: dict[int, Any] = dict()
+            partial: dict[int, Any] = dict()
             for stream_resp in self.completion_with_retry(
                 messages=message_dicts, **params
             ):
                 for part in stream_resp["choices"]:
-                    _update_response(result, part)
+                    _update_response(partial, part)
                     if run_manager:
                         run_manager.on_llm_new_token(
                             part["delta"].get("content", ""),
@@ -392,7 +392,7 @@ class ChatOpenAI(BaseChatModel):
                         )
 
             return self._create_chat_result(
-                {"choices": [result[idx] for idx in sorted(result)]}
+                {"choices": [partial[idx] for idx in sorted(partial)]}
             )
         response = self.completion_with_retry(messages=message_dicts, **params)
         return self._create_chat_result(response)
@@ -431,12 +431,12 @@ class ChatOpenAI(BaseChatModel):
         params = {**params, **kwargs}
         if self.streaming:
             params["stream"] = True
-            result: dict[int, Any] = dict()
+            partial: dict[int, Any] = dict()
             async for stream_resp in await acompletion_with_retry(
                 self, messages=message_dicts, **params
             ):
                 for part in stream_resp["choices"]:
-                    _update_response(result, part)
+                    _update_response(partial, part)
                     if run_manager:
                         await run_manager.on_llm_new_token(
                             part["delta"].get("content", ""),
@@ -446,7 +446,7 @@ class ChatOpenAI(BaseChatModel):
                             ),
                         )
             return self._create_chat_result(
-                {"choices": [result[idx] for idx in sorted(result)]}
+                {"choices": [partial[idx] for idx in sorted(partial)]}
             )
         else:
             response = await acompletion_with_retry(
