@@ -7,7 +7,6 @@ from qdrant_client.http import models as rest
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
-from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Qdrant
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
