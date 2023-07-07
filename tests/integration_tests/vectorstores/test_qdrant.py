@@ -7,6 +7,7 @@ from qdrant_client.http import models as rest
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
+from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Qdrant
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
@@ -103,6 +104,7 @@ def test_qdrant_add_documents(batch_size: int, vector_name: Optional[str]) -> No
         Document(page_content="foo")
     ]
 
+
 def test_qdrant_from_texts_add_to_existing_collection() -> None:
     """Test from texts adds to existing collection."""
     from qdrant_client import QdrantClient
@@ -125,9 +127,10 @@ def test_qdrant_from_texts_add_to_existing_collection() -> None:
             recreate_collection=False,
         )
         del vec_store
-        
+
         client = QdrantClient(path=str(tmpdir))
         assert 4 == client.count("test_collection").count
+
 
 def test_qdrant_from_documents_add_to_existing_collection() -> None:
     """Test from documents adds to existing collection."""
@@ -151,9 +154,10 @@ def test_qdrant_from_documents_add_to_existing_collection() -> None:
             recreate_collection=False,
         )
         del vec_store
-        
+
         client = QdrantClient(path=str(tmpdir))
         assert 4 == client.count("test_collection").count
+
 
 def test_qdrant_from_texts_recreates_collecton() -> None:
     """Test from texts recreates collection."""
@@ -177,9 +181,10 @@ def test_qdrant_from_texts_recreates_collecton() -> None:
             recreate_collection=True,
         )
         del vec_store
-        
+
         client = QdrantClient(path=str(tmpdir))
         assert 2 == client.count("test_collection").count
+
 
 def test_qdrant_from_documents_recreates_collecton() -> None:
     """Test from documents recreates collection."""
@@ -203,9 +208,28 @@ def test_qdrant_from_documents_recreates_collecton() -> None:
             recreate_collection=True,
         )
         del vec_store
-        
+
         client = QdrantClient(path=str(tmpdir))
         assert 2 == client.count("test_collection").count
+
+
+def test_qdrant_set_vector_size() -> None:
+    """Test from documents recreates collection."""
+    from qdrant_client import QdrantClient
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        vec_store = Qdrant.from_texts(
+            ["foo bar"],
+            embedding=ConsistentFakeEmbeddings(),
+            collection_name="test_collection",
+            path=str(tmpdir),
+            vector_size=10,
+        )
+        del vec_store
+
+        client = QdrantClient(path=str(tmpdir))
+        collection = client.get_collection("test_collection")
+        assert 10 == collection.config.params.vectors.size
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])
