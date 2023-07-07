@@ -16,7 +16,10 @@ from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 
 
 class Vectara(VectorStore):
-    """Implementation of Vector Store using Vectara (https://vectara.com).
+    """Implementation of Vector Store using Vectara.
+
+     See (https://vectara.com).
+
     Example:
         .. code-block:: python
 

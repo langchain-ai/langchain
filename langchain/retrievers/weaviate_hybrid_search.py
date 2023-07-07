@@ -16,13 +16,22 @@ from langchain.schema import BaseRetriever
 
 
 class WeaviateHybridSearchRetriever(BaseRetriever):
+    """Retriever that uses Weaviate's hybrid search to retrieve documents."""
+
     client: Any
+    """keyword arguments to pass to the Weaviate client."""
     index_name: str
+    """The name of the index to use."""
     text_key: str
+    """The name of the text key to use."""
     alpha: float = 0.5
+    """The weight of the text key in the hybrid search."""
     k: int = 4
+    """The number of results to return."""
     attributes: List[str]
+    """The attributes to return in the results."""
     create_schema_if_missing: bool = True
+    """Whether to create the schema if it doesn't exist."""
 
     @root_validator(pre=True)
     def validate_client(

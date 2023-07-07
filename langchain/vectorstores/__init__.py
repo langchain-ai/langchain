@@ -15,10 +15,14 @@ from langchain.vectorstores.clarifai import Clarifai
 from langchain.vectorstores.clickhouse import Clickhouse, ClickhouseSettings
 from langchain.vectorstores.deeplake import DeepLake
 from langchain.vectorstores.docarray import DocArrayHnswSearch, DocArrayInMemorySearch
-from langchain.vectorstores.elastic_vector_search import ElasticVectorSearch
+from langchain.vectorstores.elastic_vector_search import (
+    ElasticKnnSearch,
+    ElasticVectorSearch,
+)
 from langchain.vectorstores.faiss import FAISS
 from langchain.vectorstores.hologres import Hologres
 from langchain.vectorstores.lancedb import LanceDB
+from langchain.vectorstores.marqo import Marqo
 from langchain.vectorstores.matching_engine import MatchingEngine
 from langchain.vectorstores.milvus import Milvus
 from langchain.vectorstores.mongodb_atlas import MongoDBAtlasVectorSearch
@@ -56,11 +60,13 @@ __all__ = [
     "DocArrayHnswSearch",
     "DocArrayInMemorySearch",
     "ElasticVectorSearch",
+    "ElasticKnnSearch",
     "FAISS",
     "PGEmbedding",
     "Hologres",
     "LanceDB",
     "MatchingEngine",
+    "Marqo",
     "Milvus",
     "Zilliz",
     "SingleStoreDB",

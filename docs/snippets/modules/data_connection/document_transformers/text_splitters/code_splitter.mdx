@@ -253,7 +253,7 @@ html_text = """
 
 ```python
 html_splitter = RecursiveCharacterTextSplitter.from_language(
-    language=Language.MARKDOWN, chunk_size=60, chunk_overlap=0
+    language=Language.HTML, chunk_size=60, chunk_overlap=0
 )
 html_docs = html_splitter.create_documents([html_text])
 html_docs
@@ -262,19 +262,18 @@ html_docs
 <CodeOutputBlock lang="python">
 
 ```
-    [Document(page_content='<!DOCTYPE html>\n<html>\n    <head>', metadata={}),
-     Document(page_content='<title>🦜️🔗 LangChain</title>\n        <style>', metadata={}),
-     Document(page_content='body {', metadata={}),
-     Document(page_content='font-family: Arial, sans-serif;', metadata={}),
-     Document(page_content='}\n            h1 {', metadata={}),
-     Document(page_content='color: darkblue;\n            }', metadata={}),
-     Document(page_content='</style>\n    </head>\n    <body>\n        <div>', metadata={}),
-     Document(page_content='<h1>🦜️🔗 LangChain</h1>', metadata={}),
-     Document(page_content='<p>⚡ Building applications with LLMs through', metadata={}),
-     Document(page_content='composability ⚡</p>', metadata={}),
-     Document(page_content='</div>\n        <div>', metadata={}),
-     Document(page_content='As an open source project in a rapidly', metadata={}),
-     Document(page_content='developing field, we are extremely open to contributions.', metadata={}),
+    [Document(page_content='<!DOCTYPE html>\n<html>', metadata={}),
+     Document(page_content='<head>\n        <title>🦜️🔗 LangChain</title>', metadata={}),
+     Document(page_content='<style>\n            body {\n                font-family: Aria', metadata={}),
+     Document(page_content='l, sans-serif;\n            }\n            h1 {', metadata={}),
+     Document(page_content='color: darkblue;\n            }\n        </style>\n    </head', metadata={}),
+     Document(page_content='>', metadata={}),
+     Document(page_content='<body>', metadata={}),
+     Document(page_content='<div>\n            <h1>🦜️🔗 LangChain</h1>', metadata={}),
+     Document(page_content='<p>⚡ Building applications with LLMs through composability ⚡', metadata={}),
+     Document(page_content='</p>\n        </div>', metadata={}),
+     Document(page_content='<div>\n            As an open source project in a rapidly dev', metadata={}),
+     Document(page_content='eloping field, we are extremely open to contributions.', metadata={}),
      Document(page_content='</div>\n    </body>\n</html>', metadata={})]
 ```
 

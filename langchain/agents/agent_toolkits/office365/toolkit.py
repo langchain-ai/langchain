@@ -30,9 +30,9 @@ class O365Toolkit(BaseToolkit):
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
         return [
-            O365SearchEvents(account=self.account),
-            O365CreateDraftMessage(account=self.account),
-            O365SearchEmails(account=self.account),
-            O365SendEvent(account=self.account),
-            O365SendMessage(account=self.account),
+            O365SearchEvents(),
+            O365CreateDraftMessage(),
+            O365SearchEmails(),
+            O365SendEvent(),
+            O365SendMessage(),
         ]

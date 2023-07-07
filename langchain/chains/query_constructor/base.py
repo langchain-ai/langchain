@@ -123,8 +123,8 @@ def load_query_constructor_chain(
     enable_limit: bool = False,
     **kwargs: Any,
 ) -> LLMChain:
-    """
-    Load a query constructor chain.
+    """Load a query constructor chain.
+
     Args:
         llm: BaseLanguageModel to use for the chain.
         document_contents: The contents of the document to be queried.
