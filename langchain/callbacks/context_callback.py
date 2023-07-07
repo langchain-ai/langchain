@@ -1,4 +1,5 @@
 """Callback handler for Context AI"""
+import os
 from typing import Any, Dict, List
 from uuid import UUID
 
@@ -31,9 +32,11 @@ def import_context() -> Any:
 class ContextCallbackHandler(BaseCallbackHandler):
     """Callback Handler that records transcripts to Context (https://getcontext.ai).
 
-    Args:
-        token: The token with which to authenticate requests to Context.
+    Keyword Args:
+        token (optional): The token with which to authenticate requests to Context.
             Visit https://go.getcontext.ai/settings to generate a token.
+            If not provided, the value of the `CONTEXT_TOKEN` environment
+            variable will be used.
 
     Raises:
         ImportError: if the `context-python` package is not installed.
@@ -84,7 +87,7 @@ class ContextCallbackHandler(BaseCallbackHandler):
         >>> chain.run("colorful socks")
     """
 
-    def __init__(self, token: str, verbose: bool = False, **kwargs: Any) -> None:
+    def __init__(self, token: str = "", verbose: bool = False, **kwargs: Any) -> None:
         (
             self.context,
             self.credential,
@@ -94,11 +97,12 @@ class ContextCallbackHandler(BaseCallbackHandler):
             self.rating_model,
         ) = import_context()
 
+        token = token or os.environ.get("CONTEXT_TOKEN") or ""
+
         self.client = self.context.ContextAPI(credential=self.credential(token))
 
         self.chain_run_id = None
 
-        self.within_chat_model = False
         self.llm_model = None
 
         self.messages: List[Any] = []
@@ -113,9 +117,6 @@ class ContextCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> Any:
         """Run when the chat model is started."""
-
-        self.within_chat_model = True
-
         llm_model = kwargs.get("invocation_params", {}).get("model", None)
         if llm_model is not None:
             self.metadata["llm_model"] = llm_model
@@ -141,8 +142,7 @@ class ContextCallbackHandler(BaseCallbackHandler):
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Run when LLM ends."""
-        self.within_chat_model = False
-        if len(response.generations) == 0 and len(response.generations[0]) == 0:
+        if len(response.generations) == 0 or len(response.generations[0]) == 0:
             return
 
         if not self.chain_run_id:
