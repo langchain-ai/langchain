@@ -1,14 +1,12 @@
-from curses import meta
-from typing import TYPE_CHECKING, List, Optional
+from typing import List, Optional
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
-if TYPE_CHECKING:
-    from datadog_api_client import ApiClient, Configuration
+from datadog_api_client import ApiClient, Configuration
 
 
-class DatadogLogLoader(BaseLoader):
+class DatadogLogsLoader(BaseLoader):
     """Loads a query result from Datadog into a list of documents.
 
     Logs are written into the `page_content` and into the `metadata`.
