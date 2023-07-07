@@ -12,7 +12,9 @@ class UnstructuredExcelLoader(UnstructuredFileLoader):
     Unstructured loaders, UnstructuredExcelLoader can be used in both
     "single" and "elements" mode. If you use the loader in "elements"
     mode, each sheet in the Excel file will be a an Unstructured Table
-    element.
+    element. If you use the loader in "elements" mode, an
+    HTML representation of the table will be available in the
+    "text_as_html" key in the document metadata.
 
     Examples
     --------

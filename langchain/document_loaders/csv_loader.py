@@ -82,6 +82,9 @@ class UnstructuredCSVLoader(UnstructuredFileLoader):
     Unstructured loaders, UnstructuredCSVLoader can be used in both
     "single" and "elements" mode. If you use the loader in "elements"
     mode, the CSV file will be a single Unstructured Table element.
+    If you use the loader in "elements" mode, an HTML representation
+    of the table will be available in the "text_as_html" key in the
+    document metadata.
 
     Examples
     --------
