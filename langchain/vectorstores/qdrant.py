@@ -527,6 +527,8 @@ class Qdrant(VectorStore):
         wal_config: Optional[common_types.WalConfigDiff] = None,
         quantization_config: Optional[common_types.QuantizationConfig] = None,
         init_from: Optional[common_types.InitFrom] = None,
+        recreate_collection: Optional[bool] = True,
+        vector_size: Optional[int] = None,
         **kwargs: Any,
     ) -> Qdrant:
         """Construct Qdrant wrapper from a list of texts.
@@ -611,6 +613,15 @@ class Qdrant(VectorStore):
                 Params for quantization, if None - quantization will be disabled
             init_from:
                 Use data stored in another collection to initialize this collection
+            recreate_collection:
+                Default is True. If True - collection will be first deleted and then created again with new data.
+                Set to False if you want to upsert data to an existing collection
+                Note: collection_name must be provided if recreate_collection is set to False
+            vector_size:
+                Size (dimensions) of the vectors. If not provided, it will be automatically
+                inferred from the provided embeddings on init of collection
+                Note: if you do not provide a vector size one initial embedding
+                will be performed to detemine the vector size
             **kwargs:
                 Additional arguments passed directly into REST client initialization
 
@@ -640,12 +651,26 @@ class Qdrant(VectorStore):
 
         from qdrant_client.http import models as rest
 
-        # Just do a single quick embedding to get vector size
-        partial_embeddings = embedding.embed_documents(texts[:1])
-        vector_size = len(partial_embeddings[0])
-
         collection_name = collection_name or uuid.uuid4().hex
         distance_func = distance_func.upper()
+        collection_exists = False
+
+        # determine if collection exists
+        if (
+            init_from is None
+            and collection_name is not None
+            and recreate_collection is False
+        ):
+            all = client.get_collections()
+            for collection in all.collections:
+                if collection.name == collection_name:
+                    collection_exists = True
+                    break
+
+        # Only do a single quick embedding if vector_size is not provided
+        if vector_size is None:
+            partial_embeddings = embedding.embed_documents(texts[:1])
+            vector_size = len(partial_embeddings[0])
 
         client = qdrant_client.QdrantClient(
             location=location,
@@ -674,20 +699,25 @@ class Qdrant(VectorStore):
                 vector_name: vectors_config,
             }
 
-        client.recreate_collection(
-            collection_name=collection_name,
-            vectors_config=vectors_config,
-            shard_number=shard_number,
-            replication_factor=replication_factor,
-            write_consistency_factor=write_consistency_factor,
-            on_disk_payload=on_disk_payload,
-            hnsw_config=hnsw_config,
-            optimizers_config=optimizers_config,
-            wal_config=wal_config,
-            quantization_config=quantization_config,
-            init_from=init_from,
-            timeout=timeout,  # type: ignore[arg-type]
-        )
+        if (
+            recreate_collection is True
+            or not collection_exists
+            or init_from is not None
+        ):
+            client.recreate_collection(
+                collection_name=collection_name,
+                vectors_config=vectors_config,
+                shard_number=shard_number,
+                replication_factor=replication_factor,
+                write_consistency_factor=write_consistency_factor,
+                on_disk_payload=on_disk_payload,
+                hnsw_config=hnsw_config,
+                optimizers_config=optimizers_config,
+                wal_config=wal_config,
+                quantization_config=quantization_config,
+                init_from=init_from,
+                timeout=timeout,  # type: ignore[arg-type]
+            )
 
         texts_iterator = iter(texts)
         metadatas_iterator = iter(metadatas or [])
