@@ -61,9 +61,14 @@ class PydanticOutputParser(BaseOutputParser[T]):
                 first_quote, second_quote = indices[0], indices[1]
                 third_quote, last_quote = indices[2], indices[-1]
                 # Replace illegal " to '
-                handle_line = line[third_quote+1:last_quote].replace('"', "'")
-                lines[i] = line[:first_quote] + line[first_quote:second_quote] + \
-                    line[second_quote:third_quote+1] + handle_line + line[last_quote:]
+                handle_line = line[third_quote + 1 : last_quote].replace('"', "'")
+                lines[i] = (
+                    line[:first_quote]
+                    + line[first_quote:second_quote]
+                    + line[second_quote : third_quote + 1]
+                    + handle_line
+                    + line[last_quote:]
+                )
 
         return "\n".join(lines)
 

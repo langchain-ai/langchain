@@ -22,6 +22,11 @@ class TestModel(BaseModel):
         description="Additional fields", default=None
     )
     for_new_lines: str = Field(description="To be used to test newlines")
+    for_double_quotations: str = Field(
+        description="To be used to test double quotations"
+    )
+    for_list: list = Field(description="To be used to test list")
+    for_bool: bool = Field(description="To be used to test bool")
 
 
 # Prevent pytest from trying to run tests on TestModel
@@ -32,7 +37,10 @@ DEF_RESULT = """{
     "action": "Update",
     "action_input": "The PydanticOutputParser class is powerful",
     "additional_fields": null,
-    "for_new_lines": "not_escape_newline:\n escape_newline: \\n"
+    "for_new_lines": "not_escape_newline:\n escape_newline: \\n",
+    "for_double_quotations": "Control4® T3 Series 7\" Tabletop Touch Screen",
+    "for_list": ["Capacitive touch", "Camera: 720p", "HD camera"],
+    "for_bool": false
 }"""
 
 # action 'update' with a lowercase 'u' to test schema validation failure.
@@ -47,6 +55,9 @@ DEF_EXPECTED_RESULT = TestModel(
     action_input="The PydanticOutputParser class is powerful",
     additional_fields=None,
     for_new_lines="not_escape_newline:\n escape_newline: \n",
+    for_double_quotations="Control4® T3 Series 7' Tabletop Touch Screen",
+    for_list=["Capacitive touch", "Camera: 720p", "HD camera"],
+    for_bool=False
 )
 
 
