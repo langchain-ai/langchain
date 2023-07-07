@@ -73,7 +73,7 @@ class Requests(BaseModel):
         self, url: str, data: Dict[str, Any], **kwargs: Any
     ) -> AsyncGenerator[aiohttp.ClientResponse, None]:
         """POST to the URL and return the text asynchronously."""
-        async with self._arequest("POST", url, **kwargs) as response:
+        async with self._arequest("POST", url, json=data, **kwargs) as response:
             yield response
 
     @asynccontextmanager
@@ -81,7 +81,7 @@ class Requests(BaseModel):
         self, url: str, data: Dict[str, Any], **kwargs: Any
     ) -> AsyncGenerator[aiohttp.ClientResponse, None]:
         """PATCH the URL and return the text asynchronously."""
-        async with self._arequest("PATCH", url, **kwargs) as response:
+        async with self._arequest("PATCH", url, json=data, **kwargs) as response:
             yield response
 
     @asynccontextmanager
@@ -89,7 +89,7 @@ class Requests(BaseModel):
         self, url: str, data: Dict[str, Any], **kwargs: Any
     ) -> AsyncGenerator[aiohttp.ClientResponse, None]:
         """PUT the URL and return the text asynchronously."""
-        async with self._arequest("PUT", url, **kwargs) as response:
+        async with self._arequest("PUT", url, json=data, **kwargs) as response:
             yield response
 
     @asynccontextmanager
@@ -147,17 +147,17 @@ class TextRequestsWrapper(BaseModel):
 
     async def apost(self, url: str, data: Dict[str, Any], **kwargs: Any) -> str:
         """POST to the URL and return the text asynchronously."""
-        async with self.requests.apost(url, **kwargs) as response:
+        async with self.requests.apost(url, data, **kwargs) as response:
             return await response.text()
 
     async def apatch(self, url: str, data: Dict[str, Any], **kwargs: Any) -> str:
         """PATCH the URL and return the text asynchronously."""
-        async with self.requests.apatch(url, **kwargs) as response:
+        async with self.requests.apatch(url, data, **kwargs) as response:
             return await response.text()
 
     async def aput(self, url: str, data: Dict[str, Any], **kwargs: Any) -> str:
         """PUT the URL and return the text asynchronously."""
-        async with self.requests.aput(url, **kwargs) as response:
+        async with self.requests.aput(url, data, **kwargs) as response:
             return await response.text()
 
     async def adelete(self, url: str, **kwargs: Any) -> str:

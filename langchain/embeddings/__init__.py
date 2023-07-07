@@ -7,6 +7,7 @@ from langchain.embeddings.aleph_alpha import (
     AlephAlphaSymmetricSemanticEmbedding,
 )
 from langchain.embeddings.bedrock import BedrockEmbeddings
+from langchain.embeddings.clarifai import ClarifaiEmbeddings
 from langchain.embeddings.cohere import CohereEmbeddings
 from langchain.embeddings.dashscope import DashScopeEmbeddings
 from langchain.embeddings.deepinfra import DeepInfraEmbeddings
@@ -33,6 +34,7 @@ from langchain.embeddings.self_hosted_hugging_face import (
     SelfHostedHuggingFaceInstructEmbeddings,
 )
 from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
+from langchain.embeddings.spacy_embeddings import SpacyEmbeddings
 from langchain.embeddings.tensorflow_hub import TensorflowHubEmbeddings
 from langchain.embeddings.vertexai import VertexAIEmbeddings
 
@@ -42,6 +44,7 @@ __all__ = [
     "OpenAIEmbeddings",
     "HuggingFaceEmbeddings",
     "CohereEmbeddings",
+    "ClarifaiEmbeddings",
     "ElasticsearchEmbeddings",
     "JinaEmbeddings",
     "LlamaCppEmbeddings",
@@ -66,6 +69,7 @@ __all__ = [
     "DashScopeEmbeddings",
     "EmbaasEmbeddings",
     "OctoAIEmbeddings",
+    "SpacyEmbeddings",
 ]
 
 

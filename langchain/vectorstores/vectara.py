@@ -16,7 +16,10 @@ from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 
 
 class Vectara(VectorStore):
-    """Implementation of Vector Store using Vectara (https://vectara.com).
+    """Implementation of Vector Store using Vectara.
+
+     See (https://vectara.com).
+
     Example:
         .. code-block:: python
 
@@ -97,7 +100,7 @@ class Vectara(VectorStore):
             return False
         return True
 
-    def _index_doc(self, doc: dict) -> bool:
+    def _index_doc(self, doc: dict) -> str:
         request: dict[str, Any] = {}
         request["customer_id"] = self._vectara_customer_id
         request["corpus_id"] = self._vectara_corpus_id
@@ -115,15 +118,70 @@ class Vectara(VectorStore):
 
         result = response.json()
         status_str = result["status"]["code"] if "status" in result else None
-        if status_code == 409 or (status_str and status_str == "ALREADY_EXISTS"):
-            return False
+        if status_code == 409 or status_str and (status_str == "ALREADY_EXISTS"):
+            return "E_ALREADY_EXISTS"
+        elif status_str and (status_str == "FORBIDDEN"):
+            return "E_NO_PERMISSIONS"
         else:
-            return True
+            return "E_SUCCEEDED"
+
+    def add_files(
+        self,
+        files_list: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
+    ) -> List[str]:
+        """
+        Vectara provides a way to add documents directly via our API where
+        pre-processing and chunking occurs internally in an optimal way
+        This method provides a way to use that API in LangChain
+
+        Args:
+            files_list: Iterable of strings, each representing a local file path.
+                    Files could be text, HTML, PDF, markdown, doc/docx, ppt/pptx, etc.
+                    see API docs for full list
+            metadatas: Optional list of metadatas associated with each file
+
+        Returns:
+            List of ids associated with each of the files indexed
+        """
+        doc_ids = []
+        for inx, file in enumerate(files_list):
+            if not os.path.exists(file):
+                logging.error(f"File {file} does not exist, skipping")
+                continue
+            md = metadatas[inx] if metadatas else {}
+            files: dict = {
+                "file": (file, open(file, "rb")),
+                "doc_metadata": json.dumps(md),
+            }
+            headers = self._get_post_headers()
+            headers.pop("Content-Type")
+            response = self._session.post(
+                f"https://api.vectara.io/upload?c={self._vectara_customer_id}&o={self._vectara_corpus_id}&d=True",
+                files=files,
+                verify=True,
+                headers=headers,
+            )
+
+            if response.status_code == 409:
+                doc_id = response.json()["document"]["documentId"]
+                logging.info(
+                    f"File {file} already exists on Vectara (doc_id={doc_id}), skipping"
+                )
+            elif response.status_code == 200:
+                doc_id = response.json()["document"]["documentId"]
+                doc_ids.append(doc_id)
+            else:
+                logging.info(f"Error indexing file {file}: {response.json()}")
+
+        return doc_ids
 
     def add_texts(
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
+        doc_metadata: Optional[dict] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -131,6 +189,12 @@ class Vectara(VectorStore):
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
+            doc_metadata: optional metadata for the document
+
+        This function indexes all the input text strings in the Vectara corpus as a
+        single Vectara document, where each input text is considered a "part" and the
+        metadata are associated with each part.
+        if 'doc_metadata' is provided, it is associated with the Vectara document.
 
         Returns:
             List of ids from adding the texts into the vectorstore.
@@ -142,18 +206,27 @@ class Vectara(VectorStore):
         doc_id = doc_hash.hexdigest()
         if metadatas is None:
             metadatas = [{} for _ in texts]
+        if doc_metadata:
+            doc_metadata["source"] = "langchain"
+        else:
+            doc_metadata = {"source": "langchain"}
         doc = {
             "document_id": doc_id,
-            "metadataJson": json.dumps({"source": "langchain"}),
+            "metadataJson": json.dumps(doc_metadata),
             "parts": [
                 {"text": text, "metadataJson": json.dumps(md)}
                 for text, md in zip(texts, metadatas)
             ],
         }
-        succeeded = self._index_doc(doc)
-        if not succeeded:
+        success_str = self._index_doc(doc)
+        if success_str == "E_ALREADY_EXISTS":
             self._delete_doc(doc_id)
             self._index_doc(doc)
+        elif success_str == "E_NO_PERMISSIONS":
+            print(
+                """No permissions to add document to Vectara. 
+                Check your corpus ID, customer ID and API key"""
+            )
         return [doc_id]
 
     def similarity_search_with_score(
@@ -296,8 +369,36 @@ class Vectara(VectorStore):
         """
         # Note: Vectara generates its own embeddings, so we ignore the provided
         # embeddings (required by interface)
+        doc_metadata = kwargs.pop("doc_metadata", {})
         vectara = cls(**kwargs)
-        vectara.add_texts(texts, metadatas)
+        vectara.add_texts(texts, metadatas, doc_metadata=doc_metadata, **kwargs)
+        return vectara
+
+    @classmethod
+    def from_files(
+        cls: Type[Vectara],
+        files: List[str],
+        embedding: Optional[Embeddings] = None,
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
+    ) -> Vectara:
+        """Construct Vectara wrapper from raw documents.
+        This is intended to be a quick way to get started.
+        Example:
+            .. code-block:: python
+
+                from langchain import Vectara
+                vectara = Vectara.from_files(
+                    files_list,
+                    vectara_customer_id=customer_id,
+                    vectara_corpus_id=corpus_id,
+                    vectara_api_key=api_key,
+                )
+        """
+        # Note: Vectara generates its own embeddings, so we ignore the provided
+        # embeddings (required by interface)
+        vectara = cls(**kwargs)
+        vectara.add_files(files, metadatas)
         return vectara
 
     def as_retriever(self, **kwargs: Any) -> VectaraRetriever:
@@ -325,7 +426,10 @@ class VectaraRetriever(VectorStoreRetriever):
     """
 
     def add_texts(
-        self, texts: List[str], metadatas: Optional[List[dict]] = None
+        self,
+        texts: List[str],
+        metadatas: Optional[List[dict]] = None,
+        doc_metadata: Optional[dict] = {},
     ) -> None:
         """Add text to the Vectara vectorstore.
 
@@ -333,4 +437,4 @@ class VectaraRetriever(VectorStoreRetriever):
             texts (List[str]): The text
             metadatas (List[dict]): Metadata dicts, must line up with existing store
         """
-        self.vectorstore.add_texts(texts, metadatas)
+        self.vectorstore.add_texts(texts, metadatas, doc_metadata)

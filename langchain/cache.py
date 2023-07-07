@@ -262,7 +262,9 @@ class RedisSemanticCache(BaseCache):
             score_threshold (float, 0.2):
 
         Example:
+
         .. code-block:: python
+
             import langchain
 
             from langchain.cache import RedisSemanticCache

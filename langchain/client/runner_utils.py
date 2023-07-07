@@ -31,10 +31,12 @@ from langchain.chains.base import Chain
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.base import BaseLLM
 from langchain.schema import (
-    BaseMessage,
     ChatResult,
-    HumanMessage,
     LLMResult,
+)
+from langchain.schema.messages import (
+    BaseMessage,
+    HumanMessage,
     get_buffer_string,
     messages_from_dict,
 )
@@ -139,6 +141,7 @@ async def _arun_llm(
     *,
     tags: Optional[List[str]] = None,
     callbacks: Callbacks = None,
+    input_mapper: Optional[Callable[[Dict], Any]] = None,
 ) -> Union[LLMResult, ChatResult]:
     """
     Asynchronously run the language model.
@@ -148,6 +151,7 @@ async def _arun_llm(
         inputs: The input dictionary.
         tags: Optional tags to add to the run.
         callbacks: Optional callbacks to use during the run.
+        input_mapper: Optional function to map inputs to the expected format.
 
     Returns:
         The LLMResult or ChatResult.
@@ -155,7 +159,13 @@ async def _arun_llm(
         ValueError: If the LLM type is unsupported.
         InputFormatError: If the input format is invalid.
     """
-    if isinstance(llm, BaseLLM):
+    if input_mapper is not None:
+        if not isinstance(llm, (BaseLLM, BaseChatModel)):
+            raise ValueError(f"Unsupported LLM type {type(llm).__name__}")
+        llm_output = await llm.agenerate(
+            input_mapper(inputs), callbacks=callbacks, tags=tags
+        )
+    elif isinstance(llm, BaseLLM):
         try:
             llm_prompts = _get_prompts(inputs)
             llm_output = await llm.agenerate(
@@ -191,6 +201,7 @@ async def _arun_llm_or_chain(
     *,
     tags: Optional[List[str]] = None,
     callbacks: Optional[List[BaseCallbackHandler]] = None,
+    input_mapper: Optional[Callable[[Dict], Any]] = None,
 ) -> Union[List[dict], List[str], List[LLMResult], List[ChatResult]]:
     """
     Asynchronously run the Chain or language model.
@@ -201,6 +212,7 @@ async def _arun_llm_or_chain(
         n_repetitions: The number of times to run the model on each example.
         tags: Optional tags to add to the run.
         callbacks: Optional callbacks to use during the run.
+        input_mapper: Optional function to map the input to the expected format.
 
     Returns:
         A list of outputs.
@@ -223,12 +235,16 @@ async def _arun_llm_or_chain(
                     example.inputs,
                     tags=tags,
                     callbacks=callbacks,
+                    input_mapper=input_mapper,
                 )
             else:
                 chain = llm_or_chain_factory()
-                inputs_ = example.inputs
-                if len(inputs_) == 1:
-                    inputs_ = next(iter(inputs_.values()))
+                if input_mapper is not None:
+                    inputs_ = input_mapper(example.inputs)
+                else:
+                    inputs_ = example.inputs
+                    if len(inputs_) == 1:
+                        inputs_ = next(iter(inputs_.values()))
                 output = await chain.acall(inputs_, callbacks=callbacks, tags=tags)
             outputs.append(output)
         except Exception as e:
@@ -297,28 +313,35 @@ async def _callbacks_initializer(
     project_name: Optional[str],
     client: LangChainPlusClient,
     run_evaluators: Sequence[RunEvaluator],
+    evaluation_handler_collector: List[EvaluatorCallbackHandler],
 ) -> List[BaseTracer]:
     """
     Initialize a tracer to share across tasks.
 
     Args:
         project_name: The project name for the tracer.
+        client: The client to use for the tracer.
+        run_evaluators: The evaluators to run.
+        evaluation_handler_collector: A list to collect the evaluators.
+            Used to wait for the evaluators to finish.
 
     Returns:
-        A LangChainTracer instance with an active project.
+        The callbacks for this thread.
     """
     callbacks: List[BaseTracer] = []
     if project_name:
         callbacks.append(LangChainTracer(project_name=project_name))
+    evaluator_project_name = f"{project_name}-evaluators" if project_name else None
     if run_evaluators:
-        callbacks.append(
-            EvaluatorCallbackHandler(
-                client=client,
-                evaluators=run_evaluators,
-                # We already have concurrency, don't want to overload the machine
-                max_workers=1,
-            )
+        callback = EvaluatorCallbackHandler(
+            client=client,
+            evaluators=run_evaluators,
+            # We already have concurrency, don't want to overload the machine
+            max_workers=1,
+            project_name=evaluator_project_name,
         )
+        callbacks.append(callback)
+        evaluation_handler_collector.append(callback)
     return callbacks
 
 
@@ -333,6 +356,7 @@ async def arun_on_examples(
     client: Optional[LangChainPlusClient] = None,
     tags: Optional[List[str]] = None,
     run_evaluators: Optional[Sequence[RunEvaluator]] = None,
+    input_mapper: Optional[Callable[[Dict], Any]] = None,
 ) -> Dict[str, Any]:
     """
     Asynchronously run the chain on examples and store traces
@@ -354,18 +378,20 @@ async def arun_on_examples(
             client will be created using the credentials in the environment.
         tags: Tags to add to each run in the project.
         run_evaluators: Evaluators to run on the results of the chain.
+        input_mapper: function to map to the inputs dictionary from an Example
+            to the format expected by the model to be evaluated. This is useful if
+            your model needs to deserialize more complex schema or if your dataset
+            has inputs with keys that differ from what is expected by your chain
+            or agent.
 
     Returns:
         A dictionary mapping example ids to the model outputs.
     """
     project_name = _get_project_name(project_name, llm_or_chain_factory, None)
     client_ = client or LangChainPlusClient()
-    client_.create_project(project_name, mode="eval")
+    client_.create_project(project_name)
 
     results: Dict[str, List[Any]] = {}
-    evaluation_handler = EvaluatorCallbackHandler(
-        evaluators=run_evaluators or [], client=client_
-    )
 
     async def process_example(
         example: Example, callbacks: List[BaseCallbackHandler], job_state: dict
@@ -377,6 +403,7 @@ async def arun_on_examples(
             num_repetitions,
             tags=tags,
             callbacks=callbacks,
+            input_mapper=input_mapper,
         )
         results[str(example.id)] = result
         job_state["num_processed"] += 1
@@ -387,17 +414,20 @@ async def arun_on_examples(
                 flush=True,
             )
 
+    evaluation_handlers: List[EvaluatorCallbackHandler] = []
     await _gather_with_concurrency(
         concurrency_level,
         functools.partial(
             _callbacks_initializer,
             project_name=project_name,
             client=client_,
+            evaluation_handler_collector=evaluation_handlers,
             run_evaluators=run_evaluators or [],
         ),
         *(functools.partial(process_example, e) for e in examples),
     )
-    evaluation_handler.wait_for_futures()
+    for handler in evaluation_handlers:
+        handler.wait_for_futures()
     return results
 
 
@@ -407,6 +437,7 @@ def run_llm(
     callbacks: Callbacks,
     *,
     tags: Optional[List[str]] = None,
+    input_mapper: Optional[Callable[[Dict], Any]] = None,
 ) -> Union[LLMResult, ChatResult]:
     """
     Run the language model on the example.
@@ -416,14 +447,18 @@ def run_llm(
         inputs: The input dictionary.
         callbacks: The callbacks to use during the run.
         tags: Optional tags to add to the run.
-
+        input_mapper: function to map to the inputs dictionary from an Example
     Returns:
         The LLMResult or ChatResult.
     Raises:
         ValueError: If the LLM type is unsupported.
         InputFormatError: If the input format is invalid.
     """
-    if isinstance(llm, BaseLLM):
+    if input_mapper is not None:
+        if not isinstance(llm, (BaseLLM, BaseChatModel)):
+            raise ValueError(f"Unsupported LLM type {type(llm).__name__}")
+        llm_output = llm.generate(input_mapper(inputs), callbacks=callbacks, tags=tags)
+    elif isinstance(llm, BaseLLM):
         try:
             llm_prompts = _get_prompts(inputs)
             llm_output = llm.generate(llm_prompts, callbacks=callbacks, tags=tags)
@@ -455,6 +490,7 @@ def run_llm_or_chain(
     *,
     tags: Optional[List[str]] = None,
     callbacks: Optional[List[BaseCallbackHandler]] = None,
+    input_mapper: Optional[Callable[[Dict], Any]] = None,
 ) -> Union[List[dict], List[str], List[LLMResult], List[ChatResult]]:
     """
     Run the Chain or language model synchronously.
@@ -483,13 +519,20 @@ def run_llm_or_chain(
         try:
             if isinstance(llm_or_chain_factory, BaseLanguageModel):
                 output: Any = run_llm(
-                    llm_or_chain_factory, example.inputs, callbacks, tags=tags
+                    llm_or_chain_factory,
+                    example.inputs,
+                    callbacks,
+                    tags=tags,
+                    input_mapper=input_mapper,
                 )
             else:
                 chain = llm_or_chain_factory()
-                inputs_ = example.inputs
-                if len(inputs_) == 1:
-                    inputs_ = next(iter(inputs_.values()))
+                if input_mapper is not None:
+                    inputs_ = input_mapper(example.inputs)
+                else:
+                    inputs_ = example.inputs
+                    if len(inputs_) == 1:
+                        inputs_ = next(iter(inputs_.values()))
                 output = chain(inputs_, callbacks=callbacks, tags=tags)
             outputs.append(output)
         except Exception as e:
@@ -512,6 +555,7 @@ def run_on_examples(
     client: Optional[LangChainPlusClient] = None,
     tags: Optional[List[str]] = None,
     run_evaluators: Optional[Sequence[RunEvaluator]] = None,
+    input_mapper: Optional[Callable[[Dict], Any]] = None,
 ) -> Dict[str, Any]:
     """
     Run the Chain or language model on examples and store
@@ -532,6 +576,11 @@ def run_on_examples(
             will be created using the credentials in the environment.
         tags: Tags to add to each run in the project.
         run_evaluators: Evaluators to run on the results of the chain.
+        input_mapper: A function to map to the inputs dictionary from an Example
+            to the format expected by the model to be evaluated. This is useful if
+            your model needs to deserialize more complex schema or if your dataset
+            has inputs with keys that differ from what is expected by your chain
+            or agent.
 
     Returns:
         A dictionary mapping example ids to the model outputs.
@@ -539,10 +588,13 @@ def run_on_examples(
     results: Dict[str, Any] = {}
     project_name = _get_project_name(project_name, llm_or_chain_factory, None)
     client_ = client or LangChainPlusClient()
-    client_.create_project(project_name, mode="eval")
+    client_.create_project(project_name)
     tracer = LangChainTracer(project_name=project_name)
+    evaluator_project_name = f"{project_name}-evaluators"
     evalution_handler = EvaluatorCallbackHandler(
-        evaluators=run_evaluators or [], client=client_
+        evaluators=run_evaluators or [],
+        client=client_,
+        project_name=evaluator_project_name,
     )
     callbacks: List[BaseCallbackHandler] = [tracer, evalution_handler]
     for i, example in enumerate(examples):
@@ -552,6 +604,7 @@ def run_on_examples(
             num_repetitions,
             tags=tags,
             callbacks=callbacks,
+            input_mapper=input_mapper,
         )
         if verbose:
             print(f"{i+1} processed", flush=True, end="\r")
@@ -599,6 +652,7 @@ async def arun_on_dataset(
     client: Optional[LangChainPlusClient] = None,
     tags: Optional[List[str]] = None,
     run_evaluators: Optional[Sequence[RunEvaluator]] = None,
+    input_mapper: Optional[Callable[[Dict], Any]] = None,
 ) -> Dict[str, Any]:
     """
     Asynchronously run the Chain or language model on a dataset
@@ -620,7 +674,11 @@ async def arun_on_dataset(
             client will be created using the credentials in the environment.
         tags: Tags to add to each run in the project.
         run_evaluators: Evaluators to run on the results of the chain.
-
+        input_mapper: A function to map to the inputs dictionary from an Example
+            to the format expected by the model to be evaluated. This is useful if
+            your model needs to deserialize more complex schema or if your dataset
+            has inputs with keys that differ from what is expected by your chain
+            or agent.
     Returns:
         A dictionary containing the run's project name and the resulting model outputs.
     """
@@ -638,6 +696,7 @@ async def arun_on_dataset(
         client=client_,
         tags=tags,
         run_evaluators=run_evaluators,
+        input_mapper=input_mapper,
     )
     return {
         "project_name": project_name,
@@ -655,6 +714,7 @@ def run_on_dataset(
     client: Optional[LangChainPlusClient] = None,
     tags: Optional[List[str]] = None,
     run_evaluators: Optional[Sequence[RunEvaluator]] = None,
+    input_mapper: Optional[Callable[[Dict], Any]] = None,
 ) -> Dict[str, Any]:
     """
     Run the Chain or language model on a dataset and store traces
@@ -676,6 +736,11 @@ def run_on_dataset(
             will be created using the credentials in the environment.
         tags: Tags to add to each run in the project.
         run_evaluators: Evaluators to run on the results of the chain.
+        input_mapper: A function to map to the inputs dictionary from an Example
+            to the format expected by the model to be evaluated. This is useful if
+            your model needs to deserialize more complex schema or if your dataset
+            has inputs with keys that differ from what is expected by your chain
+            or agent.
 
     Returns:
         A dictionary containing the run's project name and the resulting model outputs.
@@ -693,6 +758,7 @@ def run_on_dataset(
         tags=tags,
         run_evaluators=run_evaluators,
         client=client_,
+        input_mapper=input_mapper,
     )
     return {
         "project_name": project_name,

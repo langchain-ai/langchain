@@ -8,10 +8,10 @@ from pydantic import Field
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
-from langchain.chains.graph_qa.prompts import ENTITY_EXTRACTION_PROMPT, PROMPT
+from langchain.chains.graph_qa.prompts import ENTITY_EXTRACTION_PROMPT, GRAPH_QA_PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.graphs.networkx_graph import NetworkxEntityGraph, get_entities
-from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import BasePromptTemplate
 
 
 class GraphQAChain(Chain):
@@ -44,7 +44,7 @@ class GraphQAChain(Chain):
     def from_llm(
         cls,
         llm: BaseLanguageModel,
-        qa_prompt: BasePromptTemplate = PROMPT,
+        qa_prompt: BasePromptTemplate = GRAPH_QA_PROMPT,
         entity_prompt: BasePromptTemplate = ENTITY_EXTRACTION_PROMPT,
         **kwargs: Any,
     ) -> GraphQAChain:

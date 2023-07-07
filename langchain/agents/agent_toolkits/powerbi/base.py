@@ -17,7 +17,7 @@ from langchain.utilities.powerbi import PowerBIDataset
 
 def create_pbi_agent(
     llm: BaseLanguageModel,
-    toolkit: Optional[PowerBIToolkit],
+    toolkit: Optional[PowerBIToolkit] = None,
     powerbi: Optional[PowerBIDataset] = None,
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: str = POWERBI_PREFIX,
@@ -36,13 +36,13 @@ def create_pbi_agent(
             raise ValueError("Must provide either a toolkit or powerbi dataset")
         toolkit = PowerBIToolkit(powerbi=powerbi, llm=llm, examples=examples)
     tools = toolkit.get_tools()
-
+    tables = powerbi.table_names if powerbi else toolkit.powerbi.table_names
     agent = ZeroShotAgent(
         llm_chain=LLMChain(
             llm=llm,
             prompt=ZeroShotAgent.create_prompt(
                 tools,
-                prefix=prefix.format(top_k=top_k),
+                prefix=prefix.format(top_k=top_k).format(tables=tables),
                 suffix=suffix,
                 format_instructions=format_instructions,
                 input_variables=input_variables,

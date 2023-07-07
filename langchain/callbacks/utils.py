@@ -119,6 +119,7 @@ class BaseMetadataCallbackHandler:
         ignore_llm_ (bool): Whether to ignore llm callbacks.
         ignore_chain_ (bool): Whether to ignore chain callbacks.
         ignore_agent_ (bool): Whether to ignore agent callbacks.
+        ignore_retriever_ (bool): Whether to ignore retriever callbacks.
         always_verbose_ (bool): Whether to always be verbose.
         chain_starts (int): The number of times the chain start method has been called.
         chain_ends (int): The number of times the chain end method has been called.
@@ -149,6 +150,7 @@ class BaseMetadataCallbackHandler:
         self.ignore_llm_ = False
         self.ignore_chain_ = False
         self.ignore_agent_ = False
+        self.ignore_retriever_ = False
         self.always_verbose_ = False
 
         self.chain_starts = 0
