@@ -2,8 +2,8 @@
 from typing import Any, Callable, List, Sequence
 
 import numpy as np
-from sklearn.cluster import KMeans
 from pydantic import BaseModel, Field
+from sklearn.cluster import KMeans
 
 from langchain.embeddings.base import Embeddings
 from langchain.math_utils import cosine_similarity
@@ -92,7 +92,8 @@ def _filter_cluster_embeddings(
             embedded_documents - kmeans.cluster_centers_[i], axis=1
         )
 
-        # Find the indices of the two unique closest ones (using argsort to find the smallest 2 distances)
+        # Find the indices of the two unique closest ones
+        # (using argsort to find the smallest 2 distances)
         if remove_duplicates:
             # Only add not duplicated vectors.
             closest_indices_sorted = [
