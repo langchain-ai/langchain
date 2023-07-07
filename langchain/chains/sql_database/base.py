@@ -11,10 +11,12 @@ from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.sql_database.prompt import DECIDER_PROMPT, PROMPT, SQL_PROMPTS
+from langchain.chains.sql_database.utils import validate_sql_chain_memory
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BasePromptTemplate
 from langchain.sql_database import SQLDatabase
 from langchain.tools.sql_database.prompt import QUERY_CHECKER
+from langchain.schema import BaseMemory
 
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 
@@ -189,13 +191,15 @@ class SQLDatabaseChain(Chain):
         cls,
         llm: BaseLanguageModel,
         db: SQLDatabase,
+        memory: Optional[BaseMemory] = None,
         prompt: Optional[BasePromptTemplate] = None,
         **kwargs: Any,
     ) -> SQLDatabaseChain:
         prompt = prompt or SQL_PROMPTS.get(db.dialect, PROMPT)
-        llm_chain = LLMChain(llm=llm, prompt=prompt)
+        llm_chain = LLMChain(llm=llm, prompt=prompt,memory=memory)
+        if memory:
+            validate_sql_chain_memory(memory)
         return cls(llm_chain=llm_chain, database=db, **kwargs)
-
 
 class SQLDatabaseSequentialChain(Chain):
     """Chain for querying SQL database that is a sequential chain.
