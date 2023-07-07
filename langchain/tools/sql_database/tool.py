@@ -46,7 +46,14 @@ class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Execute the query, return the results or an error message."""
-        return self.db.run_no_throw(query)
+        ret = self.db.run_no_throw(query)
+        if type(ret) is not str:
+            raise TypeError(
+                "Got data in native format from `QuerySQLDataBaseTool.db`. \
+                 Please note that `QuerySQLDataBaseTool.db.native_format` \
+                 should be set to False for tools use !"
+            )
+        return ret
 
     async def _arun(
         self,

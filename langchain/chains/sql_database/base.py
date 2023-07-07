@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import Extra, Field, root_validator
 
@@ -130,8 +130,10 @@ class SQLDatabaseChain(Chain):
                 intermediate_steps.append({"sql_cmd": sql_cmd})  # input: sql exec
                 if self.sql_cmd_parser:
                     sql_cmd = self.sql_cmd_parser.parse(sql_cmd)
-                result = self.database.run(sql_cmd, 
-                                           native_format=self.native_format if self.return_direct else False)
+                result = self.database.run(
+                    sql_cmd,
+                    native_format=self.native_format if self.return_direct else False,
+                )
                 intermediate_steps.append(str(result))  # output: sql exec
             else:
                 query_checker_prompt = self.query_checker_prompt or PromptTemplate(
@@ -158,13 +160,15 @@ class SQLDatabaseChain(Chain):
                 )  # input: sql exec
                 if self.sql_cmd_parser:
                     checked_sql_command = self.sql_cmd_parser.parse(checked_sql_command)
-                result = self.database.run(checked_sql_command, 
-                                           native_format=self.native_format if self.return_direct else False)
+                result = self.database.run(
+                    checked_sql_command,
+                    native_format=self.native_format if self.return_direct else False,
+                )
                 intermediate_steps.append(str(result))  # output: sql exec
                 sql_cmd = checked_sql_command
 
             _run_manager.on_text("\nSQLResult: ", verbose=self.verbose)
-            _run_manager.on_text(result, color="yellow", verbose=self.verbose)
+            _run_manager.on_text(str(result), color="yellow", verbose=self.verbose)
             # If return direct, we just set the final result equal to
             # the result of the sql query result, otherwise try to get a human readable
             # final answer

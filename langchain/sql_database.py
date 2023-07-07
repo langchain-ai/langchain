@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Iterable, List, Optional
+from typing import Any, Iterable, List, Optional, Union, Dict, Sequence
 
 import sqlalchemy
 from sqlalchemy.sql.base import ColumnCollection, DedupeColumnCollection
@@ -11,6 +11,7 @@ from sqlalchemy import MetaData, Table, create_engine, inspect, select, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
+from sqlalchemy import BaseRow
 
 from langchain import utils
 
@@ -21,11 +22,13 @@ def _format_index(index: sqlalchemy.engine.interfaces.ReflectedIndex) -> str:
         f' Columns: {str(index["column_names"])}'
     )
 
-def _try_eval(x):
+
+def _try_eval(x: Any) -> Any:
     try:
         return eval(x)
     except:
         return x
+
 
 def truncate_word(content: Any, *, length: int, suffix: str = "...") -> str:
     """
@@ -281,11 +284,11 @@ class SQLDatabase:
             if self._custom_table_info and table.name in self._custom_table_info:
                 tables.append(self._custom_table_info[table.name])
                 continue
-            
+
             # Ignore JSON datatyped columns
-            not_nulltype_columns = [(k, v) for k, v in table.columns.items() if type(v.type) is not NullType]
-            table.columns = ColumnCollection(columns=not_nulltype_columns).as_immutable()
-            table._columns = DedupeColumnCollection(columns=not_nulltype_columns)
+            for k, v in table.columns.items():
+                if type(v.type) is NullType:
+                    table._columns.remove(v)
 
             # add create table command
             create_table = str(CreateTable(table).compile(self._engine))
@@ -328,7 +331,9 @@ class SQLDatabase:
                 )
 
             # save the sample rows in string format
-            sample_rows_str = "\n".join(["\t".join(row) for row in sample_rows]).replace('"', "'")
+            sample_rows_str = "\n".join(
+                ["\t".join(row) for row in sample_rows]
+            ).replace('"', "'")
 
         # in some dialects when there are no rows in the table a
         # 'ProgrammingError' is returned
@@ -341,9 +346,11 @@ class SQLDatabase:
             f"{sample_rows_str}"
         )
 
-    def run(self, command: str, fetch: str = "all", native_format: bool = False) -> str:
+    def run(
+        self, command: str, fetch: str = "all", native_format: bool = False
+    ) -> Union[str, List[Dict[str, Any]], Dict[str, Any]]:
         """Execute a SQL command and return a string representing the results.
-        
+
         If return_direct is set to true, then the result will be directly returned,
         Otherwise:
             If the statement returns rows, a string of the results is returned.
@@ -363,18 +370,22 @@ class SQLDatabase:
             cursor = connection.execute(text(command))
             if cursor.returns_rows:
                 if fetch == "all":
-                    result = cursor.fetchall()
+                    result: Sequence[BaseRow] = cursor.fetchall()
                 elif fetch == "one":
                     result = cursor.fetchone()  # type: ignore
                 else:
                     raise ValueError("Fetch parameter must be either 'one' or 'all'")
-                
+
                 # If return_direct then directly return the result
                 if native_format:
                     if isinstance(result, list):
-                        return [{k: _try_eval(v) for k, v in dict(d).items()} for d in result]
-                    return {k: _try_eval(v) for k, v in dict(result).items()}
-                
+                        return [
+                            {k: _try_eval(v) for k, v in dict(d._asdict()).items()}
+                            for d in result
+                        ]
+                    elif isinstance(result, BaseRow):
+                        return {k: _try_eval(v) for k, v in result.items()}
+
                 # Convert columns values to string to avoid issues with sqlalchmey
                 # trunacating text
                 if isinstance(result, list):
@@ -411,7 +422,9 @@ class SQLDatabase:
             """Format the error message"""
             return f"Error: {e}"
 
-    def run_no_throw(self, command: str, fetch: str = "all") -> str:
+    def run_no_throw(
+        self, command: str, fetch: str = "all"
+    ) -> Union[str, List[Dict[str, Any]], Dict[str, Any]]:
         """Execute a SQL command and return a string representing the results.
 
         If the statement returns rows, a string of the results is returned.
