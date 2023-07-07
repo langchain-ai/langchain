@@ -2028,6 +2028,29 @@ typing-inspect = ">=0.4.0"
 dev = ["flake8", "hypothesis", "ipython", "mypy (>=0.710)", "portray", "pytest (>=7.2.0)", "simplejson", "types-dataclasses"]
 
 [[package]]
+name = "datadog-api-client"
+version = "2.14.0"
+description = "Collection of all Datadog Public endpoints"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "datadog-api-client-2.14.0.tar.gz", hash = "sha256:b795aec3e0fdf841e8e4eef415e17d6e354f7bf5f3f39165ee2e69500f164891"},
+    {file = "datadog_api_client-2.14.0-py3-none-any.whl", hash = "sha256:f0e82da2a0b0ad58ca8265beba3d93b46f776ad809820614e92fe40e50a4727b"},
+]
+
+[package.dependencies]
+certifi = "*"
+python-dateutil = "*"
+typing-extensions = "*"
+urllib3 = ">=1.15,<2.0"
+
+[package.extras]
+apm = ["ddtrace (>=1.15.0)"]
+async = ["aiosonic (==0.15.1)"]
+tests = ["aiosonic (==0.15.1)", "glom", "jinja2", "mypy", "pytest", "pytest-asyncio", "pytest-bdd (==6.0.1)", "pytest-randomly", "pytest-recording", "python-dateutil", "types-python-dateutil", "zstandard"]
+zstandard = ["zstandard"]
+
+[[package]]
 name = "datasets"
 version = "2.13.0"
 description = "HuggingFace community-driven open-source library of datasets"
@@ -11911,4 +11934,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "cc95f4e0d4bee4ba19cf539be5ffd81f1ddb33229ace936ef3b6cbd4122493ca"
+content-hash = "2a65fb2ae9960bedd575fd306e2ea52164c655f08362fb08f195f90e6e902dca"
