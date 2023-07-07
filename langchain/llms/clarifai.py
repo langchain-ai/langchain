@@ -144,8 +144,6 @@ class Clarifai(LLM):
                 "Please install it with `pip install clarifai`."
             )
 
-        params = self._default_params
-
         # The userDataObject is created in the overview and
         # is required when using a PAT
         # If version_id None, Defaults to the latest model version
@@ -165,8 +163,15 @@ class Clarifai(LLM):
 
         if post_model_outputs_response.status.code != status_code_pb2.SUCCESS:
             logger.error(post_model_outputs_response.status)
+            first_model_failure = (
+                post_model_outputs_response.outputs[0].status
+                if len(post_model_outputs_response.outputs[0])
+                else None
+            )
             raise Exception(
-                f"Post model outputs failed, status: {post_model_outputs_response.status}, first output failure: {post_model_outputs_response.outputs[0].status if len(post_model_outputs_response.outputs[0]) else None}"
+                f"Post model outputs failed, status: "
+                f"{post_model_outputs_response.status}, first output failure: "
+                f"{first_model_failure}"
             )
 
         text = post_model_outputs_response.outputs[0].data.text.raw

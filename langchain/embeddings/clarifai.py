@@ -125,8 +125,15 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
 
         if post_model_outputs_response.status.code != status_code_pb2.SUCCESS:
             logger.error(post_model_outputs_response.status)
+            first_output_failure = (
+                post_model_outputs_response.outputs[0].status
+                if len(post_model_outputs_response.outputs[0])
+                else None
+            )
             raise Exception(
-                f"Post model outputs failed, status: {post_model_outputs_response.status}, first output failure: {post_model_outputs_response.outputs[0].status if len(post_model_outputs_response.outputs[0]) else None}"
+                f"Post model outputs failed, status: "
+                f"{post_model_outputs_response.status}, first output failure: "
+                f"{first_output_failure}"
             )
         embeddings = [
             list(o.data.embeddings[0].vector)
@@ -172,8 +179,15 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
 
         if post_model_outputs_response.status.code != status_code_pb2.SUCCESS:
             logger.error(post_model_outputs_response.status)
+            first_output_failure = (
+                post_model_outputs_response.outputs[0].status
+                if len(post_model_outputs_response.outputs[0])
+                else None
+            )
             raise Exception(
-                f"Post model outputs failed, status: {post_model_outputs_response.status}, first output failure: {post_model_outputs_response.outputs[0].status if len(post_model_outputs_response.outputs[0]) else None}"
+                f"Post model outputs failed, status: "
+                f"{post_model_outputs_response.status}, first output failure: "
+                f"{first_output_failure}"
             )
 
         embeddings = [
