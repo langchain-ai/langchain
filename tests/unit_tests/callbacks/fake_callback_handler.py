@@ -1,11 +1,15 @@
 """A fake callback handler for testing purposes."""
+from collections import defaultdict
 from itertools import chain
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel
 
-from langchain.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
+from langchain.callbacks.base import (
+    AsyncCallbackHandler,
+    BaseCallbackHandler,
+)
 from langchain.schema.messages import BaseMessage
 
 
@@ -372,3 +376,34 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
 
     def __deepcopy__(self, memo: dict) -> "FakeAsyncCallbackHandler":
         return self
+
+
+class FakeCompletionsCallbackHandler(FakeCallbackHandler):
+    completions: dict[int, dict[int, str]] = defaultdict(lambda: defaultdict(str))
+
+    def on_llm_new_token(
+        self,
+        token: str,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
+        super().on_llm_new_token(*args, **kwargs)
+
+        idx = kwargs.get("idx")
+        if idx:
+            self.completions[idx.prompt][idx.completion] += token
+
+
+class FakeAsyncCompletionsCallbackHandler(FakeAsyncCallbackHandler):
+    completions: dict[int, dict[int, str]] = defaultdict(lambda: defaultdict(str))
+
+    async def on_llm_new_token(
+        self,
+        token: str,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
+        await super().on_llm_new_token(*args, **kwargs)
+        idx = kwargs.get("idx")
+        if idx:
+            self.completions[idx.prompt][idx.completion] += token

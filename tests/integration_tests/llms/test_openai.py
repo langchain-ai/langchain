@@ -10,7 +10,10 @@ from langchain.chat_models.openai import ChatOpenAI
 from langchain.llms.loading import load_llm
 from langchain.llms.openai import OpenAI, OpenAIChat
 from langchain.schema import LLMResult
-from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
+from tests.unit_tests.callbacks.fake_callback_handler import (
+    FakeCallbackHandler,
+    FakeCompletionsCallbackHandler,
+)
 
 
 def test_openai_call() -> None:
@@ -105,29 +108,34 @@ def test_openai_multiple_prompts() -> None:
     assert len(output.generations) == 2
 
 
-def test_openai_streaming_error() -> None:
-    """Test error handling in stream."""
-    llm = OpenAI(best_of=2)
-    with pytest.raises(ValueError):
-        llm.stream("I'm Pickle Rick")
+def test_openai_multiple_prompts_and_completions_streaming() -> None:
+    """Test completion with multiple prompts and completions."""
+    callback_handler = FakeCompletionsCallbackHandler()
+    callback_manager = CallbackManager([callback_handler])
+
+    llm = OpenAI(max_tokens=10, n=3, streaming=True, callback_manager=callback_manager)
+
+    output = llm.generate(["I'm Pickle Rick", "Who are you?"])
+
+    assert isinstance(output, LLMResult)
+    assert isinstance(output.generations, list)
+    assert len(output.generations) == 2
+
+    for prompt_idx, candidates in enumerate(output.generations):
+        assert isinstance(candidates, list)
+        assert len(candidates) == 3
+
+        for completion_idx, generation in enumerate(candidates):
+            assert (
+                generation.text
+                == callback_handler.completions[prompt_idx][completion_idx]
+            )
 
 
 def test_openai_streaming_best_of_error() -> None:
     """Test validation for streaming fails if best_of is not 1."""
     with pytest.raises(ValueError):
         OpenAI(best_of=2, streaming=True)
-
-
-def test_openai_streaming_n_error() -> None:
-    """Test validation for streaming fails if n is not 1."""
-    with pytest.raises(ValueError):
-        OpenAI(n=2, streaming=True)
-
-
-def test_openai_streaming_multiple_prompts_error() -> None:
-    """Test validation for streaming fails if multiple prompts are given."""
-    with pytest.raises(ValueError):
-        OpenAI(streaming=True).generate(["I'm Pickle Rick", "I'm Pickle Rick"])
 
 
 def test_openai_streaming_call() -> None:
@@ -177,6 +185,30 @@ async def test_openai_async_streaming_callback() -> None:
     assert isinstance(result, LLMResult)
 
 
+@pytest.mark.asyncio
+async def test_async_openai_multiple_prompts_and_completions_streaming() -> None:
+    """Test stream multiple completion with multiple prompts."""
+    callback_handler = FakeCompletionsCallbackHandler()
+    callback_manager = CallbackManager([callback_handler])
+
+    llm = OpenAI(max_tokens=10, n=3, streaming=True, callback_manager=callback_manager)
+
+    output = await llm.agenerate(["I'm Pickle Rick", "Who are you?"])
+    assert isinstance(output, LLMResult)
+    assert isinstance(output.generations, list)
+    assert len(output.generations) == 2
+
+    for prompt_idx, candidates in enumerate(output.generations):
+        assert isinstance(candidates, list)
+        assert len(candidates) == 3
+
+        for completion_idx, generation in enumerate(candidates):
+            assert (
+                generation.text
+                == callback_handler.completions[prompt_idx][completion_idx]
+            )
+
+
 def test_openai_chat_wrong_class() -> None:
     """Test OpenAIChat with wrong class still works."""
     llm = OpenAI(model_name="gpt-3.5-turbo")
@@ -189,6 +221,19 @@ def test_openai_chat() -> None:
     llm = OpenAIChat(max_tokens=10)
     output = llm("Say foo:")
     assert isinstance(output, str)
+
+
+def test_openai_chat_generate_multi_completions() -> None:
+    """Test OpenAIChat with multi completions."""
+    llm = OpenAIChat(max_tokens=10, n=2)
+    output = llm.generate(["Hello, how are you?"])
+    assert isinstance(output, LLMResult)
+    assert isinstance(output.generations, list)
+    assert len(output.generations) == 1
+
+    for generation in output.generations:
+        assert isinstance(generation, list)
+        assert len(generation) == 2
 
 
 def test_openai_chat_streaming() -> None:
@@ -213,12 +258,39 @@ def test_openai_chat_streaming_callback() -> None:
     assert callback_handler.llm_streams != 0
 
 
+def test_openai_chat_streaming_multi_completions() -> None:
+    """Test OpenAIChat with multi completions."""
+    llm = OpenAIChat(max_tokens=10, n=2, streaming=True)
+    output = llm.generate(["Hello, how are you?"])
+    assert isinstance(output, LLMResult)
+    assert isinstance(output.generations, list)
+    assert len(output.generations) == 1
+
+    for generation in output.generations:
+        assert isinstance(generation, list)
+        assert len(generation) == 2
+
+
 @pytest.mark.asyncio
 async def test_openai_chat_async_generate() -> None:
     """Test async chat."""
     llm = OpenAIChat(max_tokens=10)
     output = await llm.agenerate(["Hello, how are you?"])
     assert isinstance(output, LLMResult)
+
+
+@pytest.mark.asyncio
+async def test_openai_chat_async_generate_multi_completions() -> None:
+    """Test async chat."""
+    llm = OpenAIChat(max_tokens=10, n=2)
+    output = await llm.agenerate(["Hello, how are you?"])
+    assert isinstance(output, LLMResult)
+    assert isinstance(output.generations, list)
+    assert len(output.generations) == 1
+
+    for generation in output.generations:
+        assert isinstance(generation, list)
+        assert len(generation) == 2
 
 
 @pytest.mark.asyncio
@@ -236,6 +308,20 @@ async def test_openai_chat_async_streaming_callback() -> None:
     result = await llm.agenerate(["Write me a sentence with 100 words."])
     assert callback_handler.llm_streams != 0
     assert isinstance(result, LLMResult)
+
+
+@pytest.mark.asyncio
+async def test_openai_chat_async_streaming_multi_completions() -> None:
+    """Test async chat."""
+    llm = OpenAIChat(max_tokens=10, n=3, streaming=True)
+    output = await llm.agenerate(["Give me a 100 word sentence."])
+    assert isinstance(output, LLMResult)
+    assert isinstance(output.generations, list)
+    assert len(output.generations) == 1
+
+    for generation in output.generations:
+        assert isinstance(generation, list)
+        assert len(generation) == 3
 
 
 def test_openai_modelname_to_contextsize_valid() -> None:

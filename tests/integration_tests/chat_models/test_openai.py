@@ -1,12 +1,8 @@
 """Test ChatOpenAI wrapper."""
 
 
-from collections import defaultdict
-from typing import Any
-
 import pytest
 
-from langchain.callbacks.base import NewTokenIndicies
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.schema import (
@@ -15,7 +11,11 @@ from langchain.schema import (
     LLMResult,
 )
 from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
-from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
+from tests.unit_tests.callbacks.fake_callback_handler import (
+    FakeAsyncCompletionsCallbackHandler,
+    FakeCallbackHandler,
+    FakeCompletionsCallbackHandler,
+)
 
 
 def test_chat_openai() -> None:
@@ -91,25 +91,8 @@ def test_chat_openai_streaming() -> None:
 
 
 def test_chat_openai_streaming_multiple_prompts_and_completions() -> None:
-    class RecordHandler(FakeCallbackHandler):
-        num_tokens = 0
-        completions: dict[int, dict[int, str]] = defaultdict(lambda: defaultdict(str))
-
-        def on_llm_new_token(
-            self,
-            token: str,
-            idx: NewTokenIndicies,
-            **kwargs: Any,
-        ) -> Any:
-            super().on_llm_new_token(token, idx, **kwargs)
-
-            self.num_tokens += 1
-            self.completions[idx.prompt][idx.completion] += token
-
-    callback_handler = FakeCallbackHandler()
-    record_handler = RecordHandler()
-
-    callback_manager = CallbackManager([callback_handler, record_handler])
+    callback_handler = FakeCompletionsCallbackHandler()
+    callback_manager = CallbackManager([callback_handler])
     chat = ChatOpenAI(
         n=3,
         model="gpt-3.5-turbo",
@@ -127,13 +110,12 @@ def test_chat_openai_streaming_multiple_prompts_and_completions() -> None:
     assert callback_handler.llm_starts == 2
     assert isinstance(response, LLMResult)
 
-    assert record_handler.num_tokens > 0
     for prompt_idx, candidates in enumerate(response.generations):
         assert len(candidates) == 3
         for completion_idx, generation in enumerate(candidates):
             assert (
                 generation.text
-                == record_handler.completions[prompt_idx][completion_idx]
+                == callback_handler.completions[prompt_idx][completion_idx]
             )
 
 
@@ -198,25 +180,8 @@ async def test_async_chat_openai_streaming() -> None:
 
 @pytest.mark.asyncio
 async def test_async_chat_openai_streaming_multiple_prompts_and_completions() -> None:
-    class RecordHandler(FakeCallbackHandler):
-        num_tokens = 0
-        completions: dict[int, dict[int, str]] = defaultdict(lambda: defaultdict(str))
-
-        def on_llm_new_token(
-            self,
-            token: str,
-            idx: NewTokenIndicies,
-            **kwargs: Any,
-        ) -> Any:
-            super().on_llm_new_token(token, idx, **kwargs)
-
-            self.num_tokens += 1
-            self.completions[idx.prompt][idx.completion] += token
-
-    callback_handler = FakeCallbackHandler()
-    record_handler = RecordHandler()
-
-    callback_manager = CallbackManager([callback_handler, record_handler])
+    callback_handler = FakeAsyncCompletionsCallbackHandler()
+    callback_manager = CallbackManager([callback_handler])
     chat = ChatOpenAI(
         n=3,
         model="gpt-3.5-turbo",
@@ -234,13 +199,12 @@ async def test_async_chat_openai_streaming_multiple_prompts_and_completions() ->
     assert callback_handler.llm_starts == 2
     assert isinstance(response, LLMResult)
 
-    assert record_handler.num_tokens > 0
     for prompt_idx, candidates in enumerate(response.generations):
         assert len(candidates) == 3
         for completion_idx, generation in enumerate(candidates):
             assert (
                 generation.text
-                == record_handler.completions[prompt_idx][completion_idx]
+                == callback_handler.completions[prompt_idx][completion_idx]
             )
 
 

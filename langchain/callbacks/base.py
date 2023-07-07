@@ -55,8 +55,8 @@ class LLMManagerMixin:
         self,
         token: str,
         *,
-        idx: NewTokenIndicies,
         run_id: UUID,
+        idx: Optional[NewTokenIndicies] = None,
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:

@@ -308,8 +308,8 @@ class BaseOpenAI(BaseLLM):
                             run_manager.on_llm_new_token(
                                 part["text"],
                                 idx=NewTokenIndicies(
-                                    prompt=prompt_index or 0,
-                                    completion=part["index"],
+                                    prompt=part["index"] // params.get("n", 1),
+                                    completion=part["index"] % params.get("n", 1),
                                 ),
                                 verbose=self.verbose,
                                 logprobs=part["logprobs"],
@@ -342,8 +342,6 @@ class BaseOpenAI(BaseLLM):
         _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
         for _prompts in sub_prompts:
             if self.streaming:
-                if len(_prompts) > 1:
-                    raise ValueError("Cannot stream results with multiple prompts.")
                 params["stream"] = True
                 partial: dict[int, Any] = dict()
                 async for stream_resp in await acompletion_with_retry(
@@ -355,8 +353,8 @@ class BaseOpenAI(BaseLLM):
                             await run_manager.on_llm_new_token(
                                 part["text"],
                                 idx=NewTokenIndicies(
-                                    prompt=prompt_index or 0,
-                                    completion=part["index"],
+                                    prompt=part["index"] // params.get("n", 1),
+                                    completion=part["index"] % params.get("n", 1),
                                 ),
                                 verbose=self.verbose,
                                 logprobs=part["logprobs"],
@@ -828,7 +826,10 @@ class OpenAIChat(BaseLLM):
             }
             return LLMResult(
                 generations=[
-                    [Generation(text=full_response["choices"][0]["message"]["content"])]
+                    [
+                        Generation(text=choice["message"]["content"])
+                        for choice in full_response["choices"]
+                    ]
                 ],
                 llm_output=llm_output,
             )
@@ -879,7 +880,10 @@ class OpenAIChat(BaseLLM):
             }
             return LLMResult(
                 generations=[
-                    [Generation(text=full_response["choices"][0]["message"]["content"])]
+                    [
+                        Generation(text=choice["message"]["content"])
+                        for choice in full_response["choices"]
+                    ]
                 ],
                 llm_output=llm_output,
             )
