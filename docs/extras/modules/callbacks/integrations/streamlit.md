@@ -35,7 +35,7 @@ st_callback = StreamlitCallbackHandler(st.container())
 ```
 
 Additional keyword arguments to customize the display behavior are described in the
-[API reference](https://api.python.langchain.com/en/latest/modules/callbacks.html#langchain.callbacks.StreamlitCallbackHandler).
+[API reference](https://api.python.langchain.com/en/latest/callbacks/langchain.callbacks.streamlit.streamlit_callback_handler.StreamlitCallbackHandler.html).
 
 ### Scenario 1: Using an Agent with Tools
 
