@@ -58,9 +58,9 @@ def _update_response(response: Dict[int, Any], part: Dict[str, Any]) -> None:
         response[part["index"]] = choice
 
     """Update response from the stream response."""
-    choice["text"] += part["text"] or ""
-    choice["finish_reason"] = part["finish_reason"]
-    choice["logprobs"] = part["logprobs"]
+    choice["text"] += part.get("text", "")
+    choice["finish_reason"] = part.get("finish_reason", None)
+    choice["logprobs"] = part.get("logprobs", None)
 
 
 def _create_retry_decorator(llm: Union[BaseOpenAI, OpenAIChat]) -> Callable[[Any], Any]:

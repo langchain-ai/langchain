@@ -8,7 +8,7 @@ from langchain.base_language import BaseLanguageModel
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.criteria.prompt import PROMPT, PROMPT_WITH_REFERENCES
-from langchain.evaluation.schema import StringEvaluator
+from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
 from langchain.schema import BaseOutputParser, BasePromptTemplate
 
 _SUPPORTED_CRITERIA = {
@@ -60,7 +60,7 @@ CRITERIA_TYPE = Union[
 ]
 
 
-class CriteriaEvalChain(StringEvaluator, LLMChain):
+class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     """LLM Chain for evaluating runs against criteria.
 
     Parameters
