@@ -520,6 +520,7 @@ Classes
     document_loaders.conllu.CoNLLULoader
     document_loaders.csv_loader.CSVLoader
     document_loaders.csv_loader.UnstructuredCSVLoader
+    document_loaders.datadog_logs.DatadogLogsLoader
     document_loaders.dataframe.DataFrameLoader
     document_loaders.diffbot.DiffbotLoader
     document_loaders.directory.DirectoryLoader

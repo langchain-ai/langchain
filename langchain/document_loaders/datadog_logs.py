@@ -28,7 +28,7 @@ class DatadogLogsLoader(BaseLoader):
             query: The query to run in Datadog.
             api_key: The Datadog API key.
             app_key: The Datadog APP key.
-            from_time: Optional. The start of the time range to query. 
+            from_time: Optional. The start of the time range to query.
                 Supports date math and regular timestamps (milliseconds) like '1688732708951'
             to_time: Optional. The end of the time range to query.
                 Supports date math and regular timestamps (milliseconds) like '1688732708951'
@@ -41,7 +41,7 @@ class DatadogLogsLoader(BaseLoader):
         self.from_time = from_time
         self.to_time = to_time
         self.limit = limit if limit is not None else 100
-    
+
     def parse_log(self, log: dict) -> Document:
         """
         Create Document objects from Datadog log items.
@@ -58,9 +58,9 @@ class DatadogLogsLoader(BaseLoader):
         message = attributes.get("message", "")
         inside_attributes = attributes.get("attributes", {})
         content_dict = {**inside_attributes, "message": message}
-        content = ', '.join(f'{k}: {v}' for k, v in content_dict.items())
+        content = ", ".join(f"{k}: {v}" for k, v in content_dict.items())
         return Document(page_content=content, metadata=metadata)
-    
+
     def load(self) -> List[Document]:
         """
         Get logs from Datadog.
@@ -78,8 +78,9 @@ class DatadogLogsLoader(BaseLoader):
         try:
             from datadog_api_client.v2.api.logs_api import LogsApi
             from datadog_api_client.v2.model.logs_list_request import LogsListRequest
-            from datadog_api_client.v2.model.logs_list_request_page import \
-                LogsListRequestPage
+            from datadog_api_client.v2.model.logs_list_request_page import (
+                LogsListRequestPage,
+            )
             from datadog_api_client.v2.model.logs_query_filter import LogsQueryFilter
             from datadog_api_client.v2.model.logs_sort import LogsSort
         except ImportError as ex:
@@ -87,17 +88,17 @@ class DatadogLogsLoader(BaseLoader):
                 "Could not import datadog_api_client python package. "
                 "Please install it with `pip install datadog_api_client`."
             ) from ex
-        
+
         filter_params = {
-            'query': self.query,
+            "query": self.query,
         }
 
         # Only add 'from' and 'to' parameters if they are not None
         if self.from_time is not None:
-            filter_params['_from'] = f"{self.from_time}"
+            filter_params["_from"] = f"{self.from_time}"
         if self.to_time is not None:
-            filter_params['to'] = f"{self.to_time}"
-    
+            filter_params["to"] = f"{self.to_time}"
+
         body = LogsListRequest(
             filter=LogsQueryFilter(**filter_params),
             sort=LogsSort.TIMESTAMP_ASCENDING,
@@ -109,9 +110,9 @@ class DatadogLogsLoader(BaseLoader):
         with ApiClient(configuration=self.configuration) as api_client:
             api_instance = LogsApi(api_client)
             response = api_instance.list_logs(body=body).to_dict()
-        
+
         docs: List[Document] = []
-        for row in response['data']:
+        for row in response["data"]:
             docs.append(self.parse_log(row))
 
         return docs
