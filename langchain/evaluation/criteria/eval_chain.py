@@ -100,6 +100,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     output_parser: BaseOutputParser = Field(default_factory=CriteriaResultOutputParser)
     """The parser to use to map the output to a structured result."""
     criteria_names: List[str] = Field(default_factory=list)
+    """The names of the criteria being evaluated."""
 
     class Config:
         """Configuration for the QAEvalChain."""
@@ -264,11 +265,20 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
                 requires_reference=True,
             )
         """
+        expected_input_vars = {"input", "output", "criteria"}
         if prompt is None:
             if requires_reference:
                 prompt = PROMPT_WITH_REFERENCES
             else:
                 prompt = PROMPT
+        if requires_reference:
+            expected_input_vars.add("reference")
+        if expected_input_vars != set(prompt.input_variables):
+            raise ValueError(
+                f"Input variables should be {expected_input_vars}, "
+                f"but got {prompt.input_variables}"
+            )
+
         criteria_ = cls.resolve_criteria(criteria)
         criteria_names = list(criteria_.keys())
         criteria_str = " ".join(f"{k}: {v}" for k, v in criteria_.items())
