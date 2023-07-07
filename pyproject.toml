@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.225"
+version = "0.0.227"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -38,7 +38,7 @@ pinecone-text = {version = "^0.4.2", optional = true}
 pymongo = {version = "^4.3.3", optional = true}
 clickhouse-connect = {version="^0.5.14", optional=true}
 weaviate-client = {version = "^3", optional = true}
-marqo = {version = "^0.9.1", optional=true}
+marqo = {version = "^0.11.0", optional=true}
 google-api-python-client = {version = "2.70.0", optional = true}
 google-auth = {version = "^2.18.1", optional = true}
 wolframalpha = {version = "5.0.0", optional = true}
@@ -104,7 +104,7 @@ momento = {version = "^1.5.0", optional = true}
 bibtexparser = {version = "^1.4.0", optional = true}
 singlestoredb = {version = "^0.7.1", optional = true}
 pyspark = {version = "^3.4.0", optional = true}
-clarifai = {version = "9.1.0", optional = true}
+clarifai = {version = ">=9.1.0", optional = true}
 tigrisdb = {version = "^1.0.0b6", optional = true}
 nebula3-python = {version = "^3.4.0", optional = true}
 langchainplus-sdk = "^0.0.20"

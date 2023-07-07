@@ -30,9 +30,8 @@ class ChatOutputParser(AgentOutputParser):
         except Exception:
             if not includes_answer:
                 raise OutputParserException(f"Could not parse LLM output: {text}")
-            return AgentFinish(
-                {"output": text.split(FINAL_ANSWER_ACTION)[-1].strip()}, text
-            )
+            output = text.split(FINAL_ANSWER_ACTION)[-1].strip()
+            return AgentFinish({"output": output}, text)
 
     @property
     def _type(self) -> str:

@@ -1,4 +1,3 @@
-"""Base class for all language models."""
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -30,6 +29,8 @@ def _get_token_ids_default_method(text: str) -> List[int]:
 
 
 class BaseLanguageModel(Serializable, ABC):
+    """Base class for all language models."""
+
     @abstractmethod
     def generate_prompt(
         self,

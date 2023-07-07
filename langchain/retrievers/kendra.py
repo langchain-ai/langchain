@@ -12,6 +12,15 @@ from langchain.schema import BaseRetriever
 
 
 def clean_excerpt(excerpt: str) -> str:
+    """Cleans an excerpt from Kendra.
+
+    Args:
+        excerpt: The excerpt to clean.
+
+    Returns:
+        The cleaned excerpt.
+
+    """
     if not excerpt:
         return excerpt
     res = re.sub("\s+", " ", excerpt).replace("...", "")
@@ -19,6 +28,16 @@ def clean_excerpt(excerpt: str) -> str:
 
 
 def combined_text(title: str, excerpt: str) -> str:
+    """Combines a title and an excerpt into a single string.
+
+    Args:
+        title: The title of the document.
+        excerpt: The excerpt of the document.
+
+    Returns:
+        The combined text.
+
+    """
     if not title or not excerpt:
         return ""
     return f"Document Title: {title} \nDocument Excerpt: \n{excerpt}\n"

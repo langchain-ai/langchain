@@ -1,4 +1,4 @@
-"""LangChain+ Client."""
+"""LangChain + Client."""
 from langchain.client.runner_utils import (
     arun_on_dataset,
     arun_on_examples,
