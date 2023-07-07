@@ -217,13 +217,13 @@ class PGVector(VectorStore):
             pre_delete_collection=pre_delete_collection,
         )
 
-        store.add_embeddings(
+        store.upsert_embeddings(
             texts=texts, embeddings=embeddings, metadatas=metadatas, ids=ids, **kwargs
         )
 
         return store
 
-    def add_embeddings(
+    def upsert_embeddings(
         self,
         texts: Iterable[str],
         embeddings: List[List[float]],
@@ -231,12 +231,13 @@ class PGVector(VectorStore):
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
-        """Add embeddings to the vectorstore.
+        """Add or update embeddings in the vectorstore.
 
         Args:
             texts: Iterable of strings to add to the vectorstore.
             embeddings: List of list of embedding vectors.
             metadatas: List of metadatas associated with the texts.
+            ids (list, optional): The IDs of the embeddings. If provided, will update or create the embeddings, otherwise will just add them. IDs must be sorted.
             kwargs: vectorstore specific parameters
         """
         if ids is None:
@@ -245,11 +246,18 @@ class PGVector(VectorStore):
         if not metadatas:
             metadatas = [{} for _ in texts]
 
+        last_seen_id = None
         with Session(self._conn) as session:
             collection = self.get_collection(session)
             if not collection:
                 raise ValueError("Collection not found")
             for text, metadata, embedding, id in zip(texts, metadatas, embeddings, ids):
+                if id != last_seen_id:
+                    last_seen_id = id
+                    session.query(EmbeddingStore).filter(
+                        EmbeddingStore.custom_id == id
+                    ).delete(synchronize_session=False)
+
                 embedding_store = EmbeddingStore(
                     embedding=embedding,
                     document=text,
@@ -280,7 +288,7 @@ class PGVector(VectorStore):
             List of ids from adding the texts into the vectorstore.
         """
         embeddings = self.embedding_function.embed_documents(list(texts))
-        return self.add_embeddings(
+        return self.upsert_embeddings(
             texts=texts, embeddings=embeddings, metadatas=metadatas, ids=ids, **kwargs
         )
 
