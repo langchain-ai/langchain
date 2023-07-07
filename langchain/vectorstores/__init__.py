@@ -15,7 +15,10 @@ from langchain.vectorstores.clarifai import Clarifai
 from langchain.vectorstores.clickhouse import Clickhouse, ClickhouseSettings
 from langchain.vectorstores.deeplake import DeepLake
 from langchain.vectorstores.docarray import DocArrayHnswSearch, DocArrayInMemorySearch
-from langchain.vectorstores.elastic_vector_search import ElasticVectorSearch
+from langchain.vectorstores.elastic_vector_search import (
+    ElasticKnnSearch,
+    ElasticVectorSearch,
+)
 from langchain.vectorstores.faiss import FAISS
 from langchain.vectorstores.hologres import Hologres
 from langchain.vectorstores.lancedb import LanceDB
@@ -57,6 +60,7 @@ __all__ = [
     "DocArrayHnswSearch",
     "DocArrayInMemorySearch",
     "ElasticVectorSearch",
+    "ElasticKnnSearch",
     "FAISS",
     "PGEmbedding",
     "Hologres",
