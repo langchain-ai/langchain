@@ -315,7 +315,7 @@ class SupabaseVectorStore(VectorStore):
         CREATE FUNCTION match_documents_embeddings(query_embedding vector(1536),
                                                    match_count int)
             RETURNS TABLE(
-                id bigint,
+                id uuid,
                 content text,
                 metadata jsonb,
                 embedding vector(1536),

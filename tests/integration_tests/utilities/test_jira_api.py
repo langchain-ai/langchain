@@ -41,3 +41,24 @@ def test_create_confluence_page() -> None:
     output = jira.run("create_page", create_page_dict)
     assert "type" in output
     assert "page" in output
+
+
+def test_other() -> None:
+    """Non-exhaustive test for accessing other JIRA API methods"""
+    jira = JiraAPIWrapper()
+    issue_create_dict = """
+        {
+            "function":"issue_create",
+            "kwargs": {
+                "fields": {
+                    "summary": "Test Summary",
+                    "description": "Test Description",
+                    "issuetype": {"name": "Bug"},
+                    "project": {"key": "TP"}
+                }
+            }
+        }
+    """
+    output = jira.run("other", issue_create_dict)
+    assert "id" in output
+    assert "key" in output

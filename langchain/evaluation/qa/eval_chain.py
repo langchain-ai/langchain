@@ -10,7 +10,7 @@ from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.qa.eval_prompt import CONTEXT_PROMPT, COT_PROMPT, PROMPT
-from langchain.evaluation.schema import EvalChain, StringEvaluator
+from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
 
 
 def _parse_string_eval_output(text: str) -> dict:
@@ -41,7 +41,7 @@ def _parse_string_eval_output(text: str) -> dict:
     }
 
 
-class QAEvalChain(LLMChain, StringEvaluator, EvalChain):
+class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
     """LLM Chain specifically for evaluating question answering."""
 
     class Config:
@@ -55,6 +55,10 @@ class QAEvalChain(LLMChain, StringEvaluator, EvalChain):
 
     @property
     def requires_reference(self) -> bool:
+        return True
+
+    @property
+    def requires_input(self) -> bool:
         return True
 
     @classmethod
@@ -106,7 +110,7 @@ class QAEvalChain(LLMChain, StringEvaluator, EvalChain):
 
         return self.apply(inputs, callbacks=callbacks)
 
-    def evaluate_strings(
+    def _evaluate_strings(
         self,
         *,
         prediction: str,
@@ -134,7 +138,7 @@ class QAEvalChain(LLMChain, StringEvaluator, EvalChain):
         )[0]
         return _parse_string_eval_output(result["text"])
 
-    async def aevaluate_strings(
+    async def _aevaluate_strings(
         self,
         *,
         prediction: str,
@@ -150,8 +154,18 @@ class QAEvalChain(LLMChain, StringEvaluator, EvalChain):
         return _parse_string_eval_output(result["text"])
 
 
-class ContextQAEvalChain(LLMChain, StringEvaluator, EvalChain):
+class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
     """LLM Chain specifically for evaluating QA w/o GT based on context"""
+
+    @property
+    def requires_reference(self) -> bool:
+        """Whether the chain requires a reference string."""
+        return True
+
+    @property
+    def requires_input(self) -> bool:
+        """Whether the chain requires an input string."""
+        return True
 
     @classmethod
     def _validate_input_vars(cls, prompt: PromptTemplate) -> None:
@@ -213,7 +227,7 @@ class ContextQAEvalChain(LLMChain, StringEvaluator, EvalChain):
 
         return self.apply(inputs, callbacks=callbacks)
 
-    def evaluate_strings(
+    def _evaluate_strings(
         self,
         *,
         prediction: str,
@@ -228,7 +242,7 @@ class ContextQAEvalChain(LLMChain, StringEvaluator, EvalChain):
         )[0]
         return _parse_string_eval_output(result["text"])
 
-    async def aevaluate_strings(
+    async def _aevaluate_strings(
         self,
         *,
         prediction: str,

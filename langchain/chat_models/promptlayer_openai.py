@@ -49,7 +49,7 @@ class PromptLayerChatOpenAI(ChatOpenAI):
         from promptlayer.utils import get_api_key, promptlayer_api_request
 
         request_start_time = datetime.datetime.now().timestamp()
-        generated_responses = super()._generate(messages, stop, run_manager)
+        generated_responses = super()._generate(messages, stop, run_manager, **kwargs)
         request_end_time = datetime.datetime.now().timestamp()
         message_dicts, params = super()._create_message_dicts(messages, stop)
         for i, generation in enumerate(generated_responses.generations):
