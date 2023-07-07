@@ -103,6 +103,110 @@ def test_qdrant_add_documents(batch_size: int, vector_name: Optional[str]) -> No
         Document(page_content="foo")
     ]
 
+def test_qdrant_from_texts_add_to_existing_collection() -> None:
+    """Test from texts adds to existing collection."""
+    from qdrant_client import QdrantClient
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        vec_store = Qdrant.from_texts(
+            ["abc", "def"],
+            ConsistentFakeEmbeddings(),
+            collection_name="test_collection",
+            path=str(tmpdir),
+            recreate_collection=False,
+        )
+        del vec_store
+
+        vec_store = Qdrant.from_texts(
+            ["foo", "bar"],
+            ConsistentFakeEmbeddings(),
+            collection_name="test_collection",
+            path=str(tmpdir),
+            recreate_collection=False,
+        )
+        del vec_store
+        
+        client = QdrantClient(path=str(tmpdir))
+        assert 4 == client.count("test_collection").count
+
+def test_qdrant_from_documents_add_to_existing_collection() -> None:
+    """Test from documents adds to existing collection."""
+    from qdrant_client import QdrantClient
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        vec_store = Qdrant.from_documents(
+            [Document(page_content="abc"), Document(page_content="def")],
+            ConsistentFakeEmbeddings(),
+            collection_name="test_collection",
+            path=str(tmpdir),
+            recreate_collection=False,
+        )
+        del vec_store
+
+        vec_store = Qdrant.from_documents(
+            [Document(page_content="foo"), Document(page_content="bar")],
+            ConsistentFakeEmbeddings(),
+            collection_name="test_collection",
+            path=str(tmpdir),
+            recreate_collection=False,
+        )
+        del vec_store
+        
+        client = QdrantClient(path=str(tmpdir))
+        assert 4 == client.count("test_collection").count
+
+def test_qdrant_from_texts_recreates_collecton() -> None:
+    """Test from texts recreates collection."""
+    from qdrant_client import QdrantClient
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        vec_store = Qdrant.from_texts(
+            ["abc", "def"],
+            ConsistentFakeEmbeddings(),
+            collection_name="test_collection",
+            path=str(tmpdir),
+            recreate_collection=True,
+        )
+        del vec_store
+
+        vec_store = Qdrant.from_texts(
+            ["foo", "bar"],
+            ConsistentFakeEmbeddings(),
+            collection_name="test_collection",
+            path=str(tmpdir),
+            recreate_collection=True,
+        )
+        del vec_store
+        
+        client = QdrantClient(path=str(tmpdir))
+        assert 2 == client.count("test_collection").count
+
+def test_qdrant_from_documents_recreates_collecton() -> None:
+    """Test from documents recreates collection."""
+    from qdrant_client import QdrantClient
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        vec_store = Qdrant.from_documents(
+            [Document(page_content="abc"), Document(page_content="def")],
+            ConsistentFakeEmbeddings(),
+            collection_name="test_collection",
+            path=str(tmpdir),
+            recreate_collection=True,
+        )
+        del vec_store
+
+        vec_store = Qdrant.from_documents(
+            [Document(page_content="foo"), Document(page_content="bar")],
+            ConsistentFakeEmbeddings(),
+            collection_name="test_collection",
+            path=str(tmpdir),
+            recreate_collection=True,
+        )
+        del vec_store
+        
+        client = QdrantClient(path=str(tmpdir))
+        assert 2 == client.count("test_collection").count
+
 
 @pytest.mark.parametrize("batch_size", [1, 64])
 def test_qdrant_add_texts_returns_all_ids(batch_size: int) -> None:
