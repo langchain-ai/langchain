@@ -6,6 +6,7 @@ import uuid
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type
 
 import numpy as np
+
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.utils import xor_args
@@ -197,6 +198,29 @@ class Chroma(VectorStore):
             query_embeddings=embedding, n_results=k, where=filter
         )
         return _results_to_docs(results)
+
+    def similarity_search_by_vector_with_relevance_scores(
+        self,
+        embedding: List[float],
+        k: int = DEFAULT_K,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """
+        Return docs most similar to embedding vector and similarity score.
+        Args:
+            embedding (List[float]): Embedding to look up documents similar to.
+            k (int): Number of Documents to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+        Returns:
+            List[Tuple[Document, float]]: List of documents most similar to
+            the query text and cosine distance in float for each.
+            Lower score represents more similarity.
+        """
+        results = self.__query_collection(
+            query_embeddings=embedding, n_results=k, where=filter
+        )
+        return _results_to_docs_and_scores(results)
 
     def similarity_search_with_score(
         self,
