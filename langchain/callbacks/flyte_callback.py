@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 def import_flytekit() -> Tuple[flytekit, renderer]:
+    """Import flytekit and flytekitplugins-deck-standard."""
     try:
         import flytekit  # noqa: F401
         from flytekitplugins.deck import renderer  # noqa: F401

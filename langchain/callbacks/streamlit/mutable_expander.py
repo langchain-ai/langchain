@@ -9,11 +9,15 @@ if TYPE_CHECKING:
 
 
 class ChildType(Enum):
+    """The enumerator of the child type."""
+
     MARKDOWN = "MARKDOWN"
     EXCEPTION = "EXCEPTION"
 
 
 class ChildRecord(NamedTuple):
+    """The child record as a NamedTuple."""
+
     type: ChildType
     kwargs: Dict[str, Any]
     dg: DeltaGenerator
