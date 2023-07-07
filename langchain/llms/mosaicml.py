@@ -167,7 +167,8 @@ class MosaicML(LLM):
                         break
                 else:
                     raise ValueError(
-                        f"No valid key ({', '.join(output_keys)}) in response: {parsed_response}"
+                        f"No valid key ({', '.join(output_keys)}) in response:"
+                        f" {parsed_response}"
                     )
                 if isinstance(output_item, list):
                     text = output_item[0]
