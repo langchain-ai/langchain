@@ -3,6 +3,7 @@ from typing import Optional, Type
 
 from pydantic import BaseModel
 
+from langchain import BasePromptTemplate
 from langchain.chains.llm import LLMChain
 from langchain.graphs.networkx_graph import NetworkxEntityGraph, parse_triples
 from langchain.indexes.prompts.knowledge_triplet_extraction import (
@@ -18,7 +19,7 @@ class GraphIndexCreator(BaseModel):
     graph_type: Type[NetworkxEntityGraph] = NetworkxEntityGraph
 
     def from_text(
-        self, text: str, prompt=KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT
+        self, text: str, prompt: BasePromptTemplate = KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT
     ) -> NetworkxEntityGraph:
         """Create graph index from text."""
         if self.llm is None:
@@ -32,7 +33,7 @@ class GraphIndexCreator(BaseModel):
         return graph
 
     async def afrom_text(
-        self, text: str, prompt=KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT
+        self, text: str, prompt: BasePromptTemplate = KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT
     ) -> NetworkxEntityGraph:
         """Create graph index from text asynchronously."""
         if self.llm is None:
