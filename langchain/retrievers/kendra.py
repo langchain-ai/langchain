@@ -1,8 +1,12 @@
 import re
 from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel, Extra, root_validator
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.docstore.document import Document
 from langchain.schema import BaseRetriever
 
@@ -175,37 +179,34 @@ class AmazonKendraRetriever(BaseRetriever):
 
     """
 
-    def __init__(
-        self,
-        index_id: str,
-        region_name: Optional[str] = None,
-        credentials_profile_name: Optional[str] = None,
-        top_k: int = 3,
-        attribute_filter: Optional[Dict] = None,
-        client: Optional[Any] = None,
-    ):
-        self.index_id = index_id
-        self.top_k = top_k
-        self.attribute_filter = attribute_filter
+    index_id: str
+    region_name: Optional[str] = None
+    credentials_profile_name: Optional[str] = None
+    top_k: int = 3
+    attribute_filter: Optional[Dict] = None
+    client: Any
 
-        if client is not None:
-            self.client = client
-            return
+    @root_validator(pre=True)
+    def create_client(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        if values["client"] is not None:
+            return values
 
         try:
             import boto3
 
-            if credentials_profile_name is not None:
-                session = boto3.Session(profile_name=credentials_profile_name)
+            if values["credentials_profile_name"] is not None:
+                session = boto3.Session(profile_name=values["credentials_profile_name"])
             else:
                 # use default credentials
                 session = boto3.Session()
 
             client_params = {}
-            if region_name is not None:
-                client_params["region_name"] = region_name
+            if values["region_name"] is not None:
+                client_params["region_name"] = values["region_name"]
 
-            self.client = session.client("kendra", **client_params)
+            values["client"] = session.client("kendra", **client_params)
+
+            return values
         except ImportError:
             raise ModuleNotFoundError(
                 "Could not import boto3 python package. "
@@ -257,7 +258,12 @@ class AmazonKendraRetriever(BaseRetriever):
             docs = r_result.get_top_k_docs(top_k)
         return docs
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def _get_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: CallbackManagerForRetrieverRun,
+    ) -> List[Document]:
         """Run search on Kendra index and get top k documents
 
         Example:
@@ -269,5 +275,10 @@ class AmazonKendraRetriever(BaseRetriever):
         docs = self._kendra_query(query, self.top_k, self.attribute_filter)
         return docs
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def _aget_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
+    ) -> List[Document]:
         raise NotImplementedError("Async version is not implemented for Kendra yet.")

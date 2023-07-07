@@ -27,7 +27,7 @@ from langchain.tools.steamship_image_generation.utils import make_image_public
 from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
-    pass
+    from steamship import Steamship
 
 
 class ModelName(str, Enum):
@@ -44,12 +44,9 @@ SUPPORTED_IMAGE_SIZES = {
 
 
 class SteamshipImageGenerationTool(BaseTool):
-    try:
-        from steamship import Steamship
-    except ImportError:
-        pass
 
     """Tool used to generate images from a text-prompt."""
+
     model_name: ModelName
     size: Optional[str] = "512x512"
     steamship: Steamship

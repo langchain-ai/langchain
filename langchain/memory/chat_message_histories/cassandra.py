@@ -10,10 +10,8 @@ if typing.TYPE_CHECKING:
 
 from langchain.schema import (
     BaseChatMessageHistory,
-    BaseMessage,
-    _message_to_dict,
-    messages_from_dict,
 )
+from langchain.schema.messages import BaseMessage, _message_to_dict, messages_from_dict
 
 DEFAULT_TABLE_NAME = "message_store"
 DEFAULT_TTL_SECONDS = None

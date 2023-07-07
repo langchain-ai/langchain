@@ -9,7 +9,7 @@ from langchain.experimental.plan_and_execute.schema import (
     Step,
 )
 from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain.schema import SystemMessage
+from langchain.schema.messages import SystemMessage
 
 SYSTEM_PROMPT = (
     "Let's first understand the problem and devise a plan to solve the problem."
