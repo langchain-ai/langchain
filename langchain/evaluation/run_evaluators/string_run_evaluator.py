@@ -14,10 +14,22 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import StringEvaluator
+from langchain.load.dump import dumps
+from langchain.load.load import loads
 from langchain.load.serializable import Serializable
 from langchain.schema import RUN_KEY, messages_from_dict
 from langchain.schema.messages import BaseMessage, get_buffer_string
 from langchain.tools.base import Tool
+
+
+def _get_messages_from_run_dict(messages: List[dict]) -> List[BaseMessage]:
+    if not messages:
+        return []
+    first_message = messages[0]
+    if "lc" in first_message:
+        return [loads(dumps(message)) for message in messages]
+    else:
+        return messages_from_dict(messages)
 
 
 class StringRunMapper(Serializable):
@@ -45,11 +57,11 @@ class LLMStringRunMapper(StringRunMapper):
     def serialize_chat_messages(self, messages: List[Dict]) -> str:
         """Extract the input messages from the run."""
         if isinstance(messages, list) and messages:
-            if isinstance(messages[0], BaseMessage):
-                chat_messages = messages_from_dict(messages)
+            if isinstance(messages[0], dict):
+                chat_messages = _get_messages_from_run_dict(messages)
             elif isinstance(messages[0], list):
                 # Runs from Tracer have messages as a list of lists of dicts
-                chat_messages = messages_from_dict(messages[0])
+                chat_messages = _get_messages_from_run_dict(messages[0])
             else:
                 raise ValueError(f"Could not extract messages to evaluate {messages}")
             return get_buffer_string(chat_messages)
@@ -202,7 +214,7 @@ class StringExampleMapper(Serializable):
 
     def serialize_chat_messages(self, messages: List[Dict]) -> str:
         """Extract the input messages from the run."""
-        chat_messages = messages_from_dict(messages)
+        chat_messages = _get_messages_from_run_dict(messages)
         return get_buffer_string(chat_messages)
 
     def map(self, example: Example) -> Dict[str, str]:

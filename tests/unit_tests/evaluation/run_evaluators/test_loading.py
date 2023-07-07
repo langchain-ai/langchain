@@ -69,7 +69,7 @@ def test_load_string_run_evaluators_with_chat_model(evaluator_type: str) -> None
     example.outputs = {"generations": "Another fake response"}
     result = run_evaluator._prepare_input({"run": run, "example": example})
     assert result["input"] == "Human: Foo input"
-    assert result["prediction"] == "fake response"
+    assert result["prediction"] == "AI: fake response"
     if evaluator.requires_reference:
         assert "reference" in result
         assert result["reference"] == "Another fake response"
