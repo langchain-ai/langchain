@@ -20,6 +20,8 @@ class LLMInputOutputAdapter:
         input_body = {**model_kwargs}
         if provider == "anthropic" or provider == "ai21":
             input_body["prompt"] = prompt
+        elif provider =="stability":
+            input_body["text_prompts"] = json.loads(prompt)
         elif provider == "amazon":
             input_body = dict()
             input_body["inputText"] = prompt
@@ -42,8 +44,12 @@ class LLMInputOutputAdapter:
 
         if provider == "ai21":
             return response_body.get("completions")[0].get("data").get("text")
+        elif provider == "stability":
+            return response_body.get('artifacts')[0].get('base64')
         else:
             return response_body.get("results")[0].get("outputText")
+
+
 
 
 class Bedrock(LLM):
@@ -67,7 +73,7 @@ class Bedrock(LLM):
             from bedrock_langchain.bedrock_llm import BedrockLLM
 
             llm = BedrockLLM(
-                credentials_profile_name="default", 
+                credentials_profile_name="default",
                 model_id="amazon.titan-tg1-large"
             )
 
