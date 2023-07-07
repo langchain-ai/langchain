@@ -1,7 +1,6 @@
 """Loading datasets and evaluators."""
 from typing import Any, Dict, List, Optional, Sequence, Type
 
-from langchain.base_language import BaseLanguageModel
 from langchain.chains.base import Chain
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.evaluation.agents.trajectory_eval_chain import TrajectoryEvalChain
@@ -9,6 +8,7 @@ from langchain.evaluation.comparison import PairwiseStringEvalChain
 from langchain.evaluation.criteria.eval_chain import CriteriaEvalChain
 from langchain.evaluation.qa import ContextQAEvalChain, CotQAEvalChain, QAEvalChain
 from langchain.evaluation.schema import EvaluatorType, LLMEvalChain
+from langchain.schema.language_model import BaseLanguageModel
 
 
 def load_dataset(uri: str) -> List[Dict]:

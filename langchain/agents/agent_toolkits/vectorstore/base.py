@@ -8,9 +8,9 @@ from langchain.agents.agent_toolkits.vectorstore.toolkit import (
     VectorStoreToolkit,
 )
 from langchain.agents.mrkl.base import ZeroShotAgent
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
+from langchain.schema.language_model import BaseLanguageModel
 
 
 def create_vectorstore_agent(

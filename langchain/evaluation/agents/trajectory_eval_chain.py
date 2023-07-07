@@ -9,7 +9,6 @@ from typing import Any, Dict, List, NamedTuple, Optional, Sequence, Tuple, Union
 
 from pydantic import Extra, Field
 
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
@@ -23,6 +22,7 @@ from langchain.evaluation.agents.trajectory_eval_prompt import (
 )
 from langchain.evaluation.schema import AgentTrajectoryEvaluator, LLMEvalChain
 from langchain.schema import AgentAction, BaseOutputParser, OutputParserException
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 
 
