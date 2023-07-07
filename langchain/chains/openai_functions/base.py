@@ -117,13 +117,13 @@ def convert_python_function_to_openai_function(function: Callable) -> Dict[str, 
 
 
 def convert_to_openai_function(
-    function: Union[Dict[str, Any], BaseModel, Callable]
+    function: Union[Dict[str, Any], Type[BaseModel], Callable]
 ) -> Dict[str, Any]:
     """Convert a raw function/class to an OpenAI function.
 
     Args:
-        function: Either a dictionary, a pydantic.BaseModel, or a Python function. If
-            a dictionary is passed in, it is assumed to already be a valid OpenAI
+        function: Either a dictionary, a pydantic.BaseModel class, or a Python function.
+            If a dictionary is passed in, it is assumed to already be a valid OpenAI
             function.
 
     Returns:
@@ -150,7 +150,7 @@ def convert_to_openai_function(
 
 
 def _get_openai_output_parser(
-    functions: Sequence[Union[Dict[str, Any], BaseModel, Callable]],
+    functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
     function_names: Sequence[str],
 ) -> BaseLLMOutputParser:
     """Get the appropriate function output parser given the user functions."""
@@ -170,7 +170,7 @@ def _get_openai_output_parser(
 
 
 def create_openai_fn_chain(
-    functions: Sequence[Union[Dict[str, Any], BaseModel, Callable]],
+    functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
     llm: Optional[BaseLanguageModel] = None,
     prompt: Optional[BasePromptTemplate] = None,
     output_parser: Optional[BaseLLMOutputParser] = None,
@@ -179,7 +179,7 @@ def create_openai_fn_chain(
     """Create an LLM chain that uses OpenAI functions.
 
     Args:
-        functions: A sequence of either dictionaries, pydantic.BaseModels, or
+        functions: A sequence of either dictionaries, pydantic.BaseModels classes, or
             Python functions. If dictionaries are passed in, they are assumed to
             already be a valid OpenAI functions. If only a single
             function is passed in, then it will be enforced that the model use that
@@ -256,7 +256,7 @@ def create_openai_fn_chain(
 
 
 def create_structured_output_chain(
-    output_schema: Union[Dict[str, Any], BaseModel],
+    output_schema: Union[Dict[str, Any], Type[BaseModel]],
     llm: Optional[BaseLanguageModel] = None,
     prompt: Optional[BasePromptTemplate] = None,
     output_parser: Optional[BaseLLMOutputParser] = None,
@@ -265,8 +265,8 @@ def create_structured_output_chain(
     """Create an LLMChain that uses an OpenAI function to get a structured output.
 
     Args:
-        output_schema: Either a dictionary or pydantic.BaseModel. If a dictionary is
-            passed in, it's assumed to already be a valid JsonSchema.
+        output_schema: Either a dictionary or pydantic.BaseModel class. If a dictionary
+            is passed in, it's assumed to already be a valid JsonSchema.
             For best results, pydantic.BaseModels should have docstrings describing what
             the schema represents and descriptions for the parameters.
         llm: Language model to use, assumed to support the OpenAI function-calling API.
