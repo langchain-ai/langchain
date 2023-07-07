@@ -12,7 +12,14 @@ from langchain.evaluation.schema import EvaluatorType, LLMEvalChain
 
 
 def load_dataset(uri: str) -> List[Dict]:
-    """Load a dataset from the LangChainDatasets HuggingFace org."""
+    """Load a dataset from the LangChainDatasets HuggingFace org.
+
+    Args:
+        uri: The uri of the dataset to load.
+
+    Returns:
+        A list of dictionaries, each representing a row in the dataset.
+    """
     try:
         from datasets import load_dataset
     except ImportError:

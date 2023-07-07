@@ -6,6 +6,7 @@ from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
 def import_infino() -> Any:
+    """Import the infino client."""
     try:
         from infinopy import InfinoClient
     except ImportError:

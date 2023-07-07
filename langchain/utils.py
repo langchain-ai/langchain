@@ -108,12 +108,15 @@ def comma_list(items: List[Any]) -> str:
 @contextlib.contextmanager
 def mock_now(dt_value):  # type: ignore
     """Context manager for mocking out datetime.now() in unit tests.
+
     Example:
     with mock_now(datetime.datetime(2011, 2, 3, 10, 11)):
         assert datetime.datetime.now() == datetime.datetime(2011, 2, 3, 10, 11)
     """
 
     class MockDateTime(datetime.datetime):
+        """Mock datetime.datetime.now() with a fixed datetime."""
+
         @classmethod
         def now(cls):  # type: ignore
             # Create a copy of dt_value.
