@@ -87,7 +87,7 @@ class VectorStore(ABC):
         """
         # TODO: Handle the case where the user doesn't provide ids on the Collection
         texts = [doc.page_content for doc in documents]
-        metadatas = [doc.metadata for doc in documents]
+        metadatas = [doc.metadata.copy() for doc in documents]
         return self.add_texts(texts, metadatas, **kwargs)
 
     async def aadd_documents(
@@ -102,7 +102,7 @@ class VectorStore(ABC):
             List[str]: List of IDs of the added texts.
         """
         texts = [doc.page_content for doc in documents]
-        metadatas = [doc.metadata for doc in documents]
+        metadatas = [doc.metadata.copy() for doc in documents]
         return await self.aadd_texts(texts, metadatas, **kwargs)
 
     def search(self, query: str, search_type: str, **kwargs: Any) -> List[Document]:
@@ -332,7 +332,7 @@ class VectorStore(ABC):
     ) -> VST:
         """Return VectorStore initialized from documents and embeddings."""
         texts = [d.page_content for d in documents]
-        metadatas = [d.metadata for d in documents]
+        metadatas = [d.metadata.copy() for d in documents]
         return cls.from_texts(texts, embedding, metadatas=metadatas, **kwargs)
 
     @classmethod
@@ -344,7 +344,7 @@ class VectorStore(ABC):
     ) -> VST:
         """Return VectorStore initialized from documents and embeddings."""
         texts = [d.page_content for d in documents]
-        metadatas = [d.metadata for d in documents]
+        metadatas = [d.metadata.copy() for d in documents]
         return await cls.afrom_texts(texts, embedding, metadatas=metadatas, **kwargs)
 
     @classmethod
