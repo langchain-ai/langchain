@@ -47,7 +47,7 @@ def _split_text_with_regex(
                 splits += _splits[-1:]
             splits = [_splits[0]] + splits
         else:
-            splits = text.split(separator)
+            splits = re.split(separator, text)
     else:
         splits = list(text)
     return [s for s in splits if s != ""]
@@ -70,7 +70,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             chunk_size: Maximum size of chunks to return
             chunk_overlap: Overlap in characters between chunks
             length_function: Function that measures the length of given chunks
-            keep_separator: Whether or not to keep the separator in the chunks
+            keep_separator: Whether to keep the separator in the chunks
             add_start_index: If `True`, includes chunk's start index in metadata
         """
         if chunk_overlap > chunk_size:
@@ -561,6 +561,8 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
 
 
 class Language(str, Enum):
+    """Enum of the programming languages."""
+
     CPP = "cpp"
     GO = "go"
     JAVA = "java"

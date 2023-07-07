@@ -5,14 +5,17 @@ from typing import TypeVar
 from langchain.base_language import BaseLanguageModel
 from langchain.chains.llm import LLMChain
 from langchain.output_parsers.prompts import NAIVE_FIX_PROMPT
-from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseOutputParser, OutputParserException
+from langchain.schema import BaseOutputParser, BasePromptTemplate, OutputParserException
 
 T = TypeVar("T")
 
 
 class OutputFixingParser(BaseOutputParser[T]):
     """Wraps a parser and tries to fix parsing errors."""
+
+    @property
+    def lc_serializable(self) -> bool:
+        return True
 
     parser: BaseOutputParser[T]
     retry_chain: LLMChain

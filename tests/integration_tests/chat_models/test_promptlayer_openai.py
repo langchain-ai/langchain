@@ -5,13 +5,11 @@ import pytest
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.promptlayer_openai import PromptLayerChatOpenAI
 from langchain.schema import (
-    BaseMessage,
     ChatGeneration,
     ChatResult,
-    HumanMessage,
     LLMResult,
-    SystemMessage,
 )
+from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 

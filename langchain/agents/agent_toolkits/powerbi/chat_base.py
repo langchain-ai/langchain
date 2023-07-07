@@ -41,10 +41,11 @@ def create_pbi_chat_agent(
             raise ValueError("Must provide either a toolkit or powerbi dataset")
         toolkit = PowerBIToolkit(powerbi=powerbi, llm=llm, examples=examples)
     tools = toolkit.get_tools()
+    tables = powerbi.table_names if powerbi else toolkit.powerbi.table_names
     agent = ConversationalChatAgent.from_llm_and_tools(
         llm=llm,
         tools=tools,
-        system_message=prefix.format(top_k=top_k),
+        system_message=prefix.format(top_k=top_k).format(tables=tables),
         human_message=suffix,
         input_variables=input_variables,
         callback_manager=callback_manager,

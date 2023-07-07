@@ -1,4 +1,3 @@
-"""Base class for all language models."""
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -6,7 +5,8 @@ from typing import Any, List, Optional, Sequence, Set
 
 from langchain.callbacks.manager import Callbacks
 from langchain.load.serializable import Serializable
-from langchain.schema import BaseMessage, LLMResult, PromptValue, get_buffer_string
+from langchain.schema import LLMResult, PromptValue
+from langchain.schema.messages import BaseMessage, get_buffer_string
 
 
 def _get_token_ids_default_method(text: str) -> List[int]:
@@ -29,6 +29,8 @@ def _get_token_ids_default_method(text: str) -> List[int]:
 
 
 class BaseLanguageModel(Serializable, ABC):
+    """Base class for all language models."""
+
     @abstractmethod
     def generate_prompt(
         self,

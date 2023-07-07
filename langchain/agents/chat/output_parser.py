@@ -32,7 +32,7 @@ class ChatOutputParser(AgentOutputParser):
                 raise OutputParserException(f"Could not parse LLM output: {text}")
             output = text.split(FINAL_ANSWER_ACTION)[-1].strip()
             return AgentFinish({"output": output}, text)
-    
+
     @property
     def _type(self) -> str:
         return "chat"

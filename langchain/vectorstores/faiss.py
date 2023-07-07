@@ -78,9 +78,7 @@ class FAISS(VectorStore):
         index: Any,
         docstore: Docstore,
         index_to_docstore_id: Dict[int, str],
-        relevance_score_fn: Optional[
-            Callable[[float], float]
-        ] = _default_relevance_score_fn,
+        relevance_score_fn: Callable[[float], float] = _default_relevance_score_fn,
         normalize_L2: bool = False,
     ):
         """Initialize with necessary components."""
@@ -620,7 +618,11 @@ class FAISS(VectorStore):
 
     @classmethod
     def load_local(
-        cls, folder_path: str, embeddings: Embeddings, index_name: str = "index"
+        cls,
+        folder_path: str,
+        embeddings: Embeddings,
+        index_name: str = "index",
+        **kwargs: Any,
     ) -> FAISS:
         """Load FAISS index, docstore, and index_to_docstore_id from disk.
 
@@ -640,7 +642,9 @@ class FAISS(VectorStore):
         # load docstore and index_to_docstore_id
         with open(path / "{index_name}.pkl".format(index_name=index_name), "rb") as f:
             docstore, index_to_docstore_id = pickle.load(f)
-        return cls(embeddings.embed_query, index, docstore, index_to_docstore_id)
+        return cls(
+            embeddings.embed_query, index, docstore, index_to_docstore_id, **kwargs
+        )
 
     def _similarity_search_with_relevance_scores(
         self,
@@ -651,11 +655,6 @@ class FAISS(VectorStore):
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs and their similarity scores on a scale from 0 to 1."""
-        if self.relevance_score_fn is None:
-            raise ValueError(
-                "normalize_score_fn must be provided to"
-                " FAISS constructor to normalize scores"
-            )
         docs_and_scores = self.similarity_search_with_score(
             query,
             k=k,

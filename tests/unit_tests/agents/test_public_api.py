@@ -12,6 +12,7 @@ _EXPECTED = [
     "LLMSingleActionAgent",
     "MRKLChain",
     "OpenAIFunctionsAgent",
+    "OpenAIMultiFunctionsAgent",
     "ReActChain",
     "ReActTextWorldAgent",
     "SelfAskWithSearchChain",
