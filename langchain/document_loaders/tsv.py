@@ -9,7 +9,18 @@ from langchain.document_loaders.unstructured import (
 
 
 class UnstructuredTSVLoader(UnstructuredFileLoader):
-    """Loader that uses unstructured to load TSV files."""
+    """Loader that uses unstructured to load TSV files. Like other
+    Unstructured loaders, UnstructuredTSVLoader can be used in both
+    "single" and "elements" mode. If you use the loader in "elements"
+    mode, the TSV file will be a single Unstructured Table element.
+
+    Examples
+    --------
+    from langchain.document_loaders.tsv import UnstructuredTSVLoader
+
+    loader = UnstructuredTSVLoader("stanley-cups.tsv", mode="elements")
+    docs = loader.load()
+    """
 
     def __init__(
         self, file_path: str, mode: str = "single", **unstructured_kwargs: Any
