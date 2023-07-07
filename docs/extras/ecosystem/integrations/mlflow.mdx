@@ -1,0 +1,28 @@
+# MLflow
+
+> [MLflow](https://www.mlflow.org/) is an open source platform to manage the ML lifecycle, including experimentation,
+> reproducibility, deployment, and a central model registry.
+
+## Installation and Setup
+
+We need to get [Azure credentials](https://www.mlflow.org/docs/latest/quickstart.html) and
+set up the `MLFLOW_TRACKING_URI` environment variable.
+Also, see more information about [MLflow Tracking](https://learn.microsoft.com/en-us/azure/machine-learning/concept-mlflow?view=azureml-api-2).
+
+```bash
+pip install azureml-mlflow
+pip install pandas
+pip install textstat
+pip install spacy
+pip install google-search-results
+python -m spacy download en_core_web_sm
+```
+
+
+## Callbacks
+
+```python
+from langchain.callbacks import MlflowCallbackHandler
+```
+
+[See an example](/docs/modules/callbacks/integrations/mlflow.html).

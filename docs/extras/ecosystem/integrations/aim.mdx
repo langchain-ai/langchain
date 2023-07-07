@@ -1,0 +1,25 @@
+# Aim
+
+>[Aim](https://aimstack.readthedocs.io/) is an easy-to-use & supercharged open-source experiment tracker.
+`Aim` logs your training runs, enables a beautiful UI to compare them and an API to query them programmatically.
+`Aim` makes it super easy to visualize and debug LangChain executions. `Aim` tracks inputs and outputs of LLMs and tools,
+ as well as actions of agents.
+
+
+## Installation and Setup
+
+Get an AI21 api key and set it as an environment variable (`AI21_API_KEY`). 
+See [instructions](https://studio.ai21.com/account/account).
+
+```bash
+pip install aim
+```
+
+
+## Callbacks
+
+```python
+from langchain.callbacks import AimCallbackHandler
+```
+
+[See an example](/docs/modules/callbacks/integrations/aim.html).

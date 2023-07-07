@@ -1,0 +1,31 @@
+# Arthur
+
+>[Arthur](https://arthur.ai) is a model monitoring and observability platform.
+
+
+## Installation and Setup
+
+>For more information about how to use the `Arthur SDK`, visit [documentation site](https://docs.arthur.ai/).
+
+Get the Arthur credentials: 
+
+```python
+arthur_url = "https://app.arthur.ai"
+arthur_login = "your-arthur-login-username-here"
+arthur_model_id = "your-arthur-model-id-here"
+```
+
+See [instructions](https://studio.ai21.com/account/account).
+
+```bash
+pip install arthurai
+```
+
+
+## Callbacks
+
+```python
+from langchain.callbacks import ArthurCallbackHandler
+```
+
+[See an example](/docs/modules/callbacks/integrations/arthur.html).

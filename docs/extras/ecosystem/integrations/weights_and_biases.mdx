@@ -1,0 +1,48 @@
+# Weights & Biases
+
+
+> [Weights & Biases](https://docs.wandb.ai/guides) is the machine learning platform for developers to build 
+> better models faster. Use `W&B`'s lightweight, interoperable tools to quickly track experiments, 
+> version and iterate on datasets, evaluate model performance, reproduce models, visualize results 
+> and spot regressions, and share findings with colleagues.
+
+**Note**: _the `WandbCallbackHandler` is being deprecated in favour of the `WandbTracer`_ . 
+In future please use the `WandbTracer` as it is more flexible and allows for more granular logging. 
+
+See the [Prompt Engineering LLMs with LangChain and W&B](https://wandb.ai/a-sh0ts/langchain_callback_demo/reports/Prompt-Engineering-LLMs-with-LangChain-and-W-B--VmlldzozNjk1NTUw#👋-how-to-build-a-callback-in-langchain-for-better-prompt-engineering
+) example.
+
+
+
+## Installation and Setup
+
+We need to get [Azure credentials](https://www.mlflow.org/docs/latest/quickstart.html) and
+set up the `MLFLOW_TRACKING_URI` environment variable.
+Also, see more information about [MLflow Tracking](https://learn.microsoft.com/en-us/azure/machine-learning/concept-mlflow?view=azureml-api-2).
+
+For the `WandbTracer`, we need to install:
+```bash
+pip install wandb
+```
+
+For **deprecated** `WandbCallbackHandler`, we need to install these packages:
+```bash
+pip install wandb
+pip install pandas
+pip install textstat
+pip install spacy
+python -m spacy download en_core_web_sm
+```
+
+
+
+## Callbacks
+
+```python
+from langchain.callbacks import WandbTracer
+from langchain.callbacks import WandbCallbackHandler  # deprecated!
+```
+
+[See an example](/docs/modules/callbacks/integrations/weights_and_biases.html).
+
+[Another example](/docs/modules/callbacks/integrations/weights_and_biases_tracing.html).

@@ -1,0 +1,28 @@
+# WhyLabs
+
+>[WhyLabs](https://docs.whylabs.ai/docs/) is an observability platform designed to monitor data pipelines and ML applications for data quality regressions, data drift, and model performance degradation. Built on top of an open-source package called `whylogs`, the platform enables Data Scientists and Engineers to:
+>- Set up in minutes: Begin generating statistical profiles of any dataset using whylogs, the lightweight open-source library.
+>- Upload dataset profiles to the WhyLabs platform for centralized and customizable monitoring/alerting of dataset features as well as model inputs, outputs, and performance.
+>- Integrate seamlessly: interoperable with any data pipeline, ML infrastructure, or framework. Generate real-time insights into your existing data flow. See more about our integrations here.
+>- Scale to terabytes: handle your large-scale data, keeping compute requirements low. Integrate with either batch or streaming data pipelines.
+>- Maintain data privacy: WhyLabs relies statistical profiles created via whylogs so your actual data never leaves your environment!
+Enable observability to detect inputs and LLM issues faster, deliver continuous improvements, and avoid costly incidents.
+
+## Installation and Setup
+
+Make sure to set the required API keys and config required to send telemetry to `WhyLabs`:
+* WhyLabs API Key: https://whylabs.ai/whylabs-free-sign-up
+* Org and Dataset [https://docs.whylabs.ai/docs/whylabs-onboarding](https://docs.whylabs.ai/docs/whylabs-onboarding#upload-a-profile-to-a-whylabs-project)
+
+```bash
+pip install langkit
+```
+
+
+## Callbacks
+
+```python
+from langchain.callbacks import WhyLabsCallbackHandler
+```
+
+[See an example](/docs/modules/callbacks/integrations/whylabs.html).

@@ -1,16 +1,22 @@
 # AI21 Labs
 
-This page covers how to use the AI21 ecosystem within LangChain.
-It is broken into two parts: installation and setup, and then references to specific AI21 wrappers.
+>[AI21 Studio](https://docs.ai21.com/) provides API access to `Jurassic-2` large language models.
+>See the [AI21 models](https://docs.ai21.com/docs/jurassic-2-models).
 
 ## Installation and Setup
-- Get an AI21 api key and set it as an environment variable (`AI21_API_KEY`)
 
-## Wrappers
+Get an AI21 api key and set it as an environment variable (`AI21_API_KEY`). 
+See [instructions](https://studio.ai21.com/account/account).
 
-### LLM
+```bash
+pip install ai21
+```
 
-There exists an AI21 LLM wrapper, which you can access with 
+
+## LLMs
+
 ```python
 from langchain.llms import AI21
 ```
+
+[See an example](/docs/modules/model_io/models/llms/integrations/ai21.html).

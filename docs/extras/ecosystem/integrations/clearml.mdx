@@ -1,0 +1,32 @@
+# ClearML
+
+> [ClearML](https://github.com/allegroai/clearml) is a ML/DL development and production suite, it contains 5 main modules:
+> - `Experiment Manager` - experiment tracking, environments and results
+> - `MLOps` - Orchestration, Automation & Pipelines solution for ML/DL jobs (K8s / Cloud / bare-metal)
+> - `Data-Management` - Fully differentiable data management & version control solution on top of object-storage (S3 / GS / Azure / NAS)
+> - `Model-Serving` - cloud-ready Scalable model serving solution!
+    Deploy new model endpoints in under 5 minutes
+    Includes optimized GPU serving support backed by Nvidia-Triton
+    with out-of-the-box Model Monitoring
+> - `Fire Reports` - Create and share rich MarkDown documents supporting embeddable online content
+
+## Installation and Setup
+
+In order to properly keep track of your langchain experiments and their results, you can enable the `ClearML` integration. We use the `ClearML Experiment Manager` that neatly tracks and organizes all your experiment runs.
+
+We need to get [API credentials](https://app.clear.ml/settings/workspace-configuration) and
+set up the environment variables: `CLEARML_API_ACCESS_KEY` and `CLEARML_API_SECRET_KEY`.
+
+
+```bash
+pip install clearml
+```
+
+
+## Callbacks
+
+```python
+from langchain.callbacks import ClearMLCallbackHandler
+```
+
+[See an example](/docs/modules/callbacks/integrations/clearml.html).
