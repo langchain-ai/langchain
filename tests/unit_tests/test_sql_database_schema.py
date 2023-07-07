@@ -136,7 +136,7 @@ def test_sql_database_run_native_format() -> None:
     # )
 
     command = 'select pizza_id, pizza_ingredients, time_cooked from "pizza" where pizza_id = 27'
-    output: List[Dict[str, Any]] = db.run(command, native_format=True) # type: ignore
+    output: List[Dict[str, Any]] = db.run(command, native_format=True)  # type: ignore
     expected_output = {
         "pizza_id": 27,
         "pizza_ingredients": ["Pepperoni", "Cheese", "Pineapple"],

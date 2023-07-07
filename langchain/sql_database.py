@@ -11,7 +11,6 @@ from sqlalchemy import MetaData, Table, create_engine, inspect, select, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
-from sqlalchemy import BaseRow
 
 from langchain import utils
 
@@ -370,7 +369,7 @@ class SQLDatabase:
             cursor = connection.execute(text(command))
             if cursor.returns_rows:
                 if fetch == "all":
-                    result: Sequence[BaseRow] = cursor.fetchall()
+                    result = cursor.fetchall()
                 elif fetch == "one":
                     result = cursor.fetchone()  # type: ignore
                 else:
@@ -383,8 +382,10 @@ class SQLDatabase:
                             {k: _try_eval(v) for k, v in dict(d._asdict()).items()}
                             for d in result
                         ]
-                    elif isinstance(result, BaseRow):
-                        return {k: _try_eval(v) for k, v in result.items()}
+                    else:
+                        return {
+                            k: _try_eval(v) for k, v in dict(result._asdict()).items()  # type: ignore
+                        }
 
                 # Convert columns values to string to avoid issues with sqlalchmey
                 # trunacating text

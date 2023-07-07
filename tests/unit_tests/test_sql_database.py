@@ -138,7 +138,7 @@ def test_sql_database_run_native_format() -> None:
         conn.execute(stmt)
     db = SQLDatabase(engine)
     command = "select user_id, user_name, user_bio from user where user_id = 13"
-    output: List[Dict[str, Any]] = db.run(command, native_format=True) # type: ignore
+    output: List[Dict[str, Any]] = db.run(command, native_format=True)  # type: ignore
     user_bio = "That is my Bio " * 19 + "That is my..."
     expected_output = {
         "user_id": 13,
