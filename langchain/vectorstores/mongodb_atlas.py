@@ -285,13 +285,12 @@ class MongoDBAtlasVectorSearch(VectorStore):
             post_filter_pipeline=post_filter_pipeline,
         )
         mmr_doc_indexes = maximal_marginal_relevance(
-            np.array([query_embedding], dtype=np.float32),
+            np.array(query_embedding),
             [doc.metadata[self._embedding_key] for doc, _ in docs],
             k=k,
             lambda_mult=lambda_mult,
         )
-        mmr_docs_with_relevance_score = [docs[i] for i in mmr_doc_indexes]
-        mmr_docs = [doc for doc, _ in mmr_docs_with_relevance_score]
+        mmr_docs = [docs[i][0] for i in mmr_doc_indexes]
         return mmr_docs
 
     @classmethod
@@ -319,7 +318,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
                 from langchain.vectorstores import MongoDBAtlasVectorSearch
                 from langchain.embeddings import OpenAIEmbeddings
 
-                client = MongoClient("<YOUR-CONNECTION-STRING>")
+                mongo_client = MongoClient("<YOUR-CONNECTION-STRING>")
                 collection = mongo_client["<db_name>"]["<collection_name>"]
                 embeddings = OpenAIEmbeddings()
                 vectorstore = MongoDBAtlasVectorSearch.from_texts(
@@ -331,6 +330,6 @@ class MongoDBAtlasVectorSearch(VectorStore):
         """
         if collection is None:
             raise ValueError("Must provide 'collection' named parameter.")
-        vecstore = cls(collection, embedding, **kwargs)
-        vecstore.add_texts(texts, metadatas=metadatas)
-        return vecstore
+        vectorstore = cls(collection, embedding, **kwargs)
+        vectorstore.add_texts(texts, metadatas=metadatas)
+        return vectorstore
