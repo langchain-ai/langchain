@@ -347,14 +347,18 @@ def _load_sql_database_chain(config: dict, **kwargs: Any) -> SQLDatabaseChain:
         database = kwargs.pop("database")
     else:
         raise ValueError("`database` must be present.")
-    if "llm" in config:
+
+    llm = None
+    llm_chain = None
+    if "llm_chain" in config:
+        llm_chain = load_chain_from_config(config.pop("llm_chain"))
+    elif "llm_chain_path" in config:
+        llm_chain = load_chain(config.pop("llm_chain_path"))
+    elif "llm" in config:
         llm_config = config.pop("llm")
         llm = load_llm_from_config(llm_config)
     elif "llm_path" in config:
         llm = load_llm(config.pop("llm_path"))
-    elif "llm_chain" in config:
-        llm_config = config.pop("llm_chain").pop("llm")
-        llm = load_llm_from_config(llm_config)
     else:
         raise ValueError("One of `llm` or `llm_path` must be present.")
     if "prompt" in config:
@@ -362,7 +366,10 @@ def _load_sql_database_chain(config: dict, **kwargs: Any) -> SQLDatabaseChain:
         prompt = load_prompt_from_config(prompt_config)
     else:
         prompt = None
-    return SQLDatabaseChain.from_llm(llm, database, prompt=prompt, **config)
+    if llm_chain:
+        return SQLDatabaseChain(llm_chain=llm_chain, database=database, **config)
+    else:
+        return SQLDatabaseChain.from_llm(llm, database, prompt=prompt, **config)
 
 
 def _load_vector_db_qa_with_sources_chain(
