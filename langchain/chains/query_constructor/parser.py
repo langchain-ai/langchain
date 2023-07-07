@@ -1,14 +1,10 @@
 import datetime
 from typing import Any, Optional, Sequence, Union
 
-try:
-    import lark
-    from packaging import version
+from langchain.utils import check_package_version
 
-    if version.parse(lark.__version__) < version.parse("1.1.5"):
-        raise ValueError(
-            f"Lark should be at least version 1.1.5, got {lark.__version__}"
-        )
+try:
+    check_package_version("lark", gte_version="1.1.5")
     from lark import Lark, Transformer, v_args
 except ImportError:
 
