@@ -2,10 +2,9 @@ import json
 import re
 from typing import Type, TypeVar
 
-from pydantic import BaseModel, ValidationError
-
 from langchain.output_parsers.format_instructions import PYDANTIC_FORMAT_INSTRUCTIONS
 from langchain.schema import BaseOutputParser, OutputParserException
+from pydantic import BaseModel, ValidationError
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -28,7 +27,7 @@ class PydanticOutputParser(BaseOutputParser[T]):
         except (json.JSONDecodeError, ValidationError) as e:
             name = self.pydantic_object.__name__
             msg = f"Failed to parse {name} from completion {text}. Got: {e}"
-            raise OutputParserException(msg)
+            raise OutputParserException(msg, llm_output=text)
 
     def get_format_instructions(self) -> str:
         schema = self.pydantic_object.schema()
