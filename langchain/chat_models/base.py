@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence
 from pydantic import Field, root_validator
 
 import langchain
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
     AsyncCallbackManager,
@@ -25,6 +24,7 @@ from langchain.schema import (
     PromptValue,
     RunInfo,
 )
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
 
 
@@ -65,10 +65,11 @@ class BaseChatModel(BaseLanguageModel, ABC):
     def _get_invocation_params(
         self,
         stop: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> dict:
         params = self.dict()
         params["stop"] = stop
-        return params
+        return {**params, **kwargs}
 
     def _get_llm_string(self, stop: Optional[List[str]] = None, **kwargs: Any) -> str:
         if self.lc_serializable:
@@ -77,7 +78,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
             llm_string = dumps(self)
             return llm_string + "---" + param_string
         else:
-            params = self._get_invocation_params(stop=stop)
+            params = self._get_invocation_params(stop=stop, **kwargs)
             params = {**params, **kwargs}
             return str(sorted([(k, v) for k, v in params.items()]))
 
@@ -92,7 +93,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
         **kwargs: Any,
     ) -> LLMResult:
         """Top Level call"""
-        params = self._get_invocation_params(stop=stop)
+        params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop}
 
         callback_manager = CallbackManager.configure(
@@ -148,7 +149,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
         **kwargs: Any,
     ) -> LLMResult:
         """Top Level call"""
-        params = self._get_invocation_params(stop=stop)
+        params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop}
 
         callback_manager = AsyncCallbackManager.configure(

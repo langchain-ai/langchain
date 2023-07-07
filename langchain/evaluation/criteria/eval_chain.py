@@ -4,12 +4,12 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
 
 from pydantic import Extra, Field
 
-from langchain.base_language import BaseLanguageModel
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.criteria.prompt import PROMPT, PROMPT_WITH_REFERENCES
-from langchain.evaluation.schema import StringEvaluator
+from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
 from langchain.schema import BaseOutputParser, BasePromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
 
 _SUPPORTED_CRITERIA = {
     "conciseness": "Is the submission concise and to the point?",
@@ -60,7 +60,7 @@ CRITERIA_TYPE = Union[
 ]
 
 
-class CriteriaEvalChain(StringEvaluator, LLMChain):
+class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     """LLM Chain for evaluating runs against criteria.
 
     Parameters
@@ -251,17 +251,24 @@ class CriteriaEvalChain(StringEvaluator, LLMChain):
                 requires_reference=True,
             )
         """
+        expected_input_vars = {"input", "output", "criteria"}
         if prompt is None:
             if requires_reference:
                 prompt = PROMPT_WITH_REFERENCES
             else:
                 prompt = PROMPT
+        if requires_reference:
+            expected_input_vars.add("reference")
+        if expected_input_vars != set(prompt.input_variables):
+            raise ValueError(
+                f"Input variables should be {expected_input_vars}, "
+                f"but got {prompt.input_variables}"
+            )
+
         criteria_ = cls.resolve_criteria(criteria)
         criteria_str = " ".join(f"{k}: {v}" for k, v in criteria_.items())
         prompt_ = prompt.partial(criteria=criteria_str)
-        return cls(
-            llm=llm, prompt=prompt_, requires_reference=requires_reference, **kwargs
-        )
+        return cls(llm=llm, prompt=prompt_, **kwargs)
 
     def _get_eval_input(
         self,
