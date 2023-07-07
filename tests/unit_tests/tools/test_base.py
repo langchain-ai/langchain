@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 from enum import Enum
 from functools import partial
-from typing import Any, Optional, Type, Union
+from typing import Any, List, Optional, Type, Union
 
 import pytest
 from pydantic import BaseModel
@@ -345,6 +345,39 @@ def test_structured_tool_from_function_docstring() -> None:
     }
 
     prefix = "foo(bar: int, baz: str) -> str - "
+    assert foo.__doc__ is not None
+    assert structured_tool.description == prefix + foo.__doc__.strip()
+
+
+def test_structured_tool_from_function_docstring_complex_args() -> None:
+    """Test that structured tools can be created from functions."""
+
+    def foo(bar: int, baz: List[str]) -> str:
+        """Docstring
+        Args:
+            bar: int
+            baz: List[str]
+        """
+        raise NotImplementedError()
+
+    structured_tool = StructuredTool.from_function(foo)
+    assert structured_tool.name == "foo"
+    assert structured_tool.args == {
+        "bar": {"title": "Bar", "type": "integer"},
+        "baz": {"title": "Baz", "type": "array", "items": {"type": "string"}},
+    }
+
+    assert structured_tool.args_schema.schema() == {
+        "properties": {
+            "bar": {"title": "Bar", "type": "integer"},
+            "baz": {"title": "Baz", "type": "array", "items": {"type": "string"}},
+        },
+        "title": "fooSchemaSchema",
+        "type": "object",
+        "required": ["bar", "baz"],
+    }
+
+    prefix = "foo(bar: int, baz: List[str]) -> str - "
     assert foo.__doc__ is not None
     assert structured_tool.description == prefix + foo.__doc__.strip()
 
