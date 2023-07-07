@@ -1,9 +1,10 @@
+from datetime import datetime, timedelta
 from typing import List, Optional
+
+from datadog_api_client import ApiClient, Configuration
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
-
-from datadog_api_client import ApiClient, Configuration
 
 
 class DatadogLogsLoader(BaseLoader):
@@ -30,9 +31,12 @@ class DatadogLogsLoader(BaseLoader):
             app_key: The Datadog APP key.
             from_time: Optional. The start of the time range to query.
                 Supports date math and regular timestamps (milliseconds) like '1688732708951'
+                Defaults to 20 minutes ago.
             to_time: Optional. The end of the time range to query.
                 Supports date math and regular timestamps (milliseconds) like '1688732708951'
+                Defaults to now.
             limit: Optional. The maximum number of logs to return.
+                Defaults to 100.
         """
         self.query = query
         self.configuration = Configuration()
@@ -89,18 +93,17 @@ class DatadogLogsLoader(BaseLoader):
                 "Please install it with `pip install datadog_api_client`."
             ) from ex
 
-        filter_params = {
-            "query": self.query,
-        }
-
-        # Only add 'from' and 'to' parameters if they are not None
-        if self.from_time is not None:
-            filter_params["_from"] = f"{self.from_time}"
-        if self.to_time is not None:
-            filter_params["to"] = f"{self.to_time}"
+        now = datetime.now()
+        twenty_minutes_before = now - timedelta(minutes=20)
+        now_timestamp = int(now.timestamp() * 1000)
+        twenty_minutes_before_timestamp = int(twenty_minutes_before.timestamp() * 1000)
 
         body = LogsListRequest(
-            filter=LogsQueryFilter(**filter_params),
+            filter=LogsQueryFilter(
+                query=self.query,
+                _from=f"{self.from_time if self.from_time is not None else twenty_minutes_before_timestamp}",
+                to=f"{self.to_time if self.to_time is not None else now_timestamp}",
+            ),
             sort=LogsSort.TIMESTAMP_ASCENDING,
             page=LogsListRequestPage(
                 limit=self.limit,
