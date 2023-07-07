@@ -29,6 +29,7 @@ from langchain.retrievers.weaviate_hybrid_search import WeaviateHybridSearchRetr
 from langchain.retrievers.wikipedia import WikipediaRetriever
 from langchain.retrievers.zep import ZepRetriever
 from langchain.retrievers.zilliz import ZillizRetriever
+from langchain.retrievers.sql_database import SQLDatabaseChainRetriever
 
 __all__ = [
     "AmazonKendraRetriever",
@@ -58,4 +59,5 @@ __all__ = [
     "ZepRetriever",
     "ZillizRetriever",
     "DocArrayRetriever",
+    "SQLDatabaseChainRetriever",
 ]
