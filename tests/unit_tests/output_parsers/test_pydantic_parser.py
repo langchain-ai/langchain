@@ -57,7 +57,7 @@ DEF_EXPECTED_RESULT = TestModel(
     for_new_lines="not_escape_newline:\n escape_newline: \n",
     for_double_quotations="Control4® T3 Series 7' Tabletop Touch Screen",
     for_list=["Capacitive touch", "Camera: 720p", "HD camera"],
-    for_bool=False
+    for_bool=False,
 )
 
 
