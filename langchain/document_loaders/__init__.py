@@ -141,12 +141,12 @@ from langchain.document_loaders.word_document import (
     UnstructuredWordDocumentLoader,
 )
 from langchain.document_loaders.xml import UnstructuredXMLLoader
+from langchain.document_loaders.xorbits import XorbitsLoader
 from langchain.document_loaders.youtube import (
     GoogleApiClient,
     GoogleApiYoutubeLoader,
     YoutubeLoader,
 )
-from langchain.document_loaders.xorbits import XorbitsLoader
 
 # Legacy: only for backwards compatibility. Use PyPDFLoader instead
 PagedPDFSplitter = PyPDFLoader

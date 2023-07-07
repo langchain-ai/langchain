@@ -16,6 +16,7 @@ class XorbitsLoader(BaseLoader):
               Defaults to "text".
         """
         import xorbits.pandas as pd
+
         if not isinstance(data_frame, pd.DataFrame):
             raise ValueError(
                 f"Expected data_frame to be a xorbits.pandas.DataFrame, got {type(data_frame)}"
