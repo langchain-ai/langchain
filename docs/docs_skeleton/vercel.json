@@ -1865,6 +1865,14 @@
       "destination": "/docs/modules/model_io/models/llms/integrations/writer"
     },
     {
+      "source": "/en/latest/modules/prompts/output_parsers.html",
+      "destination": "/docs/modules/model_io/output_parsers/"
+    },
+    {
+      "source": "/docs/modules/prompts/output_parsers.html",
+      "destination": "/docs/modules/model_io/output_parsers/"
+    },
+    {
       "source": "/en/latest/modules/prompts/output_parsers/examples/datetime.html",
       "destination": "/docs/modules/model_io/output_parsers/datetime"
     },
