@@ -251,17 +251,24 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
                 requires_reference=True,
             )
         """
+        expected_input_vars = {"input", "output", "criteria"}
         if prompt is None:
             if requires_reference:
                 prompt = PROMPT_WITH_REFERENCES
             else:
                 prompt = PROMPT
+        if requires_reference:
+            expected_input_vars.add("reference")
+        if expected_input_vars != set(prompt.input_variables):
+            raise ValueError(
+                f"Input variables should be {expected_input_vars}, "
+                f"but got {prompt.input_variables}"
+            )
+
         criteria_ = cls.resolve_criteria(criteria)
         criteria_str = " ".join(f"{k}: {v}" for k, v in criteria_.items())
         prompt_ = prompt.partial(criteria=criteria_str)
-        return cls(
-            llm=llm, prompt=prompt_, requires_reference=requires_reference, **kwargs
-        )
+        return cls(llm=llm, prompt=prompt_, **kwargs)
 
     def _get_eval_input(
         self,
