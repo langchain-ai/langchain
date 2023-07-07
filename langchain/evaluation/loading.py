@@ -22,6 +22,12 @@ from langchain.evaluation.string_distance.base import (
 def load_dataset(uri: str) -> List[Dict]:
     """Load a dataset from the `LangChainDatasets HuggingFace org <https://huggingface.co/LangChainDatasets>`_.
 
+    Args:
+        uri: The uri of the dataset to load.
+
+    Returns:
+        A list of dictionaries, each representing a row in the dataset.
+
     **Prerequisites**
 
     .. code-block:: shell

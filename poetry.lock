@@ -4999,14 +4999,14 @@ files = [
 
 [[package]]
 name = "marqo"
-version = "0.9.6"
+version = "0.11.0"
 description = "Tensor search for humans"
 category = "main"
 optional = true
 python-versions = ">=3"
 files = [
-    {file = "marqo-0.9.6-py3-none-any.whl", hash = "sha256:edccded5dd1e1f519a5419ec9165b65eb3240d94fd0e2875ce2f599248187ecf"},
-    {file = "marqo-0.9.6.tar.gz", hash = "sha256:6b8dd18c6216313a62fae40c62c14e7ea5e76c4f06ca30edbb3157075490a42e"},
+    {file = "marqo-0.11.0-py3-none-any.whl", hash = "sha256:e1a5409beeb02dcec725566cfbc5fd88a84ce65ca7bce08a1120f8082badeab4"},
+    {file = "marqo-0.11.0.tar.gz", hash = "sha256:808e691cf06f5f7d67d422dc7f5f6fcc53b9acc6a4bc000abbcae8a817fd765d"},
 ]
 
 [package.dependencies]
@@ -12525,4 +12525,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "39e4ccd01efa636118f112bba294242bab9c0d755b61f33362f763f588ee3b8a"
+content-hash = "6e2acbd4f760e92454f9f9e29840679fbd59b8662a99bcb89e2251a5b8736e6d"
