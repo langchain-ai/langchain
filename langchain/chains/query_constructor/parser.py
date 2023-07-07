@@ -4,8 +4,6 @@ from typing import Any, Optional, Sequence, Union
 from langchain.utils import check_package_version
 
 try:
-    import lark
-
     check_package_version("lark", gte_version="1.1.5")
     from lark import Lark, Transformer, v_args
 except ImportError:
