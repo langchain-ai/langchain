@@ -130,9 +130,7 @@ class TestMongoDBAtlasVectorSearch:
         )
         sleep(1)  # waits for mongot to update Lucene's index
         query = "foo"
-        output = vectorstore.max_marginal_relevance_search(
-            query, k=10, lambda_mult=0.1
-        )
+        output = vectorstore.max_marginal_relevance_search(query, k=10, lambda_mult=0.1)
         assert len(output) == len(texts)
         assert output[0].page_content == "foo"
         assert output[1].page_content != "foo"

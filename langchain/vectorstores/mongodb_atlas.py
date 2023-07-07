@@ -13,6 +13,7 @@ from typing import (
     TypeVar,
     Union,
 )
+
 import numpy as np
 
 from langchain.docstore.document import Document
@@ -205,7 +206,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             embedding,
             k=k,
             pre_filter=pre_filter,
-            post_filter_pipeline=post_filter_pipeline
+            post_filter_pipeline=post_filter_pipeline,
         )
         return docs
 
@@ -281,13 +282,13 @@ class MongoDBAtlasVectorSearch(VectorStore):
             query_embedding,
             k=fetch_k,
             pre_filter=pre_filter,
-            post_filter_pipeline=post_filter_pipeline
+            post_filter_pipeline=post_filter_pipeline,
         )
         mmr_doc_indexes = maximal_marginal_relevance(
             np.array([query_embedding], dtype=np.float32),
             [doc.metadata[self._embedding_key] for doc, _ in docs],
             k=k,
-            lambda_mult=lambda_mult
+            lambda_mult=lambda_mult,
         )
         mmr_docs_with_relevance_score = [docs[i] for i in mmr_doc_indexes]
         mmr_docs = [doc for doc, _ in mmr_docs_with_relevance_score]
