@@ -58,6 +58,25 @@ def test_chroma_with_metadatas_with_scores() -> None:
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
 
 
+def test_chroma_with_metadatas_with_scores_using_vector() -> None:
+    """Test end to end construction and scored search, using embedding vector."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    embeddings = FakeEmbeddings()
+
+    docsearch = Chroma.from_texts(
+        collection_name="test_collection",
+        texts=texts,
+        embedding=embeddings,
+        metadatas=metadatas,
+    )
+    embedded_query = embeddings.embed_query("foo")
+    output = docsearch.similarity_search_by_vector_with_relevance_scores(
+        embedding=embedded_query, k=1
+    )
+    assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
+
+
 def test_chroma_search_filter() -> None:
     """Test end to end construction and search with metadata filtering."""
     texts = ["far", "bar", "baz"]

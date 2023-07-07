@@ -35,6 +35,10 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
     """
 
     @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"anthropic_api_key": "ANTHROPIC_API_KEY"}
+
+    @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
         return "anthropic-chat"
