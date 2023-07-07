@@ -119,14 +119,15 @@ def convert_python_function_to_openai_function(function: Callable) -> Dict[str, 
 def convert_to_openai_function(
     function: Union[Dict[str, Any], BaseModel, Callable]
 ) -> Dict[str, Any]:
-    """Convert a raw function/class to an OpenAI function JsonSchema.
+    """Convert a raw function/class to an OpenAI function.
 
     Args:
         function: Either a dictionary, a pydantic.BaseModel, or a Python function. If
-            a dictionary is passed in, it is assumed to already be a valid JsonSchema.
+            a dictionary is passed in, it is assumed to already be a valid OpenAI
+            function.
 
     Returns:
-        A JsonSchema version of the passed in function which is compatible with the
+        A dict version of the passed in function which is compatible with the
             OpenAI function-calling API.
     """
     if isinstance(function, dict):
@@ -180,7 +181,7 @@ def create_openai_fn_chain(
     Args:
         functions: A sequence of either dictionaries, pydantic.BaseModels, or
             Python functions. If dictionaries are passed in, they are assumed to
-            already be a valid JsonSchema that conforms to OpenAI spec. If only a single
+            already be a valid OpenAI functions. If only a single
             function is passed in, then it will be enforced that the model use that
             function. pydantic.BaseModels and Python functions should have docstrings
             describing what the function does. For best results, pydantic.BaseModels
@@ -211,7 +212,7 @@ def create_openai_fn_chain(
                 from pydantic import BaseModel, Field
 
 
-                class Person(BaseModel):
+                class RecordPerson(BaseModel):
                     \"\"\"Record some identifying information about a person.\"\"\"
 
                     name: str = Field(..., description="The person's name")
@@ -219,7 +220,7 @@ def create_openai_fn_chain(
                     fav_food: Optional[str] = Field(None, description="The person's favorite food")
 
 
-                class Dog(BaseModel):
+                class RecordDog(BaseModel):
                     \"\"\"Record some identifying information about a dog.\"\"\"
 
                     name: str = Field(..., description="The dog's name")
@@ -227,9 +228,9 @@ def create_openai_fn_chain(
                     fav_food: Optional[str] = Field(None, description="The dog's favorite food")
 
 
-                chain = create_openai_fn_chain([Person, Dog])
+                chain = create_openai_fn_chain([RecordPerson, RecordDog])
                 chain.run("Harry was a chubby brown beagle who loved chicken")
-                # -> Dog(name="Harry", color="brown", fav_food="chicken")
+                # -> RecordDog(name="Harry", color="brown", fav_food="chicken")
     """  # noqa: E501
     if not functions:
         raise ValueError("Need to pass in at least one function. Received zero.")
@@ -255,7 +256,7 @@ def create_openai_fn_chain(
 
 
 def create_structured_output_chain(
-    function: Union[Dict[str, Any], BaseModel],
+    output_schema: Union[Dict[str, Any], BaseModel],
     llm: Optional[BaseLanguageModel] = None,
     prompt: Optional[BasePromptTemplate] = None,
     output_parser: Optional[BaseLLMOutputParser] = None,
@@ -264,11 +265,10 @@ def create_structured_output_chain(
     """Create an LLMChain that uses an OpenAI function to get a structured output.
 
     Args:
-        function: Either a dictionary or pydantic.BaseModel. If a dictionary is passed
-            in, it's assumed to already be a valid JsonSchema that conforms to OpenAI
-            spec. pydantic.BaseModels should have docstrings describing what the
-            function does. For best results, pydantic.BaseModels should have
-            descriptions of the parameters as well.
+        output_schema: Either a dictionary or pydantic.BaseModel. If a dictionary is
+            passed in, it's assumed to already be a valid JsonSchema.
+            For best results, pydantic.BaseModels should have docstrings describing what
+            the schema represents and descriptions for the parameters.
         llm: Language model to use, assumed to support the OpenAI function-calling API.
             Defaults to ChatOpenAI using model gpt-3.5-turbo-0613.
         prompt: BasePromptTemplate to pass to the model. Defaults to a prompt that just
@@ -289,7 +289,7 @@ def create_structured_output_chain(
                 from pydantic import BaseModel, Field
 
                 class Dog(BaseModel):
-                    \"\"\"Record some identifying information about a dog.\"\"\"
+                    \"\"\"Identifying information about a dog.\"\"\"
 
                     name: str = Field(..., description="The dog's name")
                     color: str = Field(..., description="The dog's color")
@@ -299,6 +299,17 @@ def create_structured_output_chain(
                 chain.run("Harry was a chubby brown beagle who loved chicken")
                 # -> Dog(name="Harry", color="brown", fav_food="chicken")
     """  # noqa: E501
+    function: Dict = {
+        "name": "output_formatter",
+        "description": (
+            "Output formatter. Should always be used to format your response to the"
+            " user."
+        ),
+    }
+    parameters = (
+        output_schema if isinstance(output_schema, dict) else output_schema.schema()
+    )
+    function["parameters"] = parameters
     return create_openai_fn_chain(
         [function], llm=llm, prompt=prompt, output_parser=output_parser, **kwargs
     )
