@@ -1,7 +1,7 @@
-"""Base interface that all chains should implement."""
 import inspect
 import json
 import warnings
+import langchain
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
@@ -9,7 +9,6 @@ from typing import Any, Dict, List, Optional, Union
 import yaml
 from pydantic import BaseModel, Field, root_validator, validator
 
-import langchain
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
     AsyncCallbackManager,
@@ -181,10 +180,10 @@ class Chain(BaseModel, ABC):
 
     def prep_outputs(
         self,
-        inputs: Dict[str, str],
-        outputs: Dict[str, str],
+        inputs: Dict[str, Any],
+        outputs: Dict[str, Any],
         return_only_outputs: bool = False,
-    ) -> Dict[str, str]:
+    ) -> Dict[str, Any]:
         """Validate and prep outputs."""
         self._validate_outputs(outputs)
         if self.memory is not None:
@@ -194,7 +193,7 @@ class Chain(BaseModel, ABC):
         else:
             return {**inputs, **outputs}
 
-    def prep_inputs(self, inputs: Union[Dict[str, Any], Any]) -> Dict[str, str]:
+    def prep_inputs(self, inputs: Union[Dict[str, Any], Any]) -> Dict[str, Any]:
         """Validate and prep inputs."""
         if not isinstance(inputs, dict):
             _input_keys = set(self.input_keys)
@@ -207,18 +206,18 @@ class Chain(BaseModel, ABC):
                     f"A single string input was passed in, but this chain expects "
                     f"multiple inputs ({_input_keys}). When a chain expects "
                     f"multiple inputs, please call it by passing in a dictionary, "
-                    "eg `chain({'foo': 1, 'bar': 2})`"
+                    f"eg `chain({'foo': 1, 'bar': 2})`"
                 )
             inputs = {list(_input_keys)[0]: inputs}
         if self.memory is not None:
             external_context = self.memory.load_memory_variables(inputs)
-            inputs = dict(inputs, **external_context)
+            inputs = {**inputs, **external_context}
         self._validate_inputs(inputs)
         return inputs
 
     def apply(
         self, input_list: List[Dict[str, Any]], callbacks: Callbacks = None
-    ) -> List[Dict[str, str]]:
+    ) -> List[Dict[str, Any]]:
         """Call the chain on all inputs in the list."""
         return [self(inputs, callbacks=callbacks) for inputs in input_list]
 
@@ -274,9 +273,7 @@ class Chain(BaseModel, ABC):
         """Return dictionary representation of chain."""
         if self.memory is not None:
             raise ValueError("Saving of memory is not yet supported.")
-        _dict = super().dict()
-        _dict["_type"] = self._chain_type
-        return _dict
+        return {**super().dict(), "_type": self._chain_type}
 
     def save(self, file_path: Union[Path, str]) -> None:
         """Save the chain.
@@ -302,10 +299,10 @@ class Chain(BaseModel, ABC):
         chain_dict = self.dict()
 
         if save_path.suffix == ".json":
-            with open(file_path, "w") as f:
+            with open(save_path, "w") as f:
                 json.dump(chain_dict, f, indent=4)
         elif save_path.suffix == ".yaml":
-            with open(file_path, "w") as f:
+            with open(save_path, "w") as f:
                 yaml.dump(chain_dict, f, default_flow_style=False)
         else:
             raise ValueError(f"{save_path} must be json or yaml")
