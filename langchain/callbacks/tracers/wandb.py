@@ -1,17 +1,26 @@
 """A Tracer Implementation that records activity to Weights & Biases."""
 from __future__ import annotations
 
-import copy
-import importlib
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, TypedDict, Union
+import json
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    TypedDict,
+    Union,
+)
 
-import langchain
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import Run, RunTypeEnum
 
 if TYPE_CHECKING:
     from wandb import Settings as WBSettings
     from wandb.sdk.data_types import trace_tree
+    from wandb.sdk.data_types.trace_tree import Span
     from wandb.sdk.lib.paths import StrPath
     from wandb.wandb_run import Run as WBRun
 
@@ -27,211 +36,252 @@ def _serialize_inputs(run_inputs: dict) -> dict:
         return run_inputs
 
 
-def _maybe_replace_key(
-    obj: Dict[str, Any],
-    key: str,
-) -> None:
-    if key in obj and isinstance(obj[key], list):
-        obj[key] = ".".join(obj[key])
+class RunProcessor:
+    def __init__(self, wandb_module: Any, trace_module: Any):
+        self.wandb = wandb_module
+        self.trace_tree = trace_module
 
-    for k, v in obj.items():
-        if isinstance(v, dict):
-            _maybe_replace_key(v, key)
+    def process_span(self, run: Run) -> Optional["Span"]:
+        try:
+            span = self._convert_lc_run_to_wb_span(run)
+            return span
+        except Exception as e:
+            if PRINT_WARNINGS:
+                self.wandb.termwarn(
+                    f"Skipping trace saving - unable to safely convert LangChain Run "
+                    f"into W&B Trace due to: {e}"
+                )
+            return
 
+    def _convert_run_to_wb_span(self, run: Run) -> "Span":
+        attributes = {**run.extra} if run.extra else {}
+        attributes["execution_order"] = run.execution_order
 
-def _maybe_scrub_key(obj: Dict[str, Any], key: str) -> None:
-    if isinstance(obj, dict):
-        # the call to `list` is useless for py2 but makes
-        # the code py2/py3 compatible
-        for k in list(obj.keys()):
-            if k == key or "api_key" in k.lower():
-                del obj[k]
-            else:
-                _maybe_scrub_key(obj[k], key)
-    elif isinstance(obj, list):
-        for i in reversed(range(len(obj))):
-            if obj[i] == key or "api_key" in obj[i].lower():
-                del obj[i]
-            else:
-                _maybe_scrub_key(obj[i], key)
-
-    else:
-        # neither a dict nor a list, do nothing
-        pass
-
-
-def _load_class_from_name(module_name: str, class_name: str) -> Any:
-    # load the module, will raise ImportError if module cannot be loaded
-    m = importlib.import_module(module_name)
-    # get the class, will raise AttributeError if class cannot be found
-    c = getattr(m, class_name)
-    return c
-
-
-def _maybe_infer_kind_from_id(id_value: str) -> str:
-    id_value_splits = id_value.rsplit(".", 1)
-    if len(id_value_splits) == 2:
-        module_name, class_name = id_value_splits
-        id_value = _load_class_from_name(module_name, class_name)
-    else:
-        return "unknown"
-    if issubclass(id_value, langchain.agents.agent.AgentExecutor):
-        return "agentexecutor"
-    elif issubclass(id_value, langchain.chains.base.Chain):
-        return "llm_chain"
-    elif issubclass(id_value, langchain.llms.base.BaseLLM):
-        return "llm"
-    elif issubclass(id_value, langchain.prompts.prompt.PromptTemplate):
-        return "prompt"
-    else:
-        return "unknown"
-
-
-def _identify_kind_and_add_key(d: Dict[str, Any]) -> Any:
-    if isinstance(d, dict):
-        for key, value in d.items():
-            if isinstance(value, dict):
-                if "id" in value:
-                    value["_kind"] = _maybe_infer_kind_from_id(value["id"])
-                elif "name" in value:
-                    value["_kind"] = value["name"]
-                _identify_kind_and_add_key(value)  # Recursive call for dictionary value
-            elif isinstance(value, list):
-                for item in value:
-                    _identify_kind_and_add_key(
-                        item
-                    )  # Recursive call for each item in the list
-    elif isinstance(d, list):
-        for item in d:
-            _identify_kind_and_add_key(item)  # Recursive call for each item in the list
-
-
-def _safely_convert_model_to_dict(run: Run) -> Dict[str, Any]:
-    try:
-        serialized = copy.deepcopy(run.serialized)
-        serialized["_kind"] = run.run_type.value
-
-        model_dict = {f"{run.execution_order}_{run.name}": serialized}
-
-        for child_run in run.child_runs:
-            serialized = copy.deepcopy(child_run.serialized)
-            serialized["_kind"] = child_run.run_type.value
-            model_dict[f"{child_run.execution_order}_{child_run.name}"] = serialized
-
-        _maybe_replace_key(model_dict, "id")
-        for key in ("lc", "type"):
-            _maybe_scrub_key(model_dict, key)
-
-        _identify_kind_and_add_key(model_dict)
-
-        return model_dict
-    except Exception as e:
-        if PRINT_WARNINGS:
-            print(f"WARNING: Failed to serialize model: {e}")
-        return {}
-
-
-def _convert_llm_run_to_wb_span(trace_tree: Any, run: Run) -> trace_tree.Span:
-    base_span = _convert_run_to_wb_span(trace_tree, run)
-
-    base_span.results = [
-        trace_tree.Result(
-            inputs={"prompt": prompt},
-            outputs={
-                f"gen_{g_i}": gen["text"]
-                for g_i, gen in enumerate(run.outputs["generations"][ndx])
-            }
-            if (
-                run.outputs is not None
-                and len(run.outputs["generations"]) > ndx
-                and len(run.outputs["generations"][ndx]) > 0
-            )
-            else None,
+        return self.trace_tree.Span(
+            span_id=str(run.id) if run.id is not None else None,
+            name=run.name,
+            start_time_ms=int(run.start_time.timestamp() * 1000),
+            end_time_ms=int(run.end_time.timestamp() * 1000),
+            status_code=self.trace_tree.StatusCode.SUCCESS
+            if run.error is None
+            else self.trace_tree.StatusCode.ERROR,
+            status_message=run.error,
+            attributes=attributes,
         )
-        for ndx, prompt in enumerate(run.inputs["prompts"] or [])
-    ]
-    base_span.span_kind = trace_tree.SpanKind.LLM
 
-    return base_span
+    def _convert_llm_run_to_wb_span(self, run: Run) -> "Span":
+        base_span = self._convert_run_to_wb_span(run)
+        base_span.attributes["llm_output"] = run.outputs.get("llm_output", {})
 
+        base_span.results = [
+            self.trace_tree.Result(
+                inputs={"prompt": prompt},
+                outputs={
+                    f"gen_{g_i}": gen["text"]
+                    for g_i, gen in enumerate(run.outputs["generations"][ndx])
+                }
+                if (
+                    run.outputs is not None
+                    and len(run.outputs["generations"]) > ndx
+                    and len(run.outputs["generations"][ndx]) > 0
+                )
+                else None,
+            )
+            for ndx, prompt in enumerate(run.inputs["prompts"] or [])
+        ]
+        base_span.span_kind = self.trace_tree.SpanKind.LLM
 
-def _convert_chain_run_to_wb_span(trace_tree: Any, run: Run) -> trace_tree.Span:
-    base_span = _convert_run_to_wb_span(trace_tree, run)
+        return base_span
 
-    base_span.results = [
-        trace_tree.Result(inputs=_serialize_inputs(run.inputs), outputs=run.outputs)
-    ]
-    base_span.child_spans = [
-        _convert_lc_run_to_wb_span(trace_tree, child_run)
-        for child_run in run.child_runs
-    ]
-    base_span.span_kind = (
-        trace_tree.SpanKind.AGENT
-        if "agent" in run.name.lower()
-        else trace_tree.SpanKind.CHAIN
-    )
+    def _convert_chain_run_to_wb_span(self, run: Run) -> "Span":
+        base_span = self._convert_run_to_wb_span(run)
 
-    return base_span
+        base_span.results = [
+            self.trace_tree.Result(
+                inputs=_serialize_inputs(run.inputs), outputs=run.outputs
+            )
+        ]
+        base_span.child_spans = [
+            self._convert_lc_run_to_wb_span(child_run) for child_run in run.child_runs
+        ]
+        base_span.span_kind = (
+            self.trace_tree.SpanKind.AGENT
+            if "agent" in run.name.lower()
+            else self.trace_tree.SpanKind.CHAIN
+        )
 
+        return base_span
 
-def _convert_tool_run_to_wb_span(trace_tree: Any, run: Run) -> trace_tree.Span:
-    base_span = _convert_run_to_wb_span(trace_tree, run)
-    base_span.results = [
-        trace_tree.Result(inputs=_serialize_inputs(run.inputs), outputs=run.outputs)
-    ]
-    base_span.child_spans = [
-        _convert_lc_run_to_wb_span(trace_tree, child_run)
-        for child_run in run.child_runs
-    ]
-    base_span.span_kind = trace_tree.SpanKind.TOOL
+    def _convert_tool_run_to_wb_span(self, run: Run) -> "Span":
+        base_span = self._convert_run_to_wb_span(run)
+        base_span.results = [
+            self.trace_tree.Result(
+                inputs=_serialize_inputs(run.inputs), outputs=run.outputs
+            )
+        ]
+        base_span.child_spans = [
+            self._convert_lc_run_to_wb_span(child_run) for child_run in run.child_runs
+        ]
+        base_span.span_kind = self.trace_tree.SpanKind.TOOL
 
-    return base_span
+        return base_span
 
+    def _convert_lc_run_to_wb_span(self, run: Run) -> "Span":
+        if run.run_type == RunTypeEnum.llm:
+            return self._convert_llm_run_to_wb_span(run)
+        elif run.run_type == RunTypeEnum.chain:
+            return self._convert_chain_run_to_wb_span(run)
+        elif run.run_type == RunTypeEnum.tool:
+            return self._convert_tool_run_to_wb_span(run)
+        else:
+            return self._convert_run_to_wb_span(run)
 
-def _convert_lc_run_to_wb_span(trace_tree: Any, run: Run) -> trace_tree.Span:
-    if run.run_type == RunTypeEnum.llm:
-        return _convert_llm_run_to_wb_span(trace_tree, run)
-    elif run.run_type == RunTypeEnum.chain:
-        return _convert_chain_run_to_wb_span(trace_tree, run)
-    elif run.run_type == RunTypeEnum.tool:
-        return _convert_tool_run_to_wb_span(trace_tree, run)
-    else:
-        return _convert_run_to_wb_span(trace_tree, run)
+    def process_model(self, run: Run) -> Optional[Dict[str, Any]]:
+        try:
+            data = json.loads(run.json())
+            processed = self.flatten_run(data)
+            keep_keys = (
+                "id",
+                "name",
+                "serialized",
+                "inputs",
+                "outputs",
+                "parent_run_id",
+                "execution_order",
+            )
+            processed = self.truncate_run_iterative(processed, keep_keys=keep_keys)
+            exact_keys, partial_keys = ("lc", "type"), ("api_key",)
+            processed = self.modify_serialized_iterative(
+                processed, exact_keys=exact_keys, partial_keys=partial_keys
+            )
+            processed = self.build_tree(processed)
+            return processed
+        except Exception as e:
+            if PRINT_WARNINGS:
+                self.wandb.termwarn(f"WARNING: Failed to serialize model: {e}")
+            return
 
+    def flatten_run(self, run: Dict[str, Any]) -> List[Dict[str, Any]]:
+        def flatten(child_runs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+            if child_runs is None:
+                return []
 
-def _convert_run_to_wb_span(trace_tree: Any, run: Run) -> trace_tree.Span:
-    attributes = {**run.extra} if run.extra else {}
-    attributes["execution_order"] = run.execution_order
+            result = []
+            for item in child_runs:
+                child_runs = item.pop("child_runs", [])
+                result.append(item)
+                result.extend(flatten(child_runs))
 
-    return trace_tree.Span(
-        span_id=str(run.id) if run.id is not None else None,
-        name=run.name,
-        start_time_ms=int(run.start_time.timestamp() * 1000),
-        end_time_ms=int(run.end_time.timestamp() * 1000),
-        status_code=trace_tree.StatusCode.SUCCESS
-        if run.error is None
-        else trace_tree.StatusCode.ERROR,
-        status_message=run.error,
-        attributes=attributes,
-    )
+            return result
 
+        return flatten([run])
 
-def _replace_type_with_kind(data: Any) -> Any:
-    if isinstance(data, dict):
-        # W&B TraceTree expects "_kind" instead of "_type" since `_type` is special
-        # in W&B.
-        if "_type" in data:
-            _type = data.pop("_type")
-            data["_kind"] = _type
-        return {k: _replace_type_with_kind(v) for k, v in data.items()}
-    elif isinstance(data, list):
-        return [_replace_type_with_kind(v) for v in data]
-    elif isinstance(data, tuple):
-        return tuple(_replace_type_with_kind(v) for v in data)
-    elif isinstance(data, set):
-        return {_replace_type_with_kind(v) for v in data}
-    else:
-        return data
+    def truncate_run_iterative(
+        self, runs: List[Dict[str, Any]], keep_keys: Tuple[str, ...] = ()
+    ) -> List[Dict[str, Any]]:
+        def truncate_single(run: Dict[str, Any]):
+            new_dict = {}
+            for key in run:
+                if key in keep_keys:
+                    new_dict[key] = run.get(key)
+            return new_dict
+
+        return list(map(truncate_single, runs))
+
+    def modify_serialized_iterative(
+        self,
+        runs: List[Dict[str, Any]],
+        exact_keys: Tuple[str, ...] = (),
+        partial_keys: Tuple[str, ...] = (),
+    ) -> List[Dict[str, Any]]:
+        def remove_exact_and_partial_keys(obj: Dict[str, Any]) -> Dict[str, Any]:
+            if isinstance(obj, dict):
+                obj = {
+                    k: v
+                    for k, v in obj.items()
+                    if k not in exact_keys
+                    and not any(partial in k for partial in partial_keys)
+                }
+                for k, v in obj.items():
+                    obj[k] = remove_exact_and_partial_keys(v)
+            elif isinstance(obj, list):
+                obj = [remove_exact_and_partial_keys(x) for x in obj]
+            return obj
+
+        def handle_id_and_kwargs(
+            obj: Dict[str, Any], root: bool = False
+        ) -> Dict[str, Any]:
+            if isinstance(obj, dict):
+                if ("id" in obj or "name" in obj) and not root:
+                    _kind = obj.get("id")
+                    if not _kind:
+                        _kind = [obj.get("name")]
+                    obj["_kind"] = _kind[-1]
+                    obj.pop("id", None)
+                    obj.pop("name", None)
+                    if "kwargs" in obj:
+                        kwargs = obj.pop("kwargs")
+                        for k, v in kwargs.items():
+                            obj[k] = v
+                for k, v in obj.items():
+                    obj[k] = handle_id_and_kwargs(v)
+            elif isinstance(obj, list):
+                obj = [handle_id_and_kwargs(x) for x in obj]
+            return obj
+
+        def transform_serialized(serialized: Dict[str, Any]) -> Dict[str, Any]:
+            serialized = handle_id_and_kwargs(serialized, root=True)
+            serialized = remove_exact_and_partial_keys(serialized)
+            return serialized
+
+        def transform_run(run: Dict[str, Any]) -> Dict[str, Any]:
+            transformed_dict = transform_serialized(run)
+
+            # Replace 'serialized' with the transformed dictionary
+            serialized = transformed_dict.pop("serialized")
+            for k, v in serialized.items():
+                transformed_dict[k] = v
+
+            _kind = transformed_dict.get("_kind", None)
+            name = transformed_dict.pop("name", None)
+            exec_ord = transformed_dict.pop("execution_order", None)
+
+            if not name:
+                name = _kind
+
+            output_dict = {
+                f"{exec_ord}_{name}": transformed_dict,
+            }
+            return output_dict
+
+        return list(map(transform_run, runs))
+
+    def build_tree(self, input_list):
+        id_to_data = {}
+        child_to_parent = {}
+
+        # Create id to data mapping and child to parent mapping
+        for entity in input_list:
+            for key, data in entity.items():
+                id_val = data.pop("id", None)
+                parent_run_id = data.pop("parent_run_id", None)
+                id_to_data[id_val] = {key: data}
+                if parent_run_id:
+                    child_to_parent[id_val] = parent_run_id
+
+        # Build the nested dictionary
+        for child_id, parent_id in child_to_parent.items():
+            parent_dict = id_to_data[parent_id]
+            parent_dict[next(iter(parent_dict))][
+                next(iter(id_to_data[child_id]))
+            ] = id_to_data[child_id][next(iter(id_to_data[child_id]))]
+
+        # Find the root dictionary and return
+        root_dict = next(
+            data for id_val, data in id_to_data.items() if id_val not in child_to_parent
+        )
+
+        return root_dict
 
 
 class WandbRunArgs(TypedDict):
@@ -305,6 +355,7 @@ class WandbTracer(BaseTracer):
         self._trace_tree = trace_tree
         self._run_args = run_args
         self._ensure_run(should_print_url=(wandb.run is None))
+        self.run_processor = RunProcessor(self._wandb, self._trace_tree)
 
     def finish(self) -> None:
         """Waits for all asynchronous processes to finish and data to upload.
@@ -317,17 +368,11 @@ class WandbTracer(BaseTracer):
         """Logs a LangChain Run to W*B as a W&B Trace."""
         self._ensure_run()
 
-        try:
-            root_span = _convert_lc_run_to_wb_span(self._trace_tree, run)
-        except Exception as e:
-            if PRINT_WARNINGS:
-                self._wandb.termwarn(
-                    f"Skipping trace saving - unable to safely convert LangChain Run "
-                    f"into W&B Trace due to: {e}"
-                )
-            return
+        root_span = self.run_processor.process_span(run)
+        model_dict = self.run_processor.process_model(run)
 
-        model_dict = _safely_convert_model_to_dict(run)
+        if root_span is None:
+            return
 
         model_trace = self._trace_tree.WBTraceTree(
             root_span=root_span,
