@@ -267,14 +267,14 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         run: Run = inputs["run"]
         example: Optional[Example] = inputs.get("example")
         evaluate_strings_inputs = self.run_mapper(run)
-        if self.example_mapper:
-            if not example:
-                raise ValueError(
-                    f"Evaluator {self.name} requires an reference"
-                    " example from the dataset,"
-                    f" but none was provided for run {run.id}."
-                )
+        if example and self.example_mapper:
             evaluate_strings_inputs.update(self.example_mapper(example))
+        elif self.string_evaluator.requires_reference:
+            raise ValueError(
+                f"Evaluator {self.name} requires an reference"
+                " example from the dataset,"
+                f" but none was provided for run {run.id}."
+            )
         return evaluate_strings_inputs
 
     def _prepare_output(self, output: Dict[str, Any]) -> EvaluationResult:
@@ -353,11 +353,8 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
                 " not yet implemented."
                 "Expected one of [BaseLanguageModel, Chain, Tool]."
             )
-        if reference_key is not None:
+        if reference_key is not None or isinstance(model, BaseLanguageModel):
             example_mapper = StringExampleMapper(reference_key=reference_key)
-        elif evaluator.requires_reference and isinstance(model, BaseLanguageModel):
-            # Datasets have an LLM type so we can auto-infer
-            example_mapper = StringExampleMapper()
         elif evaluator.requires_reference:
             # We could potentially auto-infer if there is only one string in the
             # example, but it's preferred to raise earlier.
