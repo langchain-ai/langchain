@@ -5,7 +5,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class XorbitsDataFrameLoader(BaseLoader):
-    """Load Pandas DataFrame."""
+    """Load Xorbits DataFrame."""
 
     def __init__(self, data_frame: Any, page_content_column: str = "text"):
         """Initialize with dataframe object.
