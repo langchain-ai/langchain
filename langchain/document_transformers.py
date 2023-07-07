@@ -3,7 +3,6 @@ from typing import Any, Callable, List, Sequence
 
 import numpy as np
 from pydantic import BaseModel, Field
-from sklearn.cluster import KMeans
 
 from langchain.embeddings.base import Embeddings
 from langchain.math_utils import cosine_similarity
@@ -80,6 +79,15 @@ def _filter_cluster_embeddings(
     remove_duplicates: bool,
 ) -> List[int]:
     """Filter documents based on proximity of their embeddings to clusters."""
+
+    try:
+        from sklearn.cluster import KMeans
+    except ImportError:
+        raise ValueError(
+            "sklearn package not found, please install it with "
+            "`pip install scikit-learn`"
+        )
+
     kmeans = KMeans(n_clusters=num_clusters, random_state=random_state).fit(
         embedded_documents
     )
