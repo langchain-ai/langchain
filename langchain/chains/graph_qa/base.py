@@ -75,9 +75,10 @@ class GraphQAChain(Chain):
         )
         entities = get_entities(entity_string)
         context = ""
+        all_triplets = []
         for entity in entities:
-            triplets = self.graph.get_entity_knowledge(entity)
-            context += "\n".join(triplets)
+            all_triplets.extend(self.graph.get_entity_knowledge(entity))
+        context = "\n".join(all_triplets)
         _run_manager.on_text("Full Context:", end="\n", verbose=self.verbose)
         _run_manager.on_text(context, color="green", end="\n", verbose=self.verbose)
         result = self.qa_chain(
