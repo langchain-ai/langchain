@@ -161,6 +161,11 @@ class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
     def requires_input(self) -> bool:
         return True
 
+    class Config:
+        """Configuration for the QAEvalChain."""
+
+        extra = Extra.ignore
+
     @classmethod
     def _validate_input_vars(cls, prompt: PromptTemplate) -> None:
         expected_input_vars = {"query", "context", "result"}
