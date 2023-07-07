@@ -101,7 +101,7 @@ class LLMStringRunMapper(StringRunMapper):
                 )
             else:
                 raise ValueError(
-                    f"Run {run.id} outputs not found. Please make sure this"
+                    f"Run {run.id} has no outputs. Cannot evaluate this run."
                 )
         else:
             try:
@@ -207,6 +207,11 @@ class StringExampleMapper(Serializable):
         """The keys to extract from the run."""
         return ["reference"]
 
+    def serialize_chat_messages(self, messages: List[Dict]) -> str:
+        """Extract the input messages from the run."""
+        chat_messages = messages_from_dict(messages)
+        return get_buffer_string(chat_messages)
+
     def map(self, example: Example) -> Dict[str, str]:
         """Maps the Example, or dataset row to a dictionary."""
         if not example.outputs:
@@ -220,7 +225,15 @@ class StringExampleMapper(Serializable):
                     " specify a reference_key."
                 )
             else:
-                return {"reference": list(example.outputs.values())[0]}
+                output = list(example.outputs.values())[0]
+                return {
+                    "reference": self.serialize_chat_messages([output])
+                    if isinstance(output, dict)
+                    and output.get("type")
+                    and output.get("data")
+                    else output
+                }
+
         elif self.reference_key not in example.outputs:
             raise ValueError(
                 f"Example {example.id} does not have reference key"
@@ -350,7 +363,12 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
             )
         if reference_key is not None:
             example_mapper = StringExampleMapper(reference_key=reference_key)
+        elif evaluator.requires_reference and isinstance(model, BaseLanguageModel):
+            # Datasets have an LLM type so we can auto-infer
+            example_mapper = StringExampleMapper()
         elif evaluator.requires_reference:
+            # We could potentially auto-infer if there is only one string in the
+            # example, but it's preferred to raise earlier.
             raise ValueError(
                 f"Evaluator {evaluator.evaluation_name} requires a reference"
                 " example from the dataset. Please specify the reference key from"
