@@ -15,7 +15,8 @@ from langchain.callbacks.manager import (
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import StringEvaluator
 from langchain.load.serializable import Serializable
-from langchain.schema import RUN_KEY, get_buffer_string, messages_from_dict
+from langchain.schema import RUN_KEY, messages_from_dict
+from langchain.schema.messages import BaseMessage, get_buffer_string
 from langchain.tools.base import Tool
 
 
@@ -43,8 +44,16 @@ class LLMStringRunMapper(StringRunMapper):
 
     def serialize_chat_messages(self, messages: List[Dict]) -> str:
         """Extract the input messages from the run."""
-        chat_messages = messages_from_dict(messages)
-        return get_buffer_string(chat_messages)
+        if isinstance(messages, list) and messages:
+            if isinstance(messages[0], BaseMessage):
+                chat_messages = messages_from_dict(messages)
+            elif isinstance(messages[0], list):
+                # Runs from Tracer have messages as a list of lists of dicts
+                chat_messages = messages_from_dict(messages[0])
+            else:
+                raise ValueError(f"Could not extract messages to evaluate {messages}")
+            return get_buffer_string(chat_messages)
+        raise ValueError(f"Could not extract messages to evaluate {messages}")
 
     def serialize_inputs(self, inputs: Dict) -> str:
         if "prompts" in inputs:  # Should we even accept this?
@@ -59,10 +68,18 @@ class LLMStringRunMapper(StringRunMapper):
 
     def serialize_outputs(self, outputs: Dict) -> str:
         if not outputs.get("generations"):
-            raise ValueError("LLM Run must have generations as outputs.")
+            raise ValueError("Cannot evaluate LLM Run without generations.")
         generations: List[Dict] = outputs["generations"]
-        if "messages" in generations[0]:
-            output_ = self.serialize_chat_messages(generations[0]["messages"])
+        if not generations:
+            raise ValueError("Cannot evaluate LLM run with empty generations.")
+        first_generation: Dict = generations[0]
+        if "messages" in first_generation:
+            if isinstance(first_generation, list):
+                # Runs from Tracer have generations as a list of lists of dicts
+                # Whereas Runs from the API have a list of dicts
+                first_generation = first_generation[0]
+        if "message" in first_generation:
+            return get_buffer_string(messages_from_dict([first_generation["message"]]))
         else:
             output_ = "\n\n".join(
                 [
