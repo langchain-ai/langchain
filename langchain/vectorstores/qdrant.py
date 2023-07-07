@@ -655,6 +655,21 @@ class Qdrant(VectorStore):
         distance_func = distance_func.upper()
         collection_exists = False
 
+        client = qdrant_client.QdrantClient(
+            location=location,
+            url=url,
+            port=port,
+            grpc_port=grpc_port,
+            prefer_grpc=prefer_grpc,
+            https=https,
+            api_key=api_key,
+            prefix=prefix,
+            timeout=timeout,
+            host=host,
+            path=path,
+            **kwargs,
+        )
+
         # determine if collection exists
         if (
             init_from is None
@@ -671,21 +686,6 @@ class Qdrant(VectorStore):
         if vector_size is None:
             partial_embeddings = embedding.embed_documents(texts[:1])
             vector_size = len(partial_embeddings[0])
-
-        client = qdrant_client.QdrantClient(
-            location=location,
-            url=url,
-            port=port,
-            grpc_port=grpc_port,
-            prefer_grpc=prefer_grpc,
-            https=https,
-            api_key=api_key,
-            prefix=prefix,
-            timeout=timeout,
-            host=host,
-            path=path,
-            **kwargs,
-        )
 
         vectors_config = rest.VectorParams(
             size=vector_size,
