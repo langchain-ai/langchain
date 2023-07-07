@@ -138,7 +138,7 @@ class HuggingFaceEndpoint(LLM):
             )
         if self.task == "text-generation":
             # Text generation return includes the starter text.
-            text = generated_text[0]["generated_text"][len(prompt) :]
+            text = generated_text[0]["generated_text"]
         elif self.task == "text2text-generation":
             text = generated_text[0]["generated_text"]
         elif self.task == "summarization":
