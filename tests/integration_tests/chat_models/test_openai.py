@@ -1,8 +1,12 @@
 """Test ChatOpenAI wrapper."""
 
 
+from collections import defaultdict
+from typing import Any
+
 import pytest
 
+from langchain.callbacks.base import NewTokenIndicies
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.schema import (
@@ -70,6 +74,7 @@ def test_chat_openai_multiple_completions() -> None:
 
 def test_chat_openai_streaming() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
+
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
     chat = ChatOpenAI(
@@ -83,6 +88,53 @@ def test_chat_openai_streaming() -> None:
     response = chat([message])
     assert callback_handler.llm_streams > 0
     assert isinstance(response, BaseMessage)
+
+
+def test_chat_openai_streaming_multiple_prompts_and_completions() -> None:
+    class RecordHandler(FakeCallbackHandler):
+        num_tokens = 0
+        completions: dict[int, dict[int, str]] = defaultdict(lambda: defaultdict(str))
+
+        def on_llm_new_token(
+            self,
+            token: str,
+            idx: NewTokenIndicies,
+            **kwargs: Any,
+        ) -> Any:
+            super().on_llm_new_token(token, idx, **kwargs)
+
+            self.num_tokens += 1
+            self.completions[idx.prompt][idx.completion] += token
+
+    callback_handler = FakeCallbackHandler()
+    record_handler = RecordHandler()
+
+    callback_manager = CallbackManager([callback_handler, record_handler])
+    chat = ChatOpenAI(
+        n=3,
+        model="gpt-3.5-turbo",
+        max_tokens=10,
+        streaming=True,
+        callback_manager=callback_manager,
+    )
+
+    message_1 = HumanMessage(content="Hello!")
+    message_2 = HumanMessage(content="Bye!")
+
+    response = chat.generate([[message_1], [message_2]])
+
+    assert callback_handler.llm_streams > 0
+    assert callback_handler.llm_starts == 2
+    assert isinstance(response, LLMResult)
+
+    assert record_handler.num_tokens > 0
+    for prompt_idx, candidates in enumerate(response.generations):
+        assert len(candidates) == 3
+        for completion_idx, generation in enumerate(candidates):
+            assert (
+                generation.text
+                == record_handler.completions[prompt_idx][completion_idx]
+            )
 
 
 def test_chat_openai_llm_output_contains_model_name() -> None:
@@ -101,17 +153,6 @@ def test_chat_openai_streaming_llm_output_contains_model_name() -> None:
     llm_result = chat.generate([[message]])
     assert llm_result.llm_output is not None
     assert llm_result.llm_output["model_name"] == chat.model_name
-
-
-def test_chat_openai_invalid_streaming_params() -> None:
-    """Test that streaming correctly invokes on_llm_new_token callback."""
-    with pytest.raises(ValueError):
-        ChatOpenAI(
-            max_tokens=10,
-            streaming=True,
-            temperature=0,
-            n=5,
-        )
 
 
 @pytest.mark.asyncio
@@ -153,6 +194,54 @@ async def test_async_chat_openai_streaming() -> None:
             assert isinstance(generation, ChatGeneration)
             assert isinstance(generation.text, str)
             assert generation.text == generation.message.content
+
+
+@pytest.mark.asyncio
+async def test_async_chat_openai_streaming_multiple_prompts_and_completions() -> None:
+    class RecordHandler(FakeCallbackHandler):
+        num_tokens = 0
+        completions: dict[int, dict[int, str]] = defaultdict(lambda: defaultdict(str))
+
+        def on_llm_new_token(
+            self,
+            token: str,
+            idx: NewTokenIndicies,
+            **kwargs: Any,
+        ) -> Any:
+            super().on_llm_new_token(token, idx, **kwargs)
+
+            self.num_tokens += 1
+            self.completions[idx.prompt][idx.completion] += token
+
+    callback_handler = FakeCallbackHandler()
+    record_handler = RecordHandler()
+
+    callback_manager = CallbackManager([callback_handler, record_handler])
+    chat = ChatOpenAI(
+        n=3,
+        model="gpt-3.5-turbo",
+        max_tokens=10,
+        streaming=True,
+        callback_manager=callback_manager,
+    )
+
+    message_1 = HumanMessage(content="Hello!")
+    message_2 = HumanMessage(content="Bye!")
+
+    response = await chat.agenerate([[message_1], [message_2]])
+
+    assert callback_handler.llm_streams > 0
+    assert callback_handler.llm_starts == 2
+    assert isinstance(response, LLMResult)
+
+    assert record_handler.num_tokens > 0
+    for prompt_idx, candidates in enumerate(response.generations):
+        assert len(candidates) == 3
+        for completion_idx, generation in enumerate(candidates):
+            assert (
+                generation.text
+                == record_handler.completions[prompt_idx][completion_idx]
+            )
 
 
 def test_chat_openai_extra_kwargs() -> None:
