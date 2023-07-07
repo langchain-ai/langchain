@@ -3,10 +3,11 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Optional
+from typing import Any, Optional, List
 
 from langchain.base_language import BaseLanguageModel
 from langchain.chains.base import Chain
+from langchain.schema import BaseMessage, get_buffer_string
 
 
 class EvaluatorType(str, Enum):
@@ -102,6 +103,113 @@ class StringEvaluator(ABC):
         raise NotImplementedError(
             f"{self.__class__.__name__} hasn't implemented an "
             "async aevaluate_strings method."
+        )
+
+
+class MessageEvaluator(ABC):
+    """Protocol for evaluating messages."""
+
+    @property
+    def evaluation_name(self) -> str:
+        raise NotImplementedError()
+
+    @property
+    def requires_reference(self) -> bool:
+        return False
+
+    @abstractmethod
+    def evaluate_messages(
+        self,
+        *,
+        prediction: BaseMessage,
+        reference: Optional[BaseMessage] = None,
+        input: Optional[List[BaseMessage]] = None,
+        **kwargs: Any,
+    ) -> dict:
+        """Evaluate Chain or LLM output, based on optional input and label.
+
+        Args:
+            prediction (BaseMessage): the prediction to evaluate.
+            reference (Optional[BaseMessage], optional): the reference label
+                to evaluate against.
+            input (Optional[List[BaseMessage]], optional): the input to consider during
+                evaluation
+            **kwargs: additional keyword arguments, including callbacks, tags, etc.
+        Returns:
+            dict: The evaluation results containing the score or value.
+                It is recommended that the dictionary contain the following keys:
+                    - score: the score of the evaluation, if applicable.
+                    - value: the string value of the evaluation, if applicable.
+                    - reasoning: the reasoning for the evaluation, if applicable.
+        """
+
+    async def aevaluate_messages(
+        self,
+        *,
+        prediction: BaseMessage,
+        reference: Optional[BaseMessage] = None,
+        input: Optional[List[BaseMessage]] = None,
+        **kwargs: Any,
+    ) -> dict:
+        """Asynchronously evaluate Chain or LLM output, based on optional
+          input and label.
+
+        Args:
+            prediction (BaseMessage): the prediction to evaluate.
+            reference (Optional[BaseMessage], optional): the reference label
+                 to evaluate against.
+            input (Optional[List[BaseMessage]], optional): the input to consider during
+                evaluation
+            **kwargs: additional keyword arguments, including callbacks, tags, etc.
+        Returns:
+            dict: The evaluation results containing the score or value.
+                It is recommended that the dictionary contain the following keys:
+                    - score: the score of the evaluation, if applicable.
+                    - value: the string value of the evaluation, if applicable.
+                    - reasoning: the reasoning for the evaluation, if applicable.
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} hasn't implemented an "
+            "async aevaluate_messages method."
+        )
+
+
+
+# TODO(agola11): move this out of schema
+class SimpleMessageEvaluator(MessageEvaluator):
+    """Simple implementation of MessageEvaluator that delegates to a StringEvaluator."""
+
+    def __init__(self, string_evaluator: StringEvaluator):
+        self.string_evaluator = string_evaluator
+
+    def evaluate_messages(
+        self,
+        *,
+        prediction: BaseMessage,
+        reference: Optional[BaseMessage] = None,
+        input: Optional[List[BaseMessage]] = None,
+        **kwargs: Any,
+    ) -> dict:
+        return self.string_evaluator.evaluate_strings(
+            prediction=get_buffer_string([prediction]),
+            reference=get_buffer_string([reference]) if reference else None,
+            input=get_buffer_string(input) if input else None,
+            **kwargs,
+        )
+
+    async def aevaluate_messages(
+        self,
+        *,
+        prediction: BaseMessage,
+        reference: Optional[BaseMessage] = None,
+        input: Optional[List[BaseMessage]] = None,
+        **kwargs: Any,
+    ) -> dict:
+        return await self.string_evaluator.aevaluate_strings(
+            prediction=get_buffer_string([prediction]),
+            reference=get_buffer_string([reference]) if reference else None,
+            input=get_buffer_string(input) if input else None,
+            **kwargs,
         )
 
 
