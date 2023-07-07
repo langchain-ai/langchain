@@ -6,7 +6,7 @@ import sympy
 import warnings
 from typing import Any, Dict, List, Optional
 
-from pydantic import Extra, root_validator
+from pydantic import Extra
 
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
@@ -30,10 +30,6 @@ class LLMSymbolicMathChain(Chain):
     """
 
     llm_chain: LLMChain
-    llm: Optional[BaseLanguageModel] = None
-    """[Deprecated] LLM wrapper to use."""
-    prompt: BasePromptTemplate = PROMPT
-    """[Deprecated] Prompt to use to translate to python if necessary."""
     input_key: str = "question"  #: :meta private:
     output_key: str = "answer"  #: :meta private:
 
@@ -42,19 +38,6 @@ class LLMSymbolicMathChain(Chain):
 
         extra = Extra.forbid
         arbitrary_types_allowed = True
-
-    @root_validator(pre=True)
-    def raise_deprecation(cls, values: Dict) -> Dict:
-        if "llm" in values:
-            warnings.warn(
-                "Directly instantiating a LLMSymbolicMathChain with an llm is deprecated. "
-                "Please instantiate with llm_chain argument or using the from_llm "
-                "class method."
-            )
-            if "llm_chain" not in values and values["llm"] is not None:
-                prompt = values.get("prompt", PROMPT)
-                values["llm_chain"] = LLMChain(llm=values["llm"], prompt=prompt)
-        return values
 
     @property
     def input_keys(self) -> List[str]:
