@@ -144,7 +144,7 @@ class PGEmbedding(VectorStore):
         try:
             with Session(self._conn) as session:
                 statement = sqlalchemy.text(
-                    "CREATE EXTENSION IF NOT EXISTS pg_embedding"
+                    "CREATE EXTENSION IF NOT EXISTS embedding"
                 )
                 session.execute(statement)
                 session.commit()
