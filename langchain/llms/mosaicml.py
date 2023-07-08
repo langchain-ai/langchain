@@ -174,19 +174,6 @@ class MosaicML(LLM):
                     text = output_item[0]
                 else:
                     text = output_item
-            elif isinstance(parsed_response, list):
-                first_item = parsed_response[0]
-                if isinstance(first_item, str):
-                    text = first_item
-                elif isinstance(first_item, dict):
-                    if "output" in parsed_response:
-                        text = first_item["output"]
-                    else:
-                        raise ValueError(
-                            f"No key data or output in response: {parsed_response}"
-                        )
-                else:
-                    raise ValueError(f"Unexpected response format: {parsed_response}")
             else:
                 raise ValueError(f"Unexpected response type: {parsed_response}")
 

@@ -101,10 +101,11 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
             # The inference API has changed a couple of times, so we add some handling
             # to be robust to multiple response formats.
             if isinstance(parsed_response, dict):
-                if "data" in parsed_response:
-                    output_item = parsed_response["data"]
-                elif "output" in parsed_response:
-                    output_item = parsed_response["output"]
+                output_keys = ["data", "output", "outputs"]
+                for key in output_keys:
+                    if key in parsed_response:
+                        output_item = parsed_response[key]
+                        break
                 else:
                     raise ValueError(
                         f"No key data or output in response: {parsed_response}"
@@ -114,19 +115,6 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
                     embeddings = output_item
                 else:
                     embeddings = [output_item]
-            elif isinstance(parsed_response, list):
-                first_item = parsed_response[0]
-                if isinstance(first_item, list):
-                    embeddings = parsed_response
-                elif isinstance(first_item, dict):
-                    if "output" in first_item:
-                        embeddings = [item["output"] for item in parsed_response]
-                    else:
-                        raise ValueError(
-                            f"No key data or output in response: {parsed_response}"
-                        )
-                else:
-                    raise ValueError(f"Unexpected response format: {parsed_response}")
             else:
                 raise ValueError(f"Unexpected response type: {parsed_response}")
 
