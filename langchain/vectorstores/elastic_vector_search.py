@@ -458,6 +458,7 @@ class ElasticKnnSearch(VectorStore, ABC):
         fields: Optional[
             Union[List[Mapping[str, Any]], Tuple[Mapping[str, Any], ...], None]
         ] = None,
+        page_content: Optional[str] = 'text'
     ) -> Dict:
         """
         Performs a k-nearest neighbor (k-NN) search on the Elasticsearch index.
@@ -502,7 +503,21 @@ class ElasticKnnSearch(VectorStore, ABC):
             source=source,
             fields=fields,
         )
-        return dict(res)
+
+        hits = [hit for hit in response["hits"]["hits"]]
+        docs_and_scores = [
+            (
+                Document(
+                    page_content=hit["_source"][page_content] if source else hit['fields'][page_content],
+                    metadata=fields if metadata else None
+                ),
+                hit["_score"],
+            )
+            for hit in hits
+        ]
+        
+        #return dict(res)
+        return docs_and_scores
 
     def knn_hybrid_search(
         self,
@@ -517,6 +532,7 @@ class ElasticKnnSearch(VectorStore, ABC):
         fields: Optional[
             Union[List[Mapping[str, Any]], Tuple[Mapping[str, Any], ...], None]
         ] = None,
+        page_content: Optional[str] = 'text'
     ) -> Dict[Any, Any]:
         """Performs a hybrid k-nearest neighbor (k-NN) and text-based search on the
             Elasticsearch index.
@@ -575,7 +591,21 @@ class ElasticKnnSearch(VectorStore, ABC):
             size=size,
             source=source,
         )
-        return dict(res)
+        
+        hits = [hit for hit in response["hits"]["hits"]]
+        docs_and_scores = [
+            (
+                Document(
+                    page_content=hit["_source"][page_content] if source else hit['fields'][page_content],
+                    metadata=fields if metadata else None
+                ),
+                hit["_score"],
+            )
+            for hit in hits
+        ]
+        
+        #return dict(res)
+        return docs_and_scores
 
 
     def create_knn_index(self,
@@ -664,8 +694,8 @@ class ElasticKnnSearch(VectorStore, ABC):
             request_timeout=120, 
             yield_ok=True
         )
-        
-#        ids = [resp["_id"] for ok, resp in responses if ok]
+
+        ### TODO THIS DOESN"T RETURN THE IDs INDEXED.....
         ids = [info['_id'] for success, info in responses if success]
 
         return ids
