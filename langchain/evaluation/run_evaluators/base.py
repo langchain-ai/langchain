@@ -77,7 +77,7 @@ class RunEvaluatorChain(Chain, RunEvaluator):
     async def _acall(
         self,
         inputs: Dict[str, Any],
-        run_manager: AsyncCallbackManagerForChainRun | None = None,
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         run: Run = inputs["run"]
         example: Optional[Example] = inputs.get("example")

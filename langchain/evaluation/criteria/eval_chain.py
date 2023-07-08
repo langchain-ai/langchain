@@ -92,10 +92,37 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     --------
     >>> from langchain.chat_models import ChatAnthropic
     >>> from langchain.evaluation.criteria import CriteriaEvalChain
-    >>> llm = ChatAnthropic()
+    >>> llm = ChatAnthropic(temperature=0)
     >>> criteria = {"my-custom-criterion": "Is the submission the most amazing ever?"}
-    >>> chain = CriteriaEvalChain.from_llm(llm=llm, criteria=criteria)
-    """
+    >>> evaluator = CriteriaEvalChain.from_llm(llm=llm, criteria=criteria)
+    >>> evaluator.evaluate_strings(prediction="Imagine an ice cream flavor for the color aquamarine", input="Tell me an idea")
+    {
+        'reasoning': 'Here is my step-by-step reasoning for the given criteria:\\n\\nThe criterion is: "Is the submission the most amazing ever?" This is a subjective criterion and open to interpretation. The submission suggests an aquamarine-colored ice cream flavor which is creative but may or may not be considered the most amazing idea ever conceived. There are many possible amazing ideas and this one ice cream flavor suggestion may or may not rise to that level for every person. \\n\\nN',
+        'value': 'N',
+        'score': 0,
+    }
+
+    >>> from langchain.chat_models import ChatOpenAI
+    >>> from langchain.evaluation.criteria import CriteriaEvalChain
+    >>> llm = ChatOpenAI(model="gpt-4", temperature=0)
+    >>> criteria = "correctness"
+    >>> evaluator = CriteriaEvalChain.from_llm(
+    ...     llm=llm,
+    ...     criteria=criteria,
+    ...    requires_reference=True,
+    ... )
+    >>> evaluator.evaluate_strings(
+    ...   prediction="The answer is 4",
+    ...   input="How many apples are there?",
+    ...   reference="There are 3 apples",
+    ...   )
+    {
+        'score': 0,
+        'reasoning': 'The criterion for this task is the correctness of the submission. The submission states that there are 4 apples, but the reference indicates that there are actually 3 apples. Therefore, the submission is not correct, accurate, or factual according to the given criterion.\\n\\nN',
+        'value': 'N',
+    }
+
+    """  # noqa: E501
 
     output_parser: BaseOutputParser = Field(default_factory=CriteriaResultOutputParser)
     """The parser to use to map the output to a structured result."""

@@ -165,28 +165,35 @@ Classes
     callbacks.aim_callback.AimCallbackHandler
     callbacks.argilla_callback.ArgillaCallbackHandler
     callbacks.arize_callback.ArizeCallbackHandler
+    callbacks.arthur_callback.ArthurCallbackHandler
     callbacks.base.AsyncCallbackHandler
     callbacks.base.BaseCallbackHandler
     callbacks.base.BaseCallbackManager
     callbacks.clearml_callback.ClearMLCallbackHandler
     callbacks.comet_ml_callback.CometCallbackHandler
     callbacks.file.FileCallbackHandler
+    callbacks.flyte_callback.FlyteCallbackHandler
     callbacks.human.HumanApprovalCallbackHandler
     callbacks.human.HumanRejectedException
     callbacks.infino_callback.InfinoCallbackHandler
     callbacks.manager.AsyncCallbackManager
     callbacks.manager.AsyncCallbackManagerForChainRun
     callbacks.manager.AsyncCallbackManagerForLLMRun
+    callbacks.manager.AsyncCallbackManagerForRetrieverRun
     callbacks.manager.AsyncCallbackManagerForToolRun
+    callbacks.manager.AsyncParentRunManager
     callbacks.manager.AsyncRunManager
     callbacks.manager.BaseRunManager
     callbacks.manager.CallbackManager
     callbacks.manager.CallbackManagerForChainRun
     callbacks.manager.CallbackManagerForLLMRun
+    callbacks.manager.CallbackManagerForRetrieverRun
     callbacks.manager.CallbackManagerForToolRun
+    callbacks.manager.ParentRunManager
     callbacks.manager.RunManager
     callbacks.mlflow_callback.MlflowCallbackHandler
     callbacks.openai_info.OpenAICallbackHandler
+    callbacks.promptlayer_callback.PromptLayerCallbackHandler
     callbacks.stdout.StdOutCallbackHandler
     callbacks.streaming_aiter.AsyncIteratorCallbackHandler
     callbacks.streaming_aiter_final_only.AsyncFinalIteratorCallbackHandler
@@ -229,6 +236,8 @@ Functions
     callbacks.aim_callback.import_aim
     callbacks.clearml_callback.import_clearml
     callbacks.comet_ml_callback.import_comet_ml
+    callbacks.flyte_callback.analyze_text
+    callbacks.flyte_callback.import_flytekit
     callbacks.infino_callback.import_infino
     callbacks.manager.env_var_is_set
     callbacks.manager.get_openai_callback
@@ -283,9 +292,11 @@ Classes
     chains.base.Chain
     chains.combine_documents.base.AnalyzeDocumentChain
     chains.combine_documents.base.BaseCombineDocumentsChain
-    chains.combine_documents.map_reduce.CombineDocsProtocol
     chains.combine_documents.map_reduce.MapReduceDocumentsChain
     chains.combine_documents.map_rerank.MapRerankDocumentsChain
+    chains.combine_documents.reduce.AsyncCombineDocsProtocol
+    chains.combine_documents.reduce.CombineDocsProtocol
+    chains.combine_documents.reduce.ReduceDocumentsChain
     chains.combine_documents.refine.RefineDocumentsChain
     chains.combine_documents.stuff.StuffDocumentsChain
     chains.constitutional_ai.base.ConstitutionalChain
@@ -299,8 +310,10 @@ Classes
     chains.flare.prompts.FinishedOutputParser
     chains.graph_qa.base.GraphQAChain
     chains.graph_qa.cypher.GraphCypherQAChain
+    chains.graph_qa.hugegraph.HugeGraphQAChain
     chains.graph_qa.kuzu.KuzuQAChain
     chains.graph_qa.nebulagraph.NebulaGraphQAChain
+    chains.graph_qa.sparql.GraphSparqlQAChain
     chains.hyde.base.HypotheticalDocumentEmbedder
     chains.llm.LLMChain
     chains.llm_bash.base.LLMBashChain
@@ -363,7 +376,6 @@ Functions
 .. autosummary::
     :toctree: chains
 
-    chains.combine_documents.base.format_document
     chains.graph_qa.cypher.extract_cypher
     chains.loading.load_chain
     chains.loading.load_chain_from_config
@@ -415,6 +427,7 @@ Classes
     chat_models.fake.FakeListChatModel
     chat_models.google_palm.ChatGooglePalm
     chat_models.google_palm.ChatGooglePalmError
+    chat_models.human.HumanInputChatModel
     chat_models.openai.ChatOpenAI
     chat_models.promptlayer_openai.PromptLayerChatOpenAI
     chat_models.vertexai.ChatVertexAI
@@ -513,6 +526,7 @@ Classes
     document_loaders.blob_loaders.youtube_audio.YoutubeAudioLoader
     document_loaders.blockchain.BlockchainDocumentLoader
     document_loaders.blockchain.BlockchainType
+    document_loaders.brave_search.BraveSearchLoader
     document_loaders.chatgpt.ChatGPTLoader
     document_loaders.college_confidential.CollegeConfidentialLoader
     document_loaders.confluence.ConfluenceLoader
@@ -520,6 +534,7 @@ Classes
     document_loaders.conllu.CoNLLULoader
     document_loaders.csv_loader.CSVLoader
     document_loaders.csv_loader.UnstructuredCSVLoader
+    document_loaders.cube_semantic.CubeSemanticLoader
     document_loaders.dataframe.DataFrameLoader
     document_loaders.diffbot.DiffbotLoader
     document_loaders.directory.DirectoryLoader
@@ -736,6 +751,7 @@ Classes
     embeddings.self_hosted.SelfHostedEmbeddings
     embeddings.self_hosted_hugging_face.SelfHostedHuggingFaceEmbeddings
     embeddings.self_hosted_hugging_face.SelfHostedHuggingFaceInstructEmbeddings
+    embeddings.spacy_embeddings.SpacyEmbeddings
     embeddings.tensorflow_hub.TensorflowHubEmbeddings
     embeddings.vertexai.VertexAIEmbeddings
 
@@ -790,6 +806,9 @@ Classes
     evaluation.comparison.eval_chain.PairwiseStringResultOutputParser
     evaluation.criteria.eval_chain.CriteriaEvalChain
     evaluation.criteria.eval_chain.CriteriaResultOutputParser
+    evaluation.embedding_distance.base.EmbeddingDistance
+    evaluation.embedding_distance.base.EmbeddingDistanceEvalChain
+    evaluation.embedding_distance.base.PairwiseEmbeddingDistanceEvalChain
     evaluation.qa.eval_chain.ContextQAEvalChain
     evaluation.qa.eval_chain.CotQAEvalChain
     evaluation.qa.eval_chain.QAEvalChain
@@ -799,10 +818,16 @@ Classes
     evaluation.run_evaluators.implementations.ChoicesOutputParser
     evaluation.run_evaluators.implementations.CriteriaOutputParser
     evaluation.run_evaluators.implementations.StringRunEvaluatorInputMapper
-    evaluation.run_evaluators.implementations.TrajectoryEvalOutputParser
     evaluation.run_evaluators.implementations.TrajectoryInputMapper
+    evaluation.run_evaluators.implementations.TrajectoryRunEvalOutputParser
+    evaluation.schema.AgentTrajectoryEvaluator
+    evaluation.schema.EvaluatorType
+    evaluation.schema.LLMEvalChain
     evaluation.schema.PairwiseStringEvaluator
     evaluation.schema.StringEvaluator
+    evaluation.string_distance.base.PairwiseStringDistanceEvalChain
+    evaluation.string_distance.base.StringDistance
+    evaluation.string_distance.base.StringDistanceEvalChain
 
 Functions
 --------------
@@ -812,6 +837,8 @@ Functions
     :toctree: evaluation
 
     evaluation.loading.load_dataset
+    evaluation.loading.load_evaluator
+    evaluation.loading.load_evaluators
     evaluation.run_evaluators.implementations.get_criteria_evaluator
     evaluation.run_evaluators.implementations.get_qa_evaluator
     evaluation.run_evaluators.implementations.get_trajectory_evaluator
@@ -1057,6 +1084,7 @@ Functions
 
     llms.aviary.get_completions
     llms.aviary.get_models
+    llms.base.create_base_retry_decorator
     llms.base.get_prompts
     llms.base.update_cache
     llms.cohere.completion_with_retry
@@ -1069,6 +1097,7 @@ Functions
     llms.openai.completion_with_retry
     llms.openai.update_token_usage
     llms.utils.enforce_stop_tokens
+    llms.vertexai.completion_with_retry
     llms.vertexai.is_codey_model
 
 :mod:`langchain.load`: Load
@@ -1241,7 +1270,6 @@ Classes
     :toctree: prompts
     :template: class.rst
 
-    prompts.base.BasePromptTemplate
     prompts.base.StringPromptTemplate
     prompts.base.StringPromptValue
     prompts.chat.AIMessagePromptTemplate
@@ -1348,7 +1376,7 @@ Classes
     retrievers.multi_query.LineListOutputParser
     retrievers.multi_query.MultiQueryRetriever
     retrievers.pinecone_hybrid_search.PineconeHybridSearchRetriever
-    retrievers.pupmed.PubMedRetriever
+    retrievers.pubmed.PubMedRetriever
     retrievers.remote_retriever.RemoteLangChainRetriever
     retrievers.self_query.base.SelfQueryRetriever
     retrievers.self_query.chroma.ChromaTranslator
@@ -1400,28 +1428,29 @@ Classes
     :toctree: schema
     :template: class.rst
 
-    schema.AIMessage
-    schema.AgentFinish
-    schema.BaseChatMessageHistory
-    schema.BaseDocumentTransformer
-    schema.BaseLLMOutputParser
-    schema.BaseMemory
-    schema.BaseMessage
-    schema.BaseOutputParser
-    schema.BaseRetriever
-    schema.ChatGeneration
-    schema.ChatMessage
-    schema.ChatResult
-    schema.Document
-    schema.FunctionMessage
-    schema.Generation
-    schema.HumanMessage
-    schema.LLMResult
-    schema.NoOpOutputParser
-    schema.OutputParserException
-    schema.PromptValue
-    schema.RunInfo
-    schema.SystemMessage
+    schema.agent.AgentFinish
+    schema.document.BaseDocumentTransformer
+    schema.document.Document
+    schema.memory.BaseChatMessageHistory
+    schema.memory.BaseMemory
+    schema.messages.AIMessage
+    schema.messages.BaseMessage
+    schema.messages.ChatMessage
+    schema.messages.FunctionMessage
+    schema.messages.HumanMessage
+    schema.messages.SystemMessage
+    schema.output.ChatGeneration
+    schema.output.ChatResult
+    schema.output.Generation
+    schema.output.LLMResult
+    schema.output.RunInfo
+    schema.output_parser.BaseLLMOutputParser
+    schema.output_parser.BaseOutputParser
+    schema.output_parser.NoOpOutputParser
+    schema.output_parser.OutputParserException
+    schema.prompt.PromptValue
+    schema.prompt_template.BasePromptTemplate
+    schema.retriever.BaseRetriever
 
 Functions
 --------------
@@ -1430,9 +1459,10 @@ Functions
 .. autosummary::
     :toctree: schema
 
-    schema.get_buffer_string
-    schema.messages_from_dict
-    schema.messages_to_dict
+    schema.messages.get_buffer_string
+    schema.messages.messages_from_dict
+    schema.messages.messages_to_dict
+    schema.prompt_template.format_document
 
 :mod:`langchain.server`: Server
 ================================
@@ -1535,6 +1565,8 @@ Classes
     tools.bing_search.tool.BingSearchRun
     tools.brave_search.tool.BraveSearch
     tools.convert_to_openai.FunctionDescription
+    tools.dataforseo_api_search.tool.DataForSeoAPISearchResults
+    tools.dataforseo_api_search.tool.DataForSeoAPISearchRun
     tools.ddg_search.tool.DuckDuckGoSearchResults
     tools.ddg_search.tool.DuckDuckGoSearchRun
     tools.file_management.copy.CopyFileTool
@@ -1708,6 +1740,7 @@ Classes
     utilities.bibtex.BibtexparserWrapper
     utilities.bing_search.BingSearchAPIWrapper
     utilities.brave_search.BraveSearchWrapper
+    utilities.dataforseo_api_search.DataForSeoAPIWrapper
     utilities.duckduckgo_search.DuckDuckGoSearchAPIWrapper
     utilities.google_places_api.GooglePlacesAPIWrapper
     utilities.google_search.GoogleSearchAPIWrapper
@@ -1805,12 +1838,17 @@ Classes
     vectorstores.faiss.FAISS
     vectorstores.hologres.Hologres
     vectorstores.lancedb.LanceDB
+    vectorstores.marqo.Marqo
     vectorstores.matching_engine.MatchingEngine
     vectorstores.milvus.Milvus
     vectorstores.mongodb_atlas.MongoDBAtlasVectorSearch
     vectorstores.myscale.MyScale
     vectorstores.myscale.MyScaleSettings
     vectorstores.opensearch_vector_search.OpenSearchVectorSearch
+    vectorstores.pgembedding.BaseModel
+    vectorstores.pgembedding.CollectionStore
+    vectorstores.pgembedding.EmbeddingStore
+    vectorstores.pgembedding.PGEmbedding
     vectorstores.pgvector.BaseModel
     vectorstores.pgvector.CollectionStore
     vectorstores.pgvector.DistanceStrategy
