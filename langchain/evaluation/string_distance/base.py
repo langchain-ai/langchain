@@ -141,6 +141,10 @@ class StringDistanceEvalChain(_RapidFuzzChainMixin, StringEvaluator):
         """
         return ["reference", "prediction"]
 
+    @property
+    def evaluation_name(self) -> str:
+        return f"{self.distance.value}_distance"
+
     @staticmethod
     def _get_metric(distance: str) -> Callable:
         """
@@ -274,6 +278,10 @@ class PairwiseStringDistanceEvalChain(_RapidFuzzChainMixin, PairwiseStringEvalua
             List[str]: The input keys.
         """
         return ["prediction", "prediction_b"]
+
+    @property
+    def evaluation_name(self) -> str:
+        return f"pairwise_{self.distance.value}_distance"
 
     def _call(
         self,
