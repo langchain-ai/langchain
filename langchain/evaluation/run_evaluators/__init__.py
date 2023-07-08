@@ -11,6 +11,10 @@ from langchain.evaluation.run_evaluators.implementations import (
     get_qa_evaluator,
     get_trajectory_evaluator,
 )
+from langchain.evaluation.run_evaluators.loading import (
+    load_run_evaluator_for_model,
+    load_run_evaluators_for_model,
+)
 from langchain.evaluation.run_evaluators.string_run_evaluator import (
     StringRunEvaluatorChain,
 )
@@ -25,4 +29,6 @@ __all__ = [
     "StringRunEvaluatorInputMapper",
     "ChoicesOutputParser",
     "StringRunEvaluatorChain",
+    "load_run_evaluators_for_model",
+    "load_run_evaluator_for_model",
 ]
