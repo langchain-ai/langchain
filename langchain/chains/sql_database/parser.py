@@ -39,3 +39,17 @@ class VectorSQLOutputParser(BaseOutputParser):
                 _sql_str_compl = _sql_str_compl[:-1]
             text = _sql_str_compl
         return text
+
+
+class VectorSQLRetrieveAllOutputParser(VectorSQLOutputParser):
+    """Based on VectorSQLOutputParser
+    It also modify the SQL to get all columns
+    """
+
+    def parse(self, text: str) -> str:
+        text = super().parse(text)
+        start = text.upper().find("SELECT")
+        if start >= 0:
+            end = text.upper().find("FROM")
+            text = text.replace(text[start + len("SELECT") + 1 : end - 1], "*")
+        return text
