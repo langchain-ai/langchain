@@ -1,7 +1,7 @@
 from typing import Any, Dict, Mapping, Optional, Sequence, Union
 
 from langchainplus_sdk.evaluation import EvaluationResult
-from langchainplus_sdk.schemas import Example, Run, RunTypeEnum
+from langchainplus_sdk.schemas import Example, Run
 from pydantic import BaseModel, Field
 
 from langchain.chat_models.base import BaseChatModel
@@ -20,6 +20,9 @@ from langchain.evaluation.run_evaluators.base import (
     RunEvaluatorChain,
     RunEvaluatorInputMapper,
     RunEvaluatorOutputParser,
+)
+from langchain.evaluation.run_evaluators.utilities.trajectory_utils import (
+    extract_agent_trajectory,
 )
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BasePromptTemplate
@@ -223,10 +226,8 @@ class TrajectoryInputMapper(RunEvaluatorInputMapper, BaseModel):
     reference_output_key: Optional[str] = None
     """The key to use for selecting the reference answer."""
 
-    def map(self, run: Run, example: Optional[Example] = None) -> Dict[str, str]:
+    def map(self, run: Run, example: Optional[Example] = None) -> Dict[str, Any]:
         """Maps the Run and Optional[Example] to a dictionary"""
-        if run.child_runs is None:
-            raise ValueError("Run must have child runs to be evaluated.")
         if run.outputs is None:
             raise ValueError("Run must have outputs to be evaluated.")
         reference = ""
@@ -241,26 +242,10 @@ class TrajectoryInputMapper(RunEvaluatorInputMapper, BaseModel):
                 raise ValueError("Could not infer the reference answer from ")
 
         question = run.inputs[self.agent_input_key]
-        tool_runs = [
-            run_ for run_ in run.child_runs if run_.run_type == RunTypeEnum.tool
-        ]
-        agent_steps = []
-        for i, run_ in enumerate(tool_runs, 1):
-            tool_output = (
-                f"Tool output: {run_.outputs.get(self.tool_output_key, run_.outputs)}"
-                if run_.outputs
-                else (f"Tool error: {run_.error}" if run_.error else "No output")
-            )
-            agent_steps.append(
-                f"""Step {i}:
-Tool used: {run_.name}
-Tool input: {run_.inputs.get(self.tool_input_key, run_.inputs)}
-Tool output: {tool_output}"""
-            )
-
+        agent_steps = extract_agent_trajectory(run)
         return {
             "question": question,
-            "agent_trajectory": "\n\n".join(agent_steps),
+            "agent_trajectory": agent_steps,
             "answer": run.outputs[self.agent_output_key],
             "reference": reference,
         }
