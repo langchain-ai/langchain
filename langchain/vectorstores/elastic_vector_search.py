@@ -459,7 +459,8 @@ class ElasticKnnSearch(VectorStore, ABC):
             Union[List[Mapping[str, Any]], Tuple[Mapping[str, Any], ...], None]
         ] = None,
         page_content: Optional[str] = 'text'
-    ) -> Dict:
+    ) -> List[Tuple[Document, float]]:
+    #) -> Dict:
         """
         Performs a k-nearest neighbor (k-NN) search on the Elasticsearch index.
 
@@ -496,7 +497,7 @@ class ElasticKnnSearch(VectorStore, ABC):
         )
 
         # Perform the kNN search on the Elasticsearch index and return the results.
-        res = self.client.search(
+        response = self.client.search(
             index=self.index_name,
             knn=knn_query_body,
             size=size,
@@ -509,13 +510,13 @@ class ElasticKnnSearch(VectorStore, ABC):
             (
                 Document(
                     page_content=hit["_source"][page_content] if source else hit['fields'][page_content],
-                    metadata=fields if metadata else None
+                    metadata=hit['fields'] if fields else {}
                 ),
                 hit["_score"],
             )
             for hit in hits
         ]
-        
+
         #return dict(res)
         return docs_and_scores
 
@@ -533,7 +534,8 @@ class ElasticKnnSearch(VectorStore, ABC):
             Union[List[Mapping[str, Any]], Tuple[Mapping[str, Any], ...], None]
         ] = None,
         page_content: Optional[str] = 'text'
-    ) -> Dict[Any, Any]:
+    #) -> Dict[Any, Any]:
+    ) -> List[Tuple[Document, float]]:
         """Performs a hybrid k-nearest neighbor (k-NN) and text-based search on the
             Elasticsearch index.
 
@@ -583,7 +585,7 @@ class ElasticKnnSearch(VectorStore, ABC):
         }
 
         # Perform the hybrid search on the Elasticsearch index and return the results.
-        res = self.client.search(
+        response = self.client.search(
             index=self.index_name,
             query=match_query_body,
             knn=knn_query_body,
@@ -591,19 +593,19 @@ class ElasticKnnSearch(VectorStore, ABC):
             size=size,
             source=source,
         )
-        
+
         hits = [hit for hit in response["hits"]["hits"]]
         docs_and_scores = [
             (
                 Document(
                     page_content=hit["_source"][page_content] if source else hit['fields'][page_content],
-                    metadata=fields if metadata else None
+                    metadata=hit['fields'] if fields else {}
                 ),
                 hit["_score"],
             )
             for hit in hits
         ]
-        
+
         #return dict(res)
         return docs_and_scores
 
@@ -628,18 +630,18 @@ class ElasticKnnSearch(VectorStore, ABC):
                **kwargs: Any
        ) -> List[str]:
 
-         """
-         Adds the provided texts to the Elasticsearch index.
-         This assumes the index already exists. if you wish to create a new index while indexing texts
-         call `from_texts` method
-         Parameters
-         ----------
-         texts : list of str
-             The texts to add to the index.
-         model_id : str, optional
-             The ID of the model to use for generating text embeddings. If not provided, the default embedding model is used.
-         """
-        
+        """
+        Adds the provided texts to the Elasticsearch index.
+        This assumes the index already exists. if you wish to create a new index while indexing texts
+        call `from_texts` method
+        Parameters
+        ----------
+        texts : list of str
+            The texts to add to the index.
+        model_id : str, optional
+            The ID of the model to use for generating text embeddings. If not provided, the default embedding model is used.
+        """
+
         try:
             from elasticsearch.helpers import bulk
         except ImportError:
@@ -689,9 +691,9 @@ class ElasticKnnSearch(VectorStore, ABC):
         # Add the list of text-embedding pairs to the Elasticsearch index.
 #        bulk(self.client, body)
         responses = bulk(
-            self.es, 
-            body, 
-            request_timeout=120, 
+            self.client,
+            body,
+            request_timeout=120,
             yield_ok=True
         )
 
@@ -708,7 +710,7 @@ class ElasticKnnSearch(VectorStore, ABC):
                    **kwargs: Any
                 ) -> ElasticKnnSearch:
 
-        index_name = kwargs.get("index_name", str(uuid.uuid4())) 
+        index_name = kwargs.get("index_name", str(uuid.uuid4()))
         es_connection = kwargs.get("es_connection")
         es_cloud_id = kwargs.get("es_cloud_id")
         es_user = kwargs.get("es_user")
