@@ -21,6 +21,10 @@ class RunEvaluatorInputMapper:
     def map(self, run: Run, example: Optional[Example] = None) -> Dict[str, Any]:
         """Maps the Run and Optional[Example] to a dictionary"""
 
+    def __call__(self, run: Run, example: Optional[Example] = None) -> Any:
+        """Maps the Run and Optional[Example] to a dictionary"""
+        return self.map(run, example)
+
 
 class RunEvaluatorOutputParser(BaseOutputParser[EvaluationResult]):
     """Parse the output of a run."""
