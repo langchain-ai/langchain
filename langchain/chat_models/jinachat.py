@@ -105,7 +105,8 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
 
 class JinaChat(BaseChatModel):
-    """Wrapper around JinaChat API.
+    """JinaChat is a wrapper for Jina AI's LLM service, providing cost-effective
+    image chat capabilities in comparison to other LLM APIs.
 
     To use, you should have the ``openai`` python package installed, and the
     environment variable ``JINACHAT_API_KEY`` set with your API key.
