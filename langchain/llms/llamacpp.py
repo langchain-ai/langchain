@@ -44,6 +44,9 @@ class LlamaCpp(LLM):
     seed: int = Field(-1, alias="seed")
     """Seed. If -1, a random seed is used."""
 
+    embedding: bool = Field(True, alias="embedding")
+    """use embedding or not."""
+
     f16_kv: bool = Field(True, alias="f16_kv")
     """Use half-precision for key/value cache."""
 
@@ -125,6 +128,7 @@ class LlamaCpp(LLM):
             "use_mmap",
             "last_n_tokens_size",
             "verbose",
+            "embedding",
         ]
         model_params = {k: values[k] for k in model_param_names}
         # For backwards compatibility, only include if non-null.
@@ -148,6 +152,9 @@ class LlamaCpp(LLM):
             )
 
         return values
+
+    def embed(self, text: str) -> List:
+        return self.client.embed(text)
 
     @property
     def _default_params(self) -> Dict[str, Any]:

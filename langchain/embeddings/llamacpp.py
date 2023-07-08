@@ -21,7 +21,9 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
     """
 
     client: Any  #: :meta private:
-    model_path: str
+    model_path: Optional[str]
+
+    llm: Optional[Any]
 
     n_ctx: int = Field(512, alias="n_ctx")
     """Token context window."""
@@ -64,7 +66,10 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that llama-cpp-python library is installed."""
-        model_path = values["model_path"]
+
+        if not values["model_path"] is None:
+            model_path = values["model_path"]
+
         model_param_names = [
             "n_ctx",
             "n_parts",
@@ -81,21 +86,24 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
         if values["n_gpu_layers"] is not None:
             model_params["n_gpu_layers"] = values["n_gpu_layers"]
 
-        try:
-            from llama_cpp import Llama
+        if not values["llm"] is None:
+            values["client"] = values["llm"]
+        else:
+            try:
+                from llama_cpp import Llama
 
-            values["client"] = Llama(model_path, embedding=True, **model_params)
-        except ImportError:
-            raise ModuleNotFoundError(
-                "Could not import llama-cpp-python library. "
-                "Please install the llama-cpp-python library to "
-                "use this embedding model: pip install llama-cpp-python"
-            )
-        except Exception as e:
-            raise ValueError(
-                f"Could not load Llama model from path: {model_path}. "
-                f"Received error {e}"
-            )
+                values["client"] = Llama(model_path, embedding=True, **model_params)
+            except ImportError:
+                raise ModuleNotFoundError(
+                    "Could not import llama-cpp-python library. "
+                    "Please install the llama-cpp-python library to "
+                    "use this embedding model: pip install llama-cpp-python"
+                )
+            except Exception as e:
+                raise ValueError(
+                    f"Could not load Llama model from path: {model_path}. "
+                    f"Received error {e}"
+                )
 
         return values
 
@@ -108,6 +116,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
+
         embeddings = [self.client.embed(text) for text in texts]
         return [list(map(float, e)) for e in embeddings]
 
