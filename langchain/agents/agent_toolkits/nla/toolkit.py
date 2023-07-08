@@ -7,8 +7,8 @@ from pydantic import Field
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.agents.agent_toolkits.nla.tool import NLATool
-from langchain.base_language import BaseLanguageModel
 from langchain.requests import Requests
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 from langchain.tools.openapi.utils.openapi_utils import OpenAPISpec
 from langchain.tools.plugin import AIPlugin

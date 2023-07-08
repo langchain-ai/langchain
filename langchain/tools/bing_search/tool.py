@@ -13,7 +13,7 @@ from langchain.utilities.bing_search import BingSearchAPIWrapper
 class BingSearchRun(BaseTool):
     """Tool that adds the capability to query the Bing search API."""
 
-    name = "Bing Search"
+    name = "bing_search"
     description = (
         "A wrapper around Bing Search. "
         "Useful for when you need to answer questions about current events. "

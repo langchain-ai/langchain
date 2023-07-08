@@ -145,6 +145,7 @@ class Cohere(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call out to Cohere's generate endpoint.
 
@@ -167,7 +168,7 @@ class Cohere(LLM):
             params["stop_sequences"] = self.stop
         else:
             params["stop_sequences"] = stop
-
+        params = {**params, **kwargs}
         response = completion_with_retry(
             self, model=self.model, prompt=prompt, **params
         )

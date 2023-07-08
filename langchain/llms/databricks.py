@@ -303,12 +303,14 @@ class Databricks(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Queries the LLM endpoint with the given prompt and stop sequence."""
 
         # TODO: support callbacks
 
         request = {"prompt": prompt, "stop": stop}
+        request.update(kwargs)
         if self.model_kwargs:
             request.update(self.model_kwargs)
 

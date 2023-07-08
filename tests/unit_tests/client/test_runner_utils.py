@@ -1,22 +1,25 @@
 """Test the LangChain+ client."""
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 from unittest import mock
 
 import pytest
 from langchainplus_sdk.client import LangChainPlusClient
 from langchainplus_sdk.schemas import Dataset, Example
 
-from langchain.base_language import BaseLanguageModel
 from langchain.chains.base import Chain
+from langchain.chains.transform import TransformChain
 from langchain.client.runner_utils import (
     InputFormatError,
     _get_messages,
     _get_prompts,
     arun_on_dataset,
     run_llm,
+    run_llm_or_chain,
 )
+from langchain.schema import LLMResult
+from langchain.schema.language_model import BaseLanguageModel
 from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
@@ -73,6 +76,57 @@ def test__get_prompts_valid(inputs: Dict[str, Any]) -> None:
 def test__get_prompts_invalid(inputs: Dict[str, Any]) -> None:
     with pytest.raises(InputFormatError):
         _get_prompts(inputs)
+
+
+def test_run_llm_or_chain_with_input_mapper() -> None:
+    example = Example(
+        id=uuid.uuid4(),
+        created_at=_CREATED_AT,
+        inputs={"the wrong input": "1", "another key": "2"},
+        outputs={"output": "2"},
+        dataset_id=str(uuid.uuid4()),
+    )
+
+    def run_val(inputs: dict) -> dict:
+        assert "the right input" in inputs
+        return {"output": "2"}
+
+    mock_chain = TransformChain(
+        input_variables=["the right input"],
+        output_variables=["output"],
+        transform=run_val,
+    )
+
+    def input_mapper(inputs: dict) -> dict:
+        assert "the wrong input" in inputs
+        return {"the right input": inputs["the wrong input"]}
+
+    result = run_llm_or_chain(
+        example, lambda: mock_chain, n_repetitions=1, input_mapper=input_mapper
+    )
+    assert len(result) == 1
+    assert result[0] == {"output": "2", "the right input": "1"}
+    bad_result = run_llm_or_chain(
+        example,
+        lambda: mock_chain,
+        n_repetitions=1,
+    )
+    assert len(bad_result) == 1
+    assert "Error" in bad_result[0]
+
+    # Try with LLM
+    def llm_input_mapper(inputs: dict) -> List[str]:
+        assert "the wrong input" in inputs
+        return ["the right input"]
+
+    mock_llm = FakeLLM(queries={"the right input": "somenumber"})
+    result = run_llm_or_chain(
+        example, mock_llm, n_repetitions=1, input_mapper=llm_input_mapper
+    )
+    assert len(result) == 1
+    llm_result = result[0]
+    assert isinstance(llm_result, LLMResult)
+    assert llm_result.generations[0][0].text == "somenumber"
 
 
 @pytest.mark.parametrize(
@@ -169,11 +223,16 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
         example: Example,
         llm_or_chain: Union[BaseLanguageModel, Chain],
         n_repetitions: int,
-        tracer: Any,
+        tags: Optional[List[str]] = None,
+        callbacks: Optional[Any] = None,
+        **kwargs: Any,
     ) -> List[Dict[str, Any]]:
         return [
             {"result": f"Result for example {example.id}"} for _ in range(n_repetitions)
         ]
+
+    def mock_create_project(*args: Any, **kwargs: Any) -> None:
+        pass
 
     with mock.patch.object(
         LangChainPlusClient, "read_dataset", new=mock_read_dataset
@@ -181,6 +240,8 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
         LangChainPlusClient, "list_examples", new=mock_list_examples
     ), mock.patch(
         "langchain.client.runner_utils._arun_llm_or_chain", new=mock_arun_chain
+    ), mock.patch.object(
+        LangChainPlusClient, "create_project", new=mock_create_project
     ):
         client = LangChainPlusClient(api_url="http://localhost:1984", api_key="123")
         chain = mock.MagicMock()
@@ -189,7 +250,7 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
             dataset_name="test",
             llm_or_chain_factory=lambda: chain,
             concurrency_level=2,
-            session_name="test_session",
+            project_name="test_project",
             num_repetitions=num_repetitions,
             client=client,
         )
@@ -201,4 +262,4 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
             ]
             for uuid_ in uuids
         }
-        assert results == expected
+        assert results["results"] == expected

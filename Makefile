@@ -10,6 +10,9 @@ coverage:
 
 clean: docs_clean
 
+docs_compile:
+	poetry run nbdoc_build --srcdir $(srcdir)
+
 docs_build:
 	cd docs && poetry run make html
 

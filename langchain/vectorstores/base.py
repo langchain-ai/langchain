@@ -1,14 +1,30 @@
 """Interface for vector stores."""
+
 from __future__ import annotations
 
 import asyncio
 import warnings
 from abc import ABC, abstractmethod
 from functools import partial
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar
+from typing import (
+    Any,
+    ClassVar,
+    Collection,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+)
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic import Field, root_validator
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseRetriever
@@ -36,6 +52,20 @@ class VectorStore(ABC):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
+
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+        """Delete by vector ID or other criteria.
+
+        Args:
+            ids: List of ids to delete.
+            **kwargs: Other keyword arguments that subclasses might use.
+
+        Returns:
+            Optional[bool]: True if deletion is successful,
+            False otherwise, None if not implemented.
+        """
+
+        raise NotImplementedError("delete method must be implemented by subclass.")
 
     async def aadd_texts(
         self,
@@ -148,8 +178,8 @@ class VectorStore(ABC):
             ]
             if len(docs_and_similarities) == 0:
                 warnings.warn(
-                    f"No relevant docs were retrieved using the relevance score\
-                          threshold {score_threshold}"
+                    "No relevant docs were retrieved using the relevance score"
+                    f" threshold {score_threshold}"
                 )
         return docs_and_similarities
 
@@ -343,10 +373,15 @@ class VectorStore(ABC):
         return VectorStoreRetriever(vectorstore=self, **kwargs)
 
 
-class VectorStoreRetriever(BaseRetriever, BaseModel):
+class VectorStoreRetriever(BaseRetriever):
     vectorstore: VectorStore
     search_type: str = "similarity"
     search_kwargs: dict = Field(default_factory=dict)
+    allowed_search_types: ClassVar[Collection[str]] = (
+        "similarity",
+        "similarity_score_threshold",
+        "mmr",
+    )
 
     class Config:
         """Configuration for this pydantic object."""
@@ -356,22 +391,24 @@ class VectorStoreRetriever(BaseRetriever, BaseModel):
     @root_validator()
     def validate_search_type(cls, values: Dict) -> Dict:
         """Validate search type."""
-        if "search_type" in values:
-            search_type = values["search_type"]
-            if search_type not in ("similarity", "similarity_score_threshold", "mmr"):
-                raise ValueError(f"search_type of {search_type} not allowed.")
-            if search_type == "similarity_score_threshold":
-                score_threshold = values["search_kwargs"].get("score_threshold")
-                if (score_threshold is None) or (
-                    not isinstance(score_threshold, float)
-                ):
-                    raise ValueError(
-                        "`score_threshold` is not specified with a float value(0~1) "
-                        "in `search_kwargs`."
-                    )
+        search_type = values["search_type"]
+        if search_type not in cls.allowed_search_types:
+            raise ValueError(
+                f"search_type of {search_type} not allowed. Valid values are: "
+                f"{cls.allowed_search_types}"
+            )
+        if search_type == "similarity_score_threshold":
+            score_threshold = values["search_kwargs"].get("score_threshold")
+            if (score_threshold is None) or (not isinstance(score_threshold, float)):
+                raise ValueError(
+                    "`score_threshold` is not specified with a float value(0~1) "
+                    "in `search_kwargs`."
+                )
         return values
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> List[Document]:
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
         elif self.search_type == "similarity_score_threshold":
@@ -389,7 +426,9 @@ class VectorStoreRetriever(BaseRetriever, BaseModel):
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def _aget_relevant_documents(
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
+    ) -> List[Document]:
         if self.search_type == "similarity":
             docs = await self.vectorstore.asimilarity_search(
                 query, **self.search_kwargs
