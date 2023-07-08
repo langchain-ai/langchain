@@ -256,7 +256,7 @@ class Redis(VectorStore):
             List[Document]: A list of documents that are most similar to the query text.
         """
         docs_and_scores = self.similarity_search_with_score(query, k=k)
-        return [doc for doc, _ in docs_and_scores]
+        return [doc for doc,_,_ in docs_and_scores]
 
     def similarity_search_limit_score(
         self, query: str, k: int = 4, score_threshold: float = 0.2, **kwargs: Any
@@ -283,7 +283,7 @@ class Redis(VectorStore):
 
         """
         docs_and_scores = self.similarity_search_with_score(query, k=k)
-        return [doc for doc, score in docs_and_scores if score < score_threshold]
+        return [doc for doc,score,_ in docs_and_scores if score < score_threshold]
 
     def _prepare_query(self, k: int) -> Query:
         try:
@@ -309,7 +309,7 @@ class Redis(VectorStore):
 
     def similarity_search_with_score(
         self, query: str, k: int = 4
-    ) -> List[Tuple[Document, float]]:
+    ) -> List[Tuple[Document, float, str]]:
         """Return docs most similar to query.
 
         Args:
@@ -364,7 +364,7 @@ class Redis(VectorStore):
                 " Redis constructor to normalize scores"
             )
         docs_and_scores = self.similarity_search_with_score(query, k=k)
-        return [(doc, self.relevance_score_fn(score)) for doc, score in docs_and_scores]
+        return [(doc, self.relevance_score_fn(score)) for doc, score,_ in docs_and_scores]
 
     @classmethod
     def from_texts_return_keys(
