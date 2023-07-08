@@ -133,15 +133,15 @@ class AwaDB(VectorStore):
         k: int = DEFAULT_TOPN,
         **kwargs: Any,
     ) -> List[Document]:
-        """The most k similar documents of the specified text query.
+        """Return docs most similar to query.
 
         Args:
-            query: Text query
-            k: The most k similar documents of the text query
+            query: Text query.
+            k: The maximum number of documents to return.
             kwargs: Any possible extend parameters in the future.
 
         Returns:
-            The most k similar documents of the specified text query
+            Returns the k most similar documents to the specified text query.
         """
 
         if self.awadb_client is None:
@@ -170,12 +170,12 @@ class AwaDB(VectorStore):
         """The most k similar documents and scores of the specified query.
 
         Args:
-            query: Text query
-            k: The most k similar documents of the text query
+            query: Text query.
+            k: The k most similar documents to the text query.
             kwargs: Any possible extend parameters in the future.
 
         Returns:
-            The most k similar documents of the specified text query
+            The k most similar documents to the specified text query.
             0 is dissimilar, 1 is the most similar.
         """
 
@@ -216,14 +216,15 @@ class AwaDB(VectorStore):
         k: int = DEFAULT_TOPN,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        """Return docs the most similar to the text query.
+        """Return docs and relevance scores which denote the InnerProduct distance, range from 0 to 1.
 
         Args:
             query: Text query.
             k: Number of the most similar documents to return. Defaults to 4.
 
         Returns:
-            List of Documents the most similar to the text query.
+            List of (Document, relevance_score) tuples the most similar to the text query.
+            Note that relevance_score ranged from 0 to 1, 0 is dissimilar, 1 is the most similar
         """
 
         if self.awadb_client is None:
