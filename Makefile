@@ -22,18 +22,18 @@ docs_clean:
 docs_linkcheck:
 	poetry run linkchecker docs/_build/html/index.html
 
-format:
-	poetry run black .
-	poetry run ruff --select I --fix .
-
 PYTHON_FILES=.
-lint: PYTHON_FILES=.
-lint_diff: PYTHON_FILES=$(shell git diff --name-only --diff-filter=d master | grep -E '\.py$$')
+lint format: PYTHON_FILES=.
+lint_diff format_diff: PYTHON_FILES=$(shell git diff --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
 
 lint lint_diff:
 	poetry run mypy $(PYTHON_FILES)
 	poetry run black $(PYTHON_FILES) --check
 	poetry run ruff .
+
+format format_diff:
+	poetry run black $(PYTHON_FILES)
+	poetry run ruff --select I --fix $(PYTHON_FILES)
 
 TEST_FILE ?= tests/unit_tests/
 
