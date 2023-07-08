@@ -7,7 +7,6 @@ from typing import Any, List, Optional, Sequence, Tuple, Union
 from pydantic import root_validator
 
 from langchain.agents import BaseSingleActionAgent
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import Callbacks
 from langchain.chat_models.openai import ChatOpenAI
@@ -23,6 +22,7 @@ from langchain.schema import (
     BasePromptTemplate,
     OutputParserException,
 )
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import (
     AIMessage,
     BaseMessage,

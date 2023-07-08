@@ -1,20 +1,18 @@
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
+from typing import Any, Dict, Mapping, Optional, Sequence, Union
 
 from langchainplus_sdk.evaluation import EvaluationResult
 from langchainplus_sdk.schemas import Example, Run, RunTypeEnum
 from pydantic import BaseModel, Field
 
-from langchain.base_language import BaseLanguageModel
-from langchain.chains.llm import LLMChain
 from langchain.chat_models.base import BaseChatModel
-from langchain.evaluation.agents.trajectory_eval_prompt import (
-    EVAL_CHAT_PROMPT as TRAJECTORY_PROMPT,
+from langchain.evaluation.agents.trajectory_eval_chain import (
+    TrajectoryEvalChain,
+    TrajectoryOutputParser,
 )
 from langchain.evaluation.criteria.eval_chain import (
     CriteriaEvalChain,
     CriteriaResultOutputParser,
 )
-from langchain.evaluation.criteria.prompt import PROMPT as CRITERIA_PROMPT
 from langchain.evaluation.qa.eval_chain import QAEvalChain
 from langchain.evaluation.qa.eval_prompt import PROMPT as QA_DEFAULT_PROMPT
 from langchain.evaluation.qa.eval_prompt import SQL_PROMPT
@@ -24,7 +22,8 @@ from langchain.evaluation.run_evaluators.base import (
     RunEvaluatorOutputParser,
 )
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import BasePromptTemplate, OutputParserException
+from langchain.schema import BasePromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 
 _QA_PROMPTS = {
@@ -152,8 +151,9 @@ def get_criteria_evaluator(
     *,
     input_key: str = "input",
     prediction_key: str = "output",
-    prompt: BasePromptTemplate = CRITERIA_PROMPT,
+    prompt: Optional[BasePromptTemplate] = None,
     evaluation_name: Optional[str] = None,
+    requires_reference: bool = False,
     **kwargs: Any,
 ) -> RunEvaluatorChain:
     """Get an eval chain for grading a model's response against a map of criteria."""
@@ -174,7 +174,11 @@ def get_criteria_evaluator(
     )
     tags = kwargs.pop("tags", [])
     eval_chain = CriteriaEvalChain.from_llm(
-        llm=llm, criteria=criteria_, prompt=prompt, **kwargs
+        llm=llm,
+        criteria=criteria_,
+        prompt=prompt,
+        requires_reference=requires_reference,
+        **kwargs,
     )
     return RunEvaluatorChain(
         eval_chain=eval_chain,
@@ -185,7 +189,7 @@ def get_criteria_evaluator(
     )
 
 
-class TrajectoryEvalOutputParser(RunEvaluatorOutputParser):
+class TrajectoryRunEvalOutputParser(RunEvaluatorOutputParser, TrajectoryOutputParser):
     evaluation_name: str = "Agent Trajectory"
     """The name assigned to the evaluation feedback."""
     evaluator_info: dict = Field(default_factory=dict)
@@ -195,29 +199,12 @@ class TrajectoryEvalOutputParser(RunEvaluatorOutputParser):
     def _type(self) -> str:
         return "agent_trajectory_run_eval"
 
-    def parse(self, text: str) -> EvaluationResult:
-        if "Score:" not in text:
-            raise OutputParserException(
-                f"Could not find score in model eval output: {text}"
-            )
-
-        reasoning, score_str = text.split("Score: ")
-
-        reasoning, score_str = reasoning.strip(), score_str.strip()
-
-        score_str = next(
-            (char for char in score_str if char.isdigit()), "0"
-        )  # Scan for first digit
-
-        if not 1 <= int(score_str) <= 5:
-            raise OutputParserException(
-                f"Score is not a digit in the range 1-5: {text}"
-            )
-
+    def parse_chain_output(self, output: Dict[str, Any]) -> EvaluationResult:
+        """Parse the output of a run."""
         return EvaluationResult(
             key=self.evaluation_name,
-            score=int(score_str),
-            comment=reasoning,
+            score=int(output["score"]),
+            comment=output["reasoning"],
             evaluator_info=self.evaluator_info,
         )
 
@@ -225,8 +212,6 @@ class TrajectoryEvalOutputParser(RunEvaluatorOutputParser):
 class TrajectoryInputMapper(RunEvaluatorInputMapper, BaseModel):
     """Maps the Run and Optional[Example] to a dictionary."""
 
-    tool_descriptions: List[str]
-    """The descriptions for each of the tools available to the agent."""
     agent_input_key: str = "input"
     """The key to load from the agent executor's run input dictionary."""
     agent_output_key: str = "output"
@@ -235,6 +220,8 @@ class TrajectoryInputMapper(RunEvaluatorInputMapper, BaseModel):
     """The key to load from the tool executor's run input dictionary."""
     tool_output_key: str = "output"
     """The key to load from the tool executor's run output dictionary."""
+    reference_output_key: Optional[str] = None
+    """The key to use for selecting the reference answer."""
 
     def map(self, run: Run, example: Optional[Example] = None) -> Dict[str, str]:
         """Maps the Run and Optional[Example] to a dictionary"""
@@ -242,6 +229,17 @@ class TrajectoryInputMapper(RunEvaluatorInputMapper, BaseModel):
             raise ValueError("Run must have child runs to be evaluated.")
         if run.outputs is None:
             raise ValueError("Run must have outputs to be evaluated.")
+        reference = ""
+        if example is not None and example.outputs:
+            if self.reference_output_key is not None:
+                reference = example.outputs[self.reference_output_key]
+            elif "output" in example.outputs:
+                reference = example.outputs["output"]
+            elif len(example.outputs) == 1:
+                reference = next(iter(example.outputs.values()))
+            else:
+                raise ValueError("Could not infer the reference answer from ")
+
         question = run.inputs[self.agent_input_key]
         tool_runs = [
             run_ for run_ in run.child_runs if run_.run_type == RunTypeEnum.tool
@@ -261,33 +259,26 @@ Tool output: {tool_output}"""
             )
 
         return {
-            "tool_descriptions": "\n\n".join(self.tool_descriptions),
             "question": question,
             "agent_trajectory": "\n\n".join(agent_steps),
             "answer": run.outputs[self.agent_output_key],
+            "reference": reference,
         }
 
 
 def get_trajectory_evaluator(
     llm: BaseChatModel,
-    agent_tools: Union[Sequence[str], Sequence[BaseTool]],
+    agent_tools: Sequence[BaseTool],
     *,
     input_key: str = "input",
     prediction_key: str = "output",
     tool_input_key: str = "input",
     tool_output_key: str = "output",
-    prompt: BasePromptTemplate = TRAJECTORY_PROMPT,
+    reference_output_key: Optional[str] = None,
     evaluation_name: str = "Agent Trajectory",
     **kwargs: Any,
 ) -> RunEvaluatorChain:
     """Get an eval chain for grading a model's response against a map of criteria."""
-    tool_descriptions = [
-        f"Tool {i}: {tool.name}\nDescription: {tool.description}"
-        if isinstance(tool, BaseTool)
-        else f"Tool {i}: {tool}"
-        for i, tool in enumerate(agent_tools, 1)
-    ]
-
     input_mapper = kwargs.pop(
         "input_mapper",
         TrajectoryInputMapper(
@@ -295,14 +286,16 @@ def get_trajectory_evaluator(
             agent_output_key=prediction_key,
             tool_input_key=tool_input_key,
             tool_output_key=tool_output_key,
-            tool_descriptions=tool_descriptions,
+            reference_output_key=reference_output_key,
         ),
     )
     parser = kwargs.pop(
         "output_parser",
-        TrajectoryEvalOutputParser(evaluation_name=evaluation_name),
+        TrajectoryRunEvalOutputParser(evaluation_name=evaluation_name),
     )
-    eval_chain = LLMChain(llm=llm, prompt=prompt, **kwargs)
+    eval_chain = TrajectoryEvalChain.from_llm(
+        llm=llm, agent_tools=agent_tools, return_reasoning=True, **kwargs
+    )
     tags = kwargs.pop("tags", [])
     return RunEvaluatorChain(
         eval_chain=eval_chain,

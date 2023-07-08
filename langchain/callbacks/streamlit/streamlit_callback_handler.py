@@ -27,6 +27,8 @@ EXCEPTION_EMOJI = "⚠️"
 
 
 class LLMThoughtState(Enum):
+    """Enumerator of the LLMThought state."""
+
     # The LLM is thinking about what to do next. We don't know which tool we'll run.
     THINKING = "THINKING"
     # The LLM has decided to run a tool. We don't have results from the tool yet.
@@ -36,6 +38,8 @@ class LLMThoughtState(Enum):
 
 
 class ToolRecord(NamedTuple):
+    """The tool record as a NamedTuple."""
+
     name: str
     input_str: str
 
@@ -100,6 +104,8 @@ class LLMThoughtLabeler:
 
 
 class LLMThought:
+    """A thought in the LLM's thought stream."""
+
     def __init__(
         self,
         parent_container: DeltaGenerator,
@@ -107,6 +113,14 @@ class LLMThought:
         expanded: bool,
         collapse_on_complete: bool,
     ):
+        """Initialize the LLMThought.
+
+        Args:
+            parent_container: The container we're writing into.
+            labeler: The labeler to use for this thought.
+            expanded: Whether the thought should be expanded by default.
+            collapse_on_complete: Whether the thought should be collapsed.
+        """
         self._container = MutableExpander(
             parent_container=parent_container,
             label=labeler.get_initial_label(),
@@ -213,6 +227,8 @@ class LLMThought:
 
 
 class StreamlitCallbackHandler(BaseCallbackHandler):
+    """A callback handler that writes to a Streamlit app."""
+
     def __init__(
         self,
         parent_container: DeltaGenerator,
