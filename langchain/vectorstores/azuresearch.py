@@ -198,6 +198,8 @@ class AzureSearch(VectorStore):
         extra_fields: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[str]:
+        extra_fields = kwargs.get("extra_fields", extra_fields)
+        metadatas = kwargs.get("metadatas", metadatas)
         """
             Add texts data to an existing index.
         Args:
