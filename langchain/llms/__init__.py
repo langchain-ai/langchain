@@ -3,15 +3,18 @@ from typing import Dict, Type
 
 from langchain.llms.ai21 import AI21
 from langchain.llms.aleph_alpha import AlephAlpha
+from langchain.llms.amazon_api_gateway import AmazonAPIGateway
 from langchain.llms.anthropic import Anthropic
 from langchain.llms.anyscale import Anyscale
 from langchain.llms.aviary import Aviary
+from langchain.llms.azureml_endpoint import AzureMLOnlineEndpoint
 from langchain.llms.bananadev import Banana
 from langchain.llms.base import BaseLLM
 from langchain.llms.baseten import Baseten
 from langchain.llms.beam import Beam
 from langchain.llms.bedrock import Bedrock
 from langchain.llms.cerebriumai import CerebriumAI
+from langchain.llms.clarifai import Clarifai
 from langchain.llms.cohere import Cohere
 from langchain.llms.ctransformers import CTransformers
 from langchain.llms.databricks import Databricks
@@ -31,7 +34,9 @@ from langchain.llms.manifest import ManifestWrapper
 from langchain.llms.modal import Modal
 from langchain.llms.mosaicml import MosaicML
 from langchain.llms.nlpcloud import NLPCloud
+from langchain.llms.octoai_endpoint import OctoAIEndpoint
 from langchain.llms.openai import AzureOpenAI, OpenAI, OpenAIChat
+from langchain.llms.openllm import OpenLLM
 from langchain.llms.openlm import OpenLM
 from langchain.llms.petals import Petals
 from langchain.llms.pipelineai import PipelineAI
@@ -50,9 +55,11 @@ from langchain.llms.writer import Writer
 __all__ = [
     "AI21",
     "AlephAlpha",
+    "AmazonAPIGateway",
     "Anthropic",
     "Anyscale",
     "Aviary",
+    "AzureMLOnlineEndpoint",
     "AzureOpenAI",
     "Banana",
     "Baseten",
@@ -60,6 +67,7 @@ __all__ = [
     "Bedrock",
     "CTransformers",
     "CerebriumAI",
+    "Clarifai",
     "Cohere",
     "Databricks",
     "DeepInfra",
@@ -81,6 +89,7 @@ __all__ = [
     "NLPCloud",
     "OpenAI",
     "OpenAIChat",
+    "OpenLLM",
     "OpenLM",
     "Petals",
     "PipelineAI",
@@ -95,19 +104,24 @@ __all__ = [
     "StochasticAI",
     "VertexAI",
     "Writer",
+    "OctoAIEndpoint",
 ]
 
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "ai21": AI21,
     "aleph_alpha": AlephAlpha,
+    "amazon_api_gateway": AmazonAPIGateway,
+    "amazon_bedrock": Bedrock,
     "anthropic": Anthropic,
     "anyscale": Anyscale,
     "aviary": Aviary,
     "azure": AzureOpenAI,
+    "azureml_endpoint": AzureMLOnlineEndpoint,
     "bananadev": Banana,
     "baseten": Baseten,
     "beam": Beam,
     "cerebriumai": CerebriumAI,
+    "clarifai": Clarifai,
     "cohere": Cohere,
     "ctransformers": CTransformers,
     "databricks": Databricks,
@@ -138,5 +152,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "self_hosted_hugging_face": SelfHostedHuggingFaceLLM,
     "stochasticai": StochasticAI,
     "vertexai": VertexAI,
+    "openllm": OpenLLM,
+    "openllm_client": OpenLLM,
     "writer": Writer,
 }

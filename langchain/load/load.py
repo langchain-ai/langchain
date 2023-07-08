@@ -1,11 +1,14 @@
 import importlib
 import json
+import os
 from typing import Any, Dict, Optional
 
 from langchain.load.serializable import Serializable
 
 
 class Reviver:
+    """Reviver for JSON objects."""
+
     def __init__(self, secrets_map: Optional[Dict[str, str]] = None) -> None:
         self.secrets_map = secrets_map or dict()
 
@@ -19,6 +22,8 @@ class Reviver:
             if key in self.secrets_map:
                 return self.secrets_map[key]
             else:
+                if key in os.environ and os.environ[key]:
+                    return os.environ[key]
                 raise KeyError(f'Missing key "{key}" in load(secrets_map)')
 
         if (
@@ -62,4 +67,13 @@ class Reviver:
 
 
 def loads(text: str, *, secrets_map: Optional[Dict[str, str]] = None) -> Any:
+    """Load a JSON object from a string.
+
+    Args:
+        text: The string to load.
+        secrets_map: A map of secrets to load.
+
+    Returns:
+
+    """
     return json.loads(text, object_hook=Reviver(secrets_map))

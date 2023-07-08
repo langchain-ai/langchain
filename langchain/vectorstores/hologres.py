@@ -104,8 +104,8 @@ document text);"""
 
 
 class Hologres(VectorStore):
-    """
-    VectorStore implementation using Hologres.
+    """VectorStore implementation using Hologres.
+
     - `connection_string` is a hologres connection string.
     - `embedding_function` any embedding function implementing
         `langchain.embeddings.base.Embeddings` interface.

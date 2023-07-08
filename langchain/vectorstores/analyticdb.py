@@ -7,7 +7,6 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type
 
 from sqlalchemy import REAL, Column, String, Table, create_engine, insert, text
 from sqlalchemy.dialects.postgresql import ARRAY, JSON, TEXT
-from sqlalchemy.engine import Row
 
 try:
     from sqlalchemy.orm import declarative_base
@@ -26,8 +25,8 @@ Base = declarative_base()  # type: Any
 
 
 class AnalyticDB(VectorStore):
-    """
-    VectorStore implementation using AnalyticDB.
+    """VectorStore implementation using AnalyticDB.
+
     AnalyticDB is a distributed full PostgresSQL syntax cloud-native database.
     - `connection_string` is a postgres connection string.
     - `embedding_function` any embedding function implementing
@@ -50,6 +49,7 @@ class AnalyticDB(VectorStore):
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         pre_delete_collection: bool = False,
         logger: Optional[logging.Logger] = None,
+        engine_args: Optional[dict] = None,
     ) -> None:
         self.connection_string = connection_string
         self.embedding_function = embedding_function
@@ -57,15 +57,26 @@ class AnalyticDB(VectorStore):
         self.collection_name = collection_name
         self.pre_delete_collection = pre_delete_collection
         self.logger = logger or logging.getLogger(__name__)
-        self.__post_init__()
+        self.__post_init__(engine_args)
 
     def __post_init__(
         self,
+        engine_args: Optional[dict] = None,
     ) -> None:
         """
         Initialize the store.
         """
-        self.engine = create_engine(self.connection_string)
+
+        _engine_args = engine_args or {}
+
+        if (
+            "pool_recycle" not in _engine_args
+        ):  # Check if pool_recycle is not in _engine_args
+            _engine_args[
+                "pool_recycle"
+            ] = 3600  # Set pool_recycle to 3600s if not present
+
+        self.engine = create_engine(self.connection_string, **_engine_args)
         self.create_collection()
 
     def create_table_if_not_exists(self) -> None:
@@ -80,34 +91,34 @@ class AnalyticDB(VectorStore):
             extend_existing=True,
         )
         with self.engine.connect() as conn:
-            # Create the table
-            Base.metadata.create_all(conn)
+            with conn.begin():
+                # Create the table
+                Base.metadata.create_all(conn)
 
-            # Check if the index exists
-            index_name = f"{self.collection_name}_embedding_idx"
-            index_query = text(
-                f"""
-                SELECT 1
-                FROM pg_indexes
-                WHERE indexname = '{index_name}';
-            """
-            )
-            result = conn.execute(index_query).scalar()
-
-            # Create the index if it doesn't exist
-            if not result:
-                index_statement = text(
+                # Check if the index exists
+                index_name = f"{self.collection_name}_embedding_idx"
+                index_query = text(
                     f"""
-                    CREATE INDEX {index_name}
-                    ON {self.collection_name} USING ann(embedding)
-                    WITH (
-                        "dim" = {self.embedding_dimension},
-                        "hnsw_m" = 100
-                    );
+                    SELECT 1
+                    FROM pg_indexes
+                    WHERE indexname = '{index_name}';
                 """
                 )
-                conn.execute(index_statement)
-            conn.commit()
+                result = conn.execute(index_query).scalar()
+
+                # Create the index if it doesn't exist
+                if not result:
+                    index_statement = text(
+                        f"""
+                        CREATE INDEX {index_name}
+                        ON {self.collection_name} USING ann(embedding)
+                        WITH (
+                            "dim" = {self.embedding_dimension},
+                            "hnsw_m" = 100
+                        );
+                    """
+                    )
+                    conn.execute(index_statement)
 
     def create_collection(self) -> None:
         if self.pre_delete_collection:
@@ -118,8 +129,8 @@ class AnalyticDB(VectorStore):
         self.logger.debug("Trying to delete collection")
         drop_statement = text(f"DROP TABLE IF EXISTS {self.collection_name};")
         with self.engine.connect() as conn:
-            conn.execute(drop_statement)
-            conn.commit()
+            with conn.begin():
+                conn.execute(drop_statement)
 
     def add_texts(
         self,
@@ -160,30 +171,28 @@ class AnalyticDB(VectorStore):
 
         chunks_table_data = []
         with self.engine.connect() as conn:
-            for document, metadata, chunk_id, embedding in zip(
-                texts, metadatas, ids, embeddings
-            ):
-                chunks_table_data.append(
-                    {
-                        "id": chunk_id,
-                        "embedding": embedding,
-                        "document": document,
-                        "metadata": metadata,
-                    }
-                )
+            with conn.begin():
+                for document, metadata, chunk_id, embedding in zip(
+                    texts, metadatas, ids, embeddings
+                ):
+                    chunks_table_data.append(
+                        {
+                            "id": chunk_id,
+                            "embedding": embedding,
+                            "document": document,
+                            "metadata": metadata,
+                        }
+                    )
 
-                # Execute the batch insert when the batch size is reached
-                if len(chunks_table_data) == batch_size:
+                    # Execute the batch insert when the batch size is reached
+                    if len(chunks_table_data) == batch_size:
+                        conn.execute(insert(chunks_table).values(chunks_table_data))
+                        # Clear the chunks_table_data list for the next batch
+                        chunks_table_data.clear()
+
+                # Insert any remaining records that didn't make up a full batch
+                if chunks_table_data:
                     conn.execute(insert(chunks_table).values(chunks_table_data))
-                    # Clear the chunks_table_data list for the next batch
-                    chunks_table_data.clear()
-
-            # Insert any remaining records that didn't make up a full batch
-            if chunks_table_data:
-                conn.execute(insert(chunks_table).values(chunks_table_data))
-
-            # Commit the transaction only once after all records have been inserted
-            conn.commit()
 
         return ids
 
@@ -262,6 +271,14 @@ class AnalyticDB(VectorStore):
         filter: Optional[dict] = None,
     ) -> List[Tuple[Document, float]]:
         # Add the filter if provided
+        try:
+            from sqlalchemy.engine import Row
+        except ImportError:
+            raise ImportError(
+                "Could not import Row from sqlalchemy.engine. "
+                "Please 'pip install sqlalchemy>=1.4'."
+            )
+
         filter_condition = ""
         if filter is not None:
             conditions = [
@@ -319,6 +336,36 @@ class AnalyticDB(VectorStore):
         )
         return [doc for doc, _ in docs_and_scores]
 
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+        """Delete by vector IDs.
+
+        Args:
+            ids: List of ids to delete.
+        """
+        if ids is None:
+            raise ValueError("No ids provided to delete.")
+
+        # Define the table schema
+        chunks_table = Table(
+            self.collection_name,
+            Base.metadata,
+            Column("id", TEXT, primary_key=True),
+            Column("embedding", ARRAY(REAL)),
+            Column("document", String, nullable=True),
+            Column("metadata", JSON, nullable=True),
+            extend_existing=True,
+        )
+
+        try:
+            with self.engine.connect() as conn:
+                with conn.begin():
+                    delete_condition = chunks_table.c.id.in_(ids)
+                    conn.execute(chunks_table.delete().where(delete_condition))
+                    return True
+        except Exception as e:
+            print("Delete operation failed:", str(e))
+            return False
+
     @classmethod
     def from_texts(
         cls: Type[AnalyticDB],
@@ -329,13 +376,14 @@ class AnalyticDB(VectorStore):
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
+        engine_args: Optional[dict] = None,
         **kwargs: Any,
     ) -> AnalyticDB:
         """
         Return VectorStore initialized from texts and embeddings.
-        Postgres connection string is required
+        Postgres Connection string is required
         Either pass it as a parameter
-        or set the PGVECTOR_CONNECTION_STRING environment variable.
+        or set the PG_CONNECTION_STRING environment variable.
         """
 
         connection_string = cls.get_connection_string(kwargs)
@@ -346,6 +394,7 @@ class AnalyticDB(VectorStore):
             embedding_function=embedding,
             embedding_dimension=embedding_dimension,
             pre_delete_collection=pre_delete_collection,
+            engine_args=engine_args,
         )
 
         store.add_texts(texts=texts, metadatas=metadatas, ids=ids, **kwargs)
@@ -363,7 +412,7 @@ class AnalyticDB(VectorStore):
             raise ValueError(
                 "Postgres connection string is required"
                 "Either pass it as a parameter"
-                "or set the PGVECTOR_CONNECTION_STRING environment variable."
+                "or set the PG_CONNECTION_STRING environment variable."
             )
 
         return connection_string
@@ -377,13 +426,14 @@ class AnalyticDB(VectorStore):
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
+        engine_args: Optional[dict] = None,
         **kwargs: Any,
     ) -> AnalyticDB:
         """
         Return VectorStore initialized from documents and embeddings.
-        Postgres connection string is required
+        Postgres Connection string is required
         Either pass it as a parameter
-        or set the PGVECTOR_CONNECTION_STRING environment variable.
+        or set the PG_CONNECTION_STRING environment variable.
         """
 
         texts = [d.page_content for d in documents]
@@ -400,6 +450,7 @@ class AnalyticDB(VectorStore):
             metadatas=metadatas,
             ids=ids,
             collection_name=collection_name,
+            engine_args=engine_args,
             **kwargs,
         )
 
