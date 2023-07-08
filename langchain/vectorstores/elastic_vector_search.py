@@ -22,6 +22,7 @@ from langchain.vectorstores.base import VectorStore
 
 if TYPE_CHECKING:
     from elasticsearch import Elasticsearch
+    from langchain.embeddings.elasticsearch import ElasticsearchEmbeddings
 
 
 def _default_text_mapping(dim: int) -> Dict:
@@ -333,7 +334,7 @@ class ElasticVectorSearch(VectorStore, ABC):
             self.client.delete(index=self.index_name, id=id)
 
 
-class ElasticKnnSearch(ElasticVectorSearch):
+class ElasticKnnSearch(VectorStore, ABC):
     """
     A class for performing k-Nearest Neighbors (k-NN) search on an Elasticsearch index.
     The class is designed for a text search scenario where documents are text strings
@@ -577,14 +578,15 @@ class ElasticKnnSearch(ElasticVectorSearch):
         return dict(res)
 
 
-    def create_knn_index(self, mapping) -> None:
+    def create_knn_index(self,
+                         mapping: Dict
+                         ) -> None:
          """
          Creates an Elasticsearch index. The name of the index is specified during the instantiation of the class.
          """
          self.client.indices.create(
              index=self.index_name,
              mappings= mapping
-#             mappings= self.mapping
          )
 
 
@@ -594,8 +596,8 @@ class ElasticKnnSearch(ElasticVectorSearch):
                model_id: Optional[str] = None,
                refresh_indices: bool = False,
                **kwargs: Any
-               ) -> None:
-  #             ) -> List[str]:
+  #             ) -> None:
+               ) -> List[str]:
 
          """
          Adds the provided texts to the Elasticsearch index.
@@ -621,7 +623,12 @@ class ElasticKnnSearch(ElasticVectorSearch):
          if not self.client.indices.exists(index=self.index_name):
 #             # If the index does not exist, raise an exception.
 #            raise Exception(f"The index '{self.index_name}' does not exist. If you want to create a new index while encoding texts, call 'from_texts' instead.")
-             mapping = self.default_knn_mapping(dims=dims)
+             dims = kwargs.get("dims")
+
+             if dims is None:
+                 raise ValueError("ElasticKnnSearch requires 'dims' parameter")
+
+             mapping = self._default_knn_mapping(dims=dims)
              self.create_knn_index(mapping)
 
          # Assign the encoding function from the instance's 'embedding' attribute to 'emb_func'
@@ -656,43 +663,32 @@ class ElasticKnnSearch(ElasticVectorSearch):
          # Add the list of text-embedding pairs to the Elasticsearch index.
          bulk(self.client, body)
 
+         # TODO RETURN ACTUAL IDS
+         return ['1','2','3']
+
     @classmethod
-    def from_texts(
-            cls, 
-#            texts: List[str],
-#             dims: int,
-            index_name: str,    
-            es_connection: Optional["Elasticsearch"] = None,
-            es_cloud_id: Optional[str] = None,
-            es_user: Optional[str] = None,
-            es_password: Optional[str] = None,
-            vector_query_field: Optional[str] = "vector",
-            query_field: Optional[str] = "text",
-            model_id: Optional[str] = None
-         ) -> ElasticKnnSearch:
+    def from_texts(cls,
+                   texts: List[str],
+                   embedding: Embeddings,
+                   metadatas: Optional[List[Dict[Any, Any]]] = None,
+                   **kwargs: Any
+                ) -> ElasticKnnSearch:
 
-         """
-         Creates a new Elasticsearch index and adds the provided texts to it.
-         This method first generates a default index mapping for k-NN search, using the provided dimensions. It then
-         creates a new Elasticsearch index with this mapping. Finally, it encodes the provided texts and adds them
-         to the newly created index.
-         Parameters
-         ----------
-         texts : list of str
-             The texts to add to the index.
-         dims : int
-             The dimensionality of the vector space in which the embeddings lie. This is used to generate
-             the index mapping for k-NN search.
-         model_id : str, optional
-             The ID of the model to use for generating text embeddings. If not provided, the default embedding
-             model is used.
-         Raises
-         ------
-         Exception
-             If the Elasticsearch index does not exist.
-         """
+        index_name = kwargs.get("index_name", str(uuid.uuid4()))  # Provide a default value for index_name
+        es_connection = kwargs.get("es_connection")
+        es_cloud_id = kwargs.get("es_cloud_id")
+        es_user = kwargs.get("es_user")
+        es_password = kwargs.get("es_password")
+        vector_query_field = kwargs.get("vector_query_field", "vector")
+        query_field = kwargs.get("query_field", "text")
+        model_id = kwargs.get("model_id")
+        dims = kwargs.get("dims")
 
-        knnvectorsearch = cls(index_name, 
+        if dims is None:
+            raise ValueError("ElasticKnnSearch requires 'dims' parameter")
+
+
+        knnvectorsearch = cls(index_name,
                               embedding,
                               es_connection,
                               es_cloud_id,
@@ -702,4 +698,6 @@ class ElasticKnnSearch(ElasticVectorSearch):
                               query_field
                              )
         # Encode the provided texts and add them to the newly created index.
-        self.add_texts(texts, model_id=model_id)
+        knnvectorsearch.add_texts(texts, model_id=model_id)
+
+        return knnvectorsearch
