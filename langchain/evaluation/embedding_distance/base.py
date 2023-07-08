@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 import numpy as np
-from pydantic import Field, root_validator
+from pydantic import Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -60,19 +60,6 @@ class _EmbeddingDistanceChainMixin(Chain):
             List[str]: The output keys.
         """
         return ["score"]
-
-    @root_validator
-    def _validate_distance_metric(cls, values: dict) -> dict:
-        """Validate the distance metric.
-
-        Args:
-            values (dict): The values to validate.
-
-        Returns:
-            dict: The validated values.
-        """
-        values["distance_metric"] = values["distance_metric"].lower()
-        return values
 
     def _get_metric(self, metric: EmbeddingDistance) -> Any:
         """Get the metric function for the given metric name.
@@ -195,6 +182,10 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         return True
 
     @property
+    def evaluation_name(self) -> str:
+        return f"embedding_{self.distance_metric.value}_distance"
+
+    @property
     def input_keys(self) -> List[str]:
         """Return the input keys of the chain.
 
@@ -219,9 +210,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
             Dict[str, Any]: The computed score.
         """
         vectors = np.array(
-            self.embeddings.embed_documents(
-                [inputs["prediction"], inputs["prediction_b"]]
-            )
+            self.embeddings.embed_documents([inputs["prediction"], inputs["reference"]])
         )
         score = self._compute_score(vectors)
         return {"score": score}
@@ -242,7 +231,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
             Dict[str, Any]: The computed score.
         """
         embedded = await self.embeddings.aembed_documents(
-            [inputs["prediction"], inputs["prediction_b"]]
+            [inputs["prediction"], inputs["reference"]]
         )
         vectors = np.array(embedded)
         score = self._compute_score(vectors)
@@ -323,6 +312,10 @@ class PairwiseEmbeddingDistanceEvalChain(
             List[str]: The input keys.
         """
         return ["prediction", "prediction_b"]
+
+    @property
+    def evaluation_name(self) -> str:
+        return f"pairwise_embedding_{self.distance_metric.value}_distance"
 
     def _call(
         self,
