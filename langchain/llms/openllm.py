@@ -32,6 +32,8 @@ ServerType = Literal["http", "grpc"]
 
 
 class IdentifyingParams(TypedDict):
+    """Parameters for identifying a model as a typed dict."""
+
     model_name: str
     model_id: Optional[str]
     server_url: Optional[str]

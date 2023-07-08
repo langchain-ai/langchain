@@ -52,7 +52,7 @@ def get_current_page(browser: SyncBrowser) -> SyncPage:
 
 def create_async_playwright_browser(headless: bool = True) -> AsyncBrowser:
     """
-    Create a async playwright browser.
+    Create an async playwright browser.
 
     Args:
         headless: Whether to run the browser in headless mode. Defaults to True.
@@ -86,7 +86,7 @@ T = TypeVar("T")
 
 
 def run_async(coro: Coroutine[Any, Any, T]) -> T:
-    """
+    """Run an async coroutine.
 
     Args:
         coro: The coroutine to run. Coroutine[Any, Any, T]

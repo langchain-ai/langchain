@@ -9,7 +9,6 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from pydantic import Extra, Field, root_validator
 
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
@@ -22,6 +21,7 @@ from langchain.chains.conversational_retrieval.prompts import CONDENSE_QUESTION_
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
 from langchain.schema import BasePromptTemplate, BaseRetriever, Document
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage
 from langchain.vectorstores.base import VectorStore
 
@@ -63,6 +63,11 @@ class BaseConversationalRetrievalChain(Chain):
     a new standalone question to be used later on."""
     output_key: str = "answer"
     """The output key to return the final answer of this chain in."""
+    rephrase_question: bool = True
+    """Whether or not to pass the new generated question to the combine_docs_chain.
+    If True, will pass the new generated question along.
+    If False, will only use the new generated question for retrieval and pass the
+    original question along to the combine_docs_chain."""
     return_source_documents: bool = False
     """Return the retrieved source documents as part of the final result."""
     return_generated_question: bool = False
@@ -131,7 +136,8 @@ class BaseConversationalRetrievalChain(Chain):
         else:
             docs = self._get_docs(new_question, inputs)  # type: ignore[call-arg]
         new_inputs = inputs.copy()
-        new_inputs["question"] = new_question
+        if self.rephrase_question:
+            new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
         answer = self.combine_docs_chain.run(
             input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
@@ -178,7 +184,8 @@ class BaseConversationalRetrievalChain(Chain):
             docs = await self._aget_docs(new_question, inputs)  # type: ignore[call-arg]
 
         new_inputs = inputs.copy()
-        new_inputs["question"] = new_question
+        if self.rephrase_question:
+            new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
         answer = await self.combine_docs_chain.arun(
             input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
@@ -212,8 +219,9 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
     2. This new question is passed to the retriever and relevant documents are
     returned.
 
-    3. The retrieved documents are passed to an LLM along with the new question to
-    generate a final answer.
+    3. The retrieved documents are passed to an LLM along with either the new question
+    (default behavior) or the original question and chat history to generate a final
+    response.
 
     Example:
         .. code-block:: python
@@ -232,8 +240,8 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
             # Should take `chat_history` and `question` as input variables.
             template = (
                 "Combine the chat history and follow up question into "
-                "a standalone question.\n\nChat History: {chat_history}"
-                "\n\n{question}"
+                "a standalone question. Chat History: {chat_history}"
+                "Follow up question: {question}"
             )
             prompt = PromptTemplate.from_template(template)
             llm = OpenAI()

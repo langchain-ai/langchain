@@ -28,6 +28,7 @@ _PARSERS_TO_SKIP = {
     "BaseOutputParser",
     "FinishedOutputParser",
     "RouterOutputParser",
+    "TrajectoryRunEvalOutputParser",
 }
 _NON_ABSTRACT_PARSERS = non_abstract_subclasses(
     BaseOutputParser, to_skip=_PARSERS_TO_SKIP

@@ -24,7 +24,7 @@ def test_merger_retriever_get_relevant_docs() -> None:
     )
 
     # The Lord of the Retrievers.
-    lotr = MergerRetriever([retriever_a, retriever_b])
+    lotr = MergerRetriever(retrievers=[retriever_a, retriever_b])
 
     actual = lotr.get_relevant_documents("Tell me about the Celtics")
     assert len(actual) == 2

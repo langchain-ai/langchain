@@ -6,6 +6,7 @@ from uuid import UUID
 
 from langchainplus_sdk import LangChainPlusClient, RunEvaluator
 
+from langchain.callbacks.manager import tracing_v2_enabled
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import Run
 
@@ -27,6 +28,8 @@ class EvaluatorCallbackHandler(BaseTracer):
         If not specified, a new instance will be created.
     example_id : Union[UUID, str], optional
         The example ID to be associated with the runs.
+    project_name : str, optional
+        The LangSmith project name to be organize eval chain runs under.
 
     Attributes
     ----------
@@ -40,6 +43,11 @@ class EvaluatorCallbackHandler(BaseTracer):
         The thread pool executor used for running the evaluators.
     futures : Set[Future]
         The set of futures representing the running evaluators.
+    skip_unfinished : bool
+        Whether to skip runs that are not finished or raised
+        an error.
+    project_name : Optional[str]
+        The LangSmith project name to be organize eval chain runs under.
     """
 
     name = "evaluator_callback_handler"
@@ -50,6 +58,8 @@ class EvaluatorCallbackHandler(BaseTracer):
         max_workers: Optional[int] = None,
         client: Optional[LangChainPlusClient] = None,
         example_id: Optional[Union[UUID, str]] = None,
+        skip_unfinished: bool = True,
+        project_name: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
@@ -62,10 +72,25 @@ class EvaluatorCallbackHandler(BaseTracer):
             max_workers=max(max_workers or len(evaluators), 1)
         )
         self.futures: Set[Future] = set()
+        self.skip_unfinished = skip_unfinished
+        self.project_name = project_name
 
-    def _evaluate_run(self, run: Run, evaluator: RunEvaluator) -> None:
+    def _evaluate_in_project(self, run: Run, evaluator: RunEvaluator) -> None:
+        """Evaluate the run in the project.
+
+        Parameters
+        ----------
+        run : Run
+            The run to be evaluated.
+        evaluator : RunEvaluator
+            The evaluator to use for evaluating the run.
+
+        """
         try:
-            self.client.evaluate_run(run, evaluator)
+            if self.project_name is None:
+                self.client.evaluate_run(run, evaluator)
+            with tracing_v2_enabled(project_name=self.project_name, tags=["eval"]):
+                self.client.evaluate_run(run, evaluator)
         except Exception as e:
             logger.error(
                 f"Error evaluating run {run.id} with "
@@ -83,10 +108,15 @@ class EvaluatorCallbackHandler(BaseTracer):
             The run to be evaluated.
 
         """
+        if self.skip_unfinished and not run.outputs:
+            logger.debug(f"Skipping unfinished run {run.id}")
+            return
         run_ = run.copy()
         run_.reference_example_id = self.example_id
         for evaluator in self.evaluators:
-            self.futures.add(self.executor.submit(self._evaluate_run, run_, evaluator))
+            self.futures.add(
+                self.executor.submit(self._evaluate_in_project, run_, evaluator)
+            )
 
     def wait_for_futures(self) -> None:
         """Wait for all futures to complete."""

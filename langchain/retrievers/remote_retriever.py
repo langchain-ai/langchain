@@ -2,7 +2,6 @@ from typing import List, Optional
 
 import aiohttp
 import requests
-from pydantic import BaseModel
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -11,7 +10,7 @@ from langchain.callbacks.manager import (
 from langchain.schema import BaseRetriever, Document
 
 
-class RemoteLangChainRetriever(BaseRetriever, BaseModel):
+class RemoteLangChainRetriever(BaseRetriever):
     url: str
     headers: Optional[dict] = None
     input_key: str = "message"

@@ -1,7 +1,6 @@
 """Load question answering chains."""
 from typing import Any, Mapping, Optional, Protocol
 
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import Callbacks
 from langchain.chains import ReduceDocumentsChain
@@ -19,6 +18,7 @@ from langchain.chains.question_answering import (
 from langchain.chains.question_answering.map_rerank_prompt import (
     PROMPT as MAP_RERANK_PROMPT,
 )
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.prompt_template import BasePromptTemplate
 
 
@@ -99,6 +99,7 @@ def _load_map_reduce_chain(
     verbose: Optional[bool] = None,
     callback_manager: Optional[BaseCallbackManager] = None,
     callbacks: Callbacks = None,
+    token_max: int = 3000,
     **kwargs: Any,
 ) -> MapReduceDocumentsChain:
     _question_prompt = (
@@ -154,6 +155,8 @@ def _load_map_reduce_chain(
     reduce_documents_chain = ReduceDocumentsChain(
         combine_documents_chain=combine_documents_chain,
         collapse_documents_chain=collapse_chain,
+        token_max=token_max,
+        verbose=verbose,
     )
     return MapReduceDocumentsChain(
         llm_chain=map_chain,

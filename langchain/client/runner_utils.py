@@ -21,7 +21,6 @@ from typing import (
 from langchainplus_sdk import LangChainPlusClient, RunEvaluator
 from langchainplus_sdk.schemas import Example
 
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.manager import Callbacks
 from langchain.callbacks.tracers.base import BaseTracer
@@ -34,6 +33,7 @@ from langchain.schema import (
     ChatResult,
     LLMResult,
 )
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import (
     BaseMessage,
     HumanMessage,
@@ -313,28 +313,35 @@ async def _callbacks_initializer(
     project_name: Optional[str],
     client: LangChainPlusClient,
     run_evaluators: Sequence[RunEvaluator],
+    evaluation_handler_collector: List[EvaluatorCallbackHandler],
 ) -> List[BaseTracer]:
     """
     Initialize a tracer to share across tasks.
 
     Args:
         project_name: The project name for the tracer.
+        client: The client to use for the tracer.
+        run_evaluators: The evaluators to run.
+        evaluation_handler_collector: A list to collect the evaluators.
+            Used to wait for the evaluators to finish.
 
     Returns:
-        A LangChainTracer instance with an active project.
+        The callbacks for this thread.
     """
     callbacks: List[BaseTracer] = []
     if project_name:
         callbacks.append(LangChainTracer(project_name=project_name))
+    evaluator_project_name = f"{project_name}-evaluators" if project_name else None
     if run_evaluators:
-        callbacks.append(
-            EvaluatorCallbackHandler(
-                client=client,
-                evaluators=run_evaluators,
-                # We already have concurrency, don't want to overload the machine
-                max_workers=1,
-            )
+        callback = EvaluatorCallbackHandler(
+            client=client,
+            evaluators=run_evaluators,
+            # We already have concurrency, don't want to overload the machine
+            max_workers=1,
+            project_name=evaluator_project_name,
         )
+        callbacks.append(callback)
+        evaluation_handler_collector.append(callback)
     return callbacks
 
 
@@ -382,12 +389,9 @@ async def arun_on_examples(
     """
     project_name = _get_project_name(project_name, llm_or_chain_factory, None)
     client_ = client or LangChainPlusClient()
-    client_.create_project(project_name, mode="eval")
+    client_.create_project(project_name)
 
     results: Dict[str, List[Any]] = {}
-    evaluation_handler = EvaluatorCallbackHandler(
-        evaluators=run_evaluators or [], client=client_
-    )
 
     async def process_example(
         example: Example, callbacks: List[BaseCallbackHandler], job_state: dict
@@ -410,17 +414,20 @@ async def arun_on_examples(
                 flush=True,
             )
 
+    evaluation_handlers: List[EvaluatorCallbackHandler] = []
     await _gather_with_concurrency(
         concurrency_level,
         functools.partial(
             _callbacks_initializer,
             project_name=project_name,
             client=client_,
+            evaluation_handler_collector=evaluation_handlers,
             run_evaluators=run_evaluators or [],
         ),
         *(functools.partial(process_example, e) for e in examples),
     )
-    evaluation_handler.wait_for_futures()
+    for handler in evaluation_handlers:
+        handler.wait_for_futures()
     return results
 
 
@@ -581,10 +588,13 @@ def run_on_examples(
     results: Dict[str, Any] = {}
     project_name = _get_project_name(project_name, llm_or_chain_factory, None)
     client_ = client or LangChainPlusClient()
-    client_.create_project(project_name, mode="eval")
+    client_.create_project(project_name)
     tracer = LangChainTracer(project_name=project_name)
+    evaluator_project_name = f"{project_name}-evaluators"
     evalution_handler = EvaluatorCallbackHandler(
-        evaluators=run_evaluators or [], client=client_
+        evaluators=run_evaluators or [],
+        client=client_,
+        project_name=evaluator_project_name,
     )
     callbacks: List[BaseCallbackHandler] = [tracer, evalution_handler]
     for i, example in enumerate(examples):
