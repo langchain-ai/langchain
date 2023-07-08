@@ -1,7 +1,6 @@
 """Loading datasets and evaluators."""
 from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
-from langchain.base_language import BaseLanguageModel
 from langchain.chains.base import Chain
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.evaluation.agents.trajectory_eval_chain import TrajectoryEvalChain
@@ -17,6 +16,7 @@ from langchain.evaluation.string_distance.base import (
     PairwiseStringDistanceEvalChain,
     StringDistanceEvalChain,
 )
+from langchain.schema.language_model import BaseLanguageModel
 
 
 def load_dataset(uri: str) -> List[Dict]:
@@ -95,6 +95,11 @@ def load_evaluator(
     >>> evaluator = load_evaluator(EvaluatorType.QA)
     """
     llm = llm or ChatOpenAI(model="gpt-4", temperature=0)
+    if evaluator not in _EVALUATOR_MAP:
+        raise ValueError(
+            f"Unknown evaluator type: {evaluator}"
+            f"Valid types are: {list(_EVALUATOR_MAP.keys())}"
+        )
     evaluator_cls = _EVALUATOR_MAP[evaluator]
     if issubclass(evaluator_cls, LLMEvalChain):
         return evaluator_cls.from_llm(llm=llm, **kwargs)

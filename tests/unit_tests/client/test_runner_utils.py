@@ -8,7 +8,6 @@ import pytest
 from langchainplus_sdk.client import LangChainPlusClient
 from langchainplus_sdk.schemas import Dataset, Example
 
-from langchain.base_language import BaseLanguageModel
 from langchain.chains.base import Chain
 from langchain.chains.transform import TransformChain
 from langchain.client.runner_utils import (
@@ -20,6 +19,7 @@ from langchain.client.runner_utils import (
     run_llm_or_chain,
 )
 from langchain.schema import LLMResult
+from langchain.schema.language_model import BaseLanguageModel
 from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 from tests.unit_tests.llms.fake_llm import FakeLLM
 

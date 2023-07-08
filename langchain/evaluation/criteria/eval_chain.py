@@ -4,12 +4,12 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
 
 from pydantic import Extra, Field
 
-from langchain.base_language import BaseLanguageModel
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.criteria.prompt import PROMPT, PROMPT_WITH_REFERENCES
 from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
 from langchain.schema import BaseOutputParser, BasePromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
 
 _SUPPORTED_CRITERIA = {
     "conciseness": "Is the submission concise and to the point?",
@@ -126,6 +126,8 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
 
     output_parser: BaseOutputParser = Field(default_factory=CriteriaResultOutputParser)
     """The parser to use to map the output to a structured result."""
+    criteria_names: List[str] = Field(default_factory=list)
+    """The names of the criteria being evaluated."""
 
     class Config:
         """Configuration for the QAEvalChain."""
@@ -134,11 +136,23 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
 
     @property
     def requires_reference(self) -> bool:
+        """Whether the evaluation requires a reference text."""
         return "reference" in self.prompt.input_variables
 
     @property
     def requires_input(self) -> bool:
         return True
+
+    @property
+    def evaluation_name(self) -> str:
+        """Get the name of the evaluation.
+
+        Returns
+        -------
+        str
+            The name of the evaluation.
+        """
+        return " ".join(self.criteria_names)
 
     @property
     def _skip_reference_warning(self) -> str:
@@ -293,9 +307,15 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
             )
 
         criteria_ = cls.resolve_criteria(criteria)
+        criteria_names = list(criteria_.keys())
         criteria_str = " ".join(f"{k}: {v}" for k, v in criteria_.items())
         prompt_ = prompt.partial(criteria=criteria_str)
-        return cls(llm=llm, prompt=prompt_, **kwargs)
+        return cls(
+            llm=llm,
+            prompt=prompt_,
+            criteria_names=criteria_names,
+            **kwargs,
+        )
 
     def _get_eval_input(
         self,

@@ -7,9 +7,9 @@ from enum import Enum
 from typing import Any, Optional, Sequence, Tuple
 from warnings import warn
 
-from langchain.base_language import BaseLanguageModel
 from langchain.chains.base import Chain
 from langchain.schema.agent import AgentAction
+from langchain.schema.language_model import BaseLanguageModel
 
 logger = logging.getLogger(__name__)
 
@@ -100,6 +100,14 @@ class StringEvaluator(_EvalArgsMixin, ABC):
     """Grade, tag, or otherwise evaluate predictions relative to their inputs
     and/or reference labels."""
 
+    @property
+    def evaluation_name(self) -> str:
+        raise NotImplementedError()
+
+    @property
+    def requires_reference(self) -> bool:
+        return False
+
     @abstractmethod
     def _evaluate_strings(
         self,
@@ -119,6 +127,10 @@ class StringEvaluator(_EvalArgsMixin, ABC):
             **kwargs: additional keyword arguments, including callbacks, tags, etc.
         Returns:
             dict: The evaluation results containing the score or value.
+                It is recommended that the dictionary contain the following keys:
+                    - score: the score of the evaluation, if applicable.
+                    - value: the string value of the evaluation, if applicable.
+                    - reasoning: the reasoning for the evaluation, if applicable.
         """
 
     async def _aevaluate_strings(
@@ -140,6 +152,10 @@ class StringEvaluator(_EvalArgsMixin, ABC):
             **kwargs: additional keyword arguments, including callbacks, tags, etc.
         Returns:
             dict: The evaluation results containing the score or value.
+                It is recommended that the dictionary contain the following keys:
+                    - score: the score of the evaluation, if applicable.
+                    - value: the string value of the evaluation, if applicable.
+                    - reasoning: the reasoning for the evaluation, if applicable.
         """
         raise NotImplementedError(
             f"{self.__class__.__name__} hasn't implemented an "
