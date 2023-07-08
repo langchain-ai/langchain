@@ -166,7 +166,8 @@ class Pinecone(VectorStore):
         k: int = 4,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        return self.similarity_search_with_score(query, k)
+        kwargs.pop("score_threshold", None)
+        return self.similarity_search_with_score(query, k, **kwargs)
 
     def max_marginal_relevance_search_by_vector(
         self,
