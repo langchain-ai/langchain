@@ -18,8 +18,8 @@ from typing import (
     Union,
 )
 
-from langchainplus_sdk import LangChainPlusClient, RunEvaluator
-from langchainplus_sdk.schemas import Example
+from langsmith import Client, RunEvaluator
+from langsmith.schemas import Example
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.manager import Callbacks
@@ -306,7 +306,7 @@ async def _gather_with_concurrency(
 
 async def _callbacks_initializer(
     project_name: Optional[str],
-    client: LangChainPlusClient,
+    client: Client,
     run_evaluators: Sequence[RunEvaluator],
     evaluation_handler_collector: List[EvaluatorCallbackHandler],
 ) -> List[BaseTracer]:
@@ -348,7 +348,7 @@ async def arun_on_examples(
     num_repetitions: int = 1,
     project_name: Optional[str] = None,
     verbose: bool = False,
-    client: Optional[LangChainPlusClient] = None,
+    client: Optional[Client] = None,
     tags: Optional[List[str]] = None,
     run_evaluators: Optional[Sequence[RunEvaluator]] = None,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
@@ -369,7 +369,7 @@ async def arun_on_examples(
         project_name: Project name to use when tracing runs.
             Defaults to {dataset_name}-{chain class name}-{datetime}.
         verbose: Whether to print progress.
-        client: Client to use to read the dataset. If not provided, a new
+        client: LangSmith client to use to read the dataset. If not provided, a new
             client will be created using the credentials in the environment.
         tags: Tags to add to each run in the project.
         run_evaluators: Evaluators to run on the results of the chain.
@@ -383,7 +383,7 @@ async def arun_on_examples(
         A dictionary mapping example ids to the model outputs.
     """
     project_name = _get_project_name(project_name, llm_or_chain_factory, None)
-    client_ = client or LangChainPlusClient()
+    client_ = client or Client()
     client_.create_project(project_name)
 
     results: Dict[str, List[Any]] = {}
@@ -548,7 +548,7 @@ def run_on_examples(
     num_repetitions: int = 1,
     project_name: Optional[str] = None,
     verbose: bool = False,
-    client: Optional[LangChainPlusClient] = None,
+    client: Optional[Client] = None,
     tags: Optional[List[str]] = None,
     run_evaluators: Optional[Sequence[RunEvaluator]] = None,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
@@ -568,7 +568,7 @@ def run_on_examples(
         project_name: Name of the project to store the traces in.
             Defaults to {dataset_name}-{chain class name}-{datetime}.
         verbose: Whether to print progress.
-        client: Client to use to access the dataset. If None, a new client
+        client: LangSmith client to use to access the dataset. If None, a new client
             will be created using the credentials in the environment.
         tags: Tags to add to each run in the project.
         run_evaluators: Evaluators to run on the results of the chain.
@@ -583,7 +583,7 @@ def run_on_examples(
     """
     results: Dict[str, Any] = {}
     project_name = _get_project_name(project_name, llm_or_chain_factory, None)
-    client_ = client or LangChainPlusClient()
+    client_ = client or Client()
     client_.create_project(project_name)
     tracer = LangChainTracer(project_name=project_name)
     evaluator_project_name = f"{project_name}-evaluators"
@@ -645,7 +645,7 @@ async def arun_on_dataset(
     num_repetitions: int = 1,
     project_name: Optional[str] = None,
     verbose: bool = False,
-    client: Optional[LangChainPlusClient] = None,
+    client: Optional[Client] = None,
     tags: Optional[List[str]] = None,
     run_evaluators: Optional[Sequence[RunEvaluator]] = None,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
@@ -666,8 +666,8 @@ async def arun_on_dataset(
         project_name: Name of the project to store the traces in.
             Defaults to {dataset_name}-{chain class name}-{datetime}.
         verbose: Whether to print progress.
-        client: Client to use to read the dataset. If not provided,
-            a new client will be created using the credentials in the environment.
+        client: LangSmith client to use to read the dataset. If not provided, a new
+            client will be created using the credentials in the environment.
         tags: Tags to add to each run in the project.
         run_evaluators: Evaluators to run on the results of the chain.
         input_mapper: A function to map to the inputs dictionary from an Example
@@ -678,7 +678,7 @@ async def arun_on_dataset(
     Returns:
         A dictionary containing the run's project name and the resulting model outputs.
     """
-    client_ = client or LangChainPlusClient()
+    client_ = client or Client()
     project_name = _get_project_name(project_name, llm_or_chain_factory, dataset_name)
     dataset = client_.read_dataset(dataset_name=dataset_name)
     examples = client_.list_examples(dataset_id=str(dataset.id))
@@ -707,7 +707,7 @@ def run_on_dataset(
     num_repetitions: int = 1,
     project_name: Optional[str] = None,
     verbose: bool = False,
-    client: Optional[LangChainPlusClient] = None,
+    client: Optional[Client] = None,
     tags: Optional[List[str]] = None,
     run_evaluators: Optional[Sequence[RunEvaluator]] = None,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
@@ -727,8 +727,8 @@ def run_on_dataset(
         project_name: Name of the project to store the traces in.
             Defaults to {dataset_name}-{chain class name}-{datetime}.
         verbose: Whether to print progress.
-        client: Client to use to access the dataset. If None,
-            a new client will be created using the credentials in the environment.
+        client: LangSmith client to use to access the dataset. If None, a new client
+            will be created using the credentials in the environment.
         tags: Tags to add to each run in the project.
         run_evaluators: Evaluators to run on the results of the chain.
         input_mapper: A function to map to the inputs dictionary from an Example
@@ -740,7 +740,7 @@ def run_on_dataset(
     Returns:
         A dictionary containing the run's project name and the resulting model outputs.
     """
-    client_ = client or LangChainPlusClient()
+    client_ = client or Client()
     project_name = _get_project_name(project_name, llm_or_chain_factory, dataset_name)
     dataset = client_.read_dataset(dataset_name=dataset_name)
     examples = client_.list_examples(dataset_id=str(dataset.id))

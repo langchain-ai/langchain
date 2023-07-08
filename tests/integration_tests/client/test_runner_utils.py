@@ -3,7 +3,7 @@ from typing import Iterator
 from uuid import uuid4
 
 import pytest
-from langchainplus_sdk import LangChainPlusClient as Client
+from langsmith import Client as Client
 
 from langchain.chains.llm import LLMChain
 from langchain.chat_models import ChatOpenAI
