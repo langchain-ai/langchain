@@ -153,7 +153,7 @@ class JinaChat(BaseChatModel):
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
-        all_required_field_names = cls.all_required_field_names()
+        all_required_field_names = cls._all_required_field_names()
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
             if field_name in extra:
