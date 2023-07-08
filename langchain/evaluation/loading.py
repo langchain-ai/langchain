@@ -67,9 +67,14 @@ def load_evaluator(
     Examples
     --------
     >>> llm = ChatOpenAI(model="gpt-4", temperature=0)
-    >>> evaluator = load_evaluator(EvaluatorType.QA, llm=llm)
+    >>> evaluator = _load_evaluator("qa", llm=llm)
     """
     llm = llm or ChatOpenAI(model="gpt-4", temperature=0)
+    if evaluator not in _EVALUATOR_MAP:
+        raise ValueError(
+            f"Unknown evaluator type: {evaluator}"
+            f"Valid types are: {list(_EVALUATOR_MAP.keys())}"
+        )
     return _EVALUATOR_MAP[evaluator].from_llm(llm=llm, **kwargs)
 
 

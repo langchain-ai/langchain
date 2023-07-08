@@ -91,6 +91,14 @@ class _EvalArgsMixin:
 class StringEvaluator(_EvalArgsMixin, ABC):
     """Protocol for evaluating strings."""
 
+    @property
+    def evaluation_name(self) -> str:
+        raise NotImplementedError()
+
+    @property
+    def requires_reference(self) -> bool:
+        return False
+
     @abstractmethod
     def _evaluate_strings(
         self,
@@ -110,6 +118,10 @@ class StringEvaluator(_EvalArgsMixin, ABC):
             **kwargs: additional keyword arguments, including callbacks, tags, etc.
         Returns:
             dict: The evaluation results containing the score or value.
+                It is recommended that the dictionary contain the following keys:
+                    - score: the score of the evaluation, if applicable.
+                    - value: the string value of the evaluation, if applicable.
+                    - reasoning: the reasoning for the evaluation, if applicable.
         """
 
     async def _aevaluate_strings(
@@ -131,6 +143,10 @@ class StringEvaluator(_EvalArgsMixin, ABC):
             **kwargs: additional keyword arguments, including callbacks, tags, etc.
         Returns:
             dict: The evaluation results containing the score or value.
+                It is recommended that the dictionary contain the following keys:
+                    - score: the score of the evaluation, if applicable.
+                    - value: the string value of the evaluation, if applicable.
+                    - reasoning: the reasoning for the evaluation, if applicable.
         """
         raise NotImplementedError(
             f"{self.__class__.__name__} hasn't implemented an "
