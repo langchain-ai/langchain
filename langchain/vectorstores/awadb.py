@@ -348,7 +348,7 @@ class AwaDB(VectorStore):
 
         if embedding.__len__() == 0:
             return []
-            
+
         results = self.max_marginal_relevance_search_by_vector(
             embedding, k, fetch_k, lambda_mult=lambda_mult
         )
@@ -453,7 +453,7 @@ class AwaDB(VectorStore):
         Args:
             ids: The ids of the embedding vectors.
             **kwargs: Other keyword arguments that subclasses might use.
-            
+
         Returns:
             Optional[bool]: True if deletion is successful.
             False otherwise, None if not implemented.
