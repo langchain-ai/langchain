@@ -216,15 +216,17 @@ class AwaDB(VectorStore):
         k: int = DEFAULT_TOPN,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        """Return docs and relevance scores which denote the InnerProduct distance, range from 0 to 1.
+        """Return docs and relevance scores 
+           which denote the InnerProduct distance, range from 0 to 1.
 
         Args:
             query: Text query.
             k: Number of the most similar documents to return. Defaults to 4.
 
         Returns:
-            List of (Document, relevance_score) tuples the most similar to the text query.
-            Note that relevance_score ranged from 0 to 1, 0 is dissimilar, 1 is the most similar
+            List of (Document, relevance_score) tuples similar to the text query.
+            Note that relevance_score ranged from 0 to 1.
+            0 is dissimilar, 1 is the most similar.
         """
 
         if self.awadb_client is None:
