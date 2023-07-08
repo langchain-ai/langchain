@@ -216,7 +216,7 @@ class AwaDB(VectorStore):
         k: int = DEFAULT_TOPN,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        """Return docs and relevance scores 
+        """Return docs and relevance scores
            which denote the InnerProduct distance, range from 0 to 1.
 
         Args:
