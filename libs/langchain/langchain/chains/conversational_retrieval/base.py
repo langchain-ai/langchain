@@ -135,7 +135,7 @@ class BaseConversationalRetrievalChain(Chain):
             and "context" not in combine_docs_chain.llm_chain.prompt.input_variables
         ):
             warnings.warn(
-                "If the `conect` variable is not set for the prompt "
+                "If the `context` variable is not set for the prompt "
                 "of `combine_docs_chain` when `question_generator` is None, "
                 "using the default combined prompt - CHAT_RETRIEVAL_QA_PROMPT"
             )
