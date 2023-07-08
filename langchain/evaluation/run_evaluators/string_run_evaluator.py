@@ -14,10 +14,22 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import StringEvaluator
+from langchain.load.dump import dumps
+from langchain.load.load import loads
 from langchain.load.serializable import Serializable
 from langchain.schema import RUN_KEY, messages_from_dict
 from langchain.schema.messages import BaseMessage, get_buffer_string
 from langchain.tools.base import Tool
+
+
+def _get_messages_from_run_dict(messages: List[dict]) -> List[BaseMessage]:
+    if not messages:
+        return []
+    first_message = messages[0]
+    if "lc" in first_message:
+        return [loads(dumps(message)) for message in messages]
+    else:
+        return messages_from_dict(messages)
 
 
 class StringRunMapper(Serializable):
@@ -45,11 +57,11 @@ class LLMStringRunMapper(StringRunMapper):
     def serialize_chat_messages(self, messages: List[Dict]) -> str:
         """Extract the input messages from the run."""
         if isinstance(messages, list) and messages:
-            if isinstance(messages[0], BaseMessage):
-                chat_messages = messages_from_dict(messages)
+            if isinstance(messages[0], dict):
+                chat_messages = _get_messages_from_run_dict(messages)
             elif isinstance(messages[0], list):
                 # Runs from Tracer have messages as a list of lists of dicts
-                chat_messages = messages_from_dict(messages[0])
+                chat_messages = _get_messages_from_run_dict(messages[0])
             else:
                 raise ValueError(f"Could not extract messages to evaluate {messages}")
             return get_buffer_string(chat_messages)
@@ -73,21 +85,14 @@ class LLMStringRunMapper(StringRunMapper):
         if not generations:
             raise ValueError("Cannot evaluate LLM run with empty generations.")
         first_generation: Dict = generations[0]
-        if "messages" in first_generation:
-            if isinstance(first_generation, list):
-                # Runs from Tracer have generations as a list of lists of dicts
-                # Whereas Runs from the API have a list of dicts
-                first_generation = first_generation[0]
+        if isinstance(first_generation, list):
+            # Runs from Tracer have generations as a list of lists of dicts
+            # Whereas Runs from the API have a list of dicts
+            first_generation = first_generation[0]
         if "message" in first_generation:
-            return get_buffer_string(messages_from_dict([first_generation["message"]]))
+            output_ = self.serialize_chat_messages([first_generation["message"]])
         else:
-            output_ = "\n\n".join(
-                [
-                    generation["text"]
-                    for gen_batch in generations
-                    for generation in gen_batch
-                ]
-            )
+            output_ = first_generation["text"]
         return output_
 
     def map(self, run: Run) -> Dict[str, str]:
@@ -209,7 +214,7 @@ class StringExampleMapper(Serializable):
 
     def serialize_chat_messages(self, messages: List[Dict]) -> str:
         """Extract the input messages from the run."""
-        chat_messages = messages_from_dict(messages)
+        chat_messages = _get_messages_from_run_dict(messages)
         return get_buffer_string(chat_messages)
 
     def map(self, example: Example) -> Dict[str, str]:
@@ -233,7 +238,6 @@ class StringExampleMapper(Serializable):
                     and output.get("data")
                     else output
                 }
-
         elif self.reference_key not in example.outputs:
             raise ValueError(
                 f"Example {example.id} does not have reference key"
@@ -275,14 +279,14 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         run: Run = inputs["run"]
         example: Optional[Example] = inputs.get("example")
         evaluate_strings_inputs = self.run_mapper(run)
-        if self.example_mapper:
-            if not example:
-                raise ValueError(
-                    f"Evaluator {self.name} requires an reference"
-                    " example from the dataset,"
-                    f" but none was provided for run {run.id}."
-                )
+        if example and self.example_mapper:
             evaluate_strings_inputs.update(self.example_mapper(example))
+        elif self.string_evaluator.requires_reference:
+            raise ValueError(
+                f"Evaluator {self.name} requires an reference"
+                " example from the dataset,"
+                f" but none was provided for run {run.id}."
+            )
         return evaluate_strings_inputs
 
     def _prepare_output(self, output: Dict[str, Any]) -> EvaluationResult:
@@ -361,11 +365,8 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
                 " not yet implemented."
                 "Expected one of [BaseLanguageModel, Chain, Tool]."
             )
-        if reference_key is not None:
+        if reference_key is not None or isinstance(model, BaseLanguageModel):
             example_mapper = StringExampleMapper(reference_key=reference_key)
-        elif evaluator.requires_reference and isinstance(model, BaseLanguageModel):
-            # Datasets have an LLM type so we can auto-infer
-            example_mapper = StringExampleMapper()
         elif evaluator.requires_reference:
             # We could potentially auto-infer if there is only one string in the
             # example, but it's preferred to raise earlier.
