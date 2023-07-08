@@ -89,9 +89,9 @@ class Milvus(VectorStore):
         embedding = OpenAIEmbeddings()
         # Connect to a milvus instance on localhost
         milvus_store = Milvus(
-            embedding_function: Embeddings,
+            embedding_function = Embeddings,
             collection_name = "LangChainCollection",
-            drop_old: True,
+            drop_old = True,
         )
 
     Raises:
