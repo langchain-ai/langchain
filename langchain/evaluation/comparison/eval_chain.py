@@ -52,7 +52,8 @@ class PairwiseStringResultOutputParser(BaseOutputParser[dict]):
 
 
 class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
-    """A chain for comparing the output of two models.
+    """A chain for comparing two outputs, such as the outputs
+     of two models, prompts, or outputs of a single model on similar inputs.
 
     Example:
     >>> from langchain.chat_models import ChatOpenAI
