@@ -337,7 +337,7 @@ class AwaDB(VectorStore):
         if self.awadb_client is None:
             raise ValueError("AwaDB client is None!!!")
 
-        embedding = None
+        embedding: List[float] = []
         if self.using_table_name in self.table2embeddings:
             embedding = self.table2embeddings[self.using_table_name].embed_query(query)
         else:
@@ -346,6 +346,9 @@ class AwaDB(VectorStore):
             llm = llm_embedding.LLMEmbedding()
             embedding = llm.Embedding(query)
 
+        if embedding.__len__() == 0:
+            return []
+            
         results = self.max_marginal_relevance_search_by_vector(
             embedding, k, fetch_k, lambda_mult=lambda_mult
         )
@@ -442,19 +445,26 @@ class AwaDB(VectorStore):
 
     def delete(
         self,
-        ids: List[str],
-    ) -> bool:
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> Optional[bool]:
         """Delete the documents which have the specified ids.
 
         Args:
             ids: The ids of the embedding vectors.
+            **kwargs: Other keyword arguments that subclasses might use.
+            
         Returns:
-            True or False of the delete operations.
+            Optional[bool]: True if deletion is successful.
+            False otherwise, None if not implemented.
         """
         if self.awadb_client is None:
             raise ValueError("AwaDB client is None!!!")
-
-        return self.awadb_client.Delete(ids)
+        ret: Optional[bool] = None
+        if ids is None or ids.__len__() == 0:
+            return ret
+        ret = self.awadb_client.Delete(ids)
+        return ret
 
     def update(
         self,
