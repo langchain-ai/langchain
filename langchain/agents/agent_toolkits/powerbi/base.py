@@ -9,15 +9,15 @@ from langchain.agents.agent_toolkits.powerbi.prompt import (
 from langchain.agents.agent_toolkits.powerbi.toolkit import PowerBIToolkit
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.utilities.powerbi import PowerBIDataset
 
 
 def create_pbi_agent(
     llm: BaseLanguageModel,
-    toolkit: Optional[PowerBIToolkit],
+    toolkit: Optional[PowerBIToolkit] = None,
     powerbi: Optional[PowerBIDataset] = None,
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: str = POWERBI_PREFIX,
