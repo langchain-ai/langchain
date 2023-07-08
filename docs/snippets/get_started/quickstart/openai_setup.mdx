@@ -10,10 +10,24 @@ Accessing the API requires an API key, which you can get by creating an account 
 export OPENAI_API_KEY="..."
 ```
 
+Should you need to specify a Organization ID, you can set the environment variable by running:
+
+```bash
+export OPENAI_ORGANIZATION="..."
+```
+
 If you'd prefer not to set an environment variable you can pass the key in directly via the `openai_api_key` named parameter when initiating the OpenAI LLM class:
 
 ```python
 from langchain.llms import OpenAI
 
 llm = OpenAI(openai_api_key="...")
+```
+
+Similarly, you can set the organization ID via the `openai_organization` named parameter:
+
+```python
+from langchain.llms import OpenAI
+
+llm = OpenAI(openai_api_key="...", openai_organization="...")
 ```
