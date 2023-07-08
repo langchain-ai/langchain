@@ -596,8 +596,7 @@ class ElasticKnnSearch(VectorStore, ABC):
                model_id: Optional[str] = None,
                refresh_indices: bool = False,
                **kwargs: Any
-  #             ) -> None:
-               ) -> List[str]:
+       ) -> List[str]:
 
          """
          Adds the provided texts to the Elasticsearch index.
@@ -610,61 +609,66 @@ class ElasticKnnSearch(VectorStore, ABC):
          model_id : str, optional
              The ID of the model to use for generating text embeddings. If not provided, the default embedding model is used.
          """
-
-         try:
-             from elasticsearch.helpers import bulk
-         except ImportError:
-             raise ImportError(
+        
+        try:
+            from elasticsearch.helpers import bulk
+        except ImportError:
+            raise ImportError(
                  "Could not import elasticsearch python package. "
                  "Please install it with `pip install elasticsearch`."
-             )
+            )
 
-         # Check if the index exists.
-         if not self.client.indices.exists(index=self.index_name):
-#             # If the index does not exist, raise an exception.
-#            raise Exception(f"The index '{self.index_name}' does not exist. If you want to create a new index while encoding texts, call 'from_texts' instead.")
-             dims = kwargs.get("dims")
+        # Check if the index exists.
+        if not self.client.indices.exists(index=self.index_name):
+            dims = kwargs.get("dims")
 
-             if dims is None:
-                 raise ValueError("ElasticKnnSearch requires 'dims' parameter")
+            if dims is None:
+                raise ValueError("ElasticKnnSearch requires 'dims' parameter")
 
-             mapping = self._default_knn_mapping(dims=dims)
-             self.create_knn_index(mapping)
+            mapping = self._default_knn_mapping(dims=dims)
+            self.create_knn_index(mapping)
 
-         # Assign the encoding function from the instance's 'embedding' attribute to 'emb_func'
-         emb_func = self.embedding.embed_documents
+        # Assign the encoding function from the instance's 'embedding' attribute to 'emb_func'
+        emb_func = self.embedding.embed_documents
 
-         # Generate embeddings for the input texts.
-         # If 'model_id' is provided, use it as an argument to 'emb_func'.
-         # Otherwise, call 'emb_func' with 'texts' as the only argument.
-         #embeddings = emb_func(list(texts)) if not model_id else emb_func(list(texts), model_id=model_id)
-         if model_id:
-             if isinstance(emb_func, ElasticsearchEmbeddings):
-                 embeddings = emb_func(list(texts), model_id=model_id)
-             else:
-                 raise ValueError("model_id is only supported with ElasticsearchEmbeddings")
-         else:
-             embeddings = emb_func(list(texts))
+        # Generate embeddings for the input texts.
+        # If 'model_id' is provided, use it as an argument to 'emb_func'.
+        # Otherwise, call 'emb_func' with 'texts' as the only argument.
+        if model_id:
+            if isinstance(emb_func, ElasticsearchEmbeddings):
+                embeddings = emb_func(list(texts), model_id=model_id)
+            else:
+                raise ValueError("model_id is only supported with ElasticsearchEmbeddings")
+        else:
+            embeddings = emb_func(list(texts))
 
 
 
-         # Create a list of dictionaries, each containing a text and its corresponding embedding.
-         # 'zip(texts, embeddings)' is used to iterate over 'texts' and 'embeddings' in parallel.
-         body = [
-             {
-                 '_op_type': 'index',
-                 '_index': self.index_name,
-                 "text": text,
-                 "vector": vector
-             }
-             for text, vector in zip(texts, embeddings)
-         ]
+        # Create a list of dictionaries, each containing a text and its corresponding embedding.
+        # 'zip(texts, embeddings)' is used to iterate over 'texts' and 'embeddings' in parallel.
+        body = [
+            {
+                '_op_type': 'index',
+                '_index': self.index_name,
+                "text": text,
+                "vector": vector
+            }
+            for text, vector in zip(texts, embeddings)
+        ]
 
-         # Add the list of text-embedding pairs to the Elasticsearch index.
-         bulk(self.client, body)
+        # Add the list of text-embedding pairs to the Elasticsearch index.
+#        bulk(self.client, body)
+        responses = bulk(
+            self.es, 
+            body, 
+            request_timeout=120, 
+            yield_ok=True
+        )
+        
+#        ids = [resp["_id"] for ok, resp in responses if ok]
+        ids = [info['_id'] for success, info in responses if success]
 
-         # TODO RETURN ACTUAL IDS
-         return ['1','2','3']
+        return ids
 
     @classmethod
     def from_texts(cls,
@@ -674,7 +678,7 @@ class ElasticKnnSearch(VectorStore, ABC):
                    **kwargs: Any
                 ) -> ElasticKnnSearch:
 
-        index_name = kwargs.get("index_name", str(uuid.uuid4()))  # Provide a default value for index_name
+        index_name = kwargs.get("index_name", str(uuid.uuid4())) 
         es_connection = kwargs.get("es_connection")
         es_cloud_id = kwargs.get("es_cloud_id")
         es_user = kwargs.get("es_user")
