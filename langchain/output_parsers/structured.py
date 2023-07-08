@@ -47,13 +47,13 @@ class StructuredOutputParser(BaseOutputParser):
 
         response_schemas = [
             ResponseSchema(
-                name="foo", 
-                description="a list of strings", 
+                name="foo",
+                description="a list of strings",
                 type="List[string]"
                 ),
             ResponseSchema(
-                name="bar", 
-                description="a string", 
+                name="bar",
+                description="a string",
                 type="string"
                 ),
         ]
@@ -73,7 +73,7 @@ class StructuredOutputParser(BaseOutputParser):
         # }
 
         Args:
-            only_json (bool): If True, only the json in the markdown code snippet 
+            only_json (bool): If True, only the json in the markdown code snippet
                 will be returned, without the introducing text. Defaults to False.
         """
         schema_str = "\n".join(
