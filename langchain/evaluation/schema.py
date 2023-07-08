@@ -7,9 +7,9 @@ from enum import Enum
 from typing import Any, Optional, Sequence, Tuple
 from warnings import warn
 
-from langchain.base_language import BaseLanguageModel
 from langchain.chains.base import Chain
 from langchain.schema.agent import AgentAction
+from langchain.schema.language_model import BaseLanguageModel
 
 logger = logging.getLogger(__name__)
 

@@ -1316,7 +1316,7 @@ Classes
     retrievers.azure_cognitive_search.AzureCognitiveSearchRetriever
     retrievers.chatgpt_plugin_retriever.ChatGPTPluginRetriever
     retrievers.contextual_compression.ContextualCompressionRetriever
-    retrievers.databerry.DataberryRetriever
+    retrievers.chaindesk.ChaindeskRetriever
     retrievers.docarray.DocArrayRetriever
     retrievers.docarray.SearchType
     retrievers.document_compressors.base.BaseDocumentCompressor

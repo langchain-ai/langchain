@@ -4,12 +4,12 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
 
 from pydantic import Extra, Field
 
-from langchain.base_language import BaseLanguageModel
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.criteria.prompt import PROMPT, PROMPT_WITH_REFERENCES
 from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
 from langchain.schema import BaseOutputParser, BasePromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
 
 _SUPPORTED_CRITERIA = {
     "conciseness": "Is the submission concise and to the point?",
