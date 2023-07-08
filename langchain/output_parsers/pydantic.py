@@ -1,7 +1,7 @@
 import json
 import re
 import warnings
-from typing import Type, TypeVar, Optional, List, Any, Union
+from typing import Type, TypeVar, Optional, List, Any, Union, Dict
 
 from pydantic import BaseModel, ValidationError, create_model, Field
 
@@ -11,10 +11,10 @@ from langchain.schema import BaseOutputParser, OutputParserException
 T = TypeVar("T", bound=BaseModel)
 
 
+
 class PydanticOutputParser(BaseOutputParser[T]):
-    """Generates an output instruction for a Pydantic model, and any nested models within it.
-    . And parse the output into a Pydantic model.
-        
+    """Generates an output instruction for a Pydantic model, and any nested models within it, and a complimentary output parser.
+    
     Args:
         pydantic_object (Type[T]): The Pydantic model to parse the output into.
         excluded_fields (Optional[List[str]], optional): A list of fields to exclude from the Pydantic model. Defaults to None."""
@@ -61,7 +61,7 @@ class PydanticOutputParser(BaseOutputParser[T]):
         schema_str = json.dumps(reduced_schema)
         return PYDANTIC_FORMAT_INSTRUCTIONS.format(schema=schema_str)
 
-    def _handle_excluded_fields(self, json_object):
+    def _handle_excluded_fields(self, json_object: dict) -> dict:
         """Return a new json object with the excluded fields removed.
         If required fields are excluded, return a new dynamically created Pydantic model with the excluded fields removed."""
         json_object = self._filter_excluded_fields(json_object)
@@ -96,6 +96,9 @@ class PydanticOutputParser(BaseOutputParser[T]):
 
     def _filter_excluded_fields(self, data: Union[dict, list]) -> Union[dict, list]:
         """Exclude specified fields from a dictionary or a list."""
+        if self.excluded_fields is None:
+            return data
+        
         if isinstance(data, dict):
             return {key: value for key, value in data.items() if key not in self.excluded_fields}
         elif isinstance(data, list):
