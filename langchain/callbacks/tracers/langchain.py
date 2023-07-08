@@ -109,8 +109,6 @@ class LangChainTracer(BaseTracer):
 
     def _persist_run_single(self, run: Run) -> None:
         """Persist a run."""
-        if run.parent_run_id is None:
-            run.reference_example_id = self.example_id
         run_dict = run.dict(exclude={"child_runs"})
         run_dict["tags"] = self._get_tags(run)
         extra = run_dict.get("extra", {})
@@ -136,12 +134,16 @@ class LangChainTracer(BaseTracer):
 
     def _on_llm_start(self, run: Run) -> None:
         """Persist an LLM run."""
+        if run.parent_run_id is None:
+            run.reference_example_id = self.example_id
         self._futures.add(
             self.executor.submit(self._persist_run_single, run.copy(deep=True))
         )
 
     def _on_chat_model_start(self, run: Run) -> None:
         """Persist an LLM run."""
+        if run.parent_run_id is None:
+            run.reference_example_id = self.example_id
         self._futures.add(
             self.executor.submit(self._persist_run_single, run.copy(deep=True))
         )
@@ -160,6 +162,8 @@ class LangChainTracer(BaseTracer):
 
     def _on_chain_start(self, run: Run) -> None:
         """Process the Chain Run upon start."""
+        if run.parent_run_id is None:
+            run.reference_example_id = self.example_id
         self._futures.add(
             self.executor.submit(self._persist_run_single, run.copy(deep=True))
         )
@@ -178,6 +182,8 @@ class LangChainTracer(BaseTracer):
 
     def _on_tool_start(self, run: Run) -> None:
         """Process the Tool Run upon start."""
+        if run.parent_run_id is None:
+            run.reference_example_id = self.example_id
         self._futures.add(
             self.executor.submit(self._persist_run_single, run.copy(deep=True))
         )
@@ -196,6 +202,8 @@ class LangChainTracer(BaseTracer):
 
     def _on_retriever_start(self, run: Run) -> None:
         """Process the Retriever Run upon start."""
+        if run.parent_run_id is None:
+            run.reference_example_id = self.example_id
         self._futures.add(
             self.executor.submit(self._persist_run_single, run.copy(deep=True))
         )
