@@ -34,6 +34,22 @@ logger = logging.getLogger(__name__)
 TS = TypeVar("TS", bound="TextSplitter")
 
 
+def _make_spacy_pipeline_for_splitting(pipeline: str) -> object:  # avoid importing spacy
+    try:
+        import spacy
+    except ImportError:
+        raise ImportError(
+            "Spacy is not installed, please install it with `pip install spacy`."
+        )
+    if pipeline == 'sentencizer':
+        from spacy.lang.en import English
+        sentencizer = English()
+        sentencizer.add_pipe("sentencizer")
+    else:
+        sentencizer = spacy.load(pipeline, disable=['ner'])
+    return sentencizer
+
+
 def _split_text_with_regex(
     text: str, separator: str, keep_separator: bool
 ) -> List[str]:
@@ -1017,18 +1033,12 @@ class SpacyTextSplitter(TextSplitter):
     ) -> None:
         """Initialize the spacy text splitter."""
         super().__init__(**kwargs)
-        try:
-            import spacy
-        except ImportError:
-            raise ImportError(
-                "Spacy is not installed, please install it with `pip install spacy`."
-            )
-        self._tokenizer = spacy.load(pipeline)
+        self._tokenizer = _make_spacy_pipeline_for_splitting(pipeline)
         self._separator = separator
 
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
-        splits = (str(s) for s in self._tokenizer(text).sents)
+        splits = (s.text for s in self._tokenizer(text).sents)
         return self._merge_splits(splits, self._separator)
 
 
@@ -1058,3 +1068,4 @@ class LatexTextSplitter(RecursiveCharacterTextSplitter):
         """Initialize a LatexTextSplitter."""
         separators = self.get_separators_for_language(Language.LATEX)
         super().__init__(separators=separators, **kwargs)
+
