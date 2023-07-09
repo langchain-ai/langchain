@@ -6,9 +6,9 @@ from typing import Any, Dict, List, Optional
 from pydantic import Extra, Field, root_validator
 
 from langchain.chains import LLMChain
-from langchain.chains.base import Chain
 from langchain.requests import TextRequestsWrapper
 from langchain.schema.callbacks.manager import CallbackManagerForChainRun
+from langchain.schema.chain import Chain
 
 DEFAULT_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36"  # noqa: E501

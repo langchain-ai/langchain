@@ -3,8 +3,8 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import root_validator
 
-from langchain.chains.base import Chain
 from langchain.schema.callbacks.manager import CallbackManagerForChainRun
+from langchain.schema.chain import Chain
 from langchain.utils import get_from_dict_or_env
 
 

@@ -4,7 +4,6 @@ from __future__ import annotations
 from typing import Any, Dict, List, Mapping, Optional
 
 from langchain.chains import ConversationChain
-from langchain.chains.base import Chain
 from langchain.chains.conversation.prompt import DEFAULT_TEMPLATE
 from langchain.chains.retrieval_qa.base import BaseRetrievalQA, RetrievalQA
 from langchain.chains.router.base import MultiRouteChain
@@ -15,6 +14,7 @@ from langchain.chains.router.multi_retrieval_prompt import (
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.schema import BaseRetriever
+from langchain.schema.chain import Chain
 from langchain.schema.language_model import BaseLanguageModel
 
 

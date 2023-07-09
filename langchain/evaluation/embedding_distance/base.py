@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 from pydantic import Field
 
-from langchain.chains.base import Chain
 from langchain.embeddings.base import Embeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.evaluation.schema import PairwiseStringEvaluator, StringEvaluator
@@ -15,6 +14,7 @@ from langchain.schema.callbacks.manager import (
     CallbackManagerForChainRun,
     Callbacks,
 )
+from langchain.schema.chain import Chain
 
 
 class EmbeddingDistance(str, Enum):

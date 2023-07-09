@@ -1,8 +1,8 @@
 """Chain that runs an arbitrary python function."""
 from typing import Callable, Dict, List, Optional
 
-from langchain.chains.base import Chain
 from langchain.schema.callbacks.manager import CallbackManagerForChainRun
+from langchain.schema.chain import Chain
 
 
 class TransformChain(Chain):

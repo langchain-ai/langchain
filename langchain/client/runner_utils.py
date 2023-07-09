@@ -24,7 +24,6 @@ from langchainplus_sdk.schemas import Example
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.evaluation import EvaluatorCallbackHandler
 from langchain.callbacks.tracers.langchain import LangChainTracer
-from langchain.chains.base import Chain
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.base import BaseLLM
 from langchain.schema import (
@@ -33,6 +32,7 @@ from langchain.schema import (
 )
 from langchain.schema.callbacks.base import BaseCallbackHandler
 from langchain.schema.callbacks.manager import Callbacks
+from langchain.schema.chain import Chain
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import (
     BaseMessage,

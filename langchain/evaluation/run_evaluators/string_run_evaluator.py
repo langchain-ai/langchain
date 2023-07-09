@@ -8,7 +8,6 @@ from langchainplus_sdk import EvaluationResult, RunEvaluator
 from langchainplus_sdk.schemas import Example, Run
 
 from langchain.base_language import BaseLanguageModel
-from langchain.chains.base import Chain
 from langchain.evaluation.schema import StringEvaluator
 from langchain.load.dump import dumps
 from langchain.load.load import loads
@@ -18,6 +17,7 @@ from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
+from langchain.schema.chain import Chain
 from langchain.schema.messages import BaseMessage, get_buffer_string
 from langchain.tools.base import Tool
 

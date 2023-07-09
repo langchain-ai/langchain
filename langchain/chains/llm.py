@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from pydantic import Extra, Field
 
-from langchain.chains.base import Chain
 from langchain.input import get_colored_text
 from langchain.load.dump import dumpd
 from langchain.prompts.prompt import PromptTemplate
@@ -24,6 +23,7 @@ from langchain.schema.callbacks.manager import (
     CallbackManagerForChainRun,
     Callbacks,
 )
+from langchain.schema.chain import Chain
 from langchain.schema.language_model import BaseLanguageModel
 
 

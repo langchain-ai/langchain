@@ -6,12 +6,12 @@ from typing import Any, Dict, List, Mapping, NamedTuple, Optional
 
 from pydantic import Extra
 
-from langchain.chains.base import Chain
 from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
     Callbacks,
 )
+from langchain.schema.chain import Chain
 
 
 class Route(NamedTuple):

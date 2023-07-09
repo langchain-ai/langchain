@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Field
 
-from langchain.chains.base import Chain
 from langchain.chains.graph_qa.prompts import (
     SPARQL_GENERATION_SELECT_PROMPT,
     SPARQL_GENERATION_UPDATE_PROMPT,
@@ -18,6 +17,7 @@ from langchain.chains.llm import LLMChain
 from langchain.graphs.rdf_graph import RdfGraph
 from langchain.prompts.base import BasePromptTemplate
 from langchain.schema.callbacks.manager import CallbackManagerForChainRun
+from langchain.schema.chain import Chain
 from langchain.schema.language_model import BaseLanguageModel
 
 

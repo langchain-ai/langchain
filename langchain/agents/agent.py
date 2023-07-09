@@ -14,7 +14,6 @@ from pydantic import BaseModel, root_validator
 
 from langchain.agents.agent_types import AgentType
 from langchain.agents.tools import InvalidTool
-from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.input import get_color_mapping
 from langchain.prompts.few_shot import FewShotPromptTemplate
@@ -34,6 +33,7 @@ from langchain.schema.callbacks.manager import (
     CallbackManagerForToolRun,
     Callbacks,
 )
+from langchain.schema.chain import Chain
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage
 from langchain.tools.base import BaseTool

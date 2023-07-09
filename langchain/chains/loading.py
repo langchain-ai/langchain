@@ -7,7 +7,6 @@ import yaml
 
 from langchain.chains import ReduceDocumentsChain
 from langchain.chains.api.base import APIChain
-from langchain.chains.base import Chain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
 from langchain.chains.combine_documents.map_rerank import MapRerankDocumentsChain
 from langchain.chains.combine_documents.refine import RefineDocumentsChain
@@ -30,6 +29,7 @@ from langchain.prompts.loading import (
     load_prompt,
     load_prompt_from_config,
 )
+from langchain.schema.chain import Chain
 from langchain.utilities.loading import try_load_from_hub
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/chains/"

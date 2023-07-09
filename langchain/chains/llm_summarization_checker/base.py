@@ -8,11 +8,11 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Extra, root_validator
 
-from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.sequential import SequentialChain
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema.callbacks.manager import CallbackManagerForChainRun
+from langchain.schema.chain import Chain
 from langchain.schema.language_model import BaseLanguageModel
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"

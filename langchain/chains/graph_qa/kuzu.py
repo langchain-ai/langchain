@@ -5,12 +5,12 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Field
 
-from langchain.chains.base import Chain
 from langchain.chains.graph_qa.prompts import CYPHER_QA_PROMPT, KUZU_GENERATION_PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.graphs.kuzu_graph import KuzuGraph
 from langchain.schema import BasePromptTemplate
 from langchain.schema.callbacks.manager import CallbackManagerForChainRun
+from langchain.schema.chain import Chain
 from langchain.schema.language_model import BaseLanguageModel
 
 

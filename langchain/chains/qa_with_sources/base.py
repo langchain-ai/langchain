@@ -10,7 +10,6 @@ from typing import Any, Dict, List, Optional
 from pydantic import Extra, root_validator
 
 from langchain.chains import ReduceDocumentsChain
-from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
@@ -27,6 +26,7 @@ from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
+from langchain.schema.chain import Chain
 from langchain.schema.language_model import BaseLanguageModel
 
 

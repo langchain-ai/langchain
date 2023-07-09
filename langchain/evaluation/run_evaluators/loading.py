@@ -4,12 +4,12 @@ from typing import Any, List, Optional, Sequence, Union
 from langchainplus_sdk import RunEvaluator
 
 from langchain.base_language import BaseLanguageModel
-from langchain.chains.base import Chain
 from langchain.evaluation.loading import load_evaluator
 from langchain.evaluation.run_evaluators.string_run_evaluator import (
     StringRunEvaluatorChain,
 )
 from langchain.evaluation.schema import EvaluatorType, StringEvaluator
+from langchain.schema.chain import Chain
 from langchain.tools.base import Tool
 
 

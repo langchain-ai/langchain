@@ -3,9 +3,9 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from langchain.chains.base import Chain
 from langchain.experimental.plan_and_execute.schema import StepResponse
 from langchain.schema.callbacks.manager import Callbacks
+from langchain.schema.chain import Chain
 
 
 class BaseExecutor(BaseModel):

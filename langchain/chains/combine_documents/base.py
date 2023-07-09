@@ -5,12 +5,12 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import Field
 
-from langchain.chains.base import Chain
 from langchain.docstore.document import Document
 from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
+from langchain.schema.chain import Chain
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
 

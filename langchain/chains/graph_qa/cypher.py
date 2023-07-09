@@ -6,12 +6,12 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Field
 
-from langchain.chains.base import Chain
 from langchain.chains.graph_qa.prompts import CYPHER_GENERATION_PROMPT, CYPHER_QA_PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.graphs.neo4j_graph import Neo4jGraph
 from langchain.schema import BasePromptTemplate
 from langchain.schema.callbacks.manager import CallbackManagerForChainRun
+from langchain.schema.chain import Chain
 from langchain.schema.language_model import BaseLanguageModel
 
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
