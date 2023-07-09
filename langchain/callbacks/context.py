@@ -6,13 +6,10 @@ import warnings
 from contextlib import asynccontextmanager, contextmanager
 from contextvars import ContextVar
 from typing import (
-    Any,
     AsyncGenerator,
-    Dict,
     Generator,
     List,
     Optional,
-    Type,
     TypeVar,
     Union,
     cast,
@@ -29,7 +26,6 @@ from langchain.callbacks.tracers.wandb import WandbTracer
 from langchain.schema.callbacks.manager import (
     AsyncCallbackManager,
     CallbackManager,
-    Callbacks,
 )
 
 logger = logging.getLogger(__name__)
@@ -271,68 +267,7 @@ def env_var_is_set(env_var: str) -> bool:
     )
 
 
-def _configure(
-    callback_manager_cls: Type[T],
-    inheritable_callbacks: Callbacks = None,
-    local_callbacks: Callbacks = None,
-    verbose: bool = False,
-    inheritable_tags: Optional[List[str]] = None,
-    local_tags: Optional[List[str]] = None,
-    inheritable_metadata: Optional[Dict[str, Any]] = None,
-    local_metadata: Optional[Dict[str, Any]] = None,
-) -> T:
-    """Configure the callback manager.
-
-    Args:
-        callback_manager_cls (Type[T]): The callback manager class.
-        inheritable_callbacks (Optional[Callbacks], optional): The inheritable
-            callbacks. Defaults to None.
-        local_callbacks (Optional[Callbacks], optional): The local callbacks.
-            Defaults to None.
-        verbose (bool, optional): Whether to enable verbose mode. Defaults to False.
-        inheritable_tags (Optional[List[str]], optional): The inheritable tags.
-            Defaults to None.
-        local_tags (Optional[List[str]], optional): The local tags. Defaults to None.
-        inheritable_metadata (Optional[Dict[str, Any]], optional): The inheritable
-            metadata. Defaults to None.
-        local_metadata (Optional[Dict[str, Any]], optional): The local metadata.
-            Defaults to None.
-
-    Returns:
-        T: The configured callback manager.
-    """
-    callback_manager = callback_manager_cls(handlers=[])
-    if inheritable_callbacks or local_callbacks:
-        if isinstance(inheritable_callbacks, list) or inheritable_callbacks is None:
-            inheritable_callbacks_ = inheritable_callbacks or []
-            callback_manager = callback_manager_cls(
-                handlers=inheritable_callbacks_.copy(),
-                inheritable_handlers=inheritable_callbacks_.copy(),
-            )
-        else:
-            callback_manager = callback_manager_cls(
-                handlers=inheritable_callbacks.handlers,
-                inheritable_handlers=inheritable_callbacks.inheritable_handlers,
-                parent_run_id=inheritable_callbacks.parent_run_id,
-                tags=inheritable_callbacks.tags,
-                inheritable_tags=inheritable_callbacks.inheritable_tags,
-                metadata=inheritable_callbacks.metadata,
-                inheritable_metadata=inheritable_callbacks.inheritable_metadata,
-            )
-        local_handlers_ = (
-            local_callbacks
-            if isinstance(local_callbacks, list)
-            else (local_callbacks.handlers if local_callbacks else [])
-        )
-        for handler in local_handlers_:
-            callback_manager.add_handler(handler, False)
-    if inheritable_tags or local_tags:
-        callback_manager.add_tags(inheritable_tags or [])
-        callback_manager.add_tags(local_tags or [], False)
-    if inheritable_metadata or local_metadata:
-        callback_manager.add_metadata(inheritable_metadata or {})
-        callback_manager.add_metadata(local_metadata or {}, False)
-
+def add_handlers_from_context(callback_manager: T, verbose: bool) -> None:
     tracer = tracing_callback_var.get()
     wandb_tracer = wandb_tracing_callback_var.get()
     open_ai = openai_callback_var.get()
@@ -390,8 +325,7 @@ def _configure(
             if wandb_tracer:
                 callback_manager.add_handler(wandb_tracer, True)
             else:
-                handler = WandbTracer()
-                callback_manager.add_handler(handler, True)
+                callback_manager.add_handler(WandbTracer(), True)
         if tracing_v2_enabled_ and not any(
             isinstance(handler, LangChainTracer)
             for handler in callback_manager.handlers
@@ -400,8 +334,9 @@ def _configure(
                 callback_manager.add_handler(tracer_v2, True)
             else:
                 try:
-                    handler = LangChainTracer(project_name=tracer_project)
-                    callback_manager.add_handler(handler, True)
+                    callback_manager.add_handler(
+                        LangChainTracer(project_name=tracer_project), True
+                    )
                 except Exception as e:
                     logger.warning(
                         "Unable to load requested LangChainTracer."
@@ -414,4 +349,3 @@ def _configure(
             for handler in callback_manager.handlers
         ):
             callback_manager.add_handler(open_ai, True)
-    return callback_manager

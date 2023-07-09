@@ -6,7 +6,7 @@ import pytest
 from aiohttp import ClientSession
 
 from langchain.agents import AgentType, initialize_agent, load_tools
-from langchain.callbacks.manager import wandb_tracing_enabled
+from langchain.callbacks.context import wandb_tracing_enabled
 from langchain.llms import OpenAI
 
 questions = [

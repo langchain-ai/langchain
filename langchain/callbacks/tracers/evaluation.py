@@ -6,7 +6,7 @@ from uuid import UUID
 
 from langchainplus_sdk import LangChainPlusClient, RunEvaluator
 
-from langchain.callbacks.manager import tracing_v2_enabled
+from langchain.callbacks.context import tracing_v2_enabled
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import Run
 

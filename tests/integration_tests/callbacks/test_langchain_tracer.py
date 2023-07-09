@@ -7,7 +7,7 @@ from aiohttp import ClientSession
 
 from langchain.agents import AgentType, initialize_agent, load_tools
 from langchain.callbacks import tracing_enabled
-from langchain.callbacks.manager import (
+from langchain.callbacks.context import (
     atrace_as_chain_group,
     trace_as_chain_group,
     tracing_v2_enabled,

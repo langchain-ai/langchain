@@ -1004,7 +1004,6 @@ class CallbackManager(BaseCallbackManager):
         Returns:
             CallbackManager: The configured callback manager.
         """
-        from langchain.callbacks.manager import _configure
 
         return _configure(
             cls,
@@ -1298,7 +1297,6 @@ class AsyncCallbackManager(BaseCallbackManager):
         Returns:
             AsyncCallbackManager: The configured async callback manager.
         """
-        from langchain.callbacks.manager import _configure
 
         return _configure(
             cls,
@@ -1310,6 +1308,81 @@ class AsyncCallbackManager(BaseCallbackManager):
             inheritable_metadata,
             local_metadata,
         )
+
+
+CM = TypeVar("CM", CallbackManager, AsyncCallbackManager)
+
+
+def _configure(
+    callback_manager_cls: Type[CM],
+    inheritable_callbacks: Callbacks = None,
+    local_callbacks: Callbacks = None,
+    verbose: bool = False,
+    inheritable_tags: Optional[List[str]] = None,
+    local_tags: Optional[List[str]] = None,
+    inheritable_metadata: Optional[Dict[str, Any]] = None,
+    local_metadata: Optional[Dict[str, Any]] = None,
+) -> CM:
+    """Configure the callback manager.
+
+    Args:
+        callback_manager_cls (Type[T]): The callback manager class.
+        inheritable_callbacks (Optional[Callbacks], optional): The inheritable
+            callbacks. Defaults to None.
+        local_callbacks (Optional[Callbacks], optional): The local callbacks.
+            Defaults to None.
+        verbose (bool, optional): Whether to enable verbose mode. Defaults to False.
+        inheritable_tags (Optional[List[str]], optional): The inheritable tags.
+            Defaults to None.
+        local_tags (Optional[List[str]], optional): The local tags. Defaults to None.
+        inheritable_metadata (Optional[Dict[str, Any]], optional): The inheritable
+            metadata. Defaults to None.
+        local_metadata (Optional[Dict[str, Any]], optional): The local metadata.
+            Defaults to None.
+
+    Returns:
+        T: The configured callback manager.
+    """
+    callback_manager = callback_manager_cls(handlers=[])
+    if inheritable_callbacks or local_callbacks:
+        if isinstance(inheritable_callbacks, list) or inheritable_callbacks is None:
+            inheritable_callbacks_ = inheritable_callbacks or []
+            callback_manager = callback_manager_cls(
+                handlers=inheritable_callbacks_.copy(),
+                inheritable_handlers=inheritable_callbacks_.copy(),
+            )
+        else:
+            callback_manager = callback_manager_cls(
+                handlers=inheritable_callbacks.handlers,
+                inheritable_handlers=inheritable_callbacks.inheritable_handlers,
+                parent_run_id=inheritable_callbacks.parent_run_id,
+                tags=inheritable_callbacks.tags,
+                inheritable_tags=inheritable_callbacks.inheritable_tags,
+                metadata=inheritable_callbacks.metadata,
+                inheritable_metadata=inheritable_callbacks.inheritable_metadata,
+            )
+        local_handlers_ = (
+            local_callbacks
+            if isinstance(local_callbacks, list)
+            else (local_callbacks.handlers if local_callbacks else [])
+        )
+        for handler in local_handlers_:
+            callback_manager.add_handler(handler, False)
+    if inheritable_tags or local_tags:
+        callback_manager.add_tags(inheritable_tags or [])
+        callback_manager.add_tags(local_tags or [], False)
+    if inheritable_metadata or local_metadata:
+        callback_manager.add_metadata(inheritable_metadata or {})
+        callback_manager.add_metadata(local_metadata or {}, False)
+
+    try:
+        from langchain.callbacks.context import add_handlers_from_context
+
+        add_handlers_from_context(callback_manager, verbose)
+    except ImportError:
+        pass
+
+    return callback_manager
 
 
 Callbacks = Optional[Union[List[BaseCallbackHandler], BaseCallbackManager]]
