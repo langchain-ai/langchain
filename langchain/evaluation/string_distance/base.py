@@ -108,8 +108,28 @@ class _RapidFuzzChainMixin(Chain):
         return _RapidFuzzChainMixin._get_metric(self.distance)
 
 
-class StringDistanceEvalChain(_RapidFuzzChainMixin, StringEvaluator):
-    """Compute string distances between the prediction and the reference."""
+class StringDistanceEvalChain(StringEvaluator, _RapidFuzzChainMixin):
+    """Compute string distances between the prediction and the reference.
+
+    Examples
+    ----------
+
+    >>> from langchain.evaluation import StringDistanceEvalChain
+    >>> evaluator = StringDistanceEvalChain()
+    >>> evaluator.evaluate_strings(
+            prediction="Mindy is the CTO",
+            reference="Mindy is the CEO",
+        )
+
+    Using the `load_evaluator` function:
+
+    >>> from langchain.evaluation import load_evaluator
+    >>> evaluator = load_evaluator("string_distance")
+    >>> evaluator.evaluate_strings(
+            prediction="The answer is three",
+            reference="three",
+        )
+    """
 
     @property
     def requires_input(self) -> bool:
@@ -266,7 +286,7 @@ class StringDistanceEvalChain(_RapidFuzzChainMixin, StringEvaluator):
         return {"score": result["score"]}
 
 
-class PairwiseStringDistanceEvalChain(_RapidFuzzChainMixin, PairwiseStringEvaluator):
+class PairwiseStringDistanceEvalChain(PairwiseStringEvaluator, _RapidFuzzChainMixin):
     """Compute string edit distances between two predictions."""
 
     @property
