@@ -132,6 +132,28 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
             return None
         return zep_memory
 
+    def add_user_message(
+        self, message: str, metadata: Optional[Dict[str, Any]] = None
+    ) -> None:
+        """Convenience method for adding a human message string to the store.
+
+        Args:
+            message: The string contents of a human message.
+            metadata: Optional metadata to attach to the message.
+        """
+        self.add_message(HumanMessage(content=message), metadata=metadata)
+
+    def add_ai_message(
+        self, message: str, metadata: Optional[Dict[str, Any]] = None
+    ) -> None:
+        """Convenience method for adding an AI message string to the store.
+
+        Args:
+            message: The string contents of an AI message.
+            metadata: Optional metadata to attach to the message.
+        """
+        self.add_message(AIMessage(content=message), metadata=metadata)
+
     def add_message(
         self, message: BaseMessage, metadata: Optional[Dict[str, Any]] = None
     ) -> None:
