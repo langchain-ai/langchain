@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from langchain.schema import (
     BaseChatMessageHistory,
@@ -84,10 +84,20 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
         if zep_memory.messages:
             msg: Message
             for msg in zep_memory.messages:
+                metadata: Dict = {
+                    "uuid": msg.uuid,
+                    "created_at": msg.created_at,
+                    "token_count": msg.token_count,
+                    "metadata": msg.metadata,
+                }
                 if msg.role == "ai":
-                    messages.append(AIMessage(content=msg.content))
+                    messages.append(
+                        AIMessage(content=msg.content, additional_kwargs=metadata)
+                    )
                 else:
-                    messages.append(HumanMessage(content=msg.content))
+                    messages.append(
+                        HumanMessage(content=msg.content, additional_kwargs=metadata)
+                    )
 
         return messages
 
@@ -122,16 +132,15 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
             return None
         return zep_memory
 
-    def add_message(self, message: BaseMessage) -> None:
+    def add_message(
+        self, message: BaseMessage, metadata: Optional[Dict[str, Any]] = None
+    ) -> None:
         """Append the message to the Zep memory history"""
         from zep_python import Memory, Message
 
-        zep_message: Message
-        if isinstance(message, HumanMessage):
-            zep_message = Message(content=message.content, role="human")
-        else:
-            zep_message = Message(content=message.content, role="ai")
-
+        zep_message = Message(
+            content=message.content, role=message.type, metadata=metadata
+        )
         zep_memory = Memory(messages=[zep_message])
 
         self.zep_client.add_memory(self.session_id, zep_memory)
