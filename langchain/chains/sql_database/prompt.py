@@ -14,6 +14,11 @@ Never query for all the columns from a specific table, only ask for a the few re
 
 Pay attention to use only the column names that you can see in the schema description. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
 
+Relevant pieces of previous conversation:
+{history}
+
+(You do not need to use these pieces of information if not relevant)
+
 Use the following format:
 
 Question: Question here
@@ -24,20 +29,23 @@ Answer: Final answer here
 """
 
 PROMPT = PromptTemplate(
-    input_variables=["input", "table_info", "dialect", "top_k"],
+    input_variables=["input", "table_info", "dialect", "top_k", "history"],
     template=_DEFAULT_TEMPLATE + PROMPT_SUFFIX,
 )
 
 
-_DECIDER_TEMPLATE = """Given the below input question and list of potential tables, output a comma separated list of the table names that may be necessary to answer this question.
+_DECIDER_TEMPLATE = """Given the below input question, past conversation history and list of potential tables, output a comma separated list of the table names that may be necessary to answer this question.
 
-Question: {query}
+
+History: {history}
+
+Question: {input}
 
 Table Names: {table_names}
 
 Relevant Table Names:"""
 DECIDER_PROMPT = PromptTemplate(
-    input_variables=["query", "table_names"],
+    input_variables=["input", "table_names", "history"],
     template=_DECIDER_TEMPLATE,
     output_parser=CommaSeparatedListOutputParser(),
 )
@@ -47,6 +55,11 @@ Unless the user specifies in the question a specific number of examples to obtai
 Never query for all columns from a table. You must query only the columns that are needed to answer the question. Wrap each column name in double quotes (") to denote them as delimited identifiers.
 Pay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
 Pay attention to use today() function to get the current date, if the question involves "today".
+
+Relevant pieces of previous conversation:
+{history}
+
+(You do not need to use these pieces of information if not relevant)
 
 Use the following format:
 
@@ -58,7 +71,7 @@ Answer: Final answer here
 """
 
 DUCKDB_PROMPT = PromptTemplate(
-    input_variables=["input", "table_info", "top_k"],
+    input_variables=["input", "table_info", "top_k", "history"],
     template=_duckdb_prompt + PROMPT_SUFFIX,
 )
 
@@ -67,6 +80,11 @@ Unless the user specifies in the question a specific number of examples to obtai
 Never query for all columns from a table. You must query only the columns that are needed to answer the question. Wrap each column name in backticks (`) to denote them as delimited identifiers.
 Pay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
 Pay attention to use CURRENT_DATE() function to get the current date, if the question involves "today".
+
+Relevant pieces of previous conversation:
+{history}
+
+(You do not need to use these pieces of information if not relevant)
 
 Use the following format:
 
@@ -78,7 +96,7 @@ Answer: Final answer here
 """
 
 GOOGLESQL_PROMPT = PromptTemplate(
-    input_variables=["input", "table_info", "top_k"],
+    input_variables=["input", "table_info", "top_k", "history"],
     template=_googlesql_prompt + PROMPT_SUFFIX,
 )
 
@@ -88,6 +106,11 @@ Unless the user specifies in the question a specific number of examples to obtai
 Never query for all columns from a table. You must query only the columns that are needed to answer the question. Wrap each column name in square brackets ([]) to denote them as delimited identifiers.
 Pay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
 Pay attention to use CAST(GETDATE() as date) function to get the current date, if the question involves "today".
+
+Relevant pieces of previous conversation:
+{history}
+
+(You do not need to use these pieces of information if not relevant)
 
 Use the following format:
 
@@ -99,7 +122,7 @@ Answer: Final answer here
 """
 
 MSSQL_PROMPT = PromptTemplate(
-    input_variables=["input", "table_info", "top_k"],
+    input_variables=["input", "table_info", "top_k", "history"],
     template=_mssql_prompt + PROMPT_SUFFIX,
 )
 
@@ -109,6 +132,11 @@ Unless the user specifies in the question a specific number of examples to obtai
 Never query for all columns from a table. You must query only the columns that are needed to answer the question. Wrap each column name in backticks (`) to denote them as delimited identifiers.
 Pay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
 Pay attention to use CURDATE() function to get the current date, if the question involves "today".
+
+Relevant pieces of previous conversation:
+{history}
+
+(You do not need to use these pieces of information if not relevant)
 
 Use the following format:
 
@@ -120,7 +148,7 @@ Answer: Final answer here
 """
 
 MYSQL_PROMPT = PromptTemplate(
-    input_variables=["input", "table_info", "top_k"],
+    input_variables=["input", "table_info", "top_k", "history"],
     template=_mysql_prompt + PROMPT_SUFFIX,
 )
 
@@ -130,6 +158,12 @@ Unless the user specifies in the question a specific number of examples to obtai
 Never query for all columns from a table. You must query only the columns that are needed to answer the question. Wrap each column name in backticks (`) to denote them as delimited identifiers.
 Pay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
 Pay attention to use CURDATE() function to get the current date, if the question involves "today".
+
+Relevant pieces of previous conversation:
+{history}
+
+(You do not need to use these pieces of information if not relevant)
+
 
 Use the following format:
 
@@ -141,7 +175,7 @@ Answer: Final answer here
 """
 
 MARIADB_PROMPT = PromptTemplate(
-    input_variables=["input", "table_info", "top_k"],
+    input_variables=["input", "table_info", "top_k", "history"],
     template=_mariadb_prompt + PROMPT_SUFFIX,
 )
 
@@ -151,6 +185,11 @@ Unless the user specifies in the question a specific number of examples to obtai
 Never query for all columns from a table. You must query only the columns that are needed to answer the question. Wrap each column name in double quotes (") to denote them as delimited identifiers.
 Pay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
 Pay attention to use TRUNC(SYSDATE) function to get the current date, if the question involves "today".
+
+Relevant pieces of previous conversation:
+{history}
+
+(You do not need to use these pieces of information if not relevant)
 
 Use the following format:
 
@@ -162,7 +201,7 @@ Answer: Final answer here
 """
 
 ORACLE_PROMPT = PromptTemplate(
-    input_variables=["input", "table_info", "top_k"],
+    input_variables=["input", "table_info", "top_k", "history"],
     template=_oracle_prompt + PROMPT_SUFFIX,
 )
 
@@ -172,6 +211,11 @@ Unless the user specifies in the question a specific number of examples to obtai
 Never query for all columns from a table. You must query only the columns that are needed to answer the question. Wrap each column name in double quotes (") to denote them as delimited identifiers.
 Pay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
 Pay attention to use CURRENT_DATE function to get the current date, if the question involves "today".
+
+Relevant pieces of previous conversation:
+{history}
+
+(You do not need to use these pieces of information if not relevant)
 
 Use the following format:
 
@@ -183,7 +227,7 @@ Answer: Final answer here
 """
 
 POSTGRES_PROMPT = PromptTemplate(
-    input_variables=["input", "table_info", "top_k"],
+    input_variables=["input", "table_info", "top_k", "history"],
     template=_postgres_prompt + PROMPT_SUFFIX,
 )
 
@@ -193,6 +237,11 @@ Unless the user specifies in the question a specific number of examples to obtai
 Never query for all columns from a table. You must query only the columns that are needed to answer the question. Wrap each column name in double quotes (") to denote them as delimited identifiers.
 Pay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
 Pay attention to use date('now') function to get the current date, if the question involves "today".
+
+Relevant pieces of previous conversation:
+{history}
+
+(You do not need to use these pieces of information if not relevant)
 
 Use the following format:
 
@@ -204,7 +253,7 @@ Answer: Final answer here
 """
 
 SQLITE_PROMPT = PromptTemplate(
-    input_variables=["input", "table_info", "top_k"],
+    input_variables=["input", "table_info", "top_k", "history"],
     template=_sqlite_prompt + PROMPT_SUFFIX,
 )
 
@@ -213,6 +262,11 @@ Unless the user specifies in the question a specific number of examples to obtai
 Never query for all columns from a table. You must query only the columns that are needed to answer the question. Wrap each column name in double quotes (") to denote them as delimited identifiers.
 Pay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
 Pay attention to use today() function to get the current date, if the question involves "today".
+
+Relevant pieces of previous conversation:
+{history}
+
+(You do not need to use these pieces of information if not relevant)
 
 Use the following format:
 
@@ -224,7 +278,7 @@ Answer: "Final answer here"
 """
 
 CLICKHOUSE_PROMPT = PromptTemplate(
-    input_variables=["input", "table_info", "top_k"],
+    input_variables=["input", "table_info", "top_k", "history"],
     template=_clickhouse_prompt + PROMPT_SUFFIX,
 )
 
@@ -233,6 +287,11 @@ Unless the user specifies in the question a specific number of examples to obtai
 Never query for all columns from a table. You must query only the columns that are needed to answer the question. Wrap each column name in double quotes (") to denote them as delimited identifiers.
 Pay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
 Pay attention to use current_date function to get the current date, if the question involves "today".
+
+Relevant pieces of previous conversation:
+{history}
+
+(You do not need to use these pieces of information if not relevant)
 
 Use the following format:
 
@@ -244,7 +303,7 @@ Answer: "Final answer here"
 """
 
 PRESTODB_PROMPT = PromptTemplate(
-    input_variables=["input", "table_info", "top_k"],
+    input_variables=["input", "table_info", "top_k", "history"],
     template=_prestodb_prompt + PROMPT_SUFFIX,
 )
 
