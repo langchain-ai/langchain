@@ -1,8 +1,21 @@
 The `chat-conversational-react-description` agent type lets us create a conversational agent using a chat model instead of an LLM.
 
 ```python
+from langchain.agents import Tool
+from langchain.agents import AgentType
 from langchain.memory import ConversationBufferMemory
 from langchain.chat_models import ChatOpenAI
+from langchain.utilities import SerpAPIWrapper
+from langchain.agents import initialize_agent
+
+search = SerpAPIWrapper()
+tools = [
+    Tool(
+        name = "Current Search",
+        func=search.run,
+        description="useful for when you need to answer questions about current events or the current state of the world"
+    ),
+]
 
 memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 llm = ChatOpenAI(openai_api_key=OPENAI_API_KEY, temperature=0)
