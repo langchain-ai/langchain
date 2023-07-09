@@ -1,7 +1,6 @@
 """Loading datasets and evaluators."""
-from typing import Any, Dict, List, Optional, Sequence, Type, Union
+from typing import Any, Dict, List, Optional, Sequence, Type, Union, cast
 
-from langchain.chains.base import Chain
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.evaluation.agents.trajectory_eval_chain import TrajectoryEvalChain
 from langchain.evaluation.comparison import PairwiseStringEvalChain
@@ -11,7 +10,13 @@ from langchain.evaluation.embedding_distance.base import (
     PairwiseEmbeddingDistanceEvalChain,
 )
 from langchain.evaluation.qa import ContextQAEvalChain, CotQAEvalChain, QAEvalChain
-from langchain.evaluation.schema import EvaluatorType, LLMEvalChain
+from langchain.evaluation.schema import (
+    AgentTrajectoryEvaluator,
+    EvaluatorType,
+    LLMEvalChain,
+    PairwiseStringEvaluator,
+    StringEvaluator,
+)
 from langchain.evaluation.string_distance.base import (
     PairwiseStringDistanceEvalChain,
     StringDistanceEvalChain,
@@ -53,7 +58,14 @@ def load_dataset(uri: str) -> List[Dict]:
     return [d for d in dataset["train"]]
 
 
-_EVALUATOR_MAP: Dict[EvaluatorType, Union[Type[LLMEvalChain], Type[Chain]]] = {
+EVALUATOR_TYPE = Union[
+    StringEvaluator, AgentTrajectoryEvaluator, PairwiseStringEvaluator
+]
+_EVALUATOR_CLS_TYPE = Union[
+    Type[StringEvaluator], Type[AgentTrajectoryEvaluator], Type[PairwiseStringEvaluator]
+]
+
+_EVALUATOR_MAP: Dict[EvaluatorType, _EVALUATOR_CLS_TYPE] = {
     EvaluatorType.QA: QAEvalChain,
     EvaluatorType.COT_QA: CotQAEvalChain,
     EvaluatorType.CONTEXT_QA: ContextQAEvalChain,
@@ -72,7 +84,7 @@ def load_evaluator(
     *,
     llm: Optional[BaseLanguageModel] = None,
     **kwargs: Any,
-) -> Chain:
+) -> EVALUATOR_TYPE:
     """Load the requested evaluation chain specified by a string.
 
     Parameters
@@ -102,7 +114,7 @@ def load_evaluator(
         )
     evaluator_cls = _EVALUATOR_MAP[evaluator]
     if issubclass(evaluator_cls, LLMEvalChain):
-        return evaluator_cls.from_llm(llm=llm, **kwargs)
+        return cast(EVALUATOR_TYPE, evaluator_cls.from_llm(llm=llm, **kwargs))
     else:
         return evaluator_cls(**kwargs)
 
@@ -113,7 +125,7 @@ def load_evaluators(
     llm: Optional[BaseLanguageModel] = None,
     config: Optional[dict] = None,
     **kwargs: Any,
-) -> List[Chain]:
+) -> List[EVALUATOR_TYPE]:
     """Load evaluators specified by a list of evaluator types.
 
     Parameters

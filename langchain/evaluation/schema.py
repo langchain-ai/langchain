@@ -341,6 +341,10 @@ class AgentTrajectoryEvaluator(_EvalArgsMixin, ABC):
     """Interface for evaluating agent trajectories."""
 
     @property
+    def evaluation_name(self) -> str:
+        raise NotImplementedError()
+
+    @property
     def requires_input(self) -> bool:
         return True
 

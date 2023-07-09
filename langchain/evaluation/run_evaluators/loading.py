@@ -6,10 +6,17 @@ from langchainplus_sdk import RunEvaluator
 from langchain.base_language import BaseLanguageModel
 from langchain.chains.base import Chain
 from langchain.evaluation.loading import load_evaluator
+from langchain.evaluation.run_evaluators.agent_trajectory_run_evaluator import (
+    AgentTrajectoryRunEvaluatorChain,
+)
 from langchain.evaluation.run_evaluators.string_run_evaluator import (
     StringRunEvaluatorChain,
 )
-from langchain.evaluation.schema import EvaluatorType, StringEvaluator
+from langchain.evaluation.schema import (
+    AgentTrajectoryEvaluator,
+    EvaluatorType,
+    StringEvaluator,
+)
 from langchain.tools.base import Tool
 
 
@@ -22,7 +29,7 @@ def load_run_evaluator_for_model(
     reference_key: Optional[str] = None,
     eval_llm: Optional[BaseLanguageModel] = None,
     **kwargs: Any,
-) -> List[RunEvaluator]:
+) -> RunEvaluator:
     """Load evaluators specified by a list of evaluator types.
 
     Parameters
@@ -56,6 +63,16 @@ def load_run_evaluator_for_model(
             input_key=input_key,
             prediction_key=prediction_key,
             reference_key=reference_key,
+        )
+    elif isinstance(evaluator_, AgentTrajectoryEvaluator):
+        if not isinstance(model, Chain):
+            raise ValueError(
+                "AgentTrajectoryRunEvaluator evaluates agent chains rather than LLMs"
+                " or other components directly. Expected model of type 'chain'."
+                f" Got '{type(model)}'."
+            )
+        run_evaluator = AgentTrajectoryRunEvaluatorChain.from_model_and_evaluator(
+            model, evaluator_
         )
     else:
         raise NotImplementedError(f"Run evaluator for {evaluator} is not implemented")

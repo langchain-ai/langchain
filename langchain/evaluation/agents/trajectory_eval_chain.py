@@ -132,6 +132,11 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
         extra = Extra.ignore
 
     @property
+    def evaluation_name(self) -> str:
+        """Return the name for the resulting evaluation result."""
+        return "agent_trajectory"
+
+    @property
     def _tools_description(self) -> str:
         """Get the description of the agent tools.
 

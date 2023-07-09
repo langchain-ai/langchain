@@ -5,7 +5,7 @@ from langchainplus_sdk.schemas import Run, RunTypeEnum
 from langchain.schema.agent import AgentAction
 
 
-def extract_agent_trajectory(
+def assemble_agent_trajectory(
     run: Run, *, tool_input_key: str = "input", tool_output_key: str = "output"
 ) -> List[Tuple[AgentAction, str]]:
     """Extract the series of steps from a run."""

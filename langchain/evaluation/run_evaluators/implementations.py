@@ -22,7 +22,7 @@ from langchain.evaluation.run_evaluators.base import (
     RunEvaluatorOutputParser,
 )
 from langchain.evaluation.run_evaluators.utilities.trajectory_utils import (
-    extract_agent_trajectory,
+    assemble_agent_trajectory,
 )
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BasePromptTemplate
@@ -242,7 +242,7 @@ class TrajectoryInputMapper(RunEvaluatorInputMapper, BaseModel):
                 raise ValueError("Could not infer the reference answer from ")
 
         question = run.inputs[self.agent_input_key]
-        agent_steps = extract_agent_trajectory(run)
+        agent_steps = assemble_agent_trajectory(run)
         return {
             "question": question,
             "agent_trajectory": agent_steps,
