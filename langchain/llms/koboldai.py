@@ -87,5 +87,5 @@ class KoboldApiLLM(LLM):
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
-        return {'endpoint': self.endpoint} #return the kobold_ai_api as an identifying parameter
+        return {'endpoint': self.endpoint} #return the endpoint as an identifying parameter
 
