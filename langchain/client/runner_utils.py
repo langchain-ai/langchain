@@ -49,8 +49,7 @@ class InputFormatError(Exception):
 
 
 def _get_prompts(inputs: Dict[str, Any]) -> List[str]:
-    """
-    Get prompts from inputs.
+    """Get prompts from inputs.
 
     Args:
         inputs: The input dictionary.
@@ -97,8 +96,7 @@ def _get_prompts(inputs: Dict[str, Any]) -> List[str]:
 
 
 def _get_messages(inputs: Dict[str, Any]) -> List[List[BaseMessage]]:
-    """
-    Get Chat Messages from inputs.
+    """Get Chat Messages from inputs.
 
     Args:
         inputs: The input dictionary.
@@ -140,8 +138,7 @@ async def _arun_llm(
     tags: Optional[List[str]] = None,
     callbacks: Callbacks = None,
 ) -> Union[LLMResult, ChatResult]:
-    """
-    Asynchronously run the language model.
+    """Asynchronously run the language model.
 
     Args:
         llm: The language model to run.
@@ -192,8 +189,7 @@ async def _arun_llm_or_chain(
     tags: Optional[List[str]] = None,
     callbacks: Optional[List[BaseCallbackHandler]] = None,
 ) -> Union[List[dict], List[str], List[LLMResult], List[ChatResult]]:
-    """
-    Asynchronously run the Chain or language model.
+    """Asynchronously run the Chain or language model.
 
     Args:
         example: The example to run.
@@ -247,8 +243,7 @@ async def _gather_with_concurrency(
         [Sequence[BaseCallbackHandler], Dict], Coroutine[Any, Any, Any]
     ],
 ) -> List[Any]:
-    """
-    Run coroutines with a concurrency limit.
+    """Run coroutines with a concurrency limit.
 
     Args:
         n: The maximum number of concurrent tasks.
@@ -342,8 +337,8 @@ async def arun_on_examples(
         llm_or_chain_factory: Language model or Chain constructor to run
             over the dataset. The Chain constructor is used to permit
             independent calls on each example without carrying over state.
-        concurrency_level: [Default: 5] The number of async tasks to run concurrently.
-        num_repetitions: [Default: 1] Number of times to run the model on each example.
+        concurrency_level: The number of async tasks to run concurrently.
+        num_repetitions: Number of times to run the model on each example.
             This is useful when testing success rates or generating confidence
             intervals.
         project_name: Project name to use when tracing runs.
@@ -606,14 +601,14 @@ async def arun_on_dataset(
         llm_or_chain_factory: Language model or Chain constructor to run
             over the dataset. The Chain constructor is used to permit
             independent calls on each example without carrying over state.
-        concurrency_level: [Default: 5] The number of async tasks to run concurrently.
-        num_repetitions: [Default: 1] Number of times to run the model on each example.
+        concurrency_level: The number of async tasks to run concurrently.
+        num_repetitions: Number of times to run the model on each example.
             This is useful when testing success rates or generating confidence
             intervals.
-        project_name: [Default: None] Name of the project to store the traces in.
+        project_name: Name of the project to store the traces in.
             Defaults to {dataset_name}-{chain class name}-{datetime}.
-        verbose: [Default: False] Whether to print progress.
-        client: [Default: None] Client to use to read the dataset. If not provided,
+        verbose: Whether to print progress.
+        client: Client to use to read the dataset. If not provided,
             a new client will be created using the credentials in the environment.
         tags: Tags to add to each run in the project.
         run_evaluators: Evaluators to run on the results of the chain.
@@ -662,13 +657,13 @@ def run_on_dataset(
         llm_or_chain_factory: Language model or Chain constructor to run
             over the dataset. The Chain constructor is used to permit
             independent calls on each example without carrying over state.
-        num_repetitions: [Default: 1] Number of times to run the model on each example.
+        num_repetitions: Number of times to run the model on each example.
             This is useful when testing success rates or generating confidence
             intervals.
-        project_name: [Default: None] Name of the project to store the traces in.
+        project_name: Name of the project to store the traces in.
             Defaults to {dataset_name}-{chain class name}-{datetime}.
-        verbose: [Default: False] Whether to print progress.
-        client: [Default: None] Client to use to access the dataset. If None,
+        verbose: Whether to print progress.
+        client: Client to use to access the dataset. If None,
             a new client will be created using the credentials in the environment.
         tags: Tags to add to each run in the project.
         run_evaluators: Evaluators to run on the results of the chain.
