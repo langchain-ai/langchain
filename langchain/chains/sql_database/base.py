@@ -37,10 +37,7 @@ class SQLDatabaseChain(Chain):
     """[Deprecated] LLM wrapper to use."""
     database: SQLDatabase = Field(exclude=True)
     """SQL Database to connect to."""
-    prompt: Optional[
-    
-    
-    ] = None
+    prompt: Optional[BasePromptTemplate] = None
     """[Deprecated] Prompt to use to translate natural language to SQL."""
     top_k: int = 5
     """Number of results to return from the query"""
@@ -128,7 +125,9 @@ class SQLDatabaseChain(Chain):
                 callbacks=_run_manager.get_child(),
                 **llm_inputs,
             ).strip()
-            if isinstance(self.llm_chain.llm , FakeLLM): # Running a FakeRun on DatabaseChain.
+            if isinstance(
+                self.llm_chain.llm, FakeLLM
+            ):  # Running a FakeRun on DatabaseChain.
                 return {self.output_key: sql_cmd}
             if not self.use_query_checker:
                 _run_manager.on_text(sql_cmd, color="green", verbose=self.verbose)
@@ -211,6 +210,7 @@ class SQLDatabaseChain(Chain):
         if memory:
             validate_sql_chain_memory(memory)
         return cls(llm_chain=llm_chain, database=db, **kwargs)
+
 
 class SQLDatabaseSequentialChain(Chain):
     """Chain for querying SQL database that is a sequential chain.
