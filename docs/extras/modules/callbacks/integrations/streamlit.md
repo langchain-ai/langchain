@@ -9,7 +9,7 @@
 In this guide we will demonstrate how to use `StreamlitCallbackHandler` to display the thoughts and actions of an agent in an
 interactive Streamlit app. Try it out with the running app below using the [MRKL agent](/docs/modules/agents/how_to/mrkl/):
 
-<iframe loading="lazy" src="https://mrkl-minimal.streamlit.app/?embed=true&embed_options=light_theme"
+<iframe loading="lazy" src="https://langchain-mrkl.streamlit.app/?embed=true&embed_options=light_theme"
     style={{ width: 100 + '%', border: 'none', marginBottom: 1 + 'rem', height: 600 }}
     allow="camera;clipboard-read;clipboard-write;"
 ></iframe>
@@ -35,7 +35,7 @@ st_callback = StreamlitCallbackHandler(st.container())
 ```
 
 Additional keyword arguments to customize the display behavior are described in the
-[API reference](https://api.python.langchain.com/en/latest/modules/callbacks.html#langchain.callbacks.StreamlitCallbackHandler).
+[API reference](https://api.python.langchain.com/en/latest/callbacks/langchain.callbacks.streamlit.streamlit_callback_handler.StreamlitCallbackHandler.html).
 
 ### Scenario 1: Using an Agent with Tools
 

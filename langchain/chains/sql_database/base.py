@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Extra, Field, root_validator
 
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -14,6 +13,7 @@ from langchain.chains.sql_database.prompt import DECIDER_PROMPT, PROMPT, SQL_PRO
 from langchain.chains.sql_database.utils import validate_sql_chain_memory
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseMemory, BasePromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.sql_database import SQLDatabase
 from langchain.tools.sql_database.prompt import QUERY_CHECKER
 from tests.unit_tests.llms.fake_llm import FakeLLM
@@ -37,7 +37,10 @@ class SQLDatabaseChain(Chain):
     """[Deprecated] LLM wrapper to use."""
     database: SQLDatabase = Field(exclude=True)
     """SQL Database to connect to."""
-    prompt: Optional[BasePromptTemplate] = None
+    prompt: Optional[
+    
+    
+    ] = None
     """[Deprecated] Prompt to use to translate natural language to SQL."""
     top_k: int = 5
     """Number of results to return from the query"""

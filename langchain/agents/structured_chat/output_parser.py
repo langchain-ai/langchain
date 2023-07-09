@@ -9,9 +9,9 @@ from pydantic import Field
 
 from langchain.agents.agent import AgentOutputParser
 from langchain.agents.structured_chat.prompt import FORMAT_INSTRUCTIONS
-from langchain.base_language import BaseLanguageModel
 from langchain.output_parsers import OutputFixingParser
 from langchain.schema import AgentAction, AgentFinish, OutputParserException
+from langchain.schema.language_model import BaseLanguageModel
 
 logger = logging.getLogger(__name__)
 

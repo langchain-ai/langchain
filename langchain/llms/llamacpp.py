@@ -103,6 +103,9 @@ class LlamaCpp(LLM):
     streaming: bool = True
     """Whether to stream the results, token by token."""
 
+    verbose: bool = True
+    """Print verbose output to stderr."""
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that llama-cpp-python library is installed."""
@@ -121,6 +124,7 @@ class LlamaCpp(LLM):
             "n_batch",
             "use_mmap",
             "last_n_tokens_size",
+            "verbose",
         ]
         model_params = {k: values[k] for k in model_param_names}
         # For backwards compatibility, only include if non-null.
