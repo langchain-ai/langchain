@@ -6,7 +6,12 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 from langchain.schema import (
     BaseChatMessageHistory,
 )
-from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
+from langchain.schema.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+)
 
 if TYPE_CHECKING:
     from zep_python import Memory, MemorySearchResult, Message, NotFoundError
@@ -75,7 +80,7 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
         # Extract summary, if present, and messages
         if zep_memory.summary:
             if len(zep_memory.summary.content) > 0:
-                messages.append(HumanMessage(content=zep_memory.summary.content))
+                messages.append(SystemMessage(content=zep_memory.summary.content))
         if zep_memory.messages:
             msg: Message
             for msg in zep_memory.messages:
