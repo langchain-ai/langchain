@@ -1026,8 +1026,12 @@ class NLTKTextSplitter(TextSplitter):
 
 
 class SpacyTextSplitter(TextSplitter):
-    """Implementation of splitting text that looks at sentences using Spacy."""
+    """Implementation of splitting text that looks at sentences using Spacy.
 
+    
+    Per default, Spacy's `en_core_web_sm` model is used. For a faster, but
+    potentially less accurate splitting, you can use `pipeline='sentencizer'`.
+    """
     def __init__(
         self, separator: str = "\n\n", pipeline: str = "en_core_web_sm", **kwargs: Any
     ) -> None:
