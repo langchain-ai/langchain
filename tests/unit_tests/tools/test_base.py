@@ -9,7 +9,7 @@ import pytest
 from pydantic import BaseModel
 
 from langchain.agents.tools import Tool, tool
-from langchain.callbacks.manager import (
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )

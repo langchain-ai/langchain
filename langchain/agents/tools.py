@@ -1,7 +1,7 @@
 """Interface for tools."""
 from typing import Optional
 
-from langchain.callbacks.manager import (
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )

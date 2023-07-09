@@ -1,12 +1,12 @@
 """Fake Chat Model wrapper for testing purposes."""
 from typing import Any, List, Mapping, Optional
 
-from langchain.callbacks.manager import (
+from langchain.chat_models.base import SimpleChatModel
+from langchain.schema import ChatGeneration, ChatResult
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.chat_models.base import SimpleChatModel
-from langchain.schema import ChatGeneration, ChatResult
 from langchain.schema.messages import AIMessage, BaseMessage
 
 

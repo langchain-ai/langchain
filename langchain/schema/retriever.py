@@ -11,9 +11,13 @@ from langchain.schema.document import Document
 
 if TYPE_CHECKING:
     from langchain.callbacks.manager import (
-        AsyncCallbackManagerForRetrieverRun,
-        CallbackManagerForRetrieverRun,
         Callbacks,
+    )
+    from langchain.schema.callbacks.manager import (
+        AsyncCallbackManager,
+        AsyncCallbackManagerForRetrieverRun,
+        CallbackManager,
+        CallbackManagerForRetrieverRun,
     )
 
 
@@ -152,7 +156,6 @@ class BaseRetriever(Serializable, ABC):
         Returns:
             List of relevant documents
         """
-        from langchain.callbacks.manager import CallbackManager
 
         callback_manager = CallbackManager.configure(
             callbacks,
@@ -208,7 +211,6 @@ class BaseRetriever(Serializable, ABC):
         Returns:
             List of relevant documents
         """
-        from langchain.callbacks.manager import AsyncCallbackManager
 
         callback_manager = AsyncCallbackManager.configure(
             callbacks,

@@ -1,11 +1,11 @@
 """Fake LLM wrapper for testing purposes."""
 from typing import Any, List, Mapping, Optional
 
-from langchain.callbacks.manager import (
+from langchain.llms.base import LLM
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.llms.base import LLM
 
 
 class FakeListLLM(LLM):

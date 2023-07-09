@@ -1,11 +1,11 @@
 """A retriever that uses PubMed API to retrieve documents."""
 from typing import List
 
-from langchain.callbacks.manager import (
+from langchain.schema import BaseRetriever, Document
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import BaseRetriever, Document
 from langchain.utilities.pupmed import PubMedAPIWrapper
 
 

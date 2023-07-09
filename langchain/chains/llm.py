@@ -7,10 +7,6 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 from pydantic import Extra, Field
 
 from langchain.callbacks.manager import (
-    AsyncCallbackManager,
-    AsyncCallbackManagerForChainRun,
-    CallbackManager,
-    CallbackManagerForChainRun,
     Callbacks,
 )
 from langchain.chains.base import Chain
@@ -23,6 +19,12 @@ from langchain.schema import (
     LLMResult,
     NoOpOutputParser,
     PromptValue,
+)
+from langchain.schema.callbacks.manager import (
+    AsyncCallbackManager,
+    AsyncCallbackManagerForChainRun,
+    CallbackManager,
+    CallbackManagerForChainRun,
 )
 from langchain.schema.language_model import BaseLanguageModel
 

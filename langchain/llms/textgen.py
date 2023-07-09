@@ -5,8 +5,8 @@ from typing import Any, Dict, List, Optional
 import requests
 from pydantic import Field
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
+from langchain.schema.callbacks.manager import CallbackManagerForLLMRun
 
 logger = logging.getLogger(__name__)
 

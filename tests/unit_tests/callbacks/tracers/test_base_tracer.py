@@ -8,10 +8,10 @@ from uuid import uuid4
 import pytest
 from freezegun import freeze_time
 
-from langchain.callbacks.manager import CallbackManager
 from langchain.callbacks.tracers.base import BaseTracer, TracerException
 from langchain.callbacks.tracers.schemas import Run
 from langchain.schema import LLMResult
+from langchain.schema.callbacks.manager import CallbackManager
 from langchain.schema.messages import HumanMessage
 
 SERIALIZED = {"id": ["llm"]}

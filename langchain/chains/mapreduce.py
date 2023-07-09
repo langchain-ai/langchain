@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import Extra
 
-from langchain.callbacks.manager import CallbackManagerForChainRun, Callbacks
+from langchain.callbacks.manager import Callbacks
 from langchain.chains import ReduceDocumentsChain
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -18,6 +18,7 @@ from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
 from langchain.schema import BasePromptTemplate
+from langchain.schema.callbacks.manager import CallbackManagerForChainRun
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.text_splitter import TextSplitter
 

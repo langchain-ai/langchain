@@ -3,9 +3,9 @@ from typing import Generator
 
 import pytest
 
-from langchain.callbacks.manager import CallbackManager
 from langchain.llms.anthropic import Anthropic
 from langchain.schema import LLMResult
+from langchain.schema.callbacks.manager import CallbackManager
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 

@@ -6,8 +6,6 @@ import numpy as np
 from pydantic import Field
 
 from langchain.callbacks.manager import (
-    AsyncCallbackManagerForChainRun,
-    CallbackManagerForChainRun,
     Callbacks,
 )
 from langchain.chains.base import Chain
@@ -15,6 +13,10 @@ from langchain.embeddings.base import Embeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.evaluation.schema import PairwiseStringEvaluator, StringEvaluator
 from langchain.math_utils import cosine_similarity
+from langchain.schema.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+)
 
 
 class EmbeddingDistance(str, Enum):

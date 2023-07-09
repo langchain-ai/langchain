@@ -9,12 +9,12 @@ from typing import Any, List, Optional
 
 import numpy as np
 
-from langchain.callbacks.manager import (
+from langchain.embeddings.base import Embeddings
+from langchain.schema import BaseRetriever, Document
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.embeddings.base import Embeddings
-from langchain.schema import BaseRetriever, Document
 
 
 def create_index(contexts: List[str], embeddings: Embeddings) -> np.ndarray:

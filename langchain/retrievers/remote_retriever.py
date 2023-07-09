@@ -3,11 +3,11 @@ from typing import List, Optional
 import aiohttp
 import requests
 
-from langchain.callbacks.manager import (
+from langchain.schema import BaseRetriever, Document
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import BaseRetriever, Document
 
 
 class RemoteLangChainRetriever(BaseRetriever):

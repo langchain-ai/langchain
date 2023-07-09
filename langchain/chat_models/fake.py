@@ -1,8 +1,8 @@
 """Fake ChatModel for testing purposes."""
 from typing import Any, List, Mapping, Optional
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import SimpleChatModel
+from langchain.schema.callbacks.manager import CallbackManagerForLLMRun
 from langchain.schema.messages import BaseMessage
 
 

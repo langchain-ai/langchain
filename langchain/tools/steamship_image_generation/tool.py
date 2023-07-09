@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Dict, Optional
 
 from pydantic import root_validator
 
-from langchain.callbacks.manager import (
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )

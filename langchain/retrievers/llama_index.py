@@ -2,11 +2,11 @@ from typing import Any, Dict, List, cast
 
 from pydantic import Field
 
-from langchain.callbacks.manager import (
+from langchain.schema import BaseRetriever, Document
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import BaseRetriever, Document
 
 
 class LlamaIndexRetriever(BaseRetriever):

@@ -4,11 +4,11 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Extra, Field, root_validator
 
-from langchain.callbacks.manager import (
+from langchain.llms.base import LLM
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.llms.base import LLM
 
 
 class HuggingFaceTextGenInference(LLM):

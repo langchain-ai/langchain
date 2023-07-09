@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING, Any, List, Optional, cast
 
 from pydantic import Field, root_validator
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
+from langchain.schema.callbacks.manager import CallbackManagerForLLMRun
 
 if TYPE_CHECKING:
     import jsonformer

@@ -22,12 +22,12 @@ from typing import (
 
 from pydantic import Field, root_validator
 
-from langchain.callbacks.manager import (
+from langchain.llms.base import BaseLLM, create_base_retry_decorator
+from langchain.schema import Generation, LLMResult
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.llms.base import BaseLLM, create_base_retry_decorator
-from langchain.schema import Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)

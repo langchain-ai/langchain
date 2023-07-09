@@ -5,11 +5,11 @@ from typing import Any, Callable, Dict, Generator, List, Mapping, Optional
 
 from pydantic import BaseModel, root_validator
 
-from langchain.callbacks.manager import (
+from langchain.llms.base import LLM
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.llms.base import LLM
 from langchain.utils import check_package_version, get_from_dict_or_env
 
 

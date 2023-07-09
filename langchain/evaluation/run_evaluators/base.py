@@ -6,12 +6,12 @@ from typing import Any, Dict, List, Optional
 from langchainplus_sdk import EvaluationResult, RunEvaluator
 from langchainplus_sdk.schemas import Example, Run
 
-from langchain.callbacks.manager import (
+from langchain.chains.base import Chain
+from langchain.schema import RUN_KEY, BaseOutputParser
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
-from langchain.chains.base import Chain
-from langchain.schema import RUN_KEY, BaseOutputParser
 
 
 class RunEvaluatorInputMapper:

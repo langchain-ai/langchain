@@ -7,9 +7,9 @@ from typing import Any, Dict, List, Mapping, Optional, Set
 
 from pydantic import BaseModel, Extra, root_validator
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
+from langchain.schema.callbacks.manager import CallbackManagerForLLMRun
 
 
 class RWKV(LLM, BaseModel):

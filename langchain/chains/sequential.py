@@ -3,12 +3,12 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Extra, root_validator
 
-from langchain.callbacks.manager import (
+from langchain.chains.base import Chain
+from langchain.input import get_color_mapping
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
-from langchain.chains.base import Chain
-from langchain.input import get_color_mapping
 
 
 class SequentialChain(Chain):

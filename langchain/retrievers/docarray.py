@@ -3,12 +3,12 @@ from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 
-from langchain.callbacks.manager import (
+from langchain.embeddings.base import Embeddings
+from langchain.schema import BaseRetriever, Document
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.embeddings.base import Embeddings
-from langchain.schema import BaseRetriever, Document
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 

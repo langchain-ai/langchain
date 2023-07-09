@@ -4,8 +4,8 @@ from typing import Any, List, Mapping, Optional
 
 from langchain.agents import AgentExecutor, AgentType, initialize_agent
 from langchain.agents.tools import Tool
-from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
+from langchain.schema.callbacks.manager import CallbackManagerForLLMRun
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 

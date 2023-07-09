@@ -7,9 +7,6 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 import numpy as np
 from pydantic import Field
 
-from langchain.callbacks.manager import (
-    CallbackManagerForChainRun,
-)
 from langchain.chains.base import Chain
 from langchain.chains.flare.prompts import (
     PROMPT,
@@ -19,6 +16,7 @@ from langchain.chains.flare.prompts import (
 from langchain.chains.llm import LLMChain
 from langchain.llms import OpenAI
 from langchain.schema import BasePromptTemplate, BaseRetriever, Generation
+from langchain.schema.callbacks.manager import CallbackManagerForChainRun
 from langchain.schema.language_model import BaseLanguageModel
 
 

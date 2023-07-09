@@ -4,8 +4,8 @@ from typing import Any, Dict, Generator, List, Optional
 
 from pydantic import Field, root_validator
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
+from langchain.schema.callbacks.manager import CallbackManagerForLLMRun
 
 logger = logging.getLogger(__name__)
 

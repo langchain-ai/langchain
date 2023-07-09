@@ -18,11 +18,11 @@ from typing import (
 
 from pydantic import PrivateAttr
 
-from langchain.callbacks.manager import (
+from langchain.llms.base import LLM
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.llms.base import LLM
 
 if TYPE_CHECKING:
     import openllm

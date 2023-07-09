@@ -6,12 +6,14 @@ from typing import Any, Callable, Dict, List, Optional
 from pydantic import Field, root_validator
 
 from langchain.callbacks.manager import (
-    AsyncCallbackManagerForChainRun,
-    CallbackManagerForChainRun,
     Callbacks,
 )
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import PairwiseStringEvaluator, StringEvaluator
+from langchain.schema.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+)
 
 
 def _load_rapidfuzz() -> Any:

@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING, Any, List, Optional, cast
 
 from pydantic import Field, root_validator
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.llms.utils import enforce_stop_tokens
+from langchain.schema.callbacks.manager import CallbackManagerForLLMRun
 
 if TYPE_CHECKING:
     import rellm

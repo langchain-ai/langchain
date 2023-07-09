@@ -9,9 +9,9 @@ from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
+from langchain.schema.callbacks.manager import (
     CallbackManagerForToolRun,
+    AsyncCallbackManagerForToolRun,
 )
 from langchain.tools.base import BaseTool
 

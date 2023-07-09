@@ -7,11 +7,11 @@ from __future__ import annotations
 
 from typing import Any, Dict, Iterable, List, Optional
 
-from langchain.callbacks.manager import (
+from langchain.schema import BaseRetriever, Document
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import BaseRetriever, Document
 
 
 class TFIDFRetriever(BaseRetriever):

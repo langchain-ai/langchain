@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional, Type
 
 from pydantic import BaseModel, Extra, Field
 
-from langchain.callbacks.manager import (
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )

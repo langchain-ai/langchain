@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, List, Optional, Sequence, Type
 
 from pydantic import BaseModel, Field
 
-from langchain.callbacks.manager import (
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )

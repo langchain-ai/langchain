@@ -5,12 +5,12 @@ from typing import Any, Dict, Optional, Tuple
 
 from pydantic import Field, validator
 
-from langchain.callbacks.manager import (
+from langchain.chains.llm import LLMChain
+from langchain.chat_models.openai import _import_tiktoken
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain.chains.llm import LLMChain
-from langchain.chat_models.openai import _import_tiktoken
 from langchain.tools.base import BaseTool
 from langchain.tools.powerbi.prompt import (
     BAD_REQUEST_RESPONSE,

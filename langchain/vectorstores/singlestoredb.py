@@ -8,12 +8,12 @@ from typing import Any, ClassVar, Collection, Iterable, List, Optional, Tuple, T
 
 from sqlalchemy.pool import QueuePool
 
-from langchain.callbacks.manager import (
+from langchain.docstore.document import Document
+from langchain.embeddings.base import Embeddings
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 
 

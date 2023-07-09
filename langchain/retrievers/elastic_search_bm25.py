@@ -5,12 +5,12 @@ from __future__ import annotations
 import uuid
 from typing import Any, Iterable, List
 
-from langchain.callbacks.manager import (
+from langchain.docstore.document import Document
+from langchain.schema import BaseRetriever
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.docstore.document import Document
-from langchain.schema import BaseRetriever
 
 
 class ElasticSearchBM25Retriever(BaseRetriever):

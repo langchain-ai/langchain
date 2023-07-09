@@ -4,10 +4,10 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
 
 from pydantic import Extra
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.router.base import RouterChain
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
+from langchain.schema.callbacks.manager import CallbackManagerForChainRun
 from langchain.vectorstores.base import VectorStore
 
 

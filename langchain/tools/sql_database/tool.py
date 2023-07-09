@@ -5,9 +5,9 @@ from typing import Any, Dict, Optional
 from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.schema.language_model import BaseLanguageModel
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
+from langchain.schema.callbacks.manager import (
     CallbackManagerForToolRun,
+    AsyncCallbackManagerForToolRun,
 )
 from langchain.chains.llm import LLMChain
 from langchain.prompts import PromptTemplate

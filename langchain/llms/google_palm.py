@@ -13,12 +13,12 @@ from tenacity import (
     wait_exponential,
 )
 
-from langchain.callbacks.manager import (
+from langchain.llms import BaseLLM
+from langchain.schema import Generation, LLMResult
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.llms import BaseLLM
-from langchain.schema import Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)

@@ -3,12 +3,12 @@ from typing import List
 
 import pytest
 
-from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.anthropic import ChatAnthropic
 from langchain.schema import (
     ChatGeneration,
     LLMResult,
 )
+from langchain.schema.callbacks.manager import CallbackManager
 from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 

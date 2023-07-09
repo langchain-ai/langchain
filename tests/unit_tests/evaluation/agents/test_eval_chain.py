@@ -5,9 +5,9 @@ from typing import Any, Dict, List, Optional, Tuple
 import pytest
 from pydantic import Field
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.evaluation.agents.trajectory_eval_chain import TrajectoryEvalChain
 from langchain.schema import AgentAction, BaseMessage
+from langchain.schema.callbacks.manager import CallbackManagerForLLMRun
 from langchain.tools.base import tool
 from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 

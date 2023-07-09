@@ -5,7 +5,7 @@ from typing import List, Optional, Type, Union
 
 from pydantic import BaseModel, Field, root_validator
 
-from langchain.callbacks.manager import (
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )

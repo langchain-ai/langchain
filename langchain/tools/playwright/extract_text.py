@@ -4,7 +4,7 @@ from typing import Optional, Type
 
 from pydantic import BaseModel, root_validator
 
-from langchain.callbacks.manager import (
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )

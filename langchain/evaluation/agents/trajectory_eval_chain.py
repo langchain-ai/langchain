@@ -10,8 +10,6 @@ from typing import Any, Dict, List, NamedTuple, Optional, Sequence, Tuple, Union
 from pydantic import Extra, Field
 
 from langchain.callbacks.manager import (
-    AsyncCallbackManagerForChainRun,
-    CallbackManagerForChainRun,
     Callbacks,
 )
 from langchain.chains.llm import LLMChain
@@ -22,6 +20,10 @@ from langchain.evaluation.agents.trajectory_eval_prompt import (
 )
 from langchain.evaluation.schema import AgentTrajectoryEvaluator, LLMEvalChain
 from langchain.schema import AgentAction, BaseOutputParser, OutputParserException
+from langchain.schema.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+)
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 

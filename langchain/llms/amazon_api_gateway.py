@@ -3,9 +3,9 @@ from typing import Any, Dict, List, Mapping, Optional
 import requests
 from pydantic import Extra
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
+from langchain.schema.callbacks.manager import CallbackManagerForLLMRun
 
 
 class ContentHandlerAmazonAPIGateway:

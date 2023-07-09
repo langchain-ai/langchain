@@ -4,15 +4,15 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import root_validator
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.vertexai import _VertexAICommon, is_codey_model
 from langchain.schema import (
     ChatGeneration,
     ChatResult,
+)
+from langchain.schema.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
 )
 from langchain.schema.messages import (
     AIMessage,

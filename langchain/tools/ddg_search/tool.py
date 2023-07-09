@@ -5,7 +5,7 @@ from typing import Any, Optional
 
 from pydantic import Field
 
-from langchain.callbacks.manager import (
+from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )

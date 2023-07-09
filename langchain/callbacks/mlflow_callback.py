@@ -6,7 +6,6 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from langchain.schema.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.utils import (
     BaseMetadataCallbackHandler,
     flatten_dict,
@@ -16,6 +15,7 @@ from langchain.callbacks.utils import (
     import_textstat,
 )
 from langchain.schema import AgentAction, AgentFinish, LLMResult
+from langchain.schema.callbacks.base import BaseCallbackHandler
 from langchain.utils import get_from_dict_or_env
 
 
