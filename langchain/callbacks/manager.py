@@ -23,7 +23,7 @@ from typing import (
 from uuid import UUID, uuid4
 
 import langchain
-from langchain.callbacks.base import (
+from langchain.schema.callbacks.base import (
     BaseCallbackHandler,
     BaseCallbackManager,
     ChainManagerMixin,

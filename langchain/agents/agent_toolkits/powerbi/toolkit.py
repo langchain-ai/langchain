@@ -4,7 +4,7 @@ from typing import List, Optional, Union
 from pydantic import Field
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
-from langchain.callbacks.base import BaseCallbackManager
+from langchain.schema.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 from langchain.chat_models.base import BaseChatModel
 from langchain.prompts import PromptTemplate

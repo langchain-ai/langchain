@@ -1,7 +1,7 @@
 """Callback Handler that prints to std out."""
 from typing import Any, Dict, List
 
-from langchain.callbacks.base import BaseCallbackHandler
+from langchain.schema.callbacks.base import BaseCallbackHandler
 from langchain.schema import LLMResult
 
 MODEL_COST_PER_1K_TOKENS = {

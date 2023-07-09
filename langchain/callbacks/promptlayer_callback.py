@@ -5,7 +5,7 @@ import datetime
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 from uuid import UUID
 
-from langchain.callbacks.base import BaseCallbackHandler
+from langchain.schema.callbacks.base import BaseCallbackHandler
 from langchain.schema import (
     ChatGeneration,
     LLMResult,

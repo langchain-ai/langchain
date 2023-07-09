@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_toolkits.spark.prompt import PREFIX, SUFFIX
 from langchain.agents.mrkl.base import ZeroShotAgent
-from langchain.callbacks.base import BaseCallbackManager
+from langchain.schema.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import BaseLLM
 from langchain.tools.python.tool import PythonAstREPLTool

@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence
 from pydantic import Field, root_validator
 
 import langchain
-from langchain.callbacks.base import BaseCallbackManager
+from langchain.schema.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
     AsyncCallbackManager,
     AsyncCallbackManagerForLLMRun,

@@ -9,7 +9,7 @@ from langchain.agents.agent_toolkits.powerbi.prompt import (
 )
 from langchain.agents.agent_toolkits.powerbi.toolkit import PowerBIToolkit
 from langchain.agents.conversational_chat.base import ConversationalChatAgent
-from langchain.callbacks.base import BaseCallbackManager
+from langchain.schema.callbacks.base import BaseCallbackManager
 from langchain.chat_models.base import BaseChatModel
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_memory import BaseChatMemory

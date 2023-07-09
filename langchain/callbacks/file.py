@@ -1,7 +1,7 @@
 """Callback Handler that writes to a file."""
 from typing import Any, Dict, Optional, TextIO, cast
 
-from langchain.callbacks.base import BaseCallbackHandler
+from langchain.schema.callbacks.base import BaseCallbackHandler
 from langchain.input import print_text
 from langchain.schema import AgentAction, AgentFinish
 

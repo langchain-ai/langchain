@@ -11,7 +11,7 @@ import yaml
 from pydantic import Field, root_validator, validator
 
 import langchain
-from langchain.callbacks.base import BaseCallbackManager
+from langchain.schema.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
     AsyncCallbackManager,
     AsyncCallbackManagerForChainRun,

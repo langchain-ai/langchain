@@ -3,7 +3,7 @@ from typing import List, Tuple
 
 import pytest
 
-from langchain.callbacks.base import BaseCallbackHandler
+from langchain.schema.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.manager import AsyncCallbackManager, CallbackManager
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult

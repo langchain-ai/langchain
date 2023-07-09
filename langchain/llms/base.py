@@ -33,7 +33,7 @@ from tenacity import (
 )
 
 import langchain
-from langchain.callbacks.base import BaseCallbackManager
+from langchain.schema.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
     AsyncCallbackManager,
     AsyncCallbackManagerForLLMRun,

@@ -16,7 +16,7 @@ from pydantic import (
 )
 from pydantic.main import ModelMetaclass
 
-from langchain.callbacks.base import BaseCallbackManager
+from langchain.schema.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
     AsyncCallbackManager,
     AsyncCallbackManagerForToolRun,
