@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 import uuid
 from typing import Any, Callable, Iterable, List, Optional, Tuple
+from collections import defaultdict
 
 import numpy as np
 
@@ -94,6 +95,79 @@ class Pinecone(VectorStore):
         # upsert to Pinecone
         self._index.upsert(vectors=docs, namespace=namespace, batch_size=batch_size)
         return ids
+
+    def search_documents_by_metadata(
+        index_name: str,
+        k: int = 4,
+        metadata: List(dict) = None,
+        include_metadata: bool = True,
+        include_values: bool = False,
+        filters: Optional[dict] = None,
+        index_dimensions: int = 1536,
+        namespace: str = ""
+    ) -> List[Document]:
+        """Search documents based on metadata. You can provide a list of metadata's dictionnary to find and you can also
+        provide your own filters based on documentation (https://docs.pinecone.io/docs/metadata-filtering) 
+
+        Args:
+            k: Number of Documents to return. Defaults to 4.
+            metadata: List of dictionnary to filter. Default to None.
+            include_metadata: include metadata from the returned documents. Defaults to True
+            inclue_values: include vector values from the returned documents. Defaults to False.
+            filters: provide your own filters based on documentation (https://docs.pinecone.io/docs/metadata-filtering) 
+            index_dimensions: Dimensions of your index. Defaults to 1536.
+            namespace: Search in a particular namespace. Default to "".
+        Returns:
+            List of Documents selected by the metadata and filters provided.
+        """
+
+        try:
+            import pinecone
+        except ImportError:
+            raise ValueError(
+                "Could not import pinecone python package. "
+                "Please install it with `pip install pinecone-client`."
+            )
+
+        indexes = pinecone.list_indexes()  # checks if provided index exists
+
+        if index_name in indexes:
+            index = pinecone.Index(index_name)
+        elif len(indexes) == 0:
+            raise ValueError(
+                "No active indexes found in your Pinecone project, "
+                "are you sure you're using the right API key and environment?"
+            )
+        else:
+            raise ValueError(
+                f"Index '{index_name}' not found in your Pinecone project. "
+                f"Did you mean one of the following indexes: {', '.join(indexes)}"
+            )
+
+        # Prepare your query
+        query = {"$and": []}
+
+        if filters is not None:
+            # Add pre-existing filters to the query
+            query["$and"].append({"$or": filters})
+
+        if metadata is not None:
+            #We do this to avoid aving the same values in the arrays
+            values_by_key = defaultdict(set)
+
+            # Loop through your data and gather values by key
+            for entry in metadata:
+                for key, value in entry.items():
+                    values_by_key[key].add(value)
+
+            # Add conditions to the query using the gathered values
+            for key, values in values_by_key.items():
+                query["$and"].append({key: {"$in": list(values)}})
+
+        vector = [0] * index_dimensions
+
+        return index.query(vector=vector, filter=query, top_k=k, include_metadata=include_metadata, include_values=False, namespace=namespace)["matches"]
+    
 
     def similarity_search_with_score(
         self,
