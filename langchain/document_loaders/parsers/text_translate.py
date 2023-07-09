@@ -11,15 +11,16 @@ from langchain.schema import Document
 class DoctranTranslateParser(BaseBlobParser):
     """Translates text documents into other languages using doctran."""
 
-    def __init__(self, openai_api_key: Optional[str] = None):
+    def __init__(self, language: str, openai_api_key: Optional[str] = None):
         self.openai_api_key = openai_api_key
+        self.language = language
 
-    def lazy_parse(self, blob: Blob, language: str, **kwargs) -> Iterator[Document]:
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
         if self.openai_api_key:
             openai_api_key = self.openai_api_key
         else:
             openai_api_key = get_from_env("openai_api_key", "OPENAI_API_KEY")
         doctran = Doctran(openai_api_key=openai_api_key)
-        doctran_doc = doctran.parse(content=blob.as_string()).translate(language=language).execute()
+        doctran_doc = doctran.parse(content=blob.as_string()).translate(language=self.language).execute()
         yield Document(page_content=doctran_doc.transformed_content)
