@@ -7,7 +7,7 @@ try:
     check_package_version("lark", gte_version="1.1.5")
     from lark import Lark, Transformer, v_args
 except ImportError:
-    # Added by Rajib
+    # Added by Rajib - to include import error
     # If lark is not installed, need to provide a meaningful
     # error to the user to let them know to install lark
     raise Exception("Could not import lark python package..Please install lark with pip install lark")
