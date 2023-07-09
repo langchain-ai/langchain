@@ -5,6 +5,7 @@ from typing import Optional
 
 from langchain.agents import MRKLChain, ReActChain, SelfAskWithSearchChain
 from langchain.cache import BaseCache
+from langchain.callbacks.context import add_handlers_from_langchain_context
 from langchain.chains import (
     ConversationChain,
     LLMBashChain,
@@ -42,6 +43,7 @@ from langchain.prompts import (
     Prompt,
     PromptTemplate,
 )
+from langchain.schema.callbacks.manager import callback_modifiers
 from langchain.schema.prompt_template import BasePromptTemplate
 from langchain.sql_database import SQLDatabase
 from langchain.utilities.arxiv import ArxivAPIWrapper
@@ -53,6 +55,8 @@ from langchain.utilities.serpapi import SerpAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 from langchain.vectorstores import FAISS, ElasticVectorSearch
+
+callback_modifiers.append(add_handlers_from_langchain_context)
 
 try:
     __version__ = metadata.version(__package__)

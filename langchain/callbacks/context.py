@@ -10,7 +10,6 @@ from typing import (
     Generator,
     List,
     Optional,
-    TypeVar,
     Union,
     cast,
 )
@@ -247,9 +246,6 @@ async def atrace_as_chain_group(
         await run_manager.on_chain_end({})
 
 
-T = TypeVar("T", CallbackManager, AsyncCallbackManager)
-
-
 def env_var_is_set(env_var: str) -> bool:
     """Check if an environment variable is set.
 
@@ -267,7 +263,9 @@ def env_var_is_set(env_var: str) -> bool:
     )
 
 
-def add_handlers_from_context(callback_manager: T, verbose: bool) -> None:
+def add_handlers_from_langchain_context(
+    callback_manager: Union[CallbackManager, AsyncCallbackManager], verbose: bool
+) -> None:
     tracer = tracing_callback_var.get()
     wandb_tracer = wandb_tracing_callback_var.get()
     open_ai = openai_callback_var.get()

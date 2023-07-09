@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import functools
 import logging
-from typing import Any, Dict, List, Optional, Sequence, Type, TypeVar, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Type, TypeVar, Union
 from uuid import UUID, uuid4
 
 from langchain.schema import (
@@ -1310,6 +1310,11 @@ class AsyncCallbackManager(BaseCallbackManager):
         )
 
 
+callback_modifiers: List[
+    Callable[[Union[CallbackManager, AsyncCallbackManager], bool], None]
+] = []
+
+
 CM = TypeVar("CM", CallbackManager, AsyncCallbackManager)
 
 
@@ -1375,12 +1380,8 @@ def _configure(
         callback_manager.add_metadata(inheritable_metadata or {})
         callback_manager.add_metadata(local_metadata or {}, False)
 
-    try:
-        from langchain.callbacks.context import add_handlers_from_context
-
-        add_handlers_from_context(callback_manager, verbose)
-    except ImportError:
-        pass
+    for modifier in callback_modifiers:
+        modifier(callback_manager, verbose)
 
     return callback_manager
 
