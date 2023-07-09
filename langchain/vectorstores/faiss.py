@@ -515,7 +515,8 @@ class FAISS(VectorStore):
 
         if len(index_to_id) != len(documents):
             raise Exception(
-                f"{len(index_to_id)} ids provided for {len(documents)} documents. Each document should have an id."
+                f"{len(index_to_id)} ids provided for {len(documents)} documents."
+                " Each document should have an id."
             )
 
         docstore = InMemoryDocstore(dict(zip(index_to_id.values(), documents)))
