@@ -26,7 +26,7 @@ def test_nltk_text_splitter() -> None:
     assert output == expected_output
 
 
-@pytest.mark.parametrize('pipeline', ['sentencizer'])#, 'en_core_web_sm'])
+@pytest.mark.parametrize('pipeline', ['sentencizer', 'en_core_web_sm'])
 def test_spacy_text_splitter(pipeline) -> None:
     """Test splitting by sentence using Spacy."""
     text = "This is sentence one. And this is sentence two."
