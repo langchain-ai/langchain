@@ -10,7 +10,7 @@ from pydantic import Extra, root_validator
 
 from langchain.chains.llm import LLMChain
 from langchain.chains.sequential import SequentialChain
-from langchain.prompts.prompt import PromptTemplate
+from langchain.core.prompts.prompt import PromptTemplate
 from langchain.schema.callbacks.manager import CallbackManagerForChainRun
 from langchain.schema.chain import Chain
 from langchain.schema.language_model import BaseLanguageModel

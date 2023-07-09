@@ -2,7 +2,7 @@
 import pytest
 
 from langchain.prompts.example_selector.length_based import LengthBasedExampleSelector
-from langchain.prompts.prompt import PromptTemplate
+from langchain.core.prompts.prompt import PromptTemplate
 
 EXAMPLES = [
     {"question": "Question: who are you?\nAnswer: foo"},

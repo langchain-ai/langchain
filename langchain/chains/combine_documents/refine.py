@@ -11,7 +11,7 @@ from langchain.chains.combine_documents.base import (
 )
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
-from langchain.prompts.prompt import PromptTemplate
+from langchain.core.prompts.prompt import PromptTemplate
 from langchain.schema import BasePromptTemplate, format_document
 from langchain.schema.callbacks.manager import Callbacks
 

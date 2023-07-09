@@ -15,7 +15,7 @@ from langchain.chains.graph_qa.prompts import (
 )
 from langchain.chains.llm import LLMChain
 from langchain.graphs.rdf_graph import RdfGraph
-from langchain.prompts.base import BasePromptTemplate
+from langchain.core.prompts.base import BasePromptTemplate
 from langchain.schema.callbacks.manager import CallbackManagerForChainRun
 from langchain.schema.chain import Chain
 from langchain.schema.language_model import BaseLanguageModel

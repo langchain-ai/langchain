@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import BaseLLM
 from langchain.output_parsers.pydantic import PydanticOutputParser
-from langchain.prompts.prompt import PromptTemplate
+from langchain.core.prompts.prompt import PromptTemplate
 from langchain.schema import BaseRetriever, Document
 from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,

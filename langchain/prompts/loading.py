@@ -9,7 +9,7 @@ import yaml
 
 from langchain.output_parsers.regex import RegexParser
 from langchain.prompts.few_shot import FewShotPromptTemplate
-from langchain.prompts.prompt import PromptTemplate
+from langchain.core.prompts.prompt import PromptTemplate
 from langchain.schema import BaseLLMOutputParser, BasePromptTemplate, NoOpOutputParser
 from langchain.utilities.loading import try_load_from_hub
 

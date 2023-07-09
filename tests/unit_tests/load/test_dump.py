@@ -10,8 +10,8 @@ from langchain.chat_models.openai import ChatOpenAI
 from langchain.llms.openai import OpenAI
 from langchain.load.dump import dumps
 from langchain.load.serializable import Serializable
-from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain.prompts.prompt import PromptTemplate
+from langchain.core.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
+from langchain.core.prompts.prompt import PromptTemplate
 
 
 class Person(Serializable):

@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Tuple
 
 from pydantic import root_validator
 
-from langchain.prompts.chat import BaseChatPromptTemplate
+from langchain.core.prompts.chat import BaseChatPromptTemplate
 from langchain.schema import BasePromptTemplate, PromptValue
 
 

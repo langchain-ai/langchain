@@ -6,7 +6,7 @@ from langchain.chains.llm import LLMChain
 from langchain.llms.openai import OpenAI
 from langchain.load.dump import dumps
 from langchain.load.load import loads
-from langchain.prompts.prompt import PromptTemplate
+from langchain.core.prompts.prompt import PromptTemplate
 
 
 class NotSerializable:

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TypeVar
 
 from langchain.chains.llm import LLMChain
-from langchain.prompts.prompt import PromptTemplate
+from langchain.core.prompts.prompt import PromptTemplate
 from langchain.schema import (
     BaseOutputParser,
     BasePromptTemplate,

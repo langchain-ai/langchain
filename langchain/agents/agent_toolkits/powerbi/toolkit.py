@@ -7,7 +7,7 @@ from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.chains.llm import LLMChain
 from langchain.chat_models.base import BaseChatModel
 from langchain.prompts import PromptTemplate
-from langchain.prompts.chat import (
+from langchain.core.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,

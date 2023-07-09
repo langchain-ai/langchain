@@ -2,7 +2,7 @@
 # flake8: noqa
 from langchain.schema.messages import HumanMessage, AIMessage, SystemMessage
 
-from langchain.prompts.chat import (
+from langchain.core.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
 )

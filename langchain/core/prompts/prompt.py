@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Union
 
 from pydantic import root_validator
 
-from langchain.prompts.base import (
+from langchain.core.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
     StringPromptTemplate,
     _get_jinja2_variables_from_template,

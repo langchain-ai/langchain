@@ -9,7 +9,7 @@ from langchain.agents.structured_chat.output_parser import (
 )
 from langchain.agents.structured_chat.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.chains.llm import LLMChain
-from langchain.prompts.chat import (
+from langchain.core.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,

@@ -8,7 +8,7 @@ from pydantic import Extra, Field
 
 from langchain.input import get_colored_text
 from langchain.load.dump import dumpd
-from langchain.prompts.prompt import PromptTemplate
+from langchain.core.prompts.prompt import PromptTemplate
 from langchain.schema import (
     BaseLLMOutputParser,
     BasePromptTemplate,

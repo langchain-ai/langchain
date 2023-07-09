@@ -8,7 +8,7 @@ from pydantic import Extra, Field
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.comparison.prompt import PROMPT, PROMPT_WITH_REFERENCE
 from langchain.evaluation.schema import LLMEvalChain, PairwiseStringEvaluator
-from langchain.prompts.prompt import PromptTemplate
+from langchain.core.prompts.prompt import PromptTemplate
 from langchain.schema import BaseOutputParser
 from langchain.schema.callbacks.manager import Callbacks
 from langchain.schema.language_model import BaseLanguageModel

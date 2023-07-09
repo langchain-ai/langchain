@@ -14,7 +14,7 @@ from langchain.agents.conversational_chat.prompt import (
 )
 from langchain.agents.utils import validate_tools_single_input
 from langchain.chains import LLMChain
-from langchain.prompts.chat import (
+from langchain.core.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     MessagesPlaceholder,

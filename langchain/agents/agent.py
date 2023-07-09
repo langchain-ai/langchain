@@ -17,7 +17,7 @@ from langchain.agents.tools import InvalidTool
 from langchain.chains.llm import LLMChain
 from langchain.input import get_color_mapping
 from langchain.prompts.few_shot import FewShotPromptTemplate
-from langchain.prompts.prompt import PromptTemplate
+from langchain.core.prompts.prompt import PromptTemplate
 from langchain.schema import (
     AgentAction,
     AgentFinish,

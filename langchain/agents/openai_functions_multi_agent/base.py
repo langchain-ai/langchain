@@ -8,7 +8,7 @@ from pydantic import root_validator
 
 from langchain.agents import BaseMultiActionAgent
 from langchain.chat_models.openai import ChatOpenAI
-from langchain.prompts.chat import (
+from langchain.core.prompts.chat import (
     BaseMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,

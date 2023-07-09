@@ -21,7 +21,7 @@ from langchain.evaluation.run_evaluators.base import (
     RunEvaluatorInputMapper,
     RunEvaluatorOutputParser,
 )
-from langchain.prompts.prompt import PromptTemplate
+from langchain.core.prompts.prompt import PromptTemplate
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool

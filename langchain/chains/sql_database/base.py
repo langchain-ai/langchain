@@ -8,7 +8,7 @@ from pydantic import Extra, Field, root_validator
 
 from langchain.chains.llm import LLMChain
 from langchain.chains.sql_database.prompt import DECIDER_PROMPT, PROMPT, SQL_PROMPTS
-from langchain.prompts.prompt import PromptTemplate
+from langchain.core.prompts.prompt import PromptTemplate
 from langchain.schema import BasePromptTemplate
 from langchain.schema.callbacks.manager import CallbackManagerForChainRun
 from langchain.schema.chain import Chain

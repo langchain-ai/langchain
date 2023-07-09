@@ -3,13 +3,13 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Extra, root_validator
 
-from langchain.prompts.base import (
+from langchain.core.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
     StringPromptTemplate,
     check_valid_template,
 )
 from langchain.prompts.example_selector.base import BaseExampleSelector
-from langchain.prompts.prompt import PromptTemplate
+from langchain.core.prompts.prompt import PromptTemplate
 
 
 class FewShotPromptTemplate(StringPromptTemplate):

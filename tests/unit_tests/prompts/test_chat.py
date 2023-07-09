@@ -4,7 +4,7 @@ from typing import List
 import pytest
 
 from langchain.prompts import PromptTemplate
-from langchain.prompts.chat import (
+from langchain.core.prompts.chat import (
     AIMessagePromptTemplate,
     BaseMessagePromptTemplate,
     ChatMessagePromptTemplate,

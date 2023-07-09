@@ -4,7 +4,7 @@ from typing import Any, Callable, List
 from pydantic import BaseModel
 
 from langchain.experimental.autonomous_agents.autogpt.prompt_generator import get_prompt
-from langchain.prompts.chat import (
+from langchain.core.prompts.chat import (
     BaseChatPromptTemplate,
 )
 from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
