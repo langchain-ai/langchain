@@ -125,6 +125,8 @@ class SQLDatabaseChain(Chain):
                 callbacks=_run_manager.get_child(),
                 **llm_inputs,
             ).strip()
+            if isinstance(self.llm_chain.llm , FakeLLM): # Running a FakeRun on DatabaseChain.
+                return {self.output_key: sql_cmd}
             if not self.use_query_checker:
                 _run_manager.on_text(sql_cmd, color="green", verbose=self.verbose)
                 intermediate_steps.append(
