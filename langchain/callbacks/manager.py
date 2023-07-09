@@ -26,14 +26,13 @@ from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.callbacks.tracers.langchain_v1 import LangChainTracerV1, TracerSessionV1
 from langchain.callbacks.tracers.stdout import ConsoleCallbackHandler
 from langchain.callbacks.tracers.wandb import WandbTracer
-from langchain.schema.callbacks.base import (
-    BaseCallbackHandler,
-    BaseCallbackManager,
+from langchain.schema.callbacks.manager import (
+    AsyncCallbackManager,
+    CallbackManager,
+    Callbacks,
 )
-from langchain.schema.callbacks.manager import AsyncCallbackManager, CallbackManager
 
 logger = logging.getLogger(__name__)
-Callbacks = Optional[Union[List[BaseCallbackHandler], BaseCallbackManager]]
 
 openai_callback_var: ContextVar[Optional[OpenAICallbackHandler]] = ContextVar(
     "openai_callback", default=None

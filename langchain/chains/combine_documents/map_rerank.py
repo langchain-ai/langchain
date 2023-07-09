@@ -6,11 +6,11 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
 from pydantic import Extra, root_validator
 
-from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
 from langchain.output_parsers.regex import RegexParser
+from langchain.schema.callbacks.manager import Callbacks
 
 
 class MapRerankDocumentsChain(BaseCombineDocumentsChain):

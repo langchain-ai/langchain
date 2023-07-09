@@ -5,9 +5,6 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 from pydantic import Field
 
-from langchain.callbacks.manager import (
-    Callbacks,
-)
 from langchain.chains.base import Chain
 from langchain.embeddings.base import Embeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
@@ -16,6 +13,7 @@ from langchain.math_utils import cosine_similarity
 from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
+    Callbacks,
 )
 
 

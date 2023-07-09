@@ -9,7 +9,7 @@ from langchain.schema.output import LLMResult
 from langchain.schema.prompt import PromptValue
 
 if TYPE_CHECKING:
-    from langchain.callbacks.manager import Callbacks
+    from langchain.schema.callbacks.manager import Callbacks
 
 
 def _get_token_ids_default_method(text: str) -> List[int]:

@@ -6,9 +6,6 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from pydantic import Extra, Field
 
-from langchain.callbacks.manager import (
-    Callbacks,
-)
 from langchain.chains.base import Chain
 from langchain.input import get_colored_text
 from langchain.load.dump import dumpd
@@ -25,6 +22,7 @@ from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManager,
     CallbackManagerForChainRun,
+    Callbacks,
 )
 from langchain.schema.language_model import BaseLanguageModel
 

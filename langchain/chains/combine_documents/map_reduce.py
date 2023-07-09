@@ -6,11 +6,11 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import Extra, root_validator
 
-from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.reduce import ReduceDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
+from langchain.schema.callbacks.manager import Callbacks
 
 
 class MapReduceDocumentsChain(BaseCombineDocumentsChain):

@@ -25,7 +25,6 @@ from langchain.schema.callbacks.base import (
 )
 
 logger = logging.getLogger(__name__)
-Callbacks = Optional[Union[List[BaseCallbackHandler], BaseCallbackManager]]
 
 
 def _handle_event(
@@ -1311,3 +1310,6 @@ class AsyncCallbackManager(BaseCallbackManager):
             inheritable_metadata,
             local_metadata,
         )
+
+
+Callbacks = Optional[Union[List[BaseCallbackHandler], BaseCallbackManager]]

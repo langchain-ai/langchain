@@ -9,9 +9,6 @@ from typing import Any, Dict, List, NamedTuple, Optional, Sequence, Tuple, Union
 
 from pydantic import Extra, Field
 
-from langchain.callbacks.manager import (
-    Callbacks,
-)
 from langchain.chains.llm import LLMChain
 from langchain.chat_models.base import BaseChatModel
 from langchain.evaluation.agents.trajectory_eval_prompt import (
@@ -23,6 +20,7 @@ from langchain.schema import AgentAction, BaseOutputParser, OutputParserExceptio
 from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
+    Callbacks,
 )
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool

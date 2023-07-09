@@ -6,13 +6,11 @@ from typing import Any, Dict, List, Mapping, NamedTuple, Optional
 
 from pydantic import Extra
 
-from langchain.callbacks.manager import (
-    Callbacks,
-)
 from langchain.chains.base import Chain
 from langchain.schema.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
+    Callbacks,
 )
 
 

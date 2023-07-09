@@ -10,14 +10,12 @@ from langchain.load.serializable import Serializable
 from langchain.schema.document import Document
 
 if TYPE_CHECKING:
-    from langchain.callbacks.manager import (
-        Callbacks,
-    )
     from langchain.schema.callbacks.manager import (
         AsyncCallbackManager,
         AsyncCallbackManagerForRetrieverRun,
         CallbackManager,
         CallbackManagerForRetrieverRun,
+        Callbacks,
     )
 
 
