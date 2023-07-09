@@ -7,12 +7,17 @@ try:
     check_package_version("lark", gte_version="1.1.5")
     from lark import Lark, Transformer, v_args
 except ImportError:
+    # Added by Rajib
+    # If lark is not installed, need to provide a meaningful
+    # error to the user to let them know to install lark
+    raise Exception("Could not import lark python package..Please install lark with pip install lark")
 
-    def v_args(*args: Any, **kwargs: Any) -> Any:  # type: ignore
-        return lambda _: None
-
-    Transformer = object  # type: ignore
-    Lark = object  # type: ignore
+    # Commented by Rajib - The below piece of code does not look relevant
+    # def v_args(*args: Any, **kwargs: Any) -> Any:  # type: ignore
+    #     return lambda _: None
+    #
+    # Transformer = object  # type: ignore
+    # Lark = object  # type: ignore
 
 from langchain.chains.query_constructor.ir import (
     Comparator,
