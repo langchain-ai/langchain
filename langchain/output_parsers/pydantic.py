@@ -1,7 +1,7 @@
 import json
 import re
 import warnings
-from typing import Type, TypeVar, Optional, List, Any
+from typing import Type, TypeVar, Optional, List, Any, Dict
 
 from pydantic import BaseModel, ValidationError, create_model, Field
 
@@ -89,7 +89,7 @@ class PydanticOutputParser(BaseOutputParser[T]):
 
             # Check if json_object can be parsed by DynamicModel
             try:
-                if issubclass(self.dynamic_model, BaseModel):
+                if self.dynamic_model and issubclass(self.dynamic_model, BaseModel):
                     self.dynamic_model.parse_obj(json_object)
             except ValidationError as e:
                 model_name = (self.dynamic_model or self.pydantic_object).__name__
@@ -124,7 +124,7 @@ class PydanticOutputParser(BaseOutputParser[T]):
         else:
             return data
 
-    def _filter_schema(self, schema: dict[str, Any]) -> dict[str, Any]:
+    def _filter_schema(self, schema: Dict[str, Any]) -> Dict[str, Any]:
         """Filter the schema to exclude the specified fields."""
         filtered_schema = schema.copy()
 
@@ -150,3 +150,4 @@ class PydanticOutputParser(BaseOutputParser[T]):
         }
 
         return filtered_schema
+
