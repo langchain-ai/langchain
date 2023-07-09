@@ -3,20 +3,18 @@ from __future__ import annotations
 import warnings
 from abc import ABC, abstractmethod
 from inspect import signature
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
+from langchain.schema.callbacks.manager import (
+    AsyncCallbackManager,
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManager,
+    CallbackManagerForRetrieverRun,
+    Callbacks,
+)
 from langchain.schema.document import Document
-
-if TYPE_CHECKING:
-    from langchain.schema.callbacks.manager import (
-        AsyncCallbackManager,
-        AsyncCallbackManagerForRetrieverRun,
-        CallbackManager,
-        CallbackManagerForRetrieverRun,
-        Callbacks,
-    )
 
 
 class BaseRetriever(Serializable, ABC):
