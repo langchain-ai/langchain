@@ -110,6 +110,7 @@ class Pinecone(VectorStore):
         provide your own filters based on documentation (https://docs.pinecone.io/docs/metadata-filtering) 
 
         Args:
+            index_name: Index name to perform the search on
             k: Number of Documents to return. Defaults to 4.
             metadata: List of dictionnary to filter. Default to None.
             include_metadata: include metadata from the returned documents. Defaults to True
@@ -166,7 +167,7 @@ class Pinecone(VectorStore):
 
         vector = [0] * index_dimensions
 
-        return index.query(vector=vector, filter=query, top_k=k, include_metadata=include_metadata, include_values=False, namespace=namespace)["matches"]
+        return index.query(vector=vector, filter=query, top_k=k, include_metadata=include_metadata, include_values=include_values, namespace=namespace)["matches"]
     
 
     def similarity_search_with_score(
