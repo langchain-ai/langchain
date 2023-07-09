@@ -3,6 +3,13 @@ from langchain.llms.base import LLM, Optional, List, Mapping, Any
 import requests
 from pydantic import Field
 
+def clean_url(url):
+    if url.endswith('/api'):
+        return url[:-4]
+    elif url.endswith('/'):
+        return url[:-1]
+    else:
+        return url
 
 class KoboldApiLLM(LLM):
     endpoint: str = Field(...)
@@ -52,7 +59,7 @@ class KoboldApiLLM(LLM):
             data["stop_sequence"] = stop
             
         # Send a POST request to the Kobold API with the data
-        response = requests.post(f"{self.endpoint}/api/v1/generate", json=data)
+        response = requests.post(f"{clean_url(self.endpoint)}/api/v1/generate", json=data)
         response.raise_for_status()
 
         # Check for the expected keys in the response JSON
