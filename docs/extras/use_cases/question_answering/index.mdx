@@ -15,7 +15,7 @@ LangChain supports Chat and QA various `data` types:
 
 Below we will review Chat and QA on `Unstructured data`. 
 
-![intro.png](chat_qa_documents_to_convert_files/intro.png)
+![intro.png](index_files/intro.png)
 
 `Unstructured data` can be loaded from many sources.
 
@@ -25,7 +25,7 @@ Each loader returns data as a LangChain [`Document`](https://docs.langchain.com/
 
 `Documents` are turned into a Chat or QA app following the steps below:
 
-![flow.jpeg](chat_qa_documents_to_convert_files/flow.jpeg)
+![flow.jpeg](index_files/flow.jpeg)
 
 ---
 
@@ -97,7 +97,7 @@ vectorstore = Chroma.from_documents(documents=all_splits,embedding=OpenAIEmbeddi
 
 Here are the three pieces together:
 
-![lc.png](chat_qa_documents_to_convert_files/lc.png)
+![lc.png](index_files/lc.png)
 
 ### 1.2 Going Deeper
 
@@ -366,7 +366,7 @@ result = qa_chain({"query": question})
 
 The user can choose the desired level of abstraction for QA:
 
-![summary_chains.png](chat_qa_documents_to_convert_files/summary_chains.png)
+![summary_chains.png](index_files/summary_chains.png)
 
 ---
 
