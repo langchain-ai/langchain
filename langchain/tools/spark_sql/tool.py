@@ -62,7 +62,7 @@ class InfoSparkSQLTool(BaseSparkSQLTool, BaseTool):
     name = "schema_sql_db"
     description = """
     Input to this tool is a comma-separated list of tables, output is the schema and sample rows for those tables.
-    Be sure that the tables actually exist by calling list_tables_sql_db first!
+    Be sure that the tables actually exist by calling sql_db_list_tables first!
 
     Example Input: "table1, table2, table3"
     """
@@ -86,7 +86,7 @@ class InfoSparkSQLTool(BaseSparkSQLTool, BaseTool):
 class ListSparkSQLTool(BaseSparkSQLTool, BaseTool):
     """Tool for getting tables names."""
 
-    name = "list_tables_sql_db"
+    name = "sql_db_list_tables"
     description = "Input is an empty string, output is a comma separated list of tables in the Spark SQL."
 
     def _run(

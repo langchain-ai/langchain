@@ -44,7 +44,7 @@ class SQLDatabaseToolkit(BaseToolkit):
         info_sql_database_tool_description = (
             "Input to this tool is a comma-separated list of tables, output is the "
             "schema and sample rows for those tables. "
-            "Be sure that the tables actually exist by calling list_tables_sql_db "
+            "Be sure that the tables actually exist by calling sql_db_list_tables "
             "first! Example Input: 'table1, table2, table3'"
         )
         return [
