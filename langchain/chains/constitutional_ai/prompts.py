@@ -60,7 +60,7 @@ CRITIQUE_PROMPT = FewShotPromptTemplate(
     examples=[
         {k: v for k, v in e.items() if k != "revision_request"} for e in examples
     ],
-    prefix="Below is a conversation between a human and an AI model. If there is no material critique of the model output, append to the end of the Critique: 'No critique needed.' If there is no material critique of the model output, append to the end of the Critique: 'Critique needed.'",
+    prefix="Below is a conversation between a human and an AI model. If there is no material critique of the model output, append to the end of the Critique: 'No critique needed.' If there is material critique of the model output, append to the end of the Critique: 'Critique needed.'",
     suffix="""Human: {input_prompt}
 Model: {output_from_model}
 

@@ -17,20 +17,21 @@ class ChatOutputParser(AgentOutputParser):
         try:
             action = text.split("```")[1]
             response = json.loads(action.strip())
-            includes_action = "action" in response and "action_input" in response
+            includes_action = "action" in response
             if includes_answer and includes_action:
                 raise OutputParserException(
                     "Parsing LLM output produced a final answer "
                     f"and a parse-able action: {text}"
                 )
-            return AgentAction(response["action"], response["action_input"], text)
+            return AgentAction(
+                response["action"], response.get("action_input", {}), text
+            )
 
         except Exception:
             if not includes_answer:
                 raise OutputParserException(f"Could not parse LLM output: {text}")
-            return AgentFinish(
-                {"output": text.split(FINAL_ANSWER_ACTION)[-1].strip()}, text
-            )
+            output = text.split(FINAL_ANSWER_ACTION)[-1].strip()
+            return AgentFinish({"output": output}, text)
 
     @property
     def _type(self) -> str:

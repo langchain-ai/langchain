@@ -4,8 +4,8 @@ from typing import Any, Optional, Sequence
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_types import AgentType
 from langchain.agents.loading import AGENT_TO_CLASS, load_agent
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 
 
@@ -16,6 +16,8 @@ def initialize_agent(
     callback_manager: Optional[BaseCallbackManager] = None,
     agent_path: Optional[str] = None,
     agent_kwargs: Optional[dict] = None,
+    *,
+    tags: Optional[Sequence[str]] = None,
     **kwargs: Any,
 ) -> AgentExecutor:
     """Load an agent executor given tools and LLM.
@@ -29,11 +31,13 @@ def initialize_agent(
             not provided. Defaults to None.
         agent_path: Path to serialized agent to use.
         agent_kwargs: Additional key word arguments to pass to the underlying agent
+        tags: Tags to apply to the traced runs.
         **kwargs: Additional key word arguments passed to the agent executor
 
     Returns:
         An agent executor
     """
+    tags_ = list(tags) if tags else []
     if agent is None and agent_path is None:
         agent = AgentType.ZERO_SHOT_REACT_DESCRIPTION
     if agent is not None and agent_path is not None:
@@ -47,6 +51,7 @@ def initialize_agent(
                 f"Got unknown agent type: {agent}. "
                 f"Valid types are: {AGENT_TO_CLASS.keys()}."
             )
+        tags_.append(agent.value if isinstance(agent, AgentType) else agent)
         agent_cls = AGENT_TO_CLASS[agent]
         agent_kwargs = agent_kwargs or {}
         agent_obj = agent_cls.from_llm_and_tools(
@@ -56,6 +61,11 @@ def initialize_agent(
         agent_obj = load_agent(
             agent_path, llm=llm, tools=tools, callback_manager=callback_manager
         )
+        try:
+            # TODO: Add tags from the serialized object directly.
+            tags_.append(agent_obj._agent_type)
+        except NotImplementedError:
+            pass
     else:
         raise ValueError(
             "Somehow both `agent` and `agent_path` are None, "
@@ -65,5 +75,6 @@ def initialize_agent(
         agent=agent_obj,
         tools=tools,
         callback_manager=callback_manager,
+        tags=tags_,
         **kwargs,
     )

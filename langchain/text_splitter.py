@@ -34,6 +34,23 @@ logger = logging.getLogger(__name__)
 TS = TypeVar("TS", bound="TextSplitter")
 
 
+def _make_spacy_pipeline_for_splitting(pipeline: str) -> Any:  # avoid importing spacy
+    try:
+        import spacy
+    except ImportError:
+        raise ImportError(
+            "Spacy is not installed, please install it with `pip install spacy`."
+        )
+    if pipeline == "sentencizer":
+        from spacy.lang.en import English
+
+        sentencizer = English()
+        sentencizer.add_pipe("sentencizer")
+    else:
+        sentencizer = spacy.load(pipeline, disable=["ner"])
+    return sentencizer
+
+
 def _split_text_with_regex(
     text: str, separator: str, keep_separator: bool
 ) -> List[str]:
@@ -47,7 +64,7 @@ def _split_text_with_regex(
                 splits += _splits[-1:]
             splits = [_splits[0]] + splits
         else:
-            splits = text.split(separator)
+            splits = re.split(separator, text)
     else:
         splits = list(text)
     return [s for s in splits if s != ""]
@@ -70,7 +87,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             chunk_size: Maximum size of chunks to return
             chunk_overlap: Overlap in characters between chunks
             length_function: Function that measures the length of given chunks
-            keep_separator: Whether or not to keep the separator in the chunks
+            keep_separator: Whether to keep the separator in the chunks
             add_start_index: If `True`, includes chunk's start index in metadata
         """
         if chunk_overlap > chunk_size:
@@ -258,11 +275,15 @@ class CharacterTextSplitter(TextSplitter):
 
 
 class LineType(TypedDict):
+    """Line type as typed dict."""
+
     metadata: Dict[str, str]
     content: str
 
 
 class HeaderType(TypedDict):
+    """Header type as typed dict."""
+
     level: int
     name: str
     data: str
@@ -288,7 +309,7 @@ class MarkdownHeaderTextSplitter:
             headers_to_split_on, key=lambda split: len(split[0]), reverse=True
         )
 
-    def aggregate_lines_to_chunks(self, lines: List[LineType]) -> List[LineType]:
+    def aggregate_lines_to_chunks(self, lines: List[LineType]) -> List[Document]:
         """Combine lines with common metadata into chunks
         Args:
             lines: Line of text / associated header metadata
@@ -307,9 +328,13 @@ class MarkdownHeaderTextSplitter:
             else:
                 # Otherwise, append the current line to the aggregated list
                 aggregated_chunks.append(line)
-        return aggregated_chunks
 
-    def split_text(self, text: str) -> List[LineType]:
+        return [
+            Document(page_content=chunk["content"], metadata=chunk["metadata"])
+            for chunk in aggregated_chunks
+        ]
+
+    def split_text(self, text: str) -> List[Document]:
         """Split markdown file
         Args:
             text: Markdown file"""
@@ -401,7 +426,10 @@ class MarkdownHeaderTextSplitter:
         if not self.return_each_line:
             return self.aggregate_lines_to_chunks(lines_with_metadata)
         else:
-            return lines_with_metadata
+            return [
+                Document(page_content=chunk["content"], metadata=chunk["metadata"])
+                for chunk in lines_with_metadata
+            ]
 
 
 # should be in newer Python versions (3.10+)
@@ -550,6 +578,8 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
 
 
 class Language(str, Enum):
+    """Enum of the programming languages."""
+
     CPP = "cpp"
     GO = "go"
     JAVA = "java"
@@ -565,6 +595,7 @@ class Language(str, Enum):
     MARKDOWN = "markdown"
     LATEX = "latex"
     HTML = "html"
+    SOL = "sol"
 
 
 class RecursiveCharacterTextSplitter(TextSplitter):
@@ -895,7 +926,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\n\\\begin{quotation}",
                 "\n\\\begin{verse}",
                 "\n\\\begin{verbatim}",
-                ## Now split by math environments
+                # Now split by math environments
                 "\n\\\begin{align}",
                 "$$",
                 "$",
@@ -935,6 +966,36 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "<title",
                 "",
             ]
+        elif language == Language.SOL:
+            return [
+                # Split along compiler informations definitions
+                "\npragma ",
+                "\nusing ",
+                # Split along contract definitions
+                "\ncontract ",
+                "\ninterface ",
+                "\nlibrary ",
+                # Split along method definitions
+                "\nconstructor ",
+                "\ntype ",
+                "\nfunction ",
+                "\nevent ",
+                "\nmodifier ",
+                "\nerror ",
+                "\nstruct ",
+                "\nenum ",
+                # Split along control flow statements
+                "\nif ",
+                "\nfor ",
+                "\nwhile ",
+                "\ndo while ",
+                "\nassembly ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
         else:
             raise ValueError(
                 f"Language {language} is not supported! "
@@ -966,25 +1027,24 @@ class NLTKTextSplitter(TextSplitter):
 
 
 class SpacyTextSplitter(TextSplitter):
-    """Implementation of splitting text that looks at sentences using Spacy."""
+    """Implementation of splitting text that looks at sentences using Spacy.
+
+
+    Per default, Spacy's `en_core_web_sm` model is used. For a faster, but
+    potentially less accurate splitting, you can use `pipeline='sentencizer'`.
+    """
 
     def __init__(
         self, separator: str = "\n\n", pipeline: str = "en_core_web_sm", **kwargs: Any
     ) -> None:
         """Initialize the spacy text splitter."""
         super().__init__(**kwargs)
-        try:
-            import spacy
-        except ImportError:
-            raise ImportError(
-                "Spacy is not installed, please install it with `pip install spacy`."
-            )
-        self._tokenizer = spacy.load(pipeline)
+        self._tokenizer = _make_spacy_pipeline_for_splitting(pipeline)
         self._separator = separator
 
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
-        splits = (str(s) for s in self._tokenizer(text).sents)
+        splits = (s.text for s in self._tokenizer(text).sents)
         return self._merge_splits(splits, self._separator)
 
 

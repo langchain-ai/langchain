@@ -8,18 +8,32 @@ import concurrent.futures
 from typing import Any, List, Optional
 
 import numpy as np
-from pydantic import BaseModel
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseRetriever, Document
 
 
 def create_index(contexts: List[str], embeddings: Embeddings) -> np.ndarray:
+    """
+    Create an index of embeddings for a list of contexts.
+    Args:
+        contexts: List of contexts to embed.
+        embeddings: Embeddings model to use.
+
+    Returns:
+        Index of embeddings.
+    """
     with concurrent.futures.ThreadPoolExecutor() as executor:
         return np.array(list(executor.map(embeddings.embed_query, contexts)))
 
 
-class SVMRetriever(BaseRetriever, BaseModel):
+class SVMRetriever(BaseRetriever):
+    """SVM Retriever."""
+
     embeddings: Embeddings
     index: Any
     texts: List[str]
@@ -39,7 +53,9 @@ class SVMRetriever(BaseRetriever, BaseModel):
         index = create_index(texts, embeddings)
         return cls(embeddings=embeddings, index=index, texts=texts, **kwargs)
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> List[Document]:
         from sklearn import svm
 
         query_embeds = np.array(self.embeddings.embed_query(query))
@@ -76,5 +92,7 @@ class SVMRetriever(BaseRetriever, BaseModel):
                 top_k_results.append(Document(page_content=self.texts[row - 1]))
         return top_k_results
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def _aget_relevant_documents(
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
+    ) -> List[Document]:
         raise NotImplementedError
