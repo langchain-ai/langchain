@@ -24,6 +24,8 @@ from langchain.schema import BaseMemory, BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import AIMessage, SystemMessage
 
+_SQL_OPEN_AI_FUNCTION_MEMORY_EXAMPLE = "https://python.langchain.com/docs/modules/agents/how_to/add_memory_openai_functions"
+
 
 def create_sql_agent(
     llm: BaseLanguageModel,
@@ -33,7 +35,7 @@ def create_sql_agent(
     prefix: str = SQL_PREFIX,
     suffix: Optional[str] = None,
     format_instructions: str = FORMAT_INSTRUCTIONS,
-    input_variables: Optional[List[str]] = None,
+    input_variables: Optional[List[str]] = ["input", "agent_scratchpad"],
     top_k: int = 10,
     max_iterations: Optional[int] = 15,
     max_execution_time: Optional[float] = None,
@@ -61,6 +63,7 @@ def create_sql_agent(
         llm_chain = LLMChain(
             llm=llm,
             prompt=prompt,
+            memory=memory,
             callback_manager=callback_manager,
         )
         tool_names = [tool.name for tool in tools]
@@ -73,10 +76,11 @@ def create_sql_agent(
             AIMessage(content=suffix or SQL_FUNCTIONS_SUFFIX),
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ]
-        input_variables = ["input", "agent_scratchpad"]
-        _prompt = ChatPromptTemplate(input_variables=input_variables, messages=messages)
         if memory:
-            validate_sql_chain_memory(memory, _prompt)
+            raise ValueError(
+                f"To use memory with OpenAIFunctionsAgent please refer to following example: {_SQL_OPEN_AI_FUNCTION_MEMORY_EXAMPLE}"
+            )
+        _prompt = ChatPromptTemplate(input_variables=input_variables, messages=messages)
         agent = OpenAIFunctionsAgent(
             llm=llm,
             prompt=_prompt,
