@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from pydantic import Extra, Field, root_validator
 
@@ -11,11 +11,10 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.sql_database.prompt import DECIDER_PROMPT, PROMPT, SQL_PROMPTS
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import BasePromptTemplate
+from langchain.schema import BaseOutputParser, BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.sql_database import SQLDatabase
 from langchain.tools.sql_database.prompt import QUERY_CHECKER
-from langchain.schema import BaseOutputParser
 
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 
@@ -54,7 +53,7 @@ class SQLDatabaseChain(Chain):
     sql_cmd_parser: Optional[BaseOutputParser] = None
     """Output parser that reformat the generated SQL"""
     native_format: bool = False
-    """If return_direct, controls whether to return in python native format instead of strings"""
+    """If return_direct, controls whether to return in python native format"""
 
     class Config:
         """Configuration for this pydantic object."""

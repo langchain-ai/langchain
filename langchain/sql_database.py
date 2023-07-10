@@ -2,15 +2,14 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Iterable, List, Optional, Union, Dict, Sequence
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 import sqlalchemy
-from sqlalchemy.sql.base import ColumnCollection, DedupeColumnCollection
-from sqlalchemy.types import NullType
 from sqlalchemy import MetaData, Table, create_engine, inspect, select, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
+from sqlalchemy.types import NullType
 
 from langchain import utils
 
@@ -25,7 +24,7 @@ def _format_index(index: sqlalchemy.engine.interfaces.ReflectedIndex) -> str:
 def _try_eval(x: Any) -> Any:
     try:
         return eval(x)
-    except:
+    except Exception:
         return x
 
 
@@ -425,7 +424,8 @@ class SQLDatabase:
                         ]
                     else:
                         return {
-                            k: _try_eval(v) for k, v in dict(result._asdict()).items()  # type: ignore
+                            k: _try_eval(v)
+                            for k, v in dict(result._asdict()).items()  # type: ignore
                         }
 
                 # Convert columns values to string to avoid issues with sqlalchmey

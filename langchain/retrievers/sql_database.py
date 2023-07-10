@@ -1,18 +1,12 @@
 """SQL Database Chain Retriever"""
-from typing import Any, List, Dict, Any
+from typing import Any, Dict, List
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-
-from pydantic import BaseModel
-
 from langchain.chains.sql_database.base import SQLDatabaseChain
 from langchain.schema import BaseRetriever, Document
-
-from langchain.schema.document import Document
-from langchain.sql_database import SQLDatabase
 
 
 class SQLDatabaseChainRetriever(BaseRetriever):
@@ -32,7 +26,8 @@ class SQLDatabaseChainRetriever(BaseRetriever):
     ) -> List[Document]:
         if not self.sql_db_chain.native_format:
             raise TypeError(
-                "SQL Database Chain must return in native format. Try to turn `native_format` in this chain to `True`."
+                "SQL Database Chain must return in native format. \
+                 Try to turn `native_format` in this chain to `True`."
             )
         ret: List[Dict[str, Any]] = self.sql_db_chain(
             query, callbacks=run_manager.get_child(), **kwargs

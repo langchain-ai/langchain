@@ -19,6 +19,7 @@ from langchain.retrievers.pinecone_hybrid_search import PineconeHybridSearchRetr
 from langchain.retrievers.pubmed import PubMedRetriever
 from langchain.retrievers.remote_retriever import RemoteLangChainRetriever
 from langchain.retrievers.self_query.base import SelfQueryRetriever
+from langchain.retrievers.sql_database import SQLDatabaseChainRetriever
 from langchain.retrievers.svm import SVMRetriever
 from langchain.retrievers.tfidf import TFIDFRetriever
 from langchain.retrievers.time_weighted_retriever import (
@@ -29,7 +30,6 @@ from langchain.retrievers.weaviate_hybrid_search import WeaviateHybridSearchRetr
 from langchain.retrievers.wikipedia import WikipediaRetriever
 from langchain.retrievers.zep import ZepRetriever
 from langchain.retrievers.zilliz import ZillizRetriever
-from langchain.retrievers.sql_database import SQLDatabaseChainRetriever
 
 __all__ = [
     "AmazonKendraRetriever",

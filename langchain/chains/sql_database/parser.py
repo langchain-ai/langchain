@@ -1,6 +1,6 @@
 from typing import Any
-from langchain.embeddings.base import Embeddings
 
+from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseOutputParser
 
 
