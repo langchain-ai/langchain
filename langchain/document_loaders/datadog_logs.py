@@ -106,11 +106,16 @@ class DatadogLogsLoader(BaseLoader):
         twenty_minutes_before = now - timedelta(minutes=20)
         now_timestamp = int(now.timestamp() * 1000)
         twenty_minutes_before_timestamp = int(twenty_minutes_before.timestamp() * 1000)
+        _from = (
+            self.from_time
+            if self.from_time is not None
+            else twenty_minutes_before_timestamp
+        )
 
         body = LogsListRequest(
             filter=LogsQueryFilter(
                 query=self.query,
-                _from=f"{self.from_time if self.from_time is not None else twenty_minutes_before_timestamp}",
+                _from=_from,
                 to=f"{self.to_time if self.to_time is not None else now_timestamp}",
             ),
             sort=LogsSort.TIMESTAMP_ASCENDING,
