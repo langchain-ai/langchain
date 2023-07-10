@@ -388,9 +388,7 @@ class ChatOpenAI(BaseChatModel):
             message = _convert_dict_to_message(res["message"])
             gen = ChatGeneration(
                 message=message,
-                generation_info=dict(
-                    finish_reason=res.get("finish_reason")
-                )
+                generation_info=dict(finish_reason=res.get("finish_reason")),
             )
             generations.append(gen)
         llm_output = {"token_usage": response["usage"], "model_name": self.model_name}
