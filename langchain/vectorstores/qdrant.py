@@ -619,10 +619,10 @@ class Qdrant(VectorStore):
                 to an existing collection Note: collection_name must be provided if
                 recreate_collection is set to False
             vector_size:
-                Size (dimensions) of the vectors. If not provided, it will be automatically
-                inferred from the provided embeddings on init of collection
-                Note: if you do not provide a vector size one initial embedding
-                will be performed to detemine the vector size
+                Size (dimensions) of the vectors. If not provided, it will be
+                automatically inferred from the provided embeddings on init of
+                collection Note: if you do not provide a vector size one initial
+                embedding will be performed to detemine the vector size
             **kwargs:
                 Additional arguments passed directly into REST client initialization
 
