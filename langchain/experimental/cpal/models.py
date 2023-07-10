@@ -1,19 +1,14 @@
 from __future__ import annotations  # allows pydantic model to reference itself
 
-from typing import Optional, Any, Union
-import pandas as pd
-from pydantic import (
-    BaseModel,
-    Field,
-    validator,
-    root_validator,
-    PrivateAttr,
-)
+import re
+from typing import Any, Optional, Union
+
 import duckdb
+import pandas as pd
+from pydantic import BaseModel, Field, PrivateAttr, root_validator, validator
+
 from langchain.experimental.cpal.constants import Constant
 from langchain.graphs.networkx_graph import NetworkxEntityGraph
-
-import re
 
 
 class NarrativeModel(BaseModel):

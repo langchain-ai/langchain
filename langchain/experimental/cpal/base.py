@@ -4,37 +4,28 @@ CPAL Chain and its subchains
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List, Optional, ClassVar, Type
+from typing import Any, ClassVar, Dict, List, Optional, Type
+
 import pydantic
 
 from langchain.base_language import BaseLanguageModel
-from langchain.prompts.prompt import PromptTemplate
-from langchain.output_parsers import PydanticOutputParser
-from langchain.experimental.cpal.constants import Constant
-
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-
-from langchain.experimental.cpal.models import (
-    StoryModel,
-    NarrativeModel,
-    CausalModel,
-    QueryModel,
-    InterventionModel,
-)
-from langchain.experimental.cpal.templates.univariate.narrative import (
-    template as narrative_template,
-)
-from langchain.experimental.cpal.templates.univariate.causal import (
-    template as causal_template,
-)
-from langchain.experimental.cpal.templates.univariate.intervention import (
-    template as intervention_template,
-)
-from langchain.experimental.cpal.templates.univariate.query import (
-    template as query_template,
-)
+from langchain.experimental.cpal.constants import Constant
+from langchain.experimental.cpal.models import (CausalModel, InterventionModel,
+                                                NarrativeModel, QueryModel,
+                                                StoryModel)
+from langchain.experimental.cpal.templates.univariate.causal import \
+    template as causal_template
+from langchain.experimental.cpal.templates.univariate.intervention import \
+    template as intervention_template
+from langchain.experimental.cpal.templates.univariate.narrative import \
+    template as narrative_template
+from langchain.experimental.cpal.templates.univariate.query import \
+    template as query_template
+from langchain.output_parsers import PydanticOutputParser
+from langchain.prompts.prompt import PromptTemplate
 
 
 class _BaseStoryElementChain(Chain):
