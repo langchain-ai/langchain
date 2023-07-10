@@ -17,26 +17,34 @@ logger = logging.getLogger(__name__)
 
 
 class StructuredChatOutputParser(AgentOutputParser):
+    # The first (original) regex expects triple backtick delimiters
+    # The second regex removes that requirement but requires "Action: {}"
+    # The second format was observed to be sometimes produced by chat-bison
+    action_regexes = [
+        re.compile(r"```(.*?)```?", re.DOTALL),
+        re.compile(r"Action: (\{.*\})", re.DOTALL),
+    ]
+
     def get_format_instructions(self) -> str:
         return FORMAT_INSTRUCTIONS
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         try:
-            action_match = re.search(r"```(.*?)```?", text, re.DOTALL)
-            if action_match is not None:
-                response = json.loads(action_match.group(1).strip(), strict=False)
-                if isinstance(response, list):
-                    # gpt turbo frequently ignores the directive to emit a single action
-                    logger.warning("Got multiple action responses: %s", response)
-                    response = response[0]
-                if response["action"] == "Final Answer":
-                    return AgentFinish({"output": response["action_input"]}, text)
-                else:
-                    return AgentAction(
-                        response["action"], response.get("action_input", {}), text
-                    )
-            else:
-                return AgentFinish({"output": text}, text)
+            for regex in self.action_regexes:
+                action_match = regex.search(text)
+                if action_match is not None:
+                    response = json.loads(action_match.group(1).strip(), strict=False)
+                    if isinstance(response, list):
+                        # gpt turbo frequently ignores the directive to emit a single action
+                        logger.warning("Got multiple action responses: %s", response)
+                        response = response[0]
+                    if response["action"] == "Final Answer":
+                        return AgentFinish({"output": response["action_input"]}, text)
+                    else:
+                        return AgentAction(
+                            response["action"], response.get("action_input", {}), text
+                        )
+            return AgentFinish({"output": text}, text)
         except Exception as e:
             raise OutputParserException(f"Could not parse LLM output: {text}") from e
 
