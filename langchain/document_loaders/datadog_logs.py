@@ -1,7 +1,6 @@
+"""Load Datadog logs."""
 from datetime import datetime, timedelta
 from typing import List, Optional
-
-from datadog_api_client import ApiClient, Configuration
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -22,8 +21,10 @@ class DatadogLogsLoader(BaseLoader):
         to_time: Optional[int] = None,
         limit: Optional[int] = None,
     ) -> None:
-        """
-        Initialize Datadog document loader.
+        """Initialize Datadog document loader.
+
+        Requirements:
+            - Must have datadog_api_client installed. Install with `pip install datadog_api_client`.
 
         Args:
             query: The query to run in Datadog.
@@ -37,7 +38,14 @@ class DatadogLogsLoader(BaseLoader):
                 Defaults to now.
             limit: Optional. The maximum number of logs to return.
                 Defaults to 100.
-        """
+        """  # noqa: E501
+        try:
+            from datadog_api_client import Configuration
+        except ImportError as ex:
+            raise ImportError(
+                "Could not import datadog_api_client python package. "
+                "Please install it with `pip install datadog_api_client`."
+            ) from ex
         self.query = query
         self.configuration = Configuration()
         self.configuration.api_key["apiKeyAuth"] = api_key
@@ -80,6 +88,7 @@ class DatadogLogsLoader(BaseLoader):
                     - timestamp
         """
         try:
+            from datadog_api_client import ApiClient
             from datadog_api_client.v2.api.logs_api import LogsApi
             from datadog_api_client.v2.model.logs_list_request import LogsListRequest
             from datadog_api_client.v2.model.logs_list_request_page import (
