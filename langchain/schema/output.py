@@ -36,6 +36,11 @@ class ChatGeneration(Generation):
     message: BaseMessage
     """The message output by the chat model."""
 
+    generation_info: Optional[Dict[str, Any]] = None
+    """Raw response from the provider. May include things like the 
+        reason for finishing or token log probabilities.
+    """
+
     @root_validator
     def set_text(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Set the text attribute to be the contents of the message."""
