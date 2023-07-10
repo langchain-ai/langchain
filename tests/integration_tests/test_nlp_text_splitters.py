@@ -35,4 +35,3 @@ def test_spacy_text_splitter(pipeline: str) -> None:
     output = splitter.split_text(text)
     expected_output = [f"This is sentence one.{separator}And this is sentence two."]
     assert output == expected_output
-

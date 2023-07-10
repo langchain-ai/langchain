@@ -43,6 +43,7 @@ def _make_spacy_pipeline_for_splitting(pipeline: str) -> Any:  # avoid importing
         )
     if pipeline == "sentencizer":
         from spacy.lang.en import English
+
         sentencizer = English()
         sentencizer.add_pipe("sentencizer")
     else:
@@ -1028,10 +1029,11 @@ class NLTKTextSplitter(TextSplitter):
 class SpacyTextSplitter(TextSplitter):
     """Implementation of splitting text that looks at sentences using Spacy.
 
-    
+
     Per default, Spacy's `en_core_web_sm` model is used. For a faster, but
     potentially less accurate splitting, you can use `pipeline='sentencizer'`.
     """
+
     def __init__(
         self, separator: str = "\n\n", pipeline: str = "en_core_web_sm", **kwargs: Any
     ) -> None:
@@ -1072,4 +1074,3 @@ class LatexTextSplitter(RecursiveCharacterTextSplitter):
         """Initialize a LatexTextSplitter."""
         separators = self.get_separators_for_language(Language.LATEX)
         super().__init__(separators=separators, **kwargs)
-
