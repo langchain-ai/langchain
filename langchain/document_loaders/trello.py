@@ -1,4 +1,4 @@
-"""Loader that loads cards from Trello"""
+"""Loads cards from Trello"""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, List, Literal, Optional, Tuple
