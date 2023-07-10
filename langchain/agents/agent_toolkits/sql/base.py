@@ -21,7 +21,8 @@ from langchain.prompts.chat import (
 )
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import AIMessage, SystemMessage
-
+from langchain.schema import BaseMemory, BasePromptTemplate
+from langchain.chains.sql_database.utils import validate_sql_chain_memory
 
 def create_sql_agent(
     llm: BaseLanguageModel,
@@ -38,6 +39,7 @@ def create_sql_agent(
     early_stopping_method: str = "force",
     verbose: bool = False,
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
+    memory: Optional[BaseMemory] = None,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Construct a sql agent from an LLM and tools."""
@@ -53,6 +55,8 @@ def create_sql_agent(
             format_instructions=format_instructions,
             input_variables=input_variables,
         )
+        if memory:
+            validate_sql_chain_memory(memory , prompt)
         llm_chain = LLMChain(
             llm=llm,
             prompt=prompt,
@@ -70,7 +74,8 @@ def create_sql_agent(
         ]
         input_variables = ["input", "agent_scratchpad"]
         _prompt = ChatPromptTemplate(input_variables=input_variables, messages=messages)
-
+        if memory:
+            validate_sql_chain_memory(memory , _prompt)
         agent = OpenAIFunctionsAgent(
             llm=llm,
             prompt=_prompt,
@@ -84,6 +89,7 @@ def create_sql_agent(
     return AgentExecutor.from_agent_and_tools(
         agent=agent,
         tools=tools,
+        memory=memory,
         callback_manager=callback_manager,
         verbose=verbose,
         max_iterations=max_iterations,
