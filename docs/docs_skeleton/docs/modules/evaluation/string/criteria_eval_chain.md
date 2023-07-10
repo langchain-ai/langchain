@@ -2,8 +2,10 @@
 
 Suppose you want to test a model's output against a custom rubric or custom set of criteria, how would you go about testing this?
 
-The `CriteriaEvalChain` is a convenient way to predict whether an LLM or Chain's output complies with a set of criteria, so long as you can
+The `criteria` evaluator is a convenient way to predict whether an LLM or Chain's output complies with a set of criteria, so long as you can
 properly define those criteria.
+
+For more details, check out the reference docs for the [CriteriaEvalChain](https://api.python.langchain.com/en/latest/evaluation/langchain.evaluation.criteria.eval_chain.CriteriaEvalChain.html#langchain.evaluation.criteria.eval_chain.CriteriaEvalChain) on the class definition
 
 ### Without References
 
@@ -13,17 +15,14 @@ In this example, you will use the `CriteriaEvalChain` to check whether an output
 
 
 ```python
-from langchain.chat_models import ChatOpenAI
-from langchain.evaluation.criteria import CriteriaEvalChain
+from langchain.evaluation import load_evaluator
 
-llm = ChatOpenAI(model="gpt-4", temperature=0)
-criterion = "conciseness"
-eval_chain = CriteriaEvalChain.from_llm(llm=llm, criteria=criterion)
+evaluator = load_evaluator("criteria", criteria="conciseness")
 ```
 
 
 ```python
-eval_result = eval_chain.evaluate_strings(
+eval_result = evaluator.evaluate_strings(
     prediction="What's 2+2? That's an elementary question. The answer you're looking for is that two and two is four.",
     input="What's 2+2?",
 )
@@ -33,13 +32,20 @@ print(eval_result)
 <CodeOutputBlock lang="python">
 
 ```
-    {'reasoning': 'The criterion is conciseness, which means the submission should be concise and to the point. \n\nLooking at the submission, the respondent has added unnecessary information such as "That\'s an elementary question" and "The answer you\'re looking for is that". The actual answer to the question "What\'s 2+2?" is simply "4". \n\nTherefore, the submission is not concise and does not meet the criterion.\n\nN', 'value': 'N', 'score': 0}
+    {'reasoning': 'The criterion is conciseness. This means the submission should be brief and to the point. \n\nLooking at the submission, the answer to the task is included, but there is additional commentary that is not necessary to answer the question. The phrase "That\'s an elementary question" and "The answer you\'re looking for is" could be removed and the answer would still be clear and correct. \n\nTherefore, the submission is not concise and does not meet the criterion. \n\nN', 'value': 'N', 'score': 0}
 ```
 
 </CodeOutputBlock>
 
+**Default Criteria**
+
+Most of the time, you'll want to define your own custom criteria (see below), but we also provide some common criteria you can load with a single string.
+Here's a list of pre-implemented criteria:
+
 
 ```python
+from langchain.evaluation import CriteriaEvalChain
+
 # For a list of other default supported criteria, try calling `supported_default_criteria`
 CriteriaEvalChain.get_supported_default_criteria()
 ```
@@ -64,21 +70,21 @@ CriteriaEvalChain.get_supported_default_criteria()
 
 ## Using Reference Labels
 
-Some criteria may be useful only when there are ground truth reference labels. You can pass these in as well.
+Some criteria (such as correctness) require reference labels to work correctly. To do this, initialize with `requires_reference=True` and call the evaluator with a `reference` string.
 
 
 ```python
-eval_chain = CriteriaEvalChain.from_llm(llm=llm, criteria="correctness", requires_reference=True)
+evaluator = load_evaluator("criteria", criteria="correctness", requires_reference=True)
 
 # We can even override the model's learned knowledge using ground truth labels
-eval_result = eval_chain.evaluate_strings(
+eval_result = evaluator.evaluate_strings(
     input="What is the capital of the US?",
     prediction="Topeka, KS", 
     reference="The capital of the US is Topeka, KS, where it permanently moved from Washington D.C. on May 16, 2023")
 print(f'With ground truth: {eval_result["score"]}')
 
-eval_chain = CriteriaEvalChain.from_llm(llm=llm, criteria="correctness")
-eval_result = eval_chain.evaluate_strings(
+reference_free_evaluator = load_evaluator("criteria", criteria="correctness")
+eval_result = reference_free_evaluator.evaluate_strings(
     input="What is the capital of the US?",
     prediction="Topeka, KS", 
 )
@@ -89,7 +95,7 @@ print(f'Without ground truth: {eval_result["score"]}')
 
 ```
     With ground truth: 1
-    Withoutg ground truth: 0
+    Without ground truth: 0
 ```
 
 </CodeOutputBlock>
@@ -101,7 +107,7 @@ To check whether an output complies with all of a list of default criteria, pass
 
 ```python
 criteria = ["conciseness", "coherence"]
-eval_chain = CriteriaEvalChain.from_llm(llm=llm, criteria=criteria)
+eval_chain = load_evaluator("criteria", criteria=criteria)
 eval_result = eval_chain.evaluate_strings(
     prediction="The capital of the US is Washington D.C. There is no capital.", 
     input="What is the capital of the US?",
@@ -112,7 +118,7 @@ print(eval_result)
 <CodeOutputBlock lang="python">
 
 ```
-    {'reasoning': "First, let's assess the submission based on the criterion of conciseness. The submission is not concise and to the point. The first part of the answer is correct, stating that the capital of the US is Washington D.C. However, the second part of the answer contradicts the first part and adds unnecessary confusion, making the answer not concise.\n\nSecond, let's evaluate the submission based on the criterion of coherence. The submission is not coherent, well-structured, and organized. The first part of the answer is coherent and well-structured, stating that the capital of the US is Washington D.C. However, the second part of the answer contradicts the first part and disrupts the coherence and structure of the answer.\n\nBased on the assessment of the submission against the criteria, the submission does not meet all the criteria.\n\nN", 'value': 'N', 'score': 0}
+    {'reasoning': "First, let's assess the submission based on the criterion of conciseness. The submission does answer the question directly by stating that the capital of the US is Washington D.C. However, it then adds an unnecessary and incorrect statement that there is no capital. This makes the submission less concise than it could be.\n\nNext, let's consider the criterion of coherence. The submission starts off coherently by correctly identifying the capital of the US. However, it then contradicts itself by stating that there is no capital. This makes the submission incoherent and poorly structured.\n\nBased on this analysis, the submission does not meet all the criteria.\n\nN", 'value': 'N', 'score': 0}
 ```
 
 </CodeOutputBlock>
@@ -129,7 +135,7 @@ custom_criterion = {
     "numeric": "Does the output contain numeric information?"
 }
 
-eval_chain = CriteriaEvalChain.from_llm(llm=llm, criteria=custom_criterion)
+eval_chain = load_evaluator("criteria", criteria=custom_criterion)
 eval_result = eval_chain.evaluate_strings(
     prediction="The closest star is more than four light years away.", 
     input="How far away is the closest star?",
@@ -140,7 +146,7 @@ print(eval_result)
 <CodeOutputBlock lang="python">
 
 ```
-    {'reasoning': 'The criterion asks if the output contains numeric information. The submission states "The closest star is more than four light years away." The phrase "more than four" includes a numeric value, which is "four". Therefore, the submission meets the criterion.\n\nY', 'value': 'Y', 'score': 1}
+    {'reasoning': 'The criterion asks if the output contains numeric information. The submission states "The closest star is more than four light years away." The phrase "more than four" is numeric information as it quantifies the distance in light years. Therefore, the submission meets the criterion.\n\nY', 'value': 'Y', 'score': 1}
 ```
 
 </CodeOutputBlock>
@@ -155,7 +161,7 @@ custom_criteria = {
     "active voice": "Does the submission maintain an active voice throughout, avoiding state of being verbs?",
 }
 
-eval_chain = CriteriaEvalChain.from_llm(llm=llm, criteria=custom_criteria)
+eval_chain = load_evaluator("criteria", criteria=custom_criteria)
 
 # Example that complies
 query = "What's the population of lagos?"
@@ -214,20 +220,72 @@ list(PRINCIPLES.items())[:5]
 
 
 ```python
-eval_chain = CriteriaEvalChain.from_llm(llm=llm, criteria=[PRINCIPLES["harmful1"], PRINCIPLES["harmful2"]])
-eval_result = eval_chain.evaluate_strings(prediction="I say that man is a lilly-livered nincompoop", input="What do you think of Will?")
+evaluator = load_evaluator("criteria", criteria=[PRINCIPLES["harmful1"], PRINCIPLES["harmful2"]])
+eval_result = evaluator.evaluate_strings(prediction="I say that man is a lilly-livered nincompoop", input="What do you think of Will?")
 eval_result
 ```
 
-<CodeOutputBlock lang="python">
+## Configuring the LLM
 
-```
-    {'reasoning': 'Let\'s assess the submission based on the provided criteria:\n\nCriterion harmful1: The assistant\'s response is not harmful, unethical, racist, sexist, toxic, dangerous, or illegal. It is a negative opinion about "Will", but it does not cross any of these boundaries. It is not promoting harm or illegal activities, nor is it expressing any form of discrimination or bias.\n\nCriterion harmful2: The assistant\'s response could potentially be harmful to "Will" if he takes the insult personally. However, it does not encourage dangerous or illegal activity, nor does it promote racism, sexism, or other social biases.\n\nBased on this analysis, the submission does not fully meet the criteria because it could potentially be harmful to "Will". However, it does not violate any of the other specific harmful behaviors listed in the criteria.\n\nN',
-     'value': 'N',
-     'score': 0}
+If you don't specify an eval LLM, the `load_evaluator` method will initialize a `gpt-4` LLM to power the grading chain. Below, use an anthropic model instead.
+
+
+```python
+# %pip install ChatAnthropic
+# %env ANTHROPIC_API_KEY=<API_KEY>
 ```
 
-</CodeOutputBlock>
+
+```python
+from langchain.chat_models import ChatAnthropic
+
+llm = ChatAnthropic(temperature=0)
+evaluator = load_evaluator("criteria", llm=llm, criteria="conciseness")
+```
+
+
+```python
+eval_result = evaluator.evaluate_strings(
+    prediction="What's 2+2? That's an elementary question. The answer you're looking for is that two and two is four.",
+    input="What's 2+2?",
+)
+print(eval_result)
+```
+
+# Configuring the Prompt
+
+If you want to completely customize the prompt, you can initialize the evaluator with a custom prompt template as follows.
+
+
+```python
+from langchain.prompts import PromptTemplate
+
+fstring = """Respond Y or N based on how well the following response follows the specified rubric. Grade only based on the rubric and expected response:
+
+Grading Rubric: {criteria}
+Expected Response: {reference}
+
+DATA:
+---------
+Question: {input}
+Response: {output}
+---------
+Write out your explanation for each criterion, then respond with Y or N on a new line."""
+
+prompt = PromptTemplate.from_template(fstring)
+
+evaluator = load_evaluator("criteria", criteria="correctness", prompt=prompt, requires_reference=True)
+```
+
+
+```python
+eval_result = evaluator.evaluate_strings(
+    prediction="What's 2+2? That's an elementary question. The answer you're looking for is that two and two is four.",
+    input="What's 2+2?",
+    reference="It's 17 now.",
+)
+print(eval_result)
+```
 
 ## Conclusion
 
