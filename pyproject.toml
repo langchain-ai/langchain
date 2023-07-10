@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.228"
+version = "0.0.229"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -349,6 +349,7 @@ extended_testing = [
  "pyspark",
  "openai",
  "rapidfuzz"
+
 ]
 
 [[tool.poetry.source]]
