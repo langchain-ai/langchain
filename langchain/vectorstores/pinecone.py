@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import Any, Callable, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Iterable, List, Optional, Tuple, Dict
 from collections import defaultdict
 
 import numpy as np
@@ -99,12 +99,12 @@ class Pinecone(VectorStore):
     def search_documents_by_metadata(
         self,
         k: int = 4,
-        metadata: List[dict] = None,
+        metadata: Optional[List[dict]] = None,
         include_metadata: bool = True,
         include_values: bool = True,
         filters: Optional[dict] = None,
         index_dimensions: int = 1536,
-        namespace: str = None
+        namespace: Optional[str] = None
     ) -> List[Document]:
         """Search documents based on metadata. You can provide a list of metadata's dictionnary to find and you can also
         provide your own filters based on documentation (https://docs.pinecone.io/docs/metadata-filtering) 
@@ -125,7 +125,7 @@ class Pinecone(VectorStore):
             namespace = self._namespace
         
         # Prepare your query
-        query = {"$and": []}
+        query : Dict = {"$and": []}
 
         if filters is not None:
             # Add pre-existing filters to the query
