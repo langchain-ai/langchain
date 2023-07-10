@@ -30,6 +30,9 @@ class AmazonAPIGateway(LLM):
     api_url: str
     """API Gateway URL"""
 
+    headers: Optional[Dict] = None
+    """API Gateway HTTP Headers to send, e.g. for authentication"""
+
     model_kwargs: Optional[Dict] = None
     """Key word arguments to pass to the model."""
 
@@ -49,7 +52,7 @@ class AmazonAPIGateway(LLM):
         """Get the identifying parameters."""
         _model_kwargs = self.model_kwargs or {}
         return {
-            **{"endpoint_name": self.api_url},
+            **{"api_url": self.api_url, "headers": self.headers},
             **{"model_kwargs": _model_kwargs},
         }
 
@@ -85,6 +88,7 @@ class AmazonAPIGateway(LLM):
         try:
             response = requests.post(
                 self.api_url,
+                headers=self.headers,
                 json=payload,
             )
             text = self.content_handler.transform_output(response)

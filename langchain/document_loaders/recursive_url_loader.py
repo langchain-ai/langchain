@@ -8,17 +8,27 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class RecursiveUrlLoader(BaseLoader):
-    """Loader that loads all child links from a given url."""
+    """Loads all child links from a given url."""
 
     def __init__(self, url: str, exclude_dirs: Optional[str] = None) -> None:
-        """Initialize with URL to crawl and any sub-directories to exclude."""
+        """Initialize with URL to crawl and any subdirectories to exclude.
+
+        Args:
+            url: The URL to crawl.
+            exclude_dirs: A list of subdirectories to exclude.
+        """
         self.url = url
         self.exclude_dirs = exclude_dirs
 
     def get_child_links_recursive(
         self, url: str, visited: Optional[Set[str]] = None
     ) -> Set[str]:
-        """Recursively get all child links starting with the path of the input URL."""
+        """Recursively get all child links starting with the path of the input URL.
+
+        Args:
+            url: The URL to crawl.
+            visited: A set of visited URLs.
+        """
 
         try:
             from bs4 import BeautifulSoup
@@ -39,7 +49,7 @@ class RecursiveUrlLoader(BaseLoader):
         if not parent_url.endswith("/"):
             parent_url += "/"
 
-        # Exclude the root and parent from list
+        # Exclude the root and parent from a list
         visited = set() if visited is None else visited
 
         # Exclude the links that start with any of the excluded directories

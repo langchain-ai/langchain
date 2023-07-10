@@ -52,7 +52,7 @@ def test_context_eval_chain(chain_cls: Type[ContextQAEvalChain]) -> None:
 def test_implements_string_evaluator_protocol(
     chain_cls: Type[LLMChain],
 ) -> None:
-    assert isinstance(chain_cls, StringEvaluator)
+    assert issubclass(chain_cls, StringEvaluator)
 
 
 @pytest.mark.parametrize("chain_cls", [QAEvalChain, ContextQAEvalChain, CotQAEvalChain])

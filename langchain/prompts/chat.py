@@ -8,16 +8,19 @@ from typing import Any, Callable, List, Sequence, Tuple, Type, TypeVar, Union
 from pydantic import Field, root_validator
 
 from langchain.load.serializable import Serializable
-from langchain.memory.buffer import get_buffer_string
-from langchain.prompts.base import BasePromptTemplate, StringPromptTemplate
+from langchain.prompts.base import StringPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
+    BasePromptTemplate,
+    PromptValue,
+)
+from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
     ChatMessage,
     HumanMessage,
-    PromptValue,
     SystemMessage,
+    get_buffer_string,
 )
 
 

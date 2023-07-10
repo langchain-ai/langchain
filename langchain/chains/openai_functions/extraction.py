@@ -2,7 +2,6 @@ from typing import Any, List
 
 from pydantic import BaseModel
 
-from langchain.base_language import BaseLanguageModel
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.openai_functions.utils import (
@@ -15,6 +14,7 @@ from langchain.output_parsers.openai_functions import (
     PydanticAttrOutputFunctionsParser,
 )
 from langchain.prompts import ChatPromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
 
 
 def _get_extraction_function(entity_schema: dict) -> dict:
@@ -78,9 +78,9 @@ def create_extraction_chain_pydantic(
     class PydanticSchema(BaseModel):
         info: List[pydantic_schema]  # type: ignore
 
-    openai_schema = PydanticSchema.schema()
+    openai_schema = pydantic_schema.schema()
     openai_schema = _resolve_schema_references(
-        openai_schema, openai_schema["definitions"]
+        openai_schema, openai_schema.get("definitions", {})
     )
 
     function = _get_extraction_function(openai_schema)

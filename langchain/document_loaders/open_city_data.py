@@ -5,13 +5,19 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class OpenCityDataLoader(BaseLoader):
-    """Loader that loads Open city data."""
+    """Loads Open City data."""
 
     def __init__(self, city_id: str, dataset_id: str, limit: int):
-        """Initialize with dataset_id"""
-        """ Example: https://dev.socrata.com/foundry/data.sfgov.org/vw6y-z8j6 """
-        """ e.g., city_id = data.sfgov.org """
-        """ e.g., dataset_id = vw6y-z8j6 """
+        """Initialize with dataset_id.
+        Example: https://dev.socrata.com/foundry/data.sfgov.org/vw6y-z8j6
+        e.g., city_id = data.sfgov.org
+        e.g., dataset_id = vw6y-z8j6
+
+        Args:
+            city_id: The Open City city identifier.
+            dataset_id: The Open City dataset identifier.
+            limit: The maximum number of documents to load.
+        """
         self.city_id = city_id
         self.dataset_id = dataset_id
         self.limit = limit
