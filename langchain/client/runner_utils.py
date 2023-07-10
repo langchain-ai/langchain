@@ -21,7 +21,6 @@ from typing import (
 from langchainplus_sdk import LangChainPlusClient, RunEvaluator
 from langchainplus_sdk.schemas import Example
 
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.manager import Callbacks
 from langchain.callbacks.tracers.base import BaseTracer
@@ -34,6 +33,7 @@ from langchain.schema import (
     ChatResult,
     LLMResult,
 )
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import (
     BaseMessage,
     HumanMessage,
@@ -51,8 +51,7 @@ class InputFormatError(Exception):
 
 
 def _get_prompts(inputs: Dict[str, Any]) -> List[str]:
-    """
-    Get prompts from inputs.
+    """Get prompts from inputs.
 
     Args:
         inputs: The input dictionary.
@@ -99,8 +98,7 @@ def _get_prompts(inputs: Dict[str, Any]) -> List[str]:
 
 
 def _get_messages(inputs: Dict[str, Any]) -> List[List[BaseMessage]]:
-    """
-    Get Chat Messages from inputs.
+    """Get Chat Messages from inputs.
 
     Args:
         inputs: The input dictionary.
@@ -143,8 +141,7 @@ async def _arun_llm(
     callbacks: Callbacks = None,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
 ) -> Union[LLMResult, ChatResult]:
-    """
-    Asynchronously run the language model.
+    """Asynchronously run the language model.
 
     Args:
         llm: The language model to run.
@@ -203,8 +200,7 @@ async def _arun_llm_or_chain(
     callbacks: Optional[List[BaseCallbackHandler]] = None,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
 ) -> Union[List[dict], List[str], List[LLMResult], List[ChatResult]]:
-    """
-    Asynchronously run the Chain or language model.
+    """Asynchronously run the Chain or language model.
 
     Args:
         example: The example to run.
@@ -264,8 +260,7 @@ async def _gather_with_concurrency(
         [Sequence[BaseCallbackHandler], Dict], Coroutine[Any, Any, Any]
     ],
 ) -> List[Any]:
-    """
-    Run coroutines with a concurrency limit.
+    """Run coroutines with a concurrency limit.
 
     Args:
         n: The maximum number of concurrent tasks.
@@ -313,28 +308,35 @@ async def _callbacks_initializer(
     project_name: Optional[str],
     client: LangChainPlusClient,
     run_evaluators: Sequence[RunEvaluator],
+    evaluation_handler_collector: List[EvaluatorCallbackHandler],
 ) -> List[BaseTracer]:
     """
     Initialize a tracer to share across tasks.
 
     Args:
         project_name: The project name for the tracer.
+        client: The client to use for the tracer.
+        run_evaluators: The evaluators to run.
+        evaluation_handler_collector: A list to collect the evaluators.
+            Used to wait for the evaluators to finish.
 
     Returns:
-        A LangChainTracer instance with an active project.
+        The callbacks for this thread.
     """
     callbacks: List[BaseTracer] = []
     if project_name:
         callbacks.append(LangChainTracer(project_name=project_name))
+    evaluator_project_name = f"{project_name}-evaluators" if project_name else None
     if run_evaluators:
-        callbacks.append(
-            EvaluatorCallbackHandler(
-                client=client,
-                evaluators=run_evaluators,
-                # We already have concurrency, don't want to overload the machine
-                max_workers=1,
-            )
+        callback = EvaluatorCallbackHandler(
+            client=client,
+            evaluators=run_evaluators,
+            # We already have concurrency, don't want to overload the machine
+            max_workers=1,
+            project_name=evaluator_project_name,
         )
+        callbacks.append(callback)
+        evaluation_handler_collector.append(callback)
     return callbacks
 
 
@@ -382,12 +384,9 @@ async def arun_on_examples(
     """
     project_name = _get_project_name(project_name, llm_or_chain_factory, None)
     client_ = client or LangChainPlusClient()
-    client_.create_project(project_name, mode="eval")
+    client_.create_project(project_name)
 
     results: Dict[str, List[Any]] = {}
-    evaluation_handler = EvaluatorCallbackHandler(
-        evaluators=run_evaluators or [], client=client_
-    )
 
     async def process_example(
         example: Example, callbacks: List[BaseCallbackHandler], job_state: dict
@@ -410,17 +409,20 @@ async def arun_on_examples(
                 flush=True,
             )
 
+    evaluation_handlers: List[EvaluatorCallbackHandler] = []
     await _gather_with_concurrency(
         concurrency_level,
         functools.partial(
             _callbacks_initializer,
             project_name=project_name,
             client=client_,
+            evaluation_handler_collector=evaluation_handlers,
             run_evaluators=run_evaluators or [],
         ),
         *(functools.partial(process_example, e) for e in examples),
     )
-    evaluation_handler.wait_for_futures()
+    for handler in evaluation_handlers:
+        handler.wait_for_futures()
     return results
 
 
@@ -496,7 +498,8 @@ def run_llm_or_chain(
         callbacks: Optional callbacks to use during the run.
 
     Returns:
-        A list of outputs.
+        Union[List[dict], List[str], List[LLMResult], List[ChatResult]]:
+          The outputs of the model or chain.
     """
     if callbacks:
         previous_example_ids = [
@@ -581,10 +584,13 @@ def run_on_examples(
     results: Dict[str, Any] = {}
     project_name = _get_project_name(project_name, llm_or_chain_factory, None)
     client_ = client or LangChainPlusClient()
-    client_.create_project(project_name, mode="eval")
+    client_.create_project(project_name)
     tracer = LangChainTracer(project_name=project_name)
+    evaluator_project_name = f"{project_name}-evaluators"
     evalution_handler = EvaluatorCallbackHandler(
-        evaluators=run_evaluators or [], client=client_
+        evaluators=run_evaluators or [],
+        client=client_,
+        project_name=evaluator_project_name,
     )
     callbacks: List[BaseCallbackHandler] = [tracer, evalution_handler]
     for i, example in enumerate(examples):
@@ -660,8 +666,8 @@ async def arun_on_dataset(
         project_name: Name of the project to store the traces in.
             Defaults to {dataset_name}-{chain class name}-{datetime}.
         verbose: Whether to print progress.
-        client: Client to use to read the dataset. If not provided, a new
-            client will be created using the credentials in the environment.
+        client: Client to use to read the dataset. If not provided,
+            a new client will be created using the credentials in the environment.
         tags: Tags to add to each run in the project.
         run_evaluators: Evaluators to run on the results of the chain.
         input_mapper: A function to map to the inputs dictionary from an Example
@@ -715,15 +721,14 @@ def run_on_dataset(
         llm_or_chain_factory: Language model or Chain constructor to run
             over the dataset. The Chain constructor is used to permit
             independent calls on each example without carrying over state.
-        concurrency_level: Number of async workers to run in parallel.
         num_repetitions: Number of times to run the model on each example.
             This is useful when testing success rates or generating confidence
             intervals.
         project_name: Name of the project to store the traces in.
             Defaults to {dataset_name}-{chain class name}-{datetime}.
         verbose: Whether to print progress.
-        client: Client to use to access the dataset. If None, a new client
-            will be created using the credentials in the environment.
+        client: Client to use to access the dataset. If None,
+            a new client will be created using the credentials in the environment.
         tags: Tags to add to each run in the project.
         run_evaluators: Evaluators to run on the results of the chain.
         input_mapper: A function to map to the inputs dictionary from an Example

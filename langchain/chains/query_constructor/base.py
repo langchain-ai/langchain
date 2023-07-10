@@ -5,7 +5,6 @@ import json
 from typing import Any, Callable, List, Optional, Sequence
 
 from langchain import FewShotPromptTemplate, LLMChain
-from langchain.base_language import BaseLanguageModel
 from langchain.chains.query_constructor.ir import (
     Comparator,
     Operator,
@@ -24,6 +23,7 @@ from langchain.chains.query_constructor.prompt import (
 from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.output_parsers.json import parse_and_check_json_markdown
 from langchain.schema import BaseOutputParser, BasePromptTemplate, OutputParserException
+from langchain.schema.language_model import BaseLanguageModel
 
 
 class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
@@ -123,8 +123,8 @@ def load_query_constructor_chain(
     enable_limit: bool = False,
     **kwargs: Any,
 ) -> LLMChain:
-    """
-    Load a query constructor chain.
+    """Load a query constructor chain.
+
     Args:
         llm: BaseLanguageModel to use for the chain.
         document_contents: The contents of the document to be queried.

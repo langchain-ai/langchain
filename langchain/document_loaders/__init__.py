@@ -29,6 +29,7 @@ from langchain.document_loaders.college_confidential import CollegeConfidentialL
 from langchain.document_loaders.confluence import ConfluenceLoader
 from langchain.document_loaders.conllu import CoNLLULoader
 from langchain.document_loaders.csv_loader import CSVLoader, UnstructuredCSVLoader
+from langchain.document_loaders.cube_semantic import CubeSemanticLoader
 from langchain.document_loaders.dataframe import DataFrameLoader
 from langchain.document_loaders.diffbot import DiffbotLoader
 from langchain.document_loaders.directory import DirectoryLoader
@@ -121,6 +122,7 @@ from langchain.document_loaders.text import TextLoader
 from langchain.document_loaders.tomarkdown import ToMarkdownLoader
 from langchain.document_loaders.toml import TomlLoader
 from langchain.document_loaders.trello import TrelloLoader
+from langchain.document_loaders.tsv import UnstructuredTSVLoader
 from langchain.document_loaders.twitter import TwitterTweetLoader
 from langchain.document_loaders.unstructured import (
     UnstructuredAPIFileIOLoader,
@@ -175,6 +177,7 @@ __all__ = [
     "CoNLLULoader",
     "CollegeConfidentialLoader",
     "ConfluenceLoader",
+    "CubeSemanticLoader",
     "DataFrameLoader",
     "DiffbotLoader",
     "DirectoryLoader",
@@ -276,6 +279,7 @@ __all__ = [
     "UnstructuredPowerPointLoader",
     "UnstructuredRSTLoader",
     "UnstructuredRTFLoader",
+    "UnstructuredTSVLoader",
     "UnstructuredURLLoader",
     "UnstructuredWordDocumentLoader",
     "UnstructuredXMLLoader",

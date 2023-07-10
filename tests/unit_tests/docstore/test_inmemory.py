@@ -54,3 +54,12 @@ def test_adding_document_already_exists() -> None:
     bar_output = docstore.search("foo")
     assert isinstance(bar_output, Document)
     assert bar_output.page_content == "bar"
+
+
+def test_default_dict_value_in_constructor() -> None:
+    """Test proper functioning if no _dict is provided to the constructor."""
+    docstore = InMemoryDocstore()
+    docstore.add({"foo": Document(page_content="bar")})
+    output = docstore.search("foo")
+    assert isinstance(output, Document)
+    assert output.page_content == "bar"
