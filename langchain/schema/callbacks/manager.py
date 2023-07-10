@@ -6,10 +6,7 @@ import logging
 from typing import Any, Dict, List, Optional, Sequence, Type, TypeVar, Union
 from uuid import UUID, uuid4
 
-from langchain.schema.agent import (
-    AgentAction,
-    AgentFinish,
-)
+from langchain.schema.agent import AgentAction, AgentFinish
 from langchain.schema.callbacks.base import (
     BaseCallbackHandler,
     BaseCallbackManager,
