@@ -5,7 +5,7 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Union
 
 from langsmith import EvaluationResult, RunEvaluator
-from langsmith.schemas import DataType, Example, Run
+from langsmith.schemas import DataType, Example, Run, RunTypeEnum
 
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
@@ -386,24 +386,50 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         )
 
     @classmethod
-    def from_data_type(
+    def from_run_and_data_type(
         cls,
         evaluator: StringEvaluator,
+        run_type: RunTypeEnum,
         data_type: DataType,
         input_key: Optional[str] = None,
         prediction_key: Optional[str] = None,
         reference_key: Optional[str] = None,
+        tags: Optional[List[str]] = None,
     ) -> StringRunEvaluatorChain:
-        """Create a StringRunEvaluatorChain from a model and evaluator."""
-        if data_type in (DataType.llm, DataType.chat):
+        """
+        Create a StringRunEvaluatorChain from an evaluator and the run and dataset types.
+
+        This method provides an easy way to instantiate a StringRunEvaluatorChain, by
+        taking an evaluator and information about the type of run and the data.
+        The method supports LLM and chain runs.
+
+        Args:
+            evaluator (StringEvaluator): The string evaluator to use.
+            run_type (RunTypeEnum): The type of run being evaluated.
+                Supported types are LLM and Chain.
+            data_type (DataType): The type of dataset used in the run.
+            input_key (str, optional): The key used to map the input from the run.
+            prediction_key (str, optional): The key used to map the prediction from the run.
+            reference_key (str, optional): The key used to map the reference from the dataset.
+            tags (List[str], optional): List of tags to attach to the evaluation chain.
+
+        Returns:
+            StringRunEvaluatorChain: The instantiated evaluation chain.
+
+        Raises:
+            ValueError: If the run type is not supported, or if the evaluator requires a
+                reference from the dataset but the reference key is not provided.
+
+        """  # noqa: E501
+        if run_type == RunTypeEnum.llm:
             run_mapper: StringRunMapper = LLMStringRunMapper()
-        elif data_type == DataType.kv:
+        elif run_type == RunTypeEnum.chain:
             run_mapper = ChainStringRunMapper(
                 input_key=input_key, prediction_key=prediction_key
             )
         else:
             raise ValueError(
-                f"Invalid data type {data_type}. Expected one of {list(DataType)}."
+                f"Unsupported run type {run_type}. Expected one of {list(RunTypeEnum)}."
             )
         if reference_key is not None or data_type in (DataType.llm, DataType.chat):
             example_mapper = StringExampleMapper(reference_key=reference_key)
@@ -420,4 +446,5 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
             run_mapper=run_mapper,
             example_mapper=example_mapper,
             string_evaluator=evaluator,
+            tags=tags,
         )

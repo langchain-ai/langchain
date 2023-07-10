@@ -21,7 +21,7 @@ from typing import (
 )
 
 from langsmith import Client, RunEvaluator
-from langsmith.schemas import DataType, Example
+from langsmith.schemas import DataType, Example, RunTypeEnum
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.manager import Callbacks
@@ -360,13 +360,13 @@ async def arun_on_examples(
     examples: Iterator[Example],
     llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
     *,
+    evaluation: Optional[RunEvalConfig] = None,
     concurrency_level: int = 5,
     num_repetitions: int = 1,
     project_name: Optional[str] = None,
     verbose: bool = False,
     client: Optional[Client] = None,
     tags: Optional[List[str]] = None,
-    run_evaluators: Optional[Sequence[RunEvaluator]] = None,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
 ) -> Dict[str, Any]:
     """
@@ -378,6 +378,7 @@ async def arun_on_examples(
         llm_or_chain_factory: Language model or Chain constructor to run
             over the dataset. The Chain constructor is used to permit
             independent calls on each example without carrying over state.
+        evaluation: Optional evaluation configuration to use when evaluating
         concurrency_level: The number of async tasks to run concurrently.
         num_repetitions: Number of times to run the model on each example.
             This is useful when testing success rates or generating confidence
@@ -388,7 +389,6 @@ async def arun_on_examples(
         client: LangSmith client to use to read the dataset. If not provided, a new
             client will be created using the credentials in the environment.
         tags: Tags to add to each run in the project.
-        run_evaluators: Evaluators to run on the results of the chain.
         input_mapper: function to map to the inputs dictionary from an Example
             to the format expected by the model to be evaluated. This is useful if
             your model needs to deserialize more complex schema or if your dataset
@@ -400,7 +400,9 @@ async def arun_on_examples(
     """
     project_name = _get_project_name(project_name, llm_or_chain_factory, None)
     client_ = client or Client()
-
+    run_evaluators, examples = _setup_evaluation(
+        evaluation, examples, client_, project_name
+    )
     results: Dict[str, List[Any]] = {}
 
     async def process_example(
@@ -560,12 +562,12 @@ def run_on_examples(
     examples: Iterator[Example],
     llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
     *,
+    evaluation: Optional[RunEvalConfig] = None,
     num_repetitions: int = 1,
     project_name: Optional[str] = None,
     verbose: bool = False,
     client: Optional[Client] = None,
     tags: Optional[List[str]] = None,
-    run_evaluator_config: Optional[RunEvalConfig] = None,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
     data_type: DataType = DataType.kv,
 ) -> Dict[str, Any]:
@@ -578,6 +580,7 @@ def run_on_examples(
         llm_or_chain_factory: Language model or Chain constructor to run
             over the dataset. The Chain constructor is used to permit
             independent calls on each example without carrying over state.
+        evaluation: Optional evaluation configuration to use when evaluating
         num_repetitions: Number of times to run the model on each example.
             This is useful when testing success rates or generating confidence
             intervals.
@@ -587,7 +590,6 @@ def run_on_examples(
         client: LangSmith client to use to access the dataset. If None, a new client
             will be created using the credentials in the environment.
         tags: Tags to add to each run in the project.
-        run_evaluators: Evaluators to run on the results of the chain.
         input_mapper: A function to map to the inputs dictionary from an Example
             to the format expected by the model to be evaluated. This is useful if
             your model needs to deserialize more complex schema or if your dataset
@@ -602,23 +604,10 @@ def run_on_examples(
     client_ = client or Client()
     tracer = LangChainTracer(project_name=project_name)
     evaluator_project_name = f"{project_name}-evaluators"
-    first_example, examples = _first_example(examples)
-    if isinstance(llm_or_chain_factory, BaseLanguageModel):
-        run_inputs, run_outputs = None, None
-    else:
-        chain = llm_or_chain_factory()
-        run_inputs = chain.input_keys
-        run_outputs = chain.output_keys
-    if run_evaluator_config:
-        run_evaluators = _load_run_evaluators(
-            run_evaluator_config,
-            data_type,
-            list(first_example.outputs) if first_example.outputs else None,
-            run_inputs,
-            run_outputs,
-        )
-    else:
-        run_evaluators = None
+    run_evaluators, examples = _setup_evaluation(
+        evaluation, examples, client_, project_name
+    )
+
     evalution_handler = EvaluatorCallbackHandler(
         evaluators=run_evaluators or [],
         client=client_,
@@ -673,13 +662,13 @@ async def arun_on_dataset(
     dataset_name: str,
     llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
     *,
+    evaluation: Optional[RunEvalConfig] = None,
     concurrency_level: int = 5,
     num_repetitions: int = 1,
     project_name: Optional[str] = None,
     verbose: bool = False,
     client: Optional[Client] = None,
     tags: Optional[List[str]] = None,
-    run_evaluators: Optional[Sequence[RunEvaluator]] = None,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
 ) -> Dict[str, Any]:
     """
@@ -723,7 +712,7 @@ async def arun_on_dataset(
         verbose=verbose,
         client=client_,
         tags=tags,
-        run_evaluators=run_evaluators,
+        evaluation=evaluation,
         input_mapper=input_mapper,
     )
     return {
@@ -736,12 +725,12 @@ def run_on_dataset(
     dataset_name: str,
     llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
     *,
+    evaluation: Optional[RunEvalConfig] = None,
     num_repetitions: int = 1,
     project_name: Optional[str] = None,
     verbose: bool = False,
     client: Optional[Client] = None,
     tags: Optional[List[str]] = None,
-    run_evaluator_config: Optional[RunEvalConfig] = None,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
 ) -> Dict[str, Any]:
     """
@@ -753,6 +742,8 @@ def run_on_dataset(
         llm_or_chain_factory: Language model or Chain constructor to run
             over the dataset. The Chain constructor is used to permit
             independent calls on each example without carrying over state.
+        evaluation: Configuration for evaluators to run on the
+            results of the chain
         num_repetitions: Number of times to run the model on each example.
             This is useful when testing success rates or generating confidence
             intervals.
@@ -762,8 +753,6 @@ def run_on_dataset(
         client: LangSmith client to use to access the dataset. If None, a new client
             will be created using the credentials in the environment.
         tags: Tags to add to each run in the project.
-        run_evaluator_config: Configuration for evaluators to run on the
-            results of the chain
         input_mapper: A function to map to the inputs dictionary from an Example
             to the format expected by the model to be evaluated. This is useful if
             your model needs to deserialize more complex schema or if your dataset
@@ -784,7 +773,7 @@ def run_on_dataset(
         project_name=project_name,
         verbose=verbose,
         tags=tags,
-        run_evaluator_config=run_evaluator_config,
+        evaluation=evaluation,
         client=client_,
         input_mapper=input_mapper,
         data_type=dataset.data_type,
@@ -798,8 +787,38 @@ def run_on_dataset(
 ### TODO: Move to different file
 
 
+def _setup_evaluation(
+    llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
+    examples: Iterator[Example],
+    evaluation: Optional[RunEvalConfig],
+    data_type: DataType,
+) -> Tuple[Optional[List[RunEvaluator]], Iterator[Example]]:
+    first_example, examples = _first_example(examples)
+    if isinstance(llm_or_chain_factory, BaseLanguageModel):
+        run_inputs, run_outputs = None, None
+        run_type = RunTypeEnum.llm
+    else:
+        run_type = RunTypeEnum.chain
+        chain = llm_or_chain_factory()
+        run_inputs = chain.input_keys
+        run_outputs = chain.output_keys
+    if evaluation:
+        run_evaluators = _load_run_evaluators(
+            evaluation,
+            run_type,
+            data_type,
+            list(first_example.outputs) if first_example.outputs else None,
+            run_inputs,
+            run_outputs,
+        )
+    else:
+        run_evaluators = None
+    return run_evaluators, examples
+
+
 def _load_run_evaluators(
     config: RunEvalConfig,
+    run_type: RunTypeEnum,
     data_type: DataType,
     example_outputs: Optional[List[str]],
     run_inputs: Optional[List[str]],
@@ -853,10 +872,12 @@ def _load_run_evaluators(
     for eval_config in config.evaluators:
         if isinstance(eval_config, EvaluatorType):
             evaluator_ = load_evaluator(eval_config, llm=eval_llm)
+            eval_type_tag = eval_config.value
         else:
             evaluator_ = load_evaluator(
                 eval_config.evaluator_type, llm=eval_llm, **eval_config.get_kwargs()
             )  # TODO: Pass in kwargs based on config specifically
+            eval_type_tag = eval_config.evaluator_type.value
 
         if isinstance(evaluator_, StringEvaluator):
             if evaluator_.requires_reference and reference_key is None:
@@ -865,12 +886,14 @@ def _load_run_evaluators(
                     f" evaluator of type {eval_config.evaluator_type} with"
                     f" dataset with multiple output keys: {example_outputs}."
                 )
-            run_evaluator = StringRunEvaluatorChain.from_data_type(
+            run_evaluator = StringRunEvaluatorChain.from_run_and_data_type(
                 evaluator_,
+                run_type,
                 data_type,
                 input_key=input_key,
                 prediction_key=prediction_key,
                 reference_key=reference_key,
+                tags=[eval_type_tag],
             )
             run_evaluators.append(run_evaluator)
         else:
