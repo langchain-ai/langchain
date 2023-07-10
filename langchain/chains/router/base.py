@@ -106,7 +106,7 @@ class MultiRouteChain(Chain):
         callbacks = _run_manager.get_child()
         route = await self.router_chain.aroute(inputs, callbacks=callbacks)
 
-        _run_manager.on_text(
+        await _run_manager.on_text(
             str(route.destination) + ": " + str(route.next_inputs), verbose=self.verbose
         )
         if not route.destination:
