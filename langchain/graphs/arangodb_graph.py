@@ -27,13 +27,13 @@ class ArangoDBGraph:
         self.__schema: str = self.generate_schema()
 
     @property
-    def schema(self) -> str:
+    def schema(self) -> Dict[str, Any]:
         return self.__schema
 
-    def set_schema(self, schema: str) -> None:
+    def set_schema(self, schema: Dict[str, Any]) -> None:
         self.__schema = schema
 
-    def generate_schema(self, sample_ratio: float = 0) -> str:
+    def generate_schema(self, sample_ratio: float = 0) -> Dict[str, Any]:
         """Generates the schema of the ArangoDB Database and returns it"""
         if not 0 <= sample_ratio <= 1:
             raise ValueError("**sample_ratio** value must be in between 0 to 1")
@@ -78,7 +78,10 @@ class ArangoDBGraph:
                 }
             )
 
-        return f"Graph Schema: {json.dumps(graph_schema)} ============= Collection Schema: {json.dumps(collection_schema)}"
+        return {
+            "Graph Schema": graph_schema,
+            "Collection Schema": collection_schema
+        }
 
     def query(
         self, query: str, top_k: Optional[int] = None, **kwargs
