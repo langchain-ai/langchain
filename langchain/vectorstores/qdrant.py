@@ -614,9 +614,10 @@ class Qdrant(VectorStore):
             init_from:
                 Use data stored in another collection to initialize this collection
             recreate_collection:
-                Default is True. If True - collection will be first deleted and then created again with new data.
-                Set to False if you want to upsert data to an existing collection
-                Note: collection_name must be provided if recreate_collection is set to False
+                Default is True. If True - collection will be first deleted and then
+                created again with new data. Set to False if you want to upsert data
+                to an existing collection Note: collection_name must be provided if
+                recreate_collection is set to False
             vector_size:
                 Size (dimensions) of the vectors. If not provided, it will be automatically
                 inferred from the provided embeddings on init of collection

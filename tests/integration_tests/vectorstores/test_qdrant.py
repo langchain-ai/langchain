@@ -227,8 +227,11 @@ def test_qdrant_set_vector_size() -> None:
         del vec_store
 
         client = QdrantClient(path=str(tmpdir))
-        collection = client.get_collection("test_collection")
-        assert 10 == collection.config.params.vectors.size
+        collection = client.get_collection(collection_name="test_collection")
+        if isinstance(collection.config.params.vectors, rest.VectorParams):
+            assert 10 == collection.config.params.vectors.size
+        else:
+            raise ValueError("params.vectors must be an instance of VectorParams")
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])
