@@ -6,6 +6,7 @@ from langchain.callbacks.arize_callback import ArizeCallbackHandler
 from langchain.callbacks.arthur_callback import ArthurCallbackHandler
 from langchain.callbacks.clearml_callback import ClearMLCallbackHandler
 from langchain.callbacks.comet_ml_callback import CometCallbackHandler
+from langchain.callbacks.context_callback import ContextCallbackHandler
 from langchain.callbacks.file import FileCallbackHandler
 from langchain.callbacks.flyte_callback import FlyteCallbackHandler
 from langchain.callbacks.human import HumanApprovalCallbackHandler
@@ -36,6 +37,7 @@ __all__ = [
     "ArthurCallbackHandler",
     "ClearMLCallbackHandler",
     "CometCallbackHandler",
+    "ContextCallbackHandler",
     "FileCallbackHandler",
     "HumanApprovalCallbackHandler",
     "InfinoCallbackHandler",

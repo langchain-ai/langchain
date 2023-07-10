@@ -26,11 +26,12 @@ def test_nltk_text_splitter() -> None:
     assert output == expected_output
 
 
-def test_spacy_text_splitter() -> None:
+@pytest.mark.parametrize("pipeline", ["sentencizer", "en_core_web_sm"])
+def test_spacy_text_splitter(pipeline: str) -> None:
     """Test splitting by sentence using Spacy."""
     text = "This is sentence one. And this is sentence two."
     separator = "|||"
-    splitter = SpacyTextSplitter(separator=separator)
+    splitter = SpacyTextSplitter(separator=separator, pipeline=pipeline)
     output = splitter.split_text(text)
     expected_output = [f"This is sentence one.{separator}And this is sentence two."]
     assert output == expected_output
