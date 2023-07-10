@@ -207,7 +207,7 @@ class AmazonKendraRetriever(BaseRetriever):
 
     @root_validator(pre=True)
     def create_client(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        if values["client"] is not None:
+        if values.get("client") is not None:
             return values
 
         try:
