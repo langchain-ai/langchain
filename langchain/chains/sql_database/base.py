@@ -105,19 +105,19 @@ class SQLDatabaseChain(Chain):
         # If not present, then defaults to None which is all tables.
         table_names_to_use = inputs.get("table_names_to_use")
         table_info = self.database.get_table_info(table_names=table_names_to_use)
-        history = ""
-        if self.llm_chain.memory:
-            history = self.llm_chain.memory.load_memory_variables(inputs).get(
-                "history", ""
-            )
         llm_inputs = {
             "input": input_text,
             "top_k": str(self.top_k),
             "dialect": self.database.dialect,
             "table_info": table_info,
-            "history": history,
             "stop": ["\nSQLResult:"],
         }
+        if self.llm_chain.memory:
+            llm_inputs[
+                self.llm_chain.memory.memory_key
+            ] = self.llm_chain.memory.load_memory_variables(inputs).get(
+                self.llm_chain.memory.memory_key, ""
+            )
         intermediate_steps: List = []
         try:
             intermediate_steps.append(llm_inputs)  # input: sql generation
@@ -206,9 +206,9 @@ class SQLDatabaseChain(Chain):
         **kwargs: Any,
     ) -> SQLDatabaseChain:
         prompt = prompt or SQL_PROMPTS.get(db.dialect, PROMPT)
-        llm_chain = LLMChain(llm=llm, prompt=prompt, memory=memory)
         if memory:
-            validate_sql_chain_memory(memory)
+            validate_sql_chain_memory(memory=memory, prompt=prompt)
+        llm_chain = LLMChain(llm=llm, prompt=prompt, memory=memory)
         return cls(llm_chain=llm_chain, database=db, **kwargs)
 
 
@@ -239,12 +239,11 @@ class SQLDatabaseSequentialChain(Chain):
         **kwargs: Any,
     ) -> SQLDatabaseSequentialChain:
         """Load the necessary chains."""
-        if memory:
-            validate_sql_chain_memory(memory)
-
         sql_chain = SQLDatabaseChain.from_llm(
             llm, database, memory=memory, prompt=query_prompt, **kwargs
         )
+        if memory:
+            validate_sql_chain_memory(memory, decider_prompt)
         decider_chain = LLMChain(
             llm=llm,
             prompt=decider_prompt,
@@ -281,16 +280,13 @@ class SQLDatabaseSequentialChain(Chain):
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         _table_names = self.sql_chain.database.get_usable_table_names()
         table_names = ", ".join(_table_names)
-        history = ""
+        llm_inputs = {"input": inputs[self.input_key], "table_names": table_names}
         if self.decider_chain.memory:
-            history = self.decider_chain.memory.load_memory_variables(inputs).get(
-                "history", ""
+            llm_inputs[
+                self.decider_chain.memory.memory_key
+            ] = self.decider_chain.memory.load_memory_variables(inputs).get(
+                self.decider_chain.memory.memory_key, ""
             )
-        llm_inputs = {
-            "input": inputs[self.input_key],
-            "table_names": table_names,
-            "history": history,
-        }
         _lowercased_table_names = [name.lower() for name in _table_names]
         table_names_from_chain = self.decider_chain.predict_and_parse(**llm_inputs)
         table_names_to_use = [
