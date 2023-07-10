@@ -61,7 +61,8 @@ arxiv = {version = "^1.4", optional = true}
 pypdf = {version = "^3.4.0", optional = true}
 networkx = {version="^2.6.3", optional = true}
 aleph-alpha-client = {version="^2.15.0", optional = true}
-deeplake = {version = "^3.6.2", optional = true}
+deeplake = {version = "^3.6.8", optional = true}
+libdeeplake = {version = "^0.0.60", optional = true}
 pgvector = {version = "^0.1.6", optional = true}
 psycopg2-binary = {version = "^2.9.5", optional = true}
 pyowm = {version = "^3.3.0", optional = true}
@@ -180,7 +181,8 @@ pinecone-text = "^0.4.2"
 pymongo = "^4.3.3"
 clickhouse-connect = "^0.5.14"
 transformers = "^4.27.4"
-deeplake = "^3.2.21"
+deeplake = "^3.6.8"
+libdeeplake = "^0.0.60"
 weaviate-client = "^3.15.5"
 torch = "^1.0.0"
 chromadb = "^0.3.21"
@@ -278,6 +280,7 @@ all = [
     "nomic",
     "aleph-alpha-client",
     "deeplake",
+    "libdeeplake",
     "pgvector",
     "psycopg2-binary",
     "pyowm",
