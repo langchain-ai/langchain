@@ -97,54 +97,33 @@ class Pinecone(VectorStore):
         return ids
 
     def search_documents_by_metadata(
-        index_name: str,
+        self,
         k: int = 4,
-        metadata: List(dict) = None,
+        metadata: List[dict] = None,
         include_metadata: bool = True,
-        include_values: bool = False,
+        include_values: bool = True,
         filters: Optional[dict] = None,
         index_dimensions: int = 1536,
-        namespace: str = ""
+        namespace: str = None
     ) -> List[Document]:
         """Search documents based on metadata. You can provide a list of metadata's dictionnary to find and you can also
         provide your own filters based on documentation (https://docs.pinecone.io/docs/metadata-filtering) 
 
         Args:
-            index_name: Index name to perform the search on
             k: Number of Documents to return. Defaults to 4.
             metadata: List of dictionnary to filter. Default to None.
             include_metadata: include metadata from the returned documents. Defaults to True
             inclue_values: include vector values from the returned documents. Defaults to False.
-            filters: provide your own filters based on documentation (https://docs.pinecone.io/docs/metadata-filtering) 
+            filters: provide your own filters based on documentation (https://docs.pinecone.io/docs/metadata-filtering). Defaults to None
             index_dimensions: Dimensions of your index. Defaults to 1536.
-            namespace: Search in a particular namespace. Default to "".
+            namespace: Search in a particular namespace. Default to None.
         Returns:
             List of Documents selected by the metadata and filters provided.
         """
 
-        try:
-            import pinecone
-        except ImportError:
-            raise ValueError(
-                "Could not import pinecone python package. "
-                "Please install it with `pip install pinecone-client`."
-            )
-
-        indexes = pinecone.list_indexes()  # checks if provided index exists
-
-        if index_name in indexes:
-            index = pinecone.Index(index_name)
-        elif len(indexes) == 0:
-            raise ValueError(
-                "No active indexes found in your Pinecone project, "
-                "are you sure you're using the right API key and environment?"
-            )
-        else:
-            raise ValueError(
-                f"Index '{index_name}' not found in your Pinecone project. "
-                f"Did you mean one of the following indexes: {', '.join(indexes)}"
-            )
-
+        if namespace is None:
+            namespace = self._namespace
+        
         # Prepare your query
         query = {"$and": []}
 
@@ -167,7 +146,7 @@ class Pinecone(VectorStore):
 
         vector = [0] * index_dimensions
 
-        return index.query(vector=vector, filter=query, top_k=k, include_metadata=include_metadata, include_values=include_values, namespace=namespace)["matches"]
+        return self._index.query(vector=vector, filter=query, top_k=k, include_metadata=include_metadata, include_values=include_values, namespace=namespace)["matches"]
     
 
     def similarity_search_with_score(
