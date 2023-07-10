@@ -1,4 +1,4 @@
-"""Loader that loads EPub files."""
+"""Loads EPub files."""
 from typing import List
 
 from langchain.document_loaders.unstructured import (
