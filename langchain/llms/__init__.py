@@ -49,6 +49,7 @@ from langchain.llms.self_hosted import SelfHostedPipeline
 from langchain.llms.self_hosted_hugging_face import SelfHostedHuggingFaceLLM
 from langchain.llms.stochasticai import StochasticAI
 from langchain.llms.textgen import TextGen
+from langchain.llms.tongyi import Tongyi
 from langchain.llms.vertexai import VertexAI
 from langchain.llms.writer import Writer
 
@@ -102,6 +103,7 @@ __all__ = [
     "SelfHostedHuggingFaceLLM",
     "SelfHostedPipeline",
     "StochasticAI",
+    "Tongyi",
     "VertexAI",
     "Writer",
     "OctoAIEndpoint",
@@ -151,6 +153,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "self_hosted": SelfHostedPipeline,
     "self_hosted_hugging_face": SelfHostedHuggingFaceLLM,
     "stochasticai": StochasticAI,
+    "tongyi": Tongyi,
     "vertexai": VertexAI,
     "openllm": OpenLLM,
     "openllm_client": OpenLLM,
