@@ -433,9 +433,9 @@ class TestCPALChain_MathWordProblems(unittest.TestCase):
         """
 
         narrative_input = (
-            "Jan has three times the number of pets as Marcia."
-            "Marcia has two more pets than Cindy."
-            "If Cindy has ten pets, how many pets does Jan have?"
+            "jan has three times the number of pets as marcia."
+            "marcia has two more pets than cindy."
+            "If cindy has ten pets, how many pets does jan have?"
         )
         llm = OpenAI(temperature=0, max_tokens=512)
         cpal_chain = CPALChain.from_univariate_prompt(llm=llm, verbose=True)
@@ -530,9 +530,9 @@ class TestCPALChain_MathWordProblems(unittest.TestCase):
         """
 
         narrative_input = (
-            "Jan has three times the number of pets as Marcia."
-            "Marcia has two more pets than Cindy."
-            "If Marcia has ten pets, how many pets does Jan have?"
+            "jan has three times the number of pets as marcia."
+            "marcia has two more pets than cindy."
+            "If marcia has ten pets, how many pets does jan have?"
         )
         llm = OpenAI(temperature=0, max_tokens=512)
         cpal_chain = CPALChain.from_univariate_prompt(llm=llm, verbose=True)
