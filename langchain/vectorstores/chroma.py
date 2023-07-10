@@ -77,6 +77,8 @@ class Chroma(VectorStore):
 
         if client is not None:
             self._client = client
+            self._client_settings = None
+            self._persist_directory = None
         else:
             if client_settings:
                 self._client_settings = client_settings
@@ -87,12 +89,14 @@ class Chroma(VectorStore):
                         chroma_db_impl="duckdb+parquet",
                         persist_directory=persist_directory,
                     )
+                    self._persist_directory = persist_directory
             self._client = chromadb.Client(self._client_settings)
+            self._persist_directory = (
+                self._client_settings.persist_directory or persist_directory
+            )
 
         self._embedding_function = embedding_function
-        self._persist_directory = (
-            self._client_settings.persist_directory or persist_directory
-        )
+
         self._collection = self._client.get_or_create_collection(
             name=collection_name,
             embedding_function=self._embedding_function.embed_documents
