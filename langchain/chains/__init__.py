@@ -20,6 +20,7 @@ from langchain.chains.graph_qa.hugegraph import HugeGraphQAChain
 from langchain.chains.graph_qa.kuzu import KuzuQAChain
 from langchain.chains.graph_qa.nebulagraph import NebulaGraphQAChain
 from langchain.chains.graph_qa.sparql import GraphSparqlQAChain
+from langchain.chains.graph_qa.aql import ArangoDBGraphQAChain
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_bash.base import LLMBashChain
@@ -115,4 +116,5 @@ __all__ = [
     "MapReduceDocumentsChain",
     "RefineDocumentsChain",
     "ReduceDocumentsChain",
+    "ArangoDBGraphQAChain",
 ]

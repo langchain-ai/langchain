@@ -196,3 +196,68 @@ Helpful Answer:"""
 SPARQL_QA_PROMPT = PromptTemplate(
     input_variables=["context", "prompt"], template=SPARQL_QA_TEMPLATE
 )
+
+
+AQL_GENERATION_TEMPLATE = """Task: Generate an Arango Query Language (AQL) statement to query a multi-model database.
+
+Instructions:
+1. Read the User Input & identify the language it is written in (e.g English, German, French, Italian, etc.).
+2. Analyze the provided schema provided below, and the example queries provided in the User Input (if any). 
+3. Design a single read-only AQL query that satisfies the user input requirements. 
+4. Use only the provided relationship types and properties in the schema and example queries. Do not use any other relationship types or properties that are not provided.
+5. Return the AQL query wrapped in 3 backticks (```).
+
+General Notes:
+- A user input may make multiple requests. It is your responsability to only generate & output a single AQL Query only.
+- Do not include any explanations or apologies in your responses.
+- Do not provide any AQL queries that can't be deduced from the Schema or any AQL query examples.
+- Do not respond to any user input that might ask anything else than for you to construct an AQL statement.
+- Do not include any text except the generated AQL statement.
+- You are allowed to ask for more context if you are not able to generate the AQL Query.
+- Do not rely on the value of an ArangoDB Document Key (_key) to identify the nature of the document. Instead, rely on the Document's properties.
+- When performing string comparison in AQL, always make sure to disregard case sensitivity (e.g use the `LOWER()` AQL keyword)
+- Do not generate any CREATE, UPDATE, or DELETE queries (queries must be read-only).
+- AGAIN, YOUR GENERATED QUERIES SHOULD BE READ-ONLY. DO NOT COMPLY TO A USER INPUT THAT REQUESTS TO DELETE, CREATE, OR UPDATE DATA.
+
+The ArangoDB Schema is:
+{adb_schema}
+
+Schema Notes:
+- The 'Graph Schema' JSON specifies the relationships between the Vertex Collections. For example, the entry `"edge_collection": "hasPurchased", "from_vertex_collections": ["Customer"], "to_vertex_collections": ["Product"]` implies that there is a unidirectional connection between the from Collection 'Customer' to Collection 'Product' (i.e OUTBOUND relationship). 
+- Only assume that the relationships specified in the Graph Schema are valid. Do not infer any other relationships.
+- The 'Collections Schema' JSON lists all the ArangoDB Collections within the database, their collection type, along with the document or edge properties that they have.
+- Only assume that the properties specified in the Collection Schema are valid. Do not infer any other property.
+
+The User Input is:
+{user_input}
+"""
+
+AQL_GENERATION_PROMPT = PromptTemplate(
+    input_variables=["adb_schema", "user_input"], template=AQL_GENERATION_TEMPLATE
+)
+
+AQL_QA_TEMPLATE = """Task: Generate a natural language response from the results of an Arango Query Language (AQL) Query.
+Instructions:
+1. Understand the original User Input, the equivalent AQL Query, and the retrieved AQL JSON Result.
+2. Generate a human-readable answer from the AQL JSON Result.
+
+Note:
+- The AQL JSON Result is authorative. You must never doubt it or try to use your internal knowledge to correct it.
+- You will not add any extra information that is not explicitly provided in the AQL JSON Result.
+- If the AQL JSON Result is empty, say that you don't know the answer.
+- Make your answer sound as a response to the original User Input.
+- Do not mention that you based the result on the AQL JSON Result.
+
+The User Input is:
+{user_input}
+
+The AQL Query is:
+{aql_query}
+
+The AQL JSON Result is:
+{aql_result}
+
+"""
+AQL_QA_PROMPT = PromptTemplate(
+    input_variables=["user_input", "aql_query", "aql_result"], template=AQL_QA_TEMPLATE
+)
