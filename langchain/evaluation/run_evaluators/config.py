@@ -1,5 +1,5 @@
 """Configuration for run evaluators."""
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from langsmith import RunEvaluator
 from pydantic import BaseModel
@@ -26,7 +26,7 @@ class EvalConfig(BaseModel):
 class RunEvalConfig(BaseModel):
     """Configuration for a run evaluation."""
 
-    evaluator_configs: List[EvalConfig]
+    evaluators: List[Union[EvaluatorType, EvalConfig]]
     # TODO: Should support custom langchain evaluators here too?
     custom_run_evaluators: Optional[List[RunEvaluator]] = None
     reference_key: Optional[str] = None
@@ -37,11 +37,17 @@ class RunEvalConfig(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
+    def __init__(self, evaluators: List[EvalConfig], **kwargs: Any):
+        super().__init__(evaluators=evaluators, **kwargs)
+
     class Criteria(EvalConfig):
         """Configuration for a criteria evaluator."""
 
-        evaluator_type: EvaluatorType = EvaluatorType.CRITERIA
         criteria: Optional[CRITERIA_TYPE] = None
+        evaluator_type: EvaluatorType = EvaluatorType.CRITERIA
+
+        def __ini__(self, criteria: Optional[CRITERIA_TYPE] = None, **kwargs: Any):
+            super().__init__(criteria=criteria, **kwargs)
 
     # TODO: LabeledCriteria when that's split out
 

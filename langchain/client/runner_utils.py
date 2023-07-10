@@ -36,7 +36,7 @@ from langchain.evaluation.run_evaluators.config import RunEvalConfig
 from langchain.evaluation.run_evaluators.string_run_evaluator import (
     StringRunEvaluatorChain,
 )
-from langchain.evaluation.schema import StringEvaluator
+from langchain.evaluation.schema import EvaluatorType, StringEvaluator
 from langchain.llms.base import BaseLLM
 from langchain.schema import ChatResult, LLMResult
 from langchain.schema.language_model import BaseLanguageModel
@@ -603,12 +603,12 @@ def run_on_examples(
     tracer = LangChainTracer(project_name=project_name)
     evaluator_project_name = f"{project_name}-evaluators"
     first_example, examples = _first_example(examples)
-    if data_type == DataType.kv:
+    if isinstance(llm_or_chain_factory, BaseLanguageModel):
+        run_inputs, run_outputs = None, None
+    else:
         chain = llm_or_chain_factory()
         run_inputs = chain.input_keys
         run_outputs = chain.output_keys
-    else:
-        run_inputs, run_outputs = None, None
     if run_evaluator_config:
         run_evaluators = _load_run_evaluators(
             run_evaluator_config,
@@ -850,10 +850,13 @@ def _load_run_evaluators(
         reference_key = list(example_outputs)[0]
     else:
         reference_key = None
-    for eval_config in config.evaluator_configs:
-        evaluator_ = load_evaluator(
-            eval_config.evaluator_type, llm=eval_llm, **eval_config.get_kwargs()
-        )  # TODO: Pass in kwargs based on config specifically
+    for eval_config in config.evaluators:
+        if isinstance(eval_config, EvaluatorType):
+            evaluator_ = load_evaluator(eval_config, llm=eval_llm)
+        else:
+            evaluator_ = load_evaluator(
+                eval_config.evaluator_type, llm=eval_llm, **eval_config.get_kwargs()
+            )  # TODO: Pass in kwargs based on config specifically
 
         if isinstance(evaluator_, StringEvaluator):
             if evaluator_.requires_reference and reference_key is None:
