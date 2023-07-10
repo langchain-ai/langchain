@@ -14,15 +14,16 @@ from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
 from langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
+from langchain.chains.sql_database.utils import validate_sql_chain_memory
 from langchain.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
 )
+from langchain.schema import BaseMemory, BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import AIMessage, SystemMessage
-from langchain.schema import BaseMemory, BasePromptTemplate
-from langchain.chains.sql_database.utils import validate_sql_chain_memory
+
 
 def create_sql_agent(
     llm: BaseLanguageModel,
@@ -56,7 +57,7 @@ def create_sql_agent(
             input_variables=input_variables,
         )
         if memory:
-            validate_sql_chain_memory(memory , prompt)
+            validate_sql_chain_memory(memory, prompt)
         llm_chain = LLMChain(
             llm=llm,
             prompt=prompt,
@@ -75,7 +76,7 @@ def create_sql_agent(
         input_variables = ["input", "agent_scratchpad"]
         _prompt = ChatPromptTemplate(input_variables=input_variables, messages=messages)
         if memory:
-            validate_sql_chain_memory(memory , _prompt)
+            validate_sql_chain_memory(memory, _prompt)
         agent = OpenAIFunctionsAgent(
             llm=llm,
             prompt=_prompt,
