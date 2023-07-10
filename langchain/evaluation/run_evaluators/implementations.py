@@ -1,4 +1,4 @@
-from typing import Any, Dict, Mapping, Optional, Sequence, Union
+from typing import Any, Dict, Optional, Sequence, Union
 
 from langchainplus_sdk.evaluation import EvaluationResult
 from langchainplus_sdk.schemas import Example, Run, RunTypeEnum
@@ -10,6 +10,7 @@ from langchain.evaluation.agents.trajectory_eval_chain import (
     TrajectoryOutputParser,
 )
 from langchain.evaluation.criteria.eval_chain import (
+    CRITERIA_TYPE,
     CriteriaEvalChain,
     CriteriaResultOutputParser,
 )
@@ -147,7 +148,7 @@ class CriteriaOutputParser(RunEvaluatorOutputParser):
 
 def get_criteria_evaluator(
     llm: BaseLanguageModel,
-    criteria: Union[Mapping[str, str], Sequence[str], str],
+    criteria: CRITERIA_TYPE,
     *,
     input_key: str = "input",
     prediction_key: str = "output",
