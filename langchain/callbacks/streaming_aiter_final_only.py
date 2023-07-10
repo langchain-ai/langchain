@@ -83,6 +83,6 @@ class AsyncFinalIteratorCallbackHandler(AsyncIteratorCallbackHandler):
                     self.queue.put_nowait(t)
             return
 
-        # If yes, then put tokens from now on
-        if self.answer_reached:
+        # If answer is not yet reached, then put the token in the queue
+        if not self.answer_reached:
             self.queue.put_nowait(token)
