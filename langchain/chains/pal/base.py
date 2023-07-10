@@ -215,17 +215,34 @@ class PALChain(Chain):
         if not code_validations.allow_imports and has_imports:
             raise ValueError(f"Generated code has disallowed imports: {code}")
 
-        if not code_validations.allow_command_exec:
+        if (
+            not code_validations.allow_command_exec
+            or not code_validations.allow_imports
+        ):
             for node in ast.walk(code_tree):
                 if (
-                    isinstance(node, ast.Call)
-                    and hasattr(node.func, "id")
-                    and node.func.id in COMMAND_EXECUTION_FUNCTIONS
+                    (not code_validations.allow_command_exec)
+                    and isinstance(node, ast.Call)
+                    and (
+                        (
+                            hasattr(node.func, "id")
+                            and node.func.id in COMMAND_EXECUTION_FUNCTIONS
+                        )
+                        or (
+                            isinstance(node.func, ast.Attribute)
+                            and node.func.attr in COMMAND_EXECUTION_FUNCTIONS
+                        )
+                    )
                 ):
                     raise ValueError(
                         f"Found illegal command execution function"
                         f"{node.func.id} in code {code}"
                     )
+
+                if (not code_validations.allow_imports) and (
+                    isinstance(node, ast.Import) or isinstance(node, ast.ImportFrom)
+                ):
+                    raise ValueError(f"Generated code has disallowed imports: {code}")
 
     @classmethod
     def from_math_prompt(cls, llm: BaseLanguageModel, **kwargs: Any) -> PALChain:
