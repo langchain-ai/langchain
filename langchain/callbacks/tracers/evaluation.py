@@ -68,9 +68,12 @@ class EvaluatorCallbackHandler(BaseTracer):
         )
         self.client = client or LangChainPlusClient()
         self.evaluators = evaluators
-        self.executor = ThreadPoolExecutor(
-            max_workers=max(max_workers or len(evaluators), 1)
-        )
+        if max_workers == 0:
+            self.executor = None
+        else:
+            self.executor = ThreadPoolExecutor(
+                max_workers=max(max_workers or len(evaluators), 1)
+            )
         self.futures: Set[Future] = set()
         self.skip_unfinished = skip_unfinished
         self.project_name = project_name
@@ -97,7 +100,6 @@ class EvaluatorCallbackHandler(BaseTracer):
                 f"{evaluator.__class__.__name__}: {e}",
                 exc_info=True,
             )
-            raise e
 
     def _persist_run(self, run: Run) -> None:
         """Run the evaluator on the run.
@@ -114,9 +116,12 @@ class EvaluatorCallbackHandler(BaseTracer):
         run_ = run.copy()
         run_.reference_example_id = self.example_id
         for evaluator in self.evaluators:
-            self.futures.add(
-                self.executor.submit(self._evaluate_in_project, run_, evaluator)
-            )
+            if self.executor is None:
+                self._evaluate_in_project(run_, evaluator)
+            else:
+                self.futures.add(
+                    self.executor.submit(self._evaluate_in_project, run_, evaluator)
+                )
 
     def wait_for_futures(self) -> None:
         """Wait for all futures to complete."""

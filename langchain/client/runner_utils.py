@@ -332,7 +332,7 @@ async def _callbacks_initializer(
             client=client,
             evaluators=run_evaluators,
             # We already have concurrency, don't want to overload the machine
-            max_workers=1,
+            max_workers=0,
             project_name=evaluator_project_name,
         )
         callbacks.append(callback)
