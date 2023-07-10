@@ -34,19 +34,19 @@ logger = logging.getLogger(__name__)
 TS = TypeVar("TS", bound="TextSplitter")
 
 
-def _make_spacy_pipeline_for_splitting(pipeline: str) -> object:  # avoid importing spacy
+def _make_spacy_pipeline_for_splitting(pipeline: str) -> Any:  # avoid importing spacy
     try:
         import spacy
     except ImportError:
         raise ImportError(
             "Spacy is not installed, please install it with `pip install spacy`."
         )
-    if pipeline == 'sentencizer':
+    if pipeline == "sentencizer":
         from spacy.lang.en import English
         sentencizer = English()
         sentencizer.add_pipe("sentencizer")
     else:
-        sentencizer = spacy.load(pipeline, disable=['ner'])
+        sentencizer = spacy.load(pipeline, disable=["ner"])
     return sentencizer
 
 
