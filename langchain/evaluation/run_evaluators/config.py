@@ -1,87 +1,78 @@
 """Configuration for run evaluators."""
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, root_validator
+from langsmith import RunEvaluator
+from pydantic import BaseModel
 
-from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
-from langchain.evaluation.criteria.eval_chain import Criteria
+from langchain.embeddings.base import Embeddings
+from langchain.evaluation.criteria.eval_chain import CRITERIA_TYPE
+from langchain.evaluation.embedding_distance.base import EmbeddingDistance
 from langchain.evaluation.schema import EvaluatorType
-from langchain.prompts.prompt import PromptTemplate
+from langchain.evaluation.string_distance.base import StringDistance
 from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema.prompt_template import BasePromptTemplate
 
 
-class RunEvaluatorConfig(BaseModel):
+class EvalConfig(BaseModel):
     """Configuration for a given run evaluator."""
 
     evaluator_type: EvaluatorType
+    """The type of evaluator to use."""
 
-    def get_loader_kwargs(self) -> Dict[str, Any]:
-        """Get kwargs for the load_evaluator function."""
-        return {}
+    def get_kwargs(self) -> Dict[str, Any]:
+        return self.dict(exclude={"evaluator_type"}, exclude_none=True)
 
 
-class RunEvaluationConfig(BaseModel):
-    evaluator_configs: List[RunEvaluatorConfig]
+class RunEvalConfig(BaseModel):
+    """Configuration for a run evaluation."""
+
+    evaluator_configs: List[EvalConfig]
+    # TODO: Should support custom langchain evaluators here too?
+    custom_run_evaluators: Optional[List[RunEvaluator]] = None
     reference_key: Optional[str] = None
     prediction_key: Optional[str] = None
     input_key: Optional[str] = None
     eval_llm: Optional[BaseLanguageModel] = None
 
+    class Config:
+        arbitrary_types_allowed = True
 
-# TODO move to other files
-class CriteriaEvaluatorConfig(RunEvaluatorConfig):
-    """Configuration for a single criteria evaluator."""
+    class Criteria(EvalConfig):
+        """Configuration for a criteria evaluator."""
 
-    evaluator_type: EvaluatorType = EvaluatorType.CRITERIA
-    criteria: Optional[Criteria] = None
-    custom_criteria: Optional[Dict[str, str]] = None
-    constitutional_principle: Optional[ConstitutionalPrinciple] = None
+        evaluator_type: EvaluatorType = EvaluatorType.CRITERIA
+        criteria: Optional[CRITERIA_TYPE] = None
 
-    @root_validator
-    def validate_one_specified(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        """Ensure that only one of criteria, custom_criteria, or
-        constitutional_principle is specified."""
-        criteria = values.get("criteria")
-        custom_criteria = values.get("custom_criteria")
-        constitutional_principle = values.get("constitutional_principle")
-        if (
-            sum(
-                [
-                    criteria is not None,
-                    custom_criteria is not None,
-                    constitutional_principle is not None,
-                ]
-            )
-            != 1
-        ):
-            raise ValueError(
-                "Exactly one of criteria, custom_criteria, or constitutional_principle"
-                " must be specified for the CriteriaEvalConfig."
-            )
-        return values
+    # TODO: LabeledCriteria when that's split out
 
-    def get_loader_kwargs(self) -> Dict[str, Any]:
-        """Get kwargs for the load_evaluator function."""
-        criteria = (
-            self.criteria or self.custom_criteria or self.constitutional_principle
-        )
-        return {"criteria": criteria}
+    class EmbeddingDistance(EvalConfig):
+        """Configuration for an embedding distance evaluator."""
 
+        evaluator_type: EvaluatorType = EvaluatorType.EMBEDDING_DISTANCE
+        embeddings: Optional[Embeddings] = None
+        distance_metric: Optional[EmbeddingDistance] = None
 
-class QAEvaluatorConfig(RunEvaluatorConfig):
-    """Configuration for a single QA evaluator."""
+        class Config:
+            arbitrary_types_allowed = True
 
-    evaluator_type: EvaluatorType = EvaluatorType.QA
-    prompt: Optional[PromptTemplate] = None
+    class StringDistance(EvalConfig):
+        """Configuration for a string distance evaluator."""
 
+        evaluator_type: EvaluatorType = EvaluatorType.STRING_DISTANCE
+        distance: Optional[StringDistance] = None
 
-class ContextQAEvalChain(QAEvaluatorConfig):
-    """Configuration for a single Context QA evaluator."""
+    class QA(EvalConfig):
+        """Configuration for a QA evaluator."""
 
-    evaluator_type: EvaluatorType = EvaluatorType.CONTEXT_QA
+        evaluator_type: EvaluatorType = EvaluatorType.QA
+        prompt: Optional[BasePromptTemplate] = None
 
+    class ContextQA(EvalConfig):
+        evaluator_type: EvaluatorType = EvaluatorType.CONTEXT_QA
+        prompt: Optional[BasePromptTemplate] = None
 
-class COTQAEvaluatorConfig(QAEvaluatorConfig):
-    """Configuration for a single Chain of thought QA evaluator."""
+    class CoTQA(EvalConfig):
+        evaluator_type: EvaluatorType = EvaluatorType.CONTEXT_QA
+        prompt: Optional[BasePromptTemplate] = None
 
-    evaluator_type: EvaluatorType = EvaluatorType.COT_QA
+    # TODO: Trajectory

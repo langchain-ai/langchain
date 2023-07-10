@@ -32,7 +32,7 @@ from langchain.chains.base import Chain
 from langchain.chat_models.base import BaseChatModel
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.evaluation.loading import load_evaluator
-from langchain.evaluation.run_evaluators.config import RunEvaluationConfig
+from langchain.evaluation.run_evaluators.config import RunEvalConfig
 from langchain.evaluation.run_evaluators.string_run_evaluator import (
     StringRunEvaluatorChain,
 )
@@ -565,7 +565,7 @@ def run_on_examples(
     verbose: bool = False,
     client: Optional[Client] = None,
     tags: Optional[List[str]] = None,
-    run_evaluator_config: Optional[RunEvaluationConfig] = None,
+    run_evaluator_config: Optional[RunEvalConfig] = None,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
     data_type: DataType = DataType.kv,
 ) -> Dict[str, Any]:
@@ -741,7 +741,7 @@ def run_on_dataset(
     verbose: bool = False,
     client: Optional[Client] = None,
     tags: Optional[List[str]] = None,
-    run_evaluator_config: Optional[RunEvaluationConfig] = None,
+    run_evaluator_config: Optional[RunEvalConfig] = None,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
 ) -> Dict[str, Any]:
     """
@@ -799,7 +799,7 @@ def run_on_dataset(
 
 
 def _load_run_evaluators(
-    config: RunEvaluationConfig,
+    config: RunEvalConfig,
     data_type: DataType,
     example_outputs: Optional[List[str]],
     run_inputs: Optional[List[str]],
@@ -852,15 +852,15 @@ def _load_run_evaluators(
         reference_key = None
     for eval_config in config.evaluator_configs:
         evaluator_ = load_evaluator(
-            eval_config.evaluator_type, llm=eval_llm, **eval_config.get_loader_kwargs()
+            eval_config.evaluator_type, llm=eval_llm, **eval_config.get_kwargs()
         )  # TODO: Pass in kwargs based on config specifically
 
         if isinstance(evaluator_, StringEvaluator):
             if evaluator_.requires_reference and reference_key is None:
                 raise ValueError(
-                    f"Must specify reference_key in RunEvaluationConfig to use"
+                    f"Must specify reference_key in RunEvalConfig to use"
                     f" evaluator of type {eval_config.evaluator_type} with"
-                    " dataset with multiple output keys."
+                    f" dataset with multiple output keys: {example_outputs}."
                 )
             run_evaluator = StringRunEvaluatorChain.from_data_type(
                 evaluator_,
