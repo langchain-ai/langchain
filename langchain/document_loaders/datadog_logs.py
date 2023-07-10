@@ -19,7 +19,7 @@ class DatadogLogsLoader(BaseLoader):
         app_key: str,
         from_time: Optional[int] = None,
         to_time: Optional[int] = None,
-        limit: Optional[int] = None,
+        limit: int = 100,
     ) -> None:
         """Initialize Datadog document loader.
 
@@ -36,7 +36,7 @@ class DatadogLogsLoader(BaseLoader):
             to_time: Optional. The end of the time range to query.
                 Supports date math and regular timestamps (milliseconds) like '1688732708951'
                 Defaults to now.
-            limit: Optional. The maximum number of logs to return.
+            limit: The maximum number of logs to return.
                 Defaults to 100.
         """  # noqa: E501
         try:
@@ -46,13 +46,15 @@ class DatadogLogsLoader(BaseLoader):
                 "Could not import datadog_api_client python package. "
                 "Please install it with `pip install datadog_api_client`."
             ) from ex
+
         self.query = query
-        self.configuration = Configuration()
-        self.configuration.api_key["apiKeyAuth"] = api_key
-        self.configuration.api_key["appKeyAuth"] = app_key
+        configuration = Configuration()
+        configuration.api_key["apiKeyAuth"] = api_key
+        configuration.api_key["appKeyAuth"] = app_key
+        self.configuration = configuration
         self.from_time = from_time
         self.to_time = to_time
-        self.limit = limit if limit is not None else 100
+        self.limit = limit
 
     def parse_log(self, log: dict) -> Document:
         """
