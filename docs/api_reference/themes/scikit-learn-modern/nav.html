@@ -1,0 +1,69 @@
+{%- if pagename != 'index' and pagename != 'documentation' %}
+  {%- set nav_bar_class = "sk-docs-navbar" %}
+  {%- set top_container_cls = "sk-docs-container" %}
+{%- else %}
+  {%- set nav_bar_class = "sk-landing-navbar" %}
+  {%- set top_container_cls = "sk-landing-container" %}
+{%- endif %}
+
+{% if theme_link_to_live_contributing_page|tobool %}
+{# Link to development page for live builds #}
+  {%- set development_link = "https://scikit-learn.org/dev/developers/index.html" %}
+{# Open on a new development page in new window/tab for live builds #}
+  {%- set development_attrs = 'target="_blank" rel="noopener noreferrer"' %}
+{%- else %}
+  {%- set development_link = pathto('developers/index') %}
+  {%- set development_attrs = '' %}
+{%- endif %}
+
+
+<nav id="navbar" class="{{ nav_bar_class }} navbar navbar-expand-md navbar-light bg-light py-0">
+  <div class="container-fluid {{ top_container_cls }} px-0">
+    {%- if logo_url %}
+      <a class="navbar-brand py-0" href="{{ pathto('index') }}">
+        <img
+          class="sk-brand-img"
+          src="{{ logo_url|e }}"
+          alt="logo"/>
+      </a>
+    {%- endif %}
+    <button
+      id="sk-navbar-toggler"
+      class="navbar-toggler"
+      type="button"
+      data-toggle="collapse"
+      data-target="#navbarSupportedContent"
+      aria-controls="navbarSupportedContent"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="sk-navbar-collapse collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav mr-auto">
+        <li class="nav-item">
+          <a class="sk-nav-link nav-link" href="{{ pathto('api_reference') }}">API</a>
+        </li>
+        <li class="nav-item">
+          <a class="sk-nav-link nav-link" target="_blank" rel="noopener noreferrer" href="https://python.langchain.com/">Python Docs</a>
+        </li>
+        {%- for title, link, link_attrs in drop_down_navigation %}
+        <li class="nav-item">
+          <a class="sk-nav-link nav-link nav-more-item-mobile-items" href="{{ link }}" {{ link_attrs }}>{{ title }}</a>
+        </li>
+        {%- endfor %}
+      </ul>
+      {%- if pagename != "search"%}
+      <div id="searchbox" role="search">
+          <div class="searchformwrapper">
+          <form class="search" action="{{ pathto('search') }}" method="get">
+            <input class="sk-search-text-input" type="text" name="q" aria-labelledby="searchlabel" />
+            <input class="sk-search-text-btn" type="submit" value="{{ _('Go') }}" />
+          </form>
+          </div>
+      </div>
+      {%- endif %}
+    </div>
+  </div>
+</nav>

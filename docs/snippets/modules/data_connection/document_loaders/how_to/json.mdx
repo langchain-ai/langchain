@@ -78,10 +78,13 @@ pprint(data)
 
 </CodeOutputBlock>
 
+
 ## Using `JSONLoader`
 
 Suppose we are interested in extracting the values under the `content` field within the `messages` key of the JSON data. This can easily be done through the `JSONLoader` as shown below.
 
+
+### JSON file
 
 ```python
 loader = JSONLoader(
@@ -113,6 +116,81 @@ pprint(data)
 ```
 
 </CodeOutputBlock>
+
+
+### JSON Lines file
+
+If you want to load documents from a JSON Lines file, you pass `json_lines=True`
+and specify `jq_schema` to extract `page_content` from a single JSON object.
+
+```python
+file_path = './example_data/facebook_chat_messages.jsonl'
+pprint(Path(file_path).read_text())
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    ('{"sender_name": "User 2", "timestamp_ms": 1675597571851, "content": "Bye!"}\n'
+     '{"sender_name": "User 1", "timestamp_ms": 1675597435669, "content": "Oh no '
+     'worries! Bye"}\n'
+     '{"sender_name": "User 2", "timestamp_ms": 1675596277579, "content": "No Im '
+     'sorry it was my mistake, the blue one is not for sale"}\n')
+```
+
+</CodeOutputBlock>
+
+
+```python
+loader = JSONLoader(
+    file_path='./example_data/facebook_chat_messages.jsonl',
+    jq_schema='.content',
+    json_lines=True)
+
+data = loader.load()
+```
+
+```python
+pprint(data)
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    [Document(page_content='Bye!', metadata={'source': 'langchain/docs/modules/indexes/document_loaders/examples/example_data/facebook_chat_messages.jsonl', 'seq_num': 1}),
+     Document(page_content='Oh no worries! Bye', metadata={'source': 'langchain/docs/modules/indexes/document_loaders/examples/example_data/facebook_chat_messages.jsonl', 'seq_num': 2}),
+     Document(page_content='No Im sorry it was my mistake, the blue one is not for sale', metadata={'source': 'langchain/docs/modules/indexes/document_loaders/examples/example_data/facebook_chat_messages.jsonl', 'seq_num': 3})]
+```
+
+</CodeOutputBlock>
+
+
+Another option is set `jq_schema='.'` and provide `content_key`:
+
+```python
+loader = JSONLoader(
+    file_path='./example_data/facebook_chat_messages.jsonl',
+    jq_schema='.',
+    content_key='sender_name',
+    json_lines=True)
+
+data = loader.load()
+```
+
+```python
+pprint(data)
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    [Document(page_content='User 2', metadata={'source': 'langchain/docs/modules/indexes/document_loaders/examples/example_data/facebook_chat_messages.jsonl', 'seq_num': 1}),
+     Document(page_content='User 1', metadata={'source': 'langchain/docs/modules/indexes/document_loaders/examples/example_data/facebook_chat_messages.jsonl', 'seq_num': 2}),
+     Document(page_content='User 2', metadata={'source': 'langchain/docs/modules/indexes/document_loaders/examples/example_data/facebook_chat_messages.jsonl', 'seq_num': 3})]
+```
+
+</CodeOutputBlock>
+
 
 ## Extracting metadata
 

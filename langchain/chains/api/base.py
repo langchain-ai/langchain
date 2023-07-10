@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Field, root_validator
 
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
@@ -13,8 +12,9 @@ from langchain.callbacks.manager import (
 from langchain.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.prompts import BasePromptTemplate
 from langchain.requests import TextRequestsWrapper
+from langchain.schema import BasePromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
 
 
 class APIChain(Chain):

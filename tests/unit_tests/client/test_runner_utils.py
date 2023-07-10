@@ -8,15 +8,18 @@ import pytest
 from langchainplus_sdk.client import LangChainPlusClient
 from langchainplus_sdk.schemas import Dataset, Example
 
-from langchain.base_language import BaseLanguageModel
 from langchain.chains.base import Chain
+from langchain.chains.transform import TransformChain
 from langchain.client.runner_utils import (
     InputFormatError,
     _get_messages,
     _get_prompts,
     arun_on_dataset,
     run_llm,
+    run_llm_or_chain,
 )
+from langchain.schema import LLMResult
+from langchain.schema.language_model import BaseLanguageModel
 from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
@@ -73,6 +76,57 @@ def test__get_prompts_valid(inputs: Dict[str, Any]) -> None:
 def test__get_prompts_invalid(inputs: Dict[str, Any]) -> None:
     with pytest.raises(InputFormatError):
         _get_prompts(inputs)
+
+
+def test_run_llm_or_chain_with_input_mapper() -> None:
+    example = Example(
+        id=uuid.uuid4(),
+        created_at=_CREATED_AT,
+        inputs={"the wrong input": "1", "another key": "2"},
+        outputs={"output": "2"},
+        dataset_id=str(uuid.uuid4()),
+    )
+
+    def run_val(inputs: dict) -> dict:
+        assert "the right input" in inputs
+        return {"output": "2"}
+
+    mock_chain = TransformChain(
+        input_variables=["the right input"],
+        output_variables=["output"],
+        transform=run_val,
+    )
+
+    def input_mapper(inputs: dict) -> dict:
+        assert "the wrong input" in inputs
+        return {"the right input": inputs["the wrong input"]}
+
+    result = run_llm_or_chain(
+        example, lambda: mock_chain, n_repetitions=1, input_mapper=input_mapper
+    )
+    assert len(result) == 1
+    assert result[0] == {"output": "2", "the right input": "1"}
+    bad_result = run_llm_or_chain(
+        example,
+        lambda: mock_chain,
+        n_repetitions=1,
+    )
+    assert len(bad_result) == 1
+    assert "Error" in bad_result[0]
+
+    # Try with LLM
+    def llm_input_mapper(inputs: dict) -> List[str]:
+        assert "the wrong input" in inputs
+        return ["the right input"]
+
+    mock_llm = FakeLLM(queries={"the right input": "somenumber"})
+    result = run_llm_or_chain(
+        example, mock_llm, n_repetitions=1, input_mapper=llm_input_mapper
+    )
+    assert len(result) == 1
+    llm_result = result[0]
+    assert isinstance(llm_result, LLMResult)
+    assert llm_result.generations[0][0].text == "somenumber"
 
 
 @pytest.mark.parametrize(
@@ -171,6 +225,7 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
         n_repetitions: int,
         tags: Optional[List[str]] = None,
         callbacks: Optional[Any] = None,
+        **kwargs: Any,
     ) -> List[Dict[str, Any]]:
         return [
             {"result": f"Result for example {example.id}"} for _ in range(n_repetitions)
