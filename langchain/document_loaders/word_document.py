@@ -1,4 +1,4 @@
-"""Loader that loads word documents."""
+"""Loads word documents."""
 import os
 import tempfile
 from abc import ABC
