@@ -40,7 +40,7 @@ class Pinecone(VectorStore):
         index: Any,
         embedding_function: Callable,
         text_key: str,
-        distance_strategy: Optional[DistanceStrategy] = None,
+        distance_strategy: Optional[DistanceStrategy] = DistanceStrategy.COSINE,
     ):
         """Initialize with Pinecone client."""
         try:
@@ -164,7 +164,6 @@ class Pinecone(VectorStore):
         elif self.distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
             return self._max_inner_product_relevance_score_fn
         elif self.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
-            # Default behavior is to use euclidean distance relevancy
             return self._euclidean_relevance_score_fn
         else:
             raise ValueError(
