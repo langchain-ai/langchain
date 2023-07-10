@@ -13,6 +13,7 @@ from langchain.evaluation.schema import EvaluatorType, StringEvaluator
 from langchain.tools.base import Tool
 
 
+# TODO: Delete below
 def load_run_evaluator_for_model(
     evaluator: EvaluatorType,
     model: Union[Chain, BaseLanguageModel, Tool],

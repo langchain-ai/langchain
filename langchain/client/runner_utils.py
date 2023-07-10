@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import itertools
 import logging
 from datetime import datetime
 from typing import (
@@ -15,11 +16,12 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Tuple,
     Union,
 )
 
 from langsmith import Client, RunEvaluator
-from langsmith.schemas import Example
+from langsmith.schemas import DataType, Example
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.manager import Callbacks
@@ -28,11 +30,15 @@ from langchain.callbacks.tracers.evaluation import EvaluatorCallbackHandler
 from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.chains.base import Chain
 from langchain.chat_models.base import BaseChatModel
-from langchain.llms.base import BaseLLM
-from langchain.schema import (
-    ChatResult,
-    LLMResult,
+from langchain.chat_models.openai import ChatOpenAI
+from langchain.evaluation.loading import load_evaluator
+from langchain.evaluation.run_evaluators.config import RunEvaluationConfig
+from langchain.evaluation.run_evaluators.string_run_evaluator import (
+    StringRunEvaluatorChain,
 )
+from langchain.evaluation.schema import StringEvaluator
+from langchain.llms.base import BaseLLM
+from langchain.schema import ChatResult, LLMResult
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import (
     BaseMessage,
@@ -48,6 +54,16 @@ MODEL_OR_CHAIN_FACTORY = Union[Callable[[], Chain], BaseLanguageModel]
 
 class InputFormatError(Exception):
     """Raised when the input format is invalid."""
+
+
+def _first_example(examples: Iterator[Example]) -> Tuple[Example, Iterator[Example]]:
+    """Get the first eample while chaining it back and preserving the iterator."""
+    try:
+        example: Example = next(examples)
+    except StopIteration:
+        raise ValueError("No examples provided.")
+    examples = itertools.chain([example], examples)
+    return example, examples
 
 
 def _get_prompts(inputs: Dict[str, Any]) -> List[str]:
@@ -550,8 +566,9 @@ def run_on_examples(
     verbose: bool = False,
     client: Optional[Client] = None,
     tags: Optional[List[str]] = None,
-    run_evaluators: Optional[Sequence[RunEvaluator]] = None,
+    run_evaluator_config: Optional[RunEvaluationConfig] = None,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
+    data_type: DataType = DataType.kv,
 ) -> Dict[str, Any]:
     """
     Run the Chain or language model on examples and store
@@ -587,6 +604,23 @@ def run_on_examples(
     client_.create_project(project_name)
     tracer = LangChainTracer(project_name=project_name)
     evaluator_project_name = f"{project_name}-evaluators"
+    first_example, examples = _first_example(examples)
+    if data_type == DataType.kv:
+        chain = llm_or_chain_factory()
+        run_inputs = chain.input_keys
+        run_outputs = chain.output_keys
+    else:
+        run_inputs, run_outputs = None, None
+    if run_evaluator_config:
+        run_evaluators = _load_run_evaluators(
+            run_evaluator_config,
+            data_type,
+            list(first_example.outputs) if first_example.outputs else None,
+            run_inputs,
+            run_outputs,
+        )
+    else:
+        run_evaluators = None
     evalution_handler = EvaluatorCallbackHandler(
         evaluators=run_evaluators or [],
         client=client_,
@@ -709,7 +743,7 @@ def run_on_dataset(
     verbose: bool = False,
     client: Optional[Client] = None,
     tags: Optional[List[str]] = None,
-    run_evaluators: Optional[Sequence[RunEvaluator]] = None,
+    run_evaluator_config: Optional[RunEvaluationConfig] = None,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
 ) -> Dict[str, Any]:
     """
@@ -730,7 +764,8 @@ def run_on_dataset(
         client: LangSmith client to use to access the dataset. If None, a new client
             will be created using the credentials in the environment.
         tags: Tags to add to each run in the project.
-        run_evaluators: Evaluators to run on the results of the chain.
+        run_evaluator_config: Configuration for evaluators to run on the
+            results of the chain
         input_mapper: A function to map to the inputs dictionary from an Example
             to the format expected by the model to be evaluated. This is useful if
             your model needs to deserialize more complex schema or if your dataset
@@ -751,11 +786,94 @@ def run_on_dataset(
         project_name=project_name,
         verbose=verbose,
         tags=tags,
-        run_evaluators=run_evaluators,
+        run_evaluator_config=run_evaluator_config,
         client=client_,
         input_mapper=input_mapper,
+        data_type=dataset.data_type,
     )
     return {
         "project_name": project_name,
         "results": results,
     }
+
+
+### TODO: Move to different file
+
+
+def _load_run_evaluators(
+    config: RunEvaluationConfig,
+    data_type: DataType,
+    example_outputs: Optional[List[str]],
+    run_inputs: Optional[List[str]],
+    run_outputs: Optional[List[str]],
+) -> List[RunEvaluator]:
+    """
+    Load run evaluators from a configuration.
+
+    Args:
+        config: Configuration for the run evaluators.
+
+    Returns:
+        A list of run evaluators.
+    """
+    eval_llm = config.eval_llm or ChatOpenAI(model="gpt-4", temperature=0.0)
+    run_evaluators = []
+    if config.input_key:
+        input_key = config.input_key
+        if run_inputs and input_key not in run_inputs:
+            raise ValueError(f"Input key {input_key} not in run inputs {run_inputs}")
+    elif run_inputs and len(run_inputs) == 1:
+        input_key = run_inputs[0]
+    else:
+        raise ValueError(
+            f"Must specify input key for model with multiple inputs: {run_inputs}"
+        )
+    if config.prediction_key:
+        prediction_key = config.prediction_key
+        if run_outputs and prediction_key not in run_outputs:
+            raise ValueError(
+                f"Prediction key {prediction_key} not in run outputs {run_outputs}"
+            )
+    elif run_outputs and len(run_outputs) == 1:
+        prediction_key = run_outputs[0]
+    else:
+        raise ValueError(
+            f"Must specify prediction key for model"
+            f" with multiple outputs: {run_outputs}"
+        )
+    if config.reference_key:
+        reference_key = config.reference_key
+        if example_outputs and reference_key not in example_outputs:
+            raise ValueError(
+                f"Reference key {reference_key} not in Dataset"
+                f" example outputs: {example_outputs}"
+            )
+    elif example_outputs and len(example_outputs) == 1:
+        reference_key = list(example_outputs)[0]
+    else:
+        reference_key = None
+    for eval_config in config.evaluator_configs:
+        evaluator_ = load_evaluator(
+            eval_config.evaluator_type, llm=eval_llm, **eval_config.get_loader_kwargs()
+        )  # TODO: Pass in kwargs based on config specifically
+
+        if isinstance(evaluator_, StringEvaluator):
+            if evaluator_.requires_reference and reference_key is None:
+                raise ValueError(
+                    f"Must specify reference_key in RunEvaluationConfig to use"
+                    f" evaluator of type {eval_config.evaluator_type} with"
+                    " dataset with multiple output keys."
+                )
+            run_evaluator = StringRunEvaluatorChain.from_data_type(
+                evaluator_,
+                data_type,
+                input_key=input_key,
+                prediction_key=prediction_key,
+                reference_key=reference_key,
+            )
+            run_evaluators.append(run_evaluator)
+        else:
+            raise NotImplementedError(
+                f"Run evaluator for {eval_config.evaluator_type} is not implemented"
+            )
+    return run_evaluators

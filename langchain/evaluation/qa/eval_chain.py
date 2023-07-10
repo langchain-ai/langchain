@@ -63,7 +63,10 @@ class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
 
     @classmethod
     def from_llm(
-        cls, llm: BaseLanguageModel, prompt: PromptTemplate = PROMPT, **kwargs: Any
+        cls,
+        llm: BaseLanguageModel,
+        prompt: Optional[PromptTemplate] = None,
+        **kwargs: Any,
     ) -> QAEvalChain:
         """Load QA Eval Chain from LLM.
 
@@ -80,6 +83,7 @@ class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
         Returns:
             QAEvalChain: the loaded QA eval chain.
         """
+        prompt = prompt or PROMPT
         expected_input_vars = {"query", "answer", "result"}
         if expected_input_vars != set(prompt.input_variables):
             raise ValueError(
@@ -189,7 +193,7 @@ class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
     def from_llm(
         cls,
         llm: BaseLanguageModel,
-        prompt: PromptTemplate = CONTEXT_PROMPT,
+        prompt: Optional[PromptTemplate] = None,
         **kwargs: Any,
     ) -> ContextQAEvalChain:
         """Load QA Eval Chain from LLM.
@@ -207,6 +211,7 @@ class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
         Returns:
             ContextQAEvalChain: the loaded QA eval chain.
         """
+        prompt = prompt or CONTEXT_PROMPT
         cls._validate_input_vars(prompt)
         return cls(llm=llm, prompt=prompt, **kwargs)
 
@@ -271,7 +276,12 @@ class CotQAEvalChain(ContextQAEvalChain):
 
     @classmethod
     def from_llm(
-        cls, llm: BaseLanguageModel, prompt: PromptTemplate = COT_PROMPT, **kwargs: Any
+        cls,
+        llm: BaseLanguageModel,
+        prompt: Optional[PromptTemplate] = None,
+        **kwargs: Any,
     ) -> CotQAEvalChain:
+        """Load QA Eval Chain from LLM."""
+        prompt = prompt or COT_PROMPT
         cls._validate_input_vars(prompt)
         return cls(llm=llm, prompt=prompt, **kwargs)

@@ -5,7 +5,7 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Union
 
 from langsmith import EvaluationResult, RunEvaluator
-from langsmith.schemas import Example, Run
+from langsmith.schemas import DataType, Example, Run
 
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
@@ -341,6 +341,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         result = await self.acall({"run": run, "example": example})
         return result["feedback"]
 
+    # TODO: Delete
     @classmethod
     def from_model_and_evaluator(
         cls,
@@ -354,8 +355,8 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         if isinstance(model, BaseLanguageModel):
             run_mapper: StringRunMapper = LLMStringRunMapper()
         elif isinstance(model, Chain):
-            run_mapper = ChainStringRunMapper.from_chain(
-                model, input_key=input_key, prediction_key=prediction_key
+            run_mapper = ChainStringRunMapper(
+                input_key=input_key, prediction_key=prediction_key
             )
         elif isinstance(model, Tool):
             run_mapper = ToolStringRunMapper()
@@ -370,6 +371,43 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         elif evaluator.requires_reference:
             # We could potentially auto-infer if there is only one string in the
             # example, but it's preferred to raise earlier.
+            raise ValueError(
+                f"Evaluator {evaluator.evaluation_name} requires a reference"
+                " example from the dataset. Please specify the reference key from"
+                " amongst the dataset outputs keys."
+            )
+        else:
+            example_mapper = None
+        return cls(
+            name=evaluator.evaluation_name,
+            run_mapper=run_mapper,
+            example_mapper=example_mapper,
+            string_evaluator=evaluator,
+        )
+
+    @classmethod
+    def from_data_type(
+        cls,
+        evaluator: StringEvaluator,
+        data_type: DataType,
+        input_key: Optional[str] = None,
+        prediction_key: Optional[str] = None,
+        reference_key: Optional[str] = None,
+    ) -> StringRunEvaluatorChain:
+        """Create a StringRunEvaluatorChain from a model and evaluator."""
+        if data_type in (DataType.llm, DataType.chat):
+            run_mapper: StringRunMapper = LLMStringRunMapper()
+        elif data_type == DataType.kv:
+            run_mapper = ChainStringRunMapper(
+                input_key=input_key, prediction_key=prediction_key
+            )
+        else:
+            raise ValueError(
+                f"Invalid data type {data_type}. Expected one of {list(DataType)}."
+            )
+        if reference_key is not None or data_type in (DataType.llm, DataType.chat):
+            example_mapper = StringExampleMapper(reference_key=reference_key)
+        elif evaluator.requires_reference:
             raise ValueError(
                 f"Evaluator {evaluator.evaluation_name} requires a reference"
                 " example from the dataset. Please specify the reference key from"
