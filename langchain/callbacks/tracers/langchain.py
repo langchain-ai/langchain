@@ -31,6 +31,7 @@ def log_error_once(method: str, exception: Exception) -> None:
 
 
 def wait_for_all_tracers() -> None:
+    """Wait for all tracers to finish."""
     global _TRACERS
     for tracer in _TRACERS:
         tracer.wait_for_futures()
@@ -44,6 +45,7 @@ class LangChainTracer(BaseTracer):
         example_id: Optional[Union[UUID, str]] = None,
         project_name: Optional[str] = None,
         client: Optional[LangChainPlusClient] = None,
+        tags: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the LangChain tracer."""
@@ -59,6 +61,7 @@ class LangChainTracer(BaseTracer):
         self.executor = ThreadPoolExecutor(max_workers=1)
         self.client = client or LangChainPlusClient()
         self._futures: Set[Future] = set()
+        self.tags = tags or []
         global _TRACERS
         _TRACERS.append(self)
 
@@ -70,12 +73,15 @@ class LangChainTracer(BaseTracer):
         run_id: UUID,
         tags: Optional[List[str]] = None,
         parent_run_id: Optional[UUID] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Start a trace for an LLM run."""
         parent_run_id_ = str(parent_run_id) if parent_run_id else None
         execution_order = self._get_execution_order(parent_run_id_)
         start_time = datetime.utcnow()
+        if metadata:
+            kwargs.update({"metadata": metadata})
         chat_model_run = Run(
             id=run_id,
             parent_run_id=parent_run_id,
@@ -95,11 +101,16 @@ class LangChainTracer(BaseTracer):
     def _persist_run(self, run: Run) -> None:
         """The Langchain Tracer uses Post/Patch rather than persist."""
 
+    def _get_tags(self, run: Run) -> List[str]:
+        """Get combined tags for a run."""
+        tags = set(run.tags or [])
+        tags.update(self.tags or [])
+        return list(tags)
+
     def _persist_run_single(self, run: Run) -> None:
         """Persist a run."""
-        if run.parent_run_id is None:
-            run.reference_example_id = self.example_id
         run_dict = run.dict(exclude={"child_runs"})
+        run_dict["tags"] = self._get_tags(run)
         extra = run_dict.get("extra", {})
         extra["runtime"] = get_runtime_environment()
         run_dict["extra"] = extra
@@ -113,7 +124,9 @@ class LangChainTracer(BaseTracer):
     def _update_run_single(self, run: Run) -> None:
         """Update a run."""
         try:
-            self.client.update_run(run.id, **run.dict())
+            run_dict = run.dict()
+            run_dict["tags"] = self._get_tags(run)
+            self.client.update_run(run.id, **run_dict)
         except Exception as e:
             # Errors are swallowed by the thread executor so we need to log them here
             log_error_once("patch", e)
@@ -121,12 +134,16 @@ class LangChainTracer(BaseTracer):
 
     def _on_llm_start(self, run: Run) -> None:
         """Persist an LLM run."""
+        if run.parent_run_id is None:
+            run.reference_example_id = self.example_id
         self._futures.add(
             self.executor.submit(self._persist_run_single, run.copy(deep=True))
         )
 
     def _on_chat_model_start(self, run: Run) -> None:
         """Persist an LLM run."""
+        if run.parent_run_id is None:
+            run.reference_example_id = self.example_id
         self._futures.add(
             self.executor.submit(self._persist_run_single, run.copy(deep=True))
         )
@@ -145,6 +162,8 @@ class LangChainTracer(BaseTracer):
 
     def _on_chain_start(self, run: Run) -> None:
         """Process the Chain Run upon start."""
+        if run.parent_run_id is None:
+            run.reference_example_id = self.example_id
         self._futures.add(
             self.executor.submit(self._persist_run_single, run.copy(deep=True))
         )
@@ -163,6 +182,8 @@ class LangChainTracer(BaseTracer):
 
     def _on_tool_start(self, run: Run) -> None:
         """Process the Tool Run upon start."""
+        if run.parent_run_id is None:
+            run.reference_example_id = self.example_id
         self._futures.add(
             self.executor.submit(self._persist_run_single, run.copy(deep=True))
         )
@@ -181,6 +202,8 @@ class LangChainTracer(BaseTracer):
 
     def _on_retriever_start(self, run: Run) -> None:
         """Process the Retriever Run upon start."""
+        if run.parent_run_id is None:
+            run.reference_example_id = self.example_id
         self._futures.add(
             self.executor.submit(self._persist_run_single, run.copy(deep=True))
         )

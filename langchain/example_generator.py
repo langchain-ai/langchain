@@ -1,10 +1,10 @@
 """Utility functions for working with prompts."""
 from typing import List
 
-from langchain.base_language import BaseLanguageModel
 from langchain.chains.llm import LLMChain
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
 
 TEST_GEN_TEMPLATE_SUFFIX = "Add another example."
 
