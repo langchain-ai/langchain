@@ -384,8 +384,6 @@ async def arun_on_examples(
     """
     project_name = _get_project_name(project_name, llm_or_chain_factory, None)
     client_ = client or LangChainPlusClient()
-    client_.create_project(project_name)
-
     results: Dict[str, List[Any]] = {}
 
     async def process_example(
@@ -584,7 +582,6 @@ def run_on_examples(
     results: Dict[str, Any] = {}
     project_name = _get_project_name(project_name, llm_or_chain_factory, None)
     client_ = client or LangChainPlusClient()
-    client_.create_project(project_name)
     tracer = LangChainTracer(project_name=project_name)
     evaluator_project_name = f"{project_name}-evaluators"
     evalution_handler = EvaluatorCallbackHandler(
