@@ -123,6 +123,7 @@ from langchain.document_loaders.text import TextLoader
 from langchain.document_loaders.tomarkdown import ToMarkdownLoader
 from langchain.document_loaders.toml import TomlLoader
 from langchain.document_loaders.trello import TrelloLoader
+from langchain.document_loaders.tsv import UnstructuredTSVLoader
 from langchain.document_loaders.twitter import TwitterTweetLoader
 from langchain.document_loaders.unstructured import (
     UnstructuredAPIFileIOLoader,
@@ -280,6 +281,7 @@ __all__ = [
     "UnstructuredPowerPointLoader",
     "UnstructuredRSTLoader",
     "UnstructuredRTFLoader",
+    "UnstructuredTSVLoader",
     "UnstructuredURLLoader",
     "UnstructuredWordDocumentLoader",
     "UnstructuredXMLLoader",

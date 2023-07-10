@@ -5,13 +5,13 @@ from typing import Any, Optional
 
 from pydantic import Extra, Field
 
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.comparison.prompt import PROMPT, PROMPT_WITH_REFERENCE
 from langchain.evaluation.schema import LLMEvalChain, PairwiseStringEvaluator
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseOutputParser
+from langchain.schema.language_model import BaseLanguageModel
 
 
 class PairwiseStringResultOutputParser(BaseOutputParser[dict]):
@@ -52,7 +52,8 @@ class PairwiseStringResultOutputParser(BaseOutputParser[dict]):
 
 
 class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
-    """A chain for comparing the output of two models.
+    """A chain for comparing two outputs, such as the outputs
+     of two models, prompts, or outputs of a single model on similar inputs.
 
     Example:
     >>> from langchain.chat_models import ChatOpenAI

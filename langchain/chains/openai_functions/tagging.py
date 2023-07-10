@@ -1,6 +1,5 @@
 from typing import Any
 
-from langchain.base_language import BaseLanguageModel
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.openai_functions.utils import _convert_schema, get_llm_kwargs
@@ -9,6 +8,7 @@ from langchain.output_parsers.openai_functions import (
     PydanticOutputFunctionsParser,
 )
 from langchain.prompts import ChatPromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
 
 
 def _get_tagging_function(schema: dict) -> dict:

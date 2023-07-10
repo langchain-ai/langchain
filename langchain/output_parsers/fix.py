@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import TypeVar
 
-from langchain.base_language import BaseLanguageModel
 from langchain.chains.llm import LLMChain
 from langchain.output_parsers.prompts import NAIVE_FIX_PROMPT
 from langchain.schema import BaseOutputParser, BasePromptTemplate, OutputParserException
+from langchain.schema.language_model import BaseLanguageModel
 
 T = TypeVar("T")
 

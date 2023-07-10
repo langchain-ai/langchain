@@ -4,7 +4,6 @@ from langchainplus_sdk.evaluation import EvaluationResult
 from langchainplus_sdk.schemas import Example, Run, RunTypeEnum
 from pydantic import BaseModel, Field
 
-from langchain.base_language import BaseLanguageModel
 from langchain.chat_models.base import BaseChatModel
 from langchain.evaluation.agents.trajectory_eval_chain import (
     TrajectoryEvalChain,
@@ -14,7 +13,6 @@ from langchain.evaluation.criteria.eval_chain import (
     CriteriaEvalChain,
     CriteriaResultOutputParser,
 )
-from langchain.evaluation.criteria.prompt import PROMPT as CRITERIA_PROMPT
 from langchain.evaluation.qa.eval_chain import QAEvalChain
 from langchain.evaluation.qa.eval_prompt import PROMPT as QA_DEFAULT_PROMPT
 from langchain.evaluation.qa.eval_prompt import SQL_PROMPT
@@ -25,6 +23,7 @@ from langchain.evaluation.run_evaluators.base import (
 )
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BasePromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 
 _QA_PROMPTS = {
@@ -152,8 +151,9 @@ def get_criteria_evaluator(
     *,
     input_key: str = "input",
     prediction_key: str = "output",
-    prompt: BasePromptTemplate = CRITERIA_PROMPT,
+    prompt: Optional[BasePromptTemplate] = None,
     evaluation_name: Optional[str] = None,
+    requires_reference: bool = False,
     **kwargs: Any,
 ) -> RunEvaluatorChain:
     """Get an eval chain for grading a model's response against a map of criteria."""
@@ -174,7 +174,11 @@ def get_criteria_evaluator(
     )
     tags = kwargs.pop("tags", [])
     eval_chain = CriteriaEvalChain.from_llm(
-        llm=llm, criteria=criteria_, prompt=prompt, **kwargs
+        llm=llm,
+        criteria=criteria_,
+        prompt=prompt,
+        requires_reference=requires_reference,
+        **kwargs,
     )
     return RunEvaluatorChain(
         eval_chain=eval_chain,
