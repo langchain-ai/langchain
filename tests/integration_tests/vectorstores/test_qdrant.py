@@ -1,6 +1,7 @@
 """Test Qdrant functionality."""
 import tempfile
 from typing import Callable, Optional
+import numpy as np
 
 import pytest
 from qdrant_client.http import models as rest
@@ -512,4 +513,27 @@ def test_qdrant_add_texts_stores_embeddings_as_named_vectors(vector_name: str) -
     assert all(
         vector_name in point.vector  # type: ignore[operator]
         for point in client.scroll(collection_name, with_vectors=True)[0]
+    )
+
+
+@pytest.mark.parametrize("batch_size", [1, 64])
+@pytest.mark.parametrize("content_payload_key", [Qdrant.CONTENT_KEY, "foo"])
+@pytest.mark.parametrize("metadata_payload_key", [Qdrant.METADATA_KEY, "bar"])
+def test_qdrant_similarity_search_with_relevance_scores(
+    batch_size: int, content_payload_key: str, metadata_payload_key: str
+) -> None:
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = Qdrant.from_texts(
+        texts,
+        ConsistentFakeEmbeddings(),
+        location=":memory:",
+        content_payload_key=content_payload_key,
+        metadata_payload_key=metadata_payload_key,
+        batch_size=batch_size,
+    )
+    output = docsearch.similarity_search_with_relevance_scores("foo", k=3)
+
+    assert all(
+        (1 >= score or np.isclose(score, 1)) and score >= 0 for _, score in output
     )
