@@ -427,6 +427,10 @@ class Milvus(VectorStore):
         if not isinstance(self.col, Collection):
             self._init(embeddings, metadatas)
 
+        # If the partition name has been provided, do create the partition
+        if "partition_name" in kwargs:
+           self.col.create_partition(kwargs.get("partition_name"))
+
         # Dict to hold all insert columns
         insert_dict: dict[str, list] = {
             self._text_field: texts,
