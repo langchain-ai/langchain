@@ -21,6 +21,10 @@ class RunEvaluatorInputMapper:
     def map(self, run: Run, example: Optional[Example] = None) -> Dict[str, Any]:
         """Maps the Run and Optional[Example] to a dictionary"""
 
+    def __call__(self, run: Run, example: Optional[Example] = None) -> Any:
+        """Maps the Run and Optional[Example] to a dictionary"""
+        return self.map(run, example)
+
 
 class RunEvaluatorOutputParser(BaseOutputParser[EvaluationResult]):
     """Parse the output of a run."""
@@ -73,7 +77,7 @@ class RunEvaluatorChain(Chain, RunEvaluator):
     async def _acall(
         self,
         inputs: Dict[str, Any],
-        run_manager: AsyncCallbackManagerForChainRun | None = None,
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         run: Run = inputs["run"]
         example: Optional[Example] = inputs.get("example")

@@ -1,4 +1,4 @@
-"""Loader that loads GitBook."""
+"""Loads GitBook."""
 from typing import Any, List, Optional
 from urllib.parse import urljoin, urlparse
 
@@ -28,7 +28,9 @@ class GitbookLoader(WebBaseLoader):
             load_all_paths: If set to True, all relative paths in the navbar
                 are loaded instead of only `web_page`.
             base_url: If `load_all_paths` is True, the relative paths are
-                appended to this base url. Defaults to `web_page` if not set.
+                appended to this base url. Defaults to `web_page`.
+            content_selector: The CSS selector for the content to load.
+                Defaults to "main".
         """
         self.base_url = base_url or web_page
         if self.base_url.endswith("/"):
@@ -47,17 +49,18 @@ class GitbookLoader(WebBaseLoader):
         if self.load_all_paths:
             soup_info = self.scrape()
             relative_paths = self._get_paths(soup_info)
-            documents = []
-            for path in relative_paths:
-                url = urljoin(self.base_url, path)
-                print(f"Fetching text from {url}")
-                soup_info = self._scrape(url)
-                documents.append(self._get_document(soup_info, url))
-            return [d for d in documents if d]
+            urls = [urljoin(self.base_url, path) for path in relative_paths]
+            soup_infos = self.scrape_all(urls)
+            _documents = [
+                self._get_document(soup_info, url)
+                for soup_info, url in zip(soup_infos, urls)
+            ]
         else:
             soup_info = self.scrape()
-            documents = [self._get_document(soup_info, self.web_path)]
-            return [d for d in documents if d]
+            _documents = [self._get_document(soup_info, self.web_path)]
+        documents = [d for d in _documents if d]
+
+        return documents
 
     def _get_document(
         self, soup: Any, custom_url: Optional[str] = None

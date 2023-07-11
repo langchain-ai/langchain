@@ -20,6 +20,7 @@ from langchain.utils import get_from_dict_or_env
 
 
 def import_mlflow() -> Any:
+    """Import the mlflow python package and raise an error if it is not installed."""
     try:
         import mlflow
     except ImportError:
@@ -117,7 +118,7 @@ class MlflowLogger:
     Parameters:
         name (str): Name of the run.
         experiment (str): Name of the experiment.
-        tags (str): Tags to be attached for the run.
+        tags (dict): Tags to be attached for the run.
         tracking_uri (str): MLflow tracking server uri.
 
     This handler implements the helper functions to initialize,
@@ -222,7 +223,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
     Parameters:
         name (str): Name of the run.
         experiment (str): Name of the experiment.
-        tags (str): Tags to be attached for the run.
+        tags (dict): Tags to be attached for the run.
         tracking_uri (str): MLflow tracking server uri.
 
     This handler will utilize the associated callback method called and formats
@@ -550,8 +551,18 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         on_llm_start_records_df = pd.DataFrame(self.records["on_llm_start_records"])
         on_llm_end_records_df = pd.DataFrame(self.records["on_llm_end_records"])
 
+        llm_input_columns = ["step", "prompt"]
+        if "name" in on_llm_start_records_df.columns:
+            llm_input_columns.append("name")
+        elif "id" in on_llm_start_records_df.columns:
+            # id is llm class's full import path. For example:
+            # ["langchain", "llms", "openai", "AzureOpenAI"]
+            on_llm_start_records_df["name"] = on_llm_start_records_df["id"].apply(
+                lambda id_: id_[-1]
+            )
+            llm_input_columns.append("name")
         llm_input_prompts_df = (
-            on_llm_start_records_df[["step", "prompt", "name"]]
+            on_llm_start_records_df[llm_input_columns]
             .dropna(axis=1)
             .rename({"step": "prompt_step"}, axis=1)
         )

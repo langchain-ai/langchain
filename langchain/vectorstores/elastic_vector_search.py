@@ -157,6 +157,7 @@ class ElasticVectorSearch(VectorStore, ABC):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
         refresh_indices: bool = True,
         **kwargs: Any,
     ) -> List[str]:
@@ -165,6 +166,7 @@ class ElasticVectorSearch(VectorStore, ABC):
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of unique IDs.
             refresh_indices: bool to refresh ElasticSearch indices
 
         Returns:
@@ -179,7 +181,7 @@ class ElasticVectorSearch(VectorStore, ABC):
                 "Please install it with `pip install elasticsearch`."
             )
         requests = []
-        ids = []
+        ids = ids or [str(uuid.uuid4()) for _ in texts]
         embeddings = self.embedding.embed_documents(list(texts))
         dim = len(embeddings[0])
         mapping = _default_text_mapping(dim)
@@ -194,16 +196,14 @@ class ElasticVectorSearch(VectorStore, ABC):
 
         for i, text in enumerate(texts):
             metadata = metadatas[i] if metadatas else {}
-            _id = str(uuid.uuid4())
             request = {
                 "_op_type": "index",
                 "_index": self.index_name,
                 "vector": embeddings[i],
                 "text": text,
                 "metadata": metadata,
-                "_id": _id,
+                "_id": ids[i],
             }
-            ids.append(_id)
             requests.append(request)
         bulk(self.client, requests)
 
@@ -261,6 +261,7 @@ class ElasticVectorSearch(VectorStore, ABC):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
         elasticsearch_url: Optional[str] = None,
         index_name: Optional[str] = None,
         refresh_indices: bool = True,
@@ -293,7 +294,7 @@ class ElasticVectorSearch(VectorStore, ABC):
         index_name = index_name or uuid.uuid4().hex
         vectorsearch = cls(elasticsearch_url, index_name, embedding, **kwargs)
         vectorsearch.add_texts(
-            texts, metadatas=metadatas, refresh_indices=refresh_indices
+            texts, metadatas=metadatas, ids=ids, refresh_indices=refresh_indices
         )
         return vectorsearch
 
@@ -317,6 +318,20 @@ class ElasticVectorSearch(VectorStore, ABC):
                 index=index_name, body={"query": script_query, "size": size}
             )
         return response
+
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> None:
+        """Delete by vector IDs.
+
+        Args:
+            ids: List of ids to delete.
+        """
+
+        if ids is None:
+            raise ValueError("No ids provided to delete.")
+
+        # TODO: Check if this can be done in bulk
+        for id in ids:
+            self.client.delete(index=self.index_name, id=id)
 
 
 class ElasticKnnSearch(ElasticVectorSearch):

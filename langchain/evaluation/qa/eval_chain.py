@@ -1,16 +1,65 @@
 """LLM Chain specifically for evaluating question answering."""
 from __future__ import annotations
 
-from typing import Any, List, Sequence
+from typing import Any, List, Optional, Sequence
+
+from pydantic import Extra
 
 from langchain import PromptTemplate
-from langchain.base_language import BaseLanguageModel
+from langchain.callbacks.manager import Callbacks
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.qa.eval_prompt import CONTEXT_PROMPT, COT_PROMPT, PROMPT
+from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
+from langchain.schema.language_model import BaseLanguageModel
 
 
-class QAEvalChain(LLMChain):
+def _parse_string_eval_output(text: str) -> dict:
+    """Parse the output text.
+
+    Args:
+        text (str): The output text to parse.
+
+    Returns:
+        Any: The parsed output.
+    """
+    splits = text.strip().rsplit("\n", maxsplit=1)
+    if len(splits) == 1:
+        verdict = splits[0]
+        reasoning = None
+    else:
+        reasoning, verdict = splits
+        reasoning = reasoning.strip()
+    score = (
+        1
+        if verdict.upper() == "CORRECT"
+        else (0 if verdict.upper() == "INCORRECT" else None)
+    )
+    return {
+        "reasoning": reasoning,
+        "value": verdict,
+        "score": score,
+    }
+
+
+class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
     """LLM Chain specifically for evaluating question answering."""
+
+    class Config:
+        """Configuration for the QAEvalChain."""
+
+        extra = Extra.ignore
+
+    @property
+    def evaluation_name(self) -> str:
+        return "correctness"
+
+    @property
+    def requires_reference(self) -> bool:
+        return True
+
+    @property
+    def requires_input(self) -> bool:
+        return True
 
     @classmethod
     def from_llm(
@@ -46,6 +95,8 @@ class QAEvalChain(LLMChain):
         question_key: str = "query",
         answer_key: str = "answer",
         prediction_key: str = "result",
+        *,
+        callbacks: Callbacks = None,
     ) -> List[dict]:
         """Evaluate question answering examples and predictions."""
         inputs = [
@@ -57,11 +108,69 @@ class QAEvalChain(LLMChain):
             for i, example in enumerate(examples)
         ]
 
-        return self.apply(inputs)
+        return self.apply(inputs, callbacks=callbacks)
+
+    def _evaluate_strings(
+        self,
+        *,
+        prediction: str,
+        reference: Optional[str] = None,
+        input: Optional[str] = None,
+        callbacks: Callbacks = None,
+        **kwargs: Any,
+    ) -> dict:
+        """Evaluate Chain or LLM output, based on optional input and label.
+
+        Args:
+            prediction (str): the LLM or chain prediction to evaluate.
+            reference (Optional[str], optional): the reference label
+                to evaluate against.
+            input (Optional[str], optional): the input to consider during evaluation
+            callbacks (Callbacks, optional): the callbacks to use for tracing.
+            **kwargs: additional keyword arguments, including callbacks, tags, etc.
+        Returns:
+            dict: The evaluation results containing the score or value.
+        """
+        result = self.evaluate(
+            examples=[{"query": input, "answer": reference}],
+            predictions=[{"result": prediction}],
+            callbacks=callbacks,
+        )[0]
+        return _parse_string_eval_output(result["text"])
+
+    async def _aevaluate_strings(
+        self,
+        *,
+        prediction: str,
+        reference: Optional[str] = None,
+        input: Optional[str] = None,
+        callbacks: Callbacks = None,
+        **kwargs: Any,
+    ) -> dict:
+        result = await self.acall(
+            inputs={"query": input, "answer": reference, "result": prediction},
+            callbacks=callbacks,
+        )
+        return _parse_string_eval_output(result["text"])
 
 
-class ContextQAEvalChain(LLMChain):
+class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
     """LLM Chain specifically for evaluating QA w/o GT based on context"""
+
+    @property
+    def requires_reference(self) -> bool:
+        """Whether the chain requires a reference string."""
+        return True
+
+    @property
+    def requires_input(self) -> bool:
+        """Whether the chain requires an input string."""
+        return True
+
+    class Config:
+        """Configuration for the QAEvalChain."""
+
+        extra = Extra.ignore
 
     @classmethod
     def _validate_input_vars(cls, prompt: PromptTemplate) -> None:
@@ -71,6 +180,10 @@ class ContextQAEvalChain(LLMChain):
                 f"Input variables should be {expected_input_vars}, "
                 f"but got {prompt.input_variables}"
             )
+
+    @property
+    def evaluation_name(self) -> str:
+        return "Contextual Accuracy"
 
     @classmethod
     def from_llm(
@@ -104,6 +217,8 @@ class ContextQAEvalChain(LLMChain):
         question_key: str = "query",
         context_key: str = "context",
         prediction_key: str = "result",
+        *,
+        callbacks: Callbacks = None,
     ) -> List[dict]:
         """Evaluate question answering examples and predictions."""
         inputs = [
@@ -115,11 +230,44 @@ class ContextQAEvalChain(LLMChain):
             for i, example in enumerate(examples)
         ]
 
-        return self.apply(inputs)
+        return self.apply(inputs, callbacks=callbacks)
+
+    def _evaluate_strings(
+        self,
+        *,
+        prediction: str,
+        reference: Optional[str] = None,
+        input: Optional[str] = None,
+        **kwargs: Any,
+    ) -> dict:
+        result = self.evaluate(
+            examples=[{"query": input, "context": reference}],
+            predictions=[{"result": prediction}],
+            callbacks=kwargs.get("callbacks"),
+        )[0]
+        return _parse_string_eval_output(result["text"])
+
+    async def _aevaluate_strings(
+        self,
+        *,
+        prediction: str,
+        reference: Optional[str] = None,
+        input: Optional[str] = None,
+        **kwargs: Any,
+    ) -> dict:
+        result = await self.acall(
+            inputs={"query": input, "context": reference, "result": prediction},
+            callbacks=kwargs.get("callbacks"),
+        )
+        return _parse_string_eval_output(result["text"])
 
 
 class CotQAEvalChain(ContextQAEvalChain):
     """LLM Chain specifically for evaluating QA using chain of thought reasoning."""
+
+    @property
+    def evaluation_name(self) -> str:
+        return "COT Contextual Accuracy"
 
     @classmethod
     def from_llm(

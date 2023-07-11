@@ -3,7 +3,17 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+)
 
 import numpy as np
 
@@ -16,6 +26,7 @@ from langchain.vectorstores.utils import maximal_marginal_relevance
 if TYPE_CHECKING:
     import chromadb
     import chromadb.config
+    from chromadb.api.types import ID, OneOrMany, Where, WhereDocument
 
 logger = logging.getLogger()
 DEFAULT_K = 4  # Number of Documents to return.
@@ -63,6 +74,7 @@ class Chroma(VectorStore):
         client_settings: Optional[chromadb.config.Settings] = None,
         collection_metadata: Optional[Dict] = None,
         client: Optional[chromadb.Client] = None,
+        relevance_score_fn: Optional[Callable[[float], float]] = None,
     ) -> None:
         """Initialize with Chroma client."""
         try:
@@ -89,7 +101,9 @@ class Chroma(VectorStore):
             self._client = chromadb.Client(self._client_settings)
 
         self._embedding_function = embedding_function
-        self._persist_directory = persist_directory
+        self._persist_directory = (
+            self._client_settings.persist_directory or persist_directory
+        )
         self._collection = self._client.get_or_create_collection(
             name=collection_name,
             embedding_function=self._embedding_function.embed_documents
@@ -97,6 +111,7 @@ class Chroma(VectorStore):
             else None,
             metadata=collection_metadata,
         )
+        self.override_relevance_score_fn = relevance_score_fn
 
     @xor_args(("query_texts", "query_embeddings"))
     def __query_collection(
@@ -109,29 +124,18 @@ class Chroma(VectorStore):
     ) -> List[Document]:
         """Query the chroma collection."""
         try:
-            import chromadb
+            import chromadb  # noqa: F401
         except ImportError:
             raise ValueError(
                 "Could not import chromadb python package. "
                 "Please install it with `pip install chromadb`."
             )
-
-        for i in range(n_results, 0, -1):
-            try:
-                return self._collection.query(
-                    query_texts=query_texts,
-                    query_embeddings=query_embeddings,
-                    n_results=i,
-                    where=where,
-                    **kwargs,
-                )
-            except chromadb.errors.NotEnoughElementsException:
-                logger.error(
-                    f"Chroma collection {self._collection.name} "
-                    f"contains fewer than {i} elements."
-                )
-        raise chromadb.errors.NotEnoughElementsException(
-            f"No documents found for Chroma collection {self._collection.name}"
+        return self._collection.query(
+            query_texts=query_texts,
+            query_embeddings=query_embeddings,
+            n_results=n_results,
+            where=where,
+            **kwargs,
         )
 
     def add_texts(
@@ -157,7 +161,7 @@ class Chroma(VectorStore):
         embeddings = None
         if self._embedding_function is not None:
             embeddings = self._embedding_function.embed_documents(list(texts))
-        self._collection.add(
+        self._collection.upsert(
             metadatas=metadatas, embeddings=embeddings, documents=texts, ids=ids
         )
         return ids
@@ -191,7 +195,7 @@ class Chroma(VectorStore):
     ) -> List[Document]:
         """Return docs most similar to embedding vector.
         Args:
-            embedding (str): Embedding to look up documents similar to.
+            embedding (List[float]): Embedding to look up documents similar to.
             k (int): Number of Documents to return. Defaults to 4.
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
         Returns:
@@ -201,6 +205,31 @@ class Chroma(VectorStore):
             query_embeddings=embedding, n_results=k, where=filter
         )
         return _results_to_docs(results)
+
+    def similarity_search_by_vector_with_relevance_scores(
+        self,
+        embedding: List[float],
+        k: int = DEFAULT_K,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """
+        Return docs most similar to embedding vector and similarity score.
+
+        Args:
+            embedding (List[float]): Embedding to look up documents similar to.
+            k (int): Number of Documents to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+
+        Returns:
+            List[Tuple[Document, float]]: List of documents most similar to
+            the query text and cosine distance in float for each.
+            Lower score represents more similarity.
+        """
+        results = self.__query_collection(
+            query_embeddings=embedding, n_results=k, where=filter
+        )
+        return _results_to_docs_and_scores(results)
 
     def similarity_search_with_score(
         self,
@@ -233,13 +262,37 @@ class Chroma(VectorStore):
 
         return _results_to_docs_and_scores(results)
 
-    def _similarity_search_with_relevance_scores(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
-        return self.similarity_search_with_score(query, k)
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        """
+        The 'correct' relevance function
+        may differ depending on a few things, including:
+        - the distance / similarity metric used by the VectorStore
+        - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
+        - embedding dimensionality
+        - etc.
+        """
+        if self.override_relevance_score_fn:
+            return self.override_relevance_score_fn
+
+        distance = "l2"
+        distance_key = "hnsw:space"
+        metadata = self._collection.metadata
+
+        if metadata and distance_key in metadata:
+            distance = metadata[distance_key]
+
+        if distance == "cosine":
+            return self._cosine_relevance_score_fn
+        elif distance == "l2":
+            return self._euclidean_relevance_score_fn
+        elif distance == "ip":
+            return self._max_inner_product_relevance_score_fn
+        else:
+            raise ValueError(
+                "No supported normalization function"
+                f" for distance metric of type: {distance}."
+                "Consider providing relevance_score_fn to Chroma constructor."
+            )
 
     def max_marginal_relevance_search_by_vector(
         self,
@@ -319,7 +372,7 @@ class Chroma(VectorStore):
 
         embedding = self._embedding_function.embed_query(query)
         docs = self.max_marginal_relevance_search_by_vector(
-            embedding, k, fetch_k, lambda_mul=lambda_mult, filter=filter
+            embedding, k, fetch_k, lambda_mult=lambda_mult, filter=filter
         )
         return docs
 
@@ -327,17 +380,43 @@ class Chroma(VectorStore):
         """Delete the collection."""
         self._client.delete_collection(self._collection.name)
 
-    def get(self, include: Optional[List[str]] = None) -> Dict[str, Any]:
+    def get(
+        self,
+        ids: Optional[OneOrMany[ID]] = None,
+        where: Optional[Where] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        where_document: Optional[WhereDocument] = None,
+        include: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
         """Gets the collection.
 
         Args:
-            include (Optional[List[str]]): List of fields to include from db.
-                Defaults to None.
+            ids: The ids of the embeddings to get. Optional.
+            where: A Where type dict used to filter results by.
+                   E.g. `{"color" : "red", "price": 4.20}`. Optional.
+            limit: The number of documents to return. Optional.
+            offset: The offset to start returning results from.
+                    Useful for paging results with limit. Optional.
+            where_document: A WhereDocument type dict used to filter by the documents.
+                            E.g. `{$contains: {"text": "hello"}}`. Optional.
+            include: A list of what to include in the results.
+                     Can contain `"embeddings"`, `"metadatas"`, `"documents"`.
+                     Ids are always included.
+                     Defaults to `["metadatas", "documents"]`. Optional.
         """
+        kwargs = {
+            "ids": ids,
+            "where": where,
+            "limit": limit,
+            "offset": offset,
+            "where_document": where_document,
+        }
+
         if include is not None:
-            return self._collection.get(include=include)
-        else:
-            return self._collection.get()
+            kwargs["include"] = include
+
+        return self._collection.get(**kwargs)
 
     def persist(self) -> None:
         """Persist the collection.
@@ -385,6 +464,7 @@ class Chroma(VectorStore):
         persist_directory: Optional[str] = None,
         client_settings: Optional[chromadb.config.Settings] = None,
         client: Optional[chromadb.Client] = None,
+        collection_metadata: Optional[Dict] = None,
         **kwargs: Any,
     ) -> Chroma:
         """Create a Chroma vectorstore from a raw documents.
@@ -400,6 +480,8 @@ class Chroma(VectorStore):
             metadatas (Optional[List[dict]]): List of metadatas. Defaults to None.
             ids (Optional[List[str]]): List of document IDs. Defaults to None.
             client_settings (Optional[chromadb.config.Settings]): Chroma client settings
+            collection_metadata (Optional[Dict]): Collection configurations.
+                                                  Defaults to None.
 
         Returns:
             Chroma: Chroma vectorstore.
@@ -410,6 +492,8 @@ class Chroma(VectorStore):
             persist_directory=persist_directory,
             client_settings=client_settings,
             client=client,
+            collection_metadata=collection_metadata,
+            **kwargs,
         )
         chroma_collection.add_texts(texts=texts, metadatas=metadatas, ids=ids)
         return chroma_collection
@@ -424,6 +508,7 @@ class Chroma(VectorStore):
         persist_directory: Optional[str] = None,
         client_settings: Optional[chromadb.config.Settings] = None,
         client: Optional[chromadb.Client] = None,  # Add this line
+        collection_metadata: Optional[Dict] = None,
         **kwargs: Any,
     ) -> Chroma:
         """Create a Chroma vectorstore from a list of documents.
@@ -438,6 +523,9 @@ class Chroma(VectorStore):
             documents (List[Document]): List of documents to add to the vectorstore.
             embedding (Optional[Embeddings]): Embedding function. Defaults to None.
             client_settings (Optional[chromadb.config.Settings]): Chroma client settings
+            collection_metadata (Optional[Dict]): Collection configurations.
+                                                  Defaults to None.
+
         Returns:
             Chroma: Chroma vectorstore.
         """
@@ -452,4 +540,14 @@ class Chroma(VectorStore):
             persist_directory=persist_directory,
             client_settings=client_settings,
             client=client,
+            collection_metadata=collection_metadata,
+            **kwargs,
         )
+
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> None:
+        """Delete by vector IDs.
+
+        Args:
+            ids: List of ids to delete.
+        """
+        self._collection.delete(ids=ids)
