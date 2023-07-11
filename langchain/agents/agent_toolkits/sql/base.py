@@ -19,8 +19,11 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
 )
+from langchain.schema import BaseMemory, BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import AIMessage, SystemMessage
+
+_SQL_OPEN_AI_FUNCTION_MEMORY_EXAMPLE = "https://python.langchain.com/docs/modules/agents/how_to/add_memory_openai_functions"
 
 
 def create_sql_agent(
@@ -31,13 +34,14 @@ def create_sql_agent(
     prefix: str = SQL_PREFIX,
     suffix: Optional[str] = None,
     format_instructions: str = FORMAT_INSTRUCTIONS,
-    input_variables: Optional[List[str]] = None,
+    input_variables: Optional[List[str]] = ["input", "agent_scratchpad"],
     top_k: int = 10,
     max_iterations: Optional[int] = 15,
     max_execution_time: Optional[float] = None,
     early_stopping_method: str = "force",
     verbose: bool = False,
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
+    memory: Optional[BaseMemory] = None,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Construct a sql agent from an LLM and tools."""
@@ -56,6 +60,7 @@ def create_sql_agent(
         llm_chain = LLMChain(
             llm=llm,
             prompt=prompt,
+            memory=memory,
             callback_manager=callback_manager,
         )
         tool_names = [tool.name for tool in tools]
@@ -68,7 +73,10 @@ def create_sql_agent(
             AIMessage(content=suffix or SQL_FUNCTIONS_SUFFIX),
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ]
-        input_variables = ["input", "agent_scratchpad"]
+        if memory:
+            raise ValueError(
+                f"To use memory with OpenAIFunctionsAgent please refer to following example: {_SQL_OPEN_AI_FUNCTION_MEMORY_EXAMPLE}"
+            )
         _prompt = ChatPromptTemplate(input_variables=input_variables, messages=messages)
 
         agent = OpenAIFunctionsAgent(
@@ -84,6 +92,7 @@ def create_sql_agent(
     return AgentExecutor.from_agent_and_tools(
         agent=agent,
         tools=tools,
+        memory=memory,
         callback_manager=callback_manager,
         verbose=verbose,
         max_iterations=max_iterations,
