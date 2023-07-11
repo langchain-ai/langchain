@@ -4,7 +4,7 @@ from __future__ import annotations
 import enum
 import logging
 import uuid
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
 
 import sqlalchemy
 from sqlalchemy.dialects.postgresql import JSON, UUID
@@ -121,6 +121,7 @@ class PGVector(VectorStore):
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         pre_delete_collection: bool = False,
         logger: Optional[logging.Logger] = None,
+        relevance_score_fn: Optional[Callable[[float], float]] = None,
     ) -> None:
         self.connection_string = connection_string
         self.embedding_function = embedding_function
@@ -129,6 +130,7 @@ class PGVector(VectorStore):
         self._distance_strategy = distance_strategy
         self.pre_delete_collection = pre_delete_collection
         self.logger = logger or logging.getLogger(__name__)
+        self.override_relevance_score_fn = relevance_score_fn
         self.__post_init__()
 
     def __post_init__(
@@ -201,6 +203,11 @@ class PGVector(VectorStore):
         pre_delete_collection: bool = False,
         **kwargs: Any,
     ) -> PGVector:
+        if ids is None:
+            ids = [str(uuid.uuid1()) for _ in texts]
+
+        if not metadatas:
+            metadatas = [{} for _ in texts]
         connection_string = cls.get_connection_string(kwargs)
 
         store = cls(
@@ -209,6 +216,7 @@ class PGVector(VectorStore):
             embedding_function=embedding,
             distance_strategy=distance_strategy,
             pre_delete_collection=pre_delete_collection,
+            **kwargs,
         )
 
         store.add_embeddings(
@@ -590,3 +598,30 @@ class PGVector(VectorStore):
     ) -> str:
         """Return connection string from database parameters."""
         return f"postgresql+{driver}://{user}:{password}@{host}:{port}/{database}"
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        """
+        The 'correct' relevance function
+        may differ depending on a few things, including:
+        - the distance / similarity metric used by the VectorStore
+        - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
+        - embedding dimensionality
+        - etc.
+        """
+        if self.override_relevance_score_fn is not None:
+            return self.override_relevance_score_fn
+
+        # Default strategy is to rely on distance strategy provided
+        # in vectorstore constructor
+        if self.distance_strategy == DistanceStrategy.COSINE:
+            return self._cosine_relevance_score_fn
+        elif self.distance_strategy == DistanceStrategy.EUCLIDEAN:
+            return self._euclidean_relevance_score_fn
+        elif self.distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
+            return self._max_inner_product_relevance_score_fn
+        else:
+            raise ValueError(
+                "No supported normalization function"
+                f" for distance_strategy of {self.distance_strategy}."
+                "Consider providing relevance_score_fn to PGVector constructor."
+            )
