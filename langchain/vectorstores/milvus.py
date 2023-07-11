@@ -429,7 +429,9 @@ class Milvus(VectorStore):
 
         # If the partition name has been provided, do create the partition
         if "partition_name" in kwargs:
-           self.col.create_partition(kwargs.get("partition_name"))
+            partition_name = kwargs.get("partition_name")
+            if not self.col.has_partition(partition_name):
+               self.col.create_partition(partition_name)
 
         # Dict to hold all insert columns
         insert_dict: dict[str, list] = {
