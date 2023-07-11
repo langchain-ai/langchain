@@ -15,7 +15,6 @@ from langchain.schema import BaseMemory, BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.sql_database import SQLDatabase
 from langchain.tools.sql_database.prompt import QUERY_CHECKER
-from tests.unit_tests.llms.fake_llm import FakeLLM
 
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 
@@ -118,10 +117,6 @@ class SQLDatabaseChain(Chain):
                 callbacks=_run_manager.get_child(),
                 **llm_inputs,
             ).strip()
-            if isinstance(
-                self.llm_chain.llm, FakeLLM
-            ):  # Running a FakeRun on DatabaseChain.
-                return {self.output_key: sql_cmd}
             if not self.use_query_checker:
                 _run_manager.on_text(sql_cmd, color="green", verbose=self.verbose)
                 intermediate_steps.append(
@@ -289,10 +284,6 @@ class SQLDatabaseSequentialChain(Chain):
             self.sql_chain.input_key: inputs[self.input_key],
             "table_names_to_use": table_names_to_use,
         }
-        if isinstance(
-            self.decider_chain.llm, FakeLLM
-        ):  # Running a FakeRun on DatabaseChain.
-            return {self.output_key: "Final Answer: baz"}
         return self.sql_chain(
             new_inputs, callbacks=_run_manager.get_child(), return_only_outputs=True
         )
