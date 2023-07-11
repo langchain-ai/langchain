@@ -112,12 +112,6 @@ class SQLDatabaseChain(Chain):
             "table_info": table_info,
             "stop": ["\nSQLResult:"],
         }
-        if self.llm_chain.memory:
-            llm_inputs[
-                self.llm_chain.memory.memory_key
-            ] = self.llm_chain.memory.load_memory_variables(inputs).get(
-                self.llm_chain.memory.memory_key, ""
-            )
         intermediate_steps: List = []
         try:
             intermediate_steps.append(llm_inputs)  # input: sql generation
@@ -281,12 +275,6 @@ class SQLDatabaseSequentialChain(Chain):
         _table_names = self.sql_chain.database.get_usable_table_names()
         table_names = ", ".join(_table_names)
         llm_inputs = {"input": inputs[self.input_key], "table_names": table_names}
-        if self.decider_chain.memory:
-            llm_inputs[
-                self.decider_chain.memory.memory_key
-            ] = self.decider_chain.memory.load_memory_variables(inputs).get(
-                self.decider_chain.memory.memory_key, ""
-            )
         _lowercased_table_names = [name.lower() for name in _table_names]
         table_names_from_chain = self.decider_chain.predict_and_parse(**llm_inputs)
         table_names_to_use = [
