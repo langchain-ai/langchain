@@ -670,9 +670,9 @@ class Qdrant(VectorStore):
                 "Please install it with `pip install qdrant-client`."
             )
 
-        from qdrant_client.http.exceptions import UnexpectedResponse
-        from qdrant_client.http import models as rest
         from grpc import RpcError
+        from qdrant_client.http import models as rest
+        from qdrant_client.http.exceptions import UnexpectedResponse
 
         # Just do a single quick embedding to get vector size
         partial_embeddings = embedding.embed_documents(texts[:1])
@@ -715,8 +715,9 @@ class Qdrant(VectorStore):
                         f"If you want to recreate the collection, set `force_recreate` "
                         f"parameter to `True`."
                     )
-                current_vector_config = \
-                    current_vector_config.get(vector_name)  # type: ignore[assignment]
+                current_vector_config = current_vector_config.get(
+                    vector_name
+                )  # type: ignore[assignment]
             elif isinstance(current_vector_config, dict) and vector_name is None:
                 raise QdrantException(
                     f"Existing Qdrant collection {collection_name} uses named vectors. "
@@ -746,8 +747,9 @@ class Qdrant(VectorStore):
                     f"parameter to `True`."
                 )
 
-            current_distance_func = \
+            current_distance_func = (
                 current_vector_config.distance.name.upper()  # type: ignore[union-attr]
+            )
             if current_distance_func != distance_func:
                 raise QdrantException(
                     f"Existing Qdrant collection is configured for "
