@@ -1,4 +1,3 @@
-import pytest
 
 from langchain import SQLDatabaseChain
 from langchain.chains import SQLDatabaseSequentialChain
@@ -31,7 +30,8 @@ def test_sql_chain_with_memory() -> None:
     {table_info}
     Question: {input}
 
-    Given an input question, first create a syntactically correct {dialect} query to run.
+    Given an input question, first create a syntactically correct
+    {dialect} query to run.
     Always limit your query to at most {top_k} results.
 
     Relevant pieces of previous conversation:
@@ -59,15 +59,19 @@ def test_sql_chain_sequential_with_memory() -> None:
     {table_info}
     Question: {input}
 
-    Given an input question, first create a syntactically correct {dialect} query to run.
+    Given an input question, first create a syntactically correct
+    {dialect} query to run.
     Always limit your query to at most {top_k} results.
 
     Relevant pieces of previous conversation:
     {history}
 
-    (You do not need to use these pieces of information if not relevant)
+    (You do not need to use these pieces of information
+    if not relevant)
     """
-    valid_decider_prompt_str = """Given the below input question and list of potential tables, output a comma separated list of the table names that may be necessary to answer this question.
+    valid_decider_prompt_str = """Given the below input question and list of potential
+    tables, output a comma separated list of the
+    table names that may be necessary to answer this question.
 
     History: {history}
 

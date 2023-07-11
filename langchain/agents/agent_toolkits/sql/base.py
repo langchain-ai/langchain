@@ -19,11 +19,11 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
 )
-from langchain.schema import BaseMemory, BasePromptTemplate
+from langchain.schema import BaseMemory
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import AIMessage, SystemMessage
 
-_SQL_OPEN_AI_FUNCTION_MEMORY_EXAMPLE = "https://python.langchain.com/docs/modules/agents/how_to/add_memory_openai_functions"
+_SQL_OPEN_AI_FUNCTION_MEMORY_EXAMPLE="https://python.langchain.com/docs/modules/agents/how_to/add_memory_openai_functions"
 
 
 def create_sql_agent(
@@ -75,7 +75,8 @@ def create_sql_agent(
         ]
         if memory:
             raise ValueError(
-                f"To use memory with OpenAIFunctionsAgent please refer to following example: {_SQL_OPEN_AI_FUNCTION_MEMORY_EXAMPLE}"
+                f"""To use memory with OpenAIFunctionsAgent please refer to following
+                example: {_SQL_OPEN_AI_FUNCTION_MEMORY_EXAMPLE}"""
             )
         _prompt = ChatPromptTemplate(input_variables=input_variables, messages=messages)
 
