@@ -9,7 +9,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class SlackDirectoryLoader(BaseLoader):
-    """Loader for loading documents from a Slack directory dump."""
+    """Loads documents from a Slack directory dump."""
 
     def __init__(self, zip_path: str, workspace_url: Optional[str] = None):
         """Initialize the SlackDirectoryLoader.

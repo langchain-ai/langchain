@@ -1,4 +1,4 @@
-"""Loader that loads documents from Psychic.dev."""
+"""Loads documents from Psychic.dev."""
 from typing import List, Optional
 
 from langchain.docstore.document import Document
@@ -6,12 +6,18 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class PsychicLoader(BaseLoader):
-    """Loader that loads documents from Psychic.dev."""
+    """Loads documents from Psychic.dev."""
 
     def __init__(
         self, api_key: str, account_id: str, connector_id: Optional[str] = None
     ):
-        """Initialize with API key, connector id, and account id."""
+        """Initialize with API key, connector id, and account id.
+
+        Args:
+            api_key: The Psychic API key.
+            account_id: The Psychic account id.
+            connector_id: The Psychic connector id.
+        """
 
         try:
             from psychicapi import ConnectorId, Psychic  # noqa: F401
