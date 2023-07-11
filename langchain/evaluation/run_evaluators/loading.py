@@ -1,7 +1,7 @@
 """"Loading helpers for run evaluators."""
 from typing import Any, List, Optional, Sequence, Union
 
-from langchainplus_sdk import RunEvaluator
+from langsmith import RunEvaluator
 
 from langchain.base_language import BaseLanguageModel
 from langchain.chains.base import Chain

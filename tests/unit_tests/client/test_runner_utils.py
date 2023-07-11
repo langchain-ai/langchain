@@ -5,8 +5,8 @@ from typing import Any, Dict, List, Optional, Union
 from unittest import mock
 
 import pytest
-from langchainplus_sdk.client import LangChainPlusClient
-from langchainplus_sdk.schemas import Dataset, Example
+from langsmith.client import Client
+from langsmith.schemas import Dataset, Example
 
 from langchain.chains.base import Chain
 from langchain.chains.transform import TransformChain
@@ -235,15 +235,13 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
         pass
 
     with mock.patch.object(
-        LangChainPlusClient, "read_dataset", new=mock_read_dataset
-    ), mock.patch.object(
-        LangChainPlusClient, "list_examples", new=mock_list_examples
-    ), mock.patch(
+        Client, "read_dataset", new=mock_read_dataset
+    ), mock.patch.object(Client, "list_examples", new=mock_list_examples), mock.patch(
         "langchain.client.runner_utils._arun_llm_or_chain", new=mock_arun_chain
     ), mock.patch.object(
-        LangChainPlusClient, "create_project", new=mock_create_project
+        Client, "create_project", new=mock_create_project
     ):
-        client = LangChainPlusClient(api_url="http://localhost:1984", api_key="123")
+        client = Client(api_url="http://localhost:1984", api_key="123")
         chain = mock.MagicMock()
         num_repetitions = 3
         results = await arun_on_dataset(

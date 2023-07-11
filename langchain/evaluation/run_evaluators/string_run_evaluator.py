@@ -4,8 +4,8 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Union
 
-from langchainplus_sdk import EvaluationResult, RunEvaluator
-from langchainplus_sdk.schemas import Example, Run
+from langsmith import EvaluationResult, RunEvaluator
+from langsmith.schemas import Example, Run
 
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
