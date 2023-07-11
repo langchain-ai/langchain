@@ -279,7 +279,10 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         run: Run = inputs["run"]
         example: Optional[Example] = inputs.get("example")
         evaluate_strings_inputs = self.run_mapper(run)
-        if example and self.example_mapper:
+        if not self.string_evaluator.requires_input:
+            # Hide warning about unused input
+            evaluate_strings_inputs.pop("input", None)
+        if example and self.example_mapper and self.string_evaluator.requires_reference:
             evaluate_strings_inputs.update(self.example_mapper(example))
         elif self.string_evaluator.requires_reference:
             raise ValueError(
