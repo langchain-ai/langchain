@@ -130,11 +130,27 @@ class BaseRetriever(Serializable, ABC):
             List of relevant documents
         """
 
+    def _litm_reordering(self, result: List[Document]) -> List[Document]:
+        """Performance degrades when models must access relevant information
+        in the middle of long contexts. Less relevant document will be at the
+        middle of the list and more relevant elements at begining / end.
+        See: https://arxiv.org/abs//2307.03172"""
+
+        result.reverse()
+        reordered_result = []
+        for i, value in enumerate(result):
+            if i % 2 == 1:
+                reordered_result.append(value)
+            else:
+                reordered_result.insert(0, value)
+        return reordered_result
+
     def get_relevant_documents(
         self,
         query: str,
         *,
         callbacks: Callbacks = None,
+        litm_reorder: bool = False,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
@@ -184,6 +200,8 @@ class BaseRetriever(Serializable, ABC):
                 result,
                 **kwargs,
             )
+            if litm_reorder:
+                return self._litm_reordering(result)
             return result
 
     async def aget_relevant_documents(
