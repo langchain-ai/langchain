@@ -20,8 +20,6 @@ from typing import (
 )
 
 import numpy as np
-from grpc import RpcError
-from qdrant_client.http.exceptions import UnexpectedResponse
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -672,7 +670,9 @@ class Qdrant(VectorStore):
                 "Please install it with `pip install qdrant-client`."
             )
 
+        from qdrant_client.http.exceptions import UnexpectedResponse
         from qdrant_client.http import models as rest
+        from grpc import RpcError
 
         # Just do a single quick embedding to get vector size
         partial_embeddings = embedding.embed_documents(texts[:1])
