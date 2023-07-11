@@ -18,7 +18,7 @@ class DoctranExtractParser(BaseBlobParser):
             self.openai_api_key = get_from_env("openai_api_key", "OPENAI_API_KEY")
         try:
             from doctran import Doctran, ExtractProperty
-            self.doctran = Doctran(openai_api_key=openai_api_key)
+            self.doctran = Doctran(openai_api_key=self.openai_api_key)
         except ImportError:
             raise ImportError("Install doctran to use this parser. (pip install doctran)")
         try:
