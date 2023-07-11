@@ -9,29 +9,29 @@ class ArangoDBGraph:
 
     def __init__(self, db: Any) -> None:
         """Create a new ArangoDB graph wrapper instance."""
+        self.set_db(db)
+        self.set_schema()
 
-        try:
-            from arango.client import ArangoClient
-            from arango.database import Database
-        except ImportError:
-            raise ValueError(
-                "Could not import python-arango package."
-                "Please install it with `pip install python-arango`"
-            )
+    @property
+    def db(self) -> Any:
+        return self.__db
+
+    @property
+    def schema(self) -> Dict[str, Any]:
+        return self.__schema
+
+    def set_db(self, db: Any) -> None:
+        from arango.database import Database
 
         if not isinstance(db, Database):
             msg = "**db** parameter must inherit from arango.database.Database"
             raise TypeError(msg)
 
         self.__db: Database = db
-        self.__schema: str = self.generate_schema()
 
-    @property
-    def schema(self) -> Dict[str, Any]:
-        return self.__schema
-
-    def set_schema(self, schema: Dict[str, Any]) -> None:
-        self.__schema = schema
+    def set_schema(self, schema: Optional[Dict[str, Any]] = None) -> None:
+        """Set the schema of the ArangoDB Database. Auto-generates Schema if **schema** is None."""
+        self.__schema = self.generate_schema() if schema is None else schema
 
     def generate_schema(self, sample_ratio: float = 0) -> Dict[str, Any]:
         """Generates the schema of the ArangoDB Database and returns it"""
@@ -95,7 +95,4 @@ class ArangoDBGraph:
             return [doc for doc in itertools.islice(cursor, top_k)]
 
         except AQLQueryExecuteError as e:
-            raise ValueError(f"Generated AQL Query is not valid: {e}")
-
-        except e:
-            raise ValueError(f"Unexpected error: {e}")
+            return "Unable to execute AQL Query"
