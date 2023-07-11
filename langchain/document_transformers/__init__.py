@@ -1,3 +1,1 @@
 from .embeddings_redundant_filter import EmbeddingsRedundantFilter, _DocumentWithState, _filter_similar_embeddings, _get_embeddings_from_stateful_docs, get_stateful_documents
-from .interrogate import DocumentInterrogator
-from .translate import DocumentTranslator
