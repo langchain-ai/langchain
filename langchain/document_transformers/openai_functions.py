@@ -4,23 +4,20 @@ from typing import Any, Dict, Optional, Sequence, Type, Union
 from pydantic import BaseModel, Field
 
 from langchain.chains.llm import LLMChain
-from langchain.chains.openai_functions import create_structured_output_chain
+from langchain.chains.openai_functions import (
+    create_tagging_chain,
+    create_tagging_chain_pydantic,
+)
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import BaseDocumentTransformer, Document
 
-_METADATA_EXTRACTION_TEMPLATE = """Extract relevant information\
- from the following text:
 
-{input}
-"""
-
-
-class MetadataExtractor(BaseDocumentTransformer, BaseModel):
+class MetadataTagger(BaseDocumentTransformer, BaseModel):
     """Perform K-means clustering on document vectors.
     Returns an arbitrary number of documents closest to center."""
 
-    extraction_chain: LLMChain
+    tagging_chain: LLMChain
     """ The chain used to extract metadata from each document."""
 
     def transform_documents(
@@ -32,7 +29,7 @@ class MetadataExtractor(BaseDocumentTransformer, BaseModel):
         new_documents = []
 
         for document in documents:
-            extracted_metadata = self.extraction_chain.run(document.page_content)
+            extracted_metadata = self.tagging_chain.run(document.page_content)
             new_document = Document(
                 page_content=document.page_content,
                 metadata={**extracted_metadata, **document.metadata},
@@ -46,17 +43,17 @@ class MetadataExtractor(BaseDocumentTransformer, BaseModel):
         raise NotImplementedError
 
 
-def create_metadata_extractor(
+def create_metadata_tagger(
     metadata_schema: Union[Dict[str, Any], Type[BaseModel]],
     llm: Optional[ChatOpenAI] = None,
     prompt: Optional[ChatPromptTemplate] = None,
-    **extraction_chain_kwargs: Any
-) -> MetadataExtractor:
+    **tagging_chain_kwargs: Any
+) -> MetadataTagger:
     llm = llm or ChatOpenAI(
         model="gpt-3.5-turbo-0613",
     )
-    prompt = prompt or ChatPromptTemplate.from_template(_METADATA_EXTRACTION_TEMPLATE)
-    extraction_chain = create_structured_output_chain(
-        output_schema=metadata_schema, llm=llm, prompt=prompt, **extraction_chain_kwargs
+    metadata_schema = metadata_schema if isinstance(metadata_schema, dict) else metadata_schema.schema()
+    tagging_chain = create_tagging_chain(
+        schema=metadata_schema, llm=llm, prompt=prompt, **tagging_chain_kwargs
     )
-    return MetadataExtractor(extraction_chain=extraction_chain)
+    return MetadataTagger(tagging_chain=tagging_chain)

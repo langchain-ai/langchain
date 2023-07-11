@@ -1,8 +1,8 @@
 """Test Qdrant functionality."""
 import tempfile
 from typing import Callable, Optional
-import numpy as np
 
+import numpy as np
 import pytest
 from qdrant_client.http import models as rest
 
