@@ -10,7 +10,7 @@ import numpy as np
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
-from langchain.vectorstores.utils import maximal_marginal_relevance
+from langchain.vectorstores.utils import DistanceStrategy, maximal_marginal_relevance
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +40,7 @@ class Pinecone(VectorStore):
         index: Any,
         embedding_function: Callable,
         text_key: str,
+        distance_strategy: Optional[DistanceStrategy] = DistanceStrategy.COSINE,
     ):
         """Initialize with Pinecone client."""
         try:
@@ -57,6 +58,7 @@ class Pinecone(VectorStore):
         self._index = index
         self._embedding_function = embedding_function
         self._text_key = text_key
+        self.distance_strategy = distance_strategy
 
     def add_texts(
         self,
@@ -147,14 +149,27 @@ class Pinecone(VectorStore):
         )
         return [doc for doc, _ in docs_and_scores]
 
-    def _similarity_search_with_relevance_scores(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
-        kwargs.pop("score_threshold", None)
-        return self.similarity_search_with_score(query, k, **kwargs)
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        """
+        The 'correct' relevance function
+        may differ depending on a few things, including:
+        - the distance / similarity metric used by the VectorStore
+        - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
+        - embedding dimensionality
+        - etc.
+        """
+
+        if self.distance_strategy == DistanceStrategy.COSINE:
+            return self._cosine_relevance_score_fn
+        elif self.distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
+            return self._max_inner_product_relevance_score_fn
+        elif self.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
+            return self._euclidean_relevance_score_fn
+        else:
+            raise ValueError(
+                "Unknown distance strategy, must be cosine, max_inner_product "
+                "(dot product), or euclidean"
+            )
 
     def max_marginal_relevance_search_by_vector(
         self,
