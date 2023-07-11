@@ -10,6 +10,7 @@ import sqlalchemy
 from pgvector.sqlalchemy import Vector
 from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import Session, declarative_base, relationship
+from sqlalchemy import delete
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -254,9 +255,9 @@ class PGVector(VectorStore):
             for text, metadata, embedding, id in zip(texts, metadatas, embeddings, ids):
                 if id != last_seen_id:
                     last_seen_id = id
-                    session.query(EmbeddingStore).filter(
-                        EmbeddingStore.custom_id == id
-                    ).delete(synchronize_session=False)
+                    session.execute(
+                        delete(EmbeddingStore).where(EmbeddingStore.custom_id == id)
+                    )
 
                 embedding_store = EmbeddingStore(
                     embedding=embedding,
