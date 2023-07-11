@@ -343,7 +343,7 @@ class Marqo(VectorStore):
     def from_documents(
         cls: Type[Marqo],
         documents: List[Document],
-        embedding: Embeddings,
+        embedding: Union[Embeddings, None] = None,
         **kwargs: Any,
     ) -> Marqo:
         """Return VectorStore initialized from documents. Note that Marqo does not
@@ -371,7 +371,6 @@ class Marqo(VectorStore):
         index_name: str = "",
         url: str = "http://localhost:8882",
         api_key: str = "",
-        marqo_device: str = "cpu",
         add_documents_settings: Optional[Dict[str, Any]] = {},
         searchable_attributes: Optional[List[str]] = None,
         page_content_builder: Optional[Callable[[Dict[str, str]], str]] = None,
@@ -407,7 +406,6 @@ class Marqo(VectorStore):
             api_key (str, optional): The API key for Marqo. Defaults to "".
             metadatas (Optional[List[dict]], optional): A list of metadatas, to
             accompany the texts. Defaults to None.
-            marqo_device (str, optional): The device for the marqo to use on the server,
             this is only used when a new index is being created. Defaults to "cpu". Can
             be "cpu" or "cuda".
             add_documents_settings (Optional[Dict[str, Any]], optional): Settings
@@ -433,7 +431,7 @@ class Marqo(VectorStore):
         if not index_name:
             index_name = str(uuid.uuid4())
 
-        client = marqo.Client(url=url, api_key=api_key, indexing_device=marqo_device)
+        client = marqo.Client(url=url, api_key=api_key)
 
         try:
             client.create_index(index_name, settings_dict=index_settings)

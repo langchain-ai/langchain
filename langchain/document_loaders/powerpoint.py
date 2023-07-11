@@ -1,4 +1,4 @@
-"""Loader that loads powerpoint files."""
+"""Loads PowerPoint files."""
 import os
 from typing import List
 
@@ -6,7 +6,7 @@ from langchain.document_loaders.unstructured import UnstructuredFileLoader
 
 
 class UnstructuredPowerPointLoader(UnstructuredFileLoader):
-    """Loader that uses unstructured to load powerpoint files."""
+    """Loader that uses unstructured to load PowerPoint files."""
 
     def _get_elements(self) -> List:
         from unstructured.__version__ import __version__ as __unstructured_version__
