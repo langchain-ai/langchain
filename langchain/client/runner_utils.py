@@ -551,7 +551,7 @@ async def _arun_chain(
             inputs_, callbacks=callbacks, tags=tags
         )
     else:
-        if len(inputs_) == 1:
+        if len(inputs) == 1:
             inputs_ = next(iter(inputs.values()))
             output = await chain.arun(inputs_, callbacks=callbacks, tags=tags)
         else:
@@ -870,12 +870,11 @@ def _run_chain(
         inputs_ = input_mapper(inputs)
         output: Union[dict, str] = chain(inputs_, callbacks=callbacks, tags=tags)
     else:
-        inputs_ = inputs
-        if len(inputs_) == 1:
-            inputs_ = next(iter(inputs_.values()))
+        if len(inputs) == 1:
+            inputs_ = next(iter(inputs.values()))
             output = chain.run(inputs_, callbacks=callbacks, tags=tags)
         else:
-            output = chain(inputs_, callbacks=callbacks, tags=tags)
+            output = chain(inputs, callbacks=callbacks, tags=tags)
     return output
 
 
