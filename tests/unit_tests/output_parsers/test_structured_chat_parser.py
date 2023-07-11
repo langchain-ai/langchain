@@ -1,7 +1,6 @@
 import pytest
 
-from langchain.agents.structured_chat.output_parser import \
-    StructuredChatOutputParser
+from langchain.agents.structured_chat.output_parser import StructuredChatOutputParser
 from langchain.schema import AgentAction, AgentFinish, OutputParserException
 
 
