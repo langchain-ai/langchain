@@ -205,7 +205,7 @@ class ChatOpenAI(BaseChatModel):
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
-        all_required_field_names = cls.all_required_field_names()
+        all_required_field_names = cls._all_required_field_names()
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
             if field_name in extra:
@@ -374,7 +374,7 @@ class ChatOpenAI(BaseChatModel):
     def _create_message_dicts(
         self, messages: List[BaseMessage], stop: Optional[List[str]]
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-        params = dict(self._invocation_params)
+        params = dict(self._client_params)
         if stop is not None:
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
@@ -439,8 +439,8 @@ class ChatOpenAI(BaseChatModel):
         return {**{"model_name": self.model_name}, **self._default_params}
 
     @property
-    def _invocation_params(self) -> Mapping[str, Any]:
-        """Get the parameters used to invoke the model."""
+    def _client_params(self) -> Mapping[str, Any]:
+        """Get the parameters used for the openai client."""
         openai_creds: Dict[str, Any] = {
             "api_key": self.openai_api_key,
             "api_base": self.openai_api_base,
@@ -452,6 +452,17 @@ class ChatOpenAI(BaseChatModel):
 
             openai.proxy = {"http": self.openai_proxy, "https": self.openai_proxy}  # type: ignore[assignment]  # noqa: E501
         return {**openai_creds, **self._default_params}
+
+    def _get_invocation_params(
+        self, stop: Optional[List[str]] = None, **kwargs: Any
+    ) -> Dict[str, Any]:
+        """Get the parameters used to invoke the model FOR THE CALLBACKS."""
+        return {
+            **super()._get_invocation_params(stop=stop, **kwargs),
+            **self._default_params,
+            "model": self.model_name,
+            "function": kwargs.get("functions"),
+        }
 
     @property
     def _llm_type(self) -> str:

@@ -2,7 +2,6 @@ from typing import Any, Dict, List, Type, Union
 
 from pydantic import Field
 
-from langchain.base_language import BaseLanguageModel
 from langchain.chains.llm import LLMChain
 from langchain.graphs import NetworkxEntityGraph
 from langchain.graphs.networkx_graph import KnowledgeTriple, get_entities, parse_triples
@@ -13,6 +12,7 @@ from langchain.memory.prompt import (
 )
 from langchain.memory.utils import get_prompt_input_key
 from langchain.schema import BasePromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage, SystemMessage, get_buffer_string
 
 

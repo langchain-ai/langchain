@@ -48,9 +48,9 @@ def update_token_usage(
 def _update_response(response: Dict[str, Any], stream_response: Dict[str, Any]) -> None:
     """Update response from the stream response."""
     response["choices"][0]["text"] += stream_response["choices"][0]["text"]
-    response["choices"][0]["finish_reason"] = stream_response["choices"][0][
-        "finish_reason"
-    ]
+    response["choices"][0]["finish_reason"] = stream_response["choices"][0].get(
+        "finish_reason", None
+    )
     response["choices"][0]["logprobs"] = stream_response["choices"][0]["logprobs"]
 
 
@@ -186,7 +186,7 @@ class BaseOpenAI(BaseLLM):
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
-        all_required_field_names = cls.all_required_field_names()
+        all_required_field_names = cls._all_required_field_names()
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
             if field_name in extra:

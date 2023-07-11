@@ -4,12 +4,12 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
 
 from pydantic import Extra, Field
 
-from langchain.base_language import BaseLanguageModel
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.criteria.prompt import PROMPT, PROMPT_WITH_REFERENCES
-from langchain.evaluation.schema import StringEvaluator
+from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
 from langchain.schema import BaseOutputParser, BasePromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
 
 _SUPPORTED_CRITERIA = {
     "conciseness": "Is the submission concise and to the point?",
@@ -60,7 +60,7 @@ CRITERIA_TYPE = Union[
 ]
 
 
-class CriteriaEvalChain(StringEvaluator, LLMChain):
+class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     """LLM Chain for evaluating runs against criteria.
 
     Parameters
@@ -92,13 +92,42 @@ class CriteriaEvalChain(StringEvaluator, LLMChain):
     --------
     >>> from langchain.chat_models import ChatAnthropic
     >>> from langchain.evaluation.criteria import CriteriaEvalChain
-    >>> llm = ChatAnthropic()
+    >>> llm = ChatAnthropic(temperature=0)
     >>> criteria = {"my-custom-criterion": "Is the submission the most amazing ever?"}
-    >>> chain = CriteriaEvalChain.from_llm(llm=llm, criteria=criteria)
-    """
+    >>> evaluator = CriteriaEvalChain.from_llm(llm=llm, criteria=criteria)
+    >>> evaluator.evaluate_strings(prediction="Imagine an ice cream flavor for the color aquamarine", input="Tell me an idea")
+    {
+        'reasoning': 'Here is my step-by-step reasoning for the given criteria:\\n\\nThe criterion is: "Is the submission the most amazing ever?" This is a subjective criterion and open to interpretation. The submission suggests an aquamarine-colored ice cream flavor which is creative but may or may not be considered the most amazing idea ever conceived. There are many possible amazing ideas and this one ice cream flavor suggestion may or may not rise to that level for every person. \\n\\nN',
+        'value': 'N',
+        'score': 0,
+    }
+
+    >>> from langchain.chat_models import ChatOpenAI
+    >>> from langchain.evaluation.criteria import CriteriaEvalChain
+    >>> llm = ChatOpenAI(model="gpt-4", temperature=0)
+    >>> criteria = "correctness"
+    >>> evaluator = CriteriaEvalChain.from_llm(
+    ...     llm=llm,
+    ...     criteria=criteria,
+    ...    requires_reference=True,
+    ... )
+    >>> evaluator.evaluate_strings(
+    ...   prediction="The answer is 4",
+    ...   input="How many apples are there?",
+    ...   reference="There are 3 apples",
+    ...   )
+    {
+        'score': 0,
+        'reasoning': 'The criterion for this task is the correctness of the submission. The submission states that there are 4 apples, but the reference indicates that there are actually 3 apples. Therefore, the submission is not correct, accurate, or factual according to the given criterion.\\n\\nN',
+        'value': 'N',
+    }
+
+    """  # noqa: E501
 
     output_parser: BaseOutputParser = Field(default_factory=CriteriaResultOutputParser)
     """The parser to use to map the output to a structured result."""
+    criteria_names: List[str] = Field(default_factory=list)
+    """The names of the criteria being evaluated."""
 
     class Config:
         """Configuration for the QAEvalChain."""
@@ -107,11 +136,23 @@ class CriteriaEvalChain(StringEvaluator, LLMChain):
 
     @property
     def requires_reference(self) -> bool:
+        """Whether the evaluation requires a reference text."""
         return "reference" in self.prompt.input_variables
 
     @property
     def requires_input(self) -> bool:
         return True
+
+    @property
+    def evaluation_name(self) -> str:
+        """Get the name of the evaluation.
+
+        Returns
+        -------
+        str
+            The name of the evaluation.
+        """
+        return " ".join(self.criteria_names)
 
     @property
     def _skip_reference_warning(self) -> str:
@@ -251,16 +292,29 @@ class CriteriaEvalChain(StringEvaluator, LLMChain):
                 requires_reference=True,
             )
         """
+        expected_input_vars = {"input", "output", "criteria"}
         if prompt is None:
             if requires_reference:
                 prompt = PROMPT_WITH_REFERENCES
             else:
                 prompt = PROMPT
+        if requires_reference:
+            expected_input_vars.add("reference")
+        if expected_input_vars != set(prompt.input_variables):
+            raise ValueError(
+                f"Input variables should be {expected_input_vars}, "
+                f"but got {prompt.input_variables}"
+            )
+
         criteria_ = cls.resolve_criteria(criteria)
+        criteria_names = list(criteria_.keys())
         criteria_str = " ".join(f"{k}: {v}" for k, v in criteria_.items())
         prompt_ = prompt.partial(criteria=criteria_str)
         return cls(
-            llm=llm, prompt=prompt_, requires_reference=requires_reference, **kwargs
+            llm=llm,
+            prompt=prompt_,
+            criteria_names=criteria_names,
+            **kwargs,
         )
 
     def _get_eval_input(

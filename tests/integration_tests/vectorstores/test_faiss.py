@@ -195,3 +195,14 @@ def test_faiss_invalid_normalize_fn() -> None:
     )
     with pytest.warns(Warning, match="scores must be between"):
         docsearch.similarity_search_with_relevance_scores("foo", k=1)
+
+
+def test_missing_normalize_score_fn() -> None:
+    """Test doesn't perform similarity search without a valid distance strategy."""
+    with pytest.raises(ValueError):
+        texts = ["foo", "bar", "baz"]
+        faiss_instance = FAISS.from_texts(
+            texts, FakeEmbeddings(), distance_strategy="fake"
+        )
+
+        faiss_instance.similarity_search_with_relevance_scores("foo", k=2)
