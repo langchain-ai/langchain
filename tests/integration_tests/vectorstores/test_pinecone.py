@@ -2,9 +2,9 @@ import importlib
 import os
 import time
 import uuid
-import numpy as np
 from typing import List
 
+import numpy as np
 import pinecone
 import pytest
 
