@@ -10,14 +10,18 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class BiliBiliLoader(BaseLoader):
-    """Loader that loads bilibili transcripts."""
+    """Loads bilibili transcripts."""
 
     def __init__(self, video_urls: List[str]):
-        """Initialize with bilibili url."""
+        """Initialize with bilibili url.
+
+        Args:
+            video_urls: List of bilibili urls.
+        """
         self.video_urls = video_urls
 
     def load(self) -> List[Document]:
-        """Load from bilibili url."""
+        """Load Documents from bilibili url."""
         results = []
         for url in self.video_urls:
             transcript, video_info = self._get_bilibili_subs_and_info(url)
@@ -30,7 +34,7 @@ class BiliBiliLoader(BaseLoader):
         try:
             from bilibili_api import sync, video
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "requests package not found, please install it with "
                 "`pip install bilibili-api-python`"
             )

@@ -33,8 +33,9 @@ class ContentFormat(str, Enum):
 
 
 class ConfluenceLoader(BaseLoader):
-    """
-    Load Confluence pages. Port of https://llamahub.ai/l/confluence
+    """Load Confluence pages.
+
+    Port of https://llamahub.ai/l/confluence
     This currently supports username/api_key, Oauth2 login or personal access token
     authentication.
 
@@ -175,7 +176,7 @@ class ConfluenceLoader(BaseLoader):
             "key_cert",
         ]:
             errors.append(
-                "You have either ommited require keys or added extra "
+                "You have either omitted require keys or added extra "
                 "keys to the oauth2 dictionary. key values should be "
                 "`['access_token', 'access_token_secret', 'consumer_key', 'key_cert']`"
             )
@@ -340,10 +341,10 @@ class ConfluenceLoader(BaseLoader):
         """Paginate the various methods to retrieve groups of pages.
 
         Unfortunately, due to page size, sometimes the Confluence API
-        doesn't match the limit value. If `limit` is  >100 confluence
+        doesn't match the limit value. If `limit` is >100 confluence
         seems to cap the response to 100. Also, due to the Atlassian Python
         package, we don't get the "next" values from the "_links" key because
-        they only return the value from the results key. So here, the pagination
+        they only return the value from the result key. So here, the pagination
         starts from 0 and goes until the max_pages, getting the `limit` number
         of pages with each request. We have to manually check if there
         are more docs based on the length of the returned list of pages, rather than
@@ -588,10 +589,22 @@ class ConfluenceLoader(BaseLoader):
         return docx2txt.process(file_data)
 
     def process_xls(self, link: str) -> str:
+        import io
+        import os
+
         try:
             import xlrd  # noqa: F401
+
         except ImportError:
             raise ImportError("`xlrd` package not found, please run `pip install xlrd`")
+
+        try:
+            import pandas as pd
+
+        except ImportError:
+            raise ImportError(
+                "`pandas` package not found, please run `pip install pandas`"
+            )
 
         response = self.confluence.request(path=link, absolute=True)
         text = ""
@@ -603,14 +616,26 @@ class ConfluenceLoader(BaseLoader):
         ):
             return text
 
-        workbook = xlrd.open_workbook(file_contents=response.content)
-        for sheet in workbook.sheets():
-            text += f"{sheet.name}:\n"
-            for row in range(sheet.nrows):
-                for col in range(sheet.ncols):
-                    text += f"{sheet.cell_value(row, col)}\t"
+        filename = os.path.basename(link)
+        # Getting the whole content of the url after filename,
+        # Example: ".csv?version=2&modificationDate=1631800010678&cacheVersion=1&api=v2"
+        file_extension = os.path.splitext(filename)[1]
+
+        if file_extension.startswith(
+            ".csv"
+        ):  # if the extension found in the url is ".csv"
+            content_string = response.content.decode("utf-8")
+            df = pd.read_csv(io.StringIO(content_string))
+            text += df.to_string(index=False, header=False) + "\n\n"
+        else:
+            workbook = xlrd.open_workbook(file_contents=response.content)
+            for sheet in workbook.sheets():
+                text += f"{sheet.name}:\n"
+                for row in range(sheet.nrows):
+                    for col in range(sheet.ncols):
+                        text += f"{sheet.cell_value(row, col)}\t"
+                    text += "\n"
                 text += "\n"
-            text += "\n"
 
         return text
 

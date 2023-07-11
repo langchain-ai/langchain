@@ -1,4 +1,4 @@
-"""Loader that loads rich text files."""
+"""Loads rich text files."""
 from typing import Any, List
 
 from langchain.document_loaders.unstructured import (
@@ -13,6 +13,16 @@ class UnstructuredRTFLoader(UnstructuredFileLoader):
     def __init__(
         self, file_path: str, mode: str = "single", **unstructured_kwargs: Any
     ):
+        """
+        Initialize with a file path.
+
+        Args:
+            file_path: The path to the file to load.
+            mode: The mode to use for partitioning. See unstructured for details.
+                Defaults to "single".
+            **unstructured_kwargs: Additional keyword arguments to pass
+                to unstructured.
+        """
         min_unstructured_version = "0.5.12"
         if not satisfies_min_unstructured_version(min_unstructured_version):
             raise ValueError(

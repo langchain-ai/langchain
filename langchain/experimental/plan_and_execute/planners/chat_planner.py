@@ -1,6 +1,5 @@
 import re
 
-from langchain.base_language import BaseLanguageModel
 from langchain.chains import LLMChain
 from langchain.experimental.plan_and_execute.planners.base import LLMPlanner
 from langchain.experimental.plan_and_execute.schema import (
@@ -9,7 +8,8 @@ from langchain.experimental.plan_and_execute.schema import (
     Step,
 )
 from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain.schema import SystemMessage
+from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema.messages import SystemMessage
 
 SYSTEM_PROMPT = (
     "Let's first understand the problem and devise a plan to solve the problem."

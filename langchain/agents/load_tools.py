@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Callable, Tuple
 from mypy_extensions import Arg, KwArg
 
 from langchain.agents.tools import Tool
-from langchain.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.api import news_docs, open_meteo_docs, podcast_docs, tmdb_docs
@@ -38,6 +38,8 @@ from langchain.tools.sleep.tool import SleepTool
 from langchain.tools.wikipedia.tool import WikipediaQueryRun
 from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
 from langchain.tools.openweathermap.tool import OpenWeatherMapQueryRun
+from langchain.tools.dataforseo_api_search import DataForSeoAPISearchRun
+from langchain.tools.dataforseo_api_search import DataForSeoAPISearchResults
 from langchain.utilities import ArxivAPIWrapper
 from langchain.utilities import PubMedAPIWrapper
 from langchain.utilities.bing_search import BingSearchAPIWrapper
@@ -53,6 +55,7 @@ from langchain.utilities.twilio import TwilioAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
+from langchain.utilities.dataforseo_api_search import DataForSeoAPIWrapper
 
 
 def _get_python_repl() -> BaseTool:
@@ -278,6 +281,14 @@ def _get_openweathermap(**kwargs: Any) -> BaseTool:
     return OpenWeatherMapQueryRun(api_wrapper=OpenWeatherMapAPIWrapper(**kwargs))
 
 
+def _get_dataforseo_api_search(**kwargs: Any) -> BaseTool:
+    return DataForSeoAPISearchRun(api_wrapper=DataForSeoAPIWrapper(**kwargs))
+
+
+def _get_dataforseo_api_search_json(**kwargs: Any) -> BaseTool:
+    return DataForSeoAPISearchResults(api_wrapper=DataForSeoAPIWrapper(**kwargs))
+
+
 _EXTRA_LLM_TOOLS: Dict[
     str,
     Tuple[Callable[[Arg(BaseLanguageModel, "llm"), KwArg(Any)], BaseTool], List[str]],
@@ -326,6 +337,14 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     "sceneXplain": (_get_scenexplain, []),
     "graphql": (_get_graphql_tool, ["graphql_endpoint"]),
     "openweathermap-api": (_get_openweathermap, ["openweathermap_api_key"]),
+    "dataforseo-api-search": (
+        _get_dataforseo_api_search,
+        ["api_login", "api_password", "aiosession"],
+    ),
+    "dataforseo-api-search-json": (
+        _get_dataforseo_api_search_json,
+        ["api_login", "api_password", "aiosession"],
+    ),
 }
 
 

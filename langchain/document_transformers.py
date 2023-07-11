@@ -71,6 +71,56 @@ def _get_embeddings_from_stateful_docs(
     return embedded_documents
 
 
+def _filter_cluster_embeddings(
+    embedded_documents: List[List[float]],
+    num_clusters: int,
+    num_closest: int,
+    random_state: int,
+    remove_duplicates: bool,
+) -> List[int]:
+    """Filter documents based on proximity of their embeddings to clusters."""
+
+    try:
+        from sklearn.cluster import KMeans
+    except ImportError:
+        raise ValueError(
+            "sklearn package not found, please install it with "
+            "`pip install scikit-learn`"
+        )
+
+    kmeans = KMeans(n_clusters=num_clusters, random_state=random_state).fit(
+        embedded_documents
+    )
+    closest_indices = []
+
+    # Loop through the number of clusters you have
+    for i in range(num_clusters):
+        # Get the list of distances from that particular cluster center
+        distances = np.linalg.norm(
+            embedded_documents - kmeans.cluster_centers_[i], axis=1
+        )
+
+        # Find the indices of the two unique closest ones
+        # (using argsort to find the smallest 2 distances)
+        if remove_duplicates:
+            # Only add not duplicated vectors.
+            closest_indices_sorted = [
+                x
+                for x in np.argsort(distances)[:num_closest]
+                if x not in closest_indices
+            ]
+        else:
+            # Skip duplicates and add the next closest vector.
+            closest_indices_sorted = [
+                x for x in np.argsort(distances) if x not in closest_indices
+            ][:num_closest]
+
+        # Append that position closest indices list
+        closest_indices.extend(closest_indices_sorted)
+
+    return closest_indices
+
+
 class EmbeddingsRedundantFilter(BaseDocumentTransformer, BaseModel):
     """Filter that drops redundant documents by comparing their embeddings."""
 
@@ -101,6 +151,66 @@ class EmbeddingsRedundantFilter(BaseDocumentTransformer, BaseModel):
             embedded_documents, self.similarity_fn, self.similarity_threshold
         )
         return [stateful_documents[i] for i in sorted(included_idxs)]
+
+    async def atransform_documents(
+        self, documents: Sequence[Document], **kwargs: Any
+    ) -> Sequence[Document]:
+        raise NotImplementedError
+
+
+class EmbeddingsClusteringFilter(BaseDocumentTransformer, BaseModel):
+    """Perform K-means clustering on document vectors.
+    Returns an arbitrary number of documents closest to center."""
+
+    embeddings: Embeddings
+    """Embeddings to use for embedding document contents."""
+
+    num_clusters: int = 5
+    """Number of clusters. Groups of documents with similar meaning."""
+
+    num_closest: int = 1
+    """The number of closest vectors to return for each cluster center."""
+
+    random_state: int = 42
+    """Controls the random number generator used to initialize the cluster centroids.
+    If you set the random_state parameter to None, the KMeans algorithm will use a 
+    random number generator that is seeded with the current time. This means 
+    that the results of the KMeans algorithm will be different each time you 
+    run it."""
+
+    sorted: bool = False
+    """By default results are re-ordered "grouping" them by cluster, if sorted is true
+    result will be ordered by the original position from the retriever"""
+
+    remove_duplicates = False
+    """ By default duplicated results are skipped and replaced by the next closest 
+    vector in the cluster. If remove_duplicates is true no replacement will be done:
+    This could dramatically reduce results when there is a lot of overlap beetween 
+    clusters.
+    """
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
+
+    def transform_documents(
+        self, documents: Sequence[Document], **kwargs: Any
+    ) -> Sequence[Document]:
+        """Filter down documents."""
+        stateful_documents = get_stateful_documents(documents)
+        embedded_documents = _get_embeddings_from_stateful_docs(
+            self.embeddings, stateful_documents
+        )
+        included_idxs = _filter_cluster_embeddings(
+            embedded_documents,
+            self.num_clusters,
+            self.num_closest,
+            self.random_state,
+            self.remove_duplicates,
+        )
+        results = sorted(included_idxs) if self.sorted else included_idxs
+        return [stateful_documents[i] for i in results]
 
     async def atransform_documents(
         self, documents: Sequence[Document], **kwargs: Any
