@@ -9,7 +9,7 @@ from langchain.chains.llm import LLMChain
 from langchain.chat_models import ChatOpenAI
 from langchain.client.runner_utils import run_on_dataset
 from langchain.evaluation import EvaluatorType
-from langchain.evaluation.run_evaluators.loading import load_run_evaluators_for_model
+from langchain.evaluation.run_evaluators import RunEvalConfig
 from langchain.llms.openai import OpenAI
 
 
@@ -43,26 +43,18 @@ def dataset_name() -> Iterator[str]:
 
 def test_chat_model(dataset_name: str) -> None:
     llm = ChatOpenAI(temperature=0)
-    evaluators = load_run_evaluators_for_model(
-        [EvaluatorType.QA, EvaluatorType.CRITERIA], llm, reference_key="answer"
-    )
-    results = run_on_dataset(
-        dataset_name,
-        llm,
-        run_evaluators=evaluators,
-    )
+    eval_config = RunEvalConfig([EvaluatorType.QA, EvaluatorType.CRITERIA])
+    results = run_on_dataset(dataset_name, llm, evaluation=eval_config)
     print("CHAT", results, file=sys.stderr)
 
 
 def test_llm(dataset_name: str) -> None:
     llm = OpenAI(temperature=0)
-    evaluators = load_run_evaluators_for_model(
-        [EvaluatorType.QA, EvaluatorType.CRITERIA], llm, reference_key="answer"
-    )
+    eval_config = RunEvalConfig([EvaluatorType.QA, EvaluatorType.CRITERIA])
     results = run_on_dataset(
         dataset_name,
         llm,
-        run_evaluators=evaluators,
+        evaluation=eval_config,
     )
     print("LLM", results, file=sys.stderr)
 
@@ -70,12 +62,10 @@ def test_llm(dataset_name: str) -> None:
 def test_chain(dataset_name: str) -> None:
     llm = ChatOpenAI(temperature=0)
     chain = LLMChain.from_string(llm, "The answer to the {question} is: ")
-    evaluators = load_run_evaluators_for_model(
-        [EvaluatorType.QA, EvaluatorType.CRITERIA], chain, reference_key="answer"
-    )
+    eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
     results = run_on_dataset(
         dataset_name,
         lambda: chain,
-        run_evaluators=evaluators,
+        evaluation=eval_config,
     )
     print("CHAIN", results, file=sys.stderr)

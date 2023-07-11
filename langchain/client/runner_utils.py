@@ -368,6 +368,7 @@ async def arun_on_examples(
     client: Optional[Client] = None,
     tags: Optional[List[str]] = None,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
+    data_type: DataType = DataType.kv,
 ) -> Dict[str, Any]:
     """
     Asynchronously run the chain on examples and store traces
@@ -394,14 +395,13 @@ async def arun_on_examples(
             your model needs to deserialize more complex schema or if your dataset
             has inputs with keys that differ from what is expected by your chain
             or agent.
-
     Returns:
         A dictionary mapping example ids to the model outputs.
     """
     project_name = _get_project_name(project_name, llm_or_chain_factory, None)
     client_ = client or Client()
     run_evaluators, examples = _setup_evaluation(
-        evaluation, examples, client_, project_name
+        llm_or_chain_factory, examples, evaluation, data_type
     )
     results: Dict[str, List[Any]] = {}
 
@@ -595,6 +595,7 @@ def run_on_examples(
             your model needs to deserialize more complex schema or if your dataset
             has inputs with keys that differ from what is expected by your chain
             or agent.
+        data_type: DataType = DataType.kv
 
     Returns:
         A dictionary mapping example ids to the model outputs.
@@ -605,7 +606,7 @@ def run_on_examples(
     tracer = LangChainTracer(project_name=project_name)
     evaluator_project_name = f"{project_name}-evaluators"
     run_evaluators, examples = _setup_evaluation(
-        evaluation, examples, client_, project_name
+        llm_or_chain_factory, examples, evaluation, data_type
     )
 
     evalution_handler = EvaluatorCallbackHandler(
@@ -714,6 +715,7 @@ async def arun_on_dataset(
         tags=tags,
         evaluation=evaluation,
         input_mapper=input_mapper,
+        data_type=dataset.data_type,
     )
     return {
         "project_name": project_name,
@@ -839,6 +841,8 @@ def _load_run_evaluators(
         input_key = config.input_key
         if run_inputs and input_key not in run_inputs:
             raise ValueError(f"Input key {input_key} not in run inputs {run_inputs}")
+    elif run_type == RunTypeEnum.llm:
+        input_key = None
     elif run_inputs and len(run_inputs) == 1:
         input_key = run_inputs[0]
     else:
@@ -851,6 +855,8 @@ def _load_run_evaluators(
             raise ValueError(
                 f"Prediction key {prediction_key} not in run outputs {run_outputs}"
             )
+    elif run_type == RunTypeEnum.llm:
+        prediction_key = None
     elif run_outputs and len(run_outputs) == 1:
         prediction_key = run_outputs[0]
     else:
@@ -883,7 +889,7 @@ def _load_run_evaluators(
             if evaluator_.requires_reference and reference_key is None:
                 raise ValueError(
                     f"Must specify reference_key in RunEvalConfig to use"
-                    f" evaluator of type {eval_config.evaluator_type} with"
+                    f" evaluator of type {eval_type_tag} with"
                     f" dataset with multiple output keys: {example_outputs}."
                 )
             run_evaluator = StringRunEvaluatorChain.from_run_and_data_type(
@@ -898,6 +904,7 @@ def _load_run_evaluators(
             run_evaluators.append(run_evaluator)
         else:
             raise NotImplementedError(
-                f"Run evaluator for {eval_config.evaluator_type} is not implemented"
+                f"Run evaluator for {eval_type_tag} is not implemented"
             )
+    # TODO: custom evaluators
     return run_evaluators

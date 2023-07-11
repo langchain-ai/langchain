@@ -4,6 +4,7 @@ from langchain.evaluation.run_evaluators.base import (
     RunEvaluatorInputMapper,
     RunEvaluatorOutputParser,
 )
+from langchain.evaluation.run_evaluators.config import RunEvalConfig
 from langchain.evaluation.run_evaluators.implementations import (
     ChoicesOutputParser,
     StringRunEvaluatorInputMapper,
@@ -31,4 +32,5 @@ __all__ = [
     "StringRunEvaluatorChain",
     "load_run_evaluators_for_model",
     "load_run_evaluator_for_model",
+    "RunEvalConfig",
 ]
