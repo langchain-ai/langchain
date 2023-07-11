@@ -40,8 +40,8 @@ class Pinecone(VectorStore):
         index: Any,
         embedding_function: Callable,
         text_key: str,
-        distance_strategy: Optional[DistanceStrategy] = DistanceStrategy.COSINE,
         namespace: Optional[str] = None,
+        distance_strategy: Optional[DistanceStrategy] = DistanceStrategy.COSINE,
     ):
         """Initialize with Pinecone client."""
         try:
@@ -59,8 +59,8 @@ class Pinecone(VectorStore):
         self._index = index
         self._embedding_function = embedding_function
         self._text_key = text_key
-        self.distance_strategy = distance_strategy
         self._namespace = namespace
+        self.distance_strategy = distance_strategy
 
     def add_texts(
         self,
