@@ -715,7 +715,8 @@ class Qdrant(VectorStore):
                         f"If you want to recreate the collection, set `force_recreate` "
                         f"parameter to `True`."
                     )
-                current_vector_config = current_vector_config.get(vector_name)  # noqa
+                current_vector_config = \
+                    current_vector_config.get(vector_name)  # type: ignore[assignment]
             elif isinstance(current_vector_config, dict) and vector_name is None:
                 raise QdrantException(
                     f"Existing Qdrant collection {collection_name} uses named vectors. "
@@ -745,7 +746,9 @@ class Qdrant(VectorStore):
                     f"parameter to `True`."
                 )
 
-            if current_vector_config.distance.name.upper() != distance_func:  # noqa
+            current_distance_func = \
+                current_vector_config.distance.name.upper()  # type: ignore[union-attr]
+            if current_distance_func != distance_func:
                 raise QdrantException(
                     f"Existing Qdrant collection is configured for "
                     f"{current_vector_config.distance} "  # type: ignore[union-attr]
