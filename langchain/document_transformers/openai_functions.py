@@ -23,7 +23,7 @@ class MetadataTagger(BaseDocumentTransformer, BaseModel):
         new_documents = []
 
         for document in documents:
-            extracted_metadata = self.tagging_chain.__call__(document.page_content)
+            extracted_metadata = self.tagging_chain(document.page_content)
             new_document = Document(
                 page_content=document.page_content,
                 metadata={**extracted_metadata, **document.metadata},
