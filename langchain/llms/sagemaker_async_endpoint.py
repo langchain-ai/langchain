@@ -21,10 +21,10 @@ class SagemakerAsyncEndpoint(SagemakerEndpoint):
         self,
         output_url: str,
         failure_url: str,
-        s3_client=None,
+        s3_client: Any = None,
         max_retries: int = 25,
         retry_delay: int = 5
-    ):
+    ) -> Any:
         """
         Wait for the inference file to be generated in S3.
         Args:
@@ -70,7 +70,7 @@ class SagemakerAsyncEndpoint(SagemakerEndpoint):
         input_prefix: str = "",
         max_request_timeout: int = 90,
         **kwargs
-    ):
+    ) -> Any:
         """
         Initialize a Sagemaker asynchronous endpoint connector in Langchain.
         Args:
