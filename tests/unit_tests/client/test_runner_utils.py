@@ -1,7 +1,7 @@
 """Test the LangChain+ client."""
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Iterator, List, Optional, Union
 from unittest import mock
 
 import pytest
@@ -216,8 +216,8 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
     def mock_read_dataset(*args: Any, **kwargs: Any) -> Dataset:
         return dataset
 
-    def mock_list_examples(*args: Any, **kwargs: Any) -> List[Example]:
-        return examples
+    def mock_list_examples(*args: Any, **kwargs: Any) -> Iterator[Example]:
+        return iter(examples)
 
     async def mock_arun_chain(
         example: Example,
@@ -243,6 +243,7 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
     ):
         client = Client(api_url="http://localhost:1984", api_key="123")
         chain = mock.MagicMock()
+        chain.input_keys = ["foothing"]
         num_repetitions = 3
         results = await arun_on_dataset(
             dataset_name="test",
