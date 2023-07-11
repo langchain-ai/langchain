@@ -9,22 +9,34 @@ import pydantic
 import pytest
 
 from langchain import OpenAI
-from langchain.experimental.cpal.base import (CausalChain, CPALChain,
-                                              InterventionChain,
-                                              NarrativeChain, QueryChain)
+from langchain.experimental.cpal.base import (
+    CausalChain,
+    CPALChain,
+    InterventionChain,
+    NarrativeChain,
+    QueryChain,
+)
 from langchain.experimental.cpal.constants import Constant
-from langchain.experimental.cpal.models import (CausalModel, EntityModel,
-                                                EntitySettingModel,
-                                                InterventionModel,
-                                                NarrativeModel, QueryModel)
-from langchain.experimental.cpal.templates.univariate.causal import \
-    template as causal_template
-from langchain.experimental.cpal.templates.univariate.intervention import \
-    template as intervention_template
-from langchain.experimental.cpal.templates.univariate.narrative import \
-    template as narrative_template
-from langchain.experimental.cpal.templates.univariate.query import \
-    template as query_template
+from langchain.experimental.cpal.models import (
+    CausalModel,
+    EntityModel,
+    EntitySettingModel,
+    InterventionModel,
+    NarrativeModel,
+    QueryModel,
+)
+from langchain.experimental.cpal.templates.univariate.causal import (
+    template as causal_template,
+)
+from langchain.experimental.cpal.templates.univariate.intervention import (
+    template as intervention_template,
+)
+from langchain.experimental.cpal.templates.univariate.narrative import (
+    template as narrative_template,
+)
+from langchain.experimental.cpal.templates.univariate.query import (
+    template as query_template,
+)
 from langchain.output_parsers import PydanticOutputParser
 from langchain.prompts.prompt import PromptTemplate
 from tests.unit_tests.llms.fake_llm import FakeLLM
