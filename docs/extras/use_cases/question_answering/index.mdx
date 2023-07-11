@@ -45,7 +45,14 @@ Let's load this [blog post](https://lilianweng.github.io/posts/2023-06-23-agent/
 
 We have a QA app in a few lines of code.
 
+Set enviorment varaibles and get packages:
+```python 
+pip install openai
+pip install chromadb
+export OPENAI_API_KEY="..."
+```
 
+Run:
 ```python
 from langchain.document_loaders import WebBaseLoader
 from langchain.indexes import VectorstoreIndexCreator
