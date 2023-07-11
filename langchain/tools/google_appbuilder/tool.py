@@ -1,13 +1,14 @@
 """Tool for the Google search API."""
 
 from typing import Optional, Type
+
 from pydantic import BaseModel, Field
 
-
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
 from langchain.tools.base import BaseTool
-
-from langchain.callbacks.manager import AsyncCallbackManagerForToolRun, CallbackManagerForToolRun
-
 from langchain.utilities.google_appbuilder_api import GoogleAppBuilderAPIWrapper
 
 
@@ -25,8 +26,10 @@ class GoogleAppBuilderTool(BaseTool):
         "discover addressed from ambiguous text. "
         "Input should be a search query."
     )
-    
-    api_wrapper: GoogleAppBuilderAPIWrapper = Field(default_factory=GoogleAppBuilderAPIWrapper)
+
+    api_wrapper: GoogleAppBuilderAPIWrapper = Field(
+        default_factory=GoogleAppBuilderAPIWrapper
+    )
     args_schema: Type[BaseModel] = GoogleAppBuilderSchema
 
     def _run(
