@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import typing
 import uuid
-from typing import Any, Iterable, List, Optional, Tuple, Type, TypeVar
+from typing import Any, Callable, Iterable, List, Optional, Tuple, Type, TypeVar
 
 import numpy as np
 
@@ -76,6 +76,9 @@ class Cassandra(VectorStore):
             embedding_dimension=self._get_embedding_dimension(),
             primary_key_type="TEXT",
         )
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        return self._cosine_relevance_score_fn
 
     def delete_collection(self) -> None:
         """
@@ -265,21 +268,6 @@ class Cassandra(VectorStore):
         embedding_vector = self.embedding.embed_query(query)
         return self.similarity_search_with_score_by_vector(
             embedding_vector,
-            k,
-        )
-
-    # Even though this is a `_`-method,
-    # it is apparently used by VectorSearch parent class
-    # in an exposed method (`similarity_search_with_relevance_scores`).
-    # So we implement it (hmm).
-    def _similarity_search_with_relevance_scores(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
-        return self.similarity_search_with_score(
-            query,
             k,
         )
 
