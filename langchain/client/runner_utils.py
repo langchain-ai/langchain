@@ -59,23 +59,28 @@ class InputFormatError(Exception):
 
 def _wrap_in_chain_factory(
     llm_or_chain_factory: Union[Chain, MODEL_OR_CHAIN_FACTORY],
-    dataset_name: str,
+    dataset_name: str = "<my_dataset>",
 ) -> MODEL_OR_CHAIN_FACTORY:
+    """Forgive the user if they pass in a chain without memory instead of a chain
+    factory. It's a common mistake. Raise a more helpful error message as well."""
     if isinstance(llm_or_chain_factory, Chain):
         if llm_or_chain_factory.memory is not None:
-            memory_class = llm_or_chain_factory.memory.__class__.__name__
-            chain_class = llm_or_chain_factory.__class__.__name__
+            chain = llm_or_chain_factory
+            memory_class = chain.memory.__class__.__name__
+            chain_class = chain.__class__.__name__
             raise ValueError(
-                "Cannot directly evaluate a chain with memory. To evaluate this chain, "
-                " pass in a constructor for the chain that initializes fresh memory"
-                " each time it is called.\nFor example:\n\n"
+                "Cannot directly evaluate a chain with memory. To evaluate this chain,"
+                " pass in a chain constructor that initializes fresh memory"
+                " each time it is called. This will safegaurd against information"
+                " leakage between dataset examples."
+                "\nFor example:\n\n"
                 "def chain_constructor():\n"
                 f"    new_memory = {memory_class}(...)\n"
                 f"    return {chain_class}"
                 "(memory=new_memory, ...)\n\n"
-                f"run_on_dataset({dataset_name}, chain_constructor, ...)"
+                f'run_on_dataset("{dataset_name}", chain_constructor, ...)'
             )
-        return lambda: llm_or_chain_factory
+        return lambda: chain
     return llm_or_chain_factory
 
 
@@ -779,6 +784,7 @@ async def _arun_on_examples(
     Returns:
         A dictionary mapping example ids to the model outputs.
     """
+    llm_or_chain_factory = _wrap_in_chain_factory(llm_or_chain_factory)
     project_name = _get_project_name(project_name, llm_or_chain_factory, None)
     client_ = client or Client()
     run_evaluators, examples = _setup_evaluation(
@@ -1012,6 +1018,7 @@ def _run_on_examples(
         A dictionary mapping example ids to the model outputs.
     """
     results: Dict[str, Any] = {}
+    llm_or_chain_factory = _wrap_in_chain_factory(llm_or_chain_factory)
     project_name = _get_project_name(project_name, llm_or_chain_factory, None)
     client_ = client or Client()
     tracer = LangChainTracer(project_name=project_name)
