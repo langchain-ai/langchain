@@ -3,7 +3,7 @@
 from typing import Any, Dict, List, Optional, Union
 
 from langsmith import RunEvaluator
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from langchain.embeddings.base import Embeddings
 from langchain.evaluation.criteria.eval_chain import CRITERIA_TYPE
@@ -73,12 +73,24 @@ class RunEvalConfig(BaseModel):
         The language model to pass to any evaluators that use a language model.
     """
 
-    evaluators: List[Union[EvaluatorType, EvalConfig]]
+    evaluators: List[Union[EvaluatorType, EvalConfig]] = Field(default_factory=list)
+    """Configurations for which evaluators to apply to the dataset run.
+    Each can be an evaluator type (e.g., "qa") or a configuration for a
+    given evaluator."""
     custom_evaluators: Optional[List[Union[RunEvaluator, StringEvaluator]]] = None
+    """Custom evaluators to apply to the dataset run."""
     reference_key: Optional[str] = None
+    """The key in the dataset run to use as the reference string.
+    If not provided, we will attempt to infer automatically."""
     prediction_key: Optional[str] = None
+    """The key from the traced run's outputs dictionary to use to
+    represent the prediction. If not provided, it will be inferred
+    automatically."""
     input_key: Optional[str] = None
+    """The key from the traced run's inputs dictionary to use to represent the
+    input. If not provided, it will be inferred automatically."""
     eval_llm: Optional[BaseLanguageModel] = None
+    """The language model to pass to any evaluators that require one."""
 
     class Config:
         arbitrary_types_allowed = True
