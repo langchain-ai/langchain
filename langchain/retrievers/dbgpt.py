@@ -1,7 +1,6 @@
-from typing import List, Optional, Any, Dict
+from typing import Any, Dict, List, Optional
 
 from pydantic import Field
-
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -46,7 +45,7 @@ class DBGPTRetriever(BaseRetriever):
         self.top_k = top_k
 
     def _get_relevant_documents(
-            self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Get documents relevant for a query."""
         try:
@@ -63,6 +62,6 @@ class DBGPTRetriever(BaseRetriever):
         return docs
 
     async def _aget_relevant_documents(
-            self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         raise NotImplementedError("DBGPTRetriever does not support async")
