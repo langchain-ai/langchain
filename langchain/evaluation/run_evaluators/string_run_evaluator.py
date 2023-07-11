@@ -355,8 +355,8 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         if isinstance(model, BaseLanguageModel):
             run_mapper: StringRunMapper = LLMStringRunMapper()
         elif isinstance(model, Chain):
-            run_mapper = ChainStringRunMapper(
-                input_key=input_key, prediction_key=prediction_key
+            run_mapper = ChainStringRunMapper.from_chain(
+                model, input_key=input_key, prediction_key=prediction_key
             )
         elif isinstance(model, Tool):
             run_mapper = ToolStringRunMapper()
