@@ -1,6 +1,7 @@
 """Load summarizing chains."""
 from typing import Any, Mapping, Optional, Protocol
 
+from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
 from langchain.chains.combine_documents.reduce import ReduceDocumentsChain
@@ -10,7 +11,7 @@ from langchain.chains.llm import LLMChain
 from langchain.chains.summarize import map_reduce_prompt, refine_prompts, stuff_prompt
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
-from langchain.callbacks.manager import Callbacks
+
 
 class LoadingCallable(Protocol):
     """Interface for loading the combine documents chain."""
@@ -52,9 +53,13 @@ def _load_map_reduce_chain(
     callbacks: Callbacks = None,
     **kwargs: Any,
 ) -> MapReduceDocumentsChain:
-    map_chain = LLMChain(llm=llm, prompt=map_prompt, verbose=verbose, callbacks=callbacks)
+    map_chain = LLMChain(
+        llm=llm, prompt=map_prompt, verbose=verbose, callbacks=callbacks
+    )
     _reduce_llm = reduce_llm or llm
-    reduce_chain = LLMChain(llm=_reduce_llm, prompt=combine_prompt, verbose=verbose, callbacks=callbacks)
+    reduce_chain = LLMChain(
+        llm=_reduce_llm, prompt=combine_prompt, verbose=verbose, callbacks=callbacks
+    )
     # TODO: document prompt
     combine_documents_chain = StuffDocumentsChain(
         llm_chain=reduce_chain,
