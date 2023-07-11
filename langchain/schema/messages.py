@@ -168,7 +168,7 @@ def _message_from_dict(message: dict) -> BaseMessage:
     elif _type == "chat":
         return ChatMessage(**message["data"])
     else:
-        raise ValueError(f"Got unexpected type: {_type}")
+        raise ValueError(f"Got unexpected message type: {_type}")
 
 
 def messages_from_dict(messages: List[dict]) -> List[BaseMessage]:
