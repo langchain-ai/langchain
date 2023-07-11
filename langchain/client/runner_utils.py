@@ -808,6 +808,11 @@ def _setup_evaluation(
             run_type = RunTypeEnum.llm
         else:
             run_type = RunTypeEnum.chain
+            if data_type in (DataType.chat, DataType.llm):
+                raise ValueError(
+                    f"Cannot evaluate a chain on a {data_type} dataset. "
+                    "Please specify a dataset with the default 'kv' data type."
+                )
             chain = llm_or_chain_factory()
             run_inputs = chain.input_keys
             run_outputs = chain.output_keys
@@ -820,6 +825,7 @@ def _setup_evaluation(
             run_outputs,
         )
     else:
+        # TODO: Create a default helpfulness evaluator
         run_evaluators = None
     return run_evaluators, examples
 
