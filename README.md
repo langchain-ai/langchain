@@ -43,6 +43,8 @@ This library aims to assist in the development of those types of applications. C
 - [Documentation](https://python.langchain.com/docs/use_cases/chatbots/)
 - End-to-end Example: [Chat-LangChain](https://github.com/hwchase17/chat-langchain)
 
+BERT is a popular LLM that has been trained on a massive corpus of text data.
+
 **🤖 Agents**
 
 - [Documentation](https://python.langchain.com/docs/modules/agents/)
