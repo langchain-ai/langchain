@@ -2,12 +2,11 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from langsmith import EvaluationResult, RunEvaluator
 from langsmith.schemas import DataType, Example, Run, RunTypeEnum
 
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
@@ -19,7 +18,6 @@ from langchain.load.load import loads
 from langchain.load.serializable import Serializable
 from langchain.schema import RUN_KEY, messages_from_dict
 from langchain.schema.messages import BaseMessage, get_buffer_string
-from langchain.tools.base import Tool
 
 
 def _get_messages_from_run_dict(messages: List[dict]) -> List[BaseMessage]:
@@ -340,50 +338,6 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         """Evaluate an example."""
         result = await self.acall({"run": run, "example": example})
         return result["feedback"]
-
-    # TODO: Delete
-    @classmethod
-    def from_model_and_evaluator(
-        cls,
-        model: Union[Chain, BaseLanguageModel, Tool],
-        evaluator: StringEvaluator,
-        input_key: Optional[str] = None,
-        prediction_key: Optional[str] = None,
-        reference_key: Optional[str] = None,
-    ) -> StringRunEvaluatorChain:
-        """Create a StringRunEvaluatorChain from a model and evaluator."""
-        if isinstance(model, BaseLanguageModel):
-            run_mapper: StringRunMapper = LLMStringRunMapper()
-        elif isinstance(model, Chain):
-            run_mapper = ChainStringRunMapper.from_chain(
-                model, input_key=input_key, prediction_key=prediction_key
-            )
-        elif isinstance(model, Tool):
-            run_mapper = ToolStringRunMapper()
-        else:
-            raise NotImplementedError(
-                f"{cls.__name__}.from_model_and_evaluator({type(model)})"
-                " not yet implemented."
-                "Expected one of [BaseLanguageModel, Chain, Tool]."
-            )
-        if reference_key is not None or isinstance(model, BaseLanguageModel):
-            example_mapper = StringExampleMapper(reference_key=reference_key)
-        elif evaluator.requires_reference:
-            # We could potentially auto-infer if there is only one string in the
-            # example, but it's preferred to raise earlier.
-            raise ValueError(
-                f"Evaluator {evaluator.evaluation_name} requires a reference"
-                " example from the dataset. Please specify the reference key from"
-                " amongst the dataset outputs keys."
-            )
-        else:
-            example_mapper = None
-        return cls(
-            name=evaluator.evaluation_name,
-            run_mapper=run_mapper,
-            example_mapper=example_mapper,
-            string_evaluator=evaluator,
-        )
 
     @classmethod
     def from_run_and_data_type(
