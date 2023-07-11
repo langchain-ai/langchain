@@ -1,4 +1,4 @@
-from typing import Iterator, List, Optional, Set
+from typing import Iterator, List, Optional, Set, Callable
 from urllib.parse import urljoin, urlparse
 
 import requests
@@ -10,19 +10,28 @@ from langchain.document_loaders.base import BaseLoader
 class RecursiveUrlLoader(BaseLoader):
     """Loads all child links from a given url."""
 
-    def __init__(self, url: str, exclude_dirs: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        url: str,
+        page_loader: Optional[Callable[[str], BaseLoader]] = None,
+        exclude_dirs: Optional[str] = None,
+    ) -> None:
         """Initialize with URL to crawl and any subdirectories to exclude.
 
         Args:
             url: The URL to crawl.
             exclude_dirs: A list of subdirectories to exclude.
         """
+
+        from langchain.document_loaders import WebBaseLoader
+
         self.url = url
         self.exclude_dirs = exclude_dirs
+        self.page_loader = page_loader if page_loader else WebBaseLoader
 
     def get_child_links_recursive(
         self, url: str, visited: Optional[Set[str]] = None
-    ) -> Set[str]:
+    ) -> Iterator[Document]:
         """Recursively get all child links starting with the path of the input URL.
 
         Args:
@@ -80,19 +89,20 @@ class RecursiveUrlLoader(BaseLoader):
             # Check all unvisited links
             if link not in visited:
                 visited.add(link)
+                loaded_link = self.page_loader(link).load()
+                if isinstance(loaded_link, list):
+                    yield from loaded_link
+                else:
+                    yield loaded_link
                 # If the link is a directory (w/ children) then visit it
                 if link.endswith("/"):
-                    visited.update(self.get_child_links_recursive(link, visited))
+                    yield from self.get_child_links_recursive(link, visited)
 
         return visited
 
     def lazy_load(self) -> Iterator[Document]:
-        from langchain.document_loaders import WebBaseLoader
-
         """Lazy load web pages."""
-        child_links = self.get_child_links_recursive(self.url)
-        loader = WebBaseLoader(list(child_links))
-        return loader.lazy_load()
+        return self.get_child_links_recursive(self.url)
 
     def load(self) -> List[Document]:
         """Load web pages."""
