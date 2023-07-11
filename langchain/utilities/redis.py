@@ -68,6 +68,11 @@ def get_client(redis_url: str, **kwargs: Any) -> RedisType:
     # check if normal redis:// or redis+sentinel:// url
     if redis_url.startswith("redis+sentinel"):
         redis_client = _redis_sentinel_client(redis_url, **kwargs)
+    if redis_url.startswith("rediss+sentinel"):  # sentinel with TLS support enables
+        kwargs["ssl"] = True
+        if "ssl_cert_reqs" not in kwargs:
+            kwargs["ssl_cert_reqs"] = "none"
+        redis_client = _redis_sentinel_client(redis_url, **kwargs)
     else:
         # connect to redis server from url
         redis_client = redis.from_url(redis_url, **kwargs)
@@ -105,6 +110,12 @@ def _redis_sentinel_client(redis_url: str, **kwargs: Any) -> RedisType:
     if parsed_url.username:
         sentinel_args["username"] = parsed_url.username
         kwargs["username"] = parsed_url.username
+
+    # check for all SSL related properties and copy them into sentinel_kwargs too,
+    # add client_name also
+    for arg in kwargs:
+        if arg.startswith("ssl") or arg == "client_name":
+            sentinel_args[arg] = kwargs[arg]
 
     # sentinel user/pass is part of sentinel_kwargs, user/pass for redis server
     # connection as direct parameter in kwargs

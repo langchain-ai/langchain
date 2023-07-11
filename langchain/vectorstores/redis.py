@@ -497,7 +497,7 @@ class Redis(VectorStore):
             raise ValueError("'ids' (keys)() were not provided.")
 
         try:
-            import redis
+            import redis  # noqa: F401
         except ImportError:
             raise ValueError(
                 "Could not import redis python package. "
@@ -508,7 +508,7 @@ class Redis(VectorStore):
             # otherwise passing it to Redis will result in an error.
             if "redis_url" in kwargs:
                 kwargs.pop("redis_url")
-            client = redis.from_url(url=redis_url, **kwargs)
+            client = get_client(redis_url=redis_url, **kwargs)
         except ValueError as e:
             raise ValueError(f"Your redis connected error: {e}")
         # Check if index exists
