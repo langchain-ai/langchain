@@ -243,6 +243,7 @@ class PGVector(VectorStore):
             ids (list, optional): The IDs of the embeddings. If provided, will update or create the embeddings, otherwise will just add them. IDs must be sorted.
             kwargs: vectorstore specific parameters
         """
+        should_upsert = ids is not None
         if ids is None:
             ids = [str(uuid.uuid1()) for _ in texts]
 
@@ -255,7 +256,7 @@ class PGVector(VectorStore):
             if not collection:
                 raise ValueError("Collection not found")
             for text, metadata, embedding, id in zip(texts, metadatas, embeddings, ids):
-                if id != last_seen_id:
+                if should_upsert and id != last_seen_id:
                     last_seen_id = id
                     session.execute(
                         delete(self.EmbeddingStore).where(
