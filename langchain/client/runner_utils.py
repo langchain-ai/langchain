@@ -64,8 +64,7 @@ def _first_example(examples: Iterator[Example]) -> Tuple[Example, Iterator[Examp
         example: Example = next(examples)
     except StopIteration:
         raise ValueError("No examples provided.")
-    examples = itertools.chain([example], examples)
-    return example, examples
+    return example, itertools.chain([example], examples)
 
 
 def _get_prompts(inputs: Dict[str, Any]) -> List[str]:
@@ -407,6 +406,7 @@ async def arun_on_examples(
     run_evaluators, examples = _setup_evaluation(
         llm_or_chain_factory, examples, evaluation, data_type
     )
+    examples = _validate_example_inputs(examples, llm_or_chain_factory, input_mapper)
     results: Dict[str, List[Any]] = {}
 
     async def process_example(
@@ -613,7 +613,7 @@ def run_on_examples(
     run_evaluators, examples = _setup_evaluation(
         llm_or_chain_factory, examples, evaluation, data_type
     )
-
+    examples = _validate_example_inputs(examples, llm_or_chain_factory, input_mapper)
     evalution_handler = EvaluatorCallbackHandler(
         evaluators=run_evaluators or [],
         client=client_,
@@ -794,6 +794,52 @@ def run_on_dataset(
 ### TODO: Move to different file
 
 
+def _validate_example_inputs(
+    examples: Iterator[Example],
+    llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
+    input_mapper: Optional[Callable[[Dict], Any]],
+) -> Iterator[Example]:
+    """Validate that the example inputs are valid for the model."""
+    first_example, examples = _first_example(examples)
+    if input_mapper:
+        first_inputs = input_mapper(first_example.inputs)
+    else:
+        first_inputs = first_example.inputs
+    if isinstance(first_inputs, dict):
+        if isinstance(llm_or_chain_factory, BaseLanguageModel):
+            try:
+                _get_prompts(first_inputs)
+            except InputFormatError:
+                try:
+                    _get_messages(first_inputs)
+                except InputFormatError:
+                    raise InputFormatError(
+                        "Example inputs do not match language model input format. "
+                        "Expected a dictionary with messages or a single prompt."
+                        f" Got: {first_inputs}"
+                        " Please provide an input_mapper to convert the example.inputs "
+                        " to a compatible format for the llm or chat model"
+                        " you wish to evaluate."
+                    )
+        else:
+            chain = llm_or_chain_factory()
+            if len(first_inputs) == 1 and len(chain.input_keys) == 1:
+                # We can pass this through the run method.
+                return examples
+            if not first_inputs.keys() == chain.input_keys:
+                raise InputFormatError(
+                    "Example inputs do not match chain input keys. "
+                    " Please provide an input_mapper to convert the example.inputs "
+                    " to a compatible format for the chain you wish to evaluate."
+                    f"Expected: {chain.input_keys}. "
+                    f"Got: {first_inputs.keys()}"
+                )
+    else:
+        # TODO: Validate that custom mapped inputs are valid
+        pass
+    return examples
+
+
 def _setup_evaluation(
     llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
     examples: Iterator[Example],
@@ -810,7 +856,8 @@ def _setup_evaluation(
             run_type = RunTypeEnum.chain
             if data_type in (DataType.chat, DataType.llm):
                 raise ValueError(
-                    f"Cannot evaluate a chain on a {data_type} dataset. "
+                    "Cannot evaluate a chain on dataset with "
+                    f"data_type={data_type.value}. "
                     "Please specify a dataset with the default 'kv' data type."
                 )
             chain = llm_or_chain_factory()

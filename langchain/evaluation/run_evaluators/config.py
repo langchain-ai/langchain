@@ -36,11 +36,6 @@ class RunEvalConfig(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
-    def __init__(
-        self, evaluators: List[Union[EvaluatorType, EvalConfig]], **kwargs: Any
-    ):
-        super().__init__(evaluators=evaluators, **kwargs)
-
     class Criteria(EvalConfig):
         """Configuration for a criteria evaluator."""
 
