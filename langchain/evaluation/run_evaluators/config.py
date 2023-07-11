@@ -37,7 +37,7 @@ class RunEvalConfig(BaseModel):
         arbitrary_types_allowed = True
 
     class Criteria(EvalConfig):
-        """Configuration for a criteria evaluator."""
+        """Configuration for a reference-free criteria evaluator."""
 
         criteria: Optional[CRITERIA_TYPE] = None
         evaluator_type: EvaluatorType = EvaluatorType.CRITERIA
@@ -47,7 +47,16 @@ class RunEvalConfig(BaseModel):
         ) -> None:
             super().__init__(criteria=criteria, **kwargs)
 
-    # TODO: LabeledCriteria when that's split out
+    class LabeledCriteria(EvalConfig):
+        """Configuration for a labeled (with references) criteria evaluator."""
+
+        criteria: Optional[CRITERIA_TYPE] = None
+        evaluator_type: EvaluatorType = EvaluatorType.LABELED_CRITERIA
+
+        def __init__(
+            self, criteria: Optional[CRITERIA_TYPE] = None, **kwargs: Any
+        ) -> None:
+            super().__init__(criteria=criteria, **kwargs)
 
     class EmbeddingDistance(EvalConfig):
         """Configuration for an embedding distance evaluator."""

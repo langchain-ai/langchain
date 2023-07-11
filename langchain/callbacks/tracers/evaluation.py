@@ -1,7 +1,9 @@
 """A tracer that runs evaluators over completed runs."""
+from __future__ import annotations
+
 import logging
 from concurrent.futures import Future, ThreadPoolExecutor, wait
-from typing import Any, Optional, Sequence, Set, Union
+from typing import Any, List, Optional, Sequence, Set, Union
 from uuid import UUID
 
 from langsmith import Client, RunEvaluator
@@ -11,6 +13,15 @@ from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import Run
 
 logger = logging.getLogger(__name__)
+
+_TRACERS: List[EvaluatorCallbackHandler] = []
+
+
+def wait_for_all_evaluators() -> None:
+    """Wait for all tracers to finish."""
+    global _TRACERS
+    for tracer in _TRACERS:
+        tracer.wait_for_futures()
 
 
 class EvaluatorCallbackHandler(BaseTracer):
@@ -74,6 +85,8 @@ class EvaluatorCallbackHandler(BaseTracer):
         self.futures: Set[Future] = set()
         self.skip_unfinished = skip_unfinished
         self.project_name = project_name
+        global _TRACERS
+        _TRACERS.append(self)
 
     def _evaluate_in_project(self, run: Run, evaluator: RunEvaluator) -> None:
         """Evaluate the run in the project.

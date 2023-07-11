@@ -1,4 +1,3 @@
-import sys
 from typing import Iterator, List
 from uuid import uuid4
 
@@ -6,12 +5,35 @@ import pytest
 from langsmith import Client as Client
 from langsmith.schemas import DataType
 
+from langchain.callbacks.tracers.evaluation import wait_for_all_evaluators
 from langchain.chains.llm import LLMChain
 from langchain.chat_models import ChatOpenAI
 from langchain.client.runner_utils import InputFormatError, run_on_dataset
 from langchain.evaluation import EvaluatorType
 from langchain.evaluation.run_evaluators import RunEvalConfig
 from langchain.llms.openai import OpenAI
+from langchain.schema.messages import BaseMessage, HumanMessage
+
+
+def _check_all_feedback_passed(_project_name: str, client: Client) -> None:
+    # Assert that all runs completed, all feedback completed, and that the
+    # chain or llm passes for the feedback provided.
+    runs = list(client.list_runs(project_name=_project_name, execution_order=1))
+    assert len(runs) == 4
+    wait_for_all_evaluators()
+    feedback = list(client.list_feedback(run_ids=[run.id for run in runs]))
+    assert len(feedback) == 8
+    assert all([f.score == 1 for f in feedback])
+
+
+@pytest.fixture
+def eval_project_name() -> str:
+    return f"lcp integration tests - {str(uuid4())[-8:]}"
+
+
+@pytest.fixture(scope="module")
+def client() -> Client:
+    return Client()
 
 
 @pytest.fixture(
@@ -52,7 +74,9 @@ def kv_dataset_name() -> Iterator[str]:
     yield _dataset_name
 
 
-def test_chat_model(kv_dataset_name: str) -> None:
+def test_chat_model(
+    kv_dataset_name: str, eval_project_name: str, client: Client
+) -> None:
     llm = ChatOpenAI(temperature=0)
     eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
     with pytest.raises(ValueError, match="Must specify reference_key"):
@@ -66,16 +90,21 @@ def test_chat_model(kv_dataset_name: str) -> None:
     ):
         run_on_dataset(kv_dataset_name, llm, evaluation=eval_config)
 
-    def input_mapper(d: dict) -> dict:
-        return {"input": d["some_input"]}
+    def input_mapper(d: dict) -> List[BaseMessage]:
+        return [HumanMessage(content=d["some_input"])]
 
-    results = run_on_dataset(
-        kv_dataset_name, llm, evaluation=eval_config, input_mapper=input_mapper
+    run_on_dataset(
+        kv_dataset_name,
+        llm,
+        evaluation=eval_config,
+        input_mapper=input_mapper,
+        project_name=eval_project_name,
+        tags=["shouldpass"],
     )
-    print("CHAT", results, file=sys.stderr)
+    _check_all_feedback_passed(eval_project_name, client)
 
 
-def test_llm(kv_dataset_name: str) -> None:
+def test_llm(kv_dataset_name: str, eval_project_name: str, client: Client) -> None:
     llm = OpenAI(temperature=0)
     eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
     with pytest.raises(ValueError, match="Must specify reference_key"):
@@ -89,16 +118,21 @@ def test_llm(kv_dataset_name: str) -> None:
     ):
         run_on_dataset(kv_dataset_name, llm, evaluation=eval_config)
 
-    def input_mapper(d: dict) -> dict:
-        return {"input": d["some_input"]}
+    def input_mapper(d: dict) -> str:
+        return d["some_input"]
 
-    results = run_on_dataset(
-        kv_dataset_name, llm, evaluation=eval_config, input_mapper=input_mapper
+    run_on_dataset(
+        kv_dataset_name,
+        llm,
+        evaluation=eval_config,
+        input_mapper=input_mapper,
+        project_name=eval_project_name,
+        tags=["shouldpass"],
     )
-    print("LLM", results, file=sys.stderr)
+    _check_all_feedback_passed(eval_project_name, client)
 
 
-def test_chain(kv_dataset_name: str) -> None:
+def test_chain(kv_dataset_name: str, eval_project_name: str, client: Client) -> None:
     llm = ChatOpenAI(temperature=0)
     chain = LLMChain.from_string(llm, "The answer to the {question} is: ")
     eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
@@ -116,13 +150,29 @@ def test_chain(kv_dataset_name: str) -> None:
     def input_mapper(d: dict) -> dict:
         return {"input": d["some_input"]}
 
-    results = run_on_dataset(
+    with pytest.raises(
+        InputFormatError,
+        match=" match the chain's expected input keys.",
+    ):
+        run_on_dataset(
+            kv_dataset_name,
+            lambda: chain,
+            evaluation=eval_config,
+            input_mapper=input_mapper,
+        )
+
+    def right_input_mapper(d: dict) -> dict:
+        return {"question": d["some_input"]}
+
+    run_on_dataset(
         kv_dataset_name,
         lambda: chain,
         evaluation=eval_config,
-        input_mapper=input_mapper,
+        input_mapper=right_input_mapper,
+        project_name=eval_project_name,
+        tags=["shouldpass"],
     )
-    print("CHAIN", results, file=sys.stderr)
+    _check_all_feedback_passed(eval_project_name, client)
 
 
 ### Testing Chat Datasets
@@ -170,22 +220,30 @@ def chat_dataset_name() -> Iterator[str]:
     yield _dataset_name
 
 
-def test_chat_model_on_chat_dataset(chat_dataset_name: str) -> None:
+def test_chat_model_on_chat_dataset(
+    chat_dataset_name: str, eval_project_name: str, client: Client
+) -> None:
     llm = ChatOpenAI(temperature=0)
     eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
-    results = run_on_dataset(chat_dataset_name, llm, evaluation=eval_config)
-    print("CHAT", results, file=sys.stderr)
+    run_on_dataset(
+        chat_dataset_name, llm, evaluation=eval_config, project_name=eval_project_name
+    )
+    _check_all_feedback_passed(eval_project_name, client)
 
 
-def test_llm_on_chat_dataset(chat_dataset_name: str) -> None:
+def test_llm_on_chat_dataset(
+    chat_dataset_name: str, eval_project_name: str, client: Client
+) -> None:
     llm = OpenAI(temperature=0)
     eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
-    results = run_on_dataset(
+    run_on_dataset(
         chat_dataset_name,
         llm,
         evaluation=eval_config,
+        project_name=eval_project_name,
+        tags=["shouldpass"],
     )
-    print("LLM", results, file=sys.stderr)
+    _check_all_feedback_passed(eval_project_name, client)
 
 
 def test_chain_on_chat_dataset(chat_dataset_name: str) -> None:
@@ -234,22 +292,34 @@ def llm_dataset_name() -> Iterator[str]:
     yield _dataset_name
 
 
-def test_chat_model_on_llm_dataset(llm_dataset_name: str) -> None:
+def test_chat_model_on_llm_dataset(
+    llm_dataset_name: str, eval_project_name: str, client: Client
+) -> None:
     llm = ChatOpenAI(temperature=0)
     eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
-    results = run_on_dataset(llm_dataset_name, llm, evaluation=eval_config)
-    print("CHAT", results, file=sys.stderr)
-
-
-def test_llm_on_llm_dataset(llm_dataset_name: str) -> None:
-    llm = OpenAI(temperature=0)
-    eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
-    results = run_on_dataset(
+    run_on_dataset(
         llm_dataset_name,
         llm,
         evaluation=eval_config,
+        project_name=eval_project_name,
+        tags=["shouldpass"],
     )
-    print("LLM", results, file=sys.stderr)
+    _check_all_feedback_passed(eval_project_name, client)
+
+
+def test_llm_on_llm_dataset(
+    llm_dataset_name: str, eval_project_name: str, client: Client
+) -> None:
+    llm = OpenAI(temperature=0)
+    eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
+    run_on_dataset(
+        llm_dataset_name,
+        llm,
+        evaluation=eval_config,
+        project_name=eval_project_name,
+        tags=["shouldpass"],
+    )
+    _check_all_feedback_passed(eval_project_name, client)
 
 
 def test_chain_on_llm_dataset(llm_dataset_name: str) -> None:
@@ -257,10 +327,87 @@ def test_chain_on_llm_dataset(llm_dataset_name: str) -> None:
     chain = LLMChain.from_string(llm, "The answer to the {question} is: ")
     eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
     with pytest.raises(
-        ValueError, match="Cannot evaluate a chain on dataset with data_type=chat"
+        ValueError, match="Cannot evaluate a chain on dataset with data_type=llm"
     ):
         run_on_dataset(
             llm_dataset_name,
             lambda: chain,
             evaluation=eval_config,
         )
+
+
+@pytest.fixture(
+    scope="module",
+)
+def kv_singleio_dataset_name() -> Iterator[str]:
+    import pandas as pd
+
+    client = Client()
+    df = pd.DataFrame(
+        {
+            "the wackiest input": [
+                "What's the capital of California?",
+                "What's the capital of Nevada?",
+                "What's the capital of Oregon?",
+                "What's the capital of Washington?",
+            ],
+            "unthinkable output": ["Sacramento", "Carson City", "Salem", "Olympia"],
+        }
+    )
+
+    uid = str(uuid4())[-8:]
+    _dataset_name = f"lcp singleio kv dataset integration tests - {uid}"
+    client.upload_dataframe(
+        df,
+        name=_dataset_name,
+        input_keys=["the wackiest input"],
+        output_keys=["unthinkable output"],
+        description="Integration test dataset",
+    )
+    yield _dataset_name
+
+
+def test_chat_model_on_kv_singleio_dataset(
+    kv_singleio_dataset_name: str, eval_project_name: str, client: Client
+) -> None:
+    llm = ChatOpenAI(temperature=0)
+    eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
+    run_on_dataset(
+        kv_singleio_dataset_name,
+        llm,
+        evaluation=eval_config,
+        project_name=eval_project_name,
+        tags=["shouldpass"],
+    )
+    _check_all_feedback_passed(eval_project_name, client)
+
+
+def test_llm_on_kv_singleio_dataset(
+    kv_singleio_dataset_name: str, eval_project_name: str, client: Client
+) -> None:
+    llm = OpenAI(temperature=0)
+    eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
+    run_on_dataset(
+        kv_singleio_dataset_name,
+        llm,
+        evaluation=eval_config,
+        project_name=eval_project_name,
+        tags=["shouldpass"],
+    )
+    _check_all_feedback_passed(eval_project_name, client)
+
+
+def test_chain_on_kv_singleio_dataset(
+    kv_singleio_dataset_name: str, eval_project_name: str, client: Client
+) -> None:
+    llm = ChatOpenAI(temperature=0)
+    chain = LLMChain.from_string(llm, "The answer to the {question} is: ")
+    eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
+    run_on_dataset(
+        kv_singleio_dataset_name,
+        lambda: chain,
+        evaluation=eval_config,
+        project_name=eval_project_name,
+        tags=["shouldpass"],
+    )
+    _check_all_feedback_passed(eval_project_name, client)
