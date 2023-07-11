@@ -114,3 +114,11 @@ def test_parse_bool_value(x: str) -> None:
     actual = parsed.value
     expected = x.lower() == "true"
     assert actual == expected
+
+
+@pytest.mark.parametrize("op", ("and", "or"))
+@pytest.mark.parametrize("arg", ('eq("foo", 2)', 'and(eq("foo", 2), lte("bar", 1.1))'))
+def test_parser_unpack_single_arg_operation(op: str, arg: str) -> None:
+    expected = DEFAULT_PARSER.parse(arg)
+    actual = DEFAULT_PARSER.parse(f"{op}({arg})")
+    assert expected == actual

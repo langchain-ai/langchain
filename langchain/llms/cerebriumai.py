@@ -23,6 +23,7 @@ class CerebriumAI(LLM):
 
     Example:
         .. code-block:: python
+
             from langchain.llms import CerebriumAI
             cerebrium = CerebriumAI(endpoint_url="")
 
@@ -87,6 +88,7 @@ class CerebriumAI(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call to CerebriumAI endpoint."""
         try:
@@ -99,7 +101,9 @@ class CerebriumAI(LLM):
 
         params = self.model_kwargs or {}
         response = model_api_request(
-            self.endpoint_url, {"prompt": prompt, **params}, self.cerebriumai_api_key
+            self.endpoint_url,
+            {"prompt": prompt, **params, **kwargs},
+            self.cerebriumai_api_key,
         )
         text = response["data"]["result"]
         if stop is not None:

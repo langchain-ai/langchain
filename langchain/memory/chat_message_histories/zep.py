@@ -1,17 +1,20 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from langchain.schema import (
-    AIMessage,
     BaseChatMessageHistory,
+)
+from langchain.schema.messages import (
+    AIMessage,
     BaseMessage,
     HumanMessage,
+    SystemMessage,
 )
 
 if TYPE_CHECKING:
-    from zep_python import Memory, Message, NotFoundError, SearchResult
+    from zep_python import Memory, MemorySearchResult, Message, NotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +28,7 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
         zep_chat_history = ZepChatMessageHistory(
             session_id=session_id,
             url=ZEP_API_URL,
+            api_key=<your_api_key>,
         )
 
         # Use a standard ConversationBufferMemory to encapsulate the Zep chat history
@@ -37,7 +41,8 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
     summarizes, embeds, indexes, and enriches conversational AI chat
     histories, and exposes them via simple, low-latency APIs.
 
-    For server installation instructions and more, see: https://getzep.github.io/
+    For server installation instructions and more, see:
+    https://docs.getzep.com/deployment/quickstart/
 
     This class is a thin wrapper around the zep-python package. Additional
     Zep functionality is exposed via the `zep_summary` and `zep_messages`
@@ -51,6 +56,7 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
         self,
         session_id: str,
         url: str = "http://localhost:8000",
+        api_key: Optional[str] = None,
     ) -> None:
         try:
             from zep_python import ZepClient
@@ -60,7 +66,7 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
                 "Please install it with `pip install zep-python`."
             )
 
-        self.zep_client = ZepClient(base_url=url)
+        self.zep_client = ZepClient(base_url=url, api_key=api_key)
         self.session_id = session_id
 
     @property
@@ -74,14 +80,24 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
         # Extract summary, if present, and messages
         if zep_memory.summary:
             if len(zep_memory.summary.content) > 0:
-                messages.append(HumanMessage(content=zep_memory.summary.content))
+                messages.append(SystemMessage(content=zep_memory.summary.content))
         if zep_memory.messages:
             msg: Message
             for msg in zep_memory.messages:
+                metadata: Dict = {
+                    "uuid": msg.uuid,
+                    "created_at": msg.created_at,
+                    "token_count": msg.token_count,
+                    "metadata": msg.metadata,
+                }
                 if msg.role == "ai":
-                    messages.append(AIMessage(content=msg.content))
+                    messages.append(
+                        AIMessage(content=msg.content, additional_kwargs=metadata)
+                    )
                 else:
-                    messages.append(HumanMessage(content=msg.content))
+                    messages.append(
+                        HumanMessage(content=msg.content, additional_kwargs=metadata)
+                    )
 
         return messages
 
@@ -116,31 +132,50 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
             return None
         return zep_memory
 
-    def add_user_message(self, message: str) -> None:
-        self.append(HumanMessage(content=message))
+    def add_user_message(
+        self, message: str, metadata: Optional[Dict[str, Any]] = None
+    ) -> None:
+        """Convenience method for adding a human message string to the store.
 
-    def add_ai_message(self, message: str) -> None:
-        self.append(AIMessage(content=message))
+        Args:
+            message: The string contents of a human message.
+            metadata: Optional metadata to attach to the message.
+        """
+        self.add_message(HumanMessage(content=message), metadata=metadata)
 
-    def append(self, message: BaseMessage) -> None:
+    def add_ai_message(
+        self, message: str, metadata: Optional[Dict[str, Any]] = None
+    ) -> None:
+        """Convenience method for adding an AI message string to the store.
+
+        Args:
+            message: The string contents of an AI message.
+            metadata: Optional metadata to attach to the message.
+        """
+        self.add_message(AIMessage(content=message), metadata=metadata)
+
+    def add_message(
+        self, message: BaseMessage, metadata: Optional[Dict[str, Any]] = None
+    ) -> None:
         """Append the message to the Zep memory history"""
         from zep_python import Memory, Message
 
-        zep_message: Message
-        if isinstance(message, HumanMessage):
-            zep_message = Message(content=message.content, role="human")
-        else:
-            zep_message = Message(content=message.content, role="ai")
-
+        zep_message = Message(
+            content=message.content, role=message.type, metadata=metadata
+        )
         zep_memory = Memory(messages=[zep_message])
 
         self.zep_client.add_memory(self.session_id, zep_memory)
 
-    def search(self, query: str, limit: Optional[int] = None) -> List[SearchResult]:
+    def search(
+        self, query: str, metadata: Optional[Dict] = None, limit: Optional[int] = None
+    ) -> List[MemorySearchResult]:
         """Search Zep memory for messages matching the query"""
-        from zep_python import SearchPayload
+        from zep_python import MemorySearchPayload
 
-        payload: SearchPayload = SearchPayload(text=query)
+        payload: MemorySearchPayload = MemorySearchPayload(
+            text=query, metadata=metadata
+        )
 
         return self.zep_client.search_memory(self.session_id, payload, limit=limit)
 

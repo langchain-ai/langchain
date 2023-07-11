@@ -1,4 +1,4 @@
-"""Loader that loads Roam directory dump."""
+"""Loads Roam directory dump."""
 from pathlib import Path
 from typing import List
 
@@ -7,10 +7,10 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class RoamLoader(BaseLoader):
-    """Loader that loads Roam files from disk."""
+    """Loads Roam files from disk."""
 
     def __init__(self, path: str):
-        """Initialize with path."""
+        """Initialize with a path."""
         self.file_path = path
 
     def load(self) -> List[Document]:

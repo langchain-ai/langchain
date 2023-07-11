@@ -4,7 +4,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from langchain.memory.chat_message_histories import ZepChatMessageHistory
-from langchain.schema import AIMessage, HumanMessage
+from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
 
 if TYPE_CHECKING:
     from zep_python import ZepClient
@@ -30,8 +30,8 @@ def test_messages(mocker: MockerFixture, zep_chat: ZepChatMessageHistory) -> Non
             content="summary",
         ),
         messages=[
-            Message(content="message", role="ai"),
-            Message(content="message2", role="human"),
+            Message(content="message", role="ai", metadata={"key": "value"}),
+            Message(content="message2", role="human", metadata={"key2": "value2"}),
         ],
     )
     zep_chat.zep_client.get_memory.return_value = mock_memory  # type: ignore
@@ -39,7 +39,7 @@ def test_messages(mocker: MockerFixture, zep_chat: ZepChatMessageHistory) -> Non
     result = zep_chat.messages
 
     assert len(result) == 3
-    assert isinstance(result[0], HumanMessage)  # summary
+    assert isinstance(result[0], SystemMessage)  # summary
     assert isinstance(result[1], AIMessage)
     assert isinstance(result[2], HumanMessage)
 
@@ -60,7 +60,7 @@ def test_add_ai_message(mocker: MockerFixture, zep_chat: ZepChatMessageHistory) 
 
 @pytest.mark.requires("zep_python")
 def test_append(mocker: MockerFixture, zep_chat: ZepChatMessageHistory) -> None:
-    zep_chat.append(AIMessage(content="test message"))
+    zep_chat.add_message(AIMessage(content="test message"))
     zep_chat.zep_client.add_memory.assert_called_once()  # type: ignore
 
 

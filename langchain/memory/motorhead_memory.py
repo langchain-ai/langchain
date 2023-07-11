@@ -3,23 +3,53 @@ from typing import Any, Dict, List, Optional
 import requests
 
 from langchain.memory.chat_memory import BaseChatMemory
-from langchain.schema import get_buffer_string
+from langchain.schema.messages import get_buffer_string
+
+MANAGED_URL = "https://api.getmetal.io/v1/motorhead"
+# LOCAL_URL = "http://localhost:8080"
 
 
 class MotorheadMemory(BaseChatMemory):
-    url: str = "http://localhost:8080"
+    url: str = MANAGED_URL
     timeout = 3000
     memory_key = "history"
     session_id: str
     context: Optional[str] = None
 
+    # Managed Params
+    api_key: Optional[str] = None
+    client_id: Optional[str] = None
+
+    def __get_headers(self) -> Dict[str, str]:
+        is_managed = self.url == MANAGED_URL
+
+        headers = {
+            "Content-Type": "application/json",
+        }
+
+        if is_managed and not (self.api_key and self.client_id):
+            raise ValueError(
+                """
+                You must provide an API key or a client ID to use the managed
+                version of Motorhead. Visit https://getmetal.io for more information.
+                """
+            )
+
+        if is_managed and self.api_key and self.client_id:
+            headers["x-metal-api-key"] = self.api_key
+            headers["x-metal-client-id"] = self.client_id
+
+        return headers
+
     async def init(self) -> None:
         res = requests.get(
             f"{self.url}/sessions/{self.session_id}/memory",
             timeout=self.timeout,
-            headers={"Content-Type": "application/json"},
+            headers=self.__get_headers(),
         )
         res_data = res.json()
+        res_data = res_data.get("data", res_data)  # Handle Managed Version
+
         messages = res_data.get("messages", [])
         context = res_data.get("context", "NONE")
 
@@ -53,6 +83,10 @@ class MotorheadMemory(BaseChatMemory):
                     {"role": "AI", "content": f"{output_str}"},
                 ]
             },
-            headers={"Content-Type": "application/json"},
+            headers=self.__get_headers(),
         )
         super().save_context(inputs, outputs)
+
+    def delete_session(self) -> None:
+        """Delete a session"""
+        requests.delete(f"{self.url}/sessions/{self.session_id}/memory")

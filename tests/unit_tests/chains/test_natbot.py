@@ -15,6 +15,7 @@ class FakeLLM(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Return `foo` if longer than 10000 words, else `bar`."""
         if len(prompt) > 10000:
@@ -26,6 +27,9 @@ class FakeLLM(LLM):
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "fake"
+
+    def get_num_tokens(self, text: str) -> int:
+        return len(text.split())
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:

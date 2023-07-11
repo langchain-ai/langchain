@@ -1,16 +1,14 @@
 """BasePrompt schema definition."""
 from __future__ import annotations
 
-import json
-from abc import ABC, abstractmethod
-from pathlib import Path
-from typing import Any, Callable, Dict, List, Mapping, Optional, Set, Union
-
-import yaml
-from pydantic import BaseModel, Extra, Field, root_validator
+import warnings
+from abc import ABC
+from typing import Any, Callable, Dict, List, Set
 
 from langchain.formatting import formatter
-from langchain.schema import BaseMessage, BaseOutputParser, HumanMessage, PromptValue
+from langchain.schema import BasePromptTemplate
+from langchain.schema.messages import BaseMessage, HumanMessage
+from langchain.schema.prompt import PromptValue
 
 
 def jinja2_formatter(template: str, **kwargs: Any) -> str:
@@ -27,20 +25,28 @@ def jinja2_formatter(template: str, **kwargs: Any) -> str:
 
 
 def validate_jinja2(template: str, input_variables: List[str]) -> None:
+    """
+    Validate that the input variables are valid for the template.
+    Issues an warning if missing or extra variables are found.
+
+    Args:
+        template: The template string.
+        input_variables: The input variables.
+    """
     input_variables_set = set(input_variables)
     valid_variables = _get_jinja2_variables_from_template(template)
     missing_variables = valid_variables - input_variables_set
     extra_variables = input_variables_set - valid_variables
 
-    error_message = ""
+    warning_message = ""
     if missing_variables:
-        error_message += f"Missing variables: {missing_variables} "
+        warning_message += f"Missing variables: {missing_variables} "
 
     if extra_variables:
-        error_message += f"Extra variables: {extra_variables}"
+        warning_message += f"Extra variables: {extra_variables}"
 
-    if error_message:
-        raise KeyError(error_message.strip())
+    if warning_message:
+        warnings.warn(warning_message.strip())
 
 
 def _get_jinja2_variables_from_template(template: str) -> Set[str]:
@@ -98,130 +104,6 @@ class StringPromptValue(PromptValue):
     def to_messages(self) -> List[BaseMessage]:
         """Return prompt as messages."""
         return [HumanMessage(content=self.text)]
-
-
-class BasePromptTemplate(BaseModel, ABC):
-    """Base class for all prompt templates, returning a prompt."""
-
-    input_variables: List[str]
-    """A list of the names of the variables the prompt template expects."""
-    output_parser: Optional[BaseOutputParser] = None
-    """How to parse the output of calling an LLM on this formatted prompt."""
-    partial_variables: Mapping[str, Union[str, Callable[[], str]]] = Field(
-        default_factory=dict
-    )
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-
-    @abstractmethod
-    def format_prompt(self, **kwargs: Any) -> PromptValue:
-        """Create Chat Messages."""
-
-    @root_validator()
-    def validate_variable_names(cls, values: Dict) -> Dict:
-        """Validate variable names do not include restricted names."""
-        if "stop" in values["input_variables"]:
-            raise ValueError(
-                "Cannot have an input variable named 'stop', as it is used internally,"
-                " please rename."
-            )
-        if "stop" in values["partial_variables"]:
-            raise ValueError(
-                "Cannot have an partial variable named 'stop', as it is used "
-                "internally, please rename."
-            )
-
-        overall = set(values["input_variables"]).intersection(
-            values["partial_variables"]
-        )
-        if overall:
-            raise ValueError(
-                f"Found overlapping input and partial variables: {overall}"
-            )
-        return values
-
-    def partial(self, **kwargs: Union[str, Callable[[], str]]) -> BasePromptTemplate:
-        """Return a partial of the prompt template."""
-        prompt_dict = self.__dict__.copy()
-        prompt_dict["input_variables"] = list(
-            set(self.input_variables).difference(kwargs)
-        )
-        prompt_dict["partial_variables"] = {**self.partial_variables, **kwargs}
-        return type(self)(**prompt_dict)
-
-    def _merge_partial_and_user_variables(self, **kwargs: Any) -> Dict[str, Any]:
-        # Get partial params:
-        partial_kwargs = {
-            k: v if isinstance(v, str) else v()
-            for k, v in self.partial_variables.items()
-        }
-        return {**partial_kwargs, **kwargs}
-
-    @abstractmethod
-    def format(self, **kwargs: Any) -> str:
-        """Format the prompt with the inputs.
-
-        Args:
-            kwargs: Any arguments to be passed to the prompt template.
-
-        Returns:
-            A formatted string.
-
-        Example:
-
-        .. code-block:: python
-
-            prompt.format(variable1="foo")
-        """
-
-    @property
-    def _prompt_type(self) -> str:
-        """Return the prompt type key."""
-        raise NotImplementedError
-
-    def dict(self, **kwargs: Any) -> Dict:
-        """Return dictionary representation of prompt."""
-        prompt_dict = super().dict(**kwargs)
-        prompt_dict["_type"] = self._prompt_type
-        return prompt_dict
-
-    def save(self, file_path: Union[Path, str]) -> None:
-        """Save the prompt.
-
-        Args:
-            file_path: Path to directory to save prompt to.
-
-        Example:
-        .. code-block:: python
-
-            prompt.save(file_path="path/prompt.yaml")
-        """
-        if self.partial_variables:
-            raise ValueError("Cannot save prompt with partial variables.")
-        # Convert file to Path object.
-        if isinstance(file_path, str):
-            save_path = Path(file_path)
-        else:
-            save_path = file_path
-
-        directory_path = save_path.parent
-        directory_path.mkdir(parents=True, exist_ok=True)
-
-        # Fetch dictionary to save
-        prompt_dict = self.dict()
-
-        if save_path.suffix == ".json":
-            with open(file_path, "w") as f:
-                json.dump(prompt_dict, f, indent=4)
-        elif save_path.suffix == ".yaml":
-            with open(file_path, "w") as f:
-                yaml.dump(prompt_dict, f, default_flow_style=False)
-        else:
-            raise ValueError(f"{save_path} must be json or yaml")
 
 
 class StringPromptTemplate(BasePromptTemplate, ABC):

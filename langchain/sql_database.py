@@ -5,14 +5,7 @@ import warnings
 from typing import Any, Iterable, List, Optional
 
 import sqlalchemy
-from sqlalchemy import (
-    MetaData,
-    Table,
-    create_engine,
-    inspect,
-    select,
-    text,
-)
+from sqlalchemy import MetaData, Table, create_engine, inspect, select, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
@@ -25,6 +18,21 @@ def _format_index(index: sqlalchemy.engine.interfaces.ReflectedIndex) -> str:
         f'Name: {index["name"]}, Unique: {index["unique"]},'
         f' Columns: {str(index["column_names"])}'
     )
+
+
+def truncate_word(content: Any, *, length: int, suffix: str = "...") -> str:
+    """
+    Truncate a string to a certain number of words, based on the max string
+    length.
+    """
+
+    if not isinstance(content, str) or length <= 0:
+        return content
+
+    if len(content) <= length:
+        return content
+
+    return content[: length - len(suffix)].rsplit(" ", 1)[0] + suffix
 
 
 class SQLDatabase:
@@ -41,6 +49,7 @@ class SQLDatabase:
         indexes_in_table_info: bool = False,
         custom_table_info: Optional[dict] = None,
         view_support: bool = False,
+        max_string_length: int = 300,
     ):
         """Create engine from database URI."""
         self._engine = engine
@@ -95,6 +104,8 @@ class SQLDatabase:
                 if table in intersection
             )
 
+        self._max_string_length = max_string_length
+
         self._metadata = metadata or MetaData()
         # including view support if view_support = true
         self._metadata.reflect(
@@ -139,7 +150,7 @@ class SQLDatabase:
                 hostname. Defaults to None.
             api_token (Optional[str]): The Databricks personal access token for
                 accessing the Databricks SQL warehouse or the cluster. If not provided,
-                it attempts to fetch from 'DATABRICKS_API_TOKEN'. If still unavailable
+                it attempts to fetch from 'DATABRICKS_TOKEN'. If still unavailable
                 and running in a Databricks notebook, a temporary token for the current
                 user is generated. Defaults to None.
             warehouse_id (Optional[str]): The warehouse ID in the Databricks SQL. If
@@ -186,7 +197,7 @@ class SQLDatabase:
         default_api_token = context.apiToken if context else None
         if api_token is None:
             api_token = utils.get_from_env(
-                "api_token", "DATABRICKS_API_TOKEN", default_api_token
+                "api_token", "DATABRICKS_TOKEN", default_api_token
             )
 
         if warehouse_id is None and cluster_id is None:
@@ -211,6 +222,47 @@ class SQLDatabase:
         )
         return cls.from_uri(database_uri=uri, engine_args=engine_args, **kwargs)
 
+    @classmethod
+    def from_cnosdb(
+        cls,
+        url: str = "127.0.0.1:8902",
+        user: str = "root",
+        password: str = "",
+        tenant: str = "cnosdb",
+        database: str = "public",
+    ) -> SQLDatabase:
+        """
+        Class method to create an SQLDatabase instance from a CnosDB connection.
+        This method requires the 'cnos-connector' package. If not installed, it
+        can be added using `pip install cnos-connector`.
+
+        Args:
+            url (str): The HTTP connection host name and port number of the CnosDB
+                service, excluding "http://" or "https://", with a default value
+                of "127.0.0.1:8902".
+            user (str): The username used to connect to the CnosDB service, with a
+                default value of "root".
+            password (str): The password of the user connecting to the CnosDB service,
+                with a default value of "".
+            tenant (str): The name of the tenant used to connect to the CnosDB service,
+                with a default value of "cnosdb".
+            database (str): The name of the database in the CnosDB tenant.
+
+        Returns:
+            SQLDatabase: An instance of SQLDatabase configured with the provided
+            CnosDB connection details.
+        """
+        try:
+            from cnosdb_connector import make_cnosdb_langchain_uri
+
+            uri = make_cnosdb_langchain_uri(url, user, password, tenant, database)
+            return cls.from_uri(database_uri=uri)
+        except ImportError:
+            raise ValueError(
+                "cnos-connector package not found, please install with"
+                " `pip install cnos-connector`"
+            )
+
     @property
     def dialect(self) -> str:
         """Return string representation of dialect to use."""
@@ -219,8 +271,8 @@ class SQLDatabase:
     def get_usable_table_names(self) -> Iterable[str]:
         """Get names of tables available."""
         if self._include_tables:
-            return self._include_tables
-        return self._all_tables - self._ignore_tables
+            return sorted(self._include_tables)
+        return sorted(self._all_tables - self._ignore_tables)
 
     def get_table_names(self) -> Iterable[str]:
         """Get names of tables available."""
@@ -279,6 +331,7 @@ class SQLDatabase:
             if has_extra_info:
                 table_info += "*/"
             tables.append(table_info)
+        tables.sort()
         final_str = "\n\n".join(tables)
         return final_str
 
@@ -322,6 +375,7 @@ class SQLDatabase:
 
         If the statement returns rows, a string of the results is returned.
         If the statement returns no rows, an empty string is returned.
+
         """
         with self._engine.begin() as connection:
             if self._schema is not None:
@@ -329,6 +383,8 @@ class SQLDatabase:
                     connection.exec_driver_sql(
                         f"ALTER SESSION SET search_path='{self._schema}'"
                     )
+                elif self.dialect == "bigquery":
+                    connection.exec_driver_sql(f"SET @@dataset_id='{self._schema}'")
                 else:
                     connection.exec_driver_sql(f"SET search_path TO {self._schema}")
             cursor = connection.execute(text(command))
@@ -336,10 +392,28 @@ class SQLDatabase:
                 if fetch == "all":
                     result = cursor.fetchall()
                 elif fetch == "one":
-                    result = cursor.fetchone()[0]  # type: ignore
+                    result = cursor.fetchone()  # type: ignore
                 else:
                     raise ValueError("Fetch parameter must be either 'one' or 'all'")
-                return str(result)
+
+                # Convert columns values to string to avoid issues with sqlalchmey
+                # trunacating text
+                if isinstance(result, list):
+                    return str(
+                        [
+                            tuple(
+                                truncate_word(c, length=self._max_string_length)
+                                for c in r
+                            )
+                            for r in result
+                        ]
+                    )
+
+                return str(
+                    tuple(
+                        truncate_word(c, length=self._max_string_length) for c in result
+                    )
+                )
         return ""
 
     def get_table_info_no_throw(self, table_names: Optional[List[str]] = None) -> str:

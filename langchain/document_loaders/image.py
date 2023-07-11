@@ -1,4 +1,4 @@
-"""Loader that loads image files."""
+"""Loads image files."""
 from typing import List
 
 from langchain.document_loaders.unstructured import UnstructuredFileLoader

@@ -5,9 +5,12 @@ import logging
 import uuid
 from typing import Any, Callable, Iterable, List, Optional, Tuple
 
+import numpy as np
+
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
+from langchain.vectorstores.utils import DistanceStrategy, maximal_marginal_relevance
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +40,7 @@ class Pinecone(VectorStore):
         index: Any,
         embedding_function: Callable,
         text_key: str,
-        namespace: Optional[str] = None,
+        distance_strategy: Optional[DistanceStrategy] = DistanceStrategy.COSINE,
     ):
         """Initialize with Pinecone client."""
         try:
@@ -55,14 +58,13 @@ class Pinecone(VectorStore):
         self._index = index
         self._embedding_function = embedding_function
         self._text_key = text_key
-        self._namespace = namespace
+        self.distance_strategy = distance_strategy
 
     def add_texts(
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
-        namespace: Optional[str] = None,
         batch_size: int = 32,
         **kwargs: Any,
     ) -> List[str]:
@@ -72,14 +74,11 @@ class Pinecone(VectorStore):
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
             ids: Optional list of ids to associate with the texts.
-            namespace: Optional pinecone namespace to add the texts to.
 
         Returns:
             List of ids from adding the texts into the vectorstore.
 
         """
-        if namespace is None:
-            namespace = self._namespace
         # Embed and create the documents
         docs = []
         ids = ids or [str(uuid.uuid4()) for _ in texts]
@@ -89,7 +88,7 @@ class Pinecone(VectorStore):
             metadata[self._text_key] = text
             docs.append((ids[i], embedding, metadata))
         # upsert to Pinecone
-        self._index.upsert(vectors=docs, namespace=namespace, batch_size=batch_size)
+        self._index.upsert(vectors=docs, batch_size=batch_size)
         return ids
 
     def similarity_search_with_score(
@@ -97,7 +96,6 @@ class Pinecone(VectorStore):
         query: str,
         k: int = 4,
         filter: Optional[dict] = None,
-        namespace: Optional[str] = None,
     ) -> List[Tuple[Document, float]]:
         """Return pinecone documents most similar to query, along with scores.
 
@@ -105,20 +103,16 @@ class Pinecone(VectorStore):
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             filter: Dictionary of argument(s) to filter on metadata
-            namespace: Namespace to search in. Default will search in '' namespace.
 
         Returns:
             List of Documents most similar to the query and score for each
         """
-        if namespace is None:
-            namespace = self._namespace
         query_obj = self._embedding_function(query)
         docs = []
         results = self._index.query(
             [query_obj],
             top_k=k,
             include_metadata=True,
-            namespace=namespace,
             filter=filter,
         )
         for res in results["matches"]:
@@ -138,7 +132,6 @@ class Pinecone(VectorStore):
         query: str,
         k: int = 4,
         filter: Optional[dict] = None,
-        namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return pinecone documents most similar to query.
@@ -147,15 +140,110 @@ class Pinecone(VectorStore):
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             filter: Dictionary of argument(s) to filter on metadata
-            namespace: Namespace to search in. Default will search in '' namespace.
 
         Returns:
             List of Documents most similar to the query and score for each
         """
         docs_and_scores = self.similarity_search_with_score(
-            query, k=k, filter=filter, namespace=namespace, **kwargs
+            query, k=k, filter=filter, **kwargs
         )
         return [doc for doc, _ in docs_and_scores]
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        """
+        The 'correct' relevance function
+        may differ depending on a few things, including:
+        - the distance / similarity metric used by the VectorStore
+        - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
+        - embedding dimensionality
+        - etc.
+        """
+
+        if self.distance_strategy == DistanceStrategy.COSINE:
+            return self._cosine_relevance_score_fn
+        elif self.distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
+            return self._max_inner_product_relevance_score_fn
+        elif self.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
+            return self._euclidean_relevance_score_fn
+        else:
+            raise ValueError(
+                "Unknown distance strategy, must be cosine, max_inner_product "
+                "(dot product), or euclidean"
+            )
+
+    def max_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[dict] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        results = self._index.query(
+            [embedding],
+            top_k=fetch_k,
+            include_values=True,
+            include_metadata=True,
+            filter=filter,
+        )
+        mmr_selected = maximal_marginal_relevance(
+            np.array([embedding], dtype=np.float32),
+            [item["values"] for item in results["matches"]],
+            k=k,
+            lambda_mult=lambda_mult,
+        )
+        selected = [results["matches"][i]["metadata"] for i in mmr_selected]
+        return [
+            Document(page_content=metadata.pop((self._text_key)), metadata=metadata)
+            for metadata in selected
+        ]
+
+    def max_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[dict] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        embedding = self._embedding_function(query)
+        return self.max_marginal_relevance_search_by_vector(
+            embedding, k, fetch_k, lambda_mult, filter
+        )
 
     @classmethod
     def from_texts(
@@ -167,7 +255,6 @@ class Pinecone(VectorStore):
         batch_size: int = 32,
         text_key: str = "text",
         index_name: Optional[str] = None,
-        namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> Pinecone:
         """Construct Pinecone wrapper from raw documents.
@@ -240,8 +327,8 @@ class Pinecone(VectorStore):
             to_upsert = zip(ids_batch, embeds, metadata)
 
             # upsert to Pinecone
-            index.upsert(vectors=list(to_upsert), namespace=namespace)
-        return cls(index, embedding.embed_query, text_key, namespace)
+            index.upsert(vectors=list(to_upsert))
+        return cls(index, embedding.embed_query, text_key)
 
     @classmethod
     def from_existing_index(
@@ -249,7 +336,6 @@ class Pinecone(VectorStore):
         index_name: str,
         embedding: Embeddings,
         text_key: str = "text",
-        namespace: Optional[str] = None,
     ) -> Pinecone:
         """Load pinecone vectorstore from index name."""
         try:
@@ -259,7 +345,21 @@ class Pinecone(VectorStore):
                 "Could not import pinecone python package. "
                 "Please install it with `pip install pinecone-client`."
             )
+        return cls(pinecone.Index(index_name), embedding.embed_query, text_key)
 
-        return cls(
-            pinecone.Index(index_name), embedding.embed_query, text_key, namespace
-        )
+    def delete(
+        self,
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Delete by vector IDs
+        Args:
+            ids: List of ids to delete.
+        """
+        if ids is None:
+            raise ValueError("Ids must be provided.")
+
+        chunk_size = 1000
+        for i in range(0, len(ids), chunk_size):
+            chunk = ids[i : i + chunk_size]
+            self._index.delete(ids=chunk, **kwargs)

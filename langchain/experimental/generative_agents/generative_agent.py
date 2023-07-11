@@ -5,9 +5,9 @@ from typing import Any, Dict, List, Optional, Tuple
 from pydantic import BaseModel, Field
 
 from langchain import LLMChain
-from langchain.base_language import BaseLanguageModel
 from langchain.experimental.generative_agents.memory import GenerativeAgentMemory
 from langchain.prompts import PromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
 
 
 class GenerativeAgent(BaseModel):

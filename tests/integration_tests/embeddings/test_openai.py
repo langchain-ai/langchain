@@ -1,6 +1,7 @@
 """Test openai embeddings."""
 import numpy as np
 import openai
+import pytest
 
 from langchain.embeddings.openai import OpenAIEmbeddings
 
@@ -26,11 +27,33 @@ def test_openai_embedding_documents_multiple() -> None:
     assert len(output[2]) == 1536
 
 
+@pytest.mark.asyncio
+async def test_openai_embedding_documents_async_multiple() -> None:
+    """Test openai embeddings."""
+    documents = ["foo bar", "bar foo", "foo"]
+    embedding = OpenAIEmbeddings(chunk_size=2)
+    embedding.embedding_ctx_length = 8191
+    output = await embedding.aembed_documents(documents)
+    assert len(output) == 3
+    assert len(output[0]) == 1536
+    assert len(output[1]) == 1536
+    assert len(output[2]) == 1536
+
+
 def test_openai_embedding_query() -> None:
     """Test openai embeddings."""
     document = "foo bar"
     embedding = OpenAIEmbeddings()
     output = embedding.embed_query(document)
+    assert len(output) == 1536
+
+
+@pytest.mark.asyncio
+async def test_openai_embedding_async_query() -> None:
+    """Test openai embeddings."""
+    document = "foo bar"
+    embedding = OpenAIEmbeddings()
+    output = await embedding.aembed_query(document)
     assert len(output) == 1536
 
 

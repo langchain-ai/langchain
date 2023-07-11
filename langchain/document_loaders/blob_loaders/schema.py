@@ -137,7 +137,7 @@ class Blob(BaseModel):
         Returns:
             Blob instance
         """
-        return cls(data=data, mime_type=mime_type, encoding=encoding, path=path)
+        return cls(data=data, mimetype=mime_type, encoding=encoding, path=path)
 
     def __repr__(self) -> str:
         """Define the blob representation."""

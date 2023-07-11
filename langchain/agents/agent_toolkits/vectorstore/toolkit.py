@@ -4,8 +4,8 @@ from typing import List
 from pydantic import BaseModel, Field
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
-from langchain.base_language import BaseLanguageModel
 from langchain.llms.openai import OpenAI
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool
 from langchain.tools.vectorstore.tool import (
     VectorStoreQATool,
@@ -62,7 +62,7 @@ class VectorStoreToolkit(BaseToolkit):
 
 
 class VectorStoreRouterToolkit(BaseToolkit):
-    """Toolkit for routing between vectorstores."""
+    """Toolkit for routing between vector stores."""
 
     vectorstores: List[VectorStoreInfo] = Field(exclude=True)
     llm: BaseLanguageModel = Field(default_factory=lambda: OpenAI(temperature=0))

@@ -5,12 +5,14 @@ from typing import Any, Union
 
 import yaml
 
+from langchain.chains import ReduceDocumentsChain
 from langchain.chains.api.base import APIChain
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
 from langchain.chains.combine_documents.map_rerank import MapRerankDocumentsChain
 from langchain.chains.combine_documents.refine import RefineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
+from langchain.chains.graph_qa.cypher import GraphCypherQAChain
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_bash.base import LLMBashChain
@@ -20,10 +22,14 @@ from langchain.chains.llm_requests import LLMRequestsChain
 from langchain.chains.pal.base import PALChain
 from langchain.chains.qa_with_sources.base import QAWithSourcesChain
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
-from langchain.chains.retrieval_qa.base import VectorDBQA
+from langchain.chains.retrieval_qa.base import RetrievalQA, VectorDBQA
 from langchain.chains.sql_database.base import SQLDatabaseChain
 from langchain.llms.loading import load_llm, load_llm_from_config
-from langchain.prompts.loading import load_prompt, load_prompt_from_config
+from langchain.prompts.loading import (
+    _load_output_parser,
+    load_prompt,
+    load_prompt_from_config,
+)
 from langchain.utilities.loading import try_load_from_hub
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/chains/"
@@ -46,6 +52,7 @@ def _load_llm_chain(config: dict, **kwargs: Any) -> LLMChain:
         prompt = load_prompt(config.pop("prompt_path"))
     else:
         raise ValueError("One of `prompt` or `prompt_path` must be present.")
+    _load_output_parser(config)
 
     return LLMChain(llm=llm, prompt=prompt, **config)
 
@@ -111,9 +118,9 @@ def _load_map_reduce_documents_chain(
 
     if "combine_document_chain" in config:
         combine_document_chain_config = config.pop("combine_document_chain")
-        combine_document_chain = load_chain_from_config(combine_document_chain_config)
+        combine_documents_chain = load_chain_from_config(combine_document_chain_config)
     elif "combine_document_chain_path" in config:
-        combine_document_chain = load_chain(config.pop("combine_document_chain_path"))
+        combine_documents_chain = load_chain(config.pop("combine_document_chain_path"))
     else:
         raise ValueError(
             "One of `combine_document_chain` or "
@@ -122,35 +129,54 @@ def _load_map_reduce_documents_chain(
     if "collapse_document_chain" in config:
         collapse_document_chain_config = config.pop("collapse_document_chain")
         if collapse_document_chain_config is None:
-            collapse_document_chain = None
+            collapse_documents_chain = None
         else:
-            collapse_document_chain = load_chain_from_config(
+            collapse_documents_chain = load_chain_from_config(
                 collapse_document_chain_config
             )
     elif "collapse_document_chain_path" in config:
-        collapse_document_chain = load_chain(config.pop("collapse_document_chain_path"))
+        collapse_documents_chain = load_chain(
+            config.pop("collapse_document_chain_path")
+        )
+    else:
+        collapse_documents_chain = None
+    reduce_documents_chain = ReduceDocumentsChain(
+        combine_documents_chain=combine_documents_chain,
+        collapse_documents_chain=collapse_documents_chain,
+    )
     return MapReduceDocumentsChain(
         llm_chain=llm_chain,
-        combine_document_chain=combine_document_chain,
-        collapse_document_chain=collapse_document_chain,
+        reduce_documents_chain=reduce_documents_chain,
         **config,
     )
 
 
 def _load_llm_bash_chain(config: dict, **kwargs: Any) -> LLMBashChain:
-    if "llm" in config:
+    llm_chain = None
+    if "llm_chain" in config:
+        llm_chain_config = config.pop("llm_chain")
+        llm_chain = load_chain_from_config(llm_chain_config)
+    elif "llm_chain_path" in config:
+        llm_chain = load_chain(config.pop("llm_chain_path"))
+    # llm attribute is deprecated in favor of llm_chain, here to support old configs
+    elif "llm" in config:
         llm_config = config.pop("llm")
         llm = load_llm_from_config(llm_config)
+    # llm_path attribute is deprecated in favor of llm_chain_path,
+    # its to support old configs
     elif "llm_path" in config:
         llm = load_llm(config.pop("llm_path"))
     else:
-        raise ValueError("One of `llm` or `llm_path` must be present.")
+        raise ValueError("One of `llm_chain` or `llm_chain_path` must be present.")
     if "prompt" in config:
         prompt_config = config.pop("prompt")
         prompt = load_prompt_from_config(prompt_config)
     elif "prompt_path" in config:
         prompt = load_prompt(config.pop("prompt_path"))
-    return LLMBashChain(llm=llm, prompt=prompt, **config)
+    if llm_chain:
+        return LLMBashChain(llm_chain=llm_chain, prompt=prompt, **config)
+    else:
+        return LLMBashChain(llm=llm, prompt=prompt, **config)
 
 
 def _load_llm_checker_chain(config: dict, **kwargs: Any) -> LLMCheckerChain:
@@ -200,19 +226,31 @@ def _load_llm_checker_chain(config: dict, **kwargs: Any) -> LLMCheckerChain:
 
 
 def _load_llm_math_chain(config: dict, **kwargs: Any) -> LLMMathChain:
-    if "llm" in config:
+    llm_chain = None
+    if "llm_chain" in config:
+        llm_chain_config = config.pop("llm_chain")
+        llm_chain = load_chain_from_config(llm_chain_config)
+    elif "llm_chain_path" in config:
+        llm_chain = load_chain(config.pop("llm_chain_path"))
+    # llm attribute is deprecated in favor of llm_chain, here to support old configs
+    elif "llm" in config:
         llm_config = config.pop("llm")
         llm = load_llm_from_config(llm_config)
+    # llm_path attribute is deprecated in favor of llm_chain_path,
+    # its to support old configs
     elif "llm_path" in config:
         llm = load_llm(config.pop("llm_path"))
     else:
-        raise ValueError("One of `llm` or `llm_path` must be present.")
+        raise ValueError("One of `llm_chain` or `llm_chain_path` must be present.")
     if "prompt" in config:
         prompt_config = config.pop("prompt")
         prompt = load_prompt_from_config(prompt_config)
     elif "prompt_path" in config:
         prompt = load_prompt(config.pop("prompt_path"))
-    return LLMMathChain(llm=llm, prompt=prompt, **config)
+    if llm_chain:
+        return LLMMathChain(llm_chain=llm_chain, prompt=prompt, **config)
+    else:
+        return LLMMathChain(llm=llm, prompt=prompt, **config)
 
 
 def _load_map_rerank_documents_chain(
@@ -229,13 +267,22 @@ def _load_map_rerank_documents_chain(
 
 
 def _load_pal_chain(config: dict, **kwargs: Any) -> PALChain:
-    if "llm" in config:
+    llm_chain = None
+    if "llm_chain" in config:
+        llm_chain_config = config.pop("llm_chain")
+        llm_chain = load_chain_from_config(llm_chain_config)
+    elif "llm_chain_path" in config:
+        llm_chain = load_chain(config.pop("llm_chain_path"))
+    # llm attribute is deprecated in favor of llm_chain, here to support old configs
+    elif "llm" in config:
         llm_config = config.pop("llm")
         llm = load_llm_from_config(llm_config)
+    # llm_path attribute is deprecated in favor of llm_chain_path,
+    # its to support old configs
     elif "llm_path" in config:
         llm = load_llm(config.pop("llm_path"))
     else:
-        raise ValueError("One of `llm` or `llm_path` must be present.")
+        raise ValueError("One of `llm_chain` or `llm_chain_path` must be present.")
     if "prompt" in config:
         prompt_config = config.pop("prompt")
         prompt = load_prompt_from_config(prompt_config)
@@ -243,7 +290,10 @@ def _load_pal_chain(config: dict, **kwargs: Any) -> PALChain:
         prompt = load_prompt(config.pop("prompt_path"))
     else:
         raise ValueError("One of `prompt` or `prompt_path` must be present.")
-    return PALChain(llm=llm, prompt=prompt, **config)
+    if llm_chain:
+        return PALChain(llm_chain=llm_chain, prompt=prompt, **config)
+    else:
+        return PALChain(llm=llm, prompt=prompt, **config)
 
 
 def _load_refine_documents_chain(config: dict, **kwargs: Any) -> RefineDocumentsChain:
@@ -336,6 +386,28 @@ def _load_vector_db_qa_with_sources_chain(
     )
 
 
+def _load_retrieval_qa(config: dict, **kwargs: Any) -> RetrievalQA:
+    if "retriever" in kwargs:
+        retriever = kwargs.pop("retriever")
+    else:
+        raise ValueError("`retriever` must be present.")
+    if "combine_documents_chain" in config:
+        combine_documents_chain_config = config.pop("combine_documents_chain")
+        combine_documents_chain = load_chain_from_config(combine_documents_chain_config)
+    elif "combine_documents_chain_path" in config:
+        combine_documents_chain = load_chain(config.pop("combine_documents_chain_path"))
+    else:
+        raise ValueError(
+            "One of `combine_documents_chain` or "
+            "`combine_documents_chain_path` must be present."
+        )
+    return RetrievalQA(
+        combine_documents_chain=combine_documents_chain,
+        retriever=retriever,
+        **config,
+    )
+
+
 def _load_vector_db_qa(config: dict, **kwargs: Any) -> VectorDBQA:
     if "vectorstore" in kwargs:
         vectorstore = kwargs.pop("vectorstore")
@@ -354,6 +426,30 @@ def _load_vector_db_qa(config: dict, **kwargs: Any) -> VectorDBQA:
     return VectorDBQA(
         combine_documents_chain=combine_documents_chain,
         vectorstore=vectorstore,
+        **config,
+    )
+
+
+def _load_graph_cypher_chain(config: dict, **kwargs: Any) -> GraphCypherQAChain:
+    if "graph" in kwargs:
+        graph = kwargs.pop("graph")
+    else:
+        raise ValueError("`graph` must be present.")
+    if "cypher_generation_chain" in config:
+        cypher_generation_chain_config = config.pop("cypher_generation_chain")
+        cypher_generation_chain = load_chain_from_config(cypher_generation_chain_config)
+    else:
+        raise ValueError("`cypher_generation_chain` must be present.")
+    if "qa_chain" in config:
+        qa_chain_config = config.pop("qa_chain")
+        qa_chain = load_chain_from_config(qa_chain_config)
+    else:
+        raise ValueError("`qa_chain` must be present.")
+
+    return GraphCypherQAChain(
+        graph=graph,
+        cypher_generation_chain=cypher_generation_chain,
+        qa_chain=qa_chain,
         **config,
     )
 
@@ -423,6 +519,8 @@ type_to_loader_dict = {
     "sql_database_chain": _load_sql_database_chain,
     "vector_db_qa_with_sources_chain": _load_vector_db_qa_with_sources_chain,
     "vector_db_qa": _load_vector_db_qa,
+    "retrieval_qa": _load_retrieval_qa,
+    "graph_cypher_chain": _load_graph_cypher_chain,
 }
 
 

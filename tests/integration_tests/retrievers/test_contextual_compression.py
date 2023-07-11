@@ -1,7 +1,7 @@
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.retrievers.contextual_compression import ContextualCompressionRetriever
 from langchain.retrievers.document_compressors import EmbeddingsFilter
-from langchain.vectorstores import Chroma
+from langchain.vectorstores import FAISS
 
 
 def test_contextual_compression_retriever_get_relevant_docs() -> None:
@@ -13,7 +13,7 @@ def test_contextual_compression_retriever_get_relevant_docs() -> None:
     ]
     embeddings = OpenAIEmbeddings()
     base_compressor = EmbeddingsFilter(embeddings=embeddings, similarity_threshold=0.75)
-    base_retriever = Chroma.from_texts(texts, embedding=embeddings).as_retriever(
+    base_retriever = FAISS.from_texts(texts, embedding=embeddings).as_retriever(
         search_kwargs={"k": len(texts)}
     )
     retriever = ContextualCompressionRetriever(

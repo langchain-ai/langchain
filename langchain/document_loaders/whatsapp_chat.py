@@ -12,7 +12,7 @@ def concatenate_rows(date: str, sender: str, text: str) -> str:
 
 
 class WhatsAppChatLoader(BaseLoader):
-    """Loader that loads WhatsApp messages text file."""
+    """Loads WhatsApp messages text file."""
 
     def __init__(self, path: str):
         """Initialize with path."""
@@ -29,18 +29,18 @@ class WhatsAppChatLoader(BaseLoader):
         message_line_regex = r"""
             \[?
             (
-                \d{1,2}
+                \d{1,4}
                 [\/.]
                 \d{1,2}
                 [\/.]
-                \d{2,4}
+                \d{1,4}
                 ,\s
                 \d{1,2}
                 :\d{2}
                 (?:
                     :\d{2}
                 )?
-                (?:[ _](?:AM|PM))?
+                (?:[\s_](?:AM|PM))?
             )
             \]?
             [\s-]*
@@ -49,11 +49,15 @@ class WhatsAppChatLoader(BaseLoader):
             \s
             (.+)
         """
+        ignore_lines = ["This message was deleted", "<Media omitted>"]
         for line in lines:
-            result = re.match(message_line_regex, line.strip(), flags=re.VERBOSE)
+            result = re.match(
+                message_line_regex, line.strip(), flags=re.VERBOSE | re.IGNORECASE
+            )
             if result:
                 date, sender, text = result.groups()
-                text_content += concatenate_rows(date, sender, text)
+                if text not in ignore_lines:
+                    text_content += concatenate_rows(date, sender, text)
 
         metadata = {"source": str(p)}
 
