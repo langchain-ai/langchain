@@ -57,6 +57,28 @@ class InputFormatError(Exception):
 ## Shared Utilities
 
 
+def _wrap_in_chain_factory(
+    llm_or_chain_factory: Union[Chain, MODEL_OR_CHAIN_FACTORY],
+    dataset_name: str,
+) -> MODEL_OR_CHAIN_FACTORY:
+    if isinstance(llm_or_chain_factory, Chain):
+        if llm_or_chain_factory.memory is not None:
+            memory_class = llm_or_chain_factory.memory.__class__.__name__
+            chain_class = llm_or_chain_factory.__class__.__name__
+            raise ValueError(
+                "Cannot directly evaluate a chain with memory. To evaluate this chain, "
+                " pass in a constructor for the chain that initializes fresh memory"
+                " each time it is called.\nFor example:\n\n"
+                "def chain_constructor():\n"
+                f"    new_memory = {memory_class}(...)\n"
+                f"    return {chain_class}"
+                "(memory=new_memory, ...)\n\n"
+                f"run_on_dataset({dataset_name}, chain_constructor, ...)"
+            )
+        return lambda: llm_or_chain_factory
+    return llm_or_chain_factory
+
+
 def _first_example(examples: Iterator[Example]) -> Tuple[Example, Iterator[Example]]:
     """Get the first eample while chaining it back and preserving the iterator."""
     try:
@@ -1066,6 +1088,7 @@ async def arun_on_dataset(
         A dictionary containing the run's project name and the resulting model outputs.
     """
     client_ = client or Client()
+    llm_or_chain_factory = _wrap_in_chain_factory(llm_or_chain_factory, dataset_name)
     project_name = _get_project_name(project_name, llm_or_chain_factory, dataset_name)
     dataset = client_.read_dataset(dataset_name=dataset_name)
     examples = client_.list_examples(dataset_id=str(dataset.id))
@@ -1130,6 +1153,7 @@ def run_on_dataset(
         A dictionary containing the run's project name and the resulting model outputs.
     """
     client_ = client or Client()
+    llm_or_chain_factory = _wrap_in_chain_factory(llm_or_chain_factory, dataset_name)
     project_name = _get_project_name(project_name, llm_or_chain_factory, dataset_name)
     dataset = client_.read_dataset(dataset_name=dataset_name)
     examples = client_.list_examples(dataset_id=str(dataset.id))
