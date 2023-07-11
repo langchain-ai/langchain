@@ -138,10 +138,7 @@ class Pinecone(VectorStore):
             # Loop through your data and gather values by key
             for entry in metadata:
                 for key, value in entry.items():
-                    if(type(value) == list):
-                        values_by_key[key].update(value)
-                    else: 
-                        values_by_key[key].add(value)
+                    values_by_key[key].add(value)
 
             # Add conditions to the query using the gathered values
             for key, values in values_by_key.items():
