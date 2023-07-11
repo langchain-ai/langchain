@@ -421,6 +421,8 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
                 reference from the dataset but the reference key is not provided.
 
         """  # noqa: E501
+
+        # Configure how run inputs/predictions are passed to the evaluator
         if run_type == RunTypeEnum.llm:
             run_mapper: StringRunMapper = LLMStringRunMapper()
         elif run_type == RunTypeEnum.chain:
@@ -429,8 +431,10 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
             )
         else:
             raise ValueError(
-                f"Unsupported run type {run_type}. Expected one of {list(RunTypeEnum)}."
+                f"Unsupported run type {run_type}. Expected one of 'llm' or 'chain'."
             )
+
+        # Configure how example rows are fed as a reference string to the evaluator
         if reference_key is not None or data_type in (DataType.llm, DataType.chat):
             example_mapper = StringExampleMapper(reference_key=reference_key)
         elif evaluator.requires_reference:

@@ -1,12 +1,13 @@
 """Configuration for run evaluators."""
 from typing import Any, Dict, List, Optional, Union
 
+from langsmith import RunEvaluator
 from pydantic import BaseModel
 
 from langchain.embeddings.base import Embeddings
 from langchain.evaluation.criteria.eval_chain import CRITERIA_TYPE
 from langchain.evaluation.embedding_distance.base import EmbeddingDistance
-from langchain.evaluation.schema import EvaluatorType
+from langchain.evaluation.schema import EvaluatorType, StringEvaluator
 from langchain.evaluation.string_distance.base import StringDistance
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.prompt_template import BasePromptTemplate
@@ -26,8 +27,7 @@ class RunEvalConfig(BaseModel):
     """Configuration for a run evaluation."""
 
     evaluators: List[Union[EvaluatorType, EvalConfig]]
-    # TODO: Should support custom langchain evaluators here too?
-    # custom_run_evaluators: Optional[List[RunEvaluator]] = None
+    custom_evaluators: Optional[List[Union[RunEvaluator, StringEvaluator]]] = None
     reference_key: Optional[str] = None
     prediction_key: Optional[str] = None
     input_key: Optional[str] = None

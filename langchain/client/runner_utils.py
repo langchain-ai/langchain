@@ -1,5 +1,7 @@
 """Utilities for running language models or Chains over datasets."""
 
+# TODO: Migrate to langchain/langsmith
+
 from __future__ import annotations
 
 import asyncio
@@ -32,7 +34,7 @@ from langchain.chains.base import Chain
 from langchain.chat_models.base import BaseChatModel
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.evaluation.loading import load_evaluator
-from langchain.evaluation.run_evaluators.config import RunEvalConfig
+from langchain.evaluation.run_evaluators.config import EvalConfig, RunEvalConfig
 from langchain.evaluation.run_evaluators.string_run_evaluator import (
     StringRunEvaluatorChain,
 )
@@ -395,6 +397,8 @@ async def arun_on_examples(
             your model needs to deserialize more complex schema or if your dataset
             has inputs with keys that differ from what is expected by your chain
             or agent.
+        data_type: The dataset's data type. This is used to determine determine
+            how to deserialize the reference data and model compatibility.
     Returns:
         A dictionary mapping example ids to the model outputs.
     """
@@ -595,7 +599,8 @@ def run_on_examples(
             your model needs to deserialize more complex schema or if your dataset
             has inputs with keys that differ from what is expected by your chain
             or agent.
-        data_type: DataType = DataType.kv
+        data_type: The dataset's data type. This is used to determine determine
+            how to deserialize the reference data and model compatibility.
 
     Returns:
         A dictionary mapping example ids to the model outputs.
@@ -795,16 +800,17 @@ def _setup_evaluation(
     evaluation: Optional[RunEvalConfig],
     data_type: DataType,
 ) -> Tuple[Optional[List[RunEvaluator]], Iterator[Example]]:
-    first_example, examples = _first_example(examples)
-    if isinstance(llm_or_chain_factory, BaseLanguageModel):
-        run_inputs, run_outputs = None, None
-        run_type = RunTypeEnum.llm
-    else:
-        run_type = RunTypeEnum.chain
-        chain = llm_or_chain_factory()
-        run_inputs = chain.input_keys
-        run_outputs = chain.output_keys
+    """Configure the evaluators to run on the results of the chain."""
     if evaluation:
+        first_example, examples = _first_example(examples)
+        if isinstance(llm_or_chain_factory, BaseLanguageModel):
+            run_inputs, run_outputs = None, None
+            run_type = RunTypeEnum.llm
+        else:
+            run_type = RunTypeEnum.chain
+            chain = llm_or_chain_factory()
+            run_inputs = chain.input_keys
+            run_outputs = chain.output_keys
         run_evaluators = _load_run_evaluators(
             evaluation,
             run_type,
@@ -816,6 +822,110 @@ def _setup_evaluation(
     else:
         run_evaluators = None
     return run_evaluators, examples
+
+
+def _determine_input_key(
+    config: RunEvalConfig,
+    run_inputs: Optional[List[str]],
+    run_type: RunTypeEnum,
+) -> Optional[str]:
+    if config.input_key:
+        input_key = config.input_key
+        if run_inputs and input_key not in run_inputs:
+            raise ValueError(f"Input key {input_key} not in run inputs {run_inputs}")
+    elif run_type == RunTypeEnum.llm:
+        input_key = None
+    elif run_inputs and len(run_inputs) == 1:
+        input_key = run_inputs[0]
+    else:
+        raise ValueError(
+            f"Must specify input key for model with multiple inputs: {run_inputs}"
+        )
+
+    return input_key
+
+
+def _determine_prediction_key(
+    config: RunEvalConfig,
+    run_outputs: Optional[List[str]],
+    run_type: RunTypeEnum,
+) -> Optional[str]:
+    if config.prediction_key:
+        prediction_key = config.prediction_key
+        if run_outputs and prediction_key not in run_outputs:
+            raise ValueError(
+                f"Prediction key {prediction_key} not in run outputs {run_outputs}"
+            )
+    elif run_type == RunTypeEnum.llm:
+        prediction_key = None
+    elif run_outputs and len(run_outputs) == 1:
+        prediction_key = run_outputs[0]
+    else:
+        raise ValueError(
+            f"Must specify prediction key for model"
+            f" with multiple outputs: {run_outputs}"
+        )
+    return prediction_key
+
+
+def _determine_reference_key(
+    config: RunEvalConfig,
+    example_outputs: Optional[List[str]],
+) -> Optional[str]:
+    if config.reference_key:
+        reference_key = config.reference_key
+        if example_outputs and reference_key not in example_outputs:
+            raise ValueError(
+                f"Reference key {reference_key} not in Dataset"
+                f" example outputs: {example_outputs}"
+            )
+    elif example_outputs and len(example_outputs) == 1:
+        reference_key = list(example_outputs)[0]
+    else:
+        reference_key = None
+    return reference_key
+
+
+def _construct_run_evaluator(
+    eval_config: Union[EvaluatorType, EvalConfig],
+    eval_llm: BaseLanguageModel,
+    run_type: RunTypeEnum,
+    data_type: DataType,
+    example_outputs: Optional[List[str]],
+    reference_key: Optional[str],
+    input_key: Optional[str],
+    prediction_key: Optional[str],
+) -> RunEvaluator:
+    if isinstance(eval_config, EvaluatorType):
+        evaluator_ = load_evaluator(eval_config, llm=eval_llm)
+        eval_type_tag = eval_config.value
+    else:
+        evaluator_ = load_evaluator(
+            eval_config.evaluator_type, llm=eval_llm, **eval_config.get_kwargs()
+        )  # TODO: Pass in kwargs based on config specifically
+        eval_type_tag = eval_config.evaluator_type.value
+
+    if isinstance(evaluator_, StringEvaluator):
+        if evaluator_.requires_reference and reference_key is None:
+            raise ValueError(
+                f"Must specify reference_key in RunEvalConfig to use"
+                f" evaluator of type {eval_type_tag} with"
+                f" dataset with multiple output keys: {example_outputs}."
+            )
+        run_evaluator = StringRunEvaluatorChain.from_run_and_data_type(
+            evaluator_,
+            run_type,
+            data_type,
+            input_key=input_key,
+            prediction_key=prediction_key,
+            reference_key=reference_key,
+            tags=[eval_type_tag],
+        )
+    else:
+        raise NotImplementedError(
+            f"Run evaluator for {eval_type_tag} is not implemented"
+        )
+    return run_evaluator
 
 
 def _load_run_evaluators(
@@ -837,74 +947,40 @@ def _load_run_evaluators(
     """
     eval_llm = config.eval_llm or ChatOpenAI(model="gpt-4", temperature=0.0)
     run_evaluators = []
-    if config.input_key:
-        input_key = config.input_key
-        if run_inputs and input_key not in run_inputs:
-            raise ValueError(f"Input key {input_key} not in run inputs {run_inputs}")
-    elif run_type == RunTypeEnum.llm:
-        input_key = None
-    elif run_inputs and len(run_inputs) == 1:
-        input_key = run_inputs[0]
-    else:
-        raise ValueError(
-            f"Must specify input key for model with multiple inputs: {run_inputs}"
-        )
-    if config.prediction_key:
-        prediction_key = config.prediction_key
-        if run_outputs and prediction_key not in run_outputs:
-            raise ValueError(
-                f"Prediction key {prediction_key} not in run outputs {run_outputs}"
-            )
-    elif run_type == RunTypeEnum.llm:
-        prediction_key = None
-    elif run_outputs and len(run_outputs) == 1:
-        prediction_key = run_outputs[0]
-    else:
-        raise ValueError(
-            f"Must specify prediction key for model"
-            f" with multiple outputs: {run_outputs}"
-        )
-    if config.reference_key:
-        reference_key = config.reference_key
-        if example_outputs and reference_key not in example_outputs:
-            raise ValueError(
-                f"Reference key {reference_key} not in Dataset"
-                f" example outputs: {example_outputs}"
-            )
-    elif example_outputs and len(example_outputs) == 1:
-        reference_key = list(example_outputs)[0]
-    else:
-        reference_key = None
+    input_key = _determine_input_key(config, run_inputs, run_type)
+    prediction_key = _determine_prediction_key(config, run_outputs, run_type)
+    reference_key = _determine_reference_key(config, example_outputs)
     for eval_config in config.evaluators:
-        if isinstance(eval_config, EvaluatorType):
-            evaluator_ = load_evaluator(eval_config, llm=eval_llm)
-            eval_type_tag = eval_config.value
-        else:
-            evaluator_ = load_evaluator(
-                eval_config.evaluator_type, llm=eval_llm, **eval_config.get_kwargs()
-            )  # TODO: Pass in kwargs based on config specifically
-            eval_type_tag = eval_config.evaluator_type.value
-
-        if isinstance(evaluator_, StringEvaluator):
-            if evaluator_.requires_reference and reference_key is None:
-                raise ValueError(
-                    f"Must specify reference_key in RunEvalConfig to use"
-                    f" evaluator of type {eval_type_tag} with"
-                    f" dataset with multiple output keys: {example_outputs}."
+        run_evaluator = _construct_run_evaluator(
+            eval_config,
+            eval_llm,
+            run_type,
+            data_type,
+            example_outputs,
+            reference_key,
+            input_key,
+            prediction_key,
+        )
+        run_evaluators.append(run_evaluator)
+    custom_evaluators = config.custom_evaluators or []
+    for custom_evaluator in custom_evaluators:
+        if isinstance(custom_evaluator, RunEvaluator):
+            run_evaluators.append(custom_evaluator)
+        elif isinstance(custom_evaluator, StringEvaluator):
+            run_evaluators.append(
+                StringRunEvaluatorChain.from_run_and_data_type(
+                    custom_evaluator,
+                    run_type,
+                    data_type,
+                    input_key=input_key,
+                    prediction_key=prediction_key,
+                    reference_key=reference_key,
                 )
-            run_evaluator = StringRunEvaluatorChain.from_run_and_data_type(
-                evaluator_,
-                run_type,
-                data_type,
-                input_key=input_key,
-                prediction_key=prediction_key,
-                reference_key=reference_key,
-                tags=[eval_type_tag],
             )
-            run_evaluators.append(run_evaluator)
         else:
-            raise NotImplementedError(
-                f"Run evaluator for {eval_type_tag} is not implemented"
+            raise ValueError(
+                f"Unsupported custom evaluator: {custom_evaluator}."
+                f" Expected RunEvaluator or StringEvaluator."
             )
-    # TODO: custom evaluators
+
     return run_evaluators
