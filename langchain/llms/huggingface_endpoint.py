@@ -139,7 +139,7 @@ class HuggingFaceEndpoint(LLM):
         if self.task == "text-generation":
             text = generated_text[0]["generated_text"]
             # Remove prompt if included in generated text.
-            if prompt in text:
+            if text.startswith(prompt):
                 text = text[len(prompt) :]
         elif self.task == "text2text-generation":
             text = generated_text[0]["generated_text"]
