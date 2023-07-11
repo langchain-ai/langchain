@@ -102,10 +102,13 @@ class RunEvalConfig(BaseModel):
         ----------
         criteria : Optional[CRITERIA_TYPE]
             The criteria to evaluate.
+        llm : Optional[BaseLanguageModel]
+            The language model to use for the evaluation chain.
 
         """
 
         criteria: Optional[CRITERIA_TYPE] = None
+        llm: Optional[BaseLanguageModel] = None
         evaluator_type: EvaluatorType = EvaluatorType.CRITERIA
 
         def __init__(
@@ -120,10 +123,12 @@ class RunEvalConfig(BaseModel):
         ----------
         criteria : Optional[CRITERIA_TYPE]
             The criteria to evaluate.
-
+        llm : Optional[BaseLanguageModel]
+            The language model to use for the evaluation chain.
         """
 
         criteria: Optional[CRITERIA_TYPE] = None
+        llm: Optional[BaseLanguageModel] = None
         evaluator_type: EvaluatorType = EvaluatorType.LABELED_CRITERIA
 
         def __init__(
@@ -171,10 +176,12 @@ class RunEvalConfig(BaseModel):
         ----------
         prompt : Optional[BasePromptTemplate]
             The prompt template to use for generating the question.
-
+        llm : Optional[BaseLanguageModel]
+            The language model to use for the evaluation chain.
         """
 
         evaluator_type: EvaluatorType = EvaluatorType.QA
+        llm: Optional[BaseLanguageModel] = None
         prompt: Optional[BasePromptTemplate] = None
 
     class ContextQA(EvalConfig):
@@ -184,10 +191,13 @@ class RunEvalConfig(BaseModel):
         ----------
         prompt : Optional[BasePromptTemplate]
             The prompt template to use for generating the question.
+        llm : Optional[BaseLanguageModel]
+            The language model to use for the evaluation chain.
 
         """
 
         evaluator_type: EvaluatorType = EvaluatorType.CONTEXT_QA
+        llm: Optional[BaseLanguageModel] = None
         prompt: Optional[BasePromptTemplate] = None
 
     class CoTQA(EvalConfig):
@@ -197,10 +207,13 @@ class RunEvalConfig(BaseModel):
         ----------
         prompt : Optional[BasePromptTemplate]
             The prompt template to use for generating the question.
+        llm : Optional[BaseLanguageModel]
+            The language model to use for the evaluation chain.
 
         """
 
         evaluator_type: EvaluatorType = EvaluatorType.CONTEXT_QA
+        llm: Optional[BaseLanguageModel] = None
         prompt: Optional[BasePromptTemplate] = None
 
     # TODO: Trajectory
