@@ -32,7 +32,10 @@ class EvaluatorType(str, Enum):
     """The agent trajectory evaluator, which grades the agent's intermediate steps."""
     CRITERIA = "criteria"
     """The criteria evaluator, which evaluates a model based on a
-    custom set of criteria."""
+    custom set of criteria without any reference labels."""
+    LABELED_CRITERIA = "labeled_criteria"
+    """The labeled criteria evaluator, which evaluates a model based on a
+    custom set of criteria, with a reference label."""
     STRING_DISTANCE = "string_distance"
     """Compare predictions to a reference answer using string edit distances."""
     PAIRWISE_STRING_DISTANCE = "pairwise_string_distance"
