@@ -196,3 +196,18 @@ Helpful Answer:"""
 SPARQL_QA_PROMPT = PromptTemplate(
     input_variables=["context", "prompt"], template=SPARQL_QA_TEMPLATE
 )
+
+
+NEPTUNE_CYPHER_EXTRA_INSTRUCTIONS = """
+Instructions:
+Generate the query in openCypher format that follows these rules:
+1. Do not use `NONE`, `ALL` or `ANY` predicate functions, rather use list comprehensions.
+2. Do not use `REDUCE` function. Rather use a combination of list comprehension and the `UNWIND` clause to achieve similar results.
+3. Do not use `FOREACH` clause. Rather use a combination of `WITH` and `UNWIND` clauses to achieve similar results.
+\n"""
+
+NEPTUNE_CYPHER_GENERATION_TEMPLATE = CYPHER_GENERATION_TEMPLATE.replace("Instructions:", NEPTUNE_CYPHER_EXTRA_INSTRUCTIONS)
+
+NEPTUNE_CYPHER_GENERATION_PROMPT = PromptTemplate(
+    input_variables=["schema", "question"], template=NEPTUNE_CYPHER_GENERATION_TEMPLATE
+)
