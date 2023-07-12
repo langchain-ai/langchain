@@ -21,6 +21,7 @@ from typing import (
 
 import numpy as np
 from pydantic import root_validator
+from redis.commands.search.document import Document as D
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -298,7 +299,7 @@ class Redis(VectorStore):
         base_query = (
             f"{hybrid_fields}=>[KNN {k} @{self.vector_key} $vector AS vector_score]"
         )
-        return_fields = [self.metadata_key, self.content_key, "vector_score"]
+        return_fields = [self.metadata_key, self.content_key, "vector_score","id"]
         return (
             Query(base_query)
             .return_fields(*return_fields)
@@ -306,6 +307,12 @@ class Redis(VectorStore):
             .paging(0, k)
             .dialect(2)
         )
+
+    @staticmethod
+    def _add_id(result: D, id: str)->str:
+        meta  = json.loads(result.metadata)
+        meta["id"] = id
+        return json.dumps(meta)
 
     def similarity_search_with_score(
         self, query: str, k: int = 4
@@ -338,7 +345,7 @@ class Redis(VectorStore):
         docs = [
             (
                 Document(
-                    page_content=result.content, metadata=json.loads(result.metadata)
+                    page_content=result.content, metadata=json.loads(self._add_id(result, result.id))
                 ),
                 float(result.vector_score),
             )
