@@ -37,8 +37,7 @@ def _serialize_inputs(run_inputs: dict) -> dict:
 
 
 class RunProcessor:
-    """Handles the conversion of a LangChain Runs into a WBTraceTree.
-    """
+    """Handles the conversion of a LangChain Runs into a WBTraceTree."""
 
     def __init__(self, wandb_module: Any, trace_module: Any):
         self.wandb = wandb_module
