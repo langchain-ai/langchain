@@ -1,4 +1,4 @@
-"""Loader that loads Figma files json dump."""
+"""Loads Figma files json dump."""
 import json
 import urllib.request
 from typing import Any, List

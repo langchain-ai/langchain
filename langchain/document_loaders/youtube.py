@@ -1,4 +1,4 @@
-"""Loader that loads YouTube transcript."""
+"""Loads YouTube transcript."""
 from __future__ import annotations
 
 import logging
@@ -140,7 +140,7 @@ def _parse_video_id(url: str) -> Optional[str]:
 
 
 class YoutubeLoader(BaseLoader):
-    """Loader that loads Youtube transcripts."""
+    """Loads Youtube transcripts."""
 
     def __init__(
         self,
@@ -252,7 +252,7 @@ class YoutubeLoader(BaseLoader):
 
 @dataclass
 class GoogleApiYoutubeLoader(BaseLoader):
-    """Loader that loads all Videos from a Channel
+    """Loads all Videos from a Channel
 
     To use, you should have the ``googleapiclient,youtube_transcript_api``
     python package installed.

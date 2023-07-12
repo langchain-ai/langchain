@@ -641,12 +641,16 @@ category = "main"
 optional = true
 python-versions = ">=3.7"
 files = [
+    {file = "awadb-0.3.6-cp310-cp310-macosx_13_0_arm64.whl", hash = "sha256:d90318d2d388aa1bb740b0b7e641cb7da00e6ab5700ce97564163c88a1927ed4"},
     {file = "awadb-0.3.6-cp310-cp310-manylinux1_x86_64.whl", hash = "sha256:6154f73aab9996aefe8c8f8bf754f7182d109d6b60302c9f31666c7f50cc7aca"},
     {file = "awadb-0.3.6-cp311-cp311-macosx_10_13_x86_64.whl", hash = "sha256:9d7e9dff353517595ecc8c9395a2367acdcfc83c68a64dd4785c8d366eed3f40"},
+    {file = "awadb-0.3.6-cp311-cp311-macosx_13_0_arm64.whl", hash = "sha256:6f6d10d1e885fa1d64eeb8ffda2de470c3a7508d57a9489213b8649bcddcd31e"},
     {file = "awadb-0.3.6-cp311-cp311-manylinux1_x86_64.whl", hash = "sha256:475af75d2ffbbe970999d93fbabdf7281797390c66fe852f6a6989e706b90c94"},
     {file = "awadb-0.3.6-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:304be1de63daec1555f0fe9de9a18cdf16a467687a35a6ccf3405cd400fefb48"},
     {file = "awadb-0.3.6-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:176cc27d1afc4aad758515d5f8fb435f555c9ba827a9e84d6f28b1c6ac568965"},
+    {file = "awadb-0.3.6-cp38-cp38-macosx_13_0_arm64.whl", hash = "sha256:36138b754c990143d0314fd7a9293c96f7ba549860244bda728e3f51b73e0f6e"},
     {file = "awadb-0.3.6-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:211d7f6b0f7c3c3d7518d424f0f3dfac5f45f9e5d7bbf397fdae861ff0dc46fd"},
+    {file = "awadb-0.3.6-cp39-cp39-macosx_13_0_arm64.whl", hash = "sha256:b1f9e9a7ba2fa58bce55fcca784d5b3e159712962aaee2156f6317c5993f4277"},
     {file = "awadb-0.3.6-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:b935ab4ffaa3bcbcc9a381fce91ace5940143b527ffdb467dd4bc630cd94afab"},
 ]
 
@@ -1002,12 +1006,10 @@ files = [
 
 [package.dependencies]
 click = ">=8.0.0"
-ipython = {version = ">=7.8.0", optional = true, markers = "extra == \"jupyter\""}
 mypy-extensions = ">=0.4.3"
 packaging = ">=22.0"
 pathspec = ">=0.9.0"
 platformdirs = ">=2"
-tokenize-rt = {version = ">=3.2.0", optional = true, markers = "extra == \"jupyter\""}
 tomli = {version = ">=1.1.0", markers = "python_version < \"3.11\""}
 typing-extensions = {version = ">=3.10.0.0", markers = "python_version < \"3.10\""}
 
@@ -2193,13 +2195,13 @@ files = [
 
 [[package]]
 name = "deeplake"
-version = "3.6.4"
+version = "3.6.8"
 description = "Activeloop Deep Lake"
 category = "main"
 optional = false
 python-versions = "*"
 files = [
-    {file = "deeplake-3.6.4.tar.gz", hash = "sha256:cd31e772e00012a0cfdcd9d2cfe0e7fa3eaea1de122e98ae4f54e15d2722b94f"},
+    {file = "deeplake-3.6.8.tar.gz", hash = "sha256:ab795d555e8b8e1c8f886cd5f587bbbdc903e96c35f9de7d505d9c347521e61a"},
 ]
 
 [package.dependencies]
@@ -2216,12 +2218,12 @@ pyjwt = "*"
 tqdm = "*"
 
 [package.extras]
-all = ["IPython", "av (>=8.1.0)", "azure-cli", "azure-identity", "azure-storage-blob", "flask", "google-api-python-client (>=2.31.0,<2.32.0)", "google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "google-cloud-storage (>=1.42.0,<1.43.0)", "laspy", "libdeeplake (==0.0.59)", "nibabel", "oauth2client (>=4.1.3,<4.2.0)", "pydicom"]
+all = ["IPython", "av (>=8.1.0)", "azure-cli", "azure-identity", "azure-storage-blob", "flask", "google-api-python-client (>=2.31.0,<2.32.0)", "google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "google-cloud-storage (>=1.42.0,<1.43.0)", "laspy", "libdeeplake (==0.0.60)", "nibabel", "oauth2client (>=4.1.3,<4.2.0)", "pydicom"]
 audio = ["av (>=8.1.0)"]
 av = ["av (>=8.1.0)"]
 azure = ["azure-cli", "azure-identity", "azure-storage-blob"]
 dicom = ["nibabel", "pydicom"]
-enterprise = ["libdeeplake (==0.0.59)", "pyjwt"]
+enterprise = ["libdeeplake (==0.0.60)", "pyjwt"]
 gcp = ["google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "google-cloud-storage (>=1.42.0,<1.43.0)"]
 gdrive = ["google-api-python-client (>=2.31.0,<2.32.0)", "google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "oauth2client (>=4.1.3,<4.2.0)"]
 medical = ["nibabel", "pydicom"]
@@ -4679,6 +4681,39 @@ files = [
     {file = "libclang-16.0.0-py2.py3-none-win_amd64.whl", hash = "sha256:ee20bf93e3dd330f71fc50cdbf13b92ced0aec8e540be64251db53502a9b33f7"},
     {file = "libclang-16.0.0-py2.py3-none-win_arm64.whl", hash = "sha256:bf4628fc4da7a1dd06a244f9b8e121c5ec68076a763c59d6b13cbb103acc935b"},
 ]
+
+[[package]]
+name = "libdeeplake"
+version = "0.0.60"
+description = "C++ backend for Deep Lake"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "libdeeplake-0.0.60-cp310-cp310-macosx_10_12_x86_64.whl", hash = "sha256:077c663370834831343b512cb4d2b166634f1aaea31e31f86721e257ce0ed1dd"},
+    {file = "libdeeplake-0.0.60-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:c6b152970a9719f10fb4656409a19cab1b3721a4c2ff9d36b8acb883992dbe7c"},
+    {file = "libdeeplake-0.0.60-cp310-cp310-manylinux2010_x86_64.whl", hash = "sha256:e54901b4ffd6b606ad5829354788626972b7a7aa7a9dea055bb987cd06544ea3"},
+    {file = "libdeeplake-0.0.60-cp310-cp310-manylinux2014_aarch64.whl", hash = "sha256:010f172e87027fb81b8eaaec35bda898783fe618632f44dd716166aa6d3bf3f6"},
+    {file = "libdeeplake-0.0.60-cp311-cp311-macosx_10_12_x86_64.whl", hash = "sha256:2d18b4b77939af29d927afa5e9d4652603821b5a48c7959ad648caf5b2509efd"},
+    {file = "libdeeplake-0.0.60-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:1c424719292da9abf4f531b21181b8dcb6a77c10db6d8d559da708b6053745c9"},
+    {file = "libdeeplake-0.0.60-cp311-cp311-manylinux2010_x86_64.whl", hash = "sha256:27ebe8638429dcdfb650f942128e9aa9944ad68332b5a5dad8d943eeb9905d24"},
+    {file = "libdeeplake-0.0.60-cp311-cp311-manylinux2014_aarch64.whl", hash = "sha256:9f3841343806372905c42ea30c89b553f79530cdaa24d5e7753cbd45fa8444f8"},
+    {file = "libdeeplake-0.0.60-cp37-cp37m-macosx_10_12_x86_64.whl", hash = "sha256:afdbf256de09b362c3fb198e33547dff157583762814f7973d4c01357506cfd7"},
+    {file = "libdeeplake-0.0.60-cp37-cp37m-macosx_11_0_arm64.whl", hash = "sha256:aee8a0f1d9521cb964efc39bee6e4cfbc18935501e0a0969dd43fe90ccd3e440"},
+    {file = "libdeeplake-0.0.60-cp37-cp37m-manylinux2010_x86_64.whl", hash = "sha256:7bf53919c17318eff53ab5f46514fe7bf86d32bfd0e7b73ab0e47e57279fb58f"},
+    {file = "libdeeplake-0.0.60-cp37-cp37m-manylinux2014_aarch64.whl", hash = "sha256:ad570eacbdc79533cc9fbc005903a7af2e037a7a743e60ed5d1486c7daade737"},
+    {file = "libdeeplake-0.0.60-cp38-cp38-macosx_10_12_x86_64.whl", hash = "sha256:957123ca007ce552f08646ceaf386e60703d9aa1f299e76f71d4b922c8ccbf4f"},
+    {file = "libdeeplake-0.0.60-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:1ea962a884eea30d092ed379dd83f3c6a162268180b55d6afa8778970ea99863"},
+    {file = "libdeeplake-0.0.60-cp38-cp38-manylinux2010_x86_64.whl", hash = "sha256:c330c1ca89c057cdabca9b6261ecc051ebad5f658d17c140a211a8842bd34ce5"},
+    {file = "libdeeplake-0.0.60-cp38-cp38-manylinux2014_aarch64.whl", hash = "sha256:397a4da31581472fc9c7444b91ee4619f29d9b18371554514a2de857f5bad8a8"},
+    {file = "libdeeplake-0.0.60-cp39-cp39-macosx_10_12_x86_64.whl", hash = "sha256:cf33e027abed9d123e6fccb822fd128ea9d9d5833600aac82a7e0280df0c190e"},
+    {file = "libdeeplake-0.0.60-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:5844475365631984453b563e3e7c69d65d96d91e44e8e0762f1877befcac58b5"},
+    {file = "libdeeplake-0.0.60-cp39-cp39-manylinux2010_x86_64.whl", hash = "sha256:753ac3840852b6009056ad725afd48c460a431470b3cccac3f717e423e2c7c1c"},
+    {file = "libdeeplake-0.0.60-cp39-cp39-manylinux2014_aarch64.whl", hash = "sha256:6f50fa21ca263084783b313a71ffb26ea7d614b9ca5e16398be1f9a1dbe0a775"},
+]
+
+[package.dependencies]
+numpy = "*"
 
 [[package]]
 name = "linkchecker"
@@ -11013,17 +11048,6 @@ doc = ["sphinx", "sphinx_rtd_theme"]
 test = ["flake8", "isort", "pytest"]
 
 [[package]]
-name = "tokenize-rt"
-version = "5.1.0"
-description = "A wrapper around the stdlib `tokenize` which roundtrips."
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "tokenize_rt-5.1.0-py2.py3-none-any.whl", hash = "sha256:9b7bb843e77dd6ed0be5564bfaaba200083911e0497841cd3e9235a6a9794d74"},
-    {file = "tokenize_rt-5.1.0.tar.gz", hash = "sha256:08f0c2daa94c4052e53c2fcaa8e32585e6ae9bdfc800974092d031401694e002"},
-]
-
-[[package]]
 name = "tokenizers"
 version = "0.13.3"
 description = "Fast and Customizable Tokenizers"
@@ -12522,7 +12546,7 @@ cffi = {version = ">=1.11", markers = "platform_python_implementation == \"PyPy\
 cffi = ["cffi (>=1.11)"]
 
 [extras]
-all = ["O365", "aleph-alpha-client", "anthropic", "arxiv", "atlassian-python-api", "awadb", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-cosmos", "azure-identity", "beautifulsoup4", "clarifai", "clickhouse-connect", "cohere", "deeplake", "docarray", "duckduckgo-search", "elasticsearch", "esprima", "faiss-cpu", "google-api-python-client", "google-auth", "google-search-results", "gptcache", "html2text", "huggingface_hub", "jina", "jinja2", "jq", "lancedb", "langkit", "lark", "lxml", "manifest-ml", "marqo", "momento", "nebula3-python", "neo4j", "networkx", "nlpcloud", "nltk", "nomic", "octoai-sdk", "openai", "openlm", "opensearch-py", "pdfminer-six", "pexpect", "pgvector", "pinecone-client", "pinecone-text", "psycopg2-binary", "pymongo", "pyowm", "pypdf", "pytesseract", "pyvespa", "qdrant-client", "rdflib", "redis", "requests-toolbelt", "sentence-transformers", "singlestoredb", "spacy", "steamship", "tensorflow-text", "tigrisdb", "tiktoken", "torch", "transformers", "weaviate-client", "wikipedia", "wolframalpha"]
+all = ["O365", "aleph-alpha-client", "anthropic", "arxiv", "atlassian-python-api", "awadb", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-cosmos", "azure-identity", "beautifulsoup4", "clarifai", "clickhouse-connect", "cohere", "deeplake", "docarray", "duckduckgo-search", "elasticsearch", "esprima", "faiss-cpu", "google-api-python-client", "google-auth", "google-search-results", "gptcache", "html2text", "huggingface_hub", "jina", "jinja2", "jq", "lancedb", "langkit", "lark", "libdeeplake", "lxml", "manifest-ml", "marqo", "momento", "nebula3-python", "neo4j", "networkx", "nlpcloud", "nltk", "nomic", "octoai-sdk", "openai", "openlm", "opensearch-py", "pdfminer-six", "pexpect", "pgvector", "pinecone-client", "pinecone-text", "psycopg2-binary", "pymongo", "pyowm", "pypdf", "pytesseract", "pyvespa", "qdrant-client", "rdflib", "redis", "requests-toolbelt", "sentence-transformers", "singlestoredb", "spacy", "steamship", "tensorflow-text", "tigrisdb", "tiktoken", "torch", "transformers", "weaviate-client", "wikipedia", "wolframalpha"]
 azure = ["azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-core", "azure-cosmos", "azure-identity", "azure-search-documents", "openai"]
 clarifai = ["clarifai"]
 cohere = ["cohere"]
@@ -12538,4 +12562,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "0aacdf6c4423430ab20a8e5cda63d2cdc7da8c83824ce7fc6732f18a41c5d73d"
+content-hash = "b2ccab03db87c42aeed22fdba0c6bae45db6e6968074572561ebddd58e5ce910"

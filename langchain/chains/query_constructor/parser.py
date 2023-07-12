@@ -145,6 +145,11 @@ def get_parser(
     Returns:
         Lark parser for the query language.
     """
+    # QueryTransformer is None when Lark cannot be imported.
+    if QueryTransformer is None:
+        raise ImportError(
+            "Cannot import lark, please install it with 'pip install lark'."
+        )
     transformer = QueryTransformer(
         allowed_comparators=allowed_comparators, allowed_operators=allowed_operators
     )
