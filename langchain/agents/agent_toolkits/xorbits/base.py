@@ -30,7 +30,7 @@ def create_xorbits_agent(
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
-    """Construct a spark agent from an LLM and dataframe."""
+    """Construct a xorbits agent from an LLM and dataframe."""
     try:
         import xorbits
         from xorbits import numpy as np
