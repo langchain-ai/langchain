@@ -305,22 +305,36 @@ async def test_run_inline_async_callback_manager() -> None:
     manager = AsyncCallbackManager(handlers=[handler])
 
     run_managers = await manager.on_llm_start({}, ["prompt"], new_ctxval=1)
-    assert handler.last_observed_ctxval == 0, "on_llm_start should see the original value"
-    assert ctxvar.get() == 1, "on_llm_start should set the new value observable from this context"
+    assert (
+        handler.last_observed_ctxval == 0
+    ), "on_llm_start should see the original value"
+    assert (
+        ctxvar.get() == 1
+    ), "on_llm_start should set the new value observable from this context"
 
     for run_manager in run_managers:
         await run_manager.on_llm_end(LLMResult(generations=[]), new_ctxval=2)
     assert handler.last_observed_ctxval == 1
-    assert ctxvar.get() == 2, "on_llm_end should set the new value observable from this context"
+    assert (
+        ctxvar.get() == 2
+    ), "on_llm_end should set the new value observable from this context"
 
     for run_manager in run_managers:
         await run_manager.on_llm_error(Exception(), new_ctxval=3)
     assert handler.last_observed_ctxval == 2
-    assert ctxvar.get() == 3, "on_llm_end should set the new value observable from this context"
+    assert (
+        ctxvar.get() == 3
+    ), "on_llm_end should set the new value observable from this context"
 
-    await manager.on_chat_model_start({}, [[SystemMessage(content="prompt")]], new_ctxval=4)
-    assert handler.last_observed_ctxval == 3, "on_chat_model_start should see the original value"
-    assert ctxvar.get() == 4, "on_chat_model_start should set the new value observable from this context"
+    await manager.on_chat_model_start(
+        {}, [[SystemMessage(content="prompt")]], new_ctxval=4
+    )
+    assert (
+        handler.last_observed_ctxval == 3
+    ), "on_chat_model_start should see the original value"
+    assert (
+        ctxvar.get() == 4
+    ), "on_chat_model_start should set the new value observable from this context"
 
 
 def test_run_inline_callback_manager() -> None:
@@ -356,22 +370,34 @@ def test_run_inline_callback_manager() -> None:
     manager = CallbackManager(handlers=[handler])
 
     run_managers = manager.on_llm_start({}, ["prompt"], new_ctxval=1)
-    assert handler.last_observed_ctxval == 0, "on_llm_start should see the original value"
-    assert ctxvar.get() == 1, "on_llm_start should set the new value observable from this context"
+    assert (
+        handler.last_observed_ctxval == 0
+    ), "on_llm_start should see the original value"
+    assert (
+        ctxvar.get() == 1
+    ), "on_llm_start should set the new value observable from this context"
 
     for run_manager in run_managers:
         run_manager.on_llm_end(LLMResult(generations=[]), new_ctxval=2)
     assert handler.last_observed_ctxval == 1
-    assert ctxvar.get() == 2, "on_llm_end should set the new value observable from this context"
+    assert (
+        ctxvar.get() == 2
+    ), "on_llm_end should set the new value observable from this context"
 
     for run_manager in run_managers:
         run_manager.on_llm_error(Exception(), new_ctxval=3)
     assert handler.last_observed_ctxval == 2
-    assert ctxvar.get() == 3, "on_llm_end should set the new value observable from this context"
+    assert (
+        ctxvar.get() == 3
+    ), "on_llm_end should set the new value observable from this context"
 
     manager.on_chat_model_start({}, [[SystemMessage(content="prompt")]], new_ctxval=4)
-    assert handler.last_observed_ctxval == 3, "on_chat_model_start should see the original value"
-    assert ctxvar.get() == 4, "on_chat_model_start should set the new value observable from this context"
+    assert (
+        handler.last_observed_ctxval == 3
+    ), "on_chat_model_start should see the original value"
+    assert (
+        ctxvar.get() == 4
+    ), "on_chat_model_start should set the new value observable from this context"
 
 
 @pytest.mark.asyncio
@@ -400,16 +426,19 @@ async def test_async_callbacks_concurrency() -> None:
         async def on_llm_error(self, *args: Any, **kwargs: Any) -> None:
             await self._hook(*args, **kwargs)
 
-
     handler = CallbackHandler()
     manager = AsyncCallbackManager(handlers=[handler, handler])
     start_time = time.monotonic()
     await manager.on_llm_start({}, ["prompt"])
     duration = time.monotonic() - start_time
-    assert duration >= 2 * handler_duration, "on_llm_start should run serially when run_inline=False"
+    assert (
+        duration >= 2 * handler_duration
+    ), "on_llm_start should run serially when run_inline=False"
 
     handler.run_inline = False
     start_time = time.monotonic()
     await manager.on_llm_start({}, ["prompt"])
     duration = time.monotonic() - start_time
-    assert duration <= 1.5 * handler_duration, "on_llm_start should run serially when run_inline=True"
+    assert (
+        duration <= 1.5 * handler_duration
+    ), "on_llm_start should run serially when run_inline=True"
