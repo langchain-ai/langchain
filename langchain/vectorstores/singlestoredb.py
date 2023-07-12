@@ -2,9 +2,18 @@
 
 from __future__ import annotations
 
-import enum
 import json
-from typing import Any, ClassVar, Collection, Iterable, List, Optional, Tuple, Type
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Collection,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+)
 
 from sqlalchemy.pool import QueuePool
 
@@ -15,14 +24,7 @@ from langchain.callbacks.manager import (
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
-
-
-class DistanceStrategy(str, enum.Enum):
-    """Enumerator of the Distance strategies for SingleStoreDB."""
-
-    EUCLIDEAN_DISTANCE = "EUCLIDEAN_DISTANCE"
-    DOT_PRODUCT = "DOT_PRODUCT"
-
+from langchain.vectorstores.utils import DistanceStrategy
 
 DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.DOT_PRODUCT
 
@@ -210,6 +212,9 @@ class SingleStoreDB(VectorStore):
             timeout=timeout,
         )
         self._create_table()
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        return self._max_inner_product_relevance_score_fn
 
     def _create_table(self: SingleStoreDB) -> None:
         """Create table if it doesn't exist."""

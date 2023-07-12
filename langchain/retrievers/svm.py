@@ -5,7 +5,7 @@ https://github.com/karpathy/randomfun/blob/master/knn_vs_svm.ipynb"""
 from __future__ import annotations
 
 import concurrent.futures
-from typing import Any, List, Optional
+from typing import Any, Iterable, List, Optional
 
 import numpy as np
 
@@ -53,10 +53,26 @@ class SVMRetriever(BaseRetriever):
         index = create_index(texts, embeddings)
         return cls(embeddings=embeddings, index=index, texts=texts, **kwargs)
 
+    @classmethod
+    def from_documents(
+        cls,
+        documents: Iterable[Document],
+        embeddings: Embeddings,
+        **kwargs: Any,
+    ) -> SVMRetriever:
+        texts, metadatas = zip(*((d.page_content, d.metadata) for d in documents))
+        return cls.from_texts(texts=texts, embeddings=embeddings, **kwargs)
+
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
-        from sklearn import svm
+        try:
+            from sklearn import svm
+        except ImportError:
+            raise ImportError(
+                "Could not import scikit-learn, please install with `pip install "
+                "scikit-learn`."
+            )
 
         query_embeds = np.array(self.embeddings.embed_query(query))
         x = np.concatenate([query_embeds[None, ...], self.index])

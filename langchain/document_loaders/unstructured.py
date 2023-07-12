@@ -126,14 +126,12 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
 
     Examples
     --------
-    ```python
     from langchain.document_loaders import UnstructuredFileLoader
 
     loader = UnstructuredFileLoader(
         "example.pdf", mode="elements", strategy="fast",
     )
     docs = loader.load()
-    ```
 
     References
     ----------
@@ -211,7 +209,6 @@ class UnstructuredAPIFileLoader(UnstructuredFileLoader):
     different unstructured settings.
 
     Examples
-    --------
     ```python
     from langchain.document_loaders import UnstructuredAPIFileLoader
 
@@ -219,7 +216,6 @@ class UnstructuredAPIFileLoader(UnstructuredFileLoader):
         "example.pdf", mode="elements", strategy="fast", api_key="MY_API_KEY",
     )
     docs = loader.load()
-    ```
 
     References
     ----------
@@ -272,7 +268,6 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
 
     Examples
     --------
-    ```python
     from langchain.document_loaders import UnstructuredFileIOLoader
 
     with open("example.pdf", "rb") as f:
@@ -280,7 +275,6 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
             f, mode="elements", strategy="fast",
         )
         docs = loader.load()
-    ```
 
 
     References
@@ -324,7 +318,6 @@ class UnstructuredAPIFileIOLoader(UnstructuredFileIOLoader):
 
     Examples
     --------
-    ```python
     from langchain.document_loaders import UnstructuredAPIFileLoader
 
     with open("example.pdf", "rb") as f:
@@ -332,7 +325,6 @@ class UnstructuredAPIFileIOLoader(UnstructuredFileIOLoader):
             f, mode="elements", strategy="fast", api_key="MY_API_KEY",
         )
         docs = loader.load()
-    ```
 
     References
     ----------
