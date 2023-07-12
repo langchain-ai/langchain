@@ -1,4 +1,4 @@
-"""Loader that loads PDF files."""
+"""Loads PDF files."""
 import json
 import logging
 import os
@@ -7,7 +7,7 @@ import time
 from abc import ABC
 from io import StringIO
 from pathlib import Path
-from typing import Any, Iterator, List, Mapping, Optional
+from typing import Any, Iterator, List, Mapping, Optional, Union
 from urllib.parse import urlparse
 
 import requests
@@ -29,7 +29,27 @@ logger = logging.getLogger(__file__)
 
 
 class UnstructuredPDFLoader(UnstructuredFileLoader):
-    """Loader that uses unstructured to load PDF files."""
+    """Loader that uses unstructured to load PDF files.
+    You can run the loader in one of two modes: "single" and "elements".
+    If you use "single" mode, the document will be returned as a single
+    langchain Document object. If you use "elements" mode, the unstructured
+    library will split the document into elements such as Title and NarrativeText.
+    You can pass in additional unstructured kwargs after mode to apply
+    different unstructured settings.
+
+    Examples
+    --------
+    from langchain.document_loaders import UnstructuredPDFLoader
+
+    loader = UnstructuredPDFLoader(
+        "example.pdf", mode="elements", strategy="fast",
+    )
+    docs = loader.load()
+
+    References
+    ----------
+    https://unstructured-io.github.io/unstructured/bricks.html#partition-pdf
+    """
 
     def _get_elements(self) -> List:
         from unstructured.partition.pdf import partition_pdf
@@ -41,11 +61,11 @@ class BasePDFLoader(BaseLoader, ABC):
     """Base loader class for PDF files.
 
     Defaults to check for local file, but if the file is a web path, it will download it
-    to a temporary file, and use that, then clean up the temporary file after completion
+    to a temporary file, use it, then clean up the temporary file after completion
     """
 
     def __init__(self, file_path: str):
-        """Initialize with file path."""
+        """Initialize with a file path."""
         self.file_path = file_path
         self.web_path = None
         if "~" in self.file_path:
@@ -86,7 +106,7 @@ class BasePDFLoader(BaseLoader, ABC):
 
 
 class OnlinePDFLoader(BasePDFLoader):
-    """Loader that loads online PDFs."""
+    """Loads online PDFs."""
 
     def load(self) -> List[Document]:
         """Load documents."""
@@ -97,18 +117,20 @@ class OnlinePDFLoader(BasePDFLoader):
 class PyPDFLoader(BasePDFLoader):
     """Loads a PDF with pypdf and chunks at character level.
 
-    Loader also stores page numbers in metadatas.
+    Loader also stores page numbers in metadata.
     """
 
-    def __init__(self, file_path: str) -> None:
-        """Initialize with file path."""
+    def __init__(
+        self, file_path: str, password: Optional[Union[str, bytes]] = None
+    ) -> None:
+        """Initialize with a file path."""
         try:
             import pypdf  # noqa:F401
         except ImportError:
             raise ImportError(
                 "pypdf package not found, please install it with " "`pip install pypdf`"
             )
-        self.parser = PyPDFParser()
+        self.parser = PyPDFParser(password=password)
         super().__init__(file_path)
 
     def load(self) -> List[Document]:
@@ -127,7 +149,7 @@ class PyPDFium2Loader(BasePDFLoader):
     """Loads a PDF with pypdfium2 and chunks at character level."""
 
     def __init__(self, file_path: str):
-        """Initialize with file path."""
+        """Initialize with a file path."""
         super().__init__(file_path)
         self.parser = PyPDFium2Parser()
 
@@ -146,7 +168,7 @@ class PyPDFium2Loader(BasePDFLoader):
 class PyPDFDirectoryLoader(BaseLoader):
     """Loads a directory with PDF files with pypdf and chunks at character level.
 
-    Loader also stores page numbers in metadatas.
+    Loader also stores page numbers in metadata.
     """
 
     def __init__(
@@ -220,7 +242,7 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
     """Loader that uses PDFMiner to load PDF files as HTML content."""
 
     def __init__(self, file_path: str):
-        """Initialize with file path."""
+        """Initialize with a file path."""
         try:
             from pdfminer.high_level import extract_text_to_fp  # noqa:F401
         except ImportError:
@@ -254,7 +276,7 @@ class PyMuPDFLoader(BasePDFLoader):
     """Loader that uses PyMuPDF to load PDF files."""
 
     def __init__(self, file_path: str) -> None:
-        """Initialize with file path."""
+        """Initialize with a file path."""
         try:
             import fitz  # noqa:F401
         except ImportError:
@@ -276,6 +298,8 @@ class PyMuPDFLoader(BasePDFLoader):
 # MathpixPDFLoader implementation taken largely from Daniel Gross's:
 # https://gist.github.com/danielgross/3ab4104e14faccc12b49200843adab21
 class MathpixPDFLoader(BasePDFLoader):
+    """This class uses Mathpix service to load PDF files."""
+
     def __init__(
         self,
         file_path: str,
@@ -284,6 +308,16 @@ class MathpixPDFLoader(BasePDFLoader):
         should_clean_pdf: bool = False,
         **kwargs: Any,
     ) -> None:
+        """Initialize with a file path.
+
+        Args:
+            file_path: a file for loading.
+            processed_file_format: a format of the processed file. Default is "mmd".
+            max_wait_time_seconds: a maximum time to wait for the response from
+             the server. Default is 500.
+            should_clean_pdf: a flag to clean the PDF file. Default is False.
+            **kwargs: additional keyword arguments.
+        """
         super().__init__(file_path)
         self.mathpix_api_key = get_from_dict_or_env(
             kwargs, "mathpix_api_key", "MATHPIX_API_KEY"
@@ -322,6 +356,13 @@ class MathpixPDFLoader(BasePDFLoader):
             raise ValueError("Unable to send PDF to Mathpix.")
 
     def wait_for_processing(self, pdf_id: str) -> None:
+        """Wait for processing to complete.
+
+        Args:
+            pdf_id: a PDF id.
+
+        Returns: None
+        """
         url = self.url + "/" + pdf_id
         for _ in range(0, self.max_wait_time_seconds, 5):
             response = requests.get(url, headers=self.headers)
@@ -344,6 +385,14 @@ class MathpixPDFLoader(BasePDFLoader):
         return response.content.decode("utf-8")
 
     def clean_pdf(self, contents: str) -> str:
+        """Clean the PDF file.
+
+        Args:
+            contents: a PDF file contents.
+
+        Returns:
+
+        """
         contents = "\n".join(
             [line for line in contents.split("\n") if not line.startswith("![]")]
         )
@@ -373,7 +422,7 @@ class PDFPlumberLoader(BasePDFLoader):
     def __init__(
         self, file_path: str, text_kwargs: Optional[Mapping[str, Any]] = None
     ) -> None:
-        """Initialize with file path."""
+        """Initialize with a file path."""
         try:
             import pdfplumber  # noqa:F401
         except ImportError:

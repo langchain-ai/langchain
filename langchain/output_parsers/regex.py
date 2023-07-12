@@ -9,6 +9,10 @@ from langchain.schema import BaseOutputParser
 class RegexParser(BaseOutputParser):
     """Class to parse the output into a dictionary."""
 
+    @property
+    def lc_serializable(self) -> bool:
+        return True
+
     regex: str
     output_keys: List[str]
     default_output_key: Optional[str] = None

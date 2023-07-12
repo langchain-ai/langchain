@@ -7,11 +7,9 @@ from typing import Any, List, Optional, Sequence, Tuple, Union
 from pydantic import root_validator
 
 from langchain.agents import BaseSingleActionAgent
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import Callbacks
 from langchain.chat_models.openai import ChatOpenAI
-from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.chat import (
     BaseMessagePromptTemplate,
     ChatPromptTemplate,
@@ -21,10 +19,14 @@ from langchain.prompts.chat import (
 from langchain.schema import (
     AgentAction,
     AgentFinish,
+    BasePromptTemplate,
+    OutputParserException,
+)
+from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
     FunctionMessage,
-    OutputParserException,
     SystemMessage,
 )
 from langchain.tools import BaseTool
@@ -106,7 +108,6 @@ def _parse_ai_message(message: BaseMessage) -> Union[AgentAction, AgentFinish]:
     function_call = message.additional_kwargs.get("function_call", {})
 
     if function_call:
-        function_call = message.additional_kwargs["function_call"]
         function_name = function_call["name"]
         try:
             _tool_input = json.loads(function_call["arguments"])
@@ -188,6 +189,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         self,
         intermediate_steps: List[Tuple[AgentAction, str]],
         callbacks: Callbacks = None,
+        with_functions: bool = True,
         **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
         """Given input, decided what to do.
@@ -206,9 +208,17 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         full_inputs = dict(**selected_inputs, agent_scratchpad=agent_scratchpad)
         prompt = self.prompt.format_prompt(**full_inputs)
         messages = prompt.to_messages()
-        predicted_message = self.llm.predict_messages(
-            messages, functions=self.functions, callbacks=callbacks
-        )
+        if with_functions:
+            predicted_message = self.llm.predict_messages(
+                messages,
+                functions=self.functions,
+                callbacks=callbacks,
+            )
+        else:
+            predicted_message = self.llm.predict_messages(
+                messages,
+                callbacks=callbacks,
+            )
         agent_decision = _parse_ai_message(predicted_message)
         return agent_decision
 
@@ -240,6 +250,35 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         )
         agent_decision = _parse_ai_message(predicted_message)
         return agent_decision
+
+    def return_stopped_response(
+        self,
+        early_stopping_method: str,
+        intermediate_steps: List[Tuple[AgentAction, str]],
+        **kwargs: Any,
+    ) -> AgentFinish:
+        """Return response when agent has been stopped due to max iterations."""
+        if early_stopping_method == "force":
+            # `force` just returns a constant string
+            return AgentFinish(
+                {"output": "Agent stopped due to iteration limit or time limit."}, ""
+            )
+        elif early_stopping_method == "generate":
+            # Generate does one final forward pass
+            agent_decision = self.plan(
+                intermediate_steps, with_functions=False, **kwargs
+            )
+            if type(agent_decision) == AgentFinish:
+                return agent_decision
+            else:
+                raise ValueError(
+                    f"got AgentAction with no functions provided: {agent_decision}"
+                )
+        else:
+            raise ValueError(
+                "early_stopping_method should be one of `force` or `generate`, "
+                f"got {early_stopping_method}"
+            )
 
     @classmethod
     def create_prompt(

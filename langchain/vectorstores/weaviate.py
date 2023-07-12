@@ -113,10 +113,17 @@ class Weaviate(VectorStore):
         self._embedding = embedding
         self._text_key = text_key
         self._query_attrs = [self._text_key]
-        self._relevance_score_fn = relevance_score_fn
+        self.relevance_score_fn = relevance_score_fn
         self._by_text = by_text
         if attributes is not None:
             self._query_attrs.extend(attributes)
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        return (
+            self.relevance_score_fn
+            if self.relevance_score_fn
+            else _default_score_normalizer
+        )
 
     def add_texts(
         self,
@@ -361,26 +368,6 @@ class Weaviate(VectorStore):
             docs_and_scores.append((Document(page_content=text, metadata=res), score))
         return docs_and_scores
 
-    def _similarity_search_with_relevance_scores(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
-        """Return docs and relevance scores, normalized on a scale from 0 to 1.
-
-        0 is dissimilar, 1 is most similar.
-        """
-        if self._relevance_score_fn is None:
-            raise ValueError(
-                "relevance_score_fn must be provided to"
-                " Weaviate constructor to normalize scores"
-            )
-        docs_and_scores = self.similarity_search_with_score(query, k=k, **kwargs)
-        return [
-            (doc, self._relevance_score_fn(score)) for doc, score in docs_and_scores
-        ]
-
     @classmethod
     def from_texts(
         cls: Type[Weaviate],
@@ -470,12 +457,15 @@ class Weaviate(VectorStore):
             by_text=by_text,
         )
 
-    def delete(self, ids: List[str]) -> None:
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> None:
         """Delete by vector IDs.
 
         Args:
             ids: List of ids to delete.
         """
+
+        if ids is None:
+            raise ValueError("No ids provided to delete.")
 
         # TODO: Check if this can be done in bulk
         for id in ids:

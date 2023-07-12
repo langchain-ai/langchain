@@ -15,21 +15,20 @@ logger = logging.getLogger(__name__)
 class Clarifai(LLM):
     """Wrapper around Clarifai's large language models.
 
-    To use, you should have an account on the Clarifai platform, 
+    To use, you should have an account on the Clarifai platform,
     the ``clarifai`` python package installed, and the
-    environment variable ``CLARIFAI_PAT_KEY`` set with your PAT key, 
+    environment variable ``CLARIFAI_PAT`` set with your PAT key,
     or pass it as a named parameter to the constructor.
 
     Example:
         .. code-block:: python
 
             from langchain.llms import Clarifai
-            clarifai_llm = Clarifai(clarifai_pat_key=CLARIFAI_PAT_KEY, \
+            clarifai_llm = Clarifai(pat=CLARIFAI_PAT, \
                 user_id=USER_ID, app_id=APP_ID, model_id=MODEL_ID)
     """
 
     stub: Any  #: :meta private:
-    metadata: Any
     userDataObject: Any
 
     model_id: Optional[str] = None
@@ -44,11 +43,9 @@ class Clarifai(LLM):
     user_id: Optional[str] = None
     """Clarifai user id to use."""
 
-    clarifai_pat_key: Optional[str] = None
+    pat: Optional[str] = None
 
     api_base: str = "https://api.clarifai.com"
-
-    stop: Optional[List[str]] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -59,32 +56,54 @@ class Clarifai(LLM):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that we have all required info to access Clarifai
         platform and python package exists in environment."""
-        values["clarifai_pat_key"] = get_from_dict_or_env(
-            values, "clarifai_pat_key", "CLARIFAI_PAT_KEY"
-        )
+        values["pat"] = get_from_dict_or_env(values, "pat", "CLARIFAI_PAT")
         user_id = values.get("user_id")
         app_id = values.get("app_id")
         model_id = values.get("model_id")
 
-        if values["clarifai_pat_key"] is None:
-            raise ValueError("Please provide a clarifai_pat_key.")
+        if values["pat"] is None:
+            raise ValueError("Please provide a pat.")
         if user_id is None:
             raise ValueError("Please provide a user_id.")
         if app_id is None:
             raise ValueError("Please provide a app_id.")
         if model_id is None:
             raise ValueError("Please provide a model_id.")
+
+        try:
+            from clarifai.auth.helper import ClarifaiAuthHelper
+            from clarifai.client import create_stub
+        except ImportError:
+            raise ImportError(
+                "Could not import clarifai python package. "
+                "Please install it with `pip install clarifai`."
+            )
+        auth = ClarifaiAuthHelper(
+            user_id=user_id,
+            app_id=app_id,
+            pat=values["pat"],
+            base=values["api_base"],
+        )
+        values["userDataObject"] = auth.get_user_app_id_proto()
+        values["stub"] = create_stub(auth)
+
         return values
 
     @property
     def _default_params(self) -> Dict[str, Any]:
-        """Get the default parameters for calling Cohere API."""
+        """Get the default parameters for calling Clarifai API."""
         return {}
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model_id": self.model_id}}
+        return {
+            **{
+                "user_id": self.user_id,
+                "app_id": self.app_id,
+                "model_id": self.model_id,
+            }
+        }
 
     @property
     def _llm_type(self) -> str:
@@ -96,7 +115,7 @@ class Clarifai(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> str:
         """Call out to Clarfai's PostModelOutputs endpoint.
 
@@ -114,8 +133,6 @@ class Clarifai(LLM):
         """
 
         try:
-            from clarifai.auth.helper import ClarifaiAuthHelper
-            from clarifai.client import create_stub
             from clarifai_grpc.grpc.api import (
                 resources_pb2,
                 service_pb2,
@@ -126,23 +143,6 @@ class Clarifai(LLM):
                 "Could not import clarifai python package. "
                 "Please install it with `pip install clarifai`."
             )
-
-        auth = ClarifaiAuthHelper(
-            user_id=self.user_id,
-            app_id=self.app_id,
-            pat=self.clarifai_pat_key,
-            base=self.api_base,
-        )
-        self.userDataObject = auth.get_user_app_id_proto()
-        self.stub = create_stub(auth)
-
-        params = self._default_params
-        if self.stop is not None and stop is not None:
-            raise ValueError("`stop` found in both the input and default params.")
-        elif self.stop is not None:
-            params["stop_sequences"] = self.stop
-        else:
-            params["stop_sequences"] = stop
 
         # The userDataObject is created in the overview and
         # is required when using a PAT
@@ -163,14 +163,20 @@ class Clarifai(LLM):
 
         if post_model_outputs_response.status.code != status_code_pb2.SUCCESS:
             logger.error(post_model_outputs_response.status)
+            first_model_failure = (
+                post_model_outputs_response.outputs[0].status
+                if len(post_model_outputs_response.outputs[0])
+                else None
+            )
             raise Exception(
-                "Post model outputs failed, status: "
-                + post_model_outputs_response.status.description
+                f"Post model outputs failed, status: "
+                f"{post_model_outputs_response.status}, first output failure: "
+                f"{first_model_failure}"
             )
 
         text = post_model_outputs_response.outputs[0].data.text.raw
 
         # In order to make this consistent with other endpoints, we strip them.
-        if stop is not None or self.stop is not None:
-            text = enforce_stop_tokens(text, params["stop_sequences"])
+        if stop is not None:
+            text = enforce_stop_tokens(text, stop)
         return text

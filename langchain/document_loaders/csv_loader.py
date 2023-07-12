@@ -37,6 +37,16 @@ class CSVLoader(BaseLoader):
         csv_args: Optional[Dict] = None,
         encoding: Optional[str] = None,
     ):
+        """
+
+        Args:
+            file_path: The path to the CSV file.
+            source_column: The name of the column in the CSV file to use as the source.
+              Optional. Defaults to None.
+            csv_args: A dictionary of arguments to pass to the csv.DictReader.
+              Optional. Defaults to None.
+            encoding: The encoding of the CSV file. Optional. Defaults to None.
+        """
         self.file_path = file_path
         self.source_column = source_column
         self.encoding = encoding
@@ -68,11 +78,33 @@ class CSVLoader(BaseLoader):
 
 
 class UnstructuredCSVLoader(UnstructuredFileLoader):
-    """Loader that uses unstructured to load CSV files."""
+    """Loader that uses unstructured to load CSV files. Like other
+    Unstructured loaders, UnstructuredCSVLoader can be used in both
+    "single" and "elements" mode. If you use the loader in "elements"
+    mode, the CSV file will be a single Unstructured Table element.
+    If you use the loader in "elements" mode, an HTML representation
+    of the table will be available in the "text_as_html" key in the
+    document metadata.
+
+    Examples
+    --------
+    from langchain.document_loaders.csv_loader import UnstructuredCSVLoader
+
+    loader = UnstructuredCSVLoader("stanley-cups.csv", mode="elements")
+    docs = loader.load()
+    """
 
     def __init__(
         self, file_path: str, mode: str = "single", **unstructured_kwargs: Any
     ):
+        """
+
+        Args:
+            file_path: The path to the CSV file.
+            mode: The mode to use when loading the CSV file.
+              Optional. Defaults to "single".
+            **unstructured_kwargs: Keyword arguments to pass to unstructured.
+        """
         validate_unstructured_version(min_unstructured_version="0.6.8")
         super().__init__(file_path=file_path, mode=mode, **unstructured_kwargs)
 

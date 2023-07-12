@@ -1,4 +1,4 @@
-"""Loading logic for loading documents from an s3 file."""
+"""Loading logic for loading documents from an AWS S3 file."""
 import os
 import tempfile
 from typing import List
@@ -9,10 +9,15 @@ from langchain.document_loaders.unstructured import UnstructuredFileLoader
 
 
 class S3FileLoader(BaseLoader):
-    """Loading logic for loading documents from s3."""
+    """Loading logic for loading documents from an AWS S3 file."""
 
     def __init__(self, bucket: str, key: str):
-        """Initialize with bucket and key name."""
+        """Initialize with bucket and key name.
+
+        Args:
+            bucket: The name of the S3 bucket.
+            key: The key of the S3 object.
+        """
         self.bucket = bucket
         self.key = key
 

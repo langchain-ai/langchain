@@ -42,11 +42,12 @@ class SitemapLoader(WebBaseLoader):
                 urls that are parsed and loaded
             parsing_function: Function to parse bs4.Soup output
             blocksize: number of sitemap locations per block
-            blocknum: the number of the block that should be loaded - zero indexed
+            blocknum: the number of the block that should be loaded - zero indexed.
+                Default: 0
             meta_function: Function to parse bs4.Soup output for metadata
                 remember when setting this method to also copy metadata["loc"]
                 to metadata["source"] if you are using this field
-            is_local: whether the sitemap is a local file
+            is_local: whether the sitemap is a local file. Default: False
         """
 
         if blocksize is not None and blocksize < 1:
@@ -72,7 +73,14 @@ class SitemapLoader(WebBaseLoader):
         self.is_local = is_local
 
     def parse_sitemap(self, soup: Any) -> List[dict]:
-        """Parse sitemap xml and load into a list of dicts."""
+        """Parse sitemap xml and load into a list of dicts.
+
+        Args:
+            soup: BeautifulSoup object.
+
+        Returns:
+            List of dicts.
+        """
         els = []
         for url in soup.find_all("url"):
             loc = url.find("loc")

@@ -12,10 +12,8 @@ from sqlalchemy.orm import sessionmaker
 
 from langchain.schema import (
     BaseChatMessageHistory,
-    BaseMessage,
-    _message_to_dict,
-    messages_from_dict,
 )
+from langchain.schema.messages import BaseMessage, _message_to_dict, messages_from_dict
 
 logger = logging.getLogger(__name__)
 

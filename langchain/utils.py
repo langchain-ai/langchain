@@ -3,8 +3,10 @@ import contextlib
 import datetime
 import importlib
 import os
+from importlib.metadata import version
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+from packaging.version import parse
 from requests import HTTPError, Response
 
 
@@ -106,12 +108,15 @@ def comma_list(items: List[Any]) -> str:
 @contextlib.contextmanager
 def mock_now(dt_value):  # type: ignore
     """Context manager for mocking out datetime.now() in unit tests.
+
     Example:
     with mock_now(datetime.datetime(2011, 2, 3, 10, 11)):
         assert datetime.datetime.now() == datetime.datetime(2011, 2, 3, 10, 11)
     """
 
     class MockDateTime(datetime.datetime):
+        """Mock datetime.datetime.now() with a fixed datetime."""
+
         @classmethod
         def now(cls):  # type: ignore
             # Create a copy of dt_value.
@@ -147,3 +152,34 @@ def guard_import(
             f"Please install it with `pip install {pip_name or module_name}`."
         )
     return module
+
+
+def check_package_version(
+    package: str,
+    lt_version: Optional[str] = None,
+    lte_version: Optional[str] = None,
+    gt_version: Optional[str] = None,
+    gte_version: Optional[str] = None,
+) -> None:
+    """Check the version of a package."""
+    imported_version = parse(version(package))
+    if lt_version is not None and imported_version >= parse(lt_version):
+        raise ValueError(
+            f"Expected {package} version to be < {lt_version}. Received "
+            f"{imported_version}."
+        )
+    if lte_version is not None and imported_version > parse(lte_version):
+        raise ValueError(
+            f"Expected {package} version to be <= {lte_version}. Received "
+            f"{imported_version}."
+        )
+    if gt_version is not None and imported_version <= parse(gt_version):
+        raise ValueError(
+            f"Expected {package} version to be > {gt_version}. Received "
+            f"{imported_version}."
+        )
+    if gte_version is not None and imported_version < parse(gte_version):
+        raise ValueError(
+            f"Expected {package} version to be >= {gte_version}. Received "
+            f"{imported_version}."
+        )

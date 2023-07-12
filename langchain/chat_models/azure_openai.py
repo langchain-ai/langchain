@@ -121,12 +121,13 @@ class AzureChatOpenAI(ChatOpenAI):
         return {**self._default_params}
 
     @property
-    def _invocation_params(self) -> Mapping[str, Any]:
+    def _client_params(self) -> Dict[str, Any]:
+        """Get the config params used for the openai client."""
         openai_creds = {
             "api_type": self.openai_api_type,
             "api_version": self.openai_api_version,
         }
-        return {**openai_creds, **super()._invocation_params}
+        return {**super()._client_params, **openai_creds}
 
     @property
     def _llm_type(self) -> str:

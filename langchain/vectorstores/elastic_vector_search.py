@@ -157,8 +157,8 @@ class ElasticVectorSearch(VectorStore, ABC):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
-        refresh_indices: bool = True,
         ids: Optional[List[str]] = None,
+        refresh_indices: bool = True,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -166,6 +166,7 @@ class ElasticVectorSearch(VectorStore, ABC):
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of unique IDs.
             refresh_indices: bool to refresh ElasticSearch indices
 
         Returns:
@@ -260,6 +261,7 @@ class ElasticVectorSearch(VectorStore, ABC):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
         elasticsearch_url: Optional[str] = None,
         index_name: Optional[str] = None,
         refresh_indices: bool = True,
@@ -292,7 +294,7 @@ class ElasticVectorSearch(VectorStore, ABC):
         index_name = index_name or uuid.uuid4().hex
         vectorsearch = cls(elasticsearch_url, index_name, embedding, **kwargs)
         vectorsearch.add_texts(
-            texts, metadatas=metadatas, refresh_indices=refresh_indices
+            texts, metadatas=metadatas, ids=ids, refresh_indices=refresh_indices
         )
         return vectorsearch
 
@@ -317,12 +319,15 @@ class ElasticVectorSearch(VectorStore, ABC):
             )
         return response
 
-    def delete(self, ids: List[str]) -> None:
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> None:
         """Delete by vector IDs.
 
         Args:
             ids: List of ids to delete.
         """
+
+        if ids is None:
+            raise ValueError("No ids provided to delete.")
 
         # TODO: Check if this can be done in bulk
         for id in ids:

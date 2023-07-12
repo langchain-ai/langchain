@@ -33,6 +33,9 @@ class TextGen(LLM):
     model_url: str
     """The full URL to the textgen webui including http[s]://host:port """
 
+    preset: Optional[str] = None
+    """The preset to use in the textgen webui """
+
     max_new_tokens: Optional[int] = 250
     """The maximum number of tokens to generate."""
 
@@ -162,7 +165,10 @@ class TextGen(LLM):
         if self.stopping_strings and stop is not None:
             raise ValueError("`stop` found in both the input and default params.")
 
-        params = self._default_params
+        if self.preset is None:
+            params = self._default_params
+        else:
+            params = {"preset": self.preset}
 
         # then sets it as configured, or default to an empty list:
         params["stop"] = self.stopping_strings or stop or []

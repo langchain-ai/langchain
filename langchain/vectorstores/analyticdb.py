@@ -3,11 +3,10 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Type
 
 from sqlalchemy import REAL, Column, String, Table, create_engine, insert, text
 from sqlalchemy.dialects.postgresql import ARRAY, JSON, TEXT
-from sqlalchemy.engine import Row
 
 try:
     from sqlalchemy.orm import declarative_base
@@ -50,6 +49,7 @@ class AnalyticDB(VectorStore):
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         pre_delete_collection: bool = False,
         logger: Optional[logging.Logger] = None,
+        engine_args: Optional[dict] = None,
     ) -> None:
         self.connection_string = connection_string
         self.embedding_function = embedding_function
@@ -57,16 +57,30 @@ class AnalyticDB(VectorStore):
         self.collection_name = collection_name
         self.pre_delete_collection = pre_delete_collection
         self.logger = logger or logging.getLogger(__name__)
-        self.__post_init__()
+        self.__post_init__(engine_args)
 
     def __post_init__(
         self,
+        engine_args: Optional[dict] = None,
     ) -> None:
         """
         Initialize the store.
         """
-        self.engine = create_engine(self.connection_string)
+
+        _engine_args = engine_args or {}
+
+        if (
+            "pool_recycle" not in _engine_args
+        ):  # Check if pool_recycle is not in _engine_args
+            _engine_args[
+                "pool_recycle"
+            ] = 3600  # Set pool_recycle to 3600s if not present
+
+        self.engine = create_engine(self.connection_string, **_engine_args)
         self.create_collection()
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        return self._euclidean_relevance_score_fn
 
     def create_table_if_not_exists(self) -> None:
         # Define the dynamic table
@@ -231,28 +245,6 @@ class AnalyticDB(VectorStore):
         )
         return docs
 
-    def _similarity_search_with_relevance_scores(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
-        """Return docs and relevance scores in the range [0, 1].
-
-        0 is dissimilar, 1 is most similar.
-
-        Args:
-            query: input text
-            k: Number of Documents to return. Defaults to 4.
-            **kwargs: kwargs to be passed to similarity search. Should include:
-                score_threshold: Optional, a floating point value between 0 to 1 to
-                    filter the resulting set of retrieved docs
-
-        Returns:
-            List of Tuples of (doc, similarity_score)
-        """
-        return self.similarity_search_with_score(query, k, **kwargs)
-
     def similarity_search_with_score_by_vector(
         self,
         embedding: List[float],
@@ -260,6 +252,14 @@ class AnalyticDB(VectorStore):
         filter: Optional[dict] = None,
     ) -> List[Tuple[Document, float]]:
         # Add the filter if provided
+        try:
+            from sqlalchemy.engine import Row
+        except ImportError:
+            raise ImportError(
+                "Could not import Row from sqlalchemy.engine. "
+                "Please 'pip install sqlalchemy>=1.4'."
+            )
+
         filter_condition = ""
         if filter is not None:
             conditions = [
@@ -317,6 +317,36 @@ class AnalyticDB(VectorStore):
         )
         return [doc for doc, _ in docs_and_scores]
 
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+        """Delete by vector IDs.
+
+        Args:
+            ids: List of ids to delete.
+        """
+        if ids is None:
+            raise ValueError("No ids provided to delete.")
+
+        # Define the table schema
+        chunks_table = Table(
+            self.collection_name,
+            Base.metadata,
+            Column("id", TEXT, primary_key=True),
+            Column("embedding", ARRAY(REAL)),
+            Column("document", String, nullable=True),
+            Column("metadata", JSON, nullable=True),
+            extend_existing=True,
+        )
+
+        try:
+            with self.engine.connect() as conn:
+                with conn.begin():
+                    delete_condition = chunks_table.c.id.in_(ids)
+                    conn.execute(chunks_table.delete().where(delete_condition))
+                    return True
+        except Exception as e:
+            print("Delete operation failed:", str(e))
+            return False
+
     @classmethod
     def from_texts(
         cls: Type[AnalyticDB],
@@ -327,6 +357,7 @@ class AnalyticDB(VectorStore):
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
+        engine_args: Optional[dict] = None,
         **kwargs: Any,
     ) -> AnalyticDB:
         """
@@ -344,6 +375,7 @@ class AnalyticDB(VectorStore):
             embedding_function=embedding,
             embedding_dimension=embedding_dimension,
             pre_delete_collection=pre_delete_collection,
+            engine_args=engine_args,
         )
 
         store.add_texts(texts=texts, metadatas=metadatas, ids=ids, **kwargs)
@@ -375,6 +407,7 @@ class AnalyticDB(VectorStore):
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
+        engine_args: Optional[dict] = None,
         **kwargs: Any,
     ) -> AnalyticDB:
         """
@@ -398,6 +431,7 @@ class AnalyticDB(VectorStore):
             metadatas=metadatas,
             ids=ids,
             collection_name=collection_name,
+            engine_args=engine_args,
             **kwargs,
         )
 

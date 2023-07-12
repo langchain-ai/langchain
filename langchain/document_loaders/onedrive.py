@@ -1,4 +1,4 @@
-"""Loader that loads data from OneDrive"""
+"""Loads data from OneDrive"""
 from __future__ import annotations
 
 import logging
@@ -60,11 +60,18 @@ class _SupportedFileTypes(BaseModel):
 
 
 class OneDriveLoader(BaseLoader, BaseModel):
+    """Loads data from OneDrive."""
+
     settings: _OneDriveSettings = Field(default_factory=_OneDriveSettings)
+    """ The settings for the OneDrive API client."""
     drive_id: str = Field(...)
+    """ The ID of the OneDrive drive to load data from."""
     folder_path: Optional[str] = None
+    """ The path to the folder to load data from."""
     object_ids: Optional[List[str]] = None
+    """ The IDs of the objects to load data from."""
     auth_with_token: bool = False
+    """ Whether to authenticate with a token or not. Defaults to False."""
 
     def _auth(self) -> Type[Account]:
         """

@@ -64,7 +64,7 @@ class Clarifai(VectorStore):
 
         self._user_id = user_id or os.environ.get("CLARIFAI_USER_ID")
         self._app_id = app_id or os.environ.get("CLARIFAI_APP_ID")
-        self._pat = pat or os.environ.get("CLARIFAI_PAT_KEY")
+        self._pat = pat or os.environ.get("CLARIFAI_PAT")
         if self._user_id is None or self._app_id is None or self._pat is None:
             raise ValueError(
                 "Could not find CLARIFAI_USER_ID, CLARIFAI_APP_ID or\
