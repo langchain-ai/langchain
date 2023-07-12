@@ -1,4 +1,4 @@
-from typing import Iterator, List
+from typing import Iterator, List, Union
 import requests
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -6,7 +6,7 @@ from langchain.document_loaders.base import BaseLoader
 class BrowserlessLoader(BaseLoader):
     """Loads the content of webpages using Browserless' /content endpoint"""
     
-    def __init__(self, api_token: str, urls: List[str]):
+    def __init__(self, api_token: str, urls: Union[str, List[str]]):
         """Initialize with API token and the URLs to scrape"""
         self.api_token = api_token
         """Browserless API token."""
