@@ -1,6 +1,5 @@
 """Methods for creating chains that use OpenAI function-calling APIs."""
 import inspect
-import re
 from typing import (
     Any,
     Callable,
