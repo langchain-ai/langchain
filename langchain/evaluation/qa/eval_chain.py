@@ -50,6 +50,10 @@ class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
         extra = Extra.ignore
 
     @property
+    def evaluation_name(self) -> str:
+        return "correctness"
+
+    @property
     def requires_reference(self) -> bool:
         return True
 
@@ -155,11 +159,18 @@ class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
 
     @property
     def requires_reference(self) -> bool:
+        """Whether the chain requires a reference string."""
         return True
 
     @property
     def requires_input(self) -> bool:
+        """Whether the chain requires an input string."""
         return True
+
+    class Config:
+        """Configuration for the QAEvalChain."""
+
+        extra = Extra.ignore
 
     @classmethod
     def _validate_input_vars(cls, prompt: PromptTemplate) -> None:
@@ -169,6 +180,10 @@ class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
                 f"Input variables should be {expected_input_vars}, "
                 f"but got {prompt.input_variables}"
             )
+
+    @property
+    def evaluation_name(self) -> str:
+        return "Contextual Accuracy"
 
     @classmethod
     def from_llm(
@@ -249,6 +264,10 @@ class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
 
 class CotQAEvalChain(ContextQAEvalChain):
     """LLM Chain specifically for evaluating QA using chain of thought reasoning."""
+
+    @property
+    def evaluation_name(self) -> str:
+        return "COT Contextual Accuracy"
 
     @classmethod
     def from_llm(

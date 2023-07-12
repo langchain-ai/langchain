@@ -33,6 +33,14 @@ class EvaluatorType(str, Enum):
     CRITERIA = "criteria"
     """The criteria evaluator, which evaluates a model based on a
     custom set of criteria."""
+    STRING_DISTANCE = "string_distance"
+    """Compare predictions to a reference answer using string edit distances."""
+    PAIRWISE_STRING_DISTANCE = "pairwise_string_distance"
+    """Compare predictions based on string edit distances."""
+    EMBEDDING_DISTANCE = "embedding_distance"
+    """Compare a prediction to a reference label using embedding distance."""
+    PAIRWISE_EMBEDDING_DISTANCE = "pairwise_embedding_distance"
+    """Compare two predictions using embedding distance."""
 
 
 class LLMEvalChain(Chain):
@@ -89,7 +97,16 @@ class _EvalArgsMixin:
 
 
 class StringEvaluator(_EvalArgsMixin, ABC):
-    """Protocol for evaluating strings."""
+    """Grade, tag, or otherwise evaluate predictions relative to their inputs
+    and/or reference labels."""
+
+    @property
+    def evaluation_name(self) -> str:
+        raise NotImplementedError()
+
+    @property
+    def requires_reference(self) -> bool:
+        return False
 
     @abstractmethod
     def _evaluate_strings(
@@ -110,6 +127,10 @@ class StringEvaluator(_EvalArgsMixin, ABC):
             **kwargs: additional keyword arguments, including callbacks, tags, etc.
         Returns:
             dict: The evaluation results containing the score or value.
+                It is recommended that the dictionary contain the following keys:
+                    - score: the score of the evaluation, if applicable.
+                    - value: the string value of the evaluation, if applicable.
+                    - reasoning: the reasoning for the evaluation, if applicable.
         """
 
     async def _aevaluate_strings(
@@ -131,6 +152,10 @@ class StringEvaluator(_EvalArgsMixin, ABC):
             **kwargs: additional keyword arguments, including callbacks, tags, etc.
         Returns:
             dict: The evaluation results containing the score or value.
+                It is recommended that the dictionary contain the following keys:
+                    - score: the score of the evaluation, if applicable.
+                    - value: the string value of the evaluation, if applicable.
+                    - reasoning: the reasoning for the evaluation, if applicable.
         """
         raise NotImplementedError(
             f"{self.__class__.__name__} hasn't implemented an "
@@ -188,7 +213,7 @@ class StringEvaluator(_EvalArgsMixin, ABC):
 
 
 class PairwiseStringEvaluator(_EvalArgsMixin, ABC):
-    """A protocol for comparing the output of two models."""
+    """Compare the output of two models (or two outputs of the same model)."""
 
     @abstractmethod
     def _evaluate_string_pairs(
