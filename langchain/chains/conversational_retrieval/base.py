@@ -245,11 +245,11 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
             )
             prompt = PromptTemplate.from_template(template)
             llm = OpenAI()
-            llm_chain = LLMChain(llm=llm, prompt=prompt)
+            question_generator_chain = LLMChain(llm=llm, prompt=prompt)
             chain = ConversationalRetrievalChain(
                 combine_docs_chain=combine_docs_chain,
                 retriever=retriever,
-                question_generator=question_generator,
+                question_generator=question_generator_chain,
             )
     """
 
