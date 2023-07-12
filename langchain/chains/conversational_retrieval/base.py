@@ -72,7 +72,7 @@ class BaseConversationalRetrievalChain(Chain):
     """Return the retrieved source documents as part of the final result."""
     return_generated_question: bool = False
     """Return the generated question as part of the final result."""
-    get_chat_history: Optional[Callable[[CHAT_TURN_TYPE], str]] = None
+    get_chat_history: Optional[Callable[[List[CHAT_TURN_TYPE]], str]] = None
     """An optional function to get a string of the chat history.
     If None is provided, will use a default."""
 
@@ -245,11 +245,11 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
             )
             prompt = PromptTemplate.from_template(template)
             llm = OpenAI()
-            llm_chain = LLMChain(llm=llm, prompt=prompt)
+            question_generator_chain = LLMChain(llm=llm, prompt=prompt)
             chain = ConversationalRetrievalChain(
                 combine_docs_chain=combine_docs_chain,
                 retriever=retriever,
-                question_generator=question_generator,
+                question_generator=question_generator_chain,
             )
     """
 
