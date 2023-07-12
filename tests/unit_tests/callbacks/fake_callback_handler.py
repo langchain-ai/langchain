@@ -1,6 +1,6 @@
 """A fake callback handler for testing purposes."""
 from itertools import chain
-from typing import Any, Dict, List, Union, Optional
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 from pydantic import BaseModel
