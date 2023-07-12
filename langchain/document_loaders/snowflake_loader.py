@@ -41,6 +41,7 @@ class SnowflakeLoader(BaseLoader):
             role: Snowflake role.
             database: Snowflake database
             schema: Snowflake schema
+            parameters: Optional. Parameters to pass to the query.
             page_content_columns: Optional. Columns written to Document `page_content`.
             metadata_columns: Optional. Columns written to Document `metadata`.
         """
@@ -62,7 +63,7 @@ class SnowflakeLoader(BaseLoader):
         try:
             import snowflake.connector
         except ImportError as ex:
-            raise ValueError(
+            raise ImportError(
                 "Could not import snowflake-connector-python package. "
                 "Please install it with `pip install snowflake-connector-python`."
             ) from ex
