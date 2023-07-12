@@ -248,7 +248,7 @@ class LongContextReorder(BaseDocumentTransformer, BaseModel):
         self, documents: Sequence[Document], **kwargs: Any
     ) -> Sequence[Document]:
         """Reorders documents."""
-        return _litm_reordering(documents)
+        return _litm_reordering(list(documents))
 
     async def atransform_documents(
         self, documents: Sequence[Document], **kwargs: Any
