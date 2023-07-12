@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 import os
 from concurrent.futures import Future, ThreadPoolExecutor, wait
+from contextvars import ContextVar
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Set, Union
 from uuid import UUID
@@ -19,6 +20,9 @@ from langchain.schema.messages import BaseMessage
 logger = logging.getLogger(__name__)
 _LOGGED = set()
 _TRACERS: List[LangChainTracer] = []
+_CLIENT_CALLBACK_VAR: ContextVar[Optional[Client]] = ContextVar(
+    "_CLIENT_CALLBACK_VAR", default=None
+)
 
 
 def log_error_once(method: str, exception: Exception) -> None:
@@ -35,6 +39,15 @@ def wait_for_all_tracers() -> None:
     global _TRACERS
     for tracer in _TRACERS:
         tracer.wait_for_futures()
+
+
+def _get_client() -> Client:
+    """Get the client."""
+    client = _CLIENT_CALLBACK_VAR.get()
+    if client is None:
+        client = Client()
+        _CLIENT_CALLBACK_VAR.set(client)
+    return client
 
 
 class LangChainTracer(BaseTracer):
@@ -59,7 +72,7 @@ class LangChainTracer(BaseTracer):
         )
         # set max_workers to 1 to process tasks in order
         self.executor = ThreadPoolExecutor(max_workers=1)
-        self.client = client or Client()
+        self.client = client or _get_client()
         self._futures: Set[Future] = set()
         self.tags = tags or []
         global _TRACERS

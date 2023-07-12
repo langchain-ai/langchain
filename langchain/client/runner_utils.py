@@ -325,7 +325,7 @@ async def _callbacks_initializer(
     """
     callbacks: List[BaseTracer] = []
     if project_name:
-        callbacks.append(LangChainTracer(project_name=project_name))
+        callbacks.append(LangChainTracer(project_name=project_name, client=client))
     evaluator_project_name = f"{project_name}-evaluators" if project_name else None
     if run_evaluators:
         callback = EvaluatorCallbackHandler(
@@ -583,7 +583,7 @@ def run_on_examples(
     results: Dict[str, Any] = {}
     project_name = _get_project_name(project_name, llm_or_chain_factory, None)
     client_ = client or Client()
-    tracer = LangChainTracer(project_name=project_name)
+    tracer = LangChainTracer(project_name=project_name, client=client_)
     evaluator_project_name = f"{project_name}-evaluators"
     evalution_handler = EvaluatorCallbackHandler(
         evaluators=run_evaluators or [],
