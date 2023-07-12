@@ -1,7 +1,17 @@
 """Methods for creating chains that use OpenAI function-calling APIs."""
 import inspect
 import re
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 
 from pydantic import BaseModel
 
@@ -24,8 +34,7 @@ PYTHON_TO_JSON_TYPES = {
 
 def _get_python_function_name(function: Callable) -> str:
     """Get the name of a Python function."""
-    source = inspect.getsource(function)
-    return re.search(r"^def (.*)\(", source).groups()[0]  # type: ignore
+    return function.__name__
 
 
 def _parse_python_function_docstring(function: Callable) -> Tuple[str, dict]:
@@ -96,7 +105,9 @@ def _get_python_function_required_args(function: Callable) -> List[str]:
     return required
 
 
-def convert_python_function_to_openai_function(function: Callable) -> Dict[str, Any]:
+def convert_python_function_to_openai_function(
+    function: Callable,
+) -> Dict[str, Any]:
     """Convert a Python function to an OpenAI function-calling API compatible dict.
 
     Assumes the Python function has type hints and a docstring with a description. If
