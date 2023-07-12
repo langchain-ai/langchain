@@ -1,5 +1,6 @@
 from langchain.schema.agent import AgentAction, AgentFinish
 from langchain.schema.document import BaseDocumentTransformer, Document
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.memory import BaseChatMessageHistory, BaseMemory
 from langchain.schema.messages import (
     AIMessage,
@@ -28,7 +29,7 @@ from langchain.schema.output_parser import (
     OutputParserException,
 )
 from langchain.schema.prompt import PromptValue
-from langchain.schema.prompt_template import BasePromptTemplate
+from langchain.schema.prompt_template import BasePromptTemplate, format_document
 from langchain.schema.retriever import BaseRetriever
 
 RUN_KEY = "__run"
@@ -66,4 +67,6 @@ __all__ = [
     "BaseOutputParser",
     "BaseLLMOutputParser",
     "BasePromptTemplate",
+    "BaseLanguageModel",
+    "format_document",
 ]

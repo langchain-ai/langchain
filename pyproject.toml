@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.221"
+version = "0.0.230"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -38,10 +38,11 @@ pinecone-text = {version = "^0.4.2", optional = true}
 pymongo = {version = "^4.3.3", optional = true}
 clickhouse-connect = {version="^0.5.14", optional=true}
 weaviate-client = {version = "^3", optional = true}
+marqo = {version = "^0.11.0", optional=true}
 google-api-python-client = {version = "2.70.0", optional = true}
 google-auth = {version = "^2.18.1", optional = true}
 wolframalpha = {version = "5.0.0", optional = true}
-anthropic = {version = "^0.2.6", optional = true}
+anthropic = {version = "^0.3", optional = true}
 qdrant-client = {version = "^1.1.2", optional = true, python = ">=3.8.1,<3.12"}
 dataclasses-json = "^0.5.7"
 tensorflow-text = {version = "^2.11.0", optional = true, python = "^3.10, <3.12"}
@@ -60,7 +61,8 @@ arxiv = {version = "^1.4", optional = true}
 pypdf = {version = "^3.4.0", optional = true}
 networkx = {version="^2.6.3", optional = true}
 aleph-alpha-client = {version="^2.15.0", optional = true}
-deeplake = {version = "^3.6.2", optional = true}
+deeplake = {version = "^3.6.8", optional = true}
+libdeeplake = {version = "^0.0.60", optional = true}
 pgvector = {version = "^0.1.6", optional = true}
 psycopg2-binary = {version = "^2.9.5", optional = true}
 pyowm = {version = "^3.3.0", optional = true}
@@ -103,10 +105,10 @@ momento = {version = "^1.5.0", optional = true}
 bibtexparser = {version = "^1.4.0", optional = true}
 singlestoredb = {version = "^0.7.1", optional = true}
 pyspark = {version = "^3.4.0", optional = true}
-clarifai = {version = "9.1.0", optional = true}
+clarifai = {version = ">=9.1.0", optional = true}
 tigrisdb = {version = "^1.0.0b6", optional = true}
 nebula3-python = {version = "^3.4.0", optional = true}
-langchainplus-sdk = ">=0.0.17"
+langchainplus-sdk = "^0.0.20"
 awadb = {version = "^0.3.3", optional = true}
 azure-search-documents = {version = "11.4.0a20230509004", source = "azure-sdk-dev", optional = true}
 esprima = {version = "^4.0.1", optional = true}
@@ -114,6 +116,8 @@ openllm = {version = ">=0.1.19", optional = true}
 streamlit = {version = "^1.18.0", optional = true, python = ">=3.8.1,<3.9.7 || >3.9.7,<4.0"}
 psychicapi = {version = "^0.8.0", optional = true}
 cassio = {version = "^0.0.7", optional = true}
+rdflib = {version = "^6.3.2", optional = true}
+rapidfuzz = {version = "^3.1.1", optional = true}
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
@@ -129,6 +133,7 @@ toml = "^0.10.2"
 myst-nb = "^0.17.1"
 linkchecker = "^10.2.1"
 sphinx-copybutton = "^0.5.1"
+nbdoc = "^0.0.82"
 
 [tool.poetry.group.test.dependencies]
 # The only dependencies that should be added are
@@ -177,7 +182,8 @@ pinecone-text = "^0.4.2"
 pymongo = "^4.3.3"
 clickhouse-connect = "^0.5.14"
 transformers = "^4.27.4"
-deeplake = "^3.2.21"
+deeplake = "^3.6.8"
+libdeeplake = "^0.0.60"
 weaviate-client = "^3.15.5"
 torch = "^1.0.0"
 chromadb = "^0.3.21"
@@ -261,6 +267,7 @@ all = [
     "jinja2",
     "pinecone-client",
     "pinecone-text",
+    "marqo",
     "pymongo",
     "weaviate-client",
     "redis",
@@ -274,6 +281,7 @@ all = [
     "nomic",
     "aleph-alpha-client",
     "deeplake",
+    "libdeeplake",
     "pgvector",
     "psycopg2-binary",
     "pyowm",
@@ -310,6 +318,7 @@ all = [
     "awadb",
     "esprima",
     "octoai-sdk",
+    "rdflib",
 ]
 
 # An extra used to be able to add extended testing.
@@ -342,7 +351,9 @@ extended_testing = [
  "scikit-learn",
  "streamlit",
  "pyspark",
- "openai"
+ "openai",
+ "rapidfuzz"
+
 ]
 
 [[tool.poetry.source]]

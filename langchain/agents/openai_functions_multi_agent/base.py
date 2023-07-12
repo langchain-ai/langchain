@@ -7,7 +7,6 @@ from typing import Any, List, Optional, Sequence, Tuple, Union
 from pydantic import root_validator
 
 from langchain.agents import BaseMultiActionAgent
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import Callbacks
 from langchain.chat_models.openai import ChatOpenAI
@@ -23,6 +22,7 @@ from langchain.schema import (
     BasePromptTemplate,
     OutputParserException,
 )
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
@@ -107,7 +107,6 @@ def _parse_ai_message(message: BaseMessage) -> Union[List[AgentAction], AgentFin
     function_call = message.additional_kwargs.get("function_call", {})
 
     if function_call:
-        function_call = message.additional_kwargs["function_call"]
         try:
             tools = json.loads(function_call["arguments"])["actions"]
         except JSONDecodeError:
