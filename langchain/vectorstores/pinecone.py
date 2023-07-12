@@ -94,7 +94,9 @@ class Pinecone(VectorStore):
             metadata[self._text_key] = text
             docs.append((ids[i], embedding, metadata))
         # upsert to Pinecone
-        self._index.upsert(vectors=docs, namespace=namespace, batch_size=batch_size)
+        self._index.upsert(
+            vectors=docs, namespace=namespace, batch_size=batch_size, **kwargs
+        )
         return ids
 
     def similarity_search_with_score(
@@ -274,6 +276,7 @@ class Pinecone(VectorStore):
         text_key: str = "text",
         index_name: Optional[str] = None,
         namespace: Optional[str] = None,
+        upsert_kwargs: Optional[dict] = None,
         **kwargs: Any,
     ) -> Pinecone:
         """Construct Pinecone wrapper from raw documents.
@@ -346,8 +349,9 @@ class Pinecone(VectorStore):
             to_upsert = zip(ids_batch, embeds, metadata)
 
             # upsert to Pinecone
-            index.upsert(vectors=list(to_upsert), namespace=namespace)
-        return cls(index, embedding.embed_query, text_key, namespace)
+            _upsert_kwargs = upsert_kwargs or {}
+            index.upsert(vectors=list(to_upsert), namespace=namespace, **_upsert_kwargs)
+        return cls(index, embedding.embed_query, text_key, namespace, **kwargs)
 
     @classmethod
     def from_existing_index(
