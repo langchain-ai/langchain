@@ -192,6 +192,7 @@ class PGVector(VectorStore):
             connection_string = cls.get_connection_string(kwargs)
 
         store = cls(
+            connection_string=connection_string,
             collection_name=collection_name,
             embedding_function=embedding,
             distance_strategy=distance_strategy,
