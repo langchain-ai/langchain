@@ -102,6 +102,10 @@ def _get_python_function_required_args(function: Callable) -> List[str]:
     spec = inspect.getfullargspec(function)
     required = spec.args[: -len(spec.defaults)] if spec.defaults else spec.args
     required += [k for k in spec.kwonlyargs if k not in (spec.kwonlydefaults or {})]
+
+    is_class = type(function) is type
+    if is_class and required[0] == "self":
+        required = required[1:]
     return required
 
 
