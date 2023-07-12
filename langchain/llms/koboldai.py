@@ -32,7 +32,8 @@ class KoboldApiLLM(LLM):
         kobold = KoboldApiLLM(endpoint="http://localhost:5000")
         result = kobold("Write a story about a dragon.")
 
-    This will send a POST request to the Kobold API with the provided prompt and generate text.
+    This will send a POST request to the Kobold API with the provided prompt and
+    generate text.
     """
 
     endpoint: str
