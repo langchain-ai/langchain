@@ -390,7 +390,7 @@ class Chain(Serializable, ABC):
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
-    ) -> Dict:
+    ) -> str:
         """Convenience method for executing chain when there's a single string output.
 
         The main difference between this method and `Chain.__call__` is that this method
