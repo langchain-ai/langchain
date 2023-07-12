@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Type
 
 from sqlalchemy import REAL, Column, String, Table, create_engine, insert, text
 from sqlalchemy.dialects.postgresql import ARRAY, JSON, TEXT
@@ -78,6 +78,9 @@ class AnalyticDB(VectorStore):
 
         self.engine = create_engine(self.connection_string, **_engine_args)
         self.create_collection()
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        return self._euclidean_relevance_score_fn
 
     def create_table_if_not_exists(self) -> None:
         # Define the dynamic table
@@ -241,28 +244,6 @@ class AnalyticDB(VectorStore):
             embedding=embedding, k=k, filter=filter
         )
         return docs
-
-    def _similarity_search_with_relevance_scores(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
-        """Return docs and relevance scores in the range [0, 1].
-
-        0 is dissimilar, 1 is most similar.
-
-        Args:
-            query: input text
-            k: Number of Documents to return. Defaults to 4.
-            **kwargs: kwargs to be passed to similarity search. Should include:
-                score_threshold: Optional, a floating point value between 0 to 1 to
-                    filter the resulting set of retrieved docs
-
-        Returns:
-            List of Tuples of (doc, similarity_score)
-        """
-        return self.similarity_search_with_score(query, k, **kwargs)
 
     def similarity_search_with_score_by_vector(
         self,
