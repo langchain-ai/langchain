@@ -31,12 +31,14 @@ def fake_llm_symbolic_math_chain() -> LLMSymbolicMathChain:
     fake_llm = FakeLLM(queries=queries)
     return LLMSymbolicMathChain.from_llm(fake_llm, input_key="q", output_key="a")
 
+
 @pytest.mark.requires("sympy")
 def test_simple_question(fake_llm_symbolic_math_chain: LLMSymbolicMathChain) -> None:
     """Test simple question that should not need python."""
     question = "What is 1 plus 1?"
     output = fake_llm_symbolic_math_chain.run(question)
     assert output == "Answer: 2"
+
 
 @pytest.mark.requires("sympy")
 def test_root_question(fake_llm_symbolic_math_chain: LLMSymbolicMathChain) -> None:
@@ -45,12 +47,14 @@ def test_root_question(fake_llm_symbolic_math_chain: LLMSymbolicMathChain) -> No
     output = fake_llm_symbolic_math_chain.run(question)
     assert output == f"Answer: {sympy.sqrt(2)}"
 
+
 @pytest.mark.requires("sympy")
 def test_limit_question(fake_llm_symbolic_math_chain: LLMSymbolicMathChain) -> None:
     """Test question about limits that needs sympy"""
     question = "What is the limit of sin(x) / x as x goes to 0?"
     output = fake_llm_symbolic_math_chain.run(question)
     assert output == "Answer: 1"
+
 
 @pytest.mark.requires("sympy")
 def test_integration_question(
@@ -61,12 +65,14 @@ def test_integration_question(
     output = fake_llm_symbolic_math_chain.run(question)
     assert output == "Answer: 1"
 
+
 @pytest.mark.requires("sympy")
 def test_solver_question(fake_llm_symbolic_math_chain: LLMSymbolicMathChain) -> None:
     """Test question about solving algebraic equations that needs sympy"""
     question = "What are the solutions to this equation x**2 - x?"
     output = fake_llm_symbolic_math_chain.run(question)
     assert output == "Answer: {0, 1}"
+
 
 @pytest.mark.requires("sympy")
 def test_error(fake_llm_symbolic_math_chain: LLMSymbolicMathChain) -> None:
