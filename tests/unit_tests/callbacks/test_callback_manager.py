@@ -1,17 +1,15 @@
 """Test CallbackManager."""
 import asyncio
 import contextvars
-import random
 import time
-from typing import Any, Dict, List, Optional, Tuple
-from uuid import UUID
+from typing import Any, List, Tuple
 
 import pytest
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.manager import AsyncCallbackManager, CallbackManager
 from langchain.callbacks.stdout import StdOutCallbackHandler
-from langchain.schema import AgentAction, AgentFinish, BaseMessage, LLMResult
+from langchain.schema import AgentAction, AgentFinish, LLMResult
 from langchain.schema.messages import SystemMessage
 from tests.unit_tests.callbacks.fake_callback_handler import (
     BaseFakeCallbackHandler,
@@ -273,7 +271,8 @@ def test_callback_manager_configure(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.mark.asyncio
 async def test_run_inline_async_callback_manager() -> None:
-    """When run_inline=True, async callback manager should run hooks in the main context."""
+    """When run_inline=True, async callback manager should run hooks in the main
+    context."""
 
     ctxvar: contextvars.ContextVar[int] = contextvars.ContextVar("var", default=0)
 
@@ -402,7 +401,8 @@ def test_run_inline_callback_manager() -> None:
 
 @pytest.mark.asyncio
 async def test_async_callbacks_concurrency() -> None:
-    """When run_inline=False, async callback manager should run concurrently. And vice versa."""
+    """When run_inline=False, async callback manager should run concurrently.
+    And vice versa."""
 
     handler_duration = 0.1
 
