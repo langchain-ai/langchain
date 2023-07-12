@@ -1006,10 +1006,12 @@ files = [
 
 [package.dependencies]
 click = ">=8.0.0"
+ipython = {version = ">=7.8.0", optional = true, markers = "extra == \"jupyter\""}
 mypy-extensions = ">=0.4.3"
 packaging = ">=22.0"
 pathspec = ">=0.9.0"
 platformdirs = ">=2"
+tokenize-rt = {version = ">=3.2.0", optional = true, markers = "extra == \"jupyter\""}
 tomli = {version = ">=1.1.0", markers = "python_version < \"3.11\""}
 typing-extensions = {version = ">=3.10.0.0", markers = "python_version < \"3.10\""}
 
@@ -2660,6 +2662,25 @@ doc = ["mdx-include (>=1.4.1,<2.0.0)", "mkdocs (>=1.1.2,<2.0.0)", "mkdocs-markdo
 test = ["anyio[trio] (>=3.2.1,<4.0.0)", "black (==23.1.0)", "coverage[toml] (>=6.5.0,<8.0)", "databases[sqlite] (>=0.3.2,<0.7.0)", "email-validator (>=1.1.1,<2.0.0)", "flask (>=1.1.2,<3.0.0)", "httpx (>=0.23.0,<0.24.0)", "isort (>=5.0.6,<6.0.0)", "mypy (==0.982)", "orjson (>=3.2.1,<4.0.0)", "passlib[bcrypt] (>=1.7.2,<2.0.0)", "peewee (>=3.13.3,<4.0.0)", "pytest (>=7.1.3,<8.0.0)", "python-jose[cryptography] (>=3.3.0,<4.0.0)", "python-multipart (>=0.0.5,<0.0.7)", "pyyaml (>=5.3.1,<7.0.0)", "ruff (==0.0.138)", "sqlalchemy (>=1.3.18,<1.4.43)", "types-orjson (==3.6.2)", "types-ujson (==5.7.0.1)", "ujson (>=4.0.1,!=4.0.2,!=4.1.0,!=4.2.0,!=4.3.0,!=5.0.0,!=5.1.0,<6.0.0)"]
 
 [[package]]
+name = "fastcore"
+version = "1.4.2"
+description = "Python supercharged for fastai development"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "fastcore-1.4.2-py3-none-any.whl", hash = "sha256:86c31395a87ea429c35f9291e826098f525684a3a6555238448a371274224ddb"},
+    {file = "fastcore-1.4.2.tar.gz", hash = "sha256:43bb895507788168317f28cf82031c5ce1796d95a229fc515c10bd90f2355a37"},
+]
+
+[package.dependencies]
+packaging = "*"
+pip = "*"
+
+[package.extras]
+dev = ["matplotlib", "nbdev (>=0.2.39)", "numpy", "pandas", "pillow", "torch"]
+
+[[package]]
 name = "fastjsonschema"
 version = "2.17.1"
 description = "Fastest Python implementation of JSON schema"
@@ -2673,6 +2694,25 @@ files = [
 
 [package.extras]
 devel = ["colorama", "json-spec", "jsonschema", "pylint", "pytest", "pytest-benchmark", "pytest-cache", "validictory"]
+
+[[package]]
+name = "fastrelease"
+version = "0.1.17"
+description = "Simplified releases using GitHub Issues"
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "fastrelease-0.1.17-py3-none-any.whl", hash = "sha256:8b5bbaa9a566fee9c08bbc7cc8fb052a04499a76b464a8b0669707843cb15e2f"},
+    {file = "fastrelease-0.1.17.tar.gz", hash = "sha256:c4c6717dcb8c5b37496511dd2a3f97f810b70e1350380b6ae023bb15757b6a63"},
+]
+
+[package.dependencies]
+fastcore = ">=1.3.13"
+ghapi = "*"
+packaging = "*"
+pip = "*"
+pyyaml = "*"
 
 [[package]]
 name = "feedparser"
@@ -2965,6 +3005,26 @@ files = [
 [package.dependencies]
 click = "*"
 six = "*"
+
+[[package]]
+name = "ghapi"
+version = "0.1.22"
+description = "A python client for the GitHub API"
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "ghapi-0.1.22-py3-none-any.whl", hash = "sha256:fba8d57dfc2992d97fe93eaa12e80b9becbed7f13ac6cdcd1c85283c68b04505"},
+    {file = "ghapi-0.1.22.tar.gz", hash = "sha256:fbe31684c141767a62899020fff8c6922a8ecaadd6d4614f0673242939cbb655"},
+]
+
+[package.dependencies]
+fastcore = "*"
+packaging = "*"
+pip = "*"
+
+[package.extras]
+dev = ["jsonref"]
 
 [[package]]
 name = "gitdb"
@@ -4387,27 +4447,28 @@ testing = ["coverage", "ipykernel", "jupytext", "matplotlib", "nbdime", "nbforma
 
 [[package]]
 name = "jupyter-client"
-version = "8.2.0"
+version = "7.4.9"
 description = "Jupyter protocol implementation and client libraries"
 category = "dev"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.7"
 files = [
-    {file = "jupyter_client-8.2.0-py3-none-any.whl", hash = "sha256:b18219aa695d39e2ad570533e0d71fb7881d35a873051054a84ee2a17c4b7389"},
-    {file = "jupyter_client-8.2.0.tar.gz", hash = "sha256:9fe233834edd0e6c0aa5f05ca2ab4bdea1842bfd2d8a932878212fc5301ddaf0"},
+    {file = "jupyter_client-7.4.9-py3-none-any.whl", hash = "sha256:214668aaea208195f4c13d28eb272ba79f945fc0cf3f11c7092c20b2ca1980e7"},
+    {file = "jupyter_client-7.4.9.tar.gz", hash = "sha256:52be28e04171f07aed8f20e1616a5a552ab9fee9cbbe6c1896ae170c3880d392"},
 ]
 
 [package.dependencies]
-importlib-metadata = {version = ">=4.8.3", markers = "python_version < \"3.10\""}
-jupyter-core = ">=4.12,<5.0.0 || >=5.1.0"
+entrypoints = "*"
+jupyter-core = ">=4.9.2"
+nest-asyncio = ">=1.5.4"
 python-dateutil = ">=2.8.2"
 pyzmq = ">=23.0"
 tornado = ">=6.2"
-traitlets = ">=5.3"
+traitlets = "*"
 
 [package.extras]
-docs = ["ipykernel", "myst-parser", "pydata-sphinx-theme", "sphinx (>=4)", "sphinx-autodoc-typehints", "sphinxcontrib-github-alt", "sphinxcontrib-spelling"]
-test = ["coverage", "ipykernel (>=6.14)", "mypy", "paramiko", "pre-commit", "pytest", "pytest-cov", "pytest-jupyter[client] (>=0.4.1)", "pytest-timeout"]
+doc = ["ipykernel", "myst-parser", "sphinx (>=1.3.6)", "sphinx-rtd-theme", "sphinxcontrib-github-alt"]
+test = ["codecov", "coverage", "ipykernel (>=6.12)", "ipython", "mypy", "pre-commit", "pytest", "pytest-asyncio (>=0.18)", "pytest-cov", "pytest-timeout"]
 
 [[package]]
 name = "jupyter-console"
@@ -5809,6 +5870,52 @@ test = ["ipykernel", "ipywidgets (>=7)", "pre-commit", "pytest", "pytest-depende
 webpdf = ["pyppeteer (>=1,<1.1)"]
 
 [[package]]
+name = "nbdev"
+version = "1.2.0"
+description = "Writing a library entirely in notebooks"
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "nbdev-1.2.0-py3-none-any.whl", hash = "sha256:236bacb23d241e1addfa683d6c3466d3ff960f0bad2639f0142afdfe06daa4f8"},
+    {file = "nbdev-1.2.0.tar.gz", hash = "sha256:474b708beef23e89665b695d304f62cd0458703e889cbe2696ae027cf299714e"},
+]
+
+[package.dependencies]
+fastcore = ">=1.3.21"
+fastrelease = "*"
+ghapi = "*"
+ipykernel = "*"
+jupyter = "*"
+jupyter-client = "<8"
+nbconvert = ">=6.4.1"
+nbformat = ">=4.4.0"
+packaging = "*"
+pip = "*"
+pyyaml = "*"
+
+[[package]]
+name = "nbdoc"
+version = "0.0.82"
+description = "Generate beautiful, testable documentation with Jupyter Notebooks"
+category = "dev"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "nbdoc-0.0.82-py3-none-any.whl", hash = "sha256:84f57e0c20b389eb748eb2055d55d5698b2f44fdef455943d396112d26103fb9"},
+    {file = "nbdoc-0.0.82.tar.gz", hash = "sha256:234b785e710025357d66c90be0bf7d620a7a507786380030d749b1c4c5146600"},
+]
+
+[package.dependencies]
+black = {version = ">=22.1.0", extras = ["jupyter"]}
+fastcore = "1.4.2"
+nbconvert = ">=6.4.1"
+nbdev = "1.2.0"
+numpydoc = "1.2"
+packaging = "*"
+pip = "*"
+
+[[package]]
 name = "nbformat"
 version = "5.9.0"
 description = "The Jupyter Notebook format"
@@ -6152,6 +6259,25 @@ files = [
     {file = "numpy-1.24.3-pp38-pypy38_pp73-win_amd64.whl", hash = "sha256:35400e6a8d102fd07c71ed7dcadd9eb62ee9a6e84ec159bd48c28235bbb0f8e4"},
     {file = "numpy-1.24.3.tar.gz", hash = "sha256:ab344f1bf21f140adab8e47fdbc7c35a477dc01408791f8ba00d018dd0bc5155"},
 ]
+
+[[package]]
+name = "numpydoc"
+version = "1.2"
+description = "Sphinx extension to support docstrings in Numpy format"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "numpydoc-1.2-py3-none-any.whl", hash = "sha256:3ecbb9feae080031714b63128912988ebdfd4c582a085d25b8d9f7ac23c2d9ef"},
+    {file = "numpydoc-1.2.tar.gz", hash = "sha256:0cec233740c6b125913005d16e8a9996e060528afcb8b7cad3f2706629dfd6f7"},
+]
+
+[package.dependencies]
+Jinja2 = ">=2.10"
+sphinx = ">=1.8"
+
+[package.extras]
+testing = ["matplotlib", "pytest", "pytest-cov"]
 
 [[package]]
 name = "nvidia-cublas-cu11"
@@ -7179,7 +7305,7 @@ name = "pip"
 version = "23.1.2"
 description = "The PyPA recommended tool for installing Python packages."
 category = "main"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "pip-23.1.2-py3-none-any.whl", hash = "sha256:3ef6ac33239e4027d9a5598a381b9d30880a1477e50039db2eac6e8a8f6d1b18"},
@@ -11048,6 +11174,18 @@ doc = ["sphinx", "sphinx_rtd_theme"]
 test = ["flake8", "isort", "pytest"]
 
 [[package]]
+name = "tokenize-rt"
+version = "5.1.0"
+description = "A wrapper around the stdlib `tokenize` which roundtrips."
+category = "dev"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "tokenize_rt-5.1.0-py2.py3-none-any.whl", hash = "sha256:9b7bb843e77dd6ed0be5564bfaaba200083911e0497841cd3e9235a6a9794d74"},
+    {file = "tokenize_rt-5.1.0.tar.gz", hash = "sha256:08f0c2daa94c4052e53c2fcaa8e32585e6ae9bdfc800974092d031401694e002"},
+]
+
+[[package]]
 name = "tokenizers"
 version = "0.13.3"
 description = "Fast and Customizable Tokenizers"
@@ -12562,4 +12700,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "b2ccab03db87c42aeed22fdba0c6bae45db6e6968074572561ebddd58e5ce910"
+content-hash = "8bb95a90cfff1af5cd7e485a3f271db72de49f4af95bcf0a907ae00384ac35ed"
