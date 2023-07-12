@@ -14,8 +14,12 @@ coverage:
 		--cov-report xml \
 		--cov-report term-missing:skip-covered
 
-<<<<<<< HEAD
+######################
+# DOCUMENTATION
+######################
+
 clean: docs_clean api_docs_clean
+
 
 docs_build:
 	docs/.local_build.sh
@@ -37,22 +41,7 @@ api_docs_clean:
 api_docs_linkcheck:
 	poetry run linkchecker docs/api_reference/_build/html/index.html
 
-format:
-	poetry run black .
-	poetry run ruff --select I --fix .
-
-PYTHON_FILES=.
-lint: PYTHON_FILES=.
-lint_diff: PYTHON_FILES=$(shell git diff --name-only --diff-filter=d master | grep -E '\.py$$')
-
-lint lint_diff:
-	poetry run mypy $(PYTHON_FILES)
-	poetry run black $(PYTHON_FILES) --check
-	poetry run ruff .
-
-=======
 # Define a variable for the test file path.
->>>>>>> master
 TEST_FILE ?= tests/unit_tests/
 
 test:
@@ -73,22 +62,6 @@ integration_tests:
 docker_tests:
 	docker build -t my-langchain-image:test .
 	docker run --rm my-langchain-image:test
-
-######################
-# DOCUMENTATION
-######################
-
-docs_compile:
-	poetry run nbdoc_build --srcdir $(srcdir)
-
-docs_build:
-	cd docs && poetry run make html
-
-docs_clean:
-	cd docs && poetry run make clean
-
-docs_linkcheck:
-	poetry run linkchecker docs/_build/html/index.html
 
 ######################
 # LINTING AND FORMATTING
