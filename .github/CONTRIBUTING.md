@@ -126,6 +126,7 @@ We recognize linting can be annoying - if you do not want to do it, please conta
 ### Spellcheck
 
 Spellchecking for this project is done via [codespell](https://github.com/codespell-project/codespell).
+Note that `codespell` finds common typos, so could have false-positive (correctly spelled but rarely used) and false-negatives (not finding misspelled) words.
 
 To check spelling for this project:
 
