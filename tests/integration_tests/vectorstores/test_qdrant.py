@@ -9,6 +9,7 @@ from qdrant_client.http import models as rest
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores import Qdrant
+from langchain.vectorstores.qdrant import QdrantException
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
 )
@@ -537,3 +538,148 @@ def test_qdrant_similarity_search_with_relevance_scores(
     assert all(
         (1 >= score or np.isclose(score, 1)) and score >= 0 for _, score in output
     )
+
+
+@pytest.mark.parametrize("vector_name", [None, "custom-vector"])
+def test_qdrant_from_texts_reuses_same_collection(vector_name: Optional[str]) -> None:
+    """Test if Qdrant.from_texts reuses the same collection"""
+    from qdrant_client import QdrantClient
+
+    collection_name = "test"
+    embeddings = ConsistentFakeEmbeddings()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        vec_store = Qdrant.from_texts(
+            ["lorem", "ipsum", "dolor", "sit", "amet"],
+            embeddings,
+            collection_name=collection_name,
+            path=str(tmpdir),
+            vector_name=vector_name,
+        )
+        del vec_store
+
+        vec_store = Qdrant.from_texts(
+            ["foo", "bar"],
+            embeddings,
+            collection_name=collection_name,
+            path=str(tmpdir),
+            vector_name=vector_name,
+        )
+        del vec_store
+
+        client = QdrantClient(path=str(tmpdir))
+        assert 7 == client.count(collection_name).count
+
+
+@pytest.mark.parametrize("vector_name", [None, "custom-vector"])
+def test_qdrant_from_texts_raises_error_on_different_dimensionality(
+    vector_name: Optional[str],
+) -> None:
+    """Test if Qdrant.from_texts raises an exception if dimensionality does not match"""
+    collection_name = "test"
+    with tempfile.TemporaryDirectory() as tmpdir:
+        vec_store = Qdrant.from_texts(
+            ["lorem", "ipsum", "dolor", "sit", "amet"],
+            ConsistentFakeEmbeddings(dimensionality=10),
+            collection_name=collection_name,
+            path=str(tmpdir),
+            vector_name=vector_name,
+        )
+        del vec_store
+
+        with pytest.raises(QdrantException):
+            Qdrant.from_texts(
+                ["foo", "bar"],
+                ConsistentFakeEmbeddings(dimensionality=5),
+                collection_name=collection_name,
+                path=str(tmpdir),
+                vector_name=vector_name,
+            )
+
+
+@pytest.mark.parametrize(
+    ["first_vector_name", "second_vector_name"],
+    [
+        (None, "custom-vector"),
+        ("custom-vector", None),
+        ("my-first-vector", "my-second_vector"),
+    ],
+)
+def test_qdrant_from_texts_raises_error_on_different_vector_name(
+    first_vector_name: Optional[str],
+    second_vector_name: Optional[str],
+) -> None:
+    """Test if Qdrant.from_texts raises an exception if vector name does not match"""
+    collection_name = "test"
+    with tempfile.TemporaryDirectory() as tmpdir:
+        vec_store = Qdrant.from_texts(
+            ["lorem", "ipsum", "dolor", "sit", "amet"],
+            ConsistentFakeEmbeddings(dimensionality=10),
+            collection_name=collection_name,
+            path=str(tmpdir),
+            vector_name=first_vector_name,
+        )
+        del vec_store
+
+        with pytest.raises(QdrantException):
+            Qdrant.from_texts(
+                ["foo", "bar"],
+                ConsistentFakeEmbeddings(dimensionality=5),
+                collection_name=collection_name,
+                path=str(tmpdir),
+                vector_name=second_vector_name,
+            )
+
+
+def test_qdrant_from_texts_raises_error_on_different_distance() -> None:
+    """Test if Qdrant.from_texts raises an exception if distance does not match"""
+    collection_name = "test"
+    with tempfile.TemporaryDirectory() as tmpdir:
+        vec_store = Qdrant.from_texts(
+            ["lorem", "ipsum", "dolor", "sit", "amet"],
+            ConsistentFakeEmbeddings(dimensionality=10),
+            collection_name=collection_name,
+            path=str(tmpdir),
+            distance_func="Cosine",
+        )
+        del vec_store
+
+        with pytest.raises(QdrantException):
+            Qdrant.from_texts(
+                ["foo", "bar"],
+                ConsistentFakeEmbeddings(dimensionality=5),
+                collection_name=collection_name,
+                path=str(tmpdir),
+                distance_func="Euclid",
+            )
+
+
+@pytest.mark.parametrize("vector_name", [None, "custom-vector"])
+def test_qdrant_from_texts_recreates_collection_on_force_recreate(
+    vector_name: Optional[str],
+) -> None:
+    """Test if Qdrant.from_texts recreates the collection even if config mismatches"""
+    from qdrant_client import QdrantClient
+
+    collection_name = "test"
+    with tempfile.TemporaryDirectory() as tmpdir:
+        vec_store = Qdrant.from_texts(
+            ["lorem", "ipsum", "dolor", "sit", "amet"],
+            ConsistentFakeEmbeddings(dimensionality=10),
+            collection_name=collection_name,
+            path=str(tmpdir),
+            vector_name=vector_name,
+        )
+        del vec_store
+
+        vec_store = Qdrant.from_texts(
+            ["foo", "bar"],
+            ConsistentFakeEmbeddings(dimensionality=5),
+            collection_name=collection_name,
+            path=str(tmpdir),
+            vector_name=vector_name,
+            force_recreate=True,
+        )
+        del vec_store
+
+        client = QdrantClient(path=str(tmpdir))
+        assert 2 == client.count(collection_name).count
