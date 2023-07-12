@@ -156,7 +156,6 @@ class DeepLake(VectorStore):
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
-        **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
@@ -171,7 +170,6 @@ class DeepLake(VectorStore):
             texts (Iterable[str]): Texts to add to the vectorstore.
             metadatas (Optional[List[dict]], optional): Optional list of metadatas.
             ids (Optional[List[str]], optional): Optional list of IDs.
-            **kwargs: other optional keyword arguments.
 
         Returns:
             List[str]: List of IDs of the added texts.
