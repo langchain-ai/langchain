@@ -208,6 +208,7 @@ def create_openai_fn_chain(
                 from langchain.chains.openai_functions import create_openai_fn_chain
                 from langchain.chat_models import ChatOpenAI
                 from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
+                from langchain.schema.messages import SystemMessage,HumanMessage
 
                 from pydantic import BaseModel, Field
 
@@ -238,9 +239,9 @@ def create_openai_fn_chain(
                     HumanMessage(content="Tips: Make sure to answer in the correct format"),
                 ]
                 prompt = ChatPromptTemplate(messages=prompt_msgs)
-                chain = create_openai_fn_chain([RecordPerson, RecordDog])
-                chain.run("Harry was a chubby brown beagle who loved chicken")
-                # -> RecordDog(name="Harry", color="brown", fav_food="chicken")
+                chain = create_openai_fn_chain([RecordPerson, RecordDog],llm,prompt)
+                chain.run("Donthula Sumanth was a chubby brown beagle who loved chicken")
+                # -> RecordDog(name="Donthula Sumanth", color="brown", fav_food="chicken")
     """  # noqa: E501
     if not functions:
         raise ValueError("Need to pass in at least one function. Received zero.")
@@ -294,6 +295,7 @@ def create_structured_output_chain(
                 from langchain.chains.openai_functions import create_structured_output_chain
                 from langchain.chat_models import ChatOpenAI
                 from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
+                from langchain.schema.messages import SystemMessage,HumanMessage
 
                 from pydantic import BaseModel, Field
 
@@ -315,8 +317,8 @@ def create_structured_output_chain(
                 ]
                 prompt = ChatPromptTemplate(messages=prompt_msgs)
                 chain = create_structured_output_chain(Dog, llm, prompt)
-                chain.run("Harry was a chubby brown beagle who loved chicken")
-                # -> Dog(name="Harry", color="brown", fav_food="chicken")
+                chain.run("Donthula Sumanth was a chubby brown beagle who loved chicken")
+                # -> {'name': 'Donthula Sumanth', 'color': 'Brown', 'fav_food': 'Chicken'}
     """  # noqa: E501
     function: Dict = {
         "name": "output_formatter",
