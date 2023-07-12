@@ -19,7 +19,6 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
 )
-from langchain.schema import BaseMemory
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import AIMessage, SystemMessage
 
