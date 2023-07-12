@@ -264,10 +264,6 @@ def create_openai_fn_chain(
     return llm_chain
 
 
-class _OutputFormatter(BaseModel):
-    """ "Output formatter. Should always be used to format your response to the user."""
-
-
 def create_structured_output_chain(
     output_schema: Union[Dict[str, Any], Type[BaseModel]],
     llm: BaseLanguageModel,
