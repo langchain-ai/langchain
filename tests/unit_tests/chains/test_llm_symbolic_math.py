@@ -1,7 +1,6 @@
 """Test LLM Math functionality."""
 
 import pytest
-import sympy
 
 from langchain.chains.llm_symbolic_math.base import LLMSymbolicMathChain
 from langchain.chains.llm_symbolic_math.prompt import _PROMPT_TEMPLATE
@@ -43,6 +42,8 @@ def test_simple_question(fake_llm_symbolic_math_chain: LLMSymbolicMathChain) -> 
 @pytest.mark.requires("sympy")
 def test_root_question(fake_llm_symbolic_math_chain: LLMSymbolicMathChain) -> None:
     """Test irrational number that should need sympy."""
+    import sympy
+
     question = "What is the square root of 2?"
     output = fake_llm_symbolic_math_chain.run(question)
     assert output == f"Answer: {sympy.sqrt(2)}"
