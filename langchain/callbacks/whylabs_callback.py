@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional
 
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.schema import AgentAction, AgentFinish, Generation, LLMResult
 from langchain.utils import get_from_env
 
 if TYPE_CHECKING:
@@ -101,7 +100,6 @@ class WhyLabsCallbackHandler(BaseCallbackHandler):
         else:
             self._callbacks = dict()
             diagnostic_logger.warning("initialized handler without callbacks.")
-        self._methods = dict()
         self._logger = logger
 
     def flush(self) -> None:
@@ -163,9 +161,9 @@ class WhyLabsCallbackHandler(BaseCallbackHandler):
         import_langkit(sentiment=sentiment, toxicity=toxicity, themes=themes)
 
         import whylogs as why
+        from langkit.callback_handler import get_callback_instance
         from whylogs.api.writer.whylabs import WhyLabsWriter
         from whylogs.experimental.core.udf_schema import udf_schema
-        from langkit.callback_handler import get_callback_instance
 
         if logger is None:
             api_key = api_key or get_from_env("api_key", "WHYLABS_API_KEY")
