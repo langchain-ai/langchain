@@ -390,7 +390,7 @@ class Chain(Serializable, ABC):
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
-    ) -> str:
+    ) -> Dict:
         """Convenience method for executing chain when there's a single string output.
 
         The main difference between this method and `Chain.__call__` is that this method
@@ -415,7 +415,7 @@ class Chain(Serializable, ABC):
                 directly as keyword arguments.
 
         Returns:
-            The chain output as a string.
+            The chain output as a Dictionary.
 
         Example:
             .. code-block:: python
