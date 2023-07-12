@@ -1,4 +1,4 @@
-"""Loader that loads Microsoft Excel files."""
+"""Loads Microsoft Excel files."""
 from typing import Any, List
 
 from langchain.document_loaders.unstructured import (
