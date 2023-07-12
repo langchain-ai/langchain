@@ -5,11 +5,11 @@ from langchain.schema import AgentAction, AgentFinish, OutputParserException
 
 
 @pytest.fixture
-def parser():
+def parser() -> StructuredChatOutputParser:
     return StructuredChatOutputParser()
 
 
-def test_parse_expected_format(parser) -> None:
+def test_parse_expected_format(parser: StructuredChatOutputParser) -> None:
     text = """
     Action:
     ```
@@ -25,7 +25,7 @@ def test_parse_expected_format(parser) -> None:
     assert result.tool_input == {"operator": "+", "x": 1, "y": 2}
 
 
-def test_parse_variant_format(parser) -> None:
+def test_parse_variant_format(parser: StructuredChatOutputParser) -> None:
     # This format is sometimes produced by AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION when running chat-bison
     # This format is the same as the expected format, but lacks a newline and the triple backtick delimiters
     text = """
@@ -40,7 +40,7 @@ def test_parse_variant_format(parser) -> None:
     assert result.tool_input == {"operator": "+", "x": 1, "y": 2}
 
 
-def test_parse_final_answer_expected_format(parser) -> None:
+def test_parse_final_answer_expected_format(parser: StructuredChatOutputParser) -> None:
     text = """
     Action:
     ```
@@ -55,7 +55,7 @@ def test_parse_final_answer_expected_format(parser) -> None:
     assert result.return_values == {"output": 3}
 
 
-def test_parse_final_answer_variant_format(parser) -> None:
+def test_parse_final_answer_variant_format(parser: StructuredChatOutputParser) -> None:
     # This format is sometimes produced by AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION when running chat-bison
     # This format is the same as the expected format, but lacks a newline and the triple backtick delimiters
     text = """
@@ -69,14 +69,14 @@ def test_parse_final_answer_variant_format(parser) -> None:
     assert result.return_values == {"output": 3}
 
 
-def test_parse_no_action(parser) -> None:
+def test_parse_no_action(parser: StructuredChatOutputParser) -> None:
     text = "I am a bot, how can I help you?"
     result = parser.parse(text)
     assert isinstance(result, AgentFinish)
     assert result.return_values == {"output": text}
 
 
-def test_parse_invalid_json(parser) -> None:
+def test_parse_invalid_json(parser: StructuredChatOutputParser) -> None:
     text = """
     Action:
     ```
