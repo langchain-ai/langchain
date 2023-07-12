@@ -1284,13 +1284,40 @@ class AsyncCallbackManager(BaseCallbackManager):
 
         tasks = []
         managers = []
+        inline_handlers = [h for h in self.handlers if h.run_inline]
+        async_handlers = [h for h in self.handlers if not h.run_inline]
 
         for prompt in prompts:
             run_id_ = uuid4()
 
+            await _ahandle_event(
+                inline_handlers,
+                "on_llm_start",
+                "ignore_llm",
+                serialized,
+                [prompt],
+                run_id=run_id_,
+                parent_run_id=self.parent_run_id,
+                tags=self.tags,
+                metadata=self.metadata,
+                **kwargs,
+            )
+            managers.append(
+                AsyncCallbackManagerForLLMRun(
+                    run_id=run_id_,
+                    handlers=inline_handlers,
+                    inheritable_handlers=self.inheritable_handlers,
+                    parent_run_id=self.parent_run_id,
+                    tags=self.tags,
+                    inheritable_tags=self.inheritable_tags,
+                    metadata=self.metadata,
+                    inheritable_metadata=self.inheritable_metadata,
+                )
+            )
+
             tasks.append(
                 _ahandle_event(
-                    self.handlers,
+                    async_handlers,
                     "on_llm_start",
                     "ignore_llm",
                     serialized,
@@ -1306,7 +1333,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             managers.append(
                 AsyncCallbackManagerForLLMRun(
                     run_id=run_id_,
-                    handlers=self.handlers,
+                    handlers=async_handlers,
                     inheritable_handlers=self.inheritable_handlers,
                     parent_run_id=self.parent_run_id,
                     tags=self.tags,
@@ -1340,13 +1367,40 @@ class AsyncCallbackManager(BaseCallbackManager):
         """
         tasks = []
         managers = []
+        inline_handlers = [h for h in self.handlers if h.run_inline]
+        async_handlers = [h for h in self.handlers if not h.run_inline]
 
         for message_list in messages:
             run_id_ = uuid4()
 
+            await _ahandle_event(
+                inline_handlers,
+                "on_chat_model_start",
+                "ignore_chat_model",
+                serialized,
+                [message_list],
+                run_id=run_id_,
+                parent_run_id=self.parent_run_id,
+                tags=self.tags,
+                metadata=self.metadata,
+                **kwargs,
+            )
+            managers.append(
+                AsyncCallbackManagerForLLMRun(
+                    run_id=run_id_,
+                    handlers=inline_handlers,
+                    inheritable_handlers=self.inheritable_handlers,
+                    parent_run_id=self.parent_run_id,
+                    tags=self.tags,
+                    inheritable_tags=self.inheritable_tags,
+                    metadata=self.metadata,
+                    inheritable_metadata=self.inheritable_metadata,
+                )
+            )
+
             tasks.append(
                 _ahandle_event(
-                    self.handlers,
+                    async_handlers,
                     "on_chat_model_start",
                     "ignore_chat_model",
                     serialized,
@@ -1362,7 +1416,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             managers.append(
                 AsyncCallbackManagerForLLMRun(
                     run_id=run_id_,
-                    handlers=self.handlers,
+                    handlers=async_handlers,
                     inheritable_handlers=self.inheritable_handlers,
                     parent_run_id=self.parent_run_id,
                     tags=self.tags,
