@@ -4,7 +4,7 @@ from langchain.schema import BaseDocumentTransformer, Document
 from langchain.utils import get_from_env
 
 
-class DoctranQATranslater(BaseDocumentTransformer):
+class DoctranTextTranslator(BaseDocumentTransformer):
     """Translates text documents using doctran."""
 
     def transform_documents(
@@ -33,11 +33,7 @@ class DoctranQATranslater(BaseDocumentTransformer):
             raise ImportError(
                 "Install doctran to use this parser. (pip install doctran)"
             )
-        for d in documents:
-            transformed_content = (
-                doctran.parse(content=d.page_content)
-                .translate(language=language)
-                .execute()
-            )
-            d.metadata["translation"] = transformed_content
-        return documents
+        doctran_docs = [doctran.parse(content=doc.page_content, metadata=doc.metadata) for doc in documents]
+        for i, doc in enumerate(doctran_docs):
+            doctran_docs[i] = await doc.translate(language=language).execute()
+        return [Document(page_content=doc.transformed_content) for doc in doctran_docs]
