@@ -154,8 +154,9 @@ class WhyLabsCallbackHandler(BaseCallbackHandler):
             themes (bool): If True will initialize a model to calculate
                 distance to configured themes. Defaults to None and will not gather this
                 metric.
-            logger (Optional[Logger]): If specified will bind the configured logger as the telemetry
-                gathering agent. Defaults to LangKit schema with periodic WhyLabs writer.
+            logger (Optional[Logger]): If specified will bind the configured logger as
+                the telemetry gathering agent. Defaults to LangKit schema with periodic
+                WhyLabs writer.
         """
         # langkit library will import necessary whylogs libraries
         import_langkit(sentiment=sentiment, toxicity=toxicity, themes=themes)
