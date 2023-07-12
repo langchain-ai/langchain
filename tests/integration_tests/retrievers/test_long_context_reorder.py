@@ -13,7 +13,7 @@ def test_litm_long_context_reorder() -> None:
         "I simply love going to the movies",
         "The Boston Celtics won the game by 20 points",
         "This is just a random text.",
-        "Elden Ring is ons of the best games in the last 15 years.",
+        "Elden Ring is one of the best games in the last 15 years.",
         "L. Kornet is one of the best Celtics players.",
         "Larry Bird was an iconic NBA player.",
     ]
