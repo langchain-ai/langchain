@@ -47,7 +47,7 @@ def _make_spacy_pipeline_for_splitting(pipeline: str) -> Any:  # avoid importing
         sentencizer = English()
         sentencizer.add_pipe("sentencizer")
     else:
-        sentencizer = spacy.load(pipeline, disable=["ner"])
+        sentencizer = spacy.load(pipeline, exclude=["ner", "tagger"])
     return sentencizer
 
 
