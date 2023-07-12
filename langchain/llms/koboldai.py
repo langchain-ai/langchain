@@ -3,7 +3,6 @@ import logging
 from typing import Any, Dict, List, Optional
 
 import requests
-from pydantic import Field
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -139,8 +138,8 @@ class KoboldApiLLM(LLM):
 
     def _call(
         self,
-        prompt: str, 
-        stop: Optional[List[str]]=None, 
+        prompt: str,
+        stop: Optional[List[str]]=None,
         run_manager: Optional[CallbackManagerForLLMRun]=None,
         **kwargs: Any,
         ) -> str:
@@ -173,7 +172,7 @@ class KoboldApiLLM(LLM):
             "rep_pen_slope": self.rep_pen_slope,
             "temperature": self.temperature,
             "tfs": self.tfs,
-            "top_a" : self.top_a,
+            "top_a": self.top_a,
             "top_p": self.top_p,
             "top_k": self.top_k,
             "typical": self.typical,
@@ -207,11 +206,3 @@ class KoboldApiLLM(LLM):
             return text
         else:
             raise ValueError("Unexpected response format from Kobold API")
-    
-    def __call__(self, prompt: str, stop: Optional[List[str]]=None) -> str:
-        return self._call(prompt, stop)
-
-    @property
-    def _identifying_params(self) -> Mapping[str, Any]:
-        return {'endpoint': self.endpoint}  # return the endpoint as an identifying parameter
-
