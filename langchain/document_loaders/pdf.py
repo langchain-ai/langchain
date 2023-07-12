@@ -29,7 +29,27 @@ logger = logging.getLogger(__file__)
 
 
 class UnstructuredPDFLoader(UnstructuredFileLoader):
-    """Loader that uses unstructured to load PDF files."""
+    """Loader that uses unstructured to load PDF files.
+    You can run the loader in one of two modes: "single" and "elements".
+    If you use "single" mode, the document will be returned as a single
+    langchain Document object. If you use "elements" mode, the unstructured
+    library will split the document into elements such as Title and NarrativeText.
+    You can pass in additional unstructured kwargs after mode to apply
+    different unstructured settings.
+
+    Examples
+    --------
+    from langchain.document_loaders import UnstructuredPDFLoader
+
+    loader = UnstructuredPDFLoader(
+        "example.pdf", mode="elements", strategy="fast",
+    )
+    docs = loader.load()
+
+    References
+    ----------
+    https://unstructured-io.github.io/unstructured/bricks.html#partition-pdf
+    """
 
     def _get_elements(self) -> List:
         from unstructured.partition.pdf import partition_pdf
