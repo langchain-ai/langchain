@@ -673,8 +673,10 @@ async def arun_on_dataset(
             your model needs to deserialize more complex schema or if your dataset
             has inputs with keys that differ from what is expected by your chain
             or agent.
+
     Returns:
-        A dictionary containing the run's project name and the resulting model outputs.
+        A dictionary containing the run's project name and the
+        resulting model outputs.
     """
     client_ = client or Client()
     project_name = _get_project_name(project_name, llm_or_chain_factory, dataset_name)
