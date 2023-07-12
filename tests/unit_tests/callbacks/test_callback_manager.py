@@ -375,8 +375,8 @@ def test_run_inline_callback_manager() -> None:
 
 
 @pytest.mark.asyncio
-async def test_non_inline_async_handler_runs_concurrently() -> None:
-    """When run_inline=False, async callback manager should run concurrently."""
+async def test_async_callbacks_concurrency() -> None:
+    """When run_inline=False, async callback manager should run concurrently. And vice versa."""
 
     handler_duration = 0.1
 
