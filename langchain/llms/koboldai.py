@@ -187,22 +187,37 @@ class KoboldApiLLM(LLM):
         """
             
         response = requests.post(f"{clean_url(self.endpoint)}/api/v1/generate", json=data)
+        """
+        Send a POST request to the API endpoint
+        """
 
         response.raise_for_status()
+        """
+        Raise an exception if the response is not successful
+        """
 
-        # Check for the expected keys in the response JSON
         json_response = response.json()
-        if "results" in json_response and len(json_response["results"]) > 0 and "text" in json_response["results"][0]:
-            # Return the generated text
-            text = json_response["results"][0]["text"].strip().replace("'''", "```")
+        """
+        Parse the response as JSON
+        """
 
-            # Remove the stop sequence from the end of the text, if it's there
+        if "results" in json_response and len(json_response["results"]) > 0 and "text" in json_response["results"][0]:
+            text = json_response["results"][0]["text"].strip()
+            """
+            Remove leading and trailing whitespace from the text
+            """
+
             if stop is not None:
                 for sequence in stop:
                     if text.endswith(sequence):
                         text = text[:-len(sequence)].rstrip()
-
-            print(text)
+            """
+            Remove the stop sequence from the end of the text, if it's there
+            """
+            
             return text
         else:
             raise ValueError("Unexpected response format from Kobold API")
+        """
+        Return the generated text
+        """
