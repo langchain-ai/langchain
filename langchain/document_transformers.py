@@ -185,7 +185,7 @@ class EmbeddingsClusteringFilter(BaseDocumentTransformer, BaseModel):
     remove_duplicates = False
     """ By default duplicated results are skipped and replaced by the next closest 
     vector in the cluster. If remove_duplicates is true no replacement will be done:
-    This could dramatically reduce results when there is a lot of overlap beetween 
+    This could dramatically reduce results when there is a lot of overlap between 
     clusters.
     """
 
