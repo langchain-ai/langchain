@@ -1,44 +1,33 @@
-# flake8: noqa
-
-PREFIX = """
-You are working with a xorbits pandas dataframe in Python. The name of the dataframe is `df`.
+PD_PREFIX = """
+You are working with Xorbits dataframe object in Python.
+Before importing Numpy or Pandas in the current script,
+remember to import the xorbits version of the library instead.
+To import the xorbits version of Numpy, replace the original import statement
+`import pandas as pd` with `import xorbits.pandas as pd`. 
+The name of the input is `data`.
 You should use the tools below to answer the question posed of you:"""
 
-MULTI_DF_PREFIX = """
-You are working with {num_dfs} xorbits pandas dataframes in Python named df1, df2, etc. You 
-should use the tools below to answer the question posed of you:"""
-
-SUFFIX_NO_DF = """
-Begin!
-Question: {input}
-{agent_scratchpad}"""
-
-SUFFIX_WITH_DF = """
-This is the result of `print(df.head())`:
-{df_head}
+PD_SUFFIX = """
+This is the result of `print(data)`:
+{data}
 
 Begin!
 Question: {input}
 {agent_scratchpad}"""
 
-SUFFIX_WITH_MULTI_DF = """
-This is the result of `print(df.head())` for each dataframe:
-{dfs_head}
+NP_PREFIX = """
+You are working with Xorbits ndarray object in Python.
+Before importing Numpy in the current script,
+remember to import the xorbits version of the library instead.
+To import the xorbits version of Numpy, replace the original import statement
+`import numpy as np` with `import xorbits.numpy as np`.
+The name of the input is `data`.
+You should use the tools below to answer the question posed of you:"""
+
+NP_SUFFIX = """
+This is the result of `print(data)`:
+{data}
 
 Begin!
 Question: {input}
 {agent_scratchpad}"""
-
-PREFIX_FUNCTIONS = """
-You are working with a xorbits pandas dataframe in Python. The name of the dataframe is `df`."""
-
-MULTI_DF_PREFIX_FUNCTIONS = """
-You are working with {num_dfs} xorbits pandas dataframes in Python named df1, df2, etc."""
-
-FUNCTIONS_WITH_DF = """
-This is the result of `print(df.head())`:
-{df_head}"""
-
-FUNCTIONS_WITH_MULTI_DF = """
-This is the result of `print(df.head())` for each dataframe:
-{dfs_head}"""

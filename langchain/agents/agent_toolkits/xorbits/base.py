@@ -1,254 +1,20 @@
-"""Agent for working with pandas objects."""
-from typing import Any, Dict, List, Optional, Tuple
-
-from langchain.agents.agent import AgentExecutor, BaseSingleActionAgent
-from langchain.agents.agent_toolkits.xorbits.prompt import (
-    FUNCTIONS_WITH_DF,
-    FUNCTIONS_WITH_MULTI_DF,
-    MULTI_DF_PREFIX,
-    MULTI_DF_PREFIX_FUNCTIONS,
-    PREFIX,
-    PREFIX_FUNCTIONS,
-    SUFFIX_NO_DF,
-    SUFFIX_WITH_DF,
-    SUFFIX_WITH_MULTI_DF,
-)
+"""Agent for working with xorbits objects."""
+from typing import Any, Dict, List, Optional
+from langchain.agents.agent import AgentExecutor
+from langchain.agents.agent_toolkits.xorbits.prompt import *
 from langchain.agents.mrkl.base import ZeroShotAgent
-from langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent
-from langchain.agents.types import AgentType
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
-from langchain.schema import BasePromptTemplate
-from langchain.schema.messages import SystemMessage
+from langchain.llms.base import BaseLLM
 from langchain.tools.python.tool import PythonAstREPLTool
 
 
-def _get_multi_prompt(
-    dfs: List[Any],
-    prefix: Optional[str] = None,
-    suffix: Optional[str] = None,
-    input_variables: Optional[List[str]] = None,
-    include_df_in_prompt: Optional[bool] = True,
-) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
-    num_dfs = len(dfs)
-    if suffix is not None:
-        suffix_to_use = suffix
-        include_dfs_head = True
-    elif include_df_in_prompt:
-        suffix_to_use = SUFFIX_WITH_MULTI_DF
-        include_dfs_head = True
-    else:
-        suffix_to_use = SUFFIX_NO_DF
-        include_dfs_head = False
-    if input_variables is None:
-        input_variables = ["input", "agent_scratchpad", "num_dfs"]
-        if include_dfs_head:
-            input_variables += ["dfs_head"]
-
-    if prefix is None:
-        prefix = MULTI_DF_PREFIX
-
-    df_locals = {}
-    for i, dataframe in enumerate(dfs):
-        df_locals[f"df{i + 1}"] = dataframe
-    tools = [PythonAstREPLTool(locals=df_locals)]
-
-    prompt = ZeroShotAgent.create_prompt(
-        tools, prefix=prefix, suffix=suffix_to_use, input_variables=input_variables
-    )
-
-    partial_prompt = prompt.partial()
-    if "dfs_head" in input_variables:
-        dfs_head = "\n\n".join([d.head().to_markdown() for d in dfs])
-        partial_prompt = partial_prompt.partial(num_dfs=str(num_dfs), dfs_head=dfs_head)
-    if "num_dfs" in input_variables:
-        partial_prompt = partial_prompt.partial(num_dfs=str(num_dfs))
-    return partial_prompt, tools
-
-
-def _get_single_prompt(
-    df: Any,
-    prefix: Optional[str] = None,
-    suffix: Optional[str] = None,
-    input_variables: Optional[List[str]] = None,
-    include_df_in_prompt: Optional[bool] = True,
-) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
-    if suffix is not None:
-        suffix_to_use = suffix
-        include_df_head = True
-    elif include_df_in_prompt:
-        suffix_to_use = SUFFIX_WITH_DF
-        include_df_head = True
-    else:
-        suffix_to_use = SUFFIX_NO_DF
-        include_df_head = False
-
-    if input_variables is None:
-        input_variables = ["input", "agent_scratchpad"]
-        if include_df_head:
-            input_variables += ["df_head"]
-
-    if prefix is None:
-        prefix = PREFIX
-
-    tools = [PythonAstREPLTool(locals={"df": df})]
-
-    prompt = ZeroShotAgent.create_prompt(
-        tools, prefix=prefix, suffix=suffix_to_use, input_variables=input_variables
-    )
-
-    partial_prompt = prompt.partial()
-    if "df_head" in input_variables:
-        partial_prompt = partial_prompt.partial(df_head=str(df.head().to_markdown()))
-    return partial_prompt, tools
-
-
-def _get_prompt_and_tools(
-    df: Any,
-    prefix: Optional[str] = None,
-    suffix: Optional[str] = None,
-    input_variables: Optional[List[str]] = None,
-    include_df_in_prompt: Optional[bool] = True,
-) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
-    try:
-        import xorbits.pandas as pd
-    except ImportError:
-        raise ValueError(
-            "xorbits package not found, please install with `pip install xorbits`"
-        )
-
-    if include_df_in_prompt is not None and suffix is not None:
-        raise ValueError("If suffix is specified, include_df_in_prompt should not be.")
-
-    if isinstance(df, list):
-        for item in df:
-            if not isinstance(item, pd.DataFrame):
-                raise ValueError(f"Expected xorbits.pandas object, got {type(df)}")
-        return _get_multi_prompt(
-            df,
-            prefix=prefix,
-            suffix=suffix,
-            input_variables=input_variables,
-            include_df_in_prompt=include_df_in_prompt,
-        )
-    else:
-        if not isinstance(df, pd.DataFrame):
-            raise ValueError(f"Expected xorbits.pandas object, got {type(df)}")
-        return _get_single_prompt(
-            df,
-            prefix=prefix,
-            suffix=suffix,
-            input_variables=input_variables,
-            include_df_in_prompt=include_df_in_prompt,
-        )
-
-
-def _get_functions_single_prompt(
-    df: Any,
-    prefix: Optional[str] = None,
-    suffix: Optional[str] = None,
-    include_df_in_prompt: Optional[bool] = True,
-) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
-    if suffix is not None:
-        suffix_to_use = suffix
-        if include_df_in_prompt:
-            suffix_to_use = suffix_to_use.format(df_head=str(df.head().to_markdown()))
-    elif include_df_in_prompt:
-        suffix_to_use = FUNCTIONS_WITH_DF.format(df_head=str(df.head().to_markdown()))
-    else:
-        suffix_to_use = ""
-
-    if prefix is None:
-        prefix = PREFIX_FUNCTIONS
-
-    tools = [PythonAstREPLTool(locals={"df": df})]
-    system_message = SystemMessage(content=prefix + suffix_to_use)
-    prompt = OpenAIFunctionsAgent.create_prompt(system_message=system_message)
-    return prompt, tools
-
-
-def _get_functions_multi_prompt(
-    dfs: Any,
-    prefix: Optional[str] = None,
-    suffix: Optional[str] = None,
-    include_df_in_prompt: Optional[bool] = True,
-) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
-    if suffix is not None:
-        suffix_to_use = suffix
-        if include_df_in_prompt:
-            dfs_head = "\n\n".join([d.head().to_markdown() for d in dfs])
-            suffix_to_use = suffix_to_use.format(
-                dfs_head=dfs_head,
-            )
-    elif include_df_in_prompt:
-        dfs_head = "\n\n".join([d.head().to_markdown() for d in dfs])
-        suffix_to_use = FUNCTIONS_WITH_MULTI_DF.format(
-            dfs_head=dfs_head,
-        )
-    else:
-        suffix_to_use = ""
-
-    if prefix is None:
-        prefix = MULTI_DF_PREFIX_FUNCTIONS
-    prefix = prefix.format(num_dfs=str(len(dfs)))
-
-    df_locals = {}
-    for i, dataframe in enumerate(dfs):
-        df_locals[f"df{i + 1}"] = dataframe
-    tools = [PythonAstREPLTool(locals=df_locals)]
-    system_message = SystemMessage(content=prefix + suffix_to_use)
-    prompt = OpenAIFunctionsAgent.create_prompt(system_message=system_message)
-    return prompt, tools
-
-
-def _get_functions_prompt_and_tools(
-    df: Any,
-    prefix: Optional[str] = None,
-    suffix: Optional[str] = None,
-    input_variables: Optional[List[str]] = None,
-    include_df_in_prompt: Optional[bool] = True,
-) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
-    try:
-        import xorbits.pandas as pd
-    except ImportError:
-        raise ValueError(
-            "xorbits package not found, please install with `pip install xorbits`"
-        )
-    if input_variables is not None:
-        raise ValueError("`input_variables` is not supported at the moment.")
-
-    if include_df_in_prompt is not None and suffix is not None:
-        raise ValueError("If suffix is specified, include_df_in_prompt should not be.")
-
-    if isinstance(df, list):
-        for item in df:
-            if not isinstance(item, pd.DataFrame):
-                raise ValueError(f"Expected xorbits.pandas object, got {type(df)}")
-        return _get_functions_multi_prompt(
-            df,
-            prefix=prefix,
-            suffix=suffix,
-            include_df_in_prompt=include_df_in_prompt,
-        )
-    else:
-        if not isinstance(df, pd.DataFrame):
-            raise ValueError(f"Expected xorbits.pandas object, got {type(df)}")
-        return _get_functions_single_prompt(
-            df,
-            prefix=prefix,
-            suffix=suffix,
-            include_df_in_prompt=include_df_in_prompt,
-        )
-
-
-def create_xorbits_dataframe_agent(
-    llm: BaseLanguageModel,
-    df: Any,
-    agent_type: AgentType = AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+def create_xorbits_agent(
+    llm: BaseLLM,
+    data: Any,
     callback_manager: Optional[BaseCallbackManager] = None,
-    prefix: Optional[str] = None,
-    suffix: Optional[str] = None,
+    prefix: str = None,
+    suffix: str = None,
     input_variables: Optional[List[str]] = None,
     verbose: bool = False,
     return_intermediate_steps: bool = False,
@@ -256,48 +22,56 @@ def create_xorbits_dataframe_agent(
     max_execution_time: Optional[float] = None,
     early_stopping_method: str = "force",
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
-    include_df_in_prompt: Optional[bool] = True,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
-    """Construct a xorbits.pandas agent from an LLM and dataframe."""
-    agent: BaseSingleActionAgent
-    if agent_type == AgentType.ZERO_SHOT_REACT_DESCRIPTION:
-        prompt, tools = _get_prompt_and_tools(
-            df,
-            prefix=prefix,
-            suffix=suffix,
+    """Construct a spark agent from an LLM and dataframe."""
+    try:
+        from xorbits import pandas as pd
+        from xorbits import numpy as np
+        import xorbits
+    except ImportError:
+        raise ValueError(
+            "Xorbits package not installed, please install with `pip install xorbits`"
+        )
+
+    if not isinstance(data, (pd.DataFrame, np.ndarray)):
+        raise ValueError(
+            f"Expected Xorbits DataFrame or ndarray object, got {type(data)}"
+        )
+    xorbits.run(data)
+    if input_variables is None:
+        input_variables = ["data", "input", "agent_scratchpad"]
+    tools = [PythonAstREPLTool(locals={"data": data})]
+    prompt, partial_input = None, None
+    if isinstance(data, pd.DataFrame):
+        prompt = ZeroShotAgent.create_prompt(
+            tools,
+            prefix=PD_PREFIX if prefix is None else prefix,
+            suffix=PD_SUFFIX if prefix is None else prefix,
             input_variables=input_variables,
-            include_df_in_prompt=include_df_in_prompt,
         )
-        llm_chain = LLMChain(
-            llm=llm,
-            prompt=prompt,
-            callback_manager=callback_manager,
-        )
-        tool_names = [tool.name for tool in tools]
-        agent = ZeroShotAgent(
-            llm_chain=llm_chain,
-            allowed_tools=tool_names,
-            callback_manager=callback_manager,
-            **kwargs,
-        )
-    elif agent_type == AgentType.OPENAI_FUNCTIONS:
-        _prompt, tools = _get_functions_prompt_and_tools(
-            df,
-            prefix=prefix,
-            suffix=suffix,
-            input_variables=input_variables,
-            include_df_in_prompt=include_df_in_prompt,
-        )
-        agent = OpenAIFunctionsAgent(
-            llm=llm,
-            prompt=_prompt,
-            tools=tools,
-            callback_manager=callback_manager,
-            **kwargs,
-        )
+        partial_input = str(data.head())
     else:
-        raise ValueError(f"Agent type {agent_type} not supported at the moment.")
+        prompt = ZeroShotAgent.create_prompt(
+            tools,
+            prefix=NP_PREFIX if prefix is None else prefix,
+            suffix=NP_SUFFIX if prefix is None else prefix,
+            input_variables=input_variables,
+        )
+        partial_input = str(data[: len(data) // 2])
+    partial_prompt = prompt.partial(data=partial_input)
+    llm_chain = LLMChain(
+        llm=llm,
+        prompt=partial_prompt,
+        callback_manager=callback_manager,
+    )
+    tool_names = [tool.name for tool in tools]
+    agent = ZeroShotAgent(
+        llm_chain=llm_chain,
+        allowed_tools=tool_names,
+        callback_manager=callback_manager,
+        **kwargs,
+    )
     return AgentExecutor.from_agent_and_tools(
         agent=agent,
         tools=tools,

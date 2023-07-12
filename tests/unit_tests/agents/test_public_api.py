@@ -36,7 +36,7 @@ _EXPECTED = [
     "load_huggingface_tool",
     "load_tools",
     "tool",
-    "create_xorbits_dataframe_agent"
+    "create_xorbits_agent",
 ]
 
 
