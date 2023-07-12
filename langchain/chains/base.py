@@ -556,6 +556,11 @@ class Chain(Serializable, ABC):
         _dict["_type"] = self._chain_type
         return _dict
 
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        return False
+
     def save(self, file_path: Union[Path, str]) -> None:
         """Save the chain.
 
