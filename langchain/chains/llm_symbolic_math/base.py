@@ -2,10 +2,8 @@
 from __future__ import annotations
 
 import re
-import warnings
 from typing import Any, Dict, List, Optional
 
-import sympy
 from pydantic import Extra
 
 from langchain.base_language import BaseLanguageModel
@@ -56,6 +54,12 @@ class LLMSymbolicMathChain(Chain):
         return [self.output_key]
 
     def _evaluate_expression(self, expression: str) -> str:
+        try:
+            import sympy
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import sympy, please install it with `pip install sympy`."
+            ) from e
         try:
             output = str(sympy.sympify(expression, evaluate=True))
         except Exception as e:
