@@ -33,17 +33,12 @@ from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.chains.base import Chain
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.evaluation.loading import load_evaluator
-from langchain.evaluation.run_evaluators.config import EvalConfig, RunEvalConfig
-from langchain.evaluation.run_evaluators.string_run_evaluator import (
-    StringRunEvaluatorChain,
-)
 from langchain.evaluation.schema import EvaluatorType, StringEvaluator
+from langchain.langsmith.evaluation.config import EvalConfig, RunEvalConfig
+from langchain.langsmith.evaluation.string_run_evaluator import StringRunEvaluatorChain
 from langchain.schema import ChatResult, LLMResult
 from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.messages import (
-    BaseMessage,
-    messages_from_dict,
-)
+from langchain.schema.messages import BaseMessage, messages_from_dict
 
 logger = logging.getLogger(__name__)
 
