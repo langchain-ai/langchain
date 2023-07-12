@@ -1,8 +1,9 @@
 from langchain.embeddings import OpenAIEmbeddings
+from langchain.document_transformers import LongContextReorder
 from langchain.vectorstores import Chroma
 
 
-def test_litm_get_relevant_docs() -> None:
+def test_litm_long_context_reorder() -> None:
     """Test Lost in the middle reordering get_relevant_docs."""
     texts = [
         "Basquetball is a great sport.",
@@ -20,10 +21,10 @@ def test_litm_get_relevant_docs() -> None:
     retriever = Chroma.from_texts(texts, embedding=embeddings).as_retriever(
         search_kwargs={"k": 10}
     )
+    reordering = LongContextReorder()
+    docs = retriever.get_relevant_documents("Tell me about the Celtics")
+    actual = reordering.transform_documents(docs)
 
-    actual = retriever.get_relevant_documents(
-        "Tell me about the Celtics", litm_reorder=True
-    )
     # First 2 and Last 2 elements must contain the most relevant
     first_and_last = actual[:2] + actual[-2:]
     assert len(actual) == 10
