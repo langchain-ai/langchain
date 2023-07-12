@@ -1,7 +1,13 @@
 """Agent for working with xorbits objects."""
 from typing import Any, Dict, List, Optional
+
 from langchain.agents.agent import AgentExecutor
-from langchain.agents.agent_toolkits.xorbits.prompt import *
+from langchain.agents.agent_toolkits.xorbits.prompt import (
+    NP_PREFIX,
+    NP_SUFFIX,
+    PD_PREFIX,
+    PD_SUFFIX,
+)
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
@@ -13,8 +19,8 @@ def create_xorbits_agent(
     llm: BaseLLM,
     data: Any,
     callback_manager: Optional[BaseCallbackManager] = None,
-    prefix: str = None,
-    suffix: str = None,
+    prefix: str = "",
+    suffix: str = "",
     input_variables: Optional[List[str]] = None,
     verbose: bool = False,
     return_intermediate_steps: bool = False,
@@ -26,9 +32,9 @@ def create_xorbits_agent(
 ) -> AgentExecutor:
     """Construct a spark agent from an LLM and dataframe."""
     try:
-        from xorbits import pandas as pd
-        from xorbits import numpy as np
         import xorbits
+        from xorbits import numpy as np
+        from xorbits import pandas as pd
     except ImportError:
         raise ValueError(
             "Xorbits package not installed, please install with `pip install xorbits`"
