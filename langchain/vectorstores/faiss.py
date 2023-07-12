@@ -521,6 +521,13 @@ class FAISS(VectorStore):
             metadata = metadatas[i] if metadatas else {}
             documents.append(Document(page_content=text, metadata=metadata))
         index_to_id = dict(enumerate(ids))
+
+        if len(index_to_id) != len(documents):
+            raise Exception(
+                f"{len(index_to_id)} ids provided for {len(documents)} documents."
+                " Each document should have an id."
+            )
+
         docstore = InMemoryDocstore(dict(zip(index_to_id.values(), documents)))
         return cls(
             embedding.embed_query,
