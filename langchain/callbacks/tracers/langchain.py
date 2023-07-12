@@ -4,7 +4,6 @@ from __future__ import annotations
 import logging
 import os
 from concurrent.futures import Future, ThreadPoolExecutor, wait
-from contextvars import ContextVar
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Set, Union
 from uuid import UUID
@@ -20,9 +19,7 @@ from langchain.schema.messages import BaseMessage
 logger = logging.getLogger(__name__)
 _LOGGED = set()
 _TRACERS: List[LangChainTracer] = []
-_CLIENT_CALLBACK_VAR: ContextVar[Optional[Client]] = ContextVar(
-    "_CLIENT_CALLBACK_VAR", default=None
-)
+_CLIENT: Optional[Client] = None
 
 
 def log_error_once(method: str, exception: Exception) -> None:
@@ -43,11 +40,10 @@ def wait_for_all_tracers() -> None:
 
 def _get_client() -> Client:
     """Get the client."""
-    client = _CLIENT_CALLBACK_VAR.get()
-    if client is None:
-        client = Client()
-        _CLIENT_CALLBACK_VAR.set(client)
-    return client
+    global _CLIENT
+    if _CLIENT is None:
+        _CLIENT = Client()
+    return _CLIENT
 
 
 class LangChainTracer(BaseTracer):
@@ -59,7 +55,6 @@ class LangChainTracer(BaseTracer):
         project_name: Optional[str] = None,
         client: Optional[Client] = None,
         tags: Optional[List[str]] = None,
-        executor: Optional[ThreadPoolExecutor] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the LangChain tracer."""
@@ -72,7 +67,7 @@ class LangChainTracer(BaseTracer):
             "LANGCHAIN_PROJECT", os.getenv("LANGCHAIN_SESSION", "default")
         )
         # set max_workers to 1 to process tasks in order
-        self.executor = executor or ThreadPoolExecutor(max_workers=1)
+        self.executor = ThreadPoolExecutor(max_workers=1)
         self.client = client or _get_client()
         self._futures: Set[Future] = set()
         self.tags = tags or []
