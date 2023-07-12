@@ -45,7 +45,14 @@ Let's load this [blog post](https://lilianweng.github.io/posts/2023-06-23-agent/
 
 We have a QA app in a few lines of code.
 
+Set enviorment varaibles and get packages:
+```python 
+pip install openai
+pip install chromadb
+export OPENAI_API_KEY="..."
+```
 
+Run:
 ```python
 from langchain.document_loaders import WebBaseLoader
 from langchain.indexes import VectorstoreIndexCreator
@@ -65,7 +72,7 @@ index.query(question)
 
 
 
-Of course, some users do not wnat this level of abstraction.
+Of course, some users do not want this level of abstraction.
 
 Below, we will discuss each stage in more detail.
 
@@ -113,13 +120,13 @@ Here are the three pieces together:
 
 #### 1.2.1 Integrations
 
-`Data Loaders`
+`Document Loaders`
  
 * Browse the > 120 data loader integrations [here](https://integrations.langchain.com/).
 
 * See further documentation on loaders [here](https://python.langchain.com/docs/modules/data_connection/document_loaders/).
 
-`Data Transformers`
+`Document Transformers`
 
 * All can ingest loaded `Documents` and process them (e.g., split).
 
@@ -133,7 +140,7 @@ Here are the three pieces together:
  
 #### 1.2.2 Retaining metadata
 
-`Context-aware splitters` keep the location or "context" of each split in the origional `Document`:
+`Context-aware splitters` keep the location ("context") of each split in the origional `Document`:
 
 * [Markdown files](https://python.langchain.com/docs/use_cases/question_answering/document-context-aware-QA)
 * [Code (py or js)](https://python.langchain.com/docs/modules/data_connection/document_loaders/integrations/source_code)
@@ -171,7 +178,7 @@ For example, SVMs (see thread [here](https://twitter.com/karpathy/status/1647025
 
 LangChain [has many retrievers](https://python.langchain.com/docs/modules/data_connection/retrievers/) including, but not limited to, vectorstores.
 
-All retrievers implement some common, useful methods, such as `get_relevant_documents()`.
+All retrievers implement some common methods, such as `get_relevant_documents()`.
 
 
 ```python
@@ -222,7 +229,7 @@ len(unique_docs)
 
 ### 3.1 Getting started
 
-Distill the retried documents into an answer using an LLM (e.g., `gpt-3.5-turbo`) with `RetrievalQA` chain.
+Distill the retrieved documents into an answer using an LLM (e.g., `gpt-3.5-turbo`) with `RetrievalQA` chain.
 
 
 ```python
@@ -247,9 +254,9 @@ qa_chain({"query": question})
 
 `LLMs`
  
-* Browse the > 55 model integrations [here](https://integrations.langchain.com/).
+* Browse the > 55 LLM integrations [here](https://integrations.langchain.com/).
  
-* See further documentation on vectorstores [here](https://python.langchain.com/docs/modules/model_io/models/). 
+* See further documentation on LLMs [here](https://python.langchain.com/docs/modules/model_io/models/). 
 
 #### 3.2.2 Running LLMs locally
 
@@ -355,7 +362,7 @@ result
 
 
 
-#### 3.2.5 Customizing how pass retrieved documents to the LLM
+#### 3.2.5 Customizing retrieved docs in the LLM prompt
 
 Retrieved documents can be fed to an LLM for answer distillation in a few different ways.
 

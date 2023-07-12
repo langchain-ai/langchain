@@ -1,10 +1,11 @@
 """Wrapper around FAISS vector database."""
 from __future__ import annotations
 
-import math
+import operator
 import os
 import pickle
 import uuid
+import warnings
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
@@ -15,7 +16,7 @@ from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
-from langchain.vectorstores.utils import maximal_marginal_relevance
+from langchain.vectorstores.utils import DistanceStrategy, maximal_marginal_relevance
 
 
 def dependable_faiss_import(no_avx2: Optional[bool] = None) -> Any:
@@ -45,20 +46,6 @@ def dependable_faiss_import(no_avx2: Optional[bool] = None) -> Any:
     return faiss
 
 
-def _default_relevance_score_fn(score: float) -> float:
-    """Return a similarity score on a scale [0, 1]."""
-    # The 'correct' relevance function
-    # may differ depending on a few things, including:
-    # - the distance / similarity metric used by the VectorStore
-    # - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
-    # - embedding dimensionality
-    # - etc.
-    # This function converts the euclidean norm of normalized embeddings
-    # (0 is most similar, sqrt(2) most dissimilar)
-    # to a similarity function (0 to 1)
-    return 1.0 - score / math.sqrt(2)
-
-
 class FAISS(VectorStore):
     """Wrapper around FAISS vector database.
 
@@ -78,16 +65,27 @@ class FAISS(VectorStore):
         index: Any,
         docstore: Docstore,
         index_to_docstore_id: Dict[int, str],
-        relevance_score_fn: Callable[[float], float] = _default_relevance_score_fn,
+        relevance_score_fn: Optional[Callable[[float], float]] = None,
         normalize_L2: bool = False,
+        distance_strategy: DistanceStrategy = DistanceStrategy.EUCLIDEAN_DISTANCE,
     ):
         """Initialize with necessary components."""
         self.embedding_function = embedding_function
         self.index = index
         self.docstore = docstore
         self.index_to_docstore_id = index_to_docstore_id
-        self.relevance_score_fn = relevance_score_fn
+        self.distance_strategy = distance_strategy
+        self.override_relevance_score_fn = relevance_score_fn
         self._normalize_L2 = normalize_L2
+        if (
+            self.distance_strategy != DistanceStrategy.EUCLIDEAN_DISTANCE
+            and self._normalize_L2
+        ):
+            warnings.warn(
+                "Normalizing L2 is not applicable for metric type: {strategy}".format(
+                    strategy=self.distance_strategy
+                )
+            )
 
     def __add(
         self,
@@ -227,10 +225,16 @@ class FAISS(VectorStore):
 
         score_threshold = kwargs.get("score_threshold")
         if score_threshold is not None:
+            cmp = (
+                operator.ge
+                if self.distance_strategy
+                in (DistanceStrategy.MAX_INNER_PRODUCT, DistanceStrategy.JACCARD)
+                else operator.le
+            )
             docs = [
                 (doc, similarity)
                 for doc, similarity in docs
-                if similarity >= score_threshold
+                if cmp(similarity, score_threshold)
             ]
         return docs[:k]
 
@@ -498,9 +502,16 @@ class FAISS(VectorStore):
         **kwargs: Any,
     ) -> FAISS:
         faiss = dependable_faiss_import()
-        index = faiss.IndexFlatL2(len(embeddings[0]))
+        distance_strategy = kwargs.get(
+            "distance_strategy", DistanceStrategy.EUCLIDEAN_DISTANCE
+        )
+        if distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
+            index = faiss.IndexFlatIP(len(embeddings[0]))
+        else:
+            # Default to L2, currently other metric types not initialized.
+            index = faiss.IndexFlatL2(len(embeddings[0]))
         vector = np.array(embeddings, dtype=np.float32)
-        if normalize_L2:
+        if normalize_L2 and distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
             faiss.normalize_L2(vector)
         index.add(vector)
         documents = []
@@ -646,6 +657,31 @@ class FAISS(VectorStore):
             embeddings.embed_query, index, docstore, index_to_docstore_id, **kwargs
         )
 
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        """
+        The 'correct' relevance function
+        may differ depending on a few things, including:
+        - the distance / similarity metric used by the VectorStore
+        - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
+        - embedding dimensionality
+        - etc.
+        """
+        if self.override_relevance_score_fn is not None:
+            return self.override_relevance_score_fn
+
+        # Default strategy is to rely on distance strategy provided in
+        # vectorstore constructor
+        if self.distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
+            return self._max_inner_product_relevance_score_fn
+        elif self.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
+            # Default behavior is to use euclidean distance relevancy
+            return self._euclidean_relevance_score_fn
+        else:
+            raise ValueError(
+                "Unknown distance strategy, must be cosine, max_inner_product,"
+                " or euclidean"
+            )
+
     def _similarity_search_with_relevance_scores(
         self,
         query: str,
@@ -655,6 +691,12 @@ class FAISS(VectorStore):
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs and their similarity scores on a scale from 0 to 1."""
+        relevance_score_fn = self._select_relevance_score_fn()
+        if relevance_score_fn is None:
+            raise ValueError(
+                "normalize_score_fn must be provided to"
+                " FAISS constructor to normalize scores"
+            )
         docs_and_scores = self.similarity_search_with_score(
             query,
             k=k,
@@ -662,4 +704,4 @@ class FAISS(VectorStore):
             fetch_k=fetch_k,
             **kwargs,
         )
-        return [(doc, self.relevance_score_fn(score)) for doc, score in docs_and_scores]
+        return [(doc, relevance_score_fn(score)) for doc, score in docs_and_scores]
