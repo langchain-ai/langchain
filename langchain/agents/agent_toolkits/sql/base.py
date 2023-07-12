@@ -43,7 +43,6 @@ def create_sql_agent(
     early_stopping_method: str = "force",
     verbose: bool = False,
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
-    memory: Optional[BaseMemory] = None,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Construct a sql agent from an LLM and tools."""
@@ -74,7 +73,7 @@ def create_sql_agent(
             AIMessage(content=suffix or SQL_FUNCTIONS_SUFFIX),
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ]
-        if memory:
+        if agent_executor_kwargs and "memory" in agent_executor_kwargs:
             raise ValueError(
                 f"""To use memory with OpenAIFunctionsAgent please refer to following
                 example: {_SQL_OPEN_AI_FUNCTION_MEMORY_EXAMPLE}"""
@@ -94,7 +93,6 @@ def create_sql_agent(
     return AgentExecutor.from_agent_and_tools(
         agent=agent,
         tools=tools,
-        memory=memory,
         callback_manager=callback_manager,
         verbose=verbose,
         max_iterations=max_iterations,
