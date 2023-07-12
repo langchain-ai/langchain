@@ -62,7 +62,6 @@ def create_sql_agent(
         llm_chain = LLMChain(
             llm=llm,
             prompt=prompt,
-            memory=memory,
             callback_manager=callback_manager,
         )
         tool_names = [tool.name for tool in tools]
