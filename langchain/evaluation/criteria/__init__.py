@@ -43,6 +43,9 @@ Using a custom criterion:
         )
 """
 
-from langchain.evaluation.criteria.eval_chain import CriteriaEvalChain
+from langchain.evaluation.criteria.eval_chain import (
+    CriteriaEvalChain,
+    LabeledCriteriaEvalChain,
+)
 
-__all__ = ["CriteriaEvalChain"]
+__all__ = ["CriteriaEvalChain", "LabeledCriteriaEvalChain"]

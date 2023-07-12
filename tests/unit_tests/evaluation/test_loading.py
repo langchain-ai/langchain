@@ -31,7 +31,8 @@ def test_criteria_eval_chain_requires_reference() -> None:
         queries={"text": "The meaning of life\nCORRECT"}, sequential_responses=True
     )
     evaluator = load_evaluators(
-        [EvaluatorType.CRITERIA], llm=fake_llm, requires_reference=True
+        [EvaluatorType.LABELED_CRITERIA],
+        llm=fake_llm,
     )[0]
     if not isinstance(evaluator, StringEvaluator):
         raise ValueError("Evaluator is not a string evaluator")

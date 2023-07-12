@@ -54,7 +54,7 @@ These interfaces enable easier composability and usage within a higher level eva
 """  # noqa: E501
 from langchain.evaluation.agents import TrajectoryEvalChain
 from langchain.evaluation.comparison import PairwiseStringEvalChain
-from langchain.evaluation.criteria import CriteriaEvalChain
+from langchain.evaluation.criteria import CriteriaEvalChain, LabeledCriteriaEvalChain
 from langchain.evaluation.embedding_distance import (
     EmbeddingDistance,
     EmbeddingDistanceEvalChain,
@@ -90,6 +90,7 @@ __all__ = [
     "StringDistance",
     "StringDistanceEvalChain",
     "PairwiseStringDistanceEvalChain",
+    "LabeledCriteriaEvalChain",
     "load_evaluators",
     "load_evaluator",
     "load_dataset",
