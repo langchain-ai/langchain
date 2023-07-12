@@ -26,7 +26,7 @@ def test_litm_long_context_reorder() -> None:
     actual = reordering.transform_documents(docs)
 
     # First 2 and Last 2 elements must contain the most relevant
-    first_and_last = actual[:2] + actual[-2:]
+    first_and_last = list(actual[:2]) + list(actual[-2:])
     assert len(actual) == 10
     assert texts[2] in [d.page_content for d in first_and_last]
     assert texts[3] in [d.page_content for d in first_and_last]
