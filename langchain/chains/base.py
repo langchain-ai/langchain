@@ -415,7 +415,7 @@ class Chain(Serializable, ABC):
                 directly as keyword arguments.
 
         Returns:
-            The chain output as a Dictionary.
+            The chain output as a string.
 
         Example:
             .. code-block:: python
