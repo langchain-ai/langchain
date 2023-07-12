@@ -143,7 +143,6 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "textgen": TextGen,
     "modal": Modal,
     "mosaic": MosaicML,
-    "oobabooga": OobaboogaLLM,
     "nlpcloud": NLPCloud,
     "openai": OpenAI,
     "openlm": OpenLM,
