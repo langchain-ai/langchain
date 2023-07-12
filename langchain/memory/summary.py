@@ -48,17 +48,14 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
         chat_memory: BaseChatMessageHistory,
         *,
         summarize_step: int = 2,
-        existing_summary: str = "",
+        buffer: str = "",
         **kwargs: Any,
     ) -> ConversationSummaryMemory:
-        if existing_summary:  # if existing_summary is provided, use it
-            obj = cls(llm=llm, chat_memory=chat_memory, **kwargs)
-            obj.buffer = existing_summary
-        else:  # if existing_summary is not provided, compute the summary
-            obj = cls(llm=llm, chat_memory=chat_memory, **kwargs)
+        obj = cls(llm=llm, chat_memory=chat_memory, buffer=buffer, **kwargs)
+        if not buffer:
             for i in range(0, len(obj.chat_memory.messages), summarize_step):
                 obj.buffer = obj.predict_new_summary(
-                    obj.chat_memory.messages[i : i + summarize_step], obj.buffer
+                    obj.chat_memory.messages[i: i + summarize_step], obj.buffer
                 )
         return obj
 
