@@ -1,4 +1,5 @@
 import json
+import re
 from typing import Union
 
 from langchain.agents.agent import AgentOutputParser
@@ -9,13 +10,19 @@ FINAL_ANSWER_ACTION = "Final Answer:"
 
 
 class ChatOutputParser(AgentOutputParser):
+    pattern = re.compile(r"^.*?`{3}(?:json)?\n(.*?)`{3}.*?$", re.DOTALL)
+
     def get_format_instructions(self) -> str:
         return FORMAT_INSTRUCTIONS
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         includes_answer = FINAL_ANSWER_ACTION in text
         try:
-            action = text.split("```")[1]
+            found = self.pattern.search(text)
+            if not found:
+                # Fast fail to parse Final Answer.
+                raise ValueError("action not found")
+            action = found.group(1)
             response = json.loads(action.strip())
             includes_action = "action" in response
             if includes_answer and includes_action:

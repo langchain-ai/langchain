@@ -74,11 +74,23 @@ class RunEvalConfig(BaseModel):
     """
 
     evaluators: List[Union[EvaluatorType, EvalConfig]] = Field(default_factory=list)
+    """Configurations for which evaluators to apply to the dataset run.
+    Each can be an evaluator type (e.g., "qa") or a configuration for a
+    given evaluator."""
     custom_evaluators: Optional[List[Union[RunEvaluator, StringEvaluator]]] = None
+    """Custom evaluators to apply to the dataset run."""
     reference_key: Optional[str] = None
+    """The key in the dataset run to use as the reference string.
+    If not provided, we will attempt to infer automatically."""
     prediction_key: Optional[str] = None
+    """The key from the traced run's outputs dictionary to use to
+    represent the prediction. If not provided, it will be inferred
+    automatically."""
     input_key: Optional[str] = None
+    """The key from the traced run's inputs dictionary to use to represent the
+    input. If not provided, it will be inferred automatically."""
     eval_llm: Optional[BaseLanguageModel] = None
+    """The language model to pass to any evaluators that require one."""
 
     class Config:
         arbitrary_types_allowed = True
@@ -90,10 +102,13 @@ class RunEvalConfig(BaseModel):
         ----------
         criteria : Optional[CRITERIA_TYPE]
             The criteria to evaluate.
+        llm : Optional[BaseLanguageModel]
+            The language model to use for the evaluation chain.
 
         """
 
         criteria: Optional[CRITERIA_TYPE] = None
+        llm: Optional[BaseLanguageModel] = None
         evaluator_type: EvaluatorType = EvaluatorType.CRITERIA
 
         def __init__(
@@ -108,10 +123,12 @@ class RunEvalConfig(BaseModel):
         ----------
         criteria : Optional[CRITERIA_TYPE]
             The criteria to evaluate.
-
+        llm : Optional[BaseLanguageModel]
+            The language model to use for the evaluation chain.
         """
 
         criteria: Optional[CRITERIA_TYPE] = None
+        llm: Optional[BaseLanguageModel] = None
         evaluator_type: EvaluatorType = EvaluatorType.LABELED_CRITERIA
 
         def __init__(
@@ -159,10 +176,12 @@ class RunEvalConfig(BaseModel):
         ----------
         prompt : Optional[BasePromptTemplate]
             The prompt template to use for generating the question.
-
+        llm : Optional[BaseLanguageModel]
+            The language model to use for the evaluation chain.
         """
 
         evaluator_type: EvaluatorType = EvaluatorType.QA
+        llm: Optional[BaseLanguageModel] = None
         prompt: Optional[BasePromptTemplate] = None
 
     class ContextQA(EvalConfig):
@@ -172,10 +191,13 @@ class RunEvalConfig(BaseModel):
         ----------
         prompt : Optional[BasePromptTemplate]
             The prompt template to use for generating the question.
+        llm : Optional[BaseLanguageModel]
+            The language model to use for the evaluation chain.
 
         """
 
         evaluator_type: EvaluatorType = EvaluatorType.CONTEXT_QA
+        llm: Optional[BaseLanguageModel] = None
         prompt: Optional[BasePromptTemplate] = None
 
     class CoTQA(EvalConfig):
@@ -185,10 +207,13 @@ class RunEvalConfig(BaseModel):
         ----------
         prompt : Optional[BasePromptTemplate]
             The prompt template to use for generating the question.
+        llm : Optional[BaseLanguageModel]
+            The language model to use for the evaluation chain.
 
         """
 
         evaluator_type: EvaluatorType = EvaluatorType.CONTEXT_QA
+        llm: Optional[BaseLanguageModel] = None
         prompt: Optional[BasePromptTemplate] = None
 
     # TODO: Trajectory
