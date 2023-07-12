@@ -19,7 +19,6 @@ from langchain.callbacks.tracers.schemas import Run, RunTypeEnum
 
 if TYPE_CHECKING:
     from wandb import Settings as WBSettings
-    from wandb.sdk.data_types import trace_tree
     from wandb.sdk.data_types.trace_tree import Span
     from wandb.sdk.lib.paths import StrPath
     from wandb.wandb_run import Run as WBRun
@@ -220,14 +219,16 @@ class RunProcessor:
     def truncate_run_iterative(
         self, runs: List[Dict[str, Any]], keep_keys: Tuple[str, ...] = ()
     ) -> List[Dict[str, Any]]:
-        """Utility to truncate a list of runs dictionaries to only keep the specified keys in each run.
+        """Utility to truncate a list of runs dictionaries to only keep the specified
+            keys in each run.
         :param runs: The list of runs to truncate.
         :param keep_keys: The keys to keep in each run.
         :return: The truncated list of runs.
         """
 
         def truncate_single(run: Dict[str, Any]) -> Dict[str, Any]:
-            """Utility to truncate a single run dictionary to only keep the specified keys.
+            """Utility to truncate a single run dictionary to only keep the specified
+                keys.
             :param run: The run dictionary to truncate.
             :return: The truncated run dictionary
             """
@@ -246,14 +247,16 @@ class RunProcessor:
         partial_keys: Tuple[str, ...] = (),
     ) -> List[Dict[str, Any]]:
         """Utility to modify the serialized field of a list of runs dictionaries.
-        removes any keys that match the exact_keys and any keys that contain any of the partial_keys.
+        removes any keys that match the exact_keys and any keys that contain any of the
+        partial_keys.
         recursively moves the dictionaries under the kwargs key to the top level.
-        changes the "id" field to a string "_kind" field that tells WBTraceTree how to visualize the run.
-        promotes the "serialized" field to the top level.
+        changes the "id" field to a string "_kind" field that tells WBTraceTree how to
+        visualize the run. promotes the "serialized" field to the top level.
 
         :param runs: The list of runs to modify.
         :param exact_keys: A tuple of keys to remove from the serialized field.
-        :param partial_keys: A tuple of partial keys to remove from the serialized field.
+        :param partial_keys: A tuple of partial keys to remove from the serialized
+            field.
         :return: The modified list of runs.
         """
 
@@ -279,10 +282,12 @@ class RunProcessor:
             obj: Dict[str, Any], root: bool = False
         ) -> Dict[str, Any]:
             """Recursively handles the id and kwargs fields of a dictionary.
-            changes the id field to a string "_kind" field that tells WBTraceTree how to visualize the run.
-            recursively moves the dictionaries under the kwargs key to the top level.
+            changes the id field to a string "_kind" field that tells WBTraceTree how
+            to visualize the run. recursively moves the dictionaries under the kwargs
+            key to the top level.
             :param obj: a run dictionary with id and kwargs fields.
-            :param root: whether this is the root dictionary or the serialized dictionary.
+            :param root: whether this is the root dictionary or the serialized
+                dictionary.
             :return: The modified dictionary.
             """
             if isinstance(obj, dict):
@@ -304,7 +309,8 @@ class RunProcessor:
             return obj
 
         def transform_serialized(serialized: Dict[str, Any]) -> Dict[str, Any]:
-            """Transforms the serialized field of a run dictionary to be compatible with WBTraceTree.
+            """Transforms the serialized field of a run dictionary to be compatible
+                with WBTraceTree.
             :param serialized: The serialized field of a run dictionary.
             :return: The transformed serialized field.
             """
@@ -340,7 +346,8 @@ class RunProcessor:
     def build_tree(self, runs: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Builds a nested dictionary from a list of runs.
         :param runs: The list of runs to build the tree from.
-        :return: The nested dictionary representing the langchain Run in a tree structure compatible with WBTraceTree.
+        :return: The nested dictionary representing the langchain Run in a tree
+            structure compatible with WBTraceTree.
         """
         id_to_data = {}
         child_to_parent = {}
