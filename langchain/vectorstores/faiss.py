@@ -1,10 +1,11 @@
 """Wrapper around FAISS vector database."""
 from __future__ import annotations
 
-import math
+import operator
 import os
 import pickle
 import uuid
+import warnings
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
@@ -15,7 +16,7 @@ from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
-from langchain.vectorstores.utils import maximal_marginal_relevance
+from langchain.vectorstores.utils import DistanceStrategy, maximal_marginal_relevance
 
 
 def dependable_faiss_import(no_avx2: Optional[bool] = None) -> Any:
@@ -37,26 +38,12 @@ def dependable_faiss_import(no_avx2: Optional[bool] = None) -> Any:
         else:
             import faiss
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "Could not import faiss python package. "
             "Please install it with `pip install faiss` "
             "or `pip install faiss-cpu` (depending on Python version)."
         )
     return faiss
-
-
-def _default_relevance_score_fn(score: float) -> float:
-    """Return a similarity score on a scale [0, 1]."""
-    # The 'correct' relevance function
-    # may differ depending on a few things, including:
-    # - the distance / similarity metric used by the VectorStore
-    # - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
-    # - embedding dimensionality
-    # - etc.
-    # This function converts the euclidean norm of normalized embeddings
-    # (0 is most similar, sqrt(2) most dissimilar)
-    # to a similarity function (0 to 1)
-    return 1.0 - score / math.sqrt(2)
 
 
 class FAISS(VectorStore):
@@ -78,18 +65,27 @@ class FAISS(VectorStore):
         index: Any,
         docstore: Docstore,
         index_to_docstore_id: Dict[int, str],
-        relevance_score_fn: Optional[
-            Callable[[float], float]
-        ] = _default_relevance_score_fn,
+        relevance_score_fn: Optional[Callable[[float], float]] = None,
         normalize_L2: bool = False,
+        distance_strategy: DistanceStrategy = DistanceStrategy.EUCLIDEAN_DISTANCE,
     ):
         """Initialize with necessary components."""
         self.embedding_function = embedding_function
         self.index = index
         self.docstore = docstore
         self.index_to_docstore_id = index_to_docstore_id
-        self.relevance_score_fn = relevance_score_fn
+        self.distance_strategy = distance_strategy
+        self.override_relevance_score_fn = relevance_score_fn
         self._normalize_L2 = normalize_L2
+        if (
+            self.distance_strategy != DistanceStrategy.EUCLIDEAN_DISTANCE
+            and self._normalize_L2
+        ):
+            warnings.warn(
+                "Normalizing L2 is not applicable for metric type: {strategy}".format(
+                    strategy=self.distance_strategy
+                )
+            )
 
     def __add(
         self,
@@ -229,10 +225,16 @@ class FAISS(VectorStore):
 
         score_threshold = kwargs.get("score_threshold")
         if score_threshold is not None:
+            cmp = (
+                operator.ge
+                if self.distance_strategy
+                in (DistanceStrategy.MAX_INNER_PRODUCT, DistanceStrategy.JACCARD)
+                else operator.le
+            )
             docs = [
                 (doc, similarity)
                 for doc, similarity in docs
-                if similarity >= score_threshold
+                if cmp(similarity, score_threshold)
             ]
         return docs[:k]
 
@@ -321,6 +323,73 @@ class FAISS(VectorStore):
         )
         return [doc for doc, _ in docs_and_scores]
 
+    def max_marginal_relevance_search_with_score_by_vector(
+        self,
+        embedding: List[float],
+        *,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, Any]] = None,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs and their similarity scores selected using the maximal marginal
+            relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch before filtering to
+                     pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        Returns:
+            List of Documents and similarity scores selected by maximal marginal
+                relevance and score for each.
+        """
+        scores, indices = self.index.search(
+            np.array([embedding], dtype=np.float32),
+            fetch_k if filter is None else fetch_k * 2,
+        )
+        if filter is not None:
+            filtered_indices = []
+            for i in indices[0]:
+                if i == -1:
+                    # This happens when not enough docs are returned.
+                    continue
+                _id = self.index_to_docstore_id[i]
+                doc = self.docstore.search(_id)
+                if not isinstance(doc, Document):
+                    raise ValueError(f"Could not find document for id {_id}, got {doc}")
+                if all(doc.metadata.get(key) == value for key, value in filter.items()):
+                    filtered_indices.append(i)
+            indices = np.array([filtered_indices])
+        # -1 happens when not enough docs are returned.
+        embeddings = [self.index.reconstruct(int(i)) for i in indices[0] if i != -1]
+        mmr_selected = maximal_marginal_relevance(
+            np.array([embedding], dtype=np.float32),
+            embeddings,
+            k=k,
+            lambda_mult=lambda_mult,
+        )
+        selected_indices = [indices[0][i] for i in mmr_selected]
+        selected_scores = [scores[0][i] for i in mmr_selected]
+        docs_and_scores = []
+        for i, score in zip(selected_indices, selected_scores):
+            if i == -1:
+                # This happens when not enough docs are returned.
+                continue
+            _id = self.index_to_docstore_id[i]
+            doc = self.docstore.search(_id)
+            if not isinstance(doc, Document):
+                raise ValueError(f"Could not find document for id {_id}, got {doc}")
+            docs_and_scores.append((doc, score))
+        return docs_and_scores
+
     def max_marginal_relevance_search_by_vector(
         self,
         embedding: List[float],
@@ -347,43 +416,10 @@ class FAISS(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        _, indices = self.index.search(
-            np.array([embedding], dtype=np.float32),
-            fetch_k if filter is None else fetch_k * 2,
+        docs_and_scores = self.max_marginal_relevance_search_with_score_by_vector(
+            embedding, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult, filter=filter
         )
-        if filter is not None:
-            filtered_indices = []
-            for i in indices[0]:
-                if i == -1:
-                    # This happens when not enough docs are returned.
-                    continue
-                _id = self.index_to_docstore_id[i]
-                doc = self.docstore.search(_id)
-                if not isinstance(doc, Document):
-                    raise ValueError(f"Could not find document for id {_id}, got {doc}")
-                if all(doc.metadata.get(key) == value for key, value in filter.items()):
-                    filtered_indices.append(i)
-            indices = np.array([filtered_indices])
-        # -1 happens when not enough docs are returned.
-        embeddings = [self.index.reconstruct(int(i)) for i in indices[0] if i != -1]
-        mmr_selected = maximal_marginal_relevance(
-            np.array([embedding], dtype=np.float32),
-            embeddings,
-            k=k,
-            lambda_mult=lambda_mult,
-        )
-        selected_indices = [indices[0][i] for i in mmr_selected]
-        docs = []
-        for i in selected_indices:
-            if i == -1:
-                # This happens when not enough docs are returned.
-                continue
-            _id = self.index_to_docstore_id[i]
-            doc = self.docstore.search(_id)
-            if not isinstance(doc, Document):
-                raise ValueError(f"Could not find document for id {_id}, got {doc}")
-            docs.append(doc)
-        return docs
+        return [doc for doc, _ in docs_and_scores]
 
     def max_marginal_relevance_search(
         self,
@@ -414,8 +450,8 @@ class FAISS(VectorStore):
         embedding = self.embedding_function(query)
         docs = self.max_marginal_relevance_search_by_vector(
             embedding,
-            k,
-            fetch_k,
+            k=k,
+            fetch_k=fetch_k,
             lambda_mult=lambda_mult,
             filter=filter,
             **kwargs,
@@ -466,9 +502,16 @@ class FAISS(VectorStore):
         **kwargs: Any,
     ) -> FAISS:
         faiss = dependable_faiss_import()
-        index = faiss.IndexFlatL2(len(embeddings[0]))
+        distance_strategy = kwargs.get(
+            "distance_strategy", DistanceStrategy.EUCLIDEAN_DISTANCE
+        )
+        if distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
+            index = faiss.IndexFlatIP(len(embeddings[0]))
+        else:
+            # Default to L2, currently other metric types not initialized.
+            index = faiss.IndexFlatL2(len(embeddings[0]))
         vector = np.array(embeddings, dtype=np.float32)
-        if normalize_L2:
+        if normalize_L2 and distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
             faiss.normalize_L2(vector)
         index.add(vector)
         documents = []
@@ -478,6 +521,13 @@ class FAISS(VectorStore):
             metadata = metadatas[i] if metadatas else {}
             documents.append(Document(page_content=text, metadata=metadata))
         index_to_id = dict(enumerate(ids))
+
+        if len(index_to_id) != len(documents):
+            raise Exception(
+                f"{len(index_to_id)} ids provided for {len(documents)} documents."
+                " Each document should have an id."
+            )
+
         docstore = InMemoryDocstore(dict(zip(index_to_id.values(), documents)))
         return cls(
             embedding.embed_query,
@@ -586,7 +636,11 @@ class FAISS(VectorStore):
 
     @classmethod
     def load_local(
-        cls, folder_path: str, embeddings: Embeddings, index_name: str = "index"
+        cls,
+        folder_path: str,
+        embeddings: Embeddings,
+        index_name: str = "index",
+        **kwargs: Any,
     ) -> FAISS:
         """Load FAISS index, docstore, and index_to_docstore_id from disk.
 
@@ -606,7 +660,34 @@ class FAISS(VectorStore):
         # load docstore and index_to_docstore_id
         with open(path / "{index_name}.pkl".format(index_name=index_name), "rb") as f:
             docstore, index_to_docstore_id = pickle.load(f)
-        return cls(embeddings.embed_query, index, docstore, index_to_docstore_id)
+        return cls(
+            embeddings.embed_query, index, docstore, index_to_docstore_id, **kwargs
+        )
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        """
+        The 'correct' relevance function
+        may differ depending on a few things, including:
+        - the distance / similarity metric used by the VectorStore
+        - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
+        - embedding dimensionality
+        - etc.
+        """
+        if self.override_relevance_score_fn is not None:
+            return self.override_relevance_score_fn
+
+        # Default strategy is to rely on distance strategy provided in
+        # vectorstore constructor
+        if self.distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
+            return self._max_inner_product_relevance_score_fn
+        elif self.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
+            # Default behavior is to use euclidean distance relevancy
+            return self._euclidean_relevance_score_fn
+        else:
+            raise ValueError(
+                "Unknown distance strategy, must be cosine, max_inner_product,"
+                " or euclidean"
+            )
 
     def _similarity_search_with_relevance_scores(
         self,
@@ -617,7 +698,8 @@ class FAISS(VectorStore):
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs and their similarity scores on a scale from 0 to 1."""
-        if self.relevance_score_fn is None:
+        relevance_score_fn = self._select_relevance_score_fn()
+        if relevance_score_fn is None:
             raise ValueError(
                 "normalize_score_fn must be provided to"
                 " FAISS constructor to normalize scores"
@@ -629,4 +711,4 @@ class FAISS(VectorStore):
             fetch_k=fetch_k,
             **kwargs,
         )
-        return [(doc, self.relevance_score_fn(score)) for doc, score in docs_and_scores]
+        return [(doc, relevance_score_fn(score)) for doc, score in docs_and_scores]

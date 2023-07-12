@@ -86,13 +86,23 @@ def _async_retry_decorator(embeddings: OpenAIEmbeddings) -> Any:
     return wrap
 
 
+# https://stackoverflow.com/questions/76469415/getting-embeddings-of-length-1-from-langchain-openaiembeddings
+def _check_response(response: dict) -> dict:
+    if any(len(d["embedding"]) == 1 for d in response["data"]):
+        import openai
+
+        raise openai.error.APIError("OpenAI API returned an empty embedding")
+    return response
+
+
 def embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) -> Any:
     """Use tenacity to retry the embedding call."""
     retry_decorator = _create_retry_decorator(embeddings)
 
     @retry_decorator
     def _embed_with_retry(**kwargs: Any) -> Any:
-        return embeddings.client.create(**kwargs)
+        response = embeddings.client.create(**kwargs)
+        return _check_response(response)
 
     return _embed_with_retry(**kwargs)
 
@@ -102,7 +112,8 @@ async def async_embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) ->
 
     @_async_retry_decorator(embeddings)
     async def _async_embed_with_retry(**kwargs: Any) -> Any:
-        return await embeddings.client.acreate(**kwargs)
+        response = await embeddings.client.acreate(**kwargs)
+        return _check_response(response)
 
     return await _async_embed_with_retry(**kwargs)
 
@@ -170,6 +181,18 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
     """Timeout in seconds for the OpenAPI request."""
     headers: Any = None
+    tiktoken_model_name: Optional[str] = None
+    """The model name to pass to tiktoken when using this class. 
+    Tiktoken is used to count the number of tokens in documents to constrain 
+    them to be under a certain limit. By default, when set to None, this will 
+    be the same as the embedding model name. However, there are some cases 
+    where you may want to use this Embedding class with a model name not 
+    supported by tiktoken. This can include when using Azure embeddings or 
+    when using one of the many model providers that expose an OpenAI-like 
+    API but with different models. In those cases, in order to avoid erroring 
+    when tiktoken is called, you can specify a model name to use here."""
+    show_progress_bar: bool = False
+    """Whether to show a progress bar when embedding."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -265,7 +288,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
         tokens = []
         indices = []
-        encoding = tiktoken.model.encoding_for_model(self.model)
+        model_name = self.tiktoken_model_name or self.model
+        try:
+            encoding = tiktoken.encoding_for_model(model_name)
+        except KeyError:
+            logger.warning("Warning: model not found. Using cl100k_base encoding.")
+            model = "cl100k_base"
+            encoding = tiktoken.get_encoding(model)
         for i, text in enumerate(texts):
             if self.model.endswith("001"):
                 # See: https://github.com/openai/openai-python/issues/418#issuecomment-1525939500
@@ -282,7 +311,18 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
         batched_embeddings = []
         _chunk_size = chunk_size or self.chunk_size
-        for i in range(0, len(tokens), _chunk_size):
+
+        if self.show_progress_bar:
+            try:
+                import tqdm
+
+                _iter = tqdm.tqdm(range(0, len(tokens), _chunk_size))
+            except ImportError:
+                _iter = range(0, len(tokens), _chunk_size)
+        else:
+            _iter = range(0, len(tokens), _chunk_size)
+
+        for i in _iter:
             response = embed_with_retry(
                 self,
                 input=tokens[i : i + _chunk_size],
@@ -329,7 +369,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
         tokens = []
         indices = []
-        encoding = tiktoken.model.encoding_for_model(self.model)
+        model_name = self.tiktoken_model_name or self.model
+        try:
+            encoding = tiktoken.encoding_for_model(model_name)
+        except KeyError:
+            logger.warning("Warning: model not found. Using cl100k_base encoding.")
+            model = "cl100k_base"
+            encoding = tiktoken.get_encoding(model)
         for i, text in enumerate(texts):
             if self.model.endswith("001"):
                 # See: https://github.com/openai/openai-python/issues/418#issuecomment-1525939500

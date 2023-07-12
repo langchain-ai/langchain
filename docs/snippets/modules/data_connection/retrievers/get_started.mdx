@@ -1,24 +1,40 @@
-The `BaseRetriever` class in LangChain is as follows:
+The public API of the `BaseRetriever` class in LangChain is as follows:
 
 ```python
 from abc import ABC, abstractmethod
-from typing import List
+from typing import Any, List
 from langchain.schema import Document
+from langchain.callbacks.manager import Callbacks
 
 class BaseRetriever(ABC):
-    @abstractmethod
-    def get_relevant_documents(self, query: str) -> List[Document]:
-        """Get texts relevant for a query.
-
+    ...
+    def get_relevant_documents(
+        self, query: str, *, callbacks: Callbacks = None, **kwargs: Any
+    ) -> List[Document]:
+        """Retrieve documents relevant to a query.
         Args:
-            query: string to find relevant texts for
-
+            query: string to find relevant documents for
+            callbacks: Callback manager or list of callbacks
         Returns:
             List of relevant documents
         """
+        ...
+
+    async def aget_relevant_documents(
+        self, query: str, *, callbacks: Callbacks = None, **kwargs: Any
+    ) -> List[Document]:
+        """Asynchronously get documents relevant to a query.
+        Args:
+            query: string to find relevant documents for
+            callbacks: Callback manager or list of callbacks
+        Returns:
+            List of relevant documents
+        """
+        ...
 ```
 
-It's that simple! The `get_relevant_documents` method can be implemented however you see fit.
+It's that simple! You can call `get_relevant_documents` or the async `get_relevant_documents` methods to retrieve documents relevant to a query, where "relevance" is defined by
+the specific retriever object you are calling.
 
 Of course, we also help construct what we think useful Retrievers are. The main type of Retriever that we focus on is a Vectorstore retriever. We will focus on that for the rest of this guide.
 
@@ -50,7 +66,7 @@ from langchain.chains import RetrievalQA
 from langchain.llms import OpenAI
 ```
 
-Next in the generic setup, let's specify the document loader we want to use. You can download the `state_of_the_union.txt` file [here](https://github.com/hwchase17/langchain/blob/master/docs/modules/state_of_the_union.txt)
+Next in the generic setup, let's specify the document loader we want to use. You can download the `state_of_the_union.txt` file [here](https://github.com/hwchase17/langchain/blob/master/docs/extras/modules/state_of_the_union.txt)
 
 
 ```python

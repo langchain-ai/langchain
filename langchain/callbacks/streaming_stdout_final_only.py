@@ -37,7 +37,7 @@ class FinalStreamingStdOutCallbackHandler(StreamingStdOutCallbackHandler):
         """Instantiate FinalStreamingStdOutCallbackHandler.
 
         Args:
-            answer_prefix_tokens: Token sequence that prefixes the anwer.
+            answer_prefix_tokens: Token sequence that prefixes the answer.
                 Default is ["Final", "Answer", ":"]
             strip_tokens: Ignore white spaces and new lines when comparing
                 answer_prefix_tokens to last tokens? (to determine if answer has been

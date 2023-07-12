@@ -19,8 +19,11 @@ class ArxivLoader(BaseLoader):
         load_all_available_meta: Optional[bool] = False,
     ):
         self.query = query
+        """The query to be passed to the arxiv.org API."""
         self.load_max_docs = load_max_docs
+        """The maximum number of documents to load."""
         self.load_all_available_meta = load_all_available_meta
+        """Whether to load all available metadata."""
 
     def load(self) -> List[Document]:
         arxiv_client = ArxivAPIWrapper(

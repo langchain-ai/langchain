@@ -15,7 +15,7 @@ def _dependable_mastodon_import() -> mastodon:
     try:
         import mastodon
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "Mastodon.py package not found, "
             "please install it with `pip install Mastodon.py`"
         )
@@ -37,11 +37,13 @@ class MastodonTootsLoader(BaseLoader):
 
         Args:
             mastodon_accounts: The list of Mastodon accounts to query.
-            number_toots: How many toots to pull for each account.
+            number_toots: How many toots to pull for each account. Defaults to 100.
             exclude_replies: Whether to exclude reply toots from the load.
+                Defaults to False.
             access_token: An access token if toots are loaded as a Mastodon app. Can
                 also be specified via the environment variables "MASTODON_ACCESS_TOKEN".
             api_base_url: A Mastodon API base URL to talk to, if not using the default.
+                Defaults to "https://mastodon.social".
         """
         mastodon = _dependable_mastodon_import()
         access_token = access_token or os.environ.get("MASTODON_ACCESS_TOKEN")
