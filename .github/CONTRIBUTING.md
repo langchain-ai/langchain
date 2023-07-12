@@ -95,6 +95,14 @@ To run formatting for this project:
 make format
 ```
 
+Additionally, you can run the formatter only on the files that have been modified in your current branch as compared to the master branch using the format_diff command:
+
+```bash
+make format_diff
+```
+
+This is especially useful when you have made changes to a subset of the project and want to ensure your changes are properly formatted without affecting the rest of the codebase.
+
 ### Linting
 
 Linting for this project is done via a combination of [Black](https://black.readthedocs.io/en/stable/), [isort](https://pycqa.github.io/isort/), [flake8](https://flake8.pycqa.org/en/latest/), and [mypy](http://mypy-lang.org/).
@@ -104,6 +112,14 @@ To run linting for this project:
 ```bash
 make lint
 ```
+
+In addition, you can run the linter only on the files that have been modified in your current branch as compared to the master branch using the lint_diff command:
+
+```bash
+make lint_diff
+```
+
+This can be very helpful when you've made changes to only certain parts of the project and want to ensure your changes meet the linting standards without having to check the entire codebase.
 
 We recognize linting can be annoying - if you do not want to do it, please contact a project maintainer, and they can help you with it. We do not want this to be a blocker for good code getting contributed.
 
