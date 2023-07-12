@@ -13,7 +13,6 @@ class RecursiveUrlLoader(BaseLoader):
     def __init__(
         self,
         url: str,
-        page_loader: Optional[Callable[[str], BaseLoader]] = None,
         exclude_dirs: Optional[str] = None,
     ) -> None:
         """Initialize with URL to crawl and any subdirectories to exclude.
@@ -23,11 +22,8 @@ class RecursiveUrlLoader(BaseLoader):
             exclude_dirs: A list of subdirectories to exclude.
         """
 
-        from langchain.document_loaders import WebBaseLoader
-
         self.url = url
         self.exclude_dirs = exclude_dirs
-        self.page_loader = page_loader if page_loader else WebBaseLoader
 
     def get_child_links_recursive(
         self, url: str, visited: Optional[Set[str]] = None
@@ -38,6 +34,8 @@ class RecursiveUrlLoader(BaseLoader):
             url: The URL to crawl.
             visited: A set of visited URLs.
         """
+
+        from langchain.document_loaders import WebBaseLoader
 
         try:
             from bs4 import BeautifulSoup
@@ -89,7 +87,7 @@ class RecursiveUrlLoader(BaseLoader):
             # Check all unvisited links
             if link not in visited:
                 visited.add(link)
-                loaded_link = self.page_loader(link).load()
+                loaded_link = WebBaseLoader(link).load()
                 if isinstance(loaded_link, list):
                     yield from loaded_link
                 else:
