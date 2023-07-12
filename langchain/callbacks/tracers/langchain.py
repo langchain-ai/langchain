@@ -59,6 +59,7 @@ class LangChainTracer(BaseTracer):
         project_name: Optional[str] = None,
         client: Optional[Client] = None,
         tags: Optional[List[str]] = None,
+        executor: Optional[ThreadPoolExecutor] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the LangChain tracer."""
@@ -71,7 +72,7 @@ class LangChainTracer(BaseTracer):
             "LANGCHAIN_PROJECT", os.getenv("LANGCHAIN_SESSION", "default")
         )
         # set max_workers to 1 to process tasks in order
-        self.executor = ThreadPoolExecutor(max_workers=1)
+        self.executor = executor or ThreadPoolExecutor(max_workers=1)
         self.client = client or _get_client()
         self._futures: Set[Future] = set()
         self.tags = tags or []

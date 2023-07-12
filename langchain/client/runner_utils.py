@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import functools
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from typing import (
     Any,
@@ -324,8 +325,11 @@ async def _callbacks_initializer(
         The callbacks for this thread.
     """
     callbacks: List[BaseTracer] = []
+    executor = ThreadPoolExecutor(max_workers=1)
     if project_name:
-        callbacks.append(LangChainTracer(project_name=project_name, client=client))
+        callbacks.append(
+            LangChainTracer(project_name=project_name, executor=executor, client=client)
+        )
     evaluator_project_name = f"{project_name}-evaluators" if project_name else None
     if run_evaluators:
         callback = EvaluatorCallbackHandler(
