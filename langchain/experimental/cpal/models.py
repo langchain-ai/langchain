@@ -106,7 +106,7 @@ class InterventionModel(BaseModel):
 
 
 class QueryModel(BaseModel):
-    """translate a question about the story outcome into a programatic expression"""
+    """translate a question about the story outcome into a programmatic expression"""
 
     question: str = Field(alias=Constant.narrative_input.value)  # input
     expression: str  # output, part of llm completion

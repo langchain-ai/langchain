@@ -449,7 +449,7 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         Everything after this will be a new table.
 
         Args:
-            name: Name of the preformed session so far so it is identifyable
+            name: Name of the performed session so far so it is identifiable
             langchain_asset: The langchain asset to save.
             finish: Whether to finish the run.
 

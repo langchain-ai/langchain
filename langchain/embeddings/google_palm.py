@@ -1,4 +1,4 @@
-"""Wrapper arround Google's PaLM Embeddings APIs."""
+"""Wrapper around Google's PaLM Embeddings APIs."""
 from __future__ import annotations
 
 import logging

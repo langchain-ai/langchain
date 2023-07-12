@@ -40,7 +40,7 @@ iii. Does the AI language model use the tools in a helpful way?
 iv. Does the AI language model use too many steps to answer the question?
 v. Are the appropriate tools used to answer the question?"""
 
-EXAMPLE_INPUT = """An AI language model has been given acces to the following set of tools to help answer a user's question.
+EXAMPLE_INPUT = """An AI language model has been given access to the following set of tools to help answer a user's question.
 
 The tools given to the AI model are:
 [TOOL_DESCRIPTIONS]
