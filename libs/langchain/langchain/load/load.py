@@ -77,3 +77,29 @@ def loads(text: str, *, secrets_map: Optional[Dict[str, str]] = None) -> Any:
 
     """
     return json.loads(text, object_hook=Reviver(secrets_map))
+
+
+def load(obj: Any, *, secrets_map: Optional[Dict[str, str]] = None) -> Any:
+    """Load an object from a JSON-compatible object
+
+    This is equivalent to `loads(json.dumps(obj)` but avoids json serialization.
+
+    Args:
+        obj: The string to load.
+        secrets_map: A map of secrets to load.
+
+    Returns:
+        Deserialized objects
+    """
+    reviver = Reviver(secrets_map)
+
+    def _load(obj: Any) -> Any:
+        if isinstance(obj, dict):
+            # Need to revive leaf nodes before reviving this node
+            loaded_obj = {k: _load(v) for k, v in obj.items()}
+            return reviver(loaded_obj)
+        if isinstance(obj, list):
+            return [_load(o) for o in obj]
+        return obj
+
+    return _load(obj)
