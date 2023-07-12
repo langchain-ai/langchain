@@ -94,8 +94,8 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
             if torch.cuda.is_available():
                 self.device = "cuda:0" 
                 # check GPU memory and select automatically the model
-                mem = torch.cuda.get_device_properties(self.device)
-                    .total_memory/(1024**2)
+                mem = torch.cuda.get_device_properties(
+                    self.device).total_memory/(1024**2)
                 if mem < 5000:
                     rec_model = "openai/whisper-base"
                 elif mem < 7000:
