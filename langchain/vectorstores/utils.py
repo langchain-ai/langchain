@@ -1,10 +1,19 @@
 """Utility functions for working with vectors and vectorstores."""
 
+from enum import Enum
 from typing import List
 
 import numpy as np
 
 from langchain.math_utils import cosine_similarity
+
+
+class DistanceStrategy(str, Enum):
+    EUCLIDEAN_DISTANCE = "EUCLIDEAN_DISTANCE"
+    MAX_INNER_PRODUCT = "MAX_INNER_PRODUCT"
+    DOT_PRODUCT = "DOT_PRODUCT"
+    JACCARD = "JACCARD"
+    COSINE = "COSINE"
 
 
 def maximal_marginal_relevance(

@@ -9,7 +9,6 @@ from typing import Any, Dict, List, NamedTuple, Optional, Sequence, Tuple, Union
 
 from pydantic import Extra, Field
 
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
@@ -23,6 +22,7 @@ from langchain.evaluation.agents.trajectory_eval_prompt import (
 )
 from langchain.evaluation.schema import AgentTrajectoryEvaluator, LLMEvalChain
 from langchain.schema import AgentAction, BaseOutputParser, OutputParserException
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 
 
@@ -77,40 +77,42 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
     the sequence of actions taken and their outcomes.
 
     Example:
-        .. code-block:: python
-            from langchain.agents import AgentType, initialize_agent
-            from langchain.chat_models import ChatOpenAI
-            from langchain.evaluation import TrajectoryEvalChain
-            from langchain.tools import tool
 
-            @tool
-            def geography_answers(country: str, question: str) -> str:
-                \"\"\"Very helpful answers to geography questions.\"\"\"
-                return f"{country}? IDK - We may never know {question}."
+    .. code-block:: python
 
-            llm = ChatOpenAI(model="gpt-3.5-turbo-0613", temperature=0)
-            agent = initialize_agent(
-                tools=[geography_answers],
-                llm=llm,
-                agent=AgentType.OPENAI_FUNCTIONS,
-                return_intermediate_steps=True,
-            )
+        from langchain.agents import AgentType, initialize_agent
+        from langchain.chat_models import ChatOpenAI
+        from langchain.evaluation import TrajectoryEvalChain
+        from langchain.tools import tool
 
-            question = "How many dwell in the largest minor region in Argentina?"
-            response = agent(question)
+        @tool
+        def geography_answers(country: str, question: str) -> str:
+            \"\"\"Very helpful answers to geography questions.\"\"\"
+            return f"{country}? IDK - We may never know {question}."
 
-            eval_chain = TrajectoryEvalChain.from_llm(
-                llm=llm, agent_tools=[geography_answers], return_reasoning=True
-            )
+        llm = ChatOpenAI(model="gpt-3.5-turbo-0613", temperature=0)
+        agent = initialize_agent(
+            tools=[geography_answers],
+            llm=llm,
+            agent=AgentType.OPENAI_FUNCTIONS,
+            return_intermediate_steps=True,
+        )
 
-            result = eval_chain.evaluate_agent_trajectory(
-                input=question,
-                agent_trajectory=response["intermediate_steps"],
-                prediction=response["output"],
-                reference="Paris",
-            )
-            print(result["score"])
-            # 0
+        question = "How many dwell in the largest minor region in Argentina?"
+        response = agent(question)
+
+        eval_chain = TrajectoryEvalChain.from_llm(
+            llm=llm, agent_tools=[geography_answers], return_reasoning=True
+        )
+
+        result = eval_chain.evaluate_agent_trajectory(
+            input=question,
+            agent_trajectory=response["intermediate_steps"],
+            prediction=response["output"],
+            reference="Paris",
+        )
+        print(result["score"])
+        # 0
     """  # noqa: E501
 
     agent_tools: Optional[List[BaseTool]] = None
@@ -336,7 +338,8 @@ The following is the expected answer. Use this to measure correctness:
             callbacks (Callbacks): Callbacks to use for this chain run.
 
         Returns:
-            dict: The evaluation result.
+            dict: The evaluation result, which includes the score and optionally
+                the reasoning for reaching that.
         """
         inputs = {
             "question": input,
@@ -367,7 +370,8 @@ The following is the expected answer. Use this to measure correctness:
             callbacks (Callbacks): Callbacks to use for this chain run.
 
         Returns:
-            dict: The evaluation result.
+            dict: The evaluation result, which includes the score and optionally
+                the reasoning for reaching that.
         """
         inputs = {
             "question": input,
