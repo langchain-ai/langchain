@@ -1,4 +1,4 @@
-from typing import Any, Optional, Sequence
+from typing import Any, Sequence
 
 from langchain.schema import BaseDocumentTransformer, Document
 from langchain.utils import get_from_env
@@ -13,17 +13,14 @@ class DoctranQATransformer(BaseDocumentTransformer):
         raise NotImplementedError
 
     async def atransform_documents(
-        self,
-        documents: Sequence[Document],
-        openai_api_key: Optional[str] = None,
-        **kwargs: Any
+        self, documents: Sequence[Document], **kwargs: Any
     ) -> Sequence[Document]:
         """Extracts QA from text documents using doctran."""
 
-        if openai_api_key:
-            openai_api_key = openai_api_key
-        else:
+        openai_api_key = kwargs.get("openai_api_key", None)
+        if not openai_api_key:
             openai_api_key = get_from_env("openai_api_key", "OPENAI_API_KEY")
+
         try:
             from doctran import Doctran
 
@@ -33,7 +30,9 @@ class DoctranQATransformer(BaseDocumentTransformer):
                 "Install doctran to use this parser. (pip install doctran)"
             )
         for d in documents:
-            doctran_doc = await doctran.parse(content=d.page_content).interrogate().execute()
+            doctran_doc = (
+                await doctran.parse(content=d.page_content).interrogate().execute()
+            )
             questions_and_answers = doctran_doc.extracted_properties.get(
                 "questions_and_answers"
             )
