@@ -9,7 +9,8 @@ from langchain.callbacks.tracers.evaluation import wait_for_all_evaluators
 from langchain.chains.llm import LLMChain
 from langchain.chat_models import ChatOpenAI
 from langchain.evaluation import EvaluatorType
-from langchain.langsmith import InputFormatError, RunEvalConfig, run_on_dataset
+from langchain.langsmith import RunEvalConfig, run_on_dataset
+from langchain.langsmith.evaluation import InputFormatError
 from langchain.llms.openai import OpenAI
 from langchain.schema.messages import BaseMessage, HumanMessage
 
