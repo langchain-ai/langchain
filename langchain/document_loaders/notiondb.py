@@ -114,9 +114,7 @@ class NotionDBLoader(BaseLoader):
                     else None
                 )
             elif prop_type == "status":
-                value = (
-                    prop_data["status"]["name"] if prop_data["status"] else None
-                )
+                value = prop_data["status"]["name"] if prop_data["status"] else None
             elif prop_type == "people":
                 value = (
                     [item["name"] for item in prop_data["people"]]
