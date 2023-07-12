@@ -178,10 +178,10 @@ async def test_async_callback_manager_sync_handler() -> None:
 
 def test_callback_manager_inheritance() -> None:
     handler1, handler2, handler3, handler4 = (
-        FakeCallbackHandler(),
-        FakeCallbackHandler(),
-        FakeCallbackHandler(),
-        FakeCallbackHandler(),
+        FakeCallbackHandler(fake_id="handler1"),
+        FakeCallbackHandler(fake_id="handler2"),
+        FakeCallbackHandler(fake_id="handler3"),
+        FakeCallbackHandler(fake_id="handler4"),
     )
 
     callback_manager1 = CallbackManager(handlers=[handler1, handler2])
@@ -222,15 +222,22 @@ def test_callback_manager_inheritance() -> None:
     assert child_manager2.inheritable_handlers == [handler1]
 
 
+def test_duplicate_callbacks() -> None:
+    handler = FakeCallbackHandler()
+    manager = CallbackManager(handlers=[handler])
+    manager.add_handler(handler)
+    assert manager.handlers == [handler]
+
+
 def test_callback_manager_configure(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test callback manager configuration."""
     monkeypatch.setenv("LANGCHAIN_TRACING_V2", "false")
     monkeypatch.setenv("LANGCHAIN_TRACING", "false")
     handler1, handler2, handler3, handler4 = (
-        FakeCallbackHandler(),
-        FakeCallbackHandler(),
-        FakeCallbackHandler(),
-        FakeCallbackHandler(),
+        FakeCallbackHandler(fake_id="handler1"),
+        FakeCallbackHandler(fake_id="handler2"),
+        FakeCallbackHandler(fake_id="handler3"),
+        FakeCallbackHandler(fake_id="handler4"),
     )
 
     inheritable_callbacks: List[BaseCallbackHandler] = [handler1, handler2]
