@@ -1,9 +1,9 @@
 """Wrapper around Minimax chat models."""
 import logging
-import requests
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
-from langchain.llms.utils import enforce_stop_tokens
+
+import requests
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -11,6 +11,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.minimax import _MinimaxCommon
+from langchain.llms.utils import enforce_stop_tokens
 from langchain.schema import (
     AIMessage,
     BaseMessage,
@@ -19,21 +20,21 @@ from langchain.schema import (
     HumanMessage,
     SystemMessage,
 )
+
 logger = logging.getLogger(__name__)
+
 
 @dataclass
 class _ChatHistory:
     """Parse history for MiniMaxChat."""
 
+
 def _parse_message(type, text):
-    return {
-        "sender_type": type,
-        "text": text
-    }
+    return {"sender_type": type, "text": text}
+
 
 def _parse_chat_history(history: List[BaseMessage]) -> _ChatHistory:
-    """Parse a sequence of messages into history.
-    """
+    """Parse a sequence of messages into history."""
     chat_history = []
     for message in history:
         if isinstance(message, HumanMessage):
@@ -41,6 +42,7 @@ def _parse_chat_history(history: List[BaseMessage]) -> _ChatHistory:
         if isinstance(message, AIMessage):
             chat_history.append(_parse_message("BOT", message.content))
     return chat_history
+
 
 class MiniMaxChat(_MinimaxCommon, BaseChatModel):
     """Wrapper around Minimax large language models.
@@ -56,7 +58,7 @@ class MiniMaxChat(_MinimaxCommon, BaseChatModel):
             llm = MiniMaxChat(model_name="abab5-chat")
 
     """
-    
+
     def _generate(
         self,
         messages: List[BaseMessage],
@@ -84,7 +86,7 @@ class MiniMaxChat(_MinimaxCommon, BaseChatModel):
         history = _parse_chat_history(messages)
         headers = {
             "Authorization": f"Bearer {self.minimax_api_key}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
         url = f"https://api.minimax.chat/v1/text/chatcompletion?GroupId={self.minimax_group_id}"
         payload = {
@@ -92,19 +94,18 @@ class MiniMaxChat(_MinimaxCommon, BaseChatModel):
             "messages": history,
             "tokens_to_generate": self.tokens_to_generate,
             "temperature": self.temperature,
-            "top_p": self.top_p
+            "top_p": self.top_p,
         }
         response = requests.post(url, headers=headers, json=payload)
         parsed_response = response.json()
-        base_resp = parsed_response['base_resp']
-        if base_resp['status_code'] != 0:
-            logger.error(base_resp['status_code'])
+        base_resp = parsed_response["base_resp"]
+        if base_resp["status_code"] != 0:
+            logger.error(base_resp["status_code"])
             raise Exception(
-                "Post model outputs failed, status: "
-                + base_resp['status_msg']
+                "Post model outputs failed, status: " + base_resp["status_msg"]
             )
-        text = parsed_response['reply']
-        
+        text = parsed_response["reply"]
+
         if stop is not None:
             # This is required since the stop tokens are not enforced by the model parameters
             text = enforce_stop_tokens(text, stop)

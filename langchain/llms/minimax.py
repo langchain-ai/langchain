@@ -1,9 +1,9 @@
 """Wrapper around MiniMaxCompletion API."""
 import logging
-import requests
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import Extra, BaseModel, root_validator
+import requests
+from pydantic import BaseModel, Extra, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -11,6 +11,7 @@ from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
+
 
 class _MinimaxCommon(BaseModel):
     client: Any
@@ -54,7 +55,7 @@ class _MinimaxCommon(BaseModel):
         """Get the default parameters for calling GooseAI API."""
         normal_params = {
             "top_p": self.top_p,
-            "temperature": self.temperature,            
+            "temperature": self.temperature,
             "tokens_to_generate": self.tokens_to_generate,
         }
         return {**normal_params}
@@ -68,6 +69,7 @@ class _MinimaxCommon(BaseModel):
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "minimax"
+
 
 class MiniMaxCompletion(_MinimaxCommon, LLM):
     """Wrapper around Minimax large language models.
@@ -94,32 +96,26 @@ class MiniMaxCompletion(_MinimaxCommon, LLM):
         """Call the MiniMax API."""
         headers = {
             "Authorization": f"Bearer {self.minimax_api_key}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
         url = f"https://api.minimax.chat/v1/text/chatcompletion?GroupId={self.minimax_group_id}"
         payload = {
             "model": "abab5-chat",
-            "messages": [
-                {
-                    "sender_type": "USER",
-                    "text": prompt
-                }
-            ],
+            "messages": [{"sender_type": "USER", "text": prompt}],
             "tokens_to_generate": self.tokens_to_generate,
             "temperature": self.temperature,
-            "top_p": self.top_p
+            "top_p": self.top_p,
         }
         response = requests.post(url, headers=headers, json=payload)
         parsed_response = response.json()
-        base_resp = parsed_response['base_resp']
-        if base_resp['status_code'] != 0:
-            logger.error(base_resp['status_code'])
+        base_resp = parsed_response["base_resp"]
+        if base_resp["status_code"] != 0:
+            logger.error(base_resp["status_code"])
             raise Exception(
-                "Post model outputs failed, status: "
-                + base_resp['status_msg']
+                "Post model outputs failed, status: " + base_resp["status_msg"]
             )
-        text = parsed_response['reply']
-        
+        text = parsed_response["reply"]
+
         if stop is not None:
             # This is required since the stop tokens are not enforced by the model parameters
             text = enforce_stop_tokens(text, stop)
