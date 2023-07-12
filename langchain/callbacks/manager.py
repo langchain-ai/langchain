@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import functools
-import inspect
 import logging
 import os
 import warnings
@@ -11,9 +10,6 @@ from contextvars import ContextVar
 from typing import (
     Any,
     AsyncGenerator,
-    Awaitable,
-    Callable,
-    Coroutine,
     Dict,
     Generator,
     List,
@@ -310,29 +306,29 @@ def _handle_event(
                 raise e
 
 
-def _ahandle_event_for_handler(
+async def _ahandle_event_for_handler(
     handler: BaseCallbackHandler,
     event_name: str,
     ignore_condition_name: Optional[str],
     *args: Any,
     **kwargs: Any,
-) -> Union[Awaitable, callable]:
+) -> None:
     try:
         if ignore_condition_name is None or not getattr(handler, ignore_condition_name):
             event = getattr(handler, event_name)
             if asyncio.iscoroutinefunction(event):
-                return event(*args, **kwargs)
+                await event(*args, **kwargs)
             else:
                 if handler.run_inline:
-                    return event(*args, **kwargs)
+                    event(*args, **kwargs)
                 else:
-                    return asyncio.get_event_loop().run_in_executor(
+                    await asyncio.get_event_loop().run_in_executor(
                         None, functools.partial(event, *args, **kwargs)
                     )
     except NotImplementedError as e:
         if event_name == "on_chat_model_start":
             message_strings = [get_buffer_string(m) for m in args[1]]
-            return _ahandle_event_for_handler(
+            await _ahandle_event_for_handler(
                 handler,
                 "on_llm_start",
                 "ignore_llm",
@@ -353,38 +349,27 @@ def _ahandle_event_for_handler(
             raise e
 
 
-def _ahandle_event(
+async def _ahandle_event(
     handlers: List[BaseCallbackHandler],
     event_name: str,
     ignore_condition_name: Optional[str],
     *args: Any,
     **kwargs: Any,
-) -> Awaitable:
+) -> None:
     """Generic event handler for AsyncCallbackManager."""
-    awaitables = []
     for handler in [h for h in handlers if h.run_inline]:
-        res = _ahandle_event_for_handler(
+        await _ahandle_event_for_handler(
             handler, event_name, ignore_condition_name, *args, **kwargs
         )
-        if inspect.isawaitable(res):
-            awaitables.append(res)
-        else:
-            fut = asyncio.get_event_loop().create_future()
-            fut.set_result(res)
-            awaitables.append(fut)
-    awaitables.append(
-        asyncio.gather(
-            *(
-                _ahandle_event_for_handler(
-                    handler, event_name, ignore_condition_name, *args, **kwargs
-                )
-                for handler in handlers
-                if not handler.run_inline
+    await asyncio.gather(
+        *(
+            _ahandle_event_for_handler(
+                handler, event_name, ignore_condition_name, *args, **kwargs
             )
+            for handler in handlers
+            if not handler.run_inline
         )
     )
-    return asyncio.wait(awaitables)
-
 
 
 BRM = TypeVar("BRM", bound="BaseRunManager")
