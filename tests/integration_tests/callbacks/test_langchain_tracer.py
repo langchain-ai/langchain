@@ -7,8 +7,17 @@ from aiohttp import ClientSession
 
 from langchain.agents import AgentType, initialize_agent, load_tools
 from langchain.callbacks import tracing_enabled
-from langchain.callbacks.manager import tracing_v2_enabled
+from langchain.callbacks.manager import (
+    atrace_as_chain_group,
+    trace_as_chain_group,
+    tracing_v2_enabled,
+)
+from langchain.chains import LLMChain
+from langchain.chains.constitutional_ai.base import ConstitutionalChain
+from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
+from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
+from langchain.prompts import PromptTemplate
 
 questions = [
     (
@@ -140,15 +149,123 @@ async def test_tracing_v2_environment_variable() -> None:
 
 
 def test_tracing_v2_context_manager() -> None:
+    llm = ChatOpenAI(temperature=0)
+    tools = load_tools(["llm-math", "serpapi"], llm=llm)
+    agent = initialize_agent(
+        tools, llm, agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True
+    )
+    if "LANGCHAIN_TRACING_V2" in os.environ:
+        del os.environ["LANGCHAIN_TRACING_V2"]
+    with tracing_v2_enabled():
+        agent.run(questions[0])  # this should be traced
+
+    agent.run(questions[0])  # this should not be traced
+
+
+def test_tracing_v2_chain_with_tags() -> None:
     llm = OpenAI(temperature=0)
+    chain = ConstitutionalChain.from_llm(
+        llm,
+        chain=LLMChain.from_string(llm, "Q: {question} A:"),
+        tags=["only-root"],
+        constitutional_principles=[
+            ConstitutionalPrinciple(
+                critique_request="Tell if this answer is good.",
+                revision_request="Give a better answer.",
+            )
+        ],
+    )
+    if "LANGCHAIN_TRACING_V2" in os.environ:
+        del os.environ["LANGCHAIN_TRACING_V2"]
+    with tracing_v2_enabled():
+        chain.run("what is the meaning of life", tags=["a-tag"])
+
+
+def test_tracing_v2_agent_with_metadata() -> None:
+    os.environ["LANGCHAIN_TRACING_V2"] = "true"
+    llm = OpenAI(temperature=0)
+    chat = ChatOpenAI(temperature=0)
     tools = load_tools(["llm-math", "serpapi"], llm=llm)
     agent = initialize_agent(
         tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
     )
-    if "LANGCHAIN_TRACING_V2" in os.environ:
-        del os.environ["LANGCHAIN_TRACING_V2"]
-    with tracing_v2_enabled() as session:
-        assert session
-        agent.run(questions[0])  # this should be traced
+    chat_agent = initialize_agent(
+        tools, chat, agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True
+    )
+    agent.run(questions[0], tags=["a-tag"], metadata={"a": "b", "c": "d"})
+    chat_agent.run(questions[0], tags=["a-tag"], metadata={"a": "b", "c": "d"})
 
-    agent.run(questions[0])  # this should not be traced
+
+@pytest.mark.asyncio
+async def test_tracing_v2_async_agent_with_metadata() -> None:
+    os.environ["LANGCHAIN_TRACING_V2"] = "true"
+    llm = OpenAI(temperature=0, metadata={"f": "g", "h": "i"})
+    chat = ChatOpenAI(temperature=0, metadata={"f": "g", "h": "i"})
+    async_tools = load_tools(["llm-math", "serpapi"], llm=llm)
+    agent = initialize_agent(
+        async_tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
+    )
+    chat_agent = initialize_agent(
+        async_tools,
+        chat,
+        agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=True,
+    )
+    await agent.arun(questions[0], tags=["a-tag"], metadata={"a": "b", "c": "d"})
+    await chat_agent.arun(questions[0], tags=["a-tag"], metadata={"a": "b", "c": "d"})
+
+
+def test_trace_as_group() -> None:
+    llm = OpenAI(temperature=0.9)
+    prompt = PromptTemplate(
+        input_variables=["product"],
+        template="What is a good name for a company that makes {product}?",
+    )
+    chain = LLMChain(llm=llm, prompt=prompt)
+    with trace_as_chain_group("my_group") as group_manager:
+        chain.run(product="cars", callbacks=group_manager)
+        chain.run(product="computers", callbacks=group_manager)
+        chain.run(product="toys", callbacks=group_manager)
+
+    with trace_as_chain_group("my_group_2") as group_manager:
+        chain.run(product="toys", callbacks=group_manager)
+
+
+def test_trace_as_group_with_env_set() -> None:
+    os.environ["LANGCHAIN_TRACING_V2"] = "true"
+    llm = OpenAI(temperature=0.9)
+    prompt = PromptTemplate(
+        input_variables=["product"],
+        template="What is a good name for a company that makes {product}?",
+    )
+    chain = LLMChain(llm=llm, prompt=prompt)
+    with trace_as_chain_group("my_group") as group_manager:
+        chain.run(product="cars", callbacks=group_manager)
+        chain.run(product="computers", callbacks=group_manager)
+        chain.run(product="toys", callbacks=group_manager)
+
+    with trace_as_chain_group("my_group_2") as group_manager:
+        chain.run(product="toys", callbacks=group_manager)
+
+
+@pytest.mark.asyncio
+async def test_trace_as_group_async() -> None:
+    llm = OpenAI(temperature=0.9)
+    prompt = PromptTemplate(
+        input_variables=["product"],
+        template="What is a good name for a company that makes {product}?",
+    )
+    chain = LLMChain(llm=llm, prompt=prompt)
+    async with atrace_as_chain_group("my_group") as group_manager:
+        await chain.arun(product="cars", callbacks=group_manager)
+        await chain.arun(product="computers", callbacks=group_manager)
+        await chain.arun(product="toys", callbacks=group_manager)
+
+    async with atrace_as_chain_group("my_group_2") as group_manager:
+        await asyncio.gather(
+            *[
+                chain.arun(product="toys", callbacks=group_manager),
+                chain.arun(product="computers", callbacks=group_manager),
+                chain.arun(product="cars", callbacks=group_manager),
+            ]
+        )

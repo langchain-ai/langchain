@@ -34,6 +34,8 @@ black_listed_elements: Set[str] = {
 
 
 class ElementInViewPort(TypedDict):
+    """A typed dictionary containing information about elements in the viewport."""
+
     node_index: str
     backend_node_id: int
     node_name: Optional[str]
@@ -51,7 +53,7 @@ class Crawler:
         try:
             from playwright.sync_api import sync_playwright
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import playwright python package. "
                 "Please install it with `pip install playwright`."
             )

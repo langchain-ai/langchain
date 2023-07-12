@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Sequence
+from typing import TYPE_CHECKING, Dict, Optional, Sequence
 
 from pydantic import Extra, root_validator
 
+from langchain.callbacks.manager import Callbacks
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 from langchain.schema import Document
 from langchain.utils import get_from_dict_or_env
@@ -41,15 +42,20 @@ class CohereRerank(BaseDocumentCompressor):
 
             values["client"] = cohere.Client(cohere_api_key)
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import cohere python package. "
                 "Please install it with `pip install cohere`."
             )
         return values
 
     def compress_documents(
-        self, documents: Sequence[Document], query: str
+        self,
+        documents: Sequence[Document],
+        query: str,
+        callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
+        if len(documents) == 0:  # to avoid empty api call
+            return []
         doc_list = list(documents)
         _docs = [d.page_content for d in doc_list]
         results = self.client.rerank(
@@ -63,6 +69,9 @@ class CohereRerank(BaseDocumentCompressor):
         return final_results
 
     async def acompress_documents(
-        self, documents: Sequence[Document], query: str
+        self,
+        documents: Sequence[Document],
+        query: str,
+        callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
         raise NotImplementedError

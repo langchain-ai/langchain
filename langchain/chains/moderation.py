@@ -54,7 +54,7 @@ class OpenAIModerationChain(Chain):
                 openai.organization = openai_organization
             values["client"] = openai.Moderation
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )

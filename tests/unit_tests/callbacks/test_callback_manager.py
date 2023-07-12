@@ -18,11 +18,12 @@ def _test_callback_manager(
     manager: CallbackManager, *handlers: BaseFakeCallbackHandler
 ) -> None:
     """Test the CallbackManager."""
-    run_manager = manager.on_llm_start({}, [])
-    run_manager.on_llm_end(LLMResult(generations=[]))
-    run_manager.on_llm_error(Exception())
-    run_manager.on_llm_new_token("foo")
-    run_manager.on_text("foo")
+    run_managers = manager.on_llm_start({}, ["prompt"])
+    for run_manager in run_managers:
+        run_manager.on_llm_end(LLMResult(generations=[]))
+        run_manager.on_llm_error(Exception())
+        run_manager.on_llm_new_token("foo")
+        run_manager.on_text("foo")
 
     run_manager_chain = manager.on_chain_start({"name": "foo"}, {})
     run_manager_chain.on_chain_end({})
@@ -42,11 +43,12 @@ async def _test_callback_manager_async(
     manager: AsyncCallbackManager, *handlers: BaseFakeCallbackHandler
 ) -> None:
     """Test the CallbackManager."""
-    run_manager = await manager.on_llm_start({}, [])
-    await run_manager.on_llm_end(LLMResult(generations=[]))
-    await run_manager.on_llm_error(Exception())
-    await run_manager.on_llm_new_token("foo")
-    await run_manager.on_text("foo")
+    run_managers = await manager.on_llm_start({}, ["prompt"])
+    for run_manager in run_managers:
+        await run_manager.on_llm_end(LLMResult(generations=[]))
+        await run_manager.on_llm_error(Exception())
+        await run_manager.on_llm_new_token("foo")
+        await run_manager.on_text("foo")
 
     run_manager_chain = await manager.on_chain_start({"name": "foo"}, {})
     await run_manager_chain.on_chain_end({})
@@ -86,7 +88,7 @@ def test_callback_manager() -> None:
     """Test the CallbackManager."""
     handler1 = FakeCallbackHandler()
     handler2 = FakeCallbackHandler()
-    manager = CallbackManager([handler1, handler2])
+    manager = CallbackManager(handlers=[handler1, handler2])
     _test_callback_manager(manager, handler1, handler2)
 
 
@@ -95,9 +97,10 @@ def test_ignore_llm() -> None:
     handler1 = FakeCallbackHandler(ignore_llm_=True)
     handler2 = FakeCallbackHandler()
     manager = CallbackManager(handlers=[handler1, handler2])
-    run_manager = manager.on_llm_start({}, [])
-    run_manager.on_llm_end(LLMResult(generations=[]))
-    run_manager.on_llm_error(Exception())
+    run_managers = manager.on_llm_start({}, ["prompt"])
+    for run_manager in run_managers:
+        run_manager.on_llm_end(LLMResult(generations=[]))
+        run_manager.on_llm_error(Exception())
     assert handler1.starts == 0
     assert handler1.ends == 0
     assert handler1.errors == 0
@@ -138,12 +141,28 @@ def test_ignore_agent() -> None:
     assert handler2.errors == 1
 
 
+def test_ignore_retriever() -> None:
+    """Test the ignore retriever param for callback handlers."""
+    handler1 = FakeCallbackHandler(ignore_retriever_=True)
+    handler2 = FakeCallbackHandler()
+    manager = CallbackManager(handlers=[handler1, handler2])
+    run_manager = manager.on_retriever_start({}, "")
+    run_manager.on_retriever_end([])
+    run_manager.on_retriever_error(Exception())
+    assert handler1.starts == 0
+    assert handler1.ends == 0
+    assert handler1.errors == 0
+    assert handler2.starts == 1
+    assert handler2.ends == 1
+    assert handler2.errors == 1
+
+
 @pytest.mark.asyncio
 async def test_async_callback_manager() -> None:
     """Test the AsyncCallbackManager."""
     handler1 = FakeAsyncCallbackHandler()
     handler2 = FakeAsyncCallbackHandler()
-    manager = AsyncCallbackManager([handler1, handler2])
+    manager = AsyncCallbackManager(handlers=[handler1, handler2])
     await _test_callback_manager_async(manager, handler1, handler2)
 
 
@@ -153,23 +172,23 @@ async def test_async_callback_manager_sync_handler() -> None:
     handler1 = FakeCallbackHandler()
     handler2 = FakeAsyncCallbackHandler()
     handler3 = FakeAsyncCallbackHandler()
-    manager = AsyncCallbackManager([handler1, handler2, handler3])
+    manager = AsyncCallbackManager(handlers=[handler1, handler2, handler3])
     await _test_callback_manager_async(manager, handler1, handler2, handler3)
 
 
 def test_callback_manager_inheritance() -> None:
     handler1, handler2, handler3, handler4 = (
-        FakeCallbackHandler(),
-        FakeCallbackHandler(),
-        FakeCallbackHandler(),
-        FakeCallbackHandler(),
+        FakeCallbackHandler(fake_id="handler1"),
+        FakeCallbackHandler(fake_id="handler2"),
+        FakeCallbackHandler(fake_id="handler3"),
+        FakeCallbackHandler(fake_id="handler4"),
     )
 
-    callback_manager1 = CallbackManager([handler1, handler2])
+    callback_manager1 = CallbackManager(handlers=[handler1, handler2])
     assert callback_manager1.handlers == [handler1, handler2]
     assert callback_manager1.inheritable_handlers == []
 
-    callback_manager2 = CallbackManager([])
+    callback_manager2 = CallbackManager(handlers=[])
     assert callback_manager2.handlers == []
     assert callback_manager2.inheritable_handlers == []
 
@@ -203,13 +222,22 @@ def test_callback_manager_inheritance() -> None:
     assert child_manager2.inheritable_handlers == [handler1]
 
 
-def test_callback_manager_configure() -> None:
+def test_duplicate_callbacks() -> None:
+    handler = FakeCallbackHandler()
+    manager = CallbackManager(handlers=[handler])
+    manager.add_handler(handler)
+    assert manager.handlers == [handler]
+
+
+def test_callback_manager_configure(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test callback manager configuration."""
+    monkeypatch.setenv("LANGCHAIN_TRACING_V2", "false")
+    monkeypatch.setenv("LANGCHAIN_TRACING", "false")
     handler1, handler2, handler3, handler4 = (
-        FakeCallbackHandler(),
-        FakeCallbackHandler(),
-        FakeCallbackHandler(),
-        FakeCallbackHandler(),
+        FakeCallbackHandler(fake_id="handler1"),
+        FakeCallbackHandler(fake_id="handler2"),
+        FakeCallbackHandler(fake_id="handler3"),
+        FakeCallbackHandler(fake_id="handler4"),
     )
 
     inheritable_callbacks: List[BaseCallbackHandler] = [handler1, handler2]
@@ -227,7 +255,7 @@ def test_callback_manager_configure() -> None:
     assert isinstance(configured_manager.handlers[4], StdOutCallbackHandler)
     assert isinstance(configured_manager, CallbackManager)
 
-    async_local_callbacks = AsyncCallbackManager([handler3, handler4])
+    async_local_callbacks = AsyncCallbackManager(handlers=[handler3, handler4])
     async_configured_manager = AsyncCallbackManager.configure(
         inheritable_callbacks=inheritable_callbacks,
         local_callbacks=async_local_callbacks,

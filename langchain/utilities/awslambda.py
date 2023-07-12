@@ -35,7 +35,7 @@ class LambdaWrapper(BaseModel):
 
         except ImportError:
             raise ImportError(
-                "boto3 is not installed." "Please install it with `pip install boto3`"
+                "boto3 is not installed. Please install it with `pip install boto3`"
             )
 
         values["lambda_client"] = boto3.client("lambda")

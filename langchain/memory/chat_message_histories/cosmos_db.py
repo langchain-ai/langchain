@@ -6,13 +6,9 @@ from types import TracebackType
 from typing import TYPE_CHECKING, Any, List, Optional, Type
 
 from langchain.schema import (
-    AIMessage,
     BaseChatMessageHistory,
-    BaseMessage,
-    HumanMessage,
-    messages_from_dict,
-    messages_to_dict,
 )
+from langchain.schema.messages import BaseMessage, messages_from_dict, messages_to_dict
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +29,7 @@ class CosmosDBChatMessageHistory(BaseChatMessageHistory):
         credential: Any = None,
         connection_string: Optional[str] = None,
         ttl: Optional[int] = None,
+        cosmos_client_kwargs: Optional[dict] = None,
     ):
         """
         Initializes a new instance of the CosmosDBChatMessageHistory class.
@@ -50,6 +47,7 @@ class CosmosDBChatMessageHistory(BaseChatMessageHistory):
         :param credential: The credential to use to authenticate to Azure Cosmos DB.
         :param connection_string: The connection string to use to authenticate.
         :param ttl: The time to live (in seconds) to use for documents in the container.
+        :param cosmos_client_kwargs: Additional kwargs to pass to the CosmosClient.
         """
         self.cosmos_endpoint = cosmos_endpoint
         self.cosmos_database = cosmos_database
@@ -71,11 +69,14 @@ class CosmosDBChatMessageHistory(BaseChatMessageHistory):
             ) from exc
         if self.credential:
             self._client = CosmosClient(
-                url=self.cosmos_endpoint, credential=self.credential
+                url=self.cosmos_endpoint,
+                credential=self.credential,
+                **cosmos_client_kwargs or {},
             )
         elif self.conn_string:
             self._client = CosmosClient.from_connection_string(
-                conn_str=self.conn_string
+                conn_str=self.conn_string,
+                **cosmos_client_kwargs or {},
             )
         else:
             raise ValueError("Either a connection string or a credential must be set.")
@@ -140,18 +141,13 @@ class CosmosDBChatMessageHistory(BaseChatMessageHistory):
         if "messages" in item and len(item["messages"]) > 0:
             self.messages = messages_from_dict(item["messages"])
 
-    def add_user_message(self, message: str) -> None:
-        """Add a user message to the memory."""
-        self.upsert_messages(HumanMessage(content=message))
+    def add_message(self, message: BaseMessage) -> None:
+        """Add a self-created message to the store"""
+        self.messages.append(message)
+        self.upsert_messages()
 
-    def add_ai_message(self, message: str) -> None:
-        """Add a AI message to the memory."""
-        self.upsert_messages(AIMessage(content=message))
-
-    def upsert_messages(self, new_message: Optional[BaseMessage] = None) -> None:
+    def upsert_messages(self) -> None:
         """Update the cosmosdb item."""
-        if new_message:
-            self.messages.append(new_message)
         if not self._container:
             raise ValueError("Container not initialized")
         self._container.upsert_item(

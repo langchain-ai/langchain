@@ -1,7 +1,10 @@
 """A tool for running python code in a REPL."""
 
 import ast
+import asyncio
+import re
 import sys
+from contextlib import redirect_stdout
 from io import StringIO
 from typing import Any, Dict, Optional
 
@@ -19,21 +22,28 @@ def _get_default_python_repl() -> PythonREPL:
     return PythonREPL(_globals=globals(), _locals=None)
 
 
-_MD_PY_BLOCK = "```python"
-
-
 def sanitize_input(query: str) -> str:
-    query = query.strip()
-    if query[: len(_MD_PY_BLOCK)] == _MD_PY_BLOCK:
-        query = query[len(_MD_PY_BLOCK) :].strip()
-    query = query.strip("`").strip()
+    """Sanitize input to the python REPL.
+    Remove whitespace, backtick & python (if llm mistakes python console as terminal)
+
+    Args:
+        query: The query to sanitize
+
+    Returns:
+        str: The sanitized query
+    """
+
+    # Removes `, whitespace & python from start
+    query = re.sub(r"^(\s|`)*(?i:python)?\s*", "", query)
+    # Removes whitespace & ` from end
+    query = re.sub(r"(\s|`)*$", "", query)
     return query
 
 
 class PythonREPLTool(BaseTool):
     """A tool for running python code in a REPL."""
 
-    name = "Python REPL"
+    name = "Python_REPL"
     description = (
         "A Python shell. Use this to execute python commands. "
         "Input should be a valid python command. "
@@ -59,7 +69,13 @@ class PythonREPLTool(BaseTool):
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> Any:
         """Use the tool asynchronously."""
-        raise NotImplementedError("PythonReplTool does not support async")
+        if self.sanitize_input:
+            query = sanitize_input(query)
+
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(None, self.run, query)
+
+        return result
 
 
 class PythonAstREPLTool(BaseTool):
@@ -101,19 +117,18 @@ class PythonAstREPLTool(BaseTool):
             exec(ast.unparse(module), self.globals, self.locals)  # type: ignore
             module_end = ast.Module(tree.body[-1:], type_ignores=[])
             module_end_str = ast.unparse(module_end)  # type: ignore
+            io_buffer = StringIO()
             try:
-                return eval(module_end_str, self.globals, self.locals)
+                with redirect_stdout(io_buffer):
+                    ret = eval(module_end_str, self.globals, self.locals)
+                    if ret is None:
+                        return io_buffer.getvalue()
+                    else:
+                        return ret
             except Exception:
-                old_stdout = sys.stdout
-                sys.stdout = mystdout = StringIO()
-                try:
+                with redirect_stdout(io_buffer):
                     exec(module_end_str, self.globals, self.locals)
-                    sys.stdout = old_stdout
-                    output = mystdout.getvalue()
-                except Exception as e:
-                    sys.stdout = old_stdout
-                    output = repr(e)
-                return output
+                return io_buffer.getvalue()
         except Exception as e:
             return "{}: {}".format(type(e).__name__, str(e))
 

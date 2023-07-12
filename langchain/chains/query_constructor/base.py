@@ -4,8 +4,7 @@ from __future__ import annotations
 import json
 from typing import Any, Callable, List, Optional, Sequence
 
-from langchain import BasePromptTemplate, FewShotPromptTemplate, LLMChain
-from langchain.base_language import BaseLanguageModel
+from langchain import FewShotPromptTemplate, LLMChain
 from langchain.chains.query_constructor.ir import (
     Comparator,
     Operator,
@@ -22,8 +21,9 @@ from langchain.chains.query_constructor.prompt import (
     SCHEMA_WITH_LIMIT,
 )
 from langchain.chains.query_constructor.schema import AttributeInfo
-from langchain.output_parsers.structured import parse_json_markdown
-from langchain.schema import BaseOutputParser, OutputParserException
+from langchain.output_parsers.json import parse_and_check_json_markdown
+from langchain.schema import BaseOutputParser, BasePromptTemplate, OutputParserException
+from langchain.schema.language_model import BaseLanguageModel
 
 
 class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
@@ -33,17 +33,18 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
     def parse(self, text: str) -> StructuredQuery:
         try:
             expected_keys = ["query", "filter"]
-            parsed = parse_json_markdown(text, expected_keys)
+            allowed_keys = ["query", "filter", "limit"]
+            parsed = parse_and_check_json_markdown(text, expected_keys)
             if len(parsed["query"]) == 0:
                 parsed["query"] = " "
             if parsed["filter"] == "NO_FILTER" or not parsed["filter"]:
                 parsed["filter"] = None
             else:
                 parsed["filter"] = self.ast_parse(parsed["filter"])
+            if not parsed.get("limit"):
+                parsed.pop("limit", None)
             return StructuredQuery(
-                query=parsed["query"],
-                filter=parsed["filter"],
-                limit=parsed.get("limit"),
+                **{k: v for k, v in parsed.items() if k in allowed_keys}
             )
         except Exception as e:
             raise OutputParserException(
@@ -122,6 +123,22 @@ def load_query_constructor_chain(
     enable_limit: bool = False,
     **kwargs: Any,
 ) -> LLMChain:
+    """Load a query constructor chain.
+
+    Args:
+        llm: BaseLanguageModel to use for the chain.
+        document_contents: The contents of the document to be queried.
+        attribute_info: A list of AttributeInfo objects describing
+            the attributes of the document.
+        examples: Optional list of examples to use for the chain.
+        allowed_comparators: An optional list of allowed comparators.
+        allowed_operators: An optional list of allowed operators.
+        enable_limit: Whether to enable the limit operator. Defaults to False.
+        **kwargs:
+
+    Returns:
+        A LLMChain that can be used to construct queries.
+    """
     prompt = _get_prompt(
         document_contents,
         attribute_info,

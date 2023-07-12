@@ -40,7 +40,7 @@ class SeleniumURLLoader(BaseLoader):
         try:
             import selenium  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "selenium package not found, please install it with "
                 "`pip install selenium`"
             )
@@ -48,7 +48,7 @@ class SeleniumURLLoader(BaseLoader):
         try:
             import unstructured  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "unstructured package not found, please install it with "
                 "`pip install unstructured`"
             )

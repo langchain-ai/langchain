@@ -1,21 +1,41 @@
 from typing import Any, List, Optional
 
+from pydantic import root_validator
+
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.schema import BaseRetriever, Document
 
 
 class MetalRetriever(BaseRetriever):
-    def __init__(self, client: Any, params: Optional[dict] = None):
+    """Retriever that uses the Metal API."""
+
+    client: Any
+
+    params: Optional[dict] = None
+
+    @root_validator(pre=True)
+    def validate_client(cls, values: dict) -> dict:
+        """Validate that the client is of the correct type."""
         from metal_sdk.metal import Metal
 
-        if not isinstance(client, Metal):
-            raise ValueError(
-                "Got unexpected client, should be of type metal_sdk.metal.Metal. "
-                f"Instead, got {type(client)}"
-            )
-        self.client: Metal = client
-        self.params = params or {}
+        if "client" in values:
+            client = values["client"]
+            if not isinstance(client, Metal):
+                raise ValueError(
+                    "Got unexpected client, should be of type metal_sdk.metal.Metal. "
+                    f"Instead, got {type(client)}"
+                )
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+        values["params"] = values.get("params", {})
+
+        return values
+
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> List[Document]:
         results = self.client.search({"text": query}, **self.params)
         final_results = []
         for r in results["data"]:
@@ -23,5 +43,7 @@ class MetalRetriever(BaseRetriever):
             final_results.append(Document(page_content=r["text"], metadata=metadata))
         return final_results
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def _aget_relevant_documents(
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
+    ) -> List[Document]:
         raise NotImplementedError

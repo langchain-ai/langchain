@@ -19,7 +19,7 @@ class GPT4All(LLM):
         .. code-block:: python
 
             from langchain.llms import GPT4All
-            model = GPT4All(model="./models/gpt4all-model.bin", n_ctx=512, n_threads=8)
+            model = GPT4All(model="./models/gpt4all-model.bin", n_threads=8)
 
             # Simplest invocation
             response = model("Once upon a time, ")
@@ -30,7 +30,7 @@ class GPT4All(LLM):
 
     backend: Optional[str] = Field(None, alias="backend")
 
-    n_ctx: int = Field(512, alias="n_ctx")
+    max_tokens: int = Field(200, alias="max_tokens")
     """Token context window."""
 
     n_parts: int = Field(-1, alias="n_parts")
@@ -61,10 +61,10 @@ class GPT4All(LLM):
     n_predict: Optional[int] = 256
     """The maximum number of tokens to generate."""
 
-    temp: Optional[float] = 0.8
+    temp: Optional[float] = 0.7
     """The temperature to use for sampling."""
 
-    top_p: Optional[float] = 0.95
+    top_p: Optional[float] = 0.1
     """The top-p value to use for sampling."""
 
     top_k: Optional[int] = 40
@@ -79,18 +79,17 @@ class GPT4All(LLM):
     repeat_last_n: Optional[int] = 64
     "Last n tokens to penalize"
 
-    repeat_penalty: Optional[float] = 1.3
+    repeat_penalty: Optional[float] = 1.18
     """The penalty to apply to repeated tokens."""
 
-    n_batch: int = Field(1, alias="n_batch")
+    n_batch: int = Field(8, alias="n_batch")
     """Batch size for prompt processing."""
 
     streaming: bool = False
     """Whether to stream the results or not."""
 
-    context_erase: float = 0.5
-    """Leave (n_ctx * context_erase) tokens
-    starting from beginning if the context has run out."""
+    allow_download: bool = False
+    """If model does not exist in ~/.cache/gpt4all/, download it."""
 
     client: Any = None  #: :meta private:
 
@@ -102,7 +101,7 @@ class GPT4All(LLM):
     @staticmethod
     def _model_param_names() -> Set[str]:
         return {
-            "n_ctx",
+            "max_tokens",
             "n_predict",
             "top_k",
             "top_p",
@@ -110,12 +109,11 @@ class GPT4All(LLM):
             "n_batch",
             "repeat_penalty",
             "repeat_last_n",
-            "context_erase",
         }
 
     def _default_params(self) -> Dict[str, Any]:
         return {
-            "n_ctx": self.n_ctx,
+            "max_tokens": self.max_tokens,
             "n_predict": self.n_predict,
             "top_k": self.top_k,
             "top_p": self.top_p,
@@ -123,7 +121,6 @@ class GPT4All(LLM):
             "n_batch": self.n_batch,
             "repeat_penalty": self.repeat_penalty,
             "repeat_last_n": self.repeat_last_n,
-            "context_erase": self.context_erase,
         }
 
     @root_validator()
@@ -131,24 +128,32 @@ class GPT4All(LLM):
         """Validate that the python package exists in the environment."""
         try:
             from gpt4all import GPT4All as GPT4AllModel
-
-            full_path = values["model"]
-            model_path, delimiter, model_name = full_path.rpartition("/")
-            model_path += delimiter
-
-            values["client"] = GPT4AllModel(
-                model_name=model_name,
-                model_path=model_path or None,
-                model_type=values["backend"],
-                allow_download=False,
-            )
-            values["backend"] = values["client"].model.model_type
-
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import gpt4all python package. "
                 "Please install it with `pip install gpt4all`."
             )
+
+        full_path = values["model"]
+        model_path, delimiter, model_name = full_path.rpartition("/")
+        model_path += delimiter
+
+        values["client"] = GPT4AllModel(
+            model_name,
+            model_path=model_path or None,
+            model_type=values["backend"],
+            allow_download=values["allow_download"],
+        )
+        if values["n_threads"] is not None:
+            # set n_threads
+            values["client"].model.set_thread_count(values["n_threads"])
+
+        try:
+            values["backend"] = values["client"].model_type
+        except AttributeError:
+            # The below is for compatibility with GPT4All Python bindings <= 0.2.3.
+            values["backend"] = values["client"].model.model_type
+
         return values
 
     @property
@@ -172,6 +177,7 @@ class GPT4All(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         r"""Call out to GPT4All's generate method.
 
@@ -192,7 +198,8 @@ class GPT4All(LLM):
         if run_manager:
             text_callback = partial(run_manager.on_llm_new_token, verbose=self.verbose)
         text = ""
-        for token in self.client.generate(prompt, **self._default_params()):
+        params = {**self._default_params(), **kwargs}
+        for token in self.client.generate(prompt, **params):
             if text_callback:
                 text_callback(token)
             text += token

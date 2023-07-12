@@ -1,0 +1,29 @@
+# Chroma
+
+>[Chroma](https://docs.trychroma.com/getting-started) is a database for building AI applications with embeddings.
+
+## Installation and Setup
+
+```bash
+pip install chromadb
+```
+
+
+## VectorStore
+
+There exists a wrapper around Chroma vector databases, allowing you to use it as a vectorstore,
+whether for semantic search or example selection.
+
+```python
+from langchain.vectorstores import Chroma
+```
+
+For a more detailed walkthrough of the Chroma wrapper, see [this notebook](/docs/modules/data_connection/vectorstores/integrations/chroma.html)
+
+## Retriever
+
+See a [usage example](/docs/modules/data_connection/retrievers/how_to/self_query/chroma_self_query.html).
+
+```python
+from langchain.retrievers import SelfQueryRetriever
+```

@@ -6,7 +6,8 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models.base import SimpleChatModel
-from langchain.schema import AIMessage, BaseMessage, ChatGeneration, ChatResult
+from langchain.schema import ChatGeneration, ChatResult
+from langchain.schema.messages import AIMessage, BaseMessage
 
 
 class FakeChatModel(SimpleChatModel):
@@ -17,6 +18,7 @@ class FakeChatModel(SimpleChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         return "fake response"
 
@@ -25,6 +27,7 @@ class FakeChatModel(SimpleChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         output_str = "fake response"
         message = AIMessage(content=output_str)
