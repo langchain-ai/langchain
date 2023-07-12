@@ -123,7 +123,7 @@ def _filter_cluster_embeddings(
 
 def _litm_reordering(documents: List[Document]) -> List[Document]:
     """Los in the middle reorder: the most relevant will be at the
-    middle of the list and more relevant elements at begining / end.
+    middle of the list and more relevant elements at beginning / end.
     See: https://arxiv.org/abs//2307.03172"""
 
     documents.reverse()
