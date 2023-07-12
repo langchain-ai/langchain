@@ -16,10 +16,10 @@ from langchain.agents.agent_toolkits.pandas.prompt import (
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent
 from langchain.agents.types import AgentType
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 from langchain.schema import BasePromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import SystemMessage
 from langchain.tools.python.tool import PythonAstREPLTool
 
@@ -30,6 +30,7 @@ def _get_multi_prompt(
     suffix: Optional[str] = None,
     input_variables: Optional[List[str]] = None,
     include_df_in_prompt: Optional[bool] = True,
+    number_of_head_rows: int = 5,
 ) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
     num_dfs = len(dfs)
     if suffix is not None:
@@ -60,7 +61,7 @@ def _get_multi_prompt(
 
     partial_prompt = prompt.partial()
     if "dfs_head" in input_variables:
-        dfs_head = "\n\n".join([d.head().to_markdown() for d in dfs])
+        dfs_head = "\n\n".join([d.head(number_of_head_rows).to_markdown() for d in dfs])
         partial_prompt = partial_prompt.partial(num_dfs=str(num_dfs), dfs_head=dfs_head)
     if "num_dfs" in input_variables:
         partial_prompt = partial_prompt.partial(num_dfs=str(num_dfs))
@@ -73,6 +74,7 @@ def _get_single_prompt(
     suffix: Optional[str] = None,
     input_variables: Optional[List[str]] = None,
     include_df_in_prompt: Optional[bool] = True,
+    number_of_head_rows: int = 5,
 ) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
     if suffix is not None:
         suffix_to_use = suffix
@@ -100,7 +102,9 @@ def _get_single_prompt(
 
     partial_prompt = prompt.partial()
     if "df_head" in input_variables:
-        partial_prompt = partial_prompt.partial(df_head=str(df.head().to_markdown()))
+        partial_prompt = partial_prompt.partial(
+            df_head=str(df.head(number_of_head_rows).to_markdown())
+        )
     return partial_prompt, tools
 
 
@@ -110,6 +114,7 @@ def _get_prompt_and_tools(
     suffix: Optional[str] = None,
     input_variables: Optional[List[str]] = None,
     include_df_in_prompt: Optional[bool] = True,
+    number_of_head_rows: int = 5,
 ) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
     try:
         import pandas as pd
@@ -131,6 +136,7 @@ def _get_prompt_and_tools(
             suffix=suffix,
             input_variables=input_variables,
             include_df_in_prompt=include_df_in_prompt,
+            number_of_head_rows=number_of_head_rows,
         )
     else:
         if not isinstance(df, pd.DataFrame):
@@ -141,6 +147,7 @@ def _get_prompt_and_tools(
             suffix=suffix,
             input_variables=input_variables,
             include_df_in_prompt=include_df_in_prompt,
+            number_of_head_rows=number_of_head_rows,
         )
 
 
@@ -149,13 +156,18 @@ def _get_functions_single_prompt(
     prefix: Optional[str] = None,
     suffix: Optional[str] = None,
     include_df_in_prompt: Optional[bool] = True,
+    number_of_head_rows: int = 5,
 ) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
     if suffix is not None:
         suffix_to_use = suffix
         if include_df_in_prompt:
-            suffix_to_use = suffix_to_use.format(df_head=str(df.head().to_markdown()))
+            suffix_to_use = suffix_to_use.format(
+                df_head=str(df.head(number_of_head_rows).to_markdown())
+            )
     elif include_df_in_prompt:
-        suffix_to_use = FUNCTIONS_WITH_DF.format(df_head=str(df.head().to_markdown()))
+        suffix_to_use = FUNCTIONS_WITH_DF.format(
+            df_head=str(df.head(number_of_head_rows).to_markdown())
+        )
     else:
         suffix_to_use = ""
 
@@ -173,16 +185,19 @@ def _get_functions_multi_prompt(
     prefix: Optional[str] = None,
     suffix: Optional[str] = None,
     include_df_in_prompt: Optional[bool] = True,
+    number_of_head_rows: int = 5,
 ) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
     if suffix is not None:
         suffix_to_use = suffix
         if include_df_in_prompt:
-            dfs_head = "\n\n".join([d.head().to_markdown() for d in dfs])
+            dfs_head = "\n\n".join(
+                [d.head(number_of_head_rows).to_markdown() for d in dfs]
+            )
             suffix_to_use = suffix_to_use.format(
                 dfs_head=dfs_head,
             )
     elif include_df_in_prompt:
-        dfs_head = "\n\n".join([d.head().to_markdown() for d in dfs])
+        dfs_head = "\n\n".join([d.head(number_of_head_rows).to_markdown() for d in dfs])
         suffix_to_use = FUNCTIONS_WITH_MULTI_DF.format(
             dfs_head=dfs_head,
         )
@@ -208,6 +223,7 @@ def _get_functions_prompt_and_tools(
     suffix: Optional[str] = None,
     input_variables: Optional[List[str]] = None,
     include_df_in_prompt: Optional[bool] = True,
+    number_of_head_rows: int = 5,
 ) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
     try:
         import pandas as pd
@@ -230,6 +246,7 @@ def _get_functions_prompt_and_tools(
             prefix=prefix,
             suffix=suffix,
             include_df_in_prompt=include_df_in_prompt,
+            number_of_head_rows=number_of_head_rows,
         )
     else:
         if not isinstance(df, pd.DataFrame):
@@ -239,6 +256,7 @@ def _get_functions_prompt_and_tools(
             prefix=prefix,
             suffix=suffix,
             include_df_in_prompt=include_df_in_prompt,
+            number_of_head_rows=number_of_head_rows,
         )
 
 
@@ -257,6 +275,7 @@ def create_pandas_dataframe_agent(
     early_stopping_method: str = "force",
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     include_df_in_prompt: Optional[bool] = True,
+    number_of_head_rows: int = 5,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Construct a pandas agent from an LLM and dataframe."""
@@ -268,6 +287,7 @@ def create_pandas_dataframe_agent(
             suffix=suffix,
             input_variables=input_variables,
             include_df_in_prompt=include_df_in_prompt,
+            number_of_head_rows=number_of_head_rows,
         )
         llm_chain = LLMChain(
             llm=llm,
@@ -288,6 +308,7 @@ def create_pandas_dataframe_agent(
             suffix=suffix,
             input_variables=input_variables,
             include_df_in_prompt=include_df_in_prompt,
+            number_of_head_rows=number_of_head_rows,
         )
         agent = OpenAIFunctionsAgent(
             llm=llm,

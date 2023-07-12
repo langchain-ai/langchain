@@ -1,4 +1,4 @@
-"""Loader that loads Hacker News."""
+"""Loads HN."""
 from typing import Any, List
 
 from langchain.docstore.document import Document

@@ -3,6 +3,8 @@ from typing import List
 
 
 class CodeSegmenter(ABC):
+    """The abstract class for the code segmenter."""
+
     def __init__(self, code: str):
         self.code = code
 
