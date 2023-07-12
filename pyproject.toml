@@ -154,6 +154,9 @@ pytest-mock  = "^3.10.0"
 pytest-socket = "^0.6.0"
 syrupy = "^4.0.2"
 
+[tool.poetry.group.codespell.dependencies]
+codespell = "^2.2.0"
+
 [tool.poetry.group.test_integration]
 optional = true
 
@@ -402,3 +405,12 @@ addopts = "--strict-markers --strict-config --durations=5 --snapshot-warn-unused
 markers = [
   "requires: mark tests as requiring a specific library"
 ]
+
+[tool.codespell]
+skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples'
+# Ignore latin etc
+ignore-regex = '.*(Stati Uniti|Tense=Pres).*'
+# whats is a typo but used frequently in queries so kept as is
+# aapply - async apply
+# unsecure - typo but part of API, decided to not bother for now
+ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure'

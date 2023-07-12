@@ -1833,6 +1833,24 @@ files = [
 ]
 
 [[package]]
+name = "codespell"
+version = "2.2.5"
+description = "Codespell"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "codespell-2.2.5-py3-none-any.whl", hash = "sha256:efa037f54b73c84f7bd14ce8e853d5f822cdd6386ef0ff32e957a3919435b9ec"},
+    {file = "codespell-2.2.5.tar.gz", hash = "sha256:6d9faddf6eedb692bf80c9a94ec13ab4f5fb585aabae5f3750727148d7b5be56"},
+]
+
+[package.extras]
+dev = ["Pygments", "build", "chardet", "pytest", "pytest-cov", "pytest-dependency", "ruff", "tomli"]
+hard-encoding-detection = ["chardet"]
+toml = ["tomli"]
+types = ["chardet (>=5.1.0)", "mypy", "pytest", "pytest-cov", "pytest-dependency"]
+
+[[package]]
 name = "cohere"
 version = "3.10.0"
 description = "A Python library for the Cohere API"
@@ -12700,4 +12718,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "cd49db5debee164e0fbb17b1d096b5ee7bae992e4dce91567525572d8dc4205e"
+content-hash = "e700e2ae2c9a9f7f6efd3bfbec6063650864d45bf8439ebfd14dcf0683d0f17a"

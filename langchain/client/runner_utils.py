@@ -663,15 +663,16 @@ async def arun_on_dataset(
         project_name: Name of the project to store the traces in.
             Defaults to {dataset_name}-{chain class name}-{datetime}.
         verbose: Whether to print progress.
-        client: Client to use to read the dataset. If not provided,
-            a new client will be created using the credentials in the environment.
-        tags: Tags to add to each run in the project.
+        client: Client to use to read the dataset. If not provided, a new
+            client will be created using the credentials in the environment.
+        tags: Tags to add to each run in the session.
         run_evaluators: Evaluators to run on the results of the chain.
         input_mapper: A function to map to the inputs dictionary from an Example
             to the format expected by the model to be evaluated. This is useful if
             your model needs to deserialize more complex schema or if your dataset
             has inputs with keys that differ from what is expected by your chain
             or agent.
+
     Returns:
         A dictionary containing the run's project name and the resulting model outputs.
     """
@@ -724,9 +725,9 @@ def run_on_dataset(
         project_name: Name of the project to store the traces in.
             Defaults to {dataset_name}-{chain class name}-{datetime}.
         verbose: Whether to print progress.
-        client: Client to use to access the dataset. If None,
-            a new client will be created using the credentials in the environment.
-        tags: Tags to add to each run in the project.
+        client: Client to use to access the dataset. If None, a new client
+            will be created using the credentials in the environment.
+        tags: Tags to add to each run in the session.
         run_evaluators: Evaluators to run on the results of the chain.
         input_mapper: A function to map to the inputs dictionary from an Example
             to the format expected by the model to be evaluated. This is useful if
