@@ -10,6 +10,7 @@ from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.manager import AsyncCallbackManager, CallbackManager
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, BaseMessage, LLMResult
+from langchain.schema.messages import SystemMessage
 from tests.unit_tests.callbacks.fake_callback_handler import (
     BaseFakeCallbackHandler,
     FakeAsyncCallbackHandler,
@@ -272,7 +273,7 @@ def test_callback_manager_configure(monkeypatch: pytest.MonkeyPatch) -> None:
 async def test_run_inline_async_callback_manager() -> None:
     """When run_inline=True, async callback manager should run hooks in the main context."""
 
-    ctxvar = contextvars.ContextVar("var")
+    ctxvar: contextvars.ContextVar[int] = contextvars.ContextVar("var", default=0)
 
     class CallbackHandler(BaseCallbackHandler):
         """Example callback handler testing that hooks are ran in the main context."""
@@ -280,20 +281,20 @@ async def test_run_inline_async_callback_manager() -> None:
         run_inline = True
         last_observed_ctxval = None
 
-        def _hook(self, *_args, new_ctxval=None, **kwargs) -> None:
+        def _hook(self, *_args: Any, new_ctxval: int, **_kwargs: Any) -> None:
             self.last_observed_ctxval = ctxvar.get()
             ctxvar.set(new_ctxval)
 
-        def on_chat_model_start(self, *args, **kwargs) -> None:
+        def on_chat_model_start(self, *args: Any, **kwargs: Any) -> None:
             self._hook(*args, **kwargs)
 
-        def on_llm_start(self, *args, **kwargs) -> None:
+        def on_llm_start(self, *args: Any, **kwargs: Any) -> None:
             self._hook(*args, **kwargs)
 
-        def on_llm_end(self, *args, **kwargs) -> None:
+        def on_llm_end(self, *args: Any, **kwargs: Any) -> None:
             self._hook(*args, **kwargs)
 
-        def on_llm_error(self, *args, **kwargs) -> None:
+        def on_llm_error(self, *args: Any, **kwargs: Any) -> None:
             self._hook(*args, **kwargs)
 
     ctxvar.set(0)
@@ -311,11 +312,11 @@ async def test_run_inline_async_callback_manager() -> None:
     assert ctxvar.get() == 2, "on_llm_end should set the new value observable from this context"
 
     for run_manager in run_managers:
-        await run_manager.on_llm_error(LLMResult(generations=[]), new_ctxval=3)
+        await run_manager.on_llm_error(Exception(), new_ctxval=3)
     assert handler.last_observed_ctxval == 2
     assert ctxvar.get() == 3, "on_llm_end should set the new value observable from this context"
 
-    await manager.on_chat_model_start({}, ["prompt"], new_ctxval=4)
+    await manager.on_chat_model_start({}, [[SystemMessage(content="prompt")]], new_ctxval=4)
     assert handler.last_observed_ctxval == 3, "on_chat_model_start should see the original value"
     assert ctxvar.get() == 4, "on_chat_model_start should set the new value observable from this context"
 
@@ -323,7 +324,7 @@ async def test_run_inline_async_callback_manager() -> None:
 def test_run_inline_callback_manager() -> None:
     """When run_inline=True, callback manager should run hooks in the main context."""
 
-    ctxvar = contextvars.ContextVar("var")
+    ctxvar: contextvars.ContextVar[int] = contextvars.ContextVar("var")
 
     class CallbackHandler(BaseCallbackHandler):
         """Example callback handler testing that hooks are ran in the main context."""
@@ -331,20 +332,20 @@ def test_run_inline_callback_manager() -> None:
         run_inline = True
         last_observed_ctxval = None
 
-        def _hook(self, *_args, new_ctxval=None, **kwargs) -> None:
+        def _hook(self, *_args: Any, new_ctxval: int, **_kwargs: Any) -> None:
             self.last_observed_ctxval = ctxvar.get()
             ctxvar.set(new_ctxval)
 
-        def on_chat_model_start(self, *args, **kwargs) -> None:
+        def on_chat_model_start(self, *args: Any, **kwargs: Any) -> None:
             self._hook(*args, **kwargs)
 
-        def on_llm_start(self, *args, **kwargs) -> None:
+        def on_llm_start(self, *args: Any, **kwargs: Any) -> None:
             self._hook(*args, **kwargs)
 
-        def on_llm_end(self, *args, **kwargs) -> None:
+        def on_llm_end(self, *args: Any, **kwargs: Any) -> None:
             self._hook(*args, **kwargs)
 
-        def on_llm_error(self, *args, **kwargs) -> None:
+        def on_llm_error(self, *args: Any, **kwargs: Any) -> None:
             self._hook(*args, **kwargs)
 
     ctxvar.set(0)
@@ -362,10 +363,10 @@ def test_run_inline_callback_manager() -> None:
     assert ctxvar.get() == 2, "on_llm_end should set the new value observable from this context"
 
     for run_manager in run_managers:
-        run_manager.on_llm_error(LLMResult(generations=[]), new_ctxval=3)
+        run_manager.on_llm_error(Exception(), new_ctxval=3)
     assert handler.last_observed_ctxval == 2
     assert ctxvar.get() == 3, "on_llm_end should set the new value observable from this context"
 
-    manager.on_chat_model_start({}, ["prompt"], new_ctxval=4)
+    manager.on_chat_model_start({}, [[SystemMessage(content="prompt")]], new_ctxval=4)
     assert handler.last_observed_ctxval == 3, "on_chat_model_start should see the original value"
     assert ctxvar.get() == 4, "on_chat_model_start should set the new value observable from this context"
