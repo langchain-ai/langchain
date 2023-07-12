@@ -208,7 +208,9 @@ class PGVector(VectorStore):
 
         if not metadatas:
             metadatas = [{} for _ in texts]
+
         connection_string = cls.get_connection_string(kwargs)
+        kwargs.pop("connection_string")
 
         store = cls(
             connection_string=connection_string,
