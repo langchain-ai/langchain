@@ -1,9 +1,18 @@
-import langchain
-from langchain.llms.base import LLM, Optional, List, Mapping, Any
+"""Wrapper around KoboldAI API."""
+import logging
+from typing import Any, Dict, List, Optional
+
 import requests
 from pydantic import Field
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
+from langchain.llms.base import LLM
+
+logger = logging.getLogger(__name__)
+
+
 def clean_url(url):
+    """Remove trailing slash and /api from url if present."""
     if url.endswith('/api'):
         return url[:-4]
     elif url.endswith('/'):
@@ -11,30 +20,146 @@ def clean_url(url):
     else:
         return url
 
+
 class KoboldApiLLM(LLM):
-    endpoint: str = Field(...)
-    use_story: bool = Field(False)
-    use_authors_note: bool = Field(False)
-    use_world_info: bool = Field(False)
-    use_memory: bool = Field(False)
-    max_context_length: int = Field(1600)
-    max_length: int = Field(80)
-    rep_pen: float = Field(1.12)
-    rep_pen_range: int = Field(1024)
-    rep_pen_slope: float = Field(0.9)
-    temperature: float = Field(0.6)
-    tfs: float = Field(0.9)
-    top_p: float = Field(0.95)
-    top_k: float = Field(0.6)
-    typical: int = Field(1)
-    frmttriminc: bool = Field(True)
+    """
+    A class that acts as a wrapper for the Kobold API language model.
+    
+    It includes several fields that can be used to control the text generation process.
+    
+    To use this class, instantiate it with the required parameters and call it with a 
+    prompt to generate text. For example:
+
+        kobold = KoboldApiLLM(endpoint="http://localhost:5000")
+        result = kobold("Write a story about a dragon.")
+
+    This will send a POST request to the Kobold API with the provided prompt and generate text.
+    """
+    
+    endpoint: str
+    """The API endpoint to use for generating text."""
+
+    use_story: Optional[bool] = False
+    """ Whether or not to use the story from the KoboldAI GUI when generating text. """
+
+    use_authors_note: Optional[bool] = False
+    """
+    Whether or not to use the author's note from the KoboldAI GUI when generating text.
+    This has no effect unless use_story is also enabled.
+    """
+
+    use_world_info: Optional[bool] = False
+    """
+    Whether or not to use the world info from the KoboldAI GUI when generating text.
+    """
+
+    use_memory: Optional[bool] = False
+    """
+    Whether or not to use the memory from the KoboldAI GUI when generating text.
+    """
+
+    max_context_length: Optional[int] = 1600
+    """
+    minimum: 1
+    Maximum number of tokens to send to the model.
+    """
+
+    max_length: Optional[int] = 80
+    """
+    maximum: 512
+    minimum: 1
+    Number of tokens to generate.
+
+    """
+
+    rep_pen: Optional[float] = 1.12
+    """
+    Base repetition penalty value.
+    minimum: 1
+    """
+
+    rep_pen_range: Optional[int] = 1024
+    """
+
+    Repetition penalty range.
+    minimum: 0
+
+    """
+
+    rep_pen_slope: Optional[float] = 0.9
+    """
+    minimum: 0
+    Repetition penalty slope.
+
+    """
+
+    temperature: Optional[float] = 0.6
+    """
+    exclusiveMinimum: 0
+
+    Temperature value.
+    """
+
+    tfs: Optional[float] = 0.9
+    """
+    maximum: 1
+    minimum: 0
+    Tail free sampling value.
+    """
+
+    top_a: Optional[float] = 0.9
+    """
+    minimum: 0
+    Top-a sampling value.
+    """
+
+    top_p: Optional[float] = 0.95
+    """
+    maximum: 1
+    minimum: 0
+    Top-p sampling value.
+    """
+
+    top_k: Optional[int] = 0
+    """
+    minimum: 0
+    Top-k sampling value.
+    """
+
+    typical: Optional[float] = 0.5
+    """
+    maximum: 1
+    minimum: 0
+    Typical sampling value.
+    """
 
     @property
     def _llm_type(self) -> str:
         return "custom"
 
-    def _call(self, prompt: str, stop: Optional[List[str]]=None) -> str:
-        # Prepare the JSON data
+    def _call(
+        self,
+        prompt: str, 
+        stop: Optional[List[str]]=None, 
+        run_manager: Optional[CallbackManagerForLLMRun]=None,
+        **kwargs: Any,
+        ) -> str:
+        """Call the API and return the output.
+
+        Args:
+            prompt: The prompt to use for generation.
+            stop: A list of strings to stop generation when encountered.
+
+        Returns:
+            The generated text.
+
+        Example:
+            .. code-block:: python
+
+                from langchain.llms import KoboldApiLLM
+                llm = KoboldApiLLM(endpoint="http://localhost:5000")
+                llm("Write a story about dragons.")
+        """
         data = {
             "prompt": prompt,
             "use_story": self.use_story,
@@ -48,18 +173,22 @@ class KoboldApiLLM(LLM):
             "rep_pen_slope": self.rep_pen_slope,
             "temperature": self.temperature,
             "tfs": self.tfs,
+            "top_a" : self.top_a,
             "top_p": self.top_p,
             "top_k": self.top_k,
             "typical": self.typical,
-            "frmttriminc": self.frmttriminc,
         }
 
-        # Add the stop sequences to the data if they are provided
         if stop is not None:
             data["stop_sequence"] = stop
+        """
+        Add the stop sequences to the data if they are provided
+        maxItems: 10
+        An array of string sequences where the API will stop generating further tokens. The returned text WILL contain the stop sequence.
+        """
             
-        # Send a POST request to the Kobold API with the data
         response = requests.post(f"{clean_url(self.endpoint)}/api/v1/generate", json=data)
+
         response.raise_for_status()
 
         # Check for the expected keys in the response JSON
@@ -72,20 +201,17 @@ class KoboldApiLLM(LLM):
             if stop is not None:
                 for sequence in stop:
                     if text.endswith(sequence):
-                        text = text[: -len(sequence)].rstrip()
-
+                        text = text[:-len(sequence)].rstrip()
 
             print(text)
             return text
         else:
             raise ValueError("Unexpected response format from Kobold API")
-
-
     
     def __call__(self, prompt: str, stop: Optional[List[str]]=None) -> str:
         return self._call(prompt, stop)
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
-        return {'endpoint': self.endpoint} #return the endpoint as an identifying parameter
+        return {'endpoint': self.endpoint}  # return the endpoint as an identifying parameter
 
