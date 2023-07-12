@@ -4691,20 +4691,20 @@ data = ["language-data (>=1.1,<2.0)"]
 
 [[package]]
 name = "langkit"
-version = "0.0.5"
+version = "0.0.6"
 description = "A collection of text metric udfs for whylogs profiling and monitoring in WhyLabs"
 category = "main"
 optional = true
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "langkit-0.0.5-py3-none-any.whl", hash = "sha256:9cffd28c7b0c3686c075b0cf9bbf51d99128f0a9fcbf39a69dd352d877f96902"},
-    {file = "langkit-0.0.5.tar.gz", hash = "sha256:7762afd0ddb6b5eafc9a08b9ad7fc47143e25780b23a9f5a58d14de2932bdae5"},
+    {file = "langkit-0.0.6-py3-none-any.whl", hash = "sha256:5b36830e9094934c933f8756177b5a8a5c7d6dc014ca49076a358c9c8fb5ddbc"},
+    {file = "langkit-0.0.6.tar.gz", hash = "sha256:08421bb0799fc831b0d1e431e600cad8acab7d7bdbf6aa6c7535291172a66343"},
 ]
 
 [package.dependencies]
 pandas = "*"
 textstat = ">=0.7.3,<0.8.0"
-whylogs = ">=1.2.1,<2.0.0"
+whylogs = ">=1.2.3,<2.0.0"
 
 [package.extras]
 all = ["datasets (>=2.12.0,<3.0.0)", "nltk (>=3.8.1,<4.0.0)", "openai (>=0.27.6,<0.28.0)", "sentence-transformers (>=2.2.2,<3.0.0)", "torch"]
@@ -12149,14 +12149,14 @@ urllib3 = ">=1.25.3"
 
 [[package]]
 name = "whylogs"
-version = "1.2.2"
+version = "1.2.3"
 description = "Profile and monitor your ML data pipeline end-to-end"
 category = "main"
 optional = true
 python-versions = ">=3.7.1,<4"
 files = [
-    {file = "whylogs-1.2.2-py3-none-any.whl", hash = "sha256:641abd26eab936d59e02e46bfddcec02beeb2ec8d098271ddd4eaff61304312d"},
-    {file = "whylogs-1.2.2.tar.gz", hash = "sha256:a6fb501f47c90f95dc51a1f8d8ef1e0f82c39eef414e1f62dd197b3c5a87cefe"},
+    {file = "whylogs-1.2.3-py3-none-any.whl", hash = "sha256:92cfe02985760c52d25b88bad69001901844ff51c76b62537bce1c31d12c271e"},
+    {file = "whylogs-1.2.3.tar.gz", hash = "sha256:d0000f502b1b30c48a5ad9535488370e961e85825dafdd75421447ffff0516e7"},
 ]
 
 [package.dependencies]
@@ -12701,4 +12701,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "b315786b1492e235ccc1302ffe788aa866a2ab796a042642c0eb726235ef4af4"
+content-hash = "2e9369742a7010cc1aabe356e73dd63de1369f3320a82609961c86c0d6918542"
