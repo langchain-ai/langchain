@@ -8,7 +8,9 @@ class DoctranQATransformer(BaseDocumentTransformer):
     """Extracts QA from text documents using doctran."""
 
     def __init__(self, **kwargs: Any) -> None:
-        self.openai_api_key = get_from_dict_or_env(kwargs, "openai_api_key", "OPENAI_API_KEY")
+        self.openai_api_key = get_from_dict_or_env(
+            kwargs, "openai_api_key", "OPENAI_API_KEY"
+        )
 
     def transform_documents(
         self, documents: Sequence[Document], **kwargs: Any
