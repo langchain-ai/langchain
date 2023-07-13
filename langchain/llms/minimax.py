@@ -46,6 +46,11 @@ class _MinimaxEndpointClient(BaseModel, ABC):
         # TODO: error handling and automatic retries
         if not response.ok:
             raise ValueError(f"HTTP {response.status_code} error: {response.text}")
+        if response.json()["base_resp"]["status_code"] > 0:
+            raise ValueError(
+                f"API {response.json()['base_resp']['status_code']}"
+                f" error: {response.json()['base_resp']['status_msg']}"
+            )
         return response.json()["reply"]
 
 
