@@ -156,6 +156,7 @@ class DeepLake(VectorStore):
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
+        embedding_function: Optional[Embeddings] = None,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
@@ -197,7 +198,7 @@ class DeepLake(VectorStore):
             metadata=metadatas,
             embedding_data=texts,
             embedding_tensor="embedding",
-            embedding_function=kwargs.get("embedding_function")
+            embedding_function=embedding_function
             or self._embedding_function.embed_documents,  # type: ignore
             return_ids=True,
             **kwargs,
