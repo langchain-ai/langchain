@@ -228,3 +228,74 @@ def test_chroma_update_document() -> None:
     ]
     assert new_embedding == embedding.embed_documents([updated_content])[0]
     assert new_embedding != old_embedding
+
+
+def test_chroma_with_relevance_score() -> None:
+    """Test to make sure the relevance score is scaled to 0-1."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    docsearch = Chroma.from_texts(
+        collection_name="test_collection",
+        texts=texts,
+        embedding=FakeEmbeddings(),
+        metadatas=metadatas,
+        collection_metadata={"hnsw:space": "l2"},
+    )
+    output = docsearch.similarity_search_with_relevance_scores("foo", k=3)
+    assert output == [
+        (Document(page_content="foo", metadata={"page": "0"}), 1.0),
+        (Document(page_content="bar", metadata={"page": "1"}), 0.8),
+        (Document(page_content="baz", metadata={"page": "2"}), 0.5),
+    ]
+
+
+def test_chroma_with_relevance_score_custom_normalization_fn() -> None:
+    """Test searching with relevance score and custom normalization function."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    docsearch = Chroma.from_texts(
+        collection_name="test_collection",
+        texts=texts,
+        embedding=FakeEmbeddings(),
+        metadatas=metadatas,
+        relevance_score_fn=lambda d: d * 0,
+        collection_metadata={"hnsw:space": "l2"},
+    )
+    output = docsearch.similarity_search_with_relevance_scores("foo", k=3)
+    assert output == [
+        (Document(page_content="foo", metadata={"page": "0"}), -0.0),
+        (Document(page_content="bar", metadata={"page": "1"}), -0.0),
+        (Document(page_content="baz", metadata={"page": "2"}), -0.0),
+    ]
+
+
+def test_init_from_client() -> None:
+    import chromadb
+
+    client = chromadb.Client(chromadb.config.Settings())
+    Chroma(client=client)
+
+
+def test_init_from_client_settings() -> None:
+    import chromadb
+
+    client_settings = chromadb.config.Settings()
+    Chroma(client_settings=client_settings)
+
+
+def test_chroma_add_documents_no_metadata() -> None:
+    db = Chroma(embedding_function=FakeEmbeddings())
+    db.add_documents([Document(page_content="foo")])
+
+
+def test_chroma_add_documents_mixed_metadata() -> None:
+    db = Chroma(embedding_function=FakeEmbeddings())
+    docs = [
+        Document(page_content="foo"),
+        Document(page_content="bar", metadata={"baz": 1}),
+    ]
+    db.add_documents(docs)
+    search = db.similarity_search("foo bar")
+    assert sorted(search, key=lambda d: d.page_content) == sorted(
+        docs, key=lambda d: d.page_content
+    )

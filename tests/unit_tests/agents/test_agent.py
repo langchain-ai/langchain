@@ -201,7 +201,7 @@ def test_agent_tool_return_direct_in_intermediate_steps() -> None:
 
 
 def test_agent_with_new_prefix_suffix() -> None:
-    """Test agent initilization kwargs with new prefix and suffix."""
+    """Test agent initialization kwargs with new prefix and suffix."""
     fake_llm = FakeListLLM(
         responses=["FooBarBaz\nAction: Search\nAction Input: misalignment"]
     )

@@ -24,6 +24,7 @@ from langchain.document_loaders.blob_loaders import (
 )
 from langchain.document_loaders.blockchain import BlockchainDocumentLoader
 from langchain.document_loaders.brave_search import BraveSearchLoader
+from langchain.document_loaders.browserless import BrowserlessLoader
 from langchain.document_loaders.chatgpt import ChatGPTLoader
 from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
 from langchain.document_loaders.confluence import ConfluenceLoader
@@ -103,6 +104,7 @@ from langchain.document_loaders.readthedocs import ReadTheDocsLoader
 from langchain.document_loaders.recursive_url_loader import RecursiveUrlLoader
 from langchain.document_loaders.reddit import RedditPostsLoader
 from langchain.document_loaders.roam import RoamLoader
+from langchain.document_loaders.rocksetdb import RocksetLoader
 from langchain.document_loaders.rst import UnstructuredRSTLoader
 from langchain.document_loaders.rtf import UnstructuredRTFLoader
 from langchain.document_loaders.s3_directory import S3DirectoryLoader
@@ -110,7 +112,6 @@ from langchain.document_loaders.s3_file import S3FileLoader
 from langchain.document_loaders.sitemap import SitemapLoader
 from langchain.document_loaders.slack_directory import SlackDirectoryLoader
 from langchain.document_loaders.snowflake_loader import SnowflakeLoader
-from langchain.document_loaders.rocksetdb import RocksetLoader
 from langchain.document_loaders.spreedly import SpreedlyLoader
 from langchain.document_loaders.srt import SRTLoader
 from langchain.document_loaders.stripe import StripeLoader
@@ -175,6 +176,7 @@ __all__ = [
     "BlobLoader",
     "BlockchainDocumentLoader",
     "BraveSearchLoader",
+    "BrowserlessLoader",
     "CSVLoader",
     "ChatGPTLoader",
     "CoNLLULoader",

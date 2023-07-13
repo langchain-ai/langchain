@@ -1,4 +1,4 @@
-from typing import Any, Iterator, List, Callable, Optional, Tuple, cast
+from typing import Any, Callable, Iterator, List, Optional, Tuple, cast
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -64,7 +64,7 @@ class RocksetLoader(BaseLoader):
                 (Callable[[List[Tuple[str, Any]]], str], optional)
         """
         try:
-            from rockset import RocksetClient, QueryPaginator
+            from rockset import QueryPaginator, RocksetClient
             from rockset.models import QueryRequestSql
         except ImportError:
             raise ImportError(

@@ -1,13 +1,11 @@
-import os
 import logging
-
-from langchain.document_loaders import RocksetLoader
-from langchain.text_splitter import CharacterTextSplitter
+import os
 
 import rockset
+
 from langchain.docstore.document import Document
 from langchain.document_loaders import RocksetLoader
-
+from langchain.text_splitter import CharacterTextSplitter
 
 logger = logging.getLogger(__name__)
 
