@@ -27,8 +27,12 @@ from langchain.tools.base import BaseTool
 
 
 class TrajectoryEval(NamedTuple):
-    score: int
+    """A named tuple containing the score and reasoning for a trajectory."""
+
+    score: float
+    """The score for the trajectory, normalized from 0 to 1.s"""
     reasoning: str
+    """The reasoning for the score."""
 
 
 class TrajectoryOutputParser(BaseOutputParser):
@@ -43,18 +47,18 @@ class TrajectoryOutputParser(BaseOutputParser):
             text (str): The output text to parse.
 
         Returns:
-            TrajectoryEval: A named tuple containing the score and reasoning.
+            TrajectoryEval: A named tuple containing the normalized score and reasoning.
 
         Raises:
             OutputParserException: If the score is not found in the output text or
-                if the score is not a digit in the range 1-5.
+                if the LLM's score is not a digit in the range 1-5.
         """
         if "Score:" not in text:
             raise OutputParserException(
                 f"Could not find score in model eval output: {text}"
             )
 
-        reasoning, score_str = text.split("Score: ")
+        reasoning, score_str = text.split("Score: ", maxsplit=1)
 
         reasoning, score_str = reasoning.strip(), score_str.strip()
 
@@ -66,8 +70,8 @@ class TrajectoryOutputParser(BaseOutputParser):
             raise OutputParserException(
                 f"Score is not a digit in the range 1-5: {text}"
             )
-
-        return TrajectoryEval(score=int(score_str), reasoning=reasoning)
+        normalized_score = (int(score_str) - 1) / 4
+        return TrajectoryEval(score=normalized_score, reasoning=reasoning)
 
 
 class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
@@ -90,7 +94,7 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
             \"\"\"Very helpful answers to geography questions.\"\"\"
             return f"{country}? IDK - We may never know {question}."
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo-0613", temperature=0)
+        llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
         agent = initialize_agent(
             tools=[geography_answers],
             llm=llm,
@@ -199,7 +203,7 @@ The following is the expected answer. Use this to measure correctness:
         llm: BaseLanguageModel,
         agent_tools: Optional[Sequence[BaseTool]] = None,
         output_parser: Optional[TrajectoryOutputParser] = None,
-        return_reasoning: bool = False,
+        return_reasoning: bool = True,
         **kwargs: Any,
     ) -> "TrajectoryEvalChain":
         """Create a TrajectoryEvalChain object from a language model chain.
@@ -207,7 +211,7 @@ The following is the expected answer. Use this to measure correctness:
         Args:
             llm (BaseChatModel): The language model chain.
             agent_tools (Optional[Sequence[BaseTool]]): A list of tools
-                available tothe agent.
+                available to the agent.
             output_parser (Optional[TrajectoryOutputParser]): The output parser
                 used to parse the chain output into a score.
             return_reasoning (bool): Whether to return the
@@ -325,6 +329,9 @@ The following is the expected answer. Use this to measure correctness:
         agent_trajectory: Sequence[Tuple[AgentAction, str]],
         reference: Optional[str] = None,
         callbacks: Callbacks = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
         """Evaluate a trajectory.
@@ -347,7 +354,14 @@ The following is the expected answer. Use this to measure correctness:
             "answer": prediction,
             "reference": reference,
         }
-        return self(inputs=inputs, callbacks=callbacks, **kwargs)
+        return self.__call__(
+            inputs=inputs,
+            callbacks=callbacks,
+            tags=tags,
+            metadata=metadata,
+            include_run_info=include_run_info,
+            return_only_outputs=True,
+        )
 
     async def _aevaluate_agent_trajectory(
         self,
@@ -357,6 +371,9 @@ The following is the expected answer. Use this to measure correctness:
         agent_trajectory: Sequence[Tuple[AgentAction, str]],
         reference: Optional[str] = None,
         callbacks: Callbacks = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
         """Asynchronously evaluate a trajectory.
@@ -382,5 +399,8 @@ The following is the expected answer. Use this to measure correctness:
         return await self.acall(
             inputs=inputs,
             callbacks=callbacks,
-            **kwargs,
+            tags=tags,
+            metadata=metadata,
+            include_run_info=include_run_info,
+            return_only_outputs=True,
         )

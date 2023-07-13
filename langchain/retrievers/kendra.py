@@ -207,20 +207,20 @@ class AmazonKendraRetriever(BaseRetriever):
 
     @root_validator(pre=True)
     def create_client(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        if values["client"] is not None:
+        if values.get("client") is not None:
             return values
 
         try:
             import boto3
 
-            if values["credentials_profile_name"] is not None:
+            if values.get("credentials_profile_name"):
                 session = boto3.Session(profile_name=values["credentials_profile_name"])
             else:
                 # use default credentials
                 session = boto3.Session()
 
             client_params = {}
-            if values["region_name"] is not None:
+            if values.get("region_name"):
                 client_params["region_name"] = values["region_name"]
 
             values["client"] = session.client("kendra", **client_params)

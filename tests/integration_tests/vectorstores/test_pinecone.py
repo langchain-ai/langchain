@@ -1,8 +1,10 @@
 import importlib
 import os
+import time
 import uuid
 from typing import List
 
+import numpy as np
 import pinecone
 import pytest
 
@@ -206,3 +208,22 @@ class TestPinecone:
         )
         index_stats = self.index.describe_index_stats()
         assert index_stats["namespaces"][index_name]["vector_count"] == len(texts) * 2
+        assert index_stats["total_vector_count"] == len(texts) * 2
+
+    @pytest.mark.vcr()
+    def test_relevance_score_bound(self, embedding_openai: OpenAIEmbeddings) -> None:
+        """Ensures all relevance scores are between 0 and 1."""
+        texts = ["foo", "bar", "baz"]
+        metadatas = [{"page": i} for i in range(len(texts))]
+        docsearch = Pinecone.from_texts(
+            texts,
+            embedding_openai,
+            index_name=index_name,
+            metadatas=metadatas,
+        )
+        # wait for the index to be ready
+        time.sleep(20)
+        output = docsearch.similarity_search_with_relevance_scores("foo", k=3)
+        assert all(
+            (1 >= score or np.isclose(score, 1)) and score >= 0 for _, score in output
+        )

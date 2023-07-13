@@ -498,8 +498,9 @@ class BaseCallbackManager(CallbackManagerMixin):
 
     def add_handler(self, handler: BaseCallbackHandler, inherit: bool = True) -> None:
         """Add a handler to the callback manager."""
-        self.handlers.append(handler)
-        if inherit:
+        if handler not in self.handlers:
+            self.handlers.append(handler)
+        if inherit and handler not in self.inheritable_handlers:
             self.inheritable_handlers.append(handler)
 
     def remove_handler(self, handler: BaseCallbackHandler) -> None:

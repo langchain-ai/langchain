@@ -121,9 +121,8 @@ class Redis(VectorStore):
         content_key: str = "content",
         metadata_key: str = "metadata",
         vector_key: str = "content_vector",
-        relevance_score_fn: Optional[
-            Callable[[float], float]
-        ] = _default_relevance_score,
+        relevance_score_fn: Optional[Callable[[float], float]] = None,
+        distance_metric: REDIS_DISTANCE_METRICS = "COSINE",
         **kwargs: Any,
     ):
         """Initialize with necessary components."""
@@ -149,11 +148,23 @@ class Redis(VectorStore):
         self.content_key = content_key
         self.metadata_key = metadata_key
         self.vector_key = vector_key
+        self.distance_metric = distance_metric
         self.relevance_score_fn = relevance_score_fn
 
-    def _create_index(
-        self, dim: int = 1536, distance_metric: REDIS_DISTANCE_METRICS = "COSINE"
-    ) -> None:
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        if self.relevance_score_fn:
+            return self.relevance_score_fn
+
+        if self.distance_metric == "COSINE":
+            return self._cosine_relevance_score_fn
+        elif self.distance_metric == "IP":
+            return self._max_inner_product_relevance_score_fn
+        elif self.distance_metric == "L2":
+            return self._euclidean_relevance_score_fn
+        else:
+            return _default_relevance_score
+
+    def _create_index(self, dim: int = 1536) -> None:
         try:
             from redis.commands.search.field import TextField, VectorField
             from redis.commands.search.indexDefinition import IndexDefinition, IndexType
@@ -175,7 +186,7 @@ class Redis(VectorStore):
                     {
                         "TYPE": "FLOAT32",
                         "DIM": dim,
-                        "DISTANCE_METRIC": distance_metric,
+                        "DISTANCE_METRIC": self.distance_metric,
                     },
                 ),
             )
@@ -347,24 +358,6 @@ class Redis(VectorStore):
 
         return docs
 
-    def _similarity_search_with_relevance_scores(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
-        """Return docs and relevance scores, normalized on a scale from 0 to 1.
-
-        0 is dissimilar, 1 is most similar.
-        """
-        if self.relevance_score_fn is None:
-            raise ValueError(
-                "relevance_score_fn must be provided to"
-                " Redis constructor to normalize scores"
-            )
-        docs_and_scores = self.similarity_search_with_score(query, k=k)
-        return [(doc, self.relevance_score_fn(score)) for doc, score in docs_and_scores]
-
     @classmethod
     def from_texts_return_keys(
         cls,
@@ -413,6 +406,7 @@ class Redis(VectorStore):
             content_key=content_key,
             metadata_key=metadata_key,
             vector_key=vector_key,
+            distance_metric=distance_metric,
             **kwargs,
         )
 
@@ -420,7 +414,7 @@ class Redis(VectorStore):
         embeddings = embedding.embed_documents(texts)
 
         # Create the search index
-        instance._create_index(dim=len(embeddings[0]), distance_metric=distance_metric)
+        instance._create_index(dim=len(embeddings[0]))
 
         # Add data to Redis
         keys = instance.add_texts(texts, metadatas, embeddings)

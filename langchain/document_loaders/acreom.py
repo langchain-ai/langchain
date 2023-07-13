@@ -1,4 +1,4 @@
-"""Loader that loads acreom vault from a directory."""
+"""Loads acreom vault from a directory."""
 import re
 from pathlib import Path
 from typing import Iterator, List
