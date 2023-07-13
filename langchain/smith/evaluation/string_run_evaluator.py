@@ -125,52 +125,21 @@ class LLMStringRunMapper(StringRunMapper):
 class ChainStringRunMapper(StringRunMapper):
     """Extract items to evaluate from the run object from a chain."""
 
-    input_key: str
+    input_key: Optional[str] = None
     """The key from the model Run's inputs to use as the eval input."""
-    prediction_key: str
+    prediction_key: Optional[str] = None
     """The key from the model Run's outputs to use as the eval prediction."""
 
-    @classmethod
-    def from_chain(
-        cls,
-        model: Chain,
-        input_key: Optional[str] = None,
-        prediction_key: Optional[str] = None,
-    ) -> ChainStringRunMapper:
-        """Create a RunMapper from a chain."""
-        error_messages = []
-        if input_key is None:
-            if len(model.input_keys) > 1:
-                error_messages.append(
-                    f"Chain {model.lc_namespace} has multiple input"
-                    " keys. Please specify 'input_key' when loading."
-                )
-            else:
-                input_key = model.input_keys[0]
-        elif input_key not in model.input_keys:
-            error_messages.append(
-                f"Chain {model.lc_namespace} does not have specified"
-                f" input key {input_key}."
+    def _get_key(self, source: Dict, key: Optional[str], which: str) -> str:
+        if key is not None:
+            return source[key]
+        elif len(source) == 1:
+            return next(iter(source.values()))
+        else:
+            raise ValueError(
+                f"Could not map run {which} with multiple keys: "
+                f"{source}\nPlease manually specify a {which}_key"
             )
-        if prediction_key is None:
-            if len(model.output_keys) > 1:
-                error_messages.append(
-                    f"Chain {model.lc_namespace} has multiple"
-                    " output keys. Please specify 'prediction_key' when loading."
-                )
-            else:
-                prediction_key = model.output_keys[0]
-        elif prediction_key not in model.output_keys:
-            error_messages.append(
-                f"Chain {model.lc_namespace} does not have specified"
-                f" prediction_key {prediction_key}."
-            )
-        if error_messages:
-            raise ValueError("\n".join(error_messages))
-        if input_key is None or prediction_key is None:
-            # This should never happen, but mypy doesn't know that.
-            raise ValueError(f"Chain {model.lc_namespace} has no input or output keys.")
-        return cls(input_key=input_key, prediction_key=prediction_key)
 
     def map(self, run: Run) -> Dict[str, str]:
         """Maps the Run to a dictionary."""
@@ -185,9 +154,11 @@ class ChainStringRunMapper(StringRunMapper):
                 f"Run {run.id} does not have prediction key {self.prediction_key}."
             )
         else:
+            input_ = self._get_key(run.inputs, self.input_key, "input")
+            prediction = self._get_key(run.outputs, self.prediction_key, "prediction")
             return {
-                "input": run.inputs[self.input_key],
-                "prediction": run.outputs[self.prediction_key],
+                "input": input_,
+                "prediction": prediction,
             }
 
 
@@ -290,14 +261,14 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
             )
         return evaluate_strings_inputs
 
-    def _prepare_output(self, output: Dict[str, Any]) -> EvaluationResult:
+    def _prepare_output(self, output: Dict[str, Any]) -> Dict[str, Any]:
         evaluation_result = EvaluationResult(
             key=self.name, comment=output.get("reasoning"), **output
         )
         if RUN_KEY in output:
             # TODO: Not currently surfaced. Update
             evaluation_result.evaluator_info[RUN_KEY] = output[RUN_KEY]
-        return evaluation_result
+        return {"feedback": evaluation_result}
 
     def _call(
         self,
@@ -311,9 +282,9 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         chain_output = self.string_evaluator.evaluate_strings(
             **evaluate_strings_inputs,
             callbacks=callbacks,
+            include_run_info=True,
         )
-        evaluation_result = self._prepare_output(chain_output)
-        return {"feedback": evaluation_result}
+        return self._prepare_output(chain_output)
 
     async def _acall(
         self,
@@ -327,22 +298,31 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         chain_output = await self.string_evaluator.aevaluate_strings(
             **evaluate_strings_inputs,
             callbacks=callbacks,
+            include_run_info=True,
         )
-        evaluation_result = self._prepare_output(chain_output)
-        return {"feedback": evaluation_result}
+        return self._prepare_output(chain_output)
+
+    def _prepare_evaluator_output(self, output: Dict[str, Any]) -> EvaluationResult:
+        feedback: EvaluationResult = output["feedback"]
+        if RUN_KEY not in feedback.evaluator_info:
+            feedback.evaluator_info[RUN_KEY] = output[RUN_KEY]
+        return output
 
     def evaluate_run(
         self, run: Run, example: Optional[Example] = None
     ) -> EvaluationResult:
         """Evaluate an example."""
-        return self({"run": run, "example": example})["feedback"]
+        result = self({"run": run, "example": example}, include_run_info=True)
+        return self._prepare_evaluator_output(result)
 
     async def aevaluate_run(
         self, run: Run, example: Optional[Example] = None
     ) -> EvaluationResult:
         """Evaluate an example."""
-        result = await self.acall({"run": run, "example": example})
-        return result["feedback"]
+        result = await self.acall(
+            {"run": run, "example": example}, include_run_info=True
+        )
+        return self._prepare_evaluator_output(result)
 
     @classmethod
     def from_run_and_data_type(

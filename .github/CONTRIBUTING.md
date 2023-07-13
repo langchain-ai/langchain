@@ -123,6 +123,32 @@ This can be very helpful when you've made changes to only certain parts of the p
 
 We recognize linting can be annoying - if you do not want to do it, please contact a project maintainer, and they can help you with it. We do not want this to be a blocker for good code getting contributed.
 
+### Spellcheck
+
+Spellchecking for this project is done via [codespell](https://github.com/codespell-project/codespell).
+Note that `codespell` finds common typos, so could have false-positive (correctly spelled but rarely used) and false-negatives (not finding misspelled) words.
+
+To check spelling for this project:
+
+```bash
+make spell_check
+```
+
+To fix spelling in place:
+
+```bash
+make spell_fix
+```
+
+If codespell is incorrectly flagging a word, you can skip spellcheck for that word by adding it to the codespell config in the `pyproject.toml` file.
+
+```python
+[tool.codespell]
+...
+# Add here:
+ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure'
+```
+
 ### Coverage
 
 Code coverage (i.e. the amount of code that is covered by unit tests) helps identify areas of the code that are potentially more or less brittle.

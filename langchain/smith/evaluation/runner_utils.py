@@ -732,7 +732,7 @@ async def _callbacks_initializer(
     """
     callbacks: List[BaseTracer] = []
     if project_name:
-        callbacks.append(LangChainTracer(project_name=project_name))
+        callbacks.append(LangChainTracer(project_name=project_name, client=client))
     evaluator_project_name = f"{project_name}-evaluators" if project_name else None
     if run_evaluators:
         callback = EvaluatorCallbackHandler(
@@ -1024,7 +1024,7 @@ def _run_on_examples(
     results: Dict[str, Any] = {}
     llm_or_chain_factory = _wrap_in_chain_factory(llm_or_chain_factory)
     project_name = _get_project_name(project_name, llm_or_chain_factory, None)
-    tracer = LangChainTracer(project_name=project_name)
+    tracer = LangChainTracer(project_name=project_name, client=client)
     evaluator_project_name = f"{project_name}-evaluators"
     run_evaluators, examples = _setup_evaluation(
         llm_or_chain_factory, examples, evaluation, data_type
@@ -1094,8 +1094,10 @@ async def arun_on_dataset(
             your model needs to deserialize more complex schema or if your dataset
             has inputs with keys that differ from what is expected by your chain
             or agent.
+
     Returns:
-        A dictionary containing the run's project name and the resulting model outputs.
+        A dictionary containing the run's project name and the
+        resulting model outputs.
     """
     llm_or_chain_factory = _wrap_in_chain_factory(llm_or_chain_factory, dataset_name)
     project_name = _get_project_name(project_name, llm_or_chain_factory, dataset_name)

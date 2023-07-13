@@ -16,7 +16,7 @@ Example:
     ...     prediction_b = (
     ...        "The chemical formula for water is H2O, which means"
     ...        " there are two hydrogen atoms and one oxygen atom."
-    ...     referenc = "The chemical formula for water is H2O.",
+    ...     reference = "The chemical formula for water is H2O.",
     ... )
     >>> print(result["text"])
     # {

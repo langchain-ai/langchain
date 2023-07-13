@@ -45,7 +45,7 @@ Using a custom criterion:
         reference="It's commonly known that the answer to life is 42.",
         input="Please summarize the following: The answer to life, the universe, and everything is unknowable.",
     )
-""" # noqa: E501
+"""  # noqa: E501
 
 from langchain.evaluation.criteria.eval_chain import (
     CriteriaEvalChain,
