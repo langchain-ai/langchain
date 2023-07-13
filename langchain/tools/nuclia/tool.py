@@ -9,13 +9,11 @@ Installation:
 """
 
 import base64
-import json
 import mimetypes
 import os
-import requests
-import urllib3
 
 from typing import Any, Dict, Optional, Type
+import requests as req
 from pydantic import BaseModel, Field
 
 from google.protobuf.json_format import MessageToJson
@@ -33,7 +31,6 @@ except ImportError:
         "Run `pip install nucliadb-protos` to install."
     )
 
-urllib3.disable_warnings()
 
 class NUASchema(BaseModel):
     action: str = Field(
@@ -64,6 +61,7 @@ class NucliaUnderstandingAPI(BaseTool):
     )
     args_schema: Type[BaseModel] = NUASchema
     _results: Dict[str, Any] = {}
+    requests = req
  
     def _run(
         self,
@@ -99,14 +97,13 @@ class NucliaUnderstandingAPI(BaseTool):
 
     def _push(self, id, content_path, backend, key, enable_ml):
         with open(content_path, "rb") as source_file:
-            response = requests.post(
+            response = self.requests.post(
                 f'{backend}/processing/upload',
                 headers={
                     "content-type": mimetypes.guess_type(content_path)[0] or "application/octet-stream",
                     "x-stf-nuakey": "Bearer " + key,
                 },
                 data=source_file.read(),
-                verify=False,
             )
             if response.status_code != 200:
                 print(f'Error uploading {content_path}: {response.status_code} {response.text}')
@@ -114,14 +111,13 @@ class NucliaUnderstandingAPI(BaseTool):
                 print(f'Pushing {content_path} in queue')
                 file_data = {}
                 file_data['file'] = f'{response.text}'
-                response = requests.post(
+                response = self.requests.post(
                     f'{backend}/processing/push',
                     headers={
                         "content-type": "application/json",
                         "x-stf-nuakey": "Bearer " + key,
                     },
                     json={"filefield": file_data, "processing_options": {"ml_text": enable_ml}},
-                    verify=False,
                 )
                 if response.status_code != 200:
                     print(f'Error pushing {content_path}: {response.status_code} {response.text}')
@@ -144,12 +140,11 @@ class NucliaUnderstandingAPI(BaseTool):
             return result['data']
 
     def _pull_queue(self, backend, key):
-        res = requests.get(
+        res = self.requests.get(
             f'{backend}/processing/pull',
             headers={
                 "x-stf-nuakey": "Bearer " + key,
             },
-            verify=False,
         ).json()
         if res['status'] == 'empty':
             print('Queue empty')
