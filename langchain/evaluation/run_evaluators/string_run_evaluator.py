@@ -130,48 +130,6 @@ class ChainStringRunMapper(StringRunMapper):
     prediction_key: Optional[str] = None
     """The key from the model Run's outputs to use as the eval prediction."""
 
-    @classmethod
-    def from_chain(
-        cls,
-        model: Chain,
-        input_key: Optional[str] = None,
-        prediction_key: Optional[str] = None,
-    ) -> ChainStringRunMapper:
-        """Create a RunMapper from a chain."""
-        error_messages = []
-        if input_key is None:
-            if len(model.input_keys) > 1:
-                error_messages.append(
-                    f"Chain {model.lc_namespace} has multiple input"
-                    " keys. Please specify 'input_key' when loading."
-                )
-            else:
-                input_key = model.input_keys[0]
-        elif input_key not in model.input_keys:
-            error_messages.append(
-                f"Chain {model.lc_namespace} does not have specified"
-                f" input key {input_key}."
-            )
-        if prediction_key is None:
-            if len(model.output_keys) > 1:
-                error_messages.append(
-                    f"Chain {model.lc_namespace} has multiple"
-                    " output keys. Please specify 'prediction_key' when loading."
-                )
-            else:
-                prediction_key = model.output_keys[0]
-        elif prediction_key not in model.output_keys:
-            error_messages.append(
-                f"Chain {model.lc_namespace} does not have specified"
-                f" prediction_key {prediction_key}."
-            )
-        if error_messages:
-            raise ValueError("\n".join(error_messages))
-        if input_key is None or prediction_key is None:
-            # This should never happen, but mypy doesn't know that.
-            raise ValueError(f"Chain {model.lc_namespace} has no input or output keys.")
-        return cls(input_key=input_key, prediction_key=prediction_key)
-
     def _get_key(self, source: Dict, key: Optional[str], which: str) -> str:
         if key is not None:
             return source[key]
