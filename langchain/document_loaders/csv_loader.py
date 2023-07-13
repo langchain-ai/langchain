@@ -16,7 +16,7 @@ class CSVLoader(BaseLoader):
     key/value pair and outputted to a new line in the document's page_content.
 
     The source for each document loaded from csv is set to the value of the
-    `file_path` argument for all doucments by default.
+    `file_path` argument for all documents by default.
     You can override this by setting the `source_column` argument to the
     name of a column in the CSV file.
     The source of each document will then be set to the value of the column
