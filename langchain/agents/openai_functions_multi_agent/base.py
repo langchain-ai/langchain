@@ -7,11 +7,9 @@ from typing import Any, List, Optional, Sequence, Tuple, Union
 from pydantic import root_validator
 
 from langchain.agents import BaseMultiActionAgent
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import Callbacks
 from langchain.chat_models.openai import ChatOpenAI
-from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.chat import (
     BaseMessagePromptTemplate,
     ChatPromptTemplate,
@@ -21,10 +19,14 @@ from langchain.prompts.chat import (
 from langchain.schema import (
     AgentAction,
     AgentFinish,
+    BasePromptTemplate,
+    OutputParserException,
+)
+from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
     FunctionMessage,
-    OutputParserException,
     SystemMessage,
 )
 from langchain.tools import BaseTool
@@ -105,7 +107,6 @@ def _parse_ai_message(message: BaseMessage) -> Union[List[AgentAction], AgentFin
     function_call = message.additional_kwargs.get("function_call", {})
 
     if function_call:
-        function_call = message.additional_kwargs["function_call"]
         try:
             tools = json.loads(function_call["arguments"])["actions"]
         except JSONDecodeError:
@@ -152,7 +153,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         tools: The tools this agent has access to.
         prompt: The prompt for this agent, should support agent_scratchpad as one
             of the variables. For an easy way to construct this prompt, use
-            `OpenAIFunctionsAgent.create_prompt(...)`
+            `OpenAIMultiFunctionsAgent.create_prompt(...)`
     """
 
     llm: BaseLanguageModel

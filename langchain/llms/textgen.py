@@ -20,7 +20,7 @@ class TextGen(LLM):
     Suggested installation, use one-click installer for your OS:
     https://github.com/oobabooga/text-generation-webui#one-click-installers
 
-    Paremeters below taken from text-generation-webui api example:
+    Parameters below taken from text-generation-webui api example:
     https://github.com/oobabooga/text-generation-webui/blob/main/api-examples/api-example.py
 
     Example:
@@ -32,6 +32,9 @@ class TextGen(LLM):
 
     model_url: str
     """The full URL to the textgen webui including http[s]://host:port """
+
+    preset: Optional[str] = None
+    """The preset to use in the textgen webui """
 
     max_new_tokens: Optional[int] = 250
     """The maximum number of tokens to generate."""
@@ -148,7 +151,7 @@ class TextGen(LLM):
 
     def _get_parameters(self, stop: Optional[List[str]] = None) -> Dict[str, Any]:
         """
-        Performs sanity check, preparing paramaters in format needed by textgen.
+        Performs sanity check, preparing parameters in format needed by textgen.
 
         Args:
             stop (Optional[List[str]]): List of stop sequences for textgen.
@@ -162,7 +165,10 @@ class TextGen(LLM):
         if self.stopping_strings and stop is not None:
             raise ValueError("`stop` found in both the input and default params.")
 
-        params = self._default_params
+        if self.preset is None:
+            params = self._default_params
+        else:
+            params = {"preset": self.preset}
 
         # then sets it as configured, or default to an empty list:
         params["stop"] = self.stopping_strings or stop or []

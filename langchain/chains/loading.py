@@ -5,6 +5,7 @@ from typing import Any, Union
 
 import yaml
 
+from langchain.chains import ReduceDocumentsChain
 from langchain.chains.api.base import APIChain
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
@@ -117,9 +118,9 @@ def _load_map_reduce_documents_chain(
 
     if "combine_document_chain" in config:
         combine_document_chain_config = config.pop("combine_document_chain")
-        combine_document_chain = load_chain_from_config(combine_document_chain_config)
+        combine_documents_chain = load_chain_from_config(combine_document_chain_config)
     elif "combine_document_chain_path" in config:
-        combine_document_chain = load_chain(config.pop("combine_document_chain_path"))
+        combine_documents_chain = load_chain(config.pop("combine_document_chain_path"))
     else:
         raise ValueError(
             "One of `combine_document_chain` or "
@@ -128,17 +129,24 @@ def _load_map_reduce_documents_chain(
     if "collapse_document_chain" in config:
         collapse_document_chain_config = config.pop("collapse_document_chain")
         if collapse_document_chain_config is None:
-            collapse_document_chain = None
+            collapse_documents_chain = None
         else:
-            collapse_document_chain = load_chain_from_config(
+            collapse_documents_chain = load_chain_from_config(
                 collapse_document_chain_config
             )
     elif "collapse_document_chain_path" in config:
-        collapse_document_chain = load_chain(config.pop("collapse_document_chain_path"))
+        collapse_documents_chain = load_chain(
+            config.pop("collapse_document_chain_path")
+        )
+    else:
+        collapse_documents_chain = None
+    reduce_documents_chain = ReduceDocumentsChain(
+        combine_documents_chain=combine_documents_chain,
+        collapse_documents_chain=collapse_documents_chain,
+    )
     return MapReduceDocumentsChain(
         llm_chain=llm_chain,
-        combine_document_chain=combine_document_chain,
-        collapse_document_chain=collapse_document_chain,
+        reduce_documents_chain=reduce_documents_chain,
         **config,
     )
 

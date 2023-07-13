@@ -1,6 +1,7 @@
 """A tool for running python code in a REPL."""
 
 import ast
+import asyncio
 import re
 import sys
 from contextlib import redirect_stdout
@@ -68,7 +69,13 @@ class PythonREPLTool(BaseTool):
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> Any:
         """Use the tool asynchronously."""
-        raise NotImplementedError("PythonReplTool does not support async")
+        if self.sanitize_input:
+            query = sanitize_input(query)
+
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(None, self.run, query)
+
+        return result
 
 
 class PythonAstREPLTool(BaseTool):

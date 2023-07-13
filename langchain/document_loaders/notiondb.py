@@ -15,11 +15,12 @@ BLOCK_URL = NOTION_BASE_URL + "/blocks/{block_id}/children"
 
 class NotionDBLoader(BaseLoader):
     """Notion DB Loader.
-    Reads content from pages within a Noton Database.
+    Reads content from pages within a Notion Database.
     Args:
         integration_token (str): Notion integration token.
         database_id (str): Notion database id.
         request_timeout_sec (int): Timeout for Notion requests in seconds.
+            Defaults to 10.
     """
 
     def __init__(
@@ -75,7 +76,11 @@ class NotionDBLoader(BaseLoader):
         return pages
 
     def load_page(self, page_summary: Dict[str, Any]) -> Document:
-        """Read a page."""
+        """Read a page.
+
+        Args:
+            page_summary: Page summary from Notion API.
+        """
         page_id = page_summary["id"]
 
         # load properties as metadata
@@ -102,6 +107,20 @@ class NotionDBLoader(BaseLoader):
                 )
             elif prop_type == "url":
                 value = prop_data["url"]
+            elif prop_type == "unique_id":
+                value = (
+                    f'{prop_data["unique_id"]["prefix"]}-{prop_data["unique_id"]["number"]}'
+                    if prop_data["unique_id"]
+                    else None
+                )
+            elif prop_type == "status":
+                value = prop_data["status"]["name"] if prop_data["status"] else None
+            elif prop_type == "people":
+                value = (
+                    [item["name"] for item in prop_data["people"]]
+                    if prop_data["people"]
+                    else []
+                )
             else:
                 value = None
 

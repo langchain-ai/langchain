@@ -81,6 +81,7 @@ def _bulk_ingest_embeddings(
     vector_field: str = "vector_field",
     text_field: str = "text",
     mapping: Optional[Dict] = None,
+    max_chunk_bytes: Optional[int] = 1 * 1024 * 1024,
 ) -> List[str]:
     """Bulk Ingest Embeddings into given index."""
     if not mapping:
@@ -110,7 +111,7 @@ def _bulk_ingest_embeddings(
         }
         requests.append(request)
         return_ids.append(_id)
-    bulk(client, requests)
+    bulk(client, requests, max_chunk_bytes=max_chunk_bytes)
     client.indices.refresh(index=index_name)
     return return_ids
 
@@ -351,6 +352,7 @@ class OpenSearchVectorSearch(VectorStore):
         ef_construction = _get_kwargs_value(kwargs, "ef_construction", 512)
         m = _get_kwargs_value(kwargs, "m", 16)
         vector_field = _get_kwargs_value(kwargs, "vector_field", "vector_field")
+        max_chunk_bytes = _get_kwargs_value(kwargs, "max_chunk_bytes", 1 * 1024 * 1024)
 
         mapping = _default_text_mapping(
             dim, engine, space_type, ef_search, ef_construction, m, vector_field
@@ -366,6 +368,7 @@ class OpenSearchVectorSearch(VectorStore):
             vector_field=vector_field,
             text_field=text_field,
             mapping=mapping,
+            max_chunk_bytes=max_chunk_bytes,
         )
 
     def similarity_search(
@@ -651,6 +654,7 @@ class OpenSearchVectorSearch(VectorStore):
             "ef_search",
             "ef_construction",
             "m",
+            "max_chunk_bytes",
         ]
         embeddings = embedding.embed_documents(texts)
         _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
@@ -663,6 +667,7 @@ class OpenSearchVectorSearch(VectorStore):
         is_appx_search = _get_kwargs_value(kwargs, "is_appx_search", True)
         vector_field = _get_kwargs_value(kwargs, "vector_field", "vector_field")
         text_field = _get_kwargs_value(kwargs, "text_field", "text")
+        max_chunk_bytes = _get_kwargs_value(kwargs, "max_chunk_bytes", 1 * 1024 * 1024)
         if is_appx_search:
             engine = _get_kwargs_value(kwargs, "engine", "nmslib")
             space_type = _get_kwargs_value(kwargs, "space_type", "l2")
@@ -687,5 +692,6 @@ class OpenSearchVectorSearch(VectorStore):
             vector_field=vector_field,
             text_field=text_field,
             mapping=mapping,
+            max_chunk_bytes=max_chunk_bytes,
         )
         return cls(opensearch_url, index_name, embedding, **kwargs)

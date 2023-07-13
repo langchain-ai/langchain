@@ -46,9 +46,19 @@ def test_faiss_vector_sim() -> None:
     output = docsearch.similarity_search_by_vector(query_vec, k=1)
     assert output == [Document(page_content="foo")]
 
+
+def test_faiss_mmr() -> None:
+    texts = ["foo", "foo", "fou", "foy"]
+    docsearch = FAISS.from_texts(texts, FakeEmbeddings())
+    query_vec = FakeEmbeddings().embed_query(text="foo")
     # make sure we can have k > docstore size
-    output = docsearch.max_marginal_relevance_search_by_vector(query_vec, k=10)
+    output = docsearch.max_marginal_relevance_search_with_score_by_vector(
+        query_vec, k=10, lambda_mult=0.1
+    )
     assert len(output) == len(texts)
+    assert output[0][0] == Document(page_content="foo")
+    assert output[0][1] == 0.0
+    assert output[1][0] != Document(page_content="foo")
 
 
 def test_faiss_with_metadatas() -> None:
@@ -188,9 +198,11 @@ def test_faiss_invalid_normalize_fn() -> None:
 
 
 def test_missing_normalize_score_fn() -> None:
-    """Test doesn't perform similarity search without a normalize score function."""
+    """Test doesn't perform similarity search without a valid distance strategy."""
     with pytest.raises(ValueError):
         texts = ["foo", "bar", "baz"]
-        faiss_instance = FAISS.from_texts(texts, FakeEmbeddings())
-        faiss_instance.relevance_score_fn = None
+        faiss_instance = FAISS.from_texts(
+            texts, FakeEmbeddings(), distance_strategy="fake"
+        )
+
         faiss_instance.similarity_search_with_relevance_scores("foo", k=2)

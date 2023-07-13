@@ -1,12 +1,15 @@
 """Interface for vector stores."""
+
 from __future__ import annotations
 
 import asyncio
+import math
 import warnings
 from abc import ABC, abstractmethod
 from functools import partial
 from typing import (
     Any,
+    Callable,
     ClassVar,
     Collection,
     Dict,
@@ -18,8 +21,12 @@ from typing import (
     TypeVar,
 )
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic import Field, root_validator
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseRetriever
@@ -48,20 +55,19 @@ class VectorStore(ABC):
             List of ids from adding the texts into the vectorstore.
         """
 
-    def delete(self, ids: List[str]) -> Optional[bool]:
-        """Delete by vector ID.
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+        """Delete by vector ID or other criteria.
 
         Args:
             ids: List of ids to delete.
+            **kwargs: Other keyword arguments that subclasses might use.
 
         Returns:
             Optional[bool]: True if deletion is successful,
             False otherwise, None if not implemented.
         """
 
-        raise NotImplementedError(
-            "delete_by_id method must be implemented by subclass."
-        )
+        raise NotImplementedError("delete method must be implemented by subclass.")
 
     async def aadd_texts(
         self,
@@ -133,6 +139,81 @@ class VectorStore(ABC):
     ) -> List[Document]:
         """Return docs most similar to query."""
 
+    @staticmethod
+    def _euclidean_relevance_score_fn(distance: float) -> float:
+        """Return a similarity score on a scale [0, 1]."""
+        # The 'correct' relevance function
+        # may differ depending on a few things, including:
+        # - the distance / similarity metric used by the VectorStore
+        # - the scale of your embeddings (OpenAI's are unit normed. Many
+        #  others are not!)
+        # - embedding dimensionality
+        # - etc.
+        # This function converts the euclidean norm of normalized embeddings
+        # (0 is most similar, sqrt(2) most dissimilar)
+        # to a similarity function (0 to 1)
+        return 1.0 - distance / math.sqrt(2)
+
+    @staticmethod
+    def _cosine_relevance_score_fn(distance: float) -> float:
+        """Normalize the distance to a score on a scale [0, 1]."""
+
+        return 1.0 - distance
+
+    @staticmethod
+    def _max_inner_product_relevance_score_fn(distance: float) -> float:
+        """Normalize the distance to a score on a scale [0, 1]."""
+        if distance > 0:
+            return 1.0 - distance
+
+        return -1.0 * distance
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        """
+        The 'correct' relevance function
+        may differ depending on a few things, including:
+        - the distance / similarity metric used by the VectorStore
+        - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
+        - embedding dimensionality
+        - etc.
+
+        Vectorstores should define their own selection based method of relevance.
+        """
+        raise NotImplementedError
+
+    def similarity_search_with_score(
+        self, *args: Any, **kwargs: Any
+    ) -> List[Tuple[Document, float]]:
+        """Run similarity search with distance."""
+        raise NotImplementedError
+
+    def _similarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """
+        Default similarity search with relevance scores. Modify if necessary
+        in subclass.
+        Return docs and relevance scores in the range [0, 1].
+
+        0 is dissimilar, 1 is most similar.
+
+        Args:
+            query: input text
+            k: Number of Documents to return. Defaults to 4.
+            **kwargs: kwargs to be passed to similarity search. Should include:
+                score_threshold: Optional, a floating point value between 0 to 1 to
+                    filter the resulting set of retrieved docs
+
+        Returns:
+            List of Tuples of (doc, similarity_score)
+        """
+        relevance_score_fn = self._select_relevance_score_fn()
+        docs_and_scores = self.similarity_search_with_score(query, k, **kwargs)
+        return [(doc, relevance_score_fn(score)) for doc, score in docs_and_scores]
+
     def similarity_search_with_relevance_scores(
         self,
         query: str,
@@ -178,18 +259,6 @@ class VectorStore(ABC):
                     f" threshold {score_threshold}"
                 )
         return docs_and_similarities
-
-    def _similarity_search_with_relevance_scores(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
-        """Return docs and relevance scores, normalized on a scale from 0 to 1.
-
-        0 is dissimilar, 1 is most similar.
-        """
-        raise NotImplementedError
 
     async def asimilarity_search_with_relevance_scores(
         self, query: str, k: int = 4, **kwargs: Any
@@ -369,7 +438,7 @@ class VectorStore(ABC):
         return VectorStoreRetriever(vectorstore=self, **kwargs)
 
 
-class VectorStoreRetriever(BaseRetriever, BaseModel):
+class VectorStoreRetriever(BaseRetriever):
     vectorstore: VectorStore
     search_type: str = "similarity"
     search_kwargs: dict = Field(default_factory=dict)
@@ -402,7 +471,9 @@ class VectorStoreRetriever(BaseRetriever, BaseModel):
                 )
         return values
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> List[Document]:
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
         elif self.search_type == "similarity_score_threshold":
@@ -420,7 +491,9 @@ class VectorStoreRetriever(BaseRetriever, BaseModel):
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def _aget_relevant_documents(
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
+    ) -> List[Document]:
         if self.search_type == "similarity":
             docs = await self.vectorstore.asimilarity_search(
                 query, **self.search_kwargs

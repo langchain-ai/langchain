@@ -19,11 +19,13 @@ from langchain.callbacks.manager import (
 )
 from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
+    ChatGeneration,
+    ChatResult,
+)
+from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
-    ChatGeneration,
     ChatMessage,
-    ChatResult,
     HumanMessage,
     SystemMessage,
 )
@@ -219,7 +221,7 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
     To use you must have the google.generativeai Python package installed and
     either:
 
-        1. The ``GOOGLE_API_KEY``` environment varaible set with your API key, or
+        1. The ``GOOGLE_API_KEY``` environment variable set with your API key, or
         2. Pass your API key using the google_api_key kwarg to the ChatGoogle
            constructor.
 

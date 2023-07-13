@@ -12,11 +12,11 @@ Example:
     >>> chain = PairwiseStringEvalChain.from_llm(llm=llm)
     >>> result = chain.evaluate_string_pairs(
     ...     input = "What is the chemical formula for water?",
-    ...     output_a = "H2O",
-    ...     output_b = (
+    ...     prediction = "H2O",
+    ...     prediction_b = (
     ...        "The chemical formula for water is H2O, which means"
     ...        " there are two hydrogen atoms and one oxygen atom."
-    ...     referenc = "The chemical formula for water is H2O.",
+    ...     reference = "The chemical formula for water is H2O.",
     ... )
     >>> print(result["text"])
     # {
@@ -24,11 +24,12 @@ Example:
     #    "comment": "Both responses accurately state"
     #       " that the chemical formula for water is H2O."
     #       " However, Response B provides additional information"
-    # .     " by explaining what the formula means.\n[[B]]"
+    # .     " by explaining what the formula means.\\n[[B]]"
     # }
 """
 from langchain.evaluation.comparison.eval_chain import (
+    LabeledPairwiseStringEvalChain,
     PairwiseStringEvalChain,
 )
 
-__all__ = ["PairwiseStringEvalChain"]
+__all__ = ["PairwiseStringEvalChain", "LabeledPairwiseStringEvalChain"]

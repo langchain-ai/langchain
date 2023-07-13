@@ -21,19 +21,12 @@ from typing import (
 )
 
 from pydantic import Field, root_validator
-from tenacity import (
-    before_sleep_log,
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_exponential,
-)
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.llms.base import BaseLLM
+from langchain.llms.base import BaseLLM, create_base_retry_decorator
 from langchain.schema import Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
 
@@ -55,9 +48,9 @@ def update_token_usage(
 def _update_response(response: Dict[str, Any], stream_response: Dict[str, Any]) -> None:
     """Update response from the stream response."""
     response["choices"][0]["text"] += stream_response["choices"][0]["text"]
-    response["choices"][0]["finish_reason"] = stream_response["choices"][0][
-        "finish_reason"
-    ]
+    response["choices"][0]["finish_reason"] = stream_response["choices"][0].get(
+        "finish_reason", None
+    )
     response["choices"][0]["logprobs"] = stream_response["choices"][0]["logprobs"]
 
 
@@ -76,23 +69,14 @@ def _streaming_response_template() -> Dict[str, Any]:
 def _create_retry_decorator(llm: Union[BaseOpenAI, OpenAIChat]) -> Callable[[Any], Any]:
     import openai
 
-    min_seconds = 4
-    max_seconds = 10
-    # Wait 2^x * 1 second between each retry starting with
-    # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
-    return retry(
-        reraise=True,
-        stop=stop_after_attempt(llm.max_retries),
-        wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
-        retry=(
-            retry_if_exception_type(openai.error.Timeout)
-            | retry_if_exception_type(openai.error.APIError)
-            | retry_if_exception_type(openai.error.APIConnectionError)
-            | retry_if_exception_type(openai.error.RateLimitError)
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)
-        ),
-        before_sleep=before_sleep_log(logger, logging.WARNING),
-    )
+    errors = [
+        openai.error.Timeout,
+        openai.error.APIError,
+        openai.error.APIConnectionError,
+        openai.error.RateLimitError,
+        openai.error.ServiceUnavailableError,
+    ]
+    return create_base_retry_decorator(error_types=errors, max_retries=llm.max_retries)
 
 
 def completion_with_retry(llm: Union[BaseOpenAI, OpenAIChat], **kwargs: Any) -> Any:
@@ -202,7 +186,7 @@ class BaseOpenAI(BaseLLM):
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
-        all_required_field_names = cls.all_required_field_names()
+        all_required_field_names = cls._all_required_field_names()
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
             if field_name in extra:

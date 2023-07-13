@@ -2,27 +2,22 @@
 import tempfile
 from typing import Callable, Optional
 
+import numpy as np
 import pytest
 from qdrant_client.http import models as rest
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores import Qdrant
+from langchain.vectorstores.qdrant import QdrantException
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
 )
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])
-@pytest.mark.parametrize(
-    ["content_payload_key", "metadata_payload_key"],
-    [
-        (Qdrant.CONTENT_KEY, Qdrant.METADATA_KEY),
-        ("foo", "bar"),
-        (Qdrant.CONTENT_KEY, "bar"),
-        ("foo", Qdrant.METADATA_KEY),
-    ],
-)
+@pytest.mark.parametrize("content_payload_key", [Qdrant.CONTENT_KEY, "foo"])
+@pytest.mark.parametrize("metadata_payload_key", [Qdrant.METADATA_KEY, "bar"])
 def test_qdrant_similarity_search(
     batch_size: int, content_payload_key: str, metadata_payload_key: str
 ) -> None:
@@ -41,15 +36,8 @@ def test_qdrant_similarity_search(
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])
-@pytest.mark.parametrize(
-    ["content_payload_key", "metadata_payload_key"],
-    [
-        (Qdrant.CONTENT_KEY, Qdrant.METADATA_KEY),
-        ("foo", "bar"),
-        (Qdrant.CONTENT_KEY, "bar"),
-        ("foo", Qdrant.METADATA_KEY),
-    ],
-)
+@pytest.mark.parametrize("content_payload_key", [Qdrant.CONTENT_KEY, "foo"])
+@pytest.mark.parametrize("metadata_payload_key", [Qdrant.METADATA_KEY, "bar"])
 def test_qdrant_similarity_search_by_vector(
     batch_size: int, content_payload_key: str, metadata_payload_key: str
 ) -> None:
@@ -69,15 +57,8 @@ def test_qdrant_similarity_search_by_vector(
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])
-@pytest.mark.parametrize(
-    ["content_payload_key", "metadata_payload_key"],
-    [
-        (Qdrant.CONTENT_KEY, Qdrant.METADATA_KEY),
-        ("foo", "bar"),
-        (Qdrant.CONTENT_KEY, "bar"),
-        ("foo", Qdrant.METADATA_KEY),
-    ],
-)
+@pytest.mark.parametrize("content_payload_key", [Qdrant.CONTENT_KEY, "foo"])
+@pytest.mark.parametrize("metadata_payload_key", [Qdrant.METADATA_KEY, "bar"])
 def test_qdrant_similarity_search_with_score_by_vector(
     batch_size: int, content_payload_key: str, metadata_payload_key: str
 ) -> None:
@@ -100,11 +81,16 @@ def test_qdrant_similarity_search_with_score_by_vector(
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])
-def test_qdrant_add_documents(batch_size: int) -> None:
+@pytest.mark.parametrize("vector_name", [None, "my-vector"])
+def test_qdrant_add_documents(batch_size: int, vector_name: Optional[str]) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     docsearch: Qdrant = Qdrant.from_texts(
-        texts, ConsistentFakeEmbeddings(), location=":memory:", batch_size=batch_size
+        texts,
+        ConsistentFakeEmbeddings(),
+        location=":memory:",
+        batch_size=batch_size,
+        vector_name=vector_name,
     )
 
     new_texts = ["foobar", "foobaz"]
@@ -122,6 +108,7 @@ def test_qdrant_add_documents(batch_size: int) -> None:
 
 @pytest.mark.parametrize("batch_size", [1, 64])
 def test_qdrant_add_texts_returns_all_ids(batch_size: int) -> None:
+    """Test end to end Qdrant.add_texts returns unique ids."""
     docsearch: Qdrant = Qdrant.from_texts(
         ["foobar"],
         ConsistentFakeEmbeddings(),
@@ -135,15 +122,8 @@ def test_qdrant_add_texts_returns_all_ids(batch_size: int) -> None:
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])
-@pytest.mark.parametrize(
-    ["content_payload_key", "metadata_payload_key"],
-    [
-        (Qdrant.CONTENT_KEY, Qdrant.METADATA_KEY),
-        ("test_content", "test_payload"),
-        (Qdrant.CONTENT_KEY, "payload_test"),
-        ("content_test", Qdrant.METADATA_KEY),
-    ],
-)
+@pytest.mark.parametrize("content_payload_key", [Qdrant.CONTENT_KEY, "foo"])
+@pytest.mark.parametrize("metadata_payload_key", [Qdrant.METADATA_KEY, "bar"])
 def test_qdrant_with_metadatas(
     batch_size: int, content_payload_key: str, metadata_payload_key: str
 ) -> None:
@@ -190,7 +170,10 @@ def test_qdrant_similarity_search_filters(batch_size: int) -> None:
     ]
 
 
-def test_qdrant_similarity_search_with_relevance_score_no_threshold() -> None:
+@pytest.mark.parametrize("vector_name", [None, "my-vector"])
+def test_qdrant_similarity_search_with_relevance_score_no_threshold(
+    vector_name: Optional[str],
+) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [
@@ -202,6 +185,7 @@ def test_qdrant_similarity_search_with_relevance_score_no_threshold() -> None:
         ConsistentFakeEmbeddings(),
         metadatas=metadatas,
         location=":memory:",
+        vector_name=vector_name,
     )
     output = docsearch.similarity_search_with_relevance_scores(
         "foo", k=3, score_threshold=None
@@ -302,17 +286,14 @@ def test_qdrant_similarity_search_filters_with_qdrant_filters() -> None:
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])
-@pytest.mark.parametrize(
-    ["content_payload_key", "metadata_payload_key"],
-    [
-        (Qdrant.CONTENT_KEY, Qdrant.METADATA_KEY),
-        ("test_content", "test_payload"),
-        (Qdrant.CONTENT_KEY, "payload_test"),
-        ("content_test", Qdrant.METADATA_KEY),
-    ],
-)
+@pytest.mark.parametrize("content_payload_key", [Qdrant.CONTENT_KEY, "test_content"])
+@pytest.mark.parametrize("metadata_payload_key", [Qdrant.METADATA_KEY, "test_metadata"])
+@pytest.mark.parametrize("vector_name", [None, "my-vector"])
 def test_qdrant_max_marginal_relevance_search(
-    batch_size: int, content_payload_key: str, metadata_payload_key: str
+    batch_size: int,
+    content_payload_key: str,
+    metadata_payload_key: str,
+    vector_name: Optional[str],
 ) -> None:
     """Test end to end construction and MRR search."""
     texts = ["foo", "bar", "baz"]
@@ -325,6 +306,7 @@ def test_qdrant_max_marginal_relevance_search(
         content_payload_key=content_payload_key,
         metadata_payload_key=metadata_payload_key,
         batch_size=batch_size,
+        vector_name=vector_name,
     )
     output = docsearch.max_marginal_relevance_search("foo", k=2, fetch_k=3)
     assert output == [
@@ -344,6 +326,7 @@ def test_qdrant_max_marginal_relevance_search(
 def test_qdrant_embedding_interface(
     embeddings: Optional[Embeddings], embedding_function: Optional[Callable]
 ) -> None:
+    """Test Qdrant may accept different types for embeddings."""
     from qdrant_client import QdrantClient
 
     client = QdrantClient(":memory:")
@@ -364,9 +347,10 @@ def test_qdrant_embedding_interface(
         (None, None),
     ],
 )
-def test_qdrant_embedding_interface_raises(
+def test_qdrant_embedding_interface_raises_value_error(
     embeddings: Optional[Embeddings], embedding_function: Optional[Callable]
 ) -> None:
+    """Test Qdrant requires only one method for embeddings."""
     from qdrant_client import QdrantClient
 
     client = QdrantClient(":memory:")
@@ -381,21 +365,24 @@ def test_qdrant_embedding_interface_raises(
         )
 
 
-def test_qdrant_stores_duplicated_texts() -> None:
+@pytest.mark.parametrize("vector_name", [None, "my-vector"])
+def test_qdrant_add_texts_stores_duplicated_texts(vector_name: Optional[str]) -> None:
+    """Test end to end Qdrant.add_texts stores duplicated texts separately."""
     from qdrant_client import QdrantClient
     from qdrant_client.http import models as rest
 
     client = QdrantClient(":memory:")
     collection_name = "test"
-    client.recreate_collection(
-        collection_name,
-        vectors_config=rest.VectorParams(size=10, distance=rest.Distance.COSINE),
-    )
+    vectors_config = rest.VectorParams(size=10, distance=rest.Distance.COSINE)
+    if vector_name is not None:
+        vectors_config = {vector_name: vectors_config}  # type: ignore[assignment]
+    client.recreate_collection(collection_name, vectors_config=vectors_config)
 
     vec_store = Qdrant(
         client,
         collection_name,
         embeddings=ConsistentFakeEmbeddings(),
+        vector_name=vector_name,
     )
     ids = vec_store.add_texts(["abc", "abc"], [{"a": 1}, {"a": 2}])
 
@@ -404,6 +391,7 @@ def test_qdrant_stores_duplicated_texts() -> None:
 
 
 def test_qdrant_from_texts_stores_duplicated_texts() -> None:
+    """Test end to end Qdrant.from_texts stores duplicated texts separately."""
     from qdrant_client import QdrantClient
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -420,7 +408,11 @@ def test_qdrant_from_texts_stores_duplicated_texts() -> None:
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])
-def test_qdrant_from_texts_stores_ids(batch_size: int) -> None:
+@pytest.mark.parametrize("vector_name", [None, "my-vector"])
+def test_qdrant_from_texts_stores_ids(
+    batch_size: int, vector_name: Optional[str]
+) -> None:
+    """Test end to end Qdrant.from_texts stores provided ids."""
     from qdrant_client import QdrantClient
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -435,6 +427,7 @@ def test_qdrant_from_texts_stores_ids(batch_size: int) -> None:
             collection_name="test",
             path=str(tmpdir),
             batch_size=batch_size,
+            vector_name=vector_name,
         )
         del vec_store
 
@@ -446,6 +439,7 @@ def test_qdrant_from_texts_stores_ids(batch_size: int) -> None:
 
 @pytest.mark.parametrize("batch_size", [1, 64])
 def test_qdrant_add_texts_stores_ids(batch_size: int) -> None:
+    """Test end to end Qdrant.add_texts stores provided ids."""
     from qdrant_client import QdrantClient
 
     ids = [
@@ -467,3 +461,225 @@ def test_qdrant_add_texts_stores_ids(batch_size: int) -> None:
     assert 2 == client.count("test").count
     stored_ids = [point.id for point in client.scroll("test")[0]]
     assert set(ids) == set(stored_ids)
+
+
+@pytest.mark.parametrize("vector_name", ["custom-vector"])
+def test_qdrant_from_texts_stores_embeddings_as_named_vectors(vector_name: str) -> None:
+    """Test end to end Qdrant.from_texts stores named vectors if name is provided."""
+    from qdrant_client import QdrantClient
+
+    collection_name = "test"
+    with tempfile.TemporaryDirectory() as tmpdir:
+        vec_store = Qdrant.from_texts(
+            ["lorem", "ipsum", "dolor", "sit", "amet"],
+            ConsistentFakeEmbeddings(),
+            collection_name=collection_name,
+            path=str(tmpdir),
+            vector_name=vector_name,
+        )
+        del vec_store
+
+        client = QdrantClient(path=str(tmpdir))
+        assert 5 == client.count("test").count
+        assert all(
+            vector_name in point.vector  # type: ignore[operator]
+            for point in client.scroll(collection_name, with_vectors=True)[0]
+        )
+
+
+@pytest.mark.parametrize("vector_name", ["custom-vector"])
+def test_qdrant_add_texts_stores_embeddings_as_named_vectors(vector_name: str) -> None:
+    """Test end to end Qdrant.add_texts stores named vectors if name is provided."""
+    from qdrant_client import QdrantClient
+
+    collection_name = "test"
+
+    client = QdrantClient(":memory:")
+    client.recreate_collection(
+        collection_name,
+        vectors_config={
+            vector_name: rest.VectorParams(size=10, distance=rest.Distance.COSINE)
+        },
+    )
+
+    vec_store = Qdrant(
+        client,
+        collection_name,
+        ConsistentFakeEmbeddings(),
+        vector_name=vector_name,
+    )
+    vec_store.add_texts(["lorem", "ipsum", "dolor", "sit", "amet"])
+
+    assert 5 == client.count("test").count
+    assert all(
+        vector_name in point.vector  # type: ignore[operator]
+        for point in client.scroll(collection_name, with_vectors=True)[0]
+    )
+
+
+@pytest.mark.parametrize("batch_size", [1, 64])
+@pytest.mark.parametrize("content_payload_key", [Qdrant.CONTENT_KEY, "foo"])
+@pytest.mark.parametrize("metadata_payload_key", [Qdrant.METADATA_KEY, "bar"])
+def test_qdrant_similarity_search_with_relevance_scores(
+    batch_size: int, content_payload_key: str, metadata_payload_key: str
+) -> None:
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = Qdrant.from_texts(
+        texts,
+        ConsistentFakeEmbeddings(),
+        location=":memory:",
+        content_payload_key=content_payload_key,
+        metadata_payload_key=metadata_payload_key,
+        batch_size=batch_size,
+    )
+    output = docsearch.similarity_search_with_relevance_scores("foo", k=3)
+
+    assert all(
+        (1 >= score or np.isclose(score, 1)) and score >= 0 for _, score in output
+    )
+
+
+@pytest.mark.parametrize("vector_name", [None, "custom-vector"])
+def test_qdrant_from_texts_reuses_same_collection(vector_name: Optional[str]) -> None:
+    """Test if Qdrant.from_texts reuses the same collection"""
+    from qdrant_client import QdrantClient
+
+    collection_name = "test"
+    embeddings = ConsistentFakeEmbeddings()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        vec_store = Qdrant.from_texts(
+            ["lorem", "ipsum", "dolor", "sit", "amet"],
+            embeddings,
+            collection_name=collection_name,
+            path=str(tmpdir),
+            vector_name=vector_name,
+        )
+        del vec_store
+
+        vec_store = Qdrant.from_texts(
+            ["foo", "bar"],
+            embeddings,
+            collection_name=collection_name,
+            path=str(tmpdir),
+            vector_name=vector_name,
+        )
+        del vec_store
+
+        client = QdrantClient(path=str(tmpdir))
+        assert 7 == client.count(collection_name).count
+
+
+@pytest.mark.parametrize("vector_name", [None, "custom-vector"])
+def test_qdrant_from_texts_raises_error_on_different_dimensionality(
+    vector_name: Optional[str],
+) -> None:
+    """Test if Qdrant.from_texts raises an exception if dimensionality does not match"""
+    collection_name = "test"
+    with tempfile.TemporaryDirectory() as tmpdir:
+        vec_store = Qdrant.from_texts(
+            ["lorem", "ipsum", "dolor", "sit", "amet"],
+            ConsistentFakeEmbeddings(dimensionality=10),
+            collection_name=collection_name,
+            path=str(tmpdir),
+            vector_name=vector_name,
+        )
+        del vec_store
+
+        with pytest.raises(QdrantException):
+            Qdrant.from_texts(
+                ["foo", "bar"],
+                ConsistentFakeEmbeddings(dimensionality=5),
+                collection_name=collection_name,
+                path=str(tmpdir),
+                vector_name=vector_name,
+            )
+
+
+@pytest.mark.parametrize(
+    ["first_vector_name", "second_vector_name"],
+    [
+        (None, "custom-vector"),
+        ("custom-vector", None),
+        ("my-first-vector", "my-second_vector"),
+    ],
+)
+def test_qdrant_from_texts_raises_error_on_different_vector_name(
+    first_vector_name: Optional[str],
+    second_vector_name: Optional[str],
+) -> None:
+    """Test if Qdrant.from_texts raises an exception if vector name does not match"""
+    collection_name = "test"
+    with tempfile.TemporaryDirectory() as tmpdir:
+        vec_store = Qdrant.from_texts(
+            ["lorem", "ipsum", "dolor", "sit", "amet"],
+            ConsistentFakeEmbeddings(dimensionality=10),
+            collection_name=collection_name,
+            path=str(tmpdir),
+            vector_name=first_vector_name,
+        )
+        del vec_store
+
+        with pytest.raises(QdrantException):
+            Qdrant.from_texts(
+                ["foo", "bar"],
+                ConsistentFakeEmbeddings(dimensionality=5),
+                collection_name=collection_name,
+                path=str(tmpdir),
+                vector_name=second_vector_name,
+            )
+
+
+def test_qdrant_from_texts_raises_error_on_different_distance() -> None:
+    """Test if Qdrant.from_texts raises an exception if distance does not match"""
+    collection_name = "test"
+    with tempfile.TemporaryDirectory() as tmpdir:
+        vec_store = Qdrant.from_texts(
+            ["lorem", "ipsum", "dolor", "sit", "amet"],
+            ConsistentFakeEmbeddings(dimensionality=10),
+            collection_name=collection_name,
+            path=str(tmpdir),
+            distance_func="Cosine",
+        )
+        del vec_store
+
+        with pytest.raises(QdrantException):
+            Qdrant.from_texts(
+                ["foo", "bar"],
+                ConsistentFakeEmbeddings(dimensionality=5),
+                collection_name=collection_name,
+                path=str(tmpdir),
+                distance_func="Euclid",
+            )
+
+
+@pytest.mark.parametrize("vector_name", [None, "custom-vector"])
+def test_qdrant_from_texts_recreates_collection_on_force_recreate(
+    vector_name: Optional[str],
+) -> None:
+    """Test if Qdrant.from_texts recreates the collection even if config mismatches"""
+    from qdrant_client import QdrantClient
+
+    collection_name = "test"
+    with tempfile.TemporaryDirectory() as tmpdir:
+        vec_store = Qdrant.from_texts(
+            ["lorem", "ipsum", "dolor", "sit", "amet"],
+            ConsistentFakeEmbeddings(dimensionality=10),
+            collection_name=collection_name,
+            path=str(tmpdir),
+            vector_name=vector_name,
+        )
+        del vec_store
+
+        vec_store = Qdrant.from_texts(
+            ["foo", "bar"],
+            ConsistentFakeEmbeddings(dimensionality=5),
+            collection_name=collection_name,
+            path=str(tmpdir),
+            vector_name=vector_name,
+            force_recreate=True,
+        )
+        del vec_store
+
+        client = QdrantClient(path=str(tmpdir))
+        assert 2 == client.count(collection_name).count

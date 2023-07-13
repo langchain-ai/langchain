@@ -10,7 +10,7 @@ For Feedback, Issues, Contributions - please raise an issue here:
 Main principles and benefits:
 
 - more `pythonic` way of writing code
-- write multiline prompts that wont break your code flow with indentation
+- write multiline prompts that won't break your code flow with indentation
 - making use of IDE in-built support for **hinting**, **type checking** and **popup with docs** to quickly peek in the function to see the prompt, parameters it consumes etc.
 - leverage all the power of 🦜🔗 LangChain ecosystem
 - adding support for **optional parameters**
@@ -31,7 +31,7 @@ def write_me_short_post(topic:str, platform:str="twitter", audience:str = "devel
     """
     return
 
-# run it naturaly
+# run it naturally
 write_me_short_post(topic="starwars")
 # or
 write_me_short_post(topic="starwars", platform="redit")
@@ -122,7 +122,7 @@ await write_me_short_post(topic="old movies")
 
 # Simplified streaming
 
-If we wan't to leverage streaming:
+If we want to leverage streaming:
  - we need to define prompt as async function 
  - turn on the streaming on the decorator, or we can define PromptType with streaming on
  - capture the stream using StreamingContext
@@ -149,7 +149,7 @@ async def write_me_short_post(topic:str, platform:str="twitter", audience:str = 
 
 
 
-# just an arbitrary  function to demonstrate the streaming... wil be some websockets code in the real world
+# just an arbitrary  function to demonstrate the streaming... will be some websockets code in the real world
 tokens=[]
 def capture_stream_func(new_token:str):
     tokens.append(new_token)
@@ -250,7 +250,7 @@ the roles here are model native roles (assistant, user, system for chatGPT)
 
 # Optional sections
 - you can define a whole sections of your prompt that should be optional
-- if any input in the section is missing, the whole section wont be rendered
+- if any input in the section is missing, the whole section won't be rendered
 
 the syntax for this is as follows:
 
@@ -273,7 +273,7 @@ def prompt_with_optional_partials():
 # Output parsers
 
 - llm_prompt decorator natively tries to detect the best output parser based on the output type. (if not set, it returns the raw string)
-- list, dict and pydantic outputs are also supported natively (automaticaly)
+- list, dict and pydantic outputs are also supported natively (automatically)
 
 ``` python
 # this code example is complete and should run as it is

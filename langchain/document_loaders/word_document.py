@@ -1,4 +1,4 @@
-"""Loader that loads word documents."""
+"""Loads word documents."""
 import os
 import tempfile
 from abc import ABC
@@ -65,7 +65,28 @@ class Docx2txtLoader(BaseLoader, ABC):
 
 
 class UnstructuredWordDocumentLoader(UnstructuredFileLoader):
-    """Loader that uses unstructured to load word documents."""
+    """Loader that uses unstructured to load word documents.
+    Works with both .docx and .doc files.
+    You can run the loader in one of two modes: "single" and "elements".
+    If you use "single" mode, the document will be returned as a single
+    langchain Document object. If you use "elements" mode, the unstructured
+    library will split the document into elements such as Title and NarrativeText.
+    You can pass in additional unstructured kwargs after mode to apply
+    different unstructured settings.
+
+    Examples
+    --------
+    from langchain.document_loaders import UnstructuredWordDocumentLoader
+
+    loader = UnstructuredWordDocumentLoader(
+        "example.docx", mode="elements", strategy="fast",
+    )
+    docs = loader.load()
+
+    References
+    ----------
+    https://unstructured-io.github.io/unstructured/bricks.html#partition-docx
+    """
 
     def _get_elements(self) -> List:
         from unstructured.__version__ import __version__ as __unstructured_version__
