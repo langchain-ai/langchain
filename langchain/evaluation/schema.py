@@ -89,18 +89,23 @@ class _EvalArgsMixin:
         reference: Optional[str] = None,
         input: Optional[str] = None,
     ) -> None:
+        """Check if the evaluation arguments are valid.
+
+        Args:
+            reference (Optional[str], optional): The reference label.
+            input (Optional[str], optional): The input string.
+        Raises:
+            ValueError: If the evaluator requires an input string but none is provided,
+                or if the evaluator requires a reference label but none is provided.
+        """
         if self.requires_input and input is None:
             raise ValueError(f"{self.__class__.__name__} requires an input string.")
         elif input is not None and not self.requires_input:
             warn(self._skip_input_warning)
-        else:
-            pass
         if self.requires_reference and reference is None:
             raise ValueError(f"{self.__class__.__name__} requires a reference string.")
         elif reference is not None and not self.requires_reference:
             warn(self._skip_reference_warning)
-        else:
-            pass
 
 
 class StringEvaluator(_EvalArgsMixin, ABC):
@@ -109,10 +114,12 @@ class StringEvaluator(_EvalArgsMixin, ABC):
 
     @property
     def evaluation_name(self) -> str:
+        """The name of the evaluation."""
         raise NotImplementedError()
 
     @property
     def requires_reference(self) -> bool:
+        """Whether this evaluator requires a reference label."""
         return False
 
     @abstractmethod
@@ -127,17 +134,16 @@ class StringEvaluator(_EvalArgsMixin, ABC):
         """Evaluate Chain or LLM output, based on optional input and label.
 
         Args:
-            prediction (str): the LLM or chain prediction to evaluate.
-            reference (Optional[str], optional): the reference label
-                to evaluate against.
-            input (Optional[str], optional): the input to consider during evaluation
-            **kwargs: additional keyword arguments, including callbacks, tags, etc.
+            prediction (str): The LLM or chain prediction to evaluate.
+            reference (Optional[str], optional): The reference label to evaluate against.
+            input (Optional[str], optional): The input to consider during evaluation.
+            **kwargs: Additional keyword arguments, including callbacks, tags, etc.
         Returns:
             dict: The evaluation results containing the score or value.
                 It is recommended that the dictionary contain the following keys:
-                    - score: the score of the evaluation, if applicable.
-                    - value: the string value of the evaluation, if applicable.
-                    - reasoning: the reasoning for the evaluation, if applicable.
+                     - score: the score of the evaluation, if applicable.
+                     - value: the string value of the evaluation, if applicable.
+                     - reasoning: the reasoning for the evaluation, if applicable.
         """
 
     async def _aevaluate_strings(
@@ -148,25 +154,23 @@ class StringEvaluator(_EvalArgsMixin, ABC):
         input: Optional[str] = None,
         **kwargs: Any,
     ) -> dict:
-        """Asynchronously evaluate Chain or LLM output, based on optional
-          input and label.
+        """Asynchronously evaluate Chain or LLM output, based on optional input and label.
 
         Args:
-            prediction (str): the LLM or chain prediction to evaluate.
-            reference (Optional[str], optional): the reference label
-                 to evaluate against.
-            input (Optional[str], optional): the input to consider during evaluation
-            **kwargs: additional keyword arguments, including callbacks, tags, etc.
+            prediction (str): The LLM or chain prediction to evaluate.
+            reference (Optional[str], optional): The reference label to evaluate against.
+            input (Optional[str], optional): The input to consider during evaluation.
+            **kwargs: Additional keyword arguments, including callbacks, tags, etc.
         Returns:
             dict: The evaluation results containing the score or value.
                 It is recommended that the dictionary contain the following keys:
-                    - score: the score of the evaluation, if applicable.
-                    - value: the string value of the evaluation, if applicable.
-                    - reasoning: the reasoning for the evaluation, if applicable.
+                     - score: the score of the evaluation, if applicable.
+                     - value: the string value of the evaluation, if applicable.
+                     - reasoning: the reasoning for the evaluation, if applicable.
         """
         raise NotImplementedError(
-            f"{self.__class__.__name__} hasn't implemented an "
-            "async aevaluate_strings method."
+            f"{self.__class__.__name__} hasn't implemented an async "
+            "aevaluate_strings method."
         )
 
     def evaluate_strings(
@@ -180,11 +184,10 @@ class StringEvaluator(_EvalArgsMixin, ABC):
         """Evaluate Chain or LLM output, based on optional input and label.
 
         Args:
-            prediction (str): the LLM or chain prediction to evaluate.
-            reference (Optional[str], optional): the reference label
-                to evaluate against.
-            input (Optional[str], optional): the input to consider during evaluation
-            **kwargs: additional keyword arguments, including callbacks, tags, etc.
+            prediction (str): The LLM or chain prediction to evaluate.
+            reference (Optional[str], optional): The reference label to evaluate against.
+            input (Optional[str], optional): The input to consider during evaluation.
+            **kwargs: Additional keyword arguments, including callbacks, tags, etc.
         Returns:
             dict: The evaluation results containing the score or value.
         """
@@ -201,15 +204,13 @@ class StringEvaluator(_EvalArgsMixin, ABC):
         input: Optional[str] = None,
         **kwargs: Any,
     ) -> dict:
-        """Asynchronously evaluate Chain or LLM output, based on optional
-          input and label.
+        """Asynchronously evaluate Chain or LLM output, based on optional input and label.
 
         Args:
-            prediction (str): the LLM or chain prediction to evaluate.
-            reference (Optional[str], optional): the reference label
-                 to evaluate against.
-            input (Optional[str], optional): the input to consider during evaluation
-            **kwargs: additional keyword arguments, including callbacks, tags, etc.
+            prediction (str): The LLM or chain prediction to evaluate.
+            reference (Optional[str], optional): The reference label to evaluate against.
+            input (Optional[str], optional): The input to consider during evaluation.
+            **kwargs: Additional keyword arguments, including callbacks, tags, etc.
         Returns:
             dict: The evaluation results containing the score or value.
         """
@@ -237,15 +238,11 @@ class PairwiseStringEvaluator(_EvalArgsMixin, ABC):
         Args:
             prediction (str): The output string from the first model.
             prediction_b (str): The output string from the second model.
-            reference (str, optional): The expected output / reference
-                string. Defaults to None.
-            input (str, optional): The input string. Defaults to None.
-            **kwargs (Any): Additional keyword arguments, such
-                as callbacks and optional reference strings.
-
+            reference (Optional[str], optional): The expected output / reference string.
+            input (Optional[str], optional): The input string.
+            **kwargs: Additional keyword arguments, such as callbacks and optional reference strings.
         Returns:
-            dict: A dictionary containing the preference, scores, and/or
-                other information.
+            dict: A dictionary containing the preference, scores, and/or other information.
         """
 
     async def _aevaluate_string_pairs(
@@ -257,20 +254,16 @@ class PairwiseStringEvaluator(_EvalArgsMixin, ABC):
         input: Optional[str] = None,
         **kwargs: Any,
     ) -> dict:
-        """Evaluate the output string pairs.
+        """Asynchronously evaluate the output string pairs.
 
         Args:
             prediction (str): The output string from the first model.
             prediction_b (str): The output string from the second model.
-            reference (str, optional): The expected output / reference
-                string. Defaults to None.
-            input (str, optional): The input string. Defaults to None.
-            **kwargs (Any): Additional keyword arguments, such
-                as callbacks and optional reference strings.
-
+            reference (Optional[str], optional): The expected output / reference string.
+            input (Optional[str], optional): The input string.
+            **kwargs: Additional keyword arguments, such as callbacks and optional reference strings.
         Returns:
-            dict: A dictionary containing the preference, scores, and/or
-                other information.
+            dict: A dictionary containing the preference, scores, and/or other information.
         """
         raise NotImplementedError(
             f"{self.__class__.__name__} hasn't implemented an async "
@@ -291,15 +284,11 @@ class PairwiseStringEvaluator(_EvalArgsMixin, ABC):
         Args:
             prediction (str): The output string from the first model.
             prediction_b (str): The output string from the second model.
-            reference (str, optional): The expected output / reference
-                string. Defaults to None.
-            input (str, optional): The input string. Defaults to None.
-            **kwargs (Any): Additional keyword arguments, such
-                as callbacks and optional reference strings.
-
+            reference (Optional[str], optional): The expected output / reference string.
+            input (Optional[str], optional): The input string.
+            **kwargs: Additional keyword arguments, such as callbacks and optional reference strings.
         Returns:
-            dict: A dictionary containing the preference, scores, and/or
-                other information.
+            dict: A dictionary containing the preference, scores, and/or other information.
         """
         self._check_evaluation_args(reference=reference, input=input)
         return self._evaluate_string_pairs(
@@ -319,20 +308,16 @@ class PairwiseStringEvaluator(_EvalArgsMixin, ABC):
         input: Optional[str] = None,
         **kwargs: Any,
     ) -> dict:
-        """Evaluate the output string pairs.
+        """Asynchronously evaluate the output string pairs.
 
         Args:
             prediction (str): The output string from the first model.
             prediction_b (str): The output string from the second model.
-            reference (str, optional): The expected output / reference
-                string. Defaults to None.
-            input (str, optional): The input string. Defaults to None.
-            **kwargs (Any): Additional keyword arguments, such
-                as callbacks and optional reference strings.
-
+            reference (Optional[str], optional): The expected output / reference string.
+            input (Optional[str], optional): The input string.
+            **kwargs: Additional keyword arguments, such as callbacks and optional reference strings.
         Returns:
-            dict: A dictionary containing the preference, scores, and/or
-                other information.
+            dict: A dictionary containing the preference, scores, and/or other information.
         """
         self._check_evaluation_args(reference=reference, input=input)
         return await self._aevaluate_string_pairs(
@@ -349,6 +334,7 @@ class AgentTrajectoryEvaluator(_EvalArgsMixin, ABC):
 
     @property
     def requires_input(self) -> bool:
+        """Whether this evaluator requires an input string."""
         return True
 
     @abstractmethod
