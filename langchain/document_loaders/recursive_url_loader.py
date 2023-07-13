@@ -1,4 +1,4 @@
-from typing import Iterator, List, Optional, Set, Callable
+from typing import Iterator, List, Optional, Set
 from urllib.parse import urljoin, urlparse
 
 import requests

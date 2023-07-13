@@ -1,9 +1,9 @@
 from typing import Any, Callable
-from unittest.mock import MagicMock, Mock
 
 import pytest
 from pytest import MonkeyPatch
 
+from langchain.docstore.document import Document
 from langchain.document_loaders.recursive_url_loader import RecursiveUrlLoader
 
 
@@ -15,57 +15,41 @@ def url_loader() -> RecursiveUrlLoader:
 
 
 @pytest.fixture
-def mock_requests_get(monkeypatch: MonkeyPatch) -> None:
+def mock_web_base_loader_load(monkeypatch: MonkeyPatch) -> None:
     """Mock requests.get"""
 
-    # Mocking HTML content with 2 links, one absolute, one relative.
-    html_content = """
-    <html>
-        <body>
-            <a href="/relative">relative link</a>
-            <a href="http://test.com/absolute">absolute link</a>
-        </body>
-    </html>
-    """
+    # Mock Document object for relative URL
+    mock_doc_relative = Document()
+    mock_doc_relative.page_content = "Relative page"
+    mock_doc_relative.metadata = {"url": "http://test.com/relative"}
 
-    # Mock Response object for main URL
-    mock_response_main = MagicMock()
-    mock_response_main.text = html_content
+    # Mock Document object for absolute URL
+    mock_doc_absolute = Document()
+    mock_doc_absolute.page_content = "Absolute page"
+    mock_doc_absolute.metadata = {"url": "http://test.com/absolute"}
 
-    # Mock Response object for relative URL
-    mock_response_relative = MagicMock()
-    mock_response_relative.text = "Relative page"
-
-    # Mock Response object for absolute URL
-    mock_response_absolute = MagicMock()
-    mock_response_absolute.text = "Absolute page"
-
-    # Mock Response object for default
-    mock_response_default = MagicMock()
-    mock_response_default.text = "Default page"
-
-    def mock_get(url: str, *args: Any, **kwargs: Any) -> Mock:
+    def mock_get(url: str, *args: Any, **kwargs: Any) -> Document:
         if url.startswith("http://test.com"):
             if "/absolute" in url:
-                return mock_response_absolute
+                return mock_doc_absolute
             elif "/relative" in url:
-                return mock_response_relative
-            else:
-                return mock_response_main
-        return mock_response_default
+                return mock_doc_relative
+        default_doc = Document()
+        default_doc.page_content = "Default page"
+        default_doc.metadata = {"url": "http://test.com/default"}
+        return default_doc
 
-    monkeypatch.setattr(
-        "langchain.document_loaders.recursive_url_loader.requests.get", mock_get
-    )
+    monkeypatch.setattr("langchain.document_loaders.WebBaseLoader.load", mock_get)
 
 
 def test_get_child_links_recursive(
     url_loader: RecursiveUrlLoader, mock_requests_get: Callable[[], None]
 ) -> None:
     # Testing for both relative and absolute URL
-    child_links = url_loader.get_child_links_recursive("http://test.com")
+    child_docs = list(url_loader.get_child_links_recursive("http://test.com"))
 
-    assert child_links == {
+    assert len(child_docs) == 2
+    assert set(doc.metadata['url'] for doc in child_docs) == {
         "http://test.com/relative",
         "http://test.com/absolute",
     }
