@@ -207,7 +207,7 @@ The following is the expected answer. Use this to measure correctness:
         Args:
             llm (BaseChatModel): The language model chain.
             agent_tools (Optional[Sequence[BaseTool]]): A list of tools
-                available tothe agent.
+                available to the agent.
             output_parser (Optional[TrajectoryOutputParser]): The output parser
                 used to parse the chain output into a score.
             return_reasoning (bool): Whether to return the
