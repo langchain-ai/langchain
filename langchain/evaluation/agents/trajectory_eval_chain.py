@@ -27,8 +27,12 @@ from langchain.tools.base import BaseTool
 
 
 class TrajectoryEval(NamedTuple):
-    score: int
+    """A named tuple containing the score and reasoning for a trajectory."""
+
+    score: float
+    """The score for the trajectory, normalized from 0 to 1.s"""
     reasoning: str
+    """The reasoning for the score."""
 
 
 class TrajectoryOutputParser(BaseOutputParser):
@@ -43,11 +47,11 @@ class TrajectoryOutputParser(BaseOutputParser):
             text (str): The output text to parse.
 
         Returns:
-            TrajectoryEval: A named tuple containing the score and reasoning.
+            TrajectoryEval: A named tuple containing the normalized score and reasoning.
 
         Raises:
             OutputParserException: If the score is not found in the output text or
-                if the score is not a digit in the range 1-5.
+                if the LLM's score is not a digit in the range 1-5.
         """
         if "Score:" not in text:
             raise OutputParserException(
@@ -66,8 +70,8 @@ class TrajectoryOutputParser(BaseOutputParser):
             raise OutputParserException(
                 f"Score is not a digit in the range 1-5: {text}"
             )
-
-        return TrajectoryEval(score=int(score_str), reasoning=reasoning)
+        normalized_score = (int(score_str) - 1) / 4
+        return TrajectoryEval(score=normalized_score, reasoning=reasoning)
 
 
 class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
@@ -90,7 +94,7 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
             \"\"\"Very helpful answers to geography questions.\"\"\"
             return f"{country}? IDK - We may never know {question}."
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo-0613", temperature=0)
+        llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
         agent = initialize_agent(
             tools=[geography_answers],
             llm=llm,
