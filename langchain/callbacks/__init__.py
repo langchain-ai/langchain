@@ -28,6 +28,7 @@ from langchain.callbacks.streaming_stdout_final_only import (
 from langchain.callbacks.streamlit import LLMThoughtLabeler, StreamlitCallbackHandler
 from langchain.callbacks.wandb_callback import WandbCallbackHandler
 from langchain.callbacks.whylabs_callback import WhyLabsCallbackHandler
+from langchain.callbacks.sagemaker_callback import SageMakerCallbackHandler
 
 __all__ = [
     "AimCallbackHandler",
@@ -55,4 +56,5 @@ __all__ = [
     "tracing_enabled",
     "wandb_tracing_enabled",
     "FlyteCallbackHandler",
+    "SageMakerCallbackHandler",
 ]
