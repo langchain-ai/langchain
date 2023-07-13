@@ -1,9 +1,14 @@
 """Test the comparison chains."""
 
 
+import re
+
 import pytest
 
-from langchain.evaluation.comparison.eval_chain import PairwiseStringEvalChain
+from langchain.evaluation.comparison.eval_chain import (
+    LabeledPairwiseStringEvalChain,
+    PairwiseStringEvalChain,
+)
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
@@ -32,7 +37,7 @@ def test_pairwise_string_comparison_chain() -> None:
     )
     assert res["value"] == "A"
     assert res["score"] == 1
-    with pytest.warns(UserWarning, match=chain._skip_reference_warning):
+    with pytest.warns(UserWarning, match=re.escape(chain._skip_reference_warning)):
         res = chain.evaluate_string_pairs(
             prediction="I like pie.",
             prediction_b="I hate pie.",
@@ -43,7 +48,7 @@ def test_pairwise_string_comparison_chain() -> None:
     assert res["score"] == 0
 
 
-def test_pairwise_string_comparison_chain_missing_ref() -> None:
+def test_labeled_pairwise_string_comparison_chain_missing_ref() -> None:
     llm = FakeLLM(
         queries={
             "a": "The values are the same.\n[[C]]",
@@ -52,7 +57,7 @@ def test_pairwise_string_comparison_chain_missing_ref() -> None:
         },
         sequential_responses=True,
     )
-    chain = PairwiseStringEvalChain.from_llm(llm=llm, requires_reference=True)
+    chain = LabeledPairwiseStringEvalChain.from_llm(llm=llm)
     with pytest.raises(ValueError):
         chain.evaluate_string_pairs(
             prediction="I like pie.",
