@@ -47,11 +47,11 @@ class TrajectoryOutputParser(BaseOutputParser):
             text (str): The output text to parse.
 
         Returns:
-            TrajectoryEval: A named tuple containing the score and reasoning.
+            TrajectoryEval: A named tuple containing the normalized score and reasoning.
 
         Raises:
             OutputParserException: If the score is not found in the output text or
-                if the score is not a digit in the range 1-5.
+                if the LLM's score is not a digit in the range 1-5.
         """
         if "Score:" not in text:
             raise OutputParserException(
@@ -94,7 +94,7 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
             \"\"\"Very helpful answers to geography questions.\"\"\"
             return f"{country}? IDK - We may never know {question}."
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo-0613", temperature=0)
+        llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
         agent = initialize_agent(
             tools=[geography_answers],
             llm=llm,
