@@ -157,6 +157,7 @@ class DeepLake(VectorStore):
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         embedding_function: Optional[Embeddings] = None,
+        **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
@@ -171,10 +172,19 @@ class DeepLake(VectorStore):
             texts (Iterable[str]): Texts to add to the vectorstore.
             metadatas (Optional[List[dict]], optional): Optional list of metadatas.
             ids (Optional[List[str]], optional): Optional list of IDs.
+            embedding_function (Optional[Embeddings], optional): Embedding function
+                to use to convert the text into embeddings.
+            **kwargs (Any): Additional keyword arguments
 
         Returns:
             List[str]: List of IDs of the added texts.
         """
+        if kwargs:
+            first_item = next(iter(kwargs))
+            raise TypeError(
+                f"`{first_item}` is not a valid argument to add_text method"
+            )
+
         kwargs = {}
         if ids:
             if self._id_tensor_name == "ids":  # for backwards compatibility
