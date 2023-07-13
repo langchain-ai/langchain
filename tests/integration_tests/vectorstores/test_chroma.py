@@ -267,3 +267,17 @@ def test_chroma_with_relevance_score_custom_normalization_fn() -> None:
         (Document(page_content="bar", metadata={"page": "1"}), -0.0),
         (Document(page_content="baz", metadata={"page": "2"}), -0.0),
     ]
+
+
+def test_init_from_client() -> None:
+    import chromadb
+
+    client = chromadb.Client(chromadb.config.Settings())
+    Chroma(client=client)
+
+
+def test_init_from_client_settings() -> None:
+    import chromadb
+
+    client_settings = chromadb.config.Settings()
+    Chroma(client_settings=client_settings)
