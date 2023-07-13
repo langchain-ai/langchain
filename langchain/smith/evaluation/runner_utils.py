@@ -855,7 +855,7 @@ def _run_llm(
         inputs: The input dictionary.
         callbacks: The callbacks to use during the run.
         tags: Optional tags to add to the run.
-        input_mapper: function to map to the inputs dictionary from an Examle
+        input_mapper: function to map to the inputs dictionary from an Example
     Returns:
         The LLMResult or ChatResult.
     Raises:
