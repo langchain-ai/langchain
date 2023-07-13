@@ -40,6 +40,10 @@ def mock_requests_get(monkeypatch: MonkeyPatch) -> None:
     mock_response_absolute = MagicMock()
     mock_response_absolute.text = "Absolute page"
 
+    # Mock Response object for default
+    mock_response_default = MagicMock()
+    mock_response_default.text = "Default page"
+
     def mock_get(url: str, *args: Any, **kwargs: Any) -> Mock:
         if url.startswith("http://test.com"):
             if "/absolute" in url:
@@ -48,6 +52,7 @@ def mock_requests_get(monkeypatch: MonkeyPatch) -> None:
                 return mock_response_relative
             else:
                 return mock_response_main
+        return mock_response_default
 
     monkeypatch.setattr(
         "langchain.document_loaders.recursive_url_loader.requests.get", mock_get
