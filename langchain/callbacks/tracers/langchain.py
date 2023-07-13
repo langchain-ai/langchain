@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Set, Union
 from uuid import UUID
 
-from langchainplus_sdk import LangChainPlusClient
+from langsmith import Client
 
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import Run, RunTypeEnum, TracerSession
@@ -19,6 +19,7 @@ from langchain.schema.messages import BaseMessage
 logger = logging.getLogger(__name__)
 _LOGGED = set()
 _TRACERS: List[LangChainTracer] = []
+_CLIENT: Optional[Client] = None
 
 
 def log_error_once(method: str, exception: Exception) -> None:
@@ -37,6 +38,14 @@ def wait_for_all_tracers() -> None:
         tracer.wait_for_futures()
 
 
+def _get_client() -> Client:
+    """Get the client."""
+    global _CLIENT
+    if _CLIENT is None:
+        _CLIENT = Client()
+    return _CLIENT
+
+
 class LangChainTracer(BaseTracer):
     """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
 
@@ -44,7 +53,7 @@ class LangChainTracer(BaseTracer):
         self,
         example_id: Optional[Union[UUID, str]] = None,
         project_name: Optional[str] = None,
-        client: Optional[LangChainPlusClient] = None,
+        client: Optional[Client] = None,
         tags: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
@@ -59,7 +68,7 @@ class LangChainTracer(BaseTracer):
         )
         # set max_workers to 1 to process tasks in order
         self.executor = ThreadPoolExecutor(max_workers=1)
-        self.client = client or LangChainPlusClient()
+        self.client = client or _get_client()
         self._futures: Set[Future] = set()
         self.tags = tags or []
         global _TRACERS

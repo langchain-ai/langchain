@@ -35,7 +35,7 @@ name of the dataset to load.
 **Some common use cases for evaluation include:**
 
 - Grading the accuracy of a response against ground truth answers: :class:`QAEvalChain <langchain.evaluation.qa.eval_chain.QAEvalChain>`
-- Comparing the output of two models: :class:`PairwiseStringEvalChain <langchain.evaluation.comparison.eval_chain.PairwiseStringEvalChain>`
+- Comparing the output of two models: :class:`PairwiseStringEvalChain <langchain.evaluation.comparison.eval_chain.PairwiseStringEvalChain>` or :class:`LabeledPairwiseStringEvalChain <langchain.evaluation.comparison.eval_chain.LabeledPairwiseStringEvalChain>` when there is additionally a reference label.
 - Judging the efficacy of an agent's tool usage: :class:`TrajectoryEvalChain <langchain.evaluation.agents.trajectory_eval_chain.TrajectoryEvalChain>`
 - Checking whether an output complies with a set of criteria: :class:`CriteriaEvalChain <langchain.evaluation.criteria.eval_chain.CriteriaEvalChain>`
 - Computing semantic difference between a prediction and reference: :class:`EmbeddingDistanceEvalChain <langchain.evaluation.embedding_distance.base.EmbeddingDistanceEvalChain>` or between two predictions: :class:`PairwiseEmbeddingDistanceEvalChain <langchain.evaluation.embedding_distance.base.PairwiseEmbeddingDistanceEvalChain>` 
@@ -53,8 +53,11 @@ These interfaces enable easier composability and usage within a higher level eva
 
 """  # noqa: E501
 from langchain.evaluation.agents import TrajectoryEvalChain
-from langchain.evaluation.comparison import PairwiseStringEvalChain
-from langchain.evaluation.criteria import CriteriaEvalChain
+from langchain.evaluation.comparison import (
+    LabeledPairwiseStringEvalChain,
+    PairwiseStringEvalChain,
+)
+from langchain.evaluation.criteria import CriteriaEvalChain, LabeledCriteriaEvalChain
 from langchain.evaluation.embedding_distance import (
     EmbeddingDistance,
     EmbeddingDistanceEvalChain,
@@ -77,6 +80,7 @@ from langchain.evaluation.string_distance import (
 __all__ = [
     "EvaluatorType",
     "PairwiseStringEvalChain",
+    "LabeledPairwiseStringEvalChain",
     "QAEvalChain",
     "CotQAEvalChain",
     "ContextQAEvalChain",
@@ -90,6 +94,7 @@ __all__ = [
     "StringDistance",
     "StringDistanceEvalChain",
     "PairwiseStringDistanceEvalChain",
+    "LabeledCriteriaEvalChain",
     "load_evaluators",
     "load_evaluator",
     "load_dataset",
