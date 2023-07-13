@@ -11,12 +11,12 @@ Installation:
 import base64
 import mimetypes
 import os
-
 from typing import Any, Dict, Optional, Type
-import requests as req
+
+import requests
+from google.protobuf.json_format import MessageToJson
 from pydantic import BaseModel, Field
 
-from google.protobuf.json_format import MessageToJson
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
@@ -26,7 +26,7 @@ from langchain.tools.base import BaseTool
 try:
     from nucliadb_protos.writer_pb2 import BrokerMessage
 except ImportError:
-     raise ImportError(
+    raise ImportError(
         "nucliadb-protos is not installed. "
         "Run `pip install nucliadb-protos` to install."
     )
@@ -61,8 +61,7 @@ class NucliaUnderstandingAPI(BaseTool):
     )
     args_schema: Type[BaseModel] = NUASchema
     _results: Dict[str, Any] = {}
-    requests = req
- 
+
     def _run(
         self,
         action: str,
@@ -83,6 +82,7 @@ class NucliaUnderstandingAPI(BaseTool):
             return self._push(id, path, BACKEND, NUA_KEY, enable_ml)
         elif action == "pull":
             return self._pull(id, BACKEND, NUA_KEY)
+        return ""
 
     async def _arun(
         self,
@@ -95,75 +95,91 @@ class NucliaUnderstandingAPI(BaseTool):
         """Use the tool asynchronously."""
         raise NotImplementedError("NucliaUnderstandingAPI does not support async")
 
-    def _push(self, id, content_path, backend, key, enable_ml):
+    def _push(
+        self, id: str, content_path: str, backend: str, key: str, enable_ml: bool
+    ) -> str:
         with open(content_path, "rb") as source_file:
-            response = self.requests.post(
-                f'{backend}/processing/upload',
+            response = requests.post(
+                f"{backend}/processing/upload",
                 headers={
-                    "content-type": mimetypes.guess_type(content_path)[0] or "application/octet-stream",
+                    "content-type": mimetypes.guess_type(content_path)[0]
+                    or "application/octet-stream",
                     "x-stf-nuakey": "Bearer " + key,
                 },
                 data=source_file.read(),
             )
             if response.status_code != 200:
-                print(f'Error uploading {content_path}: {response.status_code} {response.text}')
+                print(
+                    f"Error uploading {content_path}: {response.status_code} {response.text}"
+                )
+                return ""
             else:
-                print(f'Pushing {content_path} in queue')
+                print(f"Pushing {content_path} in queue")
                 file_data = {}
-                file_data['file'] = f'{response.text}'
-                response = self.requests.post(
-                    f'{backend}/processing/push',
+                file_data["file"] = f"{response.text}"
+                response = requests.post(
+                    f"{backend}/processing/push",
                     headers={
                         "content-type": "application/json",
                         "x-stf-nuakey": "Bearer " + key,
                     },
-                    json={"filefield": file_data, "processing_options": {"ml_text": enable_ml}},
+                    json={
+                        "filefield": file_data,
+                        "processing_options": {"ml_text": enable_ml},
+                    },
                 )
                 if response.status_code != 200:
-                    print(f'Error pushing {content_path}: {response.status_code} {response.text}')
+                    print(
+                        f"Error pushing {content_path}: {response.status_code} {response.text}"
+                    )
+                    return ""
                 else:
                     uuid = response.json()["uuid"]
-                    print(f'Pushed {content_path} in queue, uuid: {uuid}')
+                    print(f"Pushed {content_path} in queue, uuid: {uuid}")
                     self._results[id] = {"uuid": uuid, "status": "pending"}
                     return uuid
-    
-    def _pull(self, id, backend, key):
+
+    def _pull(self, id: str, backend: str, key: str) -> str:
         self._pull_queue(backend, key)
         result = self._results.get(id, None)
         if not result:
-            print(f'{id} not in queue')
-            return None
-        elif result['status'] == 'pending':
+            print(f"{id} not in queue")
+            return ""
+        elif result["status"] == "pending":
             print(f'Waiting for {result["uuid"]} to be processed')
-            return None
+            return ""
         else:
-            return result['data']
+            return result["data"]
 
-    def _pull_queue(self, backend, key):
-        res = self.requests.get(
-            f'{backend}/processing/pull',
+    def _pull_queue(self, backend: str, key: str) -> None:
+        res = requests.get(
+            f"{backend}/processing/pull",
             headers={
                 "x-stf-nuakey": "Bearer " + key,
             },
         ).json()
-        if res['status'] == 'empty':
-            print('Queue empty')
-        elif res['status'] == 'ok':
-            payload = res['payload']
+        if res["status"] == "empty":
+            print("Queue empty")
+        elif res["status"] == "ok":
+            payload = res["payload"]
             pb = BrokerMessage()
             pb.ParseFromString(base64.b64decode(payload))
             uuid = pb.uuid
-            print(f'Pulled {uuid} from queue')
+            print(f"Pulled {uuid} from queue")
             matching_id = self._find_matching_id(uuid)
             if not matching_id:
-                print(f'No matching id for {uuid}')
+                print(f"No matching id for {uuid}")
             else:
-                self._results[matching_id]['status'] = 'done'
-                data = MessageToJson(pb, preserving_proto_field_name=True, including_default_value_fields=True)
-                self._results[matching_id]['data'] = data
-            
-    def _find_matching_id(self, uuid):
+                self._results[matching_id]["status"] = "done"
+                data = MessageToJson(
+                    pb,
+                    preserving_proto_field_name=True,
+                    including_default_value_fields=True,
+                )
+                self._results[matching_id]["data"] = data
+
+    def _find_matching_id(self, uuid: str) -> str | None:
         for id, result in self._results.items():
-            if result['uuid'] == uuid:
+            if result["uuid"] == uuid:
                 return id
         return None
