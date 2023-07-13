@@ -54,7 +54,7 @@ class TrajectoryOutputParser(BaseOutputParser):
                 f"Could not find score in model eval output: {text}"
             )
 
-        reasoning, score_str = text.split("Score: ")
+        reasoning, score_str = text.split("Score: ", maxsplit=1)
 
         reasoning, score_str = reasoning.strip(), score_str.strip()
 
