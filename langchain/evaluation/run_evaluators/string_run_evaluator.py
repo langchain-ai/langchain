@@ -292,14 +292,14 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
             )
         return evaluate_strings_inputs
 
-    def _prepare_output(self, output: Dict[str, Any]) -> EvaluationResult:
+    def _prepare_output(self, output: Dict[str, Any]) -> Dict[str, Any]:
         evaluation_result = EvaluationResult(
             key=self.name, comment=output.get("reasoning"), **output
         )
         if RUN_KEY in output:
             # TODO: Not currently surfaced. Update
             evaluation_result.evaluator_info[RUN_KEY] = output[RUN_KEY]
-        return evaluation_result
+        return {"feedback": evaluation_result}
 
     def _call(
         self,
@@ -313,9 +313,9 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         chain_output = self.string_evaluator.evaluate_strings(
             **evaluate_strings_inputs,
             callbacks=callbacks,
+            include_run_info=True,
         )
-        evaluation_result = self._prepare_output(chain_output)
-        return {"feedback": evaluation_result}
+        return self._prepare_output(chain_output)
 
     async def _acall(
         self,
@@ -329,22 +329,31 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         chain_output = await self.string_evaluator.aevaluate_strings(
             **evaluate_strings_inputs,
             callbacks=callbacks,
+            include_run_info=True,
         )
-        evaluation_result = self._prepare_output(chain_output)
-        return {"feedback": evaluation_result}
+        return self._prepare_output(chain_output)
+
+    def _prepare_evaluator_output(self, output: Dict[str, Any]) -> EvaluationResult:
+        feedback: EvaluationResult = output["feedback"]
+        if RUN_KEY not in feedback.evaluator_info:
+            feedback.evaluator_info[RUN_KEY] = output[RUN_KEY]
+        return output
 
     def evaluate_run(
         self, run: Run, example: Optional[Example] = None
     ) -> EvaluationResult:
         """Evaluate an example."""
-        return self({"run": run, "example": example})["feedback"]
+        result = self({"run": run, "example": example}, include_run_info=True)
+        return self._prepare_evaluator_output(result)
 
     async def aevaluate_run(
         self, run: Run, example: Optional[Example] = None
     ) -> EvaluationResult:
         """Evaluate an example."""
-        result = await self.acall({"run": run, "example": example})
-        return result["feedback"]
+        result = await self.acall(
+            {"run": run, "example": example}, include_run_info=True
+        )
+        return self._prepare_evaluator_output(result)
 
     # TODO: Delete
     @classmethod
