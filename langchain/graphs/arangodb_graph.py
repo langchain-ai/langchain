@@ -73,7 +73,7 @@ class ArangoDBGraph:
                     "collection_name": col_name,
                     "collection_type": col_type,
                     f"{col_type}_properties": properties,
-                    f"example_{col_type}": doc
+                    # f"example_{col_type}": doc
                     # f"{col_typed}_properties": {k: list(v) for k,v in properties.items()},
                 }
             )
