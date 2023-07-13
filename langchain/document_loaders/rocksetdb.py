@@ -1,6 +1,5 @@
-from typing import Any, Callable, Iterator, List, Optional, Tuple, cast
+from typing import Any, Callable, Iterator, List, Optional, Tuple
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.schema import Document
 
@@ -50,18 +49,17 @@ class RocksetLoader(BaseLoader):
         """Initialize with Rockset client.
 
         Args:
-            client: Rockset client object (rockset.RocksetClient)
-            query: Rockset query object (rockset.models.QueryRequestSql)
+            client: Rockset client object.
+            query: Rockset query object.
             content_keys: The collection columns to be written into the `page_content`
-                of the Documents
+                of the Documents.
             metadata_keys: The collection columns to be written into the `metadata` of
                 the Documents. By default, this is all the keys in the document.
             content_columns_joiner: Method that joins content_keys and its values into a
                 string. It's method that takes in a List[Tuple[str, Any]]],
                 representing a list of tuples of (column name, column value).
-                By default, this is a method that joins each column value with a new line. This
-                method is only relevant if there are multiple content_keys.
-                (Callable[[List[Tuple[str, Any]]], str], optional)
+                By default, this is a method that joins each column value with a new
+                line. This method is only relevant if there are multiple content_keys.
         """
         try:
             from rockset import QueryPaginator, RocksetClient
