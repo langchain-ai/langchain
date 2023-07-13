@@ -16,4 +16,7 @@ __all__ = [
     "EmbeddingsClusteringFilter",
     "EmbeddingsRedundantFilter",
     "get_stateful_documents",
+    "OpenAIMetadataTagger",
 ]
+
+from langchain.document_transformers.openai_functions import OpenAIMetadataTagger

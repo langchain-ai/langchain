@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -26,7 +26,12 @@ Passage:
 """
 
 
-def create_tagging_chain(schema: dict, llm: BaseLanguageModel) -> Chain:
+def create_tagging_chain(
+    schema: dict,
+    llm: BaseLanguageModel,
+    prompt: Optional[ChatPromptTemplate] = None,
+    **kwargs: Any
+) -> Chain:
     """Creates a chain that extracts information from a passage.
 
     Args:
@@ -37,7 +42,7 @@ def create_tagging_chain(schema: dict, llm: BaseLanguageModel) -> Chain:
         Chain (LLMChain) that can be used to extract information from a passage.
     """
     function = _get_tagging_function(schema)
-    prompt = ChatPromptTemplate.from_template(_TAGGING_TEMPLATE)
+    prompt = prompt or ChatPromptTemplate.from_template(_TAGGING_TEMPLATE)
     output_parser = JsonOutputFunctionsParser()
     llm_kwargs = get_llm_kwargs(function)
     chain = LLMChain(
@@ -45,12 +50,16 @@ def create_tagging_chain(schema: dict, llm: BaseLanguageModel) -> Chain:
         prompt=prompt,
         llm_kwargs=llm_kwargs,
         output_parser=output_parser,
+        **kwargs,
     )
     return chain
 
 
 def create_tagging_chain_pydantic(
-    pydantic_schema: Any, llm: BaseLanguageModel
+    pydantic_schema: Any,
+    llm: BaseLanguageModel,
+    prompt: Optional[ChatPromptTemplate] = None,
+    **kwargs: Any
 ) -> Chain:
     """Creates a chain that extracts information from a passage.
 
@@ -63,7 +72,7 @@ def create_tagging_chain_pydantic(
     """
     openai_schema = pydantic_schema.schema()
     function = _get_tagging_function(openai_schema)
-    prompt = ChatPromptTemplate.from_template(_TAGGING_TEMPLATE)
+    prompt = prompt or ChatPromptTemplate.from_template(_TAGGING_TEMPLATE)
     output_parser = PydanticOutputFunctionsParser(pydantic_schema=pydantic_schema)
     llm_kwargs = get_llm_kwargs(function)
     chain = LLMChain(
@@ -71,5 +80,6 @@ def create_tagging_chain_pydantic(
         prompt=prompt,
         llm_kwargs=llm_kwargs,
         output_parser=output_parser,
+        **kwargs,
     )
     return chain
