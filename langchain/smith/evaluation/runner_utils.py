@@ -92,7 +92,7 @@ def _wrap_in_chain_factory(
 
 
 def _first_example(examples: Iterator[Example]) -> Tuple[Example, Iterator[Example]]:
-    """Get the first eample while chaining it back and preserving the iterator."""
+    """Get the first example while chaining it back and preserving the iterator."""
     try:
         example: Example = next(examples)
     except StopIteration:
@@ -855,7 +855,7 @@ def _run_llm(
         inputs: The input dictionary.
         callbacks: The callbacks to use during the run.
         tags: Optional tags to add to the run.
-        input_mapper: function to map to the inputs dictionary from an Examle
+        input_mapper: function to map to the inputs dictionary from an Example
     Returns:
         The LLMResult or ChatResult.
     Raises:

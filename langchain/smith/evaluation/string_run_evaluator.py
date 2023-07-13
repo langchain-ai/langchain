@@ -306,7 +306,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         feedback: EvaluationResult = output["feedback"]
         if RUN_KEY not in feedback.evaluator_info:
             feedback.evaluator_info[RUN_KEY] = output[RUN_KEY]
-        return output
+        return feedback
 
     def evaluate_run(
         self, run: Run, example: Optional[Example] = None
