@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import warnings
+from inspect import signature
 from typing import Any, Dict, List, Optional, cast
 
 from pydantic import BaseModel, Extra, Field, root_validator, validator
@@ -69,12 +70,21 @@ class SQLDatabaseChain(Chain):
 
     @validator("llm_chain")
     def check_outputparser_type(cls, llm_chain: LLMChain) -> LLMChain:
-        if not isinstance(llm_chain.output_parser, SQLCommandOutputParser):
-            raise TypeError(
-                "SQLDatabaseChain only works with LLMChains with"
-                "`langchain.chains.sql_databse.parser.SQLCommandOutputParser"
-            )
-        return llm_chain
+        sig = signature(llm_chain.output_parser.parse)  # type: ignore
+        if sig.return_annotation == Dict[str, Any]:
+            if isinstance(llm_chain.output_parser, SQLCommandOutputParser):
+                return llm_chain
+            else:
+                warnings.warn(
+                    "Accepting output parser that returns Dict[str, Any]."
+                    "Make sure the output must contain `sql_cmd`, `llm_out`."
+                )
+                return llm_chain
+        raise TypeError(
+            "SQLDatabaseChain only works with LLMChains with "
+            "parsers that returns `{'sql_cmd': '<SQL>', 'llm_out': '<SQL>'}` "
+            "or `langchain.chains.sql_database.parser.SQLCommandOutputParser`!"
+        )
 
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:

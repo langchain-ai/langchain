@@ -4,7 +4,11 @@ from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseOutputParser
 
 
-class SQLCommandOutputParser(BaseOutputParser):
+class SQLCommandOutputParser(BaseOutputParser[Dict[str, Any]]):
+    @property
+    def _type(self) -> str:
+        return "sql_bypass"
+
     def parse(self, text: str) -> Dict[str, Any]:
         text = text.strip()
         return {"llm_out": text, "sql_cmd": text}
@@ -23,6 +27,10 @@ class VectorSQLOutputParser(SQLCommandOutputParser):
 
     class Config:
         arbitrary_types_allowed = 1
+
+    @property
+    def _type(self) -> str:
+        return "vector_sql"
 
     @classmethod
     def from_embeddings(
@@ -52,6 +60,10 @@ class VectorSQLRetrieveAllOutputParser(VectorSQLOutputParser):
     """Based on VectorSQLOutputParser
     It also modify the SQL to get all columns
     """
+
+    @property
+    def _type(self) -> str:
+        return "vector_sql_retrieve_all"
 
     def parse(self, text: str) -> Dict[str, Any]:
         text = text.strip()
