@@ -24,31 +24,8 @@ That means there are two different axes along which you can customize your text 
 1. How the text is split
 2. How the chunk size is measured
 
-## Get started with text splitters
+### Get started with text splitters
 
 import GetStarted from "@snippets/modules/data_connection/document_transformers/get_started.mdx"
 
 <GetStarted/>
-
-## Filter redundant embeddings
-When documents have similar (even identical) content, it's not necessary to index every document. The `EmbeddingsRedundantFilter` filters out redundant documents based a semantic similarity threshold.
-
-## Convert text to Q&A format
-Often, text is presented in narrative or conversational format, but the user's query is typically formatted as a question. Converting documents to
-question and answer format ("interrogating" documents) before vectorization can help improve the reliability of the vector retrieval step.
-
-LangChain uses the [doctran](https://github.com/psychic-api/doctran/tree/main) library to interrogate documents, which itself depends on [OpenAI function calling](https://openai.com/blog/function-calling-and-other-api-updates).
-
-## Translate text
-Sometimes, it's useful to translate documents into multiple languages before generating embeddings from it, particularly for use cases
-where queries in more than one language are expected.
-
-LangChain uses the [doctran](https://github.com/psychic-api/doctran/tree/main) library to translate documents, which itself depends on [OpenAI function calling](https://openai.com/blog/function-calling-and-other-api-updates).
-
-## Extract properties
-Extracting metadata from documents is helpful for a variety of tasks, including:
-* Classification: classifying documents into different categories
-* Data mining: Extract structured data that can be used for data analysis
-* Style transfer: Change the way text is written to more closely match expected user input, improving vector search results
-
-LangChain uses the [doctran](https://github.com/psychic-api/doctran/tree/main) library to extract properties, which itself depends on [OpenAI function calling](https://openai.com/blog/function-calling-and-other-api-updates).
