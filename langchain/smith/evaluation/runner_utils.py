@@ -1080,6 +1080,7 @@ async def arun_on_dataset(
         llm_or_chain_factory: Language model or Chain constructor to run
             over the dataset. The Chain constructor is used to permit
             independent calls on each example without carrying over state.
+        evaluation: Optional evaluation configuration to use when evaluating
         concurrency_level: The number of async tasks to run concurrently.
         num_repetitions: Number of times to run the model on each example.
             This is useful when testing success rates or generating confidence
@@ -1088,7 +1089,6 @@ async def arun_on_dataset(
             Defaults to {dataset_name}-{chain class name}-{datetime}.
         verbose: Whether to print progress.
         tags: Tags to add to each run in the project.
-        run_evaluators: Evaluators to run on the results of the chain.
         input_mapper: A function to map to the inputs dictionary from an Example
             to the format expected by the model to be evaluated. This is useful if
             your model needs to deserialize more complex schema or if your dataset
