@@ -1,4 +1,4 @@
-"""Loader that loads iFixit data."""
+"""Loads iFixit data."""
 from typing import List, Optional
 
 import requests

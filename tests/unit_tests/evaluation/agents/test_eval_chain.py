@@ -70,7 +70,7 @@ def test_trajectory_eval_chain(
         agent_trajectory=intermediate_steps,
         prediction="I like pie.",
     )
-    assert res["score"] == 5
+    assert res["score"] == 1.0
     # Test when ref is provided
     res = chain.evaluate_agent_trajectory(
         input="What is your favorite food?",
@@ -78,7 +78,7 @@ def test_trajectory_eval_chain(
         prediction="I like pie.",
         reference="Paris",
     )
-    assert res["score"] == 1
+    assert res["score"] == 0.0
 
 
 def test_trajectory_eval_chain_no_tools(
@@ -97,14 +97,14 @@ def test_trajectory_eval_chain_no_tools(
         agent_trajectory=intermediate_steps,
         prediction="I like pie.",
     )
-    assert res["score"] == 5
+    assert res["score"] == 1.0
     res = chain.evaluate_agent_trajectory(
         input="What is your favorite food?",
         agent_trajectory=intermediate_steps,
         prediction="I like pie.",
         reference="Paris",
     )
-    assert res["score"] == 1
+    assert res["score"] == 0.0
 
 
 def test_old_api_works(intermediate_steps: List[Tuple[AgentAction, str]]) -> None:
@@ -123,7 +123,7 @@ def test_old_api_works(intermediate_steps: List[Tuple[AgentAction, str]]) -> Non
             "answer": "I like pie.",
         }
     )
-    assert res["score"] == 5
+    assert res["score"] == 1.0
 
     res = chain(
         {
@@ -133,4 +133,4 @@ def test_old_api_works(intermediate_steps: List[Tuple[AgentAction, str]]) -> Non
             "reference": "Paris",
         }
     )
-    assert res["score"] == 1
+    assert res["score"] == 0.0

@@ -4,7 +4,7 @@ from typing import Callable, Dict, Optional, Sequence
 import numpy as np
 from pydantic import root_validator
 
-from langchain.document_transformers import (
+from langchain.document_transformers.embeddings_redundant_filter import (
     _get_embeddings_from_stateful_docs,
     get_stateful_documents,
 )

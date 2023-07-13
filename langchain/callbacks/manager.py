@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import os
-import warnings
 from contextlib import asynccontextmanager, contextmanager
 from contextvars import ContextVar
 from typing import (
@@ -28,7 +27,11 @@ from langchain.callbacks.tracers.stdout import ConsoleCallbackHandler
 from langchain.callbacks.tracers.wandb import WandbTracer
 from langchain.schema.callbacks.manager import (
     AsyncCallbackManager,
+    # For backwards compatibility
+    AsyncCallbackManagerForChainRun,  # noqa: F401
     CallbackManager,
+    # For backwards compatibility
+    CallbackManagerForChainRun,  # noqa: F401
     Callbacks,
 )
 
@@ -148,11 +151,6 @@ def tracing_v2_enabled(
         >>> with tracing_v2_enabled():
         ...     # LangChain code will automatically be traced
     """
-    # Issue a warning that this is experimental
-    warnings.warn(
-        "The tracing v2 API is in development. "
-        "This is not yet stable and may change in the future."
-    )
     if isinstance(example_id, str):
         example_id = UUID(example_id)
     cb = LangChainTracer(

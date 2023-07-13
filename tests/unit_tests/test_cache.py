@@ -139,6 +139,26 @@ def test_chat_model_caching_params() -> None:
         )
 
 
+def test_llm_cache_clear() -> None:
+    prompt = "How are you?"
+    response = "Test response"
+    cached_response = "Cached test response"
+    llm = FakeListLLM(responses=[response])
+    if langchain.llm_cache:
+        langchain.llm_cache.update(
+            prompt=prompt,
+            llm_string=create_llm_string(llm),
+            return_val=[Generation(text=cached_response)],
+        )
+        langchain.llm_cache.clear()
+        assert llm(prompt) == response
+    else:
+        raise ValueError(
+            "The cache not set. This should never happen, as the pytest fixture "
+            "`set_cache_and_teardown` always sets the cache."
+        )
+
+
 def create_llm_string(llm: Union[BaseLLM, BaseChatModel]) -> str:
     _dict: Dict = llm.dict()
     _dict["stop"] = None

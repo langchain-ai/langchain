@@ -6,14 +6,7 @@ import logging
 from typing import Any, Dict, List, Optional, Sequence, Type, TypeVar, Union
 from uuid import UUID, uuid4
 
-from langchain.schema import (
-    AgentAction,
-    AgentFinish,
-    BaseMessage,
-    Document,
-    LLMResult,
-    get_buffer_string,
-)
+from langchain.schema.agent import AgentAction, AgentFinish
 from langchain.schema.callbacks.base import (
     BaseCallbackHandler,
     BaseCallbackManager,
@@ -23,6 +16,9 @@ from langchain.schema.callbacks.base import (
     RunManagerMixin,
     ToolManagerMixin,
 )
+from langchain.schema.document import Document
+from langchain.schema.messages import BaseMessage, get_buffer_string
+from langchain.schema.output import LLMResult
 
 logger = logging.getLogger(__name__)
 

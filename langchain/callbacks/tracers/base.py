@@ -46,7 +46,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             if parent_run:
                 self._add_child_run(parent_run, run)
             else:
-                logger.warning(f"Parent run with UUID {run.parent_run_id} not found.")
+                logger.debug(f"Parent run with UUID {run.parent_run_id} not found.")
         self.run_map[str(run.id)] = run
 
     def _end_trace(self, run: Run) -> None:
@@ -56,7 +56,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         else:
             parent_run = self.run_map.get(str(run.parent_run_id))
             if parent_run is None:
-                logger.warning(f"Parent run with UUID {run.parent_run_id} not found.")
+                logger.debug(f"Parent run with UUID {run.parent_run_id} not found.")
             elif (
                 run.child_execution_order is not None
                 and parent_run.child_execution_order is not None
@@ -72,7 +72,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
         parent_run = self.run_map.get(parent_run_id)
         if parent_run is None:
-            logger.warning(f"Parent run with UUID {parent_run_id} not found.")
+            logger.debug(f"Parent run with UUID {parent_run_id} not found.")
             return 1
         if parent_run.child_execution_order is None:
             raise TracerException(
