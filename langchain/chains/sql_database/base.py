@@ -2,21 +2,29 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
-from pydantic import Extra, Field, root_validator
+from pydantic import BaseModel, Extra, Field, root_validator, validator
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
+from langchain.chains.sql_database.parser import SQLCommandOutputParser
 from langchain.chains.sql_database.prompt import DECIDER_PROMPT, PROMPT, SQL_PROMPTS
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import BaseOutputParser, BasePromptTemplate
+from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.sql_database import SQLDatabase
 from langchain.tools.sql_database.prompt import QUERY_CHECKER
 
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
+
+
+class SQLCommand(BaseModel):
+    llm_out: str
+    """Raw output from LLM"""
+    sql_cmd: str
+    """SQL command parsed and ready to run"""
 
 
 class SQLDatabaseChain(Chain):
@@ -50,8 +58,6 @@ class SQLDatabaseChain(Chain):
     to fix the initial SQL from the LLM."""
     query_checker_prompt: Optional[BasePromptTemplate] = None
     """The prompt template that should be used by the query checker"""
-    sql_cmd_parser: Optional[BaseOutputParser] = None
-    """Output parser that reformat the generated SQL"""
     native_format: bool = False
     """If return_direct, controls whether to return in python native format"""
 
@@ -60,6 +66,15 @@ class SQLDatabaseChain(Chain):
 
         extra = Extra.forbid
         arbitrary_types_allowed = True
+
+    @validator("llm_chain")
+    def check_outputparser_type(cls, llm_chain: LLMChain) -> LLMChain:
+        if not isinstance(llm_chain.output_parser, SQLCommandOutputParser):
+            raise TypeError(
+                "SQLDatabaseChain only works with LLMChains with"
+                "`langchain.chains.sql_databse.parser.SQLCommandOutputParser"
+            )
+        return llm_chain
 
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
@@ -117,20 +132,25 @@ class SQLDatabaseChain(Chain):
         intermediate_steps: List = []
         try:
             intermediate_steps.append(llm_inputs)  # input: sql generation
-            sql_cmd = self.llm_chain.predict(
-                callbacks=_run_manager.get_child(),
-                **llm_inputs,
-            ).strip()
+            sql_cmd = cast(
+                Dict[str, Any],
+                self.llm_chain.predict_and_parse(
+                    callbacks=_run_manager.get_child(),
+                    **llm_inputs,
+                ),
+            )
             if not self.use_query_checker:
-                _run_manager.on_text(sql_cmd, color="green", verbose=self.verbose)
+                _run_manager.on_text(
+                    sql_cmd["llm_out"], color="green", verbose=self.verbose
+                )
                 intermediate_steps.append(
-                    sql_cmd
+                    sql_cmd["llm_out"]
                 )  # output: sql generation (no checker)
-                intermediate_steps.append({"sql_cmd": sql_cmd})  # input: sql exec
-                if self.sql_cmd_parser:
-                    sql_cmd = self.sql_cmd_parser.parse(sql_cmd)
+                intermediate_steps.append(
+                    {"sql_cmd": sql_cmd["llm_out"]}
+                )  # input: sql exec
                 result = self.database.run(
-                    sql_cmd,
+                    sql_cmd["sql_cmd"],
                     native_format=self.native_format if self.return_direct else False,
                 )
                 intermediate_steps.append(str(result))  # output: sql exec
@@ -139,28 +159,31 @@ class SQLDatabaseChain(Chain):
                     template=QUERY_CHECKER, input_variables=["query", "dialect"]
                 )
                 query_checker_chain = LLMChain(
-                    llm=self.llm_chain.llm, prompt=query_checker_prompt
+                    llm=self.llm_chain.llm,
+                    prompt=query_checker_prompt,
+                    output_parser=self.llm_chain.output_parser,
                 )
                 query_checker_inputs = {
-                    "query": sql_cmd,
+                    "query": sql_cmd["llm_out"],
                     "dialect": self.database.dialect,
                 }
-                checked_sql_command: str = query_checker_chain.predict(
-                    callbacks=_run_manager.get_child(), **query_checker_inputs
-                ).strip()
-                intermediate_steps.append(
-                    checked_sql_command
-                )  # output: sql generation (checker)
-                _run_manager.on_text(
-                    checked_sql_command, color="green", verbose=self.verbose
+                checked_sql_command = cast(
+                    Dict[str, Any],
+                    query_checker_chain.predict_and_parse(
+                        callbacks=_run_manager.get_child(), **query_checker_inputs
+                    ),
                 )
                 intermediate_steps.append(
-                    {"sql_cmd": checked_sql_command}
+                    checked_sql_command["llm_out"]
+                )  # output: sql generation (checker)
+                _run_manager.on_text(
+                    checked_sql_command["llm_out"], color="green", verbose=self.verbose
+                )
+                intermediate_steps.append(
+                    {"sql_cmd": checked_sql_command["llm_out"]}
                 )  # input: sql exec
-                if self.sql_cmd_parser:
-                    checked_sql_command = self.sql_cmd_parser.parse(checked_sql_command)
                 result = self.database.run(
-                    checked_sql_command,
+                    checked_sql_command["sql_cmd"],
                     native_format=self.native_format if self.return_direct else False,
                 )
                 intermediate_steps.append(str(result))  # output: sql exec
@@ -175,7 +198,7 @@ class SQLDatabaseChain(Chain):
                 final_result = result
             else:
                 _run_manager.on_text("\nAnswer:", verbose=self.verbose)
-                input_text += f"{sql_cmd}\nSQLResult: {result}\nAnswer:"
+                input_text += f"{sql_cmd['llm_out']}\nSQLResult: {result}\nAnswer:"
                 llm_inputs["input"] = input_text
                 intermediate_steps.append(llm_inputs)  # input: final answer
                 final_result = self.llm_chain.predict(
@@ -204,10 +227,13 @@ class SQLDatabaseChain(Chain):
         llm: BaseLanguageModel,
         db: SQLDatabase,
         prompt: Optional[BasePromptTemplate] = None,
+        sql_cmd_parser: Optional[SQLCommandOutputParser] = None,
         **kwargs: Any,
     ) -> SQLDatabaseChain:
+        if not sql_cmd_parser:
+            sql_cmd_parser = SQLCommandOutputParser()
         prompt = prompt or SQL_PROMPTS.get(db.dialect, PROMPT)
-        llm_chain = LLMChain(llm=llm, prompt=prompt)
+        llm_chain = LLMChain(llm=llm, prompt=prompt, output_parser=sql_cmd_parser)
         return cls(llm_chain=llm_chain, database=db, **kwargs)
 
 
