@@ -86,7 +86,7 @@ class BM25Retriever(BaseRetriever, BaseModel):
         )
 
     def get_relevant_documents(self, query: str) -> List[Document]:
-        gensim_query = self.tokenizer(query)    
+        gensim_query = self.preprocessor(query) 
         bow_query = self.dictionary.doc2bow(gensim_query)
         bm25_query = self.query_model[bow_query]
         similarities = self.bm25_index[bm25_query]
