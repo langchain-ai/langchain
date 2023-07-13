@@ -5,6 +5,7 @@ from langchain.chains.base import Chain
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.evaluation.agents.trajectory_eval_chain import TrajectoryEvalChain
 from langchain.evaluation.comparison import PairwiseStringEvalChain
+from langchain.evaluation.comparison.eval_chain import LabeledPairwiseStringEvalChain
 from langchain.evaluation.criteria.eval_chain import (
     CriteriaEvalChain,
     LabeledCriteriaEvalChain,
@@ -61,6 +62,7 @@ _EVALUATOR_MAP: Dict[EvaluatorType, Union[Type[LLMEvalChain], Type[Chain]]] = {
     EvaluatorType.COT_QA: CotQAEvalChain,
     EvaluatorType.CONTEXT_QA: ContextQAEvalChain,
     EvaluatorType.PAIRWISE_STRING: PairwiseStringEvalChain,
+    EvaluatorType.LABELED_PAIRWISE_STRING: LabeledPairwiseStringEvalChain,
     EvaluatorType.AGENT_TRAJECTORY: TrajectoryEvalChain,
     EvaluatorType.CRITERIA: CriteriaEvalChain,
     EvaluatorType.LABELED_CRITERIA: LabeledCriteriaEvalChain,

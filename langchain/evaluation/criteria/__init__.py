@@ -27,7 +27,7 @@ Using a pre-defined criterion:
 Using a custom criterion:
 
 >>> from langchain.llms import OpenAI
->>> from langchain.evaluation.criteria import CriteriaEvalChain
+>>> from langchain.evaluation.criteria import LabeledCriteriaEvalChain
 
 >>> llm = OpenAI()
 >>> criteria = {
@@ -36,10 +36,9 @@ Using a custom criterion:
             " not present in the input or reference?"
         ),
     }
->>> chain = CriteriaEvalChain.from_llm(
+>>> chain = LabeledCriteriaEvalChain.from_llm(
         llm=llm,
         criteria=criteria,
-        requires_reference=True,
         )
 """
 

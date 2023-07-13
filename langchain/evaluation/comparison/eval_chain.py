@@ -100,9 +100,8 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         """Warning to show when reference is ignored."""
         return (
             f"Ignoring reference in {self.__class__.__name__}, as it is not expected."
-            "\nTo use a reference, initialize PairwiseStringEvalChain with"
-            " `requires_reference=True` or with a prompt with 'reference' as an"
-            " input variable."
+            "\nTo use a reference, use the LabeledPairwiseStringEvalChain"
+            " (labeled_pairwise_string evaluator) instead."
         )
 
     @classmethod
@@ -111,7 +110,6 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         llm: BaseLanguageModel,
         *,
         prompt: Optional[PromptTemplate] = None,
-        requires_reference: bool = False,
         **kwargs: Any,
     ) -> PairwiseStringEvalChain:
         """Initialize the PairwiseStringEvalChain from an LLM.
@@ -127,17 +125,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
             PairwiseStringEvalChain: The initialized PairwiseStringEvalChain.
         """
         expected_input_vars = {"prediction", "prediction_b", "input"}
-        if prompt is None:
-            if requires_reference:
-                expected_input_vars.add("reference")
-                prompt_ = PROMPT_WITH_REFERENCE
-            else:
-                prompt_ = PROMPT
-        else:
-            if requires_reference:
-                expected_input_vars.add("reference")
-            prompt_ = prompt
-
+        prompt_ = prompt or PROMPT
         if expected_input_vars != set(prompt_.input_variables):
             raise ValueError(
                 f"Input variables should be {expected_input_vars}, "
@@ -155,14 +143,9 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         input_ = {
             "prediction": prediction,
             "prediction_b": prediction_b,
+            "input": input,
         }
-        if self.requires_input:
-            if not input:
-                raise ValueError("Input is require for this comparison evaluator")
-            input_["input"] = input
         if self.requires_reference:
-            if reference is None:
-                raise ValueError("Reference is required for this comparison evaluator")
             input_["reference"] = reference
         return input_
 
@@ -237,3 +220,32 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
             **kwargs,
         )
         return result["text"]
+
+
+class LabeledPairwiseStringEvalChain(PairwiseStringEvalChain, LLMEvalChain, LLMChain):
+    @classmethod
+    def from_llm(
+        cls,
+        llm: BaseLanguageModel,
+        *,
+        prompt: Optional[PromptTemplate] = None,
+        **kwargs: Any,
+    ) -> PairwiseStringEvalChain:
+        """Initialize the LabeledPairwiseStringEvalChain from an LLM.
+
+        Args:
+            llm (BaseLanguageModel): The LLM to use.
+            prompt (PromptTemplate, optional): The prompt to use.
+            **kwargs (Any): Additional keyword arguments.
+
+        Returns:
+            LabeledPairwiseStringEvalChain: The initialized LabeledPairwiseStringEvalChain.
+        """  # noqa: E501
+        expected_input_vars = {"prediction", "prediction_b", "input", "reference"}
+        prompt_ = prompt or PROMPT_WITH_REFERENCE
+        if expected_input_vars != set(prompt_.input_variables):
+            raise ValueError(
+                f"Input variables should be {expected_input_vars}, "
+                f"but got {prompt_.input_variables}"
+            )
+        return cls(llm=llm, prompt=prompt_, **kwargs)
