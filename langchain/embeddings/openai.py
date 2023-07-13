@@ -276,7 +276,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     # please refer to
     # https://github.com/openai/openai-cookbook/blob/main/examples/Embedding_long_inputs.ipynb
     def _get_len_safe_embeddings(
-        self, texts: List[str], *, engine: str, chunk_size: Optional[int] = None
+        self, texts: List[str], *, engine: str, chunk_size: Optional[int] = None, **kwargs
     ) -> List[List[float]]:
         embeddings: List[List[float]] = [[] for _ in range(len(texts))]
         try:
@@ -329,6 +329,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 self,
                 input=tokens[i : i + _chunk_size],
                 **self._invocation_params,
+                **kwargs
             )
             batched_embeddings += [r["embedding"] for r in response["data"]]
 
@@ -424,7 +425,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
         return embeddings
 
-    def _embedding_func(self, text: str, *, engine: str) -> List[float]:
+    def _embedding_func(self, text: str, *, engine: str, **kwargs) -> List[float]:
         """Call out to OpenAI's embedding endpoint."""
         # handle large input text
         if len(text) > self.embedding_ctx_length:
@@ -438,6 +439,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 self,
                 input=[text],
                 **self._invocation_params,
+                **kwargs
             )[
                 "data"
             ][0]["embedding"]
@@ -461,7 +463,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             )["data"][0]["embedding"]
 
     def embed_documents(
-        self, texts: List[str], chunk_size: Optional[int] = 0
+        self, texts: List[str], chunk_size: Optional[int] = 0, **kwargs
     ) -> List[List[float]]:
         """Call out to OpenAI's embedding endpoint for embedding search docs.
 
@@ -475,7 +477,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         """
         # NOTE: to keep things simple, we assume the list may contain texts longer
         #       than the maximum context and use length-safe embedding function.
-        return self._get_len_safe_embeddings(texts, engine=self.deployment)
+        return self._get_len_safe_embeddings(texts, engine=self.deployment, **kwargs)
 
     async def aembed_documents(
         self, texts: List[str], chunk_size: Optional[int] = 0
@@ -494,7 +496,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         #       than the maximum context and use length-safe embedding function.
         return await self._aget_len_safe_embeddings(texts, engine=self.deployment)
 
-    def embed_query(self, text: str) -> List[float]:
+    def embed_query(self, text: str, **kwargs) -> List[float]:
         """Call out to OpenAI's embedding endpoint for embedding query text.
 
         Args:
@@ -503,7 +505,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             Embedding for the text.
         """
-        embedding = self._embedding_func(text, engine=self.deployment)
+        embedding = self._embedding_func(text, engine=self.deployment, **kwargs)
         return embedding
 
     async def aembed_query(self, text: str) -> List[float]:
