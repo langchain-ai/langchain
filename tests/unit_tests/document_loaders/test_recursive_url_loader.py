@@ -1,6 +1,8 @@
-from unittest.mock import MagicMock
+from typing import Any, Callable
+from unittest.mock import MagicMock, Mock
 
 import pytest
+from pytest import MonkeyPatch
 
 from langchain.document_loaders.recursive_url_loader import RecursiveUrlLoader
 
@@ -13,7 +15,7 @@ def url_loader() -> RecursiveUrlLoader:
 
 
 @pytest.fixture
-def mock_requests_get(monkeypatch) -> None:
+def mock_requests_get(monkeypatch: MonkeyPatch) -> None:
     """Mock requests.get"""
 
     # Mocking HTML content with 2 links, one absolute, one relative.
@@ -38,7 +40,7 @@ def mock_requests_get(monkeypatch) -> None:
     mock_response_absolute = MagicMock()
     mock_response_absolute.text = "Absolute page"
 
-    def mock_get(url, *args, **kwargs):
+    def mock_get(url: str, *args: Any, **kwargs: Any) -> Mock:
         if url.startswith("http://test.com"):
             if "/absolute" in url:
                 return mock_response_absolute
@@ -52,7 +54,9 @@ def mock_requests_get(monkeypatch) -> None:
     )
 
 
-def test_get_child_links_recursive(url_loader, mock_requests_get) -> None:
+def test_get_child_links_recursive(
+    url_loader: RecursiveUrlLoader, mock_requests_get: Callable[[], None]
+) -> None:
     # Testing for both relative and absolute URL
     child_links = url_loader.get_child_links_recursive("http://test.com")
 
