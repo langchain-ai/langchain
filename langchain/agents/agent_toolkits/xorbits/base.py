@@ -49,19 +49,20 @@ def create_xorbits_agent(
         input_variables = ["data", "input", "agent_scratchpad"]
     tools = [PythonAstREPLTool(locals={"data": data})]
     prompt, partial_input = None, None
+    
     if isinstance(data, pd.DataFrame):
         prompt = ZeroShotAgent.create_prompt(
             tools,
-            prefix=PD_PREFIX if prefix is None else prefix,
-            suffix=PD_SUFFIX if prefix is None else prefix,
+            prefix=PD_PREFIX if prefix == "" else prefix,
+            suffix=PD_SUFFIX if suffix == "" else suffix,
             input_variables=input_variables,
         )
         partial_input = str(data.head())
     else:
         prompt = ZeroShotAgent.create_prompt(
             tools,
-            prefix=NP_PREFIX if prefix is None else prefix,
-            suffix=NP_SUFFIX if prefix is None else prefix,
+            prefix=NP_PREFIX if prefix == "" else prefix,
+            suffix=NP_SUFFIX if suffix == "" else suffix,
             input_variables=input_variables,
         )
         partial_input = str(data[: len(data) // 2])
