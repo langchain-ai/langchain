@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -20,7 +20,8 @@ from langchain.schema.messages import (
 
 
 class ChatAnthropic(BaseChatModel, _AnthropicCommon):
-    r"""Wrapper around Anthropic's large language model.
+    """
+    Wrapper around Anthropic's large language model.
 
     To use, you should have the ``anthropic`` python package installed, and the
     environment variable ``ANTHROPIC_API_KEY`` set with your API key, or pass
@@ -36,18 +37,21 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
+        """Returns a dictionary containing the API key for Anthropic's LLM."""
         return {"anthropic_api_key": "ANTHROPIC_API_KEY"}
 
     @property
     def _llm_type(self) -> str:
-        """Return type of chat model."""
+        """Returns the type of chat model."""
         return "anthropic-chat"
 
     @property
     def lc_serializable(self) -> bool:
+        """Returns a boolean indicating whether the model is serializable."""
         return True
 
     def _convert_one_message_to_text(self, message: BaseMessage) -> str:
+        """Converts a single message into a formatted string."""
         if isinstance(message, ChatMessage):
             message_text = f"\n\n{message.role.capitalize()}: {message.content}"
         elif isinstance(message, HumanMessage):
@@ -57,31 +61,17 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         elif isinstance(message, SystemMessage):
             message_text = f"{self.HUMAN_PROMPT} <admin>{message.content}</admin>"
         else:
-            raise ValueError(f"Got unknown type {message}")
+            raise ValueError(f"Got unknown message type: {type(message).__name__}")
         return message_text
 
     def _convert_messages_to_text(self, messages: List[BaseMessage]) -> str:
-        """Format a list of strings into a single string with necessary newlines.
-
-        Args:
-            messages (List[BaseMessage]): List of BaseMessage to combine.
-
-        Returns:
-            str: Combined string with necessary newlines.
-        """
+        """Formats a list of messages into a single string."""
         return "".join(
             self._convert_one_message_to_text(message) for message in messages
         )
 
     def _convert_messages_to_prompt(self, messages: List[BaseMessage]) -> str:
-        """Format a list of messages into a full prompt for the Anthropic model
-
-        Args:
-            messages (List[BaseMessage]): List of BaseMessage to combine.
-
-        Returns:
-            str: Combined string with necessary HUMAN_PROMPT and AI_PROMPT tags.
-        """
+        """Formats a list of messages into a full prompt for the Anthropic model."""
         messages = messages.copy()  # don't mutate the original list
 
         if not self.AI_PROMPT:
@@ -90,9 +80,22 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         if not isinstance(messages[-1], AIMessage):
             messages.append(AIMessage(content=""))
         text = self._convert_messages_to_text(messages)
-        return (
-            text.rstrip()
-        )  # trim off the trailing ' ' that might come from the "Assistant: "
+        return text.rstrip()
+
+    def _generate_response(self, params: Dict[str, Any], run_manager: Optional[Union[CallbackManagerForLLMRun, AsyncCallbackManagerForLLMRun]] = None) -> str:
+        """Generates a response from the Anthropic model based on the provided parameters."""
+        if self.streaming:
+            completion = ""
+            stream_resp = self.client.completions.create(**params, stream=True)
+            for data in stream_resp:
+                delta = data.completion
+                completion += delta
+                if run_manager:
+                    run_manager.on_llm_new_token(delta)
+        else:
+            response = self.client.completions.create(**params)
+            completion = response.completion
+        return completion
 
     def _generate(
         self,
@@ -101,24 +104,13 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        """Generates a response from the Anthropic model based on the provided messages and parameters."""
         prompt = self._convert_messages_to_prompt(messages)
         params: Dict[str, Any] = {"prompt": prompt, **self._default_params, **kwargs}
         if stop:
             params["stop_sequences"] = stop
 
-        if self.streaming:
-            completion = ""
-            stream_resp = self.client.completions.create(**params, stream=True)
-            for data in stream_resp:
-                delta = data.completion
-                completion += delta
-                if run_manager:
-                    run_manager.on_llm_new_token(
-                        delta,
-                    )
-        else:
-            response = self.client.completions.create(**params)
-            completion = response.completion
+        completion = self._generate_response(params, run_manager)
         message = AIMessage(content=completion)
         return ChatResult(generations=[ChatGeneration(message=message)])
 
@@ -129,31 +121,18 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        """An asynchronous version of `_generate`."""
         prompt = self._convert_messages_to_prompt(messages)
         params: Dict[str, Any] = {"prompt": prompt, **self._default_params, **kwargs}
         if stop:
             params["stop_sequences"] = stop
 
-        if self.streaming:
-            completion = ""
-            stream_resp = await self.async_client.completions.create(
-                **params, stream=True
-            )
-            async for data in stream_resp:
-                delta = data.completion
-                completion += delta
-                if run_manager:
-                    await run_manager.on_llm_new_token(
-                        delta,
-                    )
-        else:
-            response = await self.async_client.completions.create(**params)
-            completion = response.completion
+        completion = await self._generate_response(params, run_manager)
         message = AIMessage(content=completion)
         return ChatResult(generations=[ChatGeneration(message=message)])
 
     def get_num_tokens(self, text: str) -> int:
-        """Calculate number of tokens."""
+        """Calculates the number of tokens in a given text."""
         if not self.count_tokens:
             raise NameError("Please ensure the anthropic package is loaded")
         return self.count_tokens(text)
