@@ -17,7 +17,7 @@ from typing import (
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
-from langchain.utils import get_from_env
+from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore
 
 if TYPE_CHECKING:
@@ -262,7 +262,6 @@ class ElasticVectorSearch(VectorStore, ABC):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
-        elasticsearch_url: Optional[str] = None,
         index_name: Optional[str] = None,
         refresh_indices: bool = True,
         **kwargs: Any,
@@ -288,8 +287,8 @@ class ElasticVectorSearch(VectorStore, ABC):
                     elasticsearch_url="http://localhost:9200"
                 )
         """
-        elasticsearch_url = elasticsearch_url or get_from_env(
-            "elasticsearch_url", "ELASTICSEARCH_URL"
+        elasticsearch_url = get_from_dict_or_env(
+            kwargs, "elasticsearch_url", "ELASTICSEARCH_URL"
         )
         index_name = index_name or uuid.uuid4().hex
         vectorsearch = cls(elasticsearch_url, index_name, embedding, **kwargs)
@@ -403,12 +402,13 @@ class ElasticKnnSearch(ElasticVectorSearch):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
         index_name: Optional[str] = None,
+        refresh_indices: bool = True,
         es_connection: Optional["Elasticsearch"] = None,
         es_cloud_id: Optional[str] = None,
         es_user: Optional[str] = None,
         es_password: Optional[str] = None,
-        refresh_indices: bool = True,
         **kwargs: Any,
     ) -> ElasticKnnSearch:
         """Construct ElasticKnnSearch wrapper from raw documents.
@@ -424,14 +424,14 @@ class ElasticKnnSearch(ElasticVectorSearch):
         vectorsearch = cls(
             index_name,
             embedding,
-            es_connection,
-            es_cloud_id,
-            es_user,
-            es_password,
+            es_connection=es_connection,
+            es_cloud_id=es_cloud_id,
+            es_user=es_user,
+            es_password=es_password,
             **kwargs,
         )
         vectorsearch.add_texts(
-            texts, metadatas=metadatas, refresh_indices=refresh_indices
+            texts, metadatas=metadatas, refresh_indices=refresh_indices, ids=ids
         )
         return vectorsearch
 
