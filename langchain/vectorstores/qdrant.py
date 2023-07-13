@@ -10,6 +10,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Generator,
     Iterable,
     List,
     Optional,
@@ -27,6 +28,7 @@ from langchain.vectorstores import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
+    from qdrant_client import grpc  # noqa
     from qdrant_client.conversions import common_types
     from qdrant_client.http import models as rest
 
@@ -142,37 +144,54 @@ class Qdrant(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        from qdrant_client.http import models as rest
+        added_ids = []
+        for batch_ids, points in self._generate_rest_batches(
+            texts, metadatas, ids, batch_size
+        ):
+            self.client.upsert(
+                collection_name=self.collection_name,
+                points=points,
+            )
+            added_ids.extend(batch_ids)
+
+        return added_ids
+
+    async def aadd_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[Sequence[str]] = None,
+        batch_size: int = 64,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Run more texts through the embeddings and add to the vectorstore.
+
+        Args:
+            texts: Iterable of strings to add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+            ids:
+                Optional list of ids to associate with the texts. Ids have to be
+                uuid-like strings.
+            batch_size:
+                How many vectors upload per-request.
+                Default: 64
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+        """
+        from qdrant_client import grpc  # noqa
+        from qdrant_client.conversions.conversion import RestToGrpc
 
         added_ids = []
-        texts_iterator = iter(texts)
-        metadatas_iterator = iter(metadatas or [])
-        ids_iterator = iter(ids or [uuid.uuid4().hex for _ in iter(texts)])
-        while batch_texts := list(islice(texts_iterator, batch_size)):
-            # Take the corresponding metadata and id for each text in a batch
-            batch_metadatas = list(islice(metadatas_iterator, batch_size)) or None
-            batch_ids = list(islice(ids_iterator, batch_size))
-
-            # Generate the embeddings for all the texts in a batch
-            batch_embeddings = self._embed_texts(batch_texts)
-            if self.vector_name is not None:
-                batch_embeddings = {  # type: ignore[assignment]
-                    self.vector_name: batch_embeddings
-                }
-
-            points = rest.Batch.construct(
-                ids=batch_ids,
-                vectors=batch_embeddings,
-                payloads=self._build_payloads(
-                    batch_texts,
-                    batch_metadatas,
-                    self.content_payload_key,
-                    self.metadata_payload_key,
-                ),
+        for batch_ids, points in self._generate_rest_batches(
+            texts, metadatas, ids, batch_size
+        ):
+            await self.client.async_grpc_points.Upsert(
+                grpc.UpsertPoints(
+                    collection_name=self.collection_name,
+                    points=[RestToGrpc.convert_point_struct(point) for point in points],
+                )
             )
-
-            self.client.upsert(collection_name=self.collection_name, points=points)
-
             added_ids.extend(batch_ids)
 
         return added_ids
@@ -426,50 +445,6 @@ class Qdrant(VectorStore):
             for result in results
         ]
 
-    def _select_relevance_score_fn(self) -> Callable[[float], float]:
-        """
-        The 'correct' relevance function
-        may differ depending on a few things, including:
-        - the distance / similarity metric used by the VectorStore
-        - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
-        - embedding dimensionality
-        - etc.
-        """
-
-        if self.distance_strategy == "COSINE":
-            return self._cosine_relevance_score_fn
-        elif self.distance_strategy == "DOT":
-            return self._max_inner_product_relevance_score_fn
-        elif self.distance_strategy == "EUCLID":
-            return self._euclidean_relevance_score_fn
-        else:
-            raise ValueError(
-                "Unknown distance strategy, must be cosine, "
-                "max_inner_product, or euclidean"
-            )
-
-    def _similarity_search_with_relevance_scores(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
-        """Return docs and relevance scores in the range [0, 1].
-
-        0 is dissimilar, 1 is most similar.
-
-        Args:
-            query: input text
-            k: Number of Documents to return. Defaults to 4.
-            **kwargs: kwargs to be passed to similarity search. Should include:
-                score_threshold: Optional, a floating point value between 0 to 1 to
-                    filter the resulting set of retrieved docs
-
-        Returns:
-            List of Tuples of (doc, similarity_score)
-        """
-        return self.similarity_search_with_score(query, k, **kwargs)
-
     def max_marginal_relevance_search(
         self,
         query: str,
@@ -522,6 +497,25 @@ class Qdrant(VectorStore):
             )
             for i in mmr_selected
         ]
+
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+        """Delete by vector ID or other criteria.
+
+        Args:
+            ids: List of ids to delete.
+            **kwargs: Other keyword arguments that subclasses might use.
+
+        Returns:
+            Optional[bool]: True if deletion is successful,
+            False otherwise, None if not implemented.
+        """
+        from qdrant_client.http import models as rest
+
+        result = self.client.delete(
+            collection_name=self.collection_name,
+            points_selector=ids,
+        )
+        return result.status == rest.UpdateStatus.COMPLETED
 
     @classmethod
     def from_texts(
@@ -799,6 +793,50 @@ class Qdrant(VectorStore):
         qdrant.add_texts(texts, metadatas, ids, batch_size)
         return qdrant
 
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        """
+        The 'correct' relevance function
+        may differ depending on a few things, including:
+        - the distance / similarity metric used by the VectorStore
+        - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
+        - embedding dimensionality
+        - etc.
+        """
+
+        if self.distance_strategy == "COSINE":
+            return self._cosine_relevance_score_fn
+        elif self.distance_strategy == "DOT":
+            return self._max_inner_product_relevance_score_fn
+        elif self.distance_strategy == "EUCLID":
+            return self._euclidean_relevance_score_fn
+        else:
+            raise ValueError(
+                "Unknown distance strategy, must be cosine, "
+                "max_inner_product, or euclidean"
+            )
+
+    def _similarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs and relevance scores in the range [0, 1].
+
+        0 is dissimilar, 1 is most similar.
+
+        Args:
+            query: input text
+            k: Number of Documents to return. Defaults to 4.
+            **kwargs: kwargs to be passed to similarity search. Should include:
+                score_threshold: Optional, a floating point value between 0 to 1 to
+                    filter the resulting set of retrieved docs
+
+        Returns:
+            List of Tuples of (doc, similarity_score)
+        """
+        return self.similarity_search_with_score(query, k, **kwargs)
+
     @classmethod
     def _build_payloads(
         cls,
@@ -922,3 +960,45 @@ class Qdrant(VectorStore):
             raise ValueError("Neither of embeddings or embedding_function is set")
 
         return embeddings
+
+    def _generate_rest_batches(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[Sequence[str]] = None,
+        batch_size: int = 64,
+    ) -> Generator[Tuple[List[str], List[rest.PointStruct]], None, None]:
+        from qdrant_client.http import models as rest
+
+        texts_iterator = iter(texts)
+        metadatas_iterator = iter(metadatas or [])
+        ids_iterator = iter(ids or [uuid.uuid4().hex for _ in iter(texts)])
+        while batch_texts := list(islice(texts_iterator, batch_size)):
+            # Take the corresponding metadata and id for each text in a batch
+            batch_metadatas = list(islice(metadatas_iterator, batch_size)) or None
+            batch_ids = list(islice(ids_iterator, batch_size))
+
+            # Generate the embeddings for all the texts in a batch
+            batch_embeddings = self._embed_texts(batch_texts)
+
+            points = [
+                rest.PointStruct(
+                    id=point_id,
+                    vector=vector
+                    if self.vector_name is None
+                    else {self.vector_name: vector},
+                    payload=payload,
+                )
+                for point_id, vector, payload in zip(
+                    batch_ids,
+                    batch_embeddings,
+                    self._build_payloads(
+                        batch_texts,
+                        batch_metadatas,
+                        self.content_payload_key,
+                        self.metadata_payload_key,
+                    ),
+                )
+            ]
+
+            yield batch_ids, points

@@ -1,63 +1,58 @@
+import uuid
 from typing import Optional
 
 import pytest
 from qdrant_client.http import models as rest
 
-from langchain.schema import Document
 from langchain.vectorstores import Qdrant
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
 )
 
 
+def qdrant_is_not_running() -> bool:
+    """Check if Qdrant is not running."""
+    import requests
+
+    try:
+        response = requests.get("http://localhost:6333", timeout=10.0)
+        response_json = response.json()
+        return response_json.get("title") != "qdrant - vector search engine"
+    except requests.exceptions.ConnectionError:
+        return True
+
+
+# Skipping all the tests in the module if Qdrant is not running on localhost.
+pytestmark = pytest.mark.skipif(
+    qdrant_is_not_running(), reason="Qdrant server is not running"
+)
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("batch_size", [1, 64])
-@pytest.mark.parametrize("vector_name", [None, "my-vector"])
-def test_qdrant_add_documents_extends_existing_collection(
-    batch_size: int, vector_name: Optional[str]
-) -> None:
-    """Test end to end construction and search."""
-    texts = ["foo", "bar", "baz"]
-    docsearch: Qdrant = Qdrant.from_texts(
-        texts,
-        ConsistentFakeEmbeddings(),
-        location=":memory:",
-        batch_size=batch_size,
-        vector_name=vector_name,
-    )
-
-    new_texts = ["foobar", "foobaz"]
-    docsearch.add_documents(
-        [Document(page_content=content) for content in new_texts], batch_size=batch_size
-    )
-    output = docsearch.similarity_search("foobar", k=1)
-    # ConsistentFakeEmbeddings return the same query embedding as the first document
-    # embedding computed in `embedding.embed_documents`. Thus, "foo" embedding is the
-    # same as "foobar" embedding
-    assert output == [Document(page_content="foobar")]
-
-
-@pytest.mark.parametrize("batch_size", [1, 64])
-def test_qdrant_add_texts_returns_all_ids(batch_size: int) -> None:
-    """Test end to end Qdrant.add_texts returns unique ids."""
+async def test_qdrant_aadd_texts_returns_all_ids(batch_size: int) -> None:
+    """Test end to end Qdrant.aadd_texts returns unique ids."""
     docsearch: Qdrant = Qdrant.from_texts(
         ["foobar"],
         ConsistentFakeEmbeddings(),
-        location=":memory:",
         batch_size=batch_size,
     )
 
-    ids = docsearch.add_texts(["foo", "bar", "baz"])
+    ids = await docsearch.aadd_texts(["foo", "bar", "baz"])
     assert 3 == len(ids)
     assert 3 == len(set(ids))
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
-def test_qdrant_add_texts_stores_duplicated_texts(vector_name: Optional[str]) -> None:
-    """Test end to end Qdrant.add_texts stores duplicated texts separately."""
+async def test_qdrant_aadd_texts_stores_duplicated_texts(
+    vector_name: Optional[str],
+) -> None:
+    """Test end to end Qdrant.aadd_texts stores duplicated texts separately."""
     from qdrant_client import QdrantClient
     from qdrant_client.http import models as rest
 
-    client = QdrantClient(":memory:")
+    client = QdrantClient()
     collection_name = "test"
     vectors_config = rest.VectorParams(size=10, distance=rest.Distance.COSINE)
     if vector_name is not None:
@@ -70,15 +65,16 @@ def test_qdrant_add_texts_stores_duplicated_texts(vector_name: Optional[str]) ->
         embeddings=ConsistentFakeEmbeddings(),
         vector_name=vector_name,
     )
-    ids = vec_store.add_texts(["abc", "abc"], [{"a": 1}, {"a": 2}])
+    ids = await vec_store.aadd_texts(["abc", "abc"], [{"a": 1}, {"a": 2}])
 
     assert 2 == len(set(ids))
     assert 2 == client.count(collection_name).count
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize("batch_size", [1, 64])
-def test_qdrant_add_texts_stores_ids(batch_size: int) -> None:
-    """Test end to end Qdrant.add_texts stores provided ids."""
+async def test_qdrant_aadd_texts_stores_ids(batch_size: int) -> None:
+    """Test end to end Qdrant.aadd_texts stores provided ids."""
     from qdrant_client import QdrantClient
 
     ids = [
@@ -86,7 +82,7 @@ def test_qdrant_add_texts_stores_ids(batch_size: int) -> None:
         "cdc1aa36-d6ab-4fb2-8a94-56674fd27484",
     ]
 
-    client = QdrantClient(":memory:")
+    client = QdrantClient()
     collection_name = "test"
     client.recreate_collection(
         collection_name,
@@ -94,7 +90,9 @@ def test_qdrant_add_texts_stores_ids(batch_size: int) -> None:
     )
 
     vec_store = Qdrant(client, collection_name, ConsistentFakeEmbeddings())
-    returned_ids = vec_store.add_texts(["abc", "def"], ids=ids, batch_size=batch_size)
+    returned_ids = await vec_store.aadd_texts(
+        ["abc", "def"], ids=ids, batch_size=batch_size
+    )
 
     assert all(first == second for first, second in zip(ids, returned_ids))
     assert 2 == client.count(collection_name).count
@@ -102,14 +100,17 @@ def test_qdrant_add_texts_stores_ids(batch_size: int) -> None:
     assert set(ids) == set(stored_ids)
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize("vector_name", ["custom-vector"])
-def test_qdrant_add_texts_stores_embeddings_as_named_vectors(vector_name: str) -> None:
-    """Test end to end Qdrant.add_texts stores named vectors if name is provided."""
+async def test_qdrant_aadd_texts_stores_embeddings_as_named_vectors(
+    vector_name: str,
+) -> None:
+    """Test end to end Qdrant.aadd_texts stores named vectors if name is provided."""
     from qdrant_client import QdrantClient
 
     collection_name = "test"
 
-    client = QdrantClient(":memory:")
+    client = QdrantClient()
     client.recreate_collection(
         collection_name,
         vectors_config={
@@ -123,7 +124,7 @@ def test_qdrant_add_texts_stores_embeddings_as_named_vectors(vector_name: str) -
         ConsistentFakeEmbeddings(),
         vector_name=vector_name,
     )
-    vec_store.add_texts(["lorem", "ipsum", "dolor", "sit", "amet"])
+    await vec_store.aadd_texts(["lorem", "ipsum", "dolor", "sit", "amet"])
 
     assert 5 == client.count(collection_name).count
     assert all(

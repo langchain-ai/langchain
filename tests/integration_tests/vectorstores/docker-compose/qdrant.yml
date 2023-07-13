@@ -1,0 +1,7 @@
+version: '3.4'
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.3.2
+    ports:
+      - "6333:6333"
+      - "6334:6334"
