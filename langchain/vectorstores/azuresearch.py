@@ -123,27 +123,25 @@ def _get_search_client(
                 )
         else:
             fields = default_fields
-
         # Vector search configuration
-        default_vector_search = VectorSearch(
-            algorithm_configurations=[
-                VectorSearchAlgorithmConfiguration(
-                    name="default",
-                    kind="hnsw",
-                    hnsw_parameters={
-                        "m": 4,
-                        "efConstruction": 400,
-                        "efSearch": 500,
-                        "metric": "cosine",
-                    },
-                )
-            ]
-        )
         if vector_search == None:
-            vector_search = default_vector_search
-
+            vector_search = VectorSearch(
+                algorithm_configurations=[
+                    VectorSearchAlgorithmConfiguration(
+                        name="default",
+                        kind="hnsw",
+                        hnsw_parameters={
+                            "m": 4,
+                            "efConstruction": 400,
+                            "efSearch": 500,
+                            "metric": "cosine",
+                        },
+                    )
+                ]
+            )
         # Create the semantic settings with the configuration
-        default_semantic_settings = SemanticSettings(
+        if semantic_settings == None and semantic_configuration_name != None:
+            semantic_settings = SemanticSettings(
             configurations=[
                 SemanticConfiguration(
                     name=semantic_configuration_name,
@@ -155,8 +153,6 @@ def _get_search_client(
                 )
             ]
         )
-        if semantic_settings == None and semantic_configuration_name != None:
-            semantic_settings = default_semantic_settings
         # Create the search index with the semantic settings and vector search
         index = SearchIndex(
             name=index_name,
@@ -214,21 +210,17 @@ class AzureSearch(VectorStore):
             SearchableField(
                 name=FIELDS_CONTENT,
                 type=SearchFieldDataType.String,
-                searchable=True,
-                retrievable=True,
             ),
             SearchField(
                 name=FIELDS_CONTENT_VECTOR,
                 type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
                 searchable=True,
-                dimensions=len(embedding_function("Text")),
+                vector_search_dimensions=len(embedding_function("Text")),
                 vector_search_configuration="default",
             ),
             SearchableField(
                 name=FIELDS_METADATA,
                 type=SearchFieldDataType.String,
-                searchable=True,
-                retrievable=True,
             ),
         ]
         self.client = _get_search_client(
@@ -348,17 +340,14 @@ class AzureSearch(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        from azure.search.documents.models import Vector
 
         results = self.client.search(
             search_text="",
-            vector=Vector(
-                value=np.array(
+            vector=np.array(
                     self.embedding_function(query), dtype=np.float32
                 ).tolist(),
-                k=k,
-                fields=FIELDS_CONTENT_VECTOR,
-            ),
+            top_k=k,
+            vector_fields=FIELDS_CONTENT_VECTOR,
             select=[FIELDS_ID, FIELDS_CONTENT, FIELDS_METADATA],
             filter=filters,
         )
@@ -403,17 +392,14 @@ class AzureSearch(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        from azure.search.documents.models import Vector
 
         results = self.client.search(
             search_text=query,
-            vector=Vector(
-                value=np.array(
+            vector=np.array(
                     self.embedding_function(query), dtype=np.float32
                 ).tolist(),
-                k=k,
-                fields=FIELDS_CONTENT_VECTOR,
-            ),
+            top_k=k,
+            vector_fields=FIELDS_CONTENT_VECTOR,
             select=[FIELDS_ID, FIELDS_CONTENT, FIELDS_METADATA],
             filter=filters,
             top=k,
@@ -465,13 +451,11 @@ class AzureSearch(VectorStore):
 
         results = self.client.search(
             search_text=query,
-            vector=Vector(
-                value=np.array(
+            vector=np.array(
                     self.embedding_function(query), dtype=np.float32
                 ).tolist(),
-                k=50,  # Hardcoded value to maximize L2 retrieval
-                fields=FIELDS_CONTENT_VECTOR,
-            ),
+            top_k=50, # Hardcoded value to maximize L2 retrieval
+            vector_fields=FIELDS_CONTENT_VECTOR,
             select=[FIELDS_ID, FIELDS_CONTENT, FIELDS_METADATA],
             filter=filters,
             query_type="semantic",
