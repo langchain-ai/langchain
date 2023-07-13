@@ -27,6 +27,9 @@ class _MinimaxCommon(BaseModel):
 
     top_p: float = 0.95
     """Total probability mass of tokens to consider at each step."""
+    
+    skip_info_mask: bool = False
+    """De-sensitize text information in the output that might involve privacy issues."""
 
     minimax_group_id: Optional[str] = None
     """Group ID for MiniMax API."""
@@ -103,6 +106,7 @@ class MiniMaxCompletion(_MinimaxCommon, LLM):
             "model": "abab5-chat",
             "messages": [{"sender_type": "USER", "text": prompt}],
             "tokens_to_generate": self.tokens_to_generate,
+            "skip_info_mask": self.skip_info_mask,
             "temperature": self.temperature,
             "top_p": self.top_p,
         }

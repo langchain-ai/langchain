@@ -23,17 +23,10 @@ from langchain.schema import (
 
 logger = logging.getLogger(__name__)
 
-
-@dataclass
-class _ChatHistory:
-    """Parse history for MiniMaxChat."""
-
-
 def _parse_message(type, text):
     return {"sender_type": type, "text": text}
 
-
-def _parse_chat_history(history: List[BaseMessage]) -> _ChatHistory:
+def _parse_chat_history(history: List[BaseMessage]):
     """Parse a sequence of messages into history."""
     chat_history = []
     for message in history:
@@ -93,6 +86,7 @@ class MiniMaxChat(_MinimaxCommon, BaseChatModel):
             "model": "abab5-chat",
             "messages": history,
             "tokens_to_generate": self.tokens_to_generate,
+            "skip_info_mask": self.skip_info_mask,
             "temperature": self.temperature,
             "top_p": self.top_p,
         }
