@@ -12,7 +12,7 @@ For more information on the LangSmith API, see the `LangSmith API documentation 
     from langsmith import Client
     from langchain.chat_models import ChatOpenAI
     from langchain.chains import LLMChain
-    from langchain.langsmith import EvaluatorType, RunEvalConfig, run_on_dataset
+    from langchain.smith import EvaluatorType, RunEvalConfig, run_on_dataset
 
     def construct_chain():
         llm = ChatOpenAI(temperature=0)
@@ -52,13 +52,13 @@ For more information on the LangSmith API, see the `LangSmith API documentation 
 """  # noqa: E501
 
 
-from langchain.langsmith.evaluation.config import RunEvalConfig
-from langchain.langsmith.evaluation.runner_utils import (
+from langchain.smith.evaluation.config import RunEvalConfig
+from langchain.smith.evaluation.runner_utils import (
     InputFormatError,
     arun_on_dataset,
     run_on_dataset,
 )
-from langchain.langsmith.evaluation.string_run_evaluator import StringRunEvaluatorChain
+from langchain.smith.evaluation.string_run_evaluator import StringRunEvaluatorChain
 
 __all__ = [
     "InputFormatError",

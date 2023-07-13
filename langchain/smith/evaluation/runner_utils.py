@@ -32,11 +32,11 @@ from langchain.chains.base import Chain
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.evaluation.loading import load_evaluator
 from langchain.evaluation.schema import EvaluatorType, StringEvaluator
-from langchain.langsmith.evaluation.config import EvalConfig, RunEvalConfig
-from langchain.langsmith.evaluation.string_run_evaluator import StringRunEvaluatorChain
 from langchain.schema import ChatResult, LLMResult
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage, messages_from_dict
+from langchain.smith.evaluation.config import EvalConfig, RunEvalConfig
+from langchain.smith.evaluation.string_run_evaluator import StringRunEvaluatorChain
 
 logger = logging.getLogger(__name__)
 
