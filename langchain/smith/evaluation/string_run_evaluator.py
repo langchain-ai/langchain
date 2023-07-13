@@ -2,12 +2,11 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from langsmith import EvaluationResult, RunEvaluator
 from langsmith.schemas import DataType, Example, Run, RunTypeEnum
 
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
@@ -19,7 +18,6 @@ from langchain.load.load import loads
 from langchain.load.serializable import Serializable
 from langchain.schema import RUN_KEY, messages_from_dict
 from langchain.schema.messages import BaseMessage, get_buffer_string
-from langchain.tools.base import Tool
 
 
 def _get_messages_from_run_dict(messages: List[dict]) -> List[BaseMessage]:
@@ -131,48 +129,6 @@ class ChainStringRunMapper(StringRunMapper):
     """The key from the model Run's inputs to use as the eval input."""
     prediction_key: Optional[str] = None
     """The key from the model Run's outputs to use as the eval prediction."""
-
-    @classmethod
-    def from_chain(
-        cls,
-        model: Chain,
-        input_key: Optional[str] = None,
-        prediction_key: Optional[str] = None,
-    ) -> ChainStringRunMapper:
-        """Create a RunMapper from a chain."""
-        error_messages = []
-        if input_key is None:
-            if len(model.input_keys) > 1:
-                error_messages.append(
-                    f"Chain {model.lc_namespace} has multiple input"
-                    " keys. Please specify 'input_key' when loading."
-                )
-            else:
-                input_key = model.input_keys[0]
-        elif input_key not in model.input_keys:
-            error_messages.append(
-                f"Chain {model.lc_namespace} does not have specified"
-                f" input key {input_key}."
-            )
-        if prediction_key is None:
-            if len(model.output_keys) > 1:
-                error_messages.append(
-                    f"Chain {model.lc_namespace} has multiple"
-                    " output keys. Please specify 'prediction_key' when loading."
-                )
-            else:
-                prediction_key = model.output_keys[0]
-        elif prediction_key not in model.output_keys:
-            error_messages.append(
-                f"Chain {model.lc_namespace} does not have specified"
-                f" prediction_key {prediction_key}."
-            )
-        if error_messages:
-            raise ValueError("\n".join(error_messages))
-        if input_key is None or prediction_key is None:
-            # This should never happen, but mypy doesn't know that.
-            raise ValueError(f"Chain {model.lc_namespace} has no input or output keys.")
-        return cls(input_key=input_key, prediction_key=prediction_key)
 
     def _get_key(self, source: Dict, key: Optional[str], which: str) -> str:
         if key is not None:
@@ -367,50 +323,6 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
             {"run": run, "example": example}, include_run_info=True
         )
         return self._prepare_evaluator_output(result)
-
-    # TODO: Delete
-    @classmethod
-    def from_model_and_evaluator(
-        cls,
-        model: Union[Chain, BaseLanguageModel, Tool],
-        evaluator: StringEvaluator,
-        input_key: Optional[str] = None,
-        prediction_key: Optional[str] = None,
-        reference_key: Optional[str] = None,
-    ) -> StringRunEvaluatorChain:
-        """Create a StringRunEvaluatorChain from a model and evaluator."""
-        if isinstance(model, BaseLanguageModel):
-            run_mapper: StringRunMapper = LLMStringRunMapper()
-        elif isinstance(model, Chain):
-            run_mapper = ChainStringRunMapper.from_chain(
-                model, input_key=input_key, prediction_key=prediction_key
-            )
-        elif isinstance(model, Tool):
-            run_mapper = ToolStringRunMapper()
-        else:
-            raise NotImplementedError(
-                f"{cls.__name__}.from_model_and_evaluator({type(model)})"
-                " not yet implemented."
-                "Expected one of [BaseLanguageModel, Chain, Tool]."
-            )
-        if reference_key is not None or isinstance(model, BaseLanguageModel):
-            example_mapper = StringExampleMapper(reference_key=reference_key)
-        elif evaluator.requires_reference:
-            # We could potentially auto-infer if there is only one string in the
-            # example, but it's preferred to raise earlier.
-            raise ValueError(
-                f"Evaluator {evaluator.evaluation_name} requires a reference"
-                " example from the dataset. Please specify the reference key from"
-                " amongst the dataset outputs keys."
-            )
-        else:
-            example_mapper = None
-        return cls(
-            name=evaluator.evaluation_name,
-            run_mapper=run_mapper,
-            example_mapper=example_mapper,
-            string_evaluator=evaluator,
-        )
 
     @classmethod
     def from_run_and_data_type(

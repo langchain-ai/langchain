@@ -27,7 +27,11 @@ class EvaluatorType(str, Enum):
     CONTEXT_QA = "context_qa"
     """Question answering evaluator that incorporates 'context' in the response."""
     PAIRWISE_STRING = "pairwise_string"
-    """The pairwise string evaluator, which compares the output of two models."""
+    """The pairwise string evaluator, which predicts the preferred prediction from
+    between two models."""
+    LABELED_PAIRWISE_STRING = "labeled_pairwise_string"
+    """The labeled pairwise string evaluator, which predicts the preferred prediction
+    from between two models based on a ground truth reference label."""
     AGENT_TRAJECTORY = "trajectory"
     """The agent trajectory evaluator, which grades the agent's intermediate steps."""
     CRITERIA = "criteria"

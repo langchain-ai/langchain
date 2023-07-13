@@ -7,9 +7,9 @@ from pydantic import BaseModel, Field
 
 from langchain.embeddings.base import Embeddings
 from langchain.evaluation.criteria.eval_chain import CRITERIA_TYPE
-from langchain.evaluation.embedding_distance.base import EmbeddingDistance
+from langchain.evaluation.embedding_distance.base import EmbeddingDistance as EmbeddingDistanceEnum
 from langchain.evaluation.schema import EvaluatorType, StringEvaluator
-from langchain.evaluation.string_distance.base import StringDistance
+from langchain.evaluation.string_distance.base import StringDistance as StringDistanceEnum
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.prompt_template import BasePromptTemplate
 
@@ -144,14 +144,14 @@ class RunEvalConfig(BaseModel):
         embeddings : Optional[Embeddings]
             The embeddings to use for computing the distance.
 
-        distance_metric : Optional[EmbeddingDistance]
+        distance_metric : Optional[EmbeddingDistanceEnum]
             The distance metric to use for computing the distance.
 
         """
 
         evaluator_type: EvaluatorType = EvaluatorType.EMBEDDING_DISTANCE
         embeddings: Optional[Embeddings] = None
-        distance_metric: Optional[EmbeddingDistance] = None
+        distance_metric: Optional[EmbeddingDistanceEnum] = None
 
         class Config:
             arbitrary_types_allowed = True
@@ -161,13 +161,13 @@ class RunEvalConfig(BaseModel):
 
         Parameters
         ----------
-        distance : Optional[StringDistance]
+        distance : Optional[StringDistanceEnum]
             The string distance metric to use.
 
         """
 
         evaluator_type: EvaluatorType = EvaluatorType.STRING_DISTANCE
-        distance: Optional[StringDistance] = None
+        distance: Optional[StringDistanceEnum] = None
 
     class QA(EvalConfig):
         """Configuration for a QA evaluator.
