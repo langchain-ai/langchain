@@ -1,14 +1,15 @@
 """Filter that uses an LLM to drop documents that aren't relevant to the query."""
 from typing import Any, Callable, Dict, Optional, Sequence
 
-from langchain import BasePromptTemplate, LLMChain, PromptTemplate
-from langchain.base_language import BaseLanguageModel
+from langchain import LLMChain, PromptTemplate
+from langchain.callbacks.manager import Callbacks
 from langchain.output_parsers.boolean import BooleanOutputParser
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 from langchain.retrievers.document_compressors.chain_filter_prompt import (
     prompt_template,
 )
-from langchain.schema import Document
+from langchain.schema import BasePromptTemplate, Document
+from langchain.schema.language_model import BaseLanguageModel
 
 
 def _get_default_chain_prompt() -> PromptTemplate:
@@ -35,19 +36,27 @@ class LLMChainFilter(BaseDocumentCompressor):
     """Callable for constructing the chain input from the query and a Document."""
 
     def compress_documents(
-        self, documents: Sequence[Document], query: str
+        self,
+        documents: Sequence[Document],
+        query: str,
+        callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
         """Filter down documents based on their relevance to the query."""
         filtered_docs = []
         for doc in documents:
             _input = self.get_input(query, doc)
-            include_doc = self.llm_chain.predict_and_parse(**_input)
+            include_doc = self.llm_chain.predict_and_parse(
+                **_input, callbacks=callbacks
+            )
             if include_doc:
                 filtered_docs.append(doc)
         return filtered_docs
 
     async def acompress_documents(
-        self, documents: Sequence[Document], query: str
+        self,
+        documents: Sequence[Document],
+        query: str,
+        callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
         """Filter down documents."""
         raise NotImplementedError

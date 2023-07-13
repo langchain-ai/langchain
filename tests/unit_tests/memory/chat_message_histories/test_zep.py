@@ -4,7 +4,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from langchain.memory.chat_message_histories import ZepChatMessageHistory
-from langchain.schema import AIMessage, HumanMessage
+from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
 
 if TYPE_CHECKING:
     from zep_python import ZepClient
@@ -39,7 +39,7 @@ def test_messages(mocker: MockerFixture, zep_chat: ZepChatMessageHistory) -> Non
     result = zep_chat.messages
 
     assert len(result) == 3
-    assert isinstance(result[0], HumanMessage)  # summary
+    assert isinstance(result[0], SystemMessage)  # summary
     assert isinstance(result[1], AIMessage)
     assert isinstance(result[2], HumanMessage)
 

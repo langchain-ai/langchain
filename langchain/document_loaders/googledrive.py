@@ -1,4 +1,4 @@
-"""Loader that loads data from Google Drive."""
+"""Loads data from Google Drive."""
 
 # Prerequisites:
 # 1. Create a Google Cloud project
@@ -22,17 +22,32 @@ SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 
 
 class GoogleDriveLoader(BaseLoader, BaseModel):
-    """Loader that loads Google Docs from Google Drive."""
+    """Loads Google Docs from Google Drive."""
 
     service_account_key: Path = Path.home() / ".credentials" / "keys.json"
+    """Path to the service account key file."""
     credentials_path: Path = Path.home() / ".credentials" / "credentials.json"
+    """Path to the credentials file."""
     token_path: Path = Path.home() / ".credentials" / "token.json"
+    """Path to the token file."""
     folder_id: Optional[str] = None
+    """The folder id to load from."""
     document_ids: Optional[List[str]] = None
+    """The document ids to load from."""
     file_ids: Optional[List[str]] = None
+    """The file ids to load from."""
     recursive: bool = False
+    """Whether to load recursively. Only applies when folder_id is given."""
     file_types: Optional[Sequence[str]] = None
+    """The file types to load. Only applies when folder_id is given."""
     load_trashed_files: bool = False
+    """Whether to load trashed files. Only applies when folder_id is given."""
+    # NOTE(MthwRobinson) - changing the file_loader_cls to type here currently
+    # results in pydantic validation errors
+    file_loader_cls: Any = None
+    """The file loader class to use."""
+    file_loader_kwargs: Dict["str", Any] = {}
+    """The file loader kwargs to use."""
 
     @root_validator
     def validate_inputs(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -224,14 +239,17 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
             _files = files
 
         returns = []
-        for file in files:
+        for file in _files:
             if file["trashed"] and not self.load_trashed_files:
                 continue
             elif file["mimeType"] == "application/vnd.google-apps.document":
                 returns.append(self._load_document_from_id(file["id"]))  # type: ignore
             elif file["mimeType"] == "application/vnd.google-apps.spreadsheet":
                 returns.extend(self._load_sheet_from_id(file["id"]))  # type: ignore
-            elif file["mimeType"] == "application/pdf":
+            elif (
+                file["mimeType"] == "application/pdf"
+                or self.file_loader_cls is not None
+            ):
                 returns.extend(self._load_file_from_id(file["id"]))  # type: ignore
             else:
                 pass
@@ -287,23 +305,32 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         done = False
         while done is False:
             status, done = downloader.next_chunk()
-        content = fh.getvalue()
 
-        from PyPDF2 import PdfReader
+        if self.file_loader_cls is not None:
+            fh.seek(0)
+            loader = self.file_loader_cls(file=fh, **self.file_loader_kwargs)
+            docs = loader.load()
+            for doc in docs:
+                doc.metadata["source"] = f"https://drive.google.com/file/d/{id}/view"
+            return docs
 
-        pdf_reader = PdfReader(BytesIO(content))
+        else:
+            from PyPDF2 import PdfReader
 
-        return [
-            Document(
-                page_content=page.extract_text(),
-                metadata={
-                    "source": f"https://drive.google.com/file/d/{id}/view",
-                    "title": f"{file.get('name')}",
-                    "page": i,
-                },
-            )
-            for i, page in enumerate(pdf_reader.pages)
-        ]
+            content = fh.getvalue()
+            pdf_reader = PdfReader(BytesIO(content))
+
+            return [
+                Document(
+                    page_content=page.extract_text(),
+                    metadata={
+                        "source": f"https://drive.google.com/file/d/{id}/view",
+                        "title": f"{file.get('name')}",
+                        "page": i,
+                    },
+                )
+                for i, page in enumerate(pdf_reader.pages)
+            ]
 
     def _load_file_from_ids(self) -> List[Document]:
         """Load files from a list of IDs."""

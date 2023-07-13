@@ -1,4 +1,5 @@
 """Wrapper around Redis vector database."""
+
 from __future__ import annotations
 
 import json
@@ -19,8 +20,12 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import BaseModel, root_validator
+from pydantic import root_validator
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
@@ -116,9 +121,8 @@ class Redis(VectorStore):
         content_key: str = "content",
         metadata_key: str = "metadata",
         vector_key: str = "content_vector",
-        relevance_score_fn: Optional[
-            Callable[[float], float]
-        ] = _default_relevance_score,
+        relevance_score_fn: Optional[Callable[[float], float]] = None,
+        distance_metric: REDIS_DISTANCE_METRICS = "COSINE",
         **kwargs: Any,
     ):
         """Initialize with necessary components."""
@@ -144,11 +148,23 @@ class Redis(VectorStore):
         self.content_key = content_key
         self.metadata_key = metadata_key
         self.vector_key = vector_key
+        self.distance_metric = distance_metric
         self.relevance_score_fn = relevance_score_fn
 
-    def _create_index(
-        self, dim: int = 1536, distance_metric: REDIS_DISTANCE_METRICS = "COSINE"
-    ) -> None:
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        if self.relevance_score_fn:
+            return self.relevance_score_fn
+
+        if self.distance_metric == "COSINE":
+            return self._cosine_relevance_score_fn
+        elif self.distance_metric == "IP":
+            return self._max_inner_product_relevance_score_fn
+        elif self.distance_metric == "L2":
+            return self._euclidean_relevance_score_fn
+        else:
+            return _default_relevance_score
+
+    def _create_index(self, dim: int = 1536) -> None:
         try:
             from redis.commands.search.field import TextField, VectorField
             from redis.commands.search.indexDefinition import IndexDefinition, IndexType
@@ -170,7 +186,7 @@ class Redis(VectorStore):
                     {
                         "TYPE": "FLOAT32",
                         "DIM": dim,
-                        "DISTANCE_METRIC": distance_metric,
+                        "DISTANCE_METRIC": self.distance_metric,
                     },
                 ),
             )
@@ -187,7 +203,6 @@ class Redis(VectorStore):
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         embeddings: Optional[List[List[float]]] = None,
-        keys: Optional[List[str]] = None,
         batch_size: int = 1000,
         **kwargs: Any,
     ) -> List[str]:
@@ -199,7 +214,7 @@ class Redis(VectorStore):
                 Defaults to None.
             embeddings (Optional[List[List[float]]], optional): Optional pre-generated
                 embeddings. Defaults to None.
-            keys (Optional[List[str]], optional): Optional key values to use as ids.
+            keys (List[str]) or ids (List[str]): Identifiers of entries.
                 Defaults to None.
             batch_size (int, optional): Batch size to use for writes. Defaults to 1000.
 
@@ -209,11 +224,15 @@ class Redis(VectorStore):
         ids = []
         prefix = _redis_prefix(self.index_name)
 
+        # Get keys or ids from kwargs
+        # Other vectorstores use ids
+        keys_or_ids = kwargs.get("keys", kwargs.get("ids"))
+
         # Write data to redis
         pipeline = self.client.pipeline(transaction=False)
         for i, text in enumerate(texts):
             # Use provided values by default or fallback
-            key = keys[i] if keys else _redis_key(prefix)
+            key = keys_or_ids[i] if keys_or_ids else _redis_key(prefix)
             metadata = metadatas[i] if metadatas else {}
             embedding = embeddings[i] if embeddings else self.embedding_function(text)
             pipeline.hset(
@@ -339,24 +358,6 @@ class Redis(VectorStore):
 
         return docs
 
-    def _similarity_search_with_relevance_scores(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
-        """Return docs and relevance scores, normalized on a scale from 0 to 1.
-
-        0 is dissimilar, 1 is most similar.
-        """
-        if self.relevance_score_fn is None:
-            raise ValueError(
-                "relevance_score_fn must be provided to"
-                " Redis constructor to normalize scores"
-            )
-        docs_and_scores = self.similarity_search_with_score(query, k=k)
-        return [(doc, self.relevance_score_fn(score)) for doc, score in docs_and_scores]
-
     @classmethod
     def from_texts_return_keys(
         cls,
@@ -375,13 +376,14 @@ class Redis(VectorStore):
             1. Embeds documents.
             2. Creates a new index for the embeddings in Redis.
             3. Adds the documents to the newly created Redis index.
+            4. Returns the keys of the newly created documents.
         This is intended to be a quick way to get started.
         Example:
             .. code-block:: python
                 from langchain.vectorstores import Redis
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
-                redisearch = RediSearch.from_texts(
+                redisearch, keys = RediSearch.from_texts_return_keys(
                     texts,
                     embeddings,
                     redis_url="redis://username:password@localhost:6379"
@@ -404,6 +406,7 @@ class Redis(VectorStore):
             content_key=content_key,
             metadata_key=metadata_key,
             vector_key=vector_key,
+            distance_metric=distance_metric,
             **kwargs,
         )
 
@@ -411,7 +414,7 @@ class Redis(VectorStore):
         embeddings = embedding.embed_documents(texts)
 
         # Create the search index
-        instance._create_index(dim=len(embeddings[0]), distance_metric=distance_metric)
+        instance._create_index(dim=len(embeddings[0]))
 
         # Add data to Redis
         keys = instance.add_texts(texts, metadatas, embeddings)
@@ -457,6 +460,49 @@ class Redis(VectorStore):
             **kwargs,
         )
         return instance
+
+    @staticmethod
+    def delete(
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> bool:
+        """
+        Delete a Redis entry.
+
+        Args:
+            ids: List of ids (keys) to delete.
+
+        Returns:
+            bool: Whether or not the deletions were successful.
+        """
+        redis_url = get_from_dict_or_env(kwargs, "redis_url", "REDIS_URL")
+
+        if ids is None:
+            raise ValueError("'ids' (keys)() were not provided.")
+
+        try:
+            import redis
+        except ImportError:
+            raise ValueError(
+                "Could not import redis python package. "
+                "Please install it with `pip install redis`."
+            )
+        try:
+            # We need to first remove redis_url from kwargs,
+            # otherwise passing it to Redis will result in an error.
+            if "redis_url" in kwargs:
+                kwargs.pop("redis_url")
+            client = redis.from_url(url=redis_url, **kwargs)
+        except ValueError as e:
+            raise ValueError(f"Your redis connected error: {e}")
+        # Check if index exists
+        try:
+            client.delete(*ids)
+            logger.info("Entries deleted")
+            return True
+        except:  # noqa: E722
+            # ids does not exist
+            return False
 
     @staticmethod
     def drop_index(
@@ -547,7 +593,7 @@ class Redis(VectorStore):
         return RedisVectorStoreRetriever(vectorstore=self, **kwargs)
 
 
-class RedisVectorStoreRetriever(VectorStoreRetriever, BaseModel):
+class RedisVectorStoreRetriever(VectorStoreRetriever):
     vectorstore: Redis
     search_type: str = "similarity"
     k: int = 4
@@ -567,7 +613,9 @@ class RedisVectorStoreRetriever(VectorStoreRetriever, BaseModel):
                 raise ValueError(f"search_type of {search_type} not allowed.")
         return values
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> List[Document]:
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(query, k=self.k)
         elif self.search_type == "similarity_limit":
@@ -578,7 +626,9 @@ class RedisVectorStoreRetriever(VectorStoreRetriever, BaseModel):
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def _aget_relevant_documents(
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
+    ) -> List[Document]:
         raise NotImplementedError("RedisVectorStoreRetriever does not support async")
 
     def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:

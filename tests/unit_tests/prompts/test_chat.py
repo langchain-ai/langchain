@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import List
 
+import pytest
+
 from langchain.prompts import PromptTemplate
 from langchain.prompts.chat import (
     AIMessagePromptTemplate,
@@ -11,7 +13,7 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain.schema import HumanMessage
+from langchain.schema.messages import HumanMessage
 
 
 def create_messages() -> List[BaseMessagePromptTemplate]:
@@ -142,3 +144,49 @@ def test_chat_prompt_template_with_messages() -> None:
     )
     prompt_value_messages = prompt_value.to_messages()
     assert prompt_value_messages[-1] == HumanMessage(content="foo")
+
+
+def test_chat_invalid_input_variables_extra() -> None:
+    messages = [HumanMessage(content="foo")]
+    with pytest.raises(ValueError):
+        ChatPromptTemplate(messages=messages, input_variables=["foo"])
+
+
+def test_chat_invalid_input_variables_missing() -> None:
+    messages = [HumanMessagePromptTemplate.from_template("{foo}")]
+    with pytest.raises(ValueError):
+        ChatPromptTemplate(messages=messages, input_variables=[])
+
+
+def test_infer_variables() -> None:
+    messages = [HumanMessagePromptTemplate.from_template("{foo}")]
+    prompt = ChatPromptTemplate(messages=messages)
+    assert prompt.input_variables == ["foo"]
+
+
+def test_chat_valid_with_partial_variables() -> None:
+    messages = [
+        HumanMessagePromptTemplate.from_template(
+            "Do something with {question} using {context} giving it like {formatins}"
+        )
+    ]
+    prompt = ChatPromptTemplate(
+        messages=messages,
+        input_variables=["question", "context"],
+        partial_variables={"formatins": "some structure"},
+    )
+    assert set(prompt.input_variables) == set(["question", "context"])
+    assert prompt.partial_variables == {"formatins": "some structure"}
+
+
+def test_chat_valid_infer_variables() -> None:
+    messages = [
+        HumanMessagePromptTemplate.from_template(
+            "Do something with {question} using {context} giving it like {formatins}"
+        )
+    ]
+    prompt = ChatPromptTemplate(
+        messages=messages, partial_variables={"formatins": "some structure"}
+    )
+    assert set(prompt.input_variables) == set(["question", "context"])
+    assert prompt.partial_variables == {"formatins": "some structure"}

@@ -140,7 +140,7 @@ class RWKV(LLM, BaseModel):
     @property
     def _llm_type(self) -> str:
         """Return the type of llm."""
-        return "rwkv-4"
+        return "rwkv"
 
     def run_rnn(self, _tokens: List[str], newline_adj: int = 0) -> Any:
         AVOID_REPEAT_TOKENS = []

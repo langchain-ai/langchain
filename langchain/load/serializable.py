@@ -5,24 +5,34 @@ from pydantic import BaseModel, PrivateAttr
 
 
 class BaseSerialized(TypedDict):
+    """Base class for serialized objects."""
+
     lc: int
     id: List[str]
 
 
 class SerializedConstructor(BaseSerialized):
+    """Serialized constructor."""
+
     type: Literal["constructor"]
     kwargs: Dict[str, Any]
 
 
 class SerializedSecret(BaseSerialized):
+    """Serialized secret."""
+
     type: Literal["secret"]
 
 
 class SerializedNotImplemented(BaseSerialized):
+    """Serialized not implemented."""
+
     type: Literal["not_implemented"]
 
 
 class Serializable(BaseModel, ABC):
+    """Serializable base class."""
+
     @property
     def lc_serializable(self) -> bool:
         """
@@ -88,6 +98,13 @@ class Serializable(BaseModel, ABC):
             secrets.update(this.lc_secrets)
             lc_kwargs.update(this.lc_attributes)
 
+        # include all secrets, even if not specified in kwargs
+        # as these secrets may be passed as an environment variable instead
+        for key in secrets.keys():
+            secret_value = getattr(self, key, None) or lc_kwargs.get(key)
+            if secret_value is not None:
+                lc_kwargs.update({key: secret_value})
+
         return {
             "lc": 1,
             "type": "constructor",
@@ -123,6 +140,14 @@ def _replace_secrets(
 
 
 def to_json_not_implemented(obj: object) -> SerializedNotImplemented:
+    """Serialize a "not implemented" object.
+
+    Args:
+        obj: object to serialize
+
+    Returns:
+        SerializedNotImplemented
+    """
     _id: List[str] = []
     try:
         if hasattr(obj, "__name__"):

@@ -16,7 +16,7 @@ prompt.format(product="colorful socks")
 <CodeOutputBlock lang="python">
 
 ```
-    I want you to act as a naming consultant for new companies.
+    You are a naming consultant for new companies.
     What is a good name for a company that makes colorful socks?
 ```
 
@@ -69,7 +69,7 @@ You can create custom prompt templates that format the prompt in any way you wan
 
 ## Chat prompt template
 
-[Chat Models](../models/chat) take a list of `chat messages as` input - this list commonly referred to as a `prompt`.
+[Chat Models](../models/chat) take a list of chat messages as input - this list commonly referred to as a `prompt`.
 These chat messages differ from raw string (which you would pass into a [LLM](/docs/modules/model_io/models/llms) model) in that every message is associated with a `role`.
 
 For example, in OpenAI [Chat Completion API](https://platform.openai.com/docs/guides/chat/introduction), a chat message can be associated with the AI, human or system role. The model is supposed to follow instruction from system chat message more closely.

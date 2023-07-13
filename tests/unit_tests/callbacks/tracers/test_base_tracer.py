@@ -12,6 +12,7 @@ from langchain.callbacks.manager import CallbackManager
 from langchain.callbacks.tracers.base import BaseTracer, TracerException
 from langchain.callbacks.tracers.schemas import Run
 from langchain.schema import LLMResult
+from langchain.schema.messages import HumanMessage
 
 SERIALIZED = {"id": ["llm"]}
 SERIALIZED_CHAT = {"id": ["chat_model"]}
@@ -39,6 +40,10 @@ def test_tracer_llm_run() -> None:
         parent_run_id=None,
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow(),
+        events=[
+            {"name": "start", "time": datetime.utcnow()},
+            {"name": "end", "time": datetime.utcnow()},
+        ],
         extra={},
         execution_order=1,
         child_execution_order=1,
@@ -58,27 +63,31 @@ def test_tracer_llm_run() -> None:
 @freeze_time("2023-01-01")
 def test_tracer_chat_model_run() -> None:
     """Test tracer on a Chat Model run."""
-    uuid = uuid4()
+    tracer = FakeTracer()
+    manager = CallbackManager(handlers=[tracer])
+    run_managers = manager.on_chat_model_start(
+        serialized=SERIALIZED_CHAT, messages=[[HumanMessage(content="")]]
+    )
     compare_run = Run(
-        id=str(uuid),
+        id=str(run_managers[0].run_id),
         name="chat_model",
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow(),
+        events=[
+            {"name": "start", "time": datetime.utcnow()},
+            {"name": "end", "time": datetime.utcnow()},
+        ],
         extra={},
         execution_order=1,
         child_execution_order=1,
         serialized=SERIALIZED_CHAT,
-        inputs=dict(prompts=[""]),
+        inputs=dict(prompts=["Human: "]),
         outputs=LLMResult(generations=[[]]),
         error=None,
         run_type="llm",
     )
-    tracer = FakeTracer()
-    manager = CallbackManager(handlers=[tracer])
-    run_manager = manager.on_chat_model_start(
-        serialized=SERIALIZED_CHAT, messages=[[]], run_id=uuid
-    )
-    run_manager.on_llm_end(response=LLMResult(generations=[[]]))
+    for run_manager in run_managers:
+        run_manager.on_llm_end(response=LLMResult(generations=[[]]))
     assert tracer.runs == [compare_run]
 
 
@@ -100,6 +109,10 @@ def test_tracer_multiple_llm_runs() -> None:
         name="llm",
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow(),
+        events=[
+            {"name": "start", "time": datetime.utcnow()},
+            {"name": "end", "time": datetime.utcnow()},
+        ],
         extra={},
         execution_order=1,
         child_execution_order=1,
@@ -127,6 +140,10 @@ def test_tracer_chain_run() -> None:
         id=str(uuid),
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow(),
+        events=[
+            {"name": "start", "time": datetime.utcnow()},
+            {"name": "end", "time": datetime.utcnow()},
+        ],
         extra={},
         execution_order=1,
         child_execution_order=1,
@@ -151,6 +168,10 @@ def test_tracer_tool_run() -> None:
         id=str(uuid),
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow(),
+        events=[
+            {"name": "start", "time": datetime.utcnow()},
+            {"name": "end", "time": datetime.utcnow()},
+        ],
         extra={},
         execution_order=1,
         child_execution_order=1,
@@ -207,6 +228,10 @@ def test_tracer_nested_run() -> None:
         error=None,
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow(),
+        events=[
+            {"name": "start", "time": datetime.utcnow()},
+            {"name": "end", "time": datetime.utcnow()},
+        ],
         extra={},
         execution_order=1,
         child_execution_order=4,
@@ -220,6 +245,10 @@ def test_tracer_nested_run() -> None:
                 parent_run_id=chain_uuid,
                 start_time=datetime.utcnow(),
                 end_time=datetime.utcnow(),
+                events=[
+                    {"name": "start", "time": datetime.utcnow()},
+                    {"name": "end", "time": datetime.utcnow()},
+                ],
                 extra={},
                 execution_order=2,
                 child_execution_order=3,
@@ -235,6 +264,10 @@ def test_tracer_nested_run() -> None:
                         error=None,
                         start_time=datetime.utcnow(),
                         end_time=datetime.utcnow(),
+                        events=[
+                            {"name": "start", "time": datetime.utcnow()},
+                            {"name": "end", "time": datetime.utcnow()},
+                        ],
                         extra={},
                         execution_order=3,
                         child_execution_order=3,
@@ -251,6 +284,10 @@ def test_tracer_nested_run() -> None:
                 error=None,
                 start_time=datetime.utcnow(),
                 end_time=datetime.utcnow(),
+                events=[
+                    {"name": "start", "time": datetime.utcnow()},
+                    {"name": "end", "time": datetime.utcnow()},
+                ],
                 extra={},
                 execution_order=4,
                 child_execution_order=4,
@@ -275,6 +312,10 @@ def test_tracer_llm_run_on_error() -> None:
         id=str(uuid),
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow(),
+        events=[
+            {"name": "start", "time": datetime.utcnow()},
+            {"name": "error", "time": datetime.utcnow()},
+        ],
         extra={},
         execution_order=1,
         child_execution_order=1,
@@ -301,6 +342,10 @@ def test_tracer_chain_run_on_error() -> None:
         id=str(uuid),
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow(),
+        events=[
+            {"name": "start", "time": datetime.utcnow()},
+            {"name": "error", "time": datetime.utcnow()},
+        ],
         extra={},
         execution_order=1,
         child_execution_order=1,
@@ -327,6 +372,10 @@ def test_tracer_tool_run_on_error() -> None:
         id=str(uuid),
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow(),
+        events=[
+            {"name": "start", "time": datetime.utcnow()},
+            {"name": "error", "time": datetime.utcnow()},
+        ],
         extra={},
         execution_order=1,
         child_execution_order=1,
@@ -394,6 +443,10 @@ def test_tracer_nested_runs_on_error() -> None:
         id=str(chain_uuid),
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow(),
+        events=[
+            {"name": "start", "time": datetime.utcnow()},
+            {"name": "error", "time": datetime.utcnow()},
+        ],
         extra={},
         execution_order=1,
         child_execution_order=5,
@@ -408,6 +461,10 @@ def test_tracer_nested_runs_on_error() -> None:
                 parent_run_id=str(chain_uuid),
                 start_time=datetime.utcnow(),
                 end_time=datetime.utcnow(),
+                events=[
+                    {"name": "start", "time": datetime.utcnow()},
+                    {"name": "end", "time": datetime.utcnow()},
+                ],
                 extra={},
                 execution_order=2,
                 child_execution_order=2,
@@ -422,6 +479,10 @@ def test_tracer_nested_runs_on_error() -> None:
                 parent_run_id=str(chain_uuid),
                 start_time=datetime.utcnow(),
                 end_time=datetime.utcnow(),
+                events=[
+                    {"name": "start", "time": datetime.utcnow()},
+                    {"name": "end", "time": datetime.utcnow()},
+                ],
                 extra={},
                 execution_order=3,
                 child_execution_order=3,
@@ -436,6 +497,10 @@ def test_tracer_nested_runs_on_error() -> None:
                 parent_run_id=str(chain_uuid),
                 start_time=datetime.utcnow(),
                 end_time=datetime.utcnow(),
+                events=[
+                    {"name": "start", "time": datetime.utcnow()},
+                    {"name": "error", "time": datetime.utcnow()},
+                ],
                 extra={},
                 execution_order=4,
                 child_execution_order=5,
@@ -450,6 +515,10 @@ def test_tracer_nested_runs_on_error() -> None:
                         parent_run_id=str(tool_uuid),
                         start_time=datetime.utcnow(),
                         end_time=datetime.utcnow(),
+                        events=[
+                            {"name": "start", "time": datetime.utcnow()},
+                            {"name": "error", "time": datetime.utcnow()},
+                        ],
                         extra={},
                         execution_order=5,
                         child_execution_order=5,
