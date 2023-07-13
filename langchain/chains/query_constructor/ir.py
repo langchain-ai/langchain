@@ -75,8 +75,8 @@ class Comparator(str, Enum):
     GTE = "gte"
     LT = "lt"
     LTE = "lte"
-    CONTAIN = "list_contain"
-    LIKE = "string_pattern_like"
+    CONTAIN = "contain"
+    LIKE = "like"
 
 
 class FilterDirective(Expr, ABC):
