@@ -9,6 +9,7 @@ class BaseSerialized(TypedDict):
 
     lc: int
     id: List[str]
+    name: str
 
 
 class SerializedConstructor(BaseSerialized):
@@ -109,6 +110,7 @@ class Serializable(BaseModel, ABC):
             "lc": 1,
             "type": "constructor",
             "id": [*self.lc_namespace, self.__class__.__name__],
+            "name": self.__class__.__name__,
             "kwargs": lc_kwargs
             if not secrets
             else _replace_secrets(lc_kwargs, secrets),
@@ -149,15 +151,19 @@ def to_json_not_implemented(obj: object) -> SerializedNotImplemented:
         SerializedNotImplemented
     """
     _id: List[str] = []
+    _name: str = ""
     try:
         if hasattr(obj, "__name__"):
             _id = [*obj.__module__.split("."), obj.__name__]
+            _name = obj.__name__
         elif hasattr(obj, "__class__"):
             _id = [*obj.__class__.__module__.split("."), obj.__class__.__name__]
+            _name = obj.__class__.__name__
     except Exception:
         pass
     return {
         "lc": 1,
         "type": "not_implemented",
         "id": _id,
+        "name": _name,
     }

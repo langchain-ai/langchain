@@ -8,6 +8,7 @@
       "test_dump",
       "Person"
     ],
+    "name": "Person",
     "kwargs": {
       "secret": {
         "lc": 1,
@@ -30,6 +31,7 @@
       "test_dump",
       "SpecialPerson"
     ],
+    "name": "SpecialPerson",
     "kwargs": {
       "another_secret": {
         "lc": 1,
@@ -62,6 +64,7 @@
       "llm",
       "LLMChain"
     ],
+    "name": "LLMChain",
     "kwargs": {
       "llm": {
         "lc": 1,
@@ -72,6 +75,7 @@
           "openai",
           "OpenAI"
         ],
+        "name": "OpenAI",
         "kwargs": {
           "model": "davinci",
           "temperature": 0.5,
@@ -93,6 +97,7 @@
           "prompt",
           "PromptTemplate"
         ],
+        "name": "PromptTemplate",
         "kwargs": {
           "input_variables": [
             "name"
@@ -116,6 +121,7 @@
       "llm",
       "LLMChain"
     ],
+    "name": "LLMChain",
     "kwargs": {
       "llm": {
         "lc": 1,
@@ -126,6 +132,7 @@
           "openai",
           "ChatOpenAI"
         ],
+        "name": "ChatOpenAI",
         "kwargs": {
           "model": "davinci",
           "temperature": 0.5,
@@ -147,6 +154,7 @@
           "chat",
           "ChatPromptTemplate"
         ],
+        "name": "ChatPromptTemplate",
         "kwargs": {
           "input_variables": [
             "name"
@@ -161,6 +169,7 @@
                 "chat",
                 "HumanMessagePromptTemplate"
               ],
+              "name": "HumanMessagePromptTemplate",
               "kwargs": {
                 "prompt": {
                   "lc": 1,
@@ -171,6 +180,7 @@
                     "prompt",
                     "PromptTemplate"
                   ],
+                  "name": "PromptTemplate",
                   "kwargs": {
                     "input_variables": [
                       "name"
@@ -199,6 +209,7 @@
       "llm",
       "LLMChain"
     ],
+    "name": "LLMChain",
     "kwargs": {
       "llm": {
         "lc": 1,
@@ -209,6 +220,7 @@
           "openai",
           "OpenAI"
         ],
+        "name": "OpenAI",
         "kwargs": {
           "model": "davinci",
           "temperature": 0.5,
@@ -227,7 +239,8 @@
               "api_resources",
               "completion",
               "Completion"
-            ]
+            ],
+            "name": "Completion"
           }
         }
       },
@@ -240,6 +253,7 @@
           "prompt",
           "PromptTemplate"
         ],
+        "name": "PromptTemplate",
         "kwargs": {
           "input_variables": [
             "name"
@@ -263,6 +277,7 @@
       "openai",
       "OpenAI"
     ],
+    "name": "OpenAI",
     "kwargs": {
       "model": "davinci",
       "temperature": 0.7,
