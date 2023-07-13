@@ -626,6 +626,7 @@ Classes
     document_loaders.recursive_url_loader.RecursiveUrlLoader
     document_loaders.reddit.RedditPostsLoader
     document_loaders.roam.RoamLoader
+    document_loaders.rocksetdb.RocksetLoader
     document_loaders.rst.UnstructuredRSTLoader
     document_loaders.rtf.UnstructuredRTFLoader
     document_loaders.s3_directory.S3DirectoryLoader
@@ -1896,4 +1897,3 @@ Functions
     vectorstores.starrocks.get_named_result
     vectorstores.starrocks.has_mul_sub_str
     vectorstores.utils.maximal_marginal_relevance
-
