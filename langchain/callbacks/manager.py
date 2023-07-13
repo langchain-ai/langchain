@@ -597,6 +597,10 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
 class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
     """Async callback manager for LLM run."""
 
+    @property
+    def run_inline(self):
+        return all(h.run_inline for h in self.handlers)
+
     async def on_llm_new_token(
         self,
         token: str,

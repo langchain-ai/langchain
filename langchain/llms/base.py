@@ -309,6 +309,12 @@ class BaseLLM(BaseLanguageModel, ABC):
         new_arg_supported: bool,
         **kwargs: Any,
     ) -> LLMResult:
+        inline_managers = [
+            run_manager for run_manager in run_managers if run_manager.run_inline
+        ]
+        non_inline_managers = [
+            run_manager for run_manager in run_managers if not run_manager.run_inline
+        ]
         try:
             output = (
                 await self._agenerate(
@@ -321,19 +327,22 @@ class BaseLLM(BaseLanguageModel, ABC):
                 else await self._agenerate(prompts, stop=stop)
             )
         except (KeyboardInterrupt, Exception) as e:
+            for run_manager in inline_managers:
+                await run_manager.on_llm_error(e)
             await asyncio.gather(
-                *[run_manager.on_llm_error(e) for run_manager in run_managers]
+                *[run_manager.on_llm_error(e) for run_manager in non_inline_managers]
             )
             raise e
         flattened_outputs = output.flatten()
-        await asyncio.gather(
-            *[
-                run_manager.on_llm_end(flattened_output)
-                for run_manager, flattened_output in zip(
-                    run_managers, flattened_outputs
-                )
-            ]
-        )
+        tasks = []
+        for run_manager, flattened_output in zip(run_managers, flattened_outputs):
+            if run_manager.run_inline:
+                await run_manager.on_llm_end(flattened_output)
+            else:
+                tasks.append(run_manager.on_llm_end(flattened_output))
+        if tasks:
+            await asyncio.gather(*tasks)
+
         if run_managers:
             output.run = [
                 RunInfo(run_id=run_manager.run_id) for run_manager in run_managers
