@@ -4,7 +4,6 @@ import asyncio
 import functools
 import logging
 import os
-import warnings
 from contextlib import asynccontextmanager, contextmanager
 from contextvars import ContextVar
 from typing import (
@@ -163,11 +162,6 @@ def tracing_v2_enabled(
         >>> with tracing_v2_enabled():
         ...     # LangChain code will automatically be traced
     """
-    # Issue a warning that this is experimental
-    warnings.warn(
-        "The tracing v2 API is in development. "
-        "This is not yet stable and may change in the future."
-    )
     if isinstance(example_id, str):
         example_id = UUID(example_id)
     cb = LangChainTracer(
