@@ -1,11 +1,14 @@
 from typing import Any, Sequence
 
 from langchain.schema import BaseDocumentTransformer, Document
-from langchain.utils import get_from_env
+from langchain.utils import get_from_dict_or_env
 
 
 class DoctranQATransformer(BaseDocumentTransformer):
     """Extracts QA from text documents using doctran."""
+
+    def __init__(self, **kwargs: Any) -> None:
+        self.openai_api_key = get_from_dict_or_env(kwargs, "openai_api_key", "OPENAI_API_KEY")
 
     def transform_documents(
         self, documents: Sequence[Document], **kwargs: Any
@@ -16,15 +19,10 @@ class DoctranQATransformer(BaseDocumentTransformer):
         self, documents: Sequence[Document], **kwargs: Any
     ) -> Sequence[Document]:
         """Extracts QA from text documents using doctran."""
-
-        openai_api_key = kwargs.get("openai_api_key", None)
-        if not openai_api_key:
-            openai_api_key = get_from_env("openai_api_key", "OPENAI_API_KEY")
-
         try:
             from doctran import Doctran
 
-            doctran = Doctran(openai_api_key=openai_api_key)
+            doctran = Doctran(openai_api_key=self.openai_api_key)
         except ImportError:
             raise ImportError(
                 "Install doctran to use this parser. (pip install doctran)"
