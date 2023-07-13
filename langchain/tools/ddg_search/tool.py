@@ -44,7 +44,7 @@ class DuckDuckGoSearchRun(BaseTool):
 
 
 class DuckDuckGoSearchResults(BaseTool):
-    """Tool that queries the Duck Duck Go Search API and get back json."""
+    """Tool that queries the DuckDuckGo search API and get back json."""
 
     name = "DuckDuckGo Results JSON"
     description = (
@@ -75,6 +75,16 @@ class DuckDuckGoSearchResults(BaseTool):
 
 
 def DuckDuckGoSearchTool(*args: Any, **kwargs: Any) -> DuckDuckGoSearchRun:
+    """
+    Deprecated. Use DuckDuckGoSearchRun instead.
+
+    Args:
+        *args:
+        **kwargs:
+
+    Returns:
+        DuckDuckGoSearchRun
+    """
     warnings.warn(
         "DuckDuckGoSearchTool will be deprecated in the future. "
         "Please use DuckDuckGoSearchRun instead.",

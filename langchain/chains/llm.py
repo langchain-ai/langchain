@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from pydantic import Extra, Field
 
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
     AsyncCallbackManager,
     AsyncCallbackManagerForChainRun,
@@ -17,14 +16,15 @@ from langchain.callbacks.manager import (
 from langchain.chains.base import Chain
 from langchain.input import get_colored_text
 from langchain.load.dump import dumpd
-from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
     BaseLLMOutputParser,
+    BasePromptTemplate,
     LLMResult,
     NoOpOutputParser,
     PromptValue,
 )
+from langchain.schema.language_model import BaseLanguageModel
 
 
 class LLMChain(Chain):

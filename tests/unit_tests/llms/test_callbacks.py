@@ -1,17 +1,17 @@
 """Test LLM callbacks."""
-from langchain.schema import HumanMessage
+from langchain.chat_models.fake import FakeListChatModel
+from langchain.llms.fake import FakeListLLM
+from langchain.schema.messages import HumanMessage
 from tests.unit_tests.callbacks.fake_callback_handler import (
     FakeCallbackHandler,
     FakeCallbackHandlerWithChatStart,
 )
-from tests.unit_tests.llms.fake_chat_model import FakeChatModel
-from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
 def test_llm_with_callbacks() -> None:
     """Test LLM callbacks."""
     handler = FakeCallbackHandler()
-    llm = FakeLLM(callbacks=[handler], verbose=True)
+    llm = FakeListLLM(callbacks=[handler], verbose=True, responses=["foo"])
     output = llm("foo")
     assert output == "foo"
     assert handler.starts == 1
@@ -22,7 +22,9 @@ def test_llm_with_callbacks() -> None:
 def test_chat_model_with_v1_callbacks() -> None:
     """Test chat model callbacks fall back to on_llm_start."""
     handler = FakeCallbackHandler()
-    llm = FakeChatModel(callbacks=[handler], verbose=True)
+    llm = FakeListChatModel(
+        callbacks=[handler], verbose=True, responses=["fake response"]
+    )
     output = llm([HumanMessage(content="foo")])
     assert output.content == "fake response"
     assert handler.starts == 1
@@ -35,7 +37,9 @@ def test_chat_model_with_v1_callbacks() -> None:
 def test_chat_model_with_v2_callbacks() -> None:
     """Test chat model callbacks fall back to on_llm_start."""
     handler = FakeCallbackHandlerWithChatStart()
-    llm = FakeChatModel(callbacks=[handler], verbose=True)
+    llm = FakeListChatModel(
+        callbacks=[handler], verbose=True, responses=["fake response"]
+    )
     output = llm([HumanMessage(content="foo")])
     assert output.content == "fake response"
     assert handler.starts == 1

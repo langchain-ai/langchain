@@ -1,4 +1,4 @@
-"""Loader that loads acreom vault from a directory."""
+"""Loads acreom vault from a directory."""
 import re
 from pathlib import Path
 from typing import Iterator, List
@@ -8,15 +8,20 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class AcreomLoader(BaseLoader):
+    """Loader that loads acreom vault from a directory."""
+
     FRONT_MATTER_REGEX = re.compile(r"^---\n(.*?)\n---\n", re.MULTILINE | re.DOTALL)
+    """Regex to match front matter metadata in markdown files."""
 
     def __init__(
         self, path: str, encoding: str = "UTF-8", collect_metadata: bool = True
     ):
-        """Initialize with path."""
         self.file_path = path
+        """Path to the directory containing the markdown files."""
         self.encoding = encoding
+        """Encoding to use when reading the files."""
         self.collect_metadata = collect_metadata
+        """Whether to collect metadata from the front matter."""
 
     def _parse_front_matter(self, content: str) -> dict:
         """Parse front matter metadata from the content and return it as a dict."""

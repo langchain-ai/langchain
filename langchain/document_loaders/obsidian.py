@@ -1,4 +1,4 @@
-"""Loader that loads Obsidian directory dump."""
+"""Loads Obsidian directory dump."""
 import re
 from pathlib import Path
 from typing import List
@@ -8,14 +8,21 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class ObsidianLoader(BaseLoader):
-    """Loader that loads Obsidian files from disk."""
+    """Loads Obsidian files from disk."""
 
     FRONT_MATTER_REGEX = re.compile(r"^---\n(.*?)\n---\n", re.MULTILINE | re.DOTALL)
 
     def __init__(
         self, path: str, encoding: str = "UTF-8", collect_metadata: bool = True
     ):
-        """Initialize with path."""
+        """Initialize with a path.
+
+        Args:
+            path: Path to the directory containing the Obsidian files.
+            encoding: Charset encoding, defaults to "UTF-8"
+            collect_metadata: Whether to collect metadata from the front matter.
+                Defaults to True.
+        """
         self.file_path = path
         self.encoding = encoding
         self.collect_metadata = collect_metadata
