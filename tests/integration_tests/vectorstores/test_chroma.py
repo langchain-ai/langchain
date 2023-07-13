@@ -19,6 +19,22 @@ def test_chroma() -> None:
     assert output == [Document(page_content="foo")]
 
 
+def test_chroma_from_embeddings() -> None:
+    """Test end to end construction with embeddings and search."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    text_embeddings = ConsistentFakeEmbeddings().embed_documents(texts)
+    text_embedding_pairs = list(zip(texts, text_embeddings))
+    docsearch = Chroma.from_embeddings(
+        text_embeddings=text_embedding_pairs,
+        embedding=ConsistentFakeEmbeddings(),
+        metadatas=metadatas,
+    )
+
+    output = docsearch.similarity_search("foo", k=1)
+    assert output == [Document(page_content="foo", metadata={"page": "0"})]
+
+
 @pytest.mark.asyncio
 async def test_chroma_async() -> None:
     """Test end to end construction and search."""
