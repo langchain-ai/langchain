@@ -27,6 +27,8 @@ class ArangoDBGraphQAChain(Chain):
     # Class Variable specifying the number of AQL Query Results to return
     top_k = 10
 
+    return_aql_result: bool = False
+
     @property
     def input_keys(self) -> List[str]:
         return [self.input_key]
@@ -117,4 +119,8 @@ class ArangoDBGraphQAChain(Chain):
         )
         # breakpoint()
 
-        return {self.output_key: result[self.qa_chain.output_key]}
+        result = {self.output_key: result[self.qa_chain.output_key]}
+        if self.return_aql_result:
+            result["aql_result"] = aql_result
+
+        return result
