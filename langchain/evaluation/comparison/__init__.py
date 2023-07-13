@@ -28,7 +28,8 @@ Example:
     # }
 """
 from langchain.evaluation.comparison.eval_chain import (
+    LabeledPairwiseStringEvalChain,
     PairwiseStringEvalChain,
 )
 
-__all__ = ["PairwiseStringEvalChain"]
+__all__ = ["PairwiseStringEvalChain", "LabeledPairwiseStringEvalChain"]

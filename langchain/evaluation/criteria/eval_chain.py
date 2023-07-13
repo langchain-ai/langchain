@@ -118,13 +118,12 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     }
 
     >>> from langchain.chat_models import ChatOpenAI
-    >>> from langchain.evaluation.criteria import CriteriaEvalChain
+    >>> from langchain.evaluation.criteria import LabeledCriteriaEvalChain
     >>> llm = ChatOpenAI(model="gpt-4", temperature=0)
     >>> criteria = "correctness"
-    >>> evaluator = CriteriaEvalChain.from_llm(
+    >>> evaluator = LabeledCriteriaEvalChain.from_llm(
     ...     llm=llm,
     ...     criteria=criteria,
-    ...    requires_reference=True,
     ... )
     >>> evaluator.evaluate_strings(
     ...   prediction="The answer is 4",
@@ -271,7 +270,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         Examples
         --------
         >>> from langchain.llms import OpenAI
-        >>> from langchain.evaluation.criteria import CriteriaEvalChain
+        >>> from langchain.evaluation.criteria import LabeledCriteriaEvalChain
         >>> llm = OpenAI()
         >>> criteria = {
                 "hallucination": (
@@ -279,10 +278,9 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
                     " not present in the input or reference?"
                 ),
             }
-        >>> chain = CriteriaEvalChain.from_llm(
+        >>> chain = LabeledCriteriaEvalChain.from_llm(
                 llm=llm,
                 criteria=criteria,
-                requires_reference=True,
             )
         """
         prompt_ = cls._resolve_prompt(prompt)
@@ -475,7 +473,6 @@ class LabeledCriteriaEvalChain(CriteriaEvalChain):
         >>> chain = LabeledCriteriaEvalChain.from_llm(
                 llm=llm,
                 criteria=criteria,
-                requires_reference=True,
             )
         """
         prompt = cls._resolve_prompt(prompt)
