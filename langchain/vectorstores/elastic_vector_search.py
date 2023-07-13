@@ -41,11 +41,12 @@ def _default_script_query(
         filter = {"match": {f"metadata.{key}.keyword": f"{value}"}}
     else:
         filter = {"match_all": {}}
+    src = f"cosineSimilarity(params.query_vector, '{field_name}') + 1.0"
     return {
         "script_score": {
             "query": filter,
             "script": {
-                "source": f"cosineSimilarity(params.query_vector, '{field_name}') + 1.0",
+                "source": src,
                 "params": {"query_vector": query_vector},
             },
         }
