@@ -44,6 +44,10 @@ An example of this is shown below, assuming you've created a LangSmith dataset c
         evaluation=evaluation_config,
     )
 
+You can also create custom evaluators by subclassing the
+:class:`StringEvaluator <langchain.evaluation.schema.StringEvaluator>`
+or LangSmith's `RunEvaluator` classes.
+
 .. code-block:: python
 
     from typing import Optional

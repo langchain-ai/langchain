@@ -76,7 +76,7 @@ class RunEvalConfig(BaseModel):
 
     eval_llm : Optional[BaseLanguageModel]
         The language model to pass to any evaluators that use a language model.
-    """ # noqa: E501
+    """  # noqa: E501
 
     evaluators: List[Union[EvaluatorType, EvalConfig]] = Field(default_factory=list)
     """Configurations for which evaluators to apply to the dataset run.
