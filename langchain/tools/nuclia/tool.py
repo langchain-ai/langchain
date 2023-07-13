@@ -18,7 +18,7 @@ import urllib3
 from typing import Any, Dict, Optional, Type
 from pydantic import BaseModel, Field
 
-from google.protobuf.json_format import MessageToDict
+from google.protobuf.json_format import MessageToJson
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
@@ -44,6 +44,10 @@ class NUASchema(BaseModel):
         ...,
         description="ID of the file to push or pull.",
     )
+    enable_ml: bool = Field(
+        ...,
+        description="Enable Machine Learning processing (applicable only to `push` action).",
+    )
     path: Optional[str] = Field(
         ...,
         description="Path to the file to push (needed only for `push` action).",
@@ -65,6 +69,7 @@ class NucliaUnderstandingAPI(BaseTool):
         self,
         action: str,
         id: str,
+        enable_ml: bool,
         path: Optional[str],
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
@@ -77,7 +82,7 @@ class NucliaUnderstandingAPI(BaseTool):
         if action == "push":
             if not path:
                 raise ValueError("Path to file to push is required")
-            return self._push(id, path, BACKEND, NUA_KEY)
+            return self._push(id, path, BACKEND, NUA_KEY, enable_ml)
         elif action == "pull":
             return self._pull(id, BACKEND, NUA_KEY)
 
@@ -85,13 +90,14 @@ class NucliaUnderstandingAPI(BaseTool):
         self,
         action: str,
         id: str,
+        enable_ml: bool,
         path: Optional[str] = None,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool asynchronously."""
         raise NotImplementedError("NucliaUnderstandingAPI does not support async")
 
-    def _push(self, id, content_path, backend, key):
+    def _push(self, id, content_path, backend, key, enable_ml):
         with open(content_path, "rb") as source_file:
             response = requests.post(
                 f'{backend}/processing/upload',
@@ -114,7 +120,7 @@ class NucliaUnderstandingAPI(BaseTool):
                         "content-type": "application/json",
                         "x-stf-nuakey": "Bearer " + key,
                     },
-                    json={"filefield": file_data},
+                    json={"filefield": file_data, "processing_options": {"ml_text": enable_ml}},
                     verify=False,
                 )
                 if response.status_code != 200:
@@ -158,7 +164,7 @@ class NucliaUnderstandingAPI(BaseTool):
                 print(f'No matching id for {uuid}')
             else:
                 self._results[matching_id]['status'] = 'done'
-                data = MessageToDict(pb, preserving_proto_field_name=True, including_default_value_fields=True)
+                data = MessageToJson(pb, preserving_proto_field_name=True, including_default_value_fields=True)
                 self._results[matching_id]['data'] = data
             
     def _find_matching_id(self, uuid):
