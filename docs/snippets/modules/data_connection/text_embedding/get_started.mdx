@@ -1,0 +1,73 @@
+### Setup
+
+To start we'll need to install the OpenAI Python package:
+
+```bash
+pip install openai
+```
+
+Accessing the API requires an API key, which you can get by creating an account and heading [here](https://platform.openai.com/account/api-keys). Once we have a key we'll want to set it as an environment variable by running:
+
+```bash
+export OPENAI_API_KEY="..."
+```
+
+If you'd prefer not to set an environment variable you can pass the key in directly via the `openai_api_key` named parameter when initiating the OpenAI LLM class:
+
+```python
+from langchain.embeddings import OpenAIEmbeddings
+
+embeddings_model = OpenAIEmbeddings(openai_api_key="...")
+```
+
+otherwise you can initialize without any params:
+```python
+from langchain.embeddings import OpenAIEmbeddings
+
+embeddings_model = OpenAIEmbeddings()
+```
+
+### `embed_documents`
+#### Embed list of texts
+
+```python
+embeddings = embeddings_model.embed_documents(
+    [
+        "Hi there!",
+        "Oh, hello!",
+        "What's your name?",
+        "My friends call me World",
+        "Hello World!"
+    ]
+)
+len(embeddings), len(embeddings[0])
+```
+
+<CodeOutputBlock language="python">
+
+```
+(5, 1536)
+```
+
+</CodeOutputBlock>
+
+### `embed_query`
+#### Embed single query
+Embed a single piece of text for the purpose of comparing to other embedded pieces of texts.
+
+```python
+embedded_query = embeddings_model.embed_query("What was the name mentioned in the conversation?")
+embedded_query[:5]
+```
+
+<CodeOutputBlock language="python">
+
+```
+[0.0053587136790156364,
+ -0.0004999046213924885,
+ 0.038883671164512634,
+ -0.003001077566295862,
+ -0.00900818221271038]
+```
+
+</CodeOutputBlock>

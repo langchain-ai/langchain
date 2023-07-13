@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Field, root_validator
 
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
@@ -13,8 +12,9 @@ from langchain.callbacks.manager import (
 from langchain.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.prompts import BasePromptTemplate
 from langchain.requests import TextRequestsWrapper
+from langchain.schema import BasePromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
 
 
 class APIChain(Chain):
@@ -78,6 +78,7 @@ class APIChain(Chain):
             callbacks=_run_manager.get_child(),
         )
         _run_manager.on_text(api_url, color="green", end="\n", verbose=self.verbose)
+        api_url = api_url.strip()
         api_response = self.requests_wrapper.get(api_url)
         _run_manager.on_text(
             api_response, color="yellow", end="\n", verbose=self.verbose
@@ -106,6 +107,7 @@ class APIChain(Chain):
         await _run_manager.on_text(
             api_url, color="green", end="\n", verbose=self.verbose
         )
+        api_url = api_url.strip()
         api_response = await self.requests_wrapper.aget(api_url)
         await _run_manager.on_text(
             api_response, color="yellow", end="\n", verbose=self.verbose

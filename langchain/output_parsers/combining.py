@@ -10,6 +10,10 @@ from langchain.schema import BaseOutputParser
 class CombiningOutputParser(BaseOutputParser):
     """Class to combine multiple output parsers into one."""
 
+    @property
+    def lc_serializable(self) -> bool:
+        return True
+
     parsers: List[BaseOutputParser]
 
     @root_validator()

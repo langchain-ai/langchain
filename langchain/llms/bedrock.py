@@ -95,6 +95,9 @@ class Bedrock(LLM):
     model_kwargs: Optional[Dict] = None
     """Key word arguments to pass to the model."""
 
+    endpoint_url: Optional[str] = None
+    """Needed if you don't want to default to us-east-1 endpoint"""
+
     class Config:
         """Configuration for this pydantic object."""
 
@@ -120,6 +123,8 @@ class Bedrock(LLM):
             client_params = {}
             if values["region_name"]:
                 client_params["region_name"] = values["region_name"]
+            if values["endpoint_url"]:
+                client_params["endpoint_url"] = values["endpoint_url"]
 
             values["client"] = session.client("bedrock", **client_params)
 
@@ -155,6 +160,7 @@ class Bedrock(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call out to Bedrock service model.
 
@@ -173,10 +179,8 @@ class Bedrock(LLM):
         _model_kwargs = self.model_kwargs or {}
 
         provider = self.model_id.split(".")[0]
-
-        input_body = LLMInputOutputAdapter.prepare_input(
-            provider, prompt, _model_kwargs
-        )
+        params = {**_model_kwargs, **kwargs}
+        input_body = LLMInputOutputAdapter.prepare_input(provider, prompt, params)
         body = json.dumps(input_body)
         accept = "application/json"
         contentType = "application/json"

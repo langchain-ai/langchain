@@ -5,13 +5,13 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Field
 
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
-from langchain.chains.graph_qa.prompts import ENTITY_EXTRACTION_PROMPT, PROMPT
+from langchain.chains.graph_qa.prompts import ENTITY_EXTRACTION_PROMPT, GRAPH_QA_PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.graphs.networkx_graph import NetworkxEntityGraph, get_entities
-from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import BasePromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
 
 
 class GraphQAChain(Chain):
@@ -44,7 +44,7 @@ class GraphQAChain(Chain):
     def from_llm(
         cls,
         llm: BaseLanguageModel,
-        qa_prompt: BasePromptTemplate = PROMPT,
+        qa_prompt: BasePromptTemplate = GRAPH_QA_PROMPT,
         entity_prompt: BasePromptTemplate = ENTITY_EXTRACTION_PROMPT,
         **kwargs: Any,
     ) -> GraphQAChain:
@@ -75,9 +75,10 @@ class GraphQAChain(Chain):
         )
         entities = get_entities(entity_string)
         context = ""
+        all_triplets = []
         for entity in entities:
-            triplets = self.graph.get_entity_knowledge(entity)
-            context += "\n".join(triplets)
+            all_triplets.extend(self.graph.get_entity_knowledge(entity))
+        context = "\n".join(all_triplets)
         _run_manager.on_text("Full Context:", end="\n", verbose=self.verbose)
         _run_manager.on_text(context, color="green", end="\n", verbose=self.verbose)
         result = self.qa_chain(

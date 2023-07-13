@@ -1,4 +1,4 @@
-"""Loader that loads HTML to markdown using 2markdown."""
+"""Loads HTML to markdown using 2markdown."""
 from __future__ import annotations
 
 from typing import Iterator, List
@@ -10,7 +10,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class ToMarkdownLoader(BaseLoader):
-    """Loader that loads HTML to markdown using 2markdown."""
+    """Loads HTML to markdown using 2markdown."""
 
     def __init__(self, url: str, api_key: str):
         """Initialize with url and api key."""

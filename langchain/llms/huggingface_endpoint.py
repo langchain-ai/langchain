@@ -96,6 +96,7 @@ class HuggingFaceEndpoint(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call out to HuggingFace Hub's inference endpoint.
 
@@ -114,7 +115,8 @@ class HuggingFaceEndpoint(LLM):
         _model_kwargs = self.model_kwargs or {}
 
         # payload samples
-        parameter_payload = {"inputs": prompt, "parameters": _model_kwargs}
+        params = {**_model_kwargs, **kwargs}
+        parameter_payload = {"inputs": prompt, "parameters": params}
 
         # HTTP headers for authorization
         headers = {
@@ -135,8 +137,10 @@ class HuggingFaceEndpoint(LLM):
                 f"Error raised by inference API: {generated_text['error']}"
             )
         if self.task == "text-generation":
-            # Text generation return includes the starter text.
-            text = generated_text[0]["generated_text"][len(prompt) :]
+            text = generated_text[0]["generated_text"]
+            # Remove prompt if included in generated text.
+            if text.startswith(prompt):
+                text = text[len(prompt) :]
         elif self.task == "text2text-generation":
             text = generated_text[0]["generated_text"]
         elif self.task == "summarization":
