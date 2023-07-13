@@ -84,7 +84,7 @@ memory.buffer
 Optionally you can speed up initialization using a previously generated summary, and avoid regenerating the summary when using from_messages.
 
 ```python
-memory = ConversationSummaryMemory.from_messages(llm=OpenAI(temperature=0), existing_summary="The human asks what the AI thinks of artificial intelligence. The AI thinks artificial intelligence is a force for good because it will help humans reach their full potential.", chat_memory=history, return_messages=True)
+memory = ConversationSummaryMemory.from_messages(llm=OpenAI(temperature=0), buffer="The human asks what the AI thinks of artificial intelligence. The AI thinks artificial intelligence is a force for good because it will help humans reach their full potential.", chat_memory=history, return_messages=True)
 ```
 
 <CodeOutputBlock lang="python">
