@@ -8,11 +8,11 @@ from langsmith.schemas import DataType
 from langchain.callbacks.tracers.evaluation import wait_for_all_evaluators
 from langchain.chains.llm import LLMChain
 from langchain.chat_models import ChatOpenAI
-from langchain.client.runner_utils import InputFormatError, run_on_dataset
 from langchain.evaluation import EvaluatorType
-from langchain.evaluation.run_evaluators import RunEvalConfig
 from langchain.llms.openai import OpenAI
 from langchain.schema.messages import BaseMessage, HumanMessage
+from langchain.smith import RunEvalConfig, run_on_dataset
+from langchain.smith.evaluation import InputFormatError
 
 
 def _check_all_feedback_passed(_project_name: str, client: Client) -> None:

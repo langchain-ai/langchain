@@ -1,7 +1,5 @@
 """Utilities for running language models or Chains over datasets."""
 
-# TODO: Migrate to langchain/langsmith
-
 from __future__ import annotations
 
 import asyncio
@@ -33,17 +31,12 @@ from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.chains.base import Chain
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.evaluation.loading import load_evaluator
-from langchain.evaluation.run_evaluators.config import EvalConfig, RunEvalConfig
-from langchain.evaluation.run_evaluators.string_run_evaluator import (
-    StringRunEvaluatorChain,
-)
 from langchain.evaluation.schema import EvaluatorType, StringEvaluator
 from langchain.schema import ChatResult, LLMResult
 from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.messages import (
-    BaseMessage,
-    messages_from_dict,
-)
+from langchain.schema.messages import BaseMessage, messages_from_dict
+from langchain.smith.evaluation.config import EvalConfig, RunEvalConfig
+from langchain.smith.evaluation.string_run_evaluator import StringRunEvaluatorChain
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +48,47 @@ class InputFormatError(Exception):
 
 
 ## Shared Utilities
+
+
+def _wrap_in_chain_factory(
+    llm_or_chain_factory: Union[Chain, MODEL_OR_CHAIN_FACTORY],
+    dataset_name: str = "<my_dataset>",
+) -> MODEL_OR_CHAIN_FACTORY:
+    """Forgive the user if they pass in a chain without memory instead of a chain
+    factory. It's a common mistake. Raise a more helpful error message as well."""
+    if isinstance(llm_or_chain_factory, Chain):
+        chain = llm_or_chain_factory
+        chain_class = chain.__class__.__name__
+        if llm_or_chain_factory.memory is not None:
+            memory_class = chain.memory.__class__.__name__
+            raise ValueError(
+                "Cannot directly evaluate a chain with statefulmemory."
+                " To evaluate this chain, pass in a chain constructor"
+                " that initializes fresh memory each time it is called."
+                "  This will safegaurd against information"
+                " leakage between dataset examples."
+                "\nFor example:\n\n"
+                "def chain_constructor():\n"
+                f"    new_memory = {memory_class}(...)\n"
+                f"    return {chain_class}"
+                "(memory=new_memory, ...)\n\n"
+                f'run_on_dataset("{dataset_name}", chain_constructor, ...)'
+            )
+        logger.warning(
+            "Directly passing in a chain is not recommended as chains may have state."
+            " This can lead to unexpected behavior as the "
+            "same chain instance could be used across multiple datasets. Instead,"
+            " please pass a chain constructor that creates a new "
+            "chain with fresh memory each time it is called. This will safeguard"
+            " against information leakage between dataset examples. "
+            "\nFor example:\n\n"
+            "def chain_constructor():\n"
+            f"    return {chain_class}(memory=new_memory, ...)\n\n"
+            f'run_on_dataset("{dataset_name}", chain_constructor, ...)'
+        )
+
+        return lambda: chain
+    return llm_or_chain_factory
 
 
 def _first_example(examples: Iterator[Example]) -> Tuple[Example, Iterator[Example]]:
@@ -756,6 +790,7 @@ async def _arun_on_examples(
     Returns:
         A dictionary mapping example ids to the model outputs.
     """
+    llm_or_chain_factory = _wrap_in_chain_factory(llm_or_chain_factory)
     project_name = _get_project_name(project_name, llm_or_chain_factory, None)
     run_evaluators, examples = _setup_evaluation(
         llm_or_chain_factory, examples, evaluation, data_type
@@ -987,6 +1022,7 @@ def _run_on_examples(
         A dictionary mapping example ids to the model outputs.
     """
     results: Dict[str, Any] = {}
+    llm_or_chain_factory = _wrap_in_chain_factory(llm_or_chain_factory)
     project_name = _get_project_name(project_name, llm_or_chain_factory, None)
     tracer = LangChainTracer(project_name=project_name)
     evaluator_project_name = f"{project_name}-evaluators"
@@ -1061,6 +1097,7 @@ async def arun_on_dataset(
     Returns:
         A dictionary containing the run's project name and the resulting model outputs.
     """
+    llm_or_chain_factory = _wrap_in_chain_factory(llm_or_chain_factory, dataset_name)
     project_name = _get_project_name(project_name, llm_or_chain_factory, dataset_name)
     dataset = client.read_dataset(dataset_name=dataset_name)
     examples = client.list_examples(dataset_id=str(dataset.id))
@@ -1124,6 +1161,7 @@ def run_on_dataset(
     Returns:
         A dictionary containing the run's project name and the resulting model outputs.
     """
+    llm_or_chain_factory = _wrap_in_chain_factory(llm_or_chain_factory, dataset_name)
     project_name = _get_project_name(project_name, llm_or_chain_factory, dataset_name)
     dataset = client.read_dataset(dataset_name=dataset_name)
     examples = client.list_examples(dataset_id=str(dataset.id))
