@@ -8,11 +8,11 @@ from langsmith.schemas import DataType
 from langchain.callbacks.tracers.evaluation import wait_for_all_evaluators
 from langchain.chains.llm import LLMChain
 from langchain.chat_models import ChatOpenAI
-from langchain.client.runner_utils import InputFormatError, run_on_dataset
 from langchain.evaluation import EvaluatorType
-from langchain.evaluation.run_evaluators import RunEvalConfig
 from langchain.llms.openai import OpenAI
 from langchain.schema.messages import BaseMessage, HumanMessage
+from langchain.smith import RunEvalConfig, run_on_dataset
+from langchain.smith.evaluation import InputFormatError
 
 
 def _check_all_feedback_passed(_project_name: str, client: Client) -> None:
@@ -80,7 +80,7 @@ def test_chat_model(
     llm = ChatOpenAI(temperature=0)
     eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
     with pytest.raises(ValueError, match="Must specify reference_key"):
-        run_on_dataset(kv_dataset_name, llm, evaluation=eval_config)
+        run_on_dataset(client, kv_dataset_name, llm, evaluation=eval_config)
     eval_config = RunEvalConfig(
         evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA],
         reference_key="some_output",
@@ -88,12 +88,13 @@ def test_chat_model(
     with pytest.raises(
         InputFormatError, match="Example inputs do not match language model"
     ):
-        run_on_dataset(kv_dataset_name, llm, evaluation=eval_config)
+        run_on_dataset(client, kv_dataset_name, llm, evaluation=eval_config)
 
     def input_mapper(d: dict) -> List[BaseMessage]:
         return [HumanMessage(content=d["some_input"])]
 
     run_on_dataset(
+        client,
         kv_dataset_name,
         llm,
         evaluation=eval_config,
@@ -108,7 +109,7 @@ def test_llm(kv_dataset_name: str, eval_project_name: str, client: Client) -> No
     llm = OpenAI(temperature=0)
     eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
     with pytest.raises(ValueError, match="Must specify reference_key"):
-        run_on_dataset(kv_dataset_name, llm, evaluation=eval_config)
+        run_on_dataset(client, kv_dataset_name, llm, evaluation=eval_config)
     eval_config = RunEvalConfig(
         evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA],
         reference_key="some_output",
@@ -116,12 +117,13 @@ def test_llm(kv_dataset_name: str, eval_project_name: str, client: Client) -> No
     with pytest.raises(
         InputFormatError, match="Example inputs do not match language model"
     ):
-        run_on_dataset(kv_dataset_name, llm, evaluation=eval_config)
+        run_on_dataset(client, kv_dataset_name, llm, evaluation=eval_config)
 
     def input_mapper(d: dict) -> str:
         return d["some_input"]
 
     run_on_dataset(
+        client,
         kv_dataset_name,
         llm,
         evaluation=eval_config,
@@ -137,7 +139,7 @@ def test_chain(kv_dataset_name: str, eval_project_name: str, client: Client) -> 
     chain = LLMChain.from_string(llm, "The answer to the {question} is: ")
     eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
     with pytest.raises(ValueError, match="Must specify reference_key"):
-        run_on_dataset(kv_dataset_name, lambda: chain, evaluation=eval_config)
+        run_on_dataset(client, kv_dataset_name, lambda: chain, evaluation=eval_config)
     eval_config = RunEvalConfig(
         evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA],
         reference_key="some_output",
@@ -145,7 +147,7 @@ def test_chain(kv_dataset_name: str, eval_project_name: str, client: Client) -> 
     with pytest.raises(
         InputFormatError, match="Example inputs do not match chain input keys"
     ):
-        run_on_dataset(kv_dataset_name, lambda: chain, evaluation=eval_config)
+        run_on_dataset(client, kv_dataset_name, lambda: chain, evaluation=eval_config)
 
     def input_mapper(d: dict) -> dict:
         return {"input": d["some_input"]}
@@ -155,6 +157,7 @@ def test_chain(kv_dataset_name: str, eval_project_name: str, client: Client) -> 
         match=" match the chain's expected input keys.",
     ):
         run_on_dataset(
+            client,
             kv_dataset_name,
             lambda: chain,
             evaluation=eval_config,
@@ -165,6 +168,7 @@ def test_chain(kv_dataset_name: str, eval_project_name: str, client: Client) -> 
         return {"question": d["some_input"]}
 
     run_on_dataset(
+        client,
         kv_dataset_name,
         lambda: chain,
         evaluation=eval_config,
@@ -226,7 +230,11 @@ def test_chat_model_on_chat_dataset(
     llm = ChatOpenAI(temperature=0)
     eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
     run_on_dataset(
-        chat_dataset_name, llm, evaluation=eval_config, project_name=eval_project_name
+        client,
+        chat_dataset_name,
+        llm,
+        evaluation=eval_config,
+        project_name=eval_project_name,
     )
     _check_all_feedback_passed(eval_project_name, client)
 
@@ -237,6 +245,7 @@ def test_llm_on_chat_dataset(
     llm = OpenAI(temperature=0)
     eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
     run_on_dataset(
+        client,
         chat_dataset_name,
         llm,
         evaluation=eval_config,
@@ -254,6 +263,7 @@ def test_chain_on_chat_dataset(chat_dataset_name: str) -> None:
         ValueError, match="Cannot evaluate a chain on dataset with data_type=chat"
     ):
         run_on_dataset(
+            client,
             chat_dataset_name,
             lambda: chain,
             evaluation=eval_config,
@@ -298,6 +308,7 @@ def test_chat_model_on_llm_dataset(
     llm = ChatOpenAI(temperature=0)
     eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
     run_on_dataset(
+        client,
         llm_dataset_name,
         llm,
         evaluation=eval_config,
@@ -313,6 +324,7 @@ def test_llm_on_llm_dataset(
     llm = OpenAI(temperature=0)
     eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
     run_on_dataset(
+        client,
         llm_dataset_name,
         llm,
         evaluation=eval_config,
@@ -330,6 +342,7 @@ def test_chain_on_llm_dataset(llm_dataset_name: str) -> None:
         ValueError, match="Cannot evaluate a chain on dataset with data_type=llm"
     ):
         run_on_dataset(
+            client,
             llm_dataset_name,
             lambda: chain,
             evaluation=eval_config,
@@ -373,6 +386,7 @@ def test_chat_model_on_kv_singleio_dataset(
     llm = ChatOpenAI(temperature=0)
     eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
     run_on_dataset(
+        client,
         kv_singleio_dataset_name,
         llm,
         evaluation=eval_config,
@@ -388,6 +402,7 @@ def test_llm_on_kv_singleio_dataset(
     llm = OpenAI(temperature=0)
     eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
     run_on_dataset(
+        client,
         kv_singleio_dataset_name,
         llm,
         evaluation=eval_config,
@@ -404,6 +419,7 @@ def test_chain_on_kv_singleio_dataset(
     chain = LLMChain.from_string(llm, "The answer to the {question} is: ")
     eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
     run_on_dataset(
+        client,
         kv_singleio_dataset_name,
         lambda: chain,
         evaluation=eval_config,
