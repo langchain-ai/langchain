@@ -349,7 +349,7 @@ class Chain(Serializable, ABC):
             inputs: Dictionary of raw inputs, or single input if chain expects
                 only one param. Should contain all inputs specified in
                 `Chain.input_keys` except for inputs that will be set by the chain's
-                 memory.
+                memory.
 
         Returns:
             A dictionary of all inputs, including those added by the chain's memory.
