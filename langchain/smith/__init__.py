@@ -1,6 +1,6 @@
 """LangSmith utilities.
 
-This module provides utilities for connecting to the `LangSmith API <https://smith.langchain.com/>`_. For more information on LangSmith API, see the `LangSmith documentation <https://docs.smith.langchain.com/docs/>`_.
+This module provides utilities for connecting to `LangSmith <https://smith.langchain.com/>`_. For more information on LangSmith, see the `LangSmith documentation <https://docs.smith.langchain.com/>`_.
 
 **Evaluation**
 
@@ -12,7 +12,7 @@ An example of this is shown below, assuming you've created a LangSmith dataset c
     from langsmith import Client
     from langchain.chat_models import ChatOpenAI
     from langchain.chains import LLMChain
-    from langchain.langsmith import RunEvalConfig, run_on_dataset
+    from langchain.smith import RunEvalConfig, run_on_dataset
 
     # Chains may have memory. Passing in a constructor function lets the
     # evaluation framework avoid cross-contamination between runs.
@@ -79,11 +79,11 @@ An example of this is shown below, assuming you've created a LangSmith dataset c
 
 **Primary Functions**
 
-- :func:`arun_on_dataset <langchain.langsmith.evaluation.arun_on_dataset>`: Asynchronous function to evaluate a chain, agent, or other LangChain component over a dataset.
-- :func:`run_on_dataset <langchain.langsmith.evaluation.run_on_dataset>`: Function to evaluate a chain, agent, or other LangChain component over a dataset.
-- :class:`RunEvalConfig <langchain.langsmith.evaluation.RunEvalConfig>`: Class representing the configuration for running evaluation. You can select evaluators by :class:`EvaluatorType <langchain.evaluation.schema.EvaluatorType>` or config, or you can pass in `custom_evaluators`
+- :func:`arun_on_dataset <langchain.smith.evaluation.arun_on_dataset>`: Asynchronous function to evaluate a chain, agent, or other LangChain component over a dataset.
+- :func:`run_on_dataset <langchain.smith.evaluation.run_on_dataset>`: Function to evaluate a chain, agent, or other LangChain component over a dataset.
+- :class:`RunEvalConfig <langchain.smith.evaluation.RunEvalConfig>`: Class representing the configuration for running evaluation. You can select evaluators by :class:`EvaluatorType <langchain.evaluation.schema.EvaluatorType>` or config, or you can pass in `custom_evaluators`
 """  # noqa: E501
-from langchain.langsmith.evaluation import (
+from langchain.smith.evaluation import (
     RunEvalConfig,
     arun_on_dataset,
     run_on_dataset,

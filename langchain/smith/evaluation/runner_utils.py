@@ -32,11 +32,11 @@ from langchain.chains.base import Chain
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.evaluation.loading import load_evaluator
 from langchain.evaluation.schema import EvaluatorType, StringEvaluator
-from langchain.langsmith.evaluation.config import EvalConfig, RunEvalConfig
-from langchain.langsmith.evaluation.string_run_evaluator import StringRunEvaluatorChain
 from langchain.schema import ChatResult, LLMResult
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage, messages_from_dict
+from langchain.smith.evaluation.config import EvalConfig, RunEvalConfig
+from langchain.smith.evaluation.string_run_evaluator import StringRunEvaluatorChain
 
 logger = logging.getLogger(__name__)
 
@@ -57,14 +57,15 @@ def _wrap_in_chain_factory(
     """Forgive the user if they pass in a chain without memory instead of a chain
     factory. It's a common mistake. Raise a more helpful error message as well."""
     if isinstance(llm_or_chain_factory, Chain):
+        chain = llm_or_chain_factory
+        chain_class = chain.__class__.__name__
         if llm_or_chain_factory.memory is not None:
-            chain = llm_or_chain_factory
             memory_class = chain.memory.__class__.__name__
-            chain_class = chain.__class__.__name__
             raise ValueError(
-                "Cannot directly evaluate a chain with memory. To evaluate this chain,"
-                " pass in a chain constructor that initializes fresh memory"
-                " each time it is called. This will safegaurd against information"
+                "Cannot directly evaluate a chain with statefulmemory."
+                " To evaluate this chain, pass in a chain constructor"
+                " that initializes fresh memory each time it is called."
+                "  This will safegaurd against information"
                 " leakage between dataset examples."
                 "\nFor example:\n\n"
                 "def chain_constructor():\n"
@@ -73,6 +74,19 @@ def _wrap_in_chain_factory(
                 "(memory=new_memory, ...)\n\n"
                 f'run_on_dataset("{dataset_name}", chain_constructor, ...)'
             )
+        logger.warning(
+            "Directly passing in a chain is not recommended as chains may have state."
+            " This can lead to unexpected behavior as the "
+            "same chain instance could be used across multiple datasets. Instead,"
+            " please pass a chain constructor that creates a new "
+            "chain with fresh memory each time it is called. This will safeguard"
+            " against information leakage between dataset examples. "
+            "\nFor example:\n\n"
+            "def chain_constructor():\n"
+            f"    return {chain_class}(memory=new_memory, ...)\n\n"
+            f'run_on_dataset("{dataset_name}", chain_constructor, ...)'
+        )
+
         return lambda: chain
     return llm_or_chain_factory
 

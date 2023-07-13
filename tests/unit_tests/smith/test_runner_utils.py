@@ -10,7 +10,8 @@ from langsmith.schemas import Dataset, Example
 
 from langchain.chains.base import Chain
 from langchain.chains.transform import TransformChain
-from langchain.langsmith.evaluation.runner_utils import (
+from langchain.schema.language_model import BaseLanguageModel
+from langchain.smith.evaluation.runner_utils import (
     InputFormatError,
     _get_messages,
     _get_prompt,
@@ -20,7 +21,6 @@ from langchain.langsmith.evaluation.runner_utils import (
     _validate_example_inputs_for_language_model,
     arun_on_dataset,
 )
-from langchain.schema.language_model import BaseLanguageModel
 from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
@@ -319,7 +319,7 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
     with mock.patch.object(
         Client, "read_dataset", new=mock_read_dataset
     ), mock.patch.object(Client, "list_examples", new=mock_list_examples), mock.patch(
-        "langchain.langsmith.evaluation.runner_utils._arun_llm_or_chain",
+        "langchain.smith.evaluation.runner_utils._arun_llm_or_chain",
         new=mock_arun_chain,
     ), mock.patch.object(
         Client, "create_project", new=mock_create_project

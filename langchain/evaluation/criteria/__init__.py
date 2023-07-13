@@ -40,7 +40,12 @@ Using a custom criterion:
         llm=llm,
         criteria=criteria,
         )
-"""
+>>> chain.evaluate_strings(
+        prediction="The answer to life is 42.",
+        reference="It's commonly known that the answer to life is 42.",
+        input="Please summarize the following: The answer to life, the universe, and everything is unknowable.",
+    )
+""" # noqa: E501
 
 from langchain.evaluation.criteria.eval_chain import (
     CriteriaEvalChain,

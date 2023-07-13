@@ -15,10 +15,21 @@ from langchain.schema.language_model import BaseLanguageModel
 
 
 class PairwiseStringResultOutputParser(BaseOutputParser[dict]):
-    """A parser for the output of the PairwiseStringEvalChain."""
+    """A parser for the output of the PairwiseStringEvalChain.
+
+    Attributes:
+        _type (str): The type of the output parser.
+
+    """
 
     @property
     def _type(self) -> str:
+        """Return the type of the output parser.
+
+        Returns:
+            str: The type of the output parser.
+
+        """
         return "pairwise_string_result"
 
     def parse(self, text: str) -> Any:
@@ -29,6 +40,10 @@ class PairwiseStringResultOutputParser(BaseOutputParser[dict]):
 
         Returns:
             Any: The parsed output.
+
+        Raises:
+            ValueError: If the verdict is invalid.
+
         """
         reasoning, verdict = text.strip().rsplit("\n", maxsplit=1)
         verdict = verdict.strip("[").strip("]")
@@ -55,27 +70,31 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
     """A chain for comparing two outputs, such as the outputs
      of two models, prompts, or outputs of a single model on similar inputs.
 
+    Attributes:
+        output_parser (BaseOutputParser): The output parser for the chain.
+
     Example:
-    >>> from langchain.chat_models import ChatOpenAI
-    >>> from langchain.evaluation.comparison import PairwiseStringEvalChain
-    >>> llm = ChatOpenAI(temperature=0)
-    >>> chain = PairwiseStringEvalChain.from_llm(llm=llm)
-    >>> result = chain.evaluate_string_pairs(
-    ...     input = "What is the chemical formula for water?",
-    ...     prediction = "H2O",
-    ...     prediction_b = (
-    ...        "The chemical formula for water is H2O, which means"
-    ...        " there are two hydrogen atoms and one oxygen atom."
-    ...     referenc = "The chemical formula for water is H2O.",
-    ... )
-    >>> print(result["text"])
-    # {
-    #    "value": "B",
-    #    "comment": "Both responses accurately state"
-    #       " that the chemical formula for water is H2O."
-    #       " However, Response B provides additional information"
-    # .     " by explaining what the formula means.\n[[B]]"
-    # }
+        >>> from langchain.chat_models import ChatOpenAI
+        >>> from langchain.evaluation.comparison import PairwiseStringEvalChain
+        >>> llm = ChatOpenAI(temperature=0)
+        >>> chain = PairwiseStringEvalChain.from_llm(llm=llm)
+        >>> result = chain.evaluate_string_pairs(
+        ...     input = "What is the chemical formula for water?",
+        ...     prediction = "H2O",
+        ...     prediction_b = (
+        ...        "The chemical formula for water is H2O, which means"
+        ...        " there are two hydrogen atoms and one oxygen atom."
+        ...     referenc = "The chemical formula for water is H2O.",
+        ... )
+        >>> print(result["text"])
+        # {
+        #    "value": "B",
+        #    "comment": "Both responses accurately state"
+        #       " that the chemical formula for water is H2O."
+        #       " However, Response B provides additional information"
+        # .     " by explaining what the formula means.\n[[B]]"
+        # }
+
     """
 
     output_parser: BaseOutputParser = Field(
@@ -83,21 +102,38 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
     )
 
     class Config:
-        """Configuration for the QAEvalChain."""
+        """Configuration for the PairwiseStringEvalChain."""
 
         extra = Extra.ignore
 
     @property
     def requires_reference(self) -> bool:
-        return "reference" in self.prompt.input_variables
+        """Return whether the chain requires a reference.
+
+        Returns:
+            bool: True if the chain requires a reference, False otherwise.
+
+        """
+        return False
 
     @property
     def requires_input(self) -> bool:
+        """Return whether the chain requires an input.
+
+        Returns:
+            bool: True if the chain requires an input, False otherwise.
+
+        """
         return True
 
     @property
     def _skip_reference_warning(self) -> str:
-        """Warning to show when reference is ignored."""
+        """Return the warning to show when reference is ignored.
+
+        Returns:
+            str: The warning to show when reference is ignored.
+
+        """
         return (
             f"Ignoring reference in {self.__class__.__name__}, as it is not expected."
             "\nTo use a reference, use the LabeledPairwiseStringEvalChain"
@@ -117,12 +153,14 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         Args:
             llm (BaseLanguageModel): The LLM to use.
             prompt (PromptTemplate, optional): The prompt to use.
-            requires_reference (bool, optional): Whether to require a reference
-                string. Defaults to False.
             **kwargs (Any): Additional keyword arguments.
 
         Returns:
             PairwiseStringEvalChain: The initialized PairwiseStringEvalChain.
+
+        Raises:
+            ValueError: If the input variables are not as expected.
+
         """
         expected_input_vars = {"prediction", "prediction_b", "input"}
         prompt_ = prompt or PROMPT
@@ -140,6 +178,18 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         input: Optional[str],
         reference: Optional[str],
     ) -> dict:
+        """Prepare the input for the chain.
+
+        Args:
+            prediction (str): The output string from the first model.
+            prediction_b (str): The output string from the second model.
+            input (str, optional): The input or task string.
+            reference (str, optional): The reference string, if any.
+
+        Returns:
+            dict: The prepared input for the chain.
+
+        """
         input_ = {
             "prediction": prediction,
             "prediction_b": prediction_b,
@@ -164,7 +214,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         Args:
             prediction (str): The output string from the first model.
             prediction_b (str): The output string from the second model.
-            input (str): The input or task string.
+            input (str, optional): The input or task string.
             callbacks (Callbacks, optional): The callbacks to use.
             reference (str, optional): The reference string, if any.
             **kwargs (Any): Additional keyword arguments.
@@ -176,6 +226,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
                     for no preference.
                 - score: The preference score, which is 1 for 'A', 0 for 'B',
                     and 0.5 for None.
+
         """
         input_ = self._prepare_input(prediction, prediction_b, input, reference)
         result = self(
@@ -200,7 +251,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         Args:
             prediction (str): The output string from the first model.
             prediction_b (str): The output string from the second model.
-            input (str): The input or task string.
+            input (str, optional): The input or task string.
             callbacks (Callbacks, optional): The callbacks to use.
             reference (str, optional): The reference string, if any.
             **kwargs (Any): Additional keyword arguments.
@@ -212,6 +263,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
                     for no preference.
                 - score: The preference score, which is 1 for 'A', 0 for 'B',
                     and 0.5 for None.
+
         """
         input_ = self._prepare_input(prediction, prediction_b, input, reference)
         result = await self.acall(
@@ -222,7 +274,26 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         return result["text"]
 
 
-class LabeledPairwiseStringEvalChain(PairwiseStringEvalChain, LLMEvalChain, LLMChain):
+class LabeledPairwiseStringEvalChain(PairwiseStringEvalChain):
+    """A chain for comparing two outputs, such as the outputs
+     of two models, prompts, or outputs of a single model on similar inputs,
+     with labeled preferences.
+
+    Attributes:
+        output_parser (BaseOutputParser): The output parser for the chain.
+
+    """
+
+    @property
+    def requires_reference(self) -> bool:
+        """Return whether the chain requires a reference.
+
+        Returns:
+            bool: True if the chain requires a reference, False otherwise.
+
+        """
+        return True
+
     @classmethod
     def from_llm(
         cls,
@@ -240,6 +311,10 @@ class LabeledPairwiseStringEvalChain(PairwiseStringEvalChain, LLMEvalChain, LLMC
 
         Returns:
             LabeledPairwiseStringEvalChain: The initialized LabeledPairwiseStringEvalChain.
+
+        Raises:
+            ValueError: If the input variables are not as expected.
+
         """  # noqa: E501
         expected_input_vars = {"prediction", "prediction_b", "input", "reference"}
         prompt_ = prompt or PROMPT_WITH_REFERENCE
