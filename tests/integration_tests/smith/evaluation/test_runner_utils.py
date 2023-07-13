@@ -255,7 +255,7 @@ def test_llm_on_chat_dataset(
     _check_all_feedback_passed(eval_project_name, client)
 
 
-def test_chain_on_chat_dataset(chat_dataset_name: str) -> None:
+def test_chain_on_chat_dataset(chat_dataset_name: str, client: Client) -> None:
     llm = ChatOpenAI(temperature=0)
     chain = LLMChain.from_string(llm, "The answer to the {question} is: ")
     eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
@@ -334,7 +334,7 @@ def test_llm_on_llm_dataset(
     _check_all_feedback_passed(eval_project_name, client)
 
 
-def test_chain_on_llm_dataset(llm_dataset_name: str) -> None:
+def test_chain_on_llm_dataset(llm_dataset_name: str, client: Client) -> None:
     llm = ChatOpenAI(temperature=0)
     chain = LLMChain.from_string(llm, "The answer to the {question} is: ")
     eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
