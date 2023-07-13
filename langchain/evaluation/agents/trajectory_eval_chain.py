@@ -27,8 +27,12 @@ from langchain.tools.base import BaseTool
 
 
 class TrajectoryEval(NamedTuple):
-    score: int
+    """A named tuple containing the score and reasoning for a trajectory."""
+
+    score: float
+    """The score for the trajectory, normalized from 0 to 1.s"""
     reasoning: str
+    """The reasoning for the score."""
 
 
 class TrajectoryOutputParser(BaseOutputParser):
@@ -66,8 +70,8 @@ class TrajectoryOutputParser(BaseOutputParser):
             raise OutputParserException(
                 f"Score is not a digit in the range 1-5: {text}"
             )
-
-        return TrajectoryEval(score=int(score_str), reasoning=reasoning)
+        normalized_score = (int(score_str) - 1) / 4
+        return TrajectoryEval(score=normalized_score, reasoning=reasoning)
 
 
 class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
