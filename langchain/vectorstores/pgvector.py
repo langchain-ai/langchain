@@ -206,6 +206,15 @@ class PGVector(VectorStore):
 
         return store
 
+    def delete_embeddings(self, ids: List[str]) -> None:
+        with Session(self._conn) as session:
+            session.execute(
+                delete(self.EmbeddingStore).where(
+                    self.EmbeddingStore.custom_id.in_(ids)
+                )
+            )
+            session.commit()
+
     def add_embeddings(
         self,
         texts: Iterable[str],
