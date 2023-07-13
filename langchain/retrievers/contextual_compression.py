@@ -1,15 +1,18 @@
 """Retriever that wraps a base retriever and filters the results."""
-from typing import List
 
-from pydantic import BaseModel, Extra
+from typing import Any, List
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.retrievers.document_compressors.base import (
     BaseDocumentCompressor,
 )
 from langchain.schema import BaseRetriever, Document
 
 
-class ContextualCompressionRetriever(BaseRetriever, BaseModel):
+class ContextualCompressionRetriever(BaseRetriever):
     """Retriever that wraps a base retriever and compresses the results."""
 
     base_compressor: BaseDocumentCompressor
@@ -21,10 +24,15 @@ class ContextualCompressionRetriever(BaseRetriever, BaseModel):
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.forbid
         arbitrary_types_allowed = True
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def _get_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: CallbackManagerForRetrieverRun,
+        **kwargs: Any,
+    ) -> List[Document]:
         """Get documents relevant for a query.
 
         Args:
@@ -33,11 +41,24 @@ class ContextualCompressionRetriever(BaseRetriever, BaseModel):
         Returns:
             Sequence of relevant documents
         """
-        docs = self.base_retriever.get_relevant_documents(query)
-        compressed_docs = self.base_compressor.compress_documents(docs, query)
-        return list(compressed_docs)
+        docs = self.base_retriever.get_relevant_documents(
+            query, callbacks=run_manager.get_child(), **kwargs
+        )
+        if docs:
+            compressed_docs = self.base_compressor.compress_documents(
+                docs, query, callbacks=run_manager.get_child()
+            )
+            return list(compressed_docs)
+        else:
+            return []
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def _aget_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
+        **kwargs: Any,
+    ) -> List[Document]:
         """Get documents relevant for a query.
 
         Args:
@@ -46,6 +67,13 @@ class ContextualCompressionRetriever(BaseRetriever, BaseModel):
         Returns:
             List of relevant documents
         """
-        docs = await self.base_retriever.aget_relevant_documents(query)
-        compressed_docs = await self.base_compressor.acompress_documents(docs, query)
-        return list(compressed_docs)
+        docs = await self.base_retriever.aget_relevant_documents(
+            query, callbacks=run_manager.get_child(), **kwargs
+        )
+        if docs:
+            compressed_docs = await self.base_compressor.acompress_documents(
+                docs, query, callbacks=run_manager.get_child()
+            )
+            return list(compressed_docs)
+        else:
+            return []

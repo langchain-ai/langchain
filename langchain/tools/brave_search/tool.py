@@ -11,7 +11,7 @@ from langchain.utilities.brave_search import BraveSearchWrapper
 
 
 class BraveSearch(BaseTool):
-    name = "brave-search"
+    name = "brave_search"
     description = (
         "a search engine. "
         "useful for when you need to answer questions about current events."

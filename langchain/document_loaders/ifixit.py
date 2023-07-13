@@ -1,4 +1,4 @@
-"""Loader that loads iFixit data."""
+"""Loads iFixit data."""
 from typing import List, Optional
 
 import requests
@@ -22,7 +22,7 @@ class IFixitLoader(BaseLoader):
     """
 
     def __init__(self, web_path: str):
-        """Initialize with web path."""
+        """Initialize with a web path."""
         if not web_path.startswith("https://www.ifixit.com"):
             raise ValueError("web path must start with 'https://www.ifixit.com'")
 
@@ -60,6 +60,16 @@ class IFixitLoader(BaseLoader):
 
     @staticmethod
     def load_suggestions(query: str = "", doc_type: str = "all") -> List[Document]:
+        """Load suggestions.
+
+        Args:
+            query: A query string
+            doc_type: The type of document to search for. Can be one of "all",
+              "device", "guide", "teardown", "answer", "wiki".
+
+        Returns:
+
+        """
         res = requests.get(
             IFIXIT_BASE_URL + "/suggest/" + query + "?doctypes=" + doc_type
         )
@@ -89,6 +99,14 @@ class IFixitLoader(BaseLoader):
     def load_questions_and_answers(
         self, url_override: Optional[str] = None
     ) -> List[Document]:
+        """Load a list of questions and answers.
+
+        Args:
+            url_override: A URL to override the default URL.
+
+        Returns: List[Document]
+
+        """
         loader = WebBaseLoader(self.web_path if url_override is None else url_override)
         soup = loader.scrape()
 
@@ -125,6 +143,16 @@ class IFixitLoader(BaseLoader):
     def load_device(
         self, url_override: Optional[str] = None, include_guides: bool = True
     ) -> List[Document]:
+        """Loads a device
+
+        Args:
+            url_override: A URL to override the default URL.
+            include_guides: Whether to include guides linked to from the device.
+              Defaults to True.
+
+        Returns:
+
+        """
         documents = []
         if url_override is None:
             url = IFIXIT_BASE_URL + "/wikis/CATEGORY/" + self.id
@@ -153,6 +181,14 @@ class IFixitLoader(BaseLoader):
         return documents
 
     def load_guide(self, url_override: Optional[str] = None) -> List[Document]:
+        """Load a guide
+
+        Args:
+            url_override: A URL to override the default URL.
+
+        Returns: List[Document]
+
+        """
         if url_override is None:
             url = IFIXIT_BASE_URL + "/guides/" + self.id
         else:

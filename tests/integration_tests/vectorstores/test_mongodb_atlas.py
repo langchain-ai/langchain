@@ -21,7 +21,7 @@ DB_NAME, COLLECTION_NAME = NAMESPACE.split(".")
 
 # Instantiate as constant instead of pytest fixture to prevent needing to make multiple
 # connections.
-TEST_CLIENT = MongoClient(CONNECTION_STRING)
+TEST_CLIENT: MongoClient = MongoClient(CONNECTION_STRING)
 collection = TEST_CLIENT[DB_NAME][COLLECTION_NAME]
 
 
@@ -119,3 +119,18 @@ class TestMongoDBAtlasVectorSearch:
             "Sandwich", k=1, pre_filter={"range": {"lte": 0, "path": "c"}}
         )
         assert output == []
+
+    def test_mmr(self, embedding_openai: Embeddings) -> None:
+        texts = ["foo", "foo", "fou", "foy"]
+        vectorstore = MongoDBAtlasVectorSearch.from_texts(
+            texts,
+            embedding_openai,
+            collection=collection,
+            index_name=INDEX_NAME,
+        )
+        sleep(1)  # waits for mongot to update Lucene's index
+        query = "foo"
+        output = vectorstore.max_marginal_relevance_search(query, k=10, lambda_mult=0.1)
+        assert len(output) == len(texts)
+        assert output[0].page_content == "foo"
+        assert output[1].page_content != "foo"

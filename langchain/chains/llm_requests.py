@@ -20,7 +20,8 @@ class LLMRequestsChain(Chain):
 
     llm_chain: LLMChain
     requests_wrapper: TextRequestsWrapper = Field(
-        default_factory=TextRequestsWrapper, exclude=True
+        default_factory=lambda: TextRequestsWrapper(headers=DEFAULT_HEADERS),
+        exclude=True,
     )
     text_length: int = 8000
     requests_key: str = "requests_result"  #: :meta private:

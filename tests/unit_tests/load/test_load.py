@@ -40,6 +40,30 @@ def test_load_llmchain() -> None:
 
 
 @pytest.mark.requires("openai")
+def test_load_llmchain_env() -> None:
+    import os
+
+    has_env = "OPENAI_API_KEY" in os.environ
+    if not has_env:
+        os.environ["OPENAI_API_KEY"] = "env_variable"
+
+    llm = OpenAI(model="davinci", temperature=0.5)
+    prompt = PromptTemplate.from_template("hello {name}!")
+    chain = LLMChain(llm=llm, prompt=prompt)
+    chain_string = dumps(chain)
+    chain2 = loads(chain_string)
+
+    assert chain2 == chain
+    assert dumps(chain2) == chain_string
+    assert isinstance(chain2, LLMChain)
+    assert isinstance(chain2.llm, OpenAI)
+    assert isinstance(chain2.prompt, PromptTemplate)
+
+    if not has_env:
+        del os.environ["OPENAI_API_KEY"]
+
+
+@pytest.mark.requires("openai")
 def test_load_llmchain_with_non_serializable_arg() -> None:
     llm = OpenAI(
         model="davinci",

@@ -12,12 +12,8 @@ from unittest.mock import Mock, patch
 import pytest
 
 from langchain.chat_models import ChatVertexAI
-from langchain.chat_models.vertexai import _MessagePair, _parse_chat_history
-from langchain.schema import (
-    AIMessage,
-    HumanMessage,
-    SystemMessage,
-)
+from langchain.chat_models.vertexai import _parse_chat_history
+from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
 
 
 def test_vertexai_single_call() -> None:
@@ -47,6 +43,8 @@ def test_vertexai_single_call_with_context() -> None:
 
 
 def test_parse_chat_history_correct() -> None:
+    from vertexai.language_models import ChatMessage
+
     text_context = (
         "My name is Ned. You are my personal assistant. My "
         "favorite movies are Lord of the Rings and Hobbit."
@@ -62,22 +60,14 @@ def test_parse_chat_history_correct() -> None:
     )
     answer = AIMessage(content=text_answer)
     history = _parse_chat_history([context, question, answer, question, answer])
-    assert history.system_message == context
-    assert len(history.history) == 2
-    assert history.history[0] == _MessagePair(question=question, answer=answer)
-
-
-def test_parse_chat_history_wrong_sequence() -> None:
-    text_question = (
-        "Hello, could you recommend a good movie for me to watch this evening, please?"
-    )
-    question = HumanMessage(content=text_question)
-    with pytest.raises(ValueError) as exc_info:
-        _ = _parse_chat_history([question, question])
-    assert (
-        str(exc_info.value)
-        == "A human message should follow a bot one, got human, human."
-    )
+    assert history.context == context.content
+    assert len(history.history) == 4
+    assert history.history == [
+        ChatMessage(content=text_question, author="user"),
+        ChatMessage(content=text_answer, author="bot"),
+        ChatMessage(content=text_question, author="user"),
+        ChatMessage(content=text_answer, author="bot"),
+    ]
 
 
 def test_vertexai_single_call_failes_no_message() -> None:

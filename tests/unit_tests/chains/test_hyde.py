@@ -49,6 +49,10 @@ class FakeLLM(BaseLLM):
     ) -> LLMResult:
         return LLMResult(generations=[[Generation(text="foo") for _ in range(self.n)]])
 
+    def get_num_tokens(self, text: str) -> int:
+        """Return number of tokens."""
+        return len(text.split())
+
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""

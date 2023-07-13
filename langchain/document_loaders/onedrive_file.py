@@ -16,10 +16,15 @@ CHUNK_SIZE = 1024 * 1024 * 5
 
 
 class OneDriveFileLoader(BaseLoader, BaseModel):
+    """Loads a file from OneDrive."""
+
     file: File = Field(...)
+    """The file to load."""
 
     class Config:
         arbitrary_types_allowed = True
+        """Allow arbitrary types. This is needed for the File type. Default is True.
+         See https://pydantic-docs.helpmanual.io/usage/types/#arbitrary-types-allowed"""
 
     def load(self) -> List[Document]:
         """Load Documents"""

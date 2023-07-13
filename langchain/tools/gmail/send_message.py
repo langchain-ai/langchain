@@ -2,7 +2,7 @@
 import base64
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -18,7 +18,7 @@ class SendMessageSchema(BaseModel):
         ...,
         description="The message to send.",
     )
-    to: List[str] = Field(
+    to: Union[str, List[str]] = Field(
         ...,
         description="The list of recipients.",
     )
@@ -26,11 +26,11 @@ class SendMessageSchema(BaseModel):
         ...,
         description="The subject of the message.",
     )
-    cc: Optional[List[str]] = Field(
+    cc: Optional[Union[str, List[str]]] = Field(
         None,
         description="The list of CC recipients.",
     )
-    bcc: Optional[List[str]] = Field(
+    bcc: Optional[Union[str, List[str]]] = Field(
         None,
         description="The list of BCC recipients.",
     )
@@ -39,28 +39,28 @@ class SendMessageSchema(BaseModel):
 class GmailSendMessage(GmailBaseTool):
     name: str = "send_gmail_message"
     description: str = (
-        "Use this tool to send email messages." " The input is the message, recipents"
+        "Use this tool to send email messages." " The input is the message, recipients"
     )
 
     def _prepare_message(
         self,
         message: str,
-        to: List[str],
+        to: Union[str, List[str]],
         subject: str,
-        cc: Optional[List[str]] = None,
-        bcc: Optional[List[str]] = None,
+        cc: Optional[Union[str, List[str]]] = None,
+        bcc: Optional[Union[str, List[str]]] = None,
     ) -> Dict[str, Any]:
         """Create a message for an email."""
         mime_message = MIMEMultipart()
         mime_message.attach(MIMEText(message, "html"))
 
-        mime_message["To"] = ", ".join(to)
+        mime_message["To"] = ", ".join(to if isinstance(to, list) else [to])
         mime_message["Subject"] = subject
         if cc is not None:
-            mime_message["Cc"] = ", ".join(cc)
+            mime_message["Cc"] = ", ".join(cc if isinstance(cc, list) else [cc])
 
         if bcc is not None:
-            mime_message["Bcc"] = ", ".join(bcc)
+            mime_message["Bcc"] = ", ".join(bcc if isinstance(bcc, list) else [bcc])
 
         encoded_message = base64.urlsafe_b64encode(mime_message.as_bytes()).decode()
         return {"raw": encoded_message}
@@ -68,10 +68,10 @@ class GmailSendMessage(GmailBaseTool):
     def _run(
         self,
         message: str,
-        to: List[str],
+        to: Union[str, List[str]],
         subject: str,
-        cc: Optional[List[str]] = None,
-        bcc: Optional[List[str]] = None,
+        cc: Optional[Union[str, List[str]]] = None,
+        bcc: Optional[Union[str, List[str]]] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Run the tool."""
@@ -90,10 +90,10 @@ class GmailSendMessage(GmailBaseTool):
     async def _arun(
         self,
         message: str,
-        to: List[str],
+        to: Union[str, List[str]],
         subject: str,
-        cc: Optional[List[str]] = None,
-        bcc: Optional[List[str]] = None,
+        cc: Optional[Union[str, List[str]]] = None,
+        bcc: Optional[Union[str, List[str]]] = None,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Run the tool asynchronously."""

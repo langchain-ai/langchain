@@ -13,7 +13,7 @@ from langchain.utilities.google_search import GoogleSearchAPIWrapper
 class GoogleSearchRun(BaseTool):
     """Tool that adds the capability to query the Google search API."""
 
-    name = "Google Search"
+    name = "google_search"
     description = (
         "A wrapper around Google Search. "
         "Useful for when you need to answer questions about current events. "
