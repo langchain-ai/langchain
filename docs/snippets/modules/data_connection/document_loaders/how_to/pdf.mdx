@@ -284,7 +284,7 @@ for s in snippets:
         semantic_snippets[cur_idx].metadata['content_font'] = max(s[1], semantic_snippets[cur_idx].metadata['content_font'])
         continue
     
-    # if current snippet's font size > previous section's content but less tha previous section's heading than also make a new 
+    # if current snippet's font size > previous section's content but less than previous section's heading than also make a new 
     # section (e.g. title of a pdf will have the highest font size but we don't want it to subsume all sections)
     metadata={'heading':s[0], 'content_font': 0, 'heading_font': s[1]}
     metadata.update(data.metadata)

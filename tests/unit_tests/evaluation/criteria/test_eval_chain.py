@@ -5,18 +5,21 @@ import pytest
 
 from langchain.evaluation.criteria.eval_chain import (
     _SUPPORTED_CRITERIA,
+    Criteria,
     CriteriaEvalChain,
+    LabeledCriteriaEvalChain,
 )
 from langchain.evaluation.schema import StringEvaluator
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
 def test_resolve_criteria() -> None:
+    # type: ignore
     assert CriteriaEvalChain.resolve_criteria("helpfulness") == {
-        "helpfulness": _SUPPORTED_CRITERIA["helpfulness"]
+        "helpfulness": _SUPPORTED_CRITERIA[Criteria.HELPFULNESS]
     }
-    assert CriteriaEvalChain.resolve_criteria(["correctness"]) == {
-        "correctness": _SUPPORTED_CRITERIA["correctness"]
+    assert CriteriaEvalChain.resolve_criteria("correctness") == {
+        "correctness": _SUPPORTED_CRITERIA[Criteria.CORRECTNESS]
     }
 
 
@@ -35,12 +38,11 @@ def test_criteria_eval_chain() -> None:
 
 
 def test_criteria_eval_chain_missing_reference() -> None:
-    chain = CriteriaEvalChain.from_llm(
+    chain = LabeledCriteriaEvalChain.from_llm(
         llm=FakeLLM(
             queries={"text": "The meaning of life\nY"},
             sequential_responses=True,
         ),
-        requires_reference=True,
         criteria={"my criterion": "my criterion description"},
     )
     with pytest.raises(ValueError):
