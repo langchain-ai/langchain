@@ -7,9 +7,13 @@ from pydantic import BaseModel, Field
 
 from langchain.embeddings.base import Embeddings
 from langchain.evaluation.criteria.eval_chain import CRITERIA_TYPE
-from langchain.evaluation.embedding_distance.base import EmbeddingDistance as EmbeddingDistanceEnum
+from langchain.evaluation.embedding_distance.base import (
+    EmbeddingDistance as EmbeddingDistanceEnum,
+)
 from langchain.evaluation.schema import EvaluatorType, StringEvaluator
-from langchain.evaluation.string_distance.base import StringDistance as StringDistanceEnum
+from langchain.evaluation.string_distance.base import (
+    StringDistance as StringDistanceEnum,
+)
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.prompt_template import BasePromptTemplate
 
