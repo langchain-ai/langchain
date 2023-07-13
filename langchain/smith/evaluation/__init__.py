@@ -1,7 +1,7 @@
 """LangSmith evaluation utilities.
 
 This module provides utilities for evaluating Chains and other language model
-applications using LangChain evaluators and the LangSmith API.
+applications using LangChain evaluators and LangSmith.
 
 For more information on the LangSmith API, see the `LangSmith API documentation <https://docs.smith.langchain.com/docs/>`_.
 
