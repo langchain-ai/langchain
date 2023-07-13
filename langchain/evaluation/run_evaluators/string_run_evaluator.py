@@ -127,9 +127,9 @@ class LLMStringRunMapper(StringRunMapper):
 class ChainStringRunMapper(StringRunMapper):
     """Extract items to evaluate from the run object from a chain."""
 
-    input_key: str
+    input_key: Optional[str] = None
     """The key from the model Run's inputs to use as the eval input."""
-    prediction_key: str
+    prediction_key: Optional[str] = None
     """The key from the model Run's outputs to use as the eval prediction."""
 
     @classmethod
@@ -174,6 +174,17 @@ class ChainStringRunMapper(StringRunMapper):
             raise ValueError(f"Chain {model.lc_namespace} has no input or output keys.")
         return cls(input_key=input_key, prediction_key=prediction_key)
 
+    def _get_key(self, source: Dict, key: Optional[str], which: str) -> str:
+        if key is not None:
+            return source[key]
+        elif len(source) == 1:
+            return next(iter(source.values()))
+        else:
+            raise ValueError(
+                f"Could not map run {which} with multiple keys: "
+                f"{source}\nPlease manually specify a {which}_key"
+            )
+
     def map(self, run: Run) -> Dict[str, str]:
         """Maps the Run to a dictionary."""
         if not run.outputs:
@@ -187,9 +198,11 @@ class ChainStringRunMapper(StringRunMapper):
                 f"Run {run.id} does not have prediction key {self.prediction_key}."
             )
         else:
+            input_ = self._get_key(run.inputs, self.input_key, "input")
+            prediction = self._get_key(run.outputs, self.prediction_key, "prediction")
             return {
-                "input": run.inputs[self.input_key],
-                "prediction": run.outputs[self.prediction_key],
+                "input": input_,
+                "prediction": prediction,
             }
 
 
