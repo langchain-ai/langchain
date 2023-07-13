@@ -1,7 +1,7 @@
 from langchain.document_transformers.embeddings_redundant_filter import (
     EmbeddingsClusteringFilter,
     EmbeddingsRedundantFilter,
-    _DocumentWithState,
+    get_stateful_documents,
 )
 from langchain.document_transformers.text_extract import DoctranPropertyExtractor
 from langchain.document_transformers.text_qa import DoctranQATransformer
@@ -13,5 +13,5 @@ __all__ = [
     "DoctranPropertyExtractor",
     "EmbeddingsClusteringFilter",
     "EmbeddingsRedundantFilter",
-    "_DocumentWithState",
+    "get_stateful_documents",
 ]

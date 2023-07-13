@@ -1,17 +1,34 @@
-from typing import Any, Sequence
+from typing import Any, Optional, Sequence
 
 from langchain.schema import BaseDocumentTransformer, Document
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import get_from_env
 
 
 class DoctranTextTranslator(BaseDocumentTransformer):
-    """Translates text documents using doctran."""
+    """Translates text documents using doctran.
 
-    def __init__(self, **kwargs: Any) -> None:
-        self.openai_api_key = get_from_dict_or_env(
-            kwargs, "openai_api_key", "OPENAI_API_KEY"
+    Arguments:
+        openai_api_key: OpenAI API key. Can also be specified via environment variable
+        ``OPENAI_API_KEY``.
+        language: The language to translate *to*.
+
+    Example:
+        .. code-block:: python
+
+        from langchain.document_transformers import DoctranTextTranslator
+
+        # Pass in openai_api_key or set env var OPENAI_API_KEY
+        qa_translator = DoctranTextTranslator(language="spanish")
+        translated_document = await qa_translator.atransform_documents(documents)
+    """
+
+    def __init__(
+        self, openai_api_key: Optional[str] = None, language: str = "english"
+    ) -> None:
+        self.openai_api_key = openai_api_key or get_from_env(
+            "openai_api_key", "OPENAI_API_KEY"
         )
-        self.language = kwargs.get("language", "english")
+        self.language = language
 
     def transform_documents(
         self, documents: Sequence[Document], **kwargs: Any

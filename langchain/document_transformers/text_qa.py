@@ -1,15 +1,29 @@
-from typing import Any, Sequence
+from typing import Any, Optional, Sequence
 
 from langchain.schema import BaseDocumentTransformer, Document
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import get_from_env
 
 
 class DoctranQATransformer(BaseDocumentTransformer):
-    """Extracts QA from text documents using doctran."""
+    """Extracts QA from text documents using doctran.
 
-    def __init__(self, **kwargs: Any) -> None:
-        self.openai_api_key = get_from_dict_or_env(
-            kwargs, "openai_api_key", "OPENAI_API_KEY"
+    Arguments:
+        openai_api_key: OpenAI API key. Can also be specified via environment variable
+            ``OPENAI_API_KEY``.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.document_transformers import DoctranQATransformer
+
+            # Pass in openai_api_key or set env var OPENAI_API_KEY
+            qa_transformer = DoctranQATransformer()
+            transformed_document = await qa_transformer.atransform_documents(documents)
+    """
+
+    def __init__(self, openai_api_key: Optional[str] = None) -> None:
+        self.openai_api_key = openai_api_key or get_from_env(
+            "openai_api_key", "OPENAI_API_KEY"
         )
 
     def transform_documents(
