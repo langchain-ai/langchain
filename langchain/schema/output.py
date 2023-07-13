@@ -9,6 +9,8 @@ from pydantic import BaseModel, root_validator
 from langchain.load.serializable import Serializable
 from langchain.schema.messages import BaseMessage
 
+RUN_KEY = "__run"
+
 
 class Generation(Serializable):
     """A single text generation output."""

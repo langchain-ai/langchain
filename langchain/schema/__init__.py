@@ -16,6 +16,7 @@ from langchain.schema.messages import (
     messages_to_dict,
 )
 from langchain.schema.output import (
+    RUN_KEY,
     ChatGeneration,
     ChatResult,
     Generation,
@@ -32,7 +33,6 @@ from langchain.schema.prompt import PromptValue
 from langchain.schema.prompt_template import BasePromptTemplate, format_document
 from langchain.schema.retriever import BaseRetriever
 
-RUN_KEY = "__run"
 Memory = BaseMemory
 
 __all__ = [
