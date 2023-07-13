@@ -23,6 +23,7 @@ class CerebriumAI(LLM):
 
     Example:
         .. code-block:: python
+
             from langchain.llms import CerebriumAI
             cerebrium = CerebriumAI(endpoint_url="")
 
@@ -53,7 +54,7 @@ class CerebriumAI(LLM):
                 if field_name in extra:
                     raise ValueError(f"Found {field_name} supplied twice.")
                 logger.warning(
-                    f"""{field_name} was transfered to model_kwargs.
+                    f"""{field_name} was transferred to model_kwargs.
                     Please confirm that {field_name} is what you intended."""
                 )
                 extra[field_name] = values.pop(field_name)
@@ -87,6 +88,7 @@ class CerebriumAI(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call to CerebriumAI endpoint."""
         try:
@@ -99,7 +101,9 @@ class CerebriumAI(LLM):
 
         params = self.model_kwargs or {}
         response = model_api_request(
-            self.endpoint_url, {"prompt": prompt, **params}, self.cerebriumai_api_key
+            self.endpoint_url,
+            {"prompt": prompt, **params, **kwargs},
+            self.cerebriumai_api_key,
         )
         text = response["data"]["result"]
         if stop is not None:

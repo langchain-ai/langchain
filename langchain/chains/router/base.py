@@ -6,7 +6,11 @@ from typing import Any, Dict, List, Mapping, NamedTuple, Optional
 
 from pydantic import Extra
 
-from langchain.callbacks.manager import CallbackManagerForChainRun, Callbacks
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+    Callbacks,
+)
 from langchain.chains.base import Chain
 
 
@@ -24,6 +28,12 @@ class RouterChain(Chain, ABC):
 
     def route(self, inputs: Dict[str, Any], callbacks: Callbacks = None) -> Route:
         result = self(inputs, callbacks=callbacks)
+        return Route(result["destination"], result["next_inputs"])
+
+    async def aroute(
+        self, inputs: Dict[str, Any], callbacks: Callbacks = None
+    ) -> Route:
+        result = await self.acall(inputs, callbacks=callbacks)
         return Route(result["destination"], result["next_inputs"])
 
 
@@ -82,6 +92,35 @@ class MultiRouteChain(Chain):
             )
         elif self.silent_errors:
             return self.default_chain(route.next_inputs, callbacks=callbacks)
+        else:
+            raise ValueError(
+                f"Received invalid destination chain name '{route.destination}'"
+            )
+
+    async def _acall(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
+        _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
+        callbacks = _run_manager.get_child()
+        route = await self.router_chain.aroute(inputs, callbacks=callbacks)
+
+        await _run_manager.on_text(
+            str(route.destination) + ": " + str(route.next_inputs), verbose=self.verbose
+        )
+        if not route.destination:
+            return await self.default_chain.acall(
+                route.next_inputs, callbacks=callbacks
+            )
+        elif route.destination in self.destination_chains:
+            return await self.destination_chains[route.destination].acall(
+                route.next_inputs, callbacks=callbacks
+            )
+        elif self.silent_errors:
+            return await self.default_chain.acall(
+                route.next_inputs, callbacks=callbacks
+            )
         else:
             raise ValueError(
                 f"Received invalid destination chain name '{route.destination}'"

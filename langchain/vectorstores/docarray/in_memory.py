@@ -13,8 +13,8 @@ from langchain.vectorstores.docarray.base import (
 class DocArrayInMemorySearch(DocArrayIndex):
     """Wrapper around in-memory storage for exact search.
 
-    To use it, you should have the ``docarray`` package with version >=0.31.0 installed.
-    You can install it with `pip install "langchain[in_memory_store]"`.
+    To use it, you should have the ``docarray`` package with version >=0.32.0 installed.
+    You can install it with `pip install "langchain[docarray]"`.
     """
 
     @classmethod

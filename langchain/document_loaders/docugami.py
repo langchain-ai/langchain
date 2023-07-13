@@ -1,4 +1,4 @@
-"""Loader that loads processed documents from Docugami."""
+"""Loads processed documents from Docugami."""
 
 import io
 import logging
@@ -29,22 +29,35 @@ logger = logging.getLogger(__name__)
 
 
 class DocugamiLoader(BaseLoader, BaseModel):
-    """Loader that loads processed docs from Docugami.
+    """Loads processed docs from Docugami.
 
     To use, you should have the ``lxml`` python package installed.
     """
 
     api: str = DEFAULT_API_ENDPOINT
+    """The Docugami API endpoint to use."""
 
     access_token: Optional[str] = os.environ.get("DOCUGAMI_API_KEY")
+    """The Docugami API access token to use."""
     docset_id: Optional[str]
+    """The Docugami API docset ID to use."""
     document_ids: Optional[Sequence[str]]
+    """The Docugami API document IDs to use."""
     file_paths: Optional[Sequence[Union[Path, str]]]
+    """The local file paths to use."""
     min_chunk_size: int = 32  # appended to the next chunk to avoid over-chunking
+    """The minimum chunk size to use when parsing DGML. Defaults to 32."""
 
     @root_validator
     def validate_local_or_remote(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate that either local file paths are given, or remote API docset ID."""
+        """Validate that either local file paths are given, or remote API docset ID.
+
+        Args:
+            values: The values to validate.
+
+        Returns:
+            The validated values.
+        """
         if values.get("file_paths") and values.get("docset_id"):
             raise ValueError("Cannot specify both file_paths and remote API docset_id")
 
@@ -63,7 +76,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
         try:
             from lxml import etree
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import lxml python package. "
                 "Please install it with `pip install lxml`."
             )
@@ -243,7 +256,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
             artifact_url = artifact.get("url")
             artifact_doc = artifact.get("document")
 
-            if artifact_name == f"{project_id}.xml" and artifact_url and artifact_doc:
+            if artifact_name == "report-values.xml" and artifact_url and artifact_doc:
                 doc_id = artifact_doc["id"]
                 metadata: Dict = {}
 
@@ -259,18 +272,18 @@ class DocugamiLoader(BaseLoader, BaseModel):
                     try:
                         from lxml import etree
                     except ImportError:
-                        raise ValueError(
+                        raise ImportError(
                             "Could not import lxml python package. "
                             "Please install it with `pip install lxml`."
                         )
                     artifact_tree = etree.parse(io.BytesIO(response.content))
                     artifact_root = artifact_tree.getroot()
                     ns = artifact_root.nsmap
-                    entries = artifact_root.xpath("//wp:Entry", namespaces=ns)
+                    entries = artifact_root.xpath("//pr:Entry", namespaces=ns)
                     for entry in entries:
-                        heading = entry.xpath("./wp:Heading", namespaces=ns)[0].text
+                        heading = entry.xpath("./pr:Heading", namespaces=ns)[0].text
                         value = " ".join(
-                            entry.xpath("./wp:Value", namespaces=ns)[0].itertext()
+                            entry.xpath("./pr:Value", namespaces=ns)[0].itertext()
                         ).strip()
                         metadata[heading] = value
                     per_file_metadata[doc_id] = metadata

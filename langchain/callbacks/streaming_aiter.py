@@ -31,7 +31,8 @@ class AsyncIteratorCallbackHandler(AsyncCallbackHandler):
         self.done.clear()
 
     async def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
-        self.queue.put_nowait(token)
+        if token is not None and token != "":
+            self.queue.put_nowait(token)
 
     async def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         self.done.set()
@@ -58,7 +59,8 @@ class AsyncIteratorCallbackHandler(AsyncCallbackHandler):
             )
 
             # Cancel the other task
-            other.pop().cancel()
+            if other:
+                other.pop().cancel()
 
             # Extract the value of the first completed task
             token_or_done = cast(Union[str, Literal[True]], done.pop().result())

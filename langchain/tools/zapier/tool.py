@@ -1,6 +1,6 @@
 """## Zapier Natural Language Actions API
 \
-Full docs here: https://nla.zapier.com/api/v1/docs
+Full docs here: https://nla.zapier.com/start/
 
 **Zapier Natural Language Actions** gives you access to the 5k+ apps, 20k+ actions
 on Zapier's platform through a natural language API interface.
@@ -24,10 +24,10 @@ NLA offers both API Key and OAuth for signing NLA API requests.
     connected accounts on Zapier.com
 
 This quick start will focus on the server-side use case for brevity.
-Review [full docs](https://nla.zapier.com/api/v1/docs) or reach out to
-nla@zapier.com for user-facing oauth developer support.
+Review [full docs](https://nla.zapier.com/start/) for user-facing oauth developer
+support.
 
-Typically you'd use SequentialChain, here's a basic example:
+Typically, you'd use SequentialChain, here's a basic example:
 
     1. Use NLA to find an email in Gmail
     2. Use LLMChain to generate a draft reply to (1)
@@ -42,8 +42,7 @@ import os
 # get from https://platform.openai.com/
 os.environ["OPENAI_API_KEY"] = os.environ.get("OPENAI_API_KEY", "")
 
-# get from https://nla.zapier.com/demo/provider/debug
-# (under User Information, after logging in):
+# get from https://nla.zapier.com/docs/authentication/
 os.environ["ZAPIER_NLA_API_KEY"] = os.environ.get("ZAPIER_NLA_API_KEY", "")
 
 from langchain.llms import OpenAI
@@ -61,8 +60,9 @@ from langchain.utilities.zapier import ZapierNLAWrapper
 
 llm = OpenAI(temperature=0)
 zapier = ZapierNLAWrapper()
-## To leverage a nla_oauth_access_token you may pass the value to the ZapierNLAWrapper
-## If you do this there is no need to initialize the ZAPIER_NLA_API_KEY env variable
+## To leverage OAuth you may pass the value `nla_oauth_access_token` to
+## the ZapierNLAWrapper. If you do this there is no need to initialize
+## the ZAPIER_NLA_API_KEY env variable
 # zapier = ZapierNLAWrapper(zapier_nla_oauth_access_token="TOKEN_HERE")
 toolkit = ZapierToolkit.from_zapier_nla_wrapper(zapier)
 agent = initialize_agent(
@@ -99,7 +99,8 @@ class ZapierNLARunAction(BaseTool):
             (eg. "get the latest email from Mike Knoop" for "Gmail: find email" action)
         params: a dict, optional. Any params provided will *override* AI guesses
             from `instructions` (see "understanding the AI guessing flow" here:
-            https://nla.zapier.com/api/v1/docs)
+            https://nla.zapier.com/docs/using-the-api#ai-guessing)
+
     """
 
     api_wrapper: ZapierNLAWrapper = Field(default_factory=ZapierNLAWrapper)
@@ -118,7 +119,7 @@ class ZapierNLARunAction(BaseTool):
         if "instructions" in params_schema:
             del params_schema["instructions"]
 
-        # Ensure base prompt (if overrided) contains necessary input fields
+        # Ensure base prompt (if overridden) contains necessary input fields
         necessary_fields = {"{zapier_description}", "{params}"}
         if not all(field in values["base_prompt"] for field in necessary_fields):
             raise ValueError(
@@ -141,11 +142,15 @@ class ZapierNLARunAction(BaseTool):
 
     async def _arun(
         self,
-        _: str,
+        instructions: str,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Use the Zapier NLA tool to return a list of all exposed user actions."""
-        raise NotImplementedError("ZapierNLAListActions does not support async")
+        return await self.api_wrapper.arun_as_str(
+            self.action_id,
+            instructions,
+            self.params,
+        )
 
 
 ZapierNLARunAction.__doc__ = (
@@ -160,9 +165,10 @@ class ZapierNLAListActions(BaseTool):
     """
     Args:
         None
+
     """
 
-    name = "Zapier NLA: List Actions"
+    name = "ZapierNLA_list_actions"
     description = BASE_ZAPIER_TOOL_PROMPT + (
         "This tool returns a list of the user's exposed actions."
     )
@@ -182,7 +188,7 @@ class ZapierNLAListActions(BaseTool):
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Use the Zapier NLA tool to return a list of all exposed user actions."""
-        raise NotImplementedError("ZapierNLAListActions does not support async")
+        return await self.api_wrapper.alist_as_str()
 
 
 ZapierNLAListActions.__doc__ = (

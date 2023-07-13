@@ -28,14 +28,14 @@ from langchain.agents.agent_toolkits.openapi.planner_prompt import (
 from langchain.agents.agent_toolkits.openapi.spec import ReducedOpenAPISpec
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.tools import Tool
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 from langchain.llms.openai import OpenAI
 from langchain.memory import ReadOnlySharedMemory
 from langchain.prompts import PromptTemplate
-from langchain.prompts.base import BasePromptTemplate
 from langchain.requests import RequestsWrapper
+from langchain.schema import BasePromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 from langchain.tools.requests.tool import BaseRequestsTool
 
@@ -115,9 +115,8 @@ class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
     description = REQUESTS_PATCH_TOOL_DESCRIPTION
 
     response_length: Optional[int] = MAX_RESPONSE_LENGTH
-    llm_chain = LLMChain(
-        llm=OpenAI(),
-        prompt=PARSING_PATCH_PROMPT,
+    llm_chain: LLMChain = Field(
+        default_factory=_get_default_llm_chain_factory(PARSING_PATCH_PROMPT)
     )
 
     def _run(self, text: str) -> str:
@@ -140,9 +139,8 @@ class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):
     description = REQUESTS_DELETE_TOOL_DESCRIPTION
 
     response_length: Optional[int] = MAX_RESPONSE_LENGTH
-    llm_chain = LLMChain(
-        llm=OpenAI(),
-        prompt=PARSING_DELETE_PROMPT,
+    llm_chain: LLMChain = Field(
+        default_factory=_get_default_llm_chain_factory(PARSING_DELETE_PROMPT)
     )
 
     def _run(self, text: str) -> str:

@@ -1,4 +1,4 @@
-"""Loading logic for loading documents from an s3 directory."""
+"""Loading logic for loading documents from an AWS S3 directory."""
 from typing import List
 
 from langchain.docstore.document import Document
@@ -7,10 +7,15 @@ from langchain.document_loaders.s3_file import S3FileLoader
 
 
 class S3DirectoryLoader(BaseLoader):
-    """Loading logic for loading documents from s3."""
+    """Loading logic for loading documents from an AWS S3."""
 
     def __init__(self, bucket: str, prefix: str = ""):
-        """Initialize with bucket and key name."""
+        """Initialize with bucket and key name.
+
+        Args:
+            bucket: The name of the S3 bucket.
+            prefix: The prefix of the S3 key. Defaults to "".
+        """
         self.bucket = bucket
         self.prefix = prefix
 
@@ -19,7 +24,7 @@ class S3DirectoryLoader(BaseLoader):
         try:
             import boto3
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import boto3 python package. "
                 "Please install it with `pip install boto3`."
             )

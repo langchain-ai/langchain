@@ -4,10 +4,10 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from langchain import LLMChain
-from langchain.base_language import BaseLanguageModel
 from langchain.prompts import PromptTemplate
 from langchain.retrievers import TimeWeightedVectorStoreRetriever
 from langchain.schema import BaseMemory, Document
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.utils import mock_now
 
 logger = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ class GenerativeAgentMemory(BaseMemory):
 
     aggregate_importance: float = 0.0  # : :meta private:
     """Track the sum of the 'importance' of recent memories.
-    
+
     Triggers reflection when it reaches reflection_threshold."""
 
     max_tokens_limit: int = 1200  # : :meta private:
@@ -56,18 +56,21 @@ class GenerativeAgentMemory(BaseMemory):
     def _parse_list(text: str) -> List[str]:
         """Parse a newline-separated string into a list of strings."""
         lines = re.split(r"\n", text.strip())
+        lines = [line for line in lines if line.strip()]  # remove empty lines
         return [re.sub(r"^\s*\d+\.\s*", "", line).strip() for line in lines]
 
     def _get_topics_of_reflection(self, last_k: int = 50) -> List[str]:
         """Return the 3 most salient high-level questions about recent observations."""
         prompt = PromptTemplate.from_template(
             "{observations}\n\n"
-            + "Given only the information above, what are the 3 most salient"
-            + " high-level questions we can answer about the subjects in"
-            + " the statements? Provide each question on a new line.\n\n"
+            "Given only the information above, what are the 3 most salient "
+            "high-level questions we can answer about the subjects in the statements?\n"
+            "Provide each question on a new line."
         )
         observations = self.memory_retriever.memory_stream[-last_k:]
-        observation_str = "\n".join([o.page_content for o in observations])
+        observation_str = "\n".join(
+            [self._format_memory_detail(o) for o in observations]
+        )
         result = self.chain(prompt).run(observations=observation_str)
         return self._parse_list(result)
 
@@ -76,15 +79,22 @@ class GenerativeAgentMemory(BaseMemory):
     ) -> List[str]:
         """Generate 'insights' on a topic of reflection, based on pertinent memories."""
         prompt = PromptTemplate.from_template(
-            "Statements about {topic}\n"
-            + "{related_statements}\n\n"
-            + "What 5 high-level insights can you infer from the above statements?"
-            + " (example format: insight (because of 1, 5, 3))"
+            "Statements relevant to: '{topic}'\n"
+            "---\n"
+            "{related_statements}\n"
+            "---\n"
+            "What 5 high-level novel insights can you infer from the above statements "
+            "that are relevant for answering the following question?\n"
+            "Do not include any insights that are not relevant to the question.\n"
+            "Do not repeat any insights that have already been made.\n\n"
+            "Question: {topic}\n\n"
+            "(example format: insight (because of 1, 5, 3))\n"
         )
+
         related_memories = self.fetch_memories(topic, now=now)
         related_statements = "\n".join(
             [
-                f"{i+1}. {memory.page_content}"
+                self._format_memory_detail(memory, prefix=f"{i+1}. ")
                 for i, memory in enumerate(related_memories)
             ]
         )
@@ -127,6 +137,64 @@ class GenerativeAgentMemory(BaseMemory):
         else:
             return 0.0
 
+    def _score_memories_importance(self, memory_content: str) -> List[float]:
+        """Score the absolute importance of the given memory."""
+        prompt = PromptTemplate.from_template(
+            "On the scale of 1 to 10, where 1 is purely mundane"
+            + " (e.g., brushing teeth, making bed) and 10 is"
+            + " extremely poignant (e.g., a break up, college"
+            + " acceptance), rate the likely poignancy of the"
+            + " following piece of memory. Always answer with only a list of numbers."
+            + " If just given one memory still respond in a list."
+            + " Memories are separated by semi colans (;)"
+            + "\Memories: {memory_content}"
+            + "\nRating: "
+        )
+        scores = self.chain(prompt).run(memory_content=memory_content).strip()
+
+        if self.verbose:
+            logger.info(f"Importance scores: {scores}")
+
+        # Split into list of strings and convert to floats
+        scores_list = [float(x) for x in scores.split(";")]
+
+        return scores_list
+
+    def add_memories(
+        self, memory_content: str, now: Optional[datetime] = None
+    ) -> List[str]:
+        """Add an observations or memories to the agent's memory."""
+        importance_scores = self._score_memories_importance(memory_content)
+
+        self.aggregate_importance += max(importance_scores)
+        memory_list = memory_content.split(";")
+        documents = []
+
+        for i in range(len(memory_list)):
+            documents.append(
+                Document(
+                    page_content=memory_list[i],
+                    metadata={"importance": importance_scores[i]},
+                )
+            )
+
+        result = self.memory_retriever.add_documents(documents, current_time=now)
+
+        # After an agent has processed a certain amount of memories (as measured by
+        # aggregate importance), it is time to reflect on recent events to add
+        # more synthesized memories to the agent's memory stream.
+        if (
+            self.reflection_threshold is not None
+            and self.aggregate_importance > self.reflection_threshold
+            and not self.reflecting
+        ):
+            self.reflecting = True
+            self.pause_to_reflect(now=now)
+            # Hack to clear the importance from reflection
+            self.aggregate_importance = 0.0
+            self.reflecting = False
+        return result
+
     def add_memory(
         self, memory_content: str, now: Optional[datetime] = None
     ) -> List[str]:
@@ -164,15 +232,14 @@ class GenerativeAgentMemory(BaseMemory):
             return self.memory_retriever.get_relevant_documents(observation)
 
     def format_memories_detail(self, relevant_memories: List[Document]) -> str:
-        content_strs = set()
         content = []
         for mem in relevant_memories:
-            if mem.page_content in content_strs:
-                continue
-            content_strs.add(mem.page_content)
-            created_time = mem.metadata["created_at"].strftime("%B %d, %Y, %I:%M %p")
-            content.append(f"- {created_time}: {mem.page_content.strip()}")
+            content.append(self._format_memory_detail(mem, prefix="- "))
         return "\n".join([f"{mem}" for mem in content])
+
+    def _format_memory_detail(self, memory: Document, prefix: str = "") -> str:
+        created_time = memory.metadata["created_at"].strftime("%B %d, %Y, %I:%M %p")
+        return f"{prefix}[{created_time}] {memory.page_content.strip()}"
 
     def format_memories_simple(self, relevant_memories: List[Document]) -> str:
         return "; ".join([f"{mem.page_content}" for mem in relevant_memories])

@@ -149,6 +149,7 @@ class AlephAlphaSymmetricSemanticEmbedding(AlephAlphaAsymmetricSemanticEmbedding
     queries are embedded with a SemanticRepresentation.Symmetric
     Example:
         .. code-block:: python
+
             from aleph_alpha import AlephAlphaSymmetricSemanticEmbedding
 
             embeddings = AlephAlphaAsymmetricSemanticEmbedding()

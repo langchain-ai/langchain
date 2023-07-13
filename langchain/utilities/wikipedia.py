@@ -2,7 +2,7 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import BaseModel, root_validator
 
 from langchain.schema import Document
 
@@ -27,11 +27,6 @@ class WikipediaAPIWrapper(BaseModel):
     load_all_available_meta: bool = False
     doc_content_chars_max: int = 4000
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
@@ -41,7 +36,7 @@ class WikipediaAPIWrapper(BaseModel):
             wikipedia.set_lang(values["lang"])
             values["wiki_client"] = wikipedia
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import wikipedia python package. "
                 "Please install it with `pip install wikipedia`."
             )

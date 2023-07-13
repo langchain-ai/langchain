@@ -1,6 +1,13 @@
 """Zilliz Retriever"""
+import warnings
 from typing import Any, Dict, List, Optional
 
+from pydantic import root_validator
+
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseRetriever, Document
 from langchain.vectorstores.zilliz import Zilliz
@@ -8,22 +15,30 @@ from langchain.vectorstores.zilliz import Zilliz
 # TODO: Update to ZillizClient + Hybrid Search when available
 
 
-class ZillizRetreiver(BaseRetriever):
-    def __init__(
-        self,
-        embedding_function: Embeddings,
-        collection_name: str = "LangChainCollection",
-        connection_args: Optional[Dict[str, Any]] = None,
-        consistency_level: str = "Session",
-        search_params: Optional[dict] = None,
-    ):
-        self.store = Zilliz(
-            embedding_function,
-            collection_name,
-            connection_args,
-            consistency_level,
+class ZillizRetriever(BaseRetriever):
+    """Retriever that uses the Zilliz API."""
+
+    embedding_function: Embeddings
+    collection_name: str = "LangChainCollection"
+    connection_args: Optional[Dict[str, Any]] = None
+    consistency_level: str = "Session"
+    search_params: Optional[dict] = None
+
+    store: Zilliz
+    retriever: BaseRetriever
+
+    @root_validator(pre=True)
+    def create_client(cls, values: dict) -> dict:
+        values["store"] = Zilliz(
+            values["embedding_function"],
+            values["collection_name"],
+            values["connection_args"],
+            values["consistency_level"],
         )
-        self.retriever = self.store.as_retriever(search_kwargs={"param": search_params})
+        values["retriever"] = values["store"].as_retriever(
+            search_kwargs={"param": values["search_params"]}
+        )
+        return values
 
     def add_texts(
         self, texts: List[str], metadatas: Optional[List[dict]] = None
@@ -36,8 +51,40 @@ class ZillizRetreiver(BaseRetriever):
         """
         self.store.add_texts(texts, metadatas)
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
-        return self.retriever.get_relevant_documents(query)
+    def _get_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: CallbackManagerForRetrieverRun,
+        **kwargs: Any,
+    ) -> List[Document]:
+        return self.retriever.get_relevant_documents(
+            query, run_manager=run_manager.get_child(), **kwargs
+        )
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def _aget_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
+        **kwargs: Any,
+    ) -> List[Document]:
         raise NotImplementedError
+
+
+def ZillizRetreiver(*args: Any, **kwargs: Any) -> ZillizRetriever:
+    """
+    Deprecated ZillizRetreiver. Please use ZillizRetriever ('i' before 'e') instead.
+    Args:
+        *args:
+        **kwargs:
+
+    Returns:
+        ZillizRetriever
+    """
+    warnings.warn(
+        "ZillizRetreiver will be deprecated in the future. "
+        "Please use ZillizRetriever ('i' before 'e') instead.",
+        DeprecationWarning,
+    )
+    return ZillizRetriever(*args, **kwargs)

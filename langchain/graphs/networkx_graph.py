@@ -54,7 +54,7 @@ class NetworkxEntityGraph:
         try:
             import networkx as nx
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import networkx python package. "
                 "Please install it with `pip install networkx`."
             )
@@ -70,7 +70,7 @@ class NetworkxEntityGraph:
         try:
             import networkx as nx
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import networkx python package. "
                 "Please install it with `pip install networkx`."
             )
@@ -122,3 +122,48 @@ class NetworkxEntityGraph:
     def clear(self) -> None:
         """Clear the graph."""
         self._graph.clear()
+
+    def get_topological_sort(self) -> List[str]:
+        """Get a list of entity names in the graph sorted by causal dependence."""
+        import networkx as nx
+
+        return list(nx.topological_sort(self._graph))
+
+    def draw_graphviz(self, **kwargs: Any) -> None:
+        """
+        Provides better drawing
+
+        Usage in a jupyter notebook:
+
+            >>> from IPython.display import SVG
+            >>> self.draw_graphviz_svg(layout="dot", filename="web.svg")
+            >>> SVG('web.svg')
+        """
+        from networkx.drawing.nx_agraph import to_agraph
+
+        try:
+            import pygraphviz  # noqa: F401
+
+        except ImportError as e:
+            if e.name == "_graphviz":
+                """
+                >>> e.msg  # pygraphviz throws this error
+                ImportError: libcgraph.so.6: cannot open shared object file
+                """
+                raise ImportError(
+                    "Could not import graphviz debian package. "
+                    "Please install it with:"
+                    "`sudo apt-get update`"
+                    "`sudo apt-get install graphviz graphviz-dev`"
+                )
+            else:
+                raise ImportError(
+                    "Could not import pygraphviz python package. "
+                    "Please install it with:"
+                    "`pip install pygraphviz`."
+                )
+
+        graph = to_agraph(self._graph)  # --> pygraphviz.agraph.AGraph
+        # pygraphviz.github.io/documentation/stable/tutorial.html#layout-and-drawing
+        graph.layout(prog=kwargs.get("prog", "dot"))
+        graph.draw(kwargs.get("path", "graph.svg"))

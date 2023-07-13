@@ -1,4 +1,4 @@
-"""Loader that loads Telegram chat json dump."""
+"""Loads Telegram chat json dump."""
 from __future__ import annotations
 
 import asyncio
@@ -24,10 +24,10 @@ def concatenate_rows(row: dict) -> str:
 
 
 class TelegramChatFileLoader(BaseLoader):
-    """Loader that loads Telegram chat json directory dump."""
+    """Loads Telegram chat json directory dump."""
 
     def __init__(self, path: str):
-        """Initialize with path."""
+        """Initialize with a path."""
         self.file_path = path
 
     def load(self) -> List[Document]:
@@ -79,7 +79,7 @@ def text_to_docs(text: Union[str, List[str]]) -> List[Document]:
 
 
 class TelegramChatApiLoader(BaseLoader):
-    """Loader that loads Telegram chat json directory dump."""
+    """Loads Telegram chat json directory dump."""
 
     def __init__(
         self,
@@ -89,7 +89,16 @@ class TelegramChatApiLoader(BaseLoader):
         username: Optional[str] = None,
         file_path: str = "telegram_data.json",
     ):
-        """Initialize with API parameters."""
+        """Initialize with API parameters.
+
+        Args:
+            chat_entity: The chat entity to fetch data from.
+            api_id: The API ID.
+            api_hash: The API hash.
+            username: The username.
+            file_path: The file path to save the data to. Defaults to
+                 "telegram_data.json".
+        """
         self.chat_entity = chat_entity
         self.api_id = api_id
         self.api_hash = api_hash
@@ -226,7 +235,7 @@ class TelegramChatApiLoader(BaseLoader):
                 nest_asyncio.apply()
                 asyncio.run(self.fetch_data_from_telegram())
             except ImportError:
-                raise ValueError(
+                raise ImportError(
                     """`nest_asyncio` package not found.
                     please install with `pip install nest_asyncio`
                     """
@@ -239,7 +248,7 @@ class TelegramChatApiLoader(BaseLoader):
         try:
             import pandas as pd
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 """`pandas` package not found. 
                 please install with `pip install pandas`
                 """

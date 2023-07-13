@@ -2,7 +2,7 @@
 import asyncio
 import logging
 import warnings
-from typing import Any, List, Optional, Union
+from typing import Any, Dict, Iterator, List, Optional, Union
 
 import aiohttp
 import requests
@@ -47,8 +47,21 @@ class WebBaseLoader(BaseLoader):
     default_parser: str = "html.parser"
     """Default parser to use for BeautifulSoup."""
 
+    requests_kwargs: Dict[str, Any] = {}
+    """kwargs for requests"""
+
+    raise_for_status: bool = False
+    """Raise an exception if http status code denotes an error."""
+
+    bs_get_text_kwargs: Dict[str, Any] = {}
+    """kwargs for beatifulsoup4 get_text"""
+
     def __init__(
-        self, web_path: Union[str, List[str]], header_template: Optional[dict] = None
+        self,
+        web_path: Union[str, List[str]],
+        header_template: Optional[dict] = None,
+        verify_ssl: Optional[bool] = True,
+        proxies: Optional[dict] = None,
     ):
         """Initialize with webpage path."""
 
@@ -60,7 +73,6 @@ class WebBaseLoader(BaseLoader):
         elif isinstance(web_path, List):
             self.web_paths = web_path
 
-        self.session = requests.Session()
         try:
             import bs4  # noqa:F401
         except ImportError:
@@ -80,7 +92,13 @@ class WebBaseLoader(BaseLoader):
                     "To get a realistic header for requests, "
                     "`pip install fake_useragent`."
                 )
+
+        self.session = requests.Session()
         self.session.headers = dict(headers)
+        self.session.verify = verify_ssl
+
+        if proxies:
+            self.session.proxies.update(proxies)
 
     @property
     def web_path(self) -> str:
@@ -95,7 +113,9 @@ class WebBaseLoader(BaseLoader):
             for i in range(retries):
                 try:
                     async with session.get(
-                        url, headers=self.session.headers
+                        url,
+                        headers=self.session.headers,
+                        ssl=None if self.session.verify else False,
                     ) as response:
                         return await response.text()
                 except aiohttp.ClientConnectionError as e:
@@ -170,7 +190,9 @@ class WebBaseLoader(BaseLoader):
 
         self._check_parser(parser)
 
-        html_doc = self.session.get(url)
+        html_doc = self.session.get(url, **self.requests_kwargs)
+        if self.raise_for_status:
+            html_doc.raise_for_status()
         html_doc.encoding = html_doc.apparent_encoding
         return BeautifulSoup(html_doc.text, parser)
 
@@ -182,16 +204,17 @@ class WebBaseLoader(BaseLoader):
 
         return self._scrape(self.web_path, parser)
 
-    def load(self) -> List[Document]:
-        """Load text from the url(s) in web_path."""
-        docs = []
+    def lazy_load(self) -> Iterator[Document]:
+        """Lazy load text from the url(s) in web_path."""
         for path in self.web_paths:
             soup = self._scrape(path)
-            text = soup.get_text()
+            text = soup.get_text(**self.bs_get_text_kwargs)
             metadata = _build_metadata(soup, path)
-            docs.append(Document(page_content=text, metadata=metadata))
+            yield Document(page_content=text, metadata=metadata)
 
-        return docs
+    def load(self) -> List[Document]:
+        """Load text from the url(s) in web_path."""
+        return list(self.lazy_load())
 
     def aload(self) -> List[Document]:
         """Load text from the urls in web_path async into Documents."""
@@ -200,7 +223,7 @@ class WebBaseLoader(BaseLoader):
         docs = []
         for i in range(len(results)):
             soup = results[i]
-            text = soup.get_text()
+            text = soup.get_text(**self.bs_get_text_kwargs)
             metadata = _build_metadata(soup, self.web_paths[i])
             docs.append(Document(page_content=text, metadata=metadata))
 

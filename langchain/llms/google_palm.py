@@ -1,4 +1,4 @@
-"""Wrapper arround Google's PaLM Text APIs."""
+"""Wrapper around Google's PaLM Text APIs."""
 from __future__ import annotations
 
 import logging
@@ -29,7 +29,10 @@ def _create_retry_decorator() -> Callable[[Any], Any]:
     try:
         import google.api_core.exceptions
     except ImportError:
-        raise ImportError()
+        raise ImportError(
+            "Could not import google-api-core python package. "
+            "Please install it with `pip install google-api-core`."
+        )
 
     multiplier = 2
     min_seconds = 1
@@ -105,7 +108,10 @@ class GooglePalm(BaseLLM, BaseModel):
 
             genai.configure(api_key=google_api_key)
         except ImportError:
-            raise ImportError("Could not import google.generativeai python package.")
+            raise ImportError(
+                "Could not import google-generativeai python package. "
+                "Please install it with `pip install google-generativeai`."
+            )
 
         values["client"] = genai
 
@@ -128,6 +134,7 @@ class GooglePalm(BaseLLM, BaseModel):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> LLMResult:
         generations = []
         for prompt in prompts:
@@ -141,6 +148,7 @@ class GooglePalm(BaseLLM, BaseModel):
                 top_k=self.top_k,
                 max_output_tokens=self.max_output_tokens,
                 candidate_count=self.n,
+                **kwargs,
             )
 
             prompt_generations = []
@@ -157,6 +165,7 @@ class GooglePalm(BaseLLM, BaseModel):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> LLMResult:
         raise NotImplementedError()
 

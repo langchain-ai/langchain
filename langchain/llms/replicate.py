@@ -23,6 +23,7 @@ class Replicate(LLM):
 
     Example:
         .. code-block:: python
+
             from langchain.llms import Replicate
             replicate = Replicate(model="stability-ai/stable-diffusion: \
                                          27b93a2413e7f36cd83da926f365628\
@@ -51,7 +52,7 @@ class Replicate(LLM):
                 if field_name in extra:
                     raise ValueError(f"Found {field_name} supplied twice.")
                 logger.warning(
-                    f"""{field_name} was transfered to model_kwargs.
+                    f"""{field_name} was transferred to model_kwargs.
                     Please confirm that {field_name} is what you intended."""
                 )
                 extra[field_name] = values.pop(field_name)
@@ -71,6 +72,7 @@ class Replicate(LLM):
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         return {
+            "model": self.model,
             **{"model_kwargs": self.model_kwargs},
         }
 
@@ -84,12 +86,13 @@ class Replicate(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call to replicate endpoint."""
         try:
             import replicate as replicate_python
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import replicate python package. "
                 "Please install it with `pip install replicate`."
             )
@@ -109,6 +112,6 @@ class Replicate(LLM):
         first_input_name = input_properties[0][0]
 
         inputs = {first_input_name: prompt, **self.input}
-        iterator = replicate_python.run(self.model, input={**inputs})
+        iterator = replicate_python.run(self.model, input={**inputs, **kwargs})
 
         return "".join([output for output in iterator])

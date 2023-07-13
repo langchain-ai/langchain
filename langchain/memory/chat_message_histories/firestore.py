@@ -5,13 +5,9 @@ import logging
 from typing import TYPE_CHECKING, List, Optional
 
 from langchain.schema import (
-    AIMessage,
     BaseChatMessageHistory,
-    BaseMessage,
-    HumanMessage,
-    messages_from_dict,
-    messages_to_dict,
 )
+from langchain.schema.messages import BaseMessage, messages_from_dict, messages_to_dict
 
 logger = logging.getLogger(__name__)
 
@@ -52,13 +48,11 @@ class FirestoreChatMessageHistory(BaseChatMessageHistory):
         try:
             import firebase_admin
             from firebase_admin import firestore
-        except ImportError as e:
-            logger.error(
-                "Failed to import Firebase and Firestore: %s. "
-                "Make sure to install the 'firebase-admin' module.",
-                e,
+        except ImportError:
+            raise ImportError(
+                "Could not import firebase-admin python package. "
+                "Please install it with `pip install firebase-admin`."
             )
-            raise e
 
         # For multiple instances, only initialize the app once.
         try:
@@ -83,18 +77,12 @@ class FirestoreChatMessageHistory(BaseChatMessageHistory):
             if "messages" in data and len(data["messages"]) > 0:
                 self.messages = messages_from_dict(data["messages"])
 
-    def add_user_message(self, message: str) -> None:
-        """Add a user message to the memory."""
-        self.upsert_messages(HumanMessage(content=message))
-
-    def add_ai_message(self, message: str) -> None:
-        """Add a AI message to the memory."""
-        self.upsert_messages(AIMessage(content=message))
+    def add_message(self, message: BaseMessage) -> None:
+        self.messages.append(message)
+        self.upsert_messages()
 
     def upsert_messages(self, new_message: Optional[BaseMessage] = None) -> None:
         """Update the Firestore document."""
-        if new_message:
-            self.messages.append(new_message)
         if not self._document:
             raise ValueError("Document not initialized")
         self._document.set(

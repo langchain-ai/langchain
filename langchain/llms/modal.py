@@ -22,6 +22,7 @@ class Modal(LLM):
 
     Example:
         .. code-block:: python
+
             from langchain.llms import Modal
             modal = Modal(endpoint_url="")
 
@@ -50,7 +51,7 @@ class Modal(LLM):
                 if field_name in extra:
                     raise ValueError(f"Found {field_name} supplied twice.")
                 logger.warning(
-                    f"""{field_name} was transfered to model_kwargs.
+                    f"""{field_name} was transferred to model_kwargs.
                     Please confirm that {field_name} is what you intended."""
                 )
                 extra[field_name] = values.pop(field_name)
@@ -75,9 +76,11 @@ class Modal(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call to Modal endpoint."""
         params = self.model_kwargs or {}
+        params = {**params, **kwargs}
         response = requests.post(
             url=self.endpoint_url,
             headers={

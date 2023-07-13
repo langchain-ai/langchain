@@ -11,6 +11,8 @@ _EXPECTED = [
     "ConversationalChatAgent",
     "LLMSingleActionAgent",
     "MRKLChain",
+    "OpenAIFunctionsAgent",
+    "OpenAIMultiFunctionsAgent",
     "ReActChain",
     "ReActTextWorldAgent",
     "SelfAskWithSearchChain",

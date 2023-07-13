@@ -1,4 +1,4 @@
-"""Loader that loads data from OneDrive"""
+"""Loads data from OneDrive"""
 from __future__ import annotations
 
 import logging
@@ -60,11 +60,18 @@ class _SupportedFileTypes(BaseModel):
 
 
 class OneDriveLoader(BaseLoader, BaseModel):
+    """Loads data from OneDrive."""
+
     settings: _OneDriveSettings = Field(default_factory=_OneDriveSettings)
+    """ The settings for the OneDrive API client."""
     drive_id: str = Field(...)
+    """ The ID of the OneDrive drive to load data from."""
     folder_path: Optional[str] = None
+    """ The path to the folder to load data from."""
     object_ids: Optional[List[str]] = None
+    """ The IDs of the objects to load data from."""
     auth_with_token: bool = False
+    """ Whether to authenticate with a token or not. Defaults to False."""
 
     def _auth(self) -> Type[Account]:
         """
@@ -77,7 +84,7 @@ class OneDriveLoader(BaseLoader, BaseModel):
         try:
             from O365 import FileSystemTokenBackend
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "O365 package not found, please install it with `pip install o365`"
             )
         if self.auth_with_token:
@@ -209,8 +216,8 @@ class OneDriveLoader(BaseLoader, BaseModel):
 
     def load(self) -> List[Document]:
         """
-        Loads all supported document files from the specified OneDrive drive a
-        nd returns a list of Document objects.
+        Loads all supported document files from the specified OneDrive drive
+        and return a list of Document objects.
 
         Returns:
             List[Document]: A list of Document objects

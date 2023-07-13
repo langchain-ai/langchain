@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
-from langchain.base_language import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
@@ -33,7 +33,7 @@ class BaseSQLDatabaseTool(BaseModel):
 class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
     """Tool for querying a SQL database."""
 
-    name = "query_sql_db"
+    name = "sql_db_query"
     description = """
     Input to this tool is a detailed and correct SQL query, output is a result from the database.
     If the query is not correct, an error message will be returned.
@@ -59,10 +59,9 @@ class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
 class InfoSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
     """Tool for getting metadata about a SQL database."""
 
-    name = "schema_sql_db"
+    name = "sql_db_schema"
     description = """
-    Input to this tool is a comma-separated list of tables, output is the schema and sample rows for those tables.
-    Be sure that the tables actually exist by calling list_tables_sql_db first!
+    Input to this tool is a comma-separated list of tables, output is the schema and sample rows for those tables.    
 
     Example Input: "table1, table2, table3"
     """
@@ -86,7 +85,7 @@ class InfoSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
 class ListSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
     """Tool for getting tables names."""
 
-    name = "list_tables_sql_db"
+    name = "sql_db_list_tables"
     description = "Input is an empty string, output is a comma separated list of tables in the database."
 
     def _run(
@@ -105,14 +104,14 @@ class ListSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
         raise NotImplementedError("ListTablesSqlDbTool does not support async")
 
 
-class QueryCheckerTool(BaseSQLDatabaseTool, BaseTool):
+class QuerySQLCheckerTool(BaseSQLDatabaseTool, BaseTool):
     """Use an LLM to check if a query is correct.
     Adapted from https://www.patterns.app/blog/2023/01/18/crunchbot-sql-analyst-gpt/"""
 
     template: str = QUERY_CHECKER
     llm: BaseLanguageModel
     llm_chain: LLMChain = Field(init=False)
-    name = "query_checker_sql_db"
+    name = "sql_db_query_checker"
     description = """
     Use this tool to double check if your query is correct before executing it.
     Always use this tool before executing a query with query_sql_db!

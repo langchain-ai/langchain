@@ -44,3 +44,19 @@ def test_on_llm_end_custom_model(handler: OpenAICallbackHandler) -> None:
     )
     handler.on_llm_end(response)
     assert handler.total_cost == 0
+
+
+def test_on_llm_end_finetuned_model(handler: OpenAICallbackHandler) -> None:
+    response = LLMResult(
+        generations=[],
+        llm_output={
+            "token_usage": {
+                "prompt_tokens": 2,
+                "completion_tokens": 1,
+                "total_tokens": 3,
+            },
+            "model_name": "ada:ft-your-org:custom-model-name-2022-02-15-04-21-04",
+        },
+    )
+    handler.on_llm_end(response)
+    assert handler.total_cost > 0

@@ -1,4 +1,4 @@
-"""Loader that loads data from JSON."""
+"""Loads data from JSON."""
 import json
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
@@ -8,8 +8,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class JSONLoader(BaseLoader):
-    """Loads a JSON file and references a jq schema provided to load the text into
-    documents.
+    """Loads a JSON file using a jq schema.
 
     Example:
         [{"text": ...}, {"text": ...}, {"text": ...}] -> schema = .[].text
@@ -24,11 +23,12 @@ class JSONLoader(BaseLoader):
         content_key: Optional[str] = None,
         metadata_func: Optional[Callable[[Dict, Dict], Dict]] = None,
         text_content: bool = True,
+        json_lines: bool = False,
     ):
         """Initialize the JSONLoader.
 
         Args:
-            file_path (Union[str, Path]): The path to the JSON file.
+            file_path (Union[str, Path]): The path to the JSON or JSON Lines file.
             jq_schema (str): The jq schema to use to extract the data or text from
                 the JSON.
             content_key (str): The key to use to extract the content from the JSON if
@@ -36,13 +36,15 @@ class JSONLoader(BaseLoader):
             metadata_func (Callable[Dict, Dict]): A function that takes in the JSON
                 object extracted by the jq_schema and the default metadata and returns
                 a dict of the updated metadata.
-            text_content (bool): Boolean flag to indicates whether the content is in
-                string format, default to True
+            text_content (bool): Boolean flag to indicate whether the content is in
+                string format, default to True.
+            json_lines (bool): Boolean flag to indicate whether the input is in
+                JSON Lines format.
         """
         try:
             import jq  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "jq package not found, please install it with `pip install jq`"
             )
 
@@ -51,10 +53,24 @@ class JSONLoader(BaseLoader):
         self._content_key = content_key
         self._metadata_func = metadata_func
         self._text_content = text_content
+        self._json_lines = json_lines
 
     def load(self) -> List[Document]:
         """Load and return documents from the JSON file."""
-        data = self._jq_schema.input(json.loads(self.file_path.read_text()))
+        docs: List[Document] = []
+        if self._json_lines:
+            with self.file_path.open(encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line:
+                        self._parse(line, docs)
+        else:
+            self._parse(self.file_path.read_text(), docs)
+        return docs
+
+    def _parse(self, content: str, docs: List[Document]) -> None:
+        """Convert given content to documents."""
+        data = self._jq_schema.input(json.loads(content))
 
         # Perform some validation
         # This is not a perfect validation, but it should catch most cases
@@ -62,16 +78,13 @@ class JSONLoader(BaseLoader):
         if self._content_key is not None:
             self._validate_content_key(data)
 
-        docs = []
-        for i, sample in enumerate(data, 1):
+        for i, sample in enumerate(data, len(docs) + 1):
             metadata = dict(
                 source=str(self.file_path),
                 seq_num=i,
             )
             text = self._get_text(sample=sample, metadata=metadata)
             docs.append(Document(page_content=text, metadata=metadata))
-
-        return docs
 
     def _get_text(self, sample: Any, metadata: dict) -> str:
         """Convert sample to string format"""
@@ -101,7 +114,7 @@ class JSONLoader(BaseLoader):
             return str(content) if content is not None else ""
 
     def _validate_content_key(self, data: Any) -> None:
-        """Check if content key is valid"""
+        """Check if a content key is valid"""
         sample = data.first()
         if not isinstance(sample, dict):
             raise ValueError(

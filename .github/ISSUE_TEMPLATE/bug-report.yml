@@ -46,7 +46,7 @@ body:
         - @agola11
 
         Tools / Toolkits
-        - @vowelparrot
+        - ...
 
       placeholder: "@Username ..."
 

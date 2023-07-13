@@ -9,12 +9,11 @@ from pydantic import Extra, Field, root_validator
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
     BaseCombineDocumentsChain,
-    format_document,
 )
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
-from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
+from langchain.schema import BasePromptTemplate, format_document
 
 
 def _get_default_document_prompt() -> PromptTemplate:
@@ -22,7 +21,55 @@ def _get_default_document_prompt() -> PromptTemplate:
 
 
 class RefineDocumentsChain(BaseCombineDocumentsChain):
-    """Combine documents by doing a first pass and then refining on more documents."""
+    """Combine documents by doing a first pass and then refining on more documents.
+
+    This algorithm first calls `initial_llm_chain` on the first document, passing
+    that first document in with the variable name `document_variable_name`, and
+    produces a new variable with the variable name `initial_response_name`.
+
+    Then, it loops over every remaining document. This is called the "refine" step.
+    It calls `refine_llm_chain`,
+    passing in that document with the variable name `document_variable_name`
+    as well as the previous response with the variable name `initial_response_name`.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.chains import RefineDocumentsChain, LLMChain
+            from langchain.prompts import PromptTemplate
+            from langchain.llms import OpenAI
+
+            # This controls how each document will be formatted. Specifically,
+            # it will be passed to `format_document` - see that function for more
+            # details.
+            document_prompt = PromptTemplate(
+                input_variables=["page_content"],
+                 template="{page_content}"
+            )
+            document_variable_name = "context"
+            llm = OpenAI()
+            # The prompt here should take as an input variable the
+            # `document_variable_name`
+            prompt = PromptTemplate.from_template(
+                "Summarize this content: {context}"
+            )
+            llm_chain = LLMChain(llm=llm, prompt=prompt)
+            initial_response_name = "prev_response"
+            # The prompt here should take as an input variable the
+            # `document_variable_name` as well as `initial_response_name`
+            prompt_refine = PromptTemplate.from_template(
+                "Here's your first summary: {prev_response}. "
+                "Now add to it based on the following context: {context}"
+            )
+            llm_chain_refine = LLMChain(llm=llm, prompt=prompt_refine)
+            chain = RefineDocumentsChain(
+                initial_llm_chain=initial_llm_chain,
+                refine_llm_chain=refine_llm_chain,
+                document_prompt=document_prompt,
+                document_variable_name=document_variable_name,
+                initial_response_name=initial_response_name,
+            )
+    """
 
     initial_llm_chain: LLMChain
     """LLM chain to use on initial document."""
@@ -36,7 +83,7 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
     document_prompt: BasePromptTemplate = Field(
         default_factory=_get_default_document_prompt
     )
-    """Prompt to use to format each document."""
+    """Prompt to use to format each document, gets passed to `format_document`."""
     return_intermediate_steps: bool = False
     """Return the results of the refine steps in the output."""
 
@@ -89,7 +136,18 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
     def combine_docs(
         self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
     ) -> Tuple[str, dict]:
-        """Combine by mapping first chain over all, then stuffing into final chain."""
+        """Combine by mapping first chain over all, then stuffing into final chain.
+
+        Args:
+            docs: List of documents to combine
+            callbacks: Callbacks to be passed through
+            **kwargs: additional parameters to be passed to LLM calls (like other
+                input variables besides the documents)
+
+        Returns:
+            The first element returned is the single string output. The second
+            element returned is a dictionary of other keys to return.
+        """
         inputs = self._construct_initial_inputs(docs, **kwargs)
         res = self.initial_llm_chain.predict(callbacks=callbacks, **inputs)
         refine_steps = [res]
@@ -103,7 +161,18 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
     async def acombine_docs(
         self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
     ) -> Tuple[str, dict]:
-        """Combine by mapping first chain over all, then stuffing into final chain."""
+        """Combine by mapping first chain over all, then stuffing into final chain.
+
+        Args:
+            docs: List of documents to combine
+            callbacks: Callbacks to be passed through
+            **kwargs: additional parameters to be passed to LLM calls (like other
+                input variables besides the documents)
+
+        Returns:
+            The first element returned is the single string output. The second
+            element returned is a dictionary of other keys to return.
+        """
         inputs = self._construct_initial_inputs(docs, **kwargs)
         res = await self.initial_llm_chain.apredict(callbacks=callbacks, **inputs)
         refine_steps = [res]

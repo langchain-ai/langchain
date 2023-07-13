@@ -1,5 +1,5 @@
-"""
-Loader that loads image captions
+"""Loads image captions.
+
 By default, the loader utilizes the pre-trained BLIP image captioning model.
 https://huggingface.co/Salesforce/blip-image-captioning-base
 
@@ -13,7 +13,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class ImageCaptionLoader(BaseLoader):
-    """Loader that loads the captions of an image"""
+    """Loads the captions of an image"""
 
     def __init__(
         self,
@@ -23,6 +23,11 @@ class ImageCaptionLoader(BaseLoader):
     ):
         """
         Initialize with a list of image paths
+
+        Args:
+            path_images: A list of image paths.
+            blip_processor: The name of the pre-trained BLIP processor.
+            blip_model: The name of the pre-trained BLIP model.
         """
         if isinstance(path_images, str):
             self.image_paths = [path_images]
@@ -39,7 +44,7 @@ class ImageCaptionLoader(BaseLoader):
         try:
             from transformers import BlipForConditionalGeneration, BlipProcessor
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "`transformers` package not found, please install with "
                 "`pip install transformers`."
             )
@@ -66,7 +71,7 @@ class ImageCaptionLoader(BaseLoader):
         try:
             from PIL import Image
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "`PIL` package not found, please install with `pip install pillow`"
             )
 

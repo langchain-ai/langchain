@@ -48,13 +48,15 @@ class ManifestWrapper(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call out to LLM through Manifest."""
         if stop is not None and len(stop) != 1:
             raise NotImplementedError(
                 f"Manifest currently only supports a single stop token, got {stop}"
             )
-        kwargs = self.llm_kwargs or {}
+        params = self.llm_kwargs or {}
+        params = {**params, **kwargs}
         if stop is not None:
-            kwargs["stop_token"] = stop
-        return self.client.run(prompt, **kwargs)
+            params["stop_token"] = stop
+        return self.client.run(prompt, **params)

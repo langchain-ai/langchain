@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 from enum import Enum
 from functools import partial
-from typing import Any, Optional, Type, Union
+from typing import Any, List, Optional, Type, Union
 
 import pytest
 from pydantic import BaseModel
@@ -13,7 +13,13 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain.tools.base import BaseTool, SchemaAnnotationError, StructuredTool
+from langchain.tools.base import (
+    BaseTool,
+    SchemaAnnotationError,
+    StructuredTool,
+    ToolException,
+)
+from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
 def test_unnamed_decorator() -> None:
@@ -78,7 +84,7 @@ def test_unannotated_base_tool_raises_error() -> None:
 
 
 def test_misannotated_base_tool_raises_error() -> None:
-    """Test that a BaseTool with the incorrrect typehint raises an exception.""" ""
+    """Test that a BaseTool with the incorrect typehint raises an exception.""" ""
     with pytest.raises(SchemaAnnotationError):
 
         class _MisAnnotatedTool(BaseTool):
@@ -226,7 +232,7 @@ def test_structured_args_decorator_no_infer_schema() -> None:
     assert isinstance(structured_tool_input, BaseTool)
     assert structured_tool_input.name == "structured_tool_input"
     args = {"arg1": 1, "arg2": 0.001, "opt_arg": {"foo": "bar"}}
-    with pytest.raises(ValueError):
+    with pytest.raises(ToolException):
         assert structured_tool_input.run(args)
 
 
@@ -310,6 +316,72 @@ def test_tool_lambda_args_schema() -> None:
     assert tool.args == expected_args
 
 
+def test_structured_tool_from_function_docstring() -> None:
+    """Test that structured tools can be created from functions."""
+
+    def foo(bar: int, baz: str) -> str:
+        """Docstring
+        Args:
+            bar: int
+            baz: str
+        """
+        raise NotImplementedError()
+
+    structured_tool = StructuredTool.from_function(foo)
+    assert structured_tool.name == "foo"
+    assert structured_tool.args == {
+        "bar": {"title": "Bar", "type": "integer"},
+        "baz": {"title": "Baz", "type": "string"},
+    }
+
+    assert structured_tool.args_schema.schema() == {
+        "properties": {
+            "bar": {"title": "Bar", "type": "integer"},
+            "baz": {"title": "Baz", "type": "string"},
+        },
+        "title": "fooSchemaSchema",
+        "type": "object",
+        "required": ["bar", "baz"],
+    }
+
+    prefix = "foo(bar: int, baz: str) -> str - "
+    assert foo.__doc__ is not None
+    assert structured_tool.description == prefix + foo.__doc__.strip()
+
+
+def test_structured_tool_from_function_docstring_complex_args() -> None:
+    """Test that structured tools can be created from functions."""
+
+    def foo(bar: int, baz: List[str]) -> str:
+        """Docstring
+        Args:
+            bar: int
+            baz: List[str]
+        """
+        raise NotImplementedError()
+
+    structured_tool = StructuredTool.from_function(foo)
+    assert structured_tool.name == "foo"
+    assert structured_tool.args == {
+        "bar": {"title": "Bar", "type": "integer"},
+        "baz": {"title": "Baz", "type": "array", "items": {"type": "string"}},
+    }
+
+    assert structured_tool.args_schema.schema() == {
+        "properties": {
+            "bar": {"title": "Bar", "type": "integer"},
+            "baz": {"title": "Baz", "type": "array", "items": {"type": "string"}},
+        },
+        "title": "fooSchemaSchema",
+        "type": "object",
+        "required": ["bar", "baz"],
+    }
+
+    prefix = "foo(bar: int, baz: List[str]) -> str - "
+    assert foo.__doc__ is not None
+    assert structured_tool.description == prefix + foo.__doc__.strip()
+
+
 def test_structured_tool_lambda_multi_args_schema() -> None:
     """Test args schema inference when the tool argument is a lambda function."""
     tool = StructuredTool.from_function(
@@ -353,6 +425,64 @@ def test_empty_args_decorator() -> None:
     assert empty_tool_input.name == "empty_tool_input"
     assert empty_tool_input.args == {}
     assert empty_tool_input.run({}) == "the empty result"
+
+
+def test_tool_from_function_with_run_manager() -> None:
+    """Test run of tool when using run_manager."""
+
+    def foo(bar: str, callbacks: Optional[CallbackManagerForToolRun] = None) -> str:
+        """Docstring
+        Args:
+            bar: str
+        """
+        assert callbacks is not None
+        return "foo" + bar
+
+    handler = FakeCallbackHandler()
+    tool = Tool.from_function(foo, name="foo", description="Docstring")
+
+    assert tool.run(tool_input={"bar": "bar"}, run_manager=[handler]) == "foobar"
+    assert tool.run("baz", run_manager=[handler]) == "foobaz"
+
+
+def test_structured_tool_from_function_with_run_manager() -> None:
+    """Test args and schema of structured tool when using callbacks."""
+
+    def foo(
+        bar: int, baz: str, callbacks: Optional[CallbackManagerForToolRun] = None
+    ) -> str:
+        """Docstring
+        Args:
+            bar: int
+            baz: str
+        """
+        assert callbacks is not None
+        return str(bar) + baz
+
+    handler = FakeCallbackHandler()
+    structured_tool = StructuredTool.from_function(foo)
+
+    assert structured_tool.args == {
+        "bar": {"title": "Bar", "type": "integer"},
+        "baz": {"title": "Baz", "type": "string"},
+    }
+
+    assert structured_tool.args_schema.schema() == {
+        "properties": {
+            "bar": {"title": "Bar", "type": "integer"},
+            "baz": {"title": "Baz", "type": "string"},
+        },
+        "title": "fooSchemaSchema",
+        "type": "object",
+        "required": ["bar", "baz"],
+    }
+
+    assert (
+        structured_tool.run(
+            tool_input={"bar": "10", "baz": "baz"}, run_manger=[handler]
+        )
+        == "10baz"
+    )
 
 
 def test_named_tool_decorator() -> None:
@@ -434,7 +564,7 @@ def test_tool_with_kwargs() -> None:
 
 def test_missing_docstring() -> None:
     """Test error is raised when docstring is missing."""
-    # expect to throw a value error if theres no docstring
+    # expect to throw a value error if there's no docstring
     with pytest.raises(AssertionError, match="Function must have a docstring"):
 
         @tool
@@ -479,3 +609,108 @@ async def test_create_async_tool() -> None:
     assert test_tool.description == "test_description"
     assert test_tool.coroutine is not None
     assert await test_tool.arun("foo") == "foo"
+
+
+class _FakeExceptionTool(BaseTool):
+    name = "exception"
+    description = "an exception-throwing tool"
+    exception: Exception = ToolException()
+
+    def _run(self) -> str:
+        raise self.exception
+
+    async def _arun(self) -> str:
+        raise self.exception
+
+
+def test_exception_handling_bool() -> None:
+    _tool = _FakeExceptionTool(handle_tool_error=True)
+    expected = "Tool execution error"
+    actual = _tool.run({})
+    assert expected == actual
+
+
+def test_exception_handling_str() -> None:
+    expected = "foo bar"
+    _tool = _FakeExceptionTool(handle_tool_error=expected)
+    actual = _tool.run({})
+    assert expected == actual
+
+
+def test_exception_handling_callable() -> None:
+    expected = "foo bar"
+    handling = lambda _: expected  # noqa: E731
+    _tool = _FakeExceptionTool(handle_tool_error=handling)
+    actual = _tool.run({})
+    assert expected == actual
+
+
+def test_exception_handling_non_tool_exception() -> None:
+    _tool = _FakeExceptionTool(exception=ValueError())
+    with pytest.raises(ValueError):
+        _tool.run({})
+
+
+@pytest.mark.asyncio
+async def test_async_exception_handling_bool() -> None:
+    _tool = _FakeExceptionTool(handle_tool_error=True)
+    expected = "Tool execution error"
+    actual = await _tool.arun({})
+    assert expected == actual
+
+
+@pytest.mark.asyncio
+async def test_async_exception_handling_str() -> None:
+    expected = "foo bar"
+    _tool = _FakeExceptionTool(handle_tool_error=expected)
+    actual = await _tool.arun({})
+    assert expected == actual
+
+
+@pytest.mark.asyncio
+async def test_async_exception_handling_callable() -> None:
+    expected = "foo bar"
+    handling = lambda _: expected  # noqa: E731
+    _tool = _FakeExceptionTool(handle_tool_error=handling)
+    actual = await _tool.arun({})
+    assert expected == actual
+
+
+@pytest.mark.asyncio
+async def test_async_exception_handling_non_tool_exception() -> None:
+    _tool = _FakeExceptionTool(exception=ValueError())
+    with pytest.raises(ValueError):
+        await _tool.arun({})
+
+
+def test_structured_tool_from_function() -> None:
+    """Test that structured tools can be created from functions."""
+
+    def foo(bar: int, baz: str) -> str:
+        """Docstring
+        Args:
+            bar: int
+            baz: str
+        """
+        raise NotImplementedError()
+
+    structured_tool = StructuredTool.from_function(foo)
+    assert structured_tool.name == "foo"
+    assert structured_tool.args == {
+        "bar": {"title": "Bar", "type": "integer"},
+        "baz": {"title": "Baz", "type": "string"},
+    }
+
+    assert structured_tool.args_schema.schema() == {
+        "title": "fooSchemaSchema",
+        "type": "object",
+        "properties": {
+            "bar": {"title": "Bar", "type": "integer"},
+            "baz": {"title": "Baz", "type": "string"},
+        },
+        "required": ["bar", "baz"],
+    }
+
+    prefix = "foo(bar: int, baz: str) -> str - "
+    assert foo.__doc__ is not None
+    assert structured_tool.description == prefix + foo.__doc__.strip()

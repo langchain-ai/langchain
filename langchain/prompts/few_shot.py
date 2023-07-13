@@ -15,6 +15,10 @@ from langchain.prompts.prompt import PromptTemplate
 class FewShotPromptTemplate(StringPromptTemplate):
     """Prompt template that contains few shot examples."""
 
+    @property
+    def lc_serializable(self) -> bool:
+        return False
+
     examples: Optional[List[dict]] = None
     """Examples to format into the prompt.
     Either this or example_selector should be provided."""

@@ -70,6 +70,29 @@ def test_blob_from_str_path() -> None:
             assert bytes_io.read() == content
 
 
+def test_blob_from_str_data() -> None:
+    """Test reading blob from a file path."""
+    content = b"Hello, World!"
+    blob = Blob.from_data(content)
+    assert blob.encoding == "utf-8"  # Default encoding
+    assert blob.path is None
+    assert blob.mimetype is None
+    assert blob.source is None
+    assert blob.data == b"Hello, World!"
+    assert blob.as_bytes() == content
+    assert blob.as_string() == "Hello, World!"
+    with blob.as_bytes_io() as bytes_io:
+        assert bytes_io.read() == content
+
+
+def test_blob_mimetype_from_str_data() -> None:
+    """Test reading blob from a file path."""
+    content = b"Hello, World!"
+    mimetype = "text/html"
+    blob = Blob.from_data(content, mime_type=mimetype)
+    assert blob.mimetype == mimetype
+
+
 @pytest.mark.parametrize(
     "path, mime_type, guess_type, expected_mime_type",
     [

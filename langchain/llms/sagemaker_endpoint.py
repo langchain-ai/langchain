@@ -14,7 +14,7 @@ OUTPUT_TYPE = TypeVar("OUTPUT_TYPE", bound=Union[str, List[List[float]]])
 
 class ContentHandlerBase(Generic[INPUT_TYPE, OUTPUT_TYPE]):
     """A handler class to transform input from LLM to a
-    format that SageMaker endpoint expects. Similarily,
+    format that SageMaker endpoint expects. Similarly,
     the class also handles transforming output from the
     SageMaker endpoint to a format that LLM class expects.
     """
@@ -182,7 +182,7 @@ class SagemakerEndpoint(LLM):
                 ) from e
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import boto3 python package. "
                 "Please install it with `pip install boto3`."
             )
@@ -207,6 +207,7 @@ class SagemakerEndpoint(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call out to Sagemaker inference endpoint.
 
@@ -223,6 +224,7 @@ class SagemakerEndpoint(LLM):
                 response = se("Tell me a joke.")
         """
         _model_kwargs = self.model_kwargs or {}
+        _model_kwargs = {**_model_kwargs, **kwargs}
         _endpoint_kwargs = self.endpoint_kwargs or {}
 
         body = self.content_handler.transform_input(prompt, _model_kwargs)

@@ -14,7 +14,6 @@ from pydantic import BaseModel, root_validator
 
 from langchain.agents.agent_types import AgentType
 from langchain.agents.tools import InvalidTool
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -26,16 +25,17 @@ from langchain.callbacks.manager import (
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.input import get_color_mapping
-from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
     AgentAction,
     AgentFinish,
-    BaseMessage,
     BaseOutputParser,
+    BasePromptTemplate,
     OutputParserException,
 )
+from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema.messages import BaseMessage
 from langchain.tools.base import BaseTool
 from langchain.utilities.asyncio import asyncio_timeout
 
@@ -621,14 +621,47 @@ class AgentExecutor(Chain):
     """Consists of an agent using tools."""
 
     agent: Union[BaseSingleActionAgent, BaseMultiActionAgent]
+    """The agent to run for creating a plan and determining actions
+    to take at each step of the execution loop."""
     tools: Sequence[BaseTool]
+    """The valid tools the agent can call."""
     return_intermediate_steps: bool = False
+    """Whether to return the agent's trajectory of intermediate steps
+    at the end in addition to the final output."""
     max_iterations: Optional[int] = 15
+    """The maximum number of steps to take before ending the execution
+    loop.
+    
+    Setting to 'None' could lead to an infinite loop."""
     max_execution_time: Optional[float] = None
+    """The maximum amount of wall clock time to spend in the execution
+    loop.
+    """
     early_stopping_method: str = "force"
+    """The method to use for early stopping if the agent never
+    returns `AgentFinish`. Either 'force' or 'generate'.
+
+    `"force"` returns a string saying that it stopped because it met a
+        time or iteration limit.
+    
+    `"generate"` calls the agent's LLM Chain one final time to generate
+        a final answer based on the previous steps.
+    """
     handle_parsing_errors: Union[
         bool, str, Callable[[OutputParserException], str]
     ] = False
+    """How to handle errors raised by the agent's output parser.
+    Defaults to `False`, which raises the error.
+s
+    If `true`, the error will be sent back to the LLM as an observation.
+    If a string, the string itself will be sent to the LLM as an observation.
+    If a callable function, the function will be called with the exception
+     as an argument, and the result of that function will be passed to the agent
+      as an observation.
+    """
+    trim_intermediate_steps: Union[
+        int, Callable[[List[Tuple[AgentAction, str]]], List[Tuple[AgentAction, str]]]
+    ] = -1
 
     @classmethod
     def from_agent_and_tools(
@@ -758,6 +791,8 @@ class AgentExecutor(Chain):
         Override this to take control of how the agent makes and acts on choices.
         """
         try:
+            intermediate_steps = self._prepare_intermediate_steps(intermediate_steps)
+
             # Call the LLM to see what to do.
             output = self.agent.plan(
                 intermediate_steps,
@@ -773,7 +808,11 @@ class AgentExecutor(Chain):
                 raise e
             text = str(e)
             if isinstance(self.handle_parsing_errors, bool):
-                observation = "Invalid or incomplete response"
+                if e.send_to_llm:
+                    observation = str(e.observation)
+                    text = str(e.llm_output)
+                else:
+                    observation = "Invalid or incomplete response"
             elif isinstance(self.handle_parsing_errors, str):
                 observation = self.handle_parsing_errors
             elif callable(self.handle_parsing_errors):
@@ -781,6 +820,8 @@ class AgentExecutor(Chain):
             else:
                 raise ValueError("Got unexpected type of `handle_parsing_errors`")
             output = AgentAction("_Exception", observation, text)
+            if run_manager:
+                run_manager.on_agent_action(output, color="green")
             tool_run_kwargs = self.agent.tool_run_logging_kwargs()
             observation = ExceptionTool().run(
                 output.tool_input,
@@ -843,6 +884,8 @@ class AgentExecutor(Chain):
         Override this to take control of how the agent makes and acts on choices.
         """
         try:
+            intermediate_steps = self._prepare_intermediate_steps(intermediate_steps)
+
             # Call the LLM to see what to do.
             output = await self.agent.aplan(
                 intermediate_steps,
@@ -858,7 +901,11 @@ class AgentExecutor(Chain):
                 raise e
             text = str(e)
             if isinstance(self.handle_parsing_errors, bool):
-                observation = "Invalid or incomplete response"
+                if e.send_to_llm:
+                    observation = str(e.observation)
+                    text = str(e.llm_output)
+                else:
+                    observation = "Invalid or incomplete response"
             elif isinstance(self.handle_parsing_errors, str):
                 observation = self.handle_parsing_errors
             elif callable(self.handle_parsing_errors):
@@ -935,7 +982,7 @@ class AgentExecutor(Chain):
         name_to_tool_map = {tool.name: tool for tool in self.tools}
         # We construct a mapping from each tool to a color, used for logging.
         color_mapping = get_color_mapping(
-            [tool.name for tool in self.tools], excluded_colors=["green"]
+            [tool.name for tool in self.tools], excluded_colors=["green", "red"]
         )
         intermediate_steps: List[Tuple[AgentAction, str]] = []
         # Let's start tracking the number of iterations and time elapsed
@@ -1048,3 +1095,16 @@ class AgentExecutor(Chain):
                     "",
                 )
         return None
+
+    def _prepare_intermediate_steps(
+        self, intermediate_steps: List[Tuple[AgentAction, str]]
+    ) -> List[Tuple[AgentAction, str]]:
+        if (
+            isinstance(self.trim_intermediate_steps, int)
+            and self.trim_intermediate_steps > 0
+        ):
+            return intermediate_steps[-self.trim_intermediate_steps :]
+        elif callable(self.trim_intermediate_steps):
+            return self.trim_intermediate_steps(intermediate_steps)
+        else:
+            return intermediate_steps

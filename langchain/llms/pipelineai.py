@@ -23,6 +23,7 @@ class PipelineAI(LLM, BaseModel):
 
     Example:
         .. code-block:: python
+
             from langchain import PipelineAI
             pipeline = PipelineAI(pipeline_key="")
     """
@@ -52,7 +53,7 @@ class PipelineAI(LLM, BaseModel):
                 if field_name in extra:
                     raise ValueError(f"Found {field_name} supplied twice.")
                 logger.warning(
-                    f"""{field_name} was transfered to pipeline_kwargs.
+                    f"""{field_name} was transferred to pipeline_kwargs.
                     Please confirm that {field_name} is what you intended."""
                 )
                 extra[field_name] = values.pop(field_name)
@@ -86,6 +87,7 @@ class PipelineAI(LLM, BaseModel):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call to Pipeline Cloud endpoint."""
         try:
@@ -97,6 +99,7 @@ class PipelineAI(LLM, BaseModel):
             )
         client = PipelineCloud(token=self.pipeline_api_key)
         params = self.pipeline_kwargs or {}
+        params = {**params, **kwargs}
 
         run = client.run_pipeline(self.pipeline_key, [prompt, params])
         try:

@@ -1,49 +1,75 @@
 """Wrapper around weaviate vector database."""
+
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 from uuid import uuid4
 
-from pydantic import Extra
+from pydantic import root_validator
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.docstore.document import Document
 from langchain.schema import BaseRetriever
 
 
 class WeaviateHybridSearchRetriever(BaseRetriever):
-    def __init__(
-        self,
-        client: Any,
-        index_name: str,
-        text_key: str,
-        alpha: float = 0.5,
-        k: int = 4,
-        attributes: Optional[List[str]] = None,
-    ):
+    """Retriever that uses Weaviate's hybrid search to retrieve documents."""
+
+    client: Any
+    """keyword arguments to pass to the Weaviate client."""
+    index_name: str
+    """The name of the index to use."""
+    text_key: str
+    """The name of the text key to use."""
+    alpha: float = 0.5
+    """The weight of the text key in the hybrid search."""
+    k: int = 4
+    """The number of results to return."""
+    attributes: List[str]
+    """The attributes to return in the results."""
+    create_schema_if_missing: bool = True
+    """Whether to create the schema if it doesn't exist."""
+
+    @root_validator(pre=True)
+    def validate_client(
+        cls,
+        values: Dict[str, Any],
+    ) -> Dict[str, Any]:
         try:
             import weaviate
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import weaviate python package. "
                 "Please install it with `pip install weaviate-client`."
             )
-        if not isinstance(client, weaviate.Client):
+        if not isinstance(values["client"], weaviate.Client):
+            client = values["client"]
             raise ValueError(
                 f"client should be an instance of weaviate.Client, got {type(client)}"
             )
-        self._client = client
-        self.k = k
-        self.alpha = alpha
-        self._index_name = index_name
-        self._text_key = text_key
-        self._query_attrs = [self._text_key]
-        if attributes is not None:
-            self._query_attrs.extend(attributes)
+        if values["attributes"] is None:
+            values["attributes"] = []
+
+        cast(List, values["attributes"]).append(values["text_key"])
+
+        if values["create_schema_if_missing"]:
+            class_obj = {
+                "class": values["index_name"],
+                "properties": [{"name": values["text_key"], "dataType": ["text"]}],
+                "vectorizer": "text2vec-openai",
+            }
+
+            if not values["client"].schema.exists(values["index_name"]):
+                values["client"].schema.create_class(class_obj)
+
+        return values
 
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.forbid
         arbitrary_types_allowed = True
 
     # added text_key
@@ -51,11 +77,11 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
         """Upload documents to Weaviate."""
         from weaviate.util import get_valid_uuid
 
-        with self._client.batch as batch:
+        with self.client.batch as batch:
             ids = []
             for i, doc in enumerate(docs):
                 metadata = doc.metadata or {}
-                data_properties = {self._text_key: doc.page_content, **metadata}
+                data_properties = {self.text_key: doc.page_content, **metadata}
 
                 # If the UUID of one of the objects already exists
                 # then the existing objectwill be replaced by the new object.
@@ -64,15 +90,19 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
                 else:
                     _id = get_valid_uuid(uuid4())
 
-                batch.add_data_object(data_properties, self._index_name, _id)
+                batch.add_data_object(data_properties, self.index_name, _id)
                 ids.append(_id)
         return ids
 
-    def get_relevant_documents(
-        self, query: str, where_filter: Optional[Dict[str, object]] = None
+    def _get_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: CallbackManagerForRetrieverRun,
+        where_filter: Optional[Dict[str, object]] = None,
     ) -> List[Document]:
         """Look up similar documents in Weaviate."""
-        query_obj = self._client.query.get(self._index_name, self._query_attrs)
+        query_obj = self.client.query.get(self.index_name, self.attributes)
         if where_filter:
             query_obj = query_obj.with_where(where_filter)
 
@@ -82,12 +112,12 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
 
         docs = []
 
-        for res in result["data"]["Get"][self._index_name]:
-            text = res.pop(self._text_key)
+        for res in result["data"]["Get"][self.index_name]:
+            text = res.pop(self.text_key)
             docs.append(Document(page_content=text, metadata=res))
         return docs
 
-    async def aget_relevant_documents(
-        self, query: str, where_filter: Optional[Dict[str, object]] = None
+    async def _aget_relevant_documents(
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         raise NotImplementedError

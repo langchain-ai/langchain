@@ -5,7 +5,7 @@ import pytest
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
-from langchain.schema import BaseMemory
+from langchain.schema import RUN_KEY, BaseMemory
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
@@ -70,6 +70,15 @@ def test_bad_outputs() -> None:
     chain = FakeChain(be_correct=False)
     with pytest.raises(ValueError):
         chain({"foo": "baz"})
+
+
+def test_run_info() -> None:
+    """Test that run_info is returned properly when specified"""
+    chain = FakeChain()
+    output = chain({"foo": "bar"}, include_run_info=True)
+    assert "foo" in output
+    assert "bar" in output
+    assert RUN_KEY in output
 
 
 def test_correct_call() -> None:
