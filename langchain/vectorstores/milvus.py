@@ -141,7 +141,7 @@ class Milvus(VectorStore):
         self._primary_field = "pk"
         # In order for compatiblility, the text field will need to be called "text"
         self._text_field = "text"
-        # In order for compatbility, the vector field needs to be called "vector"
+        # In order for compatibility, the vector field needs to be called "vector"
         self._vector_field = "vector"
         self.fields: list[str] = []
         # Create the connection to the server
@@ -150,7 +150,7 @@ class Milvus(VectorStore):
         self.alias = self._create_connection_alias(connection_args)
         self.col: Optional[Collection] = None
 
-        # Grab the existing colection if it exists
+        # Grab the existing collection if it exists
         if utility.has_collection(self.collection_name, using=self.alias):
             self.col = Collection(
                 self.collection_name,
@@ -206,7 +206,7 @@ class Milvus(VectorStore):
                     logger.debug("Using previous connection: %s", con[0])
                     return con[0]
 
-        # Generate a new connection if one doesnt exist
+        # Generate a new connection if one doesn't exist
         alias = uuid4().hex
         try:
             connections.connect(alias=alias, **connection_args)
@@ -247,7 +247,7 @@ class Milvus(VectorStore):
             for key, value in metadatas[0].items():
                 # Infer the corresponding datatype of the metadata
                 dtype = infer_dtype_bydata(value)
-                # Datatype isnt compatible
+                # Datatype isn't compatible
                 if dtype == DataType.UNKNOWN or dtype == DataType.NONE:
                     logger.error(
                         "Failure to create collection, unrecognized dtype for key: %s",
@@ -423,7 +423,7 @@ class Milvus(VectorStore):
             logger.debug("Nothing to insert, skipping.")
             return []
 
-        # If the collection hasnt been initialized yet, perform all steps to do so
+        # If the collection hasn't been initialized yet, perform all steps to do so
         if not isinstance(self.col, Collection):
             self._init(embeddings, metadatas)
 
@@ -545,7 +545,7 @@ class Milvus(VectorStore):
 
         Args:
             query (str): The text being searched.
-            k (int, optional): The amount of results ot return. Defaults to 4.
+            k (int, optional): The amount of results to return. Defaults to 4.
             param (dict): The search params for the specified index.
                 Defaults to None.
             expr (str, optional): Filtering expression. Defaults to None.
@@ -585,7 +585,7 @@ class Milvus(VectorStore):
 
         Args:
             embedding (List[float]): The embedding vector being searched.
-            k (int, optional): The amount of results ot return. Defaults to 4.
+            k (int, optional): The amount of results to return. Defaults to 4.
             param (dict): The search params for the specified index.
                 Defaults to None.
             expr (str, optional): Filtering expression. Defaults to None.
