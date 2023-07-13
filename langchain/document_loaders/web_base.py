@@ -117,7 +117,6 @@ class WebBaseLoader(BaseLoader):
                         headers=self.session.headers,
                         ssl=None if self.session.verify else False,
                     ) as response:
-                        # return await response.text()
                         return await response.content.read()
                 except aiohttp.ClientConnectionError as e:
                     if i == retries - 1:
