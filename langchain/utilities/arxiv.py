@@ -135,7 +135,7 @@ class ArxivAPIWrapper(BaseModel):
                 "Title": result.title,
                 "Authors": ", ".join(a.name for a in result.authors),
                 "Summary": result.summary,
-                "Source":f"https://arxiv.org/pdf/{result.entry_id.split('/')[-1]}.pdf",
+                "Source": f"https://arxiv.org/pdf/{result.entry_id.split('/')[-1]}.pdf",
                 **extra_metadata,
             }
             doc = Document(
