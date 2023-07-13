@@ -1,16 +1,27 @@
 """A tracer that runs evaluators over completed runs."""
+from __future__ import annotations
+
 import logging
 from concurrent.futures import Future, ThreadPoolExecutor, wait
-from typing import Any, Optional, Sequence, Set, Union
+from typing import Any, List, Optional, Sequence, Set, Union
 from uuid import UUID
 
-from langchainplus_sdk import LangChainPlusClient, RunEvaluator
+from langsmith import Client, RunEvaluator
 
 from langchain.callbacks.manager import tracing_v2_enabled
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import Run
 
 logger = logging.getLogger(__name__)
+
+_TRACERS: List[EvaluatorCallbackHandler] = []
+
+
+def wait_for_all_evaluators() -> None:
+    """Wait for all tracers to finish."""
+    global _TRACERS
+    for tracer in _TRACERS:
+        tracer.wait_for_futures()
 
 
 class EvaluatorCallbackHandler(BaseTracer):
@@ -23,8 +34,8 @@ class EvaluatorCallbackHandler(BaseTracer):
     max_workers : int, optional
         The maximum number of worker threads to use for running the evaluators.
         If not specified, it will default to the number of evaluators.
-    client : LangChainPlusClient, optional
-        The LangChainPlusClient instance to use for evaluating the runs.
+    client : LangSmith Client, optional
+        The LangSmith client instance to use for evaluating the runs.
         If not specified, a new instance will be created.
     example_id : Union[UUID, str], optional
         The example ID to be associated with the runs.
@@ -35,8 +46,8 @@ class EvaluatorCallbackHandler(BaseTracer):
     ----------
     example_id : Union[UUID, None]
         The example ID associated with the runs.
-    client : LangChainPlusClient
-        The LangChainPlusClient instance used for evaluating the runs.
+    client : Client
+        The LangSmith client instance used for evaluating the runs.
     evaluators : Sequence[RunEvaluator]
         The sequence of run evaluators to be executed.
     executor : ThreadPoolExecutor
@@ -56,7 +67,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         self,
         evaluators: Sequence[RunEvaluator],
         max_workers: Optional[int] = None,
-        client: Optional[LangChainPlusClient] = None,
+        client: Optional[Client] = None,
         example_id: Optional[Union[UUID, str]] = None,
         skip_unfinished: bool = True,
         project_name: Optional[str] = None,
@@ -66,7 +77,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         self.example_id = (
             UUID(example_id) if isinstance(example_id, str) else example_id
         )
-        self.client = client or LangChainPlusClient()
+        self.client = client or Client()
         self.evaluators = evaluators
         self.executor = ThreadPoolExecutor(
             max_workers=max(max_workers or len(evaluators), 1)
@@ -74,6 +85,8 @@ class EvaluatorCallbackHandler(BaseTracer):
         self.futures: Set[Future] = set()
         self.skip_unfinished = skip_unfinished
         self.project_name = project_name
+        global _TRACERS
+        _TRACERS.append(self)
 
     def _evaluate_in_project(self, run: Run, evaluator: RunEvaluator) -> None:
         """Evaluate the run in the project.
