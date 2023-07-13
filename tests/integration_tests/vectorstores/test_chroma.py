@@ -281,3 +281,21 @@ def test_init_from_client_settings() -> None:
 
     client_settings = chromadb.config.Settings()
     Chroma(client_settings=client_settings)
+
+
+def test_chroma_add_documents_no_metadata() -> None:
+    db = Chroma(embedding_function=FakeEmbeddings())
+    db.add_documents([Document(page_content="foo")])
+
+
+def test_chroma_add_documents_mixed_metadata() -> None:
+    db = Chroma(embedding_function=FakeEmbeddings())
+    docs = [
+        Document(page_content="foo"),
+        Document(page_content="bar", metadata={"baz": 1}),
+    ]
+    db.add_documents(docs)
+    search = db.similarity_search("foo bar")
+    assert sorted(search, key=lambda d: d.page_content) == sorted(
+        docs, key=lambda d: d.page_content
+    )
