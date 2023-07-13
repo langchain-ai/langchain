@@ -81,6 +81,12 @@ format format_diff:
 	poetry run black $(PYTHON_FILES)
 	poetry run ruff --select I --fix $(PYTHON_FILES)
 
+spell_check:
+	poetry run codespell --toml pyproject.toml
+
+spell_fix:
+	poetry run codespell --toml pyproject.toml -w
+
 ######################
 # HELP
 ######################

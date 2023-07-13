@@ -1,4 +1,4 @@
-"""Test Clarifai vectore store functionality."""
+"""Test Clarifai vector store functionality."""
 import time
 
 from langchain.docstore.document import Document
