@@ -698,6 +698,9 @@ class FAISS(VectorStore):
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs and their similarity scores on a scale from 0 to 1."""
+        # Pop score threshold so that only relevancy scores, not raw scores, are
+        # filtered.
+        score_threshold = kwargs.pop("score_threshold", None)
         relevance_score_fn = self._select_relevance_score_fn()
         if relevance_score_fn is None:
             raise ValueError(
@@ -711,4 +714,13 @@ class FAISS(VectorStore):
             fetch_k=fetch_k,
             **kwargs,
         )
-        return [(doc, relevance_score_fn(score)) for doc, score in docs_and_scores]
+        docs_and_rel_scores = [
+            (doc, relevance_score_fn(score)) for doc, score in docs_and_scores
+        ]
+        if score_threshold is not None:
+            docs_and_rel_scores = [
+                (doc, similarity)
+                for doc, similarity in docs_and_rel_scores
+                if similarity >= score_threshold
+            ]
+        return docs_and_rel_scores
