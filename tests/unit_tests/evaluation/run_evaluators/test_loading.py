@@ -1,4 +1,4 @@
-"""Test the loading function for evalutors."""
+"""Test the loading function for evaluators."""
 
 from unittest.mock import MagicMock
 
