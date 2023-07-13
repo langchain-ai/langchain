@@ -101,7 +101,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         return (
             f"Ignoring reference in {self.__class__.__name__}, as it is not expected."
             "\nTo use a reference, use the LabeledPairwiseStringEvalChain"
-            " (labeled_pairwise_string evaluator) instead."
+            " (EvaluatorType.LABELED_PAIRWISE_STRING) instead."
         )
 
     @classmethod
