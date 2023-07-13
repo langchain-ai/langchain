@@ -164,7 +164,7 @@ def _get_search_client(
         )
         index_client.create_index(index)
     # Create the search client
-    return SearchClient(endpoint=endpoint, index_name=index_name, credential=credential)
+    return SearchClient(endpoint=endpoint, index_name=index_name, credential=credential, user_agent="langchain")
 
 
 class AzureSearch(VectorStore):
