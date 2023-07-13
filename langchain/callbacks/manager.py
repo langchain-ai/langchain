@@ -27,10 +27,10 @@ from langchain.callbacks.tracers.stdout import ConsoleCallbackHandler
 from langchain.callbacks.tracers.wandb import WandbTracer
 from langchain.schema.callbacks.manager import (
     AsyncCallbackManager,
-    # For backwards compatability
+    # For backwards compatibility
     AsyncCallbackManagerForChainRun,  # noqa: F401
     CallbackManager,
-    # For backwards compatability
+    # For backwards compatibility
     CallbackManagerForChainRun,  # noqa: F401
     Callbacks,
 )
