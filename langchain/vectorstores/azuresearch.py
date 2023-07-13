@@ -94,7 +94,7 @@ def _get_search_client(
     else:
         credential = AzureKeyCredential(key)
     index_client: SearchIndexClient = SearchIndexClient(
-        endpoint=endpoint, credential=credential
+        endpoint=endpoint, credential=credential, user_agent="langchain"
     )
     try:
         index_client.get_index(name=index_name)
