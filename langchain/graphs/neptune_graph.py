@@ -22,21 +22,23 @@ class NeptuneQueryException(Exception):
 
 
 class NeptuneGraph:
-    """Neptune wrapper for graph operations. This implementation
-    does not support any authentication schema at the moment.
+    """Neptune wrapper for graph operations. This version 
+    does not support Sigv4 signing of requests. 
     
     Example:
         .. code-block:: python
     
         graph = NeptuneGraph(
-            host='amz-9-2342349209.us-east-1.elb.amazonaws.com',
-            port=80,
-            use_https=False
+            host='<my-cluster>',
+            port=8182
         )
     """
 
     def __init__(
-        self, host: str, port: int = 80, use_https: bool = False
+        self, 
+        host: str, 
+        port: int = 8182, 
+        use_https: bool = True
     ) -> None:
         """Create a new Neptune graph wrapper instance."""
 
@@ -74,8 +76,20 @@ class NeptuneGraph:
 
     def _get_summary(self):
         response = requests.get(url=self.summary_url)
-        summary = response.json()['payload']['graphSummary']
-        return summary
+        if not response.ok:
+            raise NeptuneQueryException({
+                'message': 'Summary API is not available for this instance of Neptune, ensure the engine version is >=1.2.1.0',
+                'details': response.content.decode()
+            })
+        try:
+            summary = response.json()['payload']['graphSummary']
+        except Exception as e:
+            raise NeptuneQueryException({
+                'message': 'Summary API did not return a valid response.',
+                'details': response.content.decode()
+            })
+        else:
+            return summary
 
     def _get_labels(self):
         """Get node and edge labels from the Neptune statistics summary"""
@@ -110,7 +124,7 @@ class NeptuneGraph:
         node_properties_query = '''
         MATCH (a:{n_label})
         RETURN properties(a) AS props
-        LIMIT 50
+        LIMIT 100
         '''
         node_properties = []
         for label in n_labels:
@@ -135,7 +149,7 @@ class NeptuneGraph:
         edge_properties_query = '''
         MATCH ()-[e:{e_label}]->()
         RETURN properties(e) AS props
-        LIMIT 50
+        LIMIT 100
         '''
         edge_properties = []
         for label in e_labels:
