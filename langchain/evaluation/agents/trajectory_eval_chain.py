@@ -204,7 +204,7 @@ The following is the expected answer. Use this to measure correctness:
         llm: BaseLanguageModel,
         agent_tools: Optional[Sequence[BaseTool]] = None,
         output_parser: Optional[TrajectoryOutputParser] = None,
-        return_reasoning: bool = False,
+        return_reasoning: bool = True,
         **kwargs: Any,
     ) -> "TrajectoryEvalChain":
         """Create a TrajectoryEvalChain object from a language model chain.
@@ -212,7 +212,7 @@ The following is the expected answer. Use this to measure correctness:
         Args:
             llm (BaseChatModel): The language model chain.
             agent_tools (Optional[Sequence[BaseTool]]): A list of tools
-                available tothe agent.
+                available to the agent.
             output_parser (Optional[TrajectoryOutputParser]): The output parser
                 used to parse the chain output into a score.
             return_reasoning (bool): Whether to return the
@@ -330,6 +330,9 @@ The following is the expected answer. Use this to measure correctness:
         agent_trajectory: Sequence[Tuple[AgentAction, str]],
         reference: Optional[str] = None,
         callbacks: Callbacks = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
         """Evaluate a trajectory.
@@ -352,7 +355,14 @@ The following is the expected answer. Use this to measure correctness:
             "answer": prediction,
             "reference": reference,
         }
-        return self(inputs=inputs, callbacks=callbacks, **kwargs)
+        return self.__call__(
+            inputs=inputs,
+            callbacks=callbacks,
+            tags=tags,
+            metadata=metadata,
+            include_run_info=include_run_info,
+            return_only_outputs=True,
+        )
 
     async def _aevaluate_agent_trajectory(
         self,
@@ -362,6 +372,9 @@ The following is the expected answer. Use this to measure correctness:
         agent_trajectory: Sequence[Tuple[AgentAction, str]],
         reference: Optional[str] = None,
         callbacks: Callbacks = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
         """Asynchronously evaluate a trajectory.
@@ -387,5 +400,8 @@ The following is the expected answer. Use this to measure correctness:
         return await self.acall(
             inputs=inputs,
             callbacks=callbacks,
-            **kwargs,
+            tags=tags,
+            metadata=metadata,
+            include_run_info=include_run_info,
+            return_only_outputs=True,
         )

@@ -7,9 +7,13 @@ from pydantic import BaseModel, Field
 
 from langchain.embeddings.base import Embeddings
 from langchain.evaluation.criteria.eval_chain import CRITERIA_TYPE
-from langchain.evaluation.embedding_distance.base import EmbeddingDistance
+from langchain.evaluation.embedding_distance.base import (
+    EmbeddingDistance as EmbeddingDistanceEnum,
+)
 from langchain.evaluation.schema import EvaluatorType, StringEvaluator
-from langchain.evaluation.string_distance.base import StringDistance
+from langchain.evaluation.string_distance.base import (
+    StringDistance as StringDistanceEnum,
+)
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.prompt_template import BasePromptTemplate
 
@@ -50,8 +54,9 @@ class RunEvalConfig(BaseModel):
     ----------
     evaluators : List[Union[EvaluatorType, EvalConfig]]
         Configurations for which evaluators to apply to the dataset run.
-        Each can be an evaluator type (e.g., "qa") or a configuration for a
-        given evaluator.
+        Each can be the string of an :class:`EvaluatorType <langchain.evaluation.schema.EvaluatorType>`, such
+        as EvaluatorType.QA, the evaluator type string ("qa"), or a configuration for a
+        given evaluator (e.g., :class:`RunEvalConfig.QA <langchain.smith.evaluation.config.RunEvalConfig.QA>`).
 
     custom_evaluators : Optional[List[Union[RunEvaluator, StringEvaluator]]]
         Custom evaluators to apply to the dataset run.
@@ -71,12 +76,16 @@ class RunEvalConfig(BaseModel):
 
     eval_llm : Optional[BaseLanguageModel]
         The language model to pass to any evaluators that use a language model.
-    """
+    """  # noqa: E501
 
     evaluators: List[Union[EvaluatorType, EvalConfig]] = Field(default_factory=list)
     """Configurations for which evaluators to apply to the dataset run.
-    Each can be an evaluator type (e.g., "qa") or a configuration for a
-    given evaluator."""
+    Each can be the string of an
+    :class:`EvaluatorType <langchain.evaluation.schema.EvaluatorType>`, such
+    as `EvaluatorType.QA`, the evaluator type string ("qa"), or a configuration for a
+    given evaluator
+    (e.g., 
+    :class:`RunEvalConfig.QA <langchain.smith.evaluation.config.RunEvalConfig.QA>`)."""  # noqa: E501
     custom_evaluators: Optional[List[Union[RunEvaluator, StringEvaluator]]] = None
     """Custom evaluators to apply to the dataset run."""
     reference_key: Optional[str] = None
@@ -144,14 +153,14 @@ class RunEvalConfig(BaseModel):
         embeddings : Optional[Embeddings]
             The embeddings to use for computing the distance.
 
-        distance_metric : Optional[EmbeddingDistance]
+        distance_metric : Optional[EmbeddingDistanceEnum]
             The distance metric to use for computing the distance.
 
         """
 
         evaluator_type: EvaluatorType = EvaluatorType.EMBEDDING_DISTANCE
         embeddings: Optional[Embeddings] = None
-        distance_metric: Optional[EmbeddingDistance] = None
+        distance_metric: Optional[EmbeddingDistanceEnum] = None
 
         class Config:
             arbitrary_types_allowed = True
@@ -161,13 +170,13 @@ class RunEvalConfig(BaseModel):
 
         Parameters
         ----------
-        distance : Optional[StringDistance]
+        distance : Optional[StringDistanceEnum]
             The string distance metric to use.
 
         """
 
         evaluator_type: EvaluatorType = EvaluatorType.STRING_DISTANCE
-        distance: Optional[StringDistance] = None
+        distance: Optional[StringDistanceEnum] = None
 
     class QA(EvalConfig):
         """Configuration for a QA evaluator.

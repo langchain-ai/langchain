@@ -3,7 +3,7 @@ from langchain.output_parsers.regex import RegexParser
 from langchain.prompts import PromptTemplate
 
 output_parser = RegexParser(
-    regex=r"(.*?)\nScore: (.*)",
+    regex=r"(.*?)\nScore: (\d*)",
     output_keys=["answer", "score"],
 )
 

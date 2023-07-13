@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Dict, Mapping, Optional, Union
+from typing import Any, Dict, List, Mapping, Optional, Union
 
 from pydantic import Extra, Field
 
+from langchain.callbacks.manager import Callbacks
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.criteria.prompt import PROMPT, PROMPT_WITH_REFERENCES
 from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
-from langchain.schema import BaseOutputParser, BasePromptTemplate
+from langchain.schema import RUN_KEY, BaseOutputParser, BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 
 
@@ -118,13 +119,12 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     }
 
     >>> from langchain.chat_models import ChatOpenAI
-    >>> from langchain.evaluation.criteria import CriteriaEvalChain
+    >>> from langchain.evaluation.criteria import LabeledCriteriaEvalChain
     >>> llm = ChatOpenAI(model="gpt-4", temperature=0)
     >>> criteria = "correctness"
-    >>> evaluator = CriteriaEvalChain.from_llm(
+    >>> evaluator = LabeledCriteriaEvalChain.from_llm(
     ...     llm=llm,
     ...     criteria=criteria,
-    ...    requires_reference=True,
     ... )
     >>> evaluator.evaluate_strings(
     ...   prediction="The answer is 4",
@@ -143,6 +143,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     """The parser to use to map the output to a structured result."""
     criterion_name: str
     """The name of the criterion being evaluated."""
+    output_key: str = "results"  #: :meta private:
 
     class Config:
         """Configuration for the QAEvalChain."""
@@ -271,7 +272,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         Examples
         --------
         >>> from langchain.llms import OpenAI
-        >>> from langchain.evaluation.criteria import CriteriaEvalChain
+        >>> from langchain.evaluation.criteria import LabeledCriteriaEvalChain
         >>> llm = OpenAI()
         >>> criteria = {
                 "hallucination": (
@@ -279,10 +280,9 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
                     " not present in the input or reference?"
                 ),
             }
-        >>> chain = CriteriaEvalChain.from_llm(
+        >>> chain = LabeledCriteriaEvalChain.from_llm(
                 llm=llm,
                 criteria=criteria,
-                requires_reference=True,
             )
         """
         prompt_ = cls._resolve_prompt(prompt)
@@ -318,12 +318,23 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
             input_["reference"] = reference
         return input_
 
+    def _prepare_output(self, result: dict) -> dict:
+        """Prepare the output."""
+        parsed = result[self.output_key]
+        if RUN_KEY in result:
+            parsed[RUN_KEY] = result[RUN_KEY]
+        return parsed
+
     def _evaluate_strings(
         self,
         *,
         prediction: str,
         reference: Optional[str] = None,
         input: Optional[str] = None,
+        callbacks: Callbacks = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
         """Evaluate a prediction against the criteria.
@@ -360,7 +371,14 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
             )
         """
         input_ = self._get_eval_input(prediction, reference, input)
-        return self(input_, **kwargs)["text"]
+        result = self(
+            input_,
+            callbacks=callbacks,
+            tags=tags,
+            metadata=metadata,
+            include_run_info=include_run_info,
+        )
+        return self._prepare_output(result)
 
     async def _aevaluate_strings(
         self,
@@ -368,6 +386,10 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         prediction: str,
         reference: Optional[str] = None,
         input: Optional[str] = None,
+        callbacks: Callbacks = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
         """Asynchronously evaluate a prediction against the criteria.
@@ -404,8 +426,14 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
             )
         """
         input_ = self._get_eval_input(prediction, reference, input)
-        result = await self.acall(input_, **kwargs)
-        return result["text"]
+        result = await self.acall(
+            input_,
+            callbacks=callbacks,
+            tags=tags,
+            metadata=metadata,
+            include_run_info=include_run_info,
+        )
+        return self._prepare_output(result)
 
 
 class LabeledCriteriaEvalChain(CriteriaEvalChain):
@@ -475,7 +503,6 @@ class LabeledCriteriaEvalChain(CriteriaEvalChain):
         >>> chain = LabeledCriteriaEvalChain.from_llm(
                 llm=llm,
                 criteria=criteria,
-                requires_reference=True,
             )
         """
         prompt = cls._resolve_prompt(prompt)

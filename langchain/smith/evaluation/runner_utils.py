@@ -57,14 +57,15 @@ def _wrap_in_chain_factory(
     """Forgive the user if they pass in a chain without memory instead of a chain
     factory. It's a common mistake. Raise a more helpful error message as well."""
     if isinstance(llm_or_chain_factory, Chain):
+        chain = llm_or_chain_factory
+        chain_class = chain.__class__.__name__
         if llm_or_chain_factory.memory is not None:
-            chain = llm_or_chain_factory
             memory_class = chain.memory.__class__.__name__
-            chain_class = chain.__class__.__name__
             raise ValueError(
-                "Cannot directly evaluate a chain with memory. To evaluate this chain,"
-                " pass in a chain constructor that initializes fresh memory"
-                " each time it is called. This will safegaurd against information"
+                "Cannot directly evaluate a chain with statefulmemory."
+                " To evaluate this chain, pass in a chain constructor"
+                " that initializes fresh memory each time it is called."
+                "  This will safegaurd against information"
                 " leakage between dataset examples."
                 "\nFor example:\n\n"
                 "def chain_constructor():\n"
@@ -73,12 +74,25 @@ def _wrap_in_chain_factory(
                 "(memory=new_memory, ...)\n\n"
                 f'run_on_dataset("{dataset_name}", chain_constructor, ...)'
             )
+        logger.warning(
+            "Directly passing in a chain is not recommended as chains may have state."
+            " This can lead to unexpected behavior as the "
+            "same chain instance could be used across multiple datasets. Instead,"
+            " please pass a chain constructor that creates a new "
+            "chain with fresh memory each time it is called. This will safeguard"
+            " against information leakage between dataset examples. "
+            "\nFor example:\n\n"
+            "def chain_constructor():\n"
+            f"    return {chain_class}(memory=new_memory, ...)\n\n"
+            f'run_on_dataset("{dataset_name}", chain_constructor, ...)'
+        )
+
         return lambda: chain
     return llm_or_chain_factory
 
 
 def _first_example(examples: Iterator[Example]) -> Tuple[Example, Iterator[Example]]:
-    """Get the first eample while chaining it back and preserving the iterator."""
+    """Get the first example while chaining it back and preserving the iterator."""
     try:
         example: Example = next(examples)
     except StopIteration:
@@ -718,7 +732,7 @@ async def _callbacks_initializer(
     """
     callbacks: List[BaseTracer] = []
     if project_name:
-        callbacks.append(LangChainTracer(project_name=project_name))
+        callbacks.append(LangChainTracer(project_name=project_name, client=client))
     evaluator_project_name = f"{project_name}-evaluators" if project_name else None
     if run_evaluators:
         callback = EvaluatorCallbackHandler(
@@ -1010,7 +1024,7 @@ def _run_on_examples(
     results: Dict[str, Any] = {}
     llm_or_chain_factory = _wrap_in_chain_factory(llm_or_chain_factory)
     project_name = _get_project_name(project_name, llm_or_chain_factory, None)
-    tracer = LangChainTracer(project_name=project_name)
+    tracer = LangChainTracer(project_name=project_name, client=client)
     evaluator_project_name = f"{project_name}-evaluators"
     run_evaluators, examples = _setup_evaluation(
         llm_or_chain_factory, examples, evaluation, data_type
@@ -1066,6 +1080,7 @@ async def arun_on_dataset(
         llm_or_chain_factory: Language model or Chain constructor to run
             over the dataset. The Chain constructor is used to permit
             independent calls on each example without carrying over state.
+        evaluation: Optional evaluation configuration to use when evaluating
         concurrency_level: The number of async tasks to run concurrently.
         num_repetitions: Number of times to run the model on each example.
             This is useful when testing success rates or generating confidence
@@ -1074,14 +1089,15 @@ async def arun_on_dataset(
             Defaults to {dataset_name}-{chain class name}-{datetime}.
         verbose: Whether to print progress.
         tags: Tags to add to each run in the project.
-        run_evaluators: Evaluators to run on the results of the chain.
         input_mapper: A function to map to the inputs dictionary from an Example
             to the format expected by the model to be evaluated. This is useful if
             your model needs to deserialize more complex schema or if your dataset
             has inputs with keys that differ from what is expected by your chain
             or agent.
+
     Returns:
-        A dictionary containing the run's project name and the resulting model outputs.
+        A dictionary containing the run's project name and the
+        resulting model outputs.
     """
     llm_or_chain_factory = _wrap_in_chain_factory(llm_or_chain_factory, dataset_name)
     project_name = _get_project_name(project_name, llm_or_chain_factory, dataset_name)
