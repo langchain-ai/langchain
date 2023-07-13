@@ -32,7 +32,6 @@ def create_xorbits_agent(
 ) -> AgentExecutor:
     """Construct a xorbits agent from an LLM and dataframe."""
     try:
-        import xorbits
         from xorbits import numpy as np
         from xorbits import pandas as pd
     except ImportError:
@@ -44,12 +43,11 @@ def create_xorbits_agent(
         raise ValueError(
             f"Expected Xorbits DataFrame or ndarray object, got {type(data)}"
         )
-    xorbits.run(data)
     if input_variables is None:
         input_variables = ["data", "input", "agent_scratchpad"]
     tools = [PythonAstREPLTool(locals={"data": data})]
     prompt, partial_input = None, None
-    
+
     if isinstance(data, pd.DataFrame):
         prompt = ZeroShotAgent.create_prompt(
             tools,
