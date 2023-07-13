@@ -33,7 +33,7 @@ class NIBittensorLLM(LLM):
         Example:
             .. code-block:: python
 
-                from langchain.llms import NIBittensorLLM
+                from langchain.llms.bittensor import NIBittensorLLM
                 llm = NIBittensorLLM(
                     system="Your task is to give response based on user prompt")
         """
