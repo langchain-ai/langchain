@@ -1,7 +1,5 @@
 """Utilities for running language models or Chains over datasets."""
 
-# TODO: Migrate to langchain/langsmith
-
 from __future__ import annotations
 
 import asyncio
@@ -33,17 +31,12 @@ from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.chains.base import Chain
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.evaluation.loading import load_evaluator
-from langchain.evaluation.run_evaluators.config import EvalConfig, RunEvalConfig
-from langchain.evaluation.run_evaluators.string_run_evaluator import (
-    StringRunEvaluatorChain,
-)
 from langchain.evaluation.schema import EvaluatorType, StringEvaluator
 from langchain.schema import ChatResult, LLMResult
 from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.messages import (
-    BaseMessage,
-    messages_from_dict,
-)
+from langchain.schema.messages import BaseMessage, messages_from_dict
+from langchain.smith.evaluation.config import EvalConfig, RunEvalConfig
+from langchain.smith.evaluation.string_run_evaluator import StringRunEvaluatorChain
 
 logger = logging.getLogger(__name__)
 
