@@ -107,6 +107,20 @@ class NotionDBLoader(BaseLoader):
                 )
             elif prop_type == "url":
                 value = prop_data["url"]
+            elif prop_type == "unique_id":
+                value = (
+                    f'{prop_data["unique_id"]["prefix"]}-{prop_data["unique_id"]["number"]}'
+                    if prop_data["unique_id"]
+                    else None
+                )
+            elif prop_type == "status":
+                value = prop_data["status"]["name"] if prop_data["status"] else None
+            elif prop_type == "people":
+                value = (
+                    [item["name"] for item in prop_data["people"]]
+                    if prop_data["people"]
+                    else []
+                )
             else:
                 value = None
 
