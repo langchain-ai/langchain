@@ -11,7 +11,9 @@ from pydantic.class_validators import root_validator
 
 class DuckDuckGoSearchAPIWrapper(BaseModel):
     """Wrapper for DuckDuckGo Search API.
-    Free and does not require any setup"""
+
+    Free and does not require any setup.
+    """
 
     region: Optional[str] = "wt-wt"
     safesearch: str = "moderate"
