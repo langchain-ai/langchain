@@ -252,3 +252,9 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
 
     def save(self, file_path: Union[Path, str]) -> None:
         raise NotImplementedError
+
+    def to_prompt_template(self) -> PromptTemplate:
+        """Return a PromptTemplate with all input variables replaced with {var}."""
+        return PromptTemplate.from_template(
+            self.format(**{var: f"{{{var}}}" for var in self.input_variables})
+        )
