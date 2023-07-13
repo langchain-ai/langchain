@@ -12,6 +12,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import PairwiseStringEvaluator, StringEvaluator
+from langchain.schema import RUN_KEY
 
 
 def _load_rapidfuzz() -> Any:
@@ -70,6 +71,12 @@ class _RapidFuzzChainMixin(Chain):
             List[str]: The output keys.
         """
         return ["score"]
+
+    def _prepare_output(self, result: Dict[str, Any]) -> Dict[str, Any]:
+        result = {"score": result["score"]}
+        if RUN_KEY in result:
+            result[RUN_KEY] = result[RUN_KEY].dict()
+        return result
 
     @staticmethod
     def _get_metric(distance: str) -> Callable:
@@ -215,6 +222,9 @@ class StringDistanceEvalChain(_RapidFuzzChainMixin, StringEvaluator):
         reference: Optional[str] = None,
         input: Optional[str] = None,
         callbacks: Callbacks = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
         """
@@ -233,8 +243,12 @@ class StringDistanceEvalChain(_RapidFuzzChainMixin, StringEvaluator):
         result = self(
             inputs={"prediction": prediction, "reference": reference},
             callbacks=callbacks,
+            tags=tags,
+            metadata=metadata,
+            include_run_info=include_run_info,
         )
-        return {"score": result["score"]}
+
+        return self._prepare_output(result)
 
     async def _aevaluate_strings(
         self,
@@ -243,6 +257,9 @@ class StringDistanceEvalChain(_RapidFuzzChainMixin, StringEvaluator):
         reference: Optional[str] = None,
         input: Optional[str] = None,
         callbacks: Callbacks = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
         """
@@ -262,8 +279,11 @@ class StringDistanceEvalChain(_RapidFuzzChainMixin, StringEvaluator):
         result = await self.acall(
             inputs={"prediction": prediction, "reference": reference},
             callbacks=callbacks,
+            tags=tags,
+            metadata=metadata,
+            include_run_info=include_run_info,
         )
-        return {"score": result["score"]}
+        return self._prepare_output(result)
 
 
 class PairwiseStringDistanceEvalChain(_RapidFuzzChainMixin, PairwiseStringEvaluator):
@@ -327,6 +347,7 @@ class PairwiseStringDistanceEvalChain(_RapidFuzzChainMixin, PairwiseStringEvalua
         callbacks: Callbacks = None,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
         """
@@ -348,8 +369,9 @@ class PairwiseStringDistanceEvalChain(_RapidFuzzChainMixin, PairwiseStringEvalua
             callbacks=callbacks,
             tags=tags,
             metadata=metadata,
+            include_run_info=include_run_info,
         )
-        return {"score": result["score"]}
+        return self._prepare_output(result)
 
     async def _aevaluate_string_pairs(
         self,
@@ -359,6 +381,7 @@ class PairwiseStringDistanceEvalChain(_RapidFuzzChainMixin, PairwiseStringEvalua
         callbacks: Callbacks = None,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
         """
@@ -380,5 +403,6 @@ class PairwiseStringDistanceEvalChain(_RapidFuzzChainMixin, PairwiseStringEvalua
             callbacks=callbacks,
             tags=tags,
             metadata=metadata,
+            include_run_info=include_run_info,
         )
-        return {"score": result["score"]}
+        return self._prepare_output(result)

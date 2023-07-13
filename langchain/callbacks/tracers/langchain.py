@@ -19,6 +19,7 @@ from langchain.schema.messages import BaseMessage
 logger = logging.getLogger(__name__)
 _LOGGED = set()
 _TRACERS: List[LangChainTracer] = []
+_CLIENT: Optional[Client] = None
 
 
 def log_error_once(method: str, exception: Exception) -> None:
@@ -35,6 +36,14 @@ def wait_for_all_tracers() -> None:
     global _TRACERS
     for tracer in _TRACERS:
         tracer.wait_for_futures()
+
+
+def _get_client() -> Client:
+    """Get the client."""
+    global _CLIENT
+    if _CLIENT is None:
+        _CLIENT = Client()
+    return _CLIENT
 
 
 class LangChainTracer(BaseTracer):
@@ -59,7 +68,7 @@ class LangChainTracer(BaseTracer):
         )
         # set max_workers to 1 to process tasks in order
         self.executor = ThreadPoolExecutor(max_workers=1)
-        self.client = client or Client()
+        self.client = client or _get_client()
         self._futures: Set[Future] = set()
         self.tags = tags or []
         global _TRACERS

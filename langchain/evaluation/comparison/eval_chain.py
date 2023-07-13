@@ -1,7 +1,7 @@
 """Base classes for comparing the output of two models."""
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import Extra, Field
 
@@ -10,7 +10,7 @@ from langchain.chains.llm import LLMChain
 from langchain.evaluation.comparison.prompt import PROMPT, PROMPT_WITH_REFERENCE
 from langchain.evaluation.schema import LLMEvalChain, PairwiseStringEvaluator
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import BaseOutputParser
+from langchain.schema import RUN_KEY, BaseOutputParser
 from langchain.schema.language_model import BaseLanguageModel
 
 
@@ -66,9 +66,9 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
     ...     prediction_b = (
     ...        "The chemical formula for water is H2O, which means"
     ...        " there are two hydrogen atoms and one oxygen atom."
-    ...     referenc = "The chemical formula for water is H2O.",
+    ...     reference = "The chemical formula for water is H2O.",
     ... )
-    >>> print(result["text"])
+    >>> print(result)
     # {
     #    "value": "B",
     #    "comment": "Both responses accurately state"
@@ -78,6 +78,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
     # }
     """
 
+    output_key: str = "results"  #: :meta private:
     output_parser: BaseOutputParser = Field(
         default_factory=PairwiseStringResultOutputParser
     )
@@ -166,6 +167,13 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
             input_["reference"] = reference
         return input_
 
+    def _prepare_output(self, result: dict) -> dict:
+        """Prepare the output."""
+        parsed = result[self.output_key]
+        if RUN_KEY in result:
+            parsed[RUN_KEY] = result[RUN_KEY]
+        return parsed
+
     def _evaluate_string_pairs(
         self,
         *,
@@ -174,6 +182,9 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         input: Optional[str] = None,
         reference: Optional[str] = None,
         callbacks: Callbacks = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
         """Evaluate whether output A is preferred to output B.
@@ -198,9 +209,11 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         result = self(
             inputs=input_,
             callbacks=callbacks,
-            **kwargs,
+            tags=tags,
+            metadata=metadata,
+            include_run_info=include_run_info,
         )
-        return result["text"]
+        return self._prepare_output(result)
 
     async def _aevaluate_string_pairs(
         self,
@@ -210,6 +223,9 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         reference: Optional[str] = None,
         input: Optional[str] = None,
         callbacks: Callbacks = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
         """Asynchronously evaluate whether output A is preferred to output B.
@@ -234,6 +250,8 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         result = await self.acall(
             inputs=input_,
             callbacks=callbacks,
-            **kwargs,
+            tags=tags,
+            metadata=metadata,
+            include_run_info=include_run_info,
         )
-        return result["text"]
+        return self._prepare_output(result)
