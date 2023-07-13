@@ -11,23 +11,32 @@ from langchain.vectorstores.azuresearch import AzureSearch
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.cassandra import Cassandra
 from langchain.vectorstores.chroma import Chroma
+from langchain.vectorstores.clarifai import Clarifai
 from langchain.vectorstores.clickhouse import Clickhouse, ClickhouseSettings
 from langchain.vectorstores.deeplake import DeepLake
 from langchain.vectorstores.docarray import DocArrayHnswSearch, DocArrayInMemorySearch
-from langchain.vectorstores.elastic_vector_search import ElasticVectorSearch
+from langchain.vectorstores.elastic_vector_search import (
+    ElasticKnnSearch,
+    ElasticVectorSearch,
+)
 from langchain.vectorstores.faiss import FAISS
 from langchain.vectorstores.hologres import Hologres
 from langchain.vectorstores.lancedb import LanceDB
+from langchain.vectorstores.marqo import Marqo
 from langchain.vectorstores.matching_engine import MatchingEngine
 from langchain.vectorstores.milvus import Milvus
 from langchain.vectorstores.mongodb_atlas import MongoDBAtlasVectorSearch
 from langchain.vectorstores.myscale import MyScale, MyScaleSettings
 from langchain.vectorstores.opensearch_vector_search import OpenSearchVectorSearch
+from langchain.vectorstores.pgembedding import PGEmbedding
+from langchain.vectorstores.pgvector import PGVector
 from langchain.vectorstores.pinecone import Pinecone
 from langchain.vectorstores.qdrant import Qdrant
 from langchain.vectorstores.redis import Redis
+from langchain.vectorstores.rocksetdb import Rockset
 from langchain.vectorstores.singlestoredb import SingleStoreDB
 from langchain.vectorstores.sklearn import SKLearnVectorStore
+from langchain.vectorstores.starrocks import StarRocks
 from langchain.vectorstores.supabase import SupabaseVectorStore
 from langchain.vectorstores.tair import Tair
 from langchain.vectorstores.tigris import Tigris
@@ -52,11 +61,22 @@ __all__ = [
     "DocArrayHnswSearch",
     "DocArrayInMemorySearch",
     "ElasticVectorSearch",
+    "ElasticKnnSearch",
     "FAISS",
+    "PGEmbedding",
     "Hologres",
     "LanceDB",
     "MatchingEngine",
+    "Marqo",
     "Milvus",
+    "Zilliz",
+    "SingleStoreDB",
+    "Chroma",
+    "Clarifai",
+    "OpenSearchVectorSearch",
+    "AtlasDB",
+    "DeepLake",
+    "Annoy",
     "MongoDBAtlasVectorSearch",
     "MyScale",
     "MyScaleSettings",
@@ -64,8 +84,10 @@ __all__ = [
     "Pinecone",
     "Qdrant",
     "Redis",
+    "Rockset",
     "SKLearnVectorStore",
     "SingleStoreDB",
+    "StarRocks",
     "SupabaseVectorStore",
     "Tair",
     "Tigris",
@@ -74,4 +96,5 @@ __all__ = [
     "VectorStore",
     "Weaviate",
     "Zilliz",
+    "PGVector",
 ]

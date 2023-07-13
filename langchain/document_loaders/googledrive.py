@@ -1,4 +1,4 @@
-"""Loader that loads data from Google Drive."""
+"""Loads data from Google Drive."""
 
 # Prerequisites:
 # 1. Create a Google Cloud project
@@ -22,21 +22,32 @@ SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 
 
 class GoogleDriveLoader(BaseLoader, BaseModel):
-    """Loader that loads Google Docs from Google Drive."""
+    """Loads Google Docs from Google Drive."""
 
     service_account_key: Path = Path.home() / ".credentials" / "keys.json"
+    """Path to the service account key file."""
     credentials_path: Path = Path.home() / ".credentials" / "credentials.json"
+    """Path to the credentials file."""
     token_path: Path = Path.home() / ".credentials" / "token.json"
+    """Path to the token file."""
     folder_id: Optional[str] = None
+    """The folder id to load from."""
     document_ids: Optional[List[str]] = None
+    """The document ids to load from."""
     file_ids: Optional[List[str]] = None
+    """The file ids to load from."""
     recursive: bool = False
+    """Whether to load recursively. Only applies when folder_id is given."""
     file_types: Optional[Sequence[str]] = None
+    """The file types to load. Only applies when folder_id is given."""
     load_trashed_files: bool = False
+    """Whether to load trashed files. Only applies when folder_id is given."""
     # NOTE(MthwRobinson) - changing the file_loader_cls to type here currently
     # results in pydantic validation errors
     file_loader_cls: Any = None
+    """The file loader class to use."""
     file_loader_kwargs: Dict["str", Any] = {}
+    """The file loader kwargs to use."""
 
     @root_validator
     def validate_inputs(cls, values: Dict[str, Any]) -> Dict[str, Any]:

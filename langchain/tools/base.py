@@ -4,7 +4,7 @@ from __future__ import annotations
 import warnings
 from abc import ABC, abstractmethod
 from inspect import signature
-from typing import Any, Awaitable, Callable, Dict, Optional, Tuple, Type, Union
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from pydantic import (
     BaseModel,
@@ -71,7 +71,7 @@ def _create_subset_model(
     fields = {}
     for field_name in field_names:
         field = model.__fields__[field_name]
-        fields[field_name] = (field.type_, field.field_info)
+        fields[field_name] = (field.outer_type_, field.field_info)
     return create_model(name, **fields)  # type: ignore
 
 
@@ -82,7 +82,7 @@ def _get_filtered_args(
     """Get the arguments from a function's signature."""
     schema = inferred_model.schema()["properties"]
     valid_keys = signature(func).parameters
-    return {k: schema[k] for k in valid_keys if k != "run_manager"}
+    return {k: schema[k] for k in valid_keys if k not in ("run_manager", "callbacks")}
 
 
 class _SchemaConfig:
@@ -108,6 +108,8 @@ def create_schema_from_function(
     inferred_model = validated.model  # type: ignore
     if "run_manager" in inferred_model.__fields__:
         del inferred_model.__fields__["run_manager"]
+    if "callbacks" in inferred_model.__fields__:
+        del inferred_model.__fields__["callbacks"]
     # Pydantic adds placeholder virtual fields we need to strip
     valid_properties = _get_filtered_args(inferred_model, func)
     return _create_subset_model(
@@ -151,6 +153,18 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
     """Callbacks to be called during tool execution."""
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     """Deprecated. Please use callbacks instead."""
+    tags: Optional[List[str]] = None
+    """Optional list of tags associated with the tool. Defaults to None
+    These tags will be associated with each call to this tool,
+    and passed as arguments to the handlers defined in `callbacks`.
+    You can use these to eg identify a specific instance of a tool with its use case.
+    """
+    metadata: Optional[Dict[str, Any]] = None
+    """Optional metadata associated with the tool. Defaults to None
+    This metadata will be associated with each call to this tool,
+    and passed as arguments to the handlers defined in `callbacks`.
+    You can use these to eg identify a specific instance of a tool with its use case.
+    """
 
     handle_tool_error: Optional[
         Union[bool, str, Callable[[ToolException], str]]
@@ -244,6 +258,9 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         start_color: Optional[str] = "green",
         color: Optional[str] = "green",
         callbacks: Callbacks = None,
+        *,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Any:
         """Run the tool."""
@@ -253,7 +270,13 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         else:
             verbose_ = self.verbose
         callback_manager = CallbackManager.configure(
-            callbacks, self.callbacks, verbose=verbose_
+            callbacks,
+            self.callbacks,
+            verbose_,
+            tags,
+            self.tags,
+            metadata,
+            self.metadata,
         )
         # TODO: maybe also pass through run_manager is _run supports kwargs
         new_arg_supported = signature(self._run).parameters.get("run_manager")
@@ -308,6 +331,9 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         start_color: Optional[str] = "green",
         color: Optional[str] = "green",
         callbacks: Callbacks = None,
+        *,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Any:
         """Run the tool asynchronously."""
@@ -317,7 +343,13 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         else:
             verbose_ = self.verbose
         callback_manager = AsyncCallbackManager.configure(
-            callbacks, self.callbacks, verbose=verbose_
+            callbacks,
+            self.callbacks,
+            verbose_,
+            tags,
+            self.tags,
+            metadata,
+            self.metadata,
         )
         new_arg_supported = signature(self._arun).parameters.get("run_manager")
         run_manager = await callback_manager.on_tool_start(

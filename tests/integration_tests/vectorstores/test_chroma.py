@@ -58,6 +58,25 @@ def test_chroma_with_metadatas_with_scores() -> None:
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
 
 
+def test_chroma_with_metadatas_with_scores_using_vector() -> None:
+    """Test end to end construction and scored search, using embedding vector."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    embeddings = FakeEmbeddings()
+
+    docsearch = Chroma.from_texts(
+        collection_name="test_collection",
+        texts=texts,
+        embedding=embeddings,
+        metadatas=metadatas,
+    )
+    embedded_query = embeddings.embed_query("foo")
+    output = docsearch.similarity_search_by_vector_with_relevance_scores(
+        embedding=embedded_query, k=1
+    )
+    assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
+
+
 def test_chroma_search_filter() -> None:
     """Test end to end construction and search with metadata filtering."""
     texts = ["far", "bar", "baz"]
@@ -209,3 +228,42 @@ def test_chroma_update_document() -> None:
     ]
     assert new_embedding == embedding.embed_documents([updated_content])[0]
     assert new_embedding != old_embedding
+
+
+def test_chroma_with_relevance_score() -> None:
+    """Test to make sure the relevance score is scaled to 0-1."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    docsearch = Chroma.from_texts(
+        collection_name="test_collection",
+        texts=texts,
+        embedding=FakeEmbeddings(),
+        metadatas=metadatas,
+        collection_metadata={"hnsw:space": "l2"},
+    )
+    output = docsearch.similarity_search_with_relevance_scores("foo", k=3)
+    assert output == [
+        (Document(page_content="foo", metadata={"page": "0"}), 1.0),
+        (Document(page_content="bar", metadata={"page": "1"}), 0.8),
+        (Document(page_content="baz", metadata={"page": "2"}), 0.5),
+    ]
+
+
+def test_chroma_with_relevance_score_custom_normalization_fn() -> None:
+    """Test searching with relevance score and custom normalization function."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    docsearch = Chroma.from_texts(
+        collection_name="test_collection",
+        texts=texts,
+        embedding=FakeEmbeddings(),
+        metadatas=metadatas,
+        relevance_score_fn=lambda d: d * 0,
+        collection_metadata={"hnsw:space": "l2"},
+    )
+    output = docsearch.similarity_search_with_relevance_scores("foo", k=3)
+    assert output == [
+        (Document(page_content="foo", metadata={"page": "0"}), -0.0),
+        (Document(page_content="bar", metadata={"page": "1"}), -0.0),
+        (Document(page_content="baz", metadata={"page": "2"}), -0.0),
+    ]

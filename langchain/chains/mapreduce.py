@@ -9,15 +9,16 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import Extra
 
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun, Callbacks
+from langchain.chains import ReduceDocumentsChain
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
-from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import BasePromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.text_splitter import TextSplitter
 
 
@@ -44,14 +45,17 @@ class MapReduceChain(Chain):
     ) -> MapReduceChain:
         """Construct a map-reduce chain that uses the chain for map and reduce."""
         llm_chain = LLMChain(llm=llm, prompt=prompt, callbacks=callbacks)
-        reduce_chain = StuffDocumentsChain(
+        stuff_chain = StuffDocumentsChain(
             llm_chain=llm_chain,
             callbacks=callbacks,
             **(reduce_chain_kwargs if reduce_chain_kwargs else {}),
         )
+        reduce_documents_chain = ReduceDocumentsChain(
+            combine_documents_chain=stuff_chain
+        )
         combine_documents_chain = MapReduceDocumentsChain(
             llm_chain=llm_chain,
-            combine_document_chain=reduce_chain,
+            reduce_documents_chain=reduce_documents_chain,
             callbacks=callbacks,
             **(combine_chain_kwargs if combine_chain_kwargs else {}),
         )

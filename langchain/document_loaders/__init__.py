@@ -23,11 +23,14 @@ from langchain.document_loaders.blob_loaders import (
     YoutubeAudioLoader,
 )
 from langchain.document_loaders.blockchain import BlockchainDocumentLoader
+from langchain.document_loaders.brave_search import BraveSearchLoader
 from langchain.document_loaders.chatgpt import ChatGPTLoader
 from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
 from langchain.document_loaders.confluence import ConfluenceLoader
 from langchain.document_loaders.conllu import CoNLLULoader
 from langchain.document_loaders.csv_loader import CSVLoader, UnstructuredCSVLoader
+from langchain.document_loaders.cube_semantic import CubeSemanticLoader
+from langchain.document_loaders.datadog_logs import DatadogLogsLoader
 from langchain.document_loaders.dataframe import DataFrameLoader
 from langchain.document_loaders.diffbot import DiffbotLoader
 from langchain.document_loaders.directory import DirectoryLoader
@@ -63,10 +66,13 @@ from langchain.document_loaders.imsdb import IMSDbLoader
 from langchain.document_loaders.iugu import IuguLoader
 from langchain.document_loaders.joplin import JoplinLoader
 from langchain.document_loaders.json_loader import JSONLoader
+from langchain.document_loaders.larksuite import LarkSuiteDocLoader
 from langchain.document_loaders.markdown import UnstructuredMarkdownLoader
 from langchain.document_loaders.mastodon import MastodonTootsLoader
 from langchain.document_loaders.max_compute import MaxComputeLoader
 from langchain.document_loaders.mediawikidump import MWDumpLoader
+from langchain.document_loaders.merge import MergedDataLoader
+from langchain.document_loaders.mhtml import MHTMLLoader
 from langchain.document_loaders.modern_treasury import ModernTreasuryLoader
 from langchain.document_loaders.notebook import NotebookLoader
 from langchain.document_loaders.notion import NotionDirectoryLoader
@@ -75,6 +81,8 @@ from langchain.document_loaders.obsidian import ObsidianLoader
 from langchain.document_loaders.odt import UnstructuredODTLoader
 from langchain.document_loaders.onedrive import OneDriveLoader
 from langchain.document_loaders.onedrive_file import OneDriveFileLoader
+from langchain.document_loaders.open_city_data import OpenCityDataLoader
+from langchain.document_loaders.org_mode import UnstructuredOrgModeLoader
 from langchain.document_loaders.pdf import (
     MathpixPDFLoader,
     OnlinePDFLoader,
@@ -92,8 +100,10 @@ from langchain.document_loaders.psychic import PsychicLoader
 from langchain.document_loaders.pyspark_dataframe import PySparkDataFrameLoader
 from langchain.document_loaders.python import PythonLoader
 from langchain.document_loaders.readthedocs import ReadTheDocsLoader
+from langchain.document_loaders.recursive_url_loader import RecursiveUrlLoader
 from langchain.document_loaders.reddit import RedditPostsLoader
 from langchain.document_loaders.roam import RoamLoader
+from langchain.document_loaders.rst import UnstructuredRSTLoader
 from langchain.document_loaders.rtf import UnstructuredRTFLoader
 from langchain.document_loaders.s3_directory import S3DirectoryLoader
 from langchain.document_loaders.s3_file import S3FileLoader
@@ -107,10 +117,13 @@ from langchain.document_loaders.telegram import (
     TelegramChatApiLoader,
     TelegramChatFileLoader,
 )
+from langchain.document_loaders.tencent_cos_directory import TencentCOSDirectoryLoader
+from langchain.document_loaders.tencent_cos_file import TencentCOSFileLoader
 from langchain.document_loaders.text import TextLoader
 from langchain.document_loaders.tomarkdown import ToMarkdownLoader
 from langchain.document_loaders.toml import TomlLoader
 from langchain.document_loaders.trello import TrelloLoader
+from langchain.document_loaders.tsv import UnstructuredTSVLoader
 from langchain.document_loaders.twitter import TwitterTweetLoader
 from langchain.document_loaders.unstructured import (
     UnstructuredAPIFileIOLoader,
@@ -130,16 +143,17 @@ from langchain.document_loaders.word_document import (
     UnstructuredWordDocumentLoader,
 )
 from langchain.document_loaders.xml import UnstructuredXMLLoader
+from langchain.document_loaders.xorbits import XorbitsLoader
 from langchain.document_loaders.youtube import (
     GoogleApiClient,
     GoogleApiYoutubeLoader,
     YoutubeLoader,
 )
 
-# Legacy: only for backwards compat. Use PyPDFLoader instead
+# Legacy: only for backwards compatibility. Use PyPDFLoader instead
 PagedPDFSplitter = PyPDFLoader
 
-# For backwards compatability
+# For backwards compatibility
 TelegramChatLoader = TelegramChatFileLoader
 
 __all__ = [
@@ -159,11 +173,14 @@ __all__ = [
     "Blob",
     "BlobLoader",
     "BlockchainDocumentLoader",
+    "BraveSearchLoader",
     "CSVLoader",
     "ChatGPTLoader",
     "CoNLLULoader",
     "CollegeConfidentialLoader",
     "ConfluenceLoader",
+    "CubeSemanticLoader",
+    "DatadogLogsLoader",
     "DataFrameLoader",
     "DiffbotLoader",
     "DirectoryLoader",
@@ -196,10 +213,13 @@ __all__ = [
     "IuguLoader",
     "JSONLoader",
     "JoplinLoader",
+    "LarkSuiteDocLoader",
     "MWDumpLoader",
     "MastodonTootsLoader",
     "MathpixPDFLoader",
     "MaxComputeLoader",
+    "MergedDataLoader",
+    "MHTMLLoader",
     "ModernTreasuryLoader",
     "NotebookLoader",
     "NotionDBLoader",
@@ -209,6 +229,7 @@ __all__ = [
     "OneDriveLoader",
     "OnlinePDFLoader",
     "OutlookMessageLoader",
+    "OpenCityDataLoader",
     "PDFMinerLoader",
     "PDFMinerPDFasHTMLLoader",
     "PDFPlumberLoader",
@@ -222,6 +243,7 @@ __all__ = [
     "PySparkDataFrameLoader",
     "PythonLoader",
     "ReadTheDocsLoader",
+    "RecursiveUrlLoader",
     "RedditPostsLoader",
     "RoamLoader",
     "S3DirectoryLoader",
@@ -233,6 +255,8 @@ __all__ = [
     "SnowflakeLoader",
     "SpreedlyLoader",
     "StripeLoader",
+    "TencentCOSDirectoryLoader",
+    "TencentCOSFileLoader",
     "TelegramChatApiLoader",
     "TelegramChatFileLoader",
     "TelegramChatLoader",
@@ -253,9 +277,12 @@ __all__ = [
     "UnstructuredImageLoader",
     "UnstructuredMarkdownLoader",
     "UnstructuredODTLoader",
+    "UnstructuredOrgModeLoader",
     "UnstructuredPDFLoader",
     "UnstructuredPowerPointLoader",
+    "UnstructuredRSTLoader",
     "UnstructuredRTFLoader",
+    "UnstructuredTSVLoader",
     "UnstructuredURLLoader",
     "UnstructuredWordDocumentLoader",
     "UnstructuredXMLLoader",
@@ -263,6 +290,7 @@ __all__ = [
     "WebBaseLoader",
     "WhatsAppChatLoader",
     "WikipediaLoader",
+    "XorbitsLoader",
     "YoutubeAudioLoader",
     "YoutubeLoader",
 ]

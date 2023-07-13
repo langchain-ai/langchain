@@ -2,14 +2,14 @@ from typing import Iterator, List
 
 from pydantic import BaseModel, Field
 
-from langchain.base_language import BaseLanguageModel
 from langchain.chains.llm import LLMChain
 from langchain.chains.openai_functions.utils import get_llm_kwargs
 from langchain.output_parsers.openai_functions import (
     PydanticOutputFunctionsParser,
 )
 from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain.schema import HumanMessage, SystemMessage
+from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema.messages import HumanMessage, SystemMessage
 
 
 class FactWithEvidence(BaseModel):
@@ -64,6 +64,14 @@ class QuestionAnswer(BaseModel):
 
 
 def create_citation_fuzzy_match_chain(llm: BaseLanguageModel) -> LLMChain:
+    """Create a citation fuzzy match chain.
+
+    Args:
+        llm: Language model to use for the chain.
+
+    Returns:
+        Chain (LLMChain) that can be used to answer questions with citations.
+    """
     output_parser = PydanticOutputFunctionsParser(pydantic_schema=QuestionAnswer)
     schema = QuestionAnswer.schema()
     function = {

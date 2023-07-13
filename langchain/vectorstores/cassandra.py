@@ -1,9 +1,9 @@
 """Wrapper around Cassandra vector-store capabilities, based on cassIO."""
 from __future__ import annotations
 
-import hashlib
 import typing
-from typing import Any, Iterable, List, Optional, Tuple, Type, TypeVar
+import uuid
+from typing import Any, Callable, Iterable, List, Optional, Tuple, Type, TypeVar
 
 import numpy as np
 
@@ -16,14 +16,6 @@ from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 CVST = TypeVar("CVST", bound="Cassandra")
-
-# a positive number of seconds to expire entries, or None for no expiration.
-CASSANDRA_VECTORSTORE_DEFAULT_TTL_SECONDS = None
-
-
-def _hash(_input: str) -> str:
-    """Use a deterministic hashing approach."""
-    return hashlib.md5(_input.encode()).hexdigest()
 
 
 class Cassandra(VectorStore):
@@ -46,7 +38,7 @@ class Cassandra(VectorStore):
 
     _embedding_dimension: int | None
 
-    def _getEmbeddingDimension(self) -> int:
+    def _get_embedding_dimension(self) -> int:
         if self._embedding_dimension is None:
             self._embedding_dimension = len(
                 self.embedding.embed_query("This is a sample sentence.")
@@ -59,7 +51,7 @@ class Cassandra(VectorStore):
         session: Session,
         keyspace: str,
         table_name: str,
-        ttl_seconds: int | None = CASSANDRA_VECTORSTORE_DEFAULT_TTL_SECONDS,
+        ttl_seconds: Optional[int] = None,
     ) -> None:
         try:
             from cassio.vector import VectorTable
@@ -81,9 +73,12 @@ class Cassandra(VectorStore):
             session=session,
             keyspace=keyspace,
             table=table_name,
-            embedding_dimension=self._getEmbeddingDimension(),
-            auto_id=False,  # the `add_texts` contract admits user-provided ids
+            embedding_dimension=self._get_embedding_dimension(),
+            primary_key_type="TEXT",
         )
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        return self._cosine_relevance_score_fn
 
     def delete_collection(self) -> None:
         """
@@ -99,11 +94,32 @@ class Cassandra(VectorStore):
     def delete_by_document_id(self, document_id: str) -> None:
         return self.table.delete(document_id)
 
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+        """Delete by vector IDs.
+
+
+        Args:
+            ids: List of ids to delete.
+
+        Returns:
+            Optional[bool]: True if deletion is successful,
+            False otherwise, None if not implemented.
+        """
+
+        if ids is None:
+            raise ValueError("No ids provided to delete.")
+
+        for document_id in ids:
+            self.delete_by_document_id(document_id)
+        return True
+
     def add_texts(
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
+        batch_size: int = 16,
+        ttl_seconds: Optional[int] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -112,33 +128,39 @@ class Cassandra(VectorStore):
             texts (Iterable[str]): Texts to add to the vectorstore.
             metadatas (Optional[List[dict]], optional): Optional list of metadatas.
             ids (Optional[List[str]], optional): Optional list of IDs.
+            batch_size (int): Number of concurrent requests to send to the server.
+            ttl_seconds (Optional[int], optional): Optional time-to-live
+                for the added texts.
 
         Returns:
             List[str]: List of IDs of the added texts.
         """
         _texts = list(texts)  # lest it be a generator or something
         if ids is None:
-            # unless otherwise specified, we have deterministic IDs:
-            # re-inserting an existing document will not create a duplicate.
-            # (and effectively update the metadata)
-            ids = [_hash(text) for text in _texts]
+            ids = [uuid.uuid4().hex for _ in _texts]
         if metadatas is None:
             metadatas = [{} for _ in _texts]
         #
-        ttl_seconds = kwargs.get("ttl_seconds", self.ttl_seconds)
+        ttl_seconds = ttl_seconds or self.ttl_seconds
         #
         embedding_vectors = self.embedding.embed_documents(_texts)
-        for text, embedding_vector, text_id, metadata in zip(
-            _texts, embedding_vectors, ids, metadatas
-        ):
-            self.table.put(
-                document=text,
-                embedding_vector=embedding_vector,
-                document_id=text_id,
-                metadata=metadata,
-                ttl_seconds=ttl_seconds,
-            )
         #
+        for i in range(0, len(_texts), batch_size):
+            batch_texts = _texts[i : i + batch_size]
+            batch_embedding_vectors = embedding_vectors[i : i + batch_size]
+            batch_ids = ids[i : i + batch_size]
+            batch_metadatas = metadatas[i : i + batch_size]
+
+            futures = [
+                self.table.put_async(
+                    text, embedding_vector, text_id, metadata, ttl_seconds
+                )
+                for text, embedding_vector, text_id, metadata in zip(
+                    batch_texts, batch_embedding_vectors, batch_ids, batch_metadatas
+                )
+            ]
+            for future in futures:
+                future.result()
         return ids
 
     # id-returning search facilities
@@ -181,7 +203,6 @@ class Cassandra(VectorStore):
         self,
         query: str,
         k: int = 4,
-        **kwargs: Any,
     ) -> List[Tuple[Document, float, str]]:
         embedding_vector = self.embedding.embed_query(query)
         return self.similarity_search_with_score_id_by_vector(
@@ -219,12 +240,10 @@ class Cassandra(VectorStore):
         k: int = 4,
         **kwargs: Any,
     ) -> List[Document]:
-        #
         embedding_vector = self.embedding.embed_query(query)
         return self.similarity_search_by_vector(
             embedding_vector,
             k,
-            **kwargs,
         )
 
     def similarity_search_by_vector(
@@ -245,28 +264,11 @@ class Cassandra(VectorStore):
         self,
         query: str,
         k: int = 4,
-        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         embedding_vector = self.embedding.embed_query(query)
         return self.similarity_search_with_score_by_vector(
             embedding_vector,
             k,
-        )
-
-    # Even though this is a `_`-method,
-    # it is apparently used by VectorSearch parent class
-    # in an exposed method (`similarity_search_with_relevance_scores`).
-    # So we implement it (hmm).
-    def _similarity_search_with_relevance_scores(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
-        return self.similarity_search_with_score(
-            query,
-            k,
-            **kwargs,
         )
 
     def max_marginal_relevance_search_by_vector(
@@ -352,6 +354,7 @@ class Cassandra(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        batch_size: int = 16,
         **kwargs: Any,
     ) -> CVST:
         """Create a Cassandra vectorstore from raw texts.
@@ -378,6 +381,7 @@ class Cassandra(VectorStore):
         cls: Type[CVST],
         documents: List[Document],
         embedding: Embeddings,
+        batch_size: int = 16,
         **kwargs: Any,
     ) -> CVST:
         """Create a Cassandra vectorstore from a document list.

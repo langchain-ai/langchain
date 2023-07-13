@@ -4,15 +4,15 @@ from typing import List, Optional
 
 from langchain.schema import (
     BaseChatMessageHistory,
-    BaseMessage,
-    _message_to_dict,
-    messages_from_dict,
 )
+from langchain.schema.messages import BaseMessage, _message_to_dict, messages_from_dict
 
 logger = logging.getLogger(__name__)
 
 
 class RedisChatMessageHistory(BaseChatMessageHistory):
+    """Chat message history stored in a Redis database."""
+
     def __init__(
         self,
         session_id: str,
