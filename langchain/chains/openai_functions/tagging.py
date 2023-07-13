@@ -21,6 +21,8 @@ def _get_tagging_function(schema: dict) -> dict:
 
 _TAGGING_TEMPLATE = """Extract the desired information from the following passage.
 
+Only extract the properties mentioned in the 'information_extraction' function.
+
 Passage:
 {input}
 """
