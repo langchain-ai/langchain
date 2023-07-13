@@ -9,7 +9,7 @@ class SRTLoader(BaseLoader):
     """Loader for .srt (subtitle) files."""
 
     def __init__(self, file_path: str):
-        """Initialize with file path."""
+        """Initialize with a file path."""
         try:
             import pysrt  # noqa:F401
         except ImportError:

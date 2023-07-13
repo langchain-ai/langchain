@@ -51,8 +51,7 @@ class InputFormatError(Exception):
 
 
 def _get_prompts(inputs: Dict[str, Any]) -> List[str]:
-    """
-    Get prompts from inputs.
+    """Get prompts from inputs.
 
     Args:
         inputs: The input dictionary.
@@ -99,8 +98,7 @@ def _get_prompts(inputs: Dict[str, Any]) -> List[str]:
 
 
 def _get_messages(inputs: Dict[str, Any]) -> List[List[BaseMessage]]:
-    """
-    Get Chat Messages from inputs.
+    """Get Chat Messages from inputs.
 
     Args:
         inputs: The input dictionary.
@@ -143,8 +141,7 @@ async def _arun_llm(
     callbacks: Callbacks = None,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
 ) -> Union[LLMResult, ChatResult]:
-    """
-    Asynchronously run the language model.
+    """Asynchronously run the language model.
 
     Args:
         llm: The language model to run.
@@ -203,8 +200,7 @@ async def _arun_llm_or_chain(
     callbacks: Optional[List[BaseCallbackHandler]] = None,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
 ) -> Union[List[dict], List[str], List[LLMResult], List[ChatResult]]:
-    """
-    Asynchronously run the Chain or language model.
+    """Asynchronously run the Chain or language model.
 
     Args:
         example: The example to run.
@@ -264,8 +260,7 @@ async def _gather_with_concurrency(
         [Sequence[BaseCallbackHandler], Dict], Coroutine[Any, Any, Any]
     ],
 ) -> List[Any]:
-    """
-    Run coroutines with a concurrency limit.
+    """Run coroutines with a concurrency limit.
 
     Args:
         n: The maximum number of concurrent tasks.
@@ -389,8 +384,6 @@ async def arun_on_examples(
     """
     project_name = _get_project_name(project_name, llm_or_chain_factory, None)
     client_ = client or LangChainPlusClient()
-    client_.create_project(project_name)
-
     results: Dict[str, List[Any]] = {}
 
     async def process_example(
@@ -503,7 +496,8 @@ def run_llm_or_chain(
         callbacks: Optional callbacks to use during the run.
 
     Returns:
-        A list of outputs.
+        Union[List[dict], List[str], List[LLMResult], List[ChatResult]]:
+          The outputs of the model or chain.
     """
     if callbacks:
         previous_example_ids = [
@@ -588,7 +582,6 @@ def run_on_examples(
     results: Dict[str, Any] = {}
     project_name = _get_project_name(project_name, llm_or_chain_factory, None)
     client_ = client or LangChainPlusClient()
-    client_.create_project(project_name)
     tracer = LangChainTracer(project_name=project_name)
     evaluator_project_name = f"{project_name}-evaluators"
     evalution_handler = EvaluatorCallbackHandler(
@@ -672,13 +665,14 @@ async def arun_on_dataset(
         verbose: Whether to print progress.
         client: Client to use to read the dataset. If not provided, a new
             client will be created using the credentials in the environment.
-        tags: Tags to add to each run in the project.
+        tags: Tags to add to each run in the session.
         run_evaluators: Evaluators to run on the results of the chain.
         input_mapper: A function to map to the inputs dictionary from an Example
             to the format expected by the model to be evaluated. This is useful if
             your model needs to deserialize more complex schema or if your dataset
             has inputs with keys that differ from what is expected by your chain
             or agent.
+
     Returns:
         A dictionary containing the run's project name and the resulting model outputs.
     """
@@ -725,7 +719,6 @@ def run_on_dataset(
         llm_or_chain_factory: Language model or Chain constructor to run
             over the dataset. The Chain constructor is used to permit
             independent calls on each example without carrying over state.
-        concurrency_level: Number of async workers to run in parallel.
         num_repetitions: Number of times to run the model on each example.
             This is useful when testing success rates or generating confidence
             intervals.
@@ -734,7 +727,7 @@ def run_on_dataset(
         verbose: Whether to print progress.
         client: Client to use to access the dataset. If None, a new client
             will be created using the credentials in the environment.
-        tags: Tags to add to each run in the project.
+        tags: Tags to add to each run in the session.
         run_evaluators: Evaluators to run on the results of the chain.
         input_mapper: A function to map to the inputs dictionary from an Example
             to the format expected by the model to be evaluated. This is useful if

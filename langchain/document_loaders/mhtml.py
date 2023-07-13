@@ -24,10 +24,11 @@ class MHTMLLoader(BaseLoader):
         to pass to the BeautifulSoup object.
 
         Args:
-            file_path: The path to the file to load.
+            file_path: Path to file to load.
             open_encoding: The encoding to use when opening the file.
-            bs_kwargs: soup kwargs to pass to the BeautifulSoup object.
-            get_text_separator: The separator to use when getting text from the soup.
+            bs_kwargs: Any kwargs to pass to the BeautifulSoup object.
+            get_text_separator: The separator to use when getting the text
+                from the soup.
         """
         try:
             import bs4  # noqa:F401

@@ -10,7 +10,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class BiliBiliLoader(BaseLoader):
-    """Loader that loads bilibili transcripts."""
+    """Loads bilibili transcripts."""
 
     def __init__(self, video_urls: List[str]):
         """Initialize with bilibili url.

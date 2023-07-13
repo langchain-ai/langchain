@@ -22,17 +22,18 @@ from langchain.tools.openapi.utils.api_models import (
 )
 from langchain.tools.openapi.utils.openapi_utils import HTTPVerb, OpenAPISpec
 
-_DIR = Path(__file__).parent
+SPECS_DIR = Path(__file__).parents[2] / "examples" / "test_specs"
 
 
 def _get_test_specs() -> Iterable[Path]:
     """Walk the test_specs directory and collect all files with the name 'apispec'
     in them.
     """
-    test_specs_dir = _DIR / "test_specs"
+    if not SPECS_DIR.exists():
+        raise ValueError
     return (
         Path(root) / file
-        for root, _, files in os.walk(test_specs_dir)
+        for root, _, files in os.walk(SPECS_DIR)
         for file in files
         if file.startswith("apispec")
     )
@@ -84,7 +85,7 @@ def test_parse_api_operations(
     try:
         APIOperation.from_openapi_spec(spec, path, method)
     except Exception as e:
-        raise AssertionError(f"Error processong {spec_name}: {e} ") from e
+        raise AssertionError(f"Error processing {spec_name}: {e} ") from e
 
 
 @pytest.fixture
