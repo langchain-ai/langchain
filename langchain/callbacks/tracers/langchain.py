@@ -1,5 +1,5 @@
 """A Tracer implementation that records to LangChain endpoint."""
-from __future__ import absolute_import, annotations
+from __future__ import annotations
 
 import logging
 import os
