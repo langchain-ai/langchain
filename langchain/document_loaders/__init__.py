@@ -24,12 +24,14 @@ from langchain.document_loaders.blob_loaders import (
 )
 from langchain.document_loaders.blockchain import BlockchainDocumentLoader
 from langchain.document_loaders.brave_search import BraveSearchLoader
+from langchain.document_loaders.browserless import BrowserlessLoader
 from langchain.document_loaders.chatgpt import ChatGPTLoader
 from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
 from langchain.document_loaders.confluence import ConfluenceLoader
 from langchain.document_loaders.conllu import CoNLLULoader
 from langchain.document_loaders.csv_loader import CSVLoader, UnstructuredCSVLoader
 from langchain.document_loaders.cube_semantic import CubeSemanticLoader
+from langchain.document_loaders.datadog_logs import DatadogLogsLoader
 from langchain.document_loaders.dataframe import DataFrameLoader
 from langchain.document_loaders.diffbot import DiffbotLoader
 from langchain.document_loaders.directory import DirectoryLoader
@@ -122,6 +124,7 @@ from langchain.document_loaders.text import TextLoader
 from langchain.document_loaders.tomarkdown import ToMarkdownLoader
 from langchain.document_loaders.toml import TomlLoader
 from langchain.document_loaders.trello import TrelloLoader
+from langchain.document_loaders.tsv import UnstructuredTSVLoader
 from langchain.document_loaders.twitter import TwitterTweetLoader
 from langchain.document_loaders.unstructured import (
     UnstructuredAPIFileIOLoader,
@@ -141,6 +144,7 @@ from langchain.document_loaders.word_document import (
     UnstructuredWordDocumentLoader,
 )
 from langchain.document_loaders.xml import UnstructuredXMLLoader
+from langchain.document_loaders.xorbits import XorbitsLoader
 from langchain.document_loaders.youtube import (
     GoogleApiClient,
     GoogleApiYoutubeLoader,
@@ -171,12 +175,14 @@ __all__ = [
     "BlobLoader",
     "BlockchainDocumentLoader",
     "BraveSearchLoader",
+    "BrowserlessLoader",
     "CSVLoader",
     "ChatGPTLoader",
     "CoNLLULoader",
     "CollegeConfidentialLoader",
     "ConfluenceLoader",
     "CubeSemanticLoader",
+    "DatadogLogsLoader",
     "DataFrameLoader",
     "DiffbotLoader",
     "DirectoryLoader",
@@ -278,6 +284,7 @@ __all__ = [
     "UnstructuredPowerPointLoader",
     "UnstructuredRSTLoader",
     "UnstructuredRTFLoader",
+    "UnstructuredTSVLoader",
     "UnstructuredURLLoader",
     "UnstructuredWordDocumentLoader",
     "UnstructuredXMLLoader",
@@ -285,6 +292,7 @@ __all__ = [
     "WebBaseLoader",
     "WhatsAppChatLoader",
     "WikipediaLoader",
+    "XorbitsLoader",
     "YoutubeAudioLoader",
     "YoutubeLoader",
 ]

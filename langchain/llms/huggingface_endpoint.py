@@ -137,8 +137,10 @@ class HuggingFaceEndpoint(LLM):
                 f"Error raised by inference API: {generated_text['error']}"
             )
         if self.task == "text-generation":
-            # Text generation return includes the starter text.
-            text = generated_text[0]["generated_text"][len(prompt) :]
+            text = generated_text[0]["generated_text"]
+            # Remove prompt if included in generated text.
+            if text.startswith(prompt):
+                text = text[len(prompt) :]
         elif self.task == "text2text-generation":
             text = generated_text[0]["generated_text"]
         elif self.task == "summarization":

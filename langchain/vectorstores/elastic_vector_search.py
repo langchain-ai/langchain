@@ -17,7 +17,7 @@ from typing import (
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
-from langchain.utils import get_from_env
+from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore
 
 
@@ -159,8 +159,8 @@ class ElasticVectorSearch(VectorStore, ABC):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
-        refresh_indices: bool = True,
         ids: Optional[List[str]] = None,
+        refresh_indices: bool = True,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -168,6 +168,7 @@ class ElasticVectorSearch(VectorStore, ABC):
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of unique IDs.
             refresh_indices: bool to refresh ElasticSearch indices
 
         Returns:
@@ -262,7 +263,7 @@ class ElasticVectorSearch(VectorStore, ABC):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        elasticsearch_url: Optional[str] = None,
+        ids: Optional[List[str]] = None,
         index_name: Optional[str] = None,
         refresh_indices: bool = True,
         **kwargs: Any,
@@ -288,13 +289,13 @@ class ElasticVectorSearch(VectorStore, ABC):
                     elasticsearch_url="http://localhost:9200"
                 )
         """
-        elasticsearch_url = elasticsearch_url or get_from_env(
-            "elasticsearch_url", "ELASTICSEARCH_URL"
+        elasticsearch_url = get_from_dict_or_env(
+            kwargs, "elasticsearch_url", "ELASTICSEARCH_URL"
         )
         index_name = index_name or uuid.uuid4().hex
         vectorsearch = cls(elasticsearch_url, index_name, embedding, **kwargs)
         vectorsearch.add_texts(
-            texts, metadatas=metadatas, refresh_indices=refresh_indices
+            texts, metadatas=metadatas, ids=ids, refresh_indices=refresh_indices
         )
         return vectorsearch
 
@@ -348,7 +349,6 @@ class ElasticKnnSearch(VectorStore, ABC):
         query_field: Optional[str] = "text",
     ):
 
-
         try:
             import elasticsearch
         except ImportError:
@@ -377,6 +377,45 @@ class ElasticKnnSearch(VectorStore, ABC):
                     """Either provide a pre-existing Elasticsearch connection, \
                 or valid credentials for creating a new connection."""
                 )
+
+    @classmethod
+    def from_texts(
+        cls,
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        index_name: Optional[str] = None,
+        refresh_indices: bool = True,
+        es_connection: Optional["Elasticsearch"] = None,
+        es_cloud_id: Optional[str] = None,
+        es_user: Optional[str] = None,
+        es_password: Optional[str] = None,
+        **kwargs: Any,
+    ) -> ElasticKnnSearch:
+        """Construct ElasticKnnSearch wrapper from raw documents.
+
+        This is a user-friendly interface that:
+            1. Embeds documents.
+            2. Creates a new index for the embeddings in the Elasticsearch instance.
+            3. Adds the documents to the newly created Elasticsearch index.
+
+        This is intended to be a quick way to get started.
+        """
+        index_name = index_name or uuid.uuid4().hex
+        vectorsearch = cls(
+            index_name,
+            embedding,
+            es_connection=es_connection,
+            es_cloud_id=es_cloud_id,
+            es_user=es_user,
+            es_password=es_password,
+            **kwargs,
+        )
+        vectorsearch.add_texts(
+            texts, metadatas=metadatas, refresh_indices=refresh_indices, ids=ids
+        )
+        return vectorsearch
 
     @staticmethod
     def _default_knn_mapping(dims: int) -> Dict:
@@ -429,7 +468,7 @@ class ElasticKnnSearch(VectorStore, ABC):
     def similarity_search(self, *args, **kwargs):
         '''Pass through to `knn_search`'''
         return self.knn_search(*args, **kwargs)
-    
+
     def knn_search(
         self,
         query: Optional[str] = None,
