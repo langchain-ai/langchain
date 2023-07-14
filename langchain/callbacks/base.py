@@ -4,6 +4,8 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, Sequence, Union
 from uuid import UUID
 
+from pydantic import BaseModel
+
 from langchain.schema.agent import AgentAction, AgentFinish
 from langchain.schema.document import Document
 from langchain.schema.messages import BaseMessage
@@ -34,7 +36,7 @@ class RetrieverManagerMixin:
         """Run when Retriever ends running."""
 
 
-class NewTokenIndicies:
+class NewTokenIndicies(BaseModel):
     # index of the prompt that produced the token
     # (if there are multiple prompts)
     prompt: int
