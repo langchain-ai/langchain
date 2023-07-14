@@ -83,11 +83,12 @@ class DirectoryLoader(BaseLoader):
         if item.is_file():
             if _is_visible(item.relative_to(path)) or self.load_hidden:
                 try:
+                    logger.debug(f"Processing file: {str(item)}")
                     sub_docs = self.loader_cls(str(item), **self.loader_kwargs).load()
                     docs.extend(sub_docs)
                 except Exception as e:
                     if self.silent_errors:
-                        logger.warning(e)
+                        logger.warning(f"Error loading file {str(item)}: {e}")
                     else:
                         raise e
                 finally:
