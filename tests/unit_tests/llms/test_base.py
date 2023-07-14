@@ -1,5 +1,4 @@
 """Test base LLM functionality."""
-import pytest
 from sqlalchemy import Column, Integer, Sequence, String, create_engine
 
 try:
@@ -11,11 +10,7 @@ import langchain
 from langchain.cache import InMemoryCache, SQLAlchemyCache
 from langchain.schema import Generation, LLMResult
 from tests.unit_tests.llms.fake_llm import FakeLLM
-@pytest.fixture(autouse=True)
-def reset_cache_state():
-    langchain.llm_cache = None
-    yield
-    langchain.llm_cache = None
+
 
 def test_caching() -> None:
     """Test caching behavior."""
