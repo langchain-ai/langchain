@@ -70,5 +70,6 @@ class SimpleJsonOutputParser(BaseOutputParser[Any]):
         except JSONDecodeError as e:
             raise OutputParserException(f"Invalid json output: {text}") from e
 
+    @property
     def _type(self) -> str:
         return "simple_json_output_parser"
