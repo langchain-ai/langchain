@@ -8,6 +8,13 @@ from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
 )
 
+from .common import qdrant_is_not_running
+
+# Skipping all the tests in the module if Qdrant is not running on localhost.
+pytestmark = pytest.mark.skipif(
+    qdrant_is_not_running(), reason="Qdrant server is not running"
+)
+
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("batch_size", [1, 64])

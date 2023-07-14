@@ -838,7 +838,8 @@ class Qdrant(VectorStore):
         ]
         embeddings: List[List[float]] = [
             result.get(self.vector_name)  # type: ignore
-            if isinstance(result, dict) else result
+            if isinstance(result, dict)
+            else result
             for result in results
         ]
         mmr_selected: List[int] = maximal_marginal_relevance(
