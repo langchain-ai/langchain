@@ -16,7 +16,7 @@ Databricks connector for the SQLDatabase Chain
 You can connect to [Databricks runtimes](https://docs.databricks.com/runtime/index.html) and [Databricks SQL](https://www.databricks.com/product/databricks-sql) using the SQLDatabase wrapper of LangChain. See the notebook [Connect to Databricks](/docs/ecosystem/integrations/databricks/databricks.html) for details.
 
 Databricks MLflow integrates with LangChain
----------------------------------------------------
+-------------------------------------------
 
 MLflow is an open source platform to manage the ML lifecycle, including experimentation, reproducibility, deployment, and a central model registry. See the notebook [MLflow Callback Handler](/docs/ecosystem/integrations/mlflow_tracking.ipynb) for details about MLflow's integration with LangChain.
 
