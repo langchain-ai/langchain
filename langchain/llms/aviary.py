@@ -88,7 +88,7 @@ class Aviary(LLM):
     install the aviary CLI and then use:
     `aviary models`
 
-    AVIARY_URL and AVIARY_TOKEN environement variables must be set.
+    AVIARY_URL and AVIARY_TOKEN environment variables must be set.
 
     Example:
         .. code-block:: python

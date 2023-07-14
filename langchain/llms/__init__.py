@@ -29,6 +29,7 @@ from langchain.llms.huggingface_hub import HuggingFaceHub
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.llms.huggingface_text_gen_inference import HuggingFaceTextGenInference
 from langchain.llms.human import HumanInputLLM
+from langchain.llms.koboldai import KoboldApiLLM
 from langchain.llms.llamacpp import LlamaCpp
 from langchain.llms.manifest import ManifestWrapper
 from langchain.llms.modal import Modal
@@ -81,6 +82,7 @@ __all__ = [
     "HuggingFacePipeline",
     "HuggingFaceTextGenInference",
     "HumanInputLLM",
+    "KoboldApiLLM",
     "LlamaCpp",
     "TextGen",
     "ManifestWrapper",
@@ -136,6 +138,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "huggingface_pipeline": HuggingFacePipeline,
     "huggingface_textgen_inference": HuggingFaceTextGenInference,
     "human-input": HumanInputLLM,
+    "koboldai": KoboldApiLLM,
     "llamacpp": LlamaCpp,
     "textgen": TextGen,
     "modal": Modal,

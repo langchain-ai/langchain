@@ -93,7 +93,7 @@ class GooglePlacesAPIWrapper(BaseModel):
 
     def format_place_details(self, place_details: Dict[str, Any]) -> Optional[str]:
         try:
-            name = place_details.get("result", {}).get("name", "Unkown")
+            name = place_details.get("result", {}).get("name", "Unknown")
             address = place_details.get("result", {}).get(
                 "formatted_address", "Unknown"
             )
