@@ -119,7 +119,7 @@ class ZapierNLARunAction(BaseTool):
         if "instructions" in params_schema:
             del params_schema["instructions"]
 
-        # Ensure base prompt (if overrided) contains necessary input fields
+        # Ensure base prompt (if overridden) contains necessary input fields
         necessary_fields = {"{zapier_description}", "{params}"}
         if not all(field in values["base_prompt"] for field in necessary_fields):
             raise ValueError(

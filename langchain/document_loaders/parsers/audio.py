@@ -1,4 +1,4 @@
-from typing import Iterator
+from typing import Iterator, Optional
 
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
@@ -8,6 +8,9 @@ from langchain.schema import Document
 class OpenAIWhisperParser(BaseBlobParser):
     """Transcribe and parse audio files.
     Audio transcription is with OpenAI Whisper model."""
+
+    def __init__(self, api_key: Optional[str] = None):
+        self.api_key = api_key
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
@@ -27,6 +30,10 @@ class OpenAIWhisperParser(BaseBlobParser):
             raise ValueError(
                 "pydub package not found, please install it with " "`pip install pydub`"
             )
+
+        # Set the API key if provided
+        if self.api_key:
+            openai.api_key = self.api_key
 
         # Audio file from disk
         audio = AudioSegment.from_file(blob.path)

@@ -13,10 +13,11 @@ def deeplake_datastore() -> DeepLake:
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = DeepLake.from_texts(
-        dataset_path="mem://test_path",
+        dataset_path="./test_path",
         texts=texts,
         metadatas=metadatas,
         embedding=FakeEmbeddings(),
+        overwrite=True,
     )
     return docsearch
 
@@ -131,6 +132,15 @@ def test_similarity_search(deeplake_datastore: DeepLake, distance_metric: str) -
         "foo", k=1, distance_metric=distance_metric
     )
     assert output == [Document(page_content="foo", metadata={"page": "0"})]
+
+    tql_query = (
+        f"SELECT * WHERE "
+        f"id=='{deeplake_datastore.vectorstore.dataset.id[0].numpy()[0]}'"
+    )
+    with pytest.raises(ValueError):
+        output = deeplake_datastore.similarity_search(
+            query="foo", tql_query=tql_query, k=1, distance_metric=distance_metric
+        )
     deeplake_datastore.delete_dataset()
 
 

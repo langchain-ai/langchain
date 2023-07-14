@@ -47,6 +47,7 @@ def set_cache_and_teardown(request: FixtureRequest) -> Generator[None, None, Non
     # Will be run after each test
     if langchain.llm_cache:
         langchain.llm_cache.clear()
+        langchain.llm_cache = None
     else:
         raise ValueError("Cache not set. This should never happen.")
 
@@ -131,6 +132,26 @@ def test_chat_model_caching_params() -> None:
         assert isinstance(result_no_params, AIMessage)
         assert result_no_params.content == response
 
+    else:
+        raise ValueError(
+            "The cache not set. This should never happen, as the pytest fixture "
+            "`set_cache_and_teardown` always sets the cache."
+        )
+
+
+def test_llm_cache_clear() -> None:
+    prompt = "How are you?"
+    response = "Test response"
+    cached_response = "Cached test response"
+    llm = FakeListLLM(responses=[response])
+    if langchain.llm_cache:
+        langchain.llm_cache.update(
+            prompt=prompt,
+            llm_string=create_llm_string(llm),
+            return_val=[Generation(text=cached_response)],
+        )
+        langchain.llm_cache.clear()
+        assert llm(prompt) == response
     else:
         raise ValueError(
             "The cache not set. This should never happen, as the pytest fixture "

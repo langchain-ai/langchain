@@ -1,4 +1,4 @@
-"""Loader that loads all documents from a blackboard course."""
+"""Loads all documents from a blackboard course."""
 import contextlib
 import re
 from pathlib import Path

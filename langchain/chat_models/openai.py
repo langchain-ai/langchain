@@ -205,7 +205,7 @@ class ChatOpenAI(BaseChatModel):
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
-        all_required_field_names = cls.all_required_field_names()
+        all_required_field_names = cls._all_required_field_names()
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
             if field_name in extra:
@@ -386,7 +386,10 @@ class ChatOpenAI(BaseChatModel):
         generations = []
         for res in response["choices"]:
             message = _convert_dict_to_message(res["message"])
-            gen = ChatGeneration(message=message)
+            gen = ChatGeneration(
+                message=message,
+                generation_info=dict(finish_reason=res.get("finish_reason")),
+            )
             generations.append(gen)
         llm_output = {"token_usage": response["usage"], "model_name": self.model_name}
         return ChatResult(generations=generations, llm_output=llm_output)
