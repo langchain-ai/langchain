@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-from abc import ABC
 from typing import (
     Any,
     Dict,
@@ -22,11 +21,10 @@ from langchain.utils import get_from_dict_or_env
 logger = logging.getLogger(__name__)
 
 
-class _MinimaxEndpointClient(BaseModel, ABC):
+class _MinimaxEndpointClient(BaseModel):
     """An API client that talks to a Minimax llm endpoint."""
 
     host: str
-    endpoint_name: str
     group_id: str
     api_key: str
     api_url: str
@@ -131,7 +129,6 @@ class Minimax(LLM):
             host=self.minimax_api_host,
             api_key=self.minimax_api_key,
             group_id=self.minimax_group_id,
-            endpoint_name=self.minimax_group_id,
         )
 
     def _call(
