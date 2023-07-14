@@ -1,4 +1,4 @@
-from langchain.output_parsers.list import CommaSeparatedListOutputParser
+# flake8: noqa
 from langchain.prompts.prompt import PromptTemplate
 
 PROMPT_SUFFIX = """Only use the following Elasticsearch indices:
