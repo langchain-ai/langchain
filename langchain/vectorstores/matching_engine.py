@@ -100,7 +100,8 @@ class MatchingEngine(VectorStore):
         try:
             from google.cloud import aiplatform, storage  # noqa: F401
             from google.oauth2 import service_account  # noqa: F401
-            from google.cloud import firestore
+            if (self.firestore_collection_name or self.firestore_client):
+                from google.cloud import firestore
         except ImportError:
             raise ImportError(
                 "You must run `pip install --upgrade "
