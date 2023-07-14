@@ -1,22 +1,17 @@
 """Tools for interacting with the user."""
 
 
-from langchain.tools.base import BaseTool
+import warnings
+from typing import Any
+
+from langchain.tools.human.tool import HumanInputRun
 
 
-class StdInInquireTool(BaseTool):
+def StdInInquireTool(*args: Any, **kwargs: Any) -> HumanInputRun:
     """Tool for asking the user for input."""
-
-    name: str = "Inquire"
-    description: str = (
-        "useful if you do not have enough information to"
-        " effectively use other tools. Input is best as a clarifying"
-        " question (to disambiguate) or a request for more context."
+    warnings.warn(
+        "StdInInquireTool will be deprecated in the future. "
+        "Please use HumanInputRun instead.",
+        DeprecationWarning,
     )
-
-    def _run(self, prompt: str) -> str:
-        """Prompt the user for more input."""
-        return input(f"\n{prompt}")
-
-    async def _arun(self, query: str) -> str:
-        raise NotImplementedError(f"{self.__class__.__name__} does not support async")
+    return HumanInputRun(*args, **kwargs)

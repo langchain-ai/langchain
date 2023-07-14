@@ -1,5 +1,5 @@
 """DuckDuckGo Search API toolkit."""
 
-from langchain.tools.ddg_search.tool import DuckDuckGoSearchTool
+from langchain.tools.ddg_search.tool import DuckDuckGoSearchRun
 
-__all__ = ["DuckDuckGoSearchTool"]
+__all__ = ["DuckDuckGoSearchRun"]

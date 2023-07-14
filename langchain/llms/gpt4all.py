@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Mapping, Optional, Set
 
 from pydantic import Extra, Field, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
@@ -11,14 +12,14 @@ from langchain.llms.utils import enforce_stop_tokens
 class GPT4All(LLM):
     r"""Wrapper around GPT4All language models.
 
-    To use, you should have the ``pyllamacpp`` python package installed, the
+    To use, you should have the ``gpt4all`` python package installed, the
     pre-trained model file, and the model's config information.
 
     Example:
         .. code-block:: python
 
             from langchain.llms import GPT4All
-            model = GPT4All(model="./models/gpt4all-model.bin", n_ctx=512, n_threads=8)
+            model = GPT4All(model="./models/gpt4all-model.bin", n_threads=8)
 
             # Simplest invocation
             response = model("Once upon a time, ")
@@ -27,7 +28,9 @@ class GPT4All(LLM):
     model: str
     """Path to the pre-trained GPT4All model file."""
 
-    n_ctx: int = Field(512, alias="n_ctx")
+    backend: Optional[str] = Field(None, alias="backend")
+
+    max_tokens: int = Field(200, alias="max_tokens")
     """Token context window."""
 
     n_parts: int = Field(-1, alias="n_parts")
@@ -58,10 +61,10 @@ class GPT4All(LLM):
     n_predict: Optional[int] = 256
     """The maximum number of tokens to generate."""
 
-    temp: Optional[float] = 0.8
+    temp: Optional[float] = 0.7
     """The temperature to use for sampling."""
 
-    top_p: Optional[float] = 0.95
+    top_p: Optional[float] = 0.1
     """The top-p value to use for sampling."""
 
     top_k: Optional[int] = 40
@@ -76,14 +79,17 @@ class GPT4All(LLM):
     repeat_last_n: Optional[int] = 64
     "Last n tokens to penalize"
 
-    repeat_penalty: Optional[float] = 1.3
+    repeat_penalty: Optional[float] = 1.18
     """The penalty to apply to repeated tokens."""
 
-    n_batch: int = Field(1, alias="n_batch")
+    n_batch: int = Field(8, alias="n_batch")
     """Batch size for prompt processing."""
 
     streaming: bool = False
     """Whether to stream the results or not."""
+
+    allow_download: bool = False
+    """If model does not exist in ~/.cache/gpt4all/, download it."""
 
     client: Any = None  #: :meta private:
 
@@ -92,53 +98,62 @@ class GPT4All(LLM):
 
         extra = Extra.forbid
 
-    @property
-    def _default_params(self) -> Dict[str, Any]:
-        """Get the identifying parameters."""
+    @staticmethod
+    def _model_param_names() -> Set[str]:
         return {
-            "seed": self.seed,
+            "max_tokens",
+            "n_predict",
+            "top_k",
+            "top_p",
+            "temp",
+            "n_batch",
+            "repeat_penalty",
+            "repeat_last_n",
+        }
+
+    def _default_params(self) -> Dict[str, Any]:
+        return {
+            "max_tokens": self.max_tokens,
             "n_predict": self.n_predict,
-            "n_threads": self.n_threads,
-            "n_batch": self.n_batch,
-            "repeat_last_n": self.repeat_last_n,
-            "repeat_penalty": self.repeat_penalty,
             "top_k": self.top_k,
             "top_p": self.top_p,
             "temp": self.temp,
-        }
-
-    @staticmethod
-    def _llama_param_names() -> Set[str]:
-        """Get the identifying parameters."""
-        return {
-            "seed",
-            "n_ctx",
-            "n_parts",
-            "f16_kv",
-            "logits_all",
-            "vocab_only",
-            "use_mlock",
-            "embedding",
+            "n_batch": self.n_batch,
+            "repeat_penalty": self.repeat_penalty,
+            "repeat_last_n": self.repeat_last_n,
         }
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in the environment."""
         try:
-            from pyllamacpp.model import Model as GPT4AllModel
-
-            llama_keys = cls._llama_param_names()
-            model_kwargs = {k: v for k, v in values.items() if k in llama_keys}
-            values["client"] = GPT4AllModel(
-                ggml_model=values["model"],
-                **model_kwargs,
-            )
-
+            from gpt4all import GPT4All as GPT4AllModel
         except ImportError:
-            raise ValueError(
-                "Could not import pyllamacpp python package. "
-                "Please install it with `pip install pyllamacpp`."
+            raise ImportError(
+                "Could not import gpt4all python package. "
+                "Please install it with `pip install gpt4all`."
             )
+
+        full_path = values["model"]
+        model_path, delimiter, model_name = full_path.rpartition("/")
+        model_path += delimiter
+
+        values["client"] = GPT4AllModel(
+            model_name,
+            model_path=model_path or None,
+            model_type=values["backend"],
+            allow_download=values["allow_download"],
+        )
+        if values["n_threads"] is not None:
+            # set n_threads
+            values["client"].model.set_thread_count(values["n_threads"])
+
+        try:
+            values["backend"] = values["client"].model_type
+        except AttributeError:
+            # The below is for compatibility with GPT4All Python bindings <= 0.2.3.
+            values["backend"] = values["client"].model.model_type
+
         return values
 
     @property
@@ -146,11 +161,9 @@ class GPT4All(LLM):
         """Get the identifying parameters."""
         return {
             "model": self.model,
-            **self._default_params,
+            **self._default_params(),
             **{
-                k: v
-                for k, v in self.__dict__.items()
-                if k in GPT4All._llama_param_names()
+                k: v for k, v in self.__dict__.items() if k in self._model_param_names()
             },
         }
 
@@ -159,7 +172,13 @@ class GPT4All(LLM):
         """Return the type of llm."""
         return "gpt4all"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
         r"""Call out to GPT4All's generate method.
 
         Args:
@@ -175,14 +194,15 @@ class GPT4All(LLM):
                 prompt = "Once upon a time, "
                 response = model(prompt, n_predict=55)
         """
-        text_callback = partial(
-            self.callback_manager.on_llm_new_token, verbose=self.verbose
-        )
-        text = self.client.generate(
-            prompt,
-            new_text_callback=text_callback,
-            **self._default_params,
-        )
+        text_callback = None
+        if run_manager:
+            text_callback = partial(run_manager.on_llm_new_token, verbose=self.verbose)
+        text = ""
+        params = {**self._default_params(), **kwargs}
+        for token in self.client.generate(prompt, **params):
+            if text_callback:
+                text_callback(token)
+            text += token
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
         return text

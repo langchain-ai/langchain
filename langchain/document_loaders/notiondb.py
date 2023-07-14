@@ -1,6 +1,6 @@
 """Notion DB loader for langchain"""
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import requests
 
@@ -15,13 +15,20 @@ BLOCK_URL = NOTION_BASE_URL + "/blocks/{block_id}/children"
 
 class NotionDBLoader(BaseLoader):
     """Notion DB Loader.
-    Reads content from pages within a Noton Database.
+    Reads content from pages within a Notion Database.
     Args:
         integration_token (str): Notion integration token.
         database_id (str): Notion database id.
+        request_timeout_sec (int): Timeout for Notion requests in seconds.
+            Defaults to 10.
     """
 
-    def __init__(self, integration_token: str, database_id: str) -> None:
+    def __init__(
+        self,
+        integration_token: str,
+        database_id: str,
+        request_timeout_sec: Optional[int] = 10,
+    ) -> None:
         """Initialize with parameters."""
         if not integration_token:
             raise ValueError("integration_token must be provided")
@@ -35,19 +42,20 @@ class NotionDBLoader(BaseLoader):
             "Content-Type": "application/json",
             "Notion-Version": "2022-06-28",
         }
+        self.request_timeout_sec = request_timeout_sec
 
     def load(self) -> List[Document]:
         """Load documents from the Notion database.
         Returns:
             List[Document]: List of documents.
         """
-        page_ids = self._retrieve_page_ids()
+        page_summaries = self._retrieve_page_summaries()
 
-        return list(self.load_page(page_id) for page_id in page_ids)
+        return list(self.load_page(page_summary) for page_summary in page_summaries)
 
-    def _retrieve_page_ids(
+    def _retrieve_page_summaries(
         self, query_dict: Dict[str, Any] = {"page_size": 100}
-    ) -> List[str]:
+    ) -> List[Dict[str, Any]]:
         """Get all the pages from a Notion database."""
         pages: List[Dict[str, Any]] = []
 
@@ -65,18 +73,20 @@ class NotionDBLoader(BaseLoader):
 
             query_dict["start_cursor"] = data.get("next_cursor")
 
-        page_ids = [page["id"] for page in pages]
+        return pages
 
-        return page_ids
+    def load_page(self, page_summary: Dict[str, Any]) -> Document:
+        """Read a page.
 
-    def load_page(self, page_id: str) -> Document:
-        """Read a page."""
-        data = self._request(PAGE_URL.format(page_id=page_id))
+        Args:
+            page_summary: Page summary from Notion API.
+        """
+        page_id = page_summary["id"]
 
         # load properties as metadata
         metadata: Dict[str, Any] = {}
 
-        for prop_name, prop_data in data["properties"].items():
+        for prop_name, prop_data in page_summary["properties"].items():
             prop_type = prop_data["type"]
 
             if prop_type == "rich_text":
@@ -93,6 +103,22 @@ class NotionDBLoader(BaseLoader):
                 value = (
                     [item["name"] for item in prop_data["multi_select"]]
                     if prop_data["multi_select"]
+                    else []
+                )
+            elif prop_type == "url":
+                value = prop_data["url"]
+            elif prop_type == "unique_id":
+                value = (
+                    f'{prop_data["unique_id"]["prefix"]}-{prop_data["unique_id"]["number"]}'
+                    if prop_data["unique_id"]
+                    else None
+                )
+            elif prop_type == "status":
+                value = prop_data["status"]["name"] if prop_data["status"] else None
+            elif prop_type == "people":
+                value = (
+                    [item["name"] for item in prop_data["people"]]
+                    if prop_data["people"]
                     else []
                 )
             else:
@@ -146,7 +172,7 @@ class NotionDBLoader(BaseLoader):
             url,
             headers=self.headers,
             json=query_dict,
-            timeout=10,
+            timeout=self.request_timeout_sec,
         )
         res.raise_for_status()
         return res.json()

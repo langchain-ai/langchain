@@ -16,7 +16,6 @@ Answer: ${{Answer}}
 Begin.
 
 Question: What is 37593 * 67?
-
 ```text
 37593 * 67
 ```
@@ -25,6 +24,16 @@ Question: What is 37593 * 67?
 2518731
 ```
 Answer: 2518731
+
+Question: 37593^(1/5)
+```text
+37593**(1/5)
+```
+...numexpr.evaluate("37593**(1/5)")...
+```output
+8.222831614237718
+```
+Answer: 8.222831614237718
 
 Question: {question}
 """

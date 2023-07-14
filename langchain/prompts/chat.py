@@ -3,24 +3,32 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Callable, List, Sequence, Tuple, Type, Union
+from typing import Any, Callable, List, Sequence, Tuple, Type, TypeVar, Union
 
-from pydantic import BaseModel, Field
+from pydantic import Field, root_validator
 
-from langchain.memory.buffer import get_buffer_string
-from langchain.prompts.base import BasePromptTemplate, StringPromptTemplate
+from langchain.load.serializable import Serializable
+from langchain.prompts.base import StringPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
+    BasePromptTemplate,
+    PromptValue,
+)
+from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
     ChatMessage,
     HumanMessage,
-    PromptValue,
     SystemMessage,
+    get_buffer_string,
 )
 
 
-class BaseMessagePromptTemplate(BaseModel, ABC):
+class BaseMessagePromptTemplate(Serializable, ABC):
+    @property
+    def lc_serializable(self) -> bool:
+        return True
+
     @abstractmethod
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """To messages."""
@@ -58,13 +66,33 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
         return [self.variable_name]
 
 
+MessagePromptTemplateT = TypeVar(
+    "MessagePromptTemplateT", bound="BaseStringMessagePromptTemplate"
+)
+
+
 class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
     prompt: StringPromptTemplate
     additional_kwargs: dict = Field(default_factory=dict)
 
     @classmethod
-    def from_template(cls, template: str, **kwargs: Any) -> BaseMessagePromptTemplate:
-        prompt = PromptTemplate.from_template(template)
+    def from_template(
+        cls: Type[MessagePromptTemplateT],
+        template: str,
+        template_format: str = "f-string",
+        **kwargs: Any,
+    ) -> MessagePromptTemplateT:
+        prompt = PromptTemplate.from_template(template, template_format=template_format)
+        return cls(prompt=prompt, **kwargs)
+
+    @classmethod
+    def from_template_file(
+        cls: Type[MessagePromptTemplateT],
+        template_file: Union[str, Path],
+        input_variables: List[str],
+        **kwargs: Any,
+    ) -> MessagePromptTemplateT:
+        prompt = PromptTemplate.from_file(template_file, input_variables)
         return cls(prompt=prompt, **kwargs)
 
     @abstractmethod
@@ -136,13 +164,39 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
     input_variables: List[str]
     messages: List[Union[BaseMessagePromptTemplate, BaseMessage]]
 
+    @root_validator(pre=True)
+    def validate_input_variables(cls, values: dict) -> dict:
+        messages = values["messages"]
+        input_vars = set()
+        for message in messages:
+            if isinstance(message, BaseMessagePromptTemplate):
+                input_vars.update(message.input_variables)
+        if "partial_variables" in values:
+            input_vars = input_vars - set(values["partial_variables"])
+        if "input_variables" in values:
+            if input_vars != set(values["input_variables"]):
+                raise ValueError(
+                    "Got mismatched input_variables. "
+                    f"Expected: {input_vars}. "
+                    f"Got: {values['input_variables']}"
+                )
+        else:
+            values["input_variables"] = list(input_vars)
+        return values
+
+    @classmethod
+    def from_template(cls, template: str, **kwargs: Any) -> ChatPromptTemplate:
+        prompt_template = PromptTemplate.from_template(template, **kwargs)
+        message = HumanMessagePromptTemplate(prompt=prompt_template)
+        return cls.from_messages([message])
+
     @classmethod
     def from_role_strings(
         cls, string_messages: List[Tuple[str, str]]
     ) -> ChatPromptTemplate:
         messages = [
             ChatMessagePromptTemplate(
-                content=PromptTemplate.from_template(template), role=role
+                prompt=PromptTemplate.from_template(template), role=role
             )
             for role, template in string_messages
         ]
@@ -153,7 +207,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
         cls, string_messages: List[Tuple[Type[BaseMessagePromptTemplate], str]]
     ) -> ChatPromptTemplate:
         messages = [
-            role(content=PromptTemplate.from_template(template))
+            role(prompt=PromptTemplate.from_template(template))
             for role, template in string_messages
         ]
         return cls.from_messages(messages)
@@ -194,7 +248,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
 
     @property
     def _prompt_type(self) -> str:
-        raise NotImplementedError
+        return "chat"
 
     def save(self, file_path: Union[Path, str]) -> None:
         raise NotImplementedError

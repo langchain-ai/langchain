@@ -1,15 +1,25 @@
 """Tool for the Google search API."""
 
-from pydantic import Field
+from typing import Optional, Type
 
+from pydantic import BaseModel, Field
+
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
 from langchain.tools.base import BaseTool
 from langchain.utilities.google_places_api import GooglePlacesAPIWrapper
+
+
+class GooglePlacesSchema(BaseModel):
+    query: str = Field(..., description="Query for google maps")
 
 
 class GooglePlacesTool(BaseTool):
     """Tool that adds the capability to query the Google places API."""
 
-    name = "Google Places"
+    name = "google_places"
     description = (
         "A wrapper around Google Places. "
         "Useful for when you need to validate or "
@@ -17,11 +27,20 @@ class GooglePlacesTool(BaseTool):
         "Input should be a search query."
     )
     api_wrapper: GooglePlacesAPIWrapper = Field(default_factory=GooglePlacesAPIWrapper)
+    args_schema: Type[BaseModel] = GooglePlacesSchema
 
-    def _run(self, query: str) -> str:
+    def _run(
+        self,
+        query: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the tool."""
         return self.api_wrapper.run(query)
 
-    async def _arun(self, query: str) -> str:
+    async def _arun(
+        self,
+        query: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the tool asynchronously."""
         raise NotImplementedError("GooglePlacesRun does not support async")

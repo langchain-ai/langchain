@@ -6,7 +6,10 @@ from tempfile import TemporaryDirectory
 
 import pytest
 
-from langchain.tools.file_management.utils import get_validated_relative_path
+from langchain.tools.file_management.utils import (
+    FileValidationError,
+    get_validated_relative_path,
+)
 
 
 def test_get_validated_relative_path_errs_on_absolute() -> None:
@@ -14,7 +17,7 @@ def test_get_validated_relative_path_errs_on_absolute() -> None:
     root = Path(__file__).parent
     user_path = "/bin/bash"
     matches = f"Path {user_path} is outside of the allowed directory {root}"
-    with pytest.raises(ValueError, match=matches):
+    with pytest.raises(FileValidationError, match=matches):
         get_validated_relative_path(root, user_path)
 
 
@@ -23,7 +26,7 @@ def test_get_validated_relative_path_errs_on_parent_dir() -> None:
     root = Path(__file__).parent
     user_path = "data/sub/../../../sibling"
     matches = f"Path {user_path} is outside of the allowed directory {root}"
-    with pytest.raises(ValueError, match=matches):
+    with pytest.raises(FileValidationError, match=matches):
         get_validated_relative_path(root, user_path)
 
 
@@ -49,7 +52,7 @@ def test_get_validated_relative_path_errs_for_symlink_outside_root() -> None:
         matches = (
             f"Path {user_path} is outside of the allowed directory {root.resolve()}"
         )
-        with pytest.raises(ValueError, match=matches):
+        with pytest.raises(FileValidationError, match=matches):
             get_validated_relative_path(root, user_path)
 
         symlink_path.unlink()

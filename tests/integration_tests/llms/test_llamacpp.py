@@ -5,7 +5,6 @@ from typing import Generator
 from urllib.request import urlretrieve
 
 from langchain.llms import LlamaCpp
-from langchain.callbacks.base import CallbackManager
 
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
@@ -61,10 +60,9 @@ def test_llamacpp_streaming_callback() -> None:
     OFF_BY_ONE = 1  # There may be an off by one error in the upstream code!
 
     callback_handler = FakeCallbackHandler()
-    callback_manager = CallbackManager([callback_handler])
     llm = LlamaCpp(
         model_path=get_model(),
-        callback_manager=callback_manager,
+        callbacks=[callback_handler],
         verbose=True,
         max_tokens=MAX_TOKENS,
     )

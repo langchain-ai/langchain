@@ -1,0 +1,22 @@
+[internal]
+creation_date = "2023-05-01"
+updated_date = "2022-05-01"
+release = ["release_type"]
+min_endpoint_version = "some_semantic_version"
+os_list = ["operating_system_list"]
+
+[rule]
+uuid = "some_uuid"
+name = "Fake Rule Name"
+description = "Fake description of rule"
+query = '''
+process where process.name : "somequery"
+'''
+
+[[rule.threat]]
+framework = "MITRE ATT&CK"
+
+  [rule.threat.tactic]
+  name = "Execution"
+  id = "TA0002"
+  reference = "https://attack.mitre.org/tactics/TA0002/"

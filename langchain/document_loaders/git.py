@@ -7,9 +7,9 @@ from langchain.document_loaders.base import BaseLoader
 
 class GitLoader(BaseLoader):
     """Loads files from a Git repository into a list of documents.
-    Repository can be local on disk available at `repo_path`,
+    The Repository can be local on disk available at `repo_path`,
     or remote at `clone_url` that will be cloned to `repo_path`.
-    Currently supports only text files.
+    Currently, supports only text files.
 
     Each document represents one file in the repository. The `path` points to
     the local Git repository, and the `branch` specifies the branch to load
@@ -23,6 +23,15 @@ class GitLoader(BaseLoader):
         branch: Optional[str] = "main",
         file_filter: Optional[Callable[[str], bool]] = None,
     ):
+        """
+
+        Args:
+            repo_path: The path to the Git repository.
+            clone_url: Optional. The URL to clone the repository from.
+            branch: Optional. The branch to load files from. Defaults to `main`.
+            file_filter: Optional. A function that takes a file path and returns
+              a boolean indicating whether to load the file. Defaults to None.
+        """
         self.repo_path = repo_path
         self.clone_url = clone_url
         self.branch = branch
@@ -54,7 +63,7 @@ class GitLoader(BaseLoader):
 
             file_path = os.path.join(self.repo_path, item.path)
 
-            ignored_files = repo.ignored([file_path])
+            ignored_files = repo.ignored([file_path])  # type: ignore
             if len(ignored_files):
                 continue
 
@@ -75,6 +84,7 @@ class GitLoader(BaseLoader):
                         continue
 
                     metadata = {
+                        "source": rel_file_path,
                         "file_path": rel_file_path,
                         "file_name": item.name,
                         "file_type": file_type,

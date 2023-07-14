@@ -20,8 +20,10 @@ class SeleniumURLLoader(BaseLoader):
         urls (List[str]): List of URLs to load.
         continue_on_failure (bool): If True, continue loading other URLs on failure.
         browser (str): The browser to use, either 'chrome' or 'firefox'.
+        binary_location (Optional[str]): The location of the browser binary.
         executable_path (Optional[str]): The path to the browser executable.
         headless (bool): If True, the browser will run in headless mode.
+        arguments [List[str]]: List of arguments to pass to the browser.
     """
 
     def __init__(
@@ -29,14 +31,16 @@ class SeleniumURLLoader(BaseLoader):
         urls: List[str],
         continue_on_failure: bool = True,
         browser: Literal["chrome", "firefox"] = "chrome",
+        binary_location: Optional[str] = None,
         executable_path: Optional[str] = None,
         headless: bool = True,
+        arguments: List[str] = [],
     ):
         """Load a list of URLs using Selenium and unstructured."""
         try:
             import selenium  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "selenium package not found, please install it with "
                 "`pip install selenium`"
             )
@@ -44,7 +48,7 @@ class SeleniumURLLoader(BaseLoader):
         try:
             import unstructured  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "unstructured package not found, please install it with "
                 "`pip install unstructured`"
             )
@@ -52,8 +56,10 @@ class SeleniumURLLoader(BaseLoader):
         self.urls = urls
         self.continue_on_failure = continue_on_failure
         self.browser = browser
+        self.binary_location = binary_location
         self.executable_path = executable_path
         self.headless = headless
+        self.arguments = arguments
 
     def _get_driver(self) -> Union["Chrome", "Firefox"]:
         """Create and return a WebDriver instance based on the specified browser.
@@ -69,8 +75,15 @@ class SeleniumURLLoader(BaseLoader):
             from selenium.webdriver.chrome.options import Options as ChromeOptions
 
             chrome_options = ChromeOptions()
+
+            for arg in self.arguments:
+                chrome_options.add_argument(arg)
+
             if self.headless:
                 chrome_options.add_argument("--headless")
+                chrome_options.add_argument("--no-sandbox")
+            if self.binary_location is not None:
+                chrome_options.binary_location = self.binary_location
             if self.executable_path is None:
                 return Chrome(options=chrome_options)
             return Chrome(executable_path=self.executable_path, options=chrome_options)
@@ -79,8 +92,14 @@ class SeleniumURLLoader(BaseLoader):
             from selenium.webdriver.firefox.options import Options as FirefoxOptions
 
             firefox_options = FirefoxOptions()
+
+            for arg in self.arguments:
+                firefox_options.add_argument(arg)
+
             if self.headless:
                 firefox_options.add_argument("--headless")
+            if self.binary_location is not None:
+                firefox_options.binary_location = self.binary_location
             if self.executable_path is None:
                 return Firefox(options=firefox_options)
             return Firefox(

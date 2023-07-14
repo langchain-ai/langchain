@@ -1,0 +1,158 @@
+# Quickstart
+
+## Installation
+
+To install LangChain run:
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import Install from "@snippets/get_started/quickstart/installation.mdx"
+
+<Install/>
+
+For more details, see our [Installation guide](/docs/get_started/installation.html).
+
+## Environment setup
+
+Using LangChain will usually require integrations with one or more model providers, data stores, APIs, etc. For this example, we'll use OpenAI's model APIs.
+
+import OpenAISetup from "@snippets/get_started/quickstart/openai_setup.mdx"
+
+<OpenAISetup/>
+
+## Building an application
+
+Now we can start building our language model application. LangChain provides many modules that can be used to build language model applications. Modules can be used as stand-alones in simple applications and they can be combined for more complex use cases.
+
+## LLMs
+#### Get predictions from a language model
+
+The basic building block of LangChain is the LLM, which takes in text and generates more text.
+
+As an example, suppose we're building an application that generates a company name based on a company description. In order to do this, we need to initialize an OpenAI model wrapper. In this case, since we want the outputs to be MORE random, we'll initialize our model with a HIGH temperature.
+
+import LLM from "@snippets/get_started/quickstart/llm.mdx"
+
+<LLM/>
+
+## Chat models
+
+Chat models are a variation on language models. While chat models use language models under the hood, the interface they expose is a bit different: rather than expose a "text in, text out" API, they expose an interface where "chat messages" are the inputs and outputs.
+
+You can get chat completions by passing one or more messages to the chat model. The response will be a message. The types of messages currently supported in LangChain are `AIMessage`, `HumanMessage`, `SystemMessage`, and `ChatMessage` -- `ChatMessage` takes in an arbitrary role parameter. Most of the time, you'll just be dealing with `HumanMessage`, `AIMessage`, and `SystemMessage`.
+
+import ChatModel from "@snippets/get_started/quickstart/chat_model.mdx"
+
+<ChatModel/>
+
+## Prompt templates
+
+Most LLM applications do not pass user input directly into an LLM. Usually they will add the user input to a larger piece of text, called a prompt template, that provides additional context on the specific task at hand.
+
+In the previous example, the text we passed to the model contained instructions to generate a company name. For our application, it'd be great if the user only had to provide the description of a company/product, without having to worry about giving the model instructions.
+
+import PromptTemplateLLM from "@snippets/get_started/quickstart/prompt_templates_llms.mdx"
+import PromptTemplateChatModel from "@snippets/get_started/quickstart/prompt_templates_chat_models.mdx"
+
+<Tabs>
+    <TabItem value="llms" label="LLMs" default>
+
+With PromptTemplates this is easy! In this case our template would be very simple:
+
+<PromptTemplateLLM/>
+</TabItem>
+<TabItem value="chat_models" label="Chat models">
+
+Similar to LLMs, you can make use of templating by using a `MessagePromptTemplate`. You can build a `ChatPromptTemplate` from one or more `MessagePromptTemplate`s. You can use `ChatPromptTemplate`'s `format_messages` method to generate the formatted messages.
+
+Because this is generating a list of messages, it is slightly more complex than the normal prompt template which is generating only a string. Please see the detailed guides on prompts to understand more options available to you here.
+
+<PromptTemplateChatModel/>
+    </TabItem>
+</Tabs>
+
+## Chains
+
+Now that we've got a model and a prompt template, we'll want to combine the two. Chains give us a way to link (or chain) together multiple primitives, like models, prompts, and other chains.
+
+import ChainLLM from "@snippets/get_started/quickstart/chains_llms.mdx"
+import ChainChatModel from "@snippets/get_started/quickstart/chains_chat_models.mdx"
+
+<Tabs>
+<TabItem value="llms" label="LLMs" default>
+
+The simplest and most common type of chain is an LLMChain, which passes an input first to a PromptTemplate and then to an LLM. We can construct an LLM chain from our existing model and prompt template.
+
+<ChainLLM/>
+
+There we go, our first chain! Understanding how this simple chain works will set you up well for working with more complex chains.
+
+</TabItem>
+<TabItem value="chat_models" label="Chat models">
+
+The `LLMChain` can be used with chat models as well:
+
+<ChainChatModel/>
+</TabItem>
+</Tabs>
+
+## Agents
+
+import AgentLLM from "@snippets/get_started/quickstart/agents_llms.mdx"
+import AgentChatModel from "@snippets/get_started/quickstart/agents_chat_models.mdx"
+
+Our first chain ran a pre-determined sequence of steps. To handle complex workflows, we need to be able to dynamically choose actions based on inputs.
+
+Agents do just this: they use a language model to determine which actions to take and in what order. Agents are given access to tools, and they repeatedly choose a tool, run the tool, and observe the output until they come up with a final answer.
+
+To load an agent, you need to choose a(n):
+- LLM/Chat model: The language model powering the agent.
+- Tool(s): A function that performs a specific duty. This can be things like: Google Search, Database lookup, Python REPL, other chains. For a list of predefined tools and their specifications, see the [Tools documentation](/docs/modules/agents/tools/).
+- Agent name: A string that references a supported agent class. An agent class is largely parameterized by the prompt the language model uses to determine which action to take. Because this notebook focuses on the simplest, highest level API, this only covers using the standard supported agents. If you want to implement a custom agent, see [here](/docs/modules/agents/how_to/custom_agent.html). For a list of supported agents and their specifications, see [here](/docs/modules/agents/agent_types/).
+
+For this example, we'll be using SerpAPI to query a search engine.
+
+You'll need to install the SerpAPI Python package:
+
+```bash
+pip install google-search-results
+```
+
+And set the `SERPAPI_API_KEY` environment variable.
+
+<Tabs>
+<TabItem value="llms" label="LLMs" default>
+<AgentLLM/>
+</TabItem>
+<TabItem value="chat_models" label="Chat models">
+
+Agents can also be used with chat models, you can initialize one using `AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION` as the agent type.
+
+<AgentChatModel/>
+</TabItem>
+</Tabs>
+
+## Memory
+
+The chains and agents we've looked at so far have been stateless, but for many applications it's necessary to reference past interactions. This is clearly the case with a chatbot for example, where you want it to understand new messages in the context of past messages.
+
+The Memory module gives you a way to maintain application state. The base Memory interface is simple: it lets you update state given the latest run inputs and outputs and it lets you modify (or contextualize) the next input using the stored state.
+
+There are a number of built-in memory systems. The simplest of these is a buffer memory which just prepends the last few inputs/outputs to the current input - we will use this in the example below.
+
+import MemoryLLM from "@snippets/get_started/quickstart/memory_llms.mdx"
+import MemoryChatModel from "@snippets/get_started/quickstart/memory_chat_models.mdx"
+
+<Tabs>
+<TabItem value="llms" label="LLMs" default>
+
+<MemoryLLM/>
+</TabItem>
+<TabItem value="chat_models" label="Chat models">
+
+You can use Memory with chains and agents initialized with chat models. The main difference between this and Memory for LLMs is that rather than trying to condense all previous messages into a string, we can keep them as their own unique memory object.
+
+<MemoryChatModel/>
+
+</TabItem>
+</Tabs>

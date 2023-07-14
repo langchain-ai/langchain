@@ -1,5 +1,5 @@
 # flake8: noqa
-PREFIX = """Answer the following questions as best you can. You have access to the following tools:"""
+SYSTEM_MESSAGE_PREFIX = """Answer the following questions as best you can. You have access to the following tools:"""
 FORMAT_INSTRUCTIONS = """The way you use the tools is by specifying a json blob.
 Specifically, this json should have a `action` key (with the name of the tool to use) and a `action_input` key (with the input to the tool going here).
 
@@ -26,4 +26,5 @@ Observation: the result of the action
 ... (this Thought/Action/Observation can repeat N times)
 Thought: I now know the final answer
 Final Answer: the final answer to the original input question"""
-SUFFIX = """Begin! Reminder to always use the exact characters `Final Answer` when responding."""
+SYSTEM_MESSAGE_SUFFIX = """Begin! Reminder to always use the exact characters `Final Answer` when responding."""
+HUMAN_MESSAGE = "{input}\n\n{agent_scratchpad}"

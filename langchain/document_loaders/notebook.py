@@ -1,4 +1,4 @@
-"""Loader that loads .ipynb notebook files."""
+"""Loads .ipynb notebook files."""
 import json
 from pathlib import Path
 from typing import Any, List
@@ -10,7 +10,18 @@ from langchain.document_loaders.base import BaseLoader
 def concatenate_cells(
     cell: dict, include_outputs: bool, max_output_length: int, traceback: bool
 ) -> str:
-    """Combine cells information in a readable format ready to be used."""
+    """Combine cells information in a readable format ready to be used.
+
+    Args:
+        cell: A dictionary
+        include_outputs: Whether to include the outputs of the cell.
+        max_output_length: Maximum length of the output to be displayed.
+        traceback: Whether to return a traceback of the error.
+
+    Returns:
+        A string with the cell information.
+
+    """
     cell_type = cell["cell_type"]
     source = cell["source"]
     output = cell["outputs"]
@@ -45,7 +56,7 @@ def concatenate_cells(
 
 
 def remove_newlines(x: Any) -> Any:
-    """Remove recursively newlines, no matter the data structure they are stored in."""
+    """Recursively removes newlines, no matter the data structure they are stored in."""
     import pandas as pd
 
     if isinstance(x, str):
@@ -59,7 +70,7 @@ def remove_newlines(x: Any) -> Any:
 
 
 class NotebookLoader(BaseLoader):
-    """Loader that loads .ipynb notebook files."""
+    """Loads .ipynb notebook files."""
 
     def __init__(
         self,
@@ -69,7 +80,19 @@ class NotebookLoader(BaseLoader):
         remove_newline: bool = False,
         traceback: bool = False,
     ):
-        """Initialize with path."""
+        """Initialize with path.
+
+        Args:
+            path: The path to load the notebook from.
+            include_outputs: Whether to include the outputs of the cell.
+                Defaults to False.
+            max_output_length: Maximum length of the output to be displayed.
+                Defaults to 10.
+            remove_newline: Whether to remove newlines from the notebook.
+                Defaults to False.
+            traceback: Whether to return a traceback of the error.
+                Defaults to False.
+        """
         self.file_path = path
         self.include_outputs = include_outputs
         self.max_output_length = max_output_length
@@ -83,7 +106,7 @@ class NotebookLoader(BaseLoader):
         try:
             import pandas as pd
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "pandas is needed for Notebook Loader, "
                 "please install with `pip install pandas`"
             )

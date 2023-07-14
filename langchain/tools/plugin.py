@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import json
-from typing import Optional
+from typing import Optional, Type
 
 import requests
 import yaml
 from pydantic import BaseModel
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
 from langchain.tools.base import BaseTool
 
 
@@ -38,16 +42,30 @@ class AIPlugin(BaseModel):
 
 
 def marshal_spec(txt: str) -> dict:
-    """Convert the yaml or json serialized spec to a dict."""
+    """Convert the yaml or json serialized spec to a dict.
+
+    Args:
+        txt: The yaml or json serialized spec.
+
+    Returns:
+        dict: The spec as a dict.
+    """
     try:
         return json.loads(txt)
     except json.JSONDecodeError:
         return yaml.safe_load(txt)
 
 
+class AIPluginToolSchema(BaseModel):
+    """AIPLuginToolSchema."""
+
+    tool_input: Optional[str] = ""
+
+
 class AIPluginTool(BaseTool):
     plugin: AIPlugin
     api_spec: str
+    args_schema: Type[AIPluginToolSchema] = AIPluginToolSchema
 
     @classmethod
     def from_plugin_url(cls, url: str) -> AIPluginTool:
@@ -72,10 +90,18 @@ class AIPluginTool(BaseTool):
             api_spec=api_spec,
         )
 
-    def _run(self, tool_input: str) -> str:
+    def _run(
+        self,
+        tool_input: Optional[str] = "",
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the tool."""
         return self.api_spec
 
-    async def _arun(self, tool_input: str) -> str:
+    async def _arun(
+        self,
+        tool_input: Optional[str] = None,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the tool asynchronously."""
         return self.api_spec

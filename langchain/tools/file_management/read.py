@@ -1,10 +1,17 @@
-from pathlib import Path
 from typing import Optional, Type
 
 from pydantic import BaseModel, Field
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
 from langchain.tools.base import BaseTool
-from langchain.tools.file_management.utils import get_validated_relative_path
+from langchain.tools.file_management.utils import (
+    INVALID_PATH_TEMPLATE,
+    BaseFileToolMixin,
+    FileValidationError,
+)
 
 
 class ReadFileInput(BaseModel):
@@ -13,21 +20,22 @@ class ReadFileInput(BaseModel):
     file_path: str = Field(..., description="name of file")
 
 
-class ReadFileTool(BaseTool):
+class ReadFileTool(BaseFileToolMixin, BaseTool):
     name: str = "read_file"
     args_schema: Type[BaseModel] = ReadFileInput
     description: str = "Read file from disk"
-    root_dir: Optional[str] = None
-    """Directory to read file from.
 
-    If specified, raises an error for file_paths oustide root_dir."""
-
-    def _run(self, file_path: str) -> str:
-        read_path = (
-            get_validated_relative_path(Path(self.root_dir), file_path)
-            if self.root_dir
-            else Path(file_path)
-        )
+    def _run(
+        self,
+        file_path: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
+        try:
+            read_path = self.get_relative_path(file_path)
+        except FileValidationError:
+            return INVALID_PATH_TEMPLATE.format(arg_name="file_path", value=file_path)
+        if not read_path.exists():
+            return f"Error: no such file or directory: {file_path}"
         try:
             with read_path.open("r", encoding="utf-8") as f:
                 content = f.read()
@@ -35,6 +43,10 @@ class ReadFileTool(BaseTool):
         except Exception as e:
             return "Error: " + str(e)
 
-    async def _arun(self, tool_input: str) -> str:
+    async def _arun(
+        self,
+        file_path: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         # TODO: Add aiofiles method
         raise NotImplementedError

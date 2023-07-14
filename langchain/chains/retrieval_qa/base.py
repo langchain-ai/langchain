@@ -1,12 +1,17 @@
 """Chain for question-answering against a vector database."""
 from __future__ import annotations
 
+import inspect
 import warnings
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
 from pydantic import Extra, Field, root_validator
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+)
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
@@ -14,7 +19,8 @@ from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
 from langchain.chains.question_answering.stuff_prompt import PROMPT_SELECTOR
 from langchain.prompts import PromptTemplate
-from langchain.schema import BaseLanguageModel, BaseRetriever, Document
+from langchain.schema import BaseRetriever, Document
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.vectorstores.base import VectorStore
 
 
@@ -89,10 +95,19 @@ class BaseRetrievalQA(Chain):
         return cls(combine_documents_chain=combine_documents_chain, **kwargs)
 
     @abstractmethod
-    def _get_docs(self, question: str) -> List[Document]:
+    def _get_docs(
+        self,
+        question: str,
+        *,
+        run_manager: CallbackManagerForChainRun,
+    ) -> List[Document]:
         """Get documents to do question answering over."""
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, Any]:
+    def _call(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
         """Run get_relevant_text and llm on input query.
 
         If chain has 'return_source_documents' as 'True', returns
@@ -104,11 +119,17 @@ class BaseRetrievalQA(Chain):
         res = indexqa({'query': 'This is my query'})
         answer, docs = res['result'], res['source_documents']
         """
+        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.input_key]
-
-        docs = self._get_docs(question)
+        accepts_run_manager = (
+            "run_manager" in inspect.signature(self._get_docs).parameters
+        )
+        if accepts_run_manager:
+            docs = self._get_docs(question, run_manager=_run_manager)
+        else:
+            docs = self._get_docs(question)  # type: ignore[call-arg]
         answer = self.combine_documents_chain.run(
-            input_documents=docs, question=question
+            input_documents=docs, question=question, callbacks=_run_manager.get_child()
         )
 
         if self.return_source_documents:
@@ -117,10 +138,19 @@ class BaseRetrievalQA(Chain):
             return {self.output_key: answer}
 
     @abstractmethod
-    async def _aget_docs(self, question: str) -> List[Document]:
+    async def _aget_docs(
+        self,
+        question: str,
+        *,
+        run_manager: AsyncCallbackManagerForChainRun,
+    ) -> List[Document]:
         """Get documents to do question answering over."""
 
-    async def _acall(self, inputs: Dict[str, str]) -> Dict[str, Any]:
+    async def _acall(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
         """Run get_relevant_text and llm on input query.
 
         If chain has 'return_source_documents' as 'True', returns
@@ -132,11 +162,17 @@ class BaseRetrievalQA(Chain):
         res = indexqa({'query': 'This is my query'})
         answer, docs = res['result'], res['source_documents']
         """
+        _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.input_key]
-
-        docs = await self._aget_docs(question)
+        accepts_run_manager = (
+            "run_manager" in inspect.signature(self._aget_docs).parameters
+        )
+        if accepts_run_manager:
+            docs = await self._aget_docs(question, run_manager=_run_manager)
+        else:
+            docs = await self._aget_docs(question)  # type: ignore[call-arg]
         answer = await self.combine_documents_chain.arun(
-            input_documents=docs, question=question
+            input_documents=docs, question=question, callbacks=_run_manager.get_child()
         )
 
         if self.return_source_documents:
@@ -162,11 +198,32 @@ class RetrievalQA(BaseRetrievalQA):
 
     retriever: BaseRetriever = Field(exclude=True)
 
-    def _get_docs(self, question: str) -> List[Document]:
-        return self.retriever.get_relevant_documents(question)
+    def _get_docs(
+        self,
+        question: str,
+        *,
+        run_manager: CallbackManagerForChainRun,
+    ) -> List[Document]:
+        """Get docs."""
+        return self.retriever.get_relevant_documents(
+            question, callbacks=run_manager.get_child()
+        )
 
-    async def _aget_docs(self, question: str) -> List[Document]:
-        return await self.retriever.aget_relevant_documents(question)
+    async def _aget_docs(
+        self,
+        question: str,
+        *,
+        run_manager: AsyncCallbackManagerForChainRun,
+    ) -> List[Document]:
+        """Get docs."""
+        return await self.retriever.aget_relevant_documents(
+            question, callbacks=run_manager.get_child()
+        )
+
+    @property
+    def _chain_type(self) -> str:
+        """Return the chain type."""
+        return "retrieval_qa"
 
 
 class VectorDBQA(BaseRetrievalQA):
@@ -198,7 +255,13 @@ class VectorDBQA(BaseRetrievalQA):
                 raise ValueError(f"search_type of {search_type} not allowed.")
         return values
 
-    def _get_docs(self, question: str) -> List[Document]:
+    def _get_docs(
+        self,
+        question: str,
+        *,
+        run_manager: CallbackManagerForChainRun,
+    ) -> List[Document]:
+        """Get docs."""
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(
                 question, k=self.k, **self.search_kwargs
@@ -211,7 +274,13 @@ class VectorDBQA(BaseRetrievalQA):
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs
 
-    async def _aget_docs(self, question: str) -> List[Document]:
+    async def _aget_docs(
+        self,
+        question: str,
+        *,
+        run_manager: AsyncCallbackManagerForChainRun,
+    ) -> List[Document]:
+        """Get docs."""
         raise NotImplementedError("VectorDBQA does not support async")
 
     @property

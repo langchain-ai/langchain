@@ -3,12 +3,25 @@ from __future__ import annotations
 
 import uuid
 from abc import ABC
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore
+
+if TYPE_CHECKING:
+    from elasticsearch import Elasticsearch
 
 
 def _default_text_mapping(dim: int) -> Dict:
@@ -114,29 +127,37 @@ class ElasticVectorSearch(VectorStore, ABC):
         ValueError: If the elasticsearch python package is not installed.
     """
 
-    def __init__(self, elasticsearch_url: str, index_name: str, embedding: Embeddings):
+    def __init__(
+        self,
+        elasticsearch_url: str,
+        index_name: str,
+        embedding: Embeddings,
+        *,
+        ssl_verify: Optional[Dict[str, Any]] = None,
+    ):
         """Initialize with necessary components."""
         try:
             import elasticsearch
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import elasticsearch python package. "
                 "Please install it with `pip install elasticsearch`."
             )
         self.embedding = embedding
         self.index_name = index_name
+        _ssl_verify = ssl_verify or {}
         try:
-            es_client = elasticsearch.Elasticsearch(elasticsearch_url)  # noqa
+            self.client = elasticsearch.Elasticsearch(elasticsearch_url, **_ssl_verify)
         except ValueError as e:
             raise ValueError(
-                f"Your elasticsearch client string is misformatted. Got error: {e} "
+                f"Your elasticsearch client string is mis-formatted. Got error: {e} "
             )
-        self.client = es_client
 
     def add_texts(
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
         refresh_indices: bool = True,
         **kwargs: Any,
     ) -> List[str]:
@@ -145,6 +166,7 @@ class ElasticVectorSearch(VectorStore, ABC):
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of unique IDs.
             refresh_indices: bool to refresh ElasticSearch indices
 
         Returns:
@@ -154,12 +176,12 @@ class ElasticVectorSearch(VectorStore, ABC):
             from elasticsearch.exceptions import NotFoundError
             from elasticsearch.helpers import bulk
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import elasticsearch python package. "
                 "Please install it with `pip install elasticsearch`."
             )
         requests = []
-        ids = []
+        ids = ids or [str(uuid.uuid4()) for _ in texts]
         embeddings = self.embedding.embed_documents(list(texts))
         dim = len(embeddings[0])
         mapping = _default_text_mapping(dim)
@@ -170,20 +192,18 @@ class ElasticVectorSearch(VectorStore, ABC):
         except NotFoundError:
             # TODO would be nice to create index before embedding,
             # just to save expensive steps for last
-            self.client.indices.create(index=self.index_name, mappings=mapping)
+            self.create_index(self.client, self.index_name, mapping)
 
         for i, text in enumerate(texts):
             metadata = metadatas[i] if metadatas else {}
-            _id = str(uuid.uuid4())
             request = {
                 "_op_type": "index",
                 "_index": self.index_name,
                 "vector": embeddings[i],
                 "text": text,
                 "metadata": metadata,
-                "_id": _id,
+                "_id": ids[i],
             }
-            ids.append(_id)
             requests.append(request)
         bulk(self.client, requests)
 
@@ -219,7 +239,9 @@ class ElasticVectorSearch(VectorStore, ABC):
         """
         embedding = self.embedding.embed_query(query)
         script_query = _default_script_query(embedding, filter)
-        response = self.client.search(index=self.index_name, query=script_query, size=k)
+        response = self.client_search(
+            self.client, self.index_name, script_query, size=k
+        )
         hits = [hit for hit in response["hits"]["hits"]]
         docs_and_scores = [
             (
@@ -239,6 +261,9 @@ class ElasticVectorSearch(VectorStore, ABC):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        index_name: Optional[str] = None,
+        refresh_indices: bool = True,
         **kwargs: Any,
     ) -> ElasticVectorSearch:
         """Construct ElasticVectorSearch wrapper from raw documents.
@@ -265,45 +290,326 @@ class ElasticVectorSearch(VectorStore, ABC):
         elasticsearch_url = get_from_dict_or_env(
             kwargs, "elasticsearch_url", "ELASTICSEARCH_URL"
         )
+        index_name = index_name or uuid.uuid4().hex
+        vectorsearch = cls(elasticsearch_url, index_name, embedding, **kwargs)
+        vectorsearch.add_texts(
+            texts, metadatas=metadatas, ids=ids, refresh_indices=refresh_indices
+        )
+        return vectorsearch
+
+    def create_index(self, client: Any, index_name: str, mapping: Dict) -> None:
+        version_num = client.info()["version"]["number"][0]
+        version_num = int(version_num)
+        if version_num >= 8:
+            client.indices.create(index=index_name, mappings=mapping)
+        else:
+            client.indices.create(index=index_name, body={"mappings": mapping})
+
+    def client_search(
+        self, client: Any, index_name: str, script_query: Dict, size: int
+    ) -> Any:
+        version_num = client.info()["version"]["number"][0]
+        version_num = int(version_num)
+        if version_num >= 8:
+            response = client.search(index=index_name, query=script_query, size=size)
+        else:
+            response = client.search(
+                index=index_name, body={"query": script_query, "size": size}
+            )
+        return response
+
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> None:
+        """Delete by vector IDs.
+
+        Args:
+            ids: List of ids to delete.
+        """
+
+        if ids is None:
+            raise ValueError("No ids provided to delete.")
+
+        # TODO: Check if this can be done in bulk
+        for id in ids:
+            self.client.delete(index=self.index_name, id=id)
+
+
+class ElasticKnnSearch(ElasticVectorSearch):
+    """
+    A class for performing k-Nearest Neighbors (k-NN) search on an Elasticsearch index.
+    The class is designed for a text search scenario where documents are text strings
+    and their embeddings are vector representations of those strings.
+    """
+
+    def __init__(
+        self,
+        index_name: str,
+        embedding: Embeddings,
+        es_connection: Optional["Elasticsearch"] = None,
+        es_cloud_id: Optional[str] = None,
+        es_user: Optional[str] = None,
+        es_password: Optional[str] = None,
+        vector_query_field: Optional[str] = "vector",
+        query_field: Optional[str] = "text",
+    ):
+        """
+        Initializes an instance of the ElasticKnnSearch class and sets up the
+            Elasticsearch client.
+
+        Args:
+            index_name: The name of the Elasticsearch index.
+            embedding: An instance of the Embeddings class, used to generate vector
+                representations of text strings.
+            es_connection: An existing Elasticsearch connection.
+            es_cloud_id: The Cloud ID of the Elasticsearch instance. Required if
+                creating a new connection.
+            es_user: The username for the Elasticsearch instance. Required if
+                creating a new connection.
+            es_password: The password for the Elasticsearch instance. Required if
+                creating a new connection.
+        """
         try:
             import elasticsearch
-            from elasticsearch.exceptions import NotFoundError
-            from elasticsearch.helpers import bulk
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import elasticsearch python package. "
                 "Please install it with `pip install elasticsearch`."
             )
-        try:
-            client = elasticsearch.Elasticsearch(elasticsearch_url)
-        except ValueError as e:
-            raise ValueError(
-                "Your elasticsearch client string is misformatted. " f"Got error: {e} "
-            )
-        index_name = kwargs.get("index_name", uuid.uuid4().hex)
-        embeddings = embedding.embed_documents(texts)
-        dim = len(embeddings[0])
-        mapping = _default_text_mapping(dim)
 
-        # check to see if the index already exists
-        try:
-            client.indices.get(index=index_name)
-        except NotFoundError:
-            # TODO would be nice to create index before embedding,
-            # just to save expensive steps for last
-            client.indices.create(index=index_name, mappings=mapping)
+        self.embedding = embedding
+        self.index_name = index_name
+        self.query_field = query_field
+        self.vector_query_field = vector_query_field
 
-        requests = []
-        for i, text in enumerate(texts):
-            metadata = metadatas[i] if metadatas else {}
-            request = {
-                "_op_type": "index",
-                "_index": index_name,
-                "vector": embeddings[i],
-                "text": text,
-                "metadata": metadata,
+        # If a pre-existing Elasticsearch connection is provided, use it.
+        if es_connection is not None:
+            self.client = es_connection
+        else:
+            # If credentials for a new Elasticsearch connection are provided,
+            # create a new connection.
+            if es_cloud_id and es_user and es_password:
+                self.client = elasticsearch.Elasticsearch(
+                    cloud_id=es_cloud_id, basic_auth=(es_user, es_password)
+                )
+            else:
+                raise ValueError(
+                    """Either provide a pre-existing Elasticsearch connection, \
+                or valid credentials for creating a new connection."""
+                )
+
+    @classmethod
+    def from_texts(
+        cls,
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        index_name: Optional[str] = None,
+        refresh_indices: bool = True,
+        es_connection: Optional["Elasticsearch"] = None,
+        es_cloud_id: Optional[str] = None,
+        es_user: Optional[str] = None,
+        es_password: Optional[str] = None,
+        **kwargs: Any,
+    ) -> ElasticKnnSearch:
+        """Construct ElasticKnnSearch wrapper from raw documents.
+
+        This is a user-friendly interface that:
+            1. Embeds documents.
+            2. Creates a new index for the embeddings in the Elasticsearch instance.
+            3. Adds the documents to the newly created Elasticsearch index.
+
+        This is intended to be a quick way to get started.
+        """
+        index_name = index_name or uuid.uuid4().hex
+        vectorsearch = cls(
+            index_name,
+            embedding,
+            es_connection=es_connection,
+            es_cloud_id=es_cloud_id,
+            es_user=es_user,
+            es_password=es_password,
+            **kwargs,
+        )
+        vectorsearch.add_texts(
+            texts, metadatas=metadatas, refresh_indices=refresh_indices, ids=ids
+        )
+        return vectorsearch
+
+    @staticmethod
+    def _default_knn_mapping(dims: int) -> Dict:
+        """Generates a default index mapping for kNN search."""
+        return {
+            "properties": {
+                "text": {"type": "text"},
+                "vector": {
+                    "type": "dense_vector",
+                    "dims": dims,
+                    "index": True,
+                    "similarity": "dot_product",
+                },
             }
-            requests.append(request)
-        bulk(client, requests)
-        client.indices.refresh(index=index_name)
-        return cls(elasticsearch_url, index_name, embedding)
+        }
+
+    def _default_knn_query(
+        self,
+        query_vector: Optional[List[float]] = None,
+        query: Optional[str] = None,
+        model_id: Optional[str] = None,
+        k: Optional[int] = 10,
+        num_candidates: Optional[int] = 10,
+    ) -> Dict:
+        knn: Dict = {
+            "field": self.vector_query_field,
+            "k": k,
+            "num_candidates": num_candidates,
+        }
+
+        # Case 1: `query_vector` is provided, but not `model_id` -> use query_vector
+        if query_vector and not model_id:
+            knn["query_vector"] = query_vector
+
+        # Case 2: `query` and `model_id` are provided, -> use query_vector_builder
+        elif query and model_id:
+            knn["query_vector_builder"] = {
+                "text_embedding": {
+                    "model_id": model_id,  # use 'model_id' argument
+                    "model_text": query,  # use 'query' argument
+                }
+            }
+
+        else:
+            raise ValueError(
+                "Either `query_vector` or `model_id` must be provided, but not both."
+            )
+
+        return knn
+
+    def knn_search(
+        self,
+        query: Optional[str] = None,
+        k: Optional[int] = 10,
+        query_vector: Optional[List[float]] = None,
+        model_id: Optional[str] = None,
+        size: Optional[int] = 10,
+        source: Optional[bool] = True,
+        fields: Optional[
+            Union[List[Mapping[str, Any]], Tuple[Mapping[str, Any], ...], None]
+        ] = None,
+    ) -> Dict:
+        """
+        Performs a k-nearest neighbor (k-NN) search on the Elasticsearch index.
+
+        The search can be conducted using either a raw query vector or a model ID.
+        The method first generates
+        the body of the search query, which can be interpreted by Elasticsearch.
+        It then performs the k-NN
+        search on the Elasticsearch index and returns the results.
+
+        Args:
+            query: The query or queries to be used for the search. Required if
+                `query_vector` is not provided.
+            k: The number of nearest neighbors to return. Defaults to 10.
+            query_vector: The query vector to be used for the search. Required if
+                `query` is not provided.
+            model_id: The ID of the model to use for generating the query vector, if
+                `query` is provided.
+            size: The number of search hits to return. Defaults to 10.
+            source: Whether to include the source of each hit in the results.
+            fields: The fields to include in the source of each hit. If None, all
+                fields are included.
+            vector_query_field: Field name to use in knn search if not default 'vector'
+
+        Returns:
+            The search results.
+
+        Raises:
+            ValueError: If neither `query_vector` nor `model_id` is provided, or if
+                both are provided.
+        """
+
+        knn_query_body = self._default_knn_query(
+            query_vector=query_vector, query=query, model_id=model_id, k=k
+        )
+
+        # Perform the kNN search on the Elasticsearch index and return the results.
+        res = self.client.search(
+            index=self.index_name,
+            knn=knn_query_body,
+            size=size,
+            source=source,
+            fields=fields,
+        )
+        return dict(res)
+
+    def knn_hybrid_search(
+        self,
+        query: Optional[str] = None,
+        k: Optional[int] = 10,
+        query_vector: Optional[List[float]] = None,
+        model_id: Optional[str] = None,
+        size: Optional[int] = 10,
+        source: Optional[bool] = True,
+        knn_boost: Optional[float] = 0.9,
+        query_boost: Optional[float] = 0.1,
+        fields: Optional[
+            Union[List[Mapping[str, Any]], Tuple[Mapping[str, Any], ...], None]
+        ] = None,
+    ) -> Dict[Any, Any]:
+        """Performs a hybrid k-nearest neighbor (k-NN) and text-based search on the
+            Elasticsearch index.
+
+        The search can be conducted using either a raw query vector or a model ID.
+        The method first generates
+        the body of the k-NN search query and the text-based query, which can be
+        interpreted by Elasticsearch.
+        It then performs the hybrid search on the Elasticsearch index and returns the
+        results.
+
+        Args:
+            query: The query or queries to be used for the search. Required if
+                `query_vector` is not provided.
+            k: The number of nearest neighbors to return. Defaults to 10.
+            query_vector: The query vector to be used for the search. Required if
+                `query` is not provided.
+            model_id: The ID of the model to use for generating the query vector, if
+                `query` is provided.
+            size: The number of search hits to return. Defaults to 10.
+            source: Whether to include the source of each hit in the results.
+            knn_boost: The boost factor for the k-NN part of the search.
+            query_boost: The boost factor for the text-based part of the search.
+            fields
+                The fields to include in the source of each hit. If None, all fields are
+                included. Defaults to None.
+            vector_query_field: Field name to use in knn search if not default 'vector'
+            query_field: Field name to use in search if not default 'text'
+
+        Returns:
+            The search results.
+
+        Raises:
+            ValueError: If neither `query_vector` nor `model_id` is provided, or if
+                both are provided.
+        """
+
+        knn_query_body = self._default_knn_query(
+            query_vector=query_vector, query=query, model_id=model_id, k=k
+        )
+
+        # Modify the knn_query_body to add a "boost" parameter
+        knn_query_body["boost"] = knn_boost
+
+        # Generate the body of the standard Elasticsearch query
+        match_query_body = {
+            "match": {self.query_field: {"query": query, "boost": query_boost}}
+        }
+
+        # Perform the hybrid search on the Elasticsearch index and return the results.
+        res = self.client.search(
+            index=self.index_name,
+            query=match_query_body,
+            knn=knn_query_body,
+            fields=fields,
+            size=size,
+            source=source,
+        )
+        return dict(res)

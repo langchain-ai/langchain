@@ -30,7 +30,7 @@ class PlaywrightURLLoader(BaseLoader):
         try:
             import playwright  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "playwright package not found, please install it with "
                 "`pip install playwright`"
             )
@@ -85,4 +85,44 @@ class PlaywrightURLLoader(BaseLoader):
                     else:
                         raise e
             browser.close()
+        return docs
+
+    async def aload(self) -> List[Document]:
+        """Load the specified URLs with Playwright and create Documents asynchronously.
+        Use this function when in a jupyter notebook environment.
+
+        Returns:
+            List[Document]: A list of Document instances with loaded content.
+        """
+        from playwright.async_api import async_playwright
+        from unstructured.partition.html import partition_html
+
+        docs: List[Document] = list()
+
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=self.headless)
+            for url in self.urls:
+                try:
+                    page = await browser.new_page()
+                    await page.goto(url)
+
+                    for selector in self.remove_selectors or []:
+                        elements = await page.locator(selector).all()
+                        for element in elements:
+                            if await element.is_visible():
+                                await element.evaluate("element => element.remove()")
+
+                    page_source = await page.content()
+                    elements = partition_html(text=page_source)
+                    text = "\n\n".join([str(el) for el in elements])
+                    metadata = {"source": url}
+                    docs.append(Document(page_content=text, metadata=metadata))
+                except Exception as e:
+                    if self.continue_on_failure:
+                        logger.error(
+                            f"Error fetching or processing {url}, exception: {e}"
+                        )
+                    else:
+                        raise e
+            await browser.close()
         return docs

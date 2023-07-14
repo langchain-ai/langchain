@@ -26,4 +26,4 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_DB=postgres
     expose:
-      - 5432:5432
+      - 5432

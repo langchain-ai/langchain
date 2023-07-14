@@ -1,14 +1,17 @@
 """DocumentFilter that uses an LLM chain to extract the relevant parts of documents."""
+from __future__ import annotations
+
+import asyncio
 from typing import Any, Callable, Dict, Optional, Sequence
 
 from langchain import LLMChain, PromptTemplate
-from langchain.retrievers.document_compressors.base import (
-    BaseDocumentCompressor,
-)
+from langchain.callbacks.manager import Callbacks
+from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 from langchain.retrievers.document_compressors.chain_extract_prompt import (
     prompt_template,
 )
-from langchain.schema import BaseLanguageModel, BaseOutputParser, Document
+from langchain.schema import BaseOutputParser, Document
+from langchain.schema.language_model import BaseLanguageModel
 
 
 def default_get_input(query: str, doc: Document) -> Dict[str, Any]:
@@ -46,22 +49,44 @@ class LLMChainExtractor(BaseDocumentCompressor):
     """Callable for constructing the chain input from the query and a Document."""
 
     def compress_documents(
-        self, documents: Sequence[Document], query: str
+        self,
+        documents: Sequence[Document],
+        query: str,
+        callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
         """Compress page content of raw documents."""
         compressed_docs = []
         for doc in documents:
             _input = self.get_input(query, doc)
-            output = self.llm_chain.predict_and_parse(**_input)
+            output = self.llm_chain.predict_and_parse(**_input, callbacks=callbacks)
             if len(output) == 0:
                 continue
             compressed_docs.append(Document(page_content=output, metadata=doc.metadata))
         return compressed_docs
 
     async def acompress_documents(
-        self, documents: Sequence[Document], query: str
+        self,
+        documents: Sequence[Document],
+        query: str,
+        callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
-        raise NotImplementedError
+        """Compress page content of raw documents asynchronously."""
+        outputs = await asyncio.gather(
+            *[
+                self.llm_chain.apredict_and_parse(
+                    **self.get_input(query, doc), callbacks=callbacks
+                )
+                for doc in documents
+            ]
+        )
+        compressed_docs = []
+        for i, doc in enumerate(documents):
+            if len(outputs[i]) == 0:
+                continue
+            compressed_docs.append(
+                Document(page_content=outputs[i], metadata=doc.metadata)
+            )
+        return compressed_docs
 
     @classmethod
     def from_llm(
@@ -69,9 +94,10 @@ class LLMChainExtractor(BaseDocumentCompressor):
         llm: BaseLanguageModel,
         prompt: Optional[PromptTemplate] = None,
         get_input: Optional[Callable[[str, Document], str]] = None,
-    ) -> "LLMChainExtractor":
+        llm_chain_kwargs: Optional[dict] = None,
+    ) -> LLMChainExtractor:
         """Initialize from LLM."""
         _prompt = prompt if prompt is not None else _get_default_chain_prompt()
         _get_input = get_input if get_input is not None else default_get_input
-        llm_chain = LLMChain(llm=llm, prompt=_prompt)
+        llm_chain = LLMChain(llm=llm, prompt=_prompt, **(llm_chain_kwargs or {}))
         return cls(llm_chain=llm_chain, get_input=_get_input)

@@ -14,13 +14,12 @@ from langchain.experimental.autonomous_agents.autogpt.prompt import AutoGPTPromp
 from langchain.experimental.autonomous_agents.autogpt.prompt_generator import (
     FINISH_NAME,
 )
+from langchain.memory import ChatMessageHistory
 from langchain.schema import (
-    AIMessage,
-    BaseMessage,
+    BaseChatMessageHistory,
     Document,
-    HumanMessage,
-    SystemMessage,
 )
+from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
 from langchain.tools.base import BaseTool
 from langchain.tools.human.tool import HumanInputRun
 from langchain.vectorstores.base import VectorStoreRetriever
@@ -37,15 +36,16 @@ class AutoGPT:
         output_parser: BaseAutoGPTOutputParser,
         tools: List[BaseTool],
         feedback_tool: Optional[HumanInputRun] = None,
+        chat_history_memory: Optional[BaseChatMessageHistory] = None,
     ):
         self.ai_name = ai_name
         self.memory = memory
-        self.full_message_history: List[BaseMessage] = []
         self.next_action_count = 0
         self.chain = chain
         self.output_parser = output_parser
         self.tools = tools
         self.feedback_tool = feedback_tool
+        self.chat_history_memory = chat_history_memory or ChatMessageHistory()
 
     @classmethod
     def from_llm_and_tools(
@@ -57,6 +57,7 @@ class AutoGPT:
         llm: BaseChatModel,
         human_in_the_loop: bool = False,
         output_parser: Optional[BaseAutoGPTOutputParser] = None,
+        chat_history_memory: Optional[BaseChatMessageHistory] = None,
     ) -> AutoGPT:
         prompt = AutoGPTPrompt(
             ai_name=ai_name,
@@ -74,6 +75,7 @@ class AutoGPT:
             output_parser or AutoGPTOutputParser(),
             tools,
             feedback_tool=human_feedback_tool,
+            chat_history_memory=chat_history_memory,
         )
 
     def run(self, goals: List[str]) -> str:
@@ -90,15 +92,15 @@ class AutoGPT:
             # Send message to AI, get response
             assistant_reply = self.chain.run(
                 goals=goals,
-                messages=self.full_message_history,
+                messages=self.chat_history_memory.messages,
                 memory=self.memory,
                 user_input=user_input,
             )
 
             # Print Assistant thoughts
             print(assistant_reply)
-            self.full_message_history.append(HumanMessage(content=user_input))
-            self.full_message_history.append(AIMessage(content=assistant_reply))
+            self.chat_history_memory.add_message(HumanMessage(content=user_input))
+            self.chat_history_memory.add_message(AIMessage(content=assistant_reply))
 
             # Get command name and arguments
             action = self.output_parser.parse(assistant_reply)
@@ -138,4 +140,4 @@ class AutoGPT:
                 memory_to_add += feedback
 
             self.memory.add_documents([Document(page_content=memory_to_add)])
-            self.full_message_history.append(SystemMessage(content=result))
+            self.chat_history_memory.add_message(SystemMessage(content=result))

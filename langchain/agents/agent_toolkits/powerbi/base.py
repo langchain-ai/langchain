@@ -11,13 +11,13 @@ from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
-from langchain.llms.base import BaseLLM
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.utilities.powerbi import PowerBIDataset
 
 
 def create_pbi_agent(
-    llm: BaseLLM,
-    toolkit: Optional[PowerBIToolkit],
+    llm: BaseLanguageModel,
+    toolkit: Optional[PowerBIToolkit] = None,
     powerbi: Optional[PowerBIDataset] = None,
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: str = POWERBI_PREFIX,
@@ -27,7 +27,7 @@ def create_pbi_agent(
     input_variables: Optional[List[str]] = None,
     top_k: int = 10,
     verbose: bool = False,
-    agent_kwargs: Optional[Dict[str, Any]] = None,
+    agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Construct a pbi agent from an LLM and tools."""
@@ -36,13 +36,13 @@ def create_pbi_agent(
             raise ValueError("Must provide either a toolkit or powerbi dataset")
         toolkit = PowerBIToolkit(powerbi=powerbi, llm=llm, examples=examples)
     tools = toolkit.get_tools()
-
+    tables = powerbi.table_names if powerbi else toolkit.powerbi.table_names
     agent = ZeroShotAgent(
         llm_chain=LLMChain(
             llm=llm,
             prompt=ZeroShotAgent.create_prompt(
                 tools,
-                prefix=prefix.format(top_k=top_k),
+                prefix=prefix.format(top_k=top_k).format(tables=tables),
                 suffix=suffix,
                 format_instructions=format_instructions,
                 input_variables=input_variables,
@@ -51,12 +51,12 @@ def create_pbi_agent(
             verbose=verbose,
         ),
         allowed_tools=[tool.name for tool in tools],
-        **(agent_kwargs or {}),
+        **kwargs,
     )
     return AgentExecutor.from_agent_and_tools(
         agent=agent,
         tools=tools,
         callback_manager=callback_manager,
         verbose=verbose,
-        **kwargs,
+        **(agent_executor_kwargs or {}),
     )
