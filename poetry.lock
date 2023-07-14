@@ -358,7 +358,7 @@ trio = ["trio (<0.22)"]
 name = "appdirs"
 version = "1.4.4"
 description = "A small Python module for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
-optional = true
+optional = false
 python-versions = "*"
 files = [
     {file = "appdirs-1.4.4-py2.py3-none-any.whl", hash = "sha256:a841dacd6b99318a741b166adb07e19ee71a274450e68237b4650ca1055ab128"},
@@ -573,7 +573,7 @@ tests-no-zope = ["cloudpickle", "hypothesis", "mypy (>=1.1.1)", "pympler", "pyte
 name = "audioread"
 version = "3.0.0"
 description = "multi-library, cross-platform audio decoding"
-optional = true
+optional = false
 python-versions = ">=3.6"
 files = [
     {file = "audioread-3.0.0.tar.gz", hash = "sha256:121995bd207eb1fda3d566beb851d3534275925bc35a4fb6da0cb11de0f7251a"},
@@ -4495,7 +4495,7 @@ regex = ["regex"]
 name = "lazy-loader"
 version = "0.3"
 description = "lazy_loader"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "lazy_loader-0.3-py3-none-any.whl", hash = "sha256:1e9e76ee8631e264c62ce10006718e80b2cfc74340d17d1031e0f84af7478554"},
@@ -4527,7 +4527,7 @@ files = [
 name = "librosa"
 version = "0.10.0.post2"
 description = "Python module for audio and music processing"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "librosa-0.10.0.post2-py3-none-any.whl", hash = "sha256:0f3b56118cb01ea89df4b04e924c7f48c5c13d42cc55a12540eb04ae87ab5848"},
@@ -4589,7 +4589,7 @@ tornado = {version = "*", markers = "python_version > \"2.7\""}
 name = "llvmlite"
 version = "0.40.1"
 description = "lightweight wrapper around basic LLVM functionality"
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "llvmlite-0.40.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:84ce9b1c7a59936382ffde7871978cddcda14098e5a76d961e204523e5c372fb"},
@@ -5197,7 +5197,7 @@ portalocker = [
 name = "msgpack"
 version = "1.0.5"
 description = "MessagePack serializer"
-optional = true
+optional = false
 python-versions = "*"
 files = [
     {file = "msgpack-1.0.5-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:525228efd79bb831cf6830a732e2e80bc1b05436b086d4264814b4b2955b2fa9"},
@@ -5881,7 +5881,7 @@ test = ["pytest", "pytest-console-scripts", "pytest-jupyter", "pytest-tornasync"
 name = "numba"
 version = "0.57.1"
 description = "compiling Python code using LLVM"
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "numba-0.57.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:db8268eb5093cae2288942a8cbd69c9352f6fe6e0bfa0a9a27679436f92e4248"},
@@ -7122,7 +7122,7 @@ testing = ["pytest", "pytest-benchmark"]
 name = "pooch"
 version = "1.6.0"
 description = "\"Pooch manages your Python library's sample data files: it automatically downloads and stores them in a local directory, with support for versioning and corruption checks.\""
-optional = true
+optional = false
 python-versions = ">=3.6"
 files = [
     {file = "pooch-1.6.0-py3-none-any.whl", hash = "sha256:3bf0e20027096836b8dbce0152dbb785a269abeb621618eb4bdd275ff1e23c9c"},
@@ -9565,7 +9565,7 @@ files = [
 name = "soundfile"
 version = "0.12.1"
 description = "An audio library based on libsndfile, CFFI and NumPy"
-optional = true
+optional = false
 python-versions = "*"
 files = [
     {file = "soundfile-0.12.1-py2.py3-none-any.whl", hash = "sha256:828a79c2e75abab5359f780c81dccd4953c45a2c4cd4f05ba3e233ddf984b882"},
@@ -9599,7 +9599,7 @@ files = [
 name = "soxr"
 version = "0.3.5"
 description = "High quality, one-dimensional sample-rate conversion library"
-optional = true
+optional = false
 python-versions = ">=3.6"
 files = [
     {file = "soxr-0.3.5-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:21c3aa3b2e12351b4310eea9d56cf52ec0769e6832f911ee6ba32f85b7c92baa"},
@@ -12215,4 +12215,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "e9d0b9b9bf67519d6363030f07bbdba8e91675275986bbbcc301159325a481ab"
+content-hash = "3a6e0b0af45c990e91d3606aba4060f74c4a11f7d3b5e97ae4ca7fccc169d74e"
