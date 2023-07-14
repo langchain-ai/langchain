@@ -1,4 +1,4 @@
-"""Loader that loads data from Google Drive."""
+"""Loads data from Google Drive."""
 
 # Prerequisites:
 # 1. Create a Google Cloud project

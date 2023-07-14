@@ -25,8 +25,8 @@ def test_eval_chain() -> None:
 
     outputs = fake_qa_eval_chain.evaluate([example, example], [prediction, prediction])
     assert outputs[0] == outputs[1]
-    assert "text" in outputs[0]
-    assert outputs[0]["text"] == "foo"
+    assert fake_qa_eval_chain.output_key in outputs[0]
+    assert outputs[0][fake_qa_eval_chain.output_key] == "foo"
 
 
 @pytest.mark.skipif(

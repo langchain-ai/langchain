@@ -1,5 +1,7 @@
 """Unit tests for document transformers."""
-from langchain.document_transformers import _filter_similar_embeddings
+from langchain.document_transformers.embeddings_redundant_filter import (
+    _filter_similar_embeddings,
+)
 from langchain.math_utils import cosine_similarity
 
 
