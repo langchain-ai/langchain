@@ -32,6 +32,7 @@ from langchain.llms.human import HumanInputLLM
 from langchain.llms.koboldai import KoboldApiLLM
 from langchain.llms.llamacpp import LlamaCpp
 from langchain.llms.manifest import ManifestWrapper
+from langchain.llms.mlflow_ai_gateway import MlflowAIGateway
 from langchain.llms.modal import Modal
 from langchain.llms.mosaicml import MosaicML
 from langchain.llms.nlpcloud import NLPCloud
@@ -87,6 +88,7 @@ __all__ = [
     "LlamaCpp",
     "TextGen",
     "ManifestWrapper",
+    "MlflowAIGateway",
     "Modal",
     "MosaicML",
     "NLPCloud",
@@ -143,6 +145,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "koboldai": KoboldApiLLM,
     "llamacpp": LlamaCpp,
     "textgen": TextGen,
+    "mlflow-gateway": MlflowAIGateway,
     "modal": Modal,
     "mosaic": MosaicML,
     "nlpcloud": NLPCloud,
