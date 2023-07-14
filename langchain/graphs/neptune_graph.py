@@ -101,8 +101,9 @@ class NeptuneGraph:
     def _get_triples(self, e_labels):
         triple_query = '''
         MATCH (a)-[e:{e_label}]->(b)
+        WITH a,e,b LIMIT 3000
         RETURN DISTINCT labels(a) AS from, type(e) AS edge, labels(b) AS to
-        LIMIT 100
+        LIMIT 10
         '''
 
         triple_template = '(:{a})-[:{e}]->(:{b})'
