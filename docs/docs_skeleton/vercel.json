@@ -1301,6 +1301,10 @@
       "destination": "/docs/modules/data_connection/document_transformers/text_splitters/markdown_header_metadata"
     },
     {
+      "source": "/en/latest/modules/indexes/text_splitters.html",
+      "destination": "/docs/modules/data_connection/document_transformers/"
+    },
+    {
       "source": "/en/latest/modules/indexes/retrievers/examples/chroma_self_query.html",
       "destination": "/docs/modules/data_connection/retrievers/how_to/self_query/chroma_self_query"
     },
