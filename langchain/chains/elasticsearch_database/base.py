@@ -3,13 +3,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from pydantic import Extra
+from pydantic import Extra, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
+from langchain.chains.elasticsearch_database.prompts import ANSWER_PROMPT, DSL_PROMPT
 from langchain.chains.llm import LLMChain
-from langchain.chains.elasticsearch_database.prompts import DSL_PROMPT
-from langchain.schema import BasePromptTemplate
+from langchain.output_parsers.json import SimpleJsonOutputParser
+from langchain.schema import BaseLLMOutputParser, BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 
 if TYPE_CHECKING:
@@ -31,10 +32,12 @@ class ElasticsearchDatabaseChain(Chain):
             db_chain = ElasticsearchDatabaseChain.from_llm(OpenAI(), database)
     """
 
-    llm_chain: LLMChain
-    """[Deprecated] LLM wrapper to use."""
-    database: Elasticsearch
-    """Elasticsearch Database to connect to."""
+    query_chain: LLMChain
+    """Chain for creating the ES query."""
+    answer_chain: LLMChain
+    """Chain for answering the user question."""
+    database: Any
+    """Elasticsearch database to connect to of type elasticsearch.Elasticsearch."""
     top_k: int = 10
     """Number of results to return from the query"""
     ignore_indices: Optional[List[str]] = None
@@ -50,6 +53,14 @@ class ElasticsearchDatabaseChain(Chain):
 
         extra = Extra.forbid
         arbitrary_types_allowed = True
+
+    @root_validator()
+    def validate_indices(cls, values: dict) -> dict:
+        if values["include_indices"] and values["ignore_indices"]:
+            raise ValueError(
+                "Cannot specify both 'include_indices' and 'ignore_indices'."
+            )
+        return values
 
     @property
     def input_keys(self) -> List[str]:
@@ -71,12 +82,14 @@ class ElasticsearchDatabaseChain(Chain):
             return [self.output_key, INTERMEDIATE_STEPS_KEY]
 
     def _list_indices(self) -> List[str]:
-        all_indices = List[str]([index['index'] for index in self.database.cat.indices(format="json")])
+        all_indices = [
+            index["index"] for index in self.database.cat.indices(format="json")
+        ]
 
-        if self.include_indices is not None:
-            all_indices = list(filter(lambda x: self.include_indices is not None and x in self.include_indices, all_indices))
-        if self.ignore_indices is not None:
-            all_indices = list(filter(lambda x: self.ignore_indices is not None and x not in self.ignore_indices, all_indices))
+        if self.include_indices:
+            all_indices = [i for i in all_indices if i in self.include_indices]
+        if self.ignore_indices:
+            all_indices = [i for i in all_indices if i not in self.ignore_indices]
 
         return all_indices
 
@@ -84,10 +97,19 @@ class ElasticsearchDatabaseChain(Chain):
         mappings = self.database.indices.get_mapping(index=",".join(indices))
         if self.sample_documents_in_index_info > 0:
             for k, v in mappings.items():
-                hits = self.database.search(index=k, body={"query": {"match_all": {}}}, size=self.sample_documents_in_index_info)['hits']['hits']
-                hits = [str(hit['_source']) for hit in hits]
-                mappings[k]['mappings'] = str(v) + "\n\n/*\n" + "\n".join(hits) + "\n*/"
-        return "\n\n".join(["Mapping for index {}:\n{}".format(index, mappings[index]['mappings']) for index in mappings])
+                hits = self.database.search(
+                    index=k,
+                    query={"match_all": {}},
+                    size=self.sample_documents_in_index_info,
+                )["hits"]["hits"]
+                hits = [str(hit["_source"]) for hit in hits]
+                mappings[k]["mappings"] = str(v) + "\n\n/*\n" + "\n".join(hits) + "\n*/"
+        return "\n\n".join(
+            [
+                "Mapping for index {}:\n{}".format(index, mappings[index]["mappings"])
+                for index in mappings
+            ]
+        )
 
     def _search(self, indices: List[str], query: str) -> str:
         result = self.database.search(index=",".join(indices), body=query)
@@ -101,10 +123,9 @@ class ElasticsearchDatabaseChain(Chain):
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         input_text = f"{inputs[self.input_key]}\nESQuery:"
         _run_manager.on_text(input_text, verbose=self.verbose)
-        # If not present, then defaults to None which is all indices.
         indices = self._list_indices()
         indices_info = self._get_indices_infos(indices)
-        llm_inputs = {
+        query_inputs = {
             "input": input_text,
             "top_k": str(self.top_k),
             "indices_info": indices_info,
@@ -112,18 +133,17 @@ class ElasticsearchDatabaseChain(Chain):
         }
         intermediate_steps: List = []
         try:
-            intermediate_steps.append(llm_inputs)  # input: es generation
-            es_cmd = self.llm_chain.predict(
+            intermediate_steps.append(query_inputs)  # input: es generation
+            es_cmd = self.query_chain.run(
                 callbacks=_run_manager.get_child(),
-                **llm_inputs,
-            ).strip()
+                **query_inputs,
+            )
 
             _run_manager.on_text(es_cmd, color="green", verbose=self.verbose)
             intermediate_steps.append(
                 es_cmd
             )  # output: elasticsearch dsl generation (no checker)
             intermediate_steps.append({"es_cmd": es_cmd})  # input: ES search
-            # result = self._sql_search(indices=indices, query=es_cmd)
             result = self._search(indices=indices, query=es_cmd)
             intermediate_steps.append(str(result))  # output: ES search
 
@@ -131,13 +151,12 @@ class ElasticsearchDatabaseChain(Chain):
             _run_manager.on_text(result, color="yellow", verbose=self.verbose)
 
             _run_manager.on_text("\nAnswer:", verbose=self.verbose)
-            input_text += f"{es_cmd}\nESResult: {result}\nAnswer:"
-            llm_inputs["input"] = input_text
-            intermediate_steps.append(llm_inputs)  # input: final answer
-            final_result = self.llm_chain.predict(
+            answer_inputs = {"data": result, "input": input_text}
+            intermediate_steps.append(answer_inputs)  # input: final answer
+            final_result = self.answer_chain.run(
                 callbacks=_run_manager.get_child(),
-                **llm_inputs,
-            ).strip()
+                **answer_inputs,
+            )
 
             intermediate_steps.append(final_result)  # output: final answer
             _run_manager.on_text(final_result, color="green", verbose=self.verbose)
@@ -160,12 +179,30 @@ class ElasticsearchDatabaseChain(Chain):
         cls,
         llm: BaseLanguageModel,
         database: Elasticsearch,
-        prompt: Optional[BasePromptTemplate] = None,
+        *,
+        query_prompt: Optional[BasePromptTemplate] = None,
+        answer_prompt: Optional[BasePromptTemplate] = None,
+        query_output_parser: Optional[BaseLLMOutputParser] = None,
         **kwargs: Any,
     ) -> ElasticsearchDatabaseChain:
-        if "include_indices" in kwargs and "ignore_indices" in kwargs:
-            raise ValueError("Cannot specify both include_indices and ignore_indices")
+        """Convenience construct ElasticsearchDatabaseChain from an LLM.
 
-        prompt = prompt or DSL_PROMPT
-        llm_chain = LLMChain(llm=llm, prompt=prompt)
-        return cls(llm_chain=llm_chain, database=database, **kwargs)
+        Args:
+            llm: The language model to use.
+            database: The Elasticsearch db.
+            prompt: The prompt to use.
+            **kwargs: Additional arguments to pass to the constructor.
+        """
+        query_prompt = query_prompt or DSL_PROMPT
+        query_output_parser = query_output_parser or SimpleJsonOutputParser()
+        query_chain = LLMChain(
+            llm=llm, prompt=query_prompt, output_parser=query_output_parser
+        )
+        answer_prompt = answer_prompt or ANSWER_PROMPT
+        answer_chain = LLMChain(llm=llm, prompt=answer_prompt)
+        return cls(
+            query_chain=query_chain,
+            answer_chain=answer_chain,
+            database=database,
+            **kwargs,
+        )

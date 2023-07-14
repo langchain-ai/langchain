@@ -1,28 +1,36 @@
 from langchain.output_parsers.list import CommaSeparatedListOutputParser
 from langchain.prompts.prompt import PromptTemplate
 
-
 PROMPT_SUFFIX = """Only use the following Elasticsearch indices:
 {indices_info}
 
-Question: {input}"""
+Question: {input}
+ESQuery:"""
 
-DEFAULT_DSL_TEMPLATE = """Given an input question, first create a syntactically correct Elasticsearch query to run, then look at the results of the query and return the answer. Unless the user specifies in his question a specific number of examples he wishes to obtain, always limit your query to at most {top_k} results. You can order the results by a relevant column to return the most interesting examples in the database.
+DEFAULT_DSL_TEMPLATE = """Given an input question, create a syntactically correct Elasticsearch query to run. Unless the user specifies in their question a specific number of examples they wish to obtain, always limit your query to at most {top_k} results. You can order the results by a relevant column to return the most interesting examples in the database.
 
-Never query for all the columns from a specific index, only ask for a the few relevant columns given the question.
+Unless told to do not query for all the columns from a specific index, only ask for a the few relevant columns given the question.
 
-Pay attention to use only the column names that you can see in the mapping description. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which index.
+Pay attention to use only the column names that you can see in the mapping description. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which index. Return the query as valid json.
 
 Use the following format:
 
 Question: Question here
-ESQuery: Elasticsearch Query to run
-ESResult: Result of the Elasticsearch Query
-Answer: Final answer here
-
+ESQuery: Elasticsearch Query formatted as json
 """
 
-DSL_PROMPT = PromptTemplate(
-    input_variables=["input", "indices_info", "top_k"],
-    template=DEFAULT_DSL_TEMPLATE + PROMPT_SUFFIX,
-)
+DSL_PROMPT = PromptTemplate.from_template(DEFAULT_DSL_TEMPLATE + PROMPT_SUFFIX)
+
+DEFAULT_ANSWER_TEMPLATE = """Given an input question and relevant data from a database, answer the user question.
+
+Use the following format:
+
+Question: Question here
+Data: Relevant data here
+Answer: Final answer here
+
+Question: {input}
+Data: {data}
+Answer:"""
+
+ANSWER_PROMPT = PromptTemplate.from_template(DEFAULT_ANSWER_TEMPLATE)
