@@ -1,0 +1,66 @@
+{
+   "openapi": "3.0.1",
+   "info": {
+      "title": "Datasette API",
+      "description": "Execute SQL queries against a Datasette database and return the results as JSON",
+      "version": "v1"
+   },
+   "servers": [
+      {
+         "url": "https://datasette.io"
+      }
+   ],
+   "paths": {
+      "/content.json": {
+         "get": {
+            "operationId": "query",
+            "summary": "Execute a SQLite SQL query against the content database",
+            "description": "Accepts SQLite SQL query, returns JSON. Does not allow PRAGMA statements.",
+            "parameters": [
+               {
+                  "name": "sql",
+                  "in": "query",
+                  "description": "The SQL query to be executed",
+                  "required": true,
+                  "schema": {
+                     "type": "string"
+                  }
+               },
+               {
+                  "name": "_shape",
+                  "in": "query",
+                  "description": "The shape of the response data. Must be \"array\"",
+                  "required": true,
+                  "schema": {
+                     "type": "string",
+                     "enum": [
+                        "array"
+                     ]
+                  }
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "Successful SQL results",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "type": "array",
+                           "items": {
+                              "type": "object"
+                           }
+                        }
+                     }
+                  }
+               },
+               "400": {
+                  "description": "Bad request"
+               },
+               "500": {
+                  "description": "Internal server error"
+               }
+            }
+         }
+      }
+   }
+}

@@ -1,4 +1,4 @@
-"""Loader that loads Facebook chat json dump."""
+"""Loads Facebook chat json dump."""
 import datetime
 import json
 from pathlib import Path

@@ -1002,10 +1002,12 @@ files = [
 
 [package.dependencies]
 click = ">=8.0.0"
+ipython = {version = ">=7.8.0", optional = true, markers = "extra == \"jupyter\""}
 mypy-extensions = ">=0.4.3"
 packaging = ">=22.0"
 pathspec = ">=0.9.0"
 platformdirs = ">=2"
+tokenize-rt = {version = ">=3.2.0", optional = true, markers = "extra == \"jupyter\""}
 tomli = {version = ">=1.1.0", markers = "python_version < \"3.11\""}
 typing-extensions = {version = ">=3.10.0.0", markers = "python_version < \"3.10\""}
 
@@ -1827,6 +1829,24 @@ files = [
 ]
 
 [[package]]
+name = "codespell"
+version = "2.2.5"
+description = "Codespell"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "codespell-2.2.5-py3-none-any.whl", hash = "sha256:efa037f54b73c84f7bd14ce8e853d5f822cdd6386ef0ff32e957a3919435b9ec"},
+    {file = "codespell-2.2.5.tar.gz", hash = "sha256:6d9faddf6eedb692bf80c9a94ec13ab4f5fb585aabae5f3750727148d7b5be56"},
+]
+
+[package.extras]
+dev = ["Pygments", "build", "chardet", "pytest", "pytest-cov", "pytest-dependency", "ruff", "tomli"]
+hard-encoding-detection = ["chardet"]
+toml = ["tomli"]
+types = ["chardet (>=5.1.0)", "mypy", "pytest", "pytest-cov", "pytest-dependency"]
+
+[[package]]
 name = "cohere"
 version = "3.10.0"
 description = "A Python library for the Cohere API"
@@ -2191,13 +2211,13 @@ files = [
 
 [[package]]
 name = "deeplake"
-version = "3.6.4"
+version = "3.6.8"
 description = "Activeloop Deep Lake"
 category = "main"
 optional = false
 python-versions = "*"
 files = [
-    {file = "deeplake-3.6.4.tar.gz", hash = "sha256:cd31e772e00012a0cfdcd9d2cfe0e7fa3eaea1de122e98ae4f54e15d2722b94f"},
+    {file = "deeplake-3.6.8.tar.gz", hash = "sha256:ab795d555e8b8e1c8f886cd5f587bbbdc903e96c35f9de7d505d9c347521e61a"},
 ]
 
 [package.dependencies]
@@ -2214,12 +2234,12 @@ pyjwt = "*"
 tqdm = "*"
 
 [package.extras]
-all = ["IPython", "av (>=8.1.0)", "azure-cli", "azure-identity", "azure-storage-blob", "flask", "google-api-python-client (>=2.31.0,<2.32.0)", "google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "google-cloud-storage (>=1.42.0,<1.43.0)", "laspy", "libdeeplake (==0.0.59)", "nibabel", "oauth2client (>=4.1.3,<4.2.0)", "pydicom"]
+all = ["IPython", "av (>=8.1.0)", "azure-cli", "azure-identity", "azure-storage-blob", "flask", "google-api-python-client (>=2.31.0,<2.32.0)", "google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "google-cloud-storage (>=1.42.0,<1.43.0)", "laspy", "libdeeplake (==0.0.60)", "nibabel", "oauth2client (>=4.1.3,<4.2.0)", "pydicom"]
 audio = ["av (>=8.1.0)"]
 av = ["av (>=8.1.0)"]
 azure = ["azure-cli", "azure-identity", "azure-storage-blob"]
 dicom = ["nibabel", "pydicom"]
-enterprise = ["libdeeplake (==0.0.59)", "pyjwt"]
+enterprise = ["libdeeplake (==0.0.60)", "pyjwt"]
 gcp = ["google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "google-cloud-storage (>=1.42.0,<1.43.0)"]
 gdrive = ["google-api-python-client (>=2.31.0,<2.32.0)", "google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "oauth2client (>=4.1.3,<4.2.0)"]
 medical = ["nibabel", "pydicom"]
@@ -2656,6 +2676,25 @@ doc = ["mdx-include (>=1.4.1,<2.0.0)", "mkdocs (>=1.1.2,<2.0.0)", "mkdocs-markdo
 test = ["anyio[trio] (>=3.2.1,<4.0.0)", "black (==23.1.0)", "coverage[toml] (>=6.5.0,<8.0)", "databases[sqlite] (>=0.3.2,<0.7.0)", "email-validator (>=1.1.1,<2.0.0)", "flask (>=1.1.2,<3.0.0)", "httpx (>=0.23.0,<0.24.0)", "isort (>=5.0.6,<6.0.0)", "mypy (==0.982)", "orjson (>=3.2.1,<4.0.0)", "passlib[bcrypt] (>=1.7.2,<2.0.0)", "peewee (>=3.13.3,<4.0.0)", "pytest (>=7.1.3,<8.0.0)", "python-jose[cryptography] (>=3.3.0,<4.0.0)", "python-multipart (>=0.0.5,<0.0.7)", "pyyaml (>=5.3.1,<7.0.0)", "ruff (==0.0.138)", "sqlalchemy (>=1.3.18,<1.4.43)", "types-orjson (==3.6.2)", "types-ujson (==5.7.0.1)", "ujson (>=4.0.1,!=4.0.2,!=4.1.0,!=4.2.0,!=4.3.0,!=5.0.0,!=5.1.0,<6.0.0)"]
 
 [[package]]
+name = "fastcore"
+version = "1.4.2"
+description = "Python supercharged for fastai development"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "fastcore-1.4.2-py3-none-any.whl", hash = "sha256:86c31395a87ea429c35f9291e826098f525684a3a6555238448a371274224ddb"},
+    {file = "fastcore-1.4.2.tar.gz", hash = "sha256:43bb895507788168317f28cf82031c5ce1796d95a229fc515c10bd90f2355a37"},
+]
+
+[package.dependencies]
+packaging = "*"
+pip = "*"
+
+[package.extras]
+dev = ["matplotlib", "nbdev (>=0.2.39)", "numpy", "pandas", "pillow", "torch"]
+
+[[package]]
 name = "fastjsonschema"
 version = "2.17.1"
 description = "Fastest Python implementation of JSON schema"
@@ -2669,6 +2708,25 @@ files = [
 
 [package.extras]
 devel = ["colorama", "json-spec", "jsonschema", "pylint", "pytest", "pytest-benchmark", "pytest-cache", "validictory"]
+
+[[package]]
+name = "fastrelease"
+version = "0.1.17"
+description = "Simplified releases using GitHub Issues"
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "fastrelease-0.1.17-py3-none-any.whl", hash = "sha256:8b5bbaa9a566fee9c08bbc7cc8fb052a04499a76b464a8b0669707843cb15e2f"},
+    {file = "fastrelease-0.1.17.tar.gz", hash = "sha256:c4c6717dcb8c5b37496511dd2a3f97f810b70e1350380b6ae023bb15757b6a63"},
+]
+
+[package.dependencies]
+fastcore = ">=1.3.13"
+ghapi = "*"
+packaging = "*"
+pip = "*"
+pyyaml = "*"
 
 [[package]]
 name = "feedparser"
@@ -2961,6 +3019,26 @@ files = [
 [package.dependencies]
 click = "*"
 six = "*"
+
+[[package]]
+name = "ghapi"
+version = "0.1.22"
+description = "A python client for the GitHub API"
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "ghapi-0.1.22-py3-none-any.whl", hash = "sha256:fba8d57dfc2992d97fe93eaa12e80b9becbed7f13ac6cdcd1c85283c68b04505"},
+    {file = "ghapi-0.1.22.tar.gz", hash = "sha256:fbe31684c141767a62899020fff8c6922a8ecaadd6d4614f0673242939cbb655"},
+]
+
+[package.dependencies]
+fastcore = "*"
+packaging = "*"
+pip = "*"
+
+[package.extras]
+dev = ["jsonref"]
 
 [[package]]
 name = "gitdb"
@@ -4383,27 +4461,28 @@ testing = ["coverage", "ipykernel", "jupytext", "matplotlib", "nbdime", "nbforma
 
 [[package]]
 name = "jupyter-client"
-version = "8.2.0"
+version = "7.4.9"
 description = "Jupyter protocol implementation and client libraries"
 category = "dev"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.7"
 files = [
-    {file = "jupyter_client-8.2.0-py3-none-any.whl", hash = "sha256:b18219aa695d39e2ad570533e0d71fb7881d35a873051054a84ee2a17c4b7389"},
-    {file = "jupyter_client-8.2.0.tar.gz", hash = "sha256:9fe233834edd0e6c0aa5f05ca2ab4bdea1842bfd2d8a932878212fc5301ddaf0"},
+    {file = "jupyter_client-7.4.9-py3-none-any.whl", hash = "sha256:214668aaea208195f4c13d28eb272ba79f945fc0cf3f11c7092c20b2ca1980e7"},
+    {file = "jupyter_client-7.4.9.tar.gz", hash = "sha256:52be28e04171f07aed8f20e1616a5a552ab9fee9cbbe6c1896ae170c3880d392"},
 ]
 
 [package.dependencies]
-importlib-metadata = {version = ">=4.8.3", markers = "python_version < \"3.10\""}
-jupyter-core = ">=4.12,<5.0.0 || >=5.1.0"
+entrypoints = "*"
+jupyter-core = ">=4.9.2"
+nest-asyncio = ">=1.5.4"
 python-dateutil = ">=2.8.2"
 pyzmq = ">=23.0"
 tornado = ">=6.2"
-traitlets = ">=5.3"
+traitlets = "*"
 
 [package.extras]
-docs = ["ipykernel", "myst-parser", "pydata-sphinx-theme", "sphinx (>=4)", "sphinx-autodoc-typehints", "sphinxcontrib-github-alt", "sphinxcontrib-spelling"]
-test = ["coverage", "ipykernel (>=6.14)", "mypy", "paramiko", "pre-commit", "pytest", "pytest-cov", "pytest-jupyter[client] (>=0.4.1)", "pytest-timeout"]
+doc = ["ipykernel", "myst-parser", "sphinx (>=1.3.6)", "sphinx-rtd-theme", "sphinxcontrib-github-alt"]
+test = ["codecov", "coverage", "ipykernel (>=6.12)", "ipython", "mypy", "pre-commit", "pytest", "pytest-asyncio (>=0.18)", "pytest-cov", "pytest-timeout"]
 
 [[package]]
 name = "jupyter-console"
@@ -4592,23 +4671,6 @@ docs = ["mkdocs", "mkdocs-jupyter", "mkdocs-material", "mkdocstrings[python]"]
 tests = ["doctest", "pytest", "pytest-mock"]
 
 [[package]]
-name = "langchainplus-sdk"
-version = "0.0.20"
-description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
-category = "main"
-optional = false
-python-versions = ">=3.8.1,<4.0"
-files = [
-    {file = "langchainplus_sdk-0.0.20-py3-none-any.whl", hash = "sha256:07a869d476755803aa04c4986ce78d00c2fe4ff584c0eaa57d7570c9664188db"},
-    {file = "langchainplus_sdk-0.0.20.tar.gz", hash = "sha256:3d300e2e3290f68cc9d842c059f9458deba60e776c9e790309688cad1bfbb219"},
-]
-
-[package.dependencies]
-pydantic = ">=1,<2"
-requests = ">=2,<3"
-tenacity = ">=8.1.0,<9.0.0"
-
-[[package]]
 name = "langcodes"
 version = "3.3.0"
 description = "Tools for labeling human languages with IETF language tags"
@@ -4625,23 +4687,39 @@ data = ["language-data (>=1.1,<2.0)"]
 
 [[package]]
 name = "langkit"
-version = "0.0.1"
+version = "0.0.6"
 description = "A collection of text metric udfs for whylogs profiling and monitoring in WhyLabs"
 category = "main"
 optional = true
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "langkit-0.0.1-py3-none-any.whl", hash = "sha256:361a593cafd1611d054dd92dda8c3f5532232e3465e88ab32347232078f8ccd3"},
-    {file = "langkit-0.0.1.tar.gz", hash = "sha256:d5ed28f21d6f641208f5da5f7d7ffd8a536b018868a004fb1fad54b83091e985"},
+    {file = "langkit-0.0.6-py3-none-any.whl", hash = "sha256:5b36830e9094934c933f8756177b5a8a5c7d6dc014ca49076a358c9c8fb5ddbc"},
+    {file = "langkit-0.0.6.tar.gz", hash = "sha256:08421bb0799fc831b0d1e431e600cad8acab7d7bdbf6aa6c7535291172a66343"},
 ]
 
 [package.dependencies]
 pandas = "*"
 textstat = ">=0.7.3,<0.8.0"
-whylogs = "1.1.45.dev6"
+whylogs = ">=1.2.3,<2.0.0"
 
 [package.extras]
 all = ["datasets (>=2.12.0,<3.0.0)", "nltk (>=3.8.1,<4.0.0)", "openai (>=0.27.6,<0.28.0)", "sentence-transformers (>=2.2.2,<3.0.0)", "torch"]
+
+[[package]]
+name = "langsmith"
+version = "0.0.5"
+description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
+category = "main"
+optional = false
+python-versions = ">=3.8.1,<4.0"
+files = [
+    {file = "langsmith-0.0.5-py3-none-any.whl", hash = "sha256:c9ce19cf7a45d4b9ef74b3133ace4d0583bc992383296d03c05065e8f871e01f"},
+    {file = "langsmith-0.0.5.tar.gz", hash = "sha256:ffad2fc638cfee8c9d27c9eae2fa3c3f9ec423bf443b1dc44cc8184fa34cd6b2"},
+]
+
+[package.dependencies]
+pydantic = ">=1,<2"
+requests = ">=2,<3"
 
 [[package]]
 name = "lark"
@@ -4677,6 +4755,39 @@ files = [
     {file = "libclang-16.0.0-py2.py3-none-win_amd64.whl", hash = "sha256:ee20bf93e3dd330f71fc50cdbf13b92ced0aec8e540be64251db53502a9b33f7"},
     {file = "libclang-16.0.0-py2.py3-none-win_arm64.whl", hash = "sha256:bf4628fc4da7a1dd06a244f9b8e121c5ec68076a763c59d6b13cbb103acc935b"},
 ]
+
+[[package]]
+name = "libdeeplake"
+version = "0.0.60"
+description = "C++ backend for Deep Lake"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "libdeeplake-0.0.60-cp310-cp310-macosx_10_12_x86_64.whl", hash = "sha256:077c663370834831343b512cb4d2b166634f1aaea31e31f86721e257ce0ed1dd"},
+    {file = "libdeeplake-0.0.60-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:c6b152970a9719f10fb4656409a19cab1b3721a4c2ff9d36b8acb883992dbe7c"},
+    {file = "libdeeplake-0.0.60-cp310-cp310-manylinux2010_x86_64.whl", hash = "sha256:e54901b4ffd6b606ad5829354788626972b7a7aa7a9dea055bb987cd06544ea3"},
+    {file = "libdeeplake-0.0.60-cp310-cp310-manylinux2014_aarch64.whl", hash = "sha256:010f172e87027fb81b8eaaec35bda898783fe618632f44dd716166aa6d3bf3f6"},
+    {file = "libdeeplake-0.0.60-cp311-cp311-macosx_10_12_x86_64.whl", hash = "sha256:2d18b4b77939af29d927afa5e9d4652603821b5a48c7959ad648caf5b2509efd"},
+    {file = "libdeeplake-0.0.60-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:1c424719292da9abf4f531b21181b8dcb6a77c10db6d8d559da708b6053745c9"},
+    {file = "libdeeplake-0.0.60-cp311-cp311-manylinux2010_x86_64.whl", hash = "sha256:27ebe8638429dcdfb650f942128e9aa9944ad68332b5a5dad8d943eeb9905d24"},
+    {file = "libdeeplake-0.0.60-cp311-cp311-manylinux2014_aarch64.whl", hash = "sha256:9f3841343806372905c42ea30c89b553f79530cdaa24d5e7753cbd45fa8444f8"},
+    {file = "libdeeplake-0.0.60-cp37-cp37m-macosx_10_12_x86_64.whl", hash = "sha256:afdbf256de09b362c3fb198e33547dff157583762814f7973d4c01357506cfd7"},
+    {file = "libdeeplake-0.0.60-cp37-cp37m-macosx_11_0_arm64.whl", hash = "sha256:aee8a0f1d9521cb964efc39bee6e4cfbc18935501e0a0969dd43fe90ccd3e440"},
+    {file = "libdeeplake-0.0.60-cp37-cp37m-manylinux2010_x86_64.whl", hash = "sha256:7bf53919c17318eff53ab5f46514fe7bf86d32bfd0e7b73ab0e47e57279fb58f"},
+    {file = "libdeeplake-0.0.60-cp37-cp37m-manylinux2014_aarch64.whl", hash = "sha256:ad570eacbdc79533cc9fbc005903a7af2e037a7a743e60ed5d1486c7daade737"},
+    {file = "libdeeplake-0.0.60-cp38-cp38-macosx_10_12_x86_64.whl", hash = "sha256:957123ca007ce552f08646ceaf386e60703d9aa1f299e76f71d4b922c8ccbf4f"},
+    {file = "libdeeplake-0.0.60-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:1ea962a884eea30d092ed379dd83f3c6a162268180b55d6afa8778970ea99863"},
+    {file = "libdeeplake-0.0.60-cp38-cp38-manylinux2010_x86_64.whl", hash = "sha256:c330c1ca89c057cdabca9b6261ecc051ebad5f658d17c140a211a8842bd34ce5"},
+    {file = "libdeeplake-0.0.60-cp38-cp38-manylinux2014_aarch64.whl", hash = "sha256:397a4da31581472fc9c7444b91ee4619f29d9b18371554514a2de857f5bad8a8"},
+    {file = "libdeeplake-0.0.60-cp39-cp39-macosx_10_12_x86_64.whl", hash = "sha256:cf33e027abed9d123e6fccb822fd128ea9d9d5833600aac82a7e0280df0c190e"},
+    {file = "libdeeplake-0.0.60-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:5844475365631984453b563e3e7c69d65d96d91e44e8e0762f1877befcac58b5"},
+    {file = "libdeeplake-0.0.60-cp39-cp39-manylinux2010_x86_64.whl", hash = "sha256:753ac3840852b6009056ad725afd48c460a431470b3cccac3f717e423e2c7c1c"},
+    {file = "libdeeplake-0.0.60-cp39-cp39-manylinux2014_aarch64.whl", hash = "sha256:6f50fa21ca263084783b313a71ffb26ea7d614b9ca5e16398be1f9a1dbe0a775"},
+]
+
+[package.dependencies]
+numpy = "*"
 
 [[package]]
 name = "linkchecker"
@@ -5772,6 +5883,52 @@ test = ["ipykernel", "ipywidgets (>=7)", "pre-commit", "pytest", "pytest-depende
 webpdf = ["pyppeteer (>=1,<1.1)"]
 
 [[package]]
+name = "nbdev"
+version = "1.2.0"
+description = "Writing a library entirely in notebooks"
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "nbdev-1.2.0-py3-none-any.whl", hash = "sha256:236bacb23d241e1addfa683d6c3466d3ff960f0bad2639f0142afdfe06daa4f8"},
+    {file = "nbdev-1.2.0.tar.gz", hash = "sha256:474b708beef23e89665b695d304f62cd0458703e889cbe2696ae027cf299714e"},
+]
+
+[package.dependencies]
+fastcore = ">=1.3.21"
+fastrelease = "*"
+ghapi = "*"
+ipykernel = "*"
+jupyter = "*"
+jupyter-client = "<8"
+nbconvert = ">=6.4.1"
+nbformat = ">=4.4.0"
+packaging = "*"
+pip = "*"
+pyyaml = "*"
+
+[[package]]
+name = "nbdoc"
+version = "0.0.82"
+description = "Generate beautiful, testable documentation with Jupyter Notebooks"
+category = "dev"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "nbdoc-0.0.82-py3-none-any.whl", hash = "sha256:84f57e0c20b389eb748eb2055d55d5698b2f44fdef455943d396112d26103fb9"},
+    {file = "nbdoc-0.0.82.tar.gz", hash = "sha256:234b785e710025357d66c90be0bf7d620a7a507786380030d749b1c4c5146600"},
+]
+
+[package.dependencies]
+black = {version = ">=22.1.0", extras = ["jupyter"]}
+fastcore = "1.4.2"
+nbconvert = ">=6.4.1"
+nbdev = "1.2.0"
+numpydoc = "1.2"
+packaging = "*"
+pip = "*"
+
+[[package]]
 name = "nbformat"
 version = "5.9.0"
 description = "The Jupyter Notebook format"
@@ -6115,6 +6272,25 @@ files = [
     {file = "numpy-1.24.3-pp38-pypy38_pp73-win_amd64.whl", hash = "sha256:35400e6a8d102fd07c71ed7dcadd9eb62ee9a6e84ec159bd48c28235bbb0f8e4"},
     {file = "numpy-1.24.3.tar.gz", hash = "sha256:ab344f1bf21f140adab8e47fdbc7c35a477dc01408791f8ba00d018dd0bc5155"},
 ]
+
+[[package]]
+name = "numpydoc"
+version = "1.2"
+description = "Sphinx extension to support docstrings in Numpy format"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "numpydoc-1.2-py3-none-any.whl", hash = "sha256:3ecbb9feae080031714b63128912988ebdfd4c582a085d25b8d9f7ac23c2d9ef"},
+    {file = "numpydoc-1.2.tar.gz", hash = "sha256:0cec233740c6b125913005d16e8a9996e060528afcb8b7cad3f2706629dfd6f7"},
+]
+
+[package.dependencies]
+Jinja2 = ">=2.10"
+sphinx = ">=1.8"
+
+[package.extras]
+testing = ["matplotlib", "pytest", "pytest-cov"]
 
 [[package]]
 name = "nvidia-cublas-cu11"
@@ -7142,7 +7318,7 @@ name = "pip"
 version = "23.1.2"
 description = "The PyPA recommended tool for installing Python packages."
 category = "main"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "pip-23.1.2-py3-none-any.whl", hash = "sha256:3ef6ac33239e4027d9a5598a381b9d30880a1477e50039db2eac6e8a8f6d1b18"},
@@ -11011,6 +11187,18 @@ doc = ["sphinx", "sphinx_rtd_theme"]
 test = ["flake8", "isort", "pytest"]
 
 [[package]]
+name = "tokenize-rt"
+version = "5.1.0"
+description = "A wrapper around the stdlib `tokenize` which roundtrips."
+category = "dev"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "tokenize_rt-5.1.0-py2.py3-none-any.whl", hash = "sha256:9b7bb843e77dd6ed0be5564bfaaba200083911e0497841cd3e9235a6a9794d74"},
+    {file = "tokenize_rt-5.1.0.tar.gz", hash = "sha256:08f0c2daa94c4052e53c2fcaa8e32585e6ae9bdfc800974092d031401694e002"},
+]
+
+[[package]]
 name = "tokenizers"
 version = "0.13.3"
 description = "Fast and Customizable Tokenizers"
@@ -11973,14 +12161,14 @@ urllib3 = ">=1.25.3"
 
 [[package]]
 name = "whylogs"
-version = "1.1.45.dev6"
+version = "1.2.3"
 description = "Profile and monitor your ML data pipeline end-to-end"
 category = "main"
 optional = true
 python-versions = ">=3.7.1,<4"
 files = [
-    {file = "whylogs-1.1.45.dev6-py3-none-any.whl", hash = "sha256:8d5a96ecf7b181b5034168b7ba979d463a2dd33a8b7a728ffd911b493de89857"},
-    {file = "whylogs-1.1.45.dev6.tar.gz", hash = "sha256:a4b81bea7adf407de200ae6e8c7b53316b3304b3922ae4518a0f4234086db7ba"},
+    {file = "whylogs-1.2.3-py3-none-any.whl", hash = "sha256:92cfe02985760c52d25b88bad69001901844ff51c76b62537bce1c31d12c271e"},
+    {file = "whylogs-1.2.3.tar.gz", hash = "sha256:d0000f502b1b30c48a5ad9535488370e961e85825dafdd75421447ffff0516e7"},
 ]
 
 [package.dependencies]
@@ -12509,13 +12697,13 @@ cffi = {version = ">=1.11", markers = "platform_python_implementation == \"PyPy\
 cffi = ["cffi (>=1.11)"]
 
 [extras]
-all = ["O365", "aleph-alpha-client", "anthropic", "arxiv", "atlassian-python-api", "awadb", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-cosmos", "azure-identity", "beautifulsoup4", "clarifai", "clickhouse-connect", "cohere", "deeplake", "docarray", "duckduckgo-search", "elasticsearch", "esprima", "faiss-cpu", "google-api-python-client", "google-auth", "google-search-results", "gptcache", "html2text", "huggingface_hub", "jina", "jinja2", "jq", "lancedb", "langkit", "lark", "lxml", "manifest-ml", "marqo", "momento", "nebula3-python", "neo4j", "networkx", "nlpcloud", "nltk", "nomic", "octoai-sdk", "openai", "openlm", "opensearch-py", "pdfminer-six", "pexpect", "pgvector", "pinecone-client", "pinecone-text", "psycopg2-binary", "pymongo", "pyowm", "pypdf", "pytesseract", "pyvespa", "qdrant-client", "rdflib", "redis", "requests-toolbelt", "sentence-transformers", "singlestoredb", "spacy", "steamship", "tensorflow-text", "tigrisdb", "tiktoken", "torch", "transformers", "weaviate-client", "wikipedia", "wolframalpha"]
+all = ["O365", "aleph-alpha-client", "anthropic", "arxiv", "atlassian-python-api", "awadb", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-cosmos", "azure-identity", "beautifulsoup4", "clarifai", "clickhouse-connect", "cohere", "deeplake", "docarray", "duckduckgo-search", "elasticsearch", "esprima", "faiss-cpu", "google-api-python-client", "google-auth", "google-search-results", "gptcache", "html2text", "huggingface_hub", "jina", "jinja2", "jq", "lancedb", "langkit", "lark", "libdeeplake", "lxml", "manifest-ml", "marqo", "momento", "nebula3-python", "neo4j", "networkx", "nlpcloud", "nltk", "nomic", "octoai-sdk", "openai", "openlm", "opensearch-py", "pdfminer-six", "pexpect", "pgvector", "pinecone-client", "pinecone-text", "psycopg2-binary", "pymongo", "pyowm", "pypdf", "pytesseract", "pyvespa", "qdrant-client", "rdflib", "redis", "requests-toolbelt", "sentence-transformers", "singlestoredb", "spacy", "steamship", "tensorflow-text", "tigrisdb", "tiktoken", "torch", "transformers", "weaviate-client", "wikipedia", "wolframalpha"]
 azure = ["azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-core", "azure-cosmos", "azure-identity", "azure-search-documents", "openai"]
 clarifai = ["clarifai"]
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["atlassian-python-api", "beautifulsoup4", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "esprima", "gql", "html2text", "jq", "lxml", "openai", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rapidfuzz", "requests-toolbelt", "scikit-learn", "streamlit", "telethon", "tqdm", "zep-python"]
+extended-testing = ["atlassian-python-api", "beautifulsoup4", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "esprima", "gql", "html2text", "jq", "lxml", "openai", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rapidfuzz", "requests-toolbelt", "scikit-learn", "streamlit", "sympy", "telethon", "tqdm", "zep-python"]
 javascript = ["esprima"]
 llms = ["anthropic", "clarifai", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "openllm", "openlm", "torch", "transformers"]
 openai = ["openai", "tiktoken"]
@@ -12525,4 +12713,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "6e2acbd4f760e92454f9f9e29840679fbd59b8662a99bcb89e2251a5b8736e6d"
+content-hash = "f8f94ad19dd8f96637f6ffe64401b780ea9e7985543a7c9da31c41c55e94ab0f"
