@@ -118,6 +118,7 @@ class Writer(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call out to Writer's completions endpoint.
 
@@ -141,7 +142,7 @@ class Writer(LLM):
                 f"/organization/{self.writer_org_id}"
                 f"/model/{self.model_id}/completions"
             )
-
+        params = {**self._default_params, **kwargs}
         response = requests.post(
             url=base_url,
             headers={
@@ -149,7 +150,7 @@ class Writer(LLM):
                 "Content-Type": "application/json",
                 "Accept": "application/json",
             },
-            json={"prompt": prompt, **self._default_params},
+            json={"prompt": prompt, **params},
         )
         text = response.text
         if stop is not None:

@@ -81,7 +81,7 @@ class GooseAI(LLM):
                     raise ValueError(f"Found {field_name} supplied twice.")
                 logger.warning(
                     f"""WARNING! {field_name} is not default parameter.
-                    {field_name} was transfered to model_kwargs.
+                    {field_name} was transferred to model_kwargs.
                     Please confirm that {field_name} is what you intended."""
                 )
                 extra[field_name] = values.pop(field_name)
@@ -137,6 +137,7 @@ class GooseAI(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call the GooseAI API."""
         params = self._default_params
@@ -144,6 +145,8 @@ class GooseAI(LLM):
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
+
+        params = {**params, **kwargs}
 
         response = self.client.create(engine=self.model_name, prompt=prompt, **params)
         text = response.choices[0].text

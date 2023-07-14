@@ -4,10 +4,8 @@ from typing import List
 
 from langchain.schema import (
     BaseChatMessageHistory,
-    BaseMessage,
-    _message_to_dict,
-    messages_from_dict,
 )
+from langchain.schema.messages import BaseMessage, _message_to_dict, messages_from_dict
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +45,7 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
 
         self.db = self.client[database_name]
         self.collection = self.db[collection_name]
+        self.collection.create_index("SessionId")
 
     @property
     def messages(self) -> List[BaseMessage]:  # type: ignore

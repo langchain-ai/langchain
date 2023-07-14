@@ -2,7 +2,7 @@
 import subprocess
 from pathlib import Path
 
-from langchain.cli.main import get_docker_compose_command
+from langsmith.cli.main import get_docker_compose_command
 
 
 def main() -> None:

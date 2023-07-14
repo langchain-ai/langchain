@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 import requests
 
 from langchain.memory.chat_memory import BaseChatMemory
-from langchain.schema import get_buffer_string
+from langchain.schema.messages import get_buffer_string
 
 MANAGED_URL = "https://api.getmetal.io/v1/motorhead"
 # LOCAL_URL = "http://localhost:8080"
@@ -48,6 +48,8 @@ class MotorheadMemory(BaseChatMemory):
             headers=self.__get_headers(),
         )
         res_data = res.json()
+        res_data = res_data.get("data", res_data)  # Handle Managed Version
+
         messages = res_data.get("messages", [])
         context = res_data.get("context", "NONE")
 
@@ -84,3 +86,7 @@ class MotorheadMemory(BaseChatMemory):
             headers=self.__get_headers(),
         )
         super().save_context(inputs, outputs)
+
+    def delete_session(self) -> None:
+        """Delete a session"""
+        requests.delete(f"{self.url}/sessions/{self.session_id}/memory")

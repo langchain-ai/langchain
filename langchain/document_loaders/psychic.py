@@ -1,15 +1,23 @@
-"""Loader that loads documents from Psychic.dev."""
-from typing import List
+"""Loads documents from Psychic.dev."""
+from typing import List, Optional
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 
 class PsychicLoader(BaseLoader):
-    """Loader that loads documents from Psychic.dev."""
+    """Loads documents from Psychic.dev."""
 
-    def __init__(self, api_key: str, connector_id: str, connection_id: str):
-        """Initialize with API key, connector id, and connection id."""
+    def __init__(
+        self, api_key: str, account_id: str, connector_id: Optional[str] = None
+    ):
+        """Initialize with API key, connector id, and account id.
+
+        Args:
+            api_key: The Psychic API key.
+            account_id: The Psychic account id.
+            connector_id: The Psychic connector id.
+        """
 
         try:
             from psychicapi import ConnectorId, Psychic  # noqa: F401
@@ -19,16 +27,18 @@ class PsychicLoader(BaseLoader):
             )
         self.psychic = Psychic(secret_key=api_key)
         self.connector_id = ConnectorId(connector_id)
-        self.connection_id = connection_id
+        self.account_id = account_id
 
     def load(self) -> List[Document]:
         """Load documents."""
 
-        psychic_docs = self.psychic.get_documents(self.connector_id, self.connection_id)
+        psychic_docs = self.psychic.get_documents(
+            connector_id=self.connector_id, account_id=self.account_id
+        )
         return [
             Document(
                 page_content=doc["content"],
                 metadata={"title": doc["title"], "source": doc["uri"]},
             )
-            for doc in psychic_docs
+            for doc in psychic_docs.documents
         ]

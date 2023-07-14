@@ -1,5 +1,5 @@
 """Test HyDE."""
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import numpy as np
 
@@ -36,6 +36,7 @@ class FakeLLM(BaseLLM):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> LLMResult:
         return LLMResult(generations=[[Generation(text="foo") for _ in range(self.n)]])
 
@@ -44,8 +45,13 @@ class FakeLLM(BaseLLM):
         prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> LLMResult:
         return LLMResult(generations=[[Generation(text="foo") for _ in range(self.n)]])
+
+    def get_num_tokens(self, text: str) -> int:
+        """Return number of tokens."""
+        return len(text.split())
 
     @property
     def _llm_type(self) -> str:

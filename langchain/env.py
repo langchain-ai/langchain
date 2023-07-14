@@ -10,6 +10,7 @@ def get_runtime_environment() -> dict:
 
     return {
         "library_version": __version__,
+        "library": "langchain",
         "platform": platform.platform(),
         "runtime": "python",
         "runtime_version": platform.python_version(),
