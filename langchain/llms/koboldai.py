@@ -20,7 +20,7 @@ def clean_url(url: str) -> str:
         return url
 
 
-class KoboldApiLLM1(LLM):
+class KoboldApiLLM(LLM):
     """
     A class that acts as a wrapper for the Kobold API language model.
 
