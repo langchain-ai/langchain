@@ -145,6 +145,7 @@ class Chroma(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
+        embeddings: Optional[List[List[float]]] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
@@ -161,7 +162,6 @@ class Chroma(VectorStore):
         # TODO: Handle the case where the user doesn't provide ids on the Collection
         if ids is None:
             ids = [str(uuid.uuid1()) for _ in texts]
-        embeddings = None
         if embeddings is None and self._embedding_function is not None:
             embeddings = self._embedding_function.embed_documents(list(texts))
 
@@ -593,7 +593,8 @@ class Chroma(VectorStore):
         Otherwise, the data will be ephemeral in-memory.
 
         Args:
-            text_embeddings (List[Tuple[str, List[float]]]): List of tuples with texts and embeddings (list of floats).
+            text_embeddings (List[Tuple[str, List[float]]]): List of tuples with texts
+            and embeddings (list of floats).
             metadatas (Optional[List[dict]]): List of metadatas. Defaults to None.
             collection_name (str): Name of the collection to create.
             persist_directory (Optional[str]): Directory to persist the collection.
