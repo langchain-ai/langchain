@@ -67,7 +67,7 @@ def test_should_continue() -> None:
         is True
     )
 
-    # trial failed due to max action reptetitions exceeded
+    # trial failed due to max action repetitions exceeded
     assert (
         reflector.should_reflect(
             iterations_in_trial=3,

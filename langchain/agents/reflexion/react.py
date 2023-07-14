@@ -31,7 +31,7 @@ class ReactReflector(Reflector):
             return ""
 
         history = ""
-        # # We create a trial histrory of form:
+        # # We create a trial history of form:
         #
         # Trial 1:
         # Thought: ... \nAction: ... \nObservation: ...

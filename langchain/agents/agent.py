@@ -462,7 +462,7 @@ class Agent(BaseSingleActionAgent):
         """
         full_inputs = self.get_full_inputs(intermediate_steps, **kwargs)
 
-        # Pepend agent scratchpad with reflexion history
+        # Prepend agent scratchpad with reflexion history
         full_inputs["agent_scratchpad"] = (
             reflexion_history + full_inputs["agent_scratchpad"]
         )
@@ -682,7 +682,7 @@ class Reflector(BaseModel):
         self.trial_reflexions = []
 
     def current_trial_prefix(self, trial_number: int) -> str:
-        return self.trial_prefix.replace("{trial_number}", str(trial_number))
+        return self.trial_prefix.format(trial_number = str(trial_number))
 
     @abstractmethod
     def get_history(self, trials: int) -> str:
@@ -1166,7 +1166,7 @@ class AgentExecutor(Chain):
                 # If yes, we reflect and start a new trial
                 if trial_failed:
                     if run_manager:
-                        run_manager.on_trial_fail("\nTrail failed", color="red")
+                        run_manager.on_trial_fail("\nTrial failed", color="red")
 
                     current_trial = self.agent.string_representation(intermediate_steps)
 
@@ -1276,7 +1276,7 @@ class AgentExecutor(Chain):
                         if trial_failed:
                             if run_manager:
                                 await run_manager.on_trial_fail(
-                                    "\nTrail failed", color="red"
+                                    "\nTrial failed", color="red"
                                 )
 
                             current_trial = self.agent.string_representation(
