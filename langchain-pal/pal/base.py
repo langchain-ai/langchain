@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import Extra, root_validator
 from langchain_core.callbacks.manager import CallbackManagerForChainRun  # need to move
 from langchain_core.chains.base import Chain
-from langchain_core.chains.llm import LLMChain
+from langchain_core.chains.llm import LLMChain  # need to move
 from langchain_core.prompt_template import BasePromptTemplate
 from langchain_core.language_model import BaseLanguageModel
 # langchain-experimental?
