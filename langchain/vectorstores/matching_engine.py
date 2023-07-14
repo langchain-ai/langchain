@@ -81,7 +81,7 @@ class MatchingEngine(VectorStore):
             credentials (Optional): Created GCP credentials.
         """
         super().__init__()
-        self._validate_google_libraries_installation()
+        
 
         self.project_id = project_id
         self.index = index
@@ -95,6 +95,8 @@ class MatchingEngine(VectorStore):
         if not (firestore_collection_name or gcs_bucket_name):
             raise ValueError("Storage not specified. Either a firestore collection or gcs bucket must be provided!")
 
+        self._validate_google_libraries_installation()
+        
     def _validate_google_libraries_installation(self) -> None:
         """Validates that Google libraries that are needed are installed."""
         try:
