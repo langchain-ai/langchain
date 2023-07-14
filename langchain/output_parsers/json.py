@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import json
 import re
-from json import JSONDecodeError
-from typing import Any, List, Union
+from typing import List, Union
 
-from langchain.schema import BaseOutputParser, OutputParserException
+from langchain.schema import OutputParserException
 
 
 def parse_json_markdown(json_string: str) -> dict:
@@ -115,23 +114,11 @@ def parse_and_check_multiple_json_markdown(
         json_obj = parse_multiple_json_markdown(text)
     except json.JSONDecodeError as e:
         raise OutputParserException(f"Got invalid JSON object. Error: {e}")
-    for key in expected_keys:
-        if key not in json_obj:
-            raise OutputParserException(
-                f"Got invalid return object. Expected key `{key}` "
-                f"to be present, but got {json_obj}"
-            )
+
+    if isinstance(json_obj, list):
+        for obj in json_obj:
+            valdate_obj(obj, expected_keys)
+    else:
+        valdate_obj(json_obj, expected_keys)
+
     return json_obj
-
-
-class SimpleJsonOutputParser(BaseOutputParser[Any]):
-    def parse(self, text: str) -> Any:
-        text = text.strip()
-        try:
-            return json.loads(text)
-        except JSONDecodeError as e:
-            raise OutputParserException(f"Invalid json output: {text}") from e
-
-    @property
-    def _type(self) -> str:
-        return "simple_json_output_parser"
