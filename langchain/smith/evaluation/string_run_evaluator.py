@@ -223,6 +223,31 @@ class StringExampleMapper(Serializable):
         return self.map(example)
 
 
+class AutoStringRunMapper(StringRunMapper):
+    """Automatically select the appropriate StringRunMapper based on the run type."""
+
+    def __init__(
+        self,
+        input_key: Optional[str] = None,
+        prediction_key: Optional[str] = None,
+        **kwargs: Any,
+    ):
+        super().__init__(**kwargs)
+        self.mappers = {
+            "llm": LLMStringRunMapper(),
+            "chain": ChainStringRunMapper(
+                input_key=input_key, prediction_key=prediction_key
+            ),
+            "tool": ToolStringRunMapper(),
+        }
+
+    def map(self, run: Run) -> Dict[str, str]:
+        mapper = self.mappers.get(run.run_type)
+        if mapper is None:
+            raise ValueError(f"Unsupported run type: {run.run_type}")
+        return mapper(run)
+
+
 class StringRunEvaluatorChain(Chain, RunEvaluator):
     """Evaluate Run and optional examples."""
 
@@ -325,11 +350,12 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         return self._prepare_evaluator_output(result)
 
     @classmethod
-    def from_run_and_data_type(
+    def from_string_evaluator(
         cls,
         evaluator: StringEvaluator,
-        run_type: RunTypeEnum,
-        data_type: DataType,
+        *,
+        run_type: Optional[RunTypeEnum] = None,
+        data_type: DataType = DataType.kv,
         input_key: Optional[str] = None,
         prediction_key: Optional[str] = None,
         reference_key: Optional[str] = None,
@@ -344,7 +370,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
 
         Args:
             evaluator (StringEvaluator): The string evaluator to use.
-            run_type (RunTypeEnum): The type of run being evaluated.
+            run_type (RunTypeEnum, optional): The type of run being evaluated.
                 Supported types are LLM and Chain.
             data_type (DataType): The type of dataset used in the run.
             input_key (str, optional): The key used to map the input from the run.
@@ -362,8 +388,10 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         """  # noqa: E501
 
         # Configure how run inputs/predictions are passed to the evaluator
-        if run_type == RunTypeEnum.llm:
-            run_mapper: StringRunMapper = LLMStringRunMapper()
+        if run_type is None:
+            run_mapper: StringRunMapper = AutoStringRunMapper()
+        elif run_type == RunTypeEnum.llm:
+            run_mapper = LLMStringRunMapper()
         elif run_type == RunTypeEnum.chain:
             run_mapper = ChainStringRunMapper(
                 input_key=input_key, prediction_key=prediction_key

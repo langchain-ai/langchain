@@ -437,7 +437,7 @@ def _construct_run_evaluator(
                 f" evaluator of type {eval_type_tag} with"
                 f" dataset with multiple output keys: {example_outputs}."
             )
-        run_evaluator = StringRunEvaluatorChain.from_run_and_data_type(
+        run_evaluator = StringRunEvaluatorChain.from_string_evaluator(
             evaluator_,
             run_type,
             data_type,
@@ -493,10 +493,10 @@ def _load_run_evaluators(
             run_evaluators.append(custom_evaluator)
         elif isinstance(custom_evaluator, StringEvaluator):
             run_evaluators.append(
-                StringRunEvaluatorChain.from_run_and_data_type(
+                StringRunEvaluatorChain.from_string_evaluator(
                     custom_evaluator,
-                    run_type,
-                    data_type,
+                    run_type=run_type,
+                    data_type=data_type,
                     input_key=input_key,
                     prediction_key=prediction_key,
                     reference_key=reference_key,
