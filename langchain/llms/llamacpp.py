@@ -20,8 +20,8 @@ class LlamaCpp(LLM):
     Example:
         .. code-block:: python
 
-            from langchain.llms import LlamaCppEmbeddings
-            llm = LlamaCppEmbeddings(model_path="/path/to/llama/model")
+            from langchain.llms import LlamaCpp
+            llm = LlamaCpp(model_path="/path/to/llama/model")
     """
 
     client: Any  #: :meta private:
@@ -103,6 +103,9 @@ class LlamaCpp(LLM):
     streaming: bool = True
     """Whether to stream the results, token by token."""
 
+    verbose: bool = True
+    """Print verbose output to stderr."""
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that llama-cpp-python library is installed."""
@@ -121,6 +124,7 @@ class LlamaCpp(LLM):
             "n_batch",
             "use_mmap",
             "last_n_tokens_size",
+            "verbose",
         ]
         model_params = {k: values[k] for k in model_param_names}
         # For backwards compatibility, only include if non-null.
@@ -168,7 +172,7 @@ class LlamaCpp(LLM):
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
-        return "llama.cpp"
+        return "llamacpp"
 
     def _get_parameters(self, stop: Optional[List[str]] = None) -> Dict[str, Any]:
         """
@@ -200,6 +204,7 @@ class LlamaCpp(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call the Llama model and return the output.
 
@@ -227,6 +232,7 @@ class LlamaCpp(LLM):
             return combined_text_output
         else:
             params = self._get_parameters(stop)
+            params = {**params, **kwargs}
             result = self.client(prompt=prompt, **params)
             return result["choices"][0]["text"]
 

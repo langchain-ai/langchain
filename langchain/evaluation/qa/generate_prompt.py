@@ -18,7 +18,7 @@ These questions should be detailed and be based explicitly on information in the
 {doc}
 <End Document>"""
 output_parser = RegexParser(
-    regex=r"QUESTION: (.*?)\nANSWER: (.*)", output_keys=["query", "answer"]
+    regex=r"QUESTION: (.*?)\n+ANSWER: (.*)", output_keys=["query", "answer"]
 )
 PROMPT = PromptTemplate(
     input_variables=["doc"], template=template, output_parser=output_parser

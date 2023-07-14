@@ -42,7 +42,14 @@ class AIPlugin(BaseModel):
 
 
 def marshal_spec(txt: str) -> dict:
-    """Convert the yaml or json serialized spec to a dict."""
+    """Convert the yaml or json serialized spec to a dict.
+
+    Args:
+        txt: The yaml or json serialized spec.
+
+    Returns:
+        dict: The spec as a dict.
+    """
     try:
         return json.loads(txt)
     except json.JSONDecodeError:

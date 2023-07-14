@@ -15,6 +15,7 @@ def test_loading_flawed_xml() -> None:
     except TypeError as e:
         assert True
 
+
 @pytest.mark.requires("mwparserfromhell")
 def test_skipping_errors() -> None:
     loader = MWDumpLoader(

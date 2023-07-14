@@ -86,7 +86,7 @@ class MosaicML(LLM):
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
-        return "mosaicml"
+        return "mosaic"
 
     def _transform_prompt(self, prompt: str) -> str:
         """Transform prompt."""
@@ -102,6 +102,7 @@ class MosaicML(LLM):
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         is_retry: bool = False,
+        **kwargs: Any,
     ) -> str:
         """Call out to a MosaicML LLM inference endpoint.
 
@@ -121,8 +122,9 @@ class MosaicML(LLM):
 
         prompt = self._transform_prompt(prompt)
 
-        payload = {"input_strings": [prompt]}
+        payload = {"inputs": [prompt]}
         payload.update(_model_kwargs)
+        payload.update(kwargs)
 
         # HTTP headers for authorization
         headers = {
@@ -155,17 +157,45 @@ class MosaicML(LLM):
                     f"Error raised by inference API: {parsed_response['error']}"
                 )
 
-            if "data" not in parsed_response:
-                raise ValueError(
-                    f"Error raised by inference API, no key data: {parsed_response}"
-                )
-            generated_text = parsed_response["data"]
+            # The inference API has changed a couple of times, so we add some handling
+            # to be robust to multiple response formats.
+            if isinstance(parsed_response, dict):
+                output_keys = ["data", "output", "outputs"]
+                for key in output_keys:
+                    if key in parsed_response:
+                        output_item = parsed_response[key]
+                        break
+                else:
+                    raise ValueError(
+                        f"No valid key ({', '.join(output_keys)}) in response:"
+                        f" {parsed_response}"
+                    )
+                if isinstance(output_item, list):
+                    text = output_item[0]
+                else:
+                    text = output_item
+            elif isinstance(parsed_response, list):
+                first_item = parsed_response[0]
+                if isinstance(first_item, str):
+                    text = first_item
+                elif isinstance(first_item, dict):
+                    if "output" in parsed_response:
+                        text = first_item["output"]
+                    else:
+                        raise ValueError(
+                            f"No key data or output in response: {parsed_response}"
+                        )
+                else:
+                    raise ValueError(f"Unexpected response format: {parsed_response}")
+            else:
+                raise ValueError(f"Unexpected response type: {parsed_response}")
+
+            text = text[len(prompt) :]
+
         except requests.exceptions.JSONDecodeError as e:
             raise ValueError(
                 f"Error raised by inference API: {e}.\nResponse: {response.text}"
             )
-
-        text = generated_text[0][len(prompt) :]
 
         # TODO: replace when MosaicML supports custom stop tokens natively
         if stop is not None:

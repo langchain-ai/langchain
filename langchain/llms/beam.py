@@ -90,7 +90,7 @@ class Beam(LLM):
                 if field_name in extra:
                     raise ValueError(f"Found {field_name} supplied twice.")
                 logger.warning(
-                    f"""{field_name} was transfered to model_kwargs.
+                    f"""{field_name} was transferred to model_kwargs.
                     Please confirm that {field_name} is what you intended."""
                 )
                 extra[field_name] = values.pop(field_name)
@@ -251,10 +251,12 @@ class Beam(LLM):
         prompt: str,
         stop: Optional[list] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call to Beam."""
         url = "https://apps.beam.cloud/" + self.app_id if self.app_id else self.url
         payload = {"prompt": prompt, "max_length": self.max_length}
+        payload.update(kwargs)
         headers = {
             "Accept": "*/*",
             "Accept-Encoding": "gzip, deflate",

@@ -52,7 +52,7 @@ class StochasticAI(LLM):
                 if field_name in extra:
                     raise ValueError(f"Found {field_name} supplied twice.")
                 logger.warning(
-                    f"""{field_name} was transfered to model_kwargs.
+                    f"""{field_name} was transferred to model_kwargs.
                     Please confirm that {field_name} is what you intended."""
                 )
                 extra[field_name] = values.pop(field_name)
@@ -86,6 +86,7 @@ class StochasticAI(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call out to StochasticAI's complete endpoint.
 
@@ -102,6 +103,7 @@ class StochasticAI(LLM):
                 response = StochasticAI("Tell me a joke.")
         """
         params = self.model_kwargs or {}
+        params = {**params, **kwargs}
         response_post = requests.post(
             url=self.api_url,
             json={"prompt": prompt, "params": params},

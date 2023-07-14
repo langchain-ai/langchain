@@ -193,7 +193,7 @@ class Databricks(LLM):
     """
 
     endpoint_name: Optional[str] = None
-    """Name of the model serving endpont.
+    """Name of the model serving endpoint.
     You must specify the endpoint name to connect to a model serving endpoint.
     You must not set both ``endpoint_name`` and ``cluster_id``.
     """
@@ -303,12 +303,14 @@ class Databricks(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Queries the LLM endpoint with the given prompt and stop sequence."""
 
         # TODO: support callbacks
 
         request = {"prompt": prompt, "stop": stop}
+        request.update(kwargs)
         if self.model_kwargs:
             request.update(self.model_kwargs)
 

@@ -1,9 +1,11 @@
 """Wrapper around SingleStore DB."""
+
 from __future__ import annotations
 
 import json
 from typing import (
     Any,
+    Callable,
     ClassVar,
     Collection,
     Iterable,
@@ -15,14 +17,27 @@ from typing import (
 
 from sqlalchemy.pool import QueuePool
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
+from langchain.vectorstores.utils import DistanceStrategy
+
+DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.DOT_PRODUCT
+
+ORDERING_DIRECTIVE: dict = {
+    DistanceStrategy.EUCLIDEAN_DISTANCE: "",
+    DistanceStrategy.DOT_PRODUCT: "DESC",
+}
 
 
 class SingleStoreDB(VectorStore):
     """
     This class serves as a Pythonic interface to the SingleStore DB database.
+
     The prerequisite for using this class is the installation of the ``singlestoredb``
     Python package.
 
@@ -45,6 +60,7 @@ class SingleStoreDB(VectorStore):
         self,
         embedding: Embeddings,
         *,
+        distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         table_name: str = "embeddings",
         content_field: str = "content",
         metadata_field: str = "metadata",
@@ -58,6 +74,18 @@ class SingleStoreDB(VectorStore):
 
         Args:
             embedding (Embeddings): A text embedding model.
+
+            distance_strategy (DistanceStrategy, optional):
+                Determines the strategy employed for calculating
+                the distance between vectors in the embedding space.
+                Defaults to DOT_PRODUCT.
+                Available options are:
+                - DOT_PRODUCT: Computes the scalar product of two vectors.
+                    This is the default behavior
+                - EUCLIDEAN_DISTANCE: Computes the Euclidean distance between
+                    two vectors. This metric considers the geometric distance in
+                    the vector space, and might be more suitable for embeddings
+                    that rely on spatial relationships.
 
             table_name (str, optional): Specifies the name of the table in use.
                 Defaults to "embeddings".
@@ -137,6 +165,7 @@ class SingleStoreDB(VectorStore):
 
                 vectorstore = SingleStoreDB(
                     OpenAIEmbeddings(),
+                    distance_strategy=DistanceStrategy.EUCLIDEAN_DISTANCE,
                     host="127.0.0.1",
                     port=3306,
                     user="user",
@@ -159,6 +188,7 @@ class SingleStoreDB(VectorStore):
         """
 
         self.embedding = embedding
+        self.distance_strategy = distance_strategy
         self.table_name = table_name
         self.content_field = content_field
         self.metadata_field = metadata_field
@@ -166,6 +196,13 @@ class SingleStoreDB(VectorStore):
 
         """Pass the rest of the kwargs to the connection."""
         self.connection_kwargs = kwargs
+
+        """Add program name and version to connection attributes."""
+        if "conn_attrs" not in self.connection_kwargs:
+            self.connection_kwargs["conn_attrs"] = dict()
+
+        self.connection_kwargs["conn_attrs"]["_connector_name"] = "langchain python sdk"
+        self.connection_kwargs["conn_attrs"]["_connector_version"] = "1.0.0"
 
         """Create connection pool."""
         self.connection_pool = QueuePool(
@@ -175,6 +212,9 @@ class SingleStoreDB(VectorStore):
             timeout=timeout,
         )
         self._create_table()
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        return self._max_inner_product_relevance_score_fn
 
     def _create_table(self: SingleStoreDB) -> None:
         """Create table if it doesn't exist."""
@@ -246,7 +286,7 @@ class SingleStoreDB(VectorStore):
         return []
 
     def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
+        self, query: str, k: int = 4, filter: Optional[dict] = None, **kwargs: Any
     ) -> List[Document]:
         """Returns the most similar indexed documents to the query text.
 
@@ -255,21 +295,38 @@ class SingleStoreDB(VectorStore):
         Args:
             query (str): The query text for which to find similar documents.
             k (int): The number of documents to return. Default is 4.
+            filter (dict): A dictionary of metadata fields and values to filter by.
 
         Returns:
             List[Document]: A list of documents that are most similar to the query text.
+
+        Examples:
+            .. code-block:: python
+                from langchain.vectorstores import SingleStoreDB
+                from langchain.embeddings import OpenAIEmbeddings
+                s2 = SingleStoreDB.from_documents(
+                    docs,
+                    OpenAIEmbeddings(),
+                    host="username:password@localhost:3306/database"
+                )
+                s2.similarity_search("query text", 1,
+                    {"metadata_field": "metadata_value"})
         """
-        docs_and_scores = self.similarity_search_with_score(query, k=k)
+        docs_and_scores = self.similarity_search_with_score(
+            query=query, k=k, filter=filter
+        )
         return [doc for doc, _ in docs_and_scores]
 
     def similarity_search_with_score(
-        self, query: str, k: int = 4
+        self, query: str, k: int = 4, filter: Optional[dict] = None
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query. Uses cosine similarity.
 
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            filter: A dictionary of metadata fields and values to filter by.
+                    Defaults to None.
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -278,21 +335,52 @@ class SingleStoreDB(VectorStore):
         embedding = self.embedding.embed_query(query)
         conn = self.connection_pool.connect()
         result = []
+        where_clause: str = ""
+        where_clause_values: List[Any] = []
+        if filter:
+            where_clause = "WHERE "
+            arguments = []
+
+            def build_where_clause(
+                where_clause_values: List[Any],
+                sub_filter: dict,
+                prefix_args: List[str] = [],
+            ) -> None:
+                for key in sub_filter.keys():
+                    if isinstance(sub_filter[key], dict):
+                        build_where_clause(
+                            where_clause_values, sub_filter[key], prefix_args + [key]
+                        )
+                    else:
+                        arguments.append(
+                            "JSON_EXTRACT_JSON({}, {}) = %s".format(
+                                self.metadata_field,
+                                ", ".join(["%s"] * (len(prefix_args) + 1)),
+                            )
+                        )
+                        where_clause_values += prefix_args + [key]
+                        where_clause_values.append(json.dumps(sub_filter[key]))
+
+            build_where_clause(where_clause_values, filter)
+            where_clause += " AND ".join(arguments)
+
         try:
             cur = conn.cursor()
             try:
                 cur.execute(
-                    """SELECT {}, {}, DOT_PRODUCT({}, JSON_ARRAY_PACK(%s)) as __score 
-                    FROM {} ORDER BY __score DESC LIMIT %s""".format(
+                    """SELECT {}, {}, {}({}, JSON_ARRAY_PACK(%s)) as __score
+                    FROM {} {} ORDER BY __score {} LIMIT %s""".format(
                         self.content_field,
                         self.metadata_field,
+                        self.distance_strategy,
                         self.vector_field,
                         self.table_name,
+                        where_clause,
+                        ORDERING_DIRECTIVE[self.distance_strategy],
                     ),
-                    (
-                        "[{}]".format(",".join(map(str, embedding))),
-                        k,
-                    ),
+                    ("[{}]".format(",".join(map(str, embedding))),)
+                    + tuple(where_clause_values)
+                    + (k,),
                 )
 
                 for row in cur.fetchall():
@@ -310,6 +398,7 @@ class SingleStoreDB(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         table_name: str = "embeddings",
         content_field: str = "content",
         metadata_field: str = "metadata",
@@ -338,6 +427,7 @@ class SingleStoreDB(VectorStore):
 
         instance = cls(
             embedding,
+            distance_strategy=distance_strategy,
             table_name=table_name,
             content_field=content_field,
             metadata_field=metadata_field,
@@ -355,18 +445,24 @@ class SingleStoreDB(VectorStore):
 
 
 class SingleStoreDBRetriever(VectorStoreRetriever):
+    """Retriever for SingleStoreDB vector stores."""
+
     vectorstore: SingleStoreDB
     k: int = 4
     allowed_search_types: ClassVar[Collection[str]] = ("similarity",)
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> List[Document]:
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(query, k=self.k)
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def _aget_relevant_documents(
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
+    ) -> List[Document]:
         raise NotImplementedError(
             "SingleStoreDBVectorStoreRetriever does not support async"
         )

@@ -1,5 +1,6 @@
 """Test the BaseOutputParser class and its sub-classes."""
 from abc import ABC
+from collections import defaultdict
 from typing import List, Optional, Set, Type
 
 import pytest
@@ -21,7 +22,14 @@ def non_abstract_subclasses(
     return subclasses
 
 
-_PARSERS_TO_SKIP = {"FakeOutputParser", "BaseOutputParser"}
+# parsers defined not in the output_parsers module:
+_PARSERS_TO_SKIP = {
+    "FakeOutputParser",
+    "BaseOutputParser",
+    "FinishedOutputParser",
+    "RouterOutputParser",
+    "TrajectoryRunEvalOutputParser",
+}
 _NON_ABSTRACT_PARSERS = non_abstract_subclasses(
     BaseOutputParser, to_skip=_PARSERS_TO_SKIP
 )
@@ -36,12 +44,12 @@ def test_subclass_implements_type(cls: Type[BaseOutputParser]) -> None:
 
 
 def test_all_subclasses_implement_unique_type() -> None:
-    types = []
+    types = defaultdict(list)
     for cls in _NON_ABSTRACT_PARSERS:
         try:
-            types.append(cls._type)
+            types[cls._type].append(cls.__name__)
         except NotImplementedError:
             # This is handled in the previous test
             pass
-    dups = set([t for t in types if types.count(t) > 1])
+    dups = {t: names for t, names in types.items() if len(names) > 1}
     assert not dups, f"Duplicate types: {dups}"

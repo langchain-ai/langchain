@@ -50,7 +50,12 @@ class MWDumpLoader(BaseLoader):
         skip_redirects: Optional[bool] = False,
         stop_on_error: Optional[bool] = True,
     ):
-        """Initialize with file path."""
+        """Initialize with file path.
+
+        Args:
+            file_path: XML local file path.
+            encoding: Charset encoding.
+        """
         _default_namespaces = [
             -1,
             -2,
@@ -78,7 +83,7 @@ class MWDumpLoader(BaseLoader):
         self.stop_on_error = stop_on_error
 
     def load(self) -> List[Document]:
-        """Load from file path."""
+        """Load from a file path."""
         import mwparserfromhell
         import mwxml
 

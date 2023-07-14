@@ -16,7 +16,7 @@ from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 class DuckDuckGoSearchRun(BaseTool):
     """Tool that adds the capability to query the DuckDuckGo search API."""
 
-    name = "DuckDuckGo Search"
+    name = "duckduckgo_search"
     description = (
         "A wrapper around DuckDuckGo Search. "
         "Useful for when you need to answer questions about current events. "
@@ -44,7 +44,7 @@ class DuckDuckGoSearchRun(BaseTool):
 
 
 class DuckDuckGoSearchResults(BaseTool):
-    """Tool that queries the Duck Duck Go Search API and get back json."""
+    """Tool that queries the DuckDuckGo search API and get back json."""
 
     name = "DuckDuckGo Results JSON"
     description = (
@@ -75,6 +75,16 @@ class DuckDuckGoSearchResults(BaseTool):
 
 
 def DuckDuckGoSearchTool(*args: Any, **kwargs: Any) -> DuckDuckGoSearchRun:
+    """
+    Deprecated. Use DuckDuckGoSearchRun instead.
+
+    Args:
+        *args:
+        **kwargs:
+
+    Returns:
+        DuckDuckGoSearchRun
+    """
     warnings.warn(
         "DuckDuckGoSearchTool will be deprecated in the future. "
         "Please use DuckDuckGoSearchRun instead.",
