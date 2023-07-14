@@ -70,11 +70,18 @@ class RecursiveUrlLoader(BaseLoader):
         soup = BeautifulSoup(response.text, "html.parser")
         all_links = [link.get("href") for link in soup.find_all("a")]
 
+        # Make all links relative to the root of the website
+        all_links_relative = [
+            link.replace(base_url, "/")
+            for link in all_links
+            if link and link.startswith(base_url)
+        ]
+
         # Extract only the links that are children of the current URL
         child_links = list(
             {
                 link
-                for link in all_links
+                for link in all_links_relative
                 if link and link.startswith(current_path) and link != current_path
             }
         )
