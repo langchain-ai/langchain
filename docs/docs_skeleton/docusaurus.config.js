@@ -7,7 +7,10 @@ const { ProvidePlugin } = require("webpack");
 const path = require("path");
 
 const examplesPath = path.resolve(__dirname, "..", "examples", "src");
-const snippetsPath = path.resolve(__dirname, "..", "snippets")
+const snippetsPath = path.resolve(__dirname, "..", "snippets");
+
+const baseLightCodeBlockTheme = require("prism-react-renderer/themes/vsLight");
+const baseDarkCodeBlockTheme = require("prism-react-renderer/themes/vsDark");
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -84,7 +87,6 @@ const config = {
       ({
         docs: {
           sidebarPath: require.resolve("./sidebars.js"),
-          editUrl: "https://github.com/hwchase17/langchain/edit/master/docs/",
           remarkPlugins: [
             [require("@docusaurus/remark-plugin-npm2yarn"), { sync: true }],
           ],
@@ -127,8 +129,20 @@ const config = {
         },
       },
       prism: {
-        theme: require("prism-react-renderer/themes/vsLight"),
-        darkTheme: require("prism-react-renderer/themes/vsDark"),
+        theme: {
+          ...baseLightCodeBlockTheme,
+          plain: {
+            ...baseLightCodeBlockTheme.plain,
+            backgroundColor: "#F5F5F5",
+          },
+        },
+        darkTheme: {
+          ...baseDarkCodeBlockTheme,
+          plain: {
+            ...baseDarkCodeBlockTheme.plain,
+            backgroundColor: "#222222",
+          },
+        },
       },
       image: "img/parrot-chainlink-icon.png",
       navbar: {

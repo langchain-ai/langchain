@@ -18,6 +18,7 @@ LANGCHAIN_MODEL_NAME = "langchain-model"
 
 
 def import_comet_ml() -> Any:
+    """Import comet_ml and raise an error if it is not installed."""
     try:
         import comet_ml  # noqa: F401
     except ImportError:
@@ -435,7 +436,7 @@ class CometCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         Everything after this will be a new table.
 
         Args:
-            name: Name of the preformed session so far so it is identifyable
+            name: Name of the performed session so far so it is identifiable
             langchain_asset: The langchain asset to save.
             finish: Whether to finish the run.
 

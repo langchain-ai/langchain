@@ -1,0 +1,78 @@
+from typing import List, Optional, Type
+
+from pydantic import BaseModel, Field
+
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
+from langchain.tools.office365.base import O365BaseTool
+
+
+class CreateDraftMessageSchema(BaseModel):
+    body: str = Field(
+        ...,
+        description="The message body to include in the draft.",
+    )
+    to: List[str] = Field(
+        ...,
+        description="The list of recipients.",
+    )
+    subject: str = Field(
+        ...,
+        description="The subject of the message.",
+    )
+    cc: Optional[List[str]] = Field(
+        None,
+        description="The list of CC recipients.",
+    )
+    bcc: Optional[List[str]] = Field(
+        None,
+        description="The list of BCC recipients.",
+    )
+
+
+class O365CreateDraftMessage(O365BaseTool):
+    name: str = "create_email_draft"
+    description: str = (
+        "Use this tool to create a draft email with the provided message fields."
+    )
+    args_schema: Type[CreateDraftMessageSchema] = CreateDraftMessageSchema
+
+    def _run(
+        self,
+        body: str,
+        to: List[str],
+        subject: str,
+        cc: Optional[List[str]] = None,
+        bcc: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
+        # Get mailbox object
+        mailbox = self.account.mailbox()
+        message = mailbox.new_message()
+
+        # Assign message values
+        message.body = body
+        message.subject = subject
+        message.to.add(to)
+        if cc is not None:
+            message.cc.add(cc)
+        if bcc is not None:
+            message.bcc.add(cc)
+
+        message.save_draft()
+
+        output = "Draft created: " + str(message)
+        return output
+
+    async def _arun(
+        self,
+        message: str,
+        to: List[str],
+        subject: str,
+        cc: Optional[List[str]] = None,
+        bcc: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
+        raise NotImplementedError(f"The tool {self.name} does not support async yet.")

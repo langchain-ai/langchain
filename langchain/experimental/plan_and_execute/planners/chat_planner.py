@@ -1,6 +1,5 @@
 import re
 
-from langchain.base_language import BaseLanguageModel
 from langchain.chains import LLMChain
 from langchain.experimental.plan_and_execute.planners.base import LLMPlanner
 from langchain.experimental.plan_and_execute.schema import (
@@ -9,7 +8,8 @@ from langchain.experimental.plan_and_execute.schema import (
     Step,
 )
 from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain.schema import SystemMessage
+from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema.messages import SystemMessage
 
 SYSTEM_PROMPT = (
     "Let's first understand the problem and devise a plan to solve the problem."
@@ -32,6 +32,15 @@ class PlanningOutputParser(PlanOutputParser):
 def load_chat_planner(
     llm: BaseLanguageModel, system_prompt: str = SYSTEM_PROMPT
 ) -> LLMPlanner:
+    """
+    Load a chat planner.
+    Args:
+        llm: Language model.
+        system_prompt: System prompt.
+
+    Returns:
+        LLMPlanner
+    """
     prompt_template = ChatPromptTemplate.from_messages(
         [
             SystemMessage(content=system_prompt),

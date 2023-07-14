@@ -24,7 +24,7 @@ class FileCallbackHandler(BaseCallbackHandler):
         self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
     ) -> None:
         """Print out that we are entering a chain."""
-        class_name = serialized["name"]
+        class_name = serialized.get("name", serialized.get("id", ["<unknown>"])[-1])
         print_text(
             f"\n\n\033[1m> Entering new {class_name} chain...\033[0m",
             end="\n",
@@ -39,7 +39,7 @@ class FileCallbackHandler(BaseCallbackHandler):
         self, action: AgentAction, color: Optional[str] = None, **kwargs: Any
     ) -> Any:
         """Run on agent action."""
-        print_text(action.log, color=color if color else self.color, file=self.file)
+        print_text(action.log, color=color or self.color, file=self.file)
 
     def on_tool_end(
         self,
@@ -52,24 +52,18 @@ class FileCallbackHandler(BaseCallbackHandler):
         """If not the final action, print out observation."""
         if observation_prefix is not None:
             print_text(f"\n{observation_prefix}", file=self.file)
-        print_text(output, color=color if color else self.color, file=self.file)
+        print_text(output, color=color or self.color, file=self.file)
         if llm_prefix is not None:
             print_text(f"\n{llm_prefix}", file=self.file)
 
     def on_text(
-        self,
-        text: str,
-        color: Optional[str] = None,
-        end: str = "",
-        **kwargs: Any,
+        self, text: str, color: Optional[str] = None, end: str = "", **kwargs: Any
     ) -> None:
         """Run when agent ends."""
-        print_text(text, color=color if color else self.color, end=end, file=self.file)
+        print_text(text, color=color or self.color, end=end, file=self.file)
 
     def on_agent_finish(
         self, finish: AgentFinish, color: Optional[str] = None, **kwargs: Any
     ) -> None:
         """Run on agent end."""
-        print_text(
-            finish.log, color=color if self.color else color, end="\n", file=self.file
-        )
+        print_text(finish.log, color=color or self.color, end="\n", file=self.file)

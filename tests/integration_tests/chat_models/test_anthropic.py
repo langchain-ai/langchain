@@ -6,12 +6,10 @@ import pytest
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.anthropic import ChatAnthropic
 from langchain.schema import (
-    AIMessage,
-    BaseMessage,
     ChatGeneration,
-    HumanMessage,
     LLMResult,
 )
+from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 

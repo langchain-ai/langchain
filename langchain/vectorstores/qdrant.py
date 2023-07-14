@@ -34,6 +34,10 @@ if TYPE_CHECKING:
     MetadataFilter = Union[DictFilter, common_types.Filter]
 
 
+class QdrantException(Exception):
+    """Base class for all the Qdrant related exceptions"""
+
+
 class Qdrant(VectorStore):
     """Wrapper around Qdrant vector database.
 
@@ -52,6 +56,7 @@ class Qdrant(VectorStore):
 
     CONTENT_KEY = "page_content"
     METADATA_KEY = "metadata"
+    VECTOR_NAME = None
 
     def __init__(
         self,
@@ -60,6 +65,8 @@ class Qdrant(VectorStore):
         embeddings: Optional[Embeddings] = None,
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
+        distance_strategy: str = "COSINE",
+        vector_name: Optional[str] = VECTOR_NAME,
         embedding_function: Optional[Callable] = None,  # deprecated
     ):
         """Initialize with necessary components."""
@@ -94,6 +101,7 @@ class Qdrant(VectorStore):
         self.collection_name = collection_name
         self.content_payload_key = content_payload_key or self.CONTENT_KEY
         self.metadata_payload_key = metadata_payload_key or self.METADATA_KEY
+        self.vector_name = vector_name or self.VECTOR_NAME
 
         if embedding_function is not None:
             warnings.warn(
@@ -108,6 +116,8 @@ class Qdrant(VectorStore):
             )
             self._embeddings_function = embeddings
             self.embeddings = None
+
+        self.distance_strategy = distance_strategy.upper()
 
     def add_texts(
         self,
@@ -143,19 +153,25 @@ class Qdrant(VectorStore):
             batch_metadatas = list(islice(metadatas_iterator, batch_size)) or None
             batch_ids = list(islice(ids_iterator, batch_size))
 
-            self.client.upsert(
-                collection_name=self.collection_name,
-                points=rest.Batch.construct(
-                    ids=batch_ids,
-                    vectors=self._embed_texts(batch_texts),
-                    payloads=self._build_payloads(
-                        batch_texts,
-                        batch_metadatas,
-                        self.content_payload_key,
-                        self.metadata_payload_key,
-                    ),
+            # Generate the embeddings for all the texts in a batch
+            batch_embeddings = self._embed_texts(batch_texts)
+            if self.vector_name is not None:
+                batch_embeddings = {  # type: ignore[assignment]
+                    self.vector_name: batch_embeddings
+                }
+
+            points = rest.Batch.construct(
+                ids=batch_ids,
+                vectors=batch_embeddings,
+                payloads=self._build_payloads(
+                    batch_texts,
+                    batch_metadatas,
+                    self.content_payload_key,
+                    self.metadata_payload_key,
                 ),
             )
+
+            self.client.upsert(collection_name=self.collection_name, points=points)
 
             added_ids.extend(batch_ids)
 
@@ -315,7 +331,6 @@ class Qdrant(VectorStore):
         Returns:
             List of Documents most similar to the query.
         """
-
         results = self.similarity_search_with_score_by_vector(
             embedding,
             k,
@@ -373,7 +388,6 @@ class Qdrant(VectorStore):
             distance in float for each.
             Lower score represents more similarity.
         """
-
         if filter is not None and isinstance(filter, dict):
             warnings.warn(
                 "Using dict as a `filter` is deprecated. Please use qdrant-client "
@@ -384,9 +398,14 @@ class Qdrant(VectorStore):
             qdrant_filter = self._qdrant_filter_from_dict(filter)
         else:
             qdrant_filter = filter
+
+        query_vector = embedding
+        if self.vector_name is not None:
+            query_vector = (self.vector_name, embedding)  # type: ignore[assignment]
+
         results = self.client.search(
             collection_name=self.collection_name,
-            query_vector=embedding,
+            query_vector=query_vector,
             query_filter=qdrant_filter,
             search_params=search_params,
             limit=k,
@@ -406,6 +425,28 @@ class Qdrant(VectorStore):
             )
             for result in results
         ]
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        """
+        The 'correct' relevance function
+        may differ depending on a few things, including:
+        - the distance / similarity metric used by the VectorStore
+        - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
+        - embedding dimensionality
+        - etc.
+        """
+
+        if self.distance_strategy == "COSINE":
+            return self._cosine_relevance_score_fn
+        elif self.distance_strategy == "DOT":
+            return self._max_inner_product_relevance_score_fn
+        elif self.distance_strategy == "EUCLID":
+            return self._euclidean_relevance_score_fn
+        else:
+            raise ValueError(
+                "Unknown distance strategy, must be cosine, "
+                "max_inner_product, or euclidean"
+            )
 
     def _similarity_search_with_relevance_scores(
         self,
@@ -454,18 +495,26 @@ class Qdrant(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
+        query_embedding = self._embed_query(query)
+        query_vector = query_embedding
+        if self.vector_name is not None:
+            query_vector = (self.vector_name, query_vector)  # type: ignore[assignment]
 
-        embedding = self._embed_query(query)
         results = self.client.search(
             collection_name=self.collection_name,
-            query_vector=embedding,
+            query_vector=query_vector,
             with_payload=True,
             with_vectors=True,
             limit=fetch_k,
         )
-        embeddings = [result.vector for result in results]
+        embeddings = [
+            result.vector.get(self.vector_name)  # type: ignore[index, union-attr]
+            if self.vector_name is not None
+            else result.vector
+            for result in results
+        ]
         mmr_selected = maximal_marginal_relevance(
-            np.array(embedding), embeddings, k=k, lambda_mult=lambda_mult
+            np.array(query_embedding), embeddings, k=k, lambda_mult=lambda_mult
         )
         return [
             self._document_from_scored_point(
@@ -496,6 +545,7 @@ class Qdrant(VectorStore):
         distance_func: str = "Cosine",
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
+        vector_name: Optional[str] = VECTOR_NAME,
         batch_size: int = 64,
         shard_number: Optional[int] = None,
         replication_factor: Optional[int] = None,
@@ -506,6 +556,7 @@ class Qdrant(VectorStore):
         wal_config: Optional[common_types.WalConfigDiff] = None,
         quantization_config: Optional[common_types.QuantizationConfig] = None,
         init_from: Optional[common_types.InitFrom] = None,
+        force_recreate: bool = False,
         **kwargs: Any,
     ) -> Qdrant:
         """Construct Qdrant wrapper from a list of texts.
@@ -558,6 +609,9 @@ class Qdrant(VectorStore):
             metadata_payload_key:
                 A payload key used to store the metadata of the document.
                 Default: "metadata"
+            vector_name:
+                Name of the vector to be used internally in Qdrant.
+                Default: None
             batch_size:
                 How many vectors upload per-request.
                 Default: 64
@@ -587,6 +641,8 @@ class Qdrant(VectorStore):
                 Params for quantization, if None - quantization will be disabled
             init_from:
                 Use data stored in another collection to initialize this collection
+            force_recreate:
+                Force recreating the collection
             **kwargs:
                 Additional arguments passed directly into REST client initialization
 
@@ -614,7 +670,9 @@ class Qdrant(VectorStore):
                 "Please install it with `pip install qdrant-client`."
             )
 
+        from grpc import RpcError
         from qdrant_client.http import models as rest
+        from qdrant_client.http.exceptions import UnexpectedResponse
 
         # Just do a single quick embedding to get vector size
         partial_embeddings = embedding.embed_documents(texts[:1])
@@ -638,56 +696,108 @@ class Qdrant(VectorStore):
             **kwargs,
         )
 
-        client.recreate_collection(
-            collection_name=collection_name,
-            vectors_config=rest.VectorParams(
+        try:
+            # Skip any validation in case of forced collection recreate.
+            if force_recreate:
+                raise ValueError
+
+            # Get the vector configuration of the existing collection and vector, if it
+            # was specified. If the old configuration does not match the current one,
+            # an exception is being thrown.
+            collection_info = client.get_collection(collection_name=collection_name)
+            current_vector_config = collection_info.config.params.vectors
+            if isinstance(current_vector_config, dict) and vector_name is not None:
+                if vector_name not in current_vector_config:
+                    raise QdrantException(
+                        f"Existing Qdrant collection {collection_name} does not "
+                        f"contain vector named {vector_name}. Did you mean one of the "
+                        f"existing vectors: {', '.join(current_vector_config.keys())}? "
+                        f"If you want to recreate the collection, set `force_recreate` "
+                        f"parameter to `True`."
+                    )
+                current_vector_config = current_vector_config.get(
+                    vector_name
+                )  # type: ignore[assignment]
+            elif isinstance(current_vector_config, dict) and vector_name is None:
+                raise QdrantException(
+                    f"Existing Qdrant collection {collection_name} uses named vectors. "
+                    f"If you want to reuse it, please set `vector_name` to any of the "
+                    f"existing named vectors: "
+                    f"{', '.join(current_vector_config.keys())}."  # noqa
+                    f"If you want to recreate the collection, set `force_recreate` "
+                    f"parameter to `True`."
+                )
+            elif (
+                not isinstance(current_vector_config, dict) and vector_name is not None
+            ):
+                raise QdrantException(
+                    f"Existing Qdrant collection {collection_name} doesn't use named "
+                    f"vectors. If you want to reuse it, please set `vector_name` to "
+                    f"`None`. If you want to recreate the collection, set "
+                    f"`force_recreate` parameter to `True`."
+                )
+
+            # Check if the vector configuration has the same dimensionality.
+            if current_vector_config.size != vector_size:  # type: ignore[union-attr]
+                raise QdrantException(
+                    f"Existing Qdrant collection is configured for vectors with "
+                    f"{current_vector_config.size} "  # type: ignore[union-attr]
+                    f"dimensions. Selected embeddings are {vector_size}-dimensional. "
+                    f"If you want to recreate the collection, set `force_recreate` "
+                    f"parameter to `True`."
+                )
+
+            current_distance_func = (
+                current_vector_config.distance.name.upper()  # type: ignore[union-attr]
+            )
+            if current_distance_func != distance_func:
+                raise QdrantException(
+                    f"Existing Qdrant collection is configured for "
+                    f"{current_vector_config.distance} "  # type: ignore[union-attr]
+                    f"similarity. Please set `distance_func` parameter to "
+                    f"`{distance_func}` if you want to reuse it. If you want to "
+                    f"recreate the collection, set `force_recreate` parameter to "
+                    f"`True`."
+                )
+        except (UnexpectedResponse, RpcError, ValueError):
+            vectors_config = rest.VectorParams(
                 size=vector_size,
                 distance=rest.Distance[distance_func],
-            ),
-            shard_number=shard_number,
-            replication_factor=replication_factor,
-            write_consistency_factor=write_consistency_factor,
-            on_disk_payload=on_disk_payload,
-            hnsw_config=hnsw_config,
-            optimizers_config=optimizers_config,
-            wal_config=wal_config,
-            quantization_config=quantization_config,
-            init_from=init_from,
-            timeout=timeout,  # type: ignore[arg-type]
-        )
-
-        texts_iterator = iter(texts)
-        metadatas_iterator = iter(metadatas or [])
-        ids_iterator = iter(ids or [uuid.uuid4().hex for _ in iter(texts)])
-        while batch_texts := list(islice(texts_iterator, batch_size)):
-            # Take the corresponding metadata and id for each text in a batch
-            batch_metadatas = list(islice(metadatas_iterator, batch_size)) or None
-            batch_ids = list(islice(ids_iterator, batch_size))
-
-            # Generate the embeddings for all the texts in a batch
-            batch_embeddings = embedding.embed_documents(batch_texts)
-
-            client.upsert(
-                collection_name=collection_name,
-                points=rest.Batch.construct(
-                    ids=batch_ids,
-                    vectors=batch_embeddings,
-                    payloads=cls._build_payloads(
-                        batch_texts,
-                        batch_metadatas,
-                        content_payload_key,
-                        metadata_payload_key,
-                    ),
-                ),
             )
 
-        return cls(
+            # If vector name was provided, we're going to use the named vectors feature
+            # with just a single vector.
+            if vector_name is not None:
+                vectors_config = {  # type: ignore[assignment]
+                    vector_name: vectors_config,
+                }
+
+            client.recreate_collection(
+                collection_name=collection_name,
+                vectors_config=vectors_config,
+                shard_number=shard_number,
+                replication_factor=replication_factor,
+                write_consistency_factor=write_consistency_factor,
+                on_disk_payload=on_disk_payload,
+                hnsw_config=hnsw_config,
+                optimizers_config=optimizers_config,
+                wal_config=wal_config,
+                quantization_config=quantization_config,
+                init_from=init_from,
+                timeout=timeout,  # type: ignore[arg-type]
+            )
+
+        qdrant = cls(
             client=client,
             collection_name=collection_name,
             embeddings=embedding,
             content_payload_key=content_payload_key,
             metadata_payload_key=metadata_payload_key,
+            distance_strategy=distance_func,
+            vector_name=vector_name,
         )
+        qdrant.add_texts(texts, metadatas, ids, batch_size)
+        return qdrant
 
     @classmethod
     def _build_payloads(

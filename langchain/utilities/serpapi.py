@@ -36,7 +36,7 @@ class SerpAPIWrapper(BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain import SerpAPIWrapper
+            from langchain.utilities import SerpAPIWrapper
             serpapi = SerpAPIWrapper()
     """
 

@@ -5,12 +5,13 @@ import asyncio
 from typing import Any, Callable, Dict, Optional, Sequence
 
 from langchain import LLMChain, PromptTemplate
-from langchain.base_language import BaseLanguageModel
+from langchain.callbacks.manager import Callbacks
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 from langchain.retrievers.document_compressors.chain_extract_prompt import (
     prompt_template,
 )
 from langchain.schema import BaseOutputParser, Document
+from langchain.schema.language_model import BaseLanguageModel
 
 
 def default_get_input(query: str, doc: Document) -> Dict[str, Any]:
@@ -48,25 +49,33 @@ class LLMChainExtractor(BaseDocumentCompressor):
     """Callable for constructing the chain input from the query and a Document."""
 
     def compress_documents(
-        self, documents: Sequence[Document], query: str
+        self,
+        documents: Sequence[Document],
+        query: str,
+        callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
         """Compress page content of raw documents."""
         compressed_docs = []
         for doc in documents:
             _input = self.get_input(query, doc)
-            output = self.llm_chain.predict_and_parse(**_input)
+            output = self.llm_chain.predict_and_parse(**_input, callbacks=callbacks)
             if len(output) == 0:
                 continue
             compressed_docs.append(Document(page_content=output, metadata=doc.metadata))
         return compressed_docs
 
     async def acompress_documents(
-        self, documents: Sequence[Document], query: str
+        self,
+        documents: Sequence[Document],
+        query: str,
+        callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
         """Compress page content of raw documents asynchronously."""
         outputs = await asyncio.gather(
             *[
-                self.llm_chain.apredict_and_parse(**self.get_input(query, doc))
+                self.llm_chain.apredict_and_parse(
+                    **self.get_input(query, doc), callbacks=callbacks
+                )
                 for doc in documents
             ]
         )

@@ -11,16 +11,15 @@ from langchain.agents.chat.prompt import (
     SYSTEM_MESSAGE_SUFFIX,
 )
 from langchain.agents.utils import validate_tools_single_input
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
-from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain.schema import AgentAction
+from langchain.schema import AgentAction, BasePromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 
 

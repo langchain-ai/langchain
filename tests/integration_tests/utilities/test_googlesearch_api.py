@@ -17,3 +17,14 @@ def test_no_result_call() -> None:
     )
     print(type(output))
     assert "No good Google Search Result was found" == output
+
+
+def test_result_with_params_call() -> None:
+    """Test that call gives the correct answer with extra params."""
+    search = GoogleSearchAPIWrapper()
+    output = search.results(
+        query="What was Obama's first name?",
+        num_results=5,
+        search_params={"cr": "us", "safe": "active"},
+    )
+    assert len(output)

@@ -1,4 +1,4 @@
-"""Loader that loads Facebook chat json dump."""
+"""Loads Facebook chat json dump."""
 import datetime
 import json
 from pathlib import Path
@@ -9,7 +9,11 @@ from langchain.document_loaders.base import BaseLoader
 
 
 def concatenate_rows(row: dict) -> str:
-    """Combine message information in a readable format ready to be used."""
+    """Combine message information in a readable format ready to be used.
+
+    Args:
+        row: dictionary containing message information.
+    """
     sender = row["sender_name"]
     text = row["content"]
     date = datetime.datetime.fromtimestamp(row["timestamp_ms"] / 1000).strftime(
@@ -19,10 +23,10 @@ def concatenate_rows(row: dict) -> str:
 
 
 class FacebookChatLoader(BaseLoader):
-    """Loader that loads Facebook messages json directory dump."""
+    """Loads Facebook messages json directory dump."""
 
     def __init__(self, path: str):
-        """Initialize with path."""
+        """Initialize with a path."""
         self.file_path = path
 
     def load(self) -> List[Document]:

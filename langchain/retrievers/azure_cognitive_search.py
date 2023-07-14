@@ -1,4 +1,5 @@
 """Retriever wrapper for Azure Cognitive Search."""
+
 from __future__ import annotations
 
 import json
@@ -6,13 +7,17 @@ from typing import Dict, List, Optional
 
 import aiohttp
 import requests
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.schema import BaseRetriever, Document
 from langchain.utils import get_from_dict_or_env
 
 
-class AzureCognitiveSearchRetriever(BaseRetriever, BaseModel):
+class AzureCognitiveSearchRetriever(BaseRetriever):
     """Wrapper around Azure Cognitive Search."""
 
     service_name: str = ""
@@ -28,6 +33,8 @@ class AzureCognitiveSearchRetriever(BaseRetriever, BaseModel):
     """ClientSession, in case we want to reuse connection for better performance."""
     content_key: str = "content"
     """Key in a retrieved result to set as the Document page_content."""
+    top_k: Optional[int] = None
+    """Number of results to retrieve. Set to None to retrieve all results."""
 
     class Config:
         extra = Extra.forbid
@@ -50,7 +57,8 @@ class AzureCognitiveSearchRetriever(BaseRetriever, BaseModel):
     def _build_search_url(self, query: str) -> str:
         base_url = f"https://{self.service_name}.search.windows.net/"
         endpoint_path = f"indexes/{self.index_name}/docs?api-version={self.api_version}"
-        return base_url + endpoint_path + f"&search={query}"
+        top_param = f"&$top={self.top_k}" if self.top_k else ""
+        return base_url + endpoint_path + f"&search={query}" + top_param
 
     @property
     def _headers(self) -> Dict[str, str]:
@@ -81,7 +89,9 @@ class AzureCognitiveSearchRetriever(BaseRetriever, BaseModel):
 
         return response_json["value"]
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> List[Document]:
         search_results = self._search(query)
 
         return [
@@ -89,7 +99,9 @@ class AzureCognitiveSearchRetriever(BaseRetriever, BaseModel):
             for result in search_results
         ]
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def _aget_relevant_documents(
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
+    ) -> List[Document]:
         search_results = await self._asearch(query)
 
         return [

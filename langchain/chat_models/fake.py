@@ -3,7 +3,7 @@ from typing import Any, List, Mapping, Optional
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import SimpleChatModel
-from langchain.schema import BaseMessage
+from langchain.schema.messages import BaseMessage
 
 
 class FakeListChatModel(SimpleChatModel):
@@ -21,7 +21,7 @@ class FakeListChatModel(SimpleChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> str:
         """First try to lookup in queries, else return 'foo' or 'bar'."""
         response = self.responses[self.i]
