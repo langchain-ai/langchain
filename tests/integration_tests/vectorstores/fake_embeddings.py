@@ -27,8 +27,9 @@ class ConsistentFakeEmbeddings(FakeEmbeddings):
     """Fake embeddings which remember all the texts seen so far to return consistent
     vectors for the same texts."""
 
-    def __init__(self) -> None:
+    def __init__(self, dimensionality: int = 10) -> None:
         self.known_texts: List[str] = []
+        self.dimensionality = dimensionality
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Return consistent embeddings for each text seen so far."""
@@ -36,7 +37,9 @@ class ConsistentFakeEmbeddings(FakeEmbeddings):
         for text in texts:
             if text not in self.known_texts:
                 self.known_texts.append(text)
-            vector = [float(1.0)] * 9 + [float(self.known_texts.index(text))]
+            vector = [float(1.0)] * (self.dimensionality - 1) + [
+                float(self.known_texts.index(text))
+            ]
             out_vectors.append(vector)
         return out_vectors
 
@@ -44,8 +47,10 @@ class ConsistentFakeEmbeddings(FakeEmbeddings):
         """Return consistent embeddings for the text, if seen before, or a constant
         one if the text is unknown."""
         if text not in self.known_texts:
-            return [float(1.0)] * 9 + [float(0.0)]
-        return [float(1.0)] * 9 + [float(self.known_texts.index(text))]
+            return [float(1.0)] * (self.dimensionality - 1) + [float(0.0)]
+        return [float(1.0)] * (self.dimensionality - 1) + [
+            float(self.known_texts.index(text))
+        ]
 
 
 class AngularTwoDimensionalEmbeddings(Embeddings):

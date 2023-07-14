@@ -2,7 +2,6 @@ from typing import Any, List
 
 from pydantic import BaseModel
 
-from langchain.base_language import BaseLanguageModel
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.openai_functions.utils import (
@@ -15,6 +14,7 @@ from langchain.output_parsers.openai_functions import (
     PydanticAttrOutputFunctionsParser,
 )
 from langchain.prompts import ChatPromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
 
 
 def _get_extraction_function(entity_schema: dict) -> dict:
@@ -32,11 +32,15 @@ def _get_extraction_function(entity_schema: dict) -> dict:
 
 
 _EXTRACTION_TEMPLATE = """Extract and save the relevant entities mentioned\
- in the following passage together with their properties.
+in the following passage together with their properties.
+
+Only extract the properties mentioned in the 'information_extraction' function.
+
+If a property is not present and is not required in the function parameters, do not include it in the output.
 
 Passage:
 {input}
-"""
+"""  # noqa: E501
 
 
 def create_extraction_chain(schema: dict, llm: BaseLanguageModel) -> Chain:

@@ -12,6 +12,15 @@ from langchain.schema import BaseRetriever
 
 
 def clean_excerpt(excerpt: str) -> str:
+    """Cleans an excerpt from Kendra.
+
+    Args:
+        excerpt: The excerpt to clean.
+
+    Returns:
+        The cleaned excerpt.
+
+    """
     if not excerpt:
         return excerpt
     res = re.sub("\s+", " ", excerpt).replace("...", "")
@@ -19,6 +28,16 @@ def clean_excerpt(excerpt: str) -> str:
 
 
 def combined_text(title: str, excerpt: str) -> str:
+    """Combines a title and an excerpt into a single string.
+
+    Args:
+        title: The title of the document.
+        excerpt: The excerpt of the document.
+
+    Returns:
+        The combined text.
+
+    """
     if not title or not excerpt:
         return ""
     return f"Document Title: {title} \nDocument Excerpt: \n{excerpt}\n"
@@ -188,20 +207,20 @@ class AmazonKendraRetriever(BaseRetriever):
 
     @root_validator(pre=True)
     def create_client(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        if values["client"] is not None:
+        if values.get("client") is not None:
             return values
 
         try:
             import boto3
 
-            if values["credentials_profile_name"] is not None:
+            if values.get("credentials_profile_name"):
                 session = boto3.Session(profile_name=values["credentials_profile_name"])
             else:
                 # use default credentials
                 session = boto3.Session()
 
             client_params = {}
-            if values["region_name"] is not None:
+            if values.get("region_name"):
                 client_params["region_name"] = values["region_name"]
 
             values["client"] = session.client("kendra", **client_params)

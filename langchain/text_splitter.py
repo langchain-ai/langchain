@@ -34,6 +34,23 @@ logger = logging.getLogger(__name__)
 TS = TypeVar("TS", bound="TextSplitter")
 
 
+def _make_spacy_pipeline_for_splitting(pipeline: str) -> Any:  # avoid importing spacy
+    try:
+        import spacy
+    except ImportError:
+        raise ImportError(
+            "Spacy is not installed, please install it with `pip install spacy`."
+        )
+    if pipeline == "sentencizer":
+        from spacy.lang.en import English
+
+        sentencizer = English()
+        sentencizer.add_pipe("sentencizer")
+    else:
+        sentencizer = spacy.load(pipeline, exclude=["ner", "tagger"])
+    return sentencizer
+
+
 def _split_text_with_regex(
     text: str, separator: str, keep_separator: bool
 ) -> List[str]:
@@ -561,6 +578,8 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
 
 
 class Language(str, Enum):
+    """Enum of the programming languages."""
+
     CPP = "cpp"
     GO = "go"
     JAVA = "java"
@@ -949,7 +968,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
             ]
         elif language == Language.SOL:
             return [
-                # Split along compiler informations definitions
+                # Split along compiler information definitions
                 "\npragma ",
                 "\nusing ",
                 # Split along contract definitions
@@ -1008,25 +1027,24 @@ class NLTKTextSplitter(TextSplitter):
 
 
 class SpacyTextSplitter(TextSplitter):
-    """Implementation of splitting text that looks at sentences using Spacy."""
+    """Implementation of splitting text that looks at sentences using Spacy.
+
+
+    Per default, Spacy's `en_core_web_sm` model is used. For a faster, but
+    potentially less accurate splitting, you can use `pipeline='sentencizer'`.
+    """
 
     def __init__(
         self, separator: str = "\n\n", pipeline: str = "en_core_web_sm", **kwargs: Any
     ) -> None:
         """Initialize the spacy text splitter."""
         super().__init__(**kwargs)
-        try:
-            import spacy
-        except ImportError:
-            raise ImportError(
-                "Spacy is not installed, please install it with `pip install spacy`."
-            )
-        self._tokenizer = spacy.load(pipeline)
+        self._tokenizer = _make_spacy_pipeline_for_splitting(pipeline)
         self._separator = separator
 
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
-        splits = (str(s) for s in self._tokenizer(text).sents)
+        splits = (s.text for s in self._tokenizer(text).sents)
         return self._merge_splits(splits, self._separator)
 
 
