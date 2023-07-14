@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from pydantic import Extra
+
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -25,8 +27,8 @@ class ElasticsearchDatabaseChain(Chain):
             from langchain import ElasticsearchDatabaseChain, OpenAI
             from elasticsearch import Elasticsearch
 
-            db = Elasticsearch("http://localhost:9200")
-            db_chain = ElasticsearchDatabaseChain.from_llm(OpenAI(), db)
+            database = Elasticsearch("http://localhost:9200")
+            db_chain = ElasticsearchDatabaseChain.from_llm(OpenAI(), database)
     """
 
     llm_chain: LLMChain
@@ -69,22 +71,22 @@ class ElasticsearchDatabaseChain(Chain):
             return [self.output_key, INTERMEDIATE_STEPS_KEY]
 
     def _list_indices(self) -> List[str]:
-        all_indices = [index['index'] for index in self.database.cat.indices(format="json")]
+        all_indices = List[str]([index['index'] for index in self.database.cat.indices(format="json")])
 
         if self.include_indices is not None:
-            all_indices = list(filter(lambda x: x in self.include_indices, all_indices))
+            all_indices = list(filter(lambda x: self.include_indices is not None and x in self.include_indices, all_indices))
         if self.ignore_indices is not None:
-            all_indices = list(filter(lambda x: x not in self.ignore_indices, all_indices))
+            all_indices = list(filter(lambda x: self.ignore_indices is not None and x not in self.ignore_indices, all_indices))
 
         return all_indices
 
-    def _get_indices_infos(self, indices: List[str]) -> List[str]:
+    def _get_indices_infos(self, indices: List[str]) -> str:
         mappings = self.database.indices.get_mapping(index=",".join(indices))
         if self.sample_documents_in_index_info > 0:
             for k, v in mappings.items():
                 hits = self.database.search(index=k, body={"query": {"match_all": {}}}, size=self.sample_documents_in_index_info)['hits']['hits']
                 hits = [str(hit['_source']) for hit in hits]
-                mappings[k]['mappings'] = str(mappings[k]['mappings']) + "\n\n/*\n" + "\n".join(hits) + "\n*/"
+                mappings[k]['mappings'] = str(v) + "\n\n/*\n" + "\n".join(hits) + "\n*/"
         return "\n\n".join(["Mapping for index {}:\n{}".format(index, mappings[index]['mappings']) for index in mappings])
 
     def _search(self, indices: List[str], query: str) -> str:
