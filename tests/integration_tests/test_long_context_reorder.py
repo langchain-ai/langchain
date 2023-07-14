@@ -1,9 +1,10 @@
+"""Integration test for doc reordering."""
 from langchain.embeddings import OpenAIEmbeddings
-from langchain.document_transformers import LongContextReorder
+from langchain.document_transformers.long_context_reorder import LongContextReorder
 from langchain.vectorstores import Chroma
 
 
-def test_litm_long_context_reorder() -> None:
+def test_long_context_reorder() -> None:
     """Test Lost in the middle reordering get_relevant_docs."""
     texts = [
         "Basquetball is a great sport.",
