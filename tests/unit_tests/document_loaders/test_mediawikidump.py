@@ -7,16 +7,14 @@ from langchain.document_loaders.mediawikidump import MWDumpLoader
 PARENT_DIR = Path(__file__).parent / "sample_documents"
 
 
-@pytest.mark.requires("mwparserfromhell")
+@pytest.mark.requires("mwparserfromhell", "mwxml")
 def test_loading_flawed_xml() -> None:
     loader = MWDumpLoader((PARENT_DIR / "mwtest_current_pages.xml").absolute())
-    try:
+    with pytest.raises(TypeError):
         loader.load()
-    except TypeError as e:
-        assert True
 
 
-@pytest.mark.requires("mwparserfromhell")
+@pytest.mark.requires("mwparserfromhell", "mwxml")
 def test_skipping_errors() -> None:
     loader = MWDumpLoader(
         file_path=(PARENT_DIR / "mwtest_current_pages.xml").absolute(),
@@ -26,7 +24,7 @@ def test_skipping_errors() -> None:
     assert len(documents) == 3
 
 
-@pytest.mark.requires("mwparserfromhell")
+@pytest.mark.requires("mwparserfromhell", "mwxml")
 def test_skipping_redirects() -> None:
     loader = MWDumpLoader(
         file_path=(PARENT_DIR / "mwtest_current_pages.xml").absolute(),
@@ -37,7 +35,7 @@ def test_skipping_redirects() -> None:
     assert len(documents) == 2
 
 
-@pytest.mark.requires("mwparserfromhell")
+@pytest.mark.requires("mwparserfromhell", "mwxml")
 def test_multiple_namespaces() -> None:
     loader = MWDumpLoader(
         file_path=(PARENT_DIR / "mwtest_current_pages.xml").absolute(),

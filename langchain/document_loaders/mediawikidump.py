@@ -1,9 +1,12 @@
 """Load Data from a MediaWiki dump xml."""
+import logging
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional, Sequence, Union
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+
+logger = logging.getLogger(__name__)
 
 
 class MWDumpLoader(BaseLoader):
@@ -46,67 +49,48 @@ class MWDumpLoader(BaseLoader):
         self,
         file_path: Union[str, Path],
         encoding: Optional[str] = "utf8",
-        namespaces: Optional[List[int]] = None,
+        namespaces: Optional[Sequence[int]] = None,
         skip_redirects: Optional[bool] = False,
         stop_on_error: Optional[bool] = True,
     ):
-        """Initialize with file path.
-
-        Args:
-            file_path: XML local file path.
-            encoding: Charset encoding.
-        """
-        _default_namespaces = [
-            -1,
-            -2,
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            8,
-            9,
-            10,
-            11,
-            12,
-            13,
-            14,
-            15,
-        ]
         self.file_path = file_path if isinstance(file_path, str) else str(file_path)
         self.encoding = encoding
-        self.namespaces = namespaces or _default_namespaces
+        # Namespaces range from -2 to 15, inclusive.
+        self.namespaces = namespaces or list(range(-2, 16))
         self.skip_redirects = skip_redirects
         self.stop_on_error = stop_on_error
 
     def load(self) -> List[Document]:
         """Load from a file path."""
-        import mwparserfromhell
-        import mwxml
+        try:
+            import mwparserfromhell
+            import mwxml
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import 'mwparserfromhell' or 'mwxml'. Please install with"
+                " `pip install mwparserfromhell mwxml`."
+            ) from e
 
         dump = mwxml.Dump.from_file(open(self.file_path, encoding=self.encoding))
 
         docs = []
-
         for page in dump.pages:
-            if self.skip_redirects and page.redirect and page.redirect is not None:
+            if self.skip_redirects and page.redirect:
                 continue
-            if page.namespace in self.namespaces:
-                try:
-                    for revision in page:
-                        code = mwparserfromhell.parse(revision.text)
-                        text = code.strip_code(
-                            normalize=True, collapse=True, keep_template_params=False
-                        )
-                        metadata = {"source": page.title}
-                        docs.append(Document(page_content=text, metadata=metadata))
-                except Exception as e:
-                    print("Parsing error: {}".format(e))
-                    if self.stop_on_error:
-                        raise e
-                    else:
-                        continue
+            if page.namespace not in self.namespaces:
+                continue
+            try:
+                for revision in page:
+                    code = mwparserfromhell.parse(revision.text)
+                    text = code.strip_code(
+                        normalize=True, collapse=True, keep_template_params=False
+                    )
+                    metadata = {"source": page.title}
+                    docs.append(Document(page_content=text, metadata=metadata))
+            except Exception as e:
+                logger.error("Parsing error: {}".format(e))
+                if self.stop_on_error:
+                    raise e
+                else:
+                    continue
         return docs
