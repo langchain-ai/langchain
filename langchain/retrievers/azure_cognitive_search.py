@@ -33,7 +33,8 @@ class AzureCognitiveSearchRetriever(BaseRetriever):
     """ClientSession, in case we want to reuse connection for better performance."""
     content_key: str = "content"
     """Key in a retrieved result to set as the Document page_content."""
-
+    top_k: int = 3
+    """No of results to return"""
     class Config:
         extra = Extra.forbid
         arbitrary_types_allowed = True
@@ -52,10 +53,25 @@ class AzureCognitiveSearchRetriever(BaseRetriever):
         )
         return values
 
-    def _build_search_url(self, query: str) -> str:
+
+    def _build_search_url(self, query: str, top_k: int) -> str:
+        """Builds the search URL for querying the search service.
+        Args:
+            query (str): The search query to be executed.
+            top_k (int): The number of search results to retrieve.
+        Returns:
+            str: The constructed search URL.
+        Raises:
+            None
+        Examples:
+            >>> client = SearchClient()
+            >>> url = client._build_search_url("example query", 10)
+            >>> print(url)
+            https://search-service.search.windows.net/indexes/index-name/docs?api-version=api-version&search=example%20query&top=10
+        """
         base_url = f"https://{self.service_name}.search.windows.net/"
         endpoint_path = f"indexes/{self.index_name}/docs?api-version={self.api_version}"
-        return base_url + endpoint_path + f"&search={query}"
+        return base_url + endpoint_path + f"&search={query}" + f"&top={top_k}"
 
     @property
     def _headers(self) -> Dict[str, str]:
@@ -64,16 +80,16 @@ class AzureCognitiveSearchRetriever(BaseRetriever):
             "api-key": self.api_key,
         }
 
-    def _search(self, query: str) -> List[dict]:
-        search_url = self._build_search_url(query)
+    def _search(self, query: str, top_k: int) -> List[dict]:
+        search_url = self._build_search_url(query, top_k)
         response = requests.get(search_url, headers=self._headers)
         if response.status_code != 200:
             raise Exception(f"Error in search request: {response}")
 
         return json.loads(response.text)["value"]
 
-    async def _asearch(self, query: str) -> List[dict]:
-        search_url = self._build_search_url(query)
+    async def _asearch(self, query: str, top_k: int) -> List[dict]:
+        search_url = self._build_search_url(query, top_k)
         if not self.aiosession:
             async with aiohttp.ClientSession() as session:
                 async with session.get(search_url, headers=self._headers) as response:
@@ -89,7 +105,7 @@ class AzureCognitiveSearchRetriever(BaseRetriever):
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
-        search_results = self._search(query)
+        search_results = self._search(query, self.top_k)
 
         return [
             Document(page_content=result.pop(self.content_key), metadata=result)
@@ -99,7 +115,7 @@ class AzureCognitiveSearchRetriever(BaseRetriever):
     async def _aget_relevant_documents(
         self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
-        search_results = await self._asearch(query)
+        search_results = await self._asearch(query, self.top_k)
 
         return [
             Document(page_content=result.pop(self.content_key), metadata=result)
