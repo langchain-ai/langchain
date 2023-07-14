@@ -49,7 +49,7 @@ def test_get_child_links_recursive(
     child_docs = list(url_loader.get_child_links_recursive("http://test.com"))
 
     assert len(child_docs) == 2
-    assert set(doc.metadata['url'] for doc in child_docs) == {
+    assert set(doc.metadata["url"] for doc in child_docs) == {
         "http://test.com/relative",
         "http://test.com/absolute",
     }
