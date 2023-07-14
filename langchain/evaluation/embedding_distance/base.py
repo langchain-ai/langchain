@@ -61,7 +61,7 @@ class _EmbeddingDistanceChainMixin(Chain):
         embeddings = values.get("embeddings")
         if isinstance(embeddings, OpenAIEmbeddings):
             try:
-                import tiktoken
+                import tiktoken  # noqa: F401
             except ImportError:
                 raise ImportError(
                     "The tiktoken library is required to use the default "
