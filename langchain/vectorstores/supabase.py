@@ -141,10 +141,16 @@ class SupabaseVectorStore(VectorStore):
         vectors = self._embedding.embed_documents([query])
         return self.similarity_search_by_vector_with_relevance_scores(vectors[0], k)
 
+    def match_args(self, query: List[float], k: int, filter: dict):
+        ret = dict(query_embedding=query, match_count=k)
+        if filter:
+            ret["filter"] = filter
+        return ret
+        
     def similarity_search_by_vector_with_relevance_scores(
-        self, query: List[float], k: int
+        self, query: List[float], k: int, filter: dict
     ) -> List[Tuple[Document, float]]:
-        match_documents_params = dict(query_embedding=query, match_count=k)
+        match_documents_params = self.match_args(query, k, filter)
         res = self._client.rpc(self.query_name, match_documents_params).execute()
 
         match_result = [
@@ -164,7 +170,7 @@ class SupabaseVectorStore(VectorStore):
     def similarity_search_by_vector_returning_embeddings(
         self, query: List[float], k: int
     ) -> List[Tuple[Document, float, np.ndarray[np.float32, Any]]]:
-        match_documents_params = dict(query_embedding=query, match_count=k)
+        match_documents_params = self.match_args(query, k, filter)
         res = self._client.rpc(self.query_name, match_documents_params).execute()
 
         match_result = [
