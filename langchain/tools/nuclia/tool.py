@@ -43,7 +43,8 @@ class NUASchema(BaseModel):
     )
     enable_ml: bool = Field(
         ...,
-        description="Enable Machine Learning processing (applicable only to `push` action).",
+        description="Enable Machine Learning processing "
+        "(applicable only to `push` action).",
     )
     path: Optional[str] = Field(
         ...,
@@ -61,6 +62,17 @@ class NucliaUnderstandingAPI(BaseTool):
     )
     args_schema: Type[BaseModel] = NUASchema
     _results: Dict[str, Any] = {}
+    _config: Dict[str, str] = {}
+
+    def __init__(self) -> None:
+        zone = os.environ.get("NUCLIA_ZONE", "europe-1")
+        self._config["BACKEND"] = f"https://{zone}.nuclia.cloud/api/v1"
+        key = os.environ.get("NUCLIA_NUA_KEY")
+        if not key:
+            raise ValueError("NUCLIA_NUA_KEY environment variable not set")
+        else:
+            self._config["NUA_KEY"] = key
+        super().__init__()
 
     def _run(
         self,
@@ -71,17 +83,12 @@ class NucliaUnderstandingAPI(BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        zone = os.environ.get("NUCLIA_ZONE", "europe-1")
-        BACKEND = f"https://{zone}.nuclia.cloud/api/v1"
-        NUA_KEY = os.environ.get("NUCLIA_NUA_KEY")
-        if not NUA_KEY:
-            raise ValueError("NUCLIA_NUA_KEY environment variable not set")
         if action == "push":
             if not path:
                 raise ValueError("Path to file to push is required")
-            return self._push(id, path, BACKEND, NUA_KEY, enable_ml)
+            return self._push(id, path, enable_ml)
         elif action == "pull":
-            return self._pull(id, BACKEND, NUA_KEY)
+            return self._pull(id)
         return ""
 
     async def _arun(
@@ -95,22 +102,21 @@ class NucliaUnderstandingAPI(BaseTool):
         """Use the tool asynchronously."""
         raise NotImplementedError("NucliaUnderstandingAPI does not support async")
 
-    def _push(
-        self, id: str, content_path: str, backend: str, key: str, enable_ml: bool
-    ) -> str:
+    def _push(self, id: str, content_path: str, enable_ml: bool) -> str:
         with open(content_path, "rb") as source_file:
             response = requests.post(
-                f"{backend}/processing/upload",
+                self._config["BACKEND"] + "/processing/upload",
                 headers={
                     "content-type": mimetypes.guess_type(content_path)[0]
                     or "application/octet-stream",
-                    "x-stf-nuakey": "Bearer " + key,
+                    "x-stf-nuakey": "Bearer " + self._config["NUA_KEY"],
                 },
                 data=source_file.read(),
             )
             if response.status_code != 200:
                 print(
-                    f"Error uploading {content_path}: {response.status_code} {response.text}"
+                    f"Error uploading {content_path}: "
+                    f"{response.status_code} {response.text}"
                 )
                 return ""
             else:
@@ -118,10 +124,10 @@ class NucliaUnderstandingAPI(BaseTool):
                 file_data = {}
                 file_data["file"] = f"{response.text}"
                 response = requests.post(
-                    f"{backend}/processing/push",
+                    self._config["BACKEND"] + "/processing/push",
                     headers={
                         "content-type": "application/json",
-                        "x-stf-nuakey": "Bearer " + key,
+                        "x-stf-nuakey": "Bearer " + self._config["NUA_KEY"],
                     },
                     json={
                         "filefield": file_data,
@@ -130,7 +136,8 @@ class NucliaUnderstandingAPI(BaseTool):
                 )
                 if response.status_code != 200:
                     print(
-                        f"Error pushing {content_path}: {response.status_code} {response.text}"
+                        f"Error pushing {content_path}: "
+                        f"{response.status_code} {response.text}"
                     )
                     return ""
                 else:
@@ -139,8 +146,8 @@ class NucliaUnderstandingAPI(BaseTool):
                     self._results[id] = {"uuid": uuid, "status": "pending"}
                     return uuid
 
-    def _pull(self, id: str, backend: str, key: str) -> str:
-        self._pull_queue(backend, key)
+    def _pull(self, id: str) -> str:
+        self._pull_queue()
         result = self._results.get(id, None)
         if not result:
             print(f"{id} not in queue")
@@ -151,11 +158,11 @@ class NucliaUnderstandingAPI(BaseTool):
         else:
             return result["data"]
 
-    def _pull_queue(self, backend: str, key: str) -> None:
+    def _pull_queue(self) -> None:
         res = requests.get(
-            f"{backend}/processing/pull",
+            self._config["BACKEND"] + "/processing/pull",
             headers={
-                "x-stf-nuakey": "Bearer " + key,
+                "x-stf-nuakey": "Bearer " + self._config["NUA_KEY"],
             },
         ).json()
         if res["status"] == "empty":
