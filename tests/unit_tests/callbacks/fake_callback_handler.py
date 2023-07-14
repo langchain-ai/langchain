@@ -1,6 +1,6 @@
 """A fake callback handler for testing purposes."""
 from itertools import chain
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -21,6 +21,9 @@ class BaseFakeCallbackHandler(BaseModel):
     ignore_agent_: bool = False
     ignore_retriever_: bool = False
     ignore_chat_model_: bool = False
+
+    # to allow for similar callback handlers that are not technicall equal
+    fake_id: Union[str, None] = None
 
     # add finer-grained counters for easier debugging of failing tests
     chain_starts: int = 0
