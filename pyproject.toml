@@ -358,6 +358,7 @@ extended_testing = [
  "openai",
  "sympy",
  "rapidfuzz",
+ "qdrant-client"
 ]
 
 [[tool.poetry.source]]
