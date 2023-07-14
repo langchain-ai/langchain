@@ -25,7 +25,7 @@ class SmartLLMChain(Chain):
     performs these 3 steps:
     1. Ideate: Pass the user prompt to an ideation LLM n_ideas times,
        each result is an "idea"
-    2. Critique: Pass the ideas to a critque LLM which looks for flaws in the ideas
+    2. Critique: Pass the ideas to a critique LLM which looks for flaws in the ideas
        & picks the best one
     3. Resolve: Pass the critique to a resolver LLM which improves upon the best idea
        & outputs only the (improved version of) the best output
@@ -77,7 +77,7 @@ class SmartLLMChain(Chain):
     n_ideas: int = 3
     """Number of ideas to generate in idea step"""
     return_intermediate_steps: bool = False
-    """Wether to return ideas and critique, in addition to resolution."""
+    """Whether to return ideas and critique, in addition to resolution."""
     history: SmartLLMChainHistory = SmartLLMChainHistory()
 
     class Config:

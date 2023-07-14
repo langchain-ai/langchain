@@ -6,7 +6,7 @@ from langchain.prompts.prompt import PromptTemplate
 
 
 def test_ideation() -> None:
-    # test that correct reponses are returned
+    # test that correct responses are returned
     responses = ["Idea 1", "Idea 2", "Idea 3"]
     llm = FakeListLLM(responses=responses)
     prompt = PromptTemplate(
