@@ -1,5 +1,5 @@
 from typing import Iterator, List, Optional, Set
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 import requests
 
@@ -73,10 +73,7 @@ class RecursiveUrlLoader(BaseLoader):
         )
 
         # Get absolute path for all root relative links listed
-        absolute_paths = [
-            f"{urlparse(base_url).scheme}://{urlparse(base_url).netloc}{link}"
-            for link in child_links
-        ]
+        absolute_paths = [urljoin(base_url, link) for link in child_links]
 
         # Store the visited links and recursively visit the children
         for link in absolute_paths:
