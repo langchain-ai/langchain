@@ -20,7 +20,7 @@ def clean_url(url: str) -> str:
         return url
 
 
-class KoboldApiLLM(LLM):
+class KoboldApiLLM1(LLM):
     """
     A class that acts as a wrapper for the Kobold API language model.
 
@@ -131,7 +131,7 @@ class KoboldApiLLM(LLM):
 
     @property
     def _default_params(self) -> Dict[str, Any]:
-        """Get the default parameters for calling textgen."""
+        """Get the default parameters for calling KoboldAI."""
         return {
             "use_story": self.use_story,
             "use_authors_note": self.use_authors_note,
@@ -148,7 +148,6 @@ class KoboldApiLLM(LLM):
             "top_p": self.top_p,
             "top_k": self.top_k,
             "typical": self.typical,
-            "stop_sequence": self.stop_sequence,
         }
 
     @property
@@ -162,19 +161,21 @@ class KoboldApiLLM(LLM):
         return "koboldai"
 
     def _get_parameters(self, stop: Optional[List[str]]=None) -> Dict[str, Any]:
+
         """
-        Prepare parameters in format needed by textgen.
+        Prepare parameters in format needed by KoboldAI.
 
         Args:
-            stop (Optional[List[str]]): List of stop sequences for textgen.
+            stop (Optional[List[str]]): List of stop sequences for KoboldAI.
 
         Returns:
             Dictionary containing the combined parameters.
         """
-        if self.stop_sequence and stop is not None:
-            raise ValueError("`stop` found in both the input and default params.")
         
         params = self._default_params.copy()
+
+        # Check if stop sequences are provided in the input and update params accordingly.
+        params["stop_sequence"] = self.stop_sequence or stop or []
 
         return params
 
@@ -203,13 +204,15 @@ class KoboldApiLLM(LLM):
         """
 
         url = f"{clean_url(self.endpoint)}/api/v1/generate"
-        params = self._get_parameters(stop)
+        params = self._get_parameters(stop) 
         request = params.copy()
         request["prompt"] = prompt
+        print(request)
         response = requests.post(url, json=request)
 
         if response.status_code == 200:
             result = response.json()["results"][0]["text"]
+            result = result.strip()
             print(prompt + result)
         else:
             print(f"ERROR: response: {response}")
