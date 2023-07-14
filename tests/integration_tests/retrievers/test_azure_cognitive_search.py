@@ -13,7 +13,7 @@ def test_azure_cognitive_search_get_relevant_documents() -> None:
         assert isinstance(doc, Document)
         assert doc.page_content
 
-    retriever = AzureCognitiveSearchRetriever(top_n=1)
+    retriever = AzureCognitiveSearchRetriever(top_k=1)
     documents = retriever.get_relevant_documents("what is langchain")
     assert len(documents) <= 1
 

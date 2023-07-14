@@ -33,7 +33,7 @@ class AzureCognitiveSearchRetriever(BaseRetriever):
     """ClientSession, in case we want to reuse connection for better performance."""
     content_key: str = "content"
     """Key in a retrieved result to set as the Document page_content."""
-    top_n: Optional[int] = 50
+    top_k: Optional[int] = None
     """Number of results to retrieve. Set to None to retrieve all results."""
 
     class Config:
@@ -57,7 +57,7 @@ class AzureCognitiveSearchRetriever(BaseRetriever):
     def _build_search_url(self, query: str) -> str:
         base_url = f"https://{self.service_name}.search.windows.net/"
         endpoint_path = f"indexes/{self.index_name}/docs?api-version={self.api_version}"
-        top_param = f"&$top={self.top_n}" if self.top_n else ""
+        top_param = f"&$top={self.top_k}" if self.top_k else ""
         return base_url + endpoint_path + f"&search={query}" + top_param
 
     @property
