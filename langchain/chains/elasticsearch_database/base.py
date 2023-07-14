@@ -30,7 +30,6 @@ class ElasticsearchDatabaseChain(Chain):
     """
 
     llm_chain: LLMChain
-    llm: Optional[BaseLanguageModel] = None
     """[Deprecated] LLM wrapper to use."""
     database: Elasticsearch
     """Elasticsearch Database to connect to."""
@@ -87,12 +86,6 @@ class ElasticsearchDatabaseChain(Chain):
                 hits = [str(hit['_source']) for hit in hits]
                 mappings[k]['mappings'] = str(mappings[k]['mappings']) + "\n\n/*\n" + "\n".join(hits) + "\n*/"
         return "\n\n".join(["Mapping for index {}:\n{}".format(index, mappings[index]['mappings']) for index in mappings])
-
-    # def _sql_search(self, query: str) -> str:
-    #     result = self.database.sql.query(body={"query": query})
-    #     columns = [column['name'] for column in result['columns']]
-    #     rows = result['rows']
-    #     return [{columns[i]: cell for i, cell in enumerate(rows[0])} for row in rows]
 
     def _search(self, indices: List[str], query: str) -> str:
         result = self.database.search(index=",".join(indices), body=query)
@@ -164,7 +157,7 @@ class ElasticsearchDatabaseChain(Chain):
     def from_llm(
         cls,
         llm: BaseLanguageModel,
-        db: Elasticsearch,
+        database: Elasticsearch,
         prompt: Optional[BasePromptTemplate] = None,
         **kwargs: Any,
     ) -> ElasticsearchDatabaseChain:
@@ -173,4 +166,4 @@ class ElasticsearchDatabaseChain(Chain):
 
         prompt = prompt or DSL_PROMPT
         llm_chain = LLMChain(llm=llm, prompt=prompt)
-        return cls(llm_chain=llm_chain, database=db, **kwargs)
+        return cls(llm_chain=llm_chain, database=database, **kwargs)
