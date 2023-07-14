@@ -23,7 +23,7 @@ from langchain.schema.messages import (
 from langchain.utilities.vertexai import raise_vertex_import_error
 
 if TYPE_CHECKING:
-    from vertexai.language_models import ChatMessage
+    from vertexai.language_models import ChatMessage, InputOutputTextPair
 
 
 @dataclass
@@ -63,6 +63,36 @@ def _parse_chat_history(history: List[BaseMessage]) -> _ChatHistory:
             )
     chat_history = _ChatHistory(context=context, history=vertex_messages)
     return chat_history
+
+
+def _parse_examples(examples: List[BaseMessage]) -> List["InputOutputTextPair"]:
+    from vertexai.language_models import InputOutputTextPair
+
+    if len(examples) % 2 != 0:
+        raise ValueError(
+            f"Expect examples to have an even amount of messages, got {len(examples)}."
+        )
+    example_pairs = []
+    input_text = None
+    for i, example in enumerate(examples):
+        if i % 2 == 0:
+            if not isinstance(example, HumanMessage):
+                raise ValueError(
+                    f"Expected the first message in a part to be from human, got "
+                    f"{type(example)} for the {i}th message."
+                )
+            input_text = example.content
+        if i % 2 == 1:
+            if not isinstance(example, AIMessage):
+                raise ValueError(
+                    f"Expected the second message in a part to be from AI, got "
+                    f"{type(example)} for the {i}th message."
+                )
+            pair = InputOutputTextPair(
+                input_text=input_text, output_text=example.content
+            )
+            example_pairs.append(pair)
+    return example_pairs
 
 
 class ChatVertexAI(_VertexAICommon, BaseChatModel):
@@ -120,13 +150,16 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         history = _parse_chat_history(messages[:-1])
         context = history.context if history.context else None
         params = {**self._default_params, **kwargs}
+        examples = kwargs.get("examples", None)
+        if examples:
+            params["examples"] = _parse_examples(examples)
         if not self.is_codey_model:
             chat = self.client.start_chat(
                 context=context, message_history=history.history, **params
             )
         else:
             chat = self.client.start_chat(**params)
-        response = chat.send_message(question.content, **params)
+        response = chat.send_message(question.content)
         text = self._enforce_stop_words(response.text, stop)
         return ChatResult(generations=[ChatGeneration(message=AIMessage(content=text))])
 

@@ -24,6 +24,7 @@ from langchain.document_loaders.blob_loaders import (
 )
 from langchain.document_loaders.blockchain import BlockchainDocumentLoader
 from langchain.document_loaders.brave_search import BraveSearchLoader
+from langchain.document_loaders.browserless import BrowserlessLoader
 from langchain.document_loaders.chatgpt import ChatGPTLoader
 from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
 from langchain.document_loaders.confluence import ConfluenceLoader
@@ -174,6 +175,7 @@ __all__ = [
     "BlobLoader",
     "BlockchainDocumentLoader",
     "BraveSearchLoader",
+    "BrowserlessLoader",
     "CSVLoader",
     "ChatGPTLoader",
     "CoNLLULoader",
