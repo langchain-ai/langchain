@@ -4,18 +4,23 @@ from typing import Any, Dict, List, Optional, Union
 
 from langsmith import RunEvaluator
 from pydantic import BaseModel, Field
+from langchain.chat_models.openai import ChatOpenAI
 
 from langchain.embeddings.base import Embeddings
 from langchain.evaluation.criteria.eval_chain import CRITERIA_TYPE
 from langchain.evaluation.embedding_distance.base import (
     EmbeddingDistance as EmbeddingDistanceEnum,
 )
+from langchain.evaluation.loading import load_evaluator
 from langchain.evaluation.schema import EvaluatorType, StringEvaluator
 from langchain.evaluation.string_distance.base import (
     StringDistance as StringDistanceEnum,
 )
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.prompt_template import BasePromptTemplate
+from langsmith.schemas import DataType, RunTypeEnum
+
+from langchain.smith.evaluation.string_run_evaluator import StringRunEvaluatorChain
 
 
 class EvalConfig(BaseModel):
@@ -226,3 +231,90 @@ class RunEvalConfig(BaseModel):
         prompt: Optional[BasePromptTemplate] = None
 
     # TODO: Trajectory
+
+    def get_run_evaluators(
+        self,
+        run_type: Optional[RunTypeEnum] = None,
+        data_type: Optional[DataType] = None,
+        example_outputs: Optional[List[str]] = None,
+        reference_key: Optional[str] = None,
+        input_key: Optional[str] = None,
+        prediction_key: Optional[str] = None,
+    ) -> List[RunEvaluator]:
+        eval_llm = self.eval_llm or ChatOpenAI(model="gpt-4", temperature=0.0)
+        run_evaluators: List[RunEvaluator] = []
+        for eval_config in self.evaluators:
+            run_evaluator = self._construct_run_evaluator(
+                eval_config,
+                eval_llm,
+                run_type,
+                data_type,
+                example_outputs,
+                reference_key,
+                input_key,
+                prediction_key,
+            )
+            run_evaluators.append(run_evaluator)
+        custom_evaluators = self.custom_evaluators or []
+        for custom_evaluator in custom_evaluators:
+            if isinstance(custom_evaluator, RunEvaluator):
+                run_evaluators.append(custom_evaluator)
+            elif isinstance(custom_evaluator, StringEvaluator):
+                run_evaluators.append(
+                    StringRunEvaluatorChain.from_string_evaluator(
+                        custom_evaluator,
+                        run_type=run_type,
+                        data_type=data_type,
+                        input_key=input_key,
+                        prediction_key=prediction_key,
+                        reference_key=reference_key,
+                    )
+                )
+            else:
+                raise ValueError(
+                    f"Unsupported custom evaluator: {custom_evaluator}."
+                    f" Expected RunEvaluator or StringEvaluator."
+                )
+
+        return run_evaluators
+
+    def _construct_run_evaluator(
+        eval_config: Union[EvaluatorType, EvalConfig],
+        eval_llm: BaseLanguageModel,
+        run_type: RunTypeEnum,
+        data_type: DataType,
+        example_outputs: Optional[List[str]],
+        reference_key: Optional[str],
+        input_key: Optional[str],
+        prediction_key: Optional[str],
+    ) -> RunEvaluator:
+        if isinstance(eval_config, EvaluatorType):
+            evaluator_ = load_evaluator(eval_config, llm=eval_llm)
+            eval_type_tag = eval_config.value
+        else:
+            evaluator_ = load_evaluator(
+                eval_config.evaluator_type, llm=eval_llm, **eval_config.get_kwargs()
+            )
+            eval_type_tag = eval_config.evaluator_type.value
+
+        if isinstance(evaluator_, StringEvaluator):
+            if evaluator_.requires_reference and reference_key is None:
+                raise ValueError(
+                    f"Must specify reference_key in RunEvalConfig to use"
+                    f" evaluator of type {eval_type_tag} with"
+                    f" dataset with multiple output keys: {example_outputs}."
+                )
+            run_evaluator = StringRunEvaluatorChain.from_string_evaluator(
+                evaluator_,
+                run_type,
+                data_type,
+                input_key=input_key,
+                prediction_key=prediction_key,
+                reference_key=reference_key,
+                tags=[eval_type_tag],
+            )
+        else:
+            raise NotImplementedError(
+                f"Run evaluator for {eval_type_tag} is not implemented"
+            )
+        return run_evaluator
