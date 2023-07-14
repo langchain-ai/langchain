@@ -204,7 +204,8 @@ def trace_as_chain_group(
         ...     # Use the callback manager for the chain group
         ...     llm.predict("Foo", callbacks=manager)
     """
-    cb = (
+    cb = cast(
+        Callbacks,
         [
             LangChainTracer(
                 project_name=project_name,
@@ -212,7 +213,7 @@ def trace_as_chain_group(
             )
         ]
         if callback_manager is None
-        else callback_manager
+        else callback_manager,
     )
     cm = CallbackManager.configure(
         inheritable_callbacks=cb,
@@ -253,7 +254,8 @@ async def atrace_as_chain_group(
         ...     # Use the async callback manager for the chain group
         ...     await llm.apredict("Foo", callbacks=manager)
     """
-    cb = (
+    cb = cast(
+        Callbacks,
         [
             LangChainTracer(
                 project_name=project_name,
@@ -261,7 +263,7 @@ async def atrace_as_chain_group(
             )
         ]
         if callback_manager is None
-        else callback_manager
+        else callback_manager,
     )
     cm = AsyncCallbackManager.configure(inheritable_callbacks=cb, inheritable_tags=tags)
 
