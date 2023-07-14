@@ -132,7 +132,7 @@ class PDFPlumberParser(BaseBlobParser):
 
             yield from [
                 Document(
-                    page_content=page.extract_text(**self.text_kwargs),
+                    page_content=page.dedupe_chars().extract_text(**self.text_kwargs),
                     metadata=dict(
                         {
                             "source": blob.source,
