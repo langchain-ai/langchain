@@ -125,7 +125,7 @@ class ElasticsearchDatabaseChain(Chain):
         _run_manager.on_text(input_text, verbose=self.verbose)
         indices = self._list_indices()
         indices_info = self._get_indices_infos(indices)
-        query_inputs = {
+        query_inputs: dict = {
             "input": input_text,
             "top_k": str(self.top_k),
             "indices_info": indices_info,
@@ -151,7 +151,7 @@ class ElasticsearchDatabaseChain(Chain):
             _run_manager.on_text(result, color="yellow", verbose=self.verbose)
 
             _run_manager.on_text("\nAnswer:", verbose=self.verbose)
-            answer_inputs = {"data": result, "input": input_text}
+            answer_inputs: dict = {"data": result, "input": input_text}
             intermediate_steps.append(answer_inputs)  # input: final answer
             final_result = self.answer_chain.run(
                 callbacks=_run_manager.get_child(),
