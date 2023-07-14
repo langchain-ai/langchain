@@ -19,14 +19,13 @@ def mock_web_base_loader_load(monkeypatch: MonkeyPatch) -> None:
     """Mock requests.get"""
 
     # Mock Document object for relative URL
-    mock_doc_relative = Document()
-    mock_doc_relative.page_content = "Relative page"
-    mock_doc_relative.metadata = {"url": "http://test.com/relative"}
-
+    mock_doc_relative = Document(
+        page_content="Relative page", metadata={"url": "http://test.com/relative"}
+    )
     # Mock Document object for absolute URL
-    mock_doc_absolute = Document()
-    mock_doc_absolute.page_content = "Absolute page"
-    mock_doc_absolute.metadata = {"url": "http://test.com/absolute"}
+    mock_doc_absolute = Document(
+        page_content="Absolute page", metadata={"url": "http://test.com/absolute"}
+    )
 
     def mock_get(url: str, *args: Any, **kwargs: Any) -> Document:
         if url.startswith("http://test.com"):
@@ -34,16 +33,16 @@ def mock_web_base_loader_load(monkeypatch: MonkeyPatch) -> None:
                 return mock_doc_absolute
             elif "/relative" in url:
                 return mock_doc_relative
-        default_doc = Document()
-        default_doc.page_content = "Default page"
-        default_doc.metadata = {"url": "http://test.com/default"}
+        default_doc = Document(
+            page_content="Default page", metadata={"url": "http://test.com/default"}
+        )
         return default_doc
 
     monkeypatch.setattr("langchain.document_loaders.WebBaseLoader.load", mock_get)
 
 
 def test_get_child_links_recursive(
-    url_loader: RecursiveUrlLoader, mock_requests_get: Callable[[], None]
+    url_loader: RecursiveUrlLoader, mock_web_base_loader_load: Callable[[], None]
 ) -> None:
     # Testing for both relative and absolute URL
     child_docs = list(url_loader.get_child_links_recursive("http://test.com"))
