@@ -44,7 +44,12 @@ class EvalConfig(BaseModel):
             The keyword arguments for the load_evaluator call.
 
         """
-        return self.dict(exclude={"evaluator_type"}, exclude_none=True)
+        kwargs = {}
+        for field, val in self:
+            if field == "evaluator_type":
+                continue
+            kwargs[field] = val
+        return kwargs
 
 
 class RunEvalConfig(BaseModel):
