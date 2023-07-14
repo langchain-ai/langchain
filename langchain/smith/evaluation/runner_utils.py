@@ -425,9 +425,8 @@ def _construct_run_evaluator(
         evaluator_ = load_evaluator(eval_config, llm=eval_llm)
         eval_type_tag = eval_config.value
     else:
-        evaluator_ = load_evaluator(
-            eval_config.evaluator_type, llm=eval_llm, **eval_config.get_kwargs()
-        )
+        kwargs = {"llm": eval_llm, **eval_config.get_kwargs()}
+        evaluator_ = load_evaluator(eval_config.evaluator_type, **kwargs)
         eval_type_tag = eval_config.evaluator_type.value
 
     if isinstance(evaluator_, StringEvaluator):
