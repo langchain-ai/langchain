@@ -29,7 +29,9 @@ class AsyncRecursiveUrlLoader(BaseLoader):
         url: str,
         exclude_dirs: Optional[str] = None,
         raw_webpage_to_text_converter: Callable[[str], str] = lambda raw: raw,
-        max_depth: int = 2
+        max_depth: int = 2,
+        prevent_outside: bool = False,
+        timeout: aiohttp.ClientTimeout = aiohttp.ClientTimeout(100),
     ) -> None:
         """Initialize with URL to crawl and any subdirectories to exclude.
 
@@ -38,12 +40,16 @@ class AsyncRecursiveUrlLoader(BaseLoader):
             exclude_dirs: A list of subdirectories to exclude.
             raw_webpage_to_text_converter: A function that converts raw webpages to the text of the generated document. It is recommended to use other tools to extract important infos.
             max_depth: If to reach the page would need to go through more pages than max_depth, then stop.
+            prevent_outside: If the parameter is true, websites out of the url won't be crawled.
+            timeout: timeout for the aiohttp session, use aiohttp.ClientTimeout.
         """
 
         self.url = url
         self.exclude_dirs = exclude_dirs
         self.raw_webpage_to_text_converter = raw_webpage_to_text_converter
         self.max_depth = max_depth
+        self.prevent_outside = prevent_outside
+        self.timeout = timeout
 
     async def get_child_links_recursive(
         self, url: str, visited: Optional[Set[str]] = None, depth: int = 0
@@ -80,7 +86,7 @@ class AsyncRecursiveUrlLoader(BaseLoader):
         ):
             return
         # Disable SSL verification because some websites may have invalid SSL certificates, but won't cause any security issues for us.
-        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
+        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False), timeout=self.timeout) as session:
             # Some url may be invalid, so catch the exception
             response: aiohttp.ClientResponse
             try:
@@ -103,6 +109,7 @@ class AsyncRecursiveUrlLoader(BaseLoader):
                 if link.startswith("javascript:") or link.startswith("mailto:"):
                     continue
                 
+                # Blacklist patterns end.
                 
                 # Here are whitelist patterns
                 
@@ -116,6 +123,13 @@ class AsyncRecursiveUrlLoader(BaseLoader):
                 # Only the links without the previous two patterns are possible links to outside.
                 elif link.startswith(current_path) and link != current_path:
                     absolute_paths.append(link)
+                    
+                # Whitelist patterns end.
+                
+                # Despite prevent outside should be blacklist rule, it must be done here or it could filter valid ones.
+                elif (not self.prevent_outside) or link.startswith(current_path):
+                    pass
+                
                 # Some links may be in form of path/to/link, so add the parent URL
                 else:
                     absolute_paths.append(parent_url + link)
@@ -126,7 +140,7 @@ class AsyncRecursiveUrlLoader(BaseLoader):
                 link: str
             ) -> Union[Document, None]:
                 try:
-                    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
+                    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False), timeout=self.timeout) as session:
                         response = await session.get(link)
                         text = await response.text()
                         extracted = self.raw_webpage_to_text_converter(text)
@@ -173,6 +187,8 @@ class AsyncRecursiveUrlLoader(BaseLoader):
         """Actually, because the crawler is async, it is not lazy."""
         results = asyncio.run(self.get_child_links_recursive(self.url))
         # Yield the results
+        if results is None:
+            results = []
         for result in results:
             yield result
 
