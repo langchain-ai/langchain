@@ -9158,14 +9158,14 @@ cffi = {version = "*", markers = "implementation_name == \"pypy\""}
 
 [[package]]
 name = "qdrant-client"
-version = "1.1.7"
+version = "1.3.1"
 description = "Client library for the Qdrant vector search engine"
 category = "main"
 optional = true
 python-versions = ">=3.7,<3.12"
 files = [
-    {file = "qdrant_client-1.1.7-py3-none-any.whl", hash = "sha256:4f5d883660b8193840d8982919ab813a0470ace9a7ff46ee730f909841be5319"},
-    {file = "qdrant_client-1.1.7.tar.gz", hash = "sha256:686d86934bec2ebb70676fc0650c9a44a9e552e0149124ca5a22ee8533879deb"},
+    {file = "qdrant_client-1.3.1-py3-none-any.whl", hash = "sha256:9640855585d1f532094e342f07e0f2ef00652a60fc5d903c92ca3989a1e86318"},
+    {file = "qdrant_client-1.3.1.tar.gz", hash = "sha256:a999358b10e611d71b4b04c6ded36a6cfc963e56b4c3f99d9c1a603ca524a82e"},
 ]
 
 [package.dependencies]
@@ -9175,7 +9175,7 @@ httpx = {version = ">=0.14.0", extras = ["http2"]}
 numpy = {version = ">=1.21", markers = "python_version >= \"3.8\""}
 portalocker = ">=2.7.0,<3.0.0"
 pydantic = ">=1.8,<2.0"
-typing-extensions = ">=4.0.0,<5.0.0"
+typing-extensions = ">=4.0.0,<4.6.0"
 urllib3 = ">=1.26.14,<2.0.0"
 
 [[package]]
@@ -11769,14 +11769,14 @@ files = [
 
 [[package]]
 name = "typing-extensions"
-version = "4.6.3"
+version = "4.5.0"
 description = "Backported and Experimental Type Hints for Python 3.7+"
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "typing_extensions-4.6.3-py3-none-any.whl", hash = "sha256:88a4153d8505aabbb4e13aacb7c486c2b4a33ca3b3f807914a9b4c844c471c26"},
-    {file = "typing_extensions-4.6.3.tar.gz", hash = "sha256:d91d5919357fe7f681a9f2b5b4cb2a5f1ef0a1e9f59c4d8ff0d3491e05c0ffd5"},
+    {file = "typing_extensions-4.5.0-py3-none-any.whl", hash = "sha256:fb33085c39dd998ac16d1431ebc293a8b3eedd00fd4a32de0ff79002c19511b4"},
+    {file = "typing_extensions-4.5.0.tar.gz", hash = "sha256:5cb5f4a79139d699607b3ef622a1dedafa84e115ab0024e0d9c044a9479ca7cb"},
 ]
 
 [[package]]
@@ -12840,4 +12840,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "674e1e3e8f1c04354c9072ec0129e63e6194639ec3a56351467fc81bcca77f08"
+content-hash = "14b61a9483499285cf02b991eb176a540d76704c6859c525827e8e271e106c4a"
