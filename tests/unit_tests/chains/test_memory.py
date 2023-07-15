@@ -24,9 +24,9 @@ def test_chain_with_memory_and_multiple_prompt_params() -> None:
     prompt = PromptTemplate(input_variables=["resource", "history", "human_input"], template=template)
     memory = ConversationBufferMemory(memory_key="history")
     llm_chain = LLMChain(llm=FakeLLM(), prompt=prompt, verbose=True, memory=memory)
-    resource="lorem ipsum"
-    print(llm_chain.predict(human_input="Bar?", resource=resource) + "\n")
-    print(llm_chain.predict(human_input="Bazz?", resource=resource) + "\n")
+    with pytest.raises(ValueError):
+        llm_chain.predict(human_input="Bar?", resource="lorem ipsum")
+
 
 def test_chain_with_memory_and_multiple_prompt_params_and_input_key() -> None:
     template = """
@@ -40,9 +40,8 @@ def test_chain_with_memory_and_multiple_prompt_params_and_input_key() -> None:
     prompt = PromptTemplate(input_variables=["resource", "history", "human_input"], template=template)
     memory = ConversationBufferMemory(memory_key="history", input_key="human_input")
     llm_chain = LLMChain(llm=FakeLLM(), prompt=prompt, verbose=True, memory=memory)
-    resource="lorem ipsum"
-    print(llm_chain.predict(human_input="Bar?", resource=resource) + "\n")
-    print(llm_chain.predict(human_input="Bazz?", resource=resource) + "\n")
+    output = llm_chain.predict(human_input="Bar?", resource="lorem ipsum")
+    assert output == "foo"
 
 
 def test_chain_with_multiple_prompt_params() -> None:
@@ -55,9 +54,9 @@ def test_chain_with_multiple_prompt_params() -> None:
 
     prompt = PromptTemplate(input_variables=["resource", "human_input"], template=template)
     llm_chain = LLMChain(llm=FakeLLM(), prompt=prompt, verbose=True)
-    resource="lorem ipsum"
-    print(llm_chain.predict(human_input="Bar?", resource=resource) + "\n")
-    print(llm_chain.predict(human_input="Bazz?", resource=resource) + "\n")
+    output = llm_chain.predict(human_input="Bar?", resource="lorem ipsum")
+    assert output == "foo"
+
 
 def test_simple_memory() -> None:
     """Test SimpleMemory."""
