@@ -15,6 +15,7 @@ from langchain.embeddings.elasticsearch import ElasticsearchEmbeddings
 from langchain.embeddings.embaas import EmbaasEmbeddings
 from langchain.embeddings.fake import FakeEmbeddings
 from langchain.embeddings.google_palm import GooglePalmEmbeddings
+from langchain.embeddings.gpt4all import GPT4AllEmbeddings
 from langchain.embeddings.huggingface import (
     HuggingFaceEmbeddings,
     HuggingFaceInstructEmbeddings,
@@ -70,6 +71,7 @@ __all__ = [
     "EmbaasEmbeddings",
     "OctoAIEmbeddings",
     "SpacyEmbeddings",
+    "GPT4AllEmbeddings",
 ]
 
 
