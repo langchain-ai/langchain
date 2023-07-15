@@ -127,9 +127,15 @@ class SupabaseVectorStore(VectorStore):
         return self.similarity_search_by_vector(vectors[0], k, filter)
 
     def similarity_search_by_vector(
-        self, embedding: List[float], k: int = 4, filter: dict[str, Any] = {}, **kwargs: Any
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: dict[str, Any] = {},
+        **kwargs: Any,
     ) -> List[Document]:
-        result = self.similarity_search_by_vector_with_relevance_scores(embedding, k, filter)
+        result = self.similarity_search_by_vector_with_relevance_scores(
+            embedding, k, filter
+        )
 
         documents = [doc for doc, _ in result]
 
@@ -139,14 +145,18 @@ class SupabaseVectorStore(VectorStore):
         self, query: str, k: int = 4, filter: dict[str, Any] = {}, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         vectors = self._embedding.embed_documents([query])
-        return self.similarity_search_by_vector_with_relevance_scores(vectors[0], k, filter)
+        return self.similarity_search_by_vector_with_relevance_scores(
+            vectors[0], k, filter
+        )
 
-    def match_args(self, query: List[float], k: int, filter: dict[str, Any]) -> dict[str, Union[List[float], int]]:
+    def match_args(
+        self, query: List[float], k: int, filter: dict[str, Any]
+    ) -> dict[str, Any]:
         ret = dict(query_embedding=query, match_count=k)
         if filter:
             ret["filter"] = filter
         return ret
-        
+
     def similarity_search_by_vector_with_relevance_scores(
         self, query: List[float], k: int, filter: dict[str, Any] = {}
     ) -> List[Tuple[Document, float]]:
