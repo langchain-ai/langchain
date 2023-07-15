@@ -95,7 +95,7 @@ class Chroma(VectorStore):
                 _client_settings = client_settings
             elif persist_directory:
                 _client_settings = chromadb.config.Settings(
-                    chroma_db_impl="duckdb+parquet",
+                    is_persistent=True,
                     persist_directory=persist_directory,
                 )
             else:
