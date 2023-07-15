@@ -4,7 +4,6 @@ import asyncio
 import functools
 import logging
 import os
-import warnings
 from contextlib import asynccontextmanager, contextmanager
 from contextvars import ContextVar
 from typing import (
@@ -163,11 +162,6 @@ def tracing_v2_enabled(
         >>> with tracing_v2_enabled():
         ...     # LangChain code will automatically be traced
     """
-    # Issue a warning that this is experimental
-    warnings.warn(
-        "The tracing v2 API is in development. "
-        "This is not yet stable and may change in the future."
-    )
     if isinstance(example_id, str):
         example_id = UUID(example_id)
     cb = LangChainTracer(
@@ -183,6 +177,7 @@ def tracing_v2_enabled(
 @contextmanager
 def trace_as_chain_group(
     group_name: str,
+    callback_manager: Optional[CallbackManager] = None,
     *,
     project_name: Optional[str] = None,
     example_id: Optional[Union[str, UUID]] = None,
@@ -209,12 +204,19 @@ def trace_as_chain_group(
         ...     # Use the callback manager for the chain group
         ...     llm.predict("Foo", callbacks=manager)
     """
-    cb = LangChainTracer(
-        project_name=project_name,
-        example_id=example_id,
+    cb = cast(
+        Callbacks,
+        [
+            LangChainTracer(
+                project_name=project_name,
+                example_id=example_id,
+            )
+        ]
+        if callback_manager is None
+        else callback_manager,
     )
     cm = CallbackManager.configure(
-        inheritable_callbacks=[cb],
+        inheritable_callbacks=cb,
         inheritable_tags=tags,
     )
 
@@ -226,6 +228,7 @@ def trace_as_chain_group(
 @asynccontextmanager
 async def atrace_as_chain_group(
     group_name: str,
+    callback_manager: Optional[AsyncCallbackManager] = None,
     *,
     project_name: Optional[str] = None,
     example_id: Optional[Union[str, UUID]] = None,
@@ -251,13 +254,18 @@ async def atrace_as_chain_group(
         ...     # Use the async callback manager for the chain group
         ...     await llm.apredict("Foo", callbacks=manager)
     """
-    cb = LangChainTracer(
-        project_name=project_name,
-        example_id=example_id,
+    cb = cast(
+        Callbacks,
+        [
+            LangChainTracer(
+                project_name=project_name,
+                example_id=example_id,
+            )
+        ]
+        if callback_manager is None
+        else callback_manager,
     )
-    cm = AsyncCallbackManager.configure(
-        inheritable_callbacks=[cb], inheritable_tags=tags
-    )
+    cm = AsyncCallbackManager.configure(inheritable_callbacks=cb, inheritable_tags=tags)
 
     run_manager = await cm.on_chain_start({"name": group_name}, {})
     try:
