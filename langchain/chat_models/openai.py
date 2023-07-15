@@ -15,7 +15,7 @@ from typing import (
     Union,
 )
 
-from pydantic import Field, root_validator
+from pydantic import Field, PrivateAttr, root_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -162,7 +162,8 @@ class ChatOpenAI(BaseChatModel):
     def lc_serializable(self) -> bool:
         return True
 
-    client: Any  #: :meta private:
+    _client: Any = PrivateAttr() #: :meta private:
+    
     model_name: str = Field(default="gpt-3.5-turbo", alias="model")
     """Model name to use."""
     temperature: float = 0.7
@@ -261,7 +262,7 @@ class ChatOpenAI(BaseChatModel):
                 "Please install it with `pip install openai`."
             )
         try:
-            values["client"] = openai.ChatCompletion
+            values["_client"] = openai.ChatCompletion
         except AttributeError:
             raise ValueError(
                 "`openai` has no `ChatCompletion` attribute, this is likely "
@@ -314,7 +315,7 @@ class ChatOpenAI(BaseChatModel):
 
         @retry_decorator
         def _completion_with_retry(**kwargs: Any) -> Any:
-            return self.client.create(**kwargs)
+            return self._client.create(**kwargs)
 
         return _completion_with_retry(**kwargs)
 
