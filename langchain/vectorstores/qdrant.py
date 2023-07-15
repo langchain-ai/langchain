@@ -476,6 +476,10 @@ class Qdrant(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
+        filter: Optional[MetadataFilter] = None,
+        search_params: Optional[common_types.SearchParams] = None,
+        score_threshold: Optional[float] = None,
+        consistency: Optional[common_types.ReadConsistency] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -492,6 +496,25 @@ class Qdrant(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
+            filter: Filter by metadata. Defaults to None.
+            search_params: Additional search params
+            score_threshold:
+                Define a minimal score threshold for the result.
+                If defined, less similar results will not be returned.
+                Score of the returned result might be higher or smaller than the
+                threshold depending on the Distance function used.
+                E.g. for cosine similarity only higher scores will be returned.
+            consistency:
+                Read consistency of the search. Defines how many replicas should be
+                queried before returning the result.
+                Values:
+                - int - number of replicas to query, values should present in all
+                        queried replicas
+                - 'majority' - query all replicas, but return values present in the
+                               majority of replicas
+                - 'quorum' - query the majority of replicas, return values present in
+                             all of them
+                - 'all' - query all replicas, and return values present in all replicas
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -503,9 +526,14 @@ class Qdrant(VectorStore):
         results = self.client.search(
             collection_name=self.collection_name,
             query_vector=query_vector,
+            query_filter=filter,
+            search_params=search_params,
+            limit=fetch_k,
             with_payload=True,
             with_vectors=True,
-            limit=fetch_k,
+            score_threshold=score_threshold,
+            consistency=consistency,
+            **kwargs,
         )
         embeddings = [
             result.vector.get(self.vector_name)  # type: ignore[index, union-attr]
