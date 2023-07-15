@@ -18,5 +18,5 @@ def get_prompt_input_key(inputs: Dict[str, Any], memory_variables: List[str]) ->
     # format the prompt.
     prompt_input_keys = list(set(inputs).difference(memory_variables + ["stop"]))
     if len(prompt_input_keys) != 1:
-        raise ValueError(f"One input key expected got {prompt_input_keys}")
+        raise ValueError(f"Missing input_key with multiple prompt input variables: {prompt_input_keys}")
     return prompt_input_keys[0]

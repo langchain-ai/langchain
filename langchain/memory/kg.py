@@ -10,7 +10,6 @@ from langchain.memory.prompt import (
     ENTITY_EXTRACTION_PROMPT,
     KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT,
 )
-from langchain.memory.utils import get_prompt_input_key
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage, SystemMessage, get_buffer_string
@@ -64,20 +63,6 @@ class ConversationKGMemory(BaseChatMemory):
         """
         return [self.memory_key]
 
-    def _get_prompt_input_key(self, inputs: Dict[str, Any]) -> str:
-        """Get the input key for the prompt."""
-        if self.input_key is None:
-            return get_prompt_input_key(inputs, self.memory_variables)
-        return self.input_key
-
-    def _get_prompt_output_key(self, outputs: Dict[str, Any]) -> str:
-        """Get the output key for the prompt."""
-        if self.output_key is None:
-            if len(outputs) != 1:
-                raise ValueError(f"One output key expected, got {outputs.keys()}")
-            return list(outputs.keys())[0]
-        return self.output_key
-
     def get_current_entities(self, input_string: str) -> List[str]:
         chain = LLMChain(llm=self.llm, prompt=self.entity_extraction_prompt)
         buffer_string = get_buffer_string(
@@ -93,7 +78,7 @@ class ConversationKGMemory(BaseChatMemory):
 
     def _get_current_entities(self, inputs: Dict[str, Any]) -> List[str]:
         """Get the current entities in the conversation."""
-        prompt_input_key = self._get_prompt_input_key(inputs)
+        prompt_input_key = self.get_prompt_input_key(inputs)
         return self.get_current_entities(inputs[prompt_input_key])
 
     def get_knowledge_triplets(self, input_string: str) -> List[KnowledgeTriple]:
@@ -113,7 +98,7 @@ class ConversationKGMemory(BaseChatMemory):
 
     def _get_and_update_kg(self, inputs: Dict[str, Any]) -> None:
         """Get and update knowledge graph from the conversation history."""
-        prompt_input_key = self._get_prompt_input_key(inputs)
+        prompt_input_key = self.get_prompt_input_key(inputs)
         knowledge = self.get_knowledge_triplets(inputs[prompt_input_key])
         for triple in knowledge:
             self.kg.add_triple(triple)

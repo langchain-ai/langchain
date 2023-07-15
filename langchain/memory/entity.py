@@ -11,7 +11,6 @@ from langchain.memory.prompt import (
     ENTITY_EXTRACTION_PROMPT,
     ENTITY_SUMMARIZATION_PROMPT,
 )
-from langchain.memory.utils import get_prompt_input_key
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage, get_buffer_string
@@ -292,11 +291,7 @@ class ConversationEntityMemory(BaseChatMemory):
 
         # Create an LLMChain for predicting entity names from the recent chat history:
         chain = LLMChain(llm=self.llm, prompt=self.entity_extraction_prompt)
-
-        if self.input_key is None:
-            prompt_input_key = get_prompt_input_key(inputs, self.memory_variables)
-        else:
-            prompt_input_key = self.input_key
+        prompt_input_key = self.get_prompt_input_key(inputs)
 
         # Extract an arbitrary window of the last message pairs from
         # the chat history, where the hyperparameter k is the
@@ -354,11 +349,7 @@ class ConversationEntityMemory(BaseChatMemory):
         """
 
         super().save_context(inputs, outputs)
-
-        if self.input_key is None:
-            prompt_input_key = get_prompt_input_key(inputs, self.memory_variables)
-        else:
-            prompt_input_key = self.input_key
+        prompt_input_key = self.get_prompt_input_key(inputs)
 
         # Extract an arbitrary window of the last message pairs from
         # the chat history, where the hyperparameter k is the

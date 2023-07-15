@@ -78,7 +78,7 @@ class ConversationStringBufferMemory(BaseMemory):
             prompt_input_key = self.input_key
         if self.output_key is None:
             if len(outputs) != 1:
-                raise ValueError(f"One output key expected, got {outputs.keys()}")
+                raise ValueError(f"Missing output_key arg with multiple prompt output variables: {outputs.keys()}")
             output_key = list(outputs.keys())[0]
         else:
             output_key = self.output_key
