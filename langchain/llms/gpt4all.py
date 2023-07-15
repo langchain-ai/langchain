@@ -1,7 +1,9 @@
 """Wrapper for the GPT4All model."""
+import io
 from functools import partial
 from typing import Any, Dict, List, Mapping, Optional, Set
 
+import pkg_resources
 from pydantic import Extra, Field, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
@@ -121,6 +123,7 @@ class GPT4All(LLM):
             "n_batch": self.n_batch,
             "repeat_penalty": self.repeat_penalty,
             "repeat_last_n": self.repeat_last_n,
+            "streaming": self.streaming,
         }
 
     @root_validator()
@@ -179,7 +182,9 @@ class GPT4All(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        r"""Call out to GPT4All's generate method.
+        r"""Call out to GPT4All's generate method. If using latest version of gpt4all
+        (gpt4all version >= 1.0.3) and if `streaming` is set as True, then there
+        is no need of Streaming callbacks required.
 
         Args:
             prompt: The prompt to pass into the model.
@@ -194,15 +199,40 @@ class GPT4All(LLM):
                 prompt = "Once upon a time, "
                 response = model(prompt, n_predict=55)
         """
-        text_callback = None
-        if run_manager:
-            text_callback = partial(run_manager.on_llm_new_token, verbose=self.verbose)
-        text = ""
+        version = pkg_resources.Environment()["gpt4all"][0].version
+        major_version = int(version.split(".")[0])
+        patch_version = int(version.split(".")[2])
+
+        # get all the parameters
         params = {**self._default_params(), **kwargs}
-        for token in self.client.generate(prompt, **params):
-            if text_callback:
-                text_callback(token)
-            text += token
-        if stop is not None:
-            text = enforce_stop_tokens(text, stop)
-        return text
+
+        # this part of code can be removed when 1.0.1 gets deprecated
+        if not (major_version >= 1 and patch_version >= 3):
+            text_callback = None
+            if run_manager:
+                text_callback = partial(
+                    run_manager.on_llm_new_token, verbose=self.verbose
+                )
+            text = ""
+            for token in self.client.generate(prompt, **params):
+                if text_callback:
+                    text_callback(token)
+                text += token
+            if stop is not None:
+                text = enforce_stop_tokens(text, stop)
+            return text
+
+        with self.client.chat_session():
+            response_generator = self.client.generate(prompt, **params)
+
+            if params["streaming"]:
+                response = io.StringIO()
+                for token in response_generator:
+                    print(token, end="", flush=True)
+                    response.write(token)
+                print()
+                response_message = response.getvalue()
+                response.close()
+                return response_message
+
+        return response_generator
