@@ -16,7 +16,7 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import BaseModel, Extra, Field, root_validator
 from tenacity import (
     AsyncRetrying,
     before_sleep_log,
@@ -193,6 +193,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     when tiktoken is called, you can specify a model name to use here."""
     show_progress_bar: bool = False
     """Whether to show a progress bar when embedding."""
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
     class Config:
         """Configuration for this pydantic object."""
@@ -261,6 +262,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             "api_base": self.openai_api_base,
             "api_type": self.openai_api_type,
             "api_version": self.openai_api_version,
+            **self.model_kwargs,
         }
         if self.openai_api_type in ("azure", "azure_ad", "azuread"):
             openai_args["engine"] = self.deployment
