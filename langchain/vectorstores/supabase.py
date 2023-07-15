@@ -121,13 +121,13 @@ class SupabaseVectorStore(VectorStore):
         return self._add_vectors(self._client, self.table_name, vectors, documents, ids)
 
     def similarity_search(
-        self, query: str, k: int = 4, filter={}, **kwargs: Any
+        self, query: str, k: int = 4, filter: dict[str, Any] = {}, **kwargs: Any
     ) -> List[Document]:
         vectors = self._embedding.embed_documents([query])
         return self.similarity_search_by_vector(vectors[0], k, filter)
 
     def similarity_search_by_vector(
-        self, embedding: List[float], k: int = 4, filter = {}, **kwargs: Any
+        self, embedding: List[float], k: int = 4, filter: dict[str, Any] = {}, **kwargs: Any
     ) -> List[Document]:
         result = self.similarity_search_by_vector_with_relevance_scores(embedding, k, filter)
 
@@ -136,19 +136,19 @@ class SupabaseVectorStore(VectorStore):
         return documents
 
     def similarity_search_with_relevance_scores(
-        self, query: str, k: int = 4, filter = {}, **kwargs: Any
+        self, query: str, k: int = 4, filter: dict[str, Any] = {}, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         vectors = self._embedding.embed_documents([query])
         return self.similarity_search_by_vector_with_relevance_scores(vectors[0], k, filter)
 
-    def match_args(self, query: List[float], k: int, filter: dict):
+    def match_args(self, query: List[float], k: int, filter: dict[str, Any]) -> dict[str, Union[List[float], int]]:
         ret = dict(query_embedding=query, match_count=k)
         if filter:
             ret["filter"] = filter
         return ret
         
     def similarity_search_by_vector_with_relevance_scores(
-        self, query: List[float], k: int, filter: dict = {}
+        self, query: List[float], k: int, filter: dict[str, Any] = {}
     ) -> List[Tuple[Document, float]]:
         match_documents_params = self.match_args(query, k, filter)
         res = self._client.rpc(self.query_name, match_documents_params).execute()
@@ -168,7 +168,7 @@ class SupabaseVectorStore(VectorStore):
         return match_result
 
     def similarity_search_by_vector_returning_embeddings(
-        self, query: List[float], k: int, filter = {}
+        self, query: List[float], k: int, filter: dict[str, Any] = {}
     ) -> List[Tuple[Document, float, np.ndarray[np.float32, Any]]]:
         match_documents_params = self.match_args(query, k, filter)
         res = self._client.rpc(self.query_name, match_documents_params).execute()
