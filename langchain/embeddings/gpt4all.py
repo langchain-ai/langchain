@@ -13,8 +13,10 @@ class GPT4AllEmbeddings(BaseModel, Embeddings):
 
     Example:
         .. code-block:: python
+
             from langchain.embeddings import GPT4AllEmbeddings
-            gpt4all_embd = GPT4AllEmbeddings()
+
+            embeddings = GPT4AllEmbeddings()
     """
 
     client: Any  #: :meta private:
@@ -57,5 +59,4 @@ class GPT4AllEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        embedding = self.client.embed(text)
-        return list(map(float, embedding))
+        return self.embed_documents([text])[0]
