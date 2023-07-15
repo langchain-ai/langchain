@@ -79,6 +79,7 @@ class DirectoryLoader(BaseLoader):
             path: Directory path.
             docs: List of documents to append to.
             pbar: Progress bar. Defaults to None.
+
         """
         if item.is_file():
             if _is_visible(item.relative_to(path)) or self.load_hidden:
@@ -135,6 +136,3 @@ class DirectoryLoader(BaseLoader):
             pbar.close()
 
         return docs
-
-
-#
