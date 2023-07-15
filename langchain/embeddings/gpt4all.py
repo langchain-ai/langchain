@@ -1,4 +1,4 @@
-"""Wrapper around Cohere embedding models."""
+"""Wrapper around GPT4All embedding models."""
 from typing import Any, Dict, List
 
 from pydantic import BaseModel, root_validator
@@ -9,7 +9,7 @@ from langchain.embeddings.base import Embeddings
 class GPT4AllEmbeddings(BaseModel, Embeddings):
     """Wrapper around GPT4All embedding models.
 
-    To use, you should have the ``gpt4all`` python package installed
+    To use, you should have the gpt4all python package installed
 
     Example:
         .. code-block:: python
