@@ -55,7 +55,7 @@ def _get_eval_project_url(api_url: str, project_id: str) -> str:
     """Get the project url from the api url."""
     parsed = urlparse(api_url)
     hostname = parsed.hostname or ""
-    if hostname.startswith("api."):
+    if "api." in hostname:
         hostname = hostname.replace("api.", "", 1)
     if "localhost" in hostname:
         # Remove the port
