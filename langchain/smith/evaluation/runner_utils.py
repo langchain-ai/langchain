@@ -1096,7 +1096,7 @@ def _prepare_eval_run(
             f"Project {project_name} already exists. Please use a different name."
         )
     project_url = _get_eval_project_url(client.api_url, project.id)
-    print(f"View the evalution results for project '{project_name}' at:\n{project_url}")
+    print(f"View the evaluation results for project '{project_name}' at:\n{project_url}")
     dataset = client.read_dataset(dataset_name=dataset_name)
     examples = client.list_examples(dataset_id=str(dataset.id))
     return llm_or_chain_factory, project_name, dataset, examples
