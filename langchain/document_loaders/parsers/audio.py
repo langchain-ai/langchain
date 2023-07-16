@@ -1,3 +1,4 @@
+import time
 from typing import Iterator, Optional
 
 from langchain.document_loaders.base import BaseBlobParser
@@ -55,7 +56,18 @@ class OpenAIWhisperParser(BaseBlobParser):
 
             # Transcribe
             print(f"Transcribing part {split_number+1}!")
-            transcript = openai.Audio.transcribe("whisper-1", file_obj)
+            attempts = 0
+            while attempts < 3:
+                try:
+                    transcript = openai.Audio.transcribe("whisper-1", file_obj)
+                    break
+                except Exception as e:
+                    attempts += 1
+                    print(f"Attempt {attempts} failed. Exception: {str(e)}")
+                    time.sleep(5)
+            else:
+                print("Failed to transcribe after 3 attempts.")
+                continue
 
             yield Document(
                 page_content=transcript.text,
