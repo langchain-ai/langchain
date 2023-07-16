@@ -63,7 +63,7 @@ class AsyncRecursiveUrlLoader(BaseLoader):
         """
         
         if depth > self.max_depth:
-            return
+            return []
 
         # Construct the base and parent URLs
         parsed_url = urlparse(url)
@@ -84,7 +84,7 @@ class AsyncRecursiveUrlLoader(BaseLoader):
         if self.exclude_dirs and any(
             url.startswith(exclude_dir) for exclude_dir in self.exclude_dirs
         ):
-            return
+            return []
         # Disable SSL verification because some websites may have invalid SSL certificates, but won't cause any security issues for us.
         async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False), timeout=self.timeout) as session:
             # Some url may be invalid, so catch the exception
@@ -93,10 +93,10 @@ class AsyncRecursiveUrlLoader(BaseLoader):
                 response = await session.get(url)
                 text = await response.text()
             except aiohttp.client_exceptions.InvalidURL:
-                return
+                return []
             # There may be some other exceptions, so catch them, we don't want to stop the whole process
             except Exception as e:
-                return
+                return []
             
             # Get all links that are relative to the root of the website
             all_links = re.findall(r"href=[\"\'](.*?)[\"\']", text)
