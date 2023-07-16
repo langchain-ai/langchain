@@ -38,9 +38,9 @@ class BaseMessagePromptTemplate(Serializable, ABC):
     def input_variables(self) -> List[str]:
         """Input variables for this prompt template."""
 
-    def __or__(self, other: Any) -> ChatPromptTemplate:
+    def __add__(self, other: Any) -> ChatPromptTemplate:
         prompt = ChatPromptTemplate(messages=[self])
-        return prompt | other
+        return prompt + other
 
 
 class MessagesPlaceholder(BaseMessagePromptTemplate):
@@ -168,7 +168,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
     input_variables: List[str]
     messages: List[Union[BaseMessagePromptTemplate, BaseMessage]]
 
-    def __or__(self, other: Any) -> ChatPromptTemplate:
+    def __add__(self, other: Any) -> ChatPromptTemplate:
         # Allow for easy combining
         if isinstance(other, ChatPromptTemplate):
             return ChatPromptTemplate(messages=self.messages + other.messages)
@@ -178,7 +178,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
             prompt = HumanMessagePromptTemplate.from_template(other)
             return ChatPromptTemplate(messages=self.messages + [prompt])
         else:
-            raise NotImplementedError(f"Unsupported operand type for |: {type(other)}")
+            raise NotImplementedError(f"Unsupported operand type for +: {type(other)}")
 
     @root_validator(pre=True)
     def validate_input_variables(cls, values: dict) -> dict:
