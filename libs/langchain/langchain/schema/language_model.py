@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+import asyncio
 from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Set
+from typing_extensions import Unpack
 
+from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
 from langchain.load.serializable import Serializable
 from langchain.schema.messages import BaseMessage, get_buffer_string
 from langchain.schema.output import LLMResult
 from langchain.schema.prompt import PromptValue
 from langchain.utils import get_pydantic_field_names
+from langchain.schema.runnable import Runnable, RunnableConfig
 
 if TYPE_CHECKING:
     from langchain.callbacks.manager import Callbacks
@@ -32,7 +36,7 @@ def _get_token_ids_default_method(text: str) -> List[int]:
     return tokenizer.encode(text)
 
 
-class BaseLanguageModel(Serializable, ABC):
+class BaseLanguageModel(Serializable, Runnable[PromptValue, str], ABC):
     """Abstract base class for interfacing with language models.
 
     All language model wrappers inherit from BaseLanguageModel.
@@ -48,6 +52,75 @@ class BaseLanguageModel(Serializable, ABC):
 
     Each of these has an equivalent asynchronous method.
     """
+
+    def invoke(
+        self,
+        input: PromptValue,
+        stop: Optional[Sequence[str]] = None,
+        **kwargs: Unpack[RunnableConfig],
+    ) -> str:
+        return self.generate_prompt([input], stop=stop, **kwargs).generations[0][0].text
+
+    async def ainvoke(
+        self,
+        input: PromptValue,
+        stop: Optional[Sequence[str]] = None,
+        **kwargs: Unpack[RunnableConfig],
+    ) -> str:
+        llm_result = await self.agenerate_prompt([input], stop=stop, **kwargs)
+        return llm_result.generations[0][0].text
+
+    def batch(
+        self,
+        inputs: List[PromptValue],
+        config: Optional[RunnableConfig | List[RunnableConfig]] = None,
+    ) -> List[str]:
+        if isinstance(config, list):
+            config = config[0]
+        if config is None:
+            config = {}
+
+        llm_result = self.generate_prompt(inputs, **config)
+        return [g[0].text for g in llm_result.generations]
+
+    async def abatch(
+        self,
+        inputs: List[PromptValue],
+        config: Optional[RunnableConfig | List[RunnableConfig]] = None,
+    ) -> List[str]:
+        if isinstance(config, list):
+            config = config[0]
+        if config is None:
+            config = {}
+
+        llm_result = await self.agenerate_prompt(inputs, **config)
+        return [g[0].text for g in llm_result.generations]
+
+    # TODO implement stream() similar to below
+
+    async def astream(
+        self,
+        input: PromptValue,
+        stop: Optional[Sequence[str]] = None,
+        **kwargs: Unpack[RunnableConfig],
+    ) -> Sequence[str]:
+        callbacks: Optional[Callbacks] = kwargs.pop("callbacks", None)
+        callback_handler = AsyncIteratorCallbackHandler()
+        if callbacks is None:
+            callbacks = [callback_handler]
+        elif isinstance(callbacks, list):
+            callbacks.append(callback_handler)
+        else:
+            callbacks.add_handler(callback_handler)
+
+        task = asyncio.create_task(
+            self.ainvoke(input, stop=stop, callbacks=callbacks, **kwargs)
+        )
+
+        async for token in callback_handler.aiter():
+            yield token
+
+        await task
 
     @abstractmethod
     def generate_prompt(

@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import yaml
 from pydantic import Field, root_validator, validator
+from typing_extensions import Unpack
 
 import langchain
 from langchain.callbacks.base import BaseCallbackManager
@@ -22,6 +23,7 @@ from langchain.callbacks.manager import (
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
 from langchain.schema import RUN_KEY, BaseMemory, RunInfo
+from langchain.schema.runnable import Runnable, RunnableConfig
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +32,7 @@ def _get_verbosity() -> bool:
     return langchain.verbose
 
 
-class Chain(Serializable, ABC):
+class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
     """Abstract base class for creating structured sequences of calls to components.
 
     Chains should be used to encode a sequence of calls to components like
@@ -52,6 +54,16 @@ class Chain(Serializable, ABC):
             output as a string or object. This method can only be used for a subset of
             chains and cannot return as rich of an output as `__call__`.
     """
+
+    def invoke(
+        self, input: Dict[str, Any], **kwargs: Unpack[RunnableConfig]
+    ) -> Dict[str, Any]:
+        return self(input, **kwargs)
+
+    async def ainvoke(
+        self, input: Dict[str, Any], **kwargs: Unpack[RunnableConfig]
+    ) -> Dict[str, Any]:
+        return await self.acall(input, **kwargs)
 
     memory: Optional[BaseMemory] = None
     """Optional memory object. Defaults to None.
