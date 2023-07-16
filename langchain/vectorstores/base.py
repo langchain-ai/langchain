@@ -234,7 +234,7 @@ class VectorStore(ABC):
         Returns:
             List of Tuples of (doc, similarity_score)
         """
-        score_threshold = kwargs.pop("score_threshold")
+        score_threshold = kwargs.pop("score_threshold", None)
 
         docs_and_similarities = self._similarity_search_with_relevance_scores(
             query, k=k, **kwargs
