@@ -21,7 +21,7 @@ from typing import (
 
 import numpy as np
 from pydantic import root_validator
-from redis.commands.search.document import Document as D
+
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -309,8 +309,8 @@ class Redis(VectorStore):
         )
 
     @staticmethod
-    def _add_id(result: D, id: str)->str:
-        meta  = json.loads(result.metadata)
+    def _add_id(result, id: str)->str:
+        meta  = json.loads(result)
         meta["id"] = id
         return json.dumps(meta)
 
@@ -345,7 +345,7 @@ class Redis(VectorStore):
         docs = [
             (
                 Document(
-                    page_content=result.content, metadata=json.loads(self._add_id(result, result.id))
+                    page_content=result.content, metadata=json.loads(self._add_id(result.metadata, result.id))
                 ),
                 float(result.vector_score),
             )
