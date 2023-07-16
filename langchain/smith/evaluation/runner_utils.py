@@ -21,7 +21,7 @@ from typing import (
 )
 
 from langsmith import Client, RunEvaluator
-from langsmith.schemas import DataType, Example, RunTypeEnum
+from langsmith.schemas import Dataset, DataType, Example, RunTypeEnum
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.manager import Callbacks
@@ -48,6 +48,12 @@ class InputFormatError(Exception):
 
 
 ## Shared Utilities
+
+
+def _get_eval_project_url(api_url: str, project_id: str) -> str:
+    """Get the project url from the api url."""
+    url = api_url.replace("api.", "")
+    return f"{url}/projects/p/{project_id}?eval=true"
 
 
 def _wrap_in_chain_factory(
@@ -1061,6 +1067,29 @@ def _run_on_examples(
 ## Public API
 
 
+def _prepare_eval_run(
+    client: Client,
+    dataset_name: str,
+    llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
+    project_name: Optional[str],
+) -> Tuple[MODEL_OR_CHAIN_FACTORY, str, Dataset, List[Example]]:
+    llm_or_chain_factory = _wrap_in_chain_factory(llm_or_chain_factory, dataset_name)
+    project_name = _get_project_name(project_name, llm_or_chain_factory, dataset_name)
+    try:
+        project = client.create_project(project_name)
+    except ValueError as e:
+        if "already exists " not in str(e):
+            raise e
+        raise ValueError(
+            f"Project {project_name} already exists. Please use a different name."
+        )
+    project_url = _get_eval_project_url(client.api_url, project.id)
+    print(f"View the evalution results for project {project_name} at:\n{project_url}")
+    dataset = client.read_dataset(dataset_name=dataset_name)
+    examples = client.list_examples(dataset_id=str(dataset.id))
+    return llm_or_chain_factory, project_name, dataset, examples
+
+
 async def arun_on_dataset(
     client: Client,
     dataset_name: str,
@@ -1183,11 +1212,10 @@ async def arun_on_dataset(
             construct_chain,
             evaluation=evaluation_config,
         )
-    """
-    llm_or_chain_factory = _wrap_in_chain_factory(llm_or_chain_factory, dataset_name)
-    project_name = _get_project_name(project_name, llm_or_chain_factory, dataset_name)
-    dataset = client.read_dataset(dataset_name=dataset_name)
-    examples = client.list_examples(dataset_id=str(dataset.id))
+    """  # noqa: E501
+    llm_or_chain_factory, project_name, dataset, examples = _prepare_eval_run(
+        client, dataset_name, llm_or_chain_factory, project_name
+    )
     results = await _arun_on_examples(
         client,
         examples,
@@ -1328,11 +1356,10 @@ def run_on_dataset(
             construct_chain,
             evaluation=evaluation_config,
         )
-    """
-    llm_or_chain_factory = _wrap_in_chain_factory(llm_or_chain_factory, dataset_name)
-    project_name = _get_project_name(project_name, llm_or_chain_factory, dataset_name)
-    dataset = client.read_dataset(dataset_name=dataset_name)
-    examples = client.list_examples(dataset_id=str(dataset.id))
+    """  # noqa: E501
+    llm_or_chain_factory, project_name, dataset, examples = _prepare_eval_run(
+        client, dataset_name, llm_or_chain_factory, project_name
+    )
     results = _run_on_examples(
         client,
         examples,
