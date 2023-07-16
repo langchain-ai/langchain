@@ -9,7 +9,11 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
-from langchain.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT, RequestParams
+from langchain.chains.api.prompt import (
+    API_RESPONSE_PROMPT,
+    API_URL_PROMPT,
+    RequestParams,
+)
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.output_parsers.pydantic import PydanticOutputParser
@@ -27,7 +31,9 @@ class APIChain(Chain):
     api_docs: str
     question_key: str = "question"  #: :meta private:
     output_key: str = "output"  #: :meta private:
-    request_parser = PydanticOutputParser(pydantic_object=RequestParams)
+    request_parser: PydanticOutputParser = PydanticOutputParser(
+        pydantic_object=RequestParams
+    )
 
     @property
     def input_keys(self) -> List[str]:
@@ -79,8 +85,10 @@ class APIChain(Chain):
             api_docs=self.api_docs,
             callbacks=_run_manager.get_child(),
         )
-        req_params: RequestParams =  self.request_parser.parse(result)
-        _run_manager.on_text(req_params.dict(), color="green", end="\n", verbose=self.verbose)
+        req_params: RequestParams = self.request_parser.parse(result)
+        _run_manager.on_text(
+            str(req_params.dict()), color="green", end="\n", verbose=self.verbose
+        )
         http_method = req_params.method.lower()
         if hasattr(self.requests_wrapper, http_method):
             method = getattr(self.requests_wrapper, http_method)
@@ -114,15 +122,17 @@ class APIChain(Chain):
             api_docs=self.api_docs,
             callbacks=_run_manager.get_child(),
         )
-        req_params: RequestParams =  self.request_parser.parse(result)
+        req_params: RequestParams = self.request_parser.parse(result)
         await _run_manager.on_text(
-            req_params.dict(), color="green", end="\n", verbose=self.verbose
+            str(req_params.dict()), color="green", end="\n", verbose=self.verbose
         )
         http_method = "a" + req_params.method.lower()
         if hasattr(self.requests_wrapper, http_method):
             method = getattr(self.requests_wrapper, http_method)
             if http_method in ["aget", "adelete"]:
-                api_response = await method(url=req_params.url, params=req_params.params)
+                api_response = await method(
+                    url=req_params.url, params=req_params.params
+                )
             else:
                 api_response = await method(url=req_params.url, data=req_params.params)
         else:

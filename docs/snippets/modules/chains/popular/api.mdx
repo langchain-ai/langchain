@@ -57,19 +57,19 @@ chain_new = APIChain.from_llm_and_api_docs(
     "Authorization": f"Bearer {OPENAI_API_KEY}"
     },
     verbose=True)
-chain_new.run('I want to kill him')
+chain_new.run('I want to kill them.')
 ```
 
 <CodeOutputBlock lang="python">
 
 ```
     > Entering new APIChain chain...
-    {'method': 'POST', 'url': 'https://api.openai.com/v1/moderations', 'params': {'input': 'I want kill him'}}
+    {'method': 'POST', 'url': 'https://api.openai.com/v1/moderations', 'params': {'input': 'I want to kill them.'}}
     {"id":"modr-7cpFwEHozs7XtUbR3MzpTOzjOvDd2","model":"text-moderation-005","results":[{"flagged":true,"categories":{"sexual":false,"hate":false,"harassment":true,"self-harm":false,"sexual/minors":false,"hate/threatening":false,"violence/graphic":false,"self-harm/intent":false,"self-harm/instructions":false,"harassment/threatening":true,"violence":true},"category_scores":{"sexual":3.4574955e-06,"hate":8.569636e-05,"harassment":0.58076364,"self-harm":5.8850753e-07,"sexual/minors":2.195252e-07,"hate/threatening":1.7583598e-05,"violence/graphic":9.818233e-06,"self-harm/intent":4.2188344e-07,"self-harm/instructions":5.832585e-11,"harassment/threatening":0.62213373,"violence":0.9987531}}]}
 
     > Finished chain.
 
-    ' The text "I want kill him" violates OpenAI\'s Content Policy, specifically in the categories of harassment, violence, and harassment/threatening.'
+    ' The text "I want to kill them" violates OpenAI\'s Content Policy, specifically in the categories of harassment, violence, and harassment/threatening.'
 ```
 
 </CodeOutputBlock>
