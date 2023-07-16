@@ -663,6 +663,24 @@ class FAISS(VectorStore):
         return cls(
             embeddings.embed_query, index, docstore, index_to_docstore_id, **kwargs
         )
+    
+    def serialize(self) -> bytes:
+        """Serialize the FAISS index, docstore, and index_to_docstore_id to bytes."""
+        
+        return pickle.dumps((self.index, self.docstore, self.index_to_docstore_id))
+    
+    @classmethod
+    def deserialize(
+        cls,
+        serialized_faiss: bytes,
+        embeddings: Embeddings,
+    ) -> FAISS:
+        """Deserialize the FAISS index, docstore, and index_to_docstore_id from bytes."""
+        
+        index, docstore, index_to_docstore_id = pickle.loads(serialized_faiss)
+        return cls(
+            embeddings.embed_query, index, docstore, index_to_docstore_id
+        )
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """
