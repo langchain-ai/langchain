@@ -37,7 +37,13 @@ def test_api_data() -> dict:
     return {
         "api_docs": api_docs,
         "question": "Search for notes containing langchain",
-        "api_url": "https://thisapidoesntexist.com/api/notes?q=langchain",
+        "request_params": {
+            "method": "GET",
+            "url": "https://thisapidoesntexist.com/api/notes",
+            "params": {
+                "q": "langchain"
+            }
+        },
         "api_response": json.dumps(
             {
                 "success": True,
@@ -53,20 +59,23 @@ def fake_llm_api_chain(test_api_data: dict) -> APIChain:
     """Fake LLM API chain for testing."""
     TEST_API_DOCS = test_api_data["api_docs"]
     TEST_QUESTION = test_api_data["question"]
-    TEST_URL = test_api_data["api_url"]
+    TEST_REQUEST_PARAMS = test_api_data["request_params"]
     TEST_API_RESPONSE = test_api_data["api_response"]
     TEST_API_SUMMARY = test_api_data["api_summary"]
 
     api_url_query_prompt = API_URL_PROMPT.format(
-        api_docs=TEST_API_DOCS, question=TEST_QUESTION
+        api_docs=TEST_API_DOCS,
+        question=TEST_QUESTION
     )
     api_response_prompt = API_RESPONSE_PROMPT.format(
         api_docs=TEST_API_DOCS,
         question=TEST_QUESTION,
-        api_url=TEST_URL,
+        request_params=TEST_REQUEST_PARAMS,
         api_response=TEST_API_RESPONSE,
     )
-    queries = {api_url_query_prompt: TEST_URL, api_response_prompt: TEST_API_SUMMARY}
+
+    queries = {api_url_query_prompt: json.dumps(TEST_REQUEST_PARAMS),
+               api_response_prompt: TEST_API_SUMMARY}
     fake_llm = FakeLLM(queries=queries)
     api_request_chain = LLMChain(llm=fake_llm, prompt=API_URL_PROMPT)
     api_answer_chain = LLMChain(llm=fake_llm, prompt=API_RESPONSE_PROMPT)
