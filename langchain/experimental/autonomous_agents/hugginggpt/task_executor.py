@@ -1,10 +1,11 @@
 # execute task by calling huggingface tools
+import copy
 import uuid
 import numpy as np
 import cv2
-from transformers import load_tool
 from typing import List, Dict
 from langchain.experimental.plan_and_execute.schema import Plan
+from diffusers.utils import load_image
 
 class Task:
     def __init__(self, task: str, id: int, dep: List[int], args: Dict, tool):
@@ -51,11 +52,14 @@ class Task:
 
     def run(self):
         try:
-            self.result = self.tool(**self.args)
+            new_args = copy.deepcopy(self.args)
+            for k,v in new_args.items():
+                if k == "image":
+                    new_args["image"] = load_image(v)
+            self.result = self.tool(**new_args)
         except Exception as e:
             self.status = "failed"
             self.message = str(e)
-
         self.status = "completed"
         self.save_result()
 
@@ -100,9 +104,9 @@ class TaskExecutor:
             if dep_id == -1:
                 continue
             dep_task = self.id_task_map[dep_id]
-            for k, v in task.args:
-                if v == dep_id:
-                    task.args[k] = dep_task.result
+            for k, v in task.args.items():
+                if f"<resource-{dep_id}>" in v:
+                    task.args[k].replace(f"<resource-{dep_id}>", dep_task.result)
 
     def run(self):
         for task in self.tasks:

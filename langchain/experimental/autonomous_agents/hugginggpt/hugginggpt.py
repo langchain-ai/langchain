@@ -17,29 +17,3 @@ class HuggingGPT:
         self.task_executor.run()
         response = self.response_generator.generate({"task_execution": self.task_executor})
         return response
-
-if __name__ == "__main__":
-    from langchain.llms import OpenAI
-    llm = OpenAI(model_name="gpt-3.5-turbo")
-    hf_tools = [load_tool(tool_name) for tool_name in [
-        "document-question-answering", 
-        "image-captioning", 
-        "image-question-answering", 
-        "image-segmentation", 
-        "speech-to-text", 
-        "summarization", 
-        "text-classification", 
-        "text-question-answering", 
-        "translation", 
-        "huggingface-tools/text-to-image", 
-        "huggingface-tools/text-to-video", 
-        "text-to-speech", 
-        "huggingface-tools/text-download", 
-        "huggingface-tools/image-transformation"
-        ]
-    ]
-    agent = HuggingGPT(llm, hf_tools)
-    agent.chat_planner.llm_chain.verbose = True
-    # output = agent.run("translate the sentence 'a boy is running' into Chinese one")
-    output = agent.run("please show me a video and an image of (based on the text) 'a boy is running' and dub it")
-    print(output)
