@@ -164,6 +164,15 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
     input_variables: List[str]
     messages: List[Union[BaseMessagePromptTemplate, BaseMessage]]
 
+    def __or__(self, other: Any) -> ChatPromptTemplate:
+        # Allow for easy combining
+        if isinstance(other, ChatPromptTemplate):
+            return ChatPromptTemplate(messages=self.messages + other.messages)
+        elif isinstance(other, (BaseMessagePromptTemplate, BaseMessage)):
+            return ChatPromptTemplate(messages=self.messages + [other])
+        else:
+            raise NotImplementedError(f"Unsupported operand type for |: {type(other)}")
+
     @root_validator(pre=True)
     def validate_input_variables(cls, values: dict) -> dict:
         messages = values["messages"]
@@ -188,6 +197,12 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
     def from_template(cls, template: str, **kwargs: Any) -> ChatPromptTemplate:
         prompt_template = PromptTemplate.from_template(template, **kwargs)
         message = HumanMessagePromptTemplate(prompt=prompt_template)
+        return cls.from_messages([message])
+
+    @classmethod
+    def from_system_message(cls, template: str, **kwargs: Any) -> ChatPromptTemplate:
+        prompt_template = PromptTemplate.from_template(template, **kwargs)
+        message = SystemMessagePromptTemplate(prompt=prompt_template)
         return cls.from_messages([message])
 
     @classmethod
