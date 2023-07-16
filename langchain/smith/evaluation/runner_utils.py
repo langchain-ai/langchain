@@ -19,6 +19,7 @@ from typing import (
     Tuple,
     Union,
 )
+from urllib.parse import urlparse, urlunparse
 
 from langsmith import Client, RunEvaluator
 from langsmith.schemas import Dataset, DataType, Example, RunTypeEnum
@@ -52,7 +53,14 @@ class InputFormatError(Exception):
 
 def _get_eval_project_url(api_url: str, project_id: str) -> str:
     """Get the project url from the api url."""
-    url = api_url.replace("api.", "")
+    parsed = urlparse(api_url)
+    hostname = parsed.hostname or ""
+    if hostname.startswith("api."):
+        hostname = hostname.replace("api.", "", 1)
+    if "localhost" in hostname:
+        # Remove the port
+        hostname = "localhost"
+    url = urlunparse(parsed._replace(netloc=hostname))
     return f"{url}/projects/p/{project_id}?eval=true"
 
 
@@ -1076,7 +1084,7 @@ def _prepare_eval_run(
     dataset_name: str,
     llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
     project_name: Optional[str],
-) -> Tuple[MODEL_OR_CHAIN_FACTORY, str, Dataset, List[Example]]:
+) -> Tuple[MODEL_OR_CHAIN_FACTORY, str, Dataset, Iterator[Example]]:
     llm_or_chain_factory = _wrap_in_chain_factory(llm_or_chain_factory, dataset_name)
     project_name = _get_project_name(project_name, llm_or_chain_factory)
     try:
@@ -1088,7 +1096,7 @@ def _prepare_eval_run(
             f"Project {project_name} already exists. Please use a different name."
         )
     project_url = _get_eval_project_url(client.api_url, project.id)
-    print(f"View the evalution results for project {project_name} at:\n{project_url}")
+    print(f"View the evalution results for project '{project_name}' at:\n{project_url}")
     dataset = client.read_dataset(dataset_name=dataset_name)
     examples = client.list_examples(dataset_id=str(dataset.id))
     return llm_or_chain_factory, project_name, dataset, examples
