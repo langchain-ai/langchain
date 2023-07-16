@@ -62,7 +62,7 @@ def _wrap_in_chain_factory(
         if llm_or_chain_factory.memory is not None:
             memory_class = chain.memory.__class__.__name__
             raise ValueError(
-                "Cannot directly evaluate a chain with statefulmemory."
+                "Cannot directly evaluate a chain with stateful memory."
                 " To evaluate this chain, pass in a chain constructor"
                 " that initializes fresh memory each time it is called."
                 "  This will safegaurd against information"
@@ -88,6 +88,13 @@ def _wrap_in_chain_factory(
         )
 
         return lambda: chain
+    elif isinstance(llm_or_chain_factory, BaseLanguageModel):
+        return llm_or_chain_factory
+    elif callable(llm_or_chain_factory):
+        _model = llm_or_chain_factory()
+        if isinstance(_model, BaseLanguageModel):
+            return _model
+        return llm_or_chain_factory
     return llm_or_chain_factory
 
 
