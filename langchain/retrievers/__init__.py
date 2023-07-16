@@ -21,6 +21,7 @@ from langchain.retrievers.remote_retriever import RemoteLangChainRetriever
 from langchain.retrievers.self_query.base import SelfQueryRetriever
 from langchain.retrievers.svm import SVMRetriever
 from langchain.retrievers.tfidf import TFIDFRetriever
+from langchain.retrievers.bm25 import BM25Retriever
 from langchain.retrievers.time_weighted_retriever import (
     TimeWeightedVectorStoreRetriever,
 )
@@ -51,6 +52,7 @@ __all__ = [
     "SVMRetriever",
     "SelfQueryRetriever",
     "TFIDFRetriever",
+    "BM25Retriever",
     "TimeWeightedVectorStoreRetriever",
     "VespaRetriever",
     "WeaviateHybridSearchRetriever",
