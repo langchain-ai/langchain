@@ -4,6 +4,9 @@ OPEN_METEO_DOCS = """BASE URL: https://api.open-meteo.com/
 API Documentation
 The API endpoint /v1/forecast accepts a geographical coordinate, a list of weather variables and responds with a JSON hourly weather forecast for 7 days. Time always starts at 0:00 today and contains 168 hours. All URL parameters are listed below:
 
+Method
+GET
+
 Parameter	Format	Required	Default	Description
 latitude, longitude	Floating point	Yes		Geographical WGS84 coordinate of the location
 hourly	String array	No		A list of weather variables which should be returned. Values can be comma separated, or multiple &hourly= parameter in the URL can be used.

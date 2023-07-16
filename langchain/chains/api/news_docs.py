@@ -1,6 +1,7 @@
 # flake8: noqa
 NEWS_DOCS = """API documentation:
 Endpoint: https://newsapi.org
+Method: GET
 Top headlines /v2/top-headlines
 
 This endpoint provides live top and breaking headlines for a country, specific category in a country, single source, or multiple sources. You can also search with keywords. Articles are sorted by the earliest date published first.

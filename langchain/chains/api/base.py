@@ -9,9 +9,10 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
-from langchain.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
+from langchain.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT, RequestParams
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
+from langchain.output_parsers.pydantic import PydanticOutputParser
 from langchain.requests import TextRequestsWrapper
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
@@ -26,6 +27,7 @@ class APIChain(Chain):
     api_docs: str
     question_key: str = "question"  #: :meta private:
     output_key: str = "output"  #: :meta private:
+    request_parser = PydanticOutputParser(pydantic_object=RequestParams)
 
     @property
     def input_keys(self) -> List[str]:
@@ -58,7 +60,7 @@ class APIChain(Chain):
     def validate_api_answer_prompt(cls, values: Dict) -> Dict:
         """Check that api answer prompt expects the right variables."""
         input_vars = values["api_answer_chain"].prompt.input_variables
-        expected_vars = {"question", "api_docs", "api_url", "api_response"}
+        expected_vars = {"question", "api_docs", "request_params", "api_response"}
         if set(input_vars) != expected_vars:
             raise ValueError(
                 f"Input variables should be {expected_vars}, got {input_vars}"
@@ -72,21 +74,29 @@ class APIChain(Chain):
     ) -> Dict[str, str]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.question_key]
-        api_url = self.api_request_chain.predict(
+        result = self.api_request_chain.predict(
             question=question,
             api_docs=self.api_docs,
             callbacks=_run_manager.get_child(),
         )
-        _run_manager.on_text(api_url, color="green", end="\n", verbose=self.verbose)
-        api_url = api_url.strip()
-        api_response = self.requests_wrapper.get(api_url)
+        req_params: RequestParams =  self.request_parser.parse(result)
+        _run_manager.on_text(req_params.dict(), color="green", end="\n", verbose=self.verbose)
+        http_method = req_params.method.lower()
+        if hasattr(self.requests_wrapper, http_method):
+            method = getattr(self.requests_wrapper, http_method)
+            if http_method in ["get", "delete"]:
+                api_response = method(url=req_params.url, params=req_params.params)
+            else:
+                api_response = method(url=req_params.url, data=req_params.params)
+        else:
+            raise ValueError("Invalid request method.")
         _run_manager.on_text(
             api_response, color="yellow", end="\n", verbose=self.verbose
         )
         answer = self.api_answer_chain.predict(
             question=question,
             api_docs=self.api_docs,
-            api_url=api_url,
+            request_params=req_params.dict(),
             api_response=api_response,
             callbacks=_run_manager.get_child(),
         )
@@ -99,23 +109,31 @@ class APIChain(Chain):
     ) -> Dict[str, str]:
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.question_key]
-        api_url = await self.api_request_chain.apredict(
+        result = await self.api_request_chain.apredict(
             question=question,
             api_docs=self.api_docs,
             callbacks=_run_manager.get_child(),
         )
+        req_params: RequestParams =  self.request_parser.parse(result)
         await _run_manager.on_text(
-            api_url, color="green", end="\n", verbose=self.verbose
+            req_params.dict(), color="green", end="\n", verbose=self.verbose
         )
-        api_url = api_url.strip()
-        api_response = await self.requests_wrapper.aget(api_url)
+        http_method = "a" + req_params.method.lower()
+        if hasattr(self.requests_wrapper, http_method):
+            method = getattr(self.requests_wrapper, http_method)
+            if http_method in ["aget", "adelete"]:
+                api_response = await method(url=req_params.url, params=req_params.params)
+            else:
+                api_response = await method(url=req_params.url, data=req_params.params)
+        else:
+            raise ValueError("Invalid request method.")
         await _run_manager.on_text(
             api_response, color="yellow", end="\n", verbose=self.verbose
         )
         answer = await self.api_answer_chain.apredict(
             question=question,
             api_docs=self.api_docs,
-            api_url=api_url,
+            request_params=req_params.dict(),
             api_response=api_response,
             callbacks=_run_manager.get_child(),
         )
