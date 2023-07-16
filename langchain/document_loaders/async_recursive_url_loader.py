@@ -1,7 +1,6 @@
-from typing import Iterator, List, Optional, Set, Callable, Union, Literal
-from urllib.parse import urlparse
-
 import re
+from typing import Callable, Iterator, List, Literal, Optional, Set, Union
+from urllib.parse import urlparse
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -13,13 +12,14 @@ except ImportError:
         "The asyncio package is required for the RecursiveUrlLoader. "
         "Please install it with `pip install asyncio`."
     )
-try: 
+try:
     import aiohttp
 except ImportError:
     raise ImportError(
         "The aiohttp package is required for the RecursiveUrlLoader. "
         "Please install it with `pip install aiohttp`."
     )
+
 
 class AsyncRecursiveUrlLoader(BaseLoader):
     """Loads all child links from a given url."""
@@ -61,7 +61,7 @@ class AsyncRecursiveUrlLoader(BaseLoader):
             visited: A set of visited URLs.
             depth: To reach the current url, how many pages have been visited.
         """
-        
+
         if depth > self.max_depth:
             return []
 
@@ -86,7 +86,9 @@ class AsyncRecursiveUrlLoader(BaseLoader):
         ):
             return []
         # Disable SSL verification because some websites may have invalid SSL certificates, but won't cause any security issues for us.
-        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False), timeout=self.timeout) as session:
+        async with aiohttp.ClientSession(
+            connector=aiohttp.TCPConnector(verify_ssl=False), timeout=self.timeout
+        ) as session:
             # Some url may be invalid, so catch the exception
             response: aiohttp.ClientResponse
             try:
@@ -97,10 +99,10 @@ class AsyncRecursiveUrlLoader(BaseLoader):
             # There may be some other exceptions, so catch them, we don't want to stop the whole process
             except Exception as e:
                 return []
-            
+
             # Get all links that are relative to the root of the website
             all_links = re.findall(r"href=[\"\'](.*?)[\"\']", text)
-            
+
             absolute_paths = []
             # Process the links
             for link in all_links:
@@ -108,11 +110,11 @@ class AsyncRecursiveUrlLoader(BaseLoader):
                 # Exclude the links that start with javascript: or mailto:
                 if link.startswith("javascript:") or link.startswith("mailto:"):
                     continue
-                
+
                 # Blacklist patterns end.
-                
+
                 # Here are whitelist patterns
-                
+
                 # Some links may be in form of /path/to/link, so add the base URL
                 if link.startswith("/") and not link.startswith("//"):
                     absolute_paths.append(base_url + link[1:])
@@ -123,24 +125,25 @@ class AsyncRecursiveUrlLoader(BaseLoader):
                 # Only the links without the previous two patterns are possible links to outside.
                 elif link.startswith(current_path) and link != current_path:
                     absolute_paths.append(link)
-                    
+
                 # Whitelist patterns end.
-                
+
                 # Despite prevent outside should be blacklist rule, it must be done here or it could filter valid ones.
                 elif (not self.prevent_outside) or link.startswith(current_path):
                     pass
-                
+
                 # Some links may be in form of path/to/link, so add the parent URL
                 else:
                     absolute_paths.append(parent_url + link)
 
             # Worker will be only called within the current function to act as an async generator
             # Worker function will process the link and then recursively call get_child_links_recursive to process the children
-            async def worker(
-                link: str
-            ) -> Union[Document, None]:
+            async def worker(link: str) -> Union[Document, None]:
                 try:
-                    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False), timeout=self.timeout) as session:
+                    async with aiohttp.ClientSession(
+                        connector=aiohttp.TCPConnector(verify_ssl=False),
+                        timeout=self.timeout,
+                    ) as session:
                         response = await session.get(link)
                         text = await response.text()
                         extracted = self.raw_webpage_to_text_converter(text)
@@ -149,7 +152,7 @@ class AsyncRecursiveUrlLoader(BaseLoader):
                                 page_content=extracted,
                                 metadata={
                                     "source": link,
-                                }
+                                },
                             )
                         else:
                             return None
@@ -160,7 +163,7 @@ class AsyncRecursiveUrlLoader(BaseLoader):
                 except Exception as e:
                     # print(e)
                     return None
-            
+
             # The coroutines that will be executed
             tasks = []
             # Generate the tasks
@@ -170,11 +173,15 @@ class AsyncRecursiveUrlLoader(BaseLoader):
                     visited.add(link)
                     tasks.append(worker(link))
             # Get the not None results
-            results = list(filter(lambda x: x is not None, await asyncio.gather(*tasks)))
+            results = list(
+                filter(lambda x: x is not None, await asyncio.gather(*tasks))
+            )
             # Recursively call the function to get the children of the children
             sub_tasks = []
             for link in absolute_paths:
-                sub_tasks.append(self.get_child_links_recursive(link, visited, depth + 1))
+                sub_tasks.append(
+                    self.get_child_links_recursive(link, visited, depth + 1)
+                )
             # sub_tasks returns coroutines of list, so we need to flatten the list await asyncio.gather(*sub_tasks)
             flattened = []
             for sub_result in await asyncio.gather(*sub_tasks):

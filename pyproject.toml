@@ -363,7 +363,12 @@ extended_testing = [
 [[tool.poetry.source]]
 name = "azure-sdk-dev"
 url = "https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-python/pypi/simple/"
-secondary = true
+priority = "secondary"
+
+
+[[tool.poetry.source]]
+name = "PyPI"
+priority = "primary"
 
 [tool.ruff]
 select = [
