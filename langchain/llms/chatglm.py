@@ -2,6 +2,7 @@ from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from typing import List, Optional, Mapping, Any
 import requests
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 
 class ChatGLM(LLM):
     """Wrapper around ChatGLM's LLM inference service.
@@ -28,7 +29,7 @@ class ChatGLM(LLM):
     """Max token allowed to pass to the model."""
     temperature: float = 0.1
     """LLM model temperature from 0 to 10."""
-    history = []
+    history: List[List] = []
     """History of the conversation"""
 
     @property
@@ -48,6 +49,7 @@ class ChatGLM(LLM):
             self, 
             prompt: str, 
             stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
             ) -> str:
         """Call out to a ChatGLM LLM inference endpoint.
