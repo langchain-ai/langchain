@@ -205,7 +205,6 @@ def _get_messages(inputs: Dict[str, Any]) -> List[BaseMessage]:
 def _get_project_name(
     project_name: Optional[str],
     llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
-    dataset_name: Optional[str],
 ) -> str:
     """
     Get the project name.
@@ -213,7 +212,6 @@ def _get_project_name(
     Args:
         project_name: The project name if manually specified.
         llm_or_chain_factory: The Chain or language model constructor.
-        dataset_name: The dataset name.
 
     Returns:
         The project name.
@@ -225,8 +223,7 @@ def _get_project_name(
         model_name = llm_or_chain_factory.__class__.__name__
     else:
         model_name = llm_or_chain_factory().__class__.__name__
-    dataset_prefix = f"{dataset_name}-" if dataset_name else ""
-    return f"{dataset_prefix}{model_name}-{current_time}"
+    return f"{current_time}-{model_name}"
 
 
 ## Shared Validation Utilities
@@ -800,7 +797,7 @@ async def _arun_on_examples(
         A dictionary mapping example ids to the model outputs.
     """
     llm_or_chain_factory = _wrap_in_chain_factory(llm_or_chain_factory)
-    project_name = _get_project_name(project_name, llm_or_chain_factory, None)
+    project_name = _get_project_name(project_name, llm_or_chain_factory)
     run_evaluators, examples = _setup_evaluation(
         llm_or_chain_factory, examples, evaluation, data_type
     )
@@ -1032,7 +1029,7 @@ def _run_on_examples(
     """
     results: Dict[str, Any] = {}
     llm_or_chain_factory = _wrap_in_chain_factory(llm_or_chain_factory)
-    project_name = _get_project_name(project_name, llm_or_chain_factory, None)
+    project_name = _get_project_name(project_name, llm_or_chain_factory)
     tracer = LangChainTracer(
         project_name=project_name, client=client, use_threading=False
     )
@@ -1074,7 +1071,7 @@ def _prepare_eval_run(
     project_name: Optional[str],
 ) -> Tuple[MODEL_OR_CHAIN_FACTORY, str, Dataset, List[Example]]:
     llm_or_chain_factory = _wrap_in_chain_factory(llm_or_chain_factory, dataset_name)
-    project_name = _get_project_name(project_name, llm_or_chain_factory, dataset_name)
+    project_name = _get_project_name(project_name, llm_or_chain_factory)
     try:
         project = client.create_project(project_name)
     except ValueError as e:
