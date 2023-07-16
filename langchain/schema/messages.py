@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import List, Sequence
+from typing import Any, List, Sequence
 
 from pydantic import Field
 
@@ -76,6 +76,13 @@ class BaseMessage(Serializable):
     def lc_serializable(self) -> bool:
         """Whether this class is LangChain serializable."""
         return True
+
+    # Cannot type this since it returns something we can't import
+    def __or__(self, other: Any):  # type: ignore
+        from langchain.prompts.chat import ChatPromptTemplate
+
+        prompt = ChatPromptTemplate(messages=[self])
+        return prompt | other
 
 
 class HumanMessage(BaseMessage):

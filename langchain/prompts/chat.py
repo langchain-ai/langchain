@@ -38,6 +38,10 @@ class BaseMessagePromptTemplate(Serializable, ABC):
     def input_variables(self) -> List[str]:
         """Input variables for this prompt template."""
 
+    def __or__(self, other: Any) -> ChatPromptTemplate:
+        prompt = ChatPromptTemplate(messages=[self])
+        return prompt | other
+
 
 class MessagesPlaceholder(BaseMessagePromptTemplate):
     """Prompt template that assumes variable is already list of messages."""
@@ -170,6 +174,9 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
             return ChatPromptTemplate(messages=self.messages + other.messages)
         elif isinstance(other, (BaseMessagePromptTemplate, BaseMessage)):
             return ChatPromptTemplate(messages=self.messages + [other])
+        elif isinstance(other, str):
+            prompt = HumanMessagePromptTemplate.from_template(other)
+            return ChatPromptTemplate(messages=self.messages + [prompt])
         else:
             raise NotImplementedError(f"Unsupported operand type for |: {type(other)}")
 
