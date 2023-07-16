@@ -309,7 +309,7 @@ class Redis(VectorStore):
         )
 
     @staticmethod
-    def _add_id(result, id: str)->str:
+    def _add_id(result: str, id: str)->str:
         meta  = json.loads(result)
         meta["id"] = id
         return json.dumps(meta)
