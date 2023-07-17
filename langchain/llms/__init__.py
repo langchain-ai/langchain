@@ -14,6 +14,7 @@ from langchain.llms.baseten import Baseten
 from langchain.llms.beam import Beam
 from langchain.llms.bedrock import Bedrock
 from langchain.llms.cerebriumai import CerebriumAI
+from langchain.llms.chatglm import ChatGLM
 from langchain.llms.clarifai import Clarifai
 from langchain.llms.cohere import Cohere
 from langchain.llms.ctransformers import CTransformers
@@ -69,6 +70,7 @@ __all__ = [
     "Bedrock",
     "CTransformers",
     "CerebriumAI",
+    "ChatGLM",
     "Clarifai",
     "Cohere",
     "Databricks",
@@ -125,6 +127,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "baseten": Baseten,
     "beam": Beam,
     "cerebriumai": CerebriumAI,
+    "chat_glm": ChatGLM,
     "clarifai": Clarifai,
     "cohere": Cohere,
     "ctransformers": CTransformers,
