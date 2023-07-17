@@ -19,9 +19,10 @@ from typing import (
     Tuple,
     Union,
 )
+from urllib.parse import urlparse, urlunparse
 
 from langsmith import Client, RunEvaluator
-from langsmith.schemas import DataType, Example, RunTypeEnum
+from langsmith.schemas import Dataset, DataType, Example, RunTypeEnum
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.manager import Callbacks
@@ -50,6 +51,19 @@ class InputFormatError(Exception):
 ## Shared Utilities
 
 
+def _get_eval_project_url(api_url: str, project_id: str) -> str:
+    """Get the project url from the api url."""
+    parsed = urlparse(api_url)
+    hostname = parsed.hostname or ""
+    if "api." in hostname:
+        hostname = hostname.replace("api.", "", 1)
+    if "localhost" in hostname:
+        # Remove the port
+        hostname = "localhost"
+    url = urlunparse(parsed._replace(netloc=hostname))
+    return f"{url}/projects/p/{project_id}?eval=true"
+
+
 def _wrap_in_chain_factory(
     llm_or_chain_factory: Union[Chain, MODEL_OR_CHAIN_FACTORY],
     dataset_name: str = "<my_dataset>",
@@ -62,7 +76,7 @@ def _wrap_in_chain_factory(
         if llm_or_chain_factory.memory is not None:
             memory_class = chain.memory.__class__.__name__
             raise ValueError(
-                "Cannot directly evaluate a chain with statefulmemory."
+                "Cannot directly evaluate a chain with stateful memory."
                 " To evaluate this chain, pass in a chain constructor"
                 " that initializes fresh memory each time it is called."
                 "  This will safegaurd against information"
@@ -88,6 +102,13 @@ def _wrap_in_chain_factory(
         )
 
         return lambda: chain
+    elif isinstance(llm_or_chain_factory, BaseLanguageModel):
+        return llm_or_chain_factory
+    elif callable(llm_or_chain_factory):
+        _model = llm_or_chain_factory()
+        if isinstance(_model, BaseLanguageModel):
+            return _model
+        return llm_or_chain_factory
     return llm_or_chain_factory
 
 
@@ -199,7 +220,6 @@ def _get_messages(inputs: Dict[str, Any]) -> List[BaseMessage]:
 def _get_project_name(
     project_name: Optional[str],
     llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
-    dataset_name: Optional[str],
 ) -> str:
     """
     Get the project name.
@@ -207,7 +227,6 @@ def _get_project_name(
     Args:
         project_name: The project name if manually specified.
         llm_or_chain_factory: The Chain or language model constructor.
-        dataset_name: The dataset name.
 
     Returns:
         The project name.
@@ -219,8 +238,7 @@ def _get_project_name(
         model_name = llm_or_chain_factory.__class__.__name__
     else:
         model_name = llm_or_chain_factory().__class__.__name__
-    dataset_prefix = f"{dataset_name}-" if dataset_name else ""
-    return f"{dataset_prefix}{model_name}-{current_time}"
+    return f"{current_time}-{model_name}"
 
 
 ## Shared Validation Utilities
@@ -794,7 +812,7 @@ async def _arun_on_examples(
         A dictionary mapping example ids to the model outputs.
     """
     llm_or_chain_factory = _wrap_in_chain_factory(llm_or_chain_factory)
-    project_name = _get_project_name(project_name, llm_or_chain_factory, None)
+    project_name = _get_project_name(project_name, llm_or_chain_factory)
     run_evaluators, examples = _setup_evaluation(
         llm_or_chain_factory, examples, evaluation, data_type
     )
@@ -1026,7 +1044,7 @@ def _run_on_examples(
     """
     results: Dict[str, Any] = {}
     llm_or_chain_factory = _wrap_in_chain_factory(llm_or_chain_factory)
-    project_name = _get_project_name(project_name, llm_or_chain_factory, None)
+    project_name = _get_project_name(project_name, llm_or_chain_factory)
     tracer = LangChainTracer(
         project_name=project_name, client=client, use_threading=False
     )
@@ -1059,6 +1077,31 @@ def _run_on_examples(
 
 
 ## Public API
+
+
+def _prepare_eval_run(
+    client: Client,
+    dataset_name: str,
+    llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
+    project_name: Optional[str],
+) -> Tuple[MODEL_OR_CHAIN_FACTORY, str, Dataset, Iterator[Example]]:
+    llm_or_chain_factory = _wrap_in_chain_factory(llm_or_chain_factory, dataset_name)
+    project_name = _get_project_name(project_name, llm_or_chain_factory)
+    try:
+        project = client.create_project(project_name)
+    except ValueError as e:
+        if "already exists " not in str(e):
+            raise e
+        raise ValueError(
+            f"Project {project_name} already exists. Please use a different name."
+        )
+    project_url = _get_eval_project_url(client.api_url, project.id)
+    print(
+        f"View the evaluation results for project '{project_name}' at:\n{project_url}"
+    )
+    dataset = client.read_dataset(dataset_name=dataset_name)
+    examples = client.list_examples(dataset_id=str(dataset.id))
+    return llm_or_chain_factory, project_name, dataset, examples
 
 
 async def arun_on_dataset(
@@ -1103,11 +1146,90 @@ async def arun_on_dataset(
     Returns:
         A dictionary containing the run's project name and the
         resulting model outputs.
-    """
-    llm_or_chain_factory = _wrap_in_chain_factory(llm_or_chain_factory, dataset_name)
-    project_name = _get_project_name(project_name, llm_or_chain_factory, dataset_name)
-    dataset = client.read_dataset(dataset_name=dataset_name)
-    examples = client.list_examples(dataset_id=str(dataset.id))
+
+    For the synchronous version, see :func:`run_on_dataset`.
+
+    Examples
+    --------
+
+    .. code-block:: python
+
+        from langsmith import Client
+        from langchain.chat_models import ChatOpenAI
+        from langchain.chains import LLMChain
+        from langchain.smith import RunEvalConfig, arun_on_dataset
+
+        # Chains may have memory. Passing in a constructor function lets the
+        # evaluation framework avoid cross-contamination between runs.
+        def construct_chain():
+            llm = ChatOpenAI(temperature=0)
+            chain = LLMChain.from_string(
+                llm,
+                "What's the answer to {your_input_key}"
+            )
+            return chain
+
+        # Load off-the-shelf evaluators via config or the EvaluatorType (string or enum)
+        evaluation_config = RunEvalConfig(
+            evaluators=[
+                "qa",  # "Correctness" against a reference answer
+                "embedding_distance",
+                RunEvalConfig.Criteria("helpfulness"),
+                RunEvalConfig.Criteria({
+                    "fifth-grader-score": "Do you have to be smarter than a fifth grader to answer this question?"
+                }),
+            ]
+        )
+
+        client = Client()
+        await arun_on_dataset(
+            client,
+            "<my_dataset_name>",
+            construct_chain,
+            evaluation=evaluation_config,
+        )
+
+    You can also create custom evaluators by subclassing the
+    :class:`StringEvaluator <langchain.evaluation.schema.StringEvaluator>`
+    or LangSmith's `RunEvaluator` classes.
+
+    .. code-block:: python
+
+        from typing import Optional
+        from langchain.evaluation import StringEvaluator
+
+        class MyStringEvaluator(StringEvaluator):
+
+            @property
+            def requires_input(self) -> bool:
+                return False
+
+            @property
+            def requires_reference(self) -> bool:
+                return True
+
+            @property
+            def evaluation_name(self) -> str:
+                return "exact_match"
+
+            def _evaluate_strings(self, prediction, reference=None, input=None, **kwargs) -> dict:
+                return {"score": prediction == reference}
+
+
+        evaluation_config = RunEvalConfig(
+            custom_evaluators = [MyStringEvaluator()],
+        )
+
+        await arun_on_dataset(
+            client,
+            "<my_dataset_name>",
+            construct_chain,
+            evaluation=evaluation_config,
+        )
+    """  # noqa: E501
+    llm_or_chain_factory, project_name, dataset, examples = _prepare_eval_run(
+        client, dataset_name, llm_or_chain_factory, project_name
+    )
     results = await _arun_on_examples(
         client,
         examples,
@@ -1167,11 +1289,91 @@ def run_on_dataset(
 
     Returns:
         A dictionary containing the run's project name and the resulting model outputs.
-    """
-    llm_or_chain_factory = _wrap_in_chain_factory(llm_or_chain_factory, dataset_name)
-    project_name = _get_project_name(project_name, llm_or_chain_factory, dataset_name)
-    dataset = client.read_dataset(dataset_name=dataset_name)
-    examples = client.list_examples(dataset_id=str(dataset.id))
+
+
+    For the (usually faster) async version of this function, see :func:`arun_on_dataset`.
+
+    Examples
+    --------
+
+    .. code-block:: python
+
+        from langsmith import Client
+        from langchain.chat_models import ChatOpenAI
+        from langchain.chains import LLMChain
+        from langchain.smith import RunEvalConfig, run_on_dataset
+
+        # Chains may have memory. Passing in a constructor function lets the
+        # evaluation framework avoid cross-contamination between runs.
+        def construct_chain():
+            llm = ChatOpenAI(temperature=0)
+            chain = LLMChain.from_string(
+                llm,
+                "What's the answer to {your_input_key}"
+            )
+            return chain
+
+        # Load off-the-shelf evaluators via config or the EvaluatorType (string or enum)
+        evaluation_config = RunEvalConfig(
+            evaluators=[
+                "qa",  # "Correctness" against a reference answer
+                "embedding_distance",
+                RunEvalConfig.Criteria("helpfulness"),
+                RunEvalConfig.Criteria({
+                    "fifth-grader-score": "Do you have to be smarter than a fifth grader to answer this question?"
+                }),
+            ]
+        )
+
+        client = Client()
+        run_on_dataset(
+            client,
+            "<my_dataset_name>",
+            construct_chain,
+            evaluation=evaluation_config,
+        )
+
+    You can also create custom evaluators by subclassing the
+    :class:`StringEvaluator <langchain.evaluation.schema.StringEvaluator>`
+    or LangSmith's `RunEvaluator` classes.
+
+    .. code-block:: python
+
+        from typing import Optional
+        from langchain.evaluation import StringEvaluator
+
+        class MyStringEvaluator(StringEvaluator):
+
+            @property
+            def requires_input(self) -> bool:
+                return False
+
+            @property
+            def requires_reference(self) -> bool:
+                return True
+
+            @property
+            def evaluation_name(self) -> str:
+                return "exact_match"
+
+            def _evaluate_strings(self, prediction, reference=None, input=None, **kwargs) -> dict:
+                return {"score": prediction == reference}
+
+
+        evaluation_config = RunEvalConfig(
+            custom_evaluators = [MyStringEvaluator()],
+        )
+
+        run_on_dataset(
+            client,
+            "<my_dataset_name>",
+            construct_chain,
+            evaluation=evaluation_config,
+        )
+    """  # noqa: E501
+    llm_or_chain_factory, project_name, dataset, examples = _prepare_eval_run(
+        client, dataset_name, llm_or_chain_factory, project_name
+    )
     results = _run_on_examples(
         client,
         examples,
