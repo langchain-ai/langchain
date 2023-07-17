@@ -2399,6 +2399,17 @@ websocket-client = ">=0.32.0"
 ssh = ["paramiko (>=2.4.3)"]
 
 [[package]]
+name = "docopt"
+version = "0.6.2"
+description = "Pythonic argument parser, that will make you smile"
+category = "main"
+optional = true
+python-versions = "*"
+files = [
+    {file = "docopt-0.6.2.tar.gz", hash = "sha256:49b3a825280bd66b3aa83585ef59c4a8c82f2c8a522dbe754a8bc8d08c85c491"},
+]
+
+[[package]]
 name = "docutils"
 version = "0.17.1"
 description = "Docutils -- Python Documentation Utilities"
@@ -4355,6 +4366,18 @@ files = [
 ]
 
 [[package]]
+name = "jsonable"
+version = "0.3.1"
+description = "An abstract class that supports jsonserialization/deserialization."
+category = "main"
+optional = true
+python-versions = "*"
+files = [
+    {file = "jsonable-0.3.1-py2.py3-none-any.whl", hash = "sha256:f7754dd27b4734e42e7f8a61c2336bc98082f715e31e29a061a95843b102dc3a"},
+    {file = "jsonable-0.3.1.tar.gz", hash = "sha256:137b676e8e5819fa58518678c3d1f5463cab7e8466f69b3641cbc438042eaee4"},
+]
+
+[[package]]
 name = "jsonlines"
 version = "3.1.0"
 description = "Library with helpers for the jsonlines file format"
@@ -4707,14 +4730,14 @@ all = ["datasets (>=2.12.0,<3.0.0)", "nltk (>=3.8.1,<4.0.0)", "openai (>=0.27.6,
 
 [[package]]
 name = "langsmith"
-version = "0.0.5"
+version = "0.0.7"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 category = "main"
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langsmith-0.0.5-py3-none-any.whl", hash = "sha256:c9ce19cf7a45d4b9ef74b3133ace4d0583bc992383296d03c05065e8f871e01f"},
-    {file = "langsmith-0.0.5.tar.gz", hash = "sha256:ffad2fc638cfee8c9d27c9eae2fa3c3f9ec423bf443b1dc44cc8184fa34cd6b2"},
+    {file = "langsmith-0.0.7-py3-none-any.whl", hash = "sha256:9e0ab264b499daa778c694f9129859830820d3fb3a7c93309b630a22b68a88a9"},
+    {file = "langsmith-0.0.7.tar.gz", hash = "sha256:2f18e51cfd4e42f2b3cf00fa87e9d03012eb7269cdafd8e7c0cf7aa828dcc03e"},
 ]
 
 [package.dependencies]
@@ -5648,6 +5671,94 @@ files = [
     {file = "murmurhash-1.0.9-cp39-cp39-win_amd64.whl", hash = "sha256:379bf6b414bd27dd36772dd1570565a7d69918e980457370838bd514df0d91e9"},
     {file = "murmurhash-1.0.9.tar.gz", hash = "sha256:fe7a38cb0d3d87c14ec9dddc4932ffe2dbc77d75469ab80fd5014689b0e07b58"},
 ]
+
+[[package]]
+name = "mwcli"
+version = "0.0.3"
+description = "Utilities for processing MediaWiki on the command line."
+category = "main"
+optional = true
+python-versions = "*"
+files = [
+    {file = "mwcli-0.0.3-py2.py3-none-any.whl", hash = "sha256:24a7e53730e6fa7e55626e4f2a61a0b016d5e0a9798306c1d8c71bcead0ab239"},
+    {file = "mwcli-0.0.3.tar.gz", hash = "sha256:00331bd0ff16b5721c9c6274d91e25fd355f45ec0773c8a0e3926eac058719a0"},
+]
+
+[package.dependencies]
+docopt = "*"
+mwxml = "*"
+para = "*"
+
+[[package]]
+name = "mwparserfromhell"
+version = "0.6.4"
+description = "MWParserFromHell is a parser for MediaWiki wikicode."
+category = "main"
+optional = true
+python-versions = ">= 3.6"
+files = [
+    {file = "mwparserfromhell-0.6.4-cp310-cp310-macosx_10_15_x86_64.whl", hash = "sha256:fc4f5718e761a3f5ad76eb9089e0792ed3a6786095abe098e37e7ac7af76afef"},
+    {file = "mwparserfromhell-0.6.4-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b7f19e7d064c467f32e0704becd81c841a807335934134d6aa859d98d01c7cf3"},
+    {file = "mwparserfromhell-0.6.4-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:511ff847cddb8e7014b6afb0af5dbdb5cf05ada67e31fc39efa34fbbdccb8e8b"},
+    {file = "mwparserfromhell-0.6.4-cp36-cp36m-macosx_10_14_x86_64.whl", hash = "sha256:60d86c8d3501edc1331b37df72b74689ee392da077c36a8b453460b8e3714cdd"},
+    {file = "mwparserfromhell-0.6.4-cp36-cp36m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:54d9819c11530fc00b8a70fa3508898109b3df72336f7b8e52f8faffbe03ee88"},
+    {file = "mwparserfromhell-0.6.4-cp36-cp36m-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2d983914c19dee5c2a13298b1ccd3a1ed2b65c81d322b7e7df99cd5386a460c6"},
+    {file = "mwparserfromhell-0.6.4-cp36-cp36m-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:1c908c9738c5c6bce04b825b3f95592d971ff439ace294a86fc758070afc6d0c"},
+    {file = "mwparserfromhell-0.6.4-cp36-cp36m-win32.whl", hash = "sha256:abae1052b9c12a8814c76dd26ec9cfdd71102e7f89c28fb58a5fba7ee55ad1bc"},
+    {file = "mwparserfromhell-0.6.4-cp36-cp36m-win_amd64.whl", hash = "sha256:f8c450c39ef647678831ecf9a1f8236521d369afc4ae59a9c601d07f298eda35"},
+    {file = "mwparserfromhell-0.6.4-cp37-cp37m-macosx_10_14_x86_64.whl", hash = "sha256:5dfd7f57fa3d516b21790ef7f6094119082baa2e6072cef78fb9f999b77e674f"},
+    {file = "mwparserfromhell-0.6.4-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:cd0a74474ed6e85808c874511d28a253ffd2d1e5a3abe915705a25804212ac73"},
+    {file = "mwparserfromhell-0.6.4-cp37-cp37m-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a344ceabde013aa2f9b23494e73af11b99795f63a30124e955c185de2c8ae397"},
+    {file = "mwparserfromhell-0.6.4-cp37-cp37m-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:82010e5b5da130cbcb002747f5592ffca73488e0e9cf1ebdfef6e8559c535c41"},
+    {file = "mwparserfromhell-0.6.4-cp37-cp37m-win32.whl", hash = "sha256:2d6e124396ee41c35ea12017a66c560abb1f7f51bee04e631a149318adaf15e2"},
+    {file = "mwparserfromhell-0.6.4-cp37-cp37m-win_amd64.whl", hash = "sha256:0519497b8a7472298324ef92e1e82c1ab5cab85b4d64462d7ae46c4464c8b872"},
+    {file = "mwparserfromhell-0.6.4-cp38-cp38-macosx_10_14_x86_64.whl", hash = "sha256:dd81220d66bf829664a6f911b3f58e7af3061fd7fdee68c0fc9731f5bcd7519d"},
+    {file = "mwparserfromhell-0.6.4-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:203ad9cd78dec7480fde45c9f49d0bc2a2eaa28fa1b585461fb9f56f6587f46c"},
+    {file = "mwparserfromhell-0.6.4-cp38-cp38-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d63d76f576e133c14a29f1ad2f3fc2afa17b74945ebc017e8d7d3bcb59f5243c"},
+    {file = "mwparserfromhell-0.6.4-cp38-cp38-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:7f5682ab9e1a55b20e9fb669582493d196c76a512276456848153c39d726d7d2"},
+    {file = "mwparserfromhell-0.6.4-cp38-cp38-win32.whl", hash = "sha256:e0c3d3bc409f8ac1221639ee2dab0dc830711d9a56a39014aad2824c2c98b3e2"},
+    {file = "mwparserfromhell-0.6.4-cp38-cp38-win_amd64.whl", hash = "sha256:18dac5162471c38e5bbf6ee3698c49d2753e8dde372864112fdaf81047ce89d3"},
+    {file = "mwparserfromhell-0.6.4-cp39-cp39-macosx_10_15_x86_64.whl", hash = "sha256:7c822985760b9e82857ecfb99dbb60ac35d0ebf7b2977a0215c7c56fe70c2b68"},
+    {file = "mwparserfromhell-0.6.4-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:d521a2e3787c83ecf607a7806ae655d32f3c3884b2dcf35a388183c6028ddce4"},
+    {file = "mwparserfromhell-0.6.4-cp39-cp39-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:42eb94a6bad20b7f8845fd2900a45373cb4d414d5a357b27457c7c6c259115c5"},
+    {file = "mwparserfromhell-0.6.4-cp39-cp39-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:da2568e2a492dcc913f1c026434371af7a24e05dc56450c3ab063d9e580b48f2"},
+    {file = "mwparserfromhell-0.6.4-cp39-cp39-win32.whl", hash = "sha256:3e5f4bb96b68557acd14c4baa62cbe440b6e6d0f5263cb4860d37e1ceeada2a7"},
+    {file = "mwparserfromhell-0.6.4-cp39-cp39-win_amd64.whl", hash = "sha256:0c2bbb36110410b5f6d6d8b2f35f65f8ec8f57c0477609d35bcaac4784a59e5a"},
+    {file = "mwparserfromhell-0.6.4.tar.gz", hash = "sha256:92bec9528ae34d272893ccaf2b527df85c314ff28cfbb3056340467b095d834c"},
+]
+
+[[package]]
+name = "mwtypes"
+version = "0.3.2"
+description = "A set of types for processing MediaWiki data."
+category = "main"
+optional = true
+python-versions = "*"
+files = [
+    {file = "mwtypes-0.3.2-py2.py3-none-any.whl", hash = "sha256:d6f3cae90eea4c88bc260101c8a082fb0ab22cca88e7474657b28cd9538794f3"},
+    {file = "mwtypes-0.3.2.tar.gz", hash = "sha256:dc1176c5965629c123e859b319ae6151d4e385531e9a781604c0d4ca3434e399"},
+]
+
+[package.dependencies]
+jsonable = ">=0.3.0"
+
+[[package]]
+name = "mwxml"
+version = "0.3.3"
+description = "A set of utilities for processing MediaWiki XML dump data."
+category = "main"
+optional = true
+python-versions = "*"
+files = [
+    {file = "mwxml-0.3.3-py2.py3-none-any.whl", hash = "sha256:9695848b8b6987b6f6addc2a8accba5b2bcbc543702598194e182b508ab568a9"},
+    {file = "mwxml-0.3.3.tar.gz", hash = "sha256:0848df0cf2e293718f554311acf4715bd679f639f4e52cbe47d8206589db1d31"},
+]
+
+[package.dependencies]
+jsonschema = ">=2.5.1"
+mwcli = ">=0.0.2"
+mwtypes = ">=0.3.0"
+para = ">=0.0.1"
 
 [[package]]
 name = "mypy"
@@ -7054,6 +7165,18 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 files = [
     {file = "pandocfilters-1.5.0-py2.py3-none-any.whl", hash = "sha256:33aae3f25fd1a026079f5d27bdd52496f0e0803b3469282162bafdcbdf6ef14f"},
     {file = "pandocfilters-1.5.0.tar.gz", hash = "sha256:0b679503337d233b4339a817bfc8c50064e2eff681314376a47cb582305a7a38"},
+]
+
+[[package]]
+name = "para"
+version = "0.0.8"
+description = "a set utilities that ake advantage of python's 'multiprocessing' module to distribute CPU-intensive tasks"
+category = "main"
+optional = true
+python-versions = "*"
+files = [
+    {file = "para-0.0.8-py3-none-any.whl", hash = "sha256:c63b030658cafd84f8fabfc000142324d51c7440e50ef5012fd1a54972ca25f4"},
+    {file = "para-0.0.8.tar.gz", hash = "sha256:46c3232ae9d8ea9d886cfd08cdd112892202bed8645f40b6255597ba4cfef217"},
 ]
 
 [[package]]
@@ -9031,14 +9154,14 @@ cffi = {version = "*", markers = "implementation_name == \"pypy\""}
 
 [[package]]
 name = "qdrant-client"
-version = "1.1.7"
+version = "1.3.1"
 description = "Client library for the Qdrant vector search engine"
 category = "main"
 optional = true
 python-versions = ">=3.7,<3.12"
 files = [
-    {file = "qdrant_client-1.1.7-py3-none-any.whl", hash = "sha256:4f5d883660b8193840d8982919ab813a0470ace9a7ff46ee730f909841be5319"},
-    {file = "qdrant_client-1.1.7.tar.gz", hash = "sha256:686d86934bec2ebb70676fc0650c9a44a9e552e0149124ca5a22ee8533879deb"},
+    {file = "qdrant_client-1.3.1-py3-none-any.whl", hash = "sha256:9640855585d1f532094e342f07e0f2ef00652a60fc5d903c92ca3989a1e86318"},
+    {file = "qdrant_client-1.3.1.tar.gz", hash = "sha256:a999358b10e611d71b4b04c6ded36a6cfc963e56b4c3f99d9c1a603ca524a82e"},
 ]
 
 [package.dependencies]
@@ -9048,7 +9171,7 @@ httpx = {version = ">=0.14.0", extras = ["http2"]}
 numpy = {version = ">=1.21", markers = "python_version >= \"3.8\""}
 portalocker = ">=2.7.0,<3.0.0"
 pydantic = ">=1.8,<2.0"
-typing-extensions = ">=4.0.0,<5.0.0"
+typing-extensions = ">=4.0.0,<4.6.0"
 urllib3 = ">=1.26.14,<2.0.0"
 
 [[package]]
@@ -11642,14 +11765,14 @@ files = [
 
 [[package]]
 name = "typing-extensions"
-version = "4.6.3"
+version = "4.5.0"
 description = "Backported and Experimental Type Hints for Python 3.7+"
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "typing_extensions-4.6.3-py3-none-any.whl", hash = "sha256:88a4153d8505aabbb4e13aacb7c486c2b4a33ca3b3f807914a9b4c844c471c26"},
-    {file = "typing_extensions-4.6.3.tar.gz", hash = "sha256:d91d5919357fe7f681a9f2b5b4cb2a5f1ef0a1e9f59c4d8ff0d3491e05c0ffd5"},
+    {file = "typing_extensions-4.5.0-py3-none-any.whl", hash = "sha256:fb33085c39dd998ac16d1431ebc293a8b3eedd00fd4a32de0ff79002c19511b4"},
+    {file = "typing_extensions-4.5.0.tar.gz", hash = "sha256:5cb5f4a79139d699607b3ef622a1dedafa84e115ab0024e0d9c044a9479ca7cb"},
 ]
 
 [[package]]
@@ -12703,7 +12826,7 @@ clarifai = ["clarifai"]
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["atlassian-python-api", "beautifulsoup4", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "esprima", "gql", "html2text", "jq", "lxml", "openai", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rapidfuzz", "requests-toolbelt", "scikit-learn", "streamlit", "sympy", "telethon", "tqdm", "zep-python"]
+extended-testing = ["atlassian-python-api", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "esprima", "gql", "html2text", "jq", "lxml", "mwparserfromhell", "mwxml", "openai", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rapidfuzz", "requests-toolbelt", "scikit-learn", "streamlit", "sympy", "telethon", "tqdm", "zep-python"]
 javascript = ["esprima"]
 llms = ["anthropic", "clarifai", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "openllm", "openlm", "torch", "transformers"]
 openai = ["openai", "tiktoken"]
@@ -12713,4 +12836,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "f8f94ad19dd8f96637f6ffe64401b780ea9e7985543a7c9da31c41c55e94ab0f"
+content-hash = "eb68f4732f6230c96b48e5f6ba87494cdbd0f710886c644ecf714610e684c98b"
