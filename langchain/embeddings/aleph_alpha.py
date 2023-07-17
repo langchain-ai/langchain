@@ -18,7 +18,7 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
         .. code-block:: python
             from aleph_alpha import AlephAlphaAsymmetricSemanticEmbedding
 
-            embeddings = AlephAlphaSymmetricSemanticEmbedding(normalize=True, compress_to_size=128)
+            embeddings = AlephAlphaAsymmetricSemanticEmbedding(normalize=True, compress_to_size=128)
 
             document = "This is a content of the document"
             query = "What is the content of the document?"
