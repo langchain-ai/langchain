@@ -1,7 +1,4 @@
-import json
-from typing import Any, Dict, List, Union, Optional
-
-# from collections import defaultdict
+from typing import Any, Dict, List, Optional, Union
 
 
 class ArangoDBGraph:
@@ -54,18 +51,20 @@ class ArangoDBGraph:
 
             limit_amount = round(sample_ratio * col_size) or 1
 
-            # SORT RAND() ?
-            # RETURN SCHEMA_GET(collection) ?
-            aql = f"FOR doc in {col_name} LIMIT {limit_amount} RETURN doc"
+            aql = f"""
+                FOR doc in {col_name}
+                    // SORT RAND() ?
+                    LIMIT {limit_amount}
+                    RETURN doc
+            """
 
             doc: dict
             properties = {}  # defaultdict(set)
             for doc in self.__db.aql.execute(aql):
                 for k, v in doc.items():
-                    if k == "_rev":  # {"_id", "_key",  "_from", "_to"}
+                    if k == "_rev":
                         continue
 
-                    # properties[k].add(type(v).__name__)
                     properties[k] = type(v).__name__
 
             collection_schema.append(
@@ -73,26 +72,17 @@ class ArangoDBGraph:
                     "collection_name": col_name,
                     "collection_type": col_type,
                     f"{col_type}_properties": properties,
-                    f"example_{col_type}": doc
-                    # f"{col_typed}_properties": {k: list(v) for k,v in properties.items()},
+                    f"example_{col_type}": doc,
                 }
             )
 
-        return {
-            "Graph Schema": graph_schema,
-            "Collection Schema": collection_schema
-        }
+        return {"Graph Schema": graph_schema, "Collection Schema": collection_schema}
 
     def query(
-        self, query: str, top_k: Optional[int] = None, **kwargs
+        self, query: str, top_k: Optional[int] = None, **kwargs: Any
     ) -> List[Dict[str, Any]]:
         """Query the ArangoDB database."""
         import itertools
-        from arango import AQLQueryExecuteError
 
-        try:
-            cursor = self.__db.aql.execute(query, **kwargs)
-            return [doc for doc in itertools.islice(cursor, top_k)]
-
-        except AQLQueryExecuteError as e:
-            return "Unable to execute AQL Query"
+        cursor = self.__db.aql.execute(query, **kwargs)
+        return [doc for doc in itertools.islice(cursor, top_k)]

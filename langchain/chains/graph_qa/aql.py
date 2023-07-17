@@ -74,15 +74,13 @@ class ArangoDBGraphQAChain(Chain):
         callbacks = _run_manager.get_child()
         user_input = inputs[self.input_key]
 
+        # Generate AQL Response
         aql_generation_response = self.aql_generation_chain.run(
             {"user_input": user_input, "adb_schema": self.graph.schema},
             callbacks=callbacks,
         )
 
-        # breakpoint()
-        # matches = aql_generation_response.split('|')
-        # if not matches or (len(matches) == 1 and "RETURN" not in matches[0]):
-
+        # Extract AQL Query
         pattern = r"```(?i)aql(.*?)```"
         matches = re.findall(pattern, aql_generation_response, re.DOTALL)
         if not matches:
@@ -90,25 +88,24 @@ class ArangoDBGraphQAChain(Chain):
             return {self.output_key: aql_generation_response}
 
         aql_query = matches[0]
-        # results = []
-        # for aql_query in matches
-        # results.append(result[self.qa_chain.output_key])
-        # return {self.output_key: " ".join(results)}
 
-        # breakpoint()
         _run_manager.on_text("Generated AQL:", end="\n", verbose=self.verbose)
         _run_manager.on_text(aql_query, color="green", end="\n", verbose=self.verbose)
 
-        # Retrieve and limit the number of results
-        # breakpoint()
-        aql_result = self.graph.query(aql_query, self.top_k)
-        # breakpoint()
+        # Execute AQL Query
+        from arango import AQLQueryExecuteError
+
+        try:
+            aql_result = self.graph.query(aql_query, self.top_k)
+        except AQLQueryExecuteError as e:
+            return {self.output_key: f"Unable to execute AQL Query: {e.error_message}"}
 
         _run_manager.on_text("AQL Result:", end="\n", verbose=self.verbose)
         _run_manager.on_text(
             str(aql_result), color="green", end="\n", verbose=self.verbose
         )
 
+        # Interpret AQL Result
         result = self.qa_chain(
             {
                 "user_input": user_input,
@@ -117,8 +114,8 @@ class ArangoDBGraphQAChain(Chain):
             },
             callbacks=callbacks,
         )
-        # breakpoint()
 
+        # Return results
         result = {self.output_key: result[self.qa_chain.output_key]}
         if self.return_aql_result:
             result["aql_result"] = aql_result

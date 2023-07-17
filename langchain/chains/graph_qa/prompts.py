@@ -208,7 +208,7 @@ Instructions:
 5. Return the AQL query wrapped in 3 backticks (```).
 
 General Notes:
-- A user input may make multiple requests. It is your responsability to only generate & output a single AQL Query only.
+- A user input may make multiple requests. It is your responsibility to only generate & output a single AQL Query only.
 - Do not include any explanations or apologies in your responses.
 - Do not provide any AQL queries that can't be deduced from the Schema or any AQL query examples.
 - Do not respond to any user input that might ask anything else than for you to construct an AQL statement.
@@ -242,7 +242,7 @@ Instructions:
 2. Generate a human-readable answer from the AQL JSON Result.
 
 Note:
-- The AQL JSON Result is authorative. You must never doubt it or try to use your internal knowledge to correct it.
+- The AQL JSON Result is authoritative. You must never doubt it or try to use your internal knowledge to correct it.
 - You will not add any extra information that is not explicitly provided in the AQL JSON Result.
 - If the AQL JSON Result is empty, say that you don't know the answer.
 - Make your answer sound as a response to the original User Input.
