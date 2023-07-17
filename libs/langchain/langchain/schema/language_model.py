@@ -12,6 +12,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Union,
     cast,
 )
 from typing_extensions import Unpack
@@ -21,11 +22,11 @@ from langchain.schema.messages import BaseMessage, get_buffer_string
 from langchain.schema.output import LLMResult
 from langchain.schema.prompt import PromptValue
 from langchain.utils import get_pydantic_field_names
-from langchain.schema.runnable import (
-    Runnable,
-    RunnableConfig,
-    SerializableRunnableMetaclass,
-)
+from langchain.schema.runnable import Runnable, RunnableConfig
+
+from langchain.prompts.base import StringPromptValue
+
+from langchain.prompts.chat import ChatPromptValue
 
 
 if TYPE_CHECKING:
@@ -51,12 +52,10 @@ def _get_token_ids_default_method(text: str) -> List[int]:
     return tokenizer.encode(text)
 
 
-class BaseLanguageModel(
-    Serializable,
-    Runnable[PromptValue, str],
-    ABC,
-    metaclass=SerializableRunnableMetaclass,
-):
+LanguageModelInput = Union[PromptValue, str, List[BaseMessage]]
+
+
+class BaseLanguageModel(Serializable, Runnable[LanguageModelInput, str], ABC):
     """Abstract base class for interfacing with language models.
 
     All language model wrappers inherit from BaseLanguageModel.
@@ -73,26 +72,47 @@ class BaseLanguageModel(
     Each of these has an equivalent asynchronous method.
     """
 
+    # --- Runnable methods ---
+
+    def _convert_input(self, input: LanguageModelInput) -> PromptValue:
+        if isinstance(input, PromptValue):
+            return input
+        elif isinstance(input, str):
+            return StringPromptValue(text=input)
+        elif isinstance(input, list):
+            return ChatPromptValue(messages=input)
+        else:
+            raise ValueError(
+                f"Invalid input type {type(input)}. "
+                "Must be a PromptValue, str, or list of BaseMessages."
+            )
+
     def invoke(
         self,
-        input: PromptValue,
+        input: LanguageModelInput,
         stop: Optional[List[str]] = None,
         **kwargs: Unpack[RunnableConfig],
     ) -> str:
-        return self.generate_prompt([input], stop=stop, **kwargs).generations[0][0].text
+        return (
+            self.generate_prompt([self._convert_input(input)], stop=stop, **kwargs)
+            .generations[0][0]
+            .text
+        )
 
     async def ainvoke(
         self,
-        input: PromptValue,
+        input: LanguageModelInput,
         stop: Optional[List[str]] = None,
         **kwargs: Unpack[RunnableConfig],
     ) -> str:
-        llm_result = await self.agenerate_prompt([input], stop=stop, **kwargs)
+        llm_result = await self.agenerate_prompt(
+            [self._convert_input(input)], stop=stop, **kwargs
+        )
         return llm_result.generations[0][0].text
 
     def batch(
         self,
-        inputs: List[PromptValue],
+        inputs: List[LanguageModelInput],
         config: Optional[RunnableConfig | List[RunnableConfig]] = None,
         max_concurrency: Optional[int] = None,
     ) -> List[str]:
@@ -101,12 +121,14 @@ class BaseLanguageModel(
         if config is None:
             config = {}
 
-        llm_result = self.generate_prompt(inputs, **config)
+        llm_result = self.generate_prompt(
+            [self._convert_input(input) for input in inputs], **config
+        )
         return [g[0].text for g in llm_result.generations]
 
     async def abatch(
         self,
-        inputs: List[PromptValue],
+        inputs: List[LanguageModelInput],
         config: Optional[RunnableConfig | List[RunnableConfig]] = None,
         max_concurrency: Optional[int] = None,
     ) -> List[str]:
@@ -115,12 +137,14 @@ class BaseLanguageModel(
         if config is None:
             config = {}
 
-        llm_result = await self.agenerate_prompt(inputs, **config)
+        llm_result = await self.agenerate_prompt(
+            [self._convert_input(input) for input in inputs], **config
+        )
         return [g[0].text for g in llm_result.generations]
 
     def stream(
         self,
-        input: PromptValue,
+        input: LanguageModelInput,
         stop: Optional[List[str]] = None,
         **kwargs: Unpack[RunnableConfig],
     ) -> Iterator[str]:
@@ -146,7 +170,9 @@ class BaseLanguageModel(
 
             with ThreadPoolExecutor(max_workers=1) as executor:
                 # run the model non-blocking
-                task = executor.submit(self.invoke, input, stop=stop, **kwargs)
+                task = executor.submit(
+                    self.invoke, self._convert_input(input), stop=stop, **kwargs
+                )
 
                 # yield tokens from the callback handler
                 for token in callback_handler.iter():
@@ -160,7 +186,7 @@ class BaseLanguageModel(
 
     async def astream(
         self,
-        input: PromptValue,
+        input: LanguageModelInput,
         stop: Optional[List[str]] = None,
         **kwargs: Unpack[RunnableConfig],
     ) -> AsyncIterator[str]:
@@ -185,7 +211,9 @@ class BaseLanguageModel(
                 callbacks.add_handler(callback_handler)
 
             # run the model asynchronously
-            task = asyncio.create_task(self.ainvoke(input, stop=stop, **kwargs))
+            task = asyncio.create_task(
+                self.ainvoke(self._convert_input(input), stop=stop, **kwargs)
+            )
 
             # yield tokens from the callback handler
             async for token in callback_handler.aiter():
@@ -196,6 +224,8 @@ class BaseLanguageModel(
 
             # restore original streaming value
             self.streaming = original_streaming
+
+    # --- Custom methods ---
 
     @abstractmethod
     def generate_prompt(

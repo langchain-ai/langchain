@@ -5,7 +5,6 @@ from typing import Generator
 from urllib.request import urlretrieve
 
 from langchain.llms import LlamaCpp
-from langchain.prompts.base import StringPromptValue
 
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
@@ -43,9 +42,7 @@ def test_llamacpp_streaming() -> None:
     """Test streaming tokens from LlamaCpp."""
     model_path = get_model()
     llm = LlamaCpp(model_path=model_path, max_tokens=10)
-    generator = llm.stream(
-        StringPromptValue(text="Q: How do you say 'hello' in German? A:'"), stop=["'"]
-    )
+    generator = llm.stream("Q: How do you say 'hello' in German? A:'", stop=["'"])
     stream_results_string = ""
     assert isinstance(generator, Generator)
 
