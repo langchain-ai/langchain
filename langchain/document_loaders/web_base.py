@@ -65,7 +65,7 @@ class WebBaseLoader(BaseLoader):
         proxies: Optional[dict] = None,
         compress_newlines: Optional[bool] = False,
         regex: Optional[str] = None,
-        replacement: Optional[str] = "",
+        replacement: str = "",
     ):
         """Initialize with webpage path."""
 
