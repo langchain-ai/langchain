@@ -141,7 +141,7 @@ class ResultItem(BaseModel, ABC, extra=Extra.allow):
 
     def get_additional_metadata(self) -> dict:
         """Document additional metadata dict.
-        The final Document metadata will always provide the keys:
+        This returns any extra metadata except these values:
         ['source', 'title', 'excerpt' and 'document_attributes'].
         """
         return {}
