@@ -635,19 +635,22 @@ test = ["coverage (>=5,<6)", "pytest (>=6,<7)"]
 
 [[package]]
 name = "awadb"
-version = "0.3.6"
-description = "The AI Native database for embedding vectors"
+version = "0.3.7"
+description = "AI Native database for embedding vectors"
 category = "main"
 optional = true
 python-versions = ">=3.7"
 files = [
-    {file = "awadb-0.3.6-cp310-cp310-manylinux1_x86_64.whl", hash = "sha256:6154f73aab9996aefe8c8f8bf754f7182d109d6b60302c9f31666c7f50cc7aca"},
-    {file = "awadb-0.3.6-cp311-cp311-macosx_10_13_x86_64.whl", hash = "sha256:9d7e9dff353517595ecc8c9395a2367acdcfc83c68a64dd4785c8d366eed3f40"},
-    {file = "awadb-0.3.6-cp311-cp311-manylinux1_x86_64.whl", hash = "sha256:475af75d2ffbbe970999d93fbabdf7281797390c66fe852f6a6989e706b90c94"},
-    {file = "awadb-0.3.6-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:304be1de63daec1555f0fe9de9a18cdf16a467687a35a6ccf3405cd400fefb48"},
-    {file = "awadb-0.3.6-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:176cc27d1afc4aad758515d5f8fb435f555c9ba827a9e84d6f28b1c6ac568965"},
-    {file = "awadb-0.3.6-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:211d7f6b0f7c3c3d7518d424f0f3dfac5f45f9e5d7bbf397fdae861ff0dc46fd"},
-    {file = "awadb-0.3.6-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:b935ab4ffaa3bcbcc9a381fce91ace5940143b527ffdb467dd4bc630cd94afab"},
+    {file = "awadb-0.3.7-cp310-cp310-macosx_13_0_arm64.whl", hash = "sha256:deec44f3687aad3ef13ba3fac3e2e4fd83c710a30194d228b3f520d2fb013542"},
+    {file = "awadb-0.3.7-cp310-cp310-manylinux1_x86_64.whl", hash = "sha256:96e1e92e029f4b1000631bc06d6f845d554e4698851e515eafd35ff4f2b1994f"},
+    {file = "awadb-0.3.7-cp311-cp311-macosx_13_0_arm64.whl", hash = "sha256:46d44c4e8d97aaeb73234a2b9945b393b91dfaeae98e9fc6632ffb64bbc9e995"},
+    {file = "awadb-0.3.7-cp311-cp311-manylinux1_x86_64.whl", hash = "sha256:d5e379ea2f9f44687edb99c1d35719d1bed116759f800d212d9561cef99736a3"},
+    {file = "awadb-0.3.7-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:f2de28efa210035d278a55466023b44b8479254f3d5de69c944e6a3fcfb97879"},
+    {file = "awadb-0.3.7-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:7a2a3f063a133c945e12ea0ab9d9c7ab038c8255dbd867067dba0a513557124b"},
+    {file = "awadb-0.3.7-cp38-cp38-macosx_13_0_arm64.whl", hash = "sha256:15a8f3349ea84bdfc9c096b3760cf00363eb1908e71728b4a1e3beecda763cd5"},
+    {file = "awadb-0.3.7-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:3ac1ef7e1d1a591eb36a57ea65824e717f54fc521e4ae303d634e510817ba270"},
+    {file = "awadb-0.3.7-cp39-cp39-macosx_13_0_arm64.whl", hash = "sha256:947b6576a07e90cac31d8ff709cd0e0abc9779bc71276df817b2ffe18c1fa541"},
+    {file = "awadb-0.3.7-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:e4014edade8134579993639a4a3b18ff20c8449fdfc5ff511b24617109be5df7"},
 ]
 
 [package.extras]
