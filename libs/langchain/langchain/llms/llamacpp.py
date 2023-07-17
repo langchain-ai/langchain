@@ -226,7 +226,9 @@ class LlamaCpp(LLM):
             # method that yields as they are generated
             # and return the combined strings from the first choices's text:
             combined_text_output = ""
-            for token in self.stream(prompt=prompt, stop=stop, run_manager=run_manager):
+            for token in self._stream(
+                prompt=prompt, stop=stop, run_manager=run_manager
+            ):
                 combined_text_output += token["choices"][0]["text"]
             return combined_text_output
         else:
@@ -235,7 +237,7 @@ class LlamaCpp(LLM):
             result = self.client(prompt=prompt, **params)
             return result["choices"][0]["text"]
 
-    def stream(
+    def _stream(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,

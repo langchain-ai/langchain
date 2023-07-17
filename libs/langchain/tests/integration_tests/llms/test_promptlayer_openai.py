@@ -8,6 +8,8 @@ import pytest
 from langchain.llms.loading import load_llm
 from langchain.llms.promptlayer_openai import PromptLayerOpenAI
 
+from langchain.prompts.base import StringPromptValue
+
 
 def test_promptlayer_openai_call() -> None:
     """Test valid call to promptlayer openai."""
@@ -61,16 +63,9 @@ def test_saving_loading_llm(tmp_path: Path) -> None:
 def test_promptlayer_openai_streaming() -> None:
     """Test streaming tokens from promptalyer OpenAI."""
     llm = PromptLayerOpenAI(max_tokens=10)
-    generator = llm.stream("I'm Pickle Rick")
+    generator = llm.stream(StringPromptValue(text="I'm Pickle Rick"))
 
     assert isinstance(generator, Generator)
 
     for token in generator:
         assert isinstance(token["choices"][0]["text"], str)
-
-
-def test_promptlayer_openai_streaming_error() -> None:
-    """Test error handling in stream."""
-    llm = PromptLayerOpenAI(best_of=2)
-    with pytest.raises(ValueError):
-        llm.stream("I'm Pickle Rick")

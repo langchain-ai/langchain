@@ -6,6 +6,7 @@ import pytest
 from langchain.callbacks.manager import CallbackManager
 from langchain.llms.anthropic import Anthropic
 from langchain.schema import LLMResult
+from langchain.prompts.base import StringPromptValue
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
@@ -19,7 +20,7 @@ def test_anthropic_call() -> None:
 def test_anthropic_streaming() -> None:
     """Test streaming tokens from anthropic."""
     llm = Anthropic(model="test")
-    generator = llm.stream("I'm Pickle Rick")
+    generator = llm.stream(StringPromptValue(text="I'm Pickle Rick"))
 
     assert isinstance(generator, Generator)
 

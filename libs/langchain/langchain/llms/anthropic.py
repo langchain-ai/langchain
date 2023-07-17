@@ -1,18 +1,19 @@
 import re
 import warnings
-from typing import Any, Callable, Dict, Generator, List, Mapping, Optional
+from typing import Any, Callable, Dict, List, Mapping, Optional
 
-from pydantic import BaseModel, root_validator
+from pydantic import root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import LLM
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.utils import check_package_version, get_from_dict_or_env
 
 
-class _AnthropicCommon(BaseModel):
+class _AnthropicCommon(BaseLanguageModel):
     client: Any = None  #: :meta private:
     async_client: Any = None  #: :meta private:
     model: str = "claude-2"
@@ -248,37 +249,6 @@ class Anthropic(LLM, _AnthropicCommon):
             **params,
         )
         return response.completion
-
-    def stream(self, prompt: str, stop: Optional[List[str]] = None) -> Generator:
-        r"""Call Anthropic completion_stream and return the resulting generator.
-
-        BETA: this is a beta feature while we figure out the right abstraction.
-        Once that happens, this interface could change.
-
-        Args:
-            prompt: The prompt to pass into the model.
-            stop: Optional list of stop words to use when generating.
-
-        Returns:
-            A generator representing the stream of tokens from Anthropic.
-
-        Example:
-            .. code-block:: python
-
-
-                prompt = "Write a poem about a stream."
-                prompt = f"\n\nHuman: {prompt}\n\nAssistant:"
-                generator = anthropic.stream(prompt)
-                for token in generator:
-                    yield token
-        """
-        stop = self._get_anthropic_stop(stop)
-        return self.client.completions.create(
-            prompt=self._wrap_prompt(prompt),
-            stop_sequences=stop,
-            stream=True,
-            **self._default_params,
-        )
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate number of tokens."""

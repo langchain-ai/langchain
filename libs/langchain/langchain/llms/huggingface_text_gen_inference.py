@@ -69,7 +69,7 @@ class HuggingFaceTextGenInference(LLM):
                 temperature = 0.01,
                 repetition_penalty = 1.03,
                 callbacks = callbacks,
-                stream = True
+                streaming = True
             )
             print(llm("What is Deep Learning?"))
             
@@ -87,7 +87,7 @@ class HuggingFaceTextGenInference(LLM):
     inference_server_url: str = ""
     timeout: int = 120
     server_kwargs: Dict[str, Any] = Field(default_factory=dict)
-    stream: bool = False
+    streaming: bool = False
     client: Any
     async_client: Any
 
@@ -155,7 +155,7 @@ class HuggingFaceTextGenInference(LLM):
         **kwargs: Any,
     ) -> str:
         invocation_params = self._invocation_params(stop, **kwargs)
-        if not self.stream:
+        if not self.streaming:
             res = self.client.generate(prompt, **invocation_params)
             # remove stop sequences from the end of the generated text
             for stop_seq in invocation_params["stop_sequences"]:
@@ -194,7 +194,7 @@ class HuggingFaceTextGenInference(LLM):
         **kwargs: Any,
     ) -> str:
         invocation_params = self._invocation_params(stop, **kwargs)
-        if not self.stream:
+        if not self.streaming:
             res = await self.async_client.generate(
                 prompt,
                 **invocation_params,
