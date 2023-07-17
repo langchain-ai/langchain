@@ -72,9 +72,8 @@ class RecursiveUrlLoader(BaseLoader):
 
         # Make all links relative to the root of the website
         all_links_relative = [
-            link.replace(base_url, "/")
+            link.replace(base_url, "/") if link and link.startswith(base_url) else link
             for link in all_links
-            if link and link.startswith(base_url)
         ]
 
         # Extract only the links that are children of the current URL
