@@ -95,8 +95,6 @@ def test_sql_chain_sequential_with_memory() -> None:
     tables, output a comma separated list of the
     table names that may be necessary to answer this question.
 
-    History: {history}
-
     Question: {query}
 
     Table Names: {table_names}
@@ -108,7 +106,7 @@ def test_sql_chain_sequential_with_memory() -> None:
         template=valid_query_prompt_str,
     )
     valid_decider_prompt = PromptTemplate(
-        input_variables=["query", "table_names", "history"],
+        input_variables=["query", "table_names"],
         template=valid_decider_prompt_str,
         output_parser=CommaSeparatedListOutputParser(),
     )
@@ -118,12 +116,10 @@ def test_sql_chain_sequential_with_memory() -> None:
         "foo3": "SELECT baaz from foo",
     }
     llm = FakeLLM(queries=queries, sequential_responses=True)
-    decider_memory = ConversationBufferMemory(memory_key="history", input_key="query")
     query_memory = ConversationBufferMemory(memory_key="history", input_key="input")
     db_chain = SQLDatabaseSequentialChain.from_llm(
         llm,
         db,
-        decider_memory=decider_memory,
         query_memory=query_memory,
         decider_prompt=valid_decider_prompt,
         query_prompt=valid_query_prompt,
