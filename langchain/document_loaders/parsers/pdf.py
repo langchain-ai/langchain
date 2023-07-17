@@ -115,7 +115,9 @@ class PyPDFium2Parser(BaseBlobParser):
 class PDFPlumberParser(BaseBlobParser):
     """Parse PDFs with PDFPlumber."""
 
-    def __init__(self, text_kwargs: Optional[Mapping[str, Any]] = None) -> None:
+    def __init__(
+        self, text_kwargs: Optional[Mapping[str, Any]] = None, dedupe: bool = False
+    ) -> None:
         """Initialize the parser.
 
         Args:
