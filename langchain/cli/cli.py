@@ -18,7 +18,7 @@ def callback() -> None:
 
 AUTHOR_NAME_OPTION = typer.Option(default_factory=get_git_user_name, prompt=True)
 AUTHOR_EMAIL_OPTION = typer.Option(default_factory=get_git_user_email, prompt=True)
-USE_POETRY_OPTION = typer.Option(default_factory=is_poetry_installed, prompt=True)
+USE_POETRY_OPTION = typer.Option(default_factory=is_poetry_installed)
 
 
 @app.command()

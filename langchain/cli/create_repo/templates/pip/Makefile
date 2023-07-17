@@ -7,7 +7,7 @@ all: help
 TEST_FILE ?= tests/
 
 test:
-	poetry run pytest $(TEST_FILE)
+	pytest $(TEST_FILE)
 
 # Define a variable for Python and notebook files.
 PYTHON_FILES=.
@@ -15,13 +15,13 @@ lint format: PYTHON_FILES=.
 lint_diff format_diff: PYTHON_FILES=$(shell git diff --name-only --diff-filter=d main | grep -E '\.py$$|\.ipynb$$')
 
 lint lint_diff:
-	poetry run mypy $(PYTHON_FILES)
-	poetry run black $(PYTHON_FILES) --check
-	poetry run ruff .
+	mypy $(PYTHON_FILES)
+	black $(PYTHON_FILES) --check
+	ruff .
 
 format format_diff:
-	poetry run black $(PYTHON_FILES)
-	poetry run ruff --select I --fix $(PYTHON_FILES)
+	black $(PYTHON_FILES)
+	ruff --select I --fix $(PYTHON_FILES)
 
 ######################
 # HELP

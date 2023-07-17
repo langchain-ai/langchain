@@ -1,5 +1,4 @@
 import os
-import platform
 import string
 import subprocess
 from pathlib import Path
@@ -55,8 +54,9 @@ def create(
 
     typer.echo(
         f"\n{typer.style('1.', bold=True, fg=typer.colors.GREEN)} Creating new"
-        f" LangChain project {typer.style(project_name, fg=typer.colors.BLUE)} in"
-        f" {typer.style(project_directory_path.resolve(), fg=typer.colors.BLUE)}"
+        f" LangChain project {typer.style(project_name, fg=typer.colors.BRIGHT_CYAN)}"
+        f" in"
+        f" {typer.style(project_directory_path.resolve(), fg=typer.colors.BRIGHT_CYAN)}"
     )
 
     _create_project_dir(
@@ -77,16 +77,30 @@ def create(
 
     typer.echo(
         f"\n{typer.style('Done!', bold=True, fg=typer.colors.GREEN)}"
-        f" Your new LangChain project {typer.style(project_name, fg=typer.colors.BLUE)}"
+        f" Your new LangChain project"
+        f" {typer.style(project_name, fg=typer.colors.BRIGHT_CYAN)}"
         f" has been created in"
-        f" {typer.style(project_directory_path.resolve(), fg=typer.colors.BLUE)}."
+        f" {typer.style(project_directory_path.resolve(), fg=typer.colors.BRIGHT_CYAN)}"
+        f"."
+    )
+    cd_dir = typer.style(
+        f"cd {project_directory_path.resolve()}", fg=typer.colors.BRIGHT_CYAN
     )
     typer.echo(
-        f"\nChange into the project directory with"
-        f" {typer.style(f'cd {project_name}', fg=typer.colors.BLUE)}."
+        f"\nChange into the project directory with {cd_dir}."
         f" The following commands are available:"
     )
     subprocess.run(["make"], cwd=project_directory_path)
+
+    if not use_poetry:
+        pip_install = typer.style(
+            'pip install -e ".[dev]"', fg=typer.colors.BRIGHT_CYAN
+        )
+        typer.echo(
+            f"\nTo install all dependencies activate your environment run:"
+            f"\n{typer.style('source .venv/bin/activate', fg=typer.colors.BRIGHT_CYAN)}"
+            f"\n{pip_install}."
+        )
 
 
 def is_poetry_installed() -> bool:
@@ -98,8 +112,9 @@ def _validate_name(project_name: str, project_name_identifier: str) -> None:
     if project_name_diagnostics:
         typer.echo(
             f"{typer.style('Error:', fg=typer.colors.RED)}"
-            f" The project name {typer.style(project_name, fg=typer.colors.BLUE)} is"
-            f" not valid:",
+            f" The project name"
+            f" {typer.style(project_name, fg=typer.colors.BRIGHT_CYAN)}"
+            f" is not valid:",
             err=True,
         )
         for diagnostic in project_name_diagnostics:
@@ -112,8 +127,9 @@ def _validate_name(project_name: str, project_name_identifier: str) -> None:
     if is_name_taken(project_name):
         typer.echo(
             f"{typer.style('Error:', fg=typer.colors.RED)}"
-            f" The project name {typer.style(project_name, fg=typer.colors.BLUE)} is"
-            f" already taken.",
+            f" The project name"
+            f" {typer.style(project_name, fg=typer.colors.BRIGHT_CYAN)}"
+            f" is already taken.",
             err=True,
         )
         typer.echo(
@@ -169,8 +185,8 @@ def _check_conflicting_files(
                 typer.echo(
                     f"{typer.style('Error:', fg=typer.colors.RED)}"
                     f" The project directory already contains a file"
-                    f" {typer.style(project_file_path, fg=typer.colors.BLUE)} that"
-                    f" would be overwritten by the template.",
+                    f" {typer.style(project_file_path, fg=typer.colors.BRIGHT_CYAN)}"
+                    f" that  would be overwritten by the template.",
                     err=True,
                 )
                 typer.echo(
@@ -222,26 +238,12 @@ def _poetry_install(project_directory_path: Path) -> None:
 
 
 def _pip_install(project_directory_path: Path) -> None:
-    curr_venv = os.environ.get("VIRTUAL_ENV", None)
     typer.echo(
         f"\n{typer.style('2.', bold=True, fg=typer.colors.GREEN)}"
-        f" Installing dependencies with pip..."
+        f" Creating virtual environment..."
     )
     subprocess.run(["pwd"], cwd=project_directory_path)
-    subprocess.run(["python", "-m", "venv", ".venv"])
-    if platform.system().startswith("win"):
-        subprocess.run(".venv\\Scripts\\activate")
-    else:
-        subprocess.run(["source", ".venv/bin/activate"])
-    subprocess.run(
-        ["pip", "install", "-e", '".[dev]"'],
-        cwd=project_directory_path,
-    )
-    if curr_venv:
-        if platform.system().startswith("win"):
-            subprocess.run(curr_venv + "\\Scripts\\activate")
-        else:
-            subprocess.run(["source", curr_venv + "/bin/activate"])
+    subprocess.run(["python", "-m", "venv", ".venv"], cwd=project_directory_path)
 
 
 def _init_git(project_directory_path: Path) -> None:

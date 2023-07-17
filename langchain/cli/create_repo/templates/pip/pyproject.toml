@@ -1,20 +1,19 @@
 [project]
 name = "____project_name"
-version = "0.1.0"
+version = "0.0.1"
 description = ""
-authors = ["____author_name <____author_email>"]
-license = "MIT"
+authors = [{name = "____author_name", email = "____author_email"}]
 readme = "README.md"
-packages = [{include = "____project_name_identifier"}]
 requires-python = ">=3.8,<4.0"
 dependencies = [
   "langchain~=____langchain_version",
 ]
 
 [build-system]
-requires = []
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
 
-[project.optional_dependencies]
+[project.optional-dependencies]
 dev = [
   "pytest~=7.4.0",
   "pytest-asyncio~=0.21.1",
