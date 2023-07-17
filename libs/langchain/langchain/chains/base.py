@@ -23,11 +23,7 @@ from langchain.callbacks.manager import (
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
 from langchain.schema import RUN_KEY, BaseMemory, RunInfo
-from langchain.schema.runnable import (
-    Runnable,
-    RunnableConfig,
-    SerializableRunnableMetaclass,
-)
+from langchain.schema.runnable import Runnable, RunnableConfig
 
 logger = logging.getLogger(__name__)
 
@@ -36,12 +32,7 @@ def _get_verbosity() -> bool:
     return langchain.verbose
 
 
-class Chain(
-    Serializable,
-    Runnable[Dict[str, Any], Dict[str, Any]],
-    ABC,
-    metaclass=SerializableRunnableMetaclass,
-):
+class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
     """Abstract base class for creating structured sequences of calls to components.
 
     Chains should be used to encode a sequence of calls to components like

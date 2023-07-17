@@ -27,12 +27,12 @@ for token in fake.stream("hello"):
     print("stream fake", token)
 print("batch fake", fake.batch(["hello", "world"]))
 
-print("invoke llm", llm.invoke(StringPromptValue(text="say hi")))
-for token in llm.stream(StringPromptValue(text="say hi")):
+print("invoke llm", llm.invoke("say hi"))
+for token in llm.stream("say hi"):
     print("stream llm", token)
 print(
     "batch llm",
-    llm.batch([StringPromptValue(text="say hi"), StringPromptValue(text="say hello")]),
+    llm.batch(["say hi", StringPromptValue(text="say hello")]),
 )
 
 

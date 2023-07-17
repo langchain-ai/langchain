@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
@@ -6,10 +7,10 @@ from typing import (
     AsyncIterator,
     Coroutine,
     Dict,
+    Generic,
     Iterator,
     List,
     Optional,
-    Protocol,
     TypedDict,
     TypeVar,
     Union,
@@ -62,7 +63,8 @@ Input = TypeVar("Input")
 Output = TypeVar("Output")
 
 
-class Runnable(Protocol[Input, Output]):
+class Runnable(Generic[Input, Output], ABC):
+    @abstractmethod
     def invoke(self, input: Input, **kwargs: Unpack[RunnableConfig]) -> Output:
         ...
 
@@ -119,7 +121,3 @@ class Runnable(Protocol[Input, Output]):
             )
 
         return config if isinstance(config, list) else [config or {}] * length
-
-
-class SerializableRunnableMetaclass(type(Serializable), type(Runnable)):
-    pass
