@@ -282,7 +282,8 @@ class RecursiveUrlLoader(BaseLoader):
                 )
             # sub_tasks returns coroutines of list, so we need to flatten the list await asyncio.gather(*sub_tasks)
             flattened = []
-            for sub_result in await asyncio.gather(*sub_tasks):
+            next_results = await asyncio.gather(*sub_tasks)
+            for sub_result in next_results:
                 if sub_result is not None:
                     flattened += sub_result
             results += flattened
