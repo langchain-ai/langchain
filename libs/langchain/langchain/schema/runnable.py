@@ -19,6 +19,8 @@ from typing_extensions import Unpack
 
 from langchain.callbacks.manager import Callbacks
 
+from langchain.load.serializable import Serializable
+
 
 async def _gated_coro(semaphore: asyncio.Semaphore, coro: Coroutine) -> Any:
     async with semaphore:
@@ -34,7 +36,7 @@ async def _gather_with_concurrency(n: Union[int, None], *coros: Coroutine) -> li
     return await asyncio.gather(*(_gated_coro(semaphore, c) for c in coros))
 
 
-class RunnableConfig(TypedDict, total=False, allow_extra=True):
+class RunnableConfig(TypedDict, total=False):
     """
     Tags for this call and any sub-calls (eg. a Chain calling an LLM).
     You can use these to filter calls.
@@ -117,3 +119,7 @@ class Runnable(Protocol[Input, Output]):
             )
 
         return config if isinstance(config, list) else [config or {}] * length
+
+
+class SerializableRunnableMetaclass(type(Serializable), type(Runnable)):
+    pass
