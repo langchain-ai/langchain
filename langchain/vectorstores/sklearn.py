@@ -233,12 +233,13 @@ class SKLearnVectorStore(VectorStore):
         query: str,
         *,
         k: int = DEFAULT_K,
+        fetch_k: int = DEFAULT_FETCH_K,
         filter: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         query_embedding = self._embedding_function.embed_query(query)
         indices_dists = self._similarity_index_search_with_score(
-            query_embedding, k=k, **kwargs
+            query_embedding, k=fetch_k, **kwargs
         )
 
         docs: List[Tuple[Document, float]] = []
@@ -254,25 +255,26 @@ class SKLearnVectorStore(VectorStore):
             if filter is None:
                 docs.append(doc)
             else:
-                _filter = {
+                filter = {
                     key: [value] if not isinstance(value, list) else value
                     for key, value in filter.items()
                 }
                 if all(
-                    doc[0].metadata.get(key) in value for key, value in _filter.items()
+                    doc[0].metadata.get(key) in value for key, value in filter.items()
                 ):
                     docs.append(doc)
-        return docs
+        return docs[:k]
 
     def similarity_search(
         self,
         query: str,
         k: int = DEFAULT_K,
+        fetch_k: int = DEFAULT_FETCH_K,
         filter: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         docs_scores = self.similarity_search_with_score(
-            query, k=k, filter=filter, **kwargs
+            query, k=k, fetch_k=fetch_k, filter=filter, **kwargs
         )
         return [doc for doc, _ in docs_scores]
 
@@ -280,11 +282,12 @@ class SKLearnVectorStore(VectorStore):
         self,
         query: str,
         k: int = DEFAULT_K,
+        fetch_k: int = DEFAULT_FETCH_K,
         filter: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         docs_dists = self.similarity_search_with_score(
-            query, k=k, filter=filter, **kwargs
+            query, k=k, fetch_k=fetch_k, filter=filter, **kwargs
         )
         docs, dists = zip(*docs_dists)
         scores = [1 / math.exp(dist) for dist in dists]
@@ -315,14 +318,14 @@ class SKLearnVectorStore(VectorStore):
             List of Documents selected by maximal marginal relevance.
         """
         indices_dists = self._similarity_index_search_with_score(
-            embedding, k=fetch_k, filter=None, **kwargs
+            embedding, k=fetch_k, **kwargs
         )
         indices, _ = zip(*indices_dists)
         result_embeddings = self._embeddings_np[indices,]
         mmr_selected = maximal_marginal_relevance(
             self._np.array(embedding, dtype=self._np.float32),
             result_embeddings,
-            k=k,
+            k=fetch_k,
             lambda_mult=lambda_mult,
         )
         mmr_indices = [indices[i] for i in mmr_selected]
@@ -336,16 +339,14 @@ class SKLearnVectorStore(VectorStore):
             if filter is None:
                 docs.append(doc)
             else:
-                _filter = {
+                filter = {
                     key: [value] if not isinstance(value, list) else value
                     for key, value in filter.items()
                 }
-                if all(
-                    doc.metadata.get(key) in value for key, value in _filter.items()
-                ):
+                if all(doc.metadata.get(key) in value for key, value in filter.items()):
                     docs.append(doc)
 
-        return docs
+        return docs[:k]
 
     def max_marginal_relevance_search(
         self,
