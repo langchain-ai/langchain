@@ -9,7 +9,9 @@ from langchain.document_loaders.base import BaseLoader
 class BrowserlessLoader(BaseLoader):
     """Loads the content of webpages using Browserless' /content endpoint"""
 
-    def __init__(self, api_token: str, urls: Union[str, List[str]], text_content: bool = True):
+    def __init__(
+        self, api_token: str, urls: Union[str, List[str]], text_content: bool = True
+    ):
         """Initialize with API token and the URLs to scrape"""
         self.api_token = api_token
         """Browserless API token."""
@@ -33,11 +35,11 @@ class BrowserlessLoader(BaseLoader):
                             {
                                 "selector": "body",
                             }
-                        ]
+                        ],
                     },
                 )
                 yield Document(
-                    page_content=response.json()['data'][0]["results"][0]["text"],
+                    page_content=response.json()["data"][0]["results"][0]["text"],
                     metadata={
                         "source": url,
                     },
@@ -52,14 +54,13 @@ class BrowserlessLoader(BaseLoader):
                         "url": url,
                     },
                 )
-            
+
                 yield Document(
                     page_content=response.text,
                     metadata={
                         "source": url,
                     },
                 )
-
 
     def load(self) -> List[Document]:
         """Load Documents from URLs."""
