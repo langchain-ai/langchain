@@ -123,6 +123,7 @@ rapidfuzz = {version = "^3.1.1", optional = true}
 langsmith = "~0.0.11"
 rank-bm25 = {version = "^0.2.2", optional = true}
 geopandas = {version = "^0.13.1", optional = true}
+nucliadb-protos = {version = "^2.17.0.post451", optional = true}
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
