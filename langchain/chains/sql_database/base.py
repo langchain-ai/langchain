@@ -158,7 +158,7 @@ class SQLDatabaseChain(Chain):
             # the result of the sql query result, otherwise try to get a human readable
             # final answer
             if self.return_direct:
-                final_result = result
+                final_result = sql_cmd
             else:
                 _run_manager.on_text("\nAnswer:", verbose=self.verbose)
                 input_text += f"{sql_cmd}\nSQLResult: {result}\nAnswer:"
