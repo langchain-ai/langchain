@@ -1,8 +1,11 @@
+from typing import Any, List, Mapping, Optional
+
+import requests
+
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from typing import List, Optional, Mapping, Any
-import requests
-from langchain.callbacks.manager import CallbackManagerForLLMRun
+
 
 class ChatGLM(LLM):
     """Wrapper around ChatGLM's LLM inference service.
@@ -18,10 +21,8 @@ class ChatGLM(LLM):
                 endpoint_url=endpoint_url
             )
     """
-    
-    endpoint_url: str = (
-        "http://127.0.0.1:8000/"
-    )
+
+    endpoint_url: str = "http://127.0.0.1:8000/"
     """Endpoint URL to use."""
     model_kwargs: Optional[dict] = None
     """Key word arguments to pass to the model."""
@@ -37,7 +38,7 @@ class ChatGLM(LLM):
     @property
     def _llm_type(self) -> str:
         return "ChatGLM"
-    
+
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
@@ -46,14 +47,14 @@ class ChatGLM(LLM):
             **{"endpoint_url": self.endpoint_url},
             **{"model_kwargs": _model_kwargs},
         }
-    
+
     def _call(
-            self, 
-            prompt: str, 
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            **kwargs: Any,
-            ) -> str:
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
         """Call out to a ChatGLM LLM inference endpoint.
 
         Args:
@@ -72,37 +73,32 @@ class ChatGLM(LLM):
         _model_kwargs = self.model_kwargs or {}
 
         # HTTP headers for authorization
-        headers = {
-            "Content-Type": "application/json"
-        }
+        headers = {"Content-Type": "application/json"}
 
         payload = {
-          'prompt': prompt,
-          'temperature': self.temperature,
-          'history': self.history,
-          'max_length': self.max_token,
-          'top_p': self.top_p
+            "prompt": prompt,
+            "temperature": self.temperature,
+            "history": self.history,
+            "max_length": self.max_token,
+            "top_p": self.top_p,
         }
         payload.update(_model_kwargs)
         payload.update(kwargs)
 
         # print("ChatGLM payload:", payload)
-        
+
         # call api
         try:
-            response = requests.post(self.endpoint_url, 
-                                     headers=headers, 
-                                     json=payload)
+            response = requests.post(self.endpoint_url, headers=headers, json=payload)
         except requests.exceptions.RequestException as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
-        
+
         # print("ChatGLM resp:", response)
 
         if response.status_code != 200:
             raise ValueError(f"Failed with response: {response}")
 
         try:
-
             parsed_response = response.json()
 
             # Check if response content does exists
@@ -119,8 +115,8 @@ class ChatGLM(LLM):
             raise ValueError(
                 f"Error raised during decoding response from inference endpoint: {e}.\nResponse: {response.text}"
             )
-        
+
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
-        self.history = self.history + [[None, parsed_response['response']]]
+        self.history = self.history + [[None, parsed_response["response"]]]
         return text
