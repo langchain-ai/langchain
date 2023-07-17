@@ -1,7 +1,7 @@
 """Loader that uses unstructured to load files."""
 import collections
 from abc import ABC, abstractmethod
-from typing import IO, Any, Dict, List, Sequence, Union
+from typing import IO, Any, Callable, Dict, List, Sequence, Union
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -36,7 +36,12 @@ def validate_unstructured_version(min_unstructured_version: str) -> None:
 class UnstructuredBaseLoader(BaseLoader, ABC):
     """Loader that uses unstructured to load files."""
 
-    def __init__(self, mode: str = "single", **unstructured_kwargs: Any):
+    def __init__(
+        self,
+        mode: str = "single",
+        post_processors: List[Callable] = [],
+        **unstructured_kwargs: Any,
+    ):
         """Initialize with file path."""
         try:
             import unstructured  # noqa:F401
@@ -57,6 +62,7 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
                 unstructured_kwargs.pop("strategy")
 
         self.unstructured_kwargs = unstructured_kwargs
+        self.post_processors = post_processors
 
     @abstractmethod
     def _get_elements(self) -> List:
@@ -65,6 +71,15 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
     @abstractmethod
     def _get_metadata(self) -> dict:
         """Get metadata."""
+
+    def _post_process_elements(self, elements: list) -> list:
+        """Applies post processing functions to extracted unstructured elements.
+        Post processing functions are Element -> Element callables are passed
+        in using the post_processors kwarg when the loader is instantiated."""
+        for element in elements:
+            for post_processor in self.post_processors:
+                element.apply(post_processor)
+        return elements
 
     def load(self) -> List[Document]:
         """Load file."""

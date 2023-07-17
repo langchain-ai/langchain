@@ -10,6 +10,7 @@ from langsmith import Client, RunEvaluator
 
 from langchain.callbacks.manager import tracing_v2_enabled
 from langchain.callbacks.tracers.base import BaseTracer
+from langchain.callbacks.tracers.langchain import _get_client
 from langchain.callbacks.tracers.schemas import Run
 
 logger = logging.getLogger(__name__)
@@ -77,7 +78,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         self.example_id = (
             UUID(example_id) if isinstance(example_id, str) else example_id
         )
-        self.client = client or Client()
+        self.client = client or _get_client()
         self.evaluators = evaluators
         self.executor = ThreadPoolExecutor(
             max_workers=max(max_workers or len(evaluators), 1)
@@ -102,7 +103,9 @@ class EvaluatorCallbackHandler(BaseTracer):
         try:
             if self.project_name is None:
                 self.client.evaluate_run(run, evaluator)
-            with tracing_v2_enabled(project_name=self.project_name, tags=["eval"]):
+            with tracing_v2_enabled(
+                project_name=self.project_name, tags=["eval"], client=self.client
+            ):
                 self.client.evaluate_run(run, evaluator)
         except Exception as e:
             logger.error(

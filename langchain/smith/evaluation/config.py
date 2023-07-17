@@ -44,7 +44,12 @@ class EvalConfig(BaseModel):
             The keyword arguments for the load_evaluator call.
 
         """
-        return self.dict(exclude={"evaluator_type"}, exclude_none=True)
+        kwargs = {}
+        for field, val in self:
+            if field == "evaluator_type":
+                continue
+            kwargs[field] = val
+        return kwargs
 
 
 class RunEvalConfig(BaseModel):
@@ -177,6 +182,15 @@ class RunEvalConfig(BaseModel):
 
         evaluator_type: EvaluatorType = EvaluatorType.STRING_DISTANCE
         distance: Optional[StringDistanceEnum] = None
+        """The string distance metric to use.
+            damerau_levenshtein: The Damerau-Levenshtein distance.
+            levenshtein: The Levenshtein distance.
+            jaro: The Jaro distance.
+            jaro_winkler: The Jaro-Winkler distance.
+        """
+        normalize_score: bool = True
+        """Whether to normalize the distance to between 0 and 1.
+        Applies only to the Levenshtein and Damerau-Levenshtein distances."""
 
     class QA(EvalConfig):
         """Configuration for a QA evaluator.
