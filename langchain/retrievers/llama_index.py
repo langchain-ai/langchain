@@ -10,10 +10,13 @@ from langchain.schema import BaseRetriever, Document
 
 
 class LlamaIndexRetriever(BaseRetriever):
-    """Question-answering with sources over an LlamaIndex data structure."""
+    """Retriever for the question-answering with sources over
+    an LlamaIndex data structure."""
 
     index: Any
+    """LlamaIndex index to query."""
     query_kwargs: Dict = Field(default_factory=dict)
+    """Keyword arguments to pass to the query method."""
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
@@ -46,10 +49,13 @@ class LlamaIndexRetriever(BaseRetriever):
 
 
 class LlamaIndexGraphRetriever(BaseRetriever):
-    """Question-answering with sources over an LlamaIndex graph data structure."""
+    """Retriever for question-answering with sources over an LlamaIndex
+    graph data structure."""
 
     graph: Any
+    """LlamaIndex graph to query."""
     query_configs: List[Dict] = Field(default_factory=list)
+    """List of query configs to pass to the query method."""
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun

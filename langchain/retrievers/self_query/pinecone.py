@@ -1,4 +1,3 @@
-"""Logic for converting internal query language to a valid Pinecone query."""
 from typing import Dict, Tuple, Union
 
 from langchain.chains.query_constructor.ir import (
@@ -12,7 +11,7 @@ from langchain.chains.query_constructor.ir import (
 
 
 class PineconeTranslator(Visitor):
-    """Logic for converting internal query language elements to valid filters."""
+    """Translate the internal query language elements to valid filters."""
 
     allowed_comparators = (
         Comparator.EQ,

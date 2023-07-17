@@ -1,5 +1,3 @@
-"""Wrapper around weaviate vector database."""
-
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, cast
@@ -16,7 +14,7 @@ from langchain.schema import BaseRetriever
 
 
 class WeaviateHybridSearchRetriever(BaseRetriever):
-    """Retriever that uses Weaviate's hybrid search to retrieve documents."""
+    """Retriever for the Weaviate's hybrid search."""
 
     client: Any
     """keyword arguments to pass to the Weaviate client."""

@@ -11,12 +11,20 @@ from langchain.schema import BaseRetriever, Document
 
 
 class RemoteLangChainRetriever(BaseRetriever):
+    """Retriever for remote LangChain API."""
+
     url: str
+    """URL of the remote LangChain API."""
     headers: Optional[dict] = None
+    """Headers to use for the request."""
     input_key: str = "message"
+    """Key to use for the input in the request."""
     response_key: str = "response"
+    """Key to use for the response in the request."""
     page_content_key: str = "page_content"
+    """Key to use for the page content in the response."""
     metadata_key: str = "metadata"
+    """Key to use for the metadata in the response."""
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
