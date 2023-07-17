@@ -65,6 +65,7 @@ class CubeSemanticLoader(BaseLoader):
                     column_data_type=str(item.get("type")),
                     column_title=str(item.get("title")),
                     column_description=str(item.get("description")),
+                    column_member_type="measure" if item in measures else "dimension",
                 )
 
                 page_content = f"table name: {str(cube_name)}, "
