@@ -207,12 +207,6 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
         return cls.from_messages([message])
 
     @classmethod
-    def from_system_message(cls, template: str, **kwargs: Any) -> ChatPromptTemplate:
-        prompt_template = PromptTemplate.from_template(template, **kwargs)
-        message = SystemMessagePromptTemplate(prompt=prompt_template)
-        return cls.from_messages([message])
-
-    @classmethod
     def from_role_strings(
         cls, string_messages: List[Tuple[str, str]]
     ) -> ChatPromptTemplate:
