@@ -1,11 +1,14 @@
 import logging
 from datetime import datetime as dt
-from typing import Dict, List, Optional, Type
+from typing import Dict, Optional, Type
 
 from amadeus import ResponseError
 from pydantic import BaseModel, Field
 
-from langchain.callbacks.manager import AsyncCallbackManagerForToolRun
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
 from langchain.tools.amadeus.base import AmadeusBaseTool
 
 logger = logging.getLogger(__name__)
@@ -66,6 +69,7 @@ class AmadeusFlightSearch(AmadeusBaseTool):
         departureDateTimeEarliest: str,
         departureDateTimeLatest: str,
         page_number: int = 1,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> list:
         RESULTS_PER_PAGE = 10
 
@@ -142,11 +146,11 @@ class AmadeusFlightSearch(AmadeusBaseTool):
 
     async def _arun(
         self,
-        message: str,
-        to: List[str],
-        subject: str,
-        cc: Optional[List[str]] = None,
-        bcc: Optional[List[str]] = None,
+        originLocationCode: str,
+        destinationLocationCode: str,
+        departureDateTimeEarliest: str,
+        departureDateTimeLatest: str,
+        page_number: int = 1,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
+    ) -> list:
         raise NotImplementedError(f"The tool {self.name} does not support async yet.")

@@ -1,8 +1,11 @@
-from typing import List, Optional, Type
+from typing import Optional, Type
 
 from pydantic import BaseModel, Field
 
-from langchain.callbacks.manager import AsyncCallbackManagerForToolRun
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
 from langchain.chains import LLMChain
 from langchain.chat_models import ChatOpenAI
 from langchain.tools.amadeus.base import AmadeusBaseTool
@@ -35,6 +38,7 @@ class AmadeusClosestAirport(AmadeusBaseTool):
     def _run(
         self,
         location: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         template = (
             " What is the nearest airport to {location}? Please respond with the "
@@ -53,11 +57,7 @@ class AmadeusClosestAirport(AmadeusBaseTool):
 
     async def _arun(
         self,
-        message: str,
-        to: List[str],
-        subject: str,
-        cc: Optional[List[str]] = None,
-        bcc: Optional[List[str]] = None,
+        location: str,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         raise NotImplementedError(f"The tool {self.name} does not support async yet.")

@@ -1,5 +1,5 @@
 """Agent toolkits."""
-
+from langchain.agents.agent_toolkits.amadeus.toolkit import AmadeusToolkit
 from langchain.agents.agent_toolkits.azure_cognitive_services.toolkit import (
     AzureCognitiveServicesToolkit,
 )
@@ -38,6 +38,7 @@ from langchain.agents.agent_toolkits.vectorstore.toolkit import (
 from langchain.agents.agent_toolkits.zapier.toolkit import ZapierToolkit
 
 __all__ = [
+    "AmadeusToolkit",
     "create_json_agent",
     "create_sql_agent",
     "create_openapi_agent",
