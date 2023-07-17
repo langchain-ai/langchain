@@ -6,9 +6,12 @@ import warnings
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
+from pydantic import Extra, Field, root_validator
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
+    Callbacks,
 )
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -20,7 +23,6 @@ from langchain.prompts import PromptTemplate
 from langchain.schema import BaseRetriever, Document
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.vectorstores.base import VectorStore
-from pydantic import Extra, Field, root_validator
 
 
 class BaseRetrievalQA(Chain):
