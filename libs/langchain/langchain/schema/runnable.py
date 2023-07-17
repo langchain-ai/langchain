@@ -34,7 +34,7 @@ async def _gather_with_concurrency(n: Union[int, None], *coros: Coroutine) -> li
     return await asyncio.gather(*(_gated_coro(semaphore, c) for c in coros))
 
 
-class RunnableConfig(TypedDict, total=False):
+class RunnableConfig(TypedDict, total=False, allow_extra=True):
     """
     Tags for this call and any sub-calls (eg. a Chain calling an LLM).
     You can use these to filter calls.
@@ -72,7 +72,7 @@ class Runnable(Protocol[Input, Output]):
     def batch(
         self,
         inputs: List[Input],
-        config: Optional[RunnableConfig | List[RunnableConfig]] = None,
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
         max_concurrency: Optional[int] = None,
     ) -> List[Output]:
         configs = self._get_config_list(config, len(inputs))
@@ -87,7 +87,7 @@ class Runnable(Protocol[Input, Output]):
     async def abatch(
         self,
         inputs: List[Input],
-        config: Optional[RunnableConfig | List[RunnableConfig]] = None,
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
         max_concurrency: Optional[int] = None,
     ) -> List[Output]:
         configs = self._get_config_list(config, len(inputs))
@@ -108,7 +108,7 @@ class Runnable(Protocol[Input, Output]):
         yield await self.ainvoke(input, **kwargs)
 
     def _get_config_list(
-        self, config: Optional[RunnableConfig | List[RunnableConfig]], length: int
+        self, config: Optional[Union[RunnableConfig, List[RunnableConfig]]], length: int
     ) -> List[RunnableConfig]:
         if isinstance(config, list) and len(config) != length:
             raise ValueError(

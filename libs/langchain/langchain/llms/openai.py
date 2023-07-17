@@ -9,7 +9,6 @@ from typing import (
     Callable,
     Collection,
     Dict,
-    Generator,
     List,
     Literal,
     Mapping,
@@ -408,43 +407,6 @@ class BaseOpenAI(BaseLLM):
             )
         llm_output = {"token_usage": token_usage, "model_name": self.model_name}
         return LLMResult(generations=generations, llm_output=llm_output)
-
-    def stream(self, prompt: str, stop: Optional[List[str]] = None) -> Generator:
-        """Call OpenAI with streaming flag and return the resulting generator.
-
-        BETA: this is a beta feature while we figure out the right abstraction.
-        Once that happens, this interface could change.
-
-        Args:
-            prompt: The prompts to pass into the model.
-            stop: Optional list of stop words to use when generating.
-
-        Returns:
-            A generator representing the stream of tokens from OpenAI.
-
-        Example:
-            .. code-block:: python
-
-                generator = openai.stream("Tell me a joke.")
-                for token in generator:
-                    yield token
-        """
-        params = self.prep_streaming_params(stop)
-        generator = self.client.create(prompt=prompt, **params)
-
-        return generator
-
-    def prep_streaming_params(self, stop: Optional[List[str]] = None) -> Dict[str, Any]:
-        """Prepare the params for streaming."""
-        params = self._invocation_params
-        if "best_of" in params and params["best_of"] != 1:
-            raise ValueError("OpenAI only supports best_of == 1 for streaming")
-        if stop is not None:
-            if "stop" in params:
-                raise ValueError("`stop` found in both the input and default params.")
-            params["stop"] = stop
-        params["stream"] = True
-        return params
 
     @property
     def _invocation_params(self) -> Dict[str, Any]:

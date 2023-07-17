@@ -2,7 +2,18 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 import asyncio
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Set
+from concurrent.futures import ThreadPoolExecutor
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncIterator,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    cast,
+)
 from typing_extensions import Unpack
 
 from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
@@ -12,6 +23,8 @@ from langchain.schema.output import LLMResult
 from langchain.schema.prompt import PromptValue
 from langchain.utils import get_pydantic_field_names
 from langchain.schema.runnable import Runnable, RunnableConfig
+
+from langchain.callbacks.streaming_iter import IteratorCallbackHandler
 
 if TYPE_CHECKING:
     from langchain.callbacks.manager import Callbacks
@@ -56,7 +69,7 @@ class BaseLanguageModel(Serializable, Runnable[PromptValue, str], ABC):
     def invoke(
         self,
         input: PromptValue,
-        stop: Optional[Sequence[str]] = None,
+        stop: Optional[List[str]] = None,
         **kwargs: Unpack[RunnableConfig],
     ) -> str:
         return self.generate_prompt([input], stop=stop, **kwargs).generations[0][0].text
@@ -64,7 +77,7 @@ class BaseLanguageModel(Serializable, Runnable[PromptValue, str], ABC):
     async def ainvoke(
         self,
         input: PromptValue,
-        stop: Optional[Sequence[str]] = None,
+        stop: Optional[List[str]] = None,
         **kwargs: Unpack[RunnableConfig],
     ) -> str:
         llm_result = await self.agenerate_prompt([input], stop=stop, **kwargs)
@@ -74,6 +87,7 @@ class BaseLanguageModel(Serializable, Runnable[PromptValue, str], ABC):
         self,
         inputs: List[PromptValue],
         config: Optional[RunnableConfig | List[RunnableConfig]] = None,
+        max_concurrency: Optional[int] = None,
     ) -> List[str]:
         if isinstance(config, list):
             config = config[0]
@@ -87,6 +101,7 @@ class BaseLanguageModel(Serializable, Runnable[PromptValue, str], ABC):
         self,
         inputs: List[PromptValue],
         config: Optional[RunnableConfig | List[RunnableConfig]] = None,
+        max_concurrency: Optional[int] = None,
     ) -> List[str]:
         if isinstance(config, list):
             config = config[0]
@@ -96,31 +111,80 @@ class BaseLanguageModel(Serializable, Runnable[PromptValue, str], ABC):
         llm_result = await self.agenerate_prompt(inputs, **config)
         return [g[0].text for g in llm_result.generations]
 
-    # TODO implement stream() similar to below
+    def stream(
+        self,
+        input: PromptValue,
+        stop: Optional[List[str]] = None,
+        **kwargs: Unpack[RunnableConfig],
+    ) -> Iterator[str]:
+        if not hasattr(self, "streaming"):
+            # model doesn't support streaming, so use default implementation
+            yield self.invoke(input, stop=stop, **kwargs)
+        else:
+            # enable streaming, if it's not already enabled
+            original_streaming = cast(bool, self.streaming)  # type: ignore
+            self.streaming = True
+
+            # add iter callback handler to kwargs
+            callbacks: Optional[Callbacks] = kwargs.pop("callbacks", None)
+            callback_handler = IteratorCallbackHandler()
+            if callbacks is None:
+                kwargs["callbacks"] = [callback_handler]
+            elif isinstance(callbacks, list):
+                callbacks.append(callback_handler)
+            else:
+                callbacks.add_handler(callback_handler)
+
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                # run the model non-blocking
+                task = executor.submit(self.invoke, input, stop=stop, **kwargs)
+
+                # yield tokens from the callback handler
+                for token in callback_handler.iter():
+                    yield token
+
+                # block until the model is finished
+                task.result()
+
+            # disable streaming
+            self.streaming = original_streaming
 
     async def astream(
         self,
         input: PromptValue,
-        stop: Optional[Sequence[str]] = None,
+        stop: Optional[List[str]] = None,
         **kwargs: Unpack[RunnableConfig],
-    ) -> Sequence[str]:
-        callbacks: Optional[Callbacks] = kwargs.pop("callbacks", None)
-        callback_handler = AsyncIteratorCallbackHandler()
-        if callbacks is None:
-            callbacks = [callback_handler]
-        elif isinstance(callbacks, list):
-            callbacks.append(callback_handler)
+    ) -> AsyncIterator[str]:
+        if not hasattr(self, "streaming"):
+            # model doesn't support streaming, so use default implementation
+            yield await self.ainvoke(input, stop=stop, **kwargs)
         else:
-            callbacks.add_handler(callback_handler)
+            # enable streaming, if it's not already enabled
+            original_streaming = cast(bool, self.streaming)  # type: ignore
+            self.streaming = True
 
-        task = asyncio.create_task(
-            self.ainvoke(input, stop=stop, callbacks=callbacks, **kwargs)
-        )
+            # add aiter callback handler to kwargs
+            callbacks: Optional[Callbacks] = kwargs.pop("callbacks", None)
+            callback_handler = AsyncIteratorCallbackHandler()
+            if callbacks is None:
+                kwargs["callbacks"] = [callback_handler]
+            elif isinstance(callbacks, list):
+                callbacks.append(callback_handler)
+            else:
+                callbacks.add_handler(callback_handler)
 
-        async for token in callback_handler.aiter():
-            yield token
+            # run the model asynchronously
+            task = asyncio.create_task(self.ainvoke(input, stop=stop, **kwargs))
 
-        await task
+            # yield tokens from the callback handler
+            async for token in callback_handler.aiter():
+                yield token
+
+            # wait for the model to finish
+            await task
+
+            # restore original streaming value
+            self.streaming = original_streaming
 
     @abstractmethod
     def generate_prompt(

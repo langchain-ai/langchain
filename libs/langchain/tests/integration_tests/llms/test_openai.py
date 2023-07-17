@@ -10,6 +10,7 @@ from langchain.chat_models.openai import ChatOpenAI
 from langchain.llms.loading import load_llm
 from langchain.llms.openai import OpenAI, OpenAIChat
 from langchain.schema import LLMResult
+from langchain.prompts.base import StringPromptValue
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
@@ -88,7 +89,7 @@ def test_saving_loading_llm(tmp_path: Path) -> None:
 def test_openai_streaming() -> None:
     """Test streaming tokens from OpenAI."""
     llm = OpenAI(max_tokens=10)
-    generator = llm.stream("I'm Pickle Rick")
+    generator = llm.stream(StringPromptValue(text="I'm Pickle Rick"))
 
     assert isinstance(generator, Generator)
 
@@ -103,13 +104,6 @@ def test_openai_multiple_prompts() -> None:
     assert isinstance(output, LLMResult)
     assert isinstance(output.generations, list)
     assert len(output.generations) == 2
-
-
-def test_openai_streaming_error() -> None:
-    """Test error handling in stream."""
-    llm = OpenAI(best_of=2)
-    with pytest.raises(ValueError):
-        llm.stream("I'm Pickle Rick")
 
 
 def test_openai_streaming_best_of_error() -> None:
