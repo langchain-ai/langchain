@@ -6,8 +6,6 @@ import warnings
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
-from pydantic import Extra, Field, root_validator
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
@@ -22,6 +20,7 @@ from langchain.prompts import PromptTemplate
 from langchain.schema import BaseRetriever, Document
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.vectorstores.base import VectorStore
+from pydantic import Extra, Field, root_validator
 
 
 class BaseRetrievalQA(Chain):
@@ -65,11 +64,12 @@ class BaseRetrievalQA(Chain):
         cls,
         llm: BaseLanguageModel,
         prompt: Optional[PromptTemplate] = None,
+        callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> BaseRetrievalQA:
         """Initialize from LLM."""
         _prompt = prompt or PROMPT_SELECTOR.get_prompt(llm)
-        llm_chain = LLMChain(llm=llm, prompt=_prompt)
+        llm_chain = LLMChain(llm=llm, prompt=_prompt, callbacks=callbacks)
         document_prompt = PromptTemplate(
             input_variables=["page_content"], template="Context:\n{page_content}"
         )
@@ -77,9 +77,14 @@ class BaseRetrievalQA(Chain):
             llm_chain=llm_chain,
             document_variable_name="context",
             document_prompt=document_prompt,
+            callbacks=callbacks,
         )
 
-        return cls(combine_documents_chain=combine_documents_chain, **kwargs)
+        return cls(
+            combine_documents_chain=combine_documents_chain,
+            callbacks=callbacks,
+            **kwargs,
+        )
 
     @classmethod
     def from_chain_type(
