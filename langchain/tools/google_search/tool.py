@@ -11,7 +11,7 @@ from langchain.utilities.google_search import GoogleSearchAPIWrapper
 
 
 class GoogleSearchRun(BaseTool):
-    """Tool that adds the capability to query the Google search API."""
+    """Tool that queries the Google search API."""
 
     name = "google_search"
     description = (
@@ -39,7 +39,7 @@ class GoogleSearchRun(BaseTool):
 
 
 class GoogleSearchResults(BaseTool):
-    """Tool that has capability to query the Google Search API and get back json."""
+    """Tool that queries the Google Search API and gets back json."""
 
     name = "Google Search Results JSON"
     description = (

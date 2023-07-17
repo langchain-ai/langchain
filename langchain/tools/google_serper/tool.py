@@ -13,7 +13,7 @@ from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 
 
 class GoogleSerperRun(BaseTool):
-    """Tool that adds the capability to query the Serper.dev Google search API."""
+    """Tool that queries the Serper.dev Google search API."""
 
     name = "google_serper"
     description = (
@@ -41,7 +41,7 @@ class GoogleSerperRun(BaseTool):
 
 
 class GoogleSerperResults(BaseTool):
-    """Tool that has capability to query the Serper.dev Google Search API
+    """Tool that queries the Serper.dev Google Search API
     and get back json."""
 
     name = "google_serrper_results_json"
