@@ -31,6 +31,8 @@ class ChatGLM(LLM):
     """LLM model temperature from 0 to 10."""
     history: List[List] = []
     """History of the conversation"""
+    top_p: float = 0.7
+    """Top P for nucleus sampling from 0 to 1"""
 
     @property
     def _llm_type(self) -> str:
@@ -78,7 +80,8 @@ class ChatGLM(LLM):
           'prompt': prompt,
           'temperature': self.temperature,
           'history': self.history,
-          'max_length': self.max_token
+          'max_length': self.max_token,
+          'top_p': self.top_p
         }
         payload.update(_model_kwargs)
         payload.update(kwargs)
