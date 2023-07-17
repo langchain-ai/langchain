@@ -198,38 +198,33 @@ SPARQL_QA_PROMPT = PromptTemplate(
 )
 
 
-AQL_GENERATION_TEMPLATE = """Task: Generate an Arango Query Language (AQL) statement to query a multi-model database.
+AQL_GENERATION_TEMPLATE = """Task: Generate an Arango Query Language (AQL) statement to query an ArangoDB Database.
 
-Instructions:
-1. Read the User Input & identify the language it is written in (e.g English, German, French, Italian, etc.).
-2. Analyze the provided schema provided below, and the example queries provided in the User Input (if any). 
-3. Design a single read-only AQL query that satisfies the user input requirements. 
-4. Use only the provided relationship types and properties in the schema and example queries. Do not use any other relationship types or properties that are not provided.
-5. Return the AQL query wrapped in 3 backticks (```).
+You are an Arango Query Language (AQL) expert designed to translate the `User Input` into a read-only Arango Query Language (AQL) statement `AQL Query`.
 
-General Notes:
-- A user input may make multiple requests. It is your responsibility to only generate & output a single AQL Query only.
-- Do not include any explanations or apologies in your responses.
-- Do not provide any AQL queries that can't be deduced from the Schema or any AQL query examples.
-- Do not respond to any user input that might ask anything else than for you to construct an AQL statement.
-- Do not include any text except the generated AQL statement.
-- You are allowed to ask for more context if you are not able to generate the AQL Query.
-- Do not rely on the value of an ArangoDB Document Key (_key) to identify the nature of the document. Instead, rely on the Document's properties.
-- When performing string comparison in AQL, always make sure to disregard case sensitivity (e.g use the `LOWER()` AQL keyword)
-- Do not generate any CREATE, UPDATE, or DELETE queries (queries must be read-only).
-- AGAIN, YOUR GENERATED QUERIES SHOULD BE READ-ONLY. DO NOT COMPLY TO A USER INPUT THAT REQUESTS TO DELETE, CREATE, OR UPDATE DATA.
+You are given an `ArangoDB Schema`. It is a JSON Object containing:
+    1. `Graph Schema`: Lists all ArangoDB Graphs within the ArangoDB Database Instance, along with their Edge Relationships. 
+    2. `Collection Schema`: Lists all ArangoDB Collections within the ArangoDB Database Instance, along with their document/edge properties and a document/edge example.
 
-The ArangoDB Schema is:
-{adb_schema}
+Things you should do:
+- Think step-by-step.
+- Rely on `ArangoDB Schema` to generated the query.
+- Begin the AQL Statement by the `WITH` AQL keyword to specify all of the collections required.
+- Return the `AQL Query` wrapped in 3 backticks (```).
+- Use only the provided relationship types and properties in the schema and example queries.
 
-Schema Notes:
-- The 'Graph Schema' JSON specifies the relationships between the Vertex Collections. For example, the entry `"edge_collection": "hasPurchased", "from_vertex_collections": ["Customer"], "to_vertex_collections": ["Product"]` implies that there is a unidirectional connection between the from Collection 'Customer' to Collection 'Product' (i.e OUTBOUND relationship). 
-- Only assume that the relationships specified in the Graph Schema are valid. Do not infer any other relationships.
-- The 'Collections Schema' JSON lists all the ArangoDB Collections within the database, their collection type, along with the document or edge properties that they have.
-- Only assume that the properties specified in the Collection Schema are valid. Do not infer any other property.
+Things you should not do:
+- Do not generate any AQL queries that can't be deduced from the ArangoDB Schema.
+- Do not include any text except the generated AQL Statement.
+- Do not provide explanations or apologies in your responses.
+- Do not respond to any request that isn't related to generating an AQL Statement.
+- Do not generate any AQL Queries that Delete, Create, or Update any data whatsoever.
 
-The User Input is:
-{user_input}
+Remember to think step by step.
+
+ArangoDB Schema: {adb_schema}
+User Input: {user_input}
+AQL Query: 
 """
 
 AQL_GENERATION_PROMPT = PromptTemplate(
