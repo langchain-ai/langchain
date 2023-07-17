@@ -1,7 +1,7 @@
 """Loader that uses unstructured to load files."""
 import collections
 from abc import ABC, abstractmethod
-from typing import Callable, IO, Any, Dict, List, Sequence, Union
+from typing import IO, Any, Callable, Dict, List, Sequence, Union
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
