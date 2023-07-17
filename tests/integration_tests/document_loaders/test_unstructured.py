@@ -2,12 +2,28 @@ import os
 from contextlib import ExitStack
 from pathlib import Path
 
+from unstructured.cleaners.core import clean_extra_whitespace
+
 from langchain.document_loaders import (
     UnstructuredAPIFileIOLoader,
     UnstructuredAPIFileLoader,
+    UnstructuredFileLoader,
 )
 
 EXAMPLE_DOCS_DIRECTORY = str(Path(__file__).parent.parent / "examples/")
+
+
+def test_unstructured_loader_with_post_processor() -> None:
+    file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
+    loader = UnstructuredFileLoader(
+        file_path=file_path,
+        pos_processors=[clean_extra_whitespace],
+        strategy="fast",
+        mode="elements",
+    )
+    docs = loader.load()
+
+    assert len(docs) > 1
 
 
 def test_unstructured_api_file_loader() -> None:
