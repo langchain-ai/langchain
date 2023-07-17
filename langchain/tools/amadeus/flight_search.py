@@ -1,17 +1,12 @@
 import logging
-
 from datetime import datetime as dt
-from typing import List, Optional, Type
+from typing import Dict, List, Optional, Type
 
+from amadeus import ResponseError
 from pydantic import BaseModel, Field
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun
-)
+from langchain.callbacks.manager import AsyncCallbackManagerForToolRun
 from langchain.tools.amadeus.base import AmadeusBaseTool
-from langchain.chains import LLMChain
-from langchain.chat_models import ChatOpenAI
-from amadeus import Client, ResponseError, Location
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +49,7 @@ class FlightSearchSchema(BaseModel):
         description="The specific page number of flight results to retrieve",
     )
 
+
 class AmadeusFlightSearch(AmadeusBaseTool):
     name: str = "single_flight_search"
     description: str = (
@@ -71,7 +67,6 @@ class AmadeusFlightSearch(AmadeusBaseTool):
         departureDateTimeLatest: str,
         page_number: int = 1,
     ) -> list:
-
         RESULTS_PER_PAGE = 10
 
         # Authenticate and retrieve a client
@@ -83,19 +78,21 @@ class AmadeusFlightSearch(AmadeusBaseTool):
 
         if earliestDeparture.date() != latestDeparture.date():
             logger.error(
-                " Error: Earliest and latest departure dates need to be the same date. "
-                " If you're trying to search for round-trip flights, call this function "
-                " for the outbound flight first, and then call again for the return flight. "
+                " Error: Earliest and latest departure dates need to be the "
+                " same date. If you're trying to search for round-trip "
+                " flights, call this function for the outbound flight first, "
+                " and then call again for the return flight. "
             )
-            return None
-        
+            return [None]
+
         # Collect all results from the API
         try:
             response = client.shopping.flight_offers_search.get(
-                originLocationCode = originLocationCode,
-                destinationLocationCode = destinationLocationCode,
-                departureDate = latestDeparture.strftime("%Y-%m-%d"),
-                adults = 1)
+                originLocationCode=originLocationCode,
+                destinationLocationCode=destinationLocationCode,
+                departureDate=latestDeparture.strftime("%Y-%m-%d"),
+                adults=1,
+            )
         except ResponseError as error:
             print(error)
 
@@ -103,7 +100,7 @@ class AmadeusFlightSearch(AmadeusBaseTool):
         output = []
 
         for offer in response.data:
-            itinerary = {}
+            itinerary: Dict = {}
             itinerary["price"] = {}
             itinerary["price"]["total"] = offer["price"]["total"]
             currency = offer["price"]["currency"]
@@ -130,9 +127,10 @@ class AmadeusFlightSearch(AmadeusBaseTool):
 
         # Filter out flights after latest departure time
         for index, offer in enumerate(output):
-            offerDeparture = dt.strptime(offer["segments"][0]["departure"]["at"], 
-                                         "%Y-%m-%dT%H:%M:%S")
-            
+            offerDeparture = dt.strptime(
+                offer["segments"][0]["departure"]["at"], "%Y-%m-%dT%H:%M:%S"
+            )
+
             if offerDeparture > latestDeparture:
                 output.pop(index)
 

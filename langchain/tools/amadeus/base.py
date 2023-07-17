@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 
 from pydantic import Field
 
-from langchain.tools.base import BaseTool
 from langchain.tools.amadeus.utils import authenticate
+from langchain.tools.base import BaseTool
 
 if TYPE_CHECKING:
     from amadeus import Client

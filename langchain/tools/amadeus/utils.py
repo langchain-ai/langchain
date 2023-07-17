@@ -10,13 +10,15 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+
 def authenticate() -> Client:
     """Authenticate using the Amadeus API"""
     try:
         from amadeus import Client
     except ImportError as e:
         raise ImportError(
-            "Cannot import amadeus. Please install the package with `pip install amadeus`."
+            "Cannot import amadeus. Please install the package with "
+            "`pip install amadeus`."
         ) from e
 
     if "AMADEUS_CLIENT_ID" in os.environ and "AMADEUS_CLIENT_SECRET" in os.environ:
@@ -24,9 +26,10 @@ def authenticate() -> Client:
         client_secret = os.environ["AMADEUS_CLIENT_SECRET"]
     else:
         logger.error(
-            "Error: The AMADEUS_CLIENT_ID and AMADEUS_CLIENT_SECRET environmental variables have not "
-            "been set. Visit the following link on how to acquire these authorization "
-            "tokens: https://developers.amadeus.com/register"
+            "Error: The AMADEUS_CLIENT_ID and AMADEUS_CLIENT_SECRET environmental "
+            "variables have not been set. Visit the following link on how to "
+            "acquire these authorization tokens: "
+            "https://developers.amadeus.com/register"
         )
         return None
 

@@ -2,12 +2,10 @@ from typing import List, Optional, Type
 
 from pydantic import BaseModel, Field
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun
-)
-from langchain.tools.amadeus.base import AmadeusBaseTool
+from langchain.callbacks.manager import AsyncCallbackManagerForToolRun
 from langchain.chains import LLMChain
 from langchain.chat_models import ChatOpenAI
+from langchain.tools.amadeus.base import AmadeusBaseTool
 
 
 class ClosestAirportSchema(BaseModel):
@@ -26,6 +24,7 @@ class ClosestAirportSchema(BaseModel):
         )
     )
 
+
 class AmadeusClosestAirport(AmadeusBaseTool):
     name: str = "closest_airport"
     description: str = (
@@ -37,12 +36,11 @@ class AmadeusClosestAirport(AmadeusBaseTool):
         self,
         location: str,
     ) -> str:
-
         template = (
-        " What is the nearest airport to {location}? Please respond with the "
-        " airport\'s International Air Transport Association (IATA) Location "
-        " Identifier in the following JSON format. JSON: \"iataCode\": \"IATA "
-        " Location Identifier\" "
+            " What is the nearest airport to {location}? Please respond with the "
+            " airport's International Air Transport Association (IATA) Location "
+            ' Identifier in the following JSON format. JSON: "iataCode": "IATA '
+            ' Location Identifier" '
         )
 
         llm = ChatOpenAI(temperature=0)
