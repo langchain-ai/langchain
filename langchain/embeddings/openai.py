@@ -473,9 +473,14 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        # NOTE: to keep things simple, we assume the list may contain texts longer
-        #       than the maximum context and use length-safe embedding function.
-        return self._get_len_safe_embeddings(texts, engine=self.deployment)
+        embeddings: List[List[float]] = [[] for _ in range(len(texts))]
+        for i, text in enumerate(texts):
+            if self.model.endswith("001"):
+                # See: https://github.com/openai/openai-python/issues/418#issuecomment-1525939500
+                # replace newlines, which can negatively affect performance.
+                text = text.replace("\n", " ")
+            embeddings[i] = self._embedding_func(text, engine=self.deployment)
+        return embeddings
 
     async def aembed_documents(
         self, texts: List[str], chunk_size: Optional[int] = 0
@@ -490,9 +495,14 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        # NOTE: to keep things simple, we assume the list may contain texts longer
-        #       than the maximum context and use length-safe embedding function.
-        return await self._aget_len_safe_embeddings(texts, engine=self.deployment)
+        embeddings: List[List[float]] = [[] for _ in range(len(texts))]
+        for i, text in enumerate(texts):
+            if self.model.endswith("001"):
+                # See: https://github.com/openai/openai-python/issues/418#issuecomment-1525939500
+                # replace newlines, which can negatively affect performance.
+                text = text.replace("\n", " ")
+            embeddings[i] = self._aembedding_func(text, engine=self.deployment)
+        return embeddings
 
     def embed_query(self, text: str) -> List[float]:
         """Call out to OpenAI's embedding endpoint for embedding query text.
