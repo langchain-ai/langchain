@@ -45,11 +45,9 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
     """Apply controls on prompt items by adding the log(control_factor) 
     to attention scores."""
 
-
     # Client params
     aleph_alpha_api_key: Optional[str] = None
     """API key for Aleph Alpha API."""
-
     host: str = "https://api.aleph-alpha.com"
     """The hostname of the API host. The default one is "https://api.aleph-alpha.com")"""
     hosting: Optional[str] = None
@@ -79,18 +77,20 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
         )
         try:
             from aleph_alpha_client import Client
+
+            values["client"] = Client(token=aleph_alpha_api_key,
+                                      host=values["host"],
+                                      hosting=values["hosting"],
+                                      request_timeout_seconds=values["request_timeout_seconds"],
+                                      total_retries=values["total_retries"],
+                                      nice=values["nice"],
+                                      )
         except ImportError:
             raise ValueError(
                 "Could not import aleph_alpha_client python package. "
                 "Please install it with `pip install aleph_alpha_client`."
             )
-        values["client"] = Client(token=aleph_alpha_api_key,
-                                  host=values["host"],
-                                  hosting=values["hosting"],
-                                  request_timeout_seconds=values["request_timeout_seconds"],
-                                  total_retries=values["total_retries"],
-                                  nice=values["nice"],
-                                  )
+
         return values
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
