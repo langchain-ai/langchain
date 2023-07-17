@@ -13,7 +13,7 @@ base_url = "https://api.python.langchain.com/en/latest/"
 docs_dir = "docs_skeleton/docs"
 
 # Regular expression to match Python import lines
-import_re = re.compile(r"from\s+(langchain\.\w+(\.\w+)*?)\s+import\s+(\w+)")
+import_re = re.compile(r"(from\s+(langchain\.\w+(\.\w+)*?)\s+import\s+)(\w+)")
 
 
 def find_files(path):
@@ -38,15 +38,13 @@ def replace_imports(file):
 
     for match in import_re.finditer(data):
         # Create the URL for this class's documentation
-        class_name = match.group(3)
+        class_name = match.group(4)
         try:
-            module_path = get_full_module_name(match.group(1), class_name)
+            module_path = get_full_module_name(match.group(2), class_name)
         except AttributeError as e:
             logger.error(f"Could not find module for {class_name}", e)
             continue
-
-        # Change module path parts from dot notation to slash notation
-        module_path_parts = module_path.replace('.', '/')
+        module_path_parts = module_path.replace(".", "/")
 
         url = (
             base_url
@@ -59,11 +57,11 @@ def replace_imports(file):
         )
 
         # Replace the class name with a markdown link
-        data = data.replace(match.group(0), f"[{match.group(0)}]({url})")
+        link = f"[{match.group(1)}{class_name}]({url})"
+        data = data.replace(match.group(0), f"{match.group(0)}\n{link}")
 
     with open(file, "w") as f:
         f.write(data)
-
 
 
 def main():
