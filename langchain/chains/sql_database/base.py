@@ -220,7 +220,6 @@ class SQLDatabaseSequentialChain(Chain):
         llm: BaseLanguageModel,
         database: SQLDatabase,
         query_memory: Optional[BaseMemory] = None,
-        decider_memory: Optional[BaseMemory] = None,
         query_prompt: BasePromptTemplate = PROMPT,
         decider_prompt: BasePromptTemplate = DECIDER_PROMPT,
         **kwargs: Any,
@@ -232,7 +231,6 @@ class SQLDatabaseSequentialChain(Chain):
         decider_chain = LLMChain(
             llm=llm,
             prompt=decider_prompt,
-            memory=decider_memory,
             output_key="table_names",
         )
 
