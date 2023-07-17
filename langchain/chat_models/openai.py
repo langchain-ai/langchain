@@ -162,7 +162,7 @@ class ChatOpenAI(BaseChatModel):
     def lc_serializable(self) -> bool:
         return True
 
-    _client: Any = PrivateAttr() #: :meta private:
+    client: Any = None #: :meta private:
     model_name: str = Field(default="gpt-3.5-turbo", alias="model")
     """Model name to use."""
     temperature: float = 0.7
@@ -201,25 +201,6 @@ class ChatOpenAI(BaseChatModel):
         """Configuration for this pydantic object."""
 
         allow_population_by_field_name = True
-
-    def __init__(self, **data):
-        super().__init__(**data)
-        try:
-            import openai
-
-        except ImportError:
-            raise ValueError(
-                "Could not import openai python package. "
-                "Please install it with `pip install openai`."
-            )
-        try:
-            self._client = openai.ChatCompletion
-        except AttributeError:
-            raise ValueError(
-                "`openai` has no `ChatCompletion` attribute, this is likely "
-                "due to an old version of the openai package. Try upgrading it "
-                "with `pip install --upgrade openai`."
-            )
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -271,6 +252,22 @@ class ChatOpenAI(BaseChatModel):
             "OPENAI_PROXY",
             default="",
         )
+        try:
+            import openai
+
+        except ImportError:
+            raise ValueError(
+                "Could not import openai python package. "
+                "Please install it with `pip install openai`."
+            )
+        try:
+            values["client"] = openai.ChatCompletion
+        except AttributeError:
+            raise ValueError(
+                "`openai` has no `ChatCompletion` attribute, this is likely "
+                "due to an old version of the openai package. Try upgrading it "
+                "with `pip install --upgrade openai`."
+            )
         if values["n"] < 1:
             raise ValueError("n must be at least 1.")
         if values["n"] > 1 and values["streaming"]:
@@ -317,7 +314,7 @@ class ChatOpenAI(BaseChatModel):
 
         @retry_decorator
         def _completion_with_retry(**kwargs: Any) -> Any:
-            return self._client.create(**kwargs)
+            return self.client.create(**kwargs)
 
         return _completion_with_retry(**kwargs)
 
