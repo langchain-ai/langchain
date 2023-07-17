@@ -1,6 +1,7 @@
 """Web base loader class."""
 import asyncio
 import logging
+import re
 import warnings
 from typing import Any, Dict, Iterator, List, Optional, Union
 
@@ -62,6 +63,9 @@ class WebBaseLoader(BaseLoader):
         header_template: Optional[dict] = None,
         verify_ssl: Optional[bool] = True,
         proxies: Optional[dict] = None,
+        compress_newlines: Optional[bool] = False,
+        regex: Optional[str] = None,
+        replacement: Optional[str] = "",
     ):
         """Initialize with webpage path."""
 
@@ -96,6 +100,9 @@ class WebBaseLoader(BaseLoader):
         self.session = requests.Session()
         self.session.headers = dict(headers)
         self.session.verify = verify_ssl
+        self.compress_newlines = compress_newlines
+        self.regex = regex
+        self.replacement = replacement
 
         if proxies:
             self.session.proxies.update(proxies)
@@ -204,11 +211,19 @@ class WebBaseLoader(BaseLoader):
 
         return self._scrape(self.web_path, parser)
 
+    def apply_postprocessing(self, text: str) -> str:
+        """Apply the requested postprocessing steps."""
+        if self.compress_newlines:
+            text = re.sub(r"\n+", "\n", text)
+        if self.regex is not None:
+            text = re.sub(self.regex, self.replacement, text)
+        return text
+
     def lazy_load(self) -> Iterator[Document]:
         """Lazy load text from the url(s) in web_path."""
         for path in self.web_paths:
             soup = self._scrape(path)
-            text = soup.get_text(**self.bs_get_text_kwargs)
+            text = self.apply_postprocessing(soup.get_text(**self.bs_get_text_kwargs))
             metadata = _build_metadata(soup, path)
             yield Document(page_content=text, metadata=metadata)
 
@@ -223,7 +238,7 @@ class WebBaseLoader(BaseLoader):
         docs = []
         for i in range(len(results)):
             soup = results[i]
-            text = soup.get_text(**self.bs_get_text_kwargs)
+            text = self.apply_postprocessing(soup.get_text(**self.bs_get_text_kwargs))
             metadata = _build_metadata(soup, self.web_paths[i])
             docs.append(Document(page_content=text, metadata=metadata))
 
