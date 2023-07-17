@@ -150,6 +150,13 @@ class TestWeaviate:
             Document(page_content="bar", metadata={"page": 1}),
         ]
 
+        # when using fetch_k>len(texts), the search shall not fail (with an ValidationError)
+        standard_ranking = docsearch.similarity_search("foo", k=2)
+        output = docsearch.max_marginal_relevance_search(
+            "foo", k=2, fetch_k=len(texts)+1, lambda_mult=1.0
+        )
+        assert output == standard_ranking
+
     @pytest.mark.vcr(ignore_localhost=True)
     def test_max_marginal_relevance_search_by_vector(
         self, weaviate_url: str, embedding_openai: OpenAIEmbeddings
