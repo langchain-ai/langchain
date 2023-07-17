@@ -16,15 +16,17 @@ from typing import (
 )
 from typing_extensions import Unpack
 
-from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
 from langchain.load.serializable import Serializable
 from langchain.schema.messages import BaseMessage, get_buffer_string
 from langchain.schema.output import LLMResult
 from langchain.schema.prompt import PromptValue
 from langchain.utils import get_pydantic_field_names
-from langchain.schema.runnable import Runnable, RunnableConfig
+from langchain.schema.runnable import (
+    Runnable,
+    RunnableConfig,
+    SerializableRunnableMetaclass,
+)
 
-from langchain.callbacks.streaming_iter import IteratorCallbackHandler
 
 if TYPE_CHECKING:
     from langchain.callbacks.manager import Callbacks
@@ -49,7 +51,12 @@ def _get_token_ids_default_method(text: str) -> List[int]:
     return tokenizer.encode(text)
 
 
-class BaseLanguageModel(Serializable, Runnable[PromptValue, str], ABC):
+class BaseLanguageModel(
+    Serializable,
+    Runnable[PromptValue, str],
+    ABC,
+    metaclass=SerializableRunnableMetaclass,
+):
     """Abstract base class for interfacing with language models.
 
     All language model wrappers inherit from BaseLanguageModel.
@@ -121,6 +128,8 @@ class BaseLanguageModel(Serializable, Runnable[PromptValue, str], ABC):
             # model doesn't support streaming, so use default implementation
             yield self.invoke(input, stop=stop, **kwargs)
         else:
+            from langchain.callbacks.streaming_iter import IteratorCallbackHandler
+
             # enable streaming, if it's not already enabled
             original_streaming = cast(bool, self.streaming)  # type: ignore
             self.streaming = True
@@ -159,6 +168,8 @@ class BaseLanguageModel(Serializable, Runnable[PromptValue, str], ABC):
             # model doesn't support streaming, so use default implementation
             yield await self.ainvoke(input, stop=stop, **kwargs)
         else:
+            from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
+
             # enable streaming, if it's not already enabled
             original_streaming = cast(bool, self.streaming)  # type: ignore
             self.streaming = True

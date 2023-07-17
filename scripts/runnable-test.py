@@ -4,6 +4,10 @@ from typing_extensions import Unpack
 
 from langchain.schema.runnable import RunnableConfig, Runnable
 
+from langchain.llms.openai import OpenAI
+
+from langchain.prompts.base import StringPromptValue
+
 
 class FakeRunnable(Runnable[str, int]):
     def invoke(
@@ -16,19 +20,37 @@ class FakeRunnable(Runnable[str, int]):
 
 fake = FakeRunnable()
 
-print("invoke", fake.invoke("hello"))
+llm = OpenAI()
 
+print("invoke fake", fake.invoke("hello"))
 for token in fake.stream("hello"):
-    print("stream", token)
+    print("stream fake", token)
+print("batch fake", fake.batch(["hello", "world"]))
 
-print("batch", fake.batch(["hello", "world"]))
+print("invoke llm", llm.invoke(StringPromptValue(text="say hi")))
+for token in llm.stream(StringPromptValue(text="say hi")):
+    print("stream llm", token)
+print(
+    "batch llm",
+    llm.batch([StringPromptValue(text="say hi"), StringPromptValue(text="say hello")]),
+)
 
 
 async def test_async() -> None:
-    print("ainvoke", await fake.ainvoke("hello"))
-    async for token in fake.astream("hello"):
+    print("ainvoke", await fake.ainvoke("say hi"))
+    async for token in fake.astream("say hi"):
         print("astream", token)
-    print("abatch", await fake.abatch(["hello", "world"]))
+    print("abatch", await fake.abatch(["say hi", "say hello"]))
+
+    print("ainvoke llm", await llm.ainvoke(StringPromptValue(text="say hi")))
+    async for token in llm.astream(StringPromptValue(text="say hi")):
+        print("astream llm", token)
+    print(
+        "abatch llm",
+        await llm.abatch(
+            [StringPromptValue(text="say hi"), StringPromptValue(text="say hello")]
+        ),
+    )
 
 
 asyncio.run(test_async())
