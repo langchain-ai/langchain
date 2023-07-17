@@ -15,7 +15,7 @@ from typing import (
     Union,
 )
 
-from pydantic import Field, root_validator, PrivateAttr
+from pydantic import Field, root_validator
 from tenacity import (
     before_sleep_log,
     retry,
