@@ -37,7 +37,7 @@ class ChatGLM(LLM):
 
     @property
     def _llm_type(self) -> str:
-        return "ChatGLM"
+        return "chat_glm"
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
@@ -113,7 +113,8 @@ class ChatGLM(LLM):
 
         except requests.exceptions.JSONDecodeError as e:
             raise ValueError(
-                f"Error raised during decoding response from inference endpoint: {e}.\nResponse: {response.text}"
+                f"Error raised during decoding response from inference endpoint: {e}."
+                f"\nResponse: {response.text}"
             )
 
         if stop is not None:
