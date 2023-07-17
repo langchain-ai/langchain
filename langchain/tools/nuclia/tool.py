@@ -11,7 +11,7 @@ Installation:
 import base64
 import mimetypes
 import os
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Optional, Type, Union
 
 import requests
 from google.protobuf.json_format import MessageToJson
@@ -185,7 +185,7 @@ class NucliaUnderstandingAPI(BaseTool):
                 )
                 self._results[matching_id]["data"] = data
 
-    def _find_matching_id(self, uuid: str) -> str | None:
+    def _find_matching_id(self, uuid: str) -> Union[str, None]:
         for id, result in self._results.items():
             if result["uuid"] == uuid:
                 return id
