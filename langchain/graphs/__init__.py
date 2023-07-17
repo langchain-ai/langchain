@@ -14,5 +14,5 @@ __all__ = [
     "KuzuGraph",
     "HugeGraph",
     "RdfGraph",
-    "ArangoGraph",
+    "ArangoDBGraph",
 ]
