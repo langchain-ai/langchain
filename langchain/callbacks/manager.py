@@ -7,6 +7,7 @@ import os
 from contextlib import asynccontextmanager, contextmanager
 from contextvars import ContextVar
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncGenerator,
     Dict,
@@ -44,6 +45,9 @@ from langchain.schema import (
     LLMResult,
 )
 from langchain.schema.messages import BaseMessage, get_buffer_string
+
+if TYPE_CHECKING:
+    from langsmith import Client as LangSmithClient
 
 logger = logging.getLogger(__name__)
 Callbacks = Optional[Union[List[BaseCallbackHandler], BaseCallbackManager]]
@@ -144,6 +148,7 @@ def tracing_v2_enabled(
     *,
     example_id: Optional[Union[str, UUID]] = None,
     tags: Optional[List[str]] = None,
+    client: Optional[LangSmithClient] = None,
 ) -> Generator[None, None, None]:
     """Instruct LangChain to log all runs in context to LangSmith.
 
@@ -168,6 +173,7 @@ def tracing_v2_enabled(
         example_id=example_id,
         project_name=project_name,
         tags=tags,
+        client=client,
     )
     tracing_v2_callback_var.set(cb)
     yield
