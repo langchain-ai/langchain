@@ -60,7 +60,7 @@ class TestWeaviateHybridSearchRetriever:
             Document(page_content="baz", metadata={"page": 2}),
             Document(page_content="bar", metadata={"page": 1}),
         ]
-        
+
     @pytest.mark.vcr(ignore_localhost=True)
     def test_get_relevant_documents_with_score(self, weaviate_url: str) -> None:
         """Test end to end construction and MRR search."""

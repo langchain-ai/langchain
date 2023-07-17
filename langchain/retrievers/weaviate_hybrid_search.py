@@ -106,7 +106,7 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
         query_obj = self.client.query.get(self.index_name, self.attributes)
         if where_filter:
             query_obj = query_obj.with_where(where_filter)
-            
+
         if score:
             query_obj = query_obj.with_additional(["score", "explainScore"])
 
