@@ -47,14 +47,20 @@ class PromptTemplate(StringPromptTemplate):
         # Allow for easy combining
         if isinstance(other, PromptTemplate):
             if self.template_format != "f-string":
-                raise ValueError("Adding prompt templates only supported for f-strings.")
+                raise ValueError(
+                    "Adding prompt templates only supported for f-strings."
+                )
             if other.template_format != "f-string":
-                raise ValueError("Adding prompt templates only supported for f-strings.")
-            input_variables = list(set(self.input_variables) | set(other.input_variables))
+                raise ValueError(
+                    "Adding prompt templates only supported for f-strings."
+                )
+            input_variables = list(
+                set(self.input_variables) | set(other.input_variables)
+            )
             template = self.template + "\n\n" + other.template
             # If any do not want to validate, then don't
             validate_template = self.validate_template and other.validate_template
-            partial_variables = {k: v for k,v in self.partial_variables.items()}
+            partial_variables = {k: v for k, v in self.partial_variables.items()}
             for k, v in other.partial_variables.items():
                 if k in partial_variables:
                     raise ValueError("Cannot have same variable partialed twice.")
