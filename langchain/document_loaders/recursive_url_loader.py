@@ -40,12 +40,11 @@ class RecursiveUrlLoader(BaseLoader):
         prevent_outside: bool = True,
     ) -> None:
         """Initialize with URL to crawl and any subdirectories to exclude.
-
         Args:
             url: The URL to crawl.
             exclude_dirs: A list of subdirectories to exclude.
-            use_async: Whether to use asynchronous loading, if use async, lazy load will not be lazy, despite it will work as usual.
-            extractor: A function to extract the text from the html.
+            use_async: Whether to use asynchronous loading, if use_async is true, this function will not be lazy, but it will still work in the expected way, just not lazy.
+            extractor: A function to extract the text from the html, when extract function returns empty string, the document will be ignored.
             max_depth: The max depth of the recursive loading.
             timeout: The timeout for the requests, in the unit of seconds.
         """
@@ -197,12 +196,9 @@ class RecursiveUrlLoader(BaseLoader):
         if depth > self.max_depth:
             return []
 
-        # Construct the base and parent URLs
-        parsed_url = urlparse(url)
-        base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
         # Add a trailing slash if not present
-        if not base_url.endswith("/"):
-            base_url += "/"
+        if not url.endswith("/"):
+            url += "/"
 
         # Exclude the root and parent from a list
         visited = set() if visited is None else visited
@@ -228,7 +224,7 @@ class RecursiveUrlLoader(BaseLoader):
             except Exception as e:
                 return []
 
-            absolute_paths = self._get_sub_links(text, base_url)
+            absolute_paths = self._get_sub_links(text, url)
 
             # Worker will be only called within the current function to act as an async generator
             # Worker function will process the link and then recursively call get_child_links_recursive to process the children
@@ -288,7 +284,7 @@ class RecursiveUrlLoader(BaseLoader):
             return list(filter(lambda x: x is not None, results))
 
     def lazy_load(self) -> Iterator[Document]:
-        """Lazy load web pages."""
+        """Lazy load web pages. When use_async is True, this function will not be lazy, but it will still work in the expected way, just not lazy."""
         if self.use_async:
             results = asyncio.run(self._async_get_child_links_recursive(self.url))
             if results is None:
