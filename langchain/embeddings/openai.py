@@ -101,6 +101,7 @@ def embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) -> Any:
 
     @retry_decorator
     def _embed_with_retry(**kwargs: Any) -> Any:
+        kwargs.update(embeddings._invocation_params)  # Add invocation params
         response = embeddings.client.create(**kwargs)
         return _check_response(response)
 
@@ -112,6 +113,7 @@ async def async_embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) ->
 
     @_async_retry_decorator(embeddings)
     async def _async_embed_with_retry(**kwargs: Any) -> Any:
+        kwargs.update(embeddings._invocation_params)  # Add invocation params 
         response = await embeddings.client.acreate(**kwargs)
         return _check_response(response)
 
