@@ -96,7 +96,9 @@ class DocArrayIndex(VectorStore, ABC):
             k: Number of Documents to return. Defaults to 4.
 
         Returns:
-            List of Documents most similar to the query and score for each.
+            List of documents most similar to the query text and
+            cosine distance in float for each.
+            Lower score represents more similarity.
         """
         query_embedding = self.embedding.embed_query(query)
         query_doc = self.doc_cls(embedding=query_embedding)  # type: ignore

@@ -87,6 +87,7 @@ class ForefrontAI(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call out to ForefrontAI's complete endpoint.
 
@@ -108,7 +109,7 @@ class ForefrontAI(LLM):
                 "Authorization": f"Bearer {self.forefrontai_api_key}",
                 "Content-Type": "application/json",
             },
-            json={"text": prompt, **self._default_params},
+            json={"text": prompt, **self._default_params, **kwargs},
         )
         response_json = response.json()
         text = response_json["result"][0]["completion"]

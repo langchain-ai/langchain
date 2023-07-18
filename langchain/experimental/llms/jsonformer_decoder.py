@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, List, Optional, cast
+from typing import TYPE_CHECKING, Any, List, Optional, cast
 
 from pydantic import Field, root_validator
 
@@ -42,6 +42,7 @@ class JsonFormer(HuggingFacePipeline):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         jsonformer = import_jsonformer()
         from transformers import Text2TextGenerationPipeline

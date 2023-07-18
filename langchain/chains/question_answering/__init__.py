@@ -1,8 +1,9 @@
 """Load question answering chains."""
 from typing import Any, Mapping, Optional, Protocol
 
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
+from langchain.callbacks.manager import Callbacks
+from langchain.chains import ReduceDocumentsChain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
 from langchain.chains.combine_documents.map_rerank import MapRerankDocumentsChain
@@ -11,11 +12,14 @@ from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import (
     map_reduce_prompt,
-    map_rerank_prompt,
     refine_prompts,
     stuff_prompt,
 )
-from langchain.prompts.base import BasePromptTemplate
+from langchain.chains.question_answering.map_rerank_prompt import (
+    PROMPT as MAP_RERANK_PROMPT,
+)
+from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema.prompt_template import BasePromptTemplate
 
 
 class LoadingCallable(Protocol):
@@ -29,16 +33,21 @@ class LoadingCallable(Protocol):
 
 def _load_map_rerank_chain(
     llm: BaseLanguageModel,
-    prompt: BasePromptTemplate = map_rerank_prompt.PROMPT,
+    prompt: BasePromptTemplate = MAP_RERANK_PROMPT,
     verbose: bool = False,
     document_variable_name: str = "context",
     rank_key: str = "score",
     answer_key: str = "answer",
     callback_manager: Optional[BaseCallbackManager] = None,
+    callbacks: Callbacks = None,
     **kwargs: Any,
 ) -> MapRerankDocumentsChain:
     llm_chain = LLMChain(
-        llm=llm, prompt=prompt, verbose=verbose, callback_manager=callback_manager
+        llm=llm,
+        prompt=prompt,
+        verbose=verbose,
+        callback_manager=callback_manager,
+        callbacks=callbacks,
     )
     return MapRerankDocumentsChain(
         llm_chain=llm_chain,
@@ -57,11 +66,16 @@ def _load_stuff_chain(
     document_variable_name: str = "context",
     verbose: Optional[bool] = None,
     callback_manager: Optional[BaseCallbackManager] = None,
+    callbacks: Callbacks = None,
     **kwargs: Any,
 ) -> StuffDocumentsChain:
     _prompt = prompt or stuff_prompt.PROMPT_SELECTOR.get_prompt(llm)
     llm_chain = LLMChain(
-        llm=llm, prompt=_prompt, verbose=verbose, callback_manager=callback_manager
+        llm=llm,
+        prompt=_prompt,
+        verbose=verbose,
+        callback_manager=callback_manager,
+        callbacks=callbacks,
     )
     # TODO: document prompt
     return StuffDocumentsChain(
@@ -84,6 +98,8 @@ def _load_map_reduce_chain(
     collapse_llm: Optional[BaseLanguageModel] = None,
     verbose: Optional[bool] = None,
     callback_manager: Optional[BaseCallbackManager] = None,
+    callbacks: Callbacks = None,
+    token_max: int = 3000,
     **kwargs: Any,
 ) -> MapReduceDocumentsChain:
     _question_prompt = (
@@ -97,6 +113,7 @@ def _load_map_reduce_chain(
         prompt=_question_prompt,
         verbose=verbose,
         callback_manager=callback_manager,
+        callbacks=callbacks,
     )
     _reduce_llm = reduce_llm or llm
     reduce_chain = LLMChain(
@@ -104,13 +121,15 @@ def _load_map_reduce_chain(
         prompt=_combine_prompt,
         verbose=verbose,
         callback_manager=callback_manager,
+        callbacks=callbacks,
     )
     # TODO: document prompt
-    combine_document_chain = StuffDocumentsChain(
+    combine_documents_chain = StuffDocumentsChain(
         llm_chain=reduce_chain,
         document_variable_name=combine_document_variable_name,
         verbose=verbose,
         callback_manager=callback_manager,
+        callbacks=callbacks,
     )
     if collapse_prompt is None:
         collapse_chain = None
@@ -127,18 +146,25 @@ def _load_map_reduce_chain(
                 prompt=collapse_prompt,
                 verbose=verbose,
                 callback_manager=callback_manager,
+                callbacks=callbacks,
             ),
             document_variable_name=combine_document_variable_name,
             verbose=verbose,
             callback_manager=callback_manager,
         )
+    reduce_documents_chain = ReduceDocumentsChain(
+        combine_documents_chain=combine_documents_chain,
+        collapse_documents_chain=collapse_chain,
+        token_max=token_max,
+        verbose=verbose,
+    )
     return MapReduceDocumentsChain(
         llm_chain=map_chain,
-        combine_document_chain=combine_document_chain,
         document_variable_name=map_reduce_document_variable_name,
-        collapse_document_chain=collapse_chain,
+        reduce_documents_chain=reduce_documents_chain,
         verbose=verbose,
         callback_manager=callback_manager,
+        callbacks=callbacks,
         **kwargs,
     )
 
@@ -152,6 +178,7 @@ def _load_refine_chain(
     refine_llm: Optional[BaseLanguageModel] = None,
     verbose: Optional[bool] = None,
     callback_manager: Optional[BaseCallbackManager] = None,
+    callbacks: Callbacks = None,
     **kwargs: Any,
 ) -> RefineDocumentsChain:
     _question_prompt = (
@@ -165,6 +192,7 @@ def _load_refine_chain(
         prompt=_question_prompt,
         verbose=verbose,
         callback_manager=callback_manager,
+        callbacks=callbacks,
     )
     _refine_llm = refine_llm or llm
     refine_chain = LLMChain(
@@ -172,6 +200,7 @@ def _load_refine_chain(
         prompt=_refine_prompt,
         verbose=verbose,
         callback_manager=callback_manager,
+        callbacks=callbacks,
     )
     return RefineDocumentsChain(
         initial_llm_chain=initial_chain,

@@ -12,6 +12,7 @@ from langchain.agents.agent_toolkits.jira.toolkit import JiraToolkit
 from langchain.agents.agent_toolkits.json.base import create_json_agent
 from langchain.agents.agent_toolkits.json.toolkit import JsonToolkit
 from langchain.agents.agent_toolkits.nla.toolkit import NLAToolkit
+from langchain.agents.agent_toolkits.office365.toolkit import O365Toolkit
 from langchain.agents.agent_toolkits.openapi.base import create_openapi_agent
 from langchain.agents.agent_toolkits.openapi.toolkit import OpenAPIToolkit
 from langchain.agents.agent_toolkits.pandas.base import create_pandas_dataframe_agent
@@ -34,6 +35,7 @@ from langchain.agents.agent_toolkits.vectorstore.toolkit import (
     VectorStoreRouterToolkit,
     VectorStoreToolkit,
 )
+from langchain.agents.agent_toolkits.xorbits.base import create_xorbits_agent
 from langchain.agents.agent_toolkits.zapier.toolkit import ZapierToolkit
 
 __all__ = [
@@ -64,4 +66,6 @@ __all__ = [
     "FileManagementToolkit",
     "PlayWrightBrowserToolkit",
     "AzureCognitiveServicesToolkit",
+    "O365Toolkit",
+    "create_xorbits_agent",
 ]

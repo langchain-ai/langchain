@@ -37,7 +37,7 @@ class BigQueryLoader(BaseLoader):
             metadata_columns: Optional. The columns to write into the `metadata` of the
                 document.
             credentials : google.auth.credentials.Credentials, optional
-            Credentials for accessing Google APIs. Use this parameter to override
+              Credentials for accessing Google APIs. Use this parameter to override
                 default credentials, such as to use Compute Engine
                 (`google.auth.compute_engine.Credentials`) or Service Account
                 (`google.oauth2.service_account.Credentials`) credentials directly.
@@ -52,7 +52,7 @@ class BigQueryLoader(BaseLoader):
         try:
             from google.cloud import bigquery
         except ImportError as ex:
-            raise ValueError(
+            raise ImportError(
                 "Could not import google-cloud-bigquery python package. "
                 "Please install it with `pip install google-cloud-bigquery`."
             ) from ex

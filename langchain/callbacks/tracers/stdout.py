@@ -1,5 +1,5 @@
 import json
-from typing import Any, List
+from typing import Any, Callable, List
 
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import Run
@@ -7,13 +7,33 @@ from langchain.input import get_bolded_text, get_colored_text
 
 
 def try_json_stringify(obj: Any, fallback: str) -> str:
+    """
+    Try to stringify an object to JSON.
+    Args:
+        obj: Object to stringify.
+        fallback: Fallback string to return if the object cannot be stringified.
+
+    Returns:
+        A JSON string if the object can be stringified, otherwise the fallback string.
+
+    """
     try:
-        return json.dumps(obj, indent=2)
+        return json.dumps(obj, indent=2, ensure_ascii=False)
     except Exception:
         return fallback
 
 
 def elapsed(run: Any) -> str:
+    """Get the elapsed time of a run.
+
+    Args:
+        run: any object with a start_time and end_time attribute.
+
+    Returns:
+        A string with the elapsed time in seconds or
+            milliseconds if time is less than a second.
+
+    """
     elapsed_time = run.end_time - run.start_time
     milliseconds = elapsed_time.total_seconds() * 1000
     if milliseconds < 1000:
@@ -21,8 +41,14 @@ def elapsed(run: Any) -> str:
     return f"{(milliseconds / 1000):.2f}s"
 
 
-class ConsoleCallbackHandler(BaseTracer):
-    name = "console_callback_handler"
+class FunctionCallbackHandler(BaseTracer):
+    """Tracer that calls a function with a single str parameter."""
+
+    name = "function_callback_handler"
+
+    def __init__(self, function: Callable[[str], None], **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.function_callback = function
 
     def _persist_run(self, run: Run) -> None:
         pass
@@ -52,7 +78,7 @@ class ConsoleCallbackHandler(BaseTracer):
     # logging methods
     def _on_chain_start(self, run: Run) -> None:
         crumbs = self.get_breadcrumbs(run)
-        print(
+        self.function_callback(
             f"{get_colored_text('[chain/start]', color='green')} "
             + get_bolded_text(f"[{crumbs}] Entering Chain run with input:\n")
             + f"{try_json_stringify(run.inputs, '[inputs]')}"
@@ -60,7 +86,7 @@ class ConsoleCallbackHandler(BaseTracer):
 
     def _on_chain_end(self, run: Run) -> None:
         crumbs = self.get_breadcrumbs(run)
-        print(
+        self.function_callback(
             f"{get_colored_text('[chain/end]', color='blue')} "
             + get_bolded_text(
                 f"[{crumbs}] [{elapsed(run)}] Exiting Chain run with output:\n"
@@ -70,7 +96,7 @@ class ConsoleCallbackHandler(BaseTracer):
 
     def _on_chain_error(self, run: Run) -> None:
         crumbs = self.get_breadcrumbs(run)
-        print(
+        self.function_callback(
             f"{get_colored_text('[chain/error]', color='red')} "
             + get_bolded_text(
                 f"[{crumbs}] [{elapsed(run)}] Chain run errored with error:\n"
@@ -85,7 +111,7 @@ class ConsoleCallbackHandler(BaseTracer):
             if "prompts" in run.inputs
             else run.inputs
         )
-        print(
+        self.function_callback(
             f"{get_colored_text('[llm/start]', color='green')} "
             + get_bolded_text(f"[{crumbs}] Entering LLM run with input:\n")
             + f"{try_json_stringify(inputs, '[inputs]')}"
@@ -93,7 +119,7 @@ class ConsoleCallbackHandler(BaseTracer):
 
     def _on_llm_end(self, run: Run) -> None:
         crumbs = self.get_breadcrumbs(run)
-        print(
+        self.function_callback(
             f"{get_colored_text('[llm/end]', color='blue')} "
             + get_bolded_text(
                 f"[{crumbs}] [{elapsed(run)}] Exiting LLM run with output:\n"
@@ -103,7 +129,7 @@ class ConsoleCallbackHandler(BaseTracer):
 
     def _on_llm_error(self, run: Run) -> None:
         crumbs = self.get_breadcrumbs(run)
-        print(
+        self.function_callback(
             f"{get_colored_text('[llm/error]', color='red')} "
             + get_bolded_text(
                 f"[{crumbs}] [{elapsed(run)}] LLM run errored with error:\n"
@@ -113,7 +139,7 @@ class ConsoleCallbackHandler(BaseTracer):
 
     def _on_tool_start(self, run: Run) -> None:
         crumbs = self.get_breadcrumbs(run)
-        print(
+        self.function_callback(
             f'{get_colored_text("[tool/start]", color="green")} '
             + get_bolded_text(f"[{crumbs}] Entering Tool run with input:\n")
             + f'"{run.inputs["input"].strip()}"'
@@ -122,7 +148,7 @@ class ConsoleCallbackHandler(BaseTracer):
     def _on_tool_end(self, run: Run) -> None:
         crumbs = self.get_breadcrumbs(run)
         if run.outputs:
-            print(
+            self.function_callback(
                 f'{get_colored_text("[tool/end]", color="blue")} '
                 + get_bolded_text(
                     f"[{crumbs}] [{elapsed(run)}] Exiting Tool run with output:\n"
@@ -132,9 +158,18 @@ class ConsoleCallbackHandler(BaseTracer):
 
     def _on_tool_error(self, run: Run) -> None:
         crumbs = self.get_breadcrumbs(run)
-        print(
+        self.function_callback(
             f"{get_colored_text('[tool/error]', color='red')} "
             + get_bolded_text(f"[{crumbs}] [{elapsed(run)}] ")
             + f"Tool run errored with error:\n"
             f"{run.error}"
         )
+
+
+class ConsoleCallbackHandler(FunctionCallbackHandler):
+    """Tracer that prints to the console."""
+
+    name = "console_callback_handler"
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(function=print, **kwargs)

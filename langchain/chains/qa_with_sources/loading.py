@@ -1,10 +1,12 @@
 """Load question answering with sources chains."""
+from __future__ import annotations
+
 from typing import Any, Mapping, Optional, Protocol
 
-from langchain.base_language import BaseLanguageModel
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
 from langchain.chains.combine_documents.map_rerank import MapRerankDocumentsChain
+from langchain.chains.combine_documents.reduce import ReduceDocumentsChain
 from langchain.chains.combine_documents.refine import RefineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
@@ -13,8 +15,11 @@ from langchain.chains.qa_with_sources import (
     refine_prompts,
     stuff_prompt,
 )
-from langchain.chains.question_answering import map_rerank_prompt
-from langchain.prompts.base import BasePromptTemplate
+from langchain.chains.question_answering.map_rerank_prompt import (
+    PROMPT as MAP_RERANK_PROMPT,
+)
+from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema.prompt_template import BasePromptTemplate
 
 
 class LoadingCallable(Protocol):
@@ -28,7 +33,7 @@ class LoadingCallable(Protocol):
 
 def _load_map_rerank_chain(
     llm: BaseLanguageModel,
-    prompt: BasePromptTemplate = map_rerank_prompt.PROMPT,
+    prompt: BasePromptTemplate = MAP_RERANK_PROMPT,
     verbose: bool = False,
     document_variable_name: str = "context",
     rank_key: str = "score",
@@ -74,12 +79,13 @@ def _load_map_reduce_chain(
     reduce_llm: Optional[BaseLanguageModel] = None,
     collapse_llm: Optional[BaseLanguageModel] = None,
     verbose: Optional[bool] = None,
+    token_max: int = 3000,
     **kwargs: Any,
 ) -> MapReduceDocumentsChain:
     map_chain = LLMChain(llm=llm, prompt=question_prompt, verbose=verbose)
     _reduce_llm = reduce_llm or llm
     reduce_chain = LLMChain(llm=_reduce_llm, prompt=combine_prompt, verbose=verbose)
-    combine_document_chain = StuffDocumentsChain(
+    combine_documents_chain = StuffDocumentsChain(
         llm_chain=reduce_chain,
         document_variable_name=combine_document_variable_name,
         document_prompt=document_prompt,
@@ -103,11 +109,16 @@ def _load_map_reduce_chain(
             document_variable_name=combine_document_variable_name,
             document_prompt=document_prompt,
         )
+    reduce_documents_chain = ReduceDocumentsChain(
+        combine_documents_chain=combine_documents_chain,
+        collapse_documents_chain=collapse_chain,
+        token_max=token_max,
+        verbose=verbose,
+    )
     return MapReduceDocumentsChain(
         llm_chain=map_chain,
-        combine_document_chain=combine_document_chain,
+        reduce_documents_chain=reduce_documents_chain,
         document_variable_name=map_reduce_document_variable_name,
-        collapse_document_chain=collapse_chain,
         verbose=verbose,
         **kwargs,
     )
@@ -149,7 +160,7 @@ def load_qa_with_sources_chain(
     Args:
         llm: Language Model to use in the chain.
         chain_type: Type of document combining chain to use. Should be one of "stuff",
-            "map_reduce", and "refine".
+            "map_reduce", "refine" and "map_rerank".
         verbose: Whether chains should be run in verbose mode or not. Note that this
             applies to all chains that make up the final chain.
 

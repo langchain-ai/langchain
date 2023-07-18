@@ -1,9 +1,9 @@
-"""Loader that loads YouTube transcript."""
+"""Loads YouTube transcript."""
 from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence, Union
 from urllib.parse import parse_qs, urlparse
 
 from pydantic import root_validator
@@ -140,19 +140,25 @@ def _parse_video_id(url: str) -> Optional[str]:
 
 
 class YoutubeLoader(BaseLoader):
-    """Loader that loads Youtube transcripts."""
+    """Loads Youtube transcripts."""
 
     def __init__(
         self,
         video_id: str,
         add_video_info: bool = False,
-        language: str = "en",
+        language: Union[str, Sequence[str]] = "en",
+        translation: str = "en",
         continue_on_failure: bool = False,
     ):
         """Initialize with YouTube video ID."""
         self.video_id = video_id
         self.add_video_info = add_video_info
         self.language = language
+        if isinstance(language, str):
+            self.language = [language]
+        else:
+            self.language = language
+        self.translation = translation
         self.continue_on_failure = continue_on_failure
 
     @staticmethod
@@ -199,10 +205,10 @@ class YoutubeLoader(BaseLoader):
             return []
 
         try:
-            transcript = transcript_list.find_transcript([self.language])
+            transcript = transcript_list.find_transcript(self.language)
         except NoTranscriptFound:
             en_transcript = transcript_list.find_transcript(["en"])
-            transcript = en_transcript.translate(self.language)
+            transcript = en_transcript.translate(self.translation)
 
         transcript_pieces = transcript.fetch()
 
@@ -231,20 +237,22 @@ class YoutubeLoader(BaseLoader):
             )
         yt = YouTube(f"https://www.youtube.com/watch?v={self.video_id}")
         video_info = {
-            "title": yt.title,
-            "description": yt.description,
-            "view_count": yt.views,
-            "thumbnail_url": yt.thumbnail_url,
-            "publish_date": yt.publish_date,
-            "length": yt.length,
-            "author": yt.author,
+            "title": yt.title or "Unknown",
+            "description": yt.description or "Unknown",
+            "view_count": yt.views or 0,
+            "thumbnail_url": yt.thumbnail_url or "Unknown",
+            "publish_date": yt.publish_date.strftime("%Y-%m-%d %H:%M:%S")
+            if yt.publish_date
+            else "Unknown",
+            "length": yt.length or 0,
+            "author": yt.author or "Unknown",
         }
         return video_info
 
 
 @dataclass
 class GoogleApiYoutubeLoader(BaseLoader):
-    """Loader that loads all Videos from a Channel
+    """Loads all Videos from a Channel
 
     To use, you should have the ``googleapiclient,youtube_transcript_api``
     python package installed.

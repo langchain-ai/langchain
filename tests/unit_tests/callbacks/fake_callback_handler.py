@@ -1,12 +1,12 @@
 """A fake callback handler for testing purposes."""
 from itertools import chain
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 from pydantic import BaseModel
 
 from langchain.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
-from langchain.schema import BaseMessage
+from langchain.schema.messages import BaseMessage
 
 
 class BaseFakeCallbackHandler(BaseModel):
@@ -19,7 +19,11 @@ class BaseFakeCallbackHandler(BaseModel):
     ignore_llm_: bool = False
     ignore_chain_: bool = False
     ignore_agent_: bool = False
+    ignore_retriever_: bool = False
     ignore_chat_model_: bool = False
+
+    # to allow for similar callback handlers that are not technicall equal
+    fake_id: Union[str, None] = None
 
     # add finer-grained counters for easier debugging of failing tests
     chain_starts: int = 0
@@ -32,6 +36,9 @@ class BaseFakeCallbackHandler(BaseModel):
     agent_actions: int = 0
     agent_ends: int = 0
     chat_model_starts: int = 0
+    retriever_starts: int = 0
+    retriever_ends: int = 0
+    retriever_errors: int = 0
 
 
 class BaseFakeCallbackHandlerMixin(BaseFakeCallbackHandler):
@@ -52,7 +59,7 @@ class BaseFakeCallbackHandlerMixin(BaseFakeCallbackHandler):
         self.llm_streams += 1
 
     def on_chain_start_common(self) -> None:
-        print("CHAIN START")
+        ("CHAIN START")
         self.chain_starts += 1
         self.starts += 1
 
@@ -91,6 +98,18 @@ class BaseFakeCallbackHandlerMixin(BaseFakeCallbackHandler):
     def on_text_common(self) -> None:
         self.text += 1
 
+    def on_retriever_start_common(self) -> None:
+        self.starts += 1
+        self.retriever_starts += 1
+
+    def on_retriever_end_common(self) -> None:
+        self.ends += 1
+        self.retriever_ends += 1
+
+    def on_retriever_error_common(self) -> None:
+        self.errors += 1
+        self.retriever_errors += 1
+
 
 class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     """Fake callback handler for testing."""
@@ -109,6 +128,11 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     def ignore_agent(self) -> bool:
         """Whether to ignore agent callbacks."""
         return self.ignore_agent_
+
+    @property
+    def ignore_retriever(self) -> bool:
+        """Whether to ignore retriever callbacks."""
+        return self.ignore_retriever_
 
     def on_llm_start(
         self,
@@ -200,6 +224,27 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
         **kwargs: Any,
     ) -> Any:
         self.on_text_common()
+
+    def on_retriever_start(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
+        self.on_retriever_start_common()
+
+    def on_retriever_end(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
+        self.on_retriever_end_common()
+
+    def on_retriever_error(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
+        self.on_retriever_error_common()
 
     def __deepcopy__(self, memo: dict) -> "FakeCallbackHandler":
         return self

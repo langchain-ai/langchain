@@ -23,7 +23,15 @@ class PySparkDataFrameLoader(BaseLoader):
         page_content_column: str = "text",
         fraction_of_memory: float = 0.1,
     ):
-        """Initialize with a Spark DataFrame object."""
+        """Initialize with a Spark DataFrame object.
+
+        Args:
+            spark_session: The SparkSession object.
+            df: The Spark DataFrame object.
+            page_content_column: The name of the column containing the page content.
+             Defaults to "text".
+            fraction_of_memory: The fraction of memory to use. Defaults to 0.1.
+        """
         try:
             from pyspark.sql import DataFrame, SparkSession
         except ImportError:
@@ -48,7 +56,7 @@ class PySparkDataFrameLoader(BaseLoader):
         self.column_names = self.df.columns
 
     def get_num_rows(self) -> Tuple[int, int]:
-        """Gets the amount of "feasible" rows for the DataFrame"""
+        """Gets the number of "feasible" rows for the DataFrame"""
         try:
             import psutil
         except ImportError as e:

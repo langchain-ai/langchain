@@ -11,7 +11,9 @@ from langchain.utilities.brave_search import BraveSearchWrapper
 
 
 class BraveSearch(BaseTool):
-    name = "brave-search"
+    """Tool that queries the BraveSearch."""
+
+    name = "brave_search"
     description = (
         "a search engine. "
         "useful for when you need to answer questions about current events."
@@ -23,6 +25,16 @@ class BraveSearch(BaseTool):
     def from_api_key(
         cls, api_key: str, search_kwargs: Optional[dict] = None, **kwargs: Any
     ) -> BraveSearch:
+        """Create a tool from an api key.
+
+        Args:
+            api_key: The api key to use.
+            search_kwargs: Any additional kwargs to pass to the search wrapper.
+            **kwargs: Any additional kwargs to pass to the tool.
+
+        Returns:
+            A tool.
+        """
         wrapper = BraveSearchWrapper(api_key=api_key, search_kwargs=search_kwargs or {})
         return cls(search_wrapper=wrapper, **kwargs)
 

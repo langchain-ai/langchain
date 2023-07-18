@@ -6,9 +6,9 @@ from langchain.agents.agent_toolkits.spark_sql.prompt import SQL_PREFIX, SQL_SUF
 from langchain.agents.agent_toolkits.spark_sql.toolkit import SparkSQLToolkit
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
+from langchain.schema.language_model import BaseLanguageModel
 
 
 def create_spark_sql_agent(
@@ -27,7 +27,7 @@ def create_spark_sql_agent(
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
-    """Construct a sql agent from an LLM and tools."""
+    """Construct a Spark SQL agent from an LLM and tools."""
     tools = toolkit.get_tools()
     prefix = prefix.format(top_k=top_k)
     prompt = ZeroShotAgent.create_prompt(

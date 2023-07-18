@@ -2,9 +2,9 @@
 
 ⚡ Building applications with LLMs through composability ⚡
 
+[![Release Notes](https://img.shields.io/github/release/hwchase17/langchain)](https://github.com/hwchase17/langchain/releases)
 [![lint](https://github.com/hwchase17/langchain/actions/workflows/lint.yml/badge.svg)](https://github.com/hwchase17/langchain/actions/workflows/lint.yml)
 [![test](https://github.com/hwchase17/langchain/actions/workflows/test.yml/badge.svg)](https://github.com/hwchase17/langchain/actions/workflows/test.yml)
-[![linkcheck](https://github.com/hwchase17/langchain/actions/workflows/linkcheck.yml/badge.svg)](https://github.com/hwchase17/langchain/actions/workflows/linkcheck.yml)
 [![Downloads](https://static.pepy.tech/badge/langchain/month)](https://pepy.tech/project/langchain)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchainai.svg?style=social&label=Follow%20%40LangChainAI)](https://twitter.com/langchainai)
@@ -12,6 +12,8 @@
 [![Open in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/hwchase17/langchain)
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/hwchase17/langchain)
 [![GitHub star chart](https://img.shields.io/github/stars/hwchase17/langchain?style=social)](https://star-history.com/#hwchase17/langchain)
+[![Dependency Status](https://img.shields.io/librariesio/github/hwchase17/langchain)](https://libraries.io/github/hwchase17/langchain)
+[![Open Issues](https://img.shields.io/github/issues-raw/hwchase17/langchain)](https://github.com/hwchase17/langchain/issues)
 
 
 Looking for the JS/TS version? Check out [LangChain.js](https://github.com/hwchase17/langchainjs).
@@ -23,7 +25,7 @@ Please fill out [this form](https://forms.gle/57d8AmXBYp8PP8tZA) and we'll set u
 
 `pip install langchain`
 or
-`conda install langchain -c conda-forge`
+`pip install langsmith && conda install langchain -c conda-forge`
 
 ## 🤔 What is this?
 
@@ -33,22 +35,22 @@ This library aims to assist in the development of those types of applications. C
 
 **❓ Question Answering over specific documents**
 
-- [Documentation](https://langchain.readthedocs.io/en/latest/use_cases/question_answering.html)
+- [Documentation](https://python.langchain.com/docs/use_cases/question_answering/)
 - End-to-end Example: [Question Answering over Notion Database](https://github.com/hwchase17/notion-qa)
 
 **💬 Chatbots**
 
-- [Documentation](https://langchain.readthedocs.io/en/latest/use_cases/chatbots.html)
+- [Documentation](https://python.langchain.com/docs/use_cases/chatbots/)
 - End-to-end Example: [Chat-LangChain](https://github.com/hwchase17/chat-langchain)
 
 **🤖 Agents**
 
-- [Documentation](https://langchain.readthedocs.io/en/latest/modules/agents.html)
+- [Documentation](https://python.langchain.com/docs/modules/agents/)
 - End-to-end Example: [GPT+WolframAlpha](https://huggingface.co/spaces/JavaFXpert/Chat-GPT-LangChain)
 
 ## 📖 Documentation
 
-Please see [here](https://langchain.readthedocs.io/en/latest/?) for full documentation on:
+Please see [here](https://python.langchain.com) for full documentation on:
 
 - Getting started (installation, setting up the environment, simple examples)
 - How-To examples (demos, integrations, helper functions)
@@ -84,7 +86,7 @@ Memory refers to persisting state between calls of a chain/agent. LangChain prov
 
 [BETA] Generative models are notoriously hard to evaluate with traditional metrics. One new way of evaluating them is using language models themselves to do the evaluation. LangChain provides some prompts/chains for assisting in this.
 
-For more information on these concepts, please see our [full documentation](https://langchain.readthedocs.io/en/latest/).
+For more information on these concepts, please see our [full documentation](https://python.langchain.com).
 
 ## 💁 Contributing
 

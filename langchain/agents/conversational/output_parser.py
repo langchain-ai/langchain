@@ -7,7 +7,10 @@ from langchain.schema import AgentAction, AgentFinish, OutputParserException
 
 
 class ConvoOutputParser(AgentOutputParser):
+    """Output parser for the conversational agent."""
+
     ai_prefix: str = "AI"
+    """Prefix to use before AI output."""
 
     def get_format_instructions(self) -> str:
         return FORMAT_INSTRUCTIONS

@@ -17,6 +17,15 @@ logger = logging.getLogger()
 
 
 def has_mul_sub_str(s: str, *args: Any) -> bool:
+    """
+    Check if a string contains multiple substrings.
+    Args:
+        s: string to check.
+        *args: substrings to check.
+
+    Returns:
+        True if all substrings are in the string, False otherwise.
+    """
     for a in args:
         if a not in s:
             return False
@@ -404,7 +413,9 @@ class MyScale(VectorStore):
                   alone. The default name for it is `metadata`.
 
         Returns:
-            List[Document]: List of documents
+            List[Document]: List of documents most similar to the query text
+            and cosine distance in float for each.
+            Lower score represents more similarity.
         """
         q_str = self._build_qstr(self.embedding_function(query), k, where_str)
         try:

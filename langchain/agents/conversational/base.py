@@ -10,18 +10,20 @@ from langchain.agents.agent_types import AgentType
 from langchain.agents.conversational.output_parser import ConvoOutputParser
 from langchain.agents.conversational.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.agents.utils import validate_tools_single_input
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 
 
 class ConversationalAgent(Agent):
-    """An agent designed to hold a conversation in addition to using tools."""
+    """An agent that holds a conversation in addition to using tools."""
 
     ai_prefix: str = "AI"
+    """Prefix to use before AI output."""
     output_parser: AgentOutputParser = Field(default_factory=ConvoOutputParser)
+    """Output parser for the agent."""
 
     @classmethod
     def _get_default_output_parser(
@@ -55,7 +57,7 @@ class ConversationalAgent(Agent):
         human_prefix: str = "Human",
         input_variables: Optional[List[str]] = None,
     ) -> PromptTemplate:
-        """Create prompt in the style of the zero shot agent.
+        """Create prompt in the style of the zero-shot agent.
 
         Args:
             tools: List of tools the agent will have access to, used to format the

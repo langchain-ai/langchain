@@ -7,7 +7,7 @@ from langchain.experimental.autonomous_agents.autogpt.prompt_generator import ge
 from langchain.prompts.chat import (
     BaseChatPromptTemplate,
 )
-from langchain.schema import BaseMessage, HumanMessage, SystemMessage
+from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain.tools.base import BaseTool
 from langchain.vectorstores.base import VectorStoreRetriever
 
