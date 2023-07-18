@@ -367,6 +367,7 @@ extended_testing = [
  "openai",
  "rank_bm25",
  "geopandas",
+ "nucliadb-protos",
 ]
 
 [[tool.poetry.source]]
