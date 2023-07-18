@@ -358,6 +358,7 @@ extended_testing = [
  "openai",
  "sympy",
  "rapidfuzz",
+ "openai",
 ]
 
 [[tool.poetry.source]]

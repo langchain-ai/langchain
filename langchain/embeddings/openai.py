@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import warnings
 from typing import (
     Any,
     Callable,
@@ -27,7 +28,7 @@ from tenacity import (
 )
 
 from langchain.embeddings.base import Embeddings
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
 
 logger = logging.getLogger(__name__)
 
@@ -194,11 +195,38 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     show_progress_bar: bool = False
     """Whether to show a progress bar when embedding."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """Holds any model parameters valid for `create` call not explicitly specified."""
 
     class Config:
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
+
+    @root_validator(pre=True)
+    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Build extra kwargs from additional params that were passed in."""
+        all_required_field_names = get_pydantic_field_names(cls)
+        extra = values.get("model_kwargs", {})
+        for field_name in list(values):
+            if field_name in extra:
+                raise ValueError(f"Found {field_name} supplied twice.")
+            if field_name not in all_required_field_names:
+                warnings.warn(
+                    f"""WARNING! {field_name} is not default parameter.
+                    {field_name} was transferred to model_kwargs.
+                    Please confirm that {field_name} is what you intended."""
+                )
+                extra[field_name] = values.pop(field_name)
+
+        invalid_model_kwargs = all_required_field_names.intersection(extra.keys())
+        if invalid_model_kwargs:
+            raise ValueError(
+                f"Parameters {invalid_model_kwargs} should be specified explicitly. "
+                f"Instead they were passed in as part of `model_kwargs` parameter."
+            )
+
+        values["model_kwargs"] = extra
+        return values
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
