@@ -15,4 +15,4 @@ pip install ____project_name
 
 ## Contributing
 
-<!--- --->
+For detailed information on how to contribute, see [here](.github/CONTRIBUTING.md).

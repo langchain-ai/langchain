@@ -1,9 +1,12 @@
-from ____project_name_identifier import MyChain
+from langchain.chains import LLMChain
+from langchain.llms import HumanInputLLM
+from langchain.prompts.prompt import PromptTemplate
 
-from langchain.chat_models.openai import ChatOpenAI
+from ____project_name_identifier import MyChain
 
 
 def test_my_chain() -> None:
     """Edit this test to test your chain."""
-    llm = ChatOpenAI()
-    MyChain.from_llm(llm)
+    llm = HumanInputLLM(input_func=lambda: "baz")
+    llm_chain = LLMChain(llm=llm, prompt=PromptTemplate.from_template("foo {bar}"))
+    MyChain(llm_chain=llm_chain)
