@@ -12,6 +12,8 @@ from langchain.tools.gmail.base import GmailBaseTool
 
 
 class CreateDraftSchema(BaseModel):
+    """Input for CreateDraftTool."""
+
     message: str = Field(
         ...,
         description="The message to include in the draft.",
@@ -35,6 +37,8 @@ class CreateDraftSchema(BaseModel):
 
 
 class GmailCreateDraft(GmailBaseTool):
+    """Tool that creates a draft email for Gmail."""
+
     name: str = "create_gmail_draft"
     description: str = (
         "Use this tool to create a draft email with the provided message fields."
