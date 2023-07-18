@@ -33,7 +33,7 @@ class AzureChatOpenAI(ChatOpenAI):
 
         AzureChatOpenAI(
             deployment_name="35-turbo-dev",
-            openai_api_version="2023-03-15-preview",
+            openai_api_version="2023-05-15",
         )
 
     Be aware the API version may change.

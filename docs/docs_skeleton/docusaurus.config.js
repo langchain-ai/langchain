@@ -149,6 +149,11 @@ const config = {
         title: "🦜️🔗 LangChain",
         items: [
           {
+            to: "https://smith.langchain.com",
+            label: "LangSmith",
+            position: "right",
+          },
+          {
             to: "https://js.langchain.com/docs",
             label: "JS/TS Docs",
             position: "right",

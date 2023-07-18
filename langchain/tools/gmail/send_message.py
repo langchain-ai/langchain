@@ -14,6 +14,8 @@ from langchain.tools.gmail.base import GmailBaseTool
 
 
 class SendMessageSchema(BaseModel):
+    """Input for SendMessageTool."""
+
     message: str = Field(
         ...,
         description="The message to send.",
@@ -37,6 +39,8 @@ class SendMessageSchema(BaseModel):
 
 
 class GmailSendMessage(GmailBaseTool):
+    """Tool that sends a message to Gmail."""
+
     name: str = "send_gmail_message"
     description: str = (
         "Use this tool to send email messages." " The input is the message, recipients"

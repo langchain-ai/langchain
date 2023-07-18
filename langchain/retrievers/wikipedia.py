@@ -9,8 +9,8 @@ from langchain.utilities.wikipedia import WikipediaAPIWrapper
 
 
 class WikipediaRetriever(BaseRetriever, WikipediaAPIWrapper):
-    """
-    It is effectively a wrapper for WikipediaAPIWrapper.
+    """Retriever for Wikipedia API.
+
     It wraps load() to get_relevant_documents().
     It uses all WikipediaAPIWrapper arguments without any change.
     """

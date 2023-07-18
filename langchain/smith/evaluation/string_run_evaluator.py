@@ -200,19 +200,18 @@ class StringExampleMapper(Serializable):
                 )
             else:
                 output = list(example.outputs.values())[0]
-                return {
-                    "reference": self.serialize_chat_messages([output])
-                    if isinstance(output, dict)
-                    and output.get("type")
-                    and output.get("data")
-                    else str(output)
-                }
         elif self.reference_key not in example.outputs:
             raise ValueError(
                 f"Example {example.id} does not have reference key"
                 f" {self.reference_key}."
             )
-        return {"reference": str(example.outputs[self.reference_key])}
+        else:
+            output = example.outputs[self.reference_key]
+        return {
+            "reference": self.serialize_chat_messages([output])
+            if isinstance(output, dict) and output.get("type") and output.get("data")
+            else str(output)
+        }
 
     def __call__(self, example: Example) -> Dict[str, str]:
         """Maps the Run and Example to a dictionary."""

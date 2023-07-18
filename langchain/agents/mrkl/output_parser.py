@@ -9,6 +9,8 @@ FINAL_ANSWER_ACTION = "Final Answer:"
 
 
 class MRKLOutputParser(AgentOutputParser):
+    """MRKL Output parser for the chat agent."""
+
     def get_format_instructions(self) -> str:
         return FORMAT_INSTRUCTIONS
 

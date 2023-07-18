@@ -1,0 +1,28 @@
+---
+sidebar_position: 6
+---
+
+import DocCardList from "@theme/DocCardList";
+
+# Evaluation
+
+Language models can be unpredictable. This makes it challenging to ship reliable applications to production, where repeatable, useful outcomes across diverse inputs are a minimum requirement. Tests help demonstrate each component in an LLM application can produce the required or expected functionality. These tests also safeguard against regressions while you improve interconnected pieces of an integrated system. However, measuring the quality of generated text can be challenging. It can be hard to agree on the right set of metrics for your application, and it can be difficult to translate those into better performance. Furthermore, it's common to lack sufficient evaluation data adequately test the range of inputs and expected outputs for each component when you're just getting started. The LangChain community is building open source tools and guides to help address these challenges.
+
+LangChain exposes different types of evaluators for common types of evaluation. Each type has off-the-shelf implementations you can use to get started, as well as an
+ extensible API so you can create your own or contribute improvements for everyone to use. The following sections have example notebooks for you to get started.
+
+- [String Evaluators](/docs/modules/evaluation/string/): Evaluate the predicted string for a given input, usually against a reference string
+- [Trajectory Evaluators](/docs/modules/evaluation/trajectory/): Evaluate the whole trajectory of agent actions
+- [Comparison Evaluators](/docs/modules/evaluation/comparison/): Compare predictions from two runs on a common input
+
+
+This section also provides some additional examples of how you could use these evaluators for different scenarios or apply to different chain implementations in the LangChain library. Some examples include:
+
+- [Preference Scoring Chain Outputs](/docs/modules/evaluation/examples/comparisons): An example using a comparison evaluator on different models or prompts to select statistically significant differences in aggregate preference scores
+
+
+## Reference Docs
+
+For detailed information of the available evaluators, including how to instantiate, configure, and customize them. Check out the [reference documentation](https://api.python.langchain.com/en/latest/api_reference.html#module-langchain.evaluation) directly.
+
+<DocCardList />

@@ -63,6 +63,8 @@ def parse_and_check_json_markdown(text: str, expected_keys: List[str]) -> dict:
 
 
 class SimpleJsonOutputParser(BaseOutputParser[Any]):
+    """Parse the output of an LLM call to a JSON object."""
+
     def parse(self, text: str) -> Any:
         text = text.strip()
         try:

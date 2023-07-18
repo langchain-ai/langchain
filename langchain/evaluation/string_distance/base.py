@@ -153,7 +153,7 @@ class _RapidFuzzChainMixin(Chain):
         return score
 
 
-class StringDistanceEvalChain(_RapidFuzzChainMixin, StringEvaluator):
+class StringDistanceEvalChain(StringEvaluator, _RapidFuzzChainMixin):
     """Compute string distances between the prediction and the reference.
 
     Examples
@@ -318,7 +318,7 @@ class StringDistanceEvalChain(_RapidFuzzChainMixin, StringEvaluator):
         return self._prepare_output(result)
 
 
-class PairwiseStringDistanceEvalChain(_RapidFuzzChainMixin, PairwiseStringEvaluator):
+class PairwiseStringDistanceEvalChain(PairwiseStringEvaluator, _RapidFuzzChainMixin):
     """Compute string edit distances between two predictions."""
 
     @property

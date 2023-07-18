@@ -28,6 +28,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
+from langchain.utilities.redis import get_client
 from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 
@@ -111,6 +112,24 @@ class Redis(VectorStore):
                 index_name="my-index",
                 embedding_function=embeddings.embed_query,
             )
+
+    To use a redis replication setup with multiple redis server and redis sentinels
+    set "redis_url" to "redis+sentinel://" scheme. With this url format a path is
+    needed holding the name of the redis service within the sentinels to get the
+    correct redis server connection. The default service name is "mymaster".
+
+    An optional username or password is used for booth connections to the rediserver
+    and the sentinel, different passwords for server and sentinel are not supported.
+    And as another constraint only one sentinel instance can be given:
+
+    Example:
+        .. code-block:: python
+
+            vectorstore = Redis(
+                redis_url="redis+sentinel://username:password@sentinelhost:26379/mymaster/0"
+                index_name="my-index",
+                embedding_function=embeddings.embed_query,
+            )
     """
 
     def __init__(
@@ -126,19 +145,10 @@ class Redis(VectorStore):
         **kwargs: Any,
     ):
         """Initialize with necessary components."""
-        try:
-            import redis
-        except ImportError:
-            raise ValueError(
-                "Could not import redis python package. "
-                "Please install it with `pip install redis>=4.1.0`."
-            )
-
         self.embedding_function = embedding_function
         self.index_name = index_name
         try:
-            # connect to redis from url
-            redis_client = redis.from_url(redis_url, **kwargs)
+            redis_client = get_client(redis_url=redis_url, **kwargs)
             # check if redis has redisearch module installed
             _check_redis_module_exist(redis_client, REDIS_REQUIRED_MODULES)
         except ValueError as e:
@@ -280,13 +290,13 @@ class Redis(VectorStore):
             query (str): The query text for which to find similar documents.
             k (int): The number of documents to return. Default is 4.
             score_threshold (float): The minimum matching score required for a document
-            to be considered a match. Defaults to 0.2.
-            Because the similarity calculation algorithm is based on cosine similarity,
-            the smaller the angle, the higher the similarity.
+                to be considered a match. Defaults to 0.2.
+                Because the similarity calculation algorithm is based on cosine
+                similarity, the smaller the angle, the higher the similarity.
 
         Returns:
             List[Document]: A list of documents that are most similar to the query text,
-            including the match score for each document.
+                including the match score for each document.
 
         Note:
             If there are no documents that satisfy the score_threshold value,
@@ -309,7 +319,7 @@ class Redis(VectorStore):
         base_query = (
             f"{hybrid_fields}=>[KNN {k} @{self.vector_key} $vector AS vector_score]"
         )
-        return_fields = [self.metadata_key, self.content_key, "vector_score"]
+        return_fields = [self.metadata_key, self.content_key, "vector_score", "id"]
         return (
             Query(base_query)
             .return_fields(*return_fields)
@@ -346,17 +356,12 @@ class Redis(VectorStore):
         results = self.client.ft(self.index_name).search(redis_query, params_dict)
 
         # Prepare document results
-        docs = [
-            (
-                Document(
-                    page_content=result.content, metadata=json.loads(result.metadata)
-                ),
-                float(result.vector_score),
-            )
-            for result in results.docs
-        ]
-
-        return docs
+        docs_and_scores: List[Tuple[Document, float]] = []
+        for result in results.docs:
+            metadata = {**json.loads(result.metadata), "id": result.id}
+            doc = Document(page_content=result.content, metadata=metadata)
+            docs_and_scores.append((doc, float(result.vector_score)))
+        return docs_and_scores
 
     @classmethod
     def from_texts_return_keys(
@@ -373,13 +378,16 @@ class Redis(VectorStore):
     ) -> Tuple[Redis, List[str]]:
         """Create a Redis vectorstore from raw documents.
         This is a user-friendly interface that:
-            1. Embeds documents.
-            2. Creates a new index for the embeddings in Redis.
-            3. Adds the documents to the newly created Redis index.
-            4. Returns the keys of the newly created documents.
+        1. Embeds documents.
+        2. Creates a new index for the embeddings in Redis.
+        3. Adds the documents to the newly created Redis index.
+        4. Returns the keys of the newly created documents.
+
         This is intended to be a quick way to get started.
+
         Example:
             .. code-block:: python
+
                 from langchain.vectorstores import Redis
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
@@ -434,12 +442,15 @@ class Redis(VectorStore):
     ) -> Redis:
         """Create a Redis vectorstore from raw documents.
         This is a user-friendly interface that:
-            1. Embeds documents.
-            2. Creates a new index for the embeddings in Redis.
-            3. Adds the documents to the newly created Redis index.
+        1. Embeds documents.
+        2. Creates a new index for the embeddings in Redis.
+        3. Adds the documents to the newly created Redis index.
+
         This is intended to be a quick way to get started.
+
         Example:
             .. code-block:: python
+
                 from langchain.vectorstores import Redis
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
@@ -481,7 +492,7 @@ class Redis(VectorStore):
             raise ValueError("'ids' (keys)() were not provided.")
 
         try:
-            import redis
+            import redis  # noqa: F401
         except ImportError:
             raise ValueError(
                 "Could not import redis python package. "
@@ -492,7 +503,7 @@ class Redis(VectorStore):
             # otherwise passing it to Redis will result in an error.
             if "redis_url" in kwargs:
                 kwargs.pop("redis_url")
-            client = redis.from_url(url=redis_url, **kwargs)
+            client = get_client(redis_url=redis_url, **kwargs)
         except ValueError as e:
             raise ValueError(f"Your redis connected error: {e}")
         # Check if index exists
@@ -522,7 +533,7 @@ class Redis(VectorStore):
         """
         redis_url = get_from_dict_or_env(kwargs, "redis_url", "REDIS_URL")
         try:
-            import redis
+            import redis  # noqa: F401
         except ImportError:
             raise ValueError(
                 "Could not import redis python package. "
@@ -533,7 +544,7 @@ class Redis(VectorStore):
             # otherwise passing it to Redis will result in an error.
             if "redis_url" in kwargs:
                 kwargs.pop("redis_url")
-            client = redis.from_url(url=redis_url, **kwargs)
+            client = get_client(redis_url=redis_url, **kwargs)
         except ValueError as e:
             raise ValueError(f"Your redis connected error: {e}")
         # Check if index exists
@@ -558,7 +569,7 @@ class Redis(VectorStore):
         """Connect to an existing Redis index."""
         redis_url = get_from_dict_or_env(kwargs, "redis_url", "REDIS_URL")
         try:
-            import redis
+            import redis  # noqa: F401
         except ImportError:
             raise ValueError(
                 "Could not import redis python package. "
@@ -569,7 +580,7 @@ class Redis(VectorStore):
             # otherwise passing it to Redis will result in an error.
             if "redis_url" in kwargs:
                 kwargs.pop("redis_url")
-            client = redis.from_url(url=redis_url, **kwargs)
+            client = get_client(redis_url=redis_url, **kwargs)
             # check if redis has redisearch module installed
             _check_redis_module_exist(client, REDIS_REQUIRED_MODULES)
             # ensure that the index already exists

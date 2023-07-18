@@ -136,6 +136,11 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
         extra = Extra.ignore
 
     @property
+    def requires_reference(self) -> bool:
+        """Whether this evaluator requires a reference label."""
+        return False
+
+    @property
     def _tools_description(self) -> str:
         """Get the description of the agent tools.
 
