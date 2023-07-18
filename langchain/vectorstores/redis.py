@@ -22,7 +22,6 @@ from typing import (
 import numpy as np
 from pydantic import root_validator
 
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
@@ -320,7 +319,7 @@ class Redis(VectorStore):
         base_query = (
             f"{hybrid_fields}=>[KNN {k} @{self.vector_key} $vector AS vector_score]"
         )
-        return_fields = [self.metadata_key, self.content_key, "vector_score","id"]
+        return_fields = [self.metadata_key, self.content_key, "vector_score", "id"]
         return (
             Query(base_query)
             .return_fields(*return_fields)
@@ -328,12 +327,6 @@ class Redis(VectorStore):
             .paging(0, k)
             .dialect(2)
         )
-
-    @staticmethod
-    def _add_id(result: str, id: str)->str:
-        meta  = json.loads(result)
-        meta["id"] = id
-        return json.dumps(meta)
 
     def similarity_search_with_score(
         self, query: str, k: int = 4
@@ -363,17 +356,12 @@ class Redis(VectorStore):
         results = self.client.ft(self.index_name).search(redis_query, params_dict)
 
         # Prepare document results
-        docs = [
-            (
-                Document(
-                    page_content=result.content, metadata=json.loads(self._add_id(result.metadata, result.id))
-                ),
-                float(result.vector_score),
-            )
-            for result in results.docs
-        ]
-
-        return docs
+        docs_and_scores: List[Tuple[Document, float]] = []
+        for result in results.docs:
+            metadata = {**json.loads(result.metadata), "id": result.id}
+            doc = Document(page_content=result.content, metadata=metadata)
+            docs_and_scores.append((doc, float(result.vector_score)))
+        return docs_and_scores
 
     @classmethod
     def from_texts_return_keys(
