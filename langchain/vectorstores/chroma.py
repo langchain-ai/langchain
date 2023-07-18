@@ -96,12 +96,12 @@ class Chroma(VectorStore):
             elif persist_directory:
                 # Maintain backwards compatibility with chromadb < 0.4.0
                 major, minor, _ = chromadb.__version__.split(".")
-                if int(major) >= 0 and int(minor) >= 4:
-                    _client_settings = chromadb.config.Settings(is_persistent=True)
-                else:
+                if int(major) == 0 and int(minor) < 4:
                     _client_settings = chromadb.config.Settings(
                         chroma_db_impl="duckdb+parquet",
                     )
+                else:
+                    _client_settings = chromadb.config.Settings(is_persistent=True)
                 _client_settings.persist_directory = persist_directory
             else:
                 _client_settings = chromadb.config.Settings()
@@ -468,7 +468,7 @@ class Chroma(VectorStore):
 
         # Maintain backwards compatibility with chromadb < 0.4.0
         major, minor, _ = chromadb.__version__.split(".")
-        if int(major) >= 0 and int(minor) < 4:
+        if int(major) == 0 and int(minor) < 4:
             self._client.persist()
 
     def update_document(self, document_id: str, document: Document) -> None:
