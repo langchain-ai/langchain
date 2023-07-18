@@ -9,8 +9,9 @@ from langchain.prompts.chat import (
     AIMessagePromptTemplate,
     HumanMessagePromptTemplate,
 )
-from langchain.experimental.plan_and_execute.schema import PlanOutputParser
-from langchain.experimental.plan_and_execute.planners.base import BasePlanner
+from abc import abstractmethod
+from langchain.tools.base import BaseTool
+from pydantic import BaseModel
 from langchain.callbacks.manager import Callbacks
 
 DEMONSTRATIONS = [
@@ -46,17 +47,17 @@ class TaskPlaningChain(LLMChain):
         demo_messages = []
         for demo in demos:
             if demo["role"] == "user":
-                message = HumanMessagePromptTemplate.from_template(demo["content"])
+                demo_messages.append(HumanMessagePromptTemplate.from_template(demo["content"]))
             else:
-                message = AIMessagePromptTemplate.from_template(demo["content"])
-            demo_messages.append(message)
+                demo_messages.append(AIMessagePromptTemplate.from_template(demo["content"]))
+            # demo_messages.append(message)
 
         prompt = ChatPromptTemplate.from_messages([system_message_prompt, *demo_messages, human_message_prompt])
 
         return cls(prompt=prompt, llm=llm, verbose=verbose)
 
 class Step:
-    def __init__(self, task: str, id: int, dep: List[int], args: Dict[str, str], tool):
+    def __init__(self, task: str, id: int, dep: List[int], args: Dict[str, str], tool: BaseTool):
         self.task = task
         self.id = id
         self.dep = dep
@@ -73,9 +74,20 @@ class Plan:
     def __repr__(self):
         return str(self)
 
-class PlanningOutputParser(PlanOutputParser):
+class BasePlanner(BaseModel):
+    @abstractmethod
+    def plan(self, inputs: dict, callbacks: Callbacks = None, **kwargs: Any) -> Plan:
+        """Given input, decide what to do."""
 
-    def parse(self, text: str, hf_tools) -> Plan:
+    @abstractmethod
+    async def aplan(
+        self, inputs: dict, callbacks: Callbacks = None, **kwargs: Any
+    ) -> Plan:
+        """Given input, decide what to do."""
+
+class PlanningOutputParser():
+
+    def parse(self, text: str, hf_tools: List[BaseTool]) -> Plan:
         steps = []
         for v in json.loads(re.findall(r"\[.*\]", text)[0]):
             choose_tool = None
@@ -90,7 +102,7 @@ class PlanningOutputParser(PlanOutputParser):
 
 class TaskPlanner(BasePlanner):
     llm_chain: LLMChain
-    output_parser: PlanOutputParser
+    output_parser: PlanningOutputParser
     stop: Optional[List] = None
 
     def plan(self, inputs: dict, callbacks: Callbacks = None, **kwargs: Any) -> Plan:

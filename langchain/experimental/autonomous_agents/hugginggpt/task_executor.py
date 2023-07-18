@@ -3,24 +3,25 @@ import uuid
 import numpy as np
 import cv2
 from typing import List, Dict
-from langchain.experimental.plan_and_execute.schema import Plan
+from langchain.experimental.autonomous_agents.hugginggpt.task_planner import Plan
 from diffusers.utils import load_image
+from langchain.tools.base import BaseTool
 
 class Task:
-    def __init__(self, task: str, id: int, dep: List[int], args: Dict, tool):
+    def __init__(self, task: str, id: int, dep: List[int], args: Dict, tool: BaseTool):
         self.task = task
         self.id = id
         self.dep = dep
         self.args = args
         self.tool= tool
-        self.result = None
+        self.result = ""
         self.status = "pending"
         self.message = None
 
     def __str__(self):
         return f"{self.task}({self.args})"
 
-    def save_result(self):
+    def save_result(self) -> None:
         if self.task == "video_generator":
             # ndarray to video
             result = np.array(self.result)
@@ -40,16 +41,16 @@ class Task:
             self.result = filename
             
 
-    def completed(self):
+    def completed(self) -> bool:
         return self.status == "completed"
     
-    def failed(self):
+    def failed(self) -> bool:
         return self.status == "failed"
     
-    def pending(self):
+    def pending(self) -> bool:
         return self.status == "pending"
 
-    def run(self):
+    def run(self) -> str:
         try:
             new_args = copy.deepcopy(self.args)
             for k,v in new_args.items():
@@ -80,16 +81,16 @@ class TaskExecutor:
             self.tasks.append(task)
             self.id_task_map[step.id] = task
     
-    def completed(self):
+    def completed(self) -> bool:
         return all(task.completed() for task in self.tasks)
     
-    def failed(self):
+    def failed(self) -> bool:
         return any(task.failed() for task in self.tasks)
     
-    def pending(self):
+    def pending(self) -> bool:
         return any(task.pending() for task in self.tasks)
 
-    def check_dependency(self, task):
+    def check_dependency(self, task: Task) -> bool:
         for dep_id in task.dep:
             if dep_id == -1:
                 continue
@@ -98,7 +99,7 @@ class TaskExecutor:
                 return False
         return True
     
-    def update_args(self, task):
+    def update_args(self, task: Task) -> None:
         for dep_id in task.dep:
             if dep_id == -1:
                 continue
@@ -107,7 +108,7 @@ class TaskExecutor:
                 if f"<resource-{dep_id}>" in v:
                     task.args[k].replace(f"<resource-{dep_id}>", dep_task.result)
 
-    def run(self):
+    def run(self) -> str:
         for task in self.tasks:
             print(f"running {task}")
             if task.pending() and self.check_dependency(task):
@@ -121,7 +122,7 @@ class TaskExecutor:
             self.status = "pending"
         return self.status
 
-    def __str__(self):
+    def __str__(self) -> str:
         result = ""
         for task in self.tasks:
             result += f"{task}\n"
@@ -132,8 +133,8 @@ class TaskExecutor:
                 result += f"result: {task.result}\n"
         return result
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
     
-    def describe(self):
+    def describe(self) -> str:
         return self.__str__()
