@@ -78,7 +78,7 @@ class Zilliz(Milvus):
                 "uri": "https://in03-ba4234asae.api.gcp-us-west1.zillizcloud.com",
                 "user": "temp",
                 "password": "temp",
-                "token": "temp", # API key, for serverless clusters which can be used as replacements for user and password
+                "token": "temp", # API key as replacements for user and password
                 "secure": True
             }
             drop_old: True,
