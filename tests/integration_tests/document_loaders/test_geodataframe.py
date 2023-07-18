@@ -5,6 +5,7 @@ from langchain.schema import Document
 
 try:
     import geopandas
+
     GeoDataFrame = geopandas.GeoDataFrame
 except ImportError:
     GeoDataFrame = None
@@ -22,8 +23,8 @@ def sample_gdf() -> GeoDataFrame:
 
     path_to_data = geopandas.datasets.get_path("nybb")
     gdf = geopandas.read_file(path_to_data)
-    gdf['area'] = gdf.area
-    gdf['crs'] = gdf.crs.to_string()
+    gdf["area"] = gdf.area
+    gdf["crs"] = gdf.crs.to_string()
     return gdf.head(2)
 
 
