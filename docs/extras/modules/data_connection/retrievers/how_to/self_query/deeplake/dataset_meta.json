@@ -1,0 +1,28 @@
+{
+    "default_index": [
+        {
+            "start": null,
+            "step": null,
+            "stop": null
+        }
+    ],
+    "groups": [],
+    "hidden_tensors": [
+        "_embedding_shape"
+    ],
+    "tensor_names": {
+        "_embedding_shape": "_embedding_shape",
+        "embedding": "embedding",
+        "id": "id",
+        "metadata": "metadata",
+        "text": "text"
+    },
+    "tensors": [
+        "text",
+        "metadata",
+        "embedding",
+        "_embedding_shape",
+        "id"
+    ],
+    "version": "3.6.10"
+}

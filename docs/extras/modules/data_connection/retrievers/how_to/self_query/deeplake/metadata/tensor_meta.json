@@ -1,0 +1,23 @@
+{
+    "chunk_compression": null,
+    "dtype": "Any",
+    "hidden": false,
+    "htype": "json",
+    "is_link": false,
+    "is_sequence": false,
+    "length": 6,
+    "links": {},
+    "max_chunk_size": null,
+    "max_shape": [
+        1
+    ],
+    "min_shape": [
+        1
+    ],
+    "name": "metadata",
+    "sample_compression": null,
+    "tiling_threshold": null,
+    "typestr": null,
+    "verify": true,
+    "version": "3.6.10"
+}
