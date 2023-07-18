@@ -1,4 +1,25 @@
-"""Chains are easily reusable components which can be linked together."""
+"""Chains are easily reusable components which can be linked together.
+
+    Chains should be used to encode a sequence of calls to components like
+    models, document retrievers, other chains, etc., and provide a simple interface
+    to this sequence.
+
+    The Chain interface makes it easy to create apps that are:
+        - Stateful: add Memory to any Chain to give it state,
+        - Observable: pass Callbacks to a Chain to execute additional functionality,
+            like logging, outside the main sequence of component calls,
+        - Composable: the Chain API is flexible enough that it is easy to combine
+            Chains with other components, including other Chains.
+
+    The main methods exposed by chains are:
+        - `__call__`: Chains are callable. The `__call__` method is the primary way to
+            execute a Chain. This takes inputs as a dictionary and returns a
+            dictionary.
+        - `run`: A convenience method that takes inputs as args/kwargs and returns
+            a string. This method can only be used for a subset of chains and
+            cannot return as rich of an output as `__call__`.
+    """
+
 from langchain.chains.api.base import APIChain
 from langchain.chains.api.openapi.chain import OpenAPIEndpointChain
 from langchain.chains.combine_documents.base import AnalyzeDocumentChain

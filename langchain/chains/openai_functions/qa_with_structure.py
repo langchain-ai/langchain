@@ -16,7 +16,7 @@ from langchain.schema.messages import HumanMessage, SystemMessage
 
 
 class AnswerWithSources(BaseModel):
-    """An answer to the question being asked, with sources."""
+    """An answer to the question, with sources."""
 
     answer: str = Field(..., description="Answer to the question that was asked")
     sources: List[str] = Field(
@@ -30,7 +30,8 @@ def create_qa_with_structure_chain(
     output_parser: str = "base",
     prompt: Optional[Union[PromptTemplate, ChatPromptTemplate]] = None,
 ) -> LLMChain:
-    """Create a question answering chain that returns an answer with sources.
+    """Create a question answering chain that returns an answer with sources
+     based on schema.
 
     Args:
         llm: Language model to use for the chain.
