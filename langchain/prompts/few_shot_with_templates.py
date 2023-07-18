@@ -59,7 +59,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
 
     @root_validator()
     def template_is_valid(cls, values: Dict) -> Dict:
-        """Check that prefix, suffix and input variables are consistent."""
+        """Check that prefix, suffix, and input variables are consistent."""
         if values["validate_template"]:
             input_variables = values["input_variables"]
             expected_input_variables = set(values["suffix"].input_variables)
