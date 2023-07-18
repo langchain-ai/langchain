@@ -1,35 +1,24 @@
-"""Loader that loads Figma files json dump."""
+"""Loads Figma files json dump."""
 import json
 import urllib.request
 from typing import Any, List
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
-
-
-def _stringify_value(val: Any) -> str:
-    if isinstance(val, str):
-        return val
-    elif isinstance(val, dict):
-        return "\n" + _stringify_dict(val)
-    elif isinstance(val, list):
-        return "\n".join(_stringify_value(v) for v in val)
-    else:
-        return str(val)
-
-
-def _stringify_dict(data: dict) -> str:
-    text = ""
-    for key, value in data.items():
-        text += key + ": " + _stringify_value(data[key]) + "\n"
-    return text
+from langchain.utils import stringify_dict
 
 
 class FigmaFileLoader(BaseLoader):
-    """Loader that loads Figma file json."""
+    """Loads Figma file json."""
 
     def __init__(self, access_token: str, ids: str, key: str):
-        """Initialize with access token, ids, and key."""
+        """Initialize with access token, ids, and key.
+
+        Args:
+            access_token: The access token for the Figma REST API.
+            ids: The ids of the Figma file.
+            key: The key for the Figma file
+        """
         self.access_token = access_token
         self.ids = ids
         self.key = key
@@ -54,6 +43,6 @@ class FigmaFileLoader(BaseLoader):
     def load(self) -> List[Document]:
         """Load file"""
         data = self._get_figma_file()
-        text = _stringify_dict(data)
+        text = stringify_dict(data)
         metadata = {"source": self._construct_figma_api_url()}
         return [Document(page_content=text, metadata=metadata)]

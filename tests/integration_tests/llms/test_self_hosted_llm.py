@@ -43,6 +43,19 @@ def test_self_hosted_huggingface_pipeline_text2text_generation() -> None:
     assert isinstance(output, str)
 
 
+def test_self_hosted_huggingface_pipeline_summarization() -> None:
+    """Test valid call to self-hosted HuggingFace summarization model."""
+    gpu = get_remote_instance()
+    llm = SelfHostedHuggingFaceLLM(
+        model_id="facebook/bart-large-cnn",
+        task="summarization",
+        hardware=gpu,
+        model_reqs=model_reqs,
+    )
+    output = llm("Say foo:")
+    assert isinstance(output, str)
+
+
 def load_pipeline() -> Any:
     """Load pipeline for testing."""
     model_id = "gpt2"

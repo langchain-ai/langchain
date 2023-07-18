@@ -11,24 +11,27 @@ T = TypeVar("T", bound=BaseModel)
 
 
 class PydanticOutputParser(BaseOutputParser[T]):
+    """Parse an output using a pydantic model."""
+
     pydantic_object: Type[T]
+    """The pydantic model to parse."""
 
     def parse(self, text: str) -> T:
         try:
             # Greedy search for 1st json candidate.
             match = re.search(
-                "\{.*\}", text.strip(), re.MULTILINE | re.IGNORECASE | re.DOTALL
+                r"\{.*\}", text.strip(), re.MULTILINE | re.IGNORECASE | re.DOTALL
             )
             json_str = ""
             if match:
                 json_str = match.group()
-            json_object = json.loads(json_str)
+            json_object = json.loads(json_str, strict=False)
             return self.pydantic_object.parse_obj(json_object)
 
         except (json.JSONDecodeError, ValidationError) as e:
             name = self.pydantic_object.__name__
             msg = f"Failed to parse {name} from completion {text}. Got: {e}"
-            raise OutputParserException(msg)
+            raise OutputParserException(msg, llm_output=text)
 
     def get_format_instructions(self) -> str:
         schema = self.pydantic_object.schema()

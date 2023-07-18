@@ -27,7 +27,7 @@ def test_sql_database_run() -> None:
     with engine.connect() as conn:
         conn.execute(stmt)
     db = SQLDatabase(engine)
-    db_chain = SQLDatabaseChain(llm=OpenAI(temperature=0), database=db)
+    db_chain = SQLDatabaseChain.from_llm(OpenAI(temperature=0), db)
     output = db_chain.run("What company does Harrison work at?")
     expected_output = " Harrison works at Foo."
     assert output == expected_output
@@ -41,7 +41,7 @@ def test_sql_database_run_update() -> None:
     with engine.connect() as conn:
         conn.execute(stmt)
     db = SQLDatabase(engine)
-    db_chain = SQLDatabaseChain(llm=OpenAI(temperature=0), database=db)
+    db_chain = SQLDatabaseChain.from_llm(OpenAI(temperature=0), db)
     output = db_chain.run("Update Harrison's workplace to Bar")
     expected_output = " Harrison's workplace has been updated to Bar."
     assert output == expected_output
@@ -59,9 +59,7 @@ def test_sql_database_sequential_chain_run() -> None:
     with engine.connect() as conn:
         conn.execute(stmt)
     db = SQLDatabase(engine)
-    db_chain = SQLDatabaseSequentialChain.from_llm(
-        llm=OpenAI(temperature=0), database=db
-    )
+    db_chain = SQLDatabaseSequentialChain.from_llm(OpenAI(temperature=0), db)
     output = db_chain.run("What company does Harrison work at?")
     expected_output = " Harrison works at Foo."
     assert output == expected_output
@@ -69,7 +67,7 @@ def test_sql_database_sequential_chain_run() -> None:
 
 def test_sql_database_sequential_chain_intermediate_steps() -> None:
     """Test that commands can be run successfully SEQUENTIALLY and returned
-    in correct format. sWith Intermediate steps"""
+    in correct format. switch Intermediate steps"""
     engine = create_engine("sqlite:///:memory:")
     metadata_obj.create_all(engine)
     stmt = insert(user).values(user_id=13, user_name="Harrison", user_company="Foo")
@@ -77,7 +75,7 @@ def test_sql_database_sequential_chain_intermediate_steps() -> None:
         conn.execute(stmt)
     db = SQLDatabase(engine)
     db_chain = SQLDatabaseSequentialChain.from_llm(
-        llm=OpenAI(temperature=0), database=db, return_intermediate_steps=True
+        OpenAI(temperature=0), db, return_intermediate_steps=True
     )
     output = db_chain("What company does Harrison work at?")
     expected_output = " Harrison works at Foo."

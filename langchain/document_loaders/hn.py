@@ -1,4 +1,4 @@
-"""Loader that loads HN."""
+"""Loads HN."""
 from typing import Any, List
 
 from langchain.docstore.document import Document
@@ -11,7 +11,7 @@ class HNLoader(WebBaseLoader):
     def load(self) -> List[Document]:
         """Get important HN webpage information.
 
-        Components are:
+        HN webpage components are:
             - title
             - content
             - source url,

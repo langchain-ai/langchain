@@ -10,14 +10,18 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class BiliBiliLoader(BaseLoader):
-    """Loader that loads bilibili transcripts."""
+    """Loads bilibili transcripts."""
 
     def __init__(self, video_urls: List[str]):
-        """Initialize with bilibili url."""
+        """Initialize with bilibili url.
+
+        Args:
+            video_urls: List of bilibili urls.
+        """
         self.video_urls = video_urls
 
     def load(self) -> List[Document]:
-        """Load from bilibili url."""
+        """Load Documents from bilibili url."""
         results = []
         for url in self.video_urls:
             transcript, video_info = self._get_bilibili_subs_and_info(url)
@@ -30,9 +34,9 @@ class BiliBiliLoader(BaseLoader):
         try:
             from bilibili_api import sync, video
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "requests package not found, please install it with "
-                "`pip install bilibili-api`"
+                "`pip install bilibili-api-python`"
             )
 
         bvid = re.search(r"BV\w+", url)
@@ -60,11 +64,11 @@ class BiliBiliLoader(BaseLoader):
             raw_sub_titles = json.loads(result.content)["body"]
             raw_transcript = " ".join([c["content"] for c in raw_sub_titles])
 
-            raw_transcript_with_meta_info = f"""
-                Video Title: {video_info['title']},
-                description: {video_info['desc']}\n
-                Transcript: {raw_transcript}
-                """
+            raw_transcript_with_meta_info = (
+                f"Video Title: {video_info['title']},"
+                f"description: {video_info['desc']}\n\n"
+                f"Transcript: {raw_transcript}"
+            )
             return raw_transcript_with_meta_info, video_info
         else:
             raw_transcript = ""

@@ -4,7 +4,7 @@ from pydantic import root_validator
 
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.summary import SummarizerMixin
-from langchain.schema import BaseMessage, get_buffer_string
+from langchain.schema.messages import BaseMessage, get_buffer_string
 
 
 class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
@@ -57,7 +57,10 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
         super().save_context(inputs, outputs)
-        # Prune buffer if it exceeds max token limit
+        self.prune()
+
+    def prune(self) -> None:
+        """Prune buffer if it exceeds max token limit"""
         buffer = self.chat_memory.messages
         curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)
         if curr_buffer_length > self.max_token_limit:

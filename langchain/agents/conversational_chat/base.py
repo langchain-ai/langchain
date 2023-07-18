@@ -12,23 +12,18 @@ from langchain.agents.conversational_chat.prompt import (
     SUFFIX,
     TEMPLATE_TOOL_RESPONSE,
 )
+from langchain.agents.utils import validate_tools_single_input
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
-from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
     SystemMessagePromptTemplate,
 )
-from langchain.schema import (
-    AgentAction,
-    AIMessage,
-    BaseLanguageModel,
-    BaseMessage,
-    BaseOutputParser,
-    HumanMessage,
-)
+from langchain.schema import AgentAction, BaseOutputParser, BasePromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
 from langchain.tools.base import BaseTool
 
 
@@ -36,6 +31,7 @@ class ConversationalChatAgent(Agent):
     """An agent designed to hold a conversation in addition to using tools."""
 
     output_parser: AgentOutputParser = Field(default_factory=ConvoOutputParser)
+    template_tool_response: str = TEMPLATE_TOOL_RESPONSE
 
     @classmethod
     def _get_default_output_parser(cls, **kwargs: Any) -> AgentOutputParser:
@@ -54,6 +50,11 @@ class ConversationalChatAgent(Agent):
     def llm_prefix(self) -> str:
         """Prefix to append the llm call with."""
         return "Thought:"
+
+    @classmethod
+    def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
+        super()._validate_tools(tools)
+        validate_tools_single_input(cls.__name__, tools)
 
     @classmethod
     def create_prompt(
@@ -93,7 +94,7 @@ class ConversationalChatAgent(Agent):
         for action, observation in intermediate_steps:
             thoughts.append(AIMessage(content=action.log))
             human_message = HumanMessage(
-                content=TEMPLATE_TOOL_RESPONSE.format(observation=observation)
+                content=self.template_tool_response.format(observation=observation)
             )
             thoughts.append(human_message)
         return thoughts

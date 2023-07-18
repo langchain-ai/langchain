@@ -6,6 +6,8 @@ from langchain.schema import AgentAction, AgentFinish, OutputParserException
 
 
 class ReActOutputParser(AgentOutputParser):
+    """Output parser for the ReAct agent."""
+
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         action_prefix = "Action: "
         if not text.strip().split("\n")[-1].startswith(action_prefix):
@@ -24,3 +26,7 @@ class ReActOutputParser(AgentOutputParser):
             return AgentFinish({"output": action_input}, text)
         else:
             return AgentAction(action, action_input, text)
+
+    @property
+    def _type(self) -> str:
+        return "react"

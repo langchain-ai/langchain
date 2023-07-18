@@ -1,0 +1,2140 @@
+{
+  "redirects": [
+    {
+      "source": "/en/latest/additional_resources/youtube.html",
+      "destination": "/docs/additional_resources/youtube"
+    },
+    {
+      "source": "/en/latest/integrations/agent_with_wandb_tracing.html",
+      "destination": "/docs/ecosystem/integrations/agent_with_wandb_tracing"
+    },
+    {
+      "source": "/en/latest/integrations/ai21.html",
+      "destination": "/docs/ecosystem/integrations/ai21"
+    },
+    {
+      "source": "/en/latest/integrations/aim_tracking.html",
+      "destination": "/docs/ecosystem/integrations/aim_tracking"
+    },
+    {
+      "source": "/en/latest/integrations/airbyte.html",
+      "destination": "/docs/ecosystem/integrations/airbyte"
+    },
+    {
+      "source": "/en/latest/integrations/aleph_alpha.html",
+      "destination": "/docs/ecosystem/integrations/aleph_alpha"
+    },
+    {
+      "source": "/en/latest/integrations/analyticdb.html",
+      "destination": "/docs/ecosystem/integrations/analyticdb"
+    },
+    {
+      "source": "/en/latest/integrations/annoy.html",
+      "destination": "/docs/ecosystem/integrations/annoy"
+    },
+    {
+      "source": "/en/latest/integrations/anyscale.html",
+      "destination": "/docs/ecosystem/integrations/anyscale"
+    },
+    {
+      "source": "/en/latest/integrations/apify.html",
+      "destination": "/docs/ecosystem/integrations/apify"
+    },
+    {
+      "source": "/en/latest/integrations/argilla.html",
+      "destination": "/docs/ecosystem/integrations/argilla"
+    },
+    {
+      "source": "/en/latest/integrations/arxiv.html",
+      "destination": "/docs/ecosystem/integrations/arxiv"
+    },
+    {
+      "source": "/en/latest/integrations/atlas.html",
+      "destination": "/docs/ecosystem/integrations/atlas"
+    },
+    {
+      "source": "/en/latest/integrations/awadb.html",
+      "destination": "/docs/ecosystem/integrations/awadb"
+    },
+    {
+      "source": "/en/latest/integrations/aws_s3.html",
+      "destination": "/docs/ecosystem/integrations/aws_s3"
+    },
+    {
+      "source": "/en/latest/integrations/azlyrics.html",
+      "destination": "/docs/ecosystem/integrations/azlyrics"
+    },
+    {
+      "source": "/en/latest/integrations/azure_blob_storage.html",
+      "destination": "/docs/ecosystem/integrations/azure_blob_storage"
+    },
+    {
+      "source": "/en/latest/integrations/azure_cognitive_search_.html",
+      "destination": "/docs/ecosystem/integrations/azure_cognitive_search_"
+    },
+    {
+      "source": "/en/latest/integrations/azure_openai.html",
+      "destination": "/docs/ecosystem/integrations/azure_openai"
+    },
+    {
+      "source": "/en/latest/integrations/bananadev.html",
+      "destination": "/docs/ecosystem/integrations/bananadev"
+    },
+    {
+      "source": "/en/latest/ecosystem/baseten.html",
+      "destination": "/docs/ecosystem/integrations/baseten"
+    },
+    {
+      "source": "/en/latest/integrations/beam.html",
+      "destination": "/docs/ecosystem/integrations/beam"
+    },
+    {
+      "source": "/en/latest/integrations/amazon_bedrock.html",
+      "destination": "/docs/ecosystem/integrations/bedrock"
+    },
+    {
+      "source": "/en/latest/integrations/bilibili.html",
+      "destination": "/docs/ecosystem/integrations/bilibili"
+    },
+    {
+      "source": "/en/latest/integrations/blackboard.html",
+      "destination": "/docs/ecosystem/integrations/blackboard"
+    },
+    {
+      "source": "/en/latest/integrations/cassandra.html",
+      "destination": "/docs/ecosystem/integrations/cassandra"
+    },
+    {
+      "source": "/en/latest/integrations/cerebriumai.html",
+      "destination": "/docs/ecosystem/integrations/cerebriumai"
+    },
+    {
+      "source": "/en/latest/integrations/chroma.html",
+      "destination": "/docs/ecosystem/integrations/chroma"
+    },
+    {
+      "source": "/en/latest/integrations/clearml_tracking.html",
+      "destination": "/docs/ecosystem/integrations/clearml_tracking"
+    },
+    {
+      "source": "/en/latest/integrations/cohere.html",
+      "destination": "/docs/ecosystem/integrations/cohere"
+    },
+    {
+      "source": "/en/latest/integrations/college_confidential.html",
+      "destination": "/docs/ecosystem/integrations/college_confidential"
+    },
+    {
+      "source": "/en/latest/integrations/comet_tracking.html",
+      "destination": "/docs/ecosystem/integrations/comet_tracking"
+    },
+    {
+      "source": "/en/latest/integrations/confluence.html",
+      "destination": "/docs/ecosystem/integrations/confluence"
+    },
+    {
+      "source": "/en/latest/integrations/ctransformers.html",
+      "destination": "/docs/ecosystem/integrations/ctransformers"
+    },
+    {
+      "source": "/en/latest/integrations/databerry.html",
+      "destination": "/docs/ecosystem/integrations/chaindesk"
+    },
+    {
+      "source": "/docs/ecosystem/integrations/databerry",
+      "destination": "/docs/ecosystem/integrations/chaindesk"
+    },
+    {
+      "source": "/en/latest/integrations/databricks/databricks.html",
+      "destination": "/docs/ecosystem/integrations/databricks"
+    },
+    {
+      "source": "/en/latest/integrations/databricks.html",
+      "destination": "/docs/ecosystem/integrations/databricks"
+    },
+    {
+      "source": "/en/latest/integrations/deepinfra.html",
+      "destination": "/docs/ecosystem/integrations/deepinfra"
+    },
+    {
+      "source": "/en/latest/integrations/deeplake.html",
+      "destination": "/docs/ecosystem/integrations/deeplake"
+    },
+    {
+      "source": "/en/latest/integrations/diffbot.html",
+      "destination": "/docs/ecosystem/integrations/diffbot"
+    },
+    {
+      "source": "/en/latest/integrations/discord.html",
+      "destination": "/docs/ecosystem/integrations/discord"
+    },
+    {
+      "source": "/en/latest/integrations/docugami.html",
+      "destination": "/docs/ecosystem/integrations/docugami"
+    },
+    {
+      "source": "/en/latest/integrations/duckdb.html",
+      "destination": "/docs/ecosystem/integrations/duckdb"
+    },
+    {
+      "source": "/en/latest/integrations/elasticsearch.html",
+      "destination": "/docs/ecosystem/integrations/elasticsearch"
+    },
+    {
+      "source": "/en/latest/integrations/evernote.html",
+      "destination": "/docs/ecosystem/integrations/evernote"
+    },
+    {
+      "source": "/en/latest/integrations/facebook_chat.html",
+      "destination": "/docs/ecosystem/integrations/facebook_chat"
+    },
+    {
+      "source": "/en/latest/integrations/figma.html",
+      "destination": "/docs/ecosystem/integrations/figma"
+    },
+    {
+      "source": "/en/latest/integrations/forefrontai.html",
+      "destination": "/docs/ecosystem/integrations/forefrontai"
+    },
+    {
+      "source": "/en/latest/integrations/git.html",
+      "destination": "/docs/ecosystem/integrations/git"
+    },
+    {
+      "source": "/en/latest/integrations/gitbook.html",
+      "destination": "/docs/ecosystem/integrations/gitbook"
+    },
+    {
+      "source": "/en/latest/integrations/google_bigquery.html",
+      "destination": "/docs/ecosystem/integrations/google_bigquery"
+    },
+    {
+      "source": "/en/latest/integrations/google_cloud_storage.html",
+      "destination": "/docs/ecosystem/integrations/google_cloud_storage"
+    },
+    {
+      "source": "/en/latest/integrations/google_drive.html",
+      "destination": "/docs/ecosystem/integrations/google_drive"
+    },
+    {
+      "source": "/en/latest/integrations/google_search.html",
+      "destination": "/docs/ecosystem/integrations/google_search"
+    },
+    {
+      "source": "/en/latest/integrations/google_serper.html",
+      "destination": "/docs/ecosystem/integrations/google_serper"
+    },
+    {
+      "source": "/en/latest/integrations/gooseai.html",
+      "destination": "/docs/ecosystem/integrations/gooseai"
+    },
+    {
+      "source": "/en/latest/integrations/gpt4all.html",
+      "destination": "/docs/ecosystem/integrations/gpt4all"
+    },
+    {
+      "source": "/en/latest/integrations/graphsignal.html",
+      "destination": "/docs/ecosystem/integrations/graphsignal"
+    },
+    {
+      "source": "/en/latest/integrations/gutenberg.html",
+      "destination": "/docs/ecosystem/integrations/gutenberg"
+    },
+    {
+      "source": "/en/latest/integrations/hacker_news.html",
+      "destination": "/docs/ecosystem/integrations/hacker_news"
+    },
+    {
+      "source": "/en/latest/integrations/hazy_research.html",
+      "destination": "/docs/ecosystem/integrations/hazy_research"
+    },
+    {
+      "source": "/en/latest/integrations/helicone.html",
+      "destination": "/docs/ecosystem/integrations/helicone"
+    },
+    {
+      "source": "/en/latest/integrations/huggingface.html",
+      "destination": "/docs/ecosystem/integrations/huggingface"
+    },
+    {
+      "source": "/en/latest/integrations/ifixit.html",
+      "destination": "/docs/ecosystem/integrations/ifixit"
+    },
+    {
+      "source": "/en/latest/integrations/imsdb.html",
+      "destination": "/docs/ecosystem/integrations/imsdb"
+    },
+    {
+      "source": "/en/latest/integrations/jina.html",
+      "destination": "/docs/ecosystem/integrations/jina"
+    },
+    {
+      "source": "/en/latest/integrations/lancedb.html",
+      "destination": "/docs/ecosystem/integrations/lancedb"
+    },
+    {
+      "source": "/en/latest/integrations/langchain_decorators.html",
+      "destination": "/docs/ecosystem/integrations/langchain_decorators"
+    },
+    {
+      "source": "/en/latest/integrations/llamacpp.html",
+      "destination": "/docs/ecosystem/integrations/llamacpp"
+    },
+    {
+      "source": "/en/latest/integrations/mediawikidump.html",
+      "destination": "/docs/ecosystem/integrations/mediawikidump"
+    },
+    {
+      "source": "/en/latest/integrations/metal.html",
+      "destination": "/docs/ecosystem/integrations/metal"
+    },
+    {
+      "source": "/en/latest/integrations/microsoft_onedrive.html",
+      "destination": "/docs/ecosystem/integrations/microsoft_onedrive"
+    },
+    {
+      "source": "/en/latest/integrations/microsoft_powerpoint.html",
+      "destination": "/docs/ecosystem/integrations/microsoft_powerpoint"
+    },
+    {
+      "source": "/en/latest/integrations/microsoft_word.html",
+      "destination": "/docs/ecosystem/integrations/microsoft_word"
+    },
+    {
+      "source": "/en/latest/integrations/milvus.html",
+      "destination": "/docs/ecosystem/integrations/milvus"
+    },
+    {
+      "source": "/en/latest/integrations/mlflow_tracking.html",
+      "destination": "/docs/ecosystem/integrations/mlflow_tracking"
+    },
+    {
+      "source": "/en/latest/integrations/modal.html",
+      "destination": "/docs/ecosystem/integrations/modal"
+    },
+    {
+      "source": "/en/latest/ecosystem/modelscope.html",
+      "destination": "/docs/ecosystem/integrations/modelscope"
+    },
+    {
+      "source": "/en/latest/integrations/modern_treasury.html",
+      "destination": "/docs/ecosystem/integrations/modern_treasury"
+    },
+    {
+      "source": "/en/latest/integrations/momento.html",
+      "destination": "/docs/ecosystem/integrations/momento"
+    },
+    {
+      "source": "/en/latest/integrations/myscale.html",
+      "destination": "/docs/ecosystem/integrations/myscale"
+    },
+    {
+      "source": "/en/latest/integrations/nlpcloud.html",
+      "destination": "/docs/ecosystem/integrations/nlpcloud"
+    },
+    {
+      "source": "/en/latest/integrations/notion.html",
+      "destination": "/docs/ecosystem/integrations/notion"
+    },
+    {
+      "source": "/en/latest/integrations/obsidian.html",
+      "destination": "/docs/ecosystem/integrations/obsidian"
+    },
+    {
+      "source": "/en/latest/integrations/openai.html",
+      "destination": "/docs/ecosystem/integrations/openai"
+    },
+    {
+      "source": "/en/latest/integrations/opensearch.html",
+      "destination": "/docs/ecosystem/integrations/opensearch"
+    },
+    {
+      "source": "/en/latest/integrations/openweathermap.html",
+      "destination": "/docs/ecosystem/integrations/openweathermap"
+    },
+    {
+      "source": "/en/latest/integrations/petals.html",
+      "destination": "/docs/ecosystem/integrations/petals"
+    },
+    {
+      "source": "/en/latest/integrations/pgvector.html",
+      "destination": "/docs/ecosystem/integrations/pgvector"
+    },
+    {
+      "source": "/en/latest/integrations/pinecone.html",
+      "destination": "/docs/ecosystem/integrations/pinecone"
+    },
+    {
+      "source": "/en/latest/integrations/pipelineai.html",
+      "destination": "/docs/ecosystem/integrations/pipelineai"
+    },
+    {
+      "source": "/en/latest/integrations/predictionguard.html",
+      "destination": "/docs/ecosystem/integrations/predictionguard"
+    },
+    {
+      "source": "/en/latest/integrations/promptlayer.html",
+      "destination": "/docs/ecosystem/integrations/promptlayer"
+    },
+    {
+      "source": "/en/latest/integrations/psychic.html",
+      "destination": "/docs/ecosystem/integrations/psychic"
+    },
+    {
+      "source": "/en/latest/integrations/qdrant.html",
+      "destination": "/docs/ecosystem/integrations/qdrant"
+    },
+    {
+      "source": "/en/latest/integrations/ray_serve.html",
+      "destination": "/docs/ecosystem/integrations/ray_serve"
+    },
+    {
+      "source": "/en/latest/integrations/rebuff.html",
+      "destination": "/docs/ecosystem/integrations/rebuff"
+    },
+    {
+      "source": "/en/latest/integrations/reddit.html",
+      "destination": "/docs/ecosystem/integrations/reddit"
+    },
+    {
+      "source": "/en/latest/integrations/redis.html",
+      "destination": "/docs/ecosystem/integrations/redis"
+    },
+    {
+      "source": "/en/latest/integrations/replicate.html",
+      "destination": "/docs/ecosystem/integrations/replicate"
+    },
+    {
+      "source": "/en/latest/integrations/roam.html",
+      "destination": "/docs/ecosystem/integrations/roam"
+    },
+    {
+      "source": "/en/latest/integrations/runhouse.html",
+      "destination": "/docs/ecosystem/integrations/runhouse"
+    },
+    {
+      "source": "/en/latest/integrations/rwkv.html",
+      "destination": "/docs/ecosystem/integrations/rwkv"
+    },
+    {
+      "source": "/en/latest/integrations/sagemaker_endpoint.html",
+      "destination": "/docs/ecosystem/integrations/sagemaker_endpoint"
+    },
+    {
+      "source": "/en/latest/integrations/searx.html",
+      "destination": "/docs/ecosystem/integrations/searx"
+    },
+    {
+      "source": "/en/latest/integrations/serpapi.html",
+      "destination": "/docs/ecosystem/integrations/serpapi"
+    },
+    {
+      "source": "/en/latest/integrations/shaleprotocol.html",
+      "destination": "/docs/ecosystem/integrations/shaleprotocol"
+    },
+    {
+      "source": "/en/latest/integrations/sklearn.html",
+      "destination": "/docs/ecosystem/integrations/sklearn"
+    },
+    {
+      "source": "/en/latest/integrations/slack.html",
+      "destination": "/docs/ecosystem/integrations/slack"
+    },
+    {
+      "source": "/en/latest/integrations/spacy.html",
+      "destination": "/docs/ecosystem/integrations/spacy"
+    },
+    {
+      "source": "/en/latest/integrations/spreedly.html",
+      "destination": "/docs/ecosystem/integrations/spreedly"
+    },
+    {
+      "source": "/en/latest/integrations/stochasticai.html",
+      "destination": "/docs/ecosystem/integrations/stochasticai"
+    },
+    {
+      "source": "/en/latest/integrations/stripe.html",
+      "destination": "/docs/ecosystem/integrations/stripe"
+    },
+    {
+      "source": "/en/latest/integrations/tair.html",
+      "destination": "/docs/ecosystem/integrations/tair"
+    },
+    {
+      "source": "/en/latest/integrations/telegram.html",
+      "destination": "/docs/ecosystem/integrations/telegram"
+    },
+    {
+      "source": "/en/latest/integrations/tomarkdown.html",
+      "destination": "/docs/ecosystem/integrations/tomarkdown"
+    },
+    {
+      "source": "/en/latest/integrations/trello.html",
+      "destination": "/docs/ecosystem/integrations/trello"
+    },
+    {
+      "source": "/en/latest/integrations/twitter.html",
+      "destination": "/docs/ecosystem/integrations/twitter"
+    },
+    {
+      "source": "/en/latest/integrations/unstructured.html",
+      "destination": "/docs/ecosystem/integrations/unstructured"
+    },
+    {
+      "source": "/en/latest/integrations/vectara/vectara_chat.html",
+      "destination": "/docs/ecosystem/integrations/vectara/vectara_chat"
+    },
+    {
+      "source": "/en/latest/integrations/vectara/vectara_text_generation.html",
+      "destination": "/docs/ecosystem/integrations/vectara/vectara_text_generation"
+    },
+    {
+      "source": "/en/latest/integrations/vespa.html",
+      "destination": "/docs/ecosystem/integrations/vespa"
+    },
+    {
+      "source": "/en/latest/integrations/wandb_tracking.html",
+      "destination": "/docs/ecosystem/integrations/wandb_tracking"
+    },
+    {
+      "source": "/en/latest/integrations/weather.html",
+      "destination": "/docs/ecosystem/integrations/weather"
+    },
+    {
+      "source": "/en/latest/integrations/weaviate.html",
+      "destination": "/docs/ecosystem/integrations/weaviate"
+    },
+    {
+      "source": "/en/latest/integrations/whatsapp.html",
+      "destination": "/docs/ecosystem/integrations/whatsapp"
+    },
+    {
+      "source": "/en/latest/integrations/whylabs_profiling.html",
+      "destination": "/docs/ecosystem/integrations/whylabs_profiling"
+    },
+    {
+      "source": "/en/latest/integrations/wikipedia.html",
+      "destination": "/docs/ecosystem/integrations/wikipedia"
+    },
+    {
+      "source": "/en/latest/integrations/wolfram_alpha.html",
+      "destination": "/docs/ecosystem/integrations/wolfram_alpha"
+    },
+    {
+      "source": "/en/latest/integrations/writer.html",
+      "destination": "/docs/ecosystem/integrations/writer"
+    },
+    {
+      "source": "/en/latest/integrations/yeagerai.html",
+      "destination": "/docs/ecosystem/integrations/yeagerai"
+    },
+    {
+      "source": "/en/latest/integrations/youtube.html",
+      "destination": "/docs/ecosystem/integrations/youtube"
+    },
+    {
+      "source": "/en/latest/integrations/zep.html",
+      "destination": "/docs/ecosystem/integrations/zep"
+    },
+    {
+      "source": "/en/latest/integrations/zilliz.html",
+      "destination": "/docs/ecosystem/integrations/zilliz"
+    },
+    {
+      "source": "/en/latest/ecosystem/deployments.html",
+      "destination": "/docs/guides/deployments/template_repos"
+    },
+    {
+      "source": "/en/latest/use_cases/evaluation/agent_benchmarking.html",
+      "destination": "/docs/guides/evaluation/agent_benchmarking"
+    },
+    {
+      "source": "/en/latest/use_cases/evaluation/agent_vectordb_sota_pg.html",
+      "destination": "/docs/guides/evaluation/agent_vectordb_sota_pg"
+    },
+    {
+      "source": "/en/latest/use_cases/evaluation/benchmarking_template.html",
+      "destination": "/docs/guides/evaluation/benchmarking_template"
+    },
+    {
+      "source": "/en/latest/use_cases/evaluation/data_augmented_question_answering.html",
+      "destination": "/docs/guides/evaluation/data_augmented_question_answering"
+    },
+    {
+      "source": "/en/latest/use_cases/evaluation/generic_agent_evaluation.html",
+      "destination": "/docs/guides/evaluation/generic_agent_evaluation"
+    },
+    {
+      "source": "/en/latest/use_cases/evaluation/huggingface_datasets.html",
+      "destination": "/docs/guides/evaluation/huggingface_datasets"
+    },
+    {
+      "source": "/en/latest/use_cases/evaluation/llm_math.html",
+      "destination": "/docs/guides/evaluation/llm_math"
+    },
+    {
+      "source": "/en/latest/use_cases/evaluation/openapi_eval.html",
+      "destination": "/docs/guides/evaluation/openapi_eval"
+    },
+    {
+      "source": "/en/latest/use_cases/evaluation/qa_benchmarking_pg.html",
+      "destination": "/docs/guides/evaluation/qa_benchmarking_pg"
+    },
+    {
+      "source": "/en/latest/use_cases/evaluation/qa_benchmarking_sota.html",
+      "destination": "/docs/guides/evaluation/qa_benchmarking_sota"
+    },
+    {
+      "source": "/en/latest/use_cases/evaluation/qa_generation.html",
+      "destination": "/docs/guides/evaluation/qa_generation"
+    },
+    {
+      "source": "/en/latest/use_cases/evaluation/question_answering.html",
+      "destination": "/docs/guides/evaluation/question_answering"
+    },
+    {
+      "source": "/en/latest/use_cases/evaluation/sql_qa_benchmarking_chinook.html",
+      "destination": "/docs/guides/evaluation/sql_qa_benchmarking_chinook"
+    },
+    {
+      "source": "/en/latest/additional_resources/model_laboratory.html",
+      "destination": "/docs/guides/model_laboratory"
+    },
+    {
+      "source": "/en/latest/modules/agents/agents/examples/openai_functions_agent.html",
+      "destination": "/docs/modules/agents/agent_types/openai_functions_agent"
+    },
+    {
+      "source": "/en/latest/modules/agents/agents/examples/react.html",
+      "destination": "/docs/modules/agents/agent_types/react_docstore"
+    },
+    {
+      "source": "/en/latest/modules/agents/agents/examples/self_ask_with_search.html",
+      "destination": "/docs/modules/agents/agent_types/self_ask_with_search"
+    },
+    {
+      "source": "/en/latest/modules/agents/agent_executors/examples/agent_vectorstore.html",
+      "destination": "/docs/modules/agents/how_to/agent_vectorstore"
+    },
+    {
+      "source": "/en/latest/modules/agents/agent_executors/examples/async_agent.html",
+      "destination": "/docs/modules/agents/how_to/async_agent"
+    },
+    {
+      "source": "/en/latest/modules/agents/agent_executors/examples/chatgpt_clone.html",
+      "destination": "/docs/modules/agents/how_to/chatgpt_clone"
+    },
+    {
+      "source": "/en/latest/modules/agents/agents/custom_agent.html",
+      "destination": "/docs/modules/agents/how_to/custom_agent"
+    },
+    {
+      "source": "/en/latest/modules/agents/agents/custom_agent_with_tool_retrieval.html",
+      "destination": "/docs/modules/agents/how_to/custom_agent_with_tool_retrieval"
+    },
+    {
+      "source": "/en/latest/modules/agents/agents/custom_mrkl_agent.html",
+      "destination": "/docs/modules/agents/how_to/custom_mrkl_agent"
+    },
+    {
+      "source": "/en/latest/modules/agents/agents/custom_multi_action_agent.html",
+      "destination": "/docs/modules/agents/how_to/custom_multi_action_agent"
+    },
+    {
+      "source": "/en/latest/modules/agents/agent_executors/examples/handle_parsing_errors.html",
+      "destination": "/docs/modules/agents/how_to/handle_parsing_errors"
+    },
+    {
+      "source": "/en/latest/modules/agents/agent_executors/examples/intermediate_steps.html",
+      "destination": "/docs/modules/agents/how_to/intermediate_steps"
+    },
+    {
+      "source": "/en/latest/modules/agents/agent_executors/examples/max_iterations.html",
+      "destination": "/docs/modules/agents/how_to/max_iterations"
+    },
+    {
+      "source": "/en/latest/modules/agents/agent_executors/examples/max_time_limit.html",
+      "destination": "/docs/modules/agents/how_to/max_time_limit"
+    },
+    {
+      "source": "/en/latest/modules/agents/agent_executors/examples/sharedmemory_for_tools.html",
+      "destination": "/docs/modules/agents/how_to/sharedmemory_for_tools"
+    },
+    {
+      "source": "/en/latest/modules/agents/streaming_stdout_final_only.html",
+      "destination": "/docs/modules/agents/how_to/streaming_stdout_final_only"
+    },
+    {
+      "source": "/en/latest/modules/agents/toolkits/examples/azure_cognitive_services.html",
+      "destination": "/docs/modules/agents/toolkits/azure_cognitive_services"
+    },
+    {
+      "source": "/en/latest/modules/agents/toolkits/examples/csv.html",
+      "destination": "/docs/modules/agents/toolkits/csv"
+    },
+    {
+      "source": "/en/latest/modules/agents/toolkits/examples/gmail.html",
+      "destination": "/docs/modules/agents/toolkits/gmail"
+    },
+    {
+      "source": "/en/latest/modules/agents/toolkits/examples/jira.html",
+      "destination": "/docs/modules/agents/toolkits/jira"
+    },
+    {
+      "source": "/en/latest/modules/agents/toolkits/examples/json.html",
+      "destination": "/docs/modules/agents/toolkits/json"
+    },
+    {
+      "source": "/en/latest/modules/agents/toolkits/examples/openapi.html",
+      "destination": "/docs/modules/agents/toolkits/openapi"
+    },
+    {
+      "source": "/en/latest/modules/agents/toolkits/examples/openapi_nla.html",
+      "destination": "/docs/modules/agents/toolkits/openapi_nla"
+    },
+    {
+      "source": "/en/latest/modules/agents/toolkits/examples/pandas.html",
+      "destination": "/docs/modules/agents/toolkits/pandas"
+    },
+    {
+      "source": "/en/latest/modules/agents/toolkits/examples/playwright.html",
+      "destination": "/docs/modules/agents/toolkits/playwright"
+    },
+    {
+      "source": "/en/latest/modules/agents/toolkits/examples/powerbi.html",
+      "destination": "/docs/modules/agents/toolkits/powerbi"
+    },
+    {
+      "source": "/en/latest/modules/agents/toolkits/examples/python.html",
+      "destination": "/docs/modules/agents/toolkits/python"
+    },
+    {
+      "source": "/en/latest/modules/agents/toolkits/examples/spark.html",
+      "destination": "/docs/modules/agents/toolkits/spark"
+    },
+    {
+      "source": "/en/latest/modules/agents/toolkits/examples/spark_sql.html",
+      "destination": "/docs/modules/agents/toolkits/spark_sql"
+    },
+    {
+      "source": "/en/latest/modules/agents/toolkits/examples/sql_database.html",
+      "destination": "/docs/modules/agents/toolkits/sql_database"
+    },
+    {
+      "source": "/en/latest/modules/agents/toolkits/examples/vectorstore.html",
+      "destination": "/docs/modules/agents/toolkits/vectorstore"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/custom_tools.html",
+      "destination": "/docs/modules/agents/tools/how_to/custom_tools"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/human_approval.html",
+      "destination": "/docs/modules/agents/tools/how_to/human_approval"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/multi_input_tool.html",
+      "destination": "/docs/modules/agents/tools/how_to/multi_input_tool"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/tool_input_validation.html",
+      "destination": "/docs/modules/agents/tools/how_to/tool_input_validation"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/tools_as_openai_functions.html",
+      "destination": "/docs/modules/agents/tools/how_to/tools_as_openai_functions"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/examples/apify.html",
+      "destination": "/docs/modules/agents/tools/integrations/apify"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/examples/arxiv.html",
+      "destination": "/docs/modules/agents/tools/integrations/arxiv"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/examples/awslambda.html",
+      "destination": "/docs/modules/agents/tools/integrations/awslambda"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/examples/bing_search.html",
+      "destination": "/docs/modules/agents/tools/integrations/bing_search"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/examples/brave_search.html",
+      "destination": "/docs/modules/agents/tools/integrations/brave_search"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/examples/chatgpt_plugins.html",
+      "destination": "/docs/modules/agents/tools/integrations/chatgpt_plugins"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/examples/ddg.html",
+      "destination": "/docs/modules/agents/tools/integrations/ddg"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/examples/filesystem.html",
+      "destination": "/docs/modules/agents/tools/integrations/filesystem"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/examples/google_places.html",
+      "destination": "/docs/modules/agents/tools/integrations/google_places"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/examples/google_search.html",
+      "destination": "/docs/modules/agents/tools/integrations/google_search"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/examples/google_serper.html",
+      "destination": "/docs/modules/agents/tools/integrations/google_serper"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/examples/gradio_tools.html",
+      "destination": "/docs/modules/agents/tools/integrations/gradio_tools"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/examples/graphql.html",
+      "destination": "/docs/modules/agents/tools/integrations/graphql"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/examples/huggingface_tools.html",
+      "destination": "/docs/modules/agents/tools/integrations/huggingface_tools"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/examples/human_tools.html",
+      "destination": "/docs/modules/agents/tools/integrations/human_tools"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/examples/ifttt.html",
+      "destination": "/docs/modules/agents/tools/integrations/ifttt"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/examples/metaphor_search.html",
+      "destination": "/docs/modules/agents/tools/integrations/metaphor_search"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/examples/openweathermap.html",
+      "destination": "/docs/modules/agents/tools/integrations/openweathermap"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/examples/pubmed.html",
+      "destination": "/docs/modules/agents/tools/integrations/pubmed"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/examples/requests.html",
+      "destination": "/docs/modules/agents/tools/integrations/requests"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/examples/sceneXplain.html",
+      "destination": "/docs/modules/agents/tools/integrations/sceneXplain"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/examples/search_tools.html",
+      "destination": "/docs/modules/agents/tools/integrations/search_tools"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/examples/searx_search.html",
+      "destination": "/docs/modules/agents/tools/integrations/searx_search"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/examples/serpapi.html",
+      "destination": "/docs/modules/agents/tools/integrations/serpapi"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/examples/twilio.html",
+      "destination": "/docs/modules/agents/tools/integrations/twilio"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/examples/wikipedia.html",
+      "destination": "/docs/modules/agents/tools/integrations/wikipedia"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/examples/wolfram_alpha.html",
+      "destination": "/docs/modules/agents/tools/integrations/wolfram_alpha"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/examples/youtube.html",
+      "destination": "/docs/modules/agents/tools/integrations/youtube"
+    },
+    {
+      "source": "/en/latest/modules/agents/tools/examples/zapier.html",
+      "destination": "/docs/modules/agents/tools/integrations/zapier"
+    },
+    {
+      "source": "/en/latest/modules/callbacks/filecallbackhandler.html",
+      "destination": "/docs/modules/callbacks/how_to/filecallbackhandler"
+    },
+    {
+      "source": "/en/latest/modules/callbacks/examples/argilla.html",
+      "destination": "/docs/modules/callbacks/integrations/argilla"
+    },
+    {
+      "source": "/en/latest/modules/chains/examples/extraction.html",
+      "destination": "/docs/modules/chains/additional/extraction"
+    },
+    {
+      "source": "/en/latest/modules/chains/examples/flare.html",
+      "destination": "/docs/modules/chains/additional/flare"
+    },
+    {
+      "source": "/en/latest/modules/chains/examples/graph_cypher_qa.html",
+      "destination": "/docs/modules/chains/additional/graph_cypher_qa"
+    },
+    {
+      "source": "/en/latest/modules/chains/examples/graph_nebula_qa.html",
+      "destination": "/docs/modules/chains/additional/graph_nebula_qa"
+    },
+    {
+      "source": "/en/latest/modules/chains/index_examples/graph_qa.html",
+      "destination": "/docs/modules/chains/additional/graph_qa"
+    },
+    {
+      "source": "/en/latest/modules/chains/index_examples/hyde.html",
+      "destination": "/docs/modules/chains/additional/hyde"
+    },
+    {
+      "source": "/en/latest/modules/chains/examples/llm_bash.html",
+      "destination": "/docs/modules/chains/additional/llm_bash"
+    },
+    {
+      "source": "/en/latest/modules/chains/examples/llm_checker.html",
+      "destination": "/docs/modules/chains/additional/llm_checker"
+    },
+    {
+      "source": "/en/latest/modules/chains/examples/llm_math.html",
+      "destination": "/docs/modules/chains/additional/llm_math"
+    },
+    {
+      "source": "/en/latest/modules/chains/examples/llm_requests.html",
+      "destination": "/docs/modules/chains/additional/llm_requests"
+    },
+    {
+      "source": "/en/latest/modules/chains/examples/llm_summarization_checker.html",
+      "destination": "/docs/modules/chains/additional/llm_summarization_checker"
+    },
+    {
+      "source": "/en/latest/modules/chains/examples/openapi.html",
+      "destination": "/docs/modules/chains/additional/openapi"
+    },
+    {
+      "source": "/en/latest/modules/chains/examples/pal.html",
+      "destination": "/docs/modules/chains/additional/pal"
+    },
+    {
+      "source": "/en/latest/modules/chains/examples/tagging.html",
+      "destination": "/docs/modules/chains/additional/tagging"
+    },
+    {
+      "source": "/en/latest/modules/chains/index_examples/vector_db_text_generation.html",
+      "destination": "/docs/modules/chains/additional/vector_db_text_generation"
+    },
+    {
+      "source": "/en/latest/modules/chains/generic/router.html",
+      "destination": "/docs/modules/chains/foundational/router"
+    },
+    {
+      "source": "/en/latest/modules/chains/generic/transformation.html",
+      "destination": "/docs/modules/chains/foundational/transformation"
+    },
+    {
+      "source": "/en/latest/modules/chains/generic/async_chain.html",
+      "destination": "/docs/modules/chains/how_to/async_chain"
+    },
+    {
+      "source": "/en/latest/modules/chains/generic/custom_chain.html",
+      "destination": "/docs/modules/chains/how_to/custom_chain"
+    },
+    {
+      "source": "/en/latest/modules/chains/generic/from_hub.html",
+      "destination": "/docs/modules/chains/how_to/from_hub"
+    },
+    {
+      "source": "/en/latest/modules/chains/generic/serialization.html",
+      "destination": "/docs/modules/chains/how_to/serialization"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/acreom.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/acreom"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/airbyte_json.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/airbyte_json"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/airtable.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/airtable"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/alibaba_cloud_maxcompute.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/alibaba_cloud_maxcompute"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/apify_dataset.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/apify_dataset"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/arxiv.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/arxiv"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/aws_s3_directory.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/aws_s3_directory"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/aws_s3_file.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/aws_s3_file"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/azlyrics.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/azlyrics"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/azure_blob_storage_container.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/azure_blob_storage_container"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/azure_blob_storage_file.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/azure_blob_storage_file"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/bibtex.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/bibtex"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/bilibili.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/bilibili"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/blackboard.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/blackboard"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/blockchain.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/blockchain"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/chatgpt_loader.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/chatgpt_loader"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/college_confidential.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/college_confidential"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/confluence.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/confluence"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/conll-u.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/conll-u"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/copypaste.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/copypaste"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/csv.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/csv"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/diffbot.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/diffbot"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/discord.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/discord"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/docugami.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/docugami"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/duckdb.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/duckdb"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/email.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/email"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/embaas.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/embaas"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/epub.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/epub"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/evernote.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/evernote"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/excel.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/excel"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/facebook_chat.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/facebook_chat"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/fauna.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/fauna"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/figma.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/figma"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/git.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/git"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/gitbook.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/gitbook"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/github.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/github"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/google_bigquery.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/google_bigquery"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/google_cloud_storage_directory.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/google_cloud_storage_directory"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/google_cloud_storage_file.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/google_cloud_storage_file"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/google_drive.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/google_drive"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/gutenberg.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/gutenberg"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/hacker_news.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/hacker_news"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/hugging_face_dataset.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/hugging_face_dataset"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/ifixit.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/ifixit"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/image.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/image"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/image_captions.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/image_captions"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/imsdb.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/imsdb"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/iugu.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/iugu"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/joplin.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/joplin"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/jupyter_notebook.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/jupyter_notebook"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/mastodon.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/mastodon"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/mediawikidump.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/mediawikidump"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/microsoft_onedrive.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/microsoft_onedrive"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/microsoft_powerpoint.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/microsoft_powerpoint"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/microsoft_word.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/microsoft_word"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/modern_treasury.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/modern_treasury"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/notion.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/notion"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/notiondb.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/notiondb"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/obsidian.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/obsidian"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/odt.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/odt"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/pandas_dataframe.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/pandas_dataframe"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/psychic.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/psychic"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/pyspark_dataframe.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/pyspark_dataframe"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/readthedocs_documentation.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/readthedocs_documentation"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/reddit.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/reddit"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/roam.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/roam"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/sitemap.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/sitemap"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/slack.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/slack"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/snowflake.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/snowflake"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/spreedly.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/spreedly"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/stripe.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/stripe"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/subtitle.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/subtitle"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/telegram.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/telegram"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/tomarkdown.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/tomarkdown"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/toml.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/toml"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/trello.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/trello"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/twitter.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/twitter"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/unstructured_file.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/unstructured_file"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/url.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/url"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/weather.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/weather"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/web_base.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/web_base"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/whatsapp_chat.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/whatsapp_chat"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/wikipedia.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/wikipedia"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/xml.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/xml"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/youtube_audio.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/youtube_audio"
+    },
+    {
+      "source": "/en/latest/modules/indexes/document_loaders/examples/youtube_transcript.html",
+      "destination": "/docs/modules/data_connection/document_loaders/integrations/youtube_transcript"
+    },
+    {
+      "source": "/en/latest/modules/indexes/text_splitters/examples/markdown_header_metadata.html",
+      "destination": "/docs/modules/data_connection/document_transformers/text_splitters/markdown_header_metadata"
+    },
+    {
+      "source": "/en/latest/modules/indexes/text_splitters.html",
+      "destination": "/docs/modules/data_connection/document_transformers/"
+    },
+    {
+      "source": "/en/latest/modules/indexes/retrievers/examples/chroma_self_query.html",
+      "destination": "/docs/modules/data_connection/retrievers/how_to/self_query/chroma_self_query"
+    },
+    {
+      "source": "/en/latest/modules/indexes/retrievers/examples/self_query.html",
+      "destination": "/docs/modules/data_connection/retrievers/how_to/self_query/pinecone"
+    },
+    {
+      "source": "/en/latest/modules/indexes/retrievers/examples/qdrant_self_query.html",
+      "destination": "/docs/modules/data_connection/retrievers/how_to/self_query/qdrant_self_query"
+    },
+    {
+      "source": "/en/latest/modules/indexes/retrievers/examples/weaviate_self_query.html",
+      "destination": "/docs/modules/data_connection/retrievers/how_to/self_query/weaviate_self_query"
+    },
+    {
+      "source": "/en/latest/modules/indexes/retrievers/examples/arxiv.html",
+      "destination": "/docs/modules/data_connection/retrievers/integrations/arxiv"
+    },
+    {
+      "source": "/en/latest/modules/indexes/retrievers/examples/azure_cognitive_search.html",
+      "destination": "/docs/modules/data_connection/retrievers/integrations/azure_cognitive_search"
+    },
+    {
+      "source": "/en/latest/modules/indexes/retrievers/examples/chatgpt-plugin.html",
+      "destination": "/docs/modules/data_connection/retrievers/integrations/chatgpt-plugin"
+    },
+    {
+      "source": "/en/latest/modules/indexes/retrievers/examples/cohere-reranker.html",
+      "destination": "/docs/modules/data_connection/retrievers/integrations/cohere-reranker"
+    },
+    {
+      "source": "/en/latest/modules/indexes/retrievers/examples/databerry.html",
+      "destination": "/docs/modules/data_connection/retrievers/integrations/chaindesk"
+    },
+    {
+      "source": "/docs/modules/data_connection/retrievers/integrations/databerry",
+      "destination": "/docs/modules/data_connection/retrievers/integrations/chaindesk"
+    },
+    {
+      "source": "/en/latest/modules/indexes/retrievers/examples/elastic_search_bm25.html",
+      "destination": "/docs/modules/data_connection/retrievers/integrations/elastic_search_bm25"
+    },
+    {
+      "source": "/en/latest/modules/indexes/retrievers/examples/knn.html",
+      "destination": "/docs/modules/data_connection/retrievers/integrations/knn"
+    },
+    {
+      "source": "/en/latest/modules/indexes/retrievers/examples/merger_retriever.html",
+      "destination": "/docs/modules/data_connection/retrievers/integrations/merger_retriever"
+    },
+    {
+      "source": "/en/latest/modules/indexes/retrievers/examples/metal.html",
+      "destination": "/docs/modules/data_connection/retrievers/integrations/metal"
+    },
+    {
+      "source": "/en/latest/modules/indexes/retrievers/examples/pinecone_hybrid_search.html",
+      "destination": "/docs/modules/data_connection/retrievers/integrations/pinecone_hybrid_search"
+    },
+    {
+      "source": "/en/latest/modules/indexes/retrievers/examples/pubmed.html",
+      "destination": "/docs/modules/data_connection/retrievers/integrations/pubmed"
+    },
+    {
+      "source": "/en/latest/modules/indexes/retrievers/examples/svm.html",
+      "destination": "/docs/modules/data_connection/retrievers/integrations/svm"
+    },
+    {
+      "source": "/en/latest/modules/indexes/retrievers/examples/tf_idf.html",
+      "destination": "/docs/modules/data_connection/retrievers/integrations/tf_idf"
+    },
+    {
+      "source": "/en/latest/modules/indexes/retrievers/examples/vespa.html",
+      "destination": "/docs/modules/data_connection/retrievers/integrations/vespa"
+    },
+    {
+      "source": "/en/latest/modules/indexes/retrievers/examples/weaviate-hybrid.html",
+      "destination": "/docs/modules/data_connection/retrievers/integrations/weaviate-hybrid"
+    },
+    {
+      "source": "/en/latest/modules/indexes/retrievers/examples/wikipedia.html",
+      "destination": "/docs/modules/data_connection/retrievers/integrations/wikipedia"
+    },
+    {
+      "source": "/en/latest/modules/indexes/retrievers/examples/zep_memorystore.html",
+      "destination": "/docs/modules/data_connection/retrievers/integrations/zep_memorystore"
+    },
+    {
+      "source": "/en/latest/modules/models/text_embedding/examples/aleph_alpha.html",
+      "destination": "/docs/modules/data_connection/text_embedding/integrations/aleph_alpha"
+    },
+    {
+      "source": "/en/latest/modules/models/text_embedding/examples/azureopenai.html",
+      "destination": "/docs/modules/data_connection/text_embedding/integrations/azureopenai"
+    },
+    {
+      "source": "/en/latest/modules/models/text_embedding/examples/amazon_bedrock.html",
+      "destination": "/docs/modules/data_connection/text_embedding/integrations/bedrock"
+    },
+    {
+      "source": "/en/latest/modules/models/text_embedding/examples/cohere.html",
+      "destination": "/docs/modules/data_connection/text_embedding/integrations/cohere"
+    },
+    {
+      "source": "/en/latest/modules/models/text_embedding/examples/dashscope.html",
+      "destination": "/docs/modules/data_connection/text_embedding/integrations/dashscope"
+    },
+    {
+      "source": "/en/latest/modules/models/text_embedding/examples/deepinfra.html",
+      "destination": "/docs/modules/data_connection/text_embedding/integrations/deepinfra"
+    },
+    {
+      "source": "/en/latest/modules/models/text_embedding/examples/elasticsearch.html",
+      "destination": "/docs/modules/data_connection/text_embedding/integrations/elasticsearch"
+    },
+    {
+      "source": "/en/latest/modules/models/text_embedding/examples/embaas.html",
+      "destination": "/docs/modules/data_connection/text_embedding/integrations/embaas"
+    },
+    {
+      "source": "/en/latest/modules/models/text_embedding/examples/fake.html",
+      "destination": "/docs/modules/data_connection/text_embedding/integrations/fake"
+    },
+    {
+      "source": "/en/latest/modules/models/text_embedding/examples/google_vertex_ai_palm.html",
+      "destination": "/docs/modules/data_connection/text_embedding/integrations/google_vertex_ai_palm"
+    },
+    {
+      "source": "/en/latest/modules/models/text_embedding/examples/huggingface_hub.html",
+      "destination": "/docs/modules/data_connection/text_embedding/integrations/huggingfacehub"
+    },
+    {
+      "source": "/en/latest/modules/models/text_embedding/examples/huggingface_instruct.html",
+      "destination": "/docs/modules/data_connection/text_embedding/integrations/instruct_embeddings"
+    },
+    {
+      "source": "/en/latest/modules/models/text_embedding/examples/jina.html",
+      "destination": "/docs/modules/data_connection/text_embedding/integrations/jina"
+    },
+    {
+      "source": "/en/latest/modules/models/text_embedding/examples/llamacpp.html",
+      "destination": "/docs/modules/data_connection/text_embedding/integrations/llamacpp"
+    },
+    {
+      "source": "/en/latest/modules/models/text_embedding/examples/minimax.html",
+      "destination": "/docs/modules/data_connection/text_embedding/integrations/minimax"
+    },
+    {
+      "source": "/en/latest/modules/models/text_embedding/examples/modelscope_hub.html",
+      "destination": "/docs/modules/data_connection/text_embedding/integrations/modelscope_hub"
+    },
+    {
+      "source": "/en/latest/modules/models/text_embedding/examples/mosaicml.html",
+      "destination": "/docs/modules/data_connection/text_embedding/integrations/mosaicml"
+    },
+    {
+      "source": "/en/latest/modules/models/text_embedding/examples/openai.html",
+      "destination": "/docs/modules/data_connection/text_embedding/integrations/openai"
+    },
+    {
+      "source": "/en/latest/modules/models/text_embedding/examples/sagemaker-endpoint.html",
+      "destination": "/docs/modules/data_connection/text_embedding/integrations/sagemaker-endpoint"
+    },
+    {
+      "source": "/en/latest/modules/models/text_embedding/examples/self-hosted.html",
+      "destination": "/docs/modules/data_connection/text_embedding/integrations/self-hosted"
+    },
+    {
+      "source": "/en/latest/modules/models/text_embedding/examples/sentence_transformers.html",
+      "destination": "/docs/modules/data_connection/text_embedding/integrations/sentence_transformers"
+    },
+    {
+      "source": "/en/latest/modules/models/text_embedding/examples/tensorflowhub.html",
+      "destination": "/docs/modules/data_connection/text_embedding/integrations/tensorflowhub"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/analyticdb.html",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/analyticdb"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/annoy.html",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/annoy"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/atlas.html",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/atlas"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/awadb.html",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/awadb"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/azuresearch.html",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/azuresearch"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/chroma.html",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/chroma"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/deeplake.html",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/deeplake"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/docarray_hnsw.html",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/docarray_hnsw"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/docarray_in_memory.html",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/docarray_in_memory"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/faiss.html",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/faiss"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/hologres.html",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/hologres"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/lancedb.html",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/lancedb"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/matchingengine.html",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/matchingengine"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/milvus.html",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/milvus"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/mongodb_atlas_vector_search.html",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/mongodb_atlas_vector_search"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/myscale.html",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/myscale"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/opensearch.html",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/opensearch"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/pgvector.html",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/pgvector"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/pinecone.html",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/pinecone"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/qdrant.html",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/qdrant"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/redis.html",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/redis"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/singlestoredb.html",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/singlestoredb"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/sklearn.html",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/sklearn"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/supabase.html",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/supabase"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/tair.html",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/tair"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/tigris.html",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/tigris"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/typesense.html",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/typesense"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/vectara.html",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/vectara"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/weaviate.html",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/weaviate"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/zilliz.html",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/zilliz"
+    },
+    {
+      "source": "/en/latest/modules/memory/examples/adding_memory.html",
+      "destination": "/docs/modules/memory/how_to/adding_memory"
+    },
+    {
+      "source": "/en/latest/modules/memory/examples/adding_memory_chain_multiple_inputs.html",
+      "destination": "/docs/modules/memory/how_to/adding_memory_chain_multiple_inputs"
+    },
+    {
+      "source": "/en/latest/modules/memory/examples/agent_with_memory.html",
+      "destination": "/docs/modules/memory/how_to/agent_with_memory"
+    },
+    {
+      "source": "/en/latest/modules/memory/examples/agent_with_memory_in_db.html",
+      "destination": "/docs/modules/memory/how_to/agent_with_memory_in_db"
+    },
+    {
+      "source": "/en/latest/modules/memory/examples/conversational_customization.html",
+      "destination": "/docs/modules/memory/how_to/conversational_customization"
+    },
+    {
+      "source": "/en/latest/modules/memory/examples/custom_memory.html",
+      "destination": "/docs/modules/memory/how_to/custom_memory"
+    },
+    {
+      "source": "/en/latest/modules/memory/types/kg.html",
+      "destination": "/docs/modules/memory/how_to/kg"
+    },
+    {
+      "source": "/en/latest/modules/memory/examples/multiple_memory.html",
+      "destination": "/docs/modules/memory/how_to/multiple_memory"
+    },
+    {
+      "source": "/en/latest/modules/memory/types/summary_buffer.html",
+      "destination": "/docs/modules/memory/how_to/summary_buffer"
+    },
+    {
+      "source": "/en/latest/modules/memory/types/token_buffer.html",
+      "destination": "/docs/modules/memory/how_to/token_buffer"
+    },
+    {
+      "source": "/en/latest/modules/memory/examples/cassandra_chat_message_history.html",
+      "destination": "/docs/modules/memory/integrations/cassandra_chat_message_history"
+    },
+    {
+      "source": "/en/latest/modules/memory/examples/dynamodb_chat_message_history.html",
+      "destination": "/docs/modules/memory/integrations/dynamodb_chat_message_history"
+    },
+    {
+      "source": "/en/latest/modules/memory/examples/entity_memory_with_sqlite.html",
+      "destination": "/docs/modules/memory/integrations/entity_memory_with_sqlite"
+    },
+    {
+      "source": "/en/latest/modules/memory/examples/momento_chat_message_history.html",
+      "destination": "/docs/modules/memory/integrations/momento_chat_message_history"
+    },
+    {
+      "source": "/en/latest/modules/memory/examples/mongodb_chat_message_history.html",
+      "destination": "/docs/modules/memory/integrations/mongodb_chat_message_history"
+    },
+    {
+      "source": "/en/latest/modules/memory/examples/motorhead_memory.html",
+      "destination": "/docs/modules/memory/integrations/motorhead_memory"
+    },
+    {
+      "source": "/en/latest/modules/memory/examples/motorhead_memory_managed.html",
+      "destination": "/docs/modules/memory/integrations/motorhead_memory_managed"
+    },
+    {
+      "source": "/en/latest/modules/memory/examples/postgres_chat_message_history.html",
+      "destination": "/docs/modules/memory/integrations/postgres_chat_message_history"
+    },
+    {
+      "source": "/en/latest/modules/memory/examples/redis_chat_message_history.html",
+      "destination": "/docs/modules/memory/integrations/redis_chat_message_history"
+    },
+    {
+      "source": "/en/latest/modules/memory/examples/zep_memory.html",
+      "destination": "/docs/modules/memory/integrations/zep_memory"
+    },
+    {
+      "source": "/en/latest/modules/models/chat/integrations/anthropic.html",
+      "destination": "/docs/modules/model_io/models/chat/integrations/anthropic"
+    },
+    {
+      "source": "/en/latest/modules/models/chat/integrations/azure_chat_openai.html",
+      "destination": "/docs/modules/model_io/models/chat/integrations/azure_chat_openai"
+    },
+    {
+      "source": "/en/latest/modules/models/chat/integrations/google_vertex_ai_palm.html",
+      "destination": "/docs/modules/model_io/models/chat/integrations/google_vertex_ai_palm"
+    },
+    {
+      "source": "/en/latest/modules/models/chat/integrations/openai.html",
+      "destination": "/docs/modules/model_io/models/chat/integrations/openai"
+    },
+    {
+      "source": "/en/latest/modules/models/chat/integrations/promptlayer_chatopenai.html",
+      "destination": "/docs/modules/model_io/models/chat/integrations/promptlayer_chatopenai"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/examples/async_llm.html",
+      "destination": "/docs/modules/model_io/models/llms/how_to/async_llm"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/examples/custom_llm.html",
+      "destination": "/docs/modules/model_io/models/llms/how_to/custom_llm"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/examples/fake_llm.html",
+      "destination": "/docs/modules/model_io/models/llms/how_to/fake_llm"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/examples/human_input_llm.html",
+      "destination": "/docs/modules/model_io/models/llms/how_to/human_input_llm"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/examples/llm_serialization.html",
+      "destination": "/docs/modules/model_io/models/llms/how_to/llm_serialization"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/examples/token_usage_tracking.html",
+      "destination": "/docs/modules/model_io/models/llms/how_to/token_usage_tracking"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/ai21.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/ai21"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/aleph_alpha.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/aleph_alpha"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/anyscale.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/anyscale"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/azure_openai_example.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/azure_openai_example"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/banana.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/banana"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/baseten.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/baseten"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/beam.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/beam"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/bedrock.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/bedrock"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/cerebriumai_example.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/cerebriumai_example"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/cohere.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/cohere"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/ctransformers.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/ctransformers"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/databricks.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/databricks"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/deepinfra_example.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/deepinfra_example"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/forefrontai_example.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/forefrontai_example"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/google_vertex_ai_palm.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/google_vertex_ai_palm"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/gooseai_example.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/gooseai_example"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/huggingface_hub.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/huggingface_hub"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/huggingface_pipelines.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/huggingface_pipelines"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/huggingface_textgen_inference.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/huggingface_textgen_inference"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/jsonformer_experimental.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/jsonformer_experimental"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/llamacpp.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/llamacpp"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/examples/llm_caching.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/llm_caching"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/manifest.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/manifest"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/modal.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/modal"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/mosaicml.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/mosaicml"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/nlpcloud.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/nlpcloud"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/openai.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/openai"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/openlm.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/openlm"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/petals_example.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/petals_example"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/pipelineai_example.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/pipelineai_example"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/predictionguard.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/predictionguard"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/promptlayer_openai.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/promptlayer_openai"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/rellm_experimental.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/rellm_experimental"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/replicate.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/replicate"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/runhouse.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/runhouse"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/sagemaker.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/sagemaker"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/stochasticai.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/stochasticai"
+    },
+    {
+      "source": "/en/latest/modules/models/llms/integrations/writer.html",
+      "destination": "/docs/modules/model_io/models/llms/integrations/writer"
+    },
+    {
+      "source": "/en/latest/modules/prompts/output_parsers.html",
+      "destination": "/docs/modules/model_io/output_parsers/"
+    },
+    {
+      "source": "/docs/modules/prompts/output_parsers.html",
+      "destination": "/docs/modules/model_io/output_parsers/"
+    },
+    {
+      "source": "/en/latest/modules/prompts/output_parsers/examples/datetime.html",
+      "destination": "/docs/modules/model_io/output_parsers/datetime"
+    },
+    {
+      "source": "/en/latest/modules/prompts/output_parsers/examples/enum.html",
+      "destination": "/docs/modules/model_io/output_parsers/enum"
+    },
+    {
+      "source": "/en/latest/modules/prompts/output_parsers/examples/pydantic.html",
+      "destination": "/docs/modules/model_io/output_parsers/pydantic"
+    },
+    {
+      "source": "/en/latest/modules/prompts/output_parsers/examples/retry.html",
+      "destination": "/docs/modules/model_io/output_parsers/retry"
+    },
+    {
+      "source": "/en/latest/modules/prompts/example_selectors/examples/custom_example_selector.html",
+      "destination": "/docs/modules/model_io/prompts/example_selectors/custom_example_selector"
+    },
+    {
+      "source": "/en/latest/modules/prompts/example_selectors/examples/mmr.html",
+      "destination": "/docs/modules/model_io/prompts/example_selectors/mmr"
+    },
+    {
+      "source": "/en/latest/modules/prompts/example_selectors/examples/ngram_overlap.html",
+      "destination": "/docs/modules/model_io/prompts/example_selectors/ngram_overlap"
+    },
+    {
+      "source": "/en/latest/modules/prompts/prompt_templates/examples/connecting_to_a_feature_store.html",
+      "destination": "/docs/modules/model_io/prompts/prompt_templates/connecting_to_a_feature_store"
+    },
+    {
+      "source": "/en/latest/modules/prompts/prompt_templates/examples/custom_prompt_template.html",
+      "destination": "/docs/modules/model_io/prompts/prompt_templates/custom_prompt_template"
+    },
+    {
+      "source": "/en/latest/modules/models/chat/examples/few_shot_examples.html",
+      "destination": "/docs/modules/model_io/prompts/prompt_templates/few_shot_examples_chat"
+    },
+    {
+      "source": "/en/latest/modules/prompts/prompt_templates/examples/prompt_serialization.html",
+      "destination": "/docs/modules/model_io/prompts/prompt_templates/prompt_serialization"
+    },
+    {
+      "source": "/en/latest/use_cases/agent_simulations/camel_role_playing.html",
+      "destination": "/docs/use_cases/agent_simulations/camel_role_playing"
+    },
+    {
+      "source": "/en/latest/use_cases/agent_simulations/characters.html",
+      "destination": "/docs/use_cases/agent_simulations/characters"
+    },
+    {
+      "source": "/en/latest/use_cases/agent_simulations/gymnasium.html",
+      "destination": "/docs/use_cases/agent_simulations/gymnasium"
+    },
+    {
+      "source": "/en/latest/use_cases/agent_simulations/multi_player_dnd.html",
+      "destination": "/docs/use_cases/agent_simulations/multi_player_dnd"
+    },
+    {
+      "source": "/en/latest/use_cases/agent_simulations/multiagent_authoritarian.html",
+      "destination": "/docs/use_cases/agent_simulations/multiagent_authoritarian"
+    },
+    {
+      "source": "/en/latest/use_cases/agent_simulations/multiagent_bidding.html",
+      "destination": "/docs/use_cases/agent_simulations/multiagent_bidding"
+    },
+    {
+      "source": "/en/latest/use_cases/agent_simulations/petting_zoo.html",
+      "destination": "/docs/use_cases/agent_simulations/petting_zoo"
+    },
+    {
+      "source": "/en/latest/use_cases/agent_simulations/two_agent_debate_tools.html",
+      "destination": "/docs/use_cases/agent_simulations/two_agent_debate_tools"
+    },
+    {
+      "source": "/en/latest/use_cases/agent_simulations/two_player_dnd.html",
+      "destination": "/docs/use_cases/agent_simulations/two_player_dnd"
+    },
+    {
+      "source": "/en/latest/use_cases/agents/baby_agi.html",
+      "destination": "/docs/use_cases/agents/baby_agi"
+    },
+    {
+      "source": "/en/latest/use_cases/agents/baby_agi_with_agent.html",
+      "destination": "/docs/use_cases/agents/baby_agi_with_agent"
+    },
+    {
+      "source": "/en/latest/use_cases/agents/camel_role_playing.html",
+      "destination": "/docs/use_cases/agents/camel_role_playing"
+    },
+    {
+      "source": "/en/latest/use_cases/agents/custom_agent_with_plugin_retrieval.html",
+      "destination": "/docs/use_cases/agents/custom_agent_with_plugin_retrieval"
+    },
+    {
+      "source": "/en/latest/use_cases/agents/custom_agent_with_plugin_retrieval_using_plugnplai.html",
+      "destination": "/docs/use_cases/agents/custom_agent_with_plugin_retrieval_using_plugnplai"
+    },
+    {
+      "source": "/en/latest/use_cases/agents/multi_modal_output_agent.html",
+      "destination": "/docs/use_cases/agents/multi_modal_output_agent"
+    },
+    {
+      "source": "/en/latest/use_cases/agents/sales_agent_with_context.html",
+      "destination": "/docs/use_cases/agents/sales_agent_with_context"
+    },
+    {
+      "source": "/en/latest/use_cases/agents/wikibase_agent.html",
+      "destination": "/docs/use_cases/agents/wikibase_agent"
+    },
+    {
+      "source": "/en/latest/use_cases/apis.html",
+      "destination": "/docs/use_cases/apis"
+    },
+    {
+      "source": "/en/latest/use_cases/autonomous_agents/autogpt.html",
+      "destination": "/docs/use_cases/autonomous_agents/autogpt"
+    },
+    {
+      "source": "/en/latest/use_cases/autonomous_agents/baby_agi.html",
+      "destination": "/docs/use_cases/autonomous_agents/baby_agi"
+    },
+    {
+      "source": "/en/latest/use_cases/autonomous_agents/baby_agi_with_agent.html",
+      "destination": "/docs/use_cases/autonomous_agents/baby_agi_with_agent"
+    },
+    {
+      "source": "/en/latest/use_cases/autonomous_agents/marathon_times.html",
+      "destination": "/docs/use_cases/autonomous_agents/marathon_times"
+    },
+    {
+      "source": "/en/latest/use_cases/autonomous_agents/meta_prompt.html",
+      "destination": "/docs/use_cases/autonomous_agents/meta_prompt"
+    },
+    {
+      "source": "/en/latest/use_cases/chatbots/voice_assistant.html",
+      "destination": "/docs/use_cases/chatbots/voice_assistant"
+    },
+    {
+      "source": "/en/latest/use_cases/code/code-analysis-deeplake.html",
+      "destination": "/docs/use_cases/code/code-analysis-deeplake"
+    },
+    {
+      "source": "/en/latest/use_cases/code/twitter-the-algorithm-analysis-deeplake.html",
+      "destination": "/docs/use_cases/code/twitter-the-algorithm-analysis-deeplake"
+    },
+    {
+      "source": "/en/latest/use_cases/extraction.html",
+      "destination": "/docs/use_cases/extraction"
+    },
+    {
+      "source": "/en/latest/use_cases/multi_modal/image_agent.html",
+      "destination": "/docs/use_cases/multi_modal/image_agent"
+    },
+    {
+      "source": "/en/latest/use_cases/question_answering/semantic-search-over-chat.html",
+      "destination": "/docs/use_cases/question_answering/semantic-search-over-chat"
+    },
+    {
+      "source": "/en/latest/use_cases/summarization.html",
+      "destination": "/docs/use_cases/summarization"
+    },
+    {
+      "source": "/en/latest/use_cases/tabular.html",
+      "destination": "/docs/use_cases/tabular"
+    },
+    {
+      "source": "/en/latest/youtube.html",
+      "destination": "/docs/additional_resources/youtube"
+    },
+    {
+      "source": "/en/latest/modules/agents/agents/wikibase_agent.html",
+      "destination": "/docs/use_cases/agents/wikibase_agent"
+    },
+    {
+      "source": "/en/latest/modules/indexes/retrievers/examples/twitter-the-algorithm-analysis-deeplake.html",
+      "destination": "/docs/use_cases/code/twitter-the-algorithm-analysis-deeplake"
+    },
+    {
+      "source": "/en/latest/explanation/tools.html",
+      "destination": "/docs/modules/agents/tools"
+    },
+    {
+      "source": "/docs",
+      "destination": "/"
+    },
+    {
+      "source": "/docs/",
+      "destination": "/"
+    },
+    {
+      "source": "/en/latest",
+      "destination": "/"
+    },
+    {
+      "source": "/en/latest/",
+      "destination": "/"
+    },
+    {
+      "source": "/en/latest/index.html",
+      "destination": "/"
+    },
+    {
+      "source": "/en/latest/modules/indexes/retrievers/examples/self_query_retriever.html",
+      "destination": "/docs/modules/data_connection/retrievers/how_to/self_query/"
+    },
+    {
+      "source": "/en/latest/modules/indexes/retrievers/examples/:path*",
+      "destination": "/docs/modules/data_connection/retrievers/integrations:path*"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/:path*",
+      "destination": "/docs/modules/data_connection/vectorstores/integrations/:path*"
+    },
+    {
+      "source": "/en/latest/modules/indexes/:path*",
+      "destination": "/docs/modules/data_connection/:path*"
+    },
+    {
+      "source": "/en/latest/modules/memory/types/:path*",
+      "destination": "/docs/modules/memory/how_to/:path*"
+    },
+    {
+      "source": "/en/latest/modules/models.html",
+      "destination": "/docs/modules/model_io/models/"
+    },
+    {
+      "source": "/en/latest/modules/models/:path*",
+      "destination": "/docs/modules/model_io/models/:path*"
+    },
+    {
+      "source": "/en/latest/modules/prompts/prompt_templates/examples/:path*",
+      "destination": "/docs/modules/model_io/prompts/prompt_templates/:path*"
+    },
+    {
+      "source": "/en/latest/modules/prompts/:path1*/examples/:path*",
+      "destination": "/docs/modules/model_io/prompts/:path1*/:path*"
+    },
+    {
+      "source": "/en/latest/reference.html",
+      "destination": "https://api.python.langchain.com"
+    },
+    {
+      "source": "/en/latest/reference/:path*",
+      "destination": "https://api.python.langchain.com/en/latest/:path*"
+    },
+    {
+      "source": "/en/latest/:path*",
+      "destination": "/docs/:path*"
+    }
+  ]
+}

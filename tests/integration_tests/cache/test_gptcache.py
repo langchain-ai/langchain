@@ -1,5 +1,5 @@
 import os
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Union
 
 import pytest
 
@@ -30,9 +30,23 @@ def init_gptcache_map(cache_obj: Cache) -> None:
     init_gptcache_map._i = i + 1  # type: ignore
 
 
+def init_gptcache_map_with_llm(cache_obj: Cache, llm: str) -> None:
+    cache_path = f"data_map_{llm}.txt"
+    if os.path.isfile(cache_path):
+        os.remove(cache_path)
+    cache_obj.init(
+        pre_embedding_func=get_prompt,
+        data_manager=get_data_manager(data_path=cache_path),
+    )
+
+
 @pytest.mark.skipif(not gptcache_installed, reason="gptcache not installed")
-@pytest.mark.parametrize("init_func", [None, init_gptcache_map])
-def test_gptcache_caching(init_func: Optional[Callable[[Any], None]]) -> None:
+@pytest.mark.parametrize(
+    "init_func", [None, init_gptcache_map, init_gptcache_map_with_llm]
+)
+def test_gptcache_caching(
+    init_func: Union[Callable[[Any, str], None], Callable[[Any], None], None]
+) -> None:
     """Test gptcache default caching behavior."""
     langchain.llm_cache = GPTCache(init_func)
     llm = FakeLLM()

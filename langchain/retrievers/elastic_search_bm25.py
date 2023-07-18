@@ -1,16 +1,20 @@
 """Wrapper around Elasticsearch vector database."""
+
 from __future__ import annotations
 
 import uuid
 from typing import Any, Iterable, List
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.docstore.document import Document
 from langchain.schema import BaseRetriever
 
 
 class ElasticSearchBM25Retriever(BaseRetriever):
-    """Wrapper around Elasticsearch using BM25 as a retrieval method.
-
+    """Retriever for the Elasticsearch using BM25 as a retrieval method.
 
     To connect to an Elasticsearch instance that requires login credentials,
     including Elastic Cloud, use the Elasticsearch URL format
@@ -35,14 +39,27 @@ class ElasticSearchBM25Retriever(BaseRetriever):
     https://username:password@cluster_id.region_id.gcp.cloud.es.io:9243.
     """
 
-    def __init__(self, client: Any, index_name: str):
-        self.client = client
-        self.index_name = index_name
+    client: Any
+    """Elasticsearch client."""
+    index_name: str
+    """Name of the index to use in Elasticsearch."""
 
     @classmethod
     def create(
         cls, elasticsearch_url: str, index_name: str, k1: float = 2.0, b: float = 0.75
     ) -> ElasticSearchBM25Retriever:
+        """
+        Create a ElasticSearchBM25Retriever from a list of texts.
+
+        Args:
+            elasticsearch_url: URL of the Elasticsearch instance to connect to.
+            index_name: Name of the index to use in Elasticsearch.
+            k1: BM25 parameter k1.
+            b: BM25 parameter b.
+
+        Returns:
+
+        """
         from elasticsearch import Elasticsearch
 
         # Create an Elasticsearch client instance
@@ -70,14 +87,14 @@ class ElasticSearchBM25Retriever(BaseRetriever):
 
         # Create the index with the specified settings and mappings
         es.indices.create(index=index_name, mappings=mappings, settings=settings)
-        return cls(es, index_name)
+        return cls(client=es, index_name=index_name)
 
     def add_texts(
         self,
         texts: Iterable[str],
         refresh_indices: bool = True,
     ) -> List[str]:
-        """Run more texts through the embeddings and add to the retriver.
+        """Run more texts through the embeddings and add to the retriever.
 
         Args:
             texts: Iterable of strings to add to the retriever.
@@ -111,7 +128,9 @@ class ElasticSearchBM25Retriever(BaseRetriever):
             self.client.indices.refresh(index=self.index_name)
         return ids
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> List[Document]:
         query_dict = {"query": {"match": {"content": query}}}
         res = self.client.search(index=self.index_name, body=query_dict)
 
@@ -120,5 +139,7 @@ class ElasticSearchBM25Retriever(BaseRetriever):
             docs.append(Document(page_content=r["_source"]["content"]))
         return docs
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def _aget_relevant_documents(
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
+    ) -> List[Document]:
         raise NotImplementedError

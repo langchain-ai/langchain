@@ -59,7 +59,7 @@ SCHEMA_TYPE = Union[str, Type, tuple, None, Enum]
 class APIPropertyBase(BaseModel):
     """Base model for an API property."""
 
-    # The name of the parameter is required and is case sensitive.
+    # The name of the parameter is required and is case-sensitive.
     # If "in" is "path", the "name" field must correspond to a template expression
     # within the path field in the Paths Object.
     # If "in" is "header" and the "name" field is "Accept", "Content-Type",

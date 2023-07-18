@@ -33,7 +33,7 @@ class GoogleSearchAPIWrapper(BaseModel):
     - That’s all you have to fill up, the rest doesn’t matter.
     In the left-side menu, click Edit search engine → {your search engine name}
     → Setup Set Search the entire web to ON. Remove the URL you added from
-     the list of Sites to search.
+    the list of Sites to search.
     - Under Search engine ID you’ll find the search-engine-ID.
 
     4. Enable the Custom Search API
@@ -100,12 +100,18 @@ class GoogleSearchAPIWrapper(BaseModel):
 
         return " ".join(snippets)
 
-    def results(self, query: str, num_results: int) -> List[Dict]:
+    def results(
+        self,
+        query: str,
+        num_results: int,
+        search_params: Optional[Dict[str, str]] = None,
+    ) -> List[Dict]:
         """Run query through GoogleSearch and return metadata.
 
         Args:
             query: The query to search for.
             num_results: The number of results to return.
+            search_params: Parameters to be passed on search
 
         Returns:
             A list of dictionaries with the following keys:
@@ -114,7 +120,9 @@ class GoogleSearchAPIWrapper(BaseModel):
                 link - The link to the result.
         """
         metadata_results = []
-        results = self._google_search_results(query, num=num_results)
+        results = self._google_search_results(
+            query, num=num_results, **(search_params or {})
+        )
         if len(results) == 0:
             return [{"Result": "No good Google Search Result was found"}]
         for result in results:

@@ -1,18 +1,22 @@
 """Tool for the DuckDuckGo search API."""
 
 import warnings
-from typing import Any
+from typing import Any, Optional
 
 from pydantic import Field
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
 from langchain.tools.base import BaseTool
 from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 
 
 class DuckDuckGoSearchRun(BaseTool):
-    """Tool that adds the capability to query the DuckDuckGo search API."""
+    """Tool that queries the DuckDuckGo search API."""
 
-    name = "DuckDuckGo Search"
+    name = "duckduckgo_search"
     description = (
         "A wrapper around DuckDuckGo Search. "
         "Useful for when you need to answer questions about current events. "
@@ -22,17 +26,25 @@ class DuckDuckGoSearchRun(BaseTool):
         default_factory=DuckDuckGoSearchAPIWrapper
     )
 
-    def _run(self, query: str) -> str:
+    def _run(
+        self,
+        query: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the tool."""
         return self.api_wrapper.run(query)
 
-    async def _arun(self, query: str) -> str:
+    async def _arun(
+        self,
+        query: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the tool asynchronously."""
         raise NotImplementedError("DuckDuckGoSearch does not support async")
 
 
 class DuckDuckGoSearchResults(BaseTool):
-    """Tool that queries the Duck Duck Go Search API and get back json."""
+    """Tool that queries the DuckDuckGo search API and gets back json."""
 
     name = "DuckDuckGo Results JSON"
     description = (
@@ -45,16 +57,34 @@ class DuckDuckGoSearchResults(BaseTool):
         default_factory=DuckDuckGoSearchAPIWrapper
     )
 
-    def _run(self, query: str) -> str:
+    def _run(
+        self,
+        query: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the tool."""
         return str(self.api_wrapper.results(query, self.num_results))
 
-    async def _arun(self, query: str) -> str:
+    async def _arun(
+        self,
+        query: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the tool asynchronously."""
         raise NotImplementedError("DuckDuckGoSearchResults does not support async")
 
 
 def DuckDuckGoSearchTool(*args: Any, **kwargs: Any) -> DuckDuckGoSearchRun:
+    """
+    Deprecated. Use DuckDuckGoSearchRun instead.
+
+    Args:
+        *args:
+        **kwargs:
+
+    Returns:
+        DuckDuckGoSearchRun
+    """
     warnings.warn(
         "DuckDuckGoSearchTool will be deprecated in the future. "
         "Please use DuckDuckGoSearchRun instead.",

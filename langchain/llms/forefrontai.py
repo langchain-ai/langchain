@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Mapping, Optional
 import requests
 from pydantic import Extra, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
@@ -81,7 +82,13 @@ class ForefrontAI(LLM):
         """Return type of llm."""
         return "forefrontai"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
         """Call out to ForefrontAI's complete endpoint.
 
         Args:
@@ -102,7 +109,7 @@ class ForefrontAI(LLM):
                 "Authorization": f"Bearer {self.forefrontai_api_key}",
                 "Content-Type": "application/json",
             },
-            json={"text": prompt, **self._default_params},
+            json={"text": prompt, **self._default_params, **kwargs},
         )
         response_json = response.json()
         text = response_json["result"][0]["completion"]

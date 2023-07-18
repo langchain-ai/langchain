@@ -1,4 +1,4 @@
-"""Load prompts from disk."""
+"""Load prompts."""
 import importlib
 import json
 import logging
@@ -8,9 +8,9 @@ from typing import Union
 import yaml
 
 from langchain.output_parsers.regex import RegexParser
-from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
+from langchain.schema import BaseLLMOutputParser, BasePromptTemplate, NoOpOutputParser
 from langchain.utilities.loading import try_load_from_hub
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/prompts/"
@@ -31,7 +31,7 @@ def load_prompt_from_config(config: dict) -> BasePromptTemplate:
 
 
 def _load_template(var_name: str, config: dict) -> dict:
-    """Load template from disk if applicable."""
+    """Load template from the path if applicable."""
     # Check if template_path exists in config.
     if f"{var_name}_path" in config:
         # If it does, make sure template variable doesn't also exist.
@@ -74,20 +74,21 @@ def _load_examples(config: dict) -> dict:
 
 def _load_output_parser(config: dict) -> dict:
     """Load output parser."""
-    if "output_parsers" in config:
-        if config["output_parsers"] is not None:
-            _config = config["output_parsers"]
-            output_parser_type = _config["_type"]
-            if output_parser_type == "regex_parser":
-                output_parser = RegexParser(**_config)
-            else:
-                raise ValueError(f"Unsupported output parser {output_parser_type}")
-            config["output_parsers"] = output_parser
+    if "output_parser" in config and config["output_parser"]:
+        _config = config.pop("output_parser")
+        output_parser_type = _config.pop("_type")
+        if output_parser_type == "regex_parser":
+            output_parser: BaseLLMOutputParser = RegexParser(**_config)
+        elif output_parser_type == "default":
+            output_parser = NoOpOutputParser(**_config)
+        else:
+            raise ValueError(f"Unsupported output parser {output_parser_type}")
+        config["output_parser"] = output_parser
     return config
 
 
 def _load_few_shot_prompt(config: dict) -> FewShotPromptTemplate:
-    """Load the few shot prompt from the config."""
+    """Load the "few shot" prompt from the config."""
     # Load the suffix and prefix templates.
     config = _load_template("suffix", config)
     config = _load_template("prefix", config)
@@ -127,7 +128,7 @@ def load_prompt(path: Union[str, Path]) -> BasePromptTemplate:
 
 def _load_prompt_from_file(file: Union[str, Path]) -> BasePromptTemplate:
     """Load prompt from file."""
-    # Convert file to Path object.
+    # Convert file to a Path object.
     if isinstance(file, str):
         file_path = Path(file)
     else:

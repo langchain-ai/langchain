@@ -14,7 +14,7 @@ class GooglePlacesAPIWrapper(BaseModel):
 
     To use, you should have the ``googlemaps`` python package installed,
      **an API key for the google maps platform**,
-     and the enviroment variable ''GPLACES_API_KEY''
+     and the environment variable ''GPLACES_API_KEY''
      set with your API key , or pass 'gplaces_api_key'
      as a named parameter to the constructor.
 
@@ -51,8 +51,8 @@ class GooglePlacesAPIWrapper(BaseModel):
 
             values["google_map_client"] = googlemaps.Client(gplaces_api_key)
         except ImportError:
-            raise ValueError(
-                "Could not import googlemaps python packge. "
+            raise ImportError(
+                "Could not import googlemaps python package. "
                 "Please install it with `pip install googlemaps`."
             )
         return values
@@ -93,7 +93,7 @@ class GooglePlacesAPIWrapper(BaseModel):
 
     def format_place_details(self, place_details: Dict[str, Any]) -> Optional[str]:
         try:
-            name = place_details.get("result", {}).get("name", "Unkown")
+            name = place_details.get("result", {}).get("name", "Unknown")
             address = place_details.get("result", {}).get(
                 "formatted_address", "Unknown"
             )

@@ -36,7 +36,7 @@ class SerpAPIWrapper(BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain import SerpAPIWrapper
+            from langchain.utilities import SerpAPIWrapper
             serpapi = SerpAPIWrapper()
     """
 
@@ -76,11 +76,11 @@ class SerpAPIWrapper(BaseModel):
             )
         return values
 
-    async def arun(self, query: str) -> str:
+    async def arun(self, query: str, **kwargs: Any) -> str:
         """Run query through SerpAPI and parse result async."""
         return self._process_response(await self.aresults(query))
 
-    def run(self, query: str) -> str:
+    def run(self, query: str, **kwargs: Any) -> str:
         """Run query through SerpAPI and parse result."""
         return self._process_response(self.results(query))
 
@@ -129,6 +129,8 @@ class SerpAPIWrapper(BaseModel):
         """Process response from SerpAPI."""
         if "error" in res.keys():
             raise ValueError(f"Got error from SerpAPI: {res['error']}")
+        if "answer_box" in res.keys() and type(res["answer_box"]) == list:
+            res["answer_box"] = res["answer_box"][0]
         if "answer_box" in res.keys() and "answer" in res["answer_box"].keys():
             toret = res["answer_box"]["answer"]
         elif "answer_box" in res.keys() and "snippet" in res["answer_box"].keys():
@@ -144,13 +146,25 @@ class SerpAPIWrapper(BaseModel):
         ):
             toret = res["sports_results"]["game_spotlight"]
         elif (
+            "shopping_results" in res.keys()
+            and "title" in res["shopping_results"][0].keys()
+        ):
+            toret = res["shopping_results"][:3]
+        elif (
             "knowledge_graph" in res.keys()
             and "description" in res["knowledge_graph"].keys()
         ):
             toret = res["knowledge_graph"]["description"]
         elif "snippet" in res["organic_results"][0].keys():
             toret = res["organic_results"][0]["snippet"]
-
+        elif "link" in res["organic_results"][0].keys():
+            toret = res["organic_results"][0]["link"]
+        elif (
+            "images_results" in res.keys()
+            and "thumbnail" in res["images_results"][0].keys()
+        ):
+            thumbnails = [item["thumbnail"] for item in res["images_results"][:10]]
+            toret = thumbnails
         else:
             toret = "No good search result found"
         return toret

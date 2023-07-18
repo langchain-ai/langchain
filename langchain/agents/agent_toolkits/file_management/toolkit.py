@@ -1,4 +1,3 @@
-"""Toolkit for interacting with the local filesystem."""
 from __future__ import annotations
 
 from typing import List, Optional
@@ -54,7 +53,7 @@ class FileManagementToolkit(BaseToolkit):
         tools: List[BaseTool] = []
         for tool in allowed_tools:
             tool_cls = _FILE_TOOLS[tool]
-            tools.append(tool_cls(root_dir=self.root_dir))
+            tools.append(tool_cls(root_dir=self.root_dir))  # type: ignore
         return tools
 
 

@@ -22,6 +22,20 @@ class DuckDBLoader(BaseLoader):
         page_content_columns: Optional[List[str]] = None,
         metadata_columns: Optional[List[str]] = None,
     ):
+        """
+
+        Args:
+            query: The query to execute.
+            database: The database to connect to. Defaults to ":memory:".
+            read_only: Whether to open the database in read-only mode.
+              Defaults to False.
+            config: A dictionary of configuration options to pass to the database.
+              Optional.
+            page_content_columns: The columns to write into the `page_content`
+              of the document. Optional.
+            metadata_columns: The columns to write into the `metadata` of the document.
+              Optional.
+        """
         self.query = query
         self.database = database
         self.read_only = read_only
@@ -33,7 +47,7 @@ class DuckDBLoader(BaseLoader):
         try:
             import duckdb
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import duckdb python package. "
                 "Please install it with `pip install duckdb`."
             )

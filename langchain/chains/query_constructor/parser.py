@@ -1,9 +1,18 @@
+import datetime
 from typing import Any, Optional, Sequence, Union
 
+from langchain.utils import check_package_version
+
 try:
+    check_package_version("lark", gte_version="1.1.5")
     from lark import Lark, Transformer, v_args
 except ImportError:
-    pass
+
+    def v_args(*args: Any, **kwargs: Any) -> Any:  # type: ignore
+        return lambda _: None
+
+    Transformer = object  # type: ignore
+    Lark = object  # type: ignore
 
 from langchain.chains.query_constructor.ir import (
     Comparator,
@@ -22,12 +31,14 @@ GRAMMAR = """
 
     ?value: SIGNED_INT -> int
         | SIGNED_FLOAT -> float
+        | TIMESTAMP -> timestamp
         | list
         | string
         | ("false" | "False" | "FALSE") -> false
         | ("true" | "True" | "TRUE") -> true
 
     args: expr ("," expr)*
+    TIMESTAMP.2: /["'](\d{4}-[01]\d-[0-3]\d)["']/
     string: /'[^']*'/ | ESCAPED_STRING
     list: "[" [args] "]"
 
@@ -42,6 +53,9 @@ GRAMMAR = """
 
 @v_args(inline=True)
 class QueryTransformer(Transformer):
+    """Transforms a query string into an IR representation
+    (intermediate representation)."""
+
     def __init__(
         self,
         *args: Any,
@@ -56,11 +70,14 @@ class QueryTransformer(Transformer):
     def program(self, *items: Any) -> tuple:
         return items
 
-    def func_call(self, func_name: Any, *args: Any) -> FilterDirective:
+    def func_call(self, func_name: Any, args: list) -> FilterDirective:
         func = self._match_func_name(str(func_name))
         if isinstance(func, Comparator):
-            return Comparison(comparator=func, attribute=args[0][0], value=args[0][1])
-        return Operation(operator=func, arguments=args[0])
+            return Comparison(comparator=func, attribute=args[0], value=args[1])
+        elif len(args) == 1 and func in (Operator.AND, Operator.OR):
+            return args[0]
+        else:
+            return Operation(operator=func, arguments=args)
 
     def _match_func_name(self, func_name: str) -> Union[Operator, Comparator]:
         if func_name in set(Comparator):
@@ -105,6 +122,10 @@ class QueryTransformer(Transformer):
     def float(self, item: Any) -> float:
         return float(item)
 
+    def timestamp(self, item: Any) -> datetime.date:
+        item = item.replace("'", '"')
+        return datetime.datetime.strptime(item, '"%Y-%m-%d"').date()
+
     def string(self, item: Any) -> str:
         # Remove escaped quotes
         return str(item).strip("\"'")
@@ -114,6 +135,21 @@ def get_parser(
     allowed_comparators: Optional[Sequence[Comparator]] = None,
     allowed_operators: Optional[Sequence[Operator]] = None,
 ) -> Lark:
+    """
+    Returns a parser for the query language.
+
+    Args:
+        allowed_comparators: Optional[Sequence[Comparator]]
+        allowed_operators: Optional[Sequence[Operator]]
+
+    Returns:
+        Lark parser for the query language.
+    """
+    # QueryTransformer is None when Lark cannot be imported.
+    if QueryTransformer is None:
+        raise ImportError(
+            "Cannot import lark, please install it with 'pip install lark'."
+        )
     transformer = QueryTransformer(
         allowed_comparators=allowed_comparators, allowed_operators=allowed_operators
     )

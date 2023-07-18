@@ -5,12 +5,12 @@ from typing import Any, List
 import pytest
 
 from langchain import PromptTemplate
-from langchain.chains.combine_documents.base import format_document
-from langchain.chains.combine_documents.map_reduce import (
+from langchain.chains.combine_documents.reduce import (
     _collapse_docs,
     _split_list_of_docs,
 )
 from langchain.docstore.document import Document
+from langchain.schema import format_document
 
 
 def _fake_docs_len_func(docs: List[Document]) -> int:
@@ -24,13 +24,6 @@ def _fake_combine_docs_func(docs: List[Document], **kwargs: Any) -> str:
 def test__split_list_long_single_doc() -> None:
     """Test splitting of a long single doc."""
     docs = [Document(page_content="foo" * 100)]
-    with pytest.raises(ValueError):
-        _split_list_of_docs(docs, _fake_docs_len_func, 100)
-
-
-def test__split_list_long_pair_doc() -> None:
-    """Test splitting of a list with two medium docs."""
-    docs = [Document(page_content="foo" * 30)] * 2
     with pytest.raises(ValueError):
         _split_list_of_docs(docs, _fake_docs_len_func, 100)
 

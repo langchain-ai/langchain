@@ -4,6 +4,7 @@ from typing import Any, Dict, Generator, List, Optional
 
 from pydantic import Field, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 
 logger = logging.getLogger(__name__)
@@ -19,8 +20,8 @@ class LlamaCpp(LLM):
     Example:
         .. code-block:: python
 
-            from langchain.llms import LlamaCppEmbeddings
-            llm = LlamaCppEmbeddings(model_path="/path/to/llama/model")
+            from langchain.llms import LlamaCpp
+            llm = LlamaCpp(model_path="/path/to/llama/model")
     """
 
     client: Any  #: :meta private:
@@ -63,6 +64,9 @@ class LlamaCpp(LLM):
     """Number of tokens to process in parallel.
     Should be a number between 1 and n_ctx."""
 
+    n_gpu_layers: Optional[int] = Field(None, alias="n_gpu_layers")
+    """Number of layers to be loaded into gpu memory. Default None."""
+
     suffix: Optional[str] = Field(None)
     """A suffix to append to the generated text. If None, no suffix is appended."""
 
@@ -99,51 +103,49 @@ class LlamaCpp(LLM):
     streaming: bool = True
     """Whether to stream the results, token by token."""
 
+    verbose: bool = True
+    """Print verbose output to stderr."""
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that llama-cpp-python library is installed."""
         model_path = values["model_path"]
-        lora_path = values["lora_path"]
-        lora_base = values["lora_base"]
-        n_ctx = values["n_ctx"]
-        n_parts = values["n_parts"]
-        seed = values["seed"]
-        f16_kv = values["f16_kv"]
-        logits_all = values["logits_all"]
-        vocab_only = values["vocab_only"]
-        use_mlock = values["use_mlock"]
-        n_threads = values["n_threads"]
-        n_batch = values["n_batch"]
-        use_mmap = values["use_mmap"]
-        last_n_tokens_size = values["last_n_tokens_size"]
+        model_param_names = [
+            "lora_path",
+            "lora_base",
+            "n_ctx",
+            "n_parts",
+            "seed",
+            "f16_kv",
+            "logits_all",
+            "vocab_only",
+            "use_mlock",
+            "n_threads",
+            "n_batch",
+            "use_mmap",
+            "last_n_tokens_size",
+            "verbose",
+        ]
+        model_params = {k: values[k] for k in model_param_names}
+        # For backwards compatibility, only include if non-null.
+        if values["n_gpu_layers"] is not None:
+            model_params["n_gpu_layers"] = values["n_gpu_layers"]
 
         try:
             from llama_cpp import Llama
 
-            values["client"] = Llama(
-                model_path=model_path,
-                lora_base=lora_base,
-                lora_path=lora_path,
-                n_ctx=n_ctx,
-                n_parts=n_parts,
-                seed=seed,
-                f16_kv=f16_kv,
-                logits_all=logits_all,
-                vocab_only=vocab_only,
-                use_mlock=use_mlock,
-                n_threads=n_threads,
-                n_batch=n_batch,
-                use_mmap=use_mmap,
-                last_n_tokens_size=last_n_tokens_size,
-            )
+            values["client"] = Llama(model_path, **model_params)
         except ImportError:
             raise ModuleNotFoundError(
                 "Could not import llama-cpp-python library. "
                 "Please install the llama-cpp-python library to "
                 "use this embedding model: pip install llama-cpp-python"
             )
-        except Exception:
-            raise NameError(f"Could not load Llama model from path: {model_path}")
+        except Exception as e:
+            raise ValueError(
+                f"Could not load Llama model from path: {model_path}. "
+                f"Received error {e}"
+            )
 
         return values
 
@@ -170,11 +172,11 @@ class LlamaCpp(LLM):
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
-        return "llama.cpp"
+        return "llamacpp"
 
     def _get_parameters(self, stop: Optional[List[str]] = None) -> Dict[str, Any]:
         """
-        Performs sanity check, preparing paramaters in format needed by llama_cpp.
+        Performs sanity check, preparing parameters in format needed by llama_cpp.
 
         Args:
             stop (Optional[List[str]]): List of stop sequences for llama_cpp.
@@ -197,7 +199,13 @@ class LlamaCpp(LLM):
 
         return params
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
         """Call the Llama model and return the output.
 
         Args:
@@ -219,20 +227,24 @@ class LlamaCpp(LLM):
             # method that yields as they are generated
             # and return the combined strings from the first choices's text:
             combined_text_output = ""
-            for token in self.stream(prompt=prompt, stop=stop):
+            for token in self.stream(prompt=prompt, stop=stop, run_manager=run_manager):
                 combined_text_output += token["choices"][0]["text"]
             return combined_text_output
         else:
             params = self._get_parameters(stop)
+            params = {**params, **kwargs}
             result = self.client(prompt=prompt, **params)
             return result["choices"][0]["text"]
 
     def stream(
-        self, prompt: str, stop: Optional[List[str]] = None
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> Generator[Dict, None, None]:
         """Yields results objects as they are generated in real time.
 
-        BETA: this is a beta feature while we figure out the right abstraction:
+        BETA: this is a beta feature while we figure out the right abstraction.
         Once that happens, this interface could change.
 
         It also calls the callback manager's on_llm_new_token event with
@@ -268,7 +280,12 @@ class LlamaCpp(LLM):
         for chunk in result:
             token = chunk["choices"][0]["text"]
             log_probs = chunk["choices"][0].get("logprobs", None)
-            self.callback_manager.on_llm_new_token(
-                token=token, verbose=self.verbose, log_probs=log_probs
-            )
+            if run_manager:
+                run_manager.on_llm_new_token(
+                    token=token, verbose=self.verbose, log_probs=log_probs
+                )
             yield chunk
+
+    def get_num_tokens(self, text: str) -> int:
+        tokenized_text = self.client.tokenize(text.encode("utf-8"))
+        return len(tokenized_text)

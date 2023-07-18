@@ -2,7 +2,7 @@
 import json
 import re
 from functools import partial
-from typing import Callable, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import yaml
 from pydantic import Field
@@ -28,13 +28,14 @@ from langchain.agents.agent_toolkits.openapi.planner_prompt import (
 from langchain.agents.agent_toolkits.openapi.spec import ReducedOpenAPISpec
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.tools import Tool
+from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 from langchain.llms.openai import OpenAI
 from langchain.memory import ReadOnlySharedMemory
 from langchain.prompts import PromptTemplate
-from langchain.prompts.base import BasePromptTemplate
 from langchain.requests import RequestsWrapper
-from langchain.schema import BaseLanguageModel
+from langchain.schema import BasePromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 from langchain.tools.requests.tool import BaseRequestsTool
 
@@ -45,6 +46,7 @@ from langchain.tools.requests.tool import BaseRequestsTool
 # information in the response.
 # However, the goal for now is to have only a single inference step.
 MAX_RESPONSE_LENGTH = 5000
+"""Maximum length of the response to be returned."""
 
 
 def _get_default_llm_chain(prompt: BasePromptTemplate) -> LLMChain:
@@ -62,12 +64,18 @@ def _get_default_llm_chain_factory(
 
 
 class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
+    """Requests GET tool with LLM-instructed extraction of truncated responses."""
+
     name = "requests_get"
+    """Tool name."""
     description = REQUESTS_GET_TOOL_DESCRIPTION
+    """Tool description."""
     response_length: Optional[int] = MAX_RESPONSE_LENGTH
+    """Maximum length of the response to be returned."""
     llm_chain: LLMChain = Field(
         default_factory=_get_default_llm_chain_factory(PARSING_GET_PROMPT)
     )
+    """LLMChain used to extract the response."""
 
     def _run(self, text: str) -> str:
         try:
@@ -86,13 +94,18 @@ class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
 
 
 class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):
-    name = "requests_post"
-    description = REQUESTS_POST_TOOL_DESCRIPTION
+    """Requests POST tool with LLM-instructed extraction of truncated responses."""
 
+    name = "requests_post"
+    """Tool name."""
+    description = REQUESTS_POST_TOOL_DESCRIPTION
+    """Tool description."""
     response_length: Optional[int] = MAX_RESPONSE_LENGTH
+    """Maximum length of the response to be returned."""
     llm_chain: LLMChain = Field(
         default_factory=_get_default_llm_chain_factory(PARSING_POST_PROMPT)
     )
+    """LLMChain used to extract the response."""
 
     def _run(self, text: str) -> str:
         try:
@@ -110,14 +123,18 @@ class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):
 
 
 class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
-    name = "requests_patch"
-    description = REQUESTS_PATCH_TOOL_DESCRIPTION
+    """Requests PATCH tool with LLM-instructed extraction of truncated responses."""
 
+    name = "requests_patch"
+    """Tool name."""
+    description = REQUESTS_PATCH_TOOL_DESCRIPTION
+    """Tool description."""
     response_length: Optional[int] = MAX_RESPONSE_LENGTH
-    llm_chain = LLMChain(
-        llm=OpenAI(),
-        prompt=PARSING_PATCH_PROMPT,
+    """Maximum length of the response to be returned."""
+    llm_chain: LLMChain = Field(
+        default_factory=_get_default_llm_chain_factory(PARSING_PATCH_PROMPT)
     )
+    """LLMChain used to extract the response."""
 
     def _run(self, text: str) -> str:
         try:
@@ -135,14 +152,19 @@ class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
 
 
 class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):
+    """A tool that sends a DELETE request and parses the response."""
+
     name = "requests_delete"
+    """The name of the tool."""
     description = REQUESTS_DELETE_TOOL_DESCRIPTION
+    """The description of the tool."""
 
     response_length: Optional[int] = MAX_RESPONSE_LENGTH
-    llm_chain = LLMChain(
-        llm=OpenAI(),
-        prompt=PARSING_DELETE_PROMPT,
+    """The maximum length of the response."""
+    llm_chain: LLMChain = Field(
+        default_factory=_get_default_llm_chain_factory(PARSING_DELETE_PROMPT)
     )
+    """The LLM chain used to parse the response."""
 
     def _run(self, text: str) -> str:
         try:
@@ -261,9 +283,12 @@ def create_openapi_agent(
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
     shared_memory: Optional[ReadOnlySharedMemory] = None,
+    callback_manager: Optional[BaseCallbackManager] = None,
     verbose: bool = True,
+    agent_executor_kwargs: Optional[Dict[str, Any]] = None,
+    **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
-    """Instantiate API planner and controller for a given spec.
+    """Instantiate OpenAI API planner and controller for a given spec.
 
     Inject credentials via requests_wrapper.
 
@@ -288,5 +313,12 @@ def create_openapi_agent(
     agent = ZeroShotAgent(
         llm_chain=LLMChain(llm=llm, prompt=prompt, memory=shared_memory),
         allowed_tools=[tool.name for tool in tools],
+        **kwargs,
     )
-    return AgentExecutor.from_agent_and_tools(agent=agent, tools=tools, verbose=verbose)
+    return AgentExecutor.from_agent_and_tools(
+        agent=agent,
+        tools=tools,
+        callback_manager=callback_manager,
+        verbose=verbose,
+        **(agent_executor_kwargs or {}),
+    )

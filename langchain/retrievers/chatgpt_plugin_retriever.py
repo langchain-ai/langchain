@@ -4,34 +4,52 @@ from typing import List, Optional
 
 import aiohttp
 import requests
-from pydantic import BaseModel
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain.schema import BaseRetriever, Document
 
 
-class ChatGPTPluginRetriever(BaseRetriever, BaseModel):
+class ChatGPTPluginRetriever(BaseRetriever):
+    """Retrieves documents from a ChatGPT plugin."""
+
     url: str
+    """URL of the ChatGPT plugin."""
     bearer_token: str
+    """Bearer token for the ChatGPT plugin."""
     top_k: int = 3
+    """Number of documents to return."""
     filter: Optional[dict] = None
+    """Filter to apply to the results."""
     aiosession: Optional[aiohttp.ClientSession] = None
+    """Aiohttp session to use for requests."""
 
     class Config:
         """Configuration for this pydantic object."""
 
         arbitrary_types_allowed = True
+        """Allow arbitrary types."""
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> List[Document]:
         url, json, headers = self._create_request(query)
         response = requests.post(url, json=json, headers=headers)
         results = response.json()["results"][0]["results"]
         docs = []
         for d in results:
             content = d.pop("text")
-            docs.append(Document(page_content=content, metadata=d))
+            metadata = d.pop("metadata", d)
+            if metadata.get("source_id"):
+                metadata["source"] = metadata.pop("source_id")
+            docs.append(Document(page_content=content, metadata=metadata))
         return docs
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def _aget_relevant_documents(
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
+    ) -> List[Document]:
         url, json, headers = self._create_request(query)
 
         if not self.aiosession:
@@ -48,7 +66,10 @@ class ChatGPTPluginRetriever(BaseRetriever, BaseModel):
         docs = []
         for d in results:
             content = d.pop("text")
-            docs.append(Document(page_content=content, metadata=d))
+            metadata = d.pop("metadata", d)
+            if metadata.get("source_id"):
+                metadata["source"] = metadata.pop("source_id")
+            docs.append(Document(page_content=content, metadata=metadata))
         return docs
 
     def _create_request(self, query: str) -> tuple[str, dict, dict]:

@@ -1,4 +1,3 @@
-"""Logic for converting internal query language to a valid Pinecone query."""
 from typing import Dict, Tuple, Union
 
 from langchain.chains.query_constructor.ir import (
@@ -12,25 +11,22 @@ from langchain.chains.query_constructor.ir import (
 
 
 class PineconeTranslator(Visitor):
-    """Logic for converting internal query language elements to valid filters."""
+    """Translate the internal query language elements to valid filters."""
 
-    allowed_operators = [Operator.AND, Operator.OR]
+    allowed_comparators = (
+        Comparator.EQ,
+        Comparator.LT,
+        Comparator.LTE,
+        Comparator.GT,
+        Comparator.GTE,
+    )
+    """Subset of allowed logical comparators."""
+    allowed_operators = (Operator.AND, Operator.OR)
     """Subset of allowed logical operators."""
 
     def _format_func(self, func: Union[Operator, Comparator]) -> str:
-        if isinstance(func, Operator) and self.allowed_operators is not None:
-            if func not in self.allowed_operators:
-                raise ValueError(
-                    f"Received disallowed operator {func}. Allowed "
-                    f"comparators are {self.allowed_operators}"
-                )
-        if isinstance(func, Comparator) and self.allowed_comparators is not None:
-            if func not in self.allowed_comparators:
-                raise ValueError(
-                    f"Received disallowed comparator {func}. Allowed "
-                    f"comparators are {self.allowed_comparators}"
-                )
-        return f"${func}"
+        self._validate_func(func)
+        return f"${func.value}"
 
     def visit_operation(self, operation: Operation) -> Dict:
         args = [arg.accept(self) for arg in operation.arguments]

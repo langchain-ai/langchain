@@ -1,10 +1,14 @@
 import asyncio
 import platform
 import warnings
-from typing import List, Type
+from typing import List, Optional, Type, Union
 
 from pydantic import BaseModel, Field, root_validator
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
 from langchain.tools.base import BaseTool
 from langchain.utilities.bash import BashProcess
 
@@ -12,7 +16,7 @@ from langchain.utilities.bash import BashProcess
 class ShellInput(BaseModel):
     """Commands for the Bash Shell tool."""
 
-    commands: List[str] = Field(
+    commands: Union[str, List[str]] = Field(
         ...,
         description="List of shell commands to run. Deserialized using json.loads",
     )
@@ -60,11 +64,19 @@ class ShellTool(BaseTool):
     args_schema: Type[BaseModel] = ShellInput
     """Schema for input arguments."""
 
-    def _run(self, commands: List[str]) -> str:
+    def _run(
+        self,
+        commands: Union[str, List[str]],
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         """Run commands and return final output."""
         return self.process.run(commands)
 
-    async def _arun(self, commands: List[str]) -> str:
+    async def _arun(
+        self,
+        commands: Union[str, List[str]],
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         """Run commands asynchronously and return final output."""
         return await asyncio.get_event_loop().run_in_executor(
             None, self.process.run, commands

@@ -1,5 +1,5 @@
 """OpenAPI spec agent."""
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_toolkits.openapi.prompt import (
@@ -11,11 +11,11 @@ from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
-from langchain.llms.base import BaseLLM
+from langchain.schema.language_model import BaseLanguageModel
 
 
 def create_openapi_agent(
-    llm: BaseLLM,
+    llm: BaseLanguageModel,
     toolkit: OpenAPIToolkit,
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: str = OPENAPI_PREFIX,
@@ -27,9 +27,10 @@ def create_openapi_agent(
     early_stopping_method: str = "force",
     verbose: bool = False,
     return_intermediate_steps: bool = False,
-    **kwargs: Any,
+    agent_executor_kwargs: Optional[Dict[str, Any]] = None,
+    **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
-    """Construct a json agent from an LLM and tools."""
+    """Construct an OpenAPI agent from an LLM and tools."""
     tools = toolkit.get_tools()
     prompt = ZeroShotAgent.create_prompt(
         tools,
@@ -47,10 +48,12 @@ def create_openapi_agent(
     agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
     return AgentExecutor.from_agent_and_tools(
         agent=agent,
-        tools=toolkit.get_tools(),
+        tools=tools,
+        callback_manager=callback_manager,
         verbose=verbose,
         return_intermediate_steps=return_intermediate_steps,
         max_iterations=max_iterations,
         max_execution_time=max_execution_time,
         early_stopping_method=early_stopping_method,
+        **(agent_executor_kwargs or {}),
     )

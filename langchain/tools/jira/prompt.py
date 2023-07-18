@@ -25,10 +25,18 @@ JIRA_CATCH_ALL_PROMPT = """
     This tool is a wrapper around atlassian-python-api's Jira API.
     There are other dedicated tools for fetching all projects, and creating and searching for issues, 
     use this tool if you need to perform any other actions allowed by the atlassian-python-api Jira API.
-    The input to this tool is line of python code that calls a function from atlassian-python-api's Jira API
-    For example, to update the summary field of an issue, you would pass in the following string:
-    self.jira.update_issue_field(key, {{"summary": "New summary"}})
+    The input to this tool is a dictionary specifying a function from atlassian-python-api's Jira API, 
+    as well as a list of arguments and dictionary of keyword arguments to pass into the function.
+    For example, to get all the users in a group, while increasing the max number of results to 100, you would
+    pass in the following dictionary: {{"function": "get_all_users_from_group", "args": ["group"], "kwargs": {{"limit":100}} }}
     or to find out how many projects are in the Jira instance, you would pass in the following string:
-    self.jira.projects()
+    {{"function": "projects"}}
     For more information on the Jira API, refer to https://atlassian-python-api.readthedocs.io/jira.html
     """
+
+JIRA_CONFLUENCE_PAGE_CREATE_PROMPT = """This tool is a wrapper around atlassian-python-api's Confluence 
+atlassian-python-api API, useful when you need to create a Confluence page. The input to this tool is a dictionary 
+specifying the fields of the Confluence page, and will be passed into atlassian-python-api's Confluence `create_page` 
+function. For example, to create a page in the DEMO space titled "This is the title" with body "This is the body. You can use 
+<strong>HTML tags</strong>!", you would pass in the following dictionary: {{"space": "DEMO", "title":"This is the 
+title","body":"This is the body. You can use <strong>HTML tags</strong>!"}} """

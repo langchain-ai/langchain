@@ -5,6 +5,7 @@ from langchain.retrievers.document_compressors.chain_extract import (
 from langchain.retrievers.document_compressors.chain_filter import (
     LLMChainFilter,
 )
+from langchain.retrievers.document_compressors.cohere_rerank import CohereRerank
 from langchain.retrievers.document_compressors.embeddings_filter import (
     EmbeddingsFilter,
 )
@@ -14,4 +15,5 @@ __all__ = [
     "EmbeddingsFilter",
     "LLMChainExtractor",
     "LLMChainFilter",
+    "CohereRerank",
 ]
