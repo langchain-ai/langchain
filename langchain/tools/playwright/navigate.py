@@ -22,6 +22,8 @@ class NavigateToolInput(BaseModel):
 
 
 class NavigateTool(BaseBrowserTool):
+    """Tool for navigating a browser to a URL."""
+
     name: str = "navigate_browser"
     description: str = "Navigate a browser to the specified URL"
     args_schema: Type[BaseModel] = NavigateToolInput

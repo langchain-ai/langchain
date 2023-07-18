@@ -11,7 +11,10 @@ T = TypeVar("T", bound=BaseModel)
 
 
 class PydanticOutputParser(BaseOutputParser[T]):
+    """Parse an output using a pydantic model."""
+
     pydantic_object: Type[T]
+    """The pydantic model to parse."""
 
     def parse(self, text: str) -> T:
         try:

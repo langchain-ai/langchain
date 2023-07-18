@@ -71,6 +71,8 @@ def _get_elements(
 
 
 class GetElementsTool(BaseBrowserTool):
+    """Tool for getting elements in the current web page matching a CSS selector."""
+
     name: str = "get_elements"
     description: str = (
         "Retrieve elements in the current web page matching the given CSS selector"

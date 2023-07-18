@@ -13,8 +13,9 @@ class MetalRetriever(BaseRetriever):
     """Retriever that uses the Metal API."""
 
     client: Any
-
+    """The Metal client to use."""
     params: Optional[dict] = None
+    """The parameters to pass to the Metal client."""
 
     @root_validator(pre=True)
     def validate_client(cls, values: dict) -> dict:

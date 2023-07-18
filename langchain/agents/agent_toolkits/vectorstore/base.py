@@ -22,7 +22,7 @@ def create_vectorstore_agent(
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
-    """Construct a vectorstore agent from an LLM and tools."""
+    """Construct a VectorStore agent from an LLM and tools."""
     tools = toolkit.get_tools()
     prompt = ZeroShotAgent.create_prompt(tools, prefix=prefix)
     llm_chain = LLMChain(
@@ -50,7 +50,7 @@ def create_vectorstore_router_agent(
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
-    """Construct a vectorstore router agent from an LLM and tools."""
+    """Construct a VectorStore router agent from an LLM and tools."""
     tools = toolkit.get_tools()
     prompt = ZeroShotAgent.create_prompt(tools, prefix=prefix)
     llm_chain = LLMChain(
