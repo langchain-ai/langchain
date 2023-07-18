@@ -578,7 +578,7 @@ class Chroma(VectorStore):
     def from_embeddings(
         cls: Type[Chroma],
         text_embeddings: List[Tuple[str, List[float]]],
-        embedding: Optional[Embeddings] = None,
+        embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
@@ -599,7 +599,8 @@ class Chroma(VectorStore):
             collection_name (str): Name of the collection to create.
             persist_directory (Optional[str]): Directory to persist the collection.
             ids (Optional[List[str]]): List of document IDs. Defaults to None.
-            embedding (Optional[Embeddings]): Embedding function. Defaults to None.
+            embedding (Embeddings): Embedding function that was used to create
+            the embeddings. Defaults to None.
             client_settings (Optional[chromadb.config.Settings]): Chroma client settings
 
         Returns:
