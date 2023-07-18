@@ -4730,14 +4730,14 @@ all = ["datasets (>=2.12.0,<3.0.0)", "nltk (>=3.8.1,<4.0.0)", "openai (>=0.27.6,
 
 [[package]]
 name = "langsmith"
-version = "0.0.7"
+version = "0.0.9"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 category = "main"
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langsmith-0.0.7-py3-none-any.whl", hash = "sha256:9e0ab264b499daa778c694f9129859830820d3fb3a7c93309b630a22b68a88a9"},
-    {file = "langsmith-0.0.7.tar.gz", hash = "sha256:2f18e51cfd4e42f2b3cf00fa87e9d03012eb7269cdafd8e7c0cf7aa828dcc03e"},
+    {file = "langsmith-0.0.9-py3-none-any.whl", hash = "sha256:9c096ff6527ef4456fce7e54ed6f54e761f9f270862876fb2180a9338fc5fd1a"},
+    {file = "langsmith-0.0.9.tar.gz", hash = "sha256:c8d953ea0474aecd74859e2fc76a7c2099d2adc07c8cecdbd1f00e749a12288b"},
 ]
 
 [package.dependencies]
@@ -9220,6 +9220,24 @@ packaging = "*"
 test = ["pytest (>=6,!=7.0.0,!=7.0.1)", "pytest-cov (>=3.0.0)", "pytest-qt"]
 
 [[package]]
+name = "rank-bm25"
+version = "0.2.2"
+description = "Various BM25 algorithms for document ranking"
+category = "main"
+optional = true
+python-versions = "*"
+files = [
+    {file = "rank_bm25-0.2.2-py3-none-any.whl", hash = "sha256:7bd4a95571adadfc271746fa146a4bcfd89c0cf731e49c3d1ad863290adbe8ae"},
+    {file = "rank_bm25-0.2.2.tar.gz", hash = "sha256:096ccef76f8188563419aaf384a02f0ea459503fdf77901378d4fd9d87e5e51d"},
+]
+
+[package.dependencies]
+numpy = "*"
+
+[package.extras]
+dev = ["pytest"]
+
+[[package]]
 name = "rapidfuzz"
 version = "3.1.1"
 description = "rapid fuzzy string matching"
@@ -12826,7 +12844,7 @@ clarifai = ["clarifai"]
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["atlassian-python-api", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "esprima", "gql", "html2text", "jq", "lxml", "mwparserfromhell", "mwxml", "openai", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rapidfuzz", "requests-toolbelt", "scikit-learn", "streamlit", "sympy", "telethon", "tqdm", "zep-python"]
+extended-testing = ["atlassian-python-api", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "esprima", "gql", "html2text", "jq", "lxml", "mwparserfromhell", "mwxml", "openai", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "requests-toolbelt", "scikit-learn", "streamlit", "sympy", "telethon", "tqdm", "zep-python"]
 javascript = ["esprima"]
 llms = ["anthropic", "clarifai", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "openllm", "openlm", "torch", "transformers"]
 openai = ["openai", "tiktoken"]
@@ -12836,4 +12854,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "eb68f4732f6230c96b48e5f6ba87494cdbd0f710886c644ecf714610e684c98b"
+content-hash = "9eb29c9258d3b28b022dee152627b33e6ded1064f6e071ec246e92de42e57cfb"

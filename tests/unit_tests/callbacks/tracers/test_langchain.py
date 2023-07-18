@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import time
 import unittest.mock
 from typing import Any

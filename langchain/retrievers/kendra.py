@@ -51,24 +51,38 @@ class Highlight(BaseModel, extra=Extra.allow):
 
 
 class TextWithHighLights(BaseModel, extra=Extra.allow):
+    """Text with highlights."""
+
     Text: str
+    """The text."""
     Highlights: Optional[Any]
+    """The highlights."""
 
 
 class AdditionalResultAttributeValue(BaseModel, extra=Extra.allow):
+    """The value of an additional result attribute."""
+
     TextWithHighlightsValue: TextWithHighLights
+    """The text with highlights value."""
 
 
 class AdditionalResultAttribute(BaseModel, extra=Extra.allow):
+    """An additional result attribute."""
+
     Key: str
+    """The key of the attribute."""
     ValueType: Literal["TEXT_WITH_HIGHLIGHTS_VALUE"]
+    """The type of the value."""
     Value: AdditionalResultAttributeValue
+    """The value of the attribute."""
 
     def get_value_text(self) -> str:
         return self.Value.TextWithHighlightsValue.Text
 
 
 class QueryResultItem(BaseModel, extra=Extra.allow):
+    """A query result item."""
+
     DocumentId: str
     DocumentTitle: TextWithHighLights
     DocumentURI: Optional[str]
@@ -111,9 +125,19 @@ class QueryResultItem(BaseModel, extra=Extra.allow):
 
 
 class QueryResult(BaseModel, extra=Extra.allow):
+    """A query result."""
+
     ResultItems: List[QueryResultItem]
 
     def get_top_k_docs(self, top_n: int) -> List[Document]:
+        """Gets the top k documents.
+
+        Args:
+            top_n: The number of documents to return.
+
+        Returns:
+            The top k documents.
+        """
         items_len = len(self.ResultItems)
         count = items_len if items_len < top_n else top_n
         docs = [self.ResultItems[i].to_doc() for i in range(0, count)]
@@ -122,24 +146,42 @@ class QueryResult(BaseModel, extra=Extra.allow):
 
 
 class DocumentAttributeValue(BaseModel, extra=Extra.allow):
+    """The value of a document attribute."""
+
     DateValue: Optional[str]
+    """The date value."""
     LongValue: Optional[int]
+    """The long value."""
     StringListValue: Optional[List[str]]
+    """The string list value."""
     StringValue: Optional[str]
+    """The string value."""
 
 
 class DocumentAttribute(BaseModel, extra=Extra.allow):
+    """A document attribute."""
+
     Key: str
+    """The key of the attribute."""
     Value: DocumentAttributeValue
+    """The value of the attribute."""
 
 
 class RetrieveResultItem(BaseModel, extra=Extra.allow):
+    """A retrieve result item."""
+
     Content: Optional[str]
+    """The content of the item."""
     DocumentAttributes: Optional[List[DocumentAttribute]] = []
+    """The document attributes."""
     DocumentId: Optional[str]
+    """The document ID."""
     DocumentTitle: Optional[str]
+    """The document title."""
     DocumentURI: Optional[str]
+    """The document URI."""
     Id: Optional[str]
+    """The ID of the item."""
 
     def get_excerpt(self) -> str:
         if not self.Content:
@@ -156,8 +198,12 @@ class RetrieveResultItem(BaseModel, extra=Extra.allow):
 
 
 class RetrieveResult(BaseModel, extra=Extra.allow):
+    """A retrieve result."""
+
     QueryId: str
+    """The ID of the query."""
     ResultItems: List[RetrieveResultItem]
+    """The result items."""
 
     def get_top_k_docs(self, top_n: int) -> List[Document]:
         items_len = len(self.ResultItems)
@@ -168,7 +214,7 @@ class RetrieveResult(BaseModel, extra=Extra.allow):
 
 
 class AmazonKendraRetriever(BaseRetriever):
-    """Retriever class to query documents from Amazon Kendra Index.
+    """Retriever for the Amazon Kendra Index.
 
     Args:
         index_id: Kendra index id
