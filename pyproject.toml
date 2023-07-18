@@ -338,7 +338,7 @@ extended_testing = [
  "cassio",
  "chardet",
  "esprima",
- "geopandas"
+ "geopandas",
  "jq",
  "pdfminer.six",
  "pgvector",
