@@ -207,14 +207,14 @@ class DeepLake(VectorStore):
 
     def _search_tql(
         self,
-        tql_query: Optional[str],
+        tql: Optional[str],
         exec_option: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Function for performing tql_search.
 
         Args:
-            tql_query (str): TQL Query string for direct evaluation.
+            tql (str): TQL Query string for direct evaluation.
                 Available only for `compute_engine` and `tensor_db`.
             exec_option (str, optional): Supports 3 ways to search.
                 Could be "python", "compute_engine" or "tensor_db". Default is "python".
@@ -237,7 +237,7 @@ class DeepLake(VectorStore):
             ValueError: If return_score is True but some condition is not met.
         """
         result = self.vectorstore.search(
-            query=tql_query,
+            query=tql,
             exec_option=exec_option,
         )
         metadatas = result["metadata"]
@@ -316,9 +316,9 @@ class DeepLake(VectorStore):
             ValueError: if both `embedding` and `embedding_function` are not specified.
         """
 
-        if kwargs.get("tql_query"):
+        if kwargs.get("tql"):
             return self._search_tql(
-                tql_query=kwargs["tql_query"],
+                tql=kwargs["tql"],
                 exec_option=exec_option,
                 return_score=return_score,
                 embedding=embedding,
@@ -411,7 +411,7 @@ class DeepLake(VectorStore):
             >>> # Run tql search:
             >>> data = vector_store.similarity_search(
             ...     query=None,
-            ...     tql_query="SELECT * WHERE id == <id>",
+            ...     tql="SELECT * WHERE id == <id>",
             ...     exec_option="compute_engine",
             ... )
 
