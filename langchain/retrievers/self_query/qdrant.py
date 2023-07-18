@@ -19,6 +19,15 @@ if TYPE_CHECKING:
 class QdrantTranslator(Visitor):
     """Logic for converting internal query language elements to valid filters."""
 
+    allowed_comparators = (
+        Comparator.EQ,
+        Comparator.LT,
+        Comparator.LTE,
+        Comparator.GT,
+        Comparator.GTE,
+    )
+    """Subset of allowed logical comparators."""
+
     def __init__(self, metadata_key: str):
         self.metadata_key = metadata_key
 

@@ -48,8 +48,9 @@ Using a custom criterion:
 """  # noqa: E501
 
 from langchain.evaluation.criteria.eval_chain import (
+    Criteria,
     CriteriaEvalChain,
     LabeledCriteriaEvalChain,
 )
 
-__all__ = ["CriteriaEvalChain", "LabeledCriteriaEvalChain"]
+__all__ = ["CriteriaEvalChain", "LabeledCriteriaEvalChain", "Criteria"]
