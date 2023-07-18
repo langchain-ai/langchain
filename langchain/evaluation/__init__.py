@@ -57,7 +57,11 @@ from langchain.evaluation.comparison import (
     LabeledPairwiseStringEvalChain,
     PairwiseStringEvalChain,
 )
-from langchain.evaluation.criteria import CriteriaEvalChain, LabeledCriteriaEvalChain
+from langchain.evaluation.criteria import (
+    Criteria,
+    CriteriaEvalChain,
+    LabeledCriteriaEvalChain,
+)
 from langchain.evaluation.embedding_distance import (
     EmbeddingDistance,
     EmbeddingDistanceEvalChain,
@@ -88,6 +92,7 @@ __all__ = [
     "PairwiseStringEvaluator",
     "TrajectoryEvalChain",
     "CriteriaEvalChain",
+    "Criteria",
     "EmbeddingDistance",
     "EmbeddingDistanceEvalChain",
     "PairwiseEmbeddingDistanceEvalChain",

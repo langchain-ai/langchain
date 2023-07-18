@@ -11,7 +11,7 @@ from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 
 
 class WolframAlphaQueryRun(BaseTool):
-    """Tool that adds the capability to query using the Wolfram Alpha SDK."""
+    """Tool that queries using the Wolfram Alpha SDK."""
 
     name = "wolfram_alpha"
     description = (

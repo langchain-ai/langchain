@@ -1,4 +1,3 @@
-"""Document compressor that uses embeddings to drop documents unrelated to the query."""
 from typing import Callable, Dict, Optional, Sequence
 
 import numpy as np
@@ -18,6 +17,9 @@ from langchain.schema import Document
 
 
 class EmbeddingsFilter(BaseDocumentCompressor):
+    """Document compressor that uses embeddings to drop documents
+    unrelated to the query."""
+
     embeddings: Embeddings
     """Embeddings to use for embedding document contents and queries."""
     similarity_fn: Callable = cosine_similarity
