@@ -1,4 +1,3 @@
-"""Jira Toolkit."""
 from typing import List
 
 from langchain.agents.agent_toolkits.base import BaseToolkit

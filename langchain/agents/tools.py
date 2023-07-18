@@ -12,7 +12,9 @@ class InvalidTool(BaseTool):
     """Tool that is run when invalid tool name is encountered by agent."""
 
     name = "invalid_tool"
+    """Name of the tool."""
     description = "Called when tool name is invalid."
+    """Description of the tool."""
 
     def _run(
         self, tool_name: str, run_manager: Optional[CallbackManagerForToolRun] = None
