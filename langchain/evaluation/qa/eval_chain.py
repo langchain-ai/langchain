@@ -22,8 +22,7 @@ def _get_score(verdict: str) -> Optional[int]:
             return 1
         elif match.group(1).upper() == "INCORRECT":
             return 0
-    else:
-        return None
+    return None
 
 
 def _parse_string_eval_output(text: str) -> dict:
