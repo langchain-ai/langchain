@@ -17,10 +17,15 @@ logger = logging.getLogger(__name__)
 
 
 class LineList(BaseModel):
+    """List of lines."""
+
     lines: List[str] = Field(description="Lines of text")
+    """List of lines."""
 
 
 class LineListOutputParser(PydanticOutputParser):
+    """Output parser for a list of lines."""
+
     def __init__(self) -> None:
         super().__init__(pydantic_object=LineList)
 

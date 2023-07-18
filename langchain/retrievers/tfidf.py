@@ -1,8 +1,3 @@
-"""TF-IDF Retriever.
-
-Largely based on
-https://github.com/asvskartheek/Text-Retrieval/blob/master/TF-IDF%20Search%20Engine%20(SKLEARN).ipynb"""
-
 from __future__ import annotations
 
 from typing import Any, Dict, Iterable, List, Optional
@@ -15,10 +10,20 @@ from langchain.schema import BaseRetriever, Document
 
 
 class TFIDFRetriever(BaseRetriever):
+    """TF-IDF Retriever.
+
+    Largely based on
+    https://github.com/asvskartheek/Text-Retrieval/blob/master/TF-IDF%20Search%20Engine%20(SKLEARN).ipynb
+    """
+
     vectorizer: Any
+    """TF-IDF vectorizer."""
     docs: List[Document]
+    """Documents."""
     tfidf_array: Any
+    """TF-IDF array."""
     k: int = 4
+    """Number of documents to return."""
 
     class Config:
         """Configuration for this pydantic object."""
