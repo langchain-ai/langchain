@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Dict, List, Sequence
 
-from pydantic import Extra, root_validator, Field
+from pydantic import Extra, Field, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -14,9 +14,9 @@ from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
     from google.cloud.discoveryengine_v1beta import (
-        SearchServiceClient,
         SearchRequest,
         SearchResult,
+        SearchServiceClient,
     )
 
 
