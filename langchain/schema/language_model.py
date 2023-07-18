@@ -7,6 +7,7 @@ from langchain.load.serializable import Serializable
 from langchain.schema.messages import BaseMessage, get_buffer_string
 from langchain.schema.output import LLMResult
 from langchain.schema.prompt import PromptValue
+from langchain.utils import get_pydantic_field_names
 
 if TYPE_CHECKING:
     from langchain.callbacks.manager import Callbacks
@@ -246,9 +247,8 @@ class BaseLanguageModel(Serializable, ABC):
 
     @classmethod
     def _all_required_field_names(cls) -> Set:
-        all_required_field_names = set()
-        for field in cls.__fields__.values():
-            all_required_field_names.add(field.name)
-            if field.has_alias:
-                all_required_field_names.add(field.alias)
-        return all_required_field_names
+        """DEPRECATED: Kept for backwards compatibility.
+
+        Use get_pydantic_field_names.
+        """
+        return get_pydantic_field_names(cls)

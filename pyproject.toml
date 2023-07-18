@@ -362,6 +362,7 @@ extended_testing = [
  "openai",
  "sympy",
  "rapidfuzz",
+ "openai",
  "rank_bm25",
 ]
 
