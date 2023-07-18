@@ -45,10 +45,19 @@ def combined_text(title: str, excerpt: str) -> str:
 
 
 class Highlight(BaseModel, extra=Extra.allow):
+    """
+    Represents the information that can be
+    used to highlight key words in the excerpt.
+    """
+
     BeginOffset: int
+    """The zero-based location in the excerpt where the highlight starts."""
     EndOffset: int
+    """The zero-based location in the excerpt where the highlight ends."""
     TopAnswer: Optional[bool]
+    """Indicates whether the result is the best one."""
     Type: Optional[str]
+    """The highlight type: STANDARD or THESAURUS_SYNONYM."""
 
 
 class TextWithHighLights(BaseModel, extra=Extra.allow):
@@ -167,12 +176,24 @@ class ResultItem(BaseModel, ABC, extra=Extra.allow):
 
 
 class QueryResultItem(ResultItem):
+    """A Query API result item."""
+
     DocumentTitle: TextWithHighLights
+    """The document title."""
     FeedbackToken: Optional[str]
+    """Identifies a particular result from a particular query."""
     Format: Optional[str]
+    """
+    If the Type is ANSWER, then format is either:
+        * TABLE: a table excerpt is returned in TableExcerpt;
+        * TEXT: a text excerpt is returned in DocumentExcerpt.
+    """
     Type: Optional[str]
+    """Type of result: DOCUMENT or QUESTION_ANSWER or ANSWER"""
     AdditionalAttributes: Optional[List[AdditionalResultAttribute]] = []
+    """One or more additional attributes associated with the result."""
     DocumentExcerpt: Optional[TextWithHighLights]
+    """Excerpt of the document text."""
 
     def get_title(self) -> str:
         return self.DocumentTitle.Text
@@ -204,9 +225,10 @@ class QueryResultItem(ResultItem):
 
 
 class QueryResult(BaseModel, extra=Extra.allow):
-    """A query result."""
+    """A Query API result."""
 
     ResultItems: List[QueryResultItem]
+    """The result items."""
 
     def get_top_k_docs(self, top_n: int) -> List[Document]:
         """Gets the top k documents.
@@ -225,7 +247,7 @@ class QueryResult(BaseModel, extra=Extra.allow):
 
 
 class RetrieveResultItem(ResultItem):
-    """A retrieve result item."""
+    """A Retrieve API result item."""
 
     DocumentTitle: Optional[str]
     """The document title."""
@@ -242,7 +264,7 @@ class RetrieveResultItem(ResultItem):
 
 
 class RetrieveResult(BaseModel, extra=Extra.allow):
-    """A retrieve result."""
+    """A Retrieve API result."""
 
     QueryId: str
     """The ID of the query."""
