@@ -2323,7 +2323,6 @@ ssh = ["paramiko (>=2.4.3)"]
 name = "docopt"
 version = "0.6.2"
 description = "Pythonic argument parser, that will make you smile"
-category = "main"
 optional = true
 python-versions = "*"
 files = [
@@ -4205,7 +4204,6 @@ files = [
 name = "jsonable"
 version = "0.3.1"
 description = "An abstract class that supports jsonserialization/deserialization."
-category = "main"
 optional = true
 python-versions = "*"
 files = [
@@ -5462,7 +5460,6 @@ files = [
 name = "mwcli"
 version = "0.0.3"
 description = "Utilities for processing MediaWiki on the command line."
-category = "main"
 optional = true
 python-versions = "*"
 files = [
@@ -5479,7 +5476,6 @@ para = "*"
 name = "mwparserfromhell"
 version = "0.6.4"
 description = "MWParserFromHell is a parser for MediaWiki wikicode."
-category = "main"
 optional = true
 python-versions = ">= 3.6"
 files = [
@@ -5517,7 +5513,6 @@ files = [
 name = "mwtypes"
 version = "0.3.2"
 description = "A set of types for processing MediaWiki data."
-category = "main"
 optional = true
 python-versions = "*"
 files = [
@@ -5532,7 +5527,6 @@ jsonable = ">=0.3.0"
 name = "mwxml"
 version = "0.3.3"
 description = "A set of utilities for processing MediaWiki XML dump data."
-category = "main"
 optional = true
 python-versions = "*"
 files = [
@@ -6898,7 +6892,6 @@ files = [
 name = "para"
 version = "0.0.8"
 description = "a set utilities that ake advantage of python's 'multiprocessing' module to distribute CPU-intensive tasks"
-category = "main"
 optional = true
 python-versions = "*"
 files = [
@@ -8871,7 +8864,6 @@ test = ["pytest (>=6,!=7.0.0,!=7.0.1)", "pytest-cov (>=3.0.0)", "pytest-qt"]
 name = "rank-bm25"
 version = "0.2.2"
 description = "Various BM25 algorithms for document ranking"
-category = "main"
 optional = true
 python-versions = "*"
 files = [
@@ -12358,8 +12350,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-<<<<<<< HEAD
-content-hash = "db43ae7f3f39ac82e76d1fb535c79f97035dc48e965b61ee236c41a20cebf280"
-=======
-content-hash = "9eb29c9258d3b28b022dee152627b33e6ded1064f6e071ec246e92de42e57cfb"
->>>>>>> master
+content-hash = "91e5a78bd8b96d39386cf75e298353358ca97f9f391c0041dc60593bc4135664"
