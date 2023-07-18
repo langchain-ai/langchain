@@ -81,7 +81,9 @@ class RecursiveUrlLoader(BaseLoader):
             # Or #, which is a link to the same page
             if link.startswith("#"):
                 continue
-
+            # Some may be css, js, images files
+            if link.endswith(".css") or link.endswith(".js") or link.endswith(".ico"):
+                continue
             # Some may be absolute links like https://to/path
             if link.startswith("http"):
                 if (not self.prevent_outside) or (
@@ -111,7 +113,7 @@ class RecursiveUrlLoader(BaseLoader):
                 )
             )
         )
-
+        
         return absolute_paths
 
     def _gen_metadata(self, raw_html: str, url: str) -> dict:
@@ -181,7 +183,7 @@ class RecursiveUrlLoader(BaseLoader):
 
         return []
 
-    async def async_get_child_links_recursive(
+    async def _async_get_child_links_recursive(
         self, url: str, visited: Optional[Set[str]] = None, depth: int = 0
     ) -> List[Document]:
         """Recursively get all child links starting with the path of the input URL.
@@ -270,12 +272,16 @@ class RecursiveUrlLoader(BaseLoader):
             sub_tasks = []
             for link in absolute_paths:
                 sub_tasks.append(
-                    self._get_child_links_recursive(link, visited, depth + 1)
+                    self._async_get_child_links_recursive(link, visited, depth + 1)
                 )
             # sub_tasks returns coroutines of list, so we need to flatten the list await asyncio.gather(*sub_tasks)
             flattened = []
             next_results = await asyncio.gather(*sub_tasks)
             for sub_result in next_results:
+                if isinstance(sub_result, Exception):
+                    # We don't want to stop the whole process, so just ignore the exception
+                    # This exception may be caused by the invalid url, or not standard html format
+                    continue
                 if sub_result is not None:
                     flattened += sub_result
             results += flattened
@@ -284,7 +290,7 @@ class RecursiveUrlLoader(BaseLoader):
     def lazy_load(self) -> Iterator[Document]:
         """Lazy load web pages."""
         if self.use_async:
-            results = asyncio.run(self.async_get_child_links_recursive(self.url))
+            results = asyncio.run(self._async_get_child_links_recursive(self.url))
             if results is None:
                 return iter([])
             else:
