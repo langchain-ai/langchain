@@ -113,7 +113,7 @@ class RecursiveUrlLoader(BaseLoader):
                 )
             )
         )
-        
+
         return absolute_paths
 
     def _gen_metadata(self, raw_html: str, url: str) -> dict:
