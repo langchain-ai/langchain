@@ -22,6 +22,8 @@ class FileDeleteInput(BaseModel):
 
 
 class DeleteFileTool(BaseFileToolMixin, BaseTool):
+    """Tool that deletes a file."""
+
     name: str = "file_delete"
     args_schema: Type[BaseModel] = FileDeleteInput
     description: str = "Delete a file"
