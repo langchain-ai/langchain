@@ -190,7 +190,7 @@ deeplake = "^3.6.8"
 libdeeplake = "^0.0.60"
 weaviate-client = "^3.15.5"
 torch = "^1.0.0"
-chromadb = { git = "https://github.com/chroma-core/chroma.git", branch = "hammad/sqlite_release_pr" }
+chromadb = "^0.4.0"
 tiktoken = "^0.3.3"
 python-dotenv = "^1.0.0"
 sentence-transformers = "^2"
