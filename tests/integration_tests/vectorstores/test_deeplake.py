@@ -16,7 +16,7 @@ def deeplake_datastore() -> DeepLake:
         dataset_path="./test_path",
         texts=texts,
         metadatas=metadatas,
-        embedding=FakeEmbeddings(),
+        embedding_function=FakeEmbeddings(),
         overwrite=True,
     )
     return docsearch
