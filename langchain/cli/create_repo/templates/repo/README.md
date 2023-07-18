@@ -11,8 +11,8 @@ pip install ____project_name
 
 ## Usage
 
-<!--- --->
+<!--- Add detailed documentation on how to use this package. --->
 
 ## Contributing
 
-For detailed information on how to contribute, see [here](.github/CONTRIBUTING.md).
+For information on how to set up your dev environment and contribute, see [here](.github/CONTRIBUTING.md).

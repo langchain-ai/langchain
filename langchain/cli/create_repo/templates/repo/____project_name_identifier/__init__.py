@@ -1,7 +1,7 @@
 """____project_name_identifier package."""
 from importlib import metadata
 
-from ____project_name_identifier.main import MyChain
+from ____project_name_identifier.base import MyChain
 
 try:
     __version__ = metadata.version(__package__)

@@ -5,7 +5,6 @@ import requests
 
 BASE_URL = "https://pypi.org/pypi"
 
-LENGTH_SUGGESTION = "Name too long (>12)"
 UPPERCASE_SUGGESTION = "Use of uppercase letters is discouraged"
 SEPARATOR_SUGGESTION = "Use of `-` is discouraged, consider using `_`"
 NUMERIC_SUGGESTION = "Use of numbers is discouraged"
@@ -15,8 +14,6 @@ def lint_name(name: str) -> List[str]:
     """Check name against PEP8's naming conventions"""
     suggestions = []
 
-    if len(name) > 12:
-        suggestions.append(LENGTH_SUGGESTION)
     if "-" in name or " " in name:
         suggestions.append(SEPARATOR_SUGGESTION)
     if any(x.isupper() for x in name):
