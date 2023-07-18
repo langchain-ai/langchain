@@ -144,7 +144,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             os.environ["OPENAI_API_TYPE"] = "azure"
             os.environ["OPENAI_API_BASE"] = "https://<your-endpoint.openai.azure.com/"
             os.environ["OPENAI_API_KEY"] = "your AzureOpenAI key"
-            os.environ["OPENAI_API_VERSION"] = "2023-03-15-preview"
+            os.environ["OPENAI_API_VERSION"] = "2023-05-15"
             os.environ["OPENAI_PROXY"] = "http://your-corporate-proxy:8080"
 
             from langchain.embeddings.openai import OpenAIEmbeddings

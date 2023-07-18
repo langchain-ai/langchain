@@ -28,7 +28,7 @@ class ReActDocstoreAgent(Agent):
 
     @property
     def _agent_type(self) -> str:
-        """Return Identifier of agent type."""
+        """Return Identifier of an agent type."""
         return AgentType.REACT_DOCSTORE
 
     @classmethod

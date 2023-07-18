@@ -62,6 +62,29 @@ class TestWeaviateHybridSearchRetriever:
         ]
 
     @pytest.mark.vcr(ignore_localhost=True)
+    def test_get_relevant_documents_with_score(self, weaviate_url: str) -> None:
+        """Test end to end construction and MRR search."""
+        texts = ["foo", "bar", "baz"]
+        metadatas = [{"page": i} for i in range(len(texts))]
+
+        client = Client(weaviate_url)
+
+        retriever = WeaviateHybridSearchRetriever(
+            client=client,
+            index_name=f"LangChain_{uuid4().hex}",
+            text_key="text",
+            attributes=["page"],
+        )
+        for i, text in enumerate(texts):
+            retriever.add_documents(
+                [Document(page_content=text, metadata=metadatas[i])]
+            )
+
+        output = retriever.get_relevant_documents("foo", score=True)
+        for doc in output:
+            assert "_additional" in doc.metadata
+
+    @pytest.mark.vcr(ignore_localhost=True)
     def test_get_relevant_documents_with_filter(self, weaviate_url: str) -> None:
         """Test end to end construction and MRR search."""
         texts = ["foo", "bar", "baz"]

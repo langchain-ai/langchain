@@ -421,7 +421,7 @@ def load_tools(
 
     Args:
         tool_names: name of tools to load.
-        llm: Optional language model, may be needed to initialize certain tools.
+        llm: An optional language model, may be needed to initialize certain tools.
         callbacks: Optional callback manager or list of callback handlers.
             If not provided, default global callback manager will be used.
 
