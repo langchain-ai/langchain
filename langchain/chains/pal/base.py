@@ -11,7 +11,7 @@ import ast
 import warnings
 from typing import Any, Dict, List, Optional
 
-from pydantic import Extra, root_validator
+from pydantic import Extra, Field, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
@@ -100,13 +100,20 @@ class PALChain(Chain):
     prompt: BasePromptTemplate = MATH_PROMPT
     """[Deprecated]"""
     stop: str = "\n\n"
+    """Stop token to use when generating code."""
     get_answer_expr: str = "print(solution())"
+    """Expression to use to get the answer from the generated code."""
     python_globals: Optional[Dict[str, Any]] = None
+    """Python globals and locals to use when executing the generated code."""
     python_locals: Optional[Dict[str, Any]] = None
+    """Python globals and locals to use when executing the generated code."""
     output_key: str = "result"  #: :meta private:
     return_intermediate_steps: bool = False
-    code_validations: PALValidation = PALValidation()
+    """Whether to return intermediate steps in the generated code."""
+    code_validations: PALValidation = Field(default_factory=PALValidation)
+    """Validations to perform on the generated code."""
     timeout: Optional[int] = 10
+    """Timeout in seconds for the generated code to execute."""
 
     class Config:
         """Configuration for this pydantic object."""
