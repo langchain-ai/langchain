@@ -1,6 +1,10 @@
+import os
+
 import pytest
 
 from langchain.llms.openai import OpenAI
+
+os.environ["OPENAI_API_KEY"] = "foo"
 
 
 @pytest.mark.requires("openai")
