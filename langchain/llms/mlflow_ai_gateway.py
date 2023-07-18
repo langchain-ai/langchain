@@ -10,9 +10,9 @@ from langchain.llms.base import LLM
 
 class Params(BaseModel, extra=Extra.allow):
     temperature: float = 0.0
+    candidate_count: int = 1
     stop: Optional[List[str]] = None
     max_tokens: Optional[int] = None
-    candidate_count: int = 1
 
 
 class MlflowAIGateway(LLM):
