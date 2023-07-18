@@ -19,6 +19,12 @@ except ImportError:
     print("The asyncio package is required for the RecursiveUrlLoader.")
     print("Please install it with `pip install asyncio`.")
 
+try:
+    from bs4 import BeautifulSoup
+except ImportError:
+    print("The bs4 package is required for the RecursiveUrlLoader.")
+    print("Please install it with `pip install bs4`.")
+
 
 class RecursiveUrlLoader(BaseLoader):
     """Loads all child links from a given url."""
@@ -52,7 +58,7 @@ class RecursiveUrlLoader(BaseLoader):
         self.timeout = timeout
         self.prevent_outside = prevent_outside
 
-    def get_sub_links(self, raw_html: str, base_url: str) -> List[str]:
+    def _get_sub_links(self, raw_html: str, base_url: str) -> List[str]:
         """This function extracts all the links from the raw html, and convert them into absolute paths.
 
         Args:
@@ -62,72 +68,65 @@ class RecursiveUrlLoader(BaseLoader):
         Returns:
             List[str]: sub links
         """
-
         # Get all links that are relative to the root of the website
         all_links = re.findall(r"href=[\"\'](.*?)[\"\']", raw_html)
 
         absolute_paths = []
         # Process the links
         for link in all_links:
-            # Here are blacklist patterns
-            # Exclude the links that start with javascript: or mailto:
+            # Some patterns are on blacklist
+            # like javascript: or mailto:
             if link.startswith("javascript:") or link.startswith("mailto:"):
                 continue
+            # Or #, which is a link to the same page
+            if link.startswith("#"):
+                continue
 
-            # Blacklist patterns end.
-
-            # Here are whitelist patterns
-
-            # Some links may be in form of /path/to/link, so add the base URL
-            if link.startswith("/") and not link.startswith("//"):
-                absolute_paths.append(base_url + link[1:])
-            # Some links may be in form of //path/to/link, so add the scheme
-            elif link.startswith("//"):
-                absolute_paths.append(urlparse(base_url).scheme + ":" + link)
-            # Extract only the links that are children of the current URL
-            # Only the links without the previous two patterns are possible links to outside.
-            elif link.startswith(base_url) and link != base_url:
-                absolute_paths.append(link)
-
-            # Whitelist patterns end.
-
-            # Despite prevent outside should be blacklist rule, it must be done here or it could filter valid ones.
-            elif (not self.prevent_outside) or link.startswith(base_url):
-                pass
-
-            # Some links may be in form of path/to/link, so add the parent URL
+            # Some may be absolute links like https://to/path
+            if link.startswith("http"):
+                if (not self.prevent_outside) or (
+                    self.prevent_outside and link.startswith(base_url)
+                ):
+                    absolute_paths.append(link)
             else:
-                absolute_paths.append(base_url + link)
+                absolute_paths.append(urljoin(base_url, link))
+
+            # Some may be relative links like /to/path
+            if link.startswith("/") and not link.startswith("//"):
+                absolute_paths.append(urljoin(base_url, link))
+                continue
+            # Some may have omitted the protocol like //to/path
+            if link.startswith("//"):
+                absolute_paths.append(f"{urlparse(base_url).scheme}:{link}")
+                continue
+
+        # Remove duplicates, also do a filter to prevent outside links
+        absolute_paths = list(
+            set(
+                filter(
+                    lambda x: not self.prevent_outside
+                    or x.startswith(base_url)
+                    and (x != base_url),
+                    absolute_paths,
+                )
+            )
+        )
 
         return absolute_paths
 
-    def gen_metadata(self, raw_html: str, url: str) -> dict:
-        language = (
-            re.findall(r"<html lang=\"(.*?)\">", raw_html)[0]
-            if len(re.findall(r"<html lang=\"(.*?)\">", raw_html)) > 0
-            else ""
-        )
-        title = (
-            re.findall(r"<title>(.*?)</title>", raw_html)[0]
-            if len(re.findall(r"<title>(.*?)</title>", raw_html)) > 0
-            else ""
-        )
-        description = (
-            re.findall(r"<meta name=\"description\" content=\"(.*?)\">", raw_html)[0]
-            if len(
-                re.findall(r"<meta name=\"description\" content=\"(.*?)\">", raw_html)
-            )
-            > 0
-            else ""
-        )
-        return {
-            "source": url,
-            "title": title,
-            "description": description,
-            "language": language,
-        }
+    def _gen_metadata(self, raw_html: str, url: str) -> dict:
+        """Build metadata from BeautifulSoup output."""
+        metadata = {"source": url}
+        soup = BeautifulSoup(raw_html, "html.parser")
+        if title := soup.find("title"):
+            metadata["title"] = title.get_text()
+        if description := soup.find("meta", attrs={"name": "description"}):
+            metadata["description"] = description.get("content", None)
+        if html := soup.find("html"):
+            metadata["language"] = html.get("lang", None)
+        return metadata
 
-    def get_child_links_recursive(
+    def _get_child_links_recursive(
         self, url: str, visited: Optional[Set[str]] = None, depth: int = 0
     ) -> Iterator[Document]:
         """Recursively get all child links starting with the path of the input URL.
@@ -140,16 +139,9 @@ class RecursiveUrlLoader(BaseLoader):
         if depth > self.max_depth:
             return []
 
-        # Construct the base and parent URLs
-        parsed_url = urlparse(url)
-        base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
-        parent_url = "/".join(parsed_url.path.split("/")[:-1])
-
         # Add a trailing slash if not present
-        if not base_url.endswith("/"):
-            base_url += "/"
-        if not parent_url.endswith("/"):
-            parent_url += "/"
+        if not url.endswith("/"):
+            url += "/"
 
         # Exclude the root and parent from a list
         visited = set() if visited is None else visited
@@ -166,7 +158,7 @@ class RecursiveUrlLoader(BaseLoader):
         except:
             return []
 
-        absolute_paths = self.get_sub_links(response.text, base_url)
+        absolute_paths = self._get_sub_links(response.text, url)
 
         # Store the visited links and recursively visit the children
         for link in absolute_paths:
@@ -180,12 +172,12 @@ class RecursiveUrlLoader(BaseLoader):
                     continue
                 loaded_link = Document(
                     page_content=self.extractor(text),
-                    metadata=self.gen_metadata(text, link),
+                    metadata=self._gen_metadata(text, link),
                 )
                 yield loaded_link
                 # If the link is a directory (w/ children) then visit it
                 if link.endswith("/"):
-                    yield from self.get_child_links_recursive(link, visited, depth + 1)
+                    yield from self._get_child_links_recursive(link, visited, depth + 1)
 
         return []
 
@@ -234,7 +226,7 @@ class RecursiveUrlLoader(BaseLoader):
             except Exception as e:
                 return []
 
-            absolute_paths = self.get_sub_links(text, base_url)
+            absolute_paths = self._get_sub_links(text, base_url)
 
             # Worker will be only called within the current function to act as an async generator
             # Worker function will process the link and then recursively call get_child_links_recursive to process the children
@@ -250,7 +242,7 @@ class RecursiveUrlLoader(BaseLoader):
                         if len(extracted) > 0:
                             return Document(
                                 page_content=extracted,
-                                metadata=self.gen_metadata(text, link),
+                                metadata=self._gen_metadata(text, link),
                             )
                         else:
                             return None
@@ -278,7 +270,7 @@ class RecursiveUrlLoader(BaseLoader):
             sub_tasks = []
             for link in absolute_paths:
                 sub_tasks.append(
-                    self.get_child_links_recursive(link, visited, depth + 1)
+                    self._get_child_links_recursive(link, visited, depth + 1)
                 )
             # sub_tasks returns coroutines of list, so we need to flatten the list await asyncio.gather(*sub_tasks)
             flattened = []
@@ -298,7 +290,7 @@ class RecursiveUrlLoader(BaseLoader):
             else:
                 return iter(results)
         else:
-            return self.get_child_links_recursive(self.url)
+            return self._get_child_links_recursive(self.url)
 
     def load(self) -> List[Document]:
         """Load web pages."""
