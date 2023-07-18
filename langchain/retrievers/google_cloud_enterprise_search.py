@@ -39,7 +39,7 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
     filter: Optional[str] = None
     """Filter expression."""
     get_extractive_answers: bool = False
-    """If True the retriever will return Extractive Answers. Otherwise Extractive Segments."""
+    """If True return Extractive Answers, otherwise return Extractive Segments."""
     max_documents: int = Field(default=5, ge=1, le=100)
     """The maximum number of documents to return."""
     max_extractive_answer_count: int = Field(default=1, ge=1, le=5)
@@ -52,8 +52,10 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
     """
     query_expansion_condition: int = Field(default=1, ge=0, le=2)
     """Specification to determine under which conditions query expansion should occur.
-    0 - Unspecified query expansion condition. In this case, server behavior defaults to disabled
-    1 - Disabled query expansion. Only the exact search query is used, even if SearchResponse.total_size is zero.
+    0 - Unspecified query expansion condition. In this case, server behavior defaults 
+        to disabled
+    1 - Disabled query expansion. Only the exact search query is used, even if 
+        SearchResponse.total_size is zero.
     2 - Automatic query expansion built by the Search API.
     """
     credentials: Any = None
@@ -75,7 +77,7 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validates the environment."""
         try:
-            from google.cloud import discoveryengine_v1beta
+            from google.cloud import discoveryengine_v1beta  # noqa: F401
         except ImportError as exc:
             raise ImportError(
                 "google.cloud.discoveryengine is not installed. "
@@ -121,9 +123,10 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
                 )
                 for chunk in derived_struct_data.get(chunk_type, []):
                     if chunk_type == "extractive_answers":
-                        doc_metadata[
-                            "source"
-                        ] = f"{derived_struct_data.get('link', '')}:{chunk.get('pageNumber', '')}"
+                        doc_metadata["source"] = (
+                            f"{derived_struct_data.get('link', '')}"
+                            f":{chunk.get('pageNumber', '')}"
+                        )
                     else:
                         doc_metadata[
                             "source"
