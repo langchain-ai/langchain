@@ -73,7 +73,7 @@ with mlflow.start_run():
     model_info = mlflow.langchain.log_model(chain, "model")
 
 model = mlflow.pyfunc.load_model(model_info.model_uri)
-print(model.predict([{"adjective": "bad"}]))
+print(model.predict([{"adjective": "funny"}]))
 ```
 
 ## Embeddings Example
