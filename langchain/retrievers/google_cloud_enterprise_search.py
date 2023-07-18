@@ -89,7 +89,7 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
 
         return values
 
-    def __init__(self, **data) -> None:
+    def __init__(self, **data: Any) -> None:
         """Initializes private fields."""
         from google.cloud.discoveryengine_v1beta import SearchServiceClient
 
