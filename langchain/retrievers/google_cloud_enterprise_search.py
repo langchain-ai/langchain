@@ -1,7 +1,7 @@
 """Retriever wrapper for Google Cloud Enterprise Search on Gen App Builder."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, List, Sequence
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 
 from pydantic import Extra, Field, root_validator
 
@@ -36,7 +36,7 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
     """Enterprise Search serving config ID."""
     location_id: str = "global"
     """Enterprise Search engine location."""
-    filter: str = None
+    filter: Optional[str] = None
     """Filter expression."""
     get_extractive_answers: bool = False
     """If True the retriever will return Extractive Answers. Otherwise Extractive Segments."""
@@ -89,7 +89,7 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
 
         return values
 
-    def __init__(self, **data):
+    def __init__(self, **data) -> None:
         """Initializes private fields."""
         from google.cloud.discoveryengine_v1beta import SearchServiceClient
 
