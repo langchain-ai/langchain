@@ -1,6 +1,6 @@
 """Integration test for doc reordering."""
-from langchain.embeddings import OpenAIEmbeddings
 from langchain.document_transformers.long_context_reorder import LongContextReorder
+from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
 
 
