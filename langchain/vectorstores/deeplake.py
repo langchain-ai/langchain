@@ -173,13 +173,14 @@ class DeepLake(VectorStore):
             ids (Optional[List[str]], optional): Optional list of IDs.
             embedding_function (Optional[Embeddings], optional): Embedding function
                 to use to convert the text into embeddings.
-            **kwargs (Any): Any additional keyword arguments passed is not supported by this method.
+            **kwargs (Any): Any additional keyword arguments passed is not supported
+                by this method.
 
         Returns:
             List[str]: List of IDs of the added texts.
         """
         if kwargs:
-            unsupported_items = f"`, `".join(set(kwargs.keys()))
+            unsupported_items = "`, `".join(set(kwargs.keys()))
             raise TypeError(
                 f"`{unsupported_items}` is/are not a valid argument to add_text method"
             )
