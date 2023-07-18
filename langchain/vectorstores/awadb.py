@@ -34,7 +34,8 @@ class AwaDB(VectorStore):
     ) -> None:
         """Initialize with AwaDB client.
            If table_name is not specified,
-           a random table name of `_DEFAULT_TABLE_NAME + last segment of uuid` would be created automatically
+           a random table name of `_DEFAULT_TABLE_NAME + last segment of uuid`
+           would be created automatically.
 
         Args:
             table_name: Name of the table created, default _DEFAULT_TABLE_NAME.
@@ -144,9 +145,9 @@ class AwaDB(VectorStore):
             meta_filter (Optional[dict]): Filter by metadata. Defaults to None.
             E.g. `{"color" : "red", "price": 4.20}`. Optional.
             E.g. `{"max_price" : 15.66, "min_price": 4.20}`
-            `price` is the metadata field, means range filter(4.20<'price'<15.66). Optional.
+            `price` is the metadata field, means range filter(4.20<'price'<15.66).
             E.g. `{"maxe_price" : 15.66, "mine_price": 4.20}`
-            `price` is the metadata field, means range filter(4.20<='price'<=15.66). Optional.
+            `price` is the metadata field, means range filter(4.20<='price'<=15.66).
             kwargs: Any possible extend parameters in the future.
 
         Returns:
