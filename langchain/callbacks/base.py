@@ -68,6 +68,36 @@ class LLMManagerMixin:
         """Run when LLM errors."""
 
 
+class EmbeddingsManagerMixin:
+    """Mixin for Embeddings callbacks."""
+
+    def on_embeddings_error(
+        self,
+        error: Union[Exception, KeyboardInterrupt],
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Called when an embedding model throws an error."""
+
+    def on_embeddings_end(
+        self,
+        vector: List[float],
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Called when embeddings model finishes generating embeddings.
+
+        Args:
+            vector (List[float]): The generated embeddings.
+        Returns:
+            Any: The result of the callback.
+        """
+
+
 class ChainManagerMixin:
     """Mixin for chain callbacks."""
 
@@ -181,6 +211,19 @@ class CallbackManagerMixin:
     ) -> Any:
         """Run when Retriever starts running."""
 
+    def on_embeddings_start(
+        self,
+        serialized: Dict[str, Any],
+        texts: List[str],
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run when Embeddings starts running."""
+
     def on_chain_start(
         self,
         serialized: Dict[str, Any],
@@ -224,6 +267,7 @@ class RunManagerMixin:
 
 class BaseCallbackHandler(
     LLMManagerMixin,
+    EmbeddingsManagerMixin,
     ChainManagerMixin,
     ToolManagerMixin,
     RetrieverManagerMixin,
@@ -261,6 +305,11 @@ class BaseCallbackHandler(
         """Whether to ignore chat model callbacks."""
         return False
 
+    @property
+    def ignore_embeddings(self) -> bool:
+        """Whether to ignore embeddings callbacks."""
+        return False
+
 
 class AsyncCallbackHandler(BaseCallbackHandler):
     """Async callback handler that can be used to handle callbacks from langchain."""
@@ -288,7 +337,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
-    ) -> Any:
+    ) -> None:
         """Run when a chat model starts running."""
         raise NotImplementedError(
             f"{self.__class__.__name__} does not implement `on_chat_model_start`"
@@ -326,6 +375,38 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """Run when LLM errors."""
+
+    async def on_embeddings_start(
+        self,
+        serialized: Dict[str, Any],
+        texts: List[str],
+        *,
+        run_id: UUID,
+        parent_run_id: UUID | None = None,
+        tags: List[str] | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Run when embeddings call starts running."""
+
+    async def on_embeddings_end(
+        self,
+        outputs: Dict[str, Any],
+        *,
+        run_id: UUID,
+        parent_run_id: UUID | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Run when embeddings call ends running."""
+
+    async def on_embeddings_error(
+        self,
+        error: Union[Exception, KeyboardInterrupt],
+        *,
+        run_id: UUID,
+        parent_run_id: UUID | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Run when embeddings call errors."""
 
     async def on_chain_start(
         self,
