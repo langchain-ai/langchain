@@ -8,7 +8,7 @@ from langchain.schema import BaseOutputParser
 
 
 class CombiningOutputParser(BaseOutputParser):
-    """Class to combine multiple output parsers into one."""
+    """Combine multiple output parsers into one."""
 
     @property
     def lc_serializable(self) -> bool:

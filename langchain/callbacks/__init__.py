@@ -14,6 +14,7 @@ from langchain.callbacks.infino_callback import InfinoCallbackHandler
 from langchain.callbacks.manager import (
     get_openai_callback,
     tracing_enabled,
+    tracing_v2_enabled,
     wandb_tracing_enabled,
 )
 from langchain.callbacks.mlflow_callback import MlflowCallbackHandler
@@ -26,6 +27,7 @@ from langchain.callbacks.streaming_stdout_final_only import (
     FinalStreamingStdOutCallbackHandler,
 )
 from langchain.callbacks.streamlit import LLMThoughtLabeler, StreamlitCallbackHandler
+from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.callbacks.wandb_callback import WandbCallbackHandler
 from langchain.callbacks.whylabs_callback import WhyLabsCallbackHandler
 
@@ -48,11 +50,13 @@ __all__ = [
     "StreamingStdOutCallbackHandler",
     "FinalStreamingStdOutCallbackHandler",
     "LLMThoughtLabeler",
+    "LangChainTracer",
     "StreamlitCallbackHandler",
     "WandbCallbackHandler",
     "WhyLabsCallbackHandler",
     "get_openai_callback",
     "tracing_enabled",
+    "tracing_v2_enabled",
     "wandb_tracing_enabled",
     "FlyteCallbackHandler",
 ]

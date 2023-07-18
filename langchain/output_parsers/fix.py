@@ -27,6 +27,16 @@ class OutputFixingParser(BaseOutputParser[T]):
         parser: BaseOutputParser[T],
         prompt: BasePromptTemplate = NAIVE_FIX_PROMPT,
     ) -> OutputFixingParser[T]:
+        """Create an OutputFixingParser from a language model and a parser.
+
+        Args:
+            llm: llm to use for fixing
+            parser: parser to use for parsing
+            prompt: prompt to use for fixing
+
+        Returns:
+            OutputFixingParser
+        """
         chain = LLMChain(llm=llm, prompt=prompt)
         return cls(parser=parser, retry_chain=chain)
 
