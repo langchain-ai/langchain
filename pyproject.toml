@@ -338,7 +338,6 @@ extended_testing = [
  "cassio",
  "chardet",
  "esprima",
- "geopandas",
  "jq",
  "pdfminer.six",
  "pgvector",
@@ -365,6 +364,7 @@ extended_testing = [
  "sympy",
  "rapidfuzz",
  "rank_bm25",
+ "geopandas",
 ]
 
 [[tool.poetry.source]]
