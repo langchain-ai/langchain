@@ -3,21 +3,7 @@ import pytest
 from langchain.document_loaders import GeoDataFrameLoader
 from langchain.schema import Document
 
-try:
-    import geopandas
-
-    GeoDataFrame = geopandas.GeoDataFrame
-except ImportError:
-    GeoDataFrame = None
-
-
-requires_geopandas = pytest.mark.skipif(
-    not pytest.importorskip("geopandas"), reason="geopandas is not installed"
-)
-
-
-@requires_geopandas
-@pytest.fixture
+@pytest.mark.requires("geopandas")
 def sample_gdf() -> GeoDataFrame:
     import geopandas
 
@@ -28,7 +14,7 @@ def sample_gdf() -> GeoDataFrame:
     return gdf.head(2)
 
 
-@requires_geopandas
+@pytest.mark.requires("geopandas")
 def test_load_returns_list_of_documents(sample_gdf: GeoDataFrame) -> None:
     loader = GeoDataFrameLoader(sample_gdf)
     docs = loader.load()
@@ -37,7 +23,7 @@ def test_load_returns_list_of_documents(sample_gdf: GeoDataFrame) -> None:
     assert len(docs) == 2
 
 
-@requires_geopandas
+@pytest.mark.requires("geopandas")
 def test_load_converts_dataframe_columns_to_document_metadata(
     sample_gdf: GeoDataFrame,
 ) -> None:
