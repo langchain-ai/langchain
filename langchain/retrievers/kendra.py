@@ -96,7 +96,8 @@ class DocumentAttributeValue(BaseModel, extra=Extra.allow):
     @property
     def value(self) -> Optional[Union[str, int, List[str]]]:
         """The only defined document attribute value or None.
-        According to Amazon Kendra, you can only provide one value for a document attribute.
+        According to Amazon Kendra, you can only provide one
+        value for a document attribute.
         """
         if self.DateValue:
             return self.DateValue
