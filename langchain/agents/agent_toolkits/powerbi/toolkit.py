@@ -4,7 +4,6 @@ from typing import List, Optional, Union
 from pydantic import Field
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 from langchain.chat_models.base import BaseChatModel
@@ -14,6 +13,7 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool
 from langchain.tools.powerbi.prompt import (
     QUESTION_TO_QUERY_BASE,

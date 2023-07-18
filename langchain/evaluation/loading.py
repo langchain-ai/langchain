@@ -1,25 +1,50 @@
 """Loading datasets and evaluators."""
-from typing import Any, Dict, List, Optional, Sequence, Type
+from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
-from langchain.base_language import BaseLanguageModel
 from langchain.chains.base import Chain
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.evaluation.agents.trajectory_eval_chain import TrajectoryEvalChain
 from langchain.evaluation.comparison import PairwiseStringEvalChain
-from langchain.evaluation.criteria.eval_chain import CriteriaEvalChain
+from langchain.evaluation.comparison.eval_chain import LabeledPairwiseStringEvalChain
+from langchain.evaluation.criteria.eval_chain import (
+    CriteriaEvalChain,
+    LabeledCriteriaEvalChain,
+)
+from langchain.evaluation.embedding_distance.base import (
+    EmbeddingDistanceEvalChain,
+    PairwiseEmbeddingDistanceEvalChain,
+)
 from langchain.evaluation.qa import ContextQAEvalChain, CotQAEvalChain, QAEvalChain
 from langchain.evaluation.schema import EvaluatorType, LLMEvalChain
+from langchain.evaluation.string_distance.base import (
+    PairwiseStringDistanceEvalChain,
+    StringDistanceEvalChain,
+)
+from langchain.schema.language_model import BaseLanguageModel
 
 
 def load_dataset(uri: str) -> List[Dict]:
-    """Load a dataset from the LangChainDatasets HuggingFace org.
+    """Load a dataset from the `LangChainDatasets HuggingFace org <https://huggingface.co/LangChainDatasets>`_.
 
     Args:
         uri: The uri of the dataset to load.
 
     Returns:
         A list of dictionaries, each representing a row in the dataset.
-    """
+
+    **Prerequisites**
+
+    .. code-block:: shell
+
+        pip install datasets
+
+    Examples
+    --------
+    .. code-block:: python
+
+        from langchain.evaluation import load_dataset
+        ds = load_dataset("llm-math")
+    """  # noqa: E501
     try:
         from datasets import load_dataset
     except ImportError:
@@ -32,13 +57,19 @@ def load_dataset(uri: str) -> List[Dict]:
     return [d for d in dataset["train"]]
 
 
-_EVALUATOR_MAP: Dict[EvaluatorType, Type[LLMEvalChain]] = {
+_EVALUATOR_MAP: Dict[EvaluatorType, Union[Type[LLMEvalChain], Type[Chain]]] = {
     EvaluatorType.QA: QAEvalChain,
     EvaluatorType.COT_QA: CotQAEvalChain,
     EvaluatorType.CONTEXT_QA: ContextQAEvalChain,
     EvaluatorType.PAIRWISE_STRING: PairwiseStringEvalChain,
+    EvaluatorType.LABELED_PAIRWISE_STRING: LabeledPairwiseStringEvalChain,
     EvaluatorType.AGENT_TRAJECTORY: TrajectoryEvalChain,
     EvaluatorType.CRITERIA: CriteriaEvalChain,
+    EvaluatorType.LABELED_CRITERIA: LabeledCriteriaEvalChain,
+    EvaluatorType.STRING_DISTANCE: StringDistanceEvalChain,
+    EvaluatorType.PAIRWISE_STRING_DISTANCE: PairwiseStringDistanceEvalChain,
+    EvaluatorType.EMBEDDING_DISTANCE: EmbeddingDistanceEvalChain,
+    EvaluatorType.PAIRWISE_EMBEDDING_DISTANCE: PairwiseEmbeddingDistanceEvalChain,
 }
 
 
@@ -66,11 +97,20 @@ def load_evaluator(
 
     Examples
     --------
-    >>> llm = ChatOpenAI(model="gpt-4", temperature=0)
-    >>> evaluator = load_evaluator(EvaluatorType.QA, llm=llm)
+    >>> from langchain.evaluation import load_evaluator, EvaluatorType
+    >>> evaluator = load_evaluator(EvaluatorType.QA)
     """
     llm = llm or ChatOpenAI(model="gpt-4", temperature=0)
-    return _EVALUATOR_MAP[evaluator].from_llm(llm=llm, **kwargs)
+    if evaluator not in _EVALUATOR_MAP:
+        raise ValueError(
+            f"Unknown evaluator type: {evaluator}"
+            f"Valid types are: {list(_EVALUATOR_MAP.keys())}"
+        )
+    evaluator_cls = _EVALUATOR_MAP[evaluator]
+    if issubclass(evaluator_cls, LLMEvalChain):
+        return evaluator_cls.from_llm(llm=llm, **kwargs)
+    else:
+        return evaluator_cls(**kwargs)
 
 
 def load_evaluators(
@@ -102,10 +142,9 @@ def load_evaluators(
 
     Examples
     --------
-    .. code-block:: python
-        from langchain.evaluation import load_evaluators, EvaluatorType
-        evaluators = [EvaluatorType.QA, EvaluatorType.CRITERIA]
-        loaded_evaluators = load_evaluators(evaluators, criteria="helpfulness")
+    >>> from langchain.evaluation import load_evaluators, EvaluatorType
+    >>> evaluators = [EvaluatorType.QA, EvaluatorType.CRITERIA]
+    >>> loaded_evaluators = load_evaluators(evaluators, criteria="helpfulness")
     """
     llm = llm or ChatOpenAI(model="gpt-4", temperature=0)
     loaded = []

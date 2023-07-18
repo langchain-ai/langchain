@@ -10,6 +10,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Generator,
     Iterable,
     List,
     Optional,
@@ -27,11 +28,16 @@ from langchain.vectorstores import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
+    from qdrant_client import grpc  # noqa
     from qdrant_client.conversions import common_types
     from qdrant_client.http import models as rest
 
     DictFilter = Dict[str, Union[str, int, bool, dict, list]]
     MetadataFilter = Union[DictFilter, common_types.Filter]
+
+
+class QdrantException(Exception):
+    """Base class for all the Qdrant related exceptions"""
 
 
 class Qdrant(VectorStore):
@@ -61,6 +67,7 @@ class Qdrant(VectorStore):
         embeddings: Optional[Embeddings] = None,
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
+        distance_strategy: str = "COSINE",
         vector_name: Optional[str] = VECTOR_NAME,
         embedding_function: Optional[Callable] = None,  # deprecated
     ):
@@ -112,6 +119,8 @@ class Qdrant(VectorStore):
             self._embeddings_function = embeddings
             self.embeddings = None
 
+        self.distance_strategy = distance_strategy.upper()
+
     def add_texts(
         self,
         texts: Iterable[str],
@@ -135,37 +144,54 @@ class Qdrant(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        from qdrant_client.http import models as rest
+        added_ids = []
+        for batch_ids, points in self._generate_rest_batches(
+            texts, metadatas, ids, batch_size
+        ):
+            self.client.upsert(
+                collection_name=self.collection_name,
+                points=points,
+            )
+            added_ids.extend(batch_ids)
+
+        return added_ids
+
+    async def aadd_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[Sequence[str]] = None,
+        batch_size: int = 64,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Run more texts through the embeddings and add to the vectorstore.
+
+        Args:
+            texts: Iterable of strings to add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+            ids:
+                Optional list of ids to associate with the texts. Ids have to be
+                uuid-like strings.
+            batch_size:
+                How many vectors upload per-request.
+                Default: 64
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+        """
+        from qdrant_client import grpc  # noqa
+        from qdrant_client.conversions.conversion import RestToGrpc
 
         added_ids = []
-        texts_iterator = iter(texts)
-        metadatas_iterator = iter(metadatas or [])
-        ids_iterator = iter(ids or [uuid.uuid4().hex for _ in iter(texts)])
-        while batch_texts := list(islice(texts_iterator, batch_size)):
-            # Take the corresponding metadata and id for each text in a batch
-            batch_metadatas = list(islice(metadatas_iterator, batch_size)) or None
-            batch_ids = list(islice(ids_iterator, batch_size))
-
-            # Generate the embeddings for all the texts in a batch
-            batch_embeddings = self._embed_texts(batch_texts)
-            if self.vector_name is not None:
-                batch_embeddings = {  # type: ignore[assignment]
-                    self.vector_name: batch_embeddings
-                }
-
-            points = rest.Batch.construct(
-                ids=batch_ids,
-                vectors=batch_embeddings,
-                payloads=self._build_payloads(
-                    batch_texts,
-                    batch_metadatas,
-                    self.content_payload_key,
-                    self.metadata_payload_key,
-                ),
+        for batch_ids, points in self._generate_rest_batches(
+            texts, metadatas, ids, batch_size
+        ):
+            await self.client.async_grpc_points.Upsert(
+                grpc.UpsertPoints(
+                    collection_name=self.collection_name,
+                    points=[RestToGrpc.convert_point_struct(point) for point in points],
+                )
             )
-
-            self.client.upsert(collection_name=self.collection_name, points=points)
-
             added_ids.extend(batch_ids)
 
         return added_ids
@@ -225,6 +251,24 @@ class Qdrant(VectorStore):
         )
         return list(map(itemgetter(0), results))
 
+    async def asimilarity_search(
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[MetadataFilter] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs most similar to query.
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter by metadata. Defaults to None.
+        Returns:
+            List of Documents most similar to the query.
+        """
+        results = await self.asimilarity_search_with_score(query, k, filter)
+        return list(map(itemgetter(0), results))
+
     def similarity_search_with_score(
         self,
         query: str,
@@ -266,11 +310,63 @@ class Qdrant(VectorStore):
                 - 'all' - query all replicas, and return values present in all replicas
 
         Returns:
-            List of documents most similar to the query text and cosine
-            distance in float for each.
-            Lower score represents more similarity.
+            List of documents most similar to the query text and distance for each.
         """
         return self.similarity_search_with_score_by_vector(
+            self._embed_query(query),
+            k,
+            filter=filter,
+            search_params=search_params,
+            offset=offset,
+            score_threshold=score_threshold,
+            consistency=consistency,
+            **kwargs,
+        )
+
+    async def asimilarity_search_with_score(
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[MetadataFilter] = None,
+        search_params: Optional[common_types.SearchParams] = None,
+        offset: int = 0,
+        score_threshold: Optional[float] = None,
+        consistency: Optional[common_types.ReadConsistency] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs most similar to query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter by metadata. Defaults to None.
+            search_params: Additional search params
+            offset:
+                Offset of the first result to return.
+                May be used to paginate results.
+                Note: large offset values may cause performance issues.
+            score_threshold:
+                Define a minimal score threshold for the result.
+                If defined, less similar results will not be returned.
+                Score of the returned result might be higher or smaller than the
+                threshold depending on the Distance function used.
+                E.g. for cosine similarity only higher scores will be returned.
+            consistency:
+                Read consistency of the search. Defines how many replicas should be
+                queried before returning the result.
+                Values:
+                - int - number of replicas to query, values should present in all
+                        queried replicas
+                - 'majority' - query all replicas, but return values present in the
+                               majority of replicas
+                - 'quorum' - query the majority of replicas, return values present in
+                             all of them
+                - 'all' - query all replicas, and return values present in all replicas
+
+        Returns:
+            List of documents most similar to the query text and distance for each.
+        """
+        return await self.asimilarity_search_with_score_by_vector(
             self._embed_query(query),
             k,
             filter=filter,
@@ -336,6 +432,61 @@ class Qdrant(VectorStore):
         )
         return list(map(itemgetter(0), results))
 
+    async def asimilarity_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[MetadataFilter] = None,
+        search_params: Optional[common_types.SearchParams] = None,
+        offset: int = 0,
+        score_threshold: Optional[float] = None,
+        consistency: Optional[common_types.ReadConsistency] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs most similar to embedding vector.
+
+        Args:
+            embedding: Embedding vector to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter by metadata. Defaults to None.
+            search_params: Additional search params
+            offset:
+                Offset of the first result to return.
+                May be used to paginate results.
+                Note: large offset values may cause performance issues.
+            score_threshold:
+                Define a minimal score threshold for the result.
+                If defined, less similar results will not be returned.
+                Score of the returned result might be higher or smaller than the
+                threshold depending on the Distance function used.
+                E.g. for cosine similarity only higher scores will be returned.
+            consistency:
+                Read consistency of the search. Defines how many replicas should be
+                queried before returning the result.
+                Values:
+                - int - number of replicas to query, values should present in all
+                        queried replicas
+                - 'majority' - query all replicas, but return values present in the
+                               majority of replicas
+                - 'quorum' - query the majority of replicas, return values present in
+                             all of them
+                - 'all' - query all replicas, and return values present in all replicas
+
+        Returns:
+            List of Documents most similar to the query.
+        """
+        results = await self.asimilarity_search_with_score_by_vector(
+            embedding,
+            k,
+            filter=filter,
+            search_params=search_params,
+            offset=offset,
+            score_threshold=score_threshold,
+            consistency=consistency,
+            **kwargs,
+        )
+        return list(map(itemgetter(0), results))
+
     def similarity_search_with_score_by_vector(
         self,
         embedding: List[float],
@@ -377,9 +528,7 @@ class Qdrant(VectorStore):
                 - 'all' - query all replicas, and return values present in all replicas
 
         Returns:
-            List of documents most similar to the query text and cosine
-            distance in float for each.
-            Lower score represents more similarity.
+            List of documents most similar to the query text and distance for each.
         """
         if filter is not None and isinstance(filter, dict):
             warnings.warn(
@@ -419,27 +568,93 @@ class Qdrant(VectorStore):
             for result in results
         ]
 
-    def _similarity_search_with_relevance_scores(
+    async def asimilarity_search_with_score_by_vector(
         self,
-        query: str,
+        embedding: List[float],
         k: int = 4,
+        filter: Optional[MetadataFilter] = None,
+        search_params: Optional[common_types.SearchParams] = None,
+        offset: int = 0,
+        score_threshold: Optional[float] = None,
+        consistency: Optional[common_types.ReadConsistency] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        """Return docs and relevance scores in the range [0, 1].
-
-        0 is dissimilar, 1 is most similar.
+        """Return docs most similar to embedding vector.
 
         Args:
-            query: input text
+            embedding: Embedding vector to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            **kwargs: kwargs to be passed to similarity search. Should include:
-                score_threshold: Optional, a floating point value between 0 to 1 to
-                    filter the resulting set of retrieved docs
+            filter: Filter by metadata. Defaults to None.
+            search_params: Additional search params
+            offset:
+                Offset of the first result to return.
+                May be used to paginate results.
+                Note: large offset values may cause performance issues.
+            score_threshold:
+                Define a minimal score threshold for the result.
+                If defined, less similar results will not be returned.
+                Score of the returned result might be higher or smaller than the
+                threshold depending on the Distance function used.
+                E.g. for cosine similarity only higher scores will be returned.
+            consistency:
+                Read consistency of the search. Defines how many replicas should be
+                queried before returning the result.
+                Values:
+                - int - number of replicas to query, values should present in all
+                        queried replicas
+                - 'majority' - query all replicas, but return values present in the
+                               majority of replicas
+                - 'quorum' - query the majority of replicas, return values present in
+                             all of them
+                - 'all' - query all replicas, and return values present in all replicas
 
         Returns:
-            List of Tuples of (doc, similarity_score)
+            List of documents most similar to the query text and distance for each.
         """
-        return self.similarity_search_with_score(query, k, **kwargs)
+        from qdrant_client import grpc  # noqa
+        from qdrant_client.conversions.conversion import RestToGrpc
+        from qdrant_client.http import models as rest
+
+        if filter is not None and isinstance(filter, dict):
+            warnings.warn(
+                "Using dict as a `filter` is deprecated. Please use qdrant-client "
+                "filters directly: "
+                "https://qdrant.tech/documentation/concepts/filtering/",
+                DeprecationWarning,
+            )
+            qdrant_filter = self._qdrant_filter_from_dict(filter)
+        else:
+            qdrant_filter = filter
+
+        if qdrant_filter is not None and isinstance(qdrant_filter, rest.Filter):
+            qdrant_filter = RestToGrpc.convert_filter(qdrant_filter)
+
+        response = await self.client.async_grpc_points.Search(
+            grpc.SearchPoints(
+                collection_name=self.collection_name,
+                vector_name=self.vector_name,
+                vector=embedding,
+                filter=qdrant_filter,
+                params=search_params,
+                limit=k,
+                offset=offset,
+                with_payload=grpc.WithPayloadSelector(enable=True),
+                with_vectors=grpc.WithVectorsSelector(enable=False),
+                score_threshold=score_threshold,
+                read_consistency=consistency,
+                **kwargs,
+            )
+        )
+
+        return [
+            (
+                self._document_from_scored_point_grpc(
+                    result, self.content_payload_key, self.metadata_payload_key
+                ),
+                result.score,
+            )
+            for result in response.result
+        ]
 
     def max_marginal_relevance_search(
         self,
@@ -467,7 +682,65 @@ class Qdrant(VectorStore):
             List of Documents selected by maximal marginal relevance.
         """
         query_embedding = self._embed_query(query)
-        query_vector = query_embedding
+        return self.max_marginal_relevance_search_by_vector(
+            query_embedding, k, fetch_k, lambda_mult, **kwargs
+        )
+
+    async def amax_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+                     Defaults to 20.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        query_embedding = self._embed_query(query)
+        return await self.amax_marginal_relevance_search_by_vector(
+            query_embedding, k, fetch_k, lambda_mult, **kwargs
+        )
+
+    def max_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        query_vector = embedding
         if self.vector_name is not None:
             query_vector = (self.vector_name, query_vector)  # type: ignore[assignment]
 
@@ -485,7 +758,7 @@ class Qdrant(VectorStore):
             for result in results
         ]
         mmr_selected = maximal_marginal_relevance(
-            np.array(query_embedding), embeddings, k=k, lambda_mult=lambda_mult
+            np.array(embedding), embeddings, k=k, lambda_mult=lambda_mult
         )
         return [
             self._document_from_scored_point(
@@ -493,6 +766,118 @@ class Qdrant(VectorStore):
             )
             for i in mmr_selected
         ]
+
+    async def amax_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+                     Defaults to 20.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        Returns:
+            List of Documents selected by maximal marginal relevance and distance for
+            each.
+        """
+        results = await self.amax_marginal_relevance_search_with_score_by_vector(
+            embedding, k, fetch_k, lambda_mult, **kwargs
+        )
+        return list(map(itemgetter(0), results))
+
+    async def amax_marginal_relevance_search_with_score_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs selected using the maximal marginal relevance.
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+                     Defaults to 20.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        Returns:
+            List of Documents selected by maximal marginal relevance and distance for
+            each.
+        """
+        from qdrant_client import grpc  # noqa
+        from qdrant_client.conversions.conversion import GrpcToRest
+
+        response = await self.client.async_grpc_points.Search(
+            grpc.SearchPoints(
+                collection_name=self.collection_name,
+                vector_name=self.vector_name,
+                vector=embedding,
+                with_payload=grpc.WithPayloadSelector(enable=True),
+                with_vectors=grpc.WithVectorsSelector(enable=True),
+                limit=fetch_k,
+            )
+        )
+        results = [
+            GrpcToRest.convert_vectors(result.vectors) for result in response.result
+        ]
+        embeddings: List[List[float]] = [
+            result.get(self.vector_name)  # type: ignore
+            if isinstance(result, dict)
+            else result
+            for result in results
+        ]
+        mmr_selected: List[int] = maximal_marginal_relevance(
+            np.array(embedding),
+            embeddings,
+            k=k,
+            lambda_mult=lambda_mult,
+        )
+        return [
+            (
+                self._document_from_scored_point_grpc(
+                    response.result[i],
+                    self.content_payload_key,
+                    self.metadata_payload_key,
+                ),
+                response.result[i].score,
+            )
+            for i in mmr_selected
+        ]
+
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+        """Delete by vector ID or other criteria.
+
+        Args:
+            ids: List of ids to delete.
+            **kwargs: Other keyword arguments that subclasses might use.
+
+        Returns:
+            Optional[bool]: True if deletion is successful,
+            False otherwise, None if not implemented.
+        """
+        from qdrant_client.http import models as rest
+
+        result = self.client.delete(
+            collection_name=self.collection_name,
+            points_selector=ids,
+        )
+        return result.status == rest.UpdateStatus.COMPLETED
 
     @classmethod
     def from_texts(
@@ -527,6 +912,7 @@ class Qdrant(VectorStore):
         wal_config: Optional[common_types.WalConfigDiff] = None,
         quantization_config: Optional[common_types.QuantizationConfig] = None,
         init_from: Optional[common_types.InitFrom] = None,
+        force_recreate: bool = False,
         **kwargs: Any,
     ) -> Qdrant:
         """Construct Qdrant wrapper from a list of texts.
@@ -611,6 +997,8 @@ class Qdrant(VectorStore):
                 Params for quantization, if None - quantization will be disabled
             init_from:
                 Use data stored in another collection to initialize this collection
+            force_recreate:
+                Force recreating the collection
             **kwargs:
                 Additional arguments passed directly into REST client initialization
 
@@ -630,6 +1018,255 @@ class Qdrant(VectorStore):
                 embeddings = OpenAIEmbeddings()
                 qdrant = Qdrant.from_texts(texts, embeddings, "localhost")
         """
+        qdrant = cls._construct_instance(
+            texts,
+            embedding,
+            metadatas,
+            ids,
+            location,
+            url,
+            port,
+            grpc_port,
+            prefer_grpc,
+            https,
+            api_key,
+            prefix,
+            timeout,
+            host,
+            path,
+            collection_name,
+            distance_func,
+            content_payload_key,
+            metadata_payload_key,
+            vector_name,
+            batch_size,
+            shard_number,
+            replication_factor,
+            write_consistency_factor,
+            on_disk_payload,
+            hnsw_config,
+            optimizers_config,
+            wal_config,
+            quantization_config,
+            init_from,
+            force_recreate,
+            **kwargs,
+        )
+        qdrant.add_texts(texts, metadatas, ids, batch_size)
+        return qdrant
+
+    @classmethod
+    async def afrom_texts(
+        cls: Type[Qdrant],
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[Sequence[str]] = None,
+        location: Optional[str] = None,
+        url: Optional[str] = None,
+        port: Optional[int] = 6333,
+        grpc_port: int = 6334,
+        prefer_grpc: bool = False,
+        https: Optional[bool] = None,
+        api_key: Optional[str] = None,
+        prefix: Optional[str] = None,
+        timeout: Optional[float] = None,
+        host: Optional[str] = None,
+        path: Optional[str] = None,
+        collection_name: Optional[str] = None,
+        distance_func: str = "Cosine",
+        content_payload_key: str = CONTENT_KEY,
+        metadata_payload_key: str = METADATA_KEY,
+        vector_name: Optional[str] = VECTOR_NAME,
+        batch_size: int = 64,
+        shard_number: Optional[int] = None,
+        replication_factor: Optional[int] = None,
+        write_consistency_factor: Optional[int] = None,
+        on_disk_payload: Optional[bool] = None,
+        hnsw_config: Optional[common_types.HnswConfigDiff] = None,
+        optimizers_config: Optional[common_types.OptimizersConfigDiff] = None,
+        wal_config: Optional[common_types.WalConfigDiff] = None,
+        quantization_config: Optional[common_types.QuantizationConfig] = None,
+        init_from: Optional[common_types.InitFrom] = None,
+        force_recreate: bool = False,
+        **kwargs: Any,
+    ) -> Qdrant:
+        """Construct Qdrant wrapper from a list of texts.
+
+        Args:
+            texts: A list of texts to be indexed in Qdrant.
+            embedding: A subclass of `Embeddings`, responsible for text vectorization.
+            metadatas:
+                An optional list of metadata. If provided it has to be of the same
+                length as a list of texts.
+            ids:
+                Optional list of ids to associate with the texts. Ids have to be
+                uuid-like strings.
+            location:
+                If `:memory:` - use in-memory Qdrant instance.
+                If `str` - use it as a `url` parameter.
+                If `None` - fallback to relying on `host` and `port` parameters.
+            url: either host or str of "Optional[scheme], host, Optional[port],
+                Optional[prefix]". Default: `None`
+            port: Port of the REST API interface. Default: 6333
+            grpc_port: Port of the gRPC interface. Default: 6334
+            prefer_grpc:
+                If true - use gPRC interface whenever possible in custom methods.
+                Default: False
+            https: If true - use HTTPS(SSL) protocol. Default: None
+            api_key: API key for authentication in Qdrant Cloud. Default: None
+            prefix:
+                If not None - add prefix to the REST URL path.
+                Example: service/v1 will result in
+                    http://localhost:6333/service/v1/{qdrant-endpoint} for REST API.
+                Default: None
+            timeout:
+                Timeout for REST and gRPC API requests.
+                Default: 5.0 seconds for REST and unlimited for gRPC
+            host:
+                Host name of Qdrant service. If url and host are None, set to
+                'localhost'. Default: None
+            path:
+                Path in which the vectors will be stored while using local mode.
+                Default: None
+            collection_name:
+                Name of the Qdrant collection to be used. If not provided,
+                it will be created randomly. Default: None
+            distance_func:
+                Distance function. One of: "Cosine" / "Euclid" / "Dot".
+                Default: "Cosine"
+            content_payload_key:
+                A payload key used to store the content of the document.
+                Default: "page_content"
+            metadata_payload_key:
+                A payload key used to store the metadata of the document.
+                Default: "metadata"
+            vector_name:
+                Name of the vector to be used internally in Qdrant.
+                Default: None
+            batch_size:
+                How many vectors upload per-request.
+                Default: 64
+            shard_number: Number of shards in collection. Default is 1, minimum is 1.
+            replication_factor:
+                Replication factor for collection. Default is 1, minimum is 1.
+                Defines how many copies of each shard will be created.
+                Have effect only in distributed mode.
+            write_consistency_factor:
+                Write consistency factor for collection. Default is 1, minimum is 1.
+                Defines how many replicas should apply the operation for us to consider
+                it successful. Increasing this number will make the collection more
+                resilient to inconsistencies, but will also make it fail if not enough
+                replicas are available.
+                Does not have any performance impact.
+                Have effect only in distributed mode.
+            on_disk_payload:
+                If true - point`s payload will not be stored in memory.
+                It will be read from the disk every time it is requested.
+                This setting saves RAM by (slightly) increasing the response time.
+                Note: those payload values that are involved in filtering and are
+                indexed - remain in RAM.
+            hnsw_config: Params for HNSW index
+            optimizers_config: Params for optimizer
+            wal_config: Params for Write-Ahead-Log
+            quantization_config:
+                Params for quantization, if None - quantization will be disabled
+            init_from:
+                Use data stored in another collection to initialize this collection
+            force_recreate:
+                Force recreating the collection
+            **kwargs:
+                Additional arguments passed directly into REST client initialization
+
+        This is a user-friendly interface that:
+        1. Creates embeddings, one for each text
+        2. Initializes the Qdrant database as an in-memory docstore by default
+           (and overridable to a remote docstore)
+        3. Adds the text embeddings to the Qdrant database
+
+        This is intended to be a quick way to get started.
+
+        Example:
+            .. code-block:: python
+
+                from langchain import Qdrant
+                from langchain.embeddings import OpenAIEmbeddings
+                embeddings = OpenAIEmbeddings()
+                qdrant = await Qdrant.afrom_texts(texts, embeddings, "localhost")
+        """
+        qdrant = cls._construct_instance(
+            texts,
+            embedding,
+            metadatas,
+            ids,
+            location,
+            url,
+            port,
+            grpc_port,
+            prefer_grpc,
+            https,
+            api_key,
+            prefix,
+            timeout,
+            host,
+            path,
+            collection_name,
+            distance_func,
+            content_payload_key,
+            metadata_payload_key,
+            vector_name,
+            batch_size,
+            shard_number,
+            replication_factor,
+            write_consistency_factor,
+            on_disk_payload,
+            hnsw_config,
+            optimizers_config,
+            wal_config,
+            quantization_config,
+            init_from,
+            force_recreate,
+            **kwargs,
+        )
+        await qdrant.aadd_texts(texts, metadatas, ids, batch_size)
+        return qdrant
+
+    @classmethod
+    def _construct_instance(
+        cls: Type[Qdrant],
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[Sequence[str]] = None,
+        location: Optional[str] = None,
+        url: Optional[str] = None,
+        port: Optional[int] = 6333,
+        grpc_port: int = 6334,
+        prefer_grpc: bool = False,
+        https: Optional[bool] = None,
+        api_key: Optional[str] = None,
+        prefix: Optional[str] = None,
+        timeout: Optional[float] = None,
+        host: Optional[str] = None,
+        path: Optional[str] = None,
+        collection_name: Optional[str] = None,
+        distance_func: str = "Cosine",
+        content_payload_key: str = CONTENT_KEY,
+        metadata_payload_key: str = METADATA_KEY,
+        vector_name: Optional[str] = VECTOR_NAME,
+        batch_size: int = 64,
+        shard_number: Optional[int] = None,
+        replication_factor: Optional[int] = None,
+        write_consistency_factor: Optional[int] = None,
+        on_disk_payload: Optional[bool] = None,
+        hnsw_config: Optional[common_types.HnswConfigDiff] = None,
+        optimizers_config: Optional[common_types.OptimizersConfigDiff] = None,
+        wal_config: Optional[common_types.WalConfigDiff] = None,
+        quantization_config: Optional[common_types.QuantizationConfig] = None,
+        init_from: Optional[common_types.InitFrom] = None,
+        force_recreate: bool = False,
+        **kwargs: Any,
+    ) -> Qdrant:
         try:
             import qdrant_client
         except ImportError:
@@ -637,16 +1274,15 @@ class Qdrant(VectorStore):
                 "Could not import qdrant-client python package. "
                 "Please install it with `pip install qdrant-client`."
             )
-
+        from grpc import RpcError
         from qdrant_client.http import models as rest
+        from qdrant_client.http.exceptions import UnexpectedResponse
 
         # Just do a single quick embedding to get vector size
         partial_embeddings = embedding.embed_documents(texts[:1])
         vector_size = len(partial_embeddings[0])
-
         collection_name = collection_name or uuid.uuid4().hex
         distance_func = distance_func.upper()
-
         client = qdrant_client.QdrantClient(
             location=location,
             url=url,
@@ -661,70 +1297,150 @@ class Qdrant(VectorStore):
             path=path,
             **kwargs,
         )
+        try:
+            # Skip any validation in case of forced collection recreate.
+            if force_recreate:
+                raise ValueError
 
-        vectors_config = rest.VectorParams(
-            size=vector_size,
-            distance=rest.Distance[distance_func],
-        )
+            # Get the vector configuration of the existing collection and vector, if it
+            # was specified. If the old configuration does not match the current one,
+            # an exception is being thrown.
+            collection_info = client.get_collection(collection_name=collection_name)
+            current_vector_config = collection_info.config.params.vectors
+            if isinstance(current_vector_config, dict) and vector_name is not None:
+                if vector_name not in current_vector_config:
+                    raise QdrantException(
+                        f"Existing Qdrant collection {collection_name} does not "
+                        f"contain vector named {vector_name}. Did you mean one of the "
+                        f"existing vectors: {', '.join(current_vector_config.keys())}? "
+                        f"If you want to recreate the collection, set `force_recreate` "
+                        f"parameter to `True`."
+                    )
+                current_vector_config = current_vector_config.get(
+                    vector_name
+                )  # type: ignore[assignment]
+            elif isinstance(current_vector_config, dict) and vector_name is None:
+                raise QdrantException(
+                    f"Existing Qdrant collection {collection_name} uses named vectors. "
+                    f"If you want to reuse it, please set `vector_name` to any of the "
+                    f"existing named vectors: "
+                    f"{', '.join(current_vector_config.keys())}."  # noqa
+                    f"If you want to recreate the collection, set `force_recreate` "
+                    f"parameter to `True`."
+                )
+            elif (
+                not isinstance(current_vector_config, dict) and vector_name is not None
+            ):
+                raise QdrantException(
+                    f"Existing Qdrant collection {collection_name} doesn't use named "
+                    f"vectors. If you want to reuse it, please set `vector_name` to "
+                    f"`None`. If you want to recreate the collection, set "
+                    f"`force_recreate` parameter to `True`."
+                )
 
-        # If vector name was provided, we're going to use the named vectors feature
-        # with just a single vector.
-        if vector_name is not None:
-            vectors_config = {  # type: ignore[assignment]
-                vector_name: vectors_config,
-            }
+            # Check if the vector configuration has the same dimensionality.
+            if current_vector_config.size != vector_size:  # type: ignore[union-attr]
+                raise QdrantException(
+                    f"Existing Qdrant collection is configured for vectors with "
+                    f"{current_vector_config.size} "  # type: ignore[union-attr]
+                    f"dimensions. Selected embeddings are {vector_size}-dimensional. "
+                    f"If you want to recreate the collection, set `force_recreate` "
+                    f"parameter to `True`."
+                )
 
-        client.recreate_collection(
-            collection_name=collection_name,
-            vectors_config=vectors_config,
-            shard_number=shard_number,
-            replication_factor=replication_factor,
-            write_consistency_factor=write_consistency_factor,
-            on_disk_payload=on_disk_payload,
-            hnsw_config=hnsw_config,
-            optimizers_config=optimizers_config,
-            wal_config=wal_config,
-            quantization_config=quantization_config,
-            init_from=init_from,
-            timeout=timeout,  # type: ignore[arg-type]
-        )
-
-        texts_iterator = iter(texts)
-        metadatas_iterator = iter(metadatas or [])
-        ids_iterator = iter(ids or [uuid.uuid4().hex for _ in iter(texts)])
-        while batch_texts := list(islice(texts_iterator, batch_size)):
-            # Take the corresponding metadata and id for each text in a batch
-            batch_metadatas = list(islice(metadatas_iterator, batch_size)) or None
-            batch_ids = list(islice(ids_iterator, batch_size))
-
-            # Generate the embeddings for all the texts in a batch
-            batch_embeddings = embedding.embed_documents(batch_texts)
-            if vector_name is not None:
-                batch_embeddings = {  # type: ignore[assignment]
-                    vector_name: batch_embeddings
-                }
-
-            points = rest.Batch.construct(
-                ids=batch_ids,
-                vectors=batch_embeddings,
-                payloads=cls._build_payloads(
-                    batch_texts,
-                    batch_metadatas,
-                    content_payload_key,
-                    metadata_payload_key,
-                ),
+            current_distance_func = (
+                current_vector_config.distance.name.upper()  # type: ignore[union-attr]
+            )
+            if current_distance_func != distance_func:
+                raise QdrantException(
+                    f"Existing Qdrant collection is configured for "
+                    f"{current_vector_config.distance} "  # type: ignore[union-attr]
+                    f"similarity. Please set `distance_func` parameter to "
+                    f"`{distance_func}` if you want to reuse it. If you want to "
+                    f"recreate the collection, set `force_recreate` parameter to "
+                    f"`True`."
+                )
+        except (UnexpectedResponse, RpcError, ValueError):
+            vectors_config = rest.VectorParams(
+                size=vector_size,
+                distance=rest.Distance[distance_func],
             )
 
-            client.upsert(collection_name=collection_name, points=points)
+            # If vector name was provided, we're going to use the named vectors feature
+            # with just a single vector.
+            if vector_name is not None:
+                vectors_config = {  # type: ignore[assignment]
+                    vector_name: vectors_config,
+                }
 
-        return cls(
+            client.recreate_collection(
+                collection_name=collection_name,
+                vectors_config=vectors_config,
+                shard_number=shard_number,
+                replication_factor=replication_factor,
+                write_consistency_factor=write_consistency_factor,
+                on_disk_payload=on_disk_payload,
+                hnsw_config=hnsw_config,
+                optimizers_config=optimizers_config,
+                wal_config=wal_config,
+                quantization_config=quantization_config,
+                init_from=init_from,
+                timeout=timeout,  # type: ignore[arg-type]
+            )
+        qdrant = cls(
             client=client,
             collection_name=collection_name,
             embeddings=embedding,
             content_payload_key=content_payload_key,
             metadata_payload_key=metadata_payload_key,
+            distance_strategy=distance_func,
             vector_name=vector_name,
         )
+        return qdrant
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        """
+        The 'correct' relevance function
+        may differ depending on a few things, including:
+        - the distance / similarity metric used by the VectorStore
+        - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
+        - embedding dimensionality
+        - etc.
+        """
+
+        if self.distance_strategy == "COSINE":
+            return self._cosine_relevance_score_fn
+        elif self.distance_strategy == "DOT":
+            return self._max_inner_product_relevance_score_fn
+        elif self.distance_strategy == "EUCLID":
+            return self._euclidean_relevance_score_fn
+        else:
+            raise ValueError(
+                "Unknown distance strategy, must be cosine, "
+                "max_inner_product, or euclidean"
+            )
+
+    def _similarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs and relevance scores in the range [0, 1].
+
+        0 is dissimilar, 1 is most similar.
+
+        Args:
+            query: input text
+            k: Number of Documents to return. Defaults to 4.
+            **kwargs: kwargs to be passed to similarity search. Should include:
+                score_threshold: Optional, a floating point value between 0 to 1 to
+                    filter the resulting set of retrieved docs
+
+        Returns:
+            List of Tuples of (doc, similarity_score)
+        """
+        return self.similarity_search_with_score(query, k, **kwargs)
 
     @classmethod
     def _build_payloads(
@@ -761,6 +1477,21 @@ class Qdrant(VectorStore):
         return Document(
             page_content=scored_point.payload.get(content_payload_key),
             metadata=scored_point.payload.get(metadata_payload_key) or {},
+        )
+
+    @classmethod
+    def _document_from_scored_point_grpc(
+        cls,
+        scored_point: Any,
+        content_payload_key: str,
+        metadata_payload_key: str,
+    ) -> Document:
+        from qdrant_client.conversions.conversion import grpc_to_payload
+
+        payload = grpc_to_payload(scored_point.payload)
+        return Document(
+            page_content=payload[content_payload_key],
+            metadata=payload.get(metadata_payload_key) or {},
         )
 
     def _build_condition(self, key: str, value: Any) -> List[rest.FieldCondition]:
@@ -849,3 +1580,45 @@ class Qdrant(VectorStore):
             raise ValueError("Neither of embeddings or embedding_function is set")
 
         return embeddings
+
+    def _generate_rest_batches(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[Sequence[str]] = None,
+        batch_size: int = 64,
+    ) -> Generator[Tuple[List[str], List[rest.PointStruct]], None, None]:
+        from qdrant_client.http import models as rest
+
+        texts_iterator = iter(texts)
+        metadatas_iterator = iter(metadatas or [])
+        ids_iterator = iter(ids or [uuid.uuid4().hex for _ in iter(texts)])
+        while batch_texts := list(islice(texts_iterator, batch_size)):
+            # Take the corresponding metadata and id for each text in a batch
+            batch_metadatas = list(islice(metadatas_iterator, batch_size)) or None
+            batch_ids = list(islice(ids_iterator, batch_size))
+
+            # Generate the embeddings for all the texts in a batch
+            batch_embeddings = self._embed_texts(batch_texts)
+
+            points = [
+                rest.PointStruct(
+                    id=point_id,
+                    vector=vector
+                    if self.vector_name is None
+                    else {self.vector_name: vector},
+                    payload=payload,
+                )
+                for point_id, vector, payload in zip(
+                    batch_ids,
+                    batch_embeddings,
+                    self._build_payloads(
+                        batch_texts,
+                        batch_metadatas,
+                        self.content_payload_key,
+                        self.metadata_payload_key,
+                    ),
+                )
+            ]
+
+            yield batch_ids, points

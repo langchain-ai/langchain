@@ -16,7 +16,7 @@ class CSVLoader(BaseLoader):
     key/value pair and outputted to a new line in the document's page_content.
 
     The source for each document loaded from csv is set to the value of the
-    `file_path` argument for all doucments by default.
+    `file_path` argument for all documents by default.
     You can override this by setting the `source_column` argument to the
     name of a column in the CSV file.
     The source of each document will then be set to the value of the column
@@ -78,7 +78,21 @@ class CSVLoader(BaseLoader):
 
 
 class UnstructuredCSVLoader(UnstructuredFileLoader):
-    """Loader that uses unstructured to load CSV files."""
+    """Loader that uses unstructured to load CSV files. Like other
+    Unstructured loaders, UnstructuredCSVLoader can be used in both
+    "single" and "elements" mode. If you use the loader in "elements"
+    mode, the CSV file will be a single Unstructured Table element.
+    If you use the loader in "elements" mode, an HTML representation
+    of the table will be available in the "text_as_html" key in the
+    document metadata.
+
+    Examples
+    --------
+    from langchain.document_loaders.csv_loader import UnstructuredCSVLoader
+
+    loader = UnstructuredCSVLoader("stanley-cups.csv", mode="elements")
+    docs = loader.load()
+    """
 
     def __init__(
         self, file_path: str, mode: str = "single", **unstructured_kwargs: Any

@@ -9,7 +9,6 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from pydantic import Extra, Field, root_validator
 
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
@@ -22,6 +21,7 @@ from langchain.chains.conversational_retrieval.prompts import CONDENSE_QUESTION_
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
 from langchain.schema import BasePromptTemplate, BaseRetriever, Document
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage
 from langchain.vectorstores.base import VectorStore
 
@@ -72,7 +72,7 @@ class BaseConversationalRetrievalChain(Chain):
     """Return the retrieved source documents as part of the final result."""
     return_generated_question: bool = False
     """Return the generated question as part of the final result."""
-    get_chat_history: Optional[Callable[[CHAT_TURN_TYPE], str]] = None
+    get_chat_history: Optional[Callable[[List[CHAT_TURN_TYPE]], str]] = None
     """An optional function to get a string of the chat history.
     If None is provided, will use a default."""
 
@@ -199,7 +199,7 @@ class BaseConversationalRetrievalChain(Chain):
 
     def save(self, file_path: Union[Path, str]) -> None:
         if self.get_chat_history:
-            raise ValueError("Chain not savable when `get_chat_history` is not None.")
+            raise ValueError("Chain not saveable when `get_chat_history` is not None.")
         super().save(file_path)
 
 
@@ -245,11 +245,11 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
             )
             prompt = PromptTemplate.from_template(template)
             llm = OpenAI()
-            llm_chain = LLMChain(llm=llm, prompt=prompt)
+            question_generator_chain = LLMChain(llm=llm, prompt=prompt)
             chain = ConversationalRetrievalChain(
                 combine_docs_chain=combine_docs_chain,
                 retriever=retriever,
-                question_generator=question_generator,
+                question_generator=question_generator_chain,
             )
     """
 

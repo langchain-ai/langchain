@@ -32,7 +32,7 @@ class Marqo(VectorStore):
     and also use CLIP models to create multimodal indexes
     with images and text together.
 
-    Marqo also supports more advanced queries with mutliple weighted terms, see See
+    Marqo also supports more advanced queries with multiple weighted terms, see See
     https://docs.marqo.ai/latest/#searching-using-weights-in-queries.
     This class can flexibly take strings or dictionaries for weighted queries
     in its similarity search methods.
@@ -197,7 +197,7 @@ class Marqo(VectorStore):
 
         Args:
             queries (Iterable[Union[str, Dict[str, float]]]): An iterable of queries to
-            execute in bulk, queries in the list can be strings or dictonaries of
+            execute in bulk, queries in the list can be strings or dictionaries of
             weighted queries.
             k (int, optional): The number of documents to return for each query.
             Defaults to 4.
@@ -224,7 +224,7 @@ class Marqo(VectorStore):
 
         Args:
             query (Iterable[Union[str, Dict[str, float]]]): An iterable of queries
-            to execute in bulk, queries in the list can be strings or dictonaries
+            to execute in bulk, queries in the list can be strings or dictionaries
             of weighted queries.
             k (int, optional): The number of documents to return. Defaults to 4.
 
