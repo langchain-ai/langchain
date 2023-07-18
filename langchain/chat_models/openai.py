@@ -162,7 +162,7 @@ class ChatOpenAI(BaseChatModel):
     def lc_serializable(self) -> bool:
         return True
 
-    client: Any = None #: :meta private:
+    client: Any = None  #: :meta private:
     model_name: str = Field(default="gpt-3.5-turbo", alias="model")
     """Model name to use."""
     temperature: float = 0.7
