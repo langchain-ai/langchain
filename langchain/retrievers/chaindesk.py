@@ -11,7 +11,7 @@ from langchain.schema import BaseRetriever, Document
 
 
 class ChaindeskRetriever(BaseRetriever):
-    """Retriever that uses the Chaindesk API."""
+    """Retriever for the Chaindesk API."""
 
     datastore_url: str
     top_k: Optional[int]

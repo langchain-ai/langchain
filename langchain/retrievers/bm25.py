@@ -19,10 +19,16 @@ def default_preprocessing_func(text: str) -> List[str]:
 
 
 class BM25Retriever(BaseRetriever):
+    """BM25 Retriever without elastic search."""
+
     vectorizer: Any
+    """ BM25 vectorizer."""
     docs: List[Document]
+    """ List of documents."""
     k: int = 4
+    """ Number of documents to return."""
     preprocess_func: Callable[[str], List[str]] = default_preprocessing_func
+    """ Preprocessing function to use on the text before BM25 vectorization."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -38,6 +44,18 @@ class BM25Retriever(BaseRetriever):
         preprocess_func: Callable[[str], List[str]] = default_preprocessing_func,
         **kwargs: Any,
     ) -> BM25Retriever:
+        """
+        Create a BM25Retriever from a list of texts.
+        Args:
+            texts: A list of texts to vectorize.
+            metadatas: A list of metadata dicts to associate with each text.
+            bm25_params: Parameters to pass to the BM25 vectorizer.
+            preprocess_func: A function to preprocess each text before vectorization.
+            **kwargs: Any other arguments to pass to the retriever.
+
+        Returns:
+            A BM25Retriever instance.
+        """
         try:
             from rank_bm25 import BM25Okapi
         except ImportError:
@@ -64,6 +82,17 @@ class BM25Retriever(BaseRetriever):
         preprocess_func: Callable[[str], List[str]] = default_preprocessing_func,
         **kwargs: Any,
     ) -> BM25Retriever:
+        """
+        Create a BM25Retriever from a list of Documents.
+        Args:
+            documents: A list of Documents to vectorize.
+            bm25_params: Parameters to pass to the BM25 vectorizer.
+            preprocess_func: A function to preprocess each text before vectorization.
+            **kwargs: Any other arguments to pass to the retriever.
+
+        Returns:
+            A BM25Retriever instance.
+        """
         texts, metadatas = zip(*((d.page_content, d.metadata) for d in documents))
         return cls.from_texts(
             texts=texts,
