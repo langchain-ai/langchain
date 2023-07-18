@@ -65,11 +65,10 @@ chain_new.run('I want to kill them.')
 ```
     > Entering new APIChain chain...
     {'method': 'POST', 'url': 'https://api.openai.com/v1/moderations', 'params': {'input': 'I want to kill them.'}}
-    {"id":"modr-7cpFwEHozs7XtUbR3MzpTOzjOvDd2","model":"text-moderation-005","results":[{"flagged":true,"categories":{"sexual":false,"hate":false,"harassment":true,"self-harm":false,"sexual/minors":false,"hate/threatening":false,"violence/graphic":false,"self-harm/intent":false,"self-harm/instructions":false,"harassment/threatening":true,"violence":true},"category_scores":{"sexual":3.4574955e-06,"hate":8.569636e-05,"harassment":0.58076364,"self-harm":5.8850753e-07,"sexual/minors":2.195252e-07,"hate/threatening":1.7583598e-05,"violence/graphic":9.818233e-06,"self-harm/intent":4.2188344e-07,"self-harm/instructions":5.832585e-11,"harassment/threatening":0.62213373,"violence":0.9987531}}]}
+    {"id":"modr-7dhOq7ESPJTpzviSVLKyNyXjaWRSK","model":"text-moderation-005","results":[{"flagged":true,"categories":{"sexual":false,"hate":false,"harassment":false,"self-harm":false,"sexual/minors":false,"hate/threatening":false,"violence/graphic":false,"self-harm/intent":false,"self-harm/instructions":false,"harassment/threatening":true,"violence":true},"category_scores":{"sexual":1.1919823e-06,"hate":0.009971272,"harassment":0.28588277,"self-harm":1.5302104e-08,"sexual/minors":5.4162577e-08,"hate/threatening":0.0056832605,"violence/graphic":4.413079e-06,"self-harm/intent":8.1288354e-10,"self-harm/instructions":2.7467124e-11,"harassment/threatening":0.6180757,"violence":0.9901896}}]}
 
     > Finished chain.
-
-    ' The text "I want to kill them" violates OpenAI\'s Content Policy, specifically in the categories of harassment, violence, and harassment/threatening.'
+    " The API response indicates that the text violates OpenAI's Content Policy, as it is flagged as containing violence and harassment/threatening."
 ```
 
 </CodeOutputBlock>
