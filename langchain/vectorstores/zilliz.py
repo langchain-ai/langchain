@@ -50,6 +50,8 @@ class Zilliz(Milvus):
             password are provided, we will add related header in every RPC call.
         password (str): Required when user is provided. The password
             corresponding to the user.
+        token (str): API key, for serverless clusters which can be used as
+            replacements for user and password.
         secure (bool): Default is false. If set to true, tls will be enabled.
         client_key_path (str): If use tls two-way authentication, need to
             write the client.key path.
@@ -76,6 +78,7 @@ class Zilliz(Milvus):
                 "uri": "https://in03-ba4234asae.api.gcp-us-west1.zillizcloud.com",
                 "user": "temp",
                 "password": "temp",
+                "token": "temp", # API key as replacements for user and password
                 "secure": True
             }
             drop_old: True,
