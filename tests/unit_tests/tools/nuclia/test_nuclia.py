@@ -66,17 +66,17 @@ def test_nuclia_tool() -> None:
     ):
         with mock.patch("requests.post", new_callable=fakepost):
             with mock.patch("requests.get", new_callable=fakeget):
-                nua = NucliaUnderstandingAPI()
+                nua = NucliaUnderstandingAPI(enable_ml=False)
                 uuid = nua.run(
                     {
                         "action": "push",
                         "id": "1",
                         "path": "/Users/ebr/dev/nuclia/docs/README.md",
-                        "enable_ml": False,
+                        "text": None,
                     }
                 )
                 assert uuid == "fake_uuid"
                 data = nua.run(
-                    {"action": "pull", "id": "1", "path": None, "enable_ml": False}
+                    {"action": "pull", "id": "1", "path": None, "text": None}
                 )
                 assert json.loads(data)["uuid"] == "fake_uuid"

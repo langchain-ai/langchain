@@ -34,7 +34,7 @@ def test_nuclia_loader() -> None:
     with mock.patch(
         "langchain.tools.nuclia.tool.NucliaUnderstandingAPI._run", new_callable=fakerun
     ):
-        nua = NucliaUnderstandingAPI()
+        nua = NucliaUnderstandingAPI(enable_ml=False)
         loader = NucliaLoader("/whatever/file.mp3", nua)
         docs = loader.load()
         assert len(docs) == 1
