@@ -26,7 +26,8 @@ class RequestParams(BaseModel):
         description="One of: GET, POST, PUT, DELETE, OPTIONS, HEAD, or PATCH"
     )
     url: str = Field(
-        description="URL that you want to access. DO NOT include any params here")
+        description="URL that you want to access. DO NOT include any params here"
+    )
     params: Optional[dict] = Field(
         description="Parameters that you want to include in your request, should be a dict."
     )
@@ -47,7 +48,10 @@ class RequestParams(BaseModel):
             raise ValueError("Params must be a dict.")
         return field
 
-request_parser: PydanticOutputParser = PydanticOutputParser(pydantic_object=RequestParams)
+
+request_parser: PydanticOutputParser = PydanticOutputParser(
+    pydantic_object=RequestParams
+)
 
 API_URL_PROMPT = PromptTemplate(
     input_variables=[

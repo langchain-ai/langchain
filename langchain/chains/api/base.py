@@ -31,7 +31,9 @@ class APIChain(Chain):
     api_docs: str
     question_key: str = "question"  #: :meta private:
     output_key: str = "output"  #: :meta private:
-    request_parser: PydanticOutputParser = PydanticOutputParser(pydantic_object=RequestParams)
+    request_parser: PydanticOutputParser = PydanticOutputParser(
+        pydantic_object=RequestParams
+    )
 
     @property
     def input_keys(self) -> List[str]:
@@ -83,8 +85,10 @@ class APIChain(Chain):
             api_docs=self.api_docs,
             callbacks=_run_manager.get_child(),
         )
-        req_params: RequestParams =  self.request_parser.parse(result)
-        _run_manager.on_text(str(req_params.dict()), color="green", end="\n", verbose=self.verbose)
+        req_params: RequestParams = self.request_parser.parse(result)
+        _run_manager.on_text(
+            str(req_params.dict()), color="green", end="\n", verbose=self.verbose
+        )
         http_method = req_params.method.lower()
         if hasattr(self.requests_wrapper, http_method):
             method = getattr(self.requests_wrapper, http_method)
