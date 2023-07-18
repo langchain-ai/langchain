@@ -1,4 +1,3 @@
-"""Toolkit for interacting with a JSON spec."""
 from __future__ import annotations
 
 from typing import List

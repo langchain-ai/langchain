@@ -27,7 +27,7 @@ class BaseLLMOutputParser(Serializable, ABC, Generic[T]):
 
 
 class BaseOutputParser(BaseLLMOutputParser, ABC, Generic[T]):
-    """Class to parse the output of an LLM call.
+    """Base class to parse the output of an LLM call.
 
     Output parsers help structure language model responses.
 

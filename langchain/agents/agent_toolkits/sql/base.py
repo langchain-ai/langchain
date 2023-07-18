@@ -40,7 +40,7 @@ def create_sql_agent(
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
-    """Construct a sql agent from an LLM and tools."""
+    """Construct an SQL agent from an LLM and tools."""
     tools = toolkit.get_tools()
     prefix = prefix.format(dialect=toolkit.dialect, top_k=top_k)
     agent: BaseSingleActionAgent

@@ -35,7 +35,7 @@ def create_xorbits_agent(
         from xorbits import numpy as np
         from xorbits import pandas as pd
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "Xorbits package not installed, please install with `pip install xorbits`"
         )
 

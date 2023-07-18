@@ -5,6 +5,8 @@ from langchain.schema import AgentAction, AgentFinish, OutputParserException
 
 
 class SelfAskOutputParser(AgentOutputParser):
+    """Output parser for the self-ask agent."""
+
     followups: Sequence[str] = ("Follow up:", "Followup:")
     finish_string: str = "So the final answer is: "
 
