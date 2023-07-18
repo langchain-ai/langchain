@@ -67,7 +67,7 @@ class RetryOutputParser(BaseOutputParser[T]):
             prompt_value: The prompt to use to parse the completion.
 
         Returns:
-
+            The parsed completion.
         """
         try:
             parsed_completion = self.parser.parse(completion)
