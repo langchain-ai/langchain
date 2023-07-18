@@ -165,12 +165,13 @@ class ResultItem(BaseModel, ABC, extra=Extra.allow):
         page_content = combined_text(title, excerpt)
         source = self.DocumentURI
         document_attributes = self.get_document_attributes_dict()
-        metadata = self.get_additional_metadata() | {
+        metadata = self.get_additional_metadata()
+        metadata.update({
             "source": source,
             "title": title,
             "excerpt": excerpt,
             "document_attributes": document_attributes,
-        }
+        })
 
         return Document(page_content=page_content, metadata=metadata)
 
