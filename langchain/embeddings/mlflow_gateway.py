@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from langchain.embeddings.base import Embeddings
 
 
-def chunk(texts: List[str], size: int) -> Iterator[List[str]]:
+def _chunk(texts: List[str], size: int) -> Iterator[List[str]]:
     for i in range(0, len(texts), size):
         yield texts[i : i + size]
 
@@ -39,7 +39,7 @@ class MlflowAIGatewayEmbeddings(Embeddings, BaseModel):
             ) from e
 
         embeddings = []
-        for txt in chunk(texts, 20):
+        for txt in _chunk(texts, 20):
             resp = mlflow.gateway.query(self.route, data={"text": txt})
             embeddings.append(resp["embeddings"])
         return embeddings

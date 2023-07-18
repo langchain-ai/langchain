@@ -46,6 +46,7 @@ mlflow gateway start --config-path /path/to/config.yaml
 ## Completions Example
 
 ```python
+import mlflow
 from langchain import LLMChain, PromptTemplate
 from langchain.llms import MlflowAIGateway
 
@@ -67,6 +68,12 @@ llm_chain = LLMChain(
 )
 result = llm_chain.run(adjective="funny")
 print(result)
+
+with mlflow.start_run():
+    model_info = mlflow.langchain.log_model(chain, "model")
+
+model = mlflow.pyfunc.load_model(model_info.model_uri)
+print(model.predict([{"adjective": "bad"}]))
 ```
 
 ## Embeddings Example
@@ -86,7 +93,7 @@ print(embeddings.embed_documents(["hello"]))
 ## Databricks MLflow AI Gateway
 
 Databricks MLflow AI Gateway is in private preview.
-Please contact Databricks representative to enroll in the preview.
+Please contact a Databricks representative to enroll in the preview.
 
 ```python
 from langchain import LLMChain, PromptTemplate
