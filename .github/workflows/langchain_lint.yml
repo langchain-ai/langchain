@@ -1,5 +1,5 @@
 ---
-name: libs/langchain Lint
+name: libs/langchain
 
 on:
   push:

@@ -34,6 +34,7 @@ jobs:
         uses: "./.github/actions/poetry_setup"
         with:
           python-version: ${{ matrix.python-version }}
+          working-directory: ${{ inputs.working-directory }}
           poetry-version: "1.4.2"
           cache-key: ${{ matrix.test_type }}
           install-command: |
