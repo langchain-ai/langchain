@@ -239,8 +239,12 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         Returns:
             Dict[str, Any]: The computed score.
         """
+        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         vectors = np.array(
-            self.embeddings.embed_documents([inputs["prediction"], inputs["reference"]])
+            self.embeddings.embed_documents(
+                [inputs["prediction"], inputs["reference"]],
+                callbacks=_run_manager.get_child(),
+            )
         )
         score = self._compute_score(vectors)
         return {"score": score}
@@ -260,8 +264,10 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         Returns:
             Dict[str, Any]: The computed score.
         """
+        _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         embedded = await self.embeddings.aembed_documents(
-            [inputs["prediction"], inputs["reference"]]
+            [inputs["prediction"], inputs["reference"]],
+            callbacks=_run_manager.get_child(),
         )
         vectors = np.array(embedded)
         score = self._compute_score(vectors)
@@ -376,9 +382,11 @@ class PairwiseEmbeddingDistanceEvalChain(
         Returns:
             Dict[str, Any]: The computed score.
         """
+        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         vectors = np.array(
             self.embeddings.embed_documents(
-                [inputs["prediction"], inputs["prediction_b"]]
+                [inputs["prediction"], inputs["prediction_b"]],
+                callbacks=_run_manager.get_child(),
             )
         )
         score = self._compute_score(vectors)
@@ -399,8 +407,10 @@ class PairwiseEmbeddingDistanceEvalChain(
         Returns:
             Dict[str, Any]: The computed score.
         """
+        _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         embedded = await self.embeddings.aembed_documents(
-            [inputs["prediction"], inputs["prediction_b"]]
+            [inputs["prediction"], inputs["prediction_b"]],
+            callbacks=_run_manager.get_child(),
         )
         vectors = np.array(embedded)
         score = self._compute_score(vectors)

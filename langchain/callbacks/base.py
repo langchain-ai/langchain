@@ -71,7 +71,7 @@ class LLMManagerMixin:
 class EmbeddingsManagerMixin:
     """Mixin for Embeddings callbacks."""
 
-    def on_embeddings_error(
+    def on_embedding_error(
         self,
         error: Union[Exception, KeyboardInterrupt],
         *,
@@ -81,7 +81,7 @@ class EmbeddingsManagerMixin:
     ) -> Any:
         """Called when an embedding model throws an error."""
 
-    def on_embeddings_end(
+    def on_embedding_end(
         self,
         vector: List[float],
         *,
@@ -210,7 +210,7 @@ class CallbackManagerMixin:
     ) -> Any:
         """Run when Retriever starts running."""
 
-    def on_embeddings_start(
+    def on_embedding_start(
         self,
         serialized: Dict[str, Any],
         texts: List[str],
@@ -375,7 +375,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Run when LLM errors."""
 
-    async def on_embeddings_start(
+    async def on_embedding_start(
         self,
         serialized: Dict[str, Any],
         texts: List[str],
@@ -387,7 +387,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Run when embeddings call starts running."""
 
-    async def on_embeddings_end(
+    async def on_embedding_end(
         self,
         vector: List[float],
         *,
@@ -397,7 +397,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Run when embeddings call ends running."""
 
-    async def on_embeddings_error(
+    async def on_embedding_error(
         self,
         error: Union[Exception, KeyboardInterrupt],
         *,

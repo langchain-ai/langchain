@@ -612,7 +612,7 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
 class CallbackManagerForEmbeddingsRun(RunManager, EmbeddingsManagerMixin):
     """Callback manager for embeddings run."""
 
-    def on_embeddings_end(
+    def on_embedding_end(
         self,
         vector: List[float],
         **kwargs: Any,
@@ -625,7 +625,7 @@ class CallbackManagerForEmbeddingsRun(RunManager, EmbeddingsManagerMixin):
         """
         _handle_event(
             self.handlers,
-            "on_embeddings_end",
+            "on_embedding_end",
             "ignore_embeddings",
             vector,
             run_id=self.run_id,
@@ -633,7 +633,7 @@ class CallbackManagerForEmbeddingsRun(RunManager, EmbeddingsManagerMixin):
             **kwargs,
         )
 
-    def on_embeddings_error(
+    def on_embedding_error(
         self,
         error: Union[Exception, KeyboardInterrupt],
         **kwargs: Any,
@@ -644,7 +644,7 @@ class CallbackManagerForEmbeddingsRun(RunManager, EmbeddingsManagerMixin):
         """
         _handle_event(
             self.handlers,
-            "on_embeddings_error",
+            "on_embedding_error",
             "ignore_embeddings",
             error,
             run_id=self.run_id,
@@ -883,7 +883,7 @@ class AsyncCallbackManagerForChainRun(AsyncParentRunManager, ChainManagerMixin):
 class AsyncCallbackManagerForEmbeddingsRun(ParentRunManager, EmbeddingsManagerMixin):
     """Callback manager for embeddings run."""
 
-    async def on_embeddings_end(
+    async def on_embedding_end(
         self,
         vector: List[float],
         **kwargs: Any,
@@ -896,7 +896,7 @@ class AsyncCallbackManagerForEmbeddingsRun(ParentRunManager, EmbeddingsManagerMi
         """
         await _ahandle_event(
             self.handlers,
-            "on_embeddings_end",
+            "on_embedding_end",
             "ignore_embeddings",
             vector,
             run_id=self.run_id,
@@ -904,7 +904,7 @@ class AsyncCallbackManagerForEmbeddingsRun(ParentRunManager, EmbeddingsManagerMi
             **kwargs,
         )
 
-    async def on_embeddings_error(
+    async def on_embedding_error(
         self,
         error: Union[Exception, KeyboardInterrupt],
         **kwargs: Any,
@@ -915,7 +915,7 @@ class AsyncCallbackManagerForEmbeddingsRun(ParentRunManager, EmbeddingsManagerMi
         """
         await _ahandle_event(
             self.handlers,
-            "on_embeddings_error",
+            "on_embedding_error",
             "ignore_embeddings",
             error,
             run_id=self.run_id,
@@ -1189,7 +1189,7 @@ class CallbackManager(BaseCallbackManager):
 
         return managers
 
-    def on_embeddings_start(
+    def on_embedding_start(
         self,
         serialized: Dict[str, Any],
         texts: List[str],
@@ -1208,7 +1208,7 @@ class CallbackManager(BaseCallbackManager):
             run_id_ = uuid4()
             _handle_event(
                 self.handlers,
-                "on_embeddings_start",
+                "on_embedding_start",
                 "ignore_embeddings",
                 serialized,
                 [text],
@@ -1515,7 +1515,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         await asyncio.gather(*tasks)
         return managers
 
-    async def on_embeddings_start(
+    async def on_embedding_start(
         self,
         serialized: Dict[str, Any],
         texts: List[str],
@@ -1536,7 +1536,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             tasks.append(
                 _ahandle_event(
                     self.handlers,
-                    "on_embeddings_start",
+                    "on_embedding_start",
                     "ignore_embeddings",
                     serialized,
                     [text],

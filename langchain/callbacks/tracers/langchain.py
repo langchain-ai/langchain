@@ -216,6 +216,20 @@ class LangChainTracer(BaseTracer):
         """Process the Retriever Run upon error."""
         self._submit(self._update_run_single, run.copy(deep=True))
 
+    def _on_embedding_start(self, run: Run) -> None:
+        """Process the Embeddings Run upon start."""
+        if run.parent_run_id is None:
+            run.reference_example_id = self.example_id
+        self._submit(self._persist_run_single, run.copy(deep=True))
+
+    def _on_embedding_end(self, run: Run) -> None:
+        """Process the Embeddings Run."""
+        self._submit(self._update_run_single, run.copy(deep=True))
+
+    def _on_embedding_error(self, run: Run) -> None:
+        """Process the Embeddings Run upon error."""
+        self._submit(self._update_run_single, run.copy(deep=True))
+
     def wait_for_futures(self) -> None:
         """Wait for the given futures to complete."""
         futures = list(self._futures)

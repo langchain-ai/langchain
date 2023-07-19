@@ -97,7 +97,7 @@ class Embeddings(ABC):
         )
         run_managers: List[
             CallbackManagerForEmbeddingsRun
-        ] = callback_manager.on_embeddings_start(
+        ] = callback_manager.on_embedding_start(
             {},  # TODO: make embeddings serializable
             texts,
         )
@@ -111,11 +111,11 @@ class Embeddings(ABC):
                 result = self._embed_documents(texts)  # type: ignore[call-arg]
         except Exception as e:
             for run_manager in run_managers:
-                run_manager.on_embeddings_error(e)
+                run_manager.on_embedding_error(e)
             raise e
         else:
             for single_result, run_manager in zip(result, run_managers):
-                run_manager.on_embeddings_end(
+                run_manager.on_embedding_end(
                     single_result,
                 )
             return result
@@ -134,7 +134,7 @@ class Embeddings(ABC):
         )
         run_managers: List[
             CallbackManagerForEmbeddingsRun
-        ] = callback_manager.on_embeddings_start(
+        ] = callback_manager.on_embedding_start(
             {},  # TODO: make embeddings serializable
             [text],
         )
@@ -144,10 +144,10 @@ class Embeddings(ABC):
             else:
                 result = self._embed_query(text)  # type: ignore[call-arg]
         except Exception as e:
-            run_managers[0].on_embeddings_error(e)
+            run_managers[0].on_embedding_error(e)
             raise e
         else:
-            run_managers[0].on_embeddings_end(
+            run_managers[0].on_embedding_end(
                 result,
             )
             return result
@@ -166,7 +166,7 @@ class Embeddings(ABC):
         )
         run_managers: List[
             AsyncCallbackManagerForEmbeddingsRun
-        ] = await callback_manager.on_embeddings_start(
+        ] = await callback_manager.on_embedding_start(
             {},  # TODO: make embeddings serializable
             texts,
         )
@@ -179,12 +179,12 @@ class Embeddings(ABC):
             else:
                 result = await self._aembed_documents(texts)  # type: ignore[call-arg]
         except Exception as e:
-            tasks = [run_manager.on_embeddings_error(e) for run_manager in run_managers]
+            tasks = [run_manager.on_embedding_error(e) for run_manager in run_managers]
             await asyncio.gather(*tasks)
             raise e
         else:
             tasks = [
-                run_manager.on_embeddings_end(
+                run_manager.on_embedding_end(
                     single_result,
                 )
                 for run_manager, single_result in zip(run_managers, result)
@@ -206,7 +206,7 @@ class Embeddings(ABC):
         )
         run_managers: List[
             AsyncCallbackManagerForEmbeddingsRun
-        ] = await callback_manager.on_embeddings_start(
+        ] = await callback_manager.on_embedding_start(
             {},  # TODO: make embeddings serializable
             [text],
         )
@@ -219,10 +219,10 @@ class Embeddings(ABC):
             else:
                 result = await self._aembed_query(text)  # type: ignore[call-arg]
         except Exception as e:
-            await run_managers[0].on_embeddings_error(e)
+            await run_managers[0].on_embedding_error(e)
             raise e
         else:
-            await run_managers[0].on_embeddings_end(
+            await run_managers[0].on_embedding_end(
                 result,
             )
             return result
