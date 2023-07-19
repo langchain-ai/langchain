@@ -234,6 +234,8 @@ class VectorStore(ABC):
         Returns:
             List of Tuples of (doc, similarity_score)
         """
+        score_threshold = kwargs.pop("score_threshold", None)
+
         docs_and_similarities = self._similarity_search_with_relevance_scores(
             query, k=k, **kwargs
         )
@@ -246,7 +248,6 @@ class VectorStore(ABC):
                 f" 0 and 1, got {docs_and_similarities}"
             )
 
-        score_threshold = kwargs.get("score_threshold")
         if score_threshold is not None:
             docs_and_similarities = [
                 (doc, similarity)
