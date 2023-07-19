@@ -11,19 +11,18 @@ class ApifyDatasetLoader(BaseLoader, BaseModel):
     For details, see https://docs.apify.com/platform/integrations/langchain
 
     Example:
-    ```python
-    from langchain.document_loaders import ApifyDatasetLoader
-    from langchain.document_loaders.base import Document
+        .. code-block:: python
 
-    loader = ApifyDatasetLoader(
-        dataset_id="YOUR-DATASET-ID",
-        dataset_mapping_function=lambda dataset_item: Document(
-            page_content=dataset_item["text"], metadata={"source": dataset_item["url"]}
-        ),
-    )
-    documents = loader.load()
-    ```
+            from langchain.document_loaders import ApifyDatasetLoader
+            from langchain.schema import Document
 
+            loader = ApifyDatasetLoader(
+                dataset_id="YOUR-DATASET-ID",
+                dataset_mapping_function=lambda dataset_item: Document(
+                    page_content=dataset_item["text"], metadata={"source": dataset_item["url"]}
+                ),
+            )
+            documents = loader.load()
     """
 
     apify_client: Any
