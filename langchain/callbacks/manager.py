@@ -614,11 +614,10 @@ class CallbackManagerForEmbeddingsRun(RunManager, EmbeddingsManagerMixin):
 
     def on_embeddings_end(
         self,
-        embeddings: List[List[float]],
+        vector: List[float],
         **kwargs: Any,
     ) -> Any:
         """Run when embeddings are generated.
-
         Args:
             embeddings (List[List[float]]): The generated embeddings.
         Returns:
@@ -628,7 +627,7 @@ class CallbackManagerForEmbeddingsRun(RunManager, EmbeddingsManagerMixin):
             self.handlers,
             "on_embeddings_end",
             "ignore_embeddings",
-            embeddings,
+            vector,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
             **kwargs,
@@ -640,7 +639,6 @@ class CallbackManagerForEmbeddingsRun(RunManager, EmbeddingsManagerMixin):
         **kwargs: Any,
     ) -> None:
         """Run when embeddings errors.
-
         Args:
             error (Exception or KeyboardInterrupt): The error.
         """
@@ -887,21 +885,20 @@ class AsyncCallbackManagerForEmbeddingsRun(ParentRunManager, EmbeddingsManagerMi
 
     async def on_embeddings_end(
         self,
-        embeddings: List[List[float]],
+        vector: List[float],
         **kwargs: Any,
     ) -> Any:
         """Run when embeddings are generated.
-
         Args:
-            embeddings (List[List[float]]): The generated embeddings.
+            vector (List[float]): The generated embedding vector.
         Returns:
             Any: The result of the callback.
         """
-        _ahandle_event(
+        await _ahandle_event(
             self.handlers,
             "on_embeddings_end",
             "ignore_embeddings",
-            embeddings,
+            vector,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
             **kwargs,
@@ -912,12 +909,11 @@ class AsyncCallbackManagerForEmbeddingsRun(ParentRunManager, EmbeddingsManagerMi
         error: Union[Exception, KeyboardInterrupt],
         **kwargs: Any,
     ) -> None:
-        """Run when embeddings errors.
-
+        """Run when an embeddings run raises an error.
         Args:
             error (Exception or KeyboardInterrupt): The error.
         """
-        _ahandle_event(
+        await _ahandle_event(
             self.handlers,
             "on_embeddings_error",
             "ignore_embeddings",
@@ -1200,7 +1196,6 @@ class CallbackManager(BaseCallbackManager):
         **kwargs: Any,
     ) -> List[CallbackManagerForEmbeddingsRun]:
         """Run when embeddings model starts running.
-
         Args:
             serialized (Dict[str, Any]): The serialized embeddings model.
             texts (List[str]): The list of texts.
@@ -1221,7 +1216,6 @@ class CallbackManager(BaseCallbackManager):
                 parent_run_id=self.parent_run_id,
                 **kwargs,
             )
-
             managers.append(
                 CallbackManagerForEmbeddingsRun(
                     run_id=run_id_,
@@ -1231,7 +1225,6 @@ class CallbackManager(BaseCallbackManager):
                     inheritable_tags=self.inheritable_tags,
                 )
             )
-
         return managers
 
     def on_chain_start(
@@ -1519,7 +1512,6 @@ class AsyncCallbackManager(BaseCallbackManager):
                     inheritable_metadata=self.inheritable_metadata,
                 )
             )
-
         await asyncio.gather(*tasks)
         return managers
 
@@ -1530,7 +1522,6 @@ class AsyncCallbackManager(BaseCallbackManager):
         **kwargs: Any,
     ) -> List[AsyncCallbackManagerForEmbeddingsRun]:
         """Run when embeddings model starts running.
-
         Args:
             serialized (Dict[str, Any]): The serialized embeddings model.
             texts (List[str]): The list of texts.
@@ -1554,7 +1545,6 @@ class AsyncCallbackManager(BaseCallbackManager):
                     **kwargs,
                 )
             )
-
             managers.append(
                 AsyncCallbackManagerForEmbeddingsRun(
                     run_id=run_id_,

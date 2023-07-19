@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -42,13 +42,11 @@ class BedrockEmbeddings(BaseModel, Embeddings):
     client: Any  #: :meta private:
 
     region_name: Optional[str] = None
-
     """The aws region e.g., `us-west-2`. Fallsback to AWS_DEFAULT_REGION env variable
     or region specified in ~/.aws/config in case it is not provided here.
     """
 
     credentials_profile_name: Optional[str] = None
-
     """The name of the profile in the ~/.aws/credentials or ~/.aws/config files, which
     has either access keys or role information specified.
     If not specified, the default credential profile or, if on an EC2 instance,
@@ -125,8 +123,11 @@ class BedrockEmbeddings(BaseModel, Embeddings):
         except Exception as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
 
-    def embed_documents(
-        self, texts: List[str], chunk_size: int = 1
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingsRun],
     ) -> List[List[float]]:
         """Compute doc embeddings using a Bedrock model.
 
@@ -153,7 +154,6 @@ class BedrockEmbeddings(BaseModel, Embeddings):
         run_manager: CallbackManagerForEmbeddingsRun,
     ) -> List[float]:
         """Embed query text."""
-
         """Compute query embeddings using a Bedrock model.
 
         Args:

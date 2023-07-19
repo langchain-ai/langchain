@@ -1,5 +1,4 @@
 """Wrapper around ModelScopeHub embedding models."""
-
 from typing import Any, List, Sequence
 
 from pydantic import BaseModel, Extra
@@ -29,9 +28,7 @@ class ModelScopeEmbeddings(BaseModel, Embeddings):
 
     def __init__(self, **kwargs: Any):
         """Initialize the modelscope"""
-
         super().__init__(**kwargs)
-
         try:
             from modelscope.pipelines import pipeline
             from modelscope.utils.constant import Tasks
@@ -45,7 +42,6 @@ class ModelScopeEmbeddings(BaseModel, Embeddings):
             ) from e
 
     class Config:
-
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
@@ -64,13 +60,9 @@ class ModelScopeEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-
         texts = list(map(lambda x: x.replace("\n", " "), texts))
-
         inputs = {"source_sentence": texts}
-
         embeddings = self.embed(input=inputs)["text_embedding"]
-
         return embeddings.tolist()
 
     def _embed_query(
@@ -87,11 +79,7 @@ class ModelScopeEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-
         text = text.replace("\n", " ")
-
         inputs = {"source_sentence": [text]}
-
         embedding = self.embed(input=inputs)["text_embedding"][0]
-
         return embedding.tolist()

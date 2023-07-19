@@ -21,8 +21,6 @@ class FakeEmbeddings(Embeddings, BaseModel):
         *,
         run_managers: Sequence[CallbackManagerForEmbeddingsRun],
     ) -> List[List[float]]:
-        """Embed search docs."""
-
         return [self._get_embedding() for _ in texts]
 
     def _embed_query(
@@ -32,5 +30,4 @@ class FakeEmbeddings(Embeddings, BaseModel):
         run_manager: CallbackManagerForEmbeddingsRun,
     ) -> List[float]:
         """Embed query text."""
-
         return self._get_embedding()

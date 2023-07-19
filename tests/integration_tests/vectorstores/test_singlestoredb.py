@@ -4,6 +4,7 @@ from typing import List, Sequence
 import numpy as np
 import pytest
 
+from langchain.callbacks.manager import CallbackManagerForEmbeddingsRun
 from langchain.docstore.document import Document
 from langchain.vectorstores.singlestoredb import SingleStoreDB
 from langchain.vectorstores.utils import DistanceStrategy

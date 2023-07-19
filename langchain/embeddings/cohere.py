@@ -1,5 +1,4 @@
 """Wrapper around Cohere embedding models."""
-
 from typing import Any, Dict, List, Optional, Sequence
 
 from pydantic import BaseModel, Extra, root_validator
@@ -12,7 +11,6 @@ from langchain.utils import get_from_dict_or_env
 
 
 class CohereEmbeddings(BaseModel, Embeddings):
-
     """Wrapper around Cohere embedding models.
 
     To use, you should have the ``cohere`` python package installed, and the
@@ -29,19 +27,15 @@ class CohereEmbeddings(BaseModel, Embeddings):
     """
 
     client: Any  #: :meta private:
-
     model: str = "embed-english-v2.0"
-
     """Model name to use."""
 
     truncate: Optional[str] = None
-
     """Truncate embeddings that are too long from start or end ("NONE"|"START"|"END")"""
 
     cohere_api_key: Optional[str] = None
 
     class Config:
-
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
@@ -49,22 +43,18 @@ class CohereEmbeddings(BaseModel, Embeddings):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-
         cohere_api_key = get_from_dict_or_env(
             values, "cohere_api_key", "COHERE_API_KEY"
         )
-
         try:
             import cohere
 
             values["client"] = cohere.Client(cohere_api_key)
-
         except ImportError:
             raise ValueError(
                 "Could not import cohere python package. "
                 "Please install it with `pip install cohere`."
             )
-
         return values
 
     def _embed_documents(
@@ -81,11 +71,9 @@ class CohereEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-
         embeddings = self.client.embed(
             model=self.model, texts=texts, truncate=self.truncate
         ).embeddings
-
         return [list(map(float, e)) for e in embeddings]
 
     def _embed_query(
@@ -102,9 +90,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-
         embedding = self.client.embed(
             model=self.model, texts=[text], truncate=self.truncate
         ).embeddings[0]
-
         return list(map(float, embedding))

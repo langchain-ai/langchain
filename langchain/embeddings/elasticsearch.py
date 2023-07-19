@@ -11,12 +11,10 @@ if TYPE_CHECKING:
     from elasticsearch import Elasticsearch
     from elasticsearch.client import MlClient
 
-
 from langchain.embeddings.base import Embeddings
 
 
 class ElasticsearchEmbeddings(Embeddings):
-
     """
     Wrapper around Elasticsearch embedding models.
 
@@ -46,11 +44,8 @@ class ElasticsearchEmbeddings(Embeddings):
             input_field (str): The name of the key for the input text field in the
                 document. Defaults to 'text_field'.
         """
-
         self.client = client
-
         self.model_id = model_id
-
         self.input_field = input_field
 
     @classmethod
@@ -101,11 +96,9 @@ class ElasticsearchEmbeddings(Embeddings):
                 ]
                 embeddings_generator.embed_documents(documents)
         """
-
         try:
             from elasticsearch import Elasticsearch
             from elasticsearch.client import MlClient
-
         except ImportError:
             raise ImportError(
                 "elasticsearch package not found, please install with 'pip install "
@@ -113,19 +106,14 @@ class ElasticsearchEmbeddings(Embeddings):
             )
 
         es_cloud_id = es_cloud_id or get_from_env("es_cloud_id", "ES_CLOUD_ID")
-
         es_user = es_user or get_from_env("es_user", "ES_USER")
-
         es_password = es_password or get_from_env("es_password", "ES_PASSWORD")
 
         # Connect to Elasticsearch
-
         es_connection = Elasticsearch(
             cloud_id=es_cloud_id, basic_auth=(es_user, es_password)
         )
-
         client = MlClient(es_connection)
-
         return cls(client, model_id, input_field=input_field)
 
     @classmethod
@@ -182,21 +170,15 @@ class ElasticsearchEmbeddings(Embeddings):
                 ]
                 embeddings_generator.embed_documents(documents)
         """
-
         # Importing MlClient from elasticsearch.client within the method to
-
         # avoid unnecessary import if the method is not used
-
         from elasticsearch.client import MlClient
 
         # Create an MlClient from the given Elasticsearch connection
-
         client = MlClient(es_connection)
 
         # Return a new instance of the ElasticsearchEmbeddings class with
-
         # the MlClient, model_id, and input_field
-
         return cls(client, model_id, input_field=input_field)
 
     def _embedding_func(self, texts: List[str]) -> List[List[float]]:
@@ -210,13 +192,11 @@ class ElasticsearchEmbeddings(Embeddings):
             List[List[float]]: A list of embeddings, one for each text in the input
                 list.
         """
-
         response = self.client.infer_trained_model(
             model_id=self.model_id, docs=[{self.input_field: text} for text in texts]
         )
 
         embeddings = [doc["predicted_value"] for doc in response["inference_results"]]
-
         return embeddings
 
     def _embed_documents(
@@ -225,8 +205,6 @@ class ElasticsearchEmbeddings(Embeddings):
         *,
         run_managers: Sequence[CallbackManagerForEmbeddingsRun],
     ) -> List[List[float]]:
-        """Embed search docs."""
-
         """
         Generate embeddings for a list of documents.
 
@@ -238,7 +216,6 @@ class ElasticsearchEmbeddings(Embeddings):
             List[List[float]]: A list of embeddings, one for each document in the input
                 list.
         """
-
         return self._embedding_func(texts)
 
     def _embed_query(
@@ -248,7 +225,6 @@ class ElasticsearchEmbeddings(Embeddings):
         run_manager: CallbackManagerForEmbeddingsRun,
     ) -> List[float]:
         """Embed query text."""
-
         """
         Generate an embedding for a single query text.
 
@@ -258,5 +234,4 @@ class ElasticsearchEmbeddings(Embeddings):
         Returns:
             List[float]: The embedding for the input query text.
         """
-
         return self._embedding_func([text])[0]

@@ -1,12 +1,9 @@
 """Wrapper around Google VertexAI embedding models."""
-
 from typing import Dict, List, Sequence
 
 from pydantic import root_validator
 
-from langchain.callbacks.manager import (
-    CallbackManagerForEmbeddingsRun,
-)
+from langchain.callbacks.manager import CallbackManagerForEmbeddingsRun
 from langchain.embeddings.base import Embeddings
 from langchain.llms.vertexai import _VertexAICommon
 from langchain.utilities.vertexai import raise_vertex_import_error
@@ -20,17 +17,12 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validates that the python package exists in environment."""
-
         cls._try_init_vertexai(values)
-
         try:
             from vertexai.preview.language_models import TextEmbeddingModel
-
         except ImportError:
             raise_vertex_import_error()
-
         values["client"] = TextEmbeddingModel.from_pretrained(values["model_name"])
-
         return values
 
     def _embed_documents(
@@ -49,16 +41,11 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-
         embeddings = []
-
         for batch in range(0, len(texts), self.batch_size):
             text_batch = texts[batch : batch + self.batch_size]
-
             embeddings_batch = self.client.get_embeddings(text_batch)
-
             embeddings.extend([el.values for el in embeddings_batch])
-
         return embeddings
 
     def _embed_query(
@@ -75,7 +62,5 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
         Returns:
             Embedding for the text.
         """
-
         embeddings = self.client.get_embeddings([text])
-
         return embeddings[0].values

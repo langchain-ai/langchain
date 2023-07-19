@@ -18,7 +18,6 @@ class Embeddings(ABC):
     """Interface for embedding models."""
 
     _new_arg_supported: bool = False
-    _expects_other_args: bool = False
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__()
@@ -46,8 +45,7 @@ class Embeddings(ABC):
             )
             cls._aembed_documents = aswap  # type: ignore[assignment]
         parameters = signature(cls._embed_documents).parameters
-        cls._new_arg_supported = parameters.get("run_manager") is not None
-        cls._expects_other_args = (not cls._new_arg_supported) and len(parameters) > 1
+        cls._new_arg_supported = parameters.get("run_managers") is not None
 
     @abstractmethod
     def _embed_documents(
@@ -94,7 +92,6 @@ class Embeddings(ABC):
         metadata: Optional[Dict[str, Any]] = None,
     ) -> List[List[float]]:
         """Embed search docs."""
-
         callback_manager = CallbackManager.configure(
             callbacks, None, inheritable_tags=tags, inheritable_metadata=metadata
         )
@@ -110,8 +107,6 @@ class Embeddings(ABC):
                     texts,
                     run_managers=run_managers,
                 )
-            elif self._expects_other_args:
-                result = self._embed_documents(texts)
             else:
                 result = self._embed_documents(texts)  # type: ignore[call-arg]
         except Exception as e:
@@ -134,7 +129,6 @@ class Embeddings(ABC):
         metadata: Optional[Dict[str, Any]] = None,
     ) -> List[float]:
         """Embed query text."""
-
         callback_manager = CallbackManager.configure(
             callbacks, None, inheritable_tags=tags, inheritable_metadata=metadata
         )
@@ -147,8 +141,6 @@ class Embeddings(ABC):
         try:
             if self._new_arg_supported:
                 result = self._embed_query(text, run_manager=run_managers[0])
-            elif self._expects_other_args:
-                result = self._embed_query(text)
             else:
                 result = self._embed_query(text)  # type: ignore[call-arg]
         except Exception as e:
@@ -184,10 +176,6 @@ class Embeddings(ABC):
                     texts,
                     run_managers=run_managers,
                 )
-            elif self._expects_other_args:
-                result = await self._aembed_documents(
-                    texts,
-                )
             else:
                 result = await self._aembed_documents(texts)  # type: ignore[call-arg]
         except Exception as e:
@@ -213,7 +201,6 @@ class Embeddings(ABC):
         metadata: Optional[Dict[str, Any]] = None,
     ) -> List[float]:
         """Asynchronously embed query text."""
-
         callback_manager = AsyncCallbackManager.configure(
             callbacks, None, inheritable_tags=tags, inheritable_metadata=metadata
         )
@@ -228,10 +215,6 @@ class Embeddings(ABC):
                 result = await self._aembed_query(
                     text,
                     run_manager=run_managers[0],
-                )
-            elif self._expects_other_args:
-                result = await self._aembed_query(
-                    text,
                 )
             else:
                 result = await self._aembed_query(text)  # type: ignore[call-arg]

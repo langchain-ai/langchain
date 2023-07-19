@@ -90,7 +90,6 @@ class EmbeddingsManagerMixin:
         **kwargs: Any,
     ) -> Any:
         """Called when embeddings model finishes generating embeddings.
-
         Args:
             vector (List[float]): The generated embeddings.
         Returns:
@@ -390,7 +389,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
     async def on_embeddings_end(
         self,
-        outputs: Dict[str, Any],
+        vector: List[float],
         *,
         run_id: UUID,
         parent_run_id: UUID | None = None,

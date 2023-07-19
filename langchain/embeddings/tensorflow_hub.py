@@ -1,5 +1,4 @@
 """Wrapper around TensorflowHub embedding models."""
-
 from typing import Any, List, Sequence
 
 from pydantic import BaseModel, Extra
@@ -13,7 +12,6 @@ DEFAULT_MODEL_URL = "https://tfhub.dev/google/universal-sentence-encoder-multili
 
 
 class TensorflowHubEmbeddings(BaseModel, Embeddings):
-
     """Wrapper around tensorflow_hub embedding models.
 
     To use, you should have the ``tensorflow_text`` python package installed.
@@ -27,28 +25,21 @@ class TensorflowHubEmbeddings(BaseModel, Embeddings):
     """
 
     embed: Any  #: :meta private:
-
     model_url: str = DEFAULT_MODEL_URL
-
     """Model name to use."""
 
     def __init__(self, **kwargs: Any):
         """Initialize the tensorflow_hub and tensorflow_text."""
-
         super().__init__(**kwargs)
-
         try:
             import tensorflow_hub
-
         except ImportError:
             raise ImportError(
                 "Could not import tensorflow-hub python package. "
                 "Please install it with `pip install tensorflow-hub``."
             )
-
         try:
             import tensorflow_text  # noqa
-
         except ImportError:
             raise ImportError(
                 "Could not import tensorflow_text python package. "
@@ -58,7 +49,6 @@ class TensorflowHubEmbeddings(BaseModel, Embeddings):
         self.embed = tensorflow_hub.load(self.model_url)
 
     class Config:
-
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
@@ -77,11 +67,8 @@ class TensorflowHubEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-
         texts = list(map(lambda x: x.replace("\n", " "), texts))
-
         embeddings = self.embed(texts).numpy()
-
         return embeddings.tolist()
 
     def _embed_query(
@@ -98,9 +85,6 @@ class TensorflowHubEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-
         text = text.replace("\n", " ")
-
         embedding = self.embed([text]).numpy()[0]
-
         return embedding.tolist()
