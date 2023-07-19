@@ -1038,7 +1038,7 @@ class BalancedRecursiveCharacterTextSplitter(TextSplitter):
 
     def _split_text(
         self, text: str, separators: List[str], goal_length: Optional[int] = None
-) -> List[str]:
+) -> List[List[str]]:
         """Split incoming text and return chunks."""
 
         # Have to define here initially so it can be redefined for each recursion
