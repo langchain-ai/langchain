@@ -51,6 +51,7 @@ from langchain.document_loaders.fauna import FaunaLoader
 from langchain.document_loaders.figma import FigmaFileLoader
 from langchain.document_loaders.gcs_directory import GCSDirectoryLoader
 from langchain.document_loaders.gcs_file import GCSFileLoader
+from langchain.document_loaders.geodataframe import GeoDataFrameLoader
 from langchain.document_loaders.git import GitLoader
 from langchain.document_loaders.gitbook import GitbookLoader
 from langchain.document_loaders.github import GitHubIssuesLoader
@@ -200,6 +201,7 @@ __all__ = [
     "FileSystemBlobLoader",
     "GCSDirectoryLoader",
     "GCSFileLoader",
+    "GeoDataFrameLoader",
     "GitHubIssuesLoader",
     "GitLoader",
     "GitbookLoader",
