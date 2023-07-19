@@ -36,13 +36,35 @@ pip install ddtrace>=1.17
 ```
 
 
-3. Prefix your LangChain Python application command with `ddtrace-run`.
+3. The LangChain integration can be enabled automatically when you prefix your LangChain Python application command with `ddtrace-run`:
 
 ```
 DD_SERVICE="my-service" DD_ENV="staging" DD_API_KEY=<DATADOG_API_KEY> ddtrace-run python <your-app>.py
 ```
 
 **Note**: If the Agent is using a non-default hostname or port, be sure to also set `DD_AGENT_HOST`, `DD_TRACE_AGENT_PORT`, or `DD_DOGSTATSD_PORT`.
+
+Additionally, the LangChain integration can be enabled programmatically by adding `patch_all()` or `patch(langchain=True)` before the first import of `langchain` in your application.
+
+Note that using `ddtrace-run` or `patch_all()` will also enable the `requests` and `aiohttp` integrations which trace HTTP requests to LLM providers, as well as the `openai` integration which traces requests to the OpenAI library.
+
+```python
+from ddtrace import config, patch
+
+# Note: be sure to configure the integration before calling ``patch()``!
+# eg. config.langchain["logs_enabled"] = True
+
+patch(langchain=True)
+
+# to trace synchronous HTTP requests
+# patch(langchain=True, requests=True)
+
+# to trace asynchronous HTTP requests (to the OpenAI library)
+# patch(langchain=True, aiohttp=True)
+
+# to include underlying OpenAI spans from the OpenAI integration
+# patch(langchain=True, openai=True)patch_all
+```
 
 See the [APM Python library documentation][https://ddtrace.readthedocs.io/en/stable/installation_quickstart.html] for more advanced usage.
 
@@ -60,22 +82,6 @@ To adjust the log sample rate, see the [APM library documentation][https://ddtra
 
 **Note**: Logs submission requires `DD_API_KEY` to be specified when running `ddtrace-run`.
 
-
-## Debug Logging
-
-Pass the `--debug` flag to `ddtrace-run` to enable debug logging.
-
-```
-ddtrace-run --debug
-```
-
-This displays any errors sending data:
-
-```
-ERROR:ddtrace.internal.writer.writer:failed to send, dropping 1 traces to intake at http://localhost:8126/v0.5/traces after 3 retries ([Errno 61] Connection refused)
-WARNING:ddtrace.vendor.dogstatsd:Error submitting packet: [Errno 61] Connection refused, dropping the packet and closing the socket
-DEBUG:ddtrace.contrib._trace_utils_llm.py:sent 2 logs to 'http-intake.logs.datadoghq.com'
-```
 
 ## Troubleshooting
 
