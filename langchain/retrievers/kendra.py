@@ -38,9 +38,12 @@ def combined_text(title: str, excerpt: str) -> str:
         The combined text.
 
     """
-    if not title or not excerpt:
-        return ""
-    return f"Document Title: {title} \nDocument Excerpt: \n{excerpt}\n"
+    text = ""
+    if title:
+        text += f"Document Title: {title}\n"
+    if excerpt:
+        text += f"Document Excerpt: \n{excerpt}\n"
+    return text
 
 
 class Highlight(BaseModel, extra=Extra.allow):
