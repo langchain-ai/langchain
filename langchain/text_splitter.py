@@ -261,15 +261,17 @@ class TextSplitter(BaseDocumentTransformer, ABC):
 class CharacterTextSplitter(TextSplitter):
     """Implementation of splitting text that looks at characters."""
 
-    def __init__(self, separator: str = "\n\n", **kwargs: Any) -> None:
+    def __init__(self, separator: str = "\n\n", is_separator_regex: bool = False, **kwargs: Any) -> None:
         """Create a new TextSplitter."""
         super().__init__(**kwargs)
         self._separator = separator
+        self._is_separator_regex = is_separator_regex
 
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
         # First we naively split the large input into a bunch of smaller ones.
-        splits = _split_text_with_regex(text, self._separator, self._keep_separator)
+        separator = self._separator if self._is_separator_regex else re.escape(self._separator)
+        splits = _split_text_with_regex(text, separator, self._keep_separator)
         _separator = "" if self._keep_separator else self._separator
         return self._merge_splits(splits, _separator)
 
@@ -609,11 +611,13 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         self,
         separators: Optional[List[str]] = None,
         keep_separator: bool = True,
+        is_separator_regex: bool = False,
         **kwargs: Any,
     ) -> None:
         """Create a new TextSplitter."""
         super().__init__(keep_separator=keep_separator, **kwargs)
         self._separators = separators or ["\n\n", "\n", " ", ""]
+        self._is_separator_regex = is_separator_regex
 
     def _split_text(self, text: str, separators: List[str]) -> List[str]:
         """Split incoming text and return chunks."""
@@ -622,15 +626,18 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         separator = separators[-1]
         new_separators = []
         for i, _s in enumerate(separators):
+            _separator = _s if self._is_separator_regex else re.escape(_s)
             if _s == "":
                 separator = _s
                 break
-            if re.search(_s, text):
+            if re.search(_separator, text):
                 separator = _s
                 new_separators = separators[i + 1 :]
                 break
 
-        splits = _split_text_with_regex(text, separator, self._keep_separator)
+        _separator = separator if self._is_separator_regex else re.escape(separator)
+        splits = _split_text_with_regex(text, _separator, self._keep_separator)
+
         # Now go merging things, recursively splitting longer texts.
         _good_splits = []
         _separator = "" if self._keep_separator else separator
