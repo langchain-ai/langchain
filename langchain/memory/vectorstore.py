@@ -25,6 +25,9 @@ class VectorStoreRetrieverMemory(BaseMemory):
     return_docs: bool = False
     """Whether or not to return the result of querying the database directly."""
 
+    exclude_input_keys: Optional[List[str]] = []
+    """Input keys to exclude in addition to memory key when constructing the document"""
+
     @property
     def memory_variables(self) -> List[str]:
         """The list of keys emitted from the load_memory_variables method."""
@@ -55,7 +58,11 @@ class VectorStoreRetrieverMemory(BaseMemory):
     ) -> List[Document]:
         """Format context from this conversation to buffer."""
         # Each document should only include the current turn, not the chat history
-        filtered_inputs = {k: v for k, v in inputs.items() if k != self.memory_key}
+        filtered_inputs = {
+            k: v
+            for k, v in inputs.items()
+            if k not in [self.memory_key] + self.exclude_input_keys
+        }
         texts = [
             f"{k}: {v}"
             for k, v in list(filtered_inputs.items()) + list(outputs.items())
