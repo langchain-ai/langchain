@@ -7,7 +7,8 @@ on:
   pull_request:
     paths:
       - '.github/workflows/_lint.yml'
-      - '.github/workflows/langchain_lint.yml'
+      - '.github/workflows/_test.yml'
+      - '.github/workflows/langchain_ci.yml'
       - 'libs/langchain/**'
   workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
 

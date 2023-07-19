@@ -4,6 +4,7 @@ name: libs/langchain Release
 on:
   pull_request:
     paths:
+      - 'libs/langchain/**'
       - 'libs/langchain/pyproject.toml'
 
 jobs:
