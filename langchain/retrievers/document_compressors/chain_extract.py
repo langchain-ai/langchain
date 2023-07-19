@@ -42,6 +42,9 @@ def _get_default_chain_prompt() -> PromptTemplate:
 
 
 class LLMChainExtractor(BaseDocumentCompressor):
+    """DocumentCompressor that uses an LLM chain to extract
+    the relevant parts of documents."""
+
     llm_chain: LLMChain
     """LLM wrapper to use for compressing documents."""
 

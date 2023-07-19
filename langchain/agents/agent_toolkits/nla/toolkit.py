@@ -1,4 +1,3 @@
-"""Toolkit for interacting with API's using natural language."""
 from __future__ import annotations
 
 from typing import Any, List, Optional, Sequence
@@ -15,7 +14,7 @@ from langchain.tools.plugin import AIPlugin
 
 
 class NLAToolkit(BaseToolkit):
-    """Natural Language API Toolkit Definition."""
+    """Natural Language API Toolkit."""
 
     nla_tools: Sequence[NLATool] = Field(...)
     """List of API Endpoint Tools."""

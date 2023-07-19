@@ -1,4 +1,4 @@
-"""Retriever wrapper for Azure Cognitive Search."""
+"""Retriever for the Azure Cognitive Search service."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ from langchain.utils import get_from_dict_or_env
 
 
 class AzureCognitiveSearchRetriever(BaseRetriever):
-    """Wrapper around Azure Cognitive Search."""
+    """Retriever for the Azure Cognitive Search service."""
 
     service_name: str = ""
     """Name of Azure Cognitive Search service"""

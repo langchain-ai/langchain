@@ -7,15 +7,18 @@ from langchain.schema import BaseOutputParser
 
 
 class RegexParser(BaseOutputParser):
-    """Class to parse the output into a dictionary."""
+    """Parse the output of an LLM call using a regex."""
 
     @property
     def lc_serializable(self) -> bool:
         return True
 
     regex: str
+    """The regex to use to parse the output."""
     output_keys: List[str]
+    """The keys to use for the output."""
     default_output_key: Optional[str] = None
+    """The default key to use for the output."""
 
     @property
     def _type(self) -> str:
