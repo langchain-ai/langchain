@@ -89,7 +89,7 @@ class NucliaUnderstandingAPI(BaseTool):
             if path:
                 return self._pushFile(id, path)
             if text:
-              return self._pushText(id, text)
+                return self._pushText(id, text)
         elif action == "pull":
             return self._pull(id)
         return ""
@@ -159,8 +159,7 @@ class NucliaUnderstandingAPI(BaseTool):
         )
         if response.status_code != 200:
             print(
-                f"Error pushing field {id}:"
-                f"{response.status_code} {response.text}"
+                f"Error pushing field {id}:" f"{response.status_code} {response.text}"
             )
             raise ValueError("Error pushing field")
         else:
@@ -214,7 +213,7 @@ class NucliaUnderstandingAPI(BaseTool):
                 return id
         return None
 
-    def _check_params(self, path: Optional[str], text: Optional[str]):
+    def _check_params(self, path: Optional[str], text: Optional[str]) -> None:
         if not path and not text:
             raise ValueError("File path or text is required")
         if path and text:

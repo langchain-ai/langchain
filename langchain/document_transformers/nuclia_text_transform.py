@@ -1,8 +1,7 @@
-
 import asyncio
 import json
-from typing import Any, Sequence
 import uuid
+from typing import Any, Sequence
 
 from langchain.schema.document import BaseDocumentTransformer, Document
 from langchain.tools.nuclia.tool import NucliaUnderstandingAPI
@@ -26,7 +25,17 @@ class NucliaTextTransformer(BaseDocumentTransformer):
     async def atransform_documents(
         self, documents: Sequence[Document], **kwargs: Any
     ) -> Sequence[Document]:
-        tasks = [self.nua.arun({"action": "push", "id": str(uuid.uuid4()), "text": doc.page_content, "path": None}) for doc in documents]
+        tasks = [
+            self.nua.arun(
+                {
+                    "action": "push",
+                    "id": str(uuid.uuid4()),
+                    "text": doc.page_content,
+                    "path": None,
+                }
+            )
+            for doc in documents
+        ]
         results = await asyncio.gather(*tasks)
         for doc, result in zip(documents, results):
             obj = json.loads(result)
