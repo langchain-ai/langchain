@@ -391,7 +391,7 @@ class ChatOpenAI(BaseChatModel):
                 generation_info=dict(finish_reason=res.get("finish_reason")),
             )
             generations.append(gen)
-        token_usage = response["usage"] if "usage" in response.keys() else {}
+        token_usage = response.get("usage", {})
         llm_output = {"token_usage": token_usage, "model_name": self.model_name}
         return ChatResult(generations=generations, llm_output=llm_output)
 
