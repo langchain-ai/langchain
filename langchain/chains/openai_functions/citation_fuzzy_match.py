@@ -13,7 +13,7 @@ from langchain.schema.messages import HumanMessage, SystemMessage
 
 
 class FactWithEvidence(BaseModel):
-    """Class representing single statement.
+    """Class representing a single statement.
 
     Each fact has a body and a list of sources.
     If there are multiple facts make sure to break them apart

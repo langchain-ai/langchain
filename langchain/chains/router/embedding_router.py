@@ -12,7 +12,7 @@ from langchain.vectorstores.base import VectorStore
 
 
 class EmbeddingRouterChain(RouterChain):
-    """Class that uses embeddings to route between options."""
+    """Chain that uses embeddings to route between options."""
 
     vectorstore: VectorStore
     routing_keys: List[str] = ["query"]
