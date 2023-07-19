@@ -1,3 +1,9 @@
+"""
+Utility functions for langchain.
+
+These functions do not depend on any other langchain modules.
+"""
+
 from langchain.utils.math import cosine_similarity, cosine_similarity_top_k
 from langchain.utils.utils import (
     check_package_version,
