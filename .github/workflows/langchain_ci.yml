@@ -1,5 +1,5 @@
 ---
-name: libs/langchain
+name: libs/langchain CI
 
 on:
   push:

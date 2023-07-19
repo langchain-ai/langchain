@@ -1,13 +1,12 @@
 name: release
 
 on:
-  pull_request:
-    types:
-      - closed
-    branches:
-      - master
-    paths:
-      - 'pyproject.toml'
+  workflow_call:
+    inputs:
+      working-directory:
+        required: true
+        type: string
+        description: "From which folder this pipeline executes"
 
 env:
   POETRY_VERSION: "1.4.2"
@@ -18,6 +17,9 @@ jobs:
         ${{ github.event.pull_request.merged == true }}
         && ${{ contains(github.event.pull_request.labels.*.name, 'release') }}
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
     steps:
       - uses: actions/checkout@v3
       - name: Install poetry
