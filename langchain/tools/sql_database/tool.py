@@ -55,6 +55,7 @@ class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
     ) -> str:
         return await self.db.arun_no_throw(query)
 
+
 class InfoSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
     """Tool for getting metadata about a SQL database."""
 
@@ -104,6 +105,7 @@ class ListSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
         """Get the schema for a specific table."""
         schema = await self.db.aget_usable_table_names()
         return ", ".join(schema)
+
 
 class QuerySQLCheckerTool(BaseSQLDatabaseTool, BaseTool):
     """Use an LLM to check if a query is correct.

@@ -438,7 +438,9 @@ class SQLDatabase:
             """Format the error message"""
             return f"Error: {e}"
 
-    async def aget_table_info_no_throw(self, table_names: Optional[List[str]] = None) -> str:
+    async def aget_table_info_no_throw(
+        self, table_names: Optional[List[str]] = None
+    ) -> str:
         """Get information about specified tables.
 
         Follows best practices as specified in: Rajkumar et al, 2022
