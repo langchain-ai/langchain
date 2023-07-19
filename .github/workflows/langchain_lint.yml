@@ -12,7 +12,7 @@ on:
   workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
 
 jobs:
-  ci-libs-fancy:
+  lint:
     uses:
       ./.github/workflows/_lint.yml
     with:
