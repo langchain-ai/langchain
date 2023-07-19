@@ -1,0 +1,77 @@
+```python
+# This is a long document we can split up.
+with open('../../../state_of_the_union.txt') as f:
+    state_of_the_union = f.read()
+```
+
+
+```python
+import tiktoken
+
+# Instantiate tiktoken to count tokens for us
+tokenizer = tiktoken.encoding_for_model('text-embedding-ada-002')
+
+def tiktoken_len(text):
+        tokens = tokenizer.encode(
+            text,
+            disallowed_special=()
+        )
+        return len(tokens)
+```
+
+
+```python
+# First we try the RecursiveCharacterTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+    chunk_size=1500, chunk_overlap=0
+)
+texts = text_splitter.split_text(state_of_the_union)
+
+# Counts the tokens of each chunk and appends to a list
+token_counts = []
+for text in texts:
+    token_count = tiktoken_len(text)
+    token_counts.append(token_count)
+
+print('Notice the last chunk size.')
+print(token_counts)
+```
+
+<CodeOutputBlock lang="python">
+
+```
+Notice the last chunk is not an ideal size.
+[1322, 1314, 1279, 1266, 1305, 1287, 456]
+```
+
+</CodeOutputBlock>
+
+```python
+# Now we try the BalancedRecursiveCharacterTextSplitter
+from langchain.text_splitter import BalancedRecursiveCharacterTextSplitter
+
+text_splitter = BalancedRecursiveCharacterTextSplitter.from_tiktoken_encoder(
+    chunk_size=1500, chunk_overlap=0
+)
+texts = text_splitter.split_text(state_of_the_union)
+
+# Counts the tokens of each chunk and appends to a list
+token_counts = []
+for text in texts:
+    token_count = tiktoken_len(text)
+    token_counts.append(token_count)
+
+print('Notice the last chunk size.')
+print(token_counts)
+```
+
+<CodeOutputBlock lang="python">
+
+```
+All chunks are now near the same size.
+[1424, 1412, 1383, 1386, 1407, 1375]
+```
+
+</CodeOutputBlock>
