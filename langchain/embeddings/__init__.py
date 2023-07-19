@@ -25,6 +25,7 @@ from langchain.embeddings.llamacpp import LlamaCppEmbeddings
 from langchain.embeddings.minimax import MiniMaxEmbeddings
 from langchain.embeddings.modelscope_hub import ModelScopeEmbeddings
 from langchain.embeddings.mosaicml import MosaicMLInstructorEmbeddings
+from langchain.embeddings.nlpcloud import NLPCloudEmbeddings
 from langchain.embeddings.octoai_embeddings import OctoAIEmbeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.embeddings.sagemaker_endpoint import SagemakerEndpointEmbeddings
@@ -70,6 +71,7 @@ __all__ = [
     "EmbaasEmbeddings",
     "OctoAIEmbeddings",
     "SpacyEmbeddings",
+    "NLPCloudEmbeddings",
 ]
 
 
