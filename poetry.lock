@@ -1611,30 +1611,45 @@ files = [
 ]
 
 [[package]]
+name = "chroma-hnswlib"
+version = "0.7.1"
+description = "Chromas fork of hnswlib"
+category = "dev"
+optional = false
+python-versions = "*"
+files = [
+    {file = "chroma-hnswlib-0.7.1.tar.gz", hash = "sha256:f72592dc7d0522c25cc1f8864db7a3781f179ba989f209cc3ea01694c0d76493"},
+    {file = "chroma_hnswlib-0.7.1-cp310-cp310-macosx_13_0_arm64.whl", hash = "sha256:38f51585d81a5072db70b17207afd1f57670c209836d0fbbf2a1aa7e8bece6b7"},
+]
+
+[package.dependencies]
+numpy = "*"
+
+[[package]]
 name = "chromadb"
-version = "0.3.26"
+version = "0.4.1"
 description = "Chroma."
 category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "chromadb-0.3.26-py3-none-any.whl", hash = "sha256:45a7848ee3ed8b694ca5789e5fd723406b76a13fa46f9a9a769f93317f29894c"},
-    {file = "chromadb-0.3.26.tar.gz", hash = "sha256:a9b596d507f081993f2e32a7dcacabbbec2f6aebc2b6defe524442b07e265296"},
+    {file = "chromadb-0.4.1-py3-none-any.whl", hash = "sha256:980e776bfbb76a2689418b03a254e7edb888961f57b7615f815c8d95f048b396"},
+    {file = "chromadb-0.4.1.tar.gz", hash = "sha256:9b1a76d615dd2280e7b30ff82101ed31c26782a4d832070046309fde82515385"},
 ]
 
 [package.dependencies]
-clickhouse-connect = ">=0.5.7"
-duckdb = ">=0.7.1"
-fastapi = ">=0.85.1"
+chroma-hnswlib = "0.7.1"
+fastapi = ">=0.95.2,<0.100.0"
 graphlib-backport = {version = ">=1.0.3", markers = "python_version < \"3.9\""}
-hnswlib = ">=0.7"
+importlib-resources = "*"
 numpy = ">=1.21.6"
 onnxruntime = ">=1.14.1"
 overrides = ">=7.3.1"
 pandas = ">=1.3"
 posthog = ">=2.4.0"
 pulsar-client = ">=3.1.0"
-pydantic = ">=1.9"
+pydantic = ">=1.9,<2.0"
+pypika = ">=0.48.9"
 requests = ">=2.28"
 tokenizers = ">=0.13.2"
 tqdm = ">=4.65.0"
@@ -3604,7 +3619,7 @@ name = "hnswlib"
 version = "0.7.0"
 description = "hnswlib"
 category = "main"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "hnswlib-0.7.0.tar.gz", hash = "sha256:bc459668e7e44bb7454b256b90c98c5af750653919d9a91698dafcf416cf64c4"},
@@ -8564,6 +8579,17 @@ doc = ["sphinx", "sphinx_rtd_theme"]
 test = ["flake8", "isort", "pytest"]
 
 [[package]]
+name = "pypika"
+version = "0.48.9"
+description = "A SQL query builder API for Python"
+category = "dev"
+optional = false
+python-versions = "*"
+files = [
+    {file = "PyPika-0.48.9.tar.gz", hash = "sha256:838836a61747e7c8380cd1b7ff638694b7a7335345d0f559b04b2cd832ad5378"},
+]
+
+[[package]]
 name = "pyproject-hooks"
 version = "1.0.0"
 description = "Wrappers to call pyproject.toml-based build backend hooks."
@@ -12857,4 +12883,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "f322b36103013bd59c34dddadf84209292ea61ed73bd26fbfa355d372011238b"
+content-hash = "aee2f0c85636738d08d512c53fd551ab43a2e94c1ebf14c6178c9534da75dcaa"
