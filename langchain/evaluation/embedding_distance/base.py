@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 import numpy as np
-from pydantic import Field
+from pydantic import Field, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -15,6 +15,7 @@ from langchain.embeddings.base import Embeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.evaluation.schema import PairwiseStringEvaluator, StringEvaluator
 from langchain.math_utils import cosine_similarity
+from langchain.schema import RUN_KEY
 
 
 class EmbeddingDistance(str, Enum):
@@ -47,6 +48,29 @@ class _EmbeddingDistanceChainMixin(Chain):
     embeddings: Embeddings = Field(default_factory=OpenAIEmbeddings)
     distance_metric: EmbeddingDistance = Field(default=EmbeddingDistance.COSINE)
 
+    @root_validator(pre=False)
+    def _validate_tiktoken_installed(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate that the TikTok library is installed.
+
+        Args:
+            values (Dict[str, Any]): The values to validate.
+
+        Returns:
+            Dict[str, Any]: The validated values.
+        """
+        embeddings = values.get("embeddings")
+        if isinstance(embeddings, OpenAIEmbeddings):
+            try:
+                import tiktoken  # noqa: F401
+            except ImportError:
+                raise ImportError(
+                    "The tiktoken library is required to use the default "
+                    "OpenAI embeddings with embedding distance evaluators."
+                    " Please either manually select a different Embeddings object"
+                    " or install tiktoken using `pip install tiktoken`."
+                )
+        return values
+
     class Config:
         """Permit embeddings to go unvalidated."""
 
@@ -60,6 +84,12 @@ class _EmbeddingDistanceChainMixin(Chain):
             List[str]: The output keys.
         """
         return ["score"]
+
+    def _prepare_output(self, result: dict) -> dict:
+        parsed = {"score": result["score"]}
+        if RUN_KEY in result:
+            parsed[RUN_KEY] = result[RUN_KEY]
+        return parsed
 
     def _get_metric(self, metric: EmbeddingDistance) -> Any:
         """Get the metric function for the given metric name.
@@ -243,6 +273,9 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         prediction: str,
         reference: Optional[str] = None,
         callbacks: Callbacks = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
         """Evaluate the embedding distance between a prediction and
@@ -259,10 +292,14 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
                 - score: The embedding distance between the two
                     predictions.
         """
-        return self(
+        result = self(
             inputs={"prediction": prediction, "reference": reference},
             callbacks=callbacks,
+            tags=tags,
+            metadata=metadata,
+            include_run_info=include_run_info,
         )
+        return self._prepare_output(result)
 
     async def _aevaluate_strings(
         self,
@@ -270,6 +307,9 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         prediction: str,
         reference: Optional[str] = None,
         callbacks: Callbacks = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
         """Asynchronously evaluate the embedding distance between
@@ -286,10 +326,14 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
                 - score: The embedding distance between the two
                     predictions.
         """
-        return await self.acall(
+        result = await self.acall(
             inputs={"prediction": prediction, "reference": reference},
             callbacks=callbacks,
+            tags=tags,
+            metadata=metadata,
+            include_run_info=include_run_info,
         )
+        return self._prepare_output(result)
 
 
 class PairwiseEmbeddingDistanceEvalChain(
@@ -298,10 +342,10 @@ class PairwiseEmbeddingDistanceEvalChain(
     """Use embedding distances to score semantic difference between two predictions.
 
     Examples:
-        >>> chain = PairwiseEmbeddingDistanceEvalChain()
-        >>> result = chain.evaluate_string_pairs(prediction="Hello", prediction_b="Hi")
-        >>> print(result)
-        {'score': 0.5}
+    >>> chain = PairwiseEmbeddingDistanceEvalChain()
+    >>> result = chain.evaluate_string_pairs(prediction="Hello", prediction_b="Hi")
+    >>> print(result)
+    {'score': 0.5}
     """
 
     @property
@@ -370,6 +414,7 @@ class PairwiseEmbeddingDistanceEvalChain(
         callbacks: Callbacks = None,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
         """Evaluate the embedding distance between two predictions.
@@ -392,8 +437,9 @@ class PairwiseEmbeddingDistanceEvalChain(
             callbacks=callbacks,
             tags=tags,
             metadata=metadata,
+            include_run_info=include_run_info,
         )
-        return {"score": result["score"]}
+        return self._prepare_output(result)
 
     async def _aevaluate_string_pairs(
         self,
@@ -403,6 +449,7 @@ class PairwiseEmbeddingDistanceEvalChain(
         callbacks: Callbacks = None,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
         """Asynchronously evaluate the embedding distance
@@ -427,5 +474,6 @@ class PairwiseEmbeddingDistanceEvalChain(
             callbacks=callbacks,
             tags=tags,
             metadata=metadata,
+            include_run_info=include_run_info,
         )
-        return {"score": result["score"]}
+        return self._prepare_output(result)

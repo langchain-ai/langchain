@@ -1,7 +1,3 @@
-"""SMV Retriever.
-Largely based on
-https://github.com/karpathy/randomfun/blob/master/knn_vs_svm.ipynb"""
-
 from __future__ import annotations
 
 import concurrent.futures
@@ -20,6 +16,7 @@ from langchain.schema import BaseRetriever, Document
 def create_index(contexts: List[str], embeddings: Embeddings) -> np.ndarray:
     """
     Create an index of embeddings for a list of contexts.
+
     Args:
         contexts: List of contexts to embed.
         embeddings: Embeddings model to use.
@@ -32,13 +29,22 @@ def create_index(contexts: List[str], embeddings: Embeddings) -> np.ndarray:
 
 
 class SVMRetriever(BaseRetriever):
-    """SVM Retriever."""
+    """SVM Retriever.
+
+    Largely based on
+    https://github.com/karpathy/randomfun/blob/master/knn_vs_svm.ipynb
+    """
 
     embeddings: Embeddings
+    """Embeddings model to use."""
     index: Any
+    """Index of embeddings."""
     texts: List[str]
+    """List of texts to index."""
     k: int = 4
+    """Number of results to return."""
     relevancy_threshold: Optional[float] = None
+    """Threshold for relevancy."""
 
     class Config:
 

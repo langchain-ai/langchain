@@ -36,7 +36,17 @@ def load_agent_from_config(
     tools: Optional[List[Tool]] = None,
     **kwargs: Any,
 ) -> Union[BaseSingleActionAgent, BaseMultiActionAgent]:
-    """Load agent from Config Dict."""
+    """Load agent from Config Dict.
+
+    Args:
+        config: Config dict to load agent from.
+        llm: Language model to use as the agent.
+        tools: List of tools this agent has access to.
+        **kwargs: Additional key word arguments passed to the agent executor.
+
+    Returns:
+        An agent executor.
+    """
     if "_type" not in config:
         raise ValueError("Must specify an agent Type in config")
     load_from_tools = config.pop("load_from_llm_and_tools", False)
@@ -78,7 +88,15 @@ def load_agent_from_config(
 def load_agent(
     path: Union[str, Path], **kwargs: Any
 ) -> Union[BaseSingleActionAgent, BaseMultiActionAgent]:
-    """Unified method for loading a agent from LangChainHub or local fs."""
+    """Unified method for loading an agent from LangChainHub or local fs.
+
+    Args:
+        path: Path to the agent file.
+        **kwargs: Additional key word arguments passed to the agent executor.
+
+    Returns:
+        An agent executor.
+    """
     if hub_result := try_load_from_hub(
         path, _load_agent_from_file, "agents", {"json", "yaml"}
     ):

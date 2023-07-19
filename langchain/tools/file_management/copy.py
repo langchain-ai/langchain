@@ -23,6 +23,8 @@ class FileCopyInput(BaseModel):
 
 
 class CopyFileTool(BaseFileToolMixin, BaseTool):
+    """Tool that copies a file."""
+
     name: str = "copy_file"
     args_schema: Type[BaseModel] = FileCopyInput
     description: str = "Create a copy of a file in a specified location"

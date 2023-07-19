@@ -34,7 +34,8 @@ def create_tagging_chain(
     prompt: Optional[ChatPromptTemplate] = None,
     **kwargs: Any
 ) -> Chain:
-    """Creates a chain that extracts information from a passage.
+    """Creates a chain that extracts information from a passage
+     based on a schema.
 
     Args:
         schema: The schema of the entities to extract.
@@ -63,7 +64,8 @@ def create_tagging_chain_pydantic(
     prompt: Optional[ChatPromptTemplate] = None,
     **kwargs: Any
 ) -> Chain:
-    """Creates a chain that extracts information from a passage.
+    """Creates a chain that extracts information from a passage
+     based on a pydantic schema.
 
     Args:
         pydantic_schema: The pydantic schema of the entities to extract.

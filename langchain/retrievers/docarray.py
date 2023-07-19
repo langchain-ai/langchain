@@ -21,7 +21,7 @@ class SearchType(str, Enum):
 
 class DocArrayRetriever(BaseRetriever):
     """
-    Retriever class for DocArray Document Indices.
+    Retriever for DocArray Document Indices.
 
     Currently, supports 5 backends:
     InMemoryExactNNIndex, HnswDocumentIndex, QdrantDocumentIndex,

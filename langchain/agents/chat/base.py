@@ -24,7 +24,10 @@ from langchain.tools.base import BaseTool
 
 
 class ChatAgent(Agent):
+    """Chat Agent."""
+
     output_parser: AgentOutputParser = Field(default_factory=ChatOutputParser)
+    """Output parser for the agent."""
 
     @property
     def observation_prefix(self) -> str:
