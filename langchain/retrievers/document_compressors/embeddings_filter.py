@@ -9,11 +9,11 @@ from langchain.document_transformers.embeddings_redundant_filter import (
     get_stateful_documents,
 )
 from langchain.embeddings.base import Embeddings
-from langchain.math_utils import cosine_similarity
 from langchain.retrievers.document_compressors.base import (
     BaseDocumentCompressor,
 )
 from langchain.schema import Document
+from langchain.utils.math import cosine_similarity
 
 
 class EmbeddingsFilter(BaseDocumentCompressor):
