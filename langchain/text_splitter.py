@@ -671,7 +671,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         cls, language: Language, **kwargs: Any
     ) -> RecursiveCharacterTextSplitter:
         separators = cls.get_separators_for_language(language)
-        return cls(separators=separators, **kwargs)
+        return cls(separators=separators, is_separator_regex=True, **kwargs)
 
     @staticmethod
     def get_separators_for_language(language: Language) -> List[str]:
