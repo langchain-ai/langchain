@@ -122,6 +122,7 @@ sympy = {version = "^1.12", optional = true}
 rapidfuzz = {version = "^3.1.1", optional = true}
 langsmith = "^0.0.10"
 rank-bm25 = {version = "^0.2.2", optional = true}
+geopandas = {version = "^0.13.1", optional = true}
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
@@ -364,6 +365,7 @@ extended_testing = [
  "rapidfuzz",
  "openai",
  "rank_bm25",
+ "geopandas",
 ]
 
 [[tool.poetry.source]]
