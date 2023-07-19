@@ -108,11 +108,12 @@ class BaseRetriever(Serializable, ABC):
 
     @abstractmethod
     def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+        self, query: str, k: int, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Get documents relevant to a query.
         Args:
             query: String to find relevant documents for
+            k: Number of documents to return
             run_manager: The callbacks handler to use
         Returns:
             List of relevant documents
@@ -120,11 +121,12 @@ class BaseRetriever(Serializable, ABC):
 
     @abstractmethod
     async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
+        self, query: str, k: int, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Asynchronously get documents relevant to a query.
         Args:
             query: String to find relevant documents for
+            k: Number of documents to return
             run_manager: The callbacks handler to use
         Returns:
             List of relevant documents
@@ -133,6 +135,7 @@ class BaseRetriever(Serializable, ABC):
     def get_relevant_documents(
         self,
         query: str,
+        k: int,
         *,
         callbacks: Callbacks = None,
         tags: Optional[List[str]] = None,
@@ -142,6 +145,7 @@ class BaseRetriever(Serializable, ABC):
         """Retrieve documents relevant to a query.
         Args:
             query: string to find relevant documents for
+            k: Number of documents to return
             callbacks: Callback manager or list of callbacks
             tags: Optional list of tags associated with the retriever. Defaults to None
                 These tags will be associated with each call to this retriever,
@@ -172,10 +176,10 @@ class BaseRetriever(Serializable, ABC):
             _kwargs = kwargs if self._expects_other_args else {}
             if self._new_arg_supported:
                 result = self._get_relevant_documents(
-                    query, run_manager=run_manager, **_kwargs
+                    query=query, k=k, run_manager=run_manager, **_kwargs
                 )
             else:
-                result = self._get_relevant_documents(query, **_kwargs)
+                result = self._get_relevant_documents(query=query, k=k, **_kwargs)
         except Exception as e:
             run_manager.on_retriever_error(e)
             raise e
@@ -189,6 +193,7 @@ class BaseRetriever(Serializable, ABC):
     async def aget_relevant_documents(
         self,
         query: str,
+        k: int,
         *,
         callbacks: Callbacks = None,
         tags: Optional[List[str]] = None,
@@ -198,6 +203,7 @@ class BaseRetriever(Serializable, ABC):
         """Asynchronously get documents relevant to a query.
         Args:
             query: string to find relevant documents for
+            k: Number of documents to return
             callbacks: Callback manager or list of callbacks
             tags: Optional list of tags associated with the retriever. Defaults to None
                 These tags will be associated with each call to this retriever,
@@ -228,10 +234,10 @@ class BaseRetriever(Serializable, ABC):
             _kwargs = kwargs if self._expects_other_args else {}
             if self._new_arg_supported:
                 result = await self._aget_relevant_documents(
-                    query, run_manager=run_manager, **_kwargs
+                    query=query, k=k, run_manager=run_manager, **_kwargs
                 )
             else:
-                result = await self._aget_relevant_documents(query, **_kwargs)
+                result = await self._aget_relevant_documents(query=query, k=k, **_kwargs)
         except Exception as e:
             await run_manager.on_retriever_error(e)
             raise e
