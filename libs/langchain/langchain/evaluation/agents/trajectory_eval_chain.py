@@ -36,6 +36,8 @@ class TrajectoryEval(NamedTuple):
 
 
 class TrajectoryOutputParser(BaseOutputParser):
+    """Trajectory output parser."""
+
     @property
     def _type(self) -> str:
         return "agent_trajectory"
