@@ -1561,13 +1561,13 @@ numpy = "*"
 
 [[package]]
 name = "chromadb"
-version = "0.4.2"
+version = "0.4.1"
 description = "Chroma."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "chromadb-0.4.2-py3-none-any.whl", hash = "sha256:e5bef53a14485f5d4e1f8332c503d026ce4efde382db59a5f128897b2969fe91"},
-    {file = "chromadb-0.4.2.tar.gz", hash = "sha256:38292ab647a86ea97a697b063cbab23edad0b28afd6a85049b1d8c7ccd0b3534"},
+    {file = "chromadb-0.4.1-py3-none-any.whl", hash = "sha256:980e776bfbb76a2689418b03a254e7edb888961f57b7615f815c8d95f048b396"},
+    {file = "chromadb-0.4.1.tar.gz", hash = "sha256:9b1a76d615dd2280e7b30ff82101ed31c26782a4d832070046309fde82515385"},
 ]
 
 [package.dependencies]
@@ -2174,12 +2174,12 @@ files = [
 
 [[package]]
 name = "deeplake"
-version = "3.6.8"
+version = "3.6.11"
 description = "Activeloop Deep Lake"
 optional = false
 python-versions = "*"
 files = [
-    {file = "deeplake-3.6.8.tar.gz", hash = "sha256:ab795d555e8b8e1c8f886cd5f587bbbdc903e96c35f9de7d505d9c347521e61a"},
+    {file = "deeplake-3.6.11.tar.gz", hash = "sha256:97e22aa56e0a48dc935597f46a6f968393a4f95e799fa1df8bc7997231a40892"},
 ]
 
 [package.dependencies]
