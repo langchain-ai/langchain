@@ -24,7 +24,7 @@ class NLPCloudEmbeddings(BaseModel, Embeddings):
     client: Any  #: :meta private:
 
     def __init__(
-        self, model_name: str = "paraphrase-multilingual-mpnet-base-v2", **kwargs
+        self, model_name: str = "paraphrase-multilingual-mpnet-base-v2", **kwargs: Any
     ) -> None:
         super().__init__(model_name=model_name, **kwargs)
 
