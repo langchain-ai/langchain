@@ -1,5 +1,5 @@
 from typing import List
-from unittest import TestCase
+from unittest import TestCase, mock
 from unittest.mock import MagicMock, patch
 
 import requests
@@ -37,35 +37,27 @@ class TestCubeSemanticLoader(TestCase):
 
         expected_docs: List[Document] = [
             Document(
-                page_content=(
-                    "table name: cube1, "
-                    "column name: sales, "
-                    "column data type: sum, "
-                    "column title: Sales, "
-                    "column description: None"
-                ),
+                page_content="Sales, None",
                 metadata={
                     "table_name": "cube1",
                     "column_name": "sales",
                     "column_data_type": "sum",
+                    "column_member_type": "measure",
                     "column_title": "Sales",
                     "column_description": "None",
+                    "column_values": [],
                 },
             ),
             Document(
-                page_content=(
-                    "table name: cube1, "
-                    "column name: product_name, "
-                    "column data type: string, "
-                    "column title: Product Name, "
-                    "column description: None"
-                ),
+                page_content="Product Name, None",
                 metadata={
                     "table_name": "cube1",
                     "column_name": "product_name",
                     "column_data_type": "string",
+                    "column_member_type": "dimension",
                     "column_title": "Product Name",
                     "column_description": "None",
+                    "column_values": [],
                 },
             ),
         ]
@@ -78,7 +70,7 @@ class TestCubeSemanticLoader(TestCase):
         # Assert
         self.assertEqual(result, expected_docs)
         mock_get.assert_called_once_with(
-            cube_api_url,
+            f"{cube_api_url}/meta",
             headers={
                 "Content-Type": "application/json",
                 "Authorization": cube_api_token,

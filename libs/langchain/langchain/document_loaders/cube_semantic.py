@@ -17,8 +17,8 @@ class CubeSemanticLoader(BaseLoader):
         cube_api_token: str,
         load_dimension_values: bool = True,
         dimension_values_limit: int = 10_000,
-        dimension_values_max_retries: int = 3,
-        dimension_values_retry_delay: int = 2,
+        dimension_values_max_retries: int = 10,
+        dimension_values_retry_delay: int = 3,
     ):
         self.cube_api_url = cube_api_url
         """REST API endpoint.
@@ -99,13 +99,15 @@ class CubeSemanticLoader(BaseLoader):
 
         Returns:
             A list of documents with attributes:
-                - page_content=column_name
+                - page_content=column_title + column_description
                 - metadata
                     - table_name
                     - column_name
                     - column_data_type
+                    - column_member_type
                     - column_title
                     - column_description
+                    - column_values
         """
         headers = {
             "Content-Type": "application/json",
@@ -147,7 +149,7 @@ class CubeSemanticLoader(BaseLoader):
                     column_title=str(item.get("title")),
                     column_description=str(item.get("description")),
                     column_member_type=column_member_type,
-                    dimension_values=dimension_values,
+                    column_values=dimension_values,
                 )
 
                 page_content = f"{str(item.get('title'))}, "
