@@ -1,7 +1,7 @@
 from langchain.experimental.autonomous_agents.autogpt.agent import AutoGPT
 from langchain.experimental.autonomous_agents.baby_agi.baby_agi import BabyAGI
-from langchain.experimental.generative_agents.generative_agent import GenerativeAgent
 from langchain.experimental.autonomous_agents.hugginggpt.hugginggpt import HuggingGPT
+from langchain.experimental.generative_agents.generative_agent import GenerativeAgent
 from langchain.experimental.generative_agents.memory import GenerativeAgentMemory
 from langchain.experimental.plan_and_execute import (
     PlanAndExecute,
@@ -18,5 +18,4 @@ __all__ = [
     "PlanAndExecute",
     "load_agent_executor",
     "load_chat_planner",
-    
 ]

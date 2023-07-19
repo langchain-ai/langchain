@@ -1,11 +1,14 @@
 import copy
 import uuid
-import numpy as np
+from typing import Dict, List
+
 import cv2
-from typing import List, Dict
-from langchain.experimental.autonomous_agents.hugginggpt.task_planner import Plan
+import numpy as np
 from diffusers.utils import load_image
+
+from langchain.experimental.autonomous_agents.hugginggpt.task_planner import Plan
 from langchain.tools.base import BaseTool
+
 
 class Task:
     def __init__(self, task: str, id: int, dep: List[int], args: Dict, tool: BaseTool):
@@ -13,7 +16,7 @@ class Task:
         self.id = id
         self.dep = dep
         self.args = args
-        self.tool= tool
+        self.tool = tool
         self.result = ""
         self.status = "pending"
         self.message = None
@@ -39,21 +42,20 @@ class Task:
             filename = uuid.uuid4().hex[:6] + ".png"
             self.result.save(filename)
             self.result = filename
-            
 
     def completed(self) -> bool:
         return self.status == "completed"
-    
+
     def failed(self) -> bool:
         return self.status == "failed"
-    
+
     def pending(self) -> bool:
         return self.status == "pending"
 
     def run(self) -> str:
         try:
             new_args = copy.deepcopy(self.args)
-            for k,v in new_args.items():
+            for k, v in new_args.items():
                 if k == "image":
                     new_args["image"] = load_image(v)
             self.result = self.tool(**new_args)
@@ -65,13 +67,11 @@ class Task:
 
         return self.result
 
+
 class TaskExecutor:
     """Load tools to execute tasks."""
 
-    def __init__(
-        self,   
-        plan: Plan
-    ):
+    def __init__(self, plan: Plan):
         self.plan = plan
         self.tasks = []
         self.id_task_map = {}
@@ -80,13 +80,13 @@ class TaskExecutor:
             task = Task(step.task, step.id, step.dep, step.args, step.tool)
             self.tasks.append(task)
             self.id_task_map[step.id] = task
-    
+
     def completed(self) -> bool:
         return all(task.completed() for task in self.tasks)
-    
+
     def failed(self) -> bool:
         return any(task.failed() for task in self.tasks)
-    
+
     def pending(self) -> bool:
         return any(task.pending() for task in self.tasks)
 
@@ -98,7 +98,7 @@ class TaskExecutor:
             if dep_task.failed() or dep_task.pending():
                 return False
         return True
-    
+
     def update_args(self, task: Task) -> None:
         for dep_id in task.dep:
             if dep_id == -1:
@@ -118,7 +118,7 @@ class TaskExecutor:
             self.status = "completed"
         elif self.failed():
             self.status = "failed"
-        else:   
+        else:
             self.status = "pending"
         return self.status
 
@@ -132,9 +132,9 @@ class TaskExecutor:
             if task.completed():
                 result += f"result: {task.result}\n"
         return result
-    
+
     def __repr__(self) -> str:
         return self.__str__()
-    
+
     def describe(self) -> str:
         return self.__str__()

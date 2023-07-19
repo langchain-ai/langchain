@@ -1,8 +1,9 @@
-from typing import Any, Optional, List
+from typing import Any, List, Optional
+
 from langchain import LLMChain, PromptTemplate
 from langchain.base_language import BaseLanguageModel
-
 from langchain.callbacks.manager import Callbacks
+
 
 class ResponseGenerationChain(LLMChain):
     """Chain to execute tasks."""
@@ -19,7 +20,7 @@ class ResponseGenerationChain(LLMChain):
             input_variables=["task_execution"],
         )
         return cls(prompt=prompt, llm=llm, verbose=verbose)
-    
+
 
 class ResponseGenerator:
     def __init__(self, llm_chain: LLMChain, stop: Optional[List] = None):
@@ -30,7 +31,8 @@ class ResponseGenerator:
         """Given input, decided what to do."""
         llm_response = self.llm_chain.run(**inputs, stop=self.stop, callbacks=callbacks)
         return llm_response
-    
+
+
 def load_response_generator(llm: BaseLanguageModel) -> ResponseGenerator:
     llm_chain = ResponseGenerationChain.from_llm(llm)
     return ResponseGenerator(
