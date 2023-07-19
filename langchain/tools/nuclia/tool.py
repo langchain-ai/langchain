@@ -8,6 +8,7 @@ Installation:
 ```
 """
 
+import asyncio
 import base64
 import mimetypes
 import os
@@ -84,10 +85,7 @@ class NucliaUnderstandingAPI(BaseTool):
     ) -> str:
         """Use the tool."""
         if action == "push":
-            if not path and not text:
-                raise ValueError("File path or text is required")
-            if path and text:
-                raise ValueError("Cannot process both file and text on a single run")
+            self._check_params(path, text)
             if path:
                 return self._pushFile(id, path)
             if text:
@@ -105,7 +103,18 @@ class NucliaUnderstandingAPI(BaseTool):
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool asynchronously."""
-        raise NotImplementedError("NucliaUnderstandingAPI does not support async")
+        self._check_params(path, text)
+        if path:
+            self._pushFile(id, path)
+        if text:
+            self._pushText(id, text)
+        data = None
+        while True:
+            data = self._pull(id)
+            if data:
+                break
+            await asyncio.sleep(15)
+        return data
 
     def _pushText(self, id: str, text: str) -> str:
         field = {
@@ -204,3 +213,9 @@ class NucliaUnderstandingAPI(BaseTool):
             if result["uuid"] == uuid:
                 return id
         return None
+
+    def _check_params(self, path: Optional[str], text: Optional[str]):
+        if not path and not text:
+            raise ValueError("File path or text is required")
+        if path and text:
+            raise ValueError("Cannot process both file and text on a single run")

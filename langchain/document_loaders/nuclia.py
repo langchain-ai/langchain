@@ -1,4 +1,4 @@
-"""Loader that loads Nuclia Understanding API results."""
+"""Extract text from any file type."""
 import json
 import uuid
 from typing import List
@@ -9,7 +9,7 @@ from langchain.tools.nuclia.tool import NucliaUnderstandingAPI
 
 
 class NucliaLoader(BaseLoader):
-    """Loader that loads Nuclia Understanding API results."""
+    """Extract text from any file type."""
 
     def __init__(self, path: str, nuclia_tool: NucliaUnderstandingAPI):
         self.nua = nuclia_tool

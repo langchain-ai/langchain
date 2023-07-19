@@ -1,6 +1,8 @@
+import asyncio
 import base64
 import json
 import os
+import pytest
 from typing import Any
 from unittest import mock
 
@@ -78,5 +80,25 @@ def test_nuclia_tool() -> None:
                 assert uuid == "fake_uuid"
                 data = nua.run(
                     {"action": "pull", "id": "1", "path": None, "text": None}
+                )
+                assert json.loads(data)["uuid"] == "fake_uuid"
+
+@pytest.mark.asyncio
+@mock.patch.dict(os.environ, {"NUCLIA_NUA_KEY": "_a_key_"})
+async def test_async_call():
+    with mock.patch(
+        "nucliadb_protos.writer_pb2.BrokerMessage.ParseFromString",
+        new_callable=FakeParseFromString,
+    ):
+        with mock.patch("requests.post", new_callable=fakepost):
+            with mock.patch("requests.get", new_callable=fakeget):
+                nua = NucliaUnderstandingAPI(enable_ml=False)
+                data = await nua.arun(
+                    {
+                        "action": "push",
+                        "id": "1",
+                        "path": "/Users/ebr/dev/nuclia/docs/README.md",
+                        "text": None,
+                    }
                 )
                 assert json.loads(data)["uuid"] == "fake_uuid"
