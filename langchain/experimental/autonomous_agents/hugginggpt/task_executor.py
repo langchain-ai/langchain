@@ -4,6 +4,8 @@ from typing import Dict, List
 
 import cv2
 import numpy as np
+from typing import List, Dict, Union
+from langchain.experimental.autonomous_agents.hugginggpt.task_planner import Plan
 from diffusers.utils import load_image
 
 from langchain.experimental.autonomous_agents.hugginggpt.task_planner import Plan
@@ -17,30 +19,30 @@ class Task:
         self.dep = dep
         self.args = args
         self.tool = tool
-        self.result = ""
         self.status = "pending"
-        self.message = None
+        self.message = ""
+        self.result = ""
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.task}({self.args})"
 
-    def save_result(self) -> None:
+    def save_product(self) -> None:
         if self.task == "video_generator":
             # ndarray to video
-            result = np.array(self.result)
-            nframe, height, width, _ = result.shape
+            product = np.array(self.product)
+            nframe, height, width, _ = product.shape
             video_filename = uuid.uuid4().hex[:6] + ".mp4"
             fps = 30  # Frames per second
             fourcc = cv2.VideoWriter_fourcc(*"mp4v")  # Codec for MP4 video
             video_out = cv2.VideoWriter(video_filename, fourcc, fps, (width, height))
-            for frame in self.result:
+            for frame in self.product:
                 video_out.write(frame)
             video_out.release()
             self.result = video_filename
         elif self.task == "image_generator":
             # PIL.Image to image
             filename = uuid.uuid4().hex[:6] + ".png"
-            self.result.save(filename)
+            self.product.save(filename)
             self.result = filename
 
     def completed(self) -> bool:
@@ -58,12 +60,15 @@ class Task:
             for k, v in new_args.items():
                 if k == "image":
                     new_args["image"] = load_image(v)
-            self.result = self.tool(**new_args)
+            if self.task in ["video_generator", "image_generator", "text_reader"]:
+                self.product = self.tool(**new_args)
+            else:
+                self.result = self.tool(**new_args)
         except Exception as e:
             self.status = "failed"
             self.message = str(e)
         self.status = "completed"
-        self.save_result()
+        self.save_product()
 
         return self.result
 

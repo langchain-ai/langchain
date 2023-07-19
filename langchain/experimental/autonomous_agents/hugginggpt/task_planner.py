@@ -1,10 +1,6 @@
 import json
 import re
-from abc import abstractmethod
-from typing import Any, Dict, List, Optional
-
-from pydantic import BaseModel
-
+from typing import Any, Dict, List, Optional, Union
 from langchain import LLMChain
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import Callbacks
@@ -54,7 +50,7 @@ class TaskPlaningChain(LLMChain):
         )
         human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
 
-        demo_messages = []
+        demo_messages: List[Union[HumanMessagePromptTemplate, AIMessagePromptTemplate]] = []
         for demo in demos:
             if demo["role"] == "user":
                 demo_messages.append(
@@ -88,10 +84,10 @@ class Plan:
     def __init__(self, steps: List[Step]):
         self.steps = steps
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str([str(step) for step in self.steps])
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self)
 
 
@@ -144,7 +140,7 @@ class TaskPlanner(BasePlanner):
         llm_response = await self.llm_chain.arun(
             **inputs, stop=self.stop, callbacks=callbacks
         )
-        return self.output_parser.parse(llm_response)
+        return self.output_parser.parse(llm_response, inputs["hf_tools"])
 
 
 def load_chat_planner(llm: BaseLanguageModel) -> TaskPlanner:
