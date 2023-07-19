@@ -10,7 +10,10 @@ FINAL_ANSWER_ACTION = "Final Answer:"
 
 
 class ChatOutputParser(AgentOutputParser):
+    """Output parser for the chat agent."""
+
     pattern = re.compile(r"^.*?`{3}(?:json)?\n(.*?)`{3}.*?$", re.DOTALL)
+    """Regex pattern to parse the output."""
 
     def get_format_instructions(self) -> str:
         return FORMAT_INSTRUCTIONS

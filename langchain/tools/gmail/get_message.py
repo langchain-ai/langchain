@@ -13,6 +13,8 @@ from langchain.tools.gmail.utils import clean_email_body
 
 
 class SearchArgsSchema(BaseModel):
+    """Input for GetMessageTool."""
+
     message_id: str = Field(
         ...,
         description="The unique ID of the email message, retrieved from a search.",
@@ -20,6 +22,8 @@ class SearchArgsSchema(BaseModel):
 
 
 class GmailGetMessage(GmailBaseTool):
+    """Tool that gets a message by ID from Gmail."""
+
     name: str = "get_gmail_message"
     description: str = (
         "Use this tool to fetch an email by message ID."

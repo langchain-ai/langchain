@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import json
 import re
-from typing import List
+from json import JSONDecodeError
+from typing import Any, List
 
-from langchain.schema import OutputParserException
+from langchain.schema import BaseOutputParser, OutputParserException
 
 
 def parse_json_markdown(json_string: str) -> dict:
@@ -59,3 +60,18 @@ def parse_and_check_json_markdown(text: str, expected_keys: List[str]) -> dict:
                 f"to be present, but got {json_obj}"
             )
     return json_obj
+
+
+class SimpleJsonOutputParser(BaseOutputParser[Any]):
+    """Parse the output of an LLM call to a JSON object."""
+
+    def parse(self, text: str) -> Any:
+        text = text.strip()
+        try:
+            return json.loads(text)
+        except JSONDecodeError as e:
+            raise OutputParserException(f"Invalid json output: {text}") from e
+
+    @property
+    def _type(self) -> str:
+        return "simple_json_output_parser"

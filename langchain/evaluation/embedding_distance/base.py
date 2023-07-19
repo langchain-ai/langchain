@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 import numpy as np
-from pydantic import Field
+from pydantic import Field, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -47,6 +47,29 @@ class _EmbeddingDistanceChainMixin(Chain):
 
     embeddings: Embeddings = Field(default_factory=OpenAIEmbeddings)
     distance_metric: EmbeddingDistance = Field(default=EmbeddingDistance.COSINE)
+
+    @root_validator(pre=False)
+    def _validate_tiktoken_installed(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate that the TikTok library is installed.
+
+        Args:
+            values (Dict[str, Any]): The values to validate.
+
+        Returns:
+            Dict[str, Any]: The validated values.
+        """
+        embeddings = values.get("embeddings")
+        if isinstance(embeddings, OpenAIEmbeddings):
+            try:
+                import tiktoken  # noqa: F401
+            except ImportError:
+                raise ImportError(
+                    "The tiktoken library is required to use the default "
+                    "OpenAI embeddings with embedding distance evaluators."
+                    " Please either manually select a different Embeddings object"
+                    " or install tiktoken using `pip install tiktoken`."
+                )
+        return values
 
     class Config:
         """Permit embeddings to go unvalidated."""
@@ -319,10 +342,10 @@ class PairwiseEmbeddingDistanceEvalChain(
     """Use embedding distances to score semantic difference between two predictions.
 
     Examples:
-        >>> chain = PairwiseEmbeddingDistanceEvalChain()
-        >>> result = chain.evaluate_string_pairs(prediction="Hello", prediction_b="Hi")
-        >>> print(result)
-        {'score': 0.5}
+    >>> chain = PairwiseEmbeddingDistanceEvalChain()
+    >>> result = chain.evaluate_string_pairs(prediction="Hello", prediction_b="Hi")
+    >>> print(result)
+    {'score': 0.5}
     """
 
     @property

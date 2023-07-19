@@ -53,7 +53,10 @@ class StringDistance(str, Enum):
 class _RapidFuzzChainMixin(Chain):
     """Shared methods for the rapidfuzz string distance evaluators."""
 
-    distance: StringDistance = Field(default=StringDistance.LEVENSHTEIN)
+    distance: StringDistance = Field(default=StringDistance.JARO_WINKLER)
+    normalize_score: bool = Field(default=True)
+    """Whether to normalize the score to a value between 0 and 1.
+    Applies only to the Levenshtein and Damerau-Levenshtein distances."""
 
     @root_validator
     def validate_dependencies(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -130,8 +133,27 @@ class _RapidFuzzChainMixin(Chain):
         """
         return _RapidFuzzChainMixin._get_metric(self.distance)
 
+    def compute_metric(self, a: str, b: str) -> float:
+        """
+        Compute the distance between two strings.
 
-class StringDistanceEvalChain(_RapidFuzzChainMixin, StringEvaluator):
+        Args:
+            a (str): The first string.
+            b (str): The second string.
+
+        Returns:
+            float: The distance between the two strings.
+        """
+        score = self.metric(a, b)
+        if self.normalize_score and self.distance in (
+            StringDistance.DAMERAU_LEVENSHTEIN,
+            StringDistance.LEVENSHTEIN,
+        ):
+            score = score / max(len(a), len(b))
+        return score
+
+
+class StringDistanceEvalChain(StringEvaluator, _RapidFuzzChainMixin):
     """Compute string distances between the prediction and the reference.
 
     Examples
@@ -204,7 +226,7 @@ class StringDistanceEvalChain(_RapidFuzzChainMixin, StringEvaluator):
         Returns:
             Dict[str, Any]: The evaluation results containing the score.
         """
-        return {"score": self.metric(inputs["reference"], inputs["prediction"])}
+        return {"score": self.compute_metric(inputs["reference"], inputs["prediction"])}
 
     async def _acall(
         self,
@@ -223,7 +245,7 @@ class StringDistanceEvalChain(_RapidFuzzChainMixin, StringEvaluator):
         Returns:
             Dict[str, Any]: The evaluation results containing the score.
         """
-        return {"score": self.metric(inputs["reference"], inputs["prediction"])}
+        return {"score": self.compute_metric(inputs["reference"], inputs["prediction"])}
 
     def _evaluate_strings(
         self,
@@ -296,7 +318,7 @@ class StringDistanceEvalChain(_RapidFuzzChainMixin, StringEvaluator):
         return self._prepare_output(result)
 
 
-class PairwiseStringDistanceEvalChain(_RapidFuzzChainMixin, PairwiseStringEvaluator):
+class PairwiseStringDistanceEvalChain(PairwiseStringEvaluator, _RapidFuzzChainMixin):
     """Compute string edit distances between two predictions."""
 
     @property
@@ -335,7 +357,9 @@ class PairwiseStringDistanceEvalChain(_RapidFuzzChainMixin, PairwiseStringEvalua
         Returns:
             Dict[str, Any]: The evaluation results containing the score.
         """
-        return {"score": self.metric(inputs["prediction"], inputs["prediction_b"])}
+        return {
+            "score": self.compute_metric(inputs["prediction"], inputs["prediction_b"])
+        }
 
     async def _acall(
         self,
@@ -353,7 +377,9 @@ class PairwiseStringDistanceEvalChain(_RapidFuzzChainMixin, PairwiseStringEvalua
         Returns:
             Dict[str, Any]: The evaluation results containing the score.
         """
-        return {"score": self.metric(inputs["prediction"], inputs["prediction_b"])}
+        return {
+            "score": self.compute_metric(inputs["prediction"], inputs["prediction_b"])
+        }
 
     def _evaluate_string_pairs(
         self,

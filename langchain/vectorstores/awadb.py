@@ -12,9 +12,6 @@ from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
-# from pydantic import BaseModel, Field, root_validator
-
-
 if TYPE_CHECKING:
     import awadb
 
@@ -36,12 +33,16 @@ class AwaDB(VectorStore):
         **kwargs: Any,
     ) -> None:
         """Initialize with AwaDB client.
+           If table_name is not specified,
+           a random table name of `_DEFAULT_TABLE_NAME + last segment of uuid`
+           would be created automatically.
+
         Args:
-            table_name: Iterable of strings to add to the vectorstore.
-            embedding: Optional list of metadatas associated with the texts.
-            log_and_data_dir: Optional whether to duplicate texts.
+            table_name: Name of the table created, default _DEFAULT_TABLE_NAME.
+            embedding: Optional Embeddings initially set.
+            log_and_data_dir: Optional the root directory of log and data.
             client: Optional AwaDB client.
-            kwargs: any possible extend parameters in the future.
+            kwargs: Any possible extend parameters in the future.
 
         Returns:
             None.
@@ -83,7 +84,7 @@ class AwaDB(VectorStore):
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
-            is_duplicate_texts: Optional whether to duplicate texts.
+            is_duplicate_texts: Optional whether to duplicate texts. Defaults to True.
             kwargs: any possible extend parameters in the future.
 
         Returns:
@@ -131,6 +132,8 @@ class AwaDB(VectorStore):
         self,
         query: str,
         k: int = DEFAULT_TOPN,
+        text_in_page_content: Optional[str] = None,
+        meta_filter: Optional[dict] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to query.
@@ -138,6 +141,13 @@ class AwaDB(VectorStore):
         Args:
             query: Text query.
             k: The maximum number of documents to return.
+            text_in_page_content: Filter by the text in page_content of Document.
+            meta_filter (Optional[dict]): Filter by metadata. Defaults to None.
+            E.g. `{"color" : "red", "price": 4.20}`. Optional.
+            E.g. `{"max_price" : 15.66, "min_price": 4.20}`
+            `price` is the metadata field, means range filter(4.20<'price'<15.66).
+            E.g. `{"maxe_price" : 15.66, "mine_price": 4.20}`
+            `price` is the metadata field, means range filter(4.20<='price'<=15.66).
             kwargs: Any possible extend parameters in the future.
 
         Returns:
@@ -158,13 +168,19 @@ class AwaDB(VectorStore):
 
         not_include_fields: Set[str] = {"text_embedding", "_id", "score"}
         return self.similarity_search_by_vector(
-            embedding, k, not_include_fields_in_metadata=not_include_fields
+            embedding,
+            k,
+            text_in_page_content=text_in_page_content,
+            meta_filter=meta_filter,
+            not_include_fields_in_metadata=not_include_fields,
         )
 
     def similarity_search_with_score(
         self,
         query: str,
         k: int = DEFAULT_TOPN,
+        text_in_page_content: Optional[str] = None,
+        meta_filter: Optional[dict] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """The most k similar documents and scores of the specified query.
@@ -172,6 +188,8 @@ class AwaDB(VectorStore):
         Args:
             query: Text query.
             k: The k most similar documents to the text query.
+            text_in_page_content: Filter by the text in page_content of Document.
+            meta_filter: Filter by metadata. Defaults to None.
             kwargs: Any possible extend parameters in the future.
 
         Returns:
@@ -193,78 +211,37 @@ class AwaDB(VectorStore):
 
         results: List[Tuple[Document, float]] = []
 
-        dists: List[float] = []
-        not_include_fields: Set[str] = {"text_embedding", "_id", "score"}
+        not_include_fields: Set[str] = {"text_embedding", "_id"}
         retrieval_docs = self.similarity_search_by_vector(
             embedding,
             k,
-            scores=dists,
+            text_in_page_content=text_in_page_content,
+            meta_filter=meta_filter,
             not_include_fields_in_metadata=not_include_fields,
         )
 
-        doc_no = 0
         for doc in retrieval_docs:
-            doc_tuple = (doc, dists[doc_no])
+            score = doc.metadata["score"]
+            del doc.metadata["score"]
+            doc_tuple = (doc, score)
             results.append(doc_tuple)
-            doc_no = doc_no + 1
 
         return results
 
-    def similarity_search_with_relevance_scores(
+    def _similarity_search_with_relevance_scores(
         self,
         query: str,
-        k: int = DEFAULT_TOPN,
+        k: int = 4,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        """Return docs and relevance scores
-           which denote the InnerProduct distance, range from 0 to 1.
-
-        Args:
-            query: Text query.
-            k: Number of the most similar documents to return. Defaults to 4.
-
-        Returns:
-            List of (Document, relevance_score) tuples similar to the text query.
-            Note that relevance_score ranged from 0 to 1.
-            0 is dissimilar, 1 is the most similar.
-        """
-
-        if self.awadb_client is None:
-            raise ValueError("AwaDB client is None!!!")
-
-        embedding = None
-        if self.using_table_name in self.table2embeddings:
-            embedding = self.table2embeddings[self.using_table_name].embed_query(query)
-
-        show_results = self.awadb_client.Search(embedding, k)
-
-        results: List[Tuple[Document, float]] = []
-
-        if show_results.__len__() == 0:
-            return results
-
-        dists: List[float] = []
-        not_include_fields: Set[str] = {"text_embedding", "_id", "score"}
-        retrieval_docs = self.similarity_search_by_vector(
-            embedding,
-            k,
-            scores=dists,
-            not_include_fields_in_metadata=not_include_fields,
-        )
-
-        doc_no = 0
-        for doc in retrieval_docs:
-            doc_tuple = (doc, dists[doc_no])
-            results.append(doc_tuple)
-            doc_no = doc_no + 1
-
-        return results
+        return self.similarity_search_with_score(query, k, **kwargs)
 
     def similarity_search_by_vector(
         self,
         embedding: Optional[List[float]] = None,
         k: int = DEFAULT_TOPN,
-        scores: Optional[list] = None,
+        text_in_page_content: Optional[str] = None,
+        meta_filter: Optional[dict] = None,
         not_include_fields_in_metadata: Optional[Set[str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -273,7 +250,8 @@ class AwaDB(VectorStore):
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            scores: Scores for retrieved docs.
+            text_in_page_content: Filter by the text in page_content of Document.
+            meta_filter: Filter by metadata. Defaults to None.
             not_incude_fields_in_metadata: Not include meta fields of each document.
 
         Returns:
@@ -289,7 +267,11 @@ class AwaDB(VectorStore):
             return results
 
         show_results = self.awadb_client.Search(
-            embedding, k, not_include_fields=not_include_fields_in_metadata
+            embedding,
+            k,
+            text_in_page_content=text_in_page_content,
+            meta_filter=meta_filter,
+            not_include_fields=not_include_fields_in_metadata,
         )
 
         if show_results.__len__() == 0:
@@ -302,10 +284,6 @@ class AwaDB(VectorStore):
                 if item_key == "embedding_text":
                     content = item_detail[item_key]
                     continue
-                elif item_key == "score":
-                    if scores is not None:
-                        scores.append(item_detail[item_key])
-                        continue
                 elif not_include_fields_in_metadata is not None:
                     if item_key in not_include_fields_in_metadata:
                         continue
@@ -319,6 +297,8 @@ class AwaDB(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
+        text_in_page_content: Optional[str] = None,
+        meta_filter: Optional[dict] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -334,6 +314,9 @@ class AwaDB(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
+            text_in_page_content: Filter by the text in page_content of Document.
+            meta_filter (Optional[dict]): Filter by metadata. Defaults to None.
+
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -353,7 +336,12 @@ class AwaDB(VectorStore):
             return []
 
         results = self.max_marginal_relevance_search_by_vector(
-            embedding, k, fetch_k, lambda_mult=lambda_mult
+            embedding,
+            k,
+            fetch_k,
+            lambda_mult=lambda_mult,
+            text_in_page_content=text_in_page_content,
+            meta_filter=meta_filter,
         )
         return results
 
@@ -363,6 +351,8 @@ class AwaDB(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
+        text_in_page_content: Optional[str] = None,
+        meta_filter: Optional[dict] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -378,6 +368,9 @@ class AwaDB(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
+            text_in_page_content: Filter by the text in page_content of Document.
+            meta_filter (Optional[dict]): Filter by metadata. Defaults to None.
+
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -392,7 +385,11 @@ class AwaDB(VectorStore):
 
         not_include_fields: set = {"_id", "score"}
         retrieved_docs = self.similarity_search_by_vector(
-            embedding, fetch_k, not_include_fields_in_metadata=not_include_fields
+            embedding,
+            fetch_k,
+            text_in_page_content=text_in_page_content,
+            meta_filter=meta_filter,
+            not_include_fields_in_metadata=not_include_fields,
         )
 
         top_embeddings = []
@@ -412,29 +409,43 @@ class AwaDB(VectorStore):
 
     def get(
         self,
-        ids: List[str],
+        ids: Optional[List[str]] = None,
+        text_in_page_content: Optional[str] = None,
+        meta_filter: Optional[dict] = None,
         not_include_fields: Optional[Set[str]] = None,
+        limit: Optional[int] = None,
         **kwargs: Any,
     ) -> Dict[str, Document]:
         """Return docs according ids.
 
         Args:
             ids: The ids of the embedding vectors.
+            text_in_page_content: Filter by the text in page_content of Document.
+            meta_filter: Filter by any metadata of the document.
+            not_include_fields: Not pack the specified fields of each document.
+            limit: The number of documents to return. Defaults to 5. Optional.
+
         Returns:
-            Documents which have the ids.
+            Documents which satisfy the input conditions.
         """
 
         if self.awadb_client is None:
             raise ValueError("AwaDB client is None!!!")
 
-        docs_detail = self.awadb_client.Get(ids, not_include_fields=not_include_fields)
+        docs_detail = self.awadb_client.Get(
+            ids=ids,
+            text_in_page_content=text_in_page_content,
+            meta_filter=meta_filter,
+            not_include_fields=not_include_fields,
+            limit=limit,
+        )
 
         results: Dict[str, Document] = {}
         for doc_detail in docs_detail:
             content = ""
             meta_info = {}
             for field in doc_detail:
-                if field == "embeddint_text":
+                if field == "embedding_text":
                     content = doc_detail[field]
                     continue
                 elif field == "text_embedding" or field == "_id":

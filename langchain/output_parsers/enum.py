@@ -7,7 +7,10 @@ from langchain.schema import BaseOutputParser, OutputParserException
 
 
 class EnumOutputParser(BaseOutputParser):
+    """Parse an output that is one of a set of values."""
+
     enum: Type[Enum]
+    """The enum to parse. Its values must be strings."""
 
     @root_validator()
     def raise_deprecation(cls, values: Dict) -> Dict:

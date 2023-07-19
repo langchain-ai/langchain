@@ -313,8 +313,10 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
             {"result": f"Result for example {example.id}"} for _ in range(n_repetitions)
         ]
 
-    def mock_create_project(*args: Any, **kwargs: Any) -> None:
-        pass
+    def mock_create_project(*args: Any, **kwargs: Any) -> Any:
+        proj = mock.MagicMock()
+        proj.id = "123"
+        return proj
 
     with mock.patch.object(
         Client, "read_dataset", new=mock_read_dataset

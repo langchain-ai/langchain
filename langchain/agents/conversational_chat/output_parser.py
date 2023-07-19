@@ -9,6 +9,8 @@ from langchain.schema import AgentAction, AgentFinish, OutputParserException
 
 
 class ConvoOutputParser(AgentOutputParser):
+    """Output parser for the conversational agent."""
+
     def get_format_instructions(self) -> str:
         return FORMAT_INSTRUCTIONS
 

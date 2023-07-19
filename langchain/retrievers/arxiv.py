@@ -10,7 +10,8 @@ from langchain.utilities.arxiv import ArxivAPIWrapper
 
 class ArxivRetriever(BaseRetriever, ArxivAPIWrapper):
     """
-    It is effectively a wrapper for ArxivAPIWrapper.
+    Retriever for Arxiv.
+
     It wraps load() to get_relevant_documents().
     It uses all ArxivAPIWrapper arguments without any change.
     """
