@@ -1012,9 +1012,9 @@ class BalancedRecursiveCharacterTextSplitter(TextSplitter):
 
     def __init__(
         self,
-        goal_length: int = None,
-        max_length: int = None,
-        chunk_overlap: int = None,
+        goal_length: Optional[int] = None,
+        max_length: Optional[int] = None,
+        chunk_overlap: Optional[int] = None,
         separators: Optional[List[str]] = None,
         keep_separator=True,
         **kwargs: Any,
@@ -1069,8 +1069,8 @@ class BalancedRecursiveCharacterTextSplitter(TextSplitter):
                     combo_token_count < self.goal_length * 0.75
                     and len(final_combos) > 1
                 ):
-                    new_goal_length = goal_length + (
-                        combo_token_count / (len(final_combos) - 1)
+                    new_goal_length = int(goal_length + (
+                        combo_token_count / (len(final_combos) - 1))
                     )
                     final_combos = self._split_text(text, separators, new_goal_length)
                 # If a combo of splits is too large, we retry with new separator
@@ -1083,7 +1083,7 @@ class BalancedRecursiveCharacterTextSplitter(TextSplitter):
         # All combos satisfy requirements
         return final_combos
 
-    def distribute_splits(self, splits: list, goal_length: int):
+    def distribute_splits(self, splits: list, goal_length: int) -> List[str]:
         # Build initial combos
         combos = []
         current_combo = []
