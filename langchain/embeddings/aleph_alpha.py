@@ -78,13 +78,14 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
         try:
             from aleph_alpha_client import Client
 
-            values["client"] = Client(token=aleph_alpha_api_key,
-                                      host=values["host"],
-                                      hosting=values["hosting"],
-                                      request_timeout_seconds=values["request_timeout_seconds"],
-                                      total_retries=values["total_retries"],
-                                      nice=values["nice"],
-                                      )
+            values["client"] = Client(
+                token=aleph_alpha_api_key,
+                host=values["host"],
+                hosting=values["hosting"],
+                request_timeout_seconds=values["request_timeout_seconds"],
+                total_retries=values["total_retries"],
+                nice=values["nice"],
+            )
         except ImportError:
             raise ValueError(
                 "Could not import aleph_alpha_client python package. "

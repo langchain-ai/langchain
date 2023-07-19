@@ -167,13 +167,14 @@ class AlephAlpha(LLM):
         try:
             from aleph_alpha_client import Client
 
-            values["client"] = Client(token=aleph_alpha_api_key,
-                                      host=values["host"],
-                                      hosting=values["hosting"],
-                                      request_timeout_seconds=values["request_timeout_seconds"],
-                                      total_retries=values["total_retries"],
-                                      nice=values["nice"],
-                                      )
+            values["client"] = Client(
+                token=aleph_alpha_api_key,
+                host=values["host"],
+                hosting=values["hosting"],
+                request_timeout_seconds=values["request_timeout_seconds"],
+                total_retries=values["total_retries"],
+                nice=values["nice"],
+            )
         except ImportError:
             raise ImportError(
                 "Could not import aleph_alpha_client python package. "
@@ -270,7 +271,8 @@ class AlephAlpha(LLM):
             text = enforce_stop_tokens(text, params["stop_sequences"])
         return text
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     aa = AlephAlpha()
 
     print(aa("How are you?"))
