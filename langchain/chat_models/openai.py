@@ -107,8 +107,6 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             additional_kwargs = {"function_call": dict(_dict["function_call"])}
         else:
             additional_kwargs = {}
-
-        print(content, additional_kwargs)
         return AIMessage(content=content, additional_kwargs=additional_kwargs)
     elif role == "system":
         return SystemMessage(content=_dict["content"])
