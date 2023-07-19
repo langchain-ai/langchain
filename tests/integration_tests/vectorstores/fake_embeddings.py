@@ -1,7 +1,8 @@
 """Fake Embedding class for testing purposes."""
 import math
-from typing import List
+from typing import List, Sequence
 
+from langchain.callbacks.manager import CallbackManagerForEmbeddingsRun
 from langchain.embeddings.base import Embeddings
 
 fake_texts = ["foo", "bar", "baz"]
@@ -10,12 +11,22 @@ fake_texts = ["foo", "bar", "baz"]
 class FakeEmbeddings(Embeddings):
     """Fake embeddings functionality for testing."""
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingsRun],
+    ) -> List[List[float]]:
         """Return simple embeddings.
         Embeddings encode each text as its index."""
         return [[float(1.0)] * 9 + [float(i)] for i in range(len(texts))]
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingsRun,
+    ) -> List[float]:
         """Return constant query embeddings.
         Embeddings are identical to embed_documents(texts)[0].
         Distance to each text will be that text's index,
@@ -31,7 +42,12 @@ class ConsistentFakeEmbeddings(FakeEmbeddings):
         self.known_texts: List[str] = []
         self.dimensionality = dimensionality
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingsRun],
+    ) -> List[List[float]]:
         """Return consistent embeddings for each text seen so far."""
         out_vectors = []
         for text in texts:
@@ -43,7 +59,12 @@ class ConsistentFakeEmbeddings(FakeEmbeddings):
             out_vectors.append(vector)
         return out_vectors
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingsRun,
+    ) -> List[float]:
         """Return consistent embeddings for the text, if seen before, or a constant
         one if the text is unknown."""
         if text not in self.known_texts:
@@ -58,13 +79,23 @@ class AngularTwoDimensionalEmbeddings(Embeddings):
     From angles (as strings in units of pi) to unit embedding vectors on a circle.
     """
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingsRun],
+    ) -> List[List[float]]:
         """
         Make a list of texts into a list of embedding vectors.
         """
         return [self.embed_query(text) for text in texts]
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingsRun,
+    ) -> List[float]:
         """
         Convert input text to a 'vector' (list of floats).
         If the text is a number, use it as the angle for the

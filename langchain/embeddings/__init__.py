@@ -1,4 +1,5 @@
 """Wrappers around embedding modules."""
+
 import logging
 from typing import Any
 
@@ -41,6 +42,7 @@ from langchain.embeddings.vertexai import VertexAIEmbeddings
 
 logger = logging.getLogger(__name__)
 
+
 __all__ = [
     "OpenAIEmbeddings",
     "HuggingFaceEmbeddings",
@@ -76,12 +78,15 @@ __all__ = [
 
 
 # TODO: this is in here to maintain backwards compatibility
+
+
 class HypotheticalDocumentEmbedder:
     def __init__(self, *args: Any, **kwargs: Any):
         logger.warning(
             "Using a deprecated class. Please use "
             "`from langchain.chains import HypotheticalDocumentEmbedder` instead"
         )
+
         from langchain.chains.hyde.base import HypotheticalDocumentEmbedder as H
 
         return H(*args, **kwargs)  # type: ignore
@@ -92,6 +97,7 @@ class HypotheticalDocumentEmbedder:
             "Using a deprecated class. Please use "
             "`from langchain.chains import HypotheticalDocumentEmbedder` instead"
         )
+
         from langchain.chains.hyde.base import HypotheticalDocumentEmbedder as H
 
         return H.from_llm(*args, **kwargs)

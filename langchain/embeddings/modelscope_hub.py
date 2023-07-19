@@ -1,8 +1,12 @@
 """Wrapper around ModelScopeHub embedding models."""
-from typing import Any, List
+
+from typing import Any, List, Sequence
 
 from pydantic import BaseModel, Extra
 
+from langchain.callbacks.manager import (
+    CallbackManagerForEmbeddingsRun,
+)
 from langchain.embeddings.base import Embeddings
 
 
@@ -25,7 +29,9 @@ class ModelScopeEmbeddings(BaseModel, Embeddings):
 
     def __init__(self, **kwargs: Any):
         """Initialize the modelscope"""
+
         super().__init__(**kwargs)
+
         try:
             from modelscope.pipelines import pipeline
             from modelscope.utils.constant import Tasks
@@ -39,11 +45,17 @@ class ModelScopeEmbeddings(BaseModel, Embeddings):
             ) from e
 
     class Config:
+
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingsRun],
+    ) -> List[List[float]]:
         """Compute doc embeddings using a modelscope embedding model.
 
         Args:
@@ -52,12 +64,21 @@ class ModelScopeEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
+
         texts = list(map(lambda x: x.replace("\n", " "), texts))
+
         inputs = {"source_sentence": texts}
+
         embeddings = self.embed(input=inputs)["text_embedding"]
+
         return embeddings.tolist()
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingsRun,
+    ) -> List[float]:
         """Compute query embeddings using a modelscope embedding model.
 
         Args:
@@ -66,7 +87,11 @@ class ModelScopeEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
+
         text = text.replace("\n", " ")
+
         inputs = {"source_sentence": [text]}
+
         embedding = self.embed(input=inputs)["text_embedding"][0]
+
         return embedding.tolist()

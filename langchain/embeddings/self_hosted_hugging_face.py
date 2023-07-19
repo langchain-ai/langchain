@@ -1,16 +1,24 @@
 """Wrapper around HuggingFace embedding models for self-hosted remote hardware."""
+
 import importlib
 import logging
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, List, Optional, Sequence
 
+from langchain.callbacks.manager import (
+    CallbackManagerForEmbeddingsRun,
+)
 from langchain.embeddings.self_hosted import SelfHostedEmbeddings
 
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
+
 DEFAULT_INSTRUCT_MODEL = "hkunlp/instructor-large"
+
 DEFAULT_EMBED_INSTRUCTION = "Represent the document for retrieval: "
+
 DEFAULT_QUERY_INSTRUCTION = (
     "Represent the question for retrieving supporting documents: "
 )
+
 
 logger = logging.getLogger(__name__)
 
@@ -21,15 +29,18 @@ def _embed_documents(client: Any, *args: Any, **kwargs: Any) -> List[List[float]
     Accepts a sentence_transformer model_id and
     returns a list of embeddings for each document in the batch.
     """
+
     return client.encode(*args, **kwargs)
 
 
 def load_embedding_model(model_id: str, instruct: bool = False, device: int = 0) -> Any:
     """Load the embedding model."""
+
     if not instruct:
         import sentence_transformers
 
         client = sentence_transformers.SentenceTransformer(model_id)
+
     else:
         from InstructorEmbedding import INSTRUCTOR
 
@@ -39,11 +50,13 @@ def load_embedding_model(model_id: str, instruct: bool = False, device: int = 0)
         import torch
 
         cuda_device_count = torch.cuda.device_count()
+
         if device < -1 or (device >= cuda_device_count):
             raise ValueError(
                 f"Got device=={device}, "
                 f"device is required to be within [-1, {cuda_device_count})"
             )
+
         if device < 0 and cuda_device_count > 0:
             logger.warning(
                 "Device has %d GPUs available. "
@@ -54,10 +67,12 @@ def load_embedding_model(model_id: str, instruct: bool = False, device: int = 0)
             )
 
         client = client.to(device)
+
     return client
 
 
 class SelfHostedHuggingFaceEmbeddings(SelfHostedEmbeddings):
+
     """Runs sentence_transformers embedding models on self-hosted remote hardware.
 
     Supported hardware includes auto-launched instances on AWS, GCP, Azure,
@@ -78,29 +93,47 @@ class SelfHostedHuggingFaceEmbeddings(SelfHostedEmbeddings):
     """
 
     client: Any  #: :meta private:
+
     model_id: str = DEFAULT_MODEL_NAME
+
     """Model name to use."""
+
     model_reqs: List[str] = ["./", "sentence_transformers", "torch"]
+
     """Requirements to install on hardware to inference the model."""
+
     hardware: Any
+
     """Remote hardware to send the inference function to."""
+
     model_load_fn: Callable = load_embedding_model
+
     """Function to load the model remotely on the server."""
+
     load_fn_kwargs: Optional[dict] = None
+
     """Key word arguments to pass to the model load function."""
+
     inference_fn: Callable = _embed_documents
+
     """Inference function to extract the embeddings."""
 
     def __init__(self, **kwargs: Any):
         """Initialize the remote inference function."""
+
         load_fn_kwargs = kwargs.pop("load_fn_kwargs", {})
+
         load_fn_kwargs["model_id"] = load_fn_kwargs.get("model_id", DEFAULT_MODEL_NAME)
+
         load_fn_kwargs["instruct"] = load_fn_kwargs.get("instruct", False)
+
         load_fn_kwargs["device"] = load_fn_kwargs.get("device", 0)
+
         super().__init__(load_fn_kwargs=load_fn_kwargs, **kwargs)
 
 
 class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
+
     """Runs InstructorEmbedding embedding models on self-hosted remote hardware.
 
     Supported hardware includes auto-launched instances on AWS, GCP, Azure,
@@ -122,25 +155,44 @@ class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
     """
 
     model_id: str = DEFAULT_INSTRUCT_MODEL
+
     """Model name to use."""
+
     embed_instruction: str = DEFAULT_EMBED_INSTRUCTION
+
     """Instruction to use for embedding documents."""
+
     query_instruction: str = DEFAULT_QUERY_INSTRUCTION
+
     """Instruction to use for embedding query."""
+
     model_reqs: List[str] = ["./", "InstructorEmbedding", "torch"]
+
     """Requirements to install on hardware to inference the model."""
 
     def __init__(self, **kwargs: Any):
         """Initialize the remote inference function."""
+
         load_fn_kwargs = kwargs.pop("load_fn_kwargs", {})
+
         load_fn_kwargs["model_id"] = load_fn_kwargs.get(
             "model_id", DEFAULT_INSTRUCT_MODEL
         )
+
         load_fn_kwargs["instruct"] = load_fn_kwargs.get("instruct", True)
+
         load_fn_kwargs["device"] = load_fn_kwargs.get("device", 0)
+
         super().__init__(load_fn_kwargs=load_fn_kwargs, **kwargs)
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingsRun],
+    ) -> List[List[float]]:
+        """Embed search docs."""
+
         """Compute doc embeddings using a HuggingFace instruct model.
 
         Args:
@@ -149,13 +201,24 @@ class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
         Returns:
             List of embeddings, one for each text.
         """
+
         instruction_pairs = []
+
         for text in texts:
             instruction_pairs.append([self.embed_instruction, text])
+
         embeddings = self.client(self.pipeline_ref, instruction_pairs)
+
         return embeddings.tolist()
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingsRun,
+    ) -> List[float]:
+        """Embed query text."""
+
         """Compute query embeddings using a HuggingFace instruct model.
 
         Args:
@@ -164,6 +227,9 @@ class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
         Returns:
             Embeddings for the text.
         """
+
         instruction_pair = [self.query_instruction, text]
+
         embedding = self.client(self.pipeline_ref, [instruction_pair])[0]
+
         return embedding.tolist()

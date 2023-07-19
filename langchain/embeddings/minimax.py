@@ -1,8 +1,9 @@
 """Wrapper around MiniMax APIs."""
+
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 import requests
 from pydantic import BaseModel, Extra, root_validator
@@ -13,6 +14,9 @@ from tenacity import (
     wait_exponential,
 )
 
+from langchain.callbacks.manager import (
+    CallbackManagerForEmbeddingsRun,
+)
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
 
@@ -23,8 +27,11 @@ def _create_retry_decorator() -> Callable[[Any], Any]:
     """Returns a tenacity retry decorator."""
 
     multiplier = 1
+
     min_seconds = 1
+
     max_seconds = 4
+
     max_retries = 6
 
     return retry(
@@ -37,6 +44,7 @@ def _create_retry_decorator() -> Callable[[Any], Any]:
 
 def embed_with_retry(embeddings: MiniMaxEmbeddings, *args: Any, **kwargs: Any) -> Any:
     """Use tenacity to retry the completion call."""
+
     retry_decorator = _create_retry_decorator()
 
     @retry_decorator
@@ -47,6 +55,7 @@ def embed_with_retry(embeddings: MiniMaxEmbeddings, *args: Any, **kwargs: Any) -
 
 
 class MiniMaxEmbeddings(BaseModel, Embeddings):
+
     """Wrapper around MiniMax's embedding inference service.
 
     To use, you should have the environment variable ``MINIMAX_GROUP_ID`` and
@@ -68,20 +77,31 @@ class MiniMaxEmbeddings(BaseModel, Embeddings):
     """
 
     endpoint_url: str = "https://api.minimax.chat/v1/embeddings"
+
     """Endpoint URL to use."""
+
     model: str = "embo-01"
+
     """Embeddings model name to use."""
+
     embed_type_db: str = "db"
+
     """For embed_documents"""
+
     embed_type_query: str = "query"
+
     """For embed_query"""
 
     minimax_group_id: Optional[str] = None
+
     """Group ID for MiniMax API."""
+
     minimax_api_key: Optional[str] = None
+
     """API Key for MiniMax API."""
 
     class Config:
+
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
@@ -89,14 +109,19 @@ class MiniMaxEmbeddings(BaseModel, Embeddings):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that group id and api key exists in environment."""
+
         minimax_group_id = get_from_dict_or_env(
             values, "minimax_group_id", "MINIMAX_GROUP_ID"
         )
+
         minimax_api_key = get_from_dict_or_env(
             values, "minimax_api_key", "MINIMAX_API_KEY"
         )
+
         values["minimax_group_id"] = minimax_group_id
+
         values["minimax_api_key"] = minimax_api_key
+
         return values
 
     def embed(
@@ -111,6 +136,7 @@ class MiniMaxEmbeddings(BaseModel, Embeddings):
         }
 
         # HTTP headers for authorization
+
         headers = {
             "Authorization": f"Bearer {self.minimax_api_key}",
             "Content-Type": "application/json",
@@ -121,12 +147,15 @@ class MiniMaxEmbeddings(BaseModel, Embeddings):
         }
 
         # send request
+
         response = requests.post(
             self.endpoint_url, params=params, headers=headers, json=payload
         )
+
         parsed_response = response.json()
 
         # check for errors
+
         if parsed_response["base_resp"]["status_code"] != 0:
             raise ValueError(
                 f"MiniMax API returned an error: {parsed_response['base_resp']}"
@@ -136,7 +165,12 @@ class MiniMaxEmbeddings(BaseModel, Embeddings):
 
         return embeddings
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingsRun],
+    ) -> List[List[float]]:
         """Embed documents using a MiniMax embedding endpoint.
 
         Args:
@@ -145,10 +179,17 @@ class MiniMaxEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
+
         embeddings = embed_with_retry(self, texts=texts, embed_type=self.embed_type_db)
+
         return embeddings
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingsRun,
+    ) -> List[float]:
         """Embed a query using a MiniMax embedding endpoint.
 
         Args:
@@ -157,7 +198,9 @@ class MiniMaxEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
+
         embeddings = embed_with_retry(
             self, texts=[text], embed_type=self.embed_type_query
         )
+
         return embeddings[0]

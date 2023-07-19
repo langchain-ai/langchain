@@ -1539,7 +1539,7 @@ class AsyncCallbackManager(BaseCallbackManager):
                 text as an embeddings run.
         """
         tasks = []
-        managers = []
+        managers: List[AsyncCallbackManagerForEmbeddingsRun] = []
         for text in texts:
             run_id_ = uuid4()
             tasks.append(

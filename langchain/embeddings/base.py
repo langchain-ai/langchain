@@ -3,7 +3,7 @@ import asyncio
 import warnings
 from abc import ABC, abstractmethod
 from inspect import signature
-from typing import Any, List, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
 from langchain.callbacks.manager import (
     AsyncCallbackManager,
@@ -21,7 +21,7 @@ class Embeddings(ABC):
     _expects_other_args: bool = False
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
-        super().__init_subclass__(**kwargs)
+        super().__init_subclass__()
         if cls.embed_documents != Embeddings.embed_documents:
             warnings.warn(
                 "Embedding models must implement abstract `_embed_documents` method"
@@ -55,55 +55,63 @@ class Embeddings(ABC):
         texts: List[str],
         *,
         run_managers: Sequence[CallbackManagerForEmbeddingsRun],
-        **kwargs: Any
     ) -> List[List[float]]:
         """Embed search docs."""
 
     @abstractmethod
     def _embed_query(
-        self, text: str, *, run_manager: CallbackManagerForEmbeddingsRun, **kwargs: Any
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingsRun,
     ) -> List[float]:
         """Embed query text."""
 
-    @abstractmethod
     async def _aembed_documents(
         self,
         texts: List[str],
         *,
         run_managers: Sequence[AsyncCallbackManagerForEmbeddingsRun],
-        **kwargs: Any
     ) -> List[List[float]]:
         """Embed search docs."""
+        raise NotImplementedError(f"{self.__class__.__name__} does not support async")
 
-    @abstractmethod
     async def _aembed_query(
         self,
         text: str,
         *,
         run_manager: AsyncCallbackManagerForEmbeddingsRun,
-        **kwargs: Any
     ) -> List[float]:
         """Embed query text."""
+        raise NotImplementedError(f"{self.__class__.__name__} does not support async")
 
     def embed_documents(
-        self, texts: List[str], *, callbacks: Callbacks = None, **kwargs: Any
+        self,
+        texts: List[str],
+        *,
+        callbacks: Callbacks = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> List[List[float]]:
         """Embed search docs."""
 
         callback_manager = CallbackManager.configure(
-            callbacks, None, verbose=kwargs.get("verbose", False)
+            callbacks, None, inheritable_tags=tags, inheritable_metadata=metadata
         )
-        run_managers = callback_manager.on_embeddings_start(
+        run_managers: List[
+            CallbackManagerForEmbeddingsRun
+        ] = callback_manager.on_embeddings_start(
+            {},  # TODO: make embeddings serializable
             texts,
-            **kwargs,
         )
         try:
             if self._new_arg_supported:
                 result = self._embed_documents(
-                    texts, run_managers=run_managers, **kwargs
+                    texts,
+                    run_managers=run_managers,
                 )
             elif self._expects_other_args:
-                result = self._embed_documents(texts, **kwargs)
+                result = self._embed_documents(texts)
             else:
                 result = self._embed_documents(texts)  # type: ignore[call-arg]
         except Exception as e:
@@ -111,31 +119,36 @@ class Embeddings(ABC):
                 run_manager.on_embeddings_error(e)
             raise e
         else:
-            for run_manager in run_managers:
+            for single_result, run_manager in zip(result, run_managers):
                 run_manager.on_embeddings_end(
-                    result,
-                    **kwargs,
+                    single_result,
                 )
             return result
 
     def embed_query(
-        self, text: str, *, callbacks: Callbacks = None, **kwargs: Any
+        self,
+        text: str,
+        *,
+        callbacks: Callbacks = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> List[float]:
         """Embed query text."""
-        from langchain.callbacks.manager import CallbackManager
 
         callback_manager = CallbackManager.configure(
-            callbacks, None, verbose=kwargs.get("verbose", False)
+            callbacks, None, inheritable_tags=tags, inheritable_metadata=metadata
         )
-        run_managers = callback_manager.on_embeddings_start(
+        run_managers: List[
+            CallbackManagerForEmbeddingsRun
+        ] = callback_manager.on_embeddings_start(
+            {},  # TODO: make embeddings serializable
             [text],
-            **kwargs,
         )
         try:
             if self._new_arg_supported:
-                result = self._embed_query(text, run_manager=run_managers[0], **kwargs)
+                result = self._embed_query(text, run_manager=run_managers[0])
             elif self._expects_other_args:
-                result = self._embed_query(text, **kwargs)
+                result = self._embed_query(text)
             else:
                 result = self._embed_query(text)  # type: ignore[call-arg]
         except Exception as e:
@@ -144,29 +157,37 @@ class Embeddings(ABC):
         else:
             run_managers[0].on_embeddings_end(
                 result,
-                **kwargs,
             )
             return result
 
     async def aembed_documents(
-        self, texts: List[str], *, callbacks: Callbacks = None, **kwargs: Any
+        self,
+        texts: List[str],
+        *,
+        callbacks: Callbacks = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> List[List[float]]:
         """Asynchronously embed search docs."""
-
         callback_manager = AsyncCallbackManager.configure(
-            callbacks, None, verbose=kwargs.get("verbose", False)
+            callbacks, None, inheritable_tags=tags, inheritable_metadata=metadata
         )
-        run_managers = await callback_manager.on_embeddings_start(
+        run_managers: List[
+            AsyncCallbackManagerForEmbeddingsRun
+        ] = await callback_manager.on_embeddings_start(
+            {},  # TODO: make embeddings serializable
             texts,
-            **kwargs,
         )
         try:
             if self._new_arg_supported:
                 result = await self._aembed_documents(
-                    texts, run_managers=run_managers, **kwargs
+                    texts,
+                    run_managers=run_managers,
                 )
             elif self._expects_other_args:
-                result = await self._aembed_documents(texts, **kwargs)
+                result = await self._aembed_documents(
+                    texts,
+                )
             else:
                 result = await self._aembed_documents(texts)  # type: ignore[call-arg]
         except Exception as e:
@@ -176,34 +197,42 @@ class Embeddings(ABC):
         else:
             tasks = [
                 run_manager.on_embeddings_end(
-                    results,
-                    **kwargs,
+                    single_result,
                 )
-                for run_manager, results in zip(run_managers, result)
+                for run_manager, single_result in zip(run_managers, result)
             ]
             await asyncio.gather(*tasks)
             return result
 
     async def aembed_query(
-        self, text: str, *, callbacks: Callbacks = None, **kwargs: Any
+        self,
+        text: str,
+        *,
+        callbacks: Callbacks = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> List[float]:
         """Asynchronously embed query text."""
-        from langchain.callbacks.manager import AsyncCallbackManager
 
         callback_manager = AsyncCallbackManager.configure(
-            callbacks, None, verbose=kwargs.get("verbose", False)
+            callbacks, None, inheritable_tags=tags, inheritable_metadata=metadata
         )
-        run_managers = await callback_manager.on_embeddings_start(
+        run_managers: List[
+            AsyncCallbackManagerForEmbeddingsRun
+        ] = await callback_manager.on_embeddings_start(
+            {},  # TODO: make embeddings serializable
             [text],
-            **kwargs,
         )
         try:
             if self._new_arg_supported:
                 result = await self._aembed_query(
-                    text, run_manager=run_managers[0], **kwargs
+                    text,
+                    run_manager=run_managers[0],
                 )
             elif self._expects_other_args:
-                result = await self._aembed_query(text, **kwargs)
+                result = await self._aembed_query(
+                    text,
+                )
             else:
                 result = await self._aembed_query(text)  # type: ignore[call-arg]
         except Exception as e:
@@ -212,6 +241,5 @@ class Embeddings(ABC):
         else:
             await run_managers[0].on_embeddings_end(
                 result,
-                **kwargs,
             )
             return result

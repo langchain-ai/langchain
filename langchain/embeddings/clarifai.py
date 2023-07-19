@@ -1,9 +1,13 @@
 """Wrapper around Clarifai embedding models."""
+
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 from pydantic import BaseModel, Extra, root_validator
 
+from langchain.callbacks.manager import (
+    CallbackManagerForEmbeddingsRun,
+)
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
 
@@ -11,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class ClarifaiEmbeddings(BaseModel, Embeddings):
+
     """Wrapper around Clarifai embedding models.
 
     To use, you should have the ``clarifai`` python package installed, and the
@@ -27,18 +32,23 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
     """
 
     stub: Any  #: :meta private:
+
     userDataObject: Any
 
     model_id: Optional[str] = None
+
     """Model id to use."""
 
     model_version_id: Optional[str] = None
+
     """Model version id to use."""
 
     app_id: Optional[str] = None
+
     """Clarifai application id to use."""
 
     user_id: Optional[str] = None
+
     """Clarifai user id to use."""
 
     pat: Optional[str] = None
@@ -46,6 +56,7 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
     api_base: str = "https://api.clarifai.com"
 
     class Config:
+
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
@@ -53,40 +64,56 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
+
         values["pat"] = get_from_dict_or_env(values, "pat", "CLARIFAI_PAT")
+
         user_id = values.get("user_id")
+
         app_id = values.get("app_id")
+
         model_id = values.get("model_id")
 
         if values["pat"] is None:
             raise ValueError("Please provide a pat.")
+
         if user_id is None:
             raise ValueError("Please provide a user_id.")
+
         if app_id is None:
             raise ValueError("Please provide a app_id.")
+
         if model_id is None:
             raise ValueError("Please provide a model_id.")
 
         try:
             from clarifai.auth.helper import ClarifaiAuthHelper
             from clarifai.client import create_stub
+
         except ImportError:
             raise ImportError(
                 "Could not import clarifai python package. "
                 "Please install it with `pip install clarifai`."
             )
+
         auth = ClarifaiAuthHelper(
             user_id=user_id,
             app_id=app_id,
             pat=values["pat"],
             base=values["api_base"],
         )
+
         values["userDataObject"] = auth.get_user_app_id_proto()
+
         values["stub"] = create_stub(auth)
 
         return values
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingsRun],
+    ) -> List[List[float]]:
         """Call out to Clarifai's embedding models.
 
         Args:
@@ -102,6 +129,7 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
                 service_pb2,
             )
             from clarifai_grpc.grpc.api.status import status_code_pb2
+
         except ImportError:
             raise ImportError(
                 "Could not import clarifai python package. "
@@ -119,29 +147,39 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
                 for t in texts
             ],
         )
+
         post_model_outputs_response = self.stub.PostModelOutputs(
             post_model_outputs_request
         )
 
         if post_model_outputs_response.status.code != status_code_pb2.SUCCESS:
             logger.error(post_model_outputs_response.status)
+
             first_output_failure = (
                 post_model_outputs_response.outputs[0].status
                 if len(post_model_outputs_response.outputs[0])
                 else None
             )
+
             raise Exception(
                 f"Post model outputs failed, status: "
                 f"{post_model_outputs_response.status}, first output failure: "
                 f"{first_output_failure}"
             )
+
         embeddings = [
             list(o.data.embeddings[0].vector)
             for o in post_model_outputs_response.outputs
         ]
+
         return embeddings
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingsRun,
+    ) -> List[float]:
         """Call out to Clarifai's embedding models.
 
         Args:
@@ -157,6 +195,7 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
                 service_pb2,
             )
             from clarifai_grpc.grpc.api.status import status_code_pb2
+
         except ImportError:
             raise ImportError(
                 "Could not import clarifai python package. "
@@ -173,17 +212,20 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
                 )
             ],
         )
+
         post_model_outputs_response = self.stub.PostModelOutputs(
             post_model_outputs_request
         )
 
         if post_model_outputs_response.status.code != status_code_pb2.SUCCESS:
             logger.error(post_model_outputs_response.status)
+
             first_output_failure = (
                 post_model_outputs_response.outputs[0].status
                 if len(post_model_outputs_response.outputs[0])
                 else None
             )
+
             raise Exception(
                 f"Post model outputs failed, status: "
                 f"{post_model_outputs_response.status}, first output failure: "
@@ -194,4 +236,5 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
             list(o.data.embeddings[0].vector)
             for o in post_model_outputs_response.outputs
         ]
+
         return embeddings[0]

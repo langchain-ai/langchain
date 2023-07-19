@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForEmbeddingsRun
 from langchain.embeddings.base import Embeddings
 
 
@@ -41,11 +42,13 @@ class BedrockEmbeddings(BaseModel, Embeddings):
     client: Any  #: :meta private:
 
     region_name: Optional[str] = None
+
     """The aws region e.g., `us-west-2`. Fallsback to AWS_DEFAULT_REGION env variable
     or region specified in ~/.aws/config in case it is not provided here.
     """
 
     credentials_profile_name: Optional[str] = None
+
     """The name of the profile in the ~/.aws/credentials or ~/.aws/config files, which
     has either access keys or role information specified.
     If not specified, the default credential profile or, if on an EC2 instance,
@@ -143,7 +146,14 @@ class BedrockEmbeddings(BaseModel, Embeddings):
             results.append(response)
         return results
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingsRun,
+    ) -> List[float]:
+        """Embed query text."""
+
         """Compute query embeddings using a Bedrock model.
 
         Args:

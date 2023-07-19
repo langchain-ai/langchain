@@ -1,5 +1,6 @@
 from typing import List
 
+from langchain.callbacks.manager import CallbackManagerForEmbeddingsRun
 from langchain.schema import Document
 from langchain.vectorstores.alibabacloud_opensearch import (
     AlibabaCloudOpenSearch,
@@ -22,7 +23,12 @@ class FakeEmbeddingsWithOsDimension(FakeEmbeddings):
             for i in range(len(embedding_texts))
         ]
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingsRun,
+    ) -> List[float]:
         """Return simple embeddings."""
         return [float(1.0)] * (OS_TOKEN_COUNT - 1) + [float(texts.index(text))]
 

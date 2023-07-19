@@ -1,12 +1,17 @@
 """Wrapper around GPT4All embedding models."""
-from typing import Any, Dict, List
+
+from typing import Any, Dict, List, Sequence
 
 from pydantic import BaseModel, root_validator
 
+from langchain.callbacks.manager import (
+    CallbackManagerForEmbeddingsRun,
+)
 from langchain.embeddings.base import Embeddings
 
 
 class GPT4AllEmbeddings(BaseModel, Embeddings):
+
     """Wrapper around GPT4All embedding models.
 
     To use, you should have the gpt4all python package installed
@@ -29,15 +34,22 @@ class GPT4AllEmbeddings(BaseModel, Embeddings):
             from gpt4all import Embed4All
 
             values["client"] = Embed4All()
+
         except ImportError:
             raise ModuleNotFoundError(
                 "Could not import gpt4all library. "
                 "Please install the gpt4all library to "
                 "use this embedding model: pip install gpt4all"
             )
+
         return values
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingsRun],
+    ) -> List[List[float]]:
         """Embed a list of documents using GPT4All.
 
         Args:
@@ -48,9 +60,15 @@ class GPT4AllEmbeddings(BaseModel, Embeddings):
         """
 
         embeddings = [self.client.embed(text) for text in texts]
+
         return [list(map(float, e)) for e in embeddings]
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingsRun,
+    ) -> List[float]:
         """Embed a query using GPT4All.
 
         Args:
@@ -59,4 +77,5 @@ class GPT4AllEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
+
         return self.embed_documents([text])[0]

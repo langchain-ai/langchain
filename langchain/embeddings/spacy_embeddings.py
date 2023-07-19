@@ -1,12 +1,17 @@
 import importlib.util
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Sequence
 
 from pydantic import BaseModel, Extra, root_validator
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForEmbeddingsRun,
+    CallbackManagerForEmbeddingsRun,
+)
 from langchain.embeddings.base import Embeddings
 
 
 class SpacyEmbeddings(BaseModel, Embeddings):
+
     """
     SpacyEmbeddings is a class for generating embeddings using the Spacy library.
     It only supports the 'en_core_web_sm' model.
@@ -24,6 +29,7 @@ class SpacyEmbeddings(BaseModel, Embeddings):
     nlp: Any  # The Spacy model loaded into memory
 
     class Config:
+
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid  # Forbid extra attributes during model initialization
@@ -43,27 +49,41 @@ class SpacyEmbeddings(BaseModel, Embeddings):
             ValueError: If the Spacy package or the 'en_core_web_sm'
             model are not installed.
         """
+
         # Check if the Spacy package is installed
+
         if importlib.util.find_spec("spacy") is None:
             raise ValueError(
                 "Spacy package not found. "
                 "Please install it with `pip install spacy`."
             )
+
         try:
             # Try to load the 'en_core_web_sm' Spacy model
+
             import spacy
 
             values["nlp"] = spacy.load("en_core_web_sm")
+
         except OSError:
             # If the model is not found, raise a ValueError
+
             raise ValueError(
                 "Spacy model 'en_core_web_sm' not found. "
                 "Please install it with"
                 " `python -m spacy download en_core_web_sm`."
             )
+
         return values  # Return the validated values
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingsRun],
+    ) -> List[List[float]]:
+        """Embed search docs."""
+
         """
         Generates embeddings for a list of documents.
 
@@ -73,9 +93,17 @@ class SpacyEmbeddings(BaseModel, Embeddings):
         Returns:
             A list of embeddings, one for each document.
         """
+
         return [self.nlp(text).vector.tolist() for text in texts]
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingsRun,
+    ) -> List[float]:
+        """Embed query text."""
+
         """
         Generates an embedding for a single piece of text.
 
@@ -85,6 +113,7 @@ class SpacyEmbeddings(BaseModel, Embeddings):
         Returns:
             The embedding for the text.
         """
+
         return self.nlp(text).vector.tolist()
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
@@ -98,9 +127,15 @@ class SpacyEmbeddings(BaseModel, Embeddings):
         Raises:
             NotImplementedError: This method is not implemented.
         """
+
         raise NotImplementedError("Asynchronous embedding generation is not supported.")
 
-    async def aembed_query(self, text: str) -> List[float]:
+    async def _aembed_query(
+        self,
+        text: str,
+        *,
+        run_manager: AsyncCallbackManagerForEmbeddingsRun,
+    ) -> List[float]:
         """
         Asynchronously generates an embedding for a single piece of text.
         This method is not implemented and raises a NotImplementedError.
@@ -111,4 +146,5 @@ class SpacyEmbeddings(BaseModel, Embeddings):
         Raises:
             NotImplementedError: This method is not implemented.
         """
+
         raise NotImplementedError("Asynchronous embedding generation is not supported.")

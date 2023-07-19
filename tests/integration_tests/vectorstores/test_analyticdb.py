@@ -1,7 +1,8 @@
 """Test PGVector functionality."""
 import os
-from typing import List
+from typing import List, Sequence
 
+from langchain.callbacks.manager import CallbackManagerForEmbeddingsRun
 from langchain.docstore.document import Document
 from langchain.vectorstores.analyticdb import AnalyticDB
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
@@ -22,13 +23,23 @@ ADA_TOKEN_COUNT = 1536
 class FakeEmbeddingsWithAdaDimension(FakeEmbeddings):
     """Fake embeddings functionality for testing."""
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingsRun],
+    ) -> List[List[float]]:
         """Return simple embeddings."""
         return [
             [float(1.0)] * (ADA_TOKEN_COUNT - 1) + [float(i)] for i in range(len(texts))
         ]
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingsRun,
+    ) -> List[float]:
         """Return simple embeddings."""
         return [float(1.0)] * (ADA_TOKEN_COUNT - 1) + [float(0.0)]
 

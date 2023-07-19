@@ -27,6 +27,10 @@ from tenacity import (
     wait_exponential,
 )
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForEmbeddingsRun,
+    CallbackManagerForEmbeddingsRun,
+)
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
 
@@ -121,33 +125,26 @@ async def async_embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) ->
 
 class OpenAIEmbeddings(BaseModel, Embeddings):
     """Wrapper around OpenAI embedding models.
-
     To use, you should have the ``openai`` python package installed, and the
     environment variable ``OPENAI_API_KEY`` set with your API key or pass it
     as a named parameter to the constructor.
-
     Example:
         .. code-block:: python
-
             from langchain.embeddings import OpenAIEmbeddings
             openai = OpenAIEmbeddings(openai_api_key="my-api-key")
-
     In order to use the library with Microsoft Azure endpoints, you need to set
     the OPENAI_API_TYPE, OPENAI_API_BASE, OPENAI_API_KEY and OPENAI_API_VERSION.
     The OPENAI_API_TYPE must be set to 'azure' and the others correspond to
     the properties of your endpoint.
     In addition, the deployment name must be passed as the model parameter.
-
     Example:
         .. code-block:: python
-
             import os
             os.environ["OPENAI_API_TYPE"] = "azure"
             os.environ["OPENAI_API_BASE"] = "https://<your-endpoint.openai.azure.com/"
             os.environ["OPENAI_API_KEY"] = "your AzureOpenAI key"
             os.environ["OPENAI_API_VERSION"] = "2023-05-15"
             os.environ["OPENAI_PROXY"] = "http://your-corporate-proxy:8080"
-
             from langchain.embeddings.openai import OpenAIEmbeddings
             embeddings = OpenAIEmbeddings(
                 deployment="your-embeddings-deployment-name",
@@ -157,7 +154,6 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             )
             text = "This is a test query."
             query_result = embeddings.embed_query(text)
-
     """
 
     client: Any  #: :meta private:
@@ -490,16 +486,17 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 )
             )["data"][0]["embedding"]
 
-    def embed_documents(
-        self, texts: List[str], chunk_size: Optional[int] = 0
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingsRun],
     ) -> List[List[float]]:
         """Call out to OpenAI's embedding endpoint for embedding search docs.
-
         Args:
             texts: The list of texts to embed.
             chunk_size: The chunk size of embeddings. If None, will use the chunk size
                 specified by the class.
-
         Returns:
             List of embeddings, one for each text.
         """
@@ -507,16 +504,17 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         #       than the maximum context and use length-safe embedding function.
         return self._get_len_safe_embeddings(texts, engine=self.deployment)
 
-    async def aembed_documents(
-        self, texts: List[str], chunk_size: Optional[int] = 0
+    async def _aembed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[AsyncCallbackManagerForEmbeddingsRun],
     ) -> List[List[float]]:
         """Call out to OpenAI's embedding endpoint async for embedding search docs.
-
         Args:
             texts: The list of texts to embed.
             chunk_size: The chunk size of embeddings. If None, will use the chunk size
                 specified by the class.
-
         Returns:
             List of embeddings, one for each text.
         """
@@ -524,24 +522,30 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         #       than the maximum context and use length-safe embedding function.
         return await self._aget_len_safe_embeddings(texts, engine=self.deployment)
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingsRun,
+    ) -> List[float]:
         """Call out to OpenAI's embedding endpoint for embedding query text.
-
         Args:
             text: The text to embed.
-
         Returns:
             Embedding for the text.
         """
         embedding = self._embedding_func(text, engine=self.deployment)
         return embedding
 
-    async def aembed_query(self, text: str) -> List[float]:
+    async def _aembed_query(
+        self,
+        text: str,
+        *,
+        run_manager: AsyncCallbackManagerForEmbeddingsRun,
+    ) -> List[float]:
         """Call out to OpenAI's embedding endpoint async for embedding query text.
-
         Args:
             text: The text to embed.
-
         Returns:
             Embedding for the text.
         """

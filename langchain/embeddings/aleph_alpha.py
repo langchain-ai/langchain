@@ -1,12 +1,16 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 from pydantic import BaseModel, root_validator
 
+from langchain.callbacks.manager import (
+    CallbackManagerForEmbeddingsRun,
+)
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
 
 
 class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
+
     """
     Wrapper for Aleph Alpha's Asymmetric Embeddings
     AA provides you with an endpoint to embed a document and a query.
@@ -32,40 +36,65 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
     client: Any  #: :meta private:
 
     model: Optional[str] = "luminous-base"
+
     """Model name to use."""
+
     hosting: Optional[str] = "https://api.aleph-alpha.com"
+
     """Optional parameter that specifies which datacenters may process the request."""
+
     normalize: Optional[bool] = True
+
     """Should returned embeddings be normalized"""
+
     compress_to_size: Optional[int] = 128
+
     """Should the returned embeddings come back as an original 5120-dim vector, 
     or should it be compressed to 128-dim."""
+
     contextual_control_threshold: Optional[int] = None
+
     """Attention control parameters only apply to those tokens that have 
     explicitly been set in the request."""
+
     control_log_additive: Optional[bool] = True
+
     """Apply controls on prompt items by adding the log(control_factor) 
     to attention scores."""
+
     aleph_alpha_api_key: Optional[str] = None
+
     """API key for Aleph Alpha API."""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
+
         aleph_alpha_api_key = get_from_dict_or_env(
             values, "aleph_alpha_api_key", "ALEPH_ALPHA_API_KEY"
         )
+
         try:
             from aleph_alpha_client import Client
+
         except ImportError:
             raise ValueError(
                 "Could not import aleph_alpha_client python package. "
                 "Please install it with `pip install aleph_alpha_client`."
             )
+
         values["client"] = Client(token=aleph_alpha_api_key)
+
         return values
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingsRun],
+    ) -> List[List[float]]:
+        """Embed search docs."""
+
         """Call out to Aleph Alpha's asymmetric Document endpoint.
 
         Args:
@@ -74,17 +103,20 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
+
         try:
             from aleph_alpha_client import (
                 Prompt,
                 SemanticEmbeddingRequest,
                 SemanticRepresentation,
             )
+
         except ImportError:
             raise ValueError(
                 "Could not import aleph_alpha_client python package. "
                 "Please install it with `pip install aleph_alpha_client`."
             )
+
         document_embeddings = []
 
         for text in texts:
@@ -98,6 +130,7 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
             }
 
             document_request = SemanticEmbeddingRequest(**document_params)
+
             document_response = self.client.semantic_embed(
                 request=document_request, model=self.model
             )
@@ -106,7 +139,14 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
 
         return document_embeddings
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingsRun,
+    ) -> List[float]:
+        """Embed query text."""
+
         """Call out to Aleph Alpha's asymmetric, query embedding endpoint
         Args:
             text: The text to embed.
@@ -114,17 +154,20 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
+
         try:
             from aleph_alpha_client import (
                 Prompt,
                 SemanticEmbeddingRequest,
                 SemanticRepresentation,
             )
+
         except ImportError:
             raise ValueError(
                 "Could not import aleph_alpha_client python package. "
                 "Please install it with `pip install aleph_alpha_client`."
             )
+
         symmetric_params = {
             "prompt": Prompt.from_text(text),
             "representation": SemanticRepresentation.Query,
@@ -135,6 +178,7 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
         }
 
         symmetric_request = SemanticEmbeddingRequest(**symmetric_params)
+
         symmetric_response = self.client.semantic_embed(
             request=symmetric_request, model=self.model
         )
@@ -143,6 +187,7 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
 
 
 class AlephAlphaSymmetricSemanticEmbedding(AlephAlphaAsymmetricSemanticEmbedding):
+
     """The symmetric version of the Aleph Alpha's semantic embeddings.
 
     The main difference is that here, both the documents and
@@ -166,11 +211,13 @@ class AlephAlphaSymmetricSemanticEmbedding(AlephAlphaAsymmetricSemanticEmbedding
                 SemanticEmbeddingRequest,
                 SemanticRepresentation,
             )
+
         except ImportError:
             raise ValueError(
                 "Could not import aleph_alpha_client python package. "
                 "Please install it with `pip install aleph_alpha_client`."
             )
+
         query_params = {
             "prompt": Prompt.from_text(text),
             "representation": SemanticRepresentation.Symmetric,
@@ -181,13 +228,21 @@ class AlephAlphaSymmetricSemanticEmbedding(AlephAlphaAsymmetricSemanticEmbedding
         }
 
         query_request = SemanticEmbeddingRequest(**query_params)
+
         query_response = self.client.semantic_embed(
             request=query_request, model=self.model
         )
 
         return query_response.embedding
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingsRun],
+    ) -> List[List[float]]:
+        """Embed search docs."""
+
         """Call out to Aleph Alpha's Document endpoint.
 
         Args:
@@ -196,13 +251,22 @@ class AlephAlphaSymmetricSemanticEmbedding(AlephAlphaAsymmetricSemanticEmbedding
         Returns:
             List of embeddings, one for each text.
         """
+
         document_embeddings = []
 
         for text in texts:
             document_embeddings.append(self._embed(text))
+
         return document_embeddings
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingsRun,
+    ) -> List[float]:
+        """Embed query text."""
+
         """Call out to Aleph Alpha's asymmetric, query embedding endpoint
         Args:
             text: The text to embed.
@@ -210,4 +274,5 @@ class AlephAlphaSymmetricSemanticEmbedding(AlephAlphaAsymmetricSemanticEmbedding
         Returns:
             Embeddings for the text.
         """
+
         return self._embed(text)

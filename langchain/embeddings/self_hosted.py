@@ -1,8 +1,12 @@
 """Running custom embedding models on self-hosted remote hardware."""
-from typing import Any, Callable, List
+
+from typing import Any, Callable, List, Sequence
 
 from pydantic import Extra
 
+from langchain.callbacks.manager import (
+    CallbackManagerForEmbeddingsRun,
+)
 from langchain.embeddings.base import Embeddings
 from langchain.llms import SelfHostedPipeline
 
@@ -13,10 +17,12 @@ def _embed_documents(pipeline: Any, *args: Any, **kwargs: Any) -> List[List[floa
     Accepts a sentence_transformer model_id and
     returns a list of embeddings for each document in the batch.
     """
+
     return pipeline(*args, **kwargs)
 
 
 class SelfHostedEmbeddings(SelfHostedPipeline, Embeddings):
+
     """Runs custom embedding models on self-hosted remote hardware.
 
     Supported hardware includes auto-launched instances on AWS, GCP, Azure,
@@ -63,16 +69,27 @@ class SelfHostedEmbeddings(SelfHostedPipeline, Embeddings):
     """
 
     inference_fn: Callable = _embed_documents
+
     """Inference function to extract the embeddings on the remote hardware."""
+
     inference_kwargs: Any = None
+
     """Any kwargs to pass to the model's inference function."""
 
     class Config:
+
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def _embed_documents(
+        self,
+        texts: List[str],
+        *,
+        run_managers: Sequence[CallbackManagerForEmbeddingsRun],
+    ) -> List[List[float]]:
+        """Embed search docs."""
+
         """Compute doc embeddings using a HuggingFace transformer model.
 
         Args:
@@ -81,13 +98,24 @@ class SelfHostedEmbeddings(SelfHostedPipeline, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
+
         texts = list(map(lambda x: x.replace("\n", " "), texts))
+
         embeddings = self.client(self.pipeline_ref, texts)
+
         if not isinstance(embeddings, list):
             return embeddings.tolist()
+
         return embeddings
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(
+        self,
+        text: str,
+        *,
+        run_manager: CallbackManagerForEmbeddingsRun,
+    ) -> List[float]:
+        """Embed query text."""
+
         """Compute query embeddings using a HuggingFace transformer model.
 
         Args:
@@ -96,8 +124,12 @@ class SelfHostedEmbeddings(SelfHostedPipeline, Embeddings):
         Returns:
             Embeddings for the text.
         """
+
         text = text.replace("\n", " ")
+
         embeddings = self.client(self.pipeline_ref, text)
+
         if not isinstance(embeddings, list):
             return embeddings.tolist()
+
         return embeddings
