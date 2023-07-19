@@ -56,7 +56,7 @@ class DoctranPropertyExtractor(BaseDocumentTransformer):
         openai_api_model: Optional[str] = None,
     ) -> None:
         self.properties = properties
-        self.openai_api_model = openai_api_key or get_from_env(
+        self.openai_api_key = openai_api_key or get_from_env(
             "openai_api_key", "OPENAI_API_KEY"
         )
         self.openai_api_model= openai_api_model or get_from_env(
