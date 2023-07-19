@@ -43,8 +43,11 @@ class RecursiveUrlLoader(BaseLoader):
         Args:
             url: The URL to crawl.
             exclude_dirs: A list of subdirectories to exclude.
-            use_async: Whether to use asynchronous loading, if use_async is true, this function will not be lazy, but it will still work in the expected way, just not lazy.
-            extractor: A function to extract the text from the html, when extract function returns empty string, the document will be ignored.
+            use_async: Whether to use asynchronous loading,
+            if use_async is true, this function will not be lazy,
+            but it will still work in the expected way, just not lazy.
+            extractor: A function to extract the text from the html,
+            when extract function returns empty string, the document will be ignored.
             max_depth: The max depth of the recursive loading.
             timeout: The timeout for the requests, in the unit of seconds.
         """
@@ -58,7 +61,8 @@ class RecursiveUrlLoader(BaseLoader):
         self.prevent_outside = prevent_outside
 
     def _get_sub_links(self, raw_html: str, base_url: str) -> List[str]:
-        """This function extracts all the links from the raw html, and convert them into absolute paths.
+        """This function extracts all the links from the raw html,
+        and convert them into absolute paths.
 
         Args:
             raw_html (str): original html
@@ -69,7 +73,6 @@ class RecursiveUrlLoader(BaseLoader):
         """
         # Get all links that are relative to the root of the website
         all_links = re.findall(r"href=[\"\'](.*?)[\"\']", raw_html)
-
         absolute_paths = []
         # Process the links
         for link in all_links:
@@ -100,7 +103,6 @@ class RecursiveUrlLoader(BaseLoader):
             if link.startswith("//"):
                 absolute_paths.append(f"{urlparse(base_url).scheme}:{link}")
                 continue
-
         # Remove duplicates, also do a filter to prevent outside links
         absolute_paths = list(
             set(
@@ -156,7 +158,7 @@ class RecursiveUrlLoader(BaseLoader):
         # Get all links that can be accessed from the current URL
         try:
             response = requests.get(url, timeout=self.timeout)
-        except:
+        except Exception:
             return []
 
         absolute_paths = self._get_sub_links(response.text, url)
@@ -169,7 +171,8 @@ class RecursiveUrlLoader(BaseLoader):
                 try:
                     response = requests.get(link)
                     text = response.text
-                except:
+                except Exception:
+                    # unreachable link, so just ignore it
                     continue
                 loaded_link = Document(
                     page_content=self.extractor(text),
@@ -208,7 +211,8 @@ class RecursiveUrlLoader(BaseLoader):
             url.startswith(exclude_dir) for exclude_dir in self.exclude_dirs
         ):
             return []
-        # Disable SSL verification because some websites may have invalid SSL certificates, but won't cause any security issues for us.
+        # Disable SSL verification because websites may have invalid SSL certificates,
+        # but won't cause any security issues for us.
         async with aiohttp.ClientSession(
             connector=aiohttp.TCPConnector(verify_ssl=False),
             timeout=aiohttp.ClientTimeout(self.timeout),
@@ -220,14 +224,16 @@ class RecursiveUrlLoader(BaseLoader):
                 text = await response.text()
             except aiohttp.client_exceptions.InvalidURL:
                 return []
-            # There may be some other exceptions, so catch them, we don't want to stop the whole process
-            except Exception as e:
+            # There may be some other exceptions, so catch them,
+            # we don't want to stop the whole process
+            except Exception:
                 return []
 
             absolute_paths = self._get_sub_links(text, url)
 
-            # Worker will be only called within the current function to act as an async generator
-            # Worker function will process the link and then recursively call get_child_links_recursive to process the children
+            # Worker will be only called within the current function
+            # Worker function will process the link
+            # then recursively call get_child_links_recursive to process the children
             async def worker(link: str) -> Union[Document, None]:
                 try:
                     async with aiohttp.ClientSession(
@@ -244,11 +250,13 @@ class RecursiveUrlLoader(BaseLoader):
                             )
                         else:
                             return None
-                # Despite the fact that we have filtered some links, there may still be some invalid links, so catch the exception
+                # Despite the fact that we have filtered some links,
+                # there may still be some invalid links, so catch the exception
                 except aiohttp.client_exceptions.InvalidURL:
                     return None
-                # There may be some other exceptions, so catch them, we don't want to stop the whole process
-                except Exception as e:
+                # There may be some other exceptions, so catch them,
+                # we don't want to stop the whole process
+                except Exception:
                     # print(e)
                     return None
 
@@ -270,13 +278,15 @@ class RecursiveUrlLoader(BaseLoader):
                 sub_tasks.append(
                     self._async_get_child_links_recursive(link, visited, depth + 1)
                 )
-            # sub_tasks returns coroutines of list, so we need to flatten the list await asyncio.gather(*sub_tasks)
+            # sub_tasks returns coroutines of list,
+            # so we need to flatten the list await asyncio.gather(*sub_tasks)
             flattened = []
             next_results = await asyncio.gather(*sub_tasks)
             for sub_result in next_results:
                 if isinstance(sub_result, Exception):
-                    # We don't want to stop the whole process, so just ignore the exception
-                    # This exception may be caused by the invalid url, or not standard html format
+                    # We don't want to stop the whole process, so just ignore it
+                    # Not standard html format or invalid url or 404 may cause this
+                    # But we can't do anything about it.
                     continue
                 if sub_result is not None:
                     flattened += sub_result
@@ -284,7 +294,9 @@ class RecursiveUrlLoader(BaseLoader):
             return list(filter(lambda x: x is not None, results))
 
     def lazy_load(self) -> Iterator[Document]:
-        """Lazy load web pages. When use_async is True, this function will not be lazy, but it will still work in the expected way, just not lazy."""
+        """Lazy load web pages.
+        When use_async is True, this function will not be lazy,
+        but it will still work in the expected way, just not lazy."""
         if self.use_async:
             results = asyncio.run(self._async_get_child_links_recursive(self.url))
             if results is None:
