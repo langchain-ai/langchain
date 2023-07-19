@@ -1,10 +1,15 @@
 import geopandas
 import pytest
+from typing import TYPE_CHECKING
 
 from langchain.document_loaders import GeoDataFrameLoader
 from langchain.schema import Document
 
-GeoDataFrame = geopandas.GeoDataFrame
+
+if TYPE_CHECKING:
+    from geopandas import GeoDataFrame
+else:
+    GeoDataFrame = "geopandas.GeoDataFrame" 
 
 
 @pytest.mark.requires("geopandas")
