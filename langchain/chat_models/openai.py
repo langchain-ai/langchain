@@ -102,7 +102,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     elif role == "assistant":
         # Fix for azure
         # Also OpenAI returns None for tool invocations
-        content = _dict.get("content", "")
+        content = _dict.get("content", "") or ""
         if _dict.get("function_call"):
             additional_kwargs = {"function_call": dict(_dict["function_call"])}
         else:
