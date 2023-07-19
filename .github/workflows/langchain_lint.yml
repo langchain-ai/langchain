@@ -18,3 +18,9 @@ jobs:
     with:
       working-directory: libs/langchain
     secrets: inherit
+  test:
+    uses:
+      ./.github/workflows/_test.yml
+    with:
+      working-directory: libs/langchain
+    secrets: inherit

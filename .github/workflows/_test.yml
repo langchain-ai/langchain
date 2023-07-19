@@ -1,16 +1,21 @@
 name: test
 
 on:
-  push:
-    branches: [master]
-  pull_request:
-  workflow_dispatch:
+  workflow_call:
+    inputs:
+      working-directory:
+        required: true
+        type: string
+        description: "From which folder this pipeline executes"
 
 env:
   POETRY_VERSION: "1.4.2"
 
 jobs:
   build:
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
