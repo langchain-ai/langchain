@@ -3,10 +3,6 @@ name: libs/langchain Release
 
 on:
   pull_request:
-    types:
-      - closed
-    branches:
-      - master
     paths:
       - 'libs/langchain/pyproject.toml'
 
