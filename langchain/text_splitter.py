@@ -1038,7 +1038,7 @@ class BalancedRecursiveCharacterTextSplitter(TextSplitter):
 
     def _split_text(
         self, text: str, separators: List[str], goal_length: Optional[int] = None
-) -> List[List[str]]:
+    ) -> List[List[str]]:
         """Split incoming text and return chunks."""
 
         # Have to define here initially so it can be redefined for each recursion
@@ -1069,8 +1069,8 @@ class BalancedRecursiveCharacterTextSplitter(TextSplitter):
                     combo_token_count < self.goal_length * 0.75
                     and len(final_combos) > 1
                 ):
-                    new_goal_length = int(goal_length + (
-                        combo_token_count / (len(final_combos) - 1))
+                    new_goal_length = int(
+                        goal_length + (combo_token_count / (len(final_combos) - 1))
                     )
                     final_combos = self._split_text(text, separators, new_goal_length)
                 # If a combo of splits is too large, we retry with new separator
