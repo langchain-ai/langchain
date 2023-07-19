@@ -1,47 +1,32 @@
-/* eslint-disable react/jsx-props-no-spreading */
-import React from "react";
-import CodeBlock from "@theme-original/CodeBlock";
-
-function Imports({ imports }) {
-  return (
-    <div
-      style={{
-        paddingTop: "1.3rem",
-        background: "var(--prism-background-color)",
-        color: "var(--prism-color)",
-        marginTop: "calc(-1 * var(--ifm-leading) - 5px)",
-        marginBottom: "var(--ifm-leading)",
-        boxShadow: "var(--ifm-global-shadow-lw)",
-        borderBottomLeftRadius: "var(--ifm-code-border-radius)",
-        borderBottomRightRadius: "var(--ifm-code-border-radius)",
-      }}
-    >
-      <h4 style={{ paddingLeft: "0.65rem", marginBottom: "0.45rem" }}>
-        API Reference:
-      </h4>
-      <ul style={{ paddingBottom: "1rem" }}>
-        {imports.map(({ imported, source, docs }) => (
-          <li>
-            <a href={docs}>
-              <span>{imported}</span>
-            </a>{" "}
-            from <code>{source}</code>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-export default function CodeBlockWrapper({ children, ...props }) {
-  if (typeof children === "string") {
-    return <CodeBlock {...props}>{children}</CodeBlock>;
+import React, {isValidElement} from 'react';
+import useIsBrowser from '@docusaurus/useIsBrowser';
+import ElementContent from '@theme/CodeBlock/Content/Element';
+import StringContent from '@theme/CodeBlock/Content/String';
+/**
+ * Best attempt to make the children a plain string so it is copyable. If there
+ * are react elements, we will not be able to copy the content, and it will
+ * return `children` as-is; otherwise, it concatenates the string children
+ * together.
+ */
+function maybeStringifyChildren(children) {
+  if (React.Children.toArray(children).some((el) => isValidElement(el))) {
+    return children;
   }
-
+  // The children is now guaranteed to be one/more plain strings
+  return Array.isArray(children) ? children.join('') : children;
+}
+export default function CodeBlock({children: rawChildren, ...props}) {
+  // The Prism theme on SSR is always the default theme but the site theme can
+  // be in a different mode. React hydration doesn't update DOM styles that come
+  // from SSR. Hence force a re-render after mounting to apply the current
+  // relevant styles.
+  const isBrowser = useIsBrowser();
+  const children = maybeStringifyChildren(rawChildren);
+  const CodeBlockComp =
+    typeof children === 'string' ? StringContent : ElementContent;
   return (
-    <>
-      <CodeBlock {...props}>{children.content}</CodeBlock>
-      <Imports imports={children.imports} />
-    </>
+    <CodeBlockComp key={String(isBrowser)} {...props}>
+      {children}
+    </CodeBlockComp>
   );
 }
