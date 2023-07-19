@@ -53,8 +53,7 @@ class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
         query: str,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
-        raise NotImplementedError("QuerySqlDbTool does not support async")
-
+        return await self.db.arun_no_throw(query)
 
 class InfoSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
     """Tool for getting metadata about a SQL database."""
@@ -76,10 +75,11 @@ class InfoSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
 
     async def _arun(
         self,
-        table_name: str,
+        table_names: str,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
-        raise NotImplementedError("SchemaSqlDbTool does not support async")
+        """Get the schema for tables in a comma-separated list."""
+        return await self.db.aget_table_info_no_throw(table_names.split(", "))
 
 
 class ListSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
@@ -101,8 +101,9 @@ class ListSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
         tool_input: str = "",
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
-        raise NotImplementedError("ListTablesSqlDbTool does not support async")
-
+        """Get the schema for a specific table."""
+        schema = await self.db.aget_usable_table_names()
+        return ", ".join(schema)
 
 class QuerySQLCheckerTool(BaseSQLDatabaseTool, BaseTool):
     """Use an LLM to check if a query is correct.
