@@ -635,19 +635,22 @@ test = ["coverage (>=5,<6)", "pytest (>=6,<7)"]
 
 [[package]]
 name = "awadb"
-version = "0.3.6"
-description = "The AI Native database for embedding vectors"
+version = "0.3.7"
+description = "AI Native database for embedding vectors"
 category = "main"
 optional = true
 python-versions = ">=3.7"
 files = [
-    {file = "awadb-0.3.6-cp310-cp310-manylinux1_x86_64.whl", hash = "sha256:6154f73aab9996aefe8c8f8bf754f7182d109d6b60302c9f31666c7f50cc7aca"},
-    {file = "awadb-0.3.6-cp311-cp311-macosx_10_13_x86_64.whl", hash = "sha256:9d7e9dff353517595ecc8c9395a2367acdcfc83c68a64dd4785c8d366eed3f40"},
-    {file = "awadb-0.3.6-cp311-cp311-manylinux1_x86_64.whl", hash = "sha256:475af75d2ffbbe970999d93fbabdf7281797390c66fe852f6a6989e706b90c94"},
-    {file = "awadb-0.3.6-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:304be1de63daec1555f0fe9de9a18cdf16a467687a35a6ccf3405cd400fefb48"},
-    {file = "awadb-0.3.6-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:176cc27d1afc4aad758515d5f8fb435f555c9ba827a9e84d6f28b1c6ac568965"},
-    {file = "awadb-0.3.6-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:211d7f6b0f7c3c3d7518d424f0f3dfac5f45f9e5d7bbf397fdae861ff0dc46fd"},
-    {file = "awadb-0.3.6-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:b935ab4ffaa3bcbcc9a381fce91ace5940143b527ffdb467dd4bc630cd94afab"},
+    {file = "awadb-0.3.7-cp310-cp310-macosx_13_0_arm64.whl", hash = "sha256:deec44f3687aad3ef13ba3fac3e2e4fd83c710a30194d228b3f520d2fb013542"},
+    {file = "awadb-0.3.7-cp310-cp310-manylinux1_x86_64.whl", hash = "sha256:96e1e92e029f4b1000631bc06d6f845d554e4698851e515eafd35ff4f2b1994f"},
+    {file = "awadb-0.3.7-cp311-cp311-macosx_13_0_arm64.whl", hash = "sha256:46d44c4e8d97aaeb73234a2b9945b393b91dfaeae98e9fc6632ffb64bbc9e995"},
+    {file = "awadb-0.3.7-cp311-cp311-manylinux1_x86_64.whl", hash = "sha256:d5e379ea2f9f44687edb99c1d35719d1bed116759f800d212d9561cef99736a3"},
+    {file = "awadb-0.3.7-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:f2de28efa210035d278a55466023b44b8479254f3d5de69c944e6a3fcfb97879"},
+    {file = "awadb-0.3.7-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:7a2a3f063a133c945e12ea0ab9d9c7ab038c8255dbd867067dba0a513557124b"},
+    {file = "awadb-0.3.7-cp38-cp38-macosx_13_0_arm64.whl", hash = "sha256:15a8f3349ea84bdfc9c096b3760cf00363eb1908e71728b4a1e3beecda763cd5"},
+    {file = "awadb-0.3.7-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:3ac1ef7e1d1a591eb36a57ea65824e717f54fc521e4ae303d634e510817ba270"},
+    {file = "awadb-0.3.7-cp39-cp39-macosx_13_0_arm64.whl", hash = "sha256:947b6576a07e90cac31d8ff709cd0e0abc9779bc71276df817b2ffe18c1fa541"},
+    {file = "awadb-0.3.7-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:e4014edade8134579993639a4a3b18ff20c8449fdfc5ff511b24617109be5df7"},
 ]
 
 [package.extras]
@@ -1608,30 +1611,45 @@ files = [
 ]
 
 [[package]]
+name = "chroma-hnswlib"
+version = "0.7.1"
+description = "Chromas fork of hnswlib"
+category = "dev"
+optional = false
+python-versions = "*"
+files = [
+    {file = "chroma-hnswlib-0.7.1.tar.gz", hash = "sha256:f72592dc7d0522c25cc1f8864db7a3781f179ba989f209cc3ea01694c0d76493"},
+    {file = "chroma_hnswlib-0.7.1-cp310-cp310-macosx_13_0_arm64.whl", hash = "sha256:38f51585d81a5072db70b17207afd1f57670c209836d0fbbf2a1aa7e8bece6b7"},
+]
+
+[package.dependencies]
+numpy = "*"
+
+[[package]]
 name = "chromadb"
-version = "0.3.26"
+version = "0.4.1"
 description = "Chroma."
 category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "chromadb-0.3.26-py3-none-any.whl", hash = "sha256:45a7848ee3ed8b694ca5789e5fd723406b76a13fa46f9a9a769f93317f29894c"},
-    {file = "chromadb-0.3.26.tar.gz", hash = "sha256:a9b596d507f081993f2e32a7dcacabbbec2f6aebc2b6defe524442b07e265296"},
+    {file = "chromadb-0.4.1-py3-none-any.whl", hash = "sha256:980e776bfbb76a2689418b03a254e7edb888961f57b7615f815c8d95f048b396"},
+    {file = "chromadb-0.4.1.tar.gz", hash = "sha256:9b1a76d615dd2280e7b30ff82101ed31c26782a4d832070046309fde82515385"},
 ]
 
 [package.dependencies]
-clickhouse-connect = ">=0.5.7"
-duckdb = ">=0.7.1"
-fastapi = ">=0.85.1"
+chroma-hnswlib = "0.7.1"
+fastapi = ">=0.95.2,<0.100.0"
 graphlib-backport = {version = ">=1.0.3", markers = "python_version < \"3.9\""}
-hnswlib = ">=0.7"
+importlib-resources = "*"
 numpy = ">=1.21.6"
 onnxruntime = ">=1.14.1"
 overrides = ">=7.3.1"
 pandas = ">=1.3"
 posthog = ">=2.4.0"
 pulsar-client = ">=3.1.0"
-pydantic = ">=1.9"
+pydantic = ">=1.9,<2.0"
+pypika = ">=0.48.9"
 requests = ">=2.28"
 tokenizers = ">=0.13.2"
 tqdm = ">=4.65.0"
@@ -3601,7 +3619,7 @@ name = "hnswlib"
 version = "0.7.0"
 description = "hnswlib"
 category = "main"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "hnswlib-0.7.0.tar.gz", hash = "sha256:bc459668e7e44bb7454b256b90c98c5af750653919d9a91698dafcf416cf64c4"},
@@ -4730,14 +4748,14 @@ all = ["datasets (>=2.12.0,<3.0.0)", "nltk (>=3.8.1,<4.0.0)", "openai (>=0.27.6,
 
 [[package]]
 name = "langsmith"
-version = "0.0.7"
+version = "0.0.10"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 category = "main"
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langsmith-0.0.7-py3-none-any.whl", hash = "sha256:9e0ab264b499daa778c694f9129859830820d3fb3a7c93309b630a22b68a88a9"},
-    {file = "langsmith-0.0.7.tar.gz", hash = "sha256:2f18e51cfd4e42f2b3cf00fa87e9d03012eb7269cdafd8e7c0cf7aa828dcc03e"},
+    {file = "langsmith-0.0.10-py3-none-any.whl", hash = "sha256:716412979613a5eb550c9bce33165cd1bad296eb19009040155deccef427ef07"},
+    {file = "langsmith-0.0.10.tar.gz", hash = "sha256:11e5db0d8e29ee5583cabd872eeece8ce50738737b1f52f316ac984f4a1a58c5"},
 ]
 
 [package.dependencies]
@@ -8561,6 +8579,17 @@ doc = ["sphinx", "sphinx_rtd_theme"]
 test = ["flake8", "isort", "pytest"]
 
 [[package]]
+name = "pypika"
+version = "0.48.9"
+description = "A SQL query builder API for Python"
+category = "dev"
+optional = false
+python-versions = "*"
+files = [
+    {file = "PyPika-0.48.9.tar.gz", hash = "sha256:838836a61747e7c8380cd1b7ff638694b7a7335345d0f559b04b2cd832ad5378"},
+]
+
+[[package]]
 name = "pyproject-hooks"
 version = "1.0.0"
 description = "Wrappers to call pyproject.toml-based build backend hooks."
@@ -9218,6 +9247,24 @@ packaging = "*"
 
 [package.extras]
 test = ["pytest (>=6,!=7.0.0,!=7.0.1)", "pytest-cov (>=3.0.0)", "pytest-qt"]
+
+[[package]]
+name = "rank-bm25"
+version = "0.2.2"
+description = "Various BM25 algorithms for document ranking"
+category = "main"
+optional = true
+python-versions = "*"
+files = [
+    {file = "rank_bm25-0.2.2-py3-none-any.whl", hash = "sha256:7bd4a95571adadfc271746fa146a4bcfd89c0cf731e49c3d1ad863290adbe8ae"},
+    {file = "rank_bm25-0.2.2.tar.gz", hash = "sha256:096ccef76f8188563419aaf384a02f0ea459503fdf77901378d4fd9d87e5e51d"},
+]
+
+[package.dependencies]
+numpy = "*"
+
+[package.extras]
+dev = ["pytest"]
 
 [[package]]
 name = "rapidfuzz"
@@ -12826,7 +12873,7 @@ clarifai = ["clarifai"]
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["atlassian-python-api", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "esprima", "gql", "html2text", "jq", "lxml", "mwparserfromhell", "mwxml", "openai", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rapidfuzz", "requests-toolbelt", "scikit-learn", "streamlit", "sympy", "telethon", "tqdm", "zep-python"]
+extended-testing = ["atlassian-python-api", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "esprima", "gql", "html2text", "jq", "lxml", "mwparserfromhell", "mwxml", "openai", "openai", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "requests-toolbelt", "scikit-learn", "streamlit", "sympy", "telethon", "tqdm", "zep-python"]
 javascript = ["esprima"]
 llms = ["anthropic", "clarifai", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "openllm", "openlm", "torch", "transformers"]
 openai = ["openai", "tiktoken"]
@@ -12836,4 +12883,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "eb68f4732f6230c96b48e5f6ba87494cdbd0f710886c644ecf714610e684c98b"
+content-hash = "aee2f0c85636738d08d512c53fd551ab43a2e94c1ebf14c6178c9534da75dcaa"

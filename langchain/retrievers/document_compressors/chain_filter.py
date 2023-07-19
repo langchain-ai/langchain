@@ -68,6 +68,16 @@ class LLMChainFilter(BaseDocumentCompressor):
         prompt: Optional[BasePromptTemplate] = None,
         **kwargs: Any
     ) -> "LLMChainFilter":
+        """Create a LLMChainFilter from a language model.
+
+        Args:
+            llm: The language model to use for filtering.
+            prompt: The prompt to use for the filter.
+            **kwargs: Additional arguments to pass to the constructor.
+
+        Returns:
+            A LLMChainFilter that uses the given language model.
+        """
         _prompt = prompt if prompt is not None else _get_default_chain_prompt()
         llm_chain = LLMChain(llm=llm, prompt=_prompt)
         return cls(llm_chain=llm_chain, **kwargs)
