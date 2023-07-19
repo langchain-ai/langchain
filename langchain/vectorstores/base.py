@@ -444,7 +444,7 @@ class VectorStoreRetriever(BaseRetriever):
     search_kwargs: dict = Field(default_factory=dict)
     allowed_search_types: ClassVar[Collection[str]] = (
         "similarity",
-        "similarity_score_threshold",
+        "similarityatscore_threshold",
         "mmr",
     )
 
