@@ -6,15 +6,15 @@ on:
     branches: [ master ]
   pull_request:
     paths:
-      - '.github/workflows/base/**'
-      - '.github/workflows/langchain/**'
+      - '.github/workflows/_lint.yml'
+      - '.github/workflows/langchain_lint.yml'
       - 'libs/langchain/**'
   workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
 
 jobs:
   ci-libs-fancy:
     uses:
-      ./.github/workflows/base/lint.yml
+      ./.github/workflows/_lint.yml
     with:
       working-directory: libs/langchain
     secrets: inherit
