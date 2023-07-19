@@ -5,6 +5,10 @@ on:
   push:
     branches: [ master ]
   pull_request:
+    paths:
+      - '.github/workflows/base/**'
+      - '.github/workflows/langchain/**'
+      - 'libs/langchain/**'
   workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
 
 jobs:
