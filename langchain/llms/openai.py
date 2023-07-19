@@ -28,7 +28,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.llms.base import BaseLLM, create_base_retry_decorator
 from langchain.schema import Generation, LLMResult
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
 
 logger = logging.getLogger(__name__)
 
@@ -186,13 +186,13 @@ class BaseOpenAI(BaseLLM):
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
-        all_required_field_names = cls._all_required_field_names()
+        all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
             if field_name in extra:
                 raise ValueError(f"Found {field_name} supplied twice.")
             if field_name not in all_required_field_names:
-                logger.warning(
+                warnings.warn(
                     f"""WARNING! {field_name} is not default parameter.
                     {field_name} was transferred to model_kwargs.
                     Please confirm that {field_name} is what you intended."""

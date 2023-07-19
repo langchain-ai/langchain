@@ -1627,14 +1627,14 @@ numpy = "*"
 
 [[package]]
 name = "chromadb"
-version = "0.4.0"
+version = "0.4.1"
 description = "Chroma."
 category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "chromadb-0.4.0-py3-none-any.whl", hash = "sha256:3a7eeeb13b35776b912cd58f6852e47d5a4c0b160997589f43e78dc051fe1d3c"},
-    {file = "chromadb-0.4.0.tar.gz", hash = "sha256:20d17d98ff3e471b5f8a787057c95079b3e9160028beae7cb8a3e593a9cdcb20"},
+    {file = "chromadb-0.4.1-py3-none-any.whl", hash = "sha256:980e776bfbb76a2689418b03a254e7edb888961f57b7615f815c8d95f048b396"},
+    {file = "chromadb-0.4.1.tar.gz", hash = "sha256:9b1a76d615dd2280e7b30ff82101ed31c26782a4d832070046309fde82515385"},
 ]
 
 [package.dependencies]
@@ -12873,7 +12873,7 @@ clarifai = ["clarifai"]
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["atlassian-python-api", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "esprima", "gql", "html2text", "jq", "lxml", "mwparserfromhell", "mwxml", "openai", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "requests-toolbelt", "scikit-learn", "streamlit", "sympy", "telethon", "tqdm", "zep-python"]
+extended-testing = ["atlassian-python-api", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "esprima", "gql", "html2text", "jq", "lxml", "mwparserfromhell", "mwxml", "openai", "openai", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "requests-toolbelt", "scikit-learn", "streamlit", "sympy", "telethon", "tqdm", "zep-python"]
 javascript = ["esprima"]
 llms = ["anthropic", "clarifai", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "openllm", "openlm", "torch", "transformers"]
 openai = ["openai", "tiktoken"]
@@ -12883,4 +12883,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "a7828b51a9801139777ffddec99675262ff34a80c26b8943f6c858aa7a1ffc59"
+content-hash = "aee2f0c85636738d08d512c53fd551ab43a2e94c1ebf14c6178c9534da75dcaa"
