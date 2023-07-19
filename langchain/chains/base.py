@@ -72,13 +72,13 @@ class Chain(Serializable, ABC):
     """Whether or not run in verbose mode. In verbose mode, some intermediate logs
     will be printed to the console. Defaults to `langchain.verbose` value."""
     tags: Optional[List[str]] = None
-    """Optional list of tags associated with the chain. Defaults to None
+    """Optional list of tags associated with the chain. Defaults to None.
     These tags will be associated with each call to this chain,
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a chain with its use case.
     """
     metadata: Optional[Dict[str, Any]] = None
-    """Optional metadata associated with the chain. Defaults to None
+    """Optional metadata associated with the chain. Defaults to None.
     This metadata will be associated with each call to this chain,
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a chain with its use case.
@@ -118,12 +118,12 @@ class Chain(Serializable, ABC):
     @property
     @abstractmethod
     def input_keys(self) -> List[str]:
-        """Return the keys expected to be in the chain input."""
+        """Keys expected to be in the chain input."""
 
     @property
     @abstractmethod
     def output_keys(self) -> List[str]:
-        """Return the keys expected to be in the chain output."""
+        """Keys expected to be in the chain output."""
 
     def _validate_inputs(self, inputs: Dict[str, Any]) -> None:
         """Check that all inputs are present."""
@@ -391,7 +391,7 @@ class Chain(Serializable, ABC):
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> str:
-        """Convenience method for executing chain when there's a single string output.
+        """Execute chain when there's a single string output.
 
         The main difference between this method and `Chain.__call__` is that this method
             can only be used for chains that return a single string output. If a Chain
@@ -465,7 +465,7 @@ class Chain(Serializable, ABC):
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> str:
-        """Convenience method for executing chain when there's a single string output.
+        """Execute chain when there's a single string output.
 
         The main difference between this method and `Chain.__call__` is that this method
             can only be used for chains that return a single string output. If a Chain
@@ -532,7 +532,7 @@ class Chain(Serializable, ABC):
         )
 
     def dict(self, **kwargs: Any) -> Dict:
-        """Return dictionary representation of chain.
+        """Dictionary representation of chain.
 
         Expects `Chain._chain_type` property to be implemented and for memory to be
             null.

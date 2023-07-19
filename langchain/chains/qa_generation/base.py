@@ -15,13 +15,20 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
 
 class QAGenerationChain(Chain):
+    """Base class for question-answer generation chains."""
+
     llm_chain: LLMChain
+    """LLM Chain that generates responses from user input and context."""
     text_splitter: TextSplitter = Field(
         default=RecursiveCharacterTextSplitter(chunk_overlap=500)
     )
+    """Text splitter that splits the input into chunks."""
     input_key: str = "text"
+    """Key of the input to the chain."""
     output_key: str = "questions"
+    """Key of the output of the chain."""
     k: Optional[int] = None
+    """Number of questions to generate."""
 
     @classmethod
     def from_llm(
@@ -30,6 +37,17 @@ class QAGenerationChain(Chain):
         prompt: Optional[BasePromptTemplate] = None,
         **kwargs: Any,
     ) -> QAGenerationChain:
+        """
+        Create a QAGenerationChain from a language model.
+
+        Args:
+            llm: a language model
+            prompt: a prompt template
+            **kwargs: additional arguments
+
+        Returns:
+            a QAGenerationChain class
+        """
         _prompt = prompt or PROMPT_SELECTOR.get_prompt(llm)
         chain = LLMChain(llm=llm, prompt=_prompt)
         return cls(llm_chain=chain, **kwargs)
