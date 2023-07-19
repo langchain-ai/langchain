@@ -18,8 +18,8 @@ INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 
 
 def extract_cypher(text: str) -> str:
-    """
-    Extract Cypher code from a text.
+    """Extract Cypher code from a text.
+
     Args:
         text: Text to extract Cypher code from.
 

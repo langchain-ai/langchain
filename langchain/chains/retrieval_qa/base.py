@@ -25,12 +25,14 @@ from langchain.vectorstores.base import VectorStore
 
 
 class BaseRetrievalQA(Chain):
+    """Base class for question-answering chains."""
+
     combine_documents_chain: BaseCombineDocumentsChain
     """Chain to use to combine the documents."""
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
     return_source_documents: bool = False
-    """Return the source documents."""
+    """Return the source documents or not."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -41,7 +43,7 @@ class BaseRetrievalQA(Chain):
 
     @property
     def input_keys(self) -> List[str]:
-        """Return the input keys.
+        """Input keys.
 
         :meta private:
         """
@@ -49,7 +51,7 @@ class BaseRetrievalQA(Chain):
 
     @property
     def output_keys(self) -> List[str]:
-        """Return the output keys.
+        """Output keys.
 
         :meta private:
         """

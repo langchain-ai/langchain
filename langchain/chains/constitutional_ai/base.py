@@ -80,12 +80,12 @@ class ConstitutionalChain(Chain):
 
     @property
     def input_keys(self) -> List[str]:
-        """Defines the input keys."""
+        """Input keys."""
         return self.chain.input_keys
 
     @property
     def output_keys(self) -> List[str]:
-        """Defines the output keys."""
+        """Output keys."""
         if self.return_intermediate_steps:
             return ["output", "critiques_and_revisions", "initial_output"]
         return ["output"]

@@ -11,6 +11,7 @@ from langchain.schema import (
 
 
 def import_context() -> Any:
+    """Import the `getcontext` package."""
     try:
         import getcontext  # noqa: F401
         from getcontext.generated.models import (
@@ -30,7 +31,9 @@ def import_context() -> Any:
 
 
 class ContextCallbackHandler(BaseCallbackHandler):
-    """Callback Handler that records transcripts to Context (https://getcontext.ai).
+    """Callback Handler that records transcripts to the Context service.
+
+     (https://getcontext.ai).
 
     Keyword Args:
         token (optional): The token with which to authenticate requests to Context.
