@@ -13,7 +13,7 @@ from langchain.utilities import OpenWeatherMapAPIWrapper
 
 
 class OpenWeatherMapQueryRun(BaseTool):
-    """Tool that adds the capability to query using the OpenWeatherMap API."""
+    """Tool that queries the OpenWeatherMap API."""
 
     api_wrapper: OpenWeatherMapAPIWrapper = Field(
         default_factory=OpenWeatherMapAPIWrapper

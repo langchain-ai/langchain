@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 
 
 class BaseSingleActionAgent(BaseModel):
-    """Base Agent class."""
+    """Base Single Action Agent class."""
 
     @property
     def return_values(self) -> List[str]:
@@ -179,7 +179,7 @@ class BaseSingleActionAgent(BaseModel):
 
 
 class BaseMultiActionAgent(BaseModel):
-    """Base Agent class."""
+    """Base Multi Action Agent class."""
 
     @property
     def return_values(self) -> List[str]:
@@ -200,7 +200,7 @@ class BaseMultiActionAgent(BaseModel):
 
         Args:
             intermediate_steps: Steps the LLM has taken to date,
-                along with observations
+                along with the observations.
             callbacks: Callbacks to run.
             **kwargs: User inputs.
 
@@ -219,7 +219,7 @@ class BaseMultiActionAgent(BaseModel):
 
         Args:
             intermediate_steps: Steps the LLM has taken to date,
-                along with observations
+                along with the observations.
             callbacks: Callbacks to run.
             **kwargs: User inputs.
 
@@ -299,18 +299,30 @@ class BaseMultiActionAgent(BaseModel):
 
 
 class AgentOutputParser(BaseOutputParser):
+    """Base class for parsing agent output into agent action/finish."""
+
     @abstractmethod
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         """Parse text into agent action/finish."""
 
 
 class LLMSingleActionAgent(BaseSingleActionAgent):
+    """Base class for single action agents."""
+
     llm_chain: LLMChain
+    """LLMChain to use for agent."""
     output_parser: AgentOutputParser
+    """Output parser to use for agent."""
     stop: List[str]
+    """List of strings to stop on."""
 
     @property
     def input_keys(self) -> List[str]:
+        """Return the input keys.
+
+        Returns:
+            List of input keys.
+        """
         return list(set(self.llm_chain.input_keys) - {"intermediate_steps"})
 
     def dict(self, **kwargs: Any) -> Dict:
@@ -329,7 +341,7 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
 
         Args:
             intermediate_steps: Steps the LLM has taken to date,
-                along with observations
+                along with the observations.
             callbacks: Callbacks to run.
             **kwargs: User inputs.
 
@@ -377,7 +389,7 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
 
 
 class Agent(BaseSingleActionAgent):
-    """Class responsible for calling the language model and deciding the action.
+    """Agent that calls the language model and deciding the action.
 
     This is driven by an LLMChain. The prompt in the LLMChain MUST include
     a variable called "agent_scratchpad" where the agent can put its
@@ -599,8 +611,12 @@ class Agent(BaseSingleActionAgent):
 
 
 class ExceptionTool(BaseTool):
+    """Tool that just returns the query."""
+
     name = "_Exception"
+    """Name of the tool."""
     description = "Exception tool"
+    """Description of the tool."""
 
     def _run(
         self,
@@ -618,7 +634,7 @@ class ExceptionTool(BaseTool):
 
 
 class AgentExecutor(Chain):
-    """Consists of an agent using tools."""
+    """Agent that is using tools."""
 
     agent: Union[BaseSingleActionAgent, BaseMultiActionAgent]
     """The agent to run for creating a plan and determining actions

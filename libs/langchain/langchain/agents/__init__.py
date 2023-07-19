@@ -19,6 +19,7 @@ from langchain.agents.agent_toolkits import (
     create_sql_agent,
     create_vectorstore_agent,
     create_vectorstore_router_agent,
+    create_xorbits_agent,
 )
 from langchain.agents.agent_types import AgentType
 from langchain.agents.conversational.base import ConversationalAgent
@@ -74,4 +75,5 @@ __all__ = [
     "load_huggingface_tool",
     "load_tools",
     "tool",
+    "create_xorbits_agent",
 ]

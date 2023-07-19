@@ -95,7 +95,10 @@ def check_valid_template(
 
 
 class StringPromptValue(PromptValue):
+    """String prompt value."""
+
     text: str
+    """Prompt text."""
 
     def to_string(self) -> str:
         """Return prompt as string."""

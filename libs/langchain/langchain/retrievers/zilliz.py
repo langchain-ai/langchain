@@ -1,4 +1,3 @@
-"""Zilliz Retriever"""
 import warnings
 from typing import Any, Dict, List, Optional
 
@@ -16,16 +15,22 @@ from langchain.vectorstores.zilliz import Zilliz
 
 
 class ZillizRetriever(BaseRetriever):
-    """Retriever that uses the Zilliz API."""
+    """Retriever for the Zilliz API."""
 
     embedding_function: Embeddings
+    """The underlying embedding function from which documents will be retrieved."""
     collection_name: str = "LangChainCollection"
+    """The name of the collection in Zilliz."""
     connection_args: Optional[Dict[str, Any]] = None
+    """The connection arguments for the Zilliz client."""
     consistency_level: str = "Session"
+    """The consistency level for the Zilliz client."""
     search_params: Optional[dict] = None
-
+    """The search parameters for the Zilliz client."""
     store: Zilliz
+    """The underlying Zilliz store."""
     retriever: BaseRetriever
+    """The underlying retriever."""
 
     @root_validator(pre=True)
     def create_client(cls, values: dict) -> dict:
@@ -73,8 +78,10 @@ class ZillizRetriever(BaseRetriever):
 
 
 def ZillizRetreiver(*args: Any, **kwargs: Any) -> ZillizRetriever:
-    """
-    Deprecated ZillizRetreiver. Please use ZillizRetriever ('i' before 'e') instead.
+    """Deprecated ZillizRetreiver.
+
+    Please use ZillizRetriever ('i' before 'e') instead.
+
     Args:
         *args:
         **kwargs:

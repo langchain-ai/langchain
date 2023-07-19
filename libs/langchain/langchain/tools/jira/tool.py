@@ -41,6 +41,8 @@ from langchain.utilities.jira import JiraAPIWrapper
 
 
 class JiraAction(BaseTool):
+    """Tool that queries the Atlassian Jira API."""
+
     api_wrapper: JiraAPIWrapper = Field(default_factory=JiraAPIWrapper)
     mode: str
     name = ""

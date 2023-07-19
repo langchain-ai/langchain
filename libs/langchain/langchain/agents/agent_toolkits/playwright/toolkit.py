@@ -32,7 +32,7 @@ else:
 
 
 class PlayWrightBrowserToolkit(BaseToolkit):
-    """Toolkit for web browser tools."""
+    """Toolkit for PlayWright browser tools."""
 
     sync_browser: Optional["SyncBrowser"] = None
     async_browser: Optional["AsyncBrowser"] = None

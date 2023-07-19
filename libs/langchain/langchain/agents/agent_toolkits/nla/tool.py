@@ -1,4 +1,4 @@
-"""Tool for interacting with a single API with natural language efinition."""
+"""Tool for interacting with a single API with natural language definition."""
 
 
 from typing import Any, Optional

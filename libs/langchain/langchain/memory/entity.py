@@ -15,6 +15,7 @@ from langchain.memory.utils import get_prompt_input_key
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage, get_buffer_string
+from langchain.utilities.redis import get_client
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +100,7 @@ class RedisEntityStore(BaseEntityStore):
         super().__init__(*args, **kwargs)
 
         try:
-            self.redis_client = redis.Redis.from_url(url=url, decode_responses=True)
+            self.redis_client = get_client(redis_url=url, decode_responses=True)
         except redis.exceptions.ConnectionError as error:
             logger.error(error)
 

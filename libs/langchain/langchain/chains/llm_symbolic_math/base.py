@@ -1,4 +1,4 @@
-"""Chain that interprets a prompt and executes python code to do math."""
+"""Chain that interprets a prompt and executes python code to do symbolic math."""
 from __future__ import annotations
 
 import re
@@ -18,7 +18,7 @@ from langchain.prompts.base import BasePromptTemplate
 
 
 class LLMSymbolicMathChain(Chain):
-    """Chain that interprets a prompt and executes python code to do math.
+    """Chain that interprets a prompt and executes python code to do symbolic math.
 
     Example:
         .. code-block:: python
