@@ -1,7 +1,7 @@
 import json
 from langchain.utilities import Portkey
 
-def test_Config():
+def test_Config() -> None:
     headers = Portkey.Config(
         api_key="test_api_key",
         

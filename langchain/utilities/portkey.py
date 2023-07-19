@@ -1,11 +1,12 @@
 import json
 import os
+from typing import Optional, Dict
 
 class Portkey:
     base = "https://api.portkey.ai/v1/proxy"
 
     @staticmethod
-    def Config(api_key, trace_id=None, environment=None, user=None, organisation=None, prompt=None, retry_count=None, cache=None, cache_force_refresh=None, cache_age=None):
+    def Config(api_key: str, trace_id: Optional[str] = None, environment: Optional[str] = None, user: Optional[str] = None, organisation: Optional[str] = None, prompt: Optional[str] = None, retry_count: Optional[int] = None, cache: Optional[str] = None, cache_force_refresh: Optional[str] = None, cache_age: Optional[int] = None) -> Dict[str, str]:
 
         assert retry_count is None or retry_count in range(1, 6), "retry_count must be an integer and in range [1, 2, 3, 4, 5]"
         assert cache is None or cache in ["simple", "semantic"], "cache must be 'simple' or 'semantic'"
