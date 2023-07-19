@@ -1,5 +1,5 @@
 """Logic for converting internal query language to a valid Chroma query."""
-from typing import Dict, Tuple, Union
+from typing import Tuple, Union
 
 from langchain.chains.query_constructor.ir import (
     Comparator,
@@ -9,7 +9,6 @@ from langchain.chains.query_constructor.ir import (
     StructuredQuery,
     Visitor,
 )
-
 
 COMPARATOR_TO_TQL = {
     Comparator.EQ: "==",
@@ -26,7 +25,7 @@ OPERATOR_TO_TQL = {
 }
 
 
-def can_cast_to_float(string: str):
+def can_cast_to_float(string: str) -> bool:
     try:
         float(string)
         return True
@@ -51,17 +50,17 @@ class DeepLakeTranslator(Visitor):
     def _format_func(self, func: Union[Operator, Comparator]) -> str:
         self._validate_func(func)
         if isinstance(func, Operator):
-            value = OPERATOR_TO_TQL[func.value]
+            value = OPERATOR_TO_TQL[func.value]  # type: ignore
         elif isinstance(func, Comparator):
-            value = COMPARATOR_TO_TQL[func.value]
+            value = COMPARATOR_TO_TQL[func.value]  # type: ignore
         return f"{value}"
 
-    def visit_operation(self, operation: Operation) -> Dict:
+    def visit_operation(self, operation: Operation) -> str:
         args = [arg.accept(self) for arg in operation.arguments]
         operator = self._format_func(operation.operator)
         return "(" + (" " + operator + " ").join(args) + ")"
 
-    def visit_comparison(self, comparison: Comparison) -> Dict:
+    def visit_comparison(self, comparison: Comparison) -> str:
         comparator = self._format_func(comparison.comparator)
         value = comparison.value
         if not can_cast_to_float(comparison.value):
