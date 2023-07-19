@@ -593,15 +593,15 @@ class PGVector(VectorStore):
 
         # Default strategy is to rely on distance strategy provided
         # in vectorstore constructor
-        if self.distance_strategy == DistanceStrategy.COSINE:
+        if self._distance_strategy == DistanceStrategy.COSINE:
             return self._cosine_relevance_score_fn
-        elif self.distance_strategy == DistanceStrategy.EUCLIDEAN:
+        elif self._distance_strategy == DistanceStrategy.EUCLIDEAN:
             return self._euclidean_relevance_score_fn
-        elif self.distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
+        elif self._distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
             return self._max_inner_product_relevance_score_fn
         else:
             raise ValueError(
                 "No supported normalization function"
-                f" for distance_strategy of {self.distance_strategy}."
+                f" for distance_strategy of {self._distance_strategy}."
                 "Consider providing relevance_score_fn to PGVector constructor."
             )

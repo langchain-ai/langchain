@@ -13,7 +13,7 @@ from langchain.utilities.arxiv import ArxivAPIWrapper
 
 
 class ArxivQueryRun(BaseTool):
-    """Tool that adds the capability to search using the Arxiv API."""
+    """Tool that searches the Arxiv API."""
 
     name = "arxiv"
     description = (

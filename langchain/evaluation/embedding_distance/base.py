@@ -342,10 +342,10 @@ class PairwiseEmbeddingDistanceEvalChain(
     """Use embedding distances to score semantic difference between two predictions.
 
     Examples:
-        >>> chain = PairwiseEmbeddingDistanceEvalChain()
-        >>> result = chain.evaluate_string_pairs(prediction="Hello", prediction_b="Hi")
-        >>> print(result)
-        {'score': 0.5}
+    >>> chain = PairwiseEmbeddingDistanceEvalChain()
+    >>> result = chain.evaluate_string_pairs(prediction="Hello", prediction_b="Hi")
+    >>> print(result)
+    {'score': 0.5}
     """
 
     @property

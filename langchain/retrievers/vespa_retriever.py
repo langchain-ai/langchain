@@ -1,5 +1,3 @@
-"""Wrapper for retrieving documents from Vespa."""
-
 from __future__ import annotations
 
 import json
@@ -16,12 +14,16 @@ if TYPE_CHECKING:
 
 
 class VespaRetriever(BaseRetriever):
-    """Retriever that uses the Vespa."""
+    """Retriever that uses Vespa."""
 
     app: Vespa
+    """Vespa application to query."""
     body: Dict
+    """Body of the query."""
     content_field: str
+    """Name of the content field."""
     metadata_fields: Sequence[str]
+    """Names of the metadata fields."""
 
     def _query(self, body: Dict) -> List[Document]:
         response = self.app.query(body)
@@ -97,6 +99,9 @@ class VespaRetriever(BaseRetriever):
             yql (Optional[str]): Full YQL query to be used. Should not be specified
                 if _filter or sources are specified. Defaults to None.
             kwargs (Any): Keyword arguments added to query body.
+
+        Returns:
+            VespaRetriever: Instantiated VespaRetriever.
         """
         try:
             from vespa.application import Vespa

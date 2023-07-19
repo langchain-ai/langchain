@@ -1,5 +1,3 @@
-"""Retriever that combines embedding similarity with recency in retrieving values."""
-
 import datetime
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Tuple
@@ -20,7 +18,8 @@ def _get_hours_passed(time: datetime.datetime, ref_time: datetime.datetime) -> f
 
 
 class TimeWeightedVectorStoreRetriever(BaseRetriever):
-    """Retriever combining embedding similarity with recency."""
+    """Retriever that combines embedding similarity with
+    recency in retrieving values."""
 
     vectorstore: VectorStore
     """The vectorstore to store documents and determine salience."""

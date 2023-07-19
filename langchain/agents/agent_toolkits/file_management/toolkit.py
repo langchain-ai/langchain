@@ -1,4 +1,3 @@
-"""Toolkit for interacting with the local filesystem."""
 from __future__ import annotations
 
 from typing import List, Optional

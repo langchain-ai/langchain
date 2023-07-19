@@ -12,9 +12,9 @@ def _generate_random_datetime_strings(
     start_date: datetime = datetime(1, 1, 1),
     end_date: datetime = datetime.now() + timedelta(days=3650),
 ) -> List[str]:
-    """
-    Generates n random datetime strings conforming to the
+    """Generates n random datetime strings conforming to the
     given pattern within the specified date range.
+
     Pattern should be a string containing the desired format codes.
     start_date and end_date should be datetime objects representing
     the start and end of the date range.
@@ -30,7 +30,10 @@ def _generate_random_datetime_strings(
 
 
 class DatetimeOutputParser(BaseOutputParser[datetime]):
+    """Parse the output of an LLM call to a datetime."""
+
     format: str = "%Y-%m-%dT%H:%M:%S.%fZ"
+    """The string value that used as the datetime format."""
 
     def get_format_instructions(self) -> str:
         examples = comma_list(_generate_random_datetime_strings(self.format))

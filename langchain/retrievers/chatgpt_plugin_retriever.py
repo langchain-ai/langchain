@@ -13,16 +13,24 @@ from langchain.schema import BaseRetriever, Document
 
 
 class ChatGPTPluginRetriever(BaseRetriever):
+    """Retrieves documents from a ChatGPT plugin."""
+
     url: str
+    """URL of the ChatGPT plugin."""
     bearer_token: str
+    """Bearer token for the ChatGPT plugin."""
     top_k: int = 3
+    """Number of documents to return."""
     filter: Optional[dict] = None
+    """Filter to apply to the results."""
     aiosession: Optional[aiohttp.ClientSession] = None
+    """Aiohttp session to use for requests."""
 
     class Config:
         """Configuration for this pydantic object."""
 
         arbitrary_types_allowed = True
+        """Allow arbitrary types."""
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun

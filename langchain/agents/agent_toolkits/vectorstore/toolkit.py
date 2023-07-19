@@ -15,7 +15,7 @@ from langchain.vectorstores.base import VectorStore
 
 
 class VectorStoreInfo(BaseModel):
-    """Information about a vectorstore."""
+    """Information about a VectorStore."""
 
     vectorstore: VectorStore = Field(exclude=True)
     name: str
@@ -28,7 +28,7 @@ class VectorStoreInfo(BaseModel):
 
 
 class VectorStoreToolkit(BaseToolkit):
-    """Toolkit for interacting with a vector store."""
+    """Toolkit for interacting with a Vector Store."""
 
     vectorstore_info: VectorStoreInfo = Field(exclude=True)
     llm: BaseLanguageModel = Field(default_factory=lambda: OpenAI(temperature=0))
@@ -62,7 +62,7 @@ class VectorStoreToolkit(BaseToolkit):
 
 
 class VectorStoreRouterToolkit(BaseToolkit):
-    """Toolkit for routing between vector stores."""
+    """Toolkit for routing between Vector Stores."""
 
     vectorstores: List[VectorStoreInfo] = Field(exclude=True)
     llm: BaseLanguageModel = Field(default_factory=lambda: OpenAI(temperature=0))

@@ -30,7 +30,7 @@ def create_pbi_agent(
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
-    """Construct a pbi agent from an LLM and tools."""
+    """Construct a Power BI agent from an LLM and tools."""
     if toolkit is None:
         if powerbi is None:
             raise ValueError("Must provide either a toolkit or powerbi dataset")

@@ -1,4 +1,3 @@
-"""A retriever that uses PubMed API to retrieve documents."""
 from typing import List
 
 from langchain.callbacks.manager import (
@@ -10,8 +9,8 @@ from langchain.utilities.pupmed import PubMedAPIWrapper
 
 
 class PubMedRetriever(BaseRetriever, PubMedAPIWrapper):
-    """
-    It is effectively a wrapper for PubMedAPIWrapper.
+    """Retriever for PubMed API.
+
     It wraps load() to get_relevant_documents().
     It uses all PubMedAPIWrapper arguments without any change.
     """

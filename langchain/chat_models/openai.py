@@ -41,7 +41,7 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
 
 if TYPE_CHECKING:
     import tiktoken
@@ -100,7 +100,9 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     if role == "user":
         return HumanMessage(content=_dict["content"])
     elif role == "assistant":
-        content = _dict["content"] or ""  # OpenAI returns None for tool invocations
+        # Fix for azure
+        # Also OpenAI returns None for tool invocations
+        content = _dict.get("content", "")
         if _dict.get("function_call"):
             additional_kwargs = {"function_call": dict(_dict["function_call"])}
         else:
@@ -205,7 +207,7 @@ class ChatOpenAI(BaseChatModel):
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
-        all_required_field_names = cls._all_required_field_names()
+        all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
             if field_name in extra:
@@ -391,7 +393,8 @@ class ChatOpenAI(BaseChatModel):
                 generation_info=dict(finish_reason=res.get("finish_reason")),
             )
             generations.append(gen)
-        llm_output = {"token_usage": response["usage"], "model_name": self.model_name}
+        token_usage = response.get("usage", {})
+        llm_output = {"token_usage": token_usage, "model_name": self.model_name}
         return ChatResult(generations=generations, llm_output=llm_output)
 
     async def _agenerate(
