@@ -17,10 +17,16 @@ class NLPCloudEmbeddings(BaseModel, Embeddings):
 
             from langchain.embeddings import NLPCloudEmbeddings
 
-            embeddings = NLPCloudEmbeddings()
+            embeddings = NLPCloudEmbeddings(model_name='bert-base-uncased')
     """
 
+    model_name: str  # Define model_name as a class attribute
     client: Any  #: :meta private:
+
+    def __init__(
+        self, model_name: str = "paraphrase-multilingual-mpnet-base-v2", **kwargs
+    ):
+        super().__init__(model_name=model_name, **kwargs)
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
