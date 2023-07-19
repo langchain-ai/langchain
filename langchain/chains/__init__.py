@@ -10,14 +10,6 @@
             like logging, outside the main sequence of component calls,
         - Composable: the Chain API is flexible enough that it is easy to combine
             Chains with other components, including other Chains.
-
-    The main methods exposed by chains are:
-        - `__call__`: Chains are callable. The `__call__` method is the primary way to
-            execute a Chain. This takes inputs as a dictionary and returns a
-            dictionary.
-        - `run`: A convenience method that takes inputs as args/kwargs and returns
-            a string. This method can only be used for a subset of chains and
-            cannot return as rich of an output as `__call__`.
     """
 
 from langchain.chains.api.base import APIChain
