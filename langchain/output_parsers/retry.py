@@ -45,7 +45,9 @@ class RetryOutputParser(BaseOutputParser[T]):
     """
 
     parser: BaseOutputParser[T]
+    """The parser to use to parse the output."""
     retry_chain: LLMChain
+    """The LLMChain to use to retry the completion."""
 
     @classmethod
     def from_llm(
@@ -58,6 +60,15 @@ class RetryOutputParser(BaseOutputParser[T]):
         return cls(parser=parser, retry_chain=chain)
 
     def parse_with_prompt(self, completion: str, prompt_value: PromptValue) -> T:
+        """Parse the output of an LLM call using a wrapped parser.
+
+        Args:
+            completion: The chain completion to parse.
+            prompt_value: The prompt to use to parse the completion.
+
+        Returns:
+            The parsed completion.
+        """
         try:
             parsed_completion = self.parser.parse(completion)
         except OutputParserException:
@@ -101,6 +112,16 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
         parser: BaseOutputParser[T],
         prompt: BasePromptTemplate = NAIVE_RETRY_WITH_ERROR_PROMPT,
     ) -> RetryWithErrorOutputParser[T]:
+        """Create a RetryWithErrorOutputParser from an LLM.
+
+        Args:
+            llm: The LLM to use to retry the completion.
+            parser: The parser to use to parse the output.
+            prompt: The prompt to use to retry the completion.
+
+        Returns:
+            A RetryWithErrorOutputParser.
+        """
         chain = LLMChain(llm=llm, prompt=prompt)
         return cls(parser=parser, retry_chain=chain)
 

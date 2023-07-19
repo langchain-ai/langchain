@@ -43,7 +43,7 @@ def create_spark_dataframe_agent(
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
-    """Construct a spark agent from an LLM and dataframe."""
+    """Construct a Spark agent from an LLM and dataframe."""
 
     if not _validate_spark_df(df) and not _validate_spark_connect_df(df):
         raise ValueError("Spark is not installed. run `pip install pyspark`.")

@@ -30,7 +30,7 @@ def create_openapi_agent(
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
-    """Construct a json agent from an LLM and tools."""
+    """Construct an OpenAPI agent from an LLM and tools."""
     tools = toolkit.get_tools()
     prompt = ZeroShotAgent.create_prompt(
         tools,

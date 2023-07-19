@@ -8,6 +8,7 @@ from langchain.document_transformers.embeddings_redundant_filter import (
     EmbeddingsRedundantFilter,
     get_stateful_documents,
 )
+from langchain.document_transformers.long_context_reorder import LongContextReorder
 
 __all__ = [
     "DoctranQATransformer",
@@ -16,6 +17,7 @@ __all__ = [
     "EmbeddingsClusteringFilter",
     "EmbeddingsRedundantFilter",
     "get_stateful_documents",
+    "LongContextReorder",
     "OpenAIMetadataTagger",
 ]
 

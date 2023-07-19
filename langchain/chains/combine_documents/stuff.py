@@ -167,7 +167,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
     async def acombine_docs(
         self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
     ) -> Tuple[str, dict]:
-        """Stuff all documents into one prompt and pass to LLM.
+        """Async stuff all documents into one prompt and pass to LLM.
 
         Args:
             docs: List of documents to join together into one variable

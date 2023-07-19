@@ -120,7 +120,7 @@ cassio = {version = "^0.0.7", optional = true}
 rdflib = {version = "^6.3.2", optional = true}
 sympy = {version = "^1.12", optional = true}
 rapidfuzz = {version = "^3.1.1", optional = true}
-langsmith = "^0.0.9"
+langsmith = "^0.0.10"
 rank-bm25 = {version = "^0.2.2", optional = true}
 
 [tool.poetry.group.docs.dependencies]
@@ -193,7 +193,7 @@ deeplake = "^3.6.8"
 libdeeplake = "^0.0.60"
 weaviate-client = "^3.15.5"
 torch = "^1.0.0"
-chromadb = "^0.3.21"
+chromadb = "^0.4.0"
 tiktoken = "^0.3.3"
 python-dotenv = "^1.0.0"
 sentence-transformers = "^2"
@@ -362,6 +362,7 @@ extended_testing = [
  "openai",
  "sympy",
  "rapidfuzz",
+ "openai",
  "rank_bm25",
 ]
 

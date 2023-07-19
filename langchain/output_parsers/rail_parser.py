@@ -6,10 +6,16 @@ from langchain.schema import BaseOutputParser
 
 
 class GuardrailsOutputParser(BaseOutputParser):
+    """Parse the output of an LLM call using Guardrails."""
+
     guard: Any
+    """The Guardrails object."""
     api: Optional[Callable]
+    """The API to use for the Guardrails object."""
     args: Any
+    """The arguments to pass to the API."""
     kwargs: Any
+    """The keyword arguments to pass to the API."""
 
     @property
     def _type(self) -> str:
@@ -24,10 +30,22 @@ class GuardrailsOutputParser(BaseOutputParser):
         *args: Any,
         **kwargs: Any,
     ) -> GuardrailsOutputParser:
+        """Create a GuardrailsOutputParser from a rail file.
+
+        Args:
+            rail_file: a rail file.
+            num_reasks: number of times to re-ask the question.
+            api: the API to use for the Guardrails object.
+            *args: The arguments to pass to the API
+            **kwargs: The keyword arguments to pass to the API.
+
+        Returns:
+            GuardrailsOutputParser
+        """
         try:
             from guardrails import Guard
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "guardrails-ai package not installed. "
                 "Install it by running `pip install guardrails-ai`."
             )
@@ -50,7 +68,7 @@ class GuardrailsOutputParser(BaseOutputParser):
         try:
             from guardrails import Guard
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "guardrails-ai package not installed. "
                 "Install it by running `pip install guardrails-ai`."
             )
@@ -73,7 +91,7 @@ class GuardrailsOutputParser(BaseOutputParser):
         try:
             from guardrails import Guard
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "guardrails-ai package not installed. "
                 "Install it by running `pip install guardrails-ai`."
             )
