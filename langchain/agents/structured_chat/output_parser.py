@@ -17,6 +17,8 @@ logger = logging.getLogger(__name__)
 
 
 class StructuredChatOutputParser(AgentOutputParser):
+    """Output parser for the structured chat agent."""
+
     def get_format_instructions(self) -> str:
         return FORMAT_INSTRUCTIONS
 
@@ -46,8 +48,12 @@ class StructuredChatOutputParser(AgentOutputParser):
 
 
 class StructuredChatOutputParserWithRetries(AgentOutputParser):
+    """Output parser with retries for the structured chat agent."""
+
     base_parser: AgentOutputParser = Field(default_factory=StructuredChatOutputParser)
+    """The base parser to use."""
     output_fixing_parser: Optional[OutputFixingParser] = None
+    """The output fixing parser to use."""
 
     def get_format_instructions(self) -> str:
         return FORMAT_INSTRUCTIONS

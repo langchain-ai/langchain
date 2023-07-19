@@ -27,7 +27,7 @@ class SelfAskWithSearchAgent(Agent):
 
     @property
     def _agent_type(self) -> str:
-        """Return Identifier of agent type."""
+        """Return Identifier of an agent type."""
         return AgentType.SELF_ASK_WITH_SEARCH
 
     @classmethod
@@ -75,7 +75,7 @@ class SelfAskWithSearchChain(AgentExecutor):
         search_chain: Union[GoogleSerperAPIWrapper, SerpAPIWrapper],
         **kwargs: Any,
     ):
-        """Initialize with just an LLM and a search chain."""
+        """Initialize only with an LLM and a search chain."""
         search_tool = Tool(
             name="Intermediate Answer",
             func=search_chain.run,

@@ -1,5 +1,3 @@
-"""Wrapper around weaviate vector database."""
-
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, cast
@@ -16,7 +14,7 @@ from langchain.schema import BaseRetriever
 
 
 class WeaviateHybridSearchRetriever(BaseRetriever):
-    """Retriever that uses Weaviate's hybrid search to retrieve documents."""
+    """Retriever for the Weaviate's hybrid search."""
 
     client: Any
     """keyword arguments to pass to the Weaviate client."""
@@ -100,11 +98,15 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
         *,
         run_manager: CallbackManagerForRetrieverRun,
         where_filter: Optional[Dict[str, object]] = None,
+        score: bool = False,
     ) -> List[Document]:
         """Look up similar documents in Weaviate."""
         query_obj = self.client.query.get(self.index_name, self.attributes)
         if where_filter:
             query_obj = query_obj.with_where(where_filter)
+
+        if score:
+            query_obj = query_obj.with_additional(["score", "explainScore"])
 
         result = query_obj.with_hybrid(query, alpha=self.alpha).with_limit(self.k).do()
         if "errors" in result:

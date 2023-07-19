@@ -17,7 +17,7 @@ def _print_func(text: str) -> None:
 
 
 class HumanInputRun(BaseTool):
-    """Tool that adds the capability to ask user for input."""
+    """Tool that asks user for input."""
 
     name = "human"
     description = (

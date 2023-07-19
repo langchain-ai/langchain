@@ -23,9 +23,12 @@ HUMAN_MESSAGE_TEMPLATE = "{input}\n\n{agent_scratchpad}"
 
 
 class StructuredChatAgent(Agent):
+    """Structured Chat Agent."""
+
     output_parser: AgentOutputParser = Field(
         default_factory=StructuredChatOutputParserWithRetries
     )
+    """Output parser for the agent."""
 
     @property
     def observation_prefix(self) -> str:
