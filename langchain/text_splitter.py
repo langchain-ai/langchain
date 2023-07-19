@@ -1016,7 +1016,7 @@ class BalancedRecursiveCharacterTextSplitter(TextSplitter):
         max_length: Optional[int] = None,
         chunk_overlap: Optional[int] = None,
         separators: Optional[List[str]] = None,
-        keep_separator=True,
+        keep_separator: bool = True,
         **kwargs: Any,
     ) -> None:
         """Create a new TextSplitter."""
@@ -1083,9 +1083,9 @@ class BalancedRecursiveCharacterTextSplitter(TextSplitter):
         # All combos satisfy requirements
         return final_combos
 
-    def distribute_splits(self, splits: list, goal_length: int) -> List[str]:
+    def distribute_splits(self, splits: list, goal_length: int) -> List[List[str]]:
         # Build initial combos
-        combos = []
+        combos: List[List[str]] = []
         current_combo = []
         combo_token_count = 0
         for split in splits:
