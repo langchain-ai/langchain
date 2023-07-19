@@ -25,7 +25,7 @@ class NLPCloudEmbeddings(BaseModel, Embeddings):
 
     def __init__(
         self, model_name: str = "paraphrase-multilingual-mpnet-base-v2", **kwargs
-    ):
+    ) -> None:
         super().__init__(model_name=model_name, **kwargs)
 
     @root_validator()
@@ -38,7 +38,7 @@ class NLPCloudEmbeddings(BaseModel, Embeddings):
             import nlpcloud
 
             values["client"] = nlpcloud.Client(
-                values["model_name"], nlpcloud_api_key, gpu=True, lang="en"
+                values["model_name"], nlpcloud_api_key, gpu=False, lang="en"
             )
         except ImportError:
             raise ImportError(
@@ -57,7 +57,7 @@ class NLPCloudEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
 
-        return self.client.embeddings(texts)
+        return self.client.embeddings(texts)["embeddings"]
 
     def embed_query(self, text: str) -> List[float]:
         """Embed a query using NLP Cloud.
@@ -68,4 +68,4 @@ class NLPCloudEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        return self.client.embeddings([text])[0]
+        return self.client.embeddings([text])["embeddings"][0]
