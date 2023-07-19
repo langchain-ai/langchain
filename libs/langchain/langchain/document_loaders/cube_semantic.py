@@ -92,7 +92,7 @@ class CubeSemanticLoader(BaseLoader):
             print(
                 f"Maximum retries reached. Failed to retrieve dimension values for: {dimension_name}."
             )
-            return []
+        return []
 
     def load(self) -> List[Document]:
         """Makes a call to Cube's REST API metadata endpoint.
