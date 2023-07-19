@@ -17,7 +17,7 @@ class NLPCloudEmbeddings(BaseModel, Embeddings):
 
             from langchain.embeddings import NLPCloudEmbeddings
 
-            embeddings = NLPCloudEmbeddings(model_name='paraphrase-multilingual-mpnet-base-v2')
+            embeddings = NLPCloudEmbeddings()
     """
 
     model_name: str  # Define model_name as a class attribute
