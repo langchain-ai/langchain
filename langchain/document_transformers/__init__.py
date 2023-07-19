@@ -9,6 +9,7 @@ from langchain.document_transformers.embeddings_redundant_filter import (
     get_stateful_documents,
 )
 from langchain.document_transformers.long_context_reorder import LongContextReorder
+from langchain.document_transformers.nuclia_text_transform import NucliaTextTransformer
 
 __all__ = [
     "DoctranQATransformer",
@@ -18,6 +19,7 @@ __all__ = [
     "EmbeddingsRedundantFilter",
     "get_stateful_documents",
     "LongContextReorder",
+    "NucliaTextTransformer",
     "OpenAIMetadataTagger",
 ]
 

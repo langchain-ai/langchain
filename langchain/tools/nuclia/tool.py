@@ -118,7 +118,7 @@ class NucliaUnderstandingAPI(BaseTool):
 
     def _pushText(self, id: str, text: str) -> str:
         field = {
-            "textfield": {"text": {"body": text}},
+            "textfield": {"text": {"body": text, "format": 0}},
             "processing_options": {"ml_text": self._config["enable_ml"]},
         }
         return self._pushField(id, field)
@@ -162,7 +162,7 @@ class NucliaUnderstandingAPI(BaseTool):
                 f"Error pushing field {id}:"
                 f"{response.status_code} {response.text}"
             )
-            return ""
+            raise ValueError("Error pushing field")
         else:
             uuid = response.json()["uuid"]
             print(f"Field {id} pushed in queue, uuid: {uuid}")
