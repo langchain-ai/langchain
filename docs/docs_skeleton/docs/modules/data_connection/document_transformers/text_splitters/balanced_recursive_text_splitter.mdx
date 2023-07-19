@@ -1,7 +1,7 @@
 # Recursively split by character and chunk size
 
 This text splitter is an alternative to the RecursiveCharacterTextSplitter. It is parameterized by a list of characters. It tries to split on them in order until the chunks are small enough. The default list is `["\n\n", "\n", " ", ""]`. This has the effect of trying to keep all paragraphs (and then sentences, and then words) together as long as possible, as those would generically seem to be the strongest semantically related pieces of text.
-Where the BalancedRecursiveCharacterTextSplitter differes is that it also uses chunk size to assure that all chunks are near the same size. Whereas the RecursiveCharacterTextSplitter often leaves the last chunk signficantly smaller than the rest. By using chunk size as a parameter conformity of size for all chunks is assure which is ideal for providing context to an LLM.
+Where the BalancedRecursiveCharacterTextSplitter differs is that it also uses chunk size to assure that all chunks are near the same size. Whereas the RecursiveCharacterTextSplitter often leaves the last chunk significantly smaller than the rest. By using chunk size as a parameter conformity of size for all chunks is assure which is ideal for providing context to an LLM.
 
 1. How the text is split: by iterating through a list of characters to find the ideal split point
 2. How the chunk size is measured: by number of characters

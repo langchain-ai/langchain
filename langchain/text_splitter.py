@@ -1012,9 +1012,9 @@ class BalancedRecursiveCharacterTextSplitter(TextSplitter):
 
     def __init__(
         self,
-        goal_length=None,
-        max_length=None,
-        chunk_overlap=None,
+        goal_length: int = None,
+        max_length: int = None,
+        chunk_overlap: int = None,
         separators: Optional[List[str]] = None,
         keep_separator=True,
         **kwargs: Any,
@@ -1037,8 +1037,8 @@ class BalancedRecursiveCharacterTextSplitter(TextSplitter):
             self._chunk_overlap = self._chunk_overlap
 
     def _split_text(
-        self, text: str, separators: List[str], goal_length: None
-    ) -> List[str]:
+        self, text: str, separators: List[str], goal_length: Optional[int] = None
+) -> List[str]:
         """Split incoming text and return chunks."""
 
         # Have to define here initially so it can be redefined for each recursion
@@ -1083,7 +1083,7 @@ class BalancedRecursiveCharacterTextSplitter(TextSplitter):
         # All combos satisfy requirements
         return final_combos
 
-    def distribute_splits(self, splits, goal_length):
+    def distribute_splits(self, splits: list, goal_length: int):
         # Build initial combos
         combos = []
         current_combo = []
