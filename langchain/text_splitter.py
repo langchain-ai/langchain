@@ -1060,10 +1060,12 @@ class BalancedRecursiveCharacterTextSplitter(TextSplitter):
         splits = _split_text_with_regex(text, separator, self._keep_separator)
         final_combos = self.distribute_splits(splits, goal_length)
 
-        # If any split was larger than the max size final_combos will be returned empty from distribute_splits
+        # If any split was larger than the max size 
+        # final_combos will be returned empty from distribute_splits
         if final_combos:
             for combo in final_combos:
-                # If a combo of splits is too small, we adjust the goal_length and retry separator
+                # If a combo of splits is too small, 
+                # we adjust the goal_length and retry separator
                 combo_token_count = self._length_function("".join(combo))
                 if (
                     combo_token_count < self.goal_length * 0.75
@@ -1106,7 +1108,8 @@ class BalancedRecursiveCharacterTextSplitter(TextSplitter):
                     current_combo = []
                     current_combo.append(split)
                     combo_token_count = self._length_function("".join(current_combo))
-                # If the overlap chunk is larger than overlap size continue to next separator
+                # If the overlap chunk is larger than overlap size 
+                # continue to next separator
                 else:
                     combos = []
                     return combos
