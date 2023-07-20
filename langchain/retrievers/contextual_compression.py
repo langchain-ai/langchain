@@ -1,5 +1,3 @@
-"""Retriever that wraps a base retriever and filters the results."""
-
 from typing import Any, List
 
 from langchain.callbacks.manager import (

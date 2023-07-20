@@ -1,0 +1,36 @@
+# Golden Query
+
+>Golden Query is a wrapper on top of the [Golden Query API](https://docs.golden.com/reference/query-api) which enables programmatic access to query results on entities across Golden's Knowledge Base.
+>See the [Golden Query API docs](https://docs.golden.com/reference/query-api) for more information.
+
+This page covers how to use `Golden Query` within LangChain.
+
+## Installation and Setup
+- Go to the [Golden API docs](https://docs.golden.com/) to get an overview about the Golden API.
+- Create a Golden account if you don't have one on the [Golden Website](https://golden.com).
+- Get your API key from the [Golden API Settings](https://golden.com/settings/api) page.
+- Save your API key into GOLDEN_API_KEY env variable
+
+
+## Wrappers
+
+### Utility
+
+There exists a GoldenQueryAPIWrapper utility which wraps this API. To import this utility:
+
+```python
+from langchain.utilities.golden_query import GoldenQueryAPIWrapper
+```
+
+For a more detailed walkthrough of this wrapper, see [this notebook](/docs/modules/agents/tools/integrations/golden_query.html).
+
+### Tool
+
+You can also easily load this wrapper as a Tool (to use with an Agent).
+You can do this with:
+```python
+from langchain.agents import load_tools
+tools = load_tools(["golden-query"])
+```
+
+For more information on tools, see [this page](/docs/modules/agents/tools/).

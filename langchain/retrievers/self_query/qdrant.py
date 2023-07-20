@@ -1,4 +1,3 @@
-"""Logic for converting internal query language to a valid Qdrant query."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Tuple
@@ -17,7 +16,7 @@ if TYPE_CHECKING:
 
 
 class QdrantTranslator(Visitor):
-    """Logic for converting internal query language elements to valid filters."""
+    """Translate the internal query language elements to valid filters."""
 
     allowed_comparators = (
         Comparator.EQ,

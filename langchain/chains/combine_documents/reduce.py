@@ -22,7 +22,7 @@ class AsyncCombineDocsProtocol(Protocol):
     """Interface for the combine_docs method."""
 
     async def __call__(self, docs: List[Document], **kwargs: Any) -> str:
-        """Async nterface for the combine_docs method."""
+        """Async interface for the combine_docs method."""
 
 
 def _split_list_of_docs(
@@ -78,7 +78,7 @@ async def _acollapse_docs(
 
 
 class ReduceDocumentsChain(BaseCombineDocumentsChain):
-    """Combining documents by recursively reducing them.
+    """Combine documents by recursively reducing them.
 
     This involves
 
@@ -206,7 +206,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Tuple[str, dict]:
-        """Combine multiple documents recursively.
+        """Async combine multiple documents recursively.
 
         Args:
             docs: List of documents to combine, assumed that each one is less than

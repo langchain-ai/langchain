@@ -14,7 +14,7 @@ from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 
 
 class DuckDuckGoSearchRun(BaseTool):
-    """Tool that adds the capability to query the DuckDuckGo search API."""
+    """Tool that queries the DuckDuckGo search API."""
 
     name = "duckduckgo_search"
     description = (
@@ -44,7 +44,7 @@ class DuckDuckGoSearchRun(BaseTool):
 
 
 class DuckDuckGoSearchResults(BaseTool):
-    """Tool that queries the DuckDuckGo search API and get back json."""
+    """Tool that queries the DuckDuckGo search API and gets back json."""
 
     name = "DuckDuckGo Results JSON"
     description = (

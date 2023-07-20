@@ -7,11 +7,14 @@ from langchain.schema import BaseOutputParser
 
 
 class RegexDictParser(BaseOutputParser):
-    """Class to parse the output into a dictionary."""
+    """Parse the output of an LLM call into a Dictionary using a regex."""
 
     regex_pattern: str = r"{}:\s?([^.'\n']*)\.?"  # : :meta private:
+    """The regex pattern to use to parse the output."""
     output_key_to_format: Dict[str, str]
+    """The keys to use for the output."""
     no_update_value: Optional[str] = None
+    """The default key to use for the output."""
 
     @property
     def _type(self) -> str:

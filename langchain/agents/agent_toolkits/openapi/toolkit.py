@@ -23,7 +23,7 @@ from langchain.tools.requests.tool import (
 
 
 class RequestsToolkit(BaseToolkit):
-    """Toolkit for making requests."""
+    """Toolkit for making REST requests."""
 
     requests_wrapper: TextRequestsWrapper
 

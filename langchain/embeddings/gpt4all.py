@@ -1,4 +1,3 @@
-"""Wrapper around GPT4All embedding models."""
 from typing import Any, Dict, List
 
 from pydantic import BaseModel, root_validator
@@ -7,7 +6,7 @@ from langchain.embeddings.base import Embeddings
 
 
 class GPT4AllEmbeddings(BaseModel, Embeddings):
-    """Wrapper around GPT4All embedding models.
+    """GPT4All embedding models.
 
     To use, you should have the gpt4all python package installed
 
@@ -30,7 +29,7 @@ class GPT4AllEmbeddings(BaseModel, Embeddings):
 
             values["client"] = Embed4All()
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import gpt4all library. "
                 "Please install the gpt4all library to "
                 "use this embedding model: pip install gpt4all"

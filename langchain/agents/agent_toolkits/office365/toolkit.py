@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 
 class O365Toolkit(BaseToolkit):
-    """Toolkit for interacting with Office365."""
+    """Toolkit for interacting with Office 365."""
 
     account: Account = Field(default_factory=authenticate)
 

@@ -1,4 +1,4 @@
-"""Chain that interprets a prompt and executes bash code to perform bash operations."""
+"""Chain that interprets a prompt and executes bash operations."""
 from __future__ import annotations
 
 import logging
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class LLMBashChain(Chain):
-    """Chain that interprets a prompt and executes bash code to perform bash operations.
+    """Chain that interprets a prompt and executes bash operations.
 
     Example:
         .. code-block:: python

@@ -1,4 +1,3 @@
-"""Wrapper around DashScope embedding models."""
 from __future__ import annotations
 
 import logging
@@ -65,7 +64,7 @@ def embed_with_retry(embeddings: DashScopeEmbeddings, **kwargs: Any) -> Any:
 
 
 class DashScopeEmbeddings(BaseModel, Embeddings):
-    """Wrapper around DashScope embedding models.
+    """DashScope embedding models.
 
     To use, you should have the ``dashscope`` python package installed, and the
     environment variable ``DASHSCOPE_API_KEY`` set with your API key or pass it
@@ -93,10 +92,11 @@ class DashScopeEmbeddings(BaseModel, Embeddings):
     """
 
     client: Any  #: :meta private:
+    """The DashScope client."""
     model: str = "text-embedding-v1"
     dashscope_api_key: Optional[str] = None
-    """Maximum number of retries to make when generating."""
     max_retries: int = 5
+    """Maximum number of retries to make when generating."""
 
     class Config:
         """Configuration for this pydantic object."""

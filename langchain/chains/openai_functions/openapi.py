@@ -188,9 +188,14 @@ def openapi_spec_to_openai_fn(
 
 
 class SimpleRequestChain(Chain):
+    """Chain for making a simple request to an API endpoint."""
+
     request_method: Callable
+    """Method to use for making the request."""
     output_key: str = "response"
+    """Key to use for the output of the request."""
     input_key: str = "function"
+    """Key to use for the input of the request."""
 
     @property
     def input_keys(self) -> List[str]:
