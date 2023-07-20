@@ -178,7 +178,11 @@ class ArangoGraphQAChain(Chain):
                 ########################
                 # Retry AQL Generation #
                 aql_generation_output = self.aql_fix_chain.run(
-                    {"aql_query": aql_query, "aql_error": aql_error},
+                    {
+                        "adb_schema": self.graph.schema,
+                        "aql_query": aql_query,
+                        "aql_error": aql_error,
+                    },
                     callbacks=callbacks,
                 )
                 ########################

@@ -248,12 +248,19 @@ AQL_FIX_TEMPLATE = """Task: Address the ArangoDB Query Language (AQL) error mess
 You are an Arango Query Language (AQL) expert responsible for correcting the provided `AQL Query` based on the provided `AQL Error`. 
 
 The `AQL Error` explains why the `AQL Query` could not be executed in the database.
-The `AQL Error` will also contain the position of the error relative to the total number of lines of the `AQL Query`.
+The `AQL Error` may also contain the position of the error relative to the total number of lines of the `AQL Query`.
 For example, 'error X at position 2:5' denotes that the error X occurs on line 2, column 5 of the `AQL Query`.  
+
+You are also given the `ArangoDB Schema`. It is a JSON Object containing:
+1. `Graph Schema`: Lists all ArangoDB Graphs within the ArangoDB Database Instance, along with their Edge Relationships. 
+2. `Collection Schema`: Lists all ArangoDB Collections within the ArangoDB Database Instance, along with their document/edge properties and a document/edge example.
 
 You will output the `Corrected AQL Query` wrapped in 3 backticks (```). Do not include any text except the Corrected AQL Query.
 
 Remember to think step by step.
+
+ArangoDB Schema:
+{adb_schema}
 
 AQL Query:
 {aql_query}
@@ -266,6 +273,7 @@ Corrected AQL Query:
 
 AQL_FIX_PROMPT = PromptTemplate(
     input_variables=[
+        "adb_schema",
         "aql_query",
         "aql_error",
     ],
