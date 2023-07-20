@@ -9,6 +9,7 @@ from langchain.document_transformers.embeddings_redundant_filter import (
     get_stateful_documents,
 )
 from langchain.document_transformers.long_context_reorder import LongContextReorder
+from langchain.document_transformers.regex import RegexTransformer
 
 __all__ = [
     "DoctranQATransformer",
@@ -19,6 +20,7 @@ __all__ = [
     "get_stateful_documents",
     "LongContextReorder",
     "OpenAIMetadataTagger",
+    "RegexTransformer",
 ]
 
 from langchain.document_transformers.openai_functions import OpenAIMetadataTagger
