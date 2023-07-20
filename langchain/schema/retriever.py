@@ -108,7 +108,7 @@ class BaseRetriever(Serializable, ABC):
 
     @abstractmethod
     def _get_relevant_documents(
-        self, query: str, k: int, *, run_manager: CallbackManagerForRetrieverRun
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Get documents relevant to a query.
         Args:
@@ -121,7 +121,7 @@ class BaseRetriever(Serializable, ABC):
 
     @abstractmethod
     async def _aget_relevant_documents(
-        self, query: str, k: int, *, run_manager: AsyncCallbackManagerForRetrieverRun
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Asynchronously get documents relevant to a query.
         Args:
@@ -135,7 +135,6 @@ class BaseRetriever(Serializable, ABC):
     def get_relevant_documents(
         self,
         query: str,
-        k: int,
         *,
         callbacks: Callbacks = None,
         tags: Optional[List[str]] = None,
@@ -176,10 +175,12 @@ class BaseRetriever(Serializable, ABC):
             _kwargs = kwargs if self._expects_other_args else {}
             if self._new_arg_supported:
                 result = self._get_relevant_documents(
-                    query=query, k=k, run_manager=run_manager, **_kwargs
+                    query=query, k=self.k, run_manager=run_manager, **_kwargs
                 )
             else:
-                result = self._get_relevant_documents(query=query, k=k, **_kwargs)
+                result = self._get_relevant_documents(
+                    query=query, k=self.k, **_kwargs
+                )
         except Exception as e:
             run_manager.on_retriever_error(e)
             raise e
@@ -193,7 +194,6 @@ class BaseRetriever(Serializable, ABC):
     async def aget_relevant_documents(
         self,
         query: str,
-        k: int,
         *,
         callbacks: Callbacks = None,
         tags: Optional[List[str]] = None,
@@ -234,10 +234,12 @@ class BaseRetriever(Serializable, ABC):
             _kwargs = kwargs if self._expects_other_args else {}
             if self._new_arg_supported:
                 result = await self._aget_relevant_documents(
-                    query=query, k=k, run_manager=run_manager, **_kwargs
+                    query=query, k=self.k, run_manager=run_manager, **_kwargs
                 )
             else:
-                result = await self._aget_relevant_documents(query=query, k=k, **_kwargs)
+                result = await self._aget_relevant_documents(
+                    query=query, k=self.k, **_kwargs
+                )
         except Exception as e:
             await run_manager.on_retriever_error(e)
             raise e
