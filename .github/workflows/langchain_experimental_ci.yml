@@ -24,4 +24,5 @@ jobs:
       ./.github/workflows/_test.yml
     with:
       working-directory: libs/langchain-experimental
+      test_type: '["core"]'
     secrets: inherit
