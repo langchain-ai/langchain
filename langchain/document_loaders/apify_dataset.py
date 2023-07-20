@@ -23,7 +23,7 @@ class ApifyDatasetLoader(BaseLoader, BaseModel):
                 ),
             )
             documents = loader.load()
-    """
+    """  # noqa: E501
 
     apify_client: Any
     """An instance of the ApifyClient class from the apify-client Python package."""
