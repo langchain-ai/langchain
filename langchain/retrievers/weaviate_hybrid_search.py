@@ -53,7 +53,7 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
 
         cast(List, values["attributes"]).append(values["text_key"])
 
-        if values.get("create_schema_if_missing", False):
+        if values.get("create_schema_if_missing", True):
             class_obj = {
                 "class": values["index_name"],
                 "properties": [{"name": values["text_key"], "dataType": ["text"]}],
