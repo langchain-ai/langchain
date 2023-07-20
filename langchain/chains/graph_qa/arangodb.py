@@ -106,9 +106,9 @@ class ArangoGraphQAChain(Chain):
             output dictionary. Defaults to False
         :type return_aql_result: bool
 
-        :var max_aql_generation_attempts: The maximum amount of AQL Generation attempts to be made
-            prior to raising the last AQL Query Execution Error.
-            Defaults to 3.
+        :var max_aql_generation_attempts: The maximum amount of AQL
+            Generation attempts to be made prior to raising the last
+            AQL Query Execution Error. Defaults to 3.
         :type max_aql_generation_attempts: int
         """
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
