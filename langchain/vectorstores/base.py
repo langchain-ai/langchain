@@ -447,6 +447,9 @@ class VectorStore(ABC):
         raise NotImplementedError
 
     def as_retriever(self, **kwargs: Any) -> VectorStoreRetriever:
+        tags = kwargs.pop("tags", None) or []
+        if self.embeddings:
+            tags.append(type(self.embeddings))
         return VectorStoreRetriever(vectorstore=self, **kwargs)
 
 

@@ -406,6 +406,9 @@ class Vectara(VectorStore):
         return vectara
 
     def as_retriever(self, **kwargs: Any) -> VectaraRetriever:
+        tags = kwargs.pop("tags", None) or []
+        if self.embeddings:
+            tags.append(type(self.embeddings))
         return VectaraRetriever(vectorstore=self, **kwargs)
 
 

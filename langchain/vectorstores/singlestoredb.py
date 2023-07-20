@@ -445,6 +445,9 @@ class SingleStoreDB(VectorStore):
         return instance
 
     def as_retriever(self, **kwargs: Any) -> SingleStoreDBRetriever:
+        tags = kwargs.pop("tags", None) or []
+        if self.embeddings:
+            tags.append(type(self.embeddings))
         return SingleStoreDBRetriever(vectorstore=self, **kwargs)
 
 
