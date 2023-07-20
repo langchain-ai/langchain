@@ -21,6 +21,7 @@ class TestCubeSemanticLoader(unittest.TestCase):
         self.assertEqual(values, ["value1"])
 
     @patch("requests.get")
+    @patch("langchain.document_loaders.CubeSemanticLoader._get_dimension_values")
     def test_load(
         self, mock_get_dimension_values: MagicMock, mock_get: MagicMock
     ) -> None:
