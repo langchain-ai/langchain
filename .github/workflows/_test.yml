@@ -47,6 +47,10 @@ jobs:
                 echo "Running extended tests, installing dependencies with poetry..."
                 poetry install -E extended_testing
               fi
+      - name: Install langchain editable
+        if: ${{ inputs.working-directory != 'langchain' }}
+        run: |
+          pip install -e ../
       - name: Run ${{matrix.test_type}} tests
         run: |
           if [ "${{ matrix.test_type }}" == "core" ]; then
