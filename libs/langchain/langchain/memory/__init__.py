@@ -1,5 +1,4 @@
-"""Memory manages and manipulates previous chat messages and incorporates
- them in chains. """
+"""Memory maintains Chain state, incorporating context from past runs."""
 from langchain.memory.buffer import (
     ConversationBufferMemory,
     ConversationStringBufferMemory,
