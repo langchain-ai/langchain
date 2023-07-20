@@ -1,8 +1,10 @@
 import json
 import re
 from abc import abstractmethod
-from pydantic import BaseModel
 from typing import Any, Dict, List, Optional, Union
+
+from pydantic import BaseModel
+
 from langchain import LLMChain
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import Callbacks
@@ -52,8 +54,9 @@ class TaskPlaningChain(LLMChain):
         )
         human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
 
-        demo_messages: List[Union[HumanMessagePromptTemplate,
-                                  AIMessagePromptTemplate]] = []
+        demo_messages: List[
+            Union[HumanMessagePromptTemplate, AIMessagePromptTemplate]
+        ] = []
         for demo in demos:
             if demo["role"] == "user":
                 demo_messages.append(
