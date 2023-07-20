@@ -52,7 +52,8 @@ class TaskPlaningChain(LLMChain):
         )
         human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
 
-        demo_messages: List[Union[HumanMessagePromptTemplate, AIMessagePromptTemplate]] = []
+        demo_messages: List[Union[HumanMessagePromptTemplate,
+                                  AIMessagePromptTemplate]] = []
         for demo in demos:
             if demo["role"] == "user":
                 demo_messages.append(

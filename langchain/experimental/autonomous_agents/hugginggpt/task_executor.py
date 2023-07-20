@@ -42,7 +42,7 @@ class Task:
         elif self.task == "image_generator":
             # PIL.Image to image
             filename = uuid.uuid4().hex[:6] + ".png"
-            self.product.save(filename) # type: ignore
+            self.product.save(filename)  # type: ignore
             self.result = filename
 
     def completed(self) -> bool:
