@@ -85,6 +85,7 @@ class GooglePlacesAPIWrapper(BaseModel):
     def fetch_place_details(self, place_id: str) -> Optional[str]:
         try:
             place_details = self.google_map_client.place(place_id)
+            place_details["place_id"] = place_id
             formatted_details = self.format_place_details(place_details)
             return formatted_details
         except Exception as e:
@@ -101,9 +102,11 @@ class GooglePlacesAPIWrapper(BaseModel):
                 "formatted_phone_number", "Unknown"
             )
             website = place_details.get("result", {}).get("website", "Unknown")
+            place_id = place_details.get("result", {}).get("place_id", "Unknown")
 
             formatted_details = (
                 f"{name}\nAddress: {address}\n"
+                f"Google place ID: {place_id}\n"
                 f"Phone: {phone_number}\nWebsite: {website}\n\n"
             )
             return formatted_details
