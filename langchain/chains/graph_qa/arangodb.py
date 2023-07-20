@@ -98,12 +98,12 @@ class ArangoGraphQAChain(Chain):
             Defaults to an empty string.
         :type aql_examples: str
 
-        :var return_aql_query: Whether to return the AQL Query in the output dictionary.
-            Defaults to False.
+        :var return_aql_query: Whether to return the AQL Query in the
+            output dictionary. Defaults to False.
         :type return_aql_query: bool
 
-        :var return_aql_result: Whether to return the AQL Query in the output dictionary.
-            Defaults to False
+        :var return_aql_result: Whether to return the AQL Query in the
+            output dictionary. Defaults to False
         :type return_aql_result: bool
 
         :var max_aql_generation_attempts: The maximum amount of AQL Generation attempts to be made
