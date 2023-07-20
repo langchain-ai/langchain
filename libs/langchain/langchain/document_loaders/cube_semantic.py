@@ -42,7 +42,8 @@ class CubeSemanticLoader(BaseLoader):
         """Delay between retries to load dimension values."""
 
     def _get_dimension_values(self, dimension_name: str) -> List[str]:
-        """Makes a call to Cube's REST API load endpoint to retrieve values for dimensions.
+        """Makes a call to Cube's REST API load endpoint to retrieve
+        values for dimensions.
 
         These values can be used to achieve a more accurate filtering.
         """
@@ -90,7 +91,7 @@ class CubeSemanticLoader(BaseLoader):
 
         if retries == self.dimension_values_max_retries:
             print(
-                f"Maximum retries reached. Failed to retrieve dimension values for: {dimension_name}."
+                f"Maximum retries reached. Failed to retrieve values for: {dimension_name}."
             )
         return []
 

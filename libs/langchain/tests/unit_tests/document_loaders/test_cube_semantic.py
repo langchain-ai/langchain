@@ -1,5 +1,5 @@
 from typing import List
-from unittest import TestCase, mock
+from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
 import requests
