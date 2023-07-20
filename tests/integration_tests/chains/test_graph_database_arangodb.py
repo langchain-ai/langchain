@@ -2,8 +2,8 @@
 import os
 from typing import Any
 
-from langchain.chains.graph_qa.aql import ArangoDBGraphQAChain
-from langchain.graphs import ArangoDBGraph
+from langchain.chains.graph_qa.arangodb import ArangoGraphQAChain
+from langchain.graphs import ArangoGraph
 from langchain.llms.openai import OpenAI
 
 
@@ -60,7 +60,7 @@ def populate_arangodb_database(db: Any) -> None:
 
 def test_connect_arangodb() -> None:
     """Test that the ArangoDB database is correctly instantiated and connected."""
-    graph = ArangoDBGraph(get_arangodb_client())
+    graph = ArangoGraph(get_arangodb_client())
 
     sample_aql_result = graph.query("RETURN 'hello world'")
     assert ["hello_world"] == sample_aql_result
@@ -72,14 +72,18 @@ def test_aql_generation() -> None:
 
     populate_arangodb_database(db)
 
-    graph = ArangoDBGraph(db)
-    chain = ArangoDBGraphQAChain.from_llm(OpenAI(temperature=0), graph=graph)
+    graph = ArangoGraph(db)
+    chain = ArangoGraphQAChain.from_llm(OpenAI(temperature=0), graph=graph)
+    chain.return_aql_result = True
 
-    output = chain.run("Is Ned Stark alive?")
-    assert output == "Yes, Ned Stark is alive."
+    output = chain("Is Ned Stark alive?")
+    assert output["aql_result"] == [True]
+    assert "Yes" in output["result"]
 
-    output = chain.run("How old is Arya Stark?")
-    assert output == "Arya Stark is 11 years old."
+    output = chain("How old is Arya Stark?")
+    assert output["aql_result"] == [11]
+    assert "11" in output["result"]
 
-    output = chain.run("Who is the child of Ned Stark?")
-    assert output == "The child of Ned Stark is Arya Stark."
+    output = chain("What is the relationship between Arya Stark and Ned Stark?")
+    assert len(output["aql_result"]) == 1
+    assert "child of" in output["result"]
