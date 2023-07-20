@@ -87,7 +87,7 @@ class BedrockEmbeddings(BaseModel, Embeddings):
             client_params = {}
             if values["region_name"]:
                 client_params["region_name"] = values["region_name"]
-            
+
             if values["endpoint_url"]:
                 client_params["endpoint_url"] = values["endpoint_url"]
 
