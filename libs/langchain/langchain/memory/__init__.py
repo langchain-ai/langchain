@@ -1,3 +1,5 @@
+"""Memory manages and manipulates previous chat messages and incorporates
+ them in chains. """
 from langchain.memory.buffer import (
     ConversationBufferMemory,
     ConversationStringBufferMemory,
