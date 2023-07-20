@@ -10,7 +10,7 @@ class TestCubeSemanticLoader(unittest.TestCase):
             cube_api_url="http://example.com", cube_api_token="test_token"
         )
 
-    @patch("langchain.document_loaders.requests.request")
+    @patch("requests.request")
     def test_get_dimension_values(self, mock_request: MagicMock) -> None:
         mock_response = Mock()
         mock_response.status_code = 200
@@ -20,8 +20,8 @@ class TestCubeSemanticLoader(unittest.TestCase):
         values = self.loader._get_dimension_values("test_dimension")
         self.assertEqual(values, ["value1"])
 
-    @patch("langchain.document_loaders.requests.get")
-    @patch("langchain.document_loaders.CubeSemanticLoader._get_dimension_values")
+    @patch("requests.get")
+    @patch("CubeSemanticLoader._get_dimension_values")
     def test_load(
         self, mock_get_dimension_values: MagicMock, mock_get: MagicMock
     ) -> None:
