@@ -90,9 +90,7 @@ class CubeSemanticLoader(BaseLoader):
                 break
 
         if retries == self.dimension_values_max_retries:
-            print(
-                f"Maximum retries reached. Failed to retrieve values for: {dimension_name}."
-            )
+            print("Maximum retries reached.")
         return []
 
     def load(self) -> List[Document]:
