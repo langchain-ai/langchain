@@ -1,5 +1,7 @@
 import json
 import re
+from abc import abstractmethod
+from pydantic import BaseModel
 from typing import Any, Dict, List, Optional, Union
 from langchain import LLMChain
 from langchain.base_language import BaseLanguageModel
