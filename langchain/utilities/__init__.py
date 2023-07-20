@@ -17,6 +17,7 @@ from langchain.utilities.jira import JiraAPIWrapper
 from langchain.utilities.max_compute import MaxComputeAPIWrapper
 from langchain.utilities.metaphor_search import MetaphorSearchAPIWrapper
 from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
+from langchain.utilities.portkey import Portkey
 from langchain.utilities.powerbi import PowerBIDataset
 from langchain.utilities.pupmed import PubMedAPIWrapper
 from langchain.utilities.python import PythonREPL
@@ -47,6 +48,7 @@ __all__ = [
     "MaxComputeAPIWrapper",
     "MetaphorSearchAPIWrapper",
     "OpenWeatherMapAPIWrapper",
+    "Portkey",
     "PowerBIDataset",
     "PubMedAPIWrapper",
     "PythonREPL",
