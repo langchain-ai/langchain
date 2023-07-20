@@ -33,8 +33,10 @@ def _default_text_mapping(dim: int) -> Dict:
     }
 
 
-def _default_script_query(query_vector: List[float], filter: Optional[dict]) -> Dict:
-    if filter:
+def _default_script_query(
+    query_vector: List[float], filter: Optional[dict], filter_is_es_query: bool = False
+) -> Dict:
+    if not filter_is_es_query and filter:
         filter = {
             "bool": {
                 "filter": [
