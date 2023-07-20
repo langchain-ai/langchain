@@ -35,8 +35,16 @@ def _default_text_mapping(dim: int) -> Dict:
 
 def _default_script_query(query_vector: List[float], filter: Optional[dict]) -> Dict:
     if filter:
-        ((key, value),) = filter.items()
-        filter = {"match": {f"metadata.{key}.keyword": f"{value}"}}
+        filter = {
+            "bool": {
+                "filter": [
+                    {
+                        "match": {f"metadata.{key}.keyword": f"{value}"}
+                        for key, value in filter.items()
+                    }
+                ]
+            }
+        }
     else:
         filter = {"match_all": {}}
     return {
