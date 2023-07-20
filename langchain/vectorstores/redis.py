@@ -161,6 +161,11 @@ class Redis(VectorStore):
         self.distance_metric = distance_metric
         self.relevance_score_fn = relevance_score_fn
 
+    @property
+    def embeddings(self) -> Optional[Embeddings]:
+        # TODO: Accept embedding object directly
+        return None
+
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         if self.relevance_score_fn:
             return self.relevance_score_fn

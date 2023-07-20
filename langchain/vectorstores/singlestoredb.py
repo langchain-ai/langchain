@@ -213,6 +213,10 @@ class SingleStoreDB(VectorStore):
         )
         self._create_table()
 
+    @property
+    def embeddings(self) -> Embeddings:
+        return self.embedding
+
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         return self._max_inner_product_relevance_score_fn
 

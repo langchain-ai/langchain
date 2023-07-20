@@ -84,6 +84,10 @@ class MatchingEngine(VectorStore):
         self.credentials = credentials
         self.gcs_bucket_name = gcs_bucket_name
 
+    @property
+    def embeddings(self) -> Embeddings:
+        return self.embedding
+
     def _validate_google_libraries_installation(self) -> None:
         """Validates that Google libraries that are needed are installed."""
         try:

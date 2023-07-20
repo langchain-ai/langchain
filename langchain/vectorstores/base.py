@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import math
 import warnings
 from abc import ABC, abstractmethod
@@ -31,6 +32,8 @@ from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseRetriever
 
+logger = logging.getLogger(__name__)
+
 VST = TypeVar("VST", bound="VectorStore")
 
 
@@ -54,6 +57,14 @@ class VectorStore(ABC):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
+
+    @property
+    def embeddings(self) -> Optional[Embeddings]:
+        """Access the query embedding object if available."""
+        logger.debug(
+            f"{Embeddings.__name__} is not implemented for {self.__class__.__name__}"
+        )
+        return None
 
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
         """Delete by vector ID or other criteria.

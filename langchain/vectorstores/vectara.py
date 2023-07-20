@@ -61,6 +61,10 @@ class Vectara(VectorStore):
         adapter = requests.adapters.HTTPAdapter(max_retries=3)
         self._session.mount("http://", adapter)
 
+    @property
+    def embeddings(self) -> Optional[Embeddings]:
+        return None
+
     def _get_post_headers(self) -> dict:
         """Returns headers that should be attached to each post request."""
         return {

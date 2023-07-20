@@ -125,6 +125,10 @@ class PGVector(VectorStore):
         self.create_tables_if_not_exists()
         self.create_collection()
 
+    @property
+    def embeddings(self) -> Embeddings:
+        return self.embedding_function
+
     def connect(self) -> sqlalchemy.engine.Connection:
         engine = sqlalchemy.create_engine(self.connection_string)
         conn = engine.connect()

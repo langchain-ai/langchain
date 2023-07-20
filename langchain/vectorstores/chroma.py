@@ -121,6 +121,10 @@ class Chroma(VectorStore):
         )
         self.override_relevance_score_fn = relevance_score_fn
 
+    @property
+    def embeddings(self) -> Optional[Embeddings]:
+        return self._embedding_function
+
     @xor_args(("query_texts", "query_embeddings"))
     def __query_collection(
         self,
