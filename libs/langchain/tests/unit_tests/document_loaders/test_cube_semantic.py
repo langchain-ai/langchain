@@ -9,7 +9,7 @@ from langchain.document_loaders import CubeSemanticLoader
 
 
 class TestCubeSemanticLoader(TestCase):
-    @patch.object(requests, "get")
+    @patch("requests.get")
     def test_load_success(self, mock_get: MagicMock) -> None:
         # Arrange
         cube_api_url: str = "https://example.com/cube_api"
