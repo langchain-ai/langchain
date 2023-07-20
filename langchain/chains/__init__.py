@@ -14,7 +14,7 @@ from langchain.chains.conversational_retrieval.base import (
     ConversationalRetrievalChain,
 )
 from langchain.chains.flare.base import FlareChain
-from langchain.chains.graph_qa.aql import ArangoDBGraphQAChain
+from langchain.chains.graph_qa.arangodb import ArangoGraphQAChain
 from langchain.chains.graph_qa.base import GraphQAChain
 from langchain.chains.graph_qa.cypher import GraphCypherQAChain
 from langchain.chains.graph_qa.hugegraph import HugeGraphQAChain
@@ -116,5 +116,5 @@ __all__ = [
     "MapReduceDocumentsChain",
     "RefineDocumentsChain",
     "ReduceDocumentsChain",
-    "ArangoDBGraphQAChain",
+    "ArangoGraphQAChain",
 ]
