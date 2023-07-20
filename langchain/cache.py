@@ -219,9 +219,10 @@ class RedisCache(BaseCache):
         generations = []
         # Read from a Redis HASH
         results = self.redis.hgetall(self._key(prompt, llm_string))
-        if results:
-            for _, text in results.items():
-                generations.append(Generation(text=text))
+        try:
+            generations = [loads(text) for _, text in results.items()]
+        except Exception:
+            return None
         return generations if generations else None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
@@ -236,9 +237,7 @@ class RedisCache(BaseCache):
         key = self._key(prompt, llm_string)
         self.redis.hset(
             key,
-            mapping={
-                str(idx): generation.text for idx, generation in enumerate(return_val)
-            },
+            mapping={str(idx): dumps(gen) for idx, gen in enumerate(return_val)},
         )
 
     def clear(self, **kwargs: Any) -> None:
