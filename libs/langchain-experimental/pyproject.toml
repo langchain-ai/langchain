@@ -1,0 +1,77 @@
+[tool.poetry]
+name = "langchain_experimental"
+version = "0.0.1"
+description = "Experimental part of LangChain"
+authors = []
+license = "MIT"
+readme = "README.md"
+repository = "https://www.github.com/hwchase17/langchain"
+
+[tool.poetry.dependencies]
+langchain = "*"
+
+[tool.poetry.group.lint.dependencies]
+ruff = "^0.0.249"
+types-toml = "^0.10.8.1"
+types-redis = "^4.3.21.6"
+types-pytz = "^2023.3.0.0"
+black = "^23.1.0"
+types-chardet = "^5.0.4.6"
+mypy-protobuf = "^3.0.0"
+
+[tool.poetry.group.typing.dependencies]
+mypy = "^0.991"
+types-pyyaml = "^6.0.12.2"
+types-requests = "^2.28.11.5"
+
+[tool.poetry.group.dev.dependencies]
+jupyter = "^1.0.0"
+playwright = "^1.28.0"
+setuptools = "^67.6.1"
+
+[tool.ruff]
+select = [
+  "E",  # pycodestyle
+  "F",  # pyflakes
+  "I",  # isort
+]
+
+[tool.mypy]
+ignore_missing_imports = "True"
+disallow_untyped_defs = "True"
+exclude = ["notebooks", "examples", "example_data"]
+
+[tool.coverage.run]
+omit = [
+    "tests/*",
+]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+# --strict-markers will raise errors on unknown marks.
+# https://docs.pytest.org/en/7.1.x/how-to/mark.html#raising-errors-on-unknown-marks
+#
+# https://docs.pytest.org/en/7.1.x/reference/reference.html
+# --strict-config       any warnings encountered while parsing the `pytest`
+#                       section of the configuration file raise errors.
+#
+# https://github.com/tophat/syrupy
+# --snapshot-warn-unused    Prints a warning on unused snapshots rather than fail the test suite.
+addopts = "--strict-markers --strict-config --durations=5 --snapshot-warn-unused"
+# Registering custom markers.
+# https://docs.pytest.org/en/7.1.x/example/markers.html#registering-markers
+markers = [
+  "requires: mark tests as requiring a specific library"
+]
+
+[tool.codespell]
+skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples'
+# Ignore latin etc
+ignore-regex = '.*(Stati Uniti|Tense=Pres).*'
+# whats is a typo but used frequently in queries so kept as is
+# aapply - async apply
+# unsecure - typo but part of API, decided to not bother for now
+ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon'
