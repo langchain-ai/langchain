@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Sequence
+from typing import TYPE_CHECKING, Dict, Optional, Sequence
 
 from pydantic import Extra, root_validator
 
+from langchain.callbacks.manager import Callbacks
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 from langchain.schema import Document
 from langchain.utils import get_from_dict_or_env
@@ -20,9 +21,14 @@ else:
 
 
 class CohereRerank(BaseDocumentCompressor):
+    """DocumentCompressor that uses Cohere's rerank API to compress documents."""
+
     client: Client
+    """Cohere client to use for compressing documents."""
     top_n: int = 3
+    """Number of documents to return."""
     model: str = "rerank-english-v2.0"
+    """Model to use for reranking."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -48,8 +54,22 @@ class CohereRerank(BaseDocumentCompressor):
         return values
 
     def compress_documents(
-        self, documents: Sequence[Document], query: str
+        self,
+        documents: Sequence[Document],
+        query: str,
+        callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
+        """
+        Compress documents using Cohere's rerank API.
+
+        Args:
+            documents: A sequence of documents to compress.
+            query: The query to use for compressing the documents.
+            callbacks: Callbacks to run during the compression process.
+
+        Returns:
+            A sequence of compressed documents.
+        """
         if len(documents) == 0:  # to avoid empty api call
             return []
         doc_list = list(documents)
@@ -65,6 +85,9 @@ class CohereRerank(BaseDocumentCompressor):
         return final_results
 
     async def acompress_documents(
-        self, documents: Sequence[Document], query: str
+        self,
+        documents: Sequence[Document],
+        query: str,
+        callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
         raise NotImplementedError

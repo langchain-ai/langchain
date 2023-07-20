@@ -1,4 +1,3 @@
-"""Wrapper around Cohere embedding models."""
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
@@ -8,7 +7,7 @@ from langchain.utils import get_from_dict_or_env
 
 
 class CohereEmbeddings(BaseModel, Embeddings):
-    """Wrapper around Cohere embedding models.
+    """Cohere embedding models.
 
     To use, you should have the ``cohere`` python package installed, and the
     environment variable ``COHERE_API_KEY`` set with your API key or pass it
@@ -24,6 +23,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
     """
 
     client: Any  #: :meta private:
+    """Cohere client."""
     model: str = "embed-english-v2.0"
     """Model name to use."""
 

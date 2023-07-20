@@ -1,4 +1,3 @@
-"""Wrapper around Aleph Alpha APIs."""
 from typing import Any, Dict, List, Optional, Sequence
 
 from pydantic import Extra, root_validator
@@ -10,7 +9,7 @@ from langchain.utils import get_from_dict_or_env
 
 
 class AlephAlpha(LLM):
-    """Wrapper around Aleph Alpha large language models.
+    """Aleph Alpha large language models.
 
     To use, you should have the ``aleph_alpha_client`` python package installed, and the
     environment variable ``ALEPH_ALPHA_API_KEY`` set with your API key, or pass
@@ -23,7 +22,7 @@ class AlephAlpha(LLM):
         .. code-block:: python
 
             from langchain.llms import AlephAlpha
-            alpeh_alpha = AlephAlpha(aleph_alpha_api_key="my-api-key")
+            aleph_alpha = AlephAlpha(aleph_alpha_api_key="my-api-key")
     """
 
     client: Any  #: :meta private:
@@ -199,7 +198,7 @@ class AlephAlpha(LLM):
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
-        return "alpeh_alpha"
+        return "aleph_alpha"
 
     def _call(
         self,
@@ -220,7 +219,7 @@ class AlephAlpha(LLM):
         Example:
             .. code-block:: python
 
-                response = alpeh_alpha("Tell me a joke.")
+                response = aleph_alpha("Tell me a joke.")
         """
         from aleph_alpha_client import CompletionRequest, Prompt
 

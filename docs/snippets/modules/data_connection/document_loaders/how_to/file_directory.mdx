@@ -1,0 +1,277 @@
+Under the hood, by default this uses the [UnstructuredLoader](/docs/modules/data_connection/document_loaders/integrations/unstructured_file.html)
+
+```python
+from langchain.document_loaders import DirectoryLoader
+```
+
+We can use the `glob` parameter to control which files to load. Note that here it doesn't load the `.rst` file or the `.html` files.
+
+
+```python
+loader = DirectoryLoader('../', glob="**/*.md")
+```
+
+
+```python
+docs = loader.load()
+```
+
+
+```python
+len(docs)
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    1
+```
+
+</CodeOutputBlock>
+
+## Show a progress bar
+
+By default a progress bar will not be shown. To show a progress bar, install the `tqdm` library (e.g. `pip install tqdm`), and set the `show_progress` parameter to `True`.
+
+
+```python
+loader = DirectoryLoader('../', glob="**/*.md", show_progress=True)
+docs = loader.load()
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    Requirement already satisfied: tqdm in /Users/jon/.pyenv/versions/3.9.16/envs/microbiome-app/lib/python3.9/site-packages (4.65.0)
+
+
+    0it [00:00, ?it/s]
+```
+
+</CodeOutputBlock>
+
+## Use multithreading
+
+By default the loading happens in one thread. In order to utilize several threads set the `use_multithreading` flag to true.
+
+
+```python
+loader = DirectoryLoader('../', glob="**/*.md", use_multithreading=True)
+docs = loader.load()
+```
+
+## Change loader class
+By default this uses the `UnstructuredLoader` class. However, you can change up the type of loader pretty easily.
+
+
+```python
+from langchain.document_loaders import TextLoader
+```
+
+
+```python
+loader = DirectoryLoader('../', glob="**/*.md", loader_cls=TextLoader)
+```
+
+
+```python
+docs = loader.load()
+```
+
+
+```python
+len(docs)
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    1
+```
+
+</CodeOutputBlock>
+
+If you need to load Python source code files, use the `PythonLoader`.
+
+
+```python
+from langchain.document_loaders import PythonLoader
+```
+
+
+```python
+loader = DirectoryLoader('../../../../../', glob="**/*.py", loader_cls=PythonLoader)
+```
+
+
+```python
+docs = loader.load()
+```
+
+
+```python
+len(docs)
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    691
+```
+
+</CodeOutputBlock>
+
+## Auto detect file encodings with TextLoader
+
+In this example we will see some strategies that can be useful when loading a big list of arbitrary files from a directory using the `TextLoader` class.
+
+First to illustrate the problem, let's try to load multiple text with arbitrary encodings.
+
+
+```python
+path = '../../../../../tests/integration_tests/examples'
+loader = DirectoryLoader(path, glob="**/*.txt", loader_cls=TextLoader)
+```
+
+### A. Default Behavior
+
+
+```python
+loader.load()
+```
+    
+<HTMLOutputBlock center>
+
+
+```html
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="color: #800000; text-decoration-color: #800000">╭─────────────────────────────── </span><span style="color: #800000; text-decoration-color: #800000; font-weight: bold">Traceback </span><span style="color: #bf7f7f; text-decoration-color: #bf7f7f; font-weight: bold">(most recent call last)</span><span style="color: #800000; text-decoration-color: #800000"> ────────────────────────────────╮</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span> <span style="color: #bfbf7f; text-decoration-color: #bfbf7f">/data/source/langchain/langchain/document_loaders/</span><span style="color: #808000; text-decoration-color: #808000; font-weight: bold">text.py</span>:<span style="color: #0000ff; text-decoration-color: #0000ff">29</span> in <span style="color: #00ff00; text-decoration-color: #00ff00">load</span>                             <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>                                                                                                  <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">26 </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   </span>text = <span style="color: #808000; text-decoration-color: #808000">""</span>                                                                           <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">27 </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   </span><span style="color: #0000ff; text-decoration-color: #0000ff">with</span> <span style="color: #00ffff; text-decoration-color: #00ffff">open</span>(<span style="color: #00ffff; text-decoration-color: #00ffff">self</span>.file_path, encoding=<span style="color: #00ffff; text-decoration-color: #00ffff">self</span>.encoding) <span style="color: #0000ff; text-decoration-color: #0000ff">as</span> f:                             <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">28 </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   │   </span><span style="color: #0000ff; text-decoration-color: #0000ff">try</span>:                                                                            <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span> <span style="color: #800000; text-decoration-color: #800000">❱ </span>29 <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   │   │   </span>text = f.read()                                                             <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">30 </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   │   </span><span style="color: #0000ff; text-decoration-color: #0000ff">except</span> <span style="color: #00ffff; text-decoration-color: #00ffff">UnicodeDecodeError</span> <span style="color: #0000ff; text-decoration-color: #0000ff">as</span> e:                                                 <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">31 </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   │   │   </span><span style="color: #0000ff; text-decoration-color: #0000ff">if</span> <span style="color: #00ffff; text-decoration-color: #00ffff">self</span>.autodetect_encoding:                                                <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">32 </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   │   │   │   </span>detected_encodings = <span style="color: #00ffff; text-decoration-color: #00ffff">self</span>.detect_file_encodings()                       <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>                                                                                                  <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span> <span style="color: #bfbf7f; text-decoration-color: #bfbf7f">/home/spike/.pyenv/versions/3.9.11/lib/python3.9/</span><span style="color: #808000; text-decoration-color: #808000; font-weight: bold">codecs.py</span>:<span style="color: #0000ff; text-decoration-color: #0000ff">322</span> in <span style="color: #00ff00; text-decoration-color: #00ff00">decode</span>                         <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>                                                                                                  <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f"> 319 </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   </span><span style="color: #0000ff; text-decoration-color: #0000ff">def</span> <span style="color: #00ff00; text-decoration-color: #00ff00">decode</span>(<span style="color: #00ffff; text-decoration-color: #00ffff">self</span>, <span style="color: #00ffff; text-decoration-color: #00ffff">input</span>, final=<span style="color: #0000ff; text-decoration-color: #0000ff">False</span>):                                                 <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f"> 320 </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f"># decode input (taking the buffer into account)</span>                                   <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f"> 321 </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   </span>data = <span style="color: #00ffff; text-decoration-color: #00ffff">self</span>.buffer + <span style="color: #00ffff; text-decoration-color: #00ffff">input</span>                                                        <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span> <span style="color: #800000; text-decoration-color: #800000">❱ </span> 322 <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   </span>(result, consumed) = <span style="color: #00ffff; text-decoration-color: #00ffff">self</span>._buffer_decode(data, <span style="color: #00ffff; text-decoration-color: #00ffff">self</span>.errors, final)                <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f"> 323 </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f"># keep undecoded input until the next call</span>                                        <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f"> 324 </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   </span><span style="color: #00ffff; text-decoration-color: #00ffff">self</span>.buffer = data[consumed:]                                                     <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f"> 325 </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   </span><span style="color: #0000ff; text-decoration-color: #0000ff">return</span> result                                                                     <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">╰──────────────────────────────────────────────────────────────────────────────────────────────────╯</span>
+<span style="color: #ff0000; text-decoration-color: #ff0000; font-weight: bold">UnicodeDecodeError: </span><span style="color: #008000; text-decoration-color: #008000">'utf-8'</span> codec can't decode byte <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">0xca</span> in position <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">0</span>: invalid continuation byte
+
+<span style="font-style: italic">The above exception was the direct cause of the following exception:</span>
+
+<span style="color: #800000; text-decoration-color: #800000">╭─────────────────────────────── </span><span style="color: #800000; text-decoration-color: #800000; font-weight: bold">Traceback </span><span style="color: #bf7f7f; text-decoration-color: #bf7f7f; font-weight: bold">(most recent call last)</span><span style="color: #800000; text-decoration-color: #800000"> ────────────────────────────────╮</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span> in <span style="color: #00ff00; text-decoration-color: #00ff00">&lt;module&gt;</span>:<span style="color: #0000ff; text-decoration-color: #0000ff">1</span>                                                                                    <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>                                                                                                  <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span> <span style="color: #800000; text-decoration-color: #800000">❱ </span>1 loader.load()                                                                                <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">2 </span>                                                                                             <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>                                                                                                  <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span> <span style="color: #bfbf7f; text-decoration-color: #bfbf7f">/data/source/langchain/langchain/document_loaders/</span><span style="color: #808000; text-decoration-color: #808000; font-weight: bold">directory.py</span>:<span style="color: #0000ff; text-decoration-color: #0000ff">84</span> in <span style="color: #00ff00; text-decoration-color: #00ff00">load</span>                        <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>                                                                                                  <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">81 </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   │   │   │   │   </span><span style="color: #0000ff; text-decoration-color: #0000ff">if</span> <span style="color: #00ffff; text-decoration-color: #00ffff">self</span>.silent_errors:                                              <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">82 </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   │   │   │   │   │   </span>logger.warning(e)                                               <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">83 </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   │   │   │   │   </span><span style="color: #0000ff; text-decoration-color: #0000ff">else</span>:                                                               <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span> <span style="color: #800000; text-decoration-color: #800000">❱ </span>84 <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   │   │   │   │   │   </span><span style="color: #0000ff; text-decoration-color: #0000ff">raise</span> e                                                         <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">85 </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   │   │   │   </span><span style="color: #0000ff; text-decoration-color: #0000ff">finally</span>:                                                                <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">86 </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   │   │   │   │   </span><span style="color: #0000ff; text-decoration-color: #0000ff">if</span> pbar:                                                            <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">87 </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   │   │   │   │   │   </span>pbar.update(<span style="color: #0000ff; text-decoration-color: #0000ff">1</span>)                                                  <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>                                                                                                  <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span> <span style="color: #bfbf7f; text-decoration-color: #bfbf7f">/data/source/langchain/langchain/document_loaders/</span><span style="color: #808000; text-decoration-color: #808000; font-weight: bold">directory.py</span>:<span style="color: #0000ff; text-decoration-color: #0000ff">78</span> in <span style="color: #00ff00; text-decoration-color: #00ff00">load</span>                        <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>                                                                                                  <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">75 </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   │   </span><span style="color: #0000ff; text-decoration-color: #0000ff">if</span> i.is_file():                                                                 <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">76 </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   │   │   </span><span style="color: #0000ff; text-decoration-color: #0000ff">if</span> _is_visible(i.relative_to(p)) <span style="color: #ff00ff; text-decoration-color: #ff00ff">or</span> <span style="color: #00ffff; text-decoration-color: #00ffff">self</span>.load_hidden:                       <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">77 </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   │   │   │   </span><span style="color: #0000ff; text-decoration-color: #0000ff">try</span>:                                                                    <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span> <span style="color: #800000; text-decoration-color: #800000">❱ </span>78 <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   │   │   │   │   </span>sub_docs = <span style="color: #00ffff; text-decoration-color: #00ffff">self</span>.loader_cls(<span style="color: #00ffff; text-decoration-color: #00ffff">str</span>(i), **<span style="color: #00ffff; text-decoration-color: #00ffff">self</span>.loader_kwargs).load()     <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">79 </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   │   │   │   │   </span>docs.extend(sub_docs)                                               <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">80 </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   │   │   │   </span><span style="color: #0000ff; text-decoration-color: #0000ff">except</span> <span style="color: #00ffff; text-decoration-color: #00ffff">Exception</span> <span style="color: #0000ff; text-decoration-color: #0000ff">as</span> e:                                                  <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">81 </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   │   │   │   │   </span><span style="color: #0000ff; text-decoration-color: #0000ff">if</span> <span style="color: #00ffff; text-decoration-color: #00ffff">self</span>.silent_errors:                                              <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>                                                                                                  <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span> <span style="color: #bfbf7f; text-decoration-color: #bfbf7f">/data/source/langchain/langchain/document_loaders/</span><span style="color: #808000; text-decoration-color: #808000; font-weight: bold">text.py</span>:<span style="color: #0000ff; text-decoration-color: #0000ff">44</span> in <span style="color: #00ff00; text-decoration-color: #00ff00">load</span>                             <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>                                                                                                  <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">41 </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   │   │   │   │   </span><span style="color: #0000ff; text-decoration-color: #0000ff">except</span> <span style="color: #00ffff; text-decoration-color: #00ffff">UnicodeDecodeError</span>:                                          <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">42 </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   │   │   │   │   │   </span><span style="color: #0000ff; text-decoration-color: #0000ff">continue</span>                                                        <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">43 </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   │   │   </span><span style="color: #0000ff; text-decoration-color: #0000ff">else</span>:                                                                       <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span> <span style="color: #800000; text-decoration-color: #800000">❱ </span>44 <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   │   │   │   </span><span style="color: #0000ff; text-decoration-color: #0000ff">raise</span> <span style="color: #00ffff; text-decoration-color: #00ffff">RuntimeError</span>(<span style="color: #808000; text-decoration-color: #808000">f"Error loading {</span><span style="color: #00ffff; text-decoration-color: #00ffff">self</span>.file_path<span style="color: #808000; text-decoration-color: #808000">}"</span>) <span style="color: #0000ff; text-decoration-color: #0000ff">from</span> <span style="color: #00ffff; text-decoration-color: #00ffff; text-decoration: underline">e</span>            <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">45 </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   │   </span><span style="color: #0000ff; text-decoration-color: #0000ff">except</span> <span style="color: #00ffff; text-decoration-color: #00ffff">Exception</span> <span style="color: #0000ff; text-decoration-color: #0000ff">as</span> e:                                                          <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">46 </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   │   │   </span><span style="color: #0000ff; text-decoration-color: #0000ff">raise</span> <span style="color: #00ffff; text-decoration-color: #00ffff">RuntimeError</span>(<span style="color: #808000; text-decoration-color: #808000">f"Error loading {</span><span style="color: #00ffff; text-decoration-color: #00ffff">self</span>.file_path<span style="color: #808000; text-decoration-color: #808000">}"</span>) <span style="color: #0000ff; text-decoration-color: #0000ff">from</span> <span style="color: #00ffff; text-decoration-color: #00ffff; text-decoration: underline">e</span>                <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">47 </span>                                                                                            <span style="color: #800000; text-decoration-color: #800000">│</span>
+<span style="color: #800000; text-decoration-color: #800000">╰──────────────────────────────────────────────────────────────────────────────────────────────────╯</span>
+<span style="color: #ff0000; text-decoration-color: #ff0000; font-weight: bold">RuntimeError: </span>Error loading ..<span style="color: #800080; text-decoration-color: #800080">/../../../../tests/integration_tests/examples/</span><span style="color: #ff00ff; text-decoration-color: #ff00ff">example-non-utf8.txt</span>
+</pre>
+```
+
+
+</HTMLOutputBlock>
+
+The file `example-non-utf8.txt` uses a different encoding the `load()` function fails with a helpful message indicating which file failed decoding. 
+
+With the default behavior of `TextLoader` any failure to load any of the documents will fail the whole loading process and no documents are loaded. 
+
+### B. Silent fail
+
+We can pass the parameter `silent_errors` to the `DirectoryLoader` to skip the files which could not be loaded and continue the load process.
+
+
+```python
+loader = DirectoryLoader(path, glob="**/*.txt", loader_cls=TextLoader, silent_errors=True)
+docs = loader.load()
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    Error loading ../../../../../tests/integration_tests/examples/example-non-utf8.txt
+```
+
+</CodeOutputBlock>
+
+
+```python
+doc_sources = [doc.metadata['source']  for doc in docs]
+doc_sources
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    ['../../../../../tests/integration_tests/examples/whatsapp_chat.txt',
+     '../../../../../tests/integration_tests/examples/example-utf8.txt']
+```
+
+</CodeOutputBlock>
+
+### C. Auto detect encodings
+
+We can also ask `TextLoader` to auto detect the file encoding before failing, by passing the `autodetect_encoding` to the loader class.
+
+
+```python
+text_loader_kwargs={'autodetect_encoding': True}
+loader = DirectoryLoader(path, glob="**/*.txt", loader_cls=TextLoader, loader_kwargs=text_loader_kwargs)
+docs = loader.load()
+```
+
+
+```python
+doc_sources = [doc.metadata['source']  for doc in docs]
+doc_sources
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    ['../../../../../tests/integration_tests/examples/example-non-utf8.txt',
+     '../../../../../tests/integration_tests/examples/whatsapp_chat.txt',
+     '../../../../../tests/integration_tests/examples/example-utf8.txt']
+```
+
+</CodeOutputBlock>

@@ -6,11 +6,11 @@ from typing import Any, List, Optional, Union
 
 import yaml
 
-from langchain.agents.agent import BaseSingleActionAgent
+from langchain.agents.agent import BaseMultiActionAgent, BaseSingleActionAgent
 from langchain.agents.tools import Tool
 from langchain.agents.types import AGENT_TO_CLASS
-from langchain.base_language import BaseLanguageModel
 from langchain.chains.loading import load_chain, load_chain_from_config
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.utilities.loading import try_load_from_hub
 
 logger = logging.getLogger(__file__)
@@ -20,7 +20,7 @@ URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/age
 
 def _load_agent_from_tools(
     config: dict, llm: BaseLanguageModel, tools: List[Tool], **kwargs: Any
-) -> BaseSingleActionAgent:
+) -> Union[BaseSingleActionAgent, BaseMultiActionAgent]:
     config_type = config.pop("_type")
     if config_type not in AGENT_TO_CLASS:
         raise ValueError(f"Loading {config_type} agent not supported")
@@ -35,8 +35,18 @@ def load_agent_from_config(
     llm: Optional[BaseLanguageModel] = None,
     tools: Optional[List[Tool]] = None,
     **kwargs: Any,
-) -> BaseSingleActionAgent:
-    """Load agent from Config Dict."""
+) -> Union[BaseSingleActionAgent, BaseMultiActionAgent]:
+    """Load agent from Config Dict.
+
+    Args:
+        config: Config dict to load agent from.
+        llm: Language model to use as the agent.
+        tools: List of tools this agent has access to.
+        **kwargs: Additional key word arguments passed to the agent executor.
+
+    Returns:
+        An agent executor.
+    """
     if "_type" not in config:
         raise ValueError("Must specify an agent Type in config")
     load_from_tools = config.pop("load_from_llm_and_tools", False)
@@ -75,8 +85,18 @@ def load_agent_from_config(
     return agent_cls(**combined_config)  # type: ignore
 
 
-def load_agent(path: Union[str, Path], **kwargs: Any) -> BaseSingleActionAgent:
-    """Unified method for loading a agent from LangChainHub or local fs."""
+def load_agent(
+    path: Union[str, Path], **kwargs: Any
+) -> Union[BaseSingleActionAgent, BaseMultiActionAgent]:
+    """Unified method for loading an agent from LangChainHub or local fs.
+
+    Args:
+        path: Path to the agent file.
+        **kwargs: Additional key word arguments passed to the agent executor.
+
+    Returns:
+        An agent executor.
+    """
     if hub_result := try_load_from_hub(
         path, _load_agent_from_file, "agents", {"json", "yaml"}
     ):
@@ -87,7 +107,7 @@ def load_agent(path: Union[str, Path], **kwargs: Any) -> BaseSingleActionAgent:
 
 def _load_agent_from_file(
     file: Union[str, Path], **kwargs: Any
-) -> BaseSingleActionAgent:
+) -> Union[BaseSingleActionAgent, BaseMultiActionAgent]:
     """Load agent from file."""
     # Convert file to Path object.
     if isinstance(file, str):

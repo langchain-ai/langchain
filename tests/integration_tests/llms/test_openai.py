@@ -15,8 +15,8 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 def test_openai_call() -> None:
     """Test valid call to openai."""
-    llm = OpenAI(max_tokens=10)
-    output = llm("Say foo:")
+    llm = OpenAI(max_tokens=10, n=3)
+    output = llm("Say something nice:")
     assert isinstance(output, str)
 
 
@@ -94,6 +94,15 @@ def test_openai_streaming() -> None:
 
     for token in generator:
         assert isinstance(token["choices"][0]["text"], str)
+
+
+def test_openai_multiple_prompts() -> None:
+    """Test completion with multiple prompts."""
+    llm = OpenAI(max_tokens=10)
+    output = llm.generate(["I'm Pickle Rick", "I'm Pickle Rick"])
+    assert isinstance(output, LLMResult)
+    assert isinstance(output.generations, list)
+    assert len(output.generations) == 2
 
 
 def test_openai_streaming_error() -> None:

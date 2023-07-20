@@ -15,6 +15,8 @@ from langchain.tools.base import BaseTool
 
 
 class ApiConfig(BaseModel):
+    """API Configuration."""
+
     type: str
     url: str
     has_user_authentication: Optional[bool] = False
@@ -42,7 +44,14 @@ class AIPlugin(BaseModel):
 
 
 def marshal_spec(txt: str) -> dict:
-    """Convert the yaml or json serialized spec to a dict."""
+    """Convert the yaml or json serialized spec to a dict.
+
+    Args:
+        txt: The yaml or json serialized spec.
+
+    Returns:
+        dict: The spec as a dict.
+    """
     try:
         return json.loads(txt)
     except json.JSONDecodeError:
@@ -50,12 +59,14 @@ def marshal_spec(txt: str) -> dict:
 
 
 class AIPluginToolSchema(BaseModel):
-    """AIPLuginToolSchema."""
+    """Schema for AIPluginTool."""
 
     tool_input: Optional[str] = ""
 
 
 class AIPluginTool(BaseTool):
+    """Tool for getting the OpenAPI spec for an AI Plugin."""
+
     plugin: AIPlugin
     api_spec: str
     args_schema: Type[AIPluginToolSchema] = AIPluginToolSchema

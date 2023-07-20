@@ -1,4 +1,3 @@
-"""Logic for converting internal query language to a valid Chroma query."""
 from typing import Dict, Tuple, Union
 
 from langchain.chains.query_constructor.ir import (
@@ -12,10 +11,18 @@ from langchain.chains.query_constructor.ir import (
 
 
 class ChromaTranslator(Visitor):
-    """Logic for converting internal query language elements to valid filters."""
+    """Translate internal query language elements to valid filters."""
 
     allowed_operators = [Operator.AND, Operator.OR]
     """Subset of allowed logical operators."""
+    allowed_comparators = [
+        Comparator.EQ,
+        Comparator.GT,
+        Comparator.GTE,
+        Comparator.LT,
+        Comparator.LTE,
+    ]
+    """Subset of allowed logical comparators."""
 
     def _format_func(self, func: Union[Operator, Comparator]) -> str:
         self._validate_func(func)

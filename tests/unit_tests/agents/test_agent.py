@@ -28,6 +28,10 @@ class FakeListLLM(LLM):
         print(self.responses[self.i])
         return self.responses[self.i]
 
+    def get_num_tokens(self, text: str) -> int:
+        """Return number of tokens in text."""
+        return len(text.split())
+
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         return {}
@@ -197,7 +201,7 @@ def test_agent_tool_return_direct_in_intermediate_steps() -> None:
 
 
 def test_agent_with_new_prefix_suffix() -> None:
-    """Test agent initilization kwargs with new prefix and suffix."""
+    """Test agent initialization kwargs with new prefix and suffix."""
     fake_llm = FakeListLLM(
         responses=["FooBarBaz\nAction: Search\nAction Input: misalignment"]
     )

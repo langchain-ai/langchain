@@ -53,24 +53,40 @@ def _to_snake_case(name: str) -> str:
 
 
 class Expr(BaseModel):
+    """Base class for all expressions."""
+
     def accept(self, visitor: Visitor) -> Any:
+        """Accept a visitor.
+
+        Args:
+            visitor: visitor to accept
+
+        Returns:
+            result of visiting
+        """
         return getattr(visitor, f"visit_{_to_snake_case(self.__class__.__name__)}")(
             self
         )
 
 
 class Operator(str, Enum):
+    """Enumerator of the operations."""
+
     AND = "and"
     OR = "or"
     NOT = "not"
 
 
 class Comparator(str, Enum):
+    """Enumerator of the comparison operators."""
+
     EQ = "eq"
     GT = "gt"
     GTE = "gte"
     LT = "lt"
     LTE = "lte"
+    CONTAIN = "contain"
+    LIKE = "like"
 
 
 class FilterDirective(Expr, ABC):
@@ -93,6 +109,11 @@ class Operation(FilterDirective):
 
 
 class StructuredQuery(Expr):
+    """A structured query."""
+
     query: str
+    """Query string."""
     filter: Optional[FilterDirective]
+    """Filtering expression."""
     limit: Optional[int]
+    """Limit on the number of results."""

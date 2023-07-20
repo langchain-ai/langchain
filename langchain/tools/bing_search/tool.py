@@ -11,9 +11,9 @@ from langchain.utilities.bing_search import BingSearchAPIWrapper
 
 
 class BingSearchRun(BaseTool):
-    """Tool that adds the capability to query the Bing search API."""
+    """Tool that queries the Bing search API."""
 
-    name = "Bing Search"
+    name = "bing_search"
     description = (
         "A wrapper around Bing Search. "
         "Useful for when you need to answer questions about current events. "
@@ -39,7 +39,7 @@ class BingSearchRun(BaseTool):
 
 
 class BingSearchResults(BaseTool):
-    """Tool that has capability to query the Bing Search API and get back json."""
+    """Tool that queries the Bing Search API and gets back json."""
 
     name = "Bing Search Results JSON"
     description = (

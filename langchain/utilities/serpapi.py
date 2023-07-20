@@ -36,7 +36,7 @@ class SerpAPIWrapper(BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain import SerpAPIWrapper
+            from langchain.utilities import SerpAPIWrapper
             serpapi = SerpAPIWrapper()
     """
 
@@ -129,6 +129,8 @@ class SerpAPIWrapper(BaseModel):
         """Process response from SerpAPI."""
         if "error" in res.keys():
             raise ValueError(f"Got error from SerpAPI: {res['error']}")
+        if "answer_box" in res.keys() and type(res["answer_box"]) == list:
+            res["answer_box"] = res["answer_box"][0]
         if "answer_box" in res.keys() and "answer" in res["answer_box"].keys():
             toret = res["answer_box"]["answer"]
         elif "answer_box" in res.keys() and "snippet" in res["answer_box"].keys():
@@ -157,7 +159,12 @@ class SerpAPIWrapper(BaseModel):
             toret = res["organic_results"][0]["snippet"]
         elif "link" in res["organic_results"][0].keys():
             toret = res["organic_results"][0]["link"]
-
+        elif (
+            "images_results" in res.keys()
+            and "thumbnail" in res["images_results"][0].keys()
+        ):
+            thumbnails = [item["thumbnail"] for item in res["images_results"][:10]]
+            toret = thumbnails
         else:
             toret = "No good search result found"
         return toret

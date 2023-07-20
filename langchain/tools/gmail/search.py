@@ -14,11 +14,15 @@ from langchain.tools.gmail.utils import clean_email_body
 
 
 class Resource(str, Enum):
+    """Enumerator of Resources to search."""
+
     THREADS = "threads"
     MESSAGES = "messages"
 
 
 class SearchArgsSchema(BaseModel):
+    """Input for SearchGmailTool."""
+
     # From https://support.google.com/mail/answer/7190?hl=en
     query: str = Field(
         ...,
@@ -43,6 +47,8 @@ class SearchArgsSchema(BaseModel):
 
 
 class GmailSearch(GmailBaseTool):
+    """Tool that searches for messages or threads in Gmail."""
+
     name: str = "search_gmail"
     description: str = (
         "Use this tool to search for email messages or threads."

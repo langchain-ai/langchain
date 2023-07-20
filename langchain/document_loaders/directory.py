@@ -1,4 +1,4 @@
-"""Loading logic for loading documents from a directory."""
+"""Load documents from a directory."""
 import concurrent
 import logging
 from pathlib import Path
@@ -25,7 +25,7 @@ def _is_visible(p: Path) -> bool:
 
 
 class DirectoryLoader(BaseLoader):
-    """Loading logic for loading documents from a directory."""
+    """Load documents from a directory."""
 
     def __init__(
         self,
@@ -40,7 +40,22 @@ class DirectoryLoader(BaseLoader):
         use_multithreading: bool = False,
         max_concurrency: int = 4,
     ):
-        """Initialize with path to directory and how to glob over it."""
+        """Initialize with a path to directory and how to glob over it.
+
+        Args:
+            path: Path to directory.
+            glob: Glob pattern to use to find files. Defaults to "**/[!.]*"
+               (all files except hidden).
+            silent_errors: Whether to silently ignore errors. Defaults to False.
+            load_hidden: Whether to load hidden files. Defaults to False.
+            loader_cls: Loader class to use for loading files.
+              Defaults to UnstructuredFileLoader.
+            loader_kwargs: Keyword arguments to pass to loader_cls. Defaults to None.
+            recursive: Whether to recursively search for files. Defaults to False.
+            show_progress: Whether to show a progress bar. Defaults to False.
+            use_multithreading: Whether to use multithreading. Defaults to False.
+            max_concurrency: The maximum number of threads to use. Defaults to 4.
+        """
         if loader_kwargs is None:
             loader_kwargs = {}
         self.path = path
@@ -57,14 +72,24 @@ class DirectoryLoader(BaseLoader):
     def load_file(
         self, item: Path, path: Path, docs: List[Document], pbar: Optional[Any]
     ) -> None:
+        """Load a file.
+
+        Args:
+            item: File path.
+            path: Directory path.
+            docs: List of documents to append to.
+            pbar: Progress bar. Defaults to None.
+
+        """
         if item.is_file():
             if _is_visible(item.relative_to(path)) or self.load_hidden:
                 try:
+                    logger.debug(f"Processing file: {str(item)}")
                     sub_docs = self.loader_cls(str(item), **self.loader_kwargs).load()
                     docs.extend(sub_docs)
                 except Exception as e:
                     if self.silent_errors:
-                        logger.warning(e)
+                        logger.warning(f"Error loading file {str(item)}: {e}")
                     else:
                         raise e
                 finally:
@@ -111,6 +136,3 @@ class DirectoryLoader(BaseLoader):
             pbar.close()
 
         return docs
-
-
-#

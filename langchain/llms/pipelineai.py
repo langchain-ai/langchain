@@ -1,4 +1,3 @@
-"""Wrapper around Pipeline Cloud API."""
 import logging
 from typing import Any, Dict, List, Mapping, Optional
 
@@ -13,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class PipelineAI(LLM, BaseModel):
-    """Wrapper around PipelineAI large language models.
+    """PipelineAI large language models.
 
     To use, you should have the ``pipeline-ai`` python package installed,
     and the environment variable ``PIPELINE_API_KEY`` set with your API key.
@@ -53,7 +52,7 @@ class PipelineAI(LLM, BaseModel):
                 if field_name in extra:
                     raise ValueError(f"Found {field_name} supplied twice.")
                 logger.warning(
-                    f"""{field_name} was transfered to pipeline_kwargs.
+                    f"""{field_name} was transferred to pipeline_kwargs.
                     Please confirm that {field_name} is what you intended."""
                 )
                 extra[field_name] = values.pop(field_name)

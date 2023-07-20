@@ -8,9 +8,9 @@ from langchain.agents.agent_toolkits.vectorstore.toolkit import (
     VectorStoreToolkit,
 )
 from langchain.agents.mrkl.base import ZeroShotAgent
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
+from langchain.schema.language_model import BaseLanguageModel
 
 
 def create_vectorstore_agent(
@@ -22,7 +22,7 @@ def create_vectorstore_agent(
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
-    """Construct a vectorstore agent from an LLM and tools."""
+    """Construct a VectorStore agent from an LLM and tools."""
     tools = toolkit.get_tools()
     prompt = ZeroShotAgent.create_prompt(tools, prefix=prefix)
     llm_chain = LLMChain(
@@ -50,7 +50,7 @@ def create_vectorstore_router_agent(
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
-    """Construct a vectorstore router agent from an LLM and tools."""
+    """Construct a VectorStore router agent from an LLM and tools."""
     tools = toolkit.get_tools()
     prompt = ZeroShotAgent.create_prompt(tools, prefix=prefix)
     llm_chain = LLMChain(

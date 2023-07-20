@@ -1,14 +1,14 @@
 """Chain for applying constitutional principles to the outputs of another chain."""
 from typing import Any, Dict, List, Optional
 
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.constitutional_ai.principles import PRINCIPLES
 from langchain.chains.constitutional_ai.prompts import CRITIQUE_PROMPT, REVISION_PROMPT
 from langchain.chains.llm import LLMChain
-from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import BasePromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
 
 
 class ConstitutionalChain(Chain):
@@ -80,12 +80,12 @@ class ConstitutionalChain(Chain):
 
     @property
     def input_keys(self) -> List[str]:
-        """Defines the input keys."""
+        """Input keys."""
         return self.chain.input_keys
 
     @property
     def output_keys(self) -> List[str]:
-        """Defines the output keys."""
+        """Output keys."""
         if self.return_intermediate_steps:
             return ["output", "critiques_and_revisions", "initial_output"]
         return ["output"]

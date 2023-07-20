@@ -13,13 +13,15 @@ from langchain.utilities.google_places_api import GooglePlacesAPIWrapper
 
 
 class GooglePlacesSchema(BaseModel):
+    """Input for GooglePlacesTool."""
+
     query: str = Field(..., description="Query for google maps")
 
 
 class GooglePlacesTool(BaseTool):
-    """Tool that adds the capability to query the Google places API."""
+    """Tool that queries the Google places API."""
 
-    name = "Google Places"
+    name = "google_places"
     description = (
         "A wrapper around Google Places. "
         "Useful for when you need to validate or "

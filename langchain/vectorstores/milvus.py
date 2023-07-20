@@ -24,7 +24,79 @@ DEFAULT_MILVUS_CONNECTION = {
 
 
 class Milvus(VectorStore):
-    """Wrapper around the Milvus vector database."""
+    """Initialize wrapper around the milvus vector database.
+
+    In order to use this you need to have `pymilvus` installed and a
+    running Milvus
+
+    See the following documentation for how to run a Milvus instance:
+    https://milvus.io/docs/install_standalone-docker.md
+
+    If looking for a hosted Milvus, take a look at this documentation:
+    https://zilliz.com/cloud and make use of the Zilliz vectorstore found in
+    this project,
+
+    IF USING L2/IP metric IT IS HIGHLY SUGGESTED TO NORMALIZE YOUR DATA.
+
+    Args:
+        embedding_function (Embeddings): Function used to embed the text.
+        collection_name (str): Which Milvus collection to use. Defaults to
+            "LangChainCollection".
+        connection_args (Optional[dict[str, any]]): The connection args used for
+            this class comes in the form of a dict.
+        consistency_level (str): The consistency level to use for a collection.
+            Defaults to "Session".
+        index_params (Optional[dict]): Which index params to use. Defaults to
+            HNSW/AUTOINDEX depending on service.
+        search_params (Optional[dict]): Which search params to use. Defaults to
+            default of index.
+        drop_old (Optional[bool]): Whether to drop the current collection. Defaults
+            to False.
+
+    The connection args used for this class comes in the form of a dict,
+    here are a few of the options:
+        address (str): The actual address of Milvus
+            instance. Example address: "localhost:19530"
+        uri (str): The uri of Milvus instance. Example uri:
+            "http://randomwebsite:19530",
+            "tcp:foobarsite:19530",
+            "https://ok.s3.south.com:19530".
+        host (str): The host of Milvus instance. Default at "localhost",
+            PyMilvus will fill in the default host if only port is provided.
+        port (str/int): The port of Milvus instance. Default at 19530, PyMilvus
+            will fill in the default port if only host is provided.
+        user (str): Use which user to connect to Milvus instance. If user and
+            password are provided, we will add related header in every RPC call.
+        password (str): Required when user is provided. The password
+            corresponding to the user.
+        secure (bool): Default is false. If set to true, tls will be enabled.
+        client_key_path (str): If use tls two-way authentication, need to
+            write the client.key path.
+        client_pem_path (str): If use tls two-way authentication, need to
+            write the client.pem path.
+        ca_pem_path (str): If use tls two-way authentication, need to write
+            the ca.pem path.
+        server_pem_path (str): If use tls one-way authentication, need to
+            write the server.pem path.
+        server_name (str): If use tls, need to write the common name.
+
+    Example:
+        .. code-block:: python
+
+        from langchain import Milvus
+        from langchain.embeddings import OpenAIEmbeddings
+
+        embedding = OpenAIEmbeddings()
+        # Connect to a milvus instance on localhost
+        milvus_store = Milvus(
+            embedding_function = Embeddings,
+            collection_name = "LangChainCollection",
+            drop_old = True,
+        )
+
+    Raises:
+        ValueError: If the pymilvus python package is not installed.
+    """
 
     def __init__(
         self,
@@ -36,61 +108,7 @@ class Milvus(VectorStore):
         search_params: Optional[dict] = None,
         drop_old: Optional[bool] = False,
     ):
-        """Initialize wrapper around the milvus vector database.
-
-        In order to use this you need to have `pymilvus` installed and a
-        running Milvus/Zilliz Cloud instance.
-
-        See the following documentation for how to run a Milvus instance:
-        https://milvus.io/docs/install_standalone-docker.md
-
-        If looking for a hosted Milvus, take a looka this documentation:
-        https://zilliz.com/cloud
-
-        IF USING L2/IP metric IT IS HIGHLY SUGGESTED TO NORMALIZE YOUR DATA.
-
-        The connection args used for this class comes in the form of a dict,
-        here are a few of the options:
-            address (str): The actual address of Milvus
-                instance. Example address: "localhost:19530"
-            uri (str): The uri of Milvus instance. Example uri:
-                "http://randomwebsite:19530",
-                "tcp:foobarsite:19530",
-                "https://ok.s3.south.com:19530".
-            host (str): The host of Milvus instance. Default at "localhost",
-                PyMilvus will fill in the default host if only port is provided.
-            port (str/int): The port of Milvus instance. Default at 19530, PyMilvus
-                will fill in the default port if only host is provided.
-            user (str): Use which user to connect to Milvus instance. If user and
-                password are provided, we will add related header in every RPC call.
-            password (str): Required when user is provided. The password
-                corresponding to the user.
-            secure (bool): Default is false. If set to true, tls will be enabled.
-            client_key_path (str): If use tls two-way authentication, need to
-                write the client.key path.
-            client_pem_path (str): If use tls two-way authentication, need to
-                write the client.pem path.
-            ca_pem_path (str): If use tls two-way authentication, need to write
-                the ca.pem path.
-            server_pem_path (str): If use tls one-way authentication, need to
-                write the server.pem path.
-            server_name (str): If use tls, need to write the common name.
-
-        Args:
-            embedding_function (Embeddings): Function used to embed the text.
-            collection_name (str): Which Milvus collection to use. Defaults to
-                "LangChainCollection".
-            connection_args (Optional[dict[str, any]]): The arguments for connection to
-                Milvus/Zilliz instance. Defaults to DEFAULT_MILVUS_CONNECTION.
-            consistency_level (str): The consistency level to use for a collection.
-                Defaults to "Session".
-            index_params (Optional[dict]): Which index params to use. Defaults to
-                HNSW/AUTOINDEX depending on service.
-            search_params (Optional[dict]): Which search params to use. Defaults to
-                default of index.
-            drop_old (Optional[bool]): Whether to drop the current collection. Defaults
-                to False.
-        """
+        """Initialize the Milvus vector store."""
         try:
             from pymilvus import Collection, utility
         except ImportError:
@@ -123,7 +141,7 @@ class Milvus(VectorStore):
         self._primary_field = "pk"
         # In order for compatiblility, the text field will need to be called "text"
         self._text_field = "text"
-        # In order for compatbility, the vector field needs to be called "vector"
+        # In order for compatibility, the vector field needs to be called "vector"
         self._vector_field = "vector"
         self.fields: list[str] = []
         # Create the connection to the server
@@ -132,7 +150,7 @@ class Milvus(VectorStore):
         self.alias = self._create_connection_alias(connection_args)
         self.col: Optional[Collection] = None
 
-        # Grab the existing colection if it exists
+        # Grab the existing collection if it exists
         if utility.has_collection(self.collection_name, using=self.alias):
             self.col = Collection(
                 self.collection_name,
@@ -188,7 +206,7 @@ class Milvus(VectorStore):
                     logger.debug("Using previous connection: %s", con[0])
                     return con[0]
 
-        # Generate a new connection if one doesnt exist
+        # Generate a new connection if one doesn't exist
         alias = uuid4().hex
         try:
             connections.connect(alias=alias, **connection_args)
@@ -229,7 +247,7 @@ class Milvus(VectorStore):
             for key, value in metadatas[0].items():
                 # Infer the corresponding datatype of the metadata
                 dtype = infer_dtype_bydata(value)
-                # Datatype isnt compatible
+                # Datatype isn't compatible
                 if dtype == DataType.UNKNOWN or dtype == DataType.NONE:
                     logger.error(
                         "Failure to create collection, unrecognized dtype for key: %s",
@@ -405,7 +423,7 @@ class Milvus(VectorStore):
             logger.debug("Nothing to insert, skipping.")
             return []
 
-        # If the collection hasnt been initialized yet, perform all steps to do so
+        # If the collection hasn't been initialized yet, perform all steps to do so
         if not isinstance(self.col, Collection):
             self._init(embeddings, metadatas)
 
@@ -527,7 +545,7 @@ class Milvus(VectorStore):
 
         Args:
             query (str): The text being searched.
-            k (int, optional): The amount of results ot return. Defaults to 4.
+            k (int, optional): The amount of results to return. Defaults to 4.
             param (dict): The search params for the specified index.
                 Defaults to None.
             expr (str, optional): Filtering expression. Defaults to None.
@@ -567,7 +585,7 @@ class Milvus(VectorStore):
 
         Args:
             embedding (List[float]): The embedding vector being searched.
-            k (int, optional): The amount of results ot return. Defaults to 4.
+            k (int, optional): The amount of results to return. Defaults to 4.
             param (dict): The search params for the specified index.
                 Defaults to None.
             expr (str, optional): Filtering expression. Defaults to None.

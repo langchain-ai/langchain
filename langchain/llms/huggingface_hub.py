@@ -1,4 +1,3 @@
-"""Wrapper around HuggingFace APIs."""
 from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import Extra, root_validator
@@ -13,7 +12,7 @@ VALID_TASKS = ("text2text-generation", "text-generation", "summarization")
 
 
 class HuggingFaceHub(LLM):
-    """Wrapper around HuggingFaceHub  models.
+    """HuggingFaceHub  models.
 
     To use, you should have the ``huggingface_hub`` python package installed, and the
     environment variable ``HUGGINGFACEHUB_API_TOKEN`` set with your API token, or pass

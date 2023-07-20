@@ -18,9 +18,9 @@ class SceneXplainInput(BaseModel):
 
 
 class SceneXplainTool(BaseTool):
-    """Tool that adds the capability to explain images."""
+    """Tool that explains images."""
 
-    name = "Image Explainer"
+    name = "image_explainer"
     description = (
         "An Image Captioning Tool: Use this tool to generate a detailed caption "
         "for an image. The input can be an image file of any format, and "

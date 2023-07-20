@@ -1,4 +1,3 @@
-"""Wrapper around Replicate API."""
 import logging
 from typing import Any, Dict, List, Mapping, Optional
 
@@ -12,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class Replicate(LLM):
-    """Wrapper around Replicate models.
+    """Replicate models.
 
     To use, you should have the ``replicate`` python package installed,
     and the environment variable ``REPLICATE_API_TOKEN`` set with your API token.
@@ -52,7 +51,7 @@ class Replicate(LLM):
                 if field_name in extra:
                     raise ValueError(f"Found {field_name} supplied twice.")
                 logger.warning(
-                    f"""{field_name} was transfered to model_kwargs.
+                    f"""{field_name} was transferred to model_kwargs.
                     Please confirm that {field_name} is what you intended."""
                 )
                 extra[field_name] = values.pop(field_name)
@@ -72,6 +71,7 @@ class Replicate(LLM):
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         return {
+            "model": self.model,
             **{"model_kwargs": self.model_kwargs},
         }
 

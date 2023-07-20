@@ -1,4 +1,3 @@
-"""Interface for embedding models."""
 from abc import ABC, abstractmethod
 from typing import List
 
@@ -13,3 +12,11 @@ class Embeddings(ABC):
     @abstractmethod
     def embed_query(self, text: str) -> List[float]:
         """Embed query text."""
+
+    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+        """Asynchronous Embed search docs."""
+        raise NotImplementedError
+
+    async def aembed_query(self, text: str) -> List[float]:
+        """Asynchronous Embed query text."""
+        raise NotImplementedError
