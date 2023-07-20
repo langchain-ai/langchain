@@ -102,7 +102,7 @@ class MetaphorSearchAPIWrapper(BaseModel):
                 author - Author of the content, if applicable. Otherwise, None.
                 published_date - Estimated date published
                     in YYYY-MM-DD format. Otherwise, None.
-        """
+        """  # noqa: E501
         raw_search_results = self._metaphor_search_results(
             query,
             num_results=num_results,
