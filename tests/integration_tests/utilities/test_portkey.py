@@ -1,21 +1,20 @@
 import json
+
 from langchain.utilities import Portkey
+
 
 def test_Config() -> None:
     headers = Portkey.Config(
         api_key="test_api_key",
-        
         environment="test_environment",
         user="test_user",
         organisation="test_organisation",
         prompt="test_prompt",
-
         retry_count=3,
         trace_id="test_trace_id",
-
         cache="simple",
         cache_force_refresh="True",
-        cache_age=3600
+        cache_age=3600,
     )
 
     assert headers["x-portkey-api-key"] == "test_api_key"
