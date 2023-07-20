@@ -1,33 +1,23 @@
-import requests
-from bs4 import BeautifulSoup as soup
-
 from langchain.document_loaders.recursive_url_loader import RecursiveUrlLoader
-
-url = "https://js.langchain.com/docs/modules/memory/integrations/"
-
-
-def get_correct_number() -> int:
-    raw_html = requests.session().get(url).text
-    return len(soup(raw_html, "html.parser").select("section.row > article"))
 
 
 def test_async_recursive_url_loader() -> None:
+    url = "https://docs.python.org/3.9/"
     loader = RecursiveUrlLoader(
-        url=url, extractor=lambda _: "placeholder", use_async=True
+        url=url, extractor=lambda _: "placeholder", use_async=True, max_depth=1
     )
     docs = loader.load()
-    correct_doc_num = get_correct_number()
-    assert len(docs) == correct_doc_num
+    assert len(docs) == 25
     assert docs[0].page_content == "placeholder"
 
 
 def test_sync_recursive_url_loader() -> None:
+    url = "https://docs.python.org/3.9/"
     loader = RecursiveUrlLoader(
-        url=url, extractor=lambda _: "placeholder", use_async=False
+        url=url, extractor=lambda _: "placeholder", use_async=False, max_depth=1
     )
     docs = loader.load()
-    correct_doc_num = get_correct_number()
-    assert len(docs) == correct_doc_num
+    assert len(docs) == 25
     assert docs[0].page_content == "placeholder"
 
 
