@@ -39,21 +39,21 @@ async def test_nuclia_loader() -> None:
     with mock.patch(
         "langchain.tools.nuclia.tool.NucliaUnderstandingAPI._arun", new_callable=fakerun
     ):
-        os.environ.get = mock.MagicMock(return_value="_a_key_")
-        nua = NucliaUnderstandingAPI(enable_ml=False)
-        documents = [
-            Document(page_content="Hello, my name is Alice", metadata={}),
-            Document(page_content="Hello, my name is Bob", metadata={}),
-        ]
-        nuclia_transformer = NucliaTextTransformer(nua)
-        transformed_documents = await nuclia_transformer.atransform_documents(documents)
-        assert len(transformed_documents) == 2
-        assert transformed_documents[0].metadata["nuclia"]["file"]["language"] == "en"
-        assert (
-            len(
-                transformed_documents[1].metadata["nuclia"]["metadata"]["metadata"][
-                    "metadata"
-                ]["paragraphs"]
+        with mock.patch("os.environ.get", return_value="_a_key_"):
+            nua = NucliaUnderstandingAPI(enable_ml=False)
+            documents = [
+                Document(page_content="Hello, my name is Alice", metadata={}),
+                Document(page_content="Hello, my name is Bob", metadata={}),
+            ]
+            nuclia_transformer = NucliaTextTransformer(nua)
+            transformed_documents = await nuclia_transformer.atransform_documents(documents)
+            assert len(transformed_documents) == 2
+            assert transformed_documents[0].metadata["nuclia"]["file"]["language"] == "en"
+            assert (
+                len(
+                    transformed_documents[1].metadata["nuclia"]["metadata"]["metadata"][
+                        "metadata"
+                    ]["paragraphs"]
+                )
+                == 1
             )
-            == 1
-        )

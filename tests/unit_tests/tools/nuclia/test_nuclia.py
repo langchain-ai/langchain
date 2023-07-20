@@ -92,14 +92,14 @@ async def test_async_call() -> None:
     ):
         with mock.patch("requests.post", new_callable=fakepost):
             with mock.patch("requests.get", new_callable=fakeget):
-                os.environ.get = mock.MagicMock(return_value="_a_key_")
-                nua = NucliaUnderstandingAPI(enable_ml=False)
-                data = await nua.arun(
-                    {
-                        "action": "push",
-                        "id": "1",
-                        "path": "/Users/ebr/dev/nuclia/docs/README.md",
-                        "text": None,
-                    }
-                )
-                assert json.loads(data)["uuid"] == "fake_uuid"
+                with mock.patch("os.environ.get", return_value="_a_key_"):
+                    nua = NucliaUnderstandingAPI(enable_ml=False)
+                    data = await nua.arun(
+                        {
+                            "action": "push",
+                            "id": "1",
+                            "path": "/Users/ebr/dev/nuclia/docs/README.md",
+                            "text": None,
+                        }
+                    )
+                    assert json.loads(data)["uuid"] == "fake_uuid"
