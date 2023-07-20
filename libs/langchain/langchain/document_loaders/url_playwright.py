@@ -48,6 +48,36 @@ class PlaywrightURLLoader(BaseLoader):
         self.headless = headless
         self.remove_selectors = remove_selectors
 
+    def sync_evaluate_page(self, page):
+        """Process a page and return the text content.
+        This method can be overridden to apply custom logic.
+        """
+        for selector in self.remove_selectors or []:
+            elements = page.locator(selector).all()
+            for element in elements:
+                if element.is_visible():
+                    element.evaluate("element => element.remove()")
+
+        page_source = page.content()
+        elements = partition_html(text=page_source)
+        text = "\n\n".join([str(el) for el in elements])
+        return text
+
+    async def async_evaluate_page(self, page):
+        """Process a page asynchronously and return the text content.
+        This method can be overridden to apply custom logic.
+        """
+        for selector in self.remove_selectors or []:
+            elements = await page.locator(selector).all()
+            for element in elements:
+                if await element.is_visible():
+                    await element.evaluate("element => element.remove()")
+
+        page_source = await page.content()
+        elements = partition_html(text=page_source)
+        text = "\n\n".join([str(el) for el in elements])
+        return text
+
     def load(self) -> List[Document]:
         """Load the specified URLs using Playwright and create Document instances.
 
@@ -65,16 +95,7 @@ class PlaywrightURLLoader(BaseLoader):
                 try:
                     page = browser.new_page()
                     page.goto(url)
-
-                    for selector in self.remove_selectors or []:
-                        elements = page.locator(selector).all()
-                        for element in elements:
-                            if element.is_visible():
-                                element.evaluate("element => element.remove()")
-
-                    page_source = page.content()
-                    elements = partition_html(text=page_source)
-                    text = "\n\n".join([str(el) for el in elements])
+                    text = self.sync_evaluate_page(page)
                     metadata = {"source": url}
                     docs.append(Document(page_content=text, metadata=metadata))
                 except Exception as e:
@@ -105,16 +126,7 @@ class PlaywrightURLLoader(BaseLoader):
                 try:
                     page = await browser.new_page()
                     await page.goto(url)
-
-                    for selector in self.remove_selectors or []:
-                        elements = await page.locator(selector).all()
-                        for element in elements:
-                            if await element.is_visible():
-                                await element.evaluate("element => element.remove()")
-
-                    page_source = await page.content()
-                    elements = partition_html(text=page_source)
-                    text = "\n\n".join([str(el) for el in elements])
+                    text = await self.async_evaluate_page(page)
                     metadata = {"source": url}
                     docs.append(Document(page_content=text, metadata=metadata))
                 except Exception as e:
