@@ -50,7 +50,7 @@ jobs:
       - name: Install langchain editable
         if: ${{ inputs.working-directory != 'langchain' }}
         run: |
-          pip install -e ../
+          pip install -e ../langchain
       - name: Run ${{matrix.test_type}} tests
         run: |
           if [ "${{ matrix.test_type }}" == "core" ]; then
