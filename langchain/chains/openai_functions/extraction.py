@@ -51,7 +51,8 @@ def create_extraction_chain(
     Args:
         schema: The schema of the entities to extract.
         llm: The language model to use.
-        verbose: Whether or not run in verbose mode. In verbose mode, some intermediate logs will be printed to the console. Defaults to `langchain.verbose` value.
+        verbose: Whether to run in verbose mode. In verbose mode, some intermediate
+            logs will be printed to the console. Defaults to `langchain.verbose` value.
 
     Returns:
         Chain that can be used to extract information from a passage.
