@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import requests
 
@@ -95,7 +95,7 @@ class NeptuneGraph:
         else:
             return summary
 
-    def _get_labels(self) -> tuple[List[str], List[str]]:
+    def _get_labels(self) -> Tuple[List[str], List[str]]:
         """Get node and edge labels from the Neptune statistics summary"""
         summary = self._get_summary()
         n_labels = summary["nodeLabels"]
