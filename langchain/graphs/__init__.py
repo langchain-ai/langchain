@@ -1,5 +1,5 @@
 """Graph implementations."""
-from langchain.graphs.arangodb_graph import ArangoDBGraph
+from langchain.graphs.arangodb_graph import ArangoGraph
 from langchain.graphs.hugegraph import HugeGraph
 from langchain.graphs.kuzu_graph import KuzuGraph
 from langchain.graphs.nebula_graph import NebulaGraph
@@ -14,5 +14,5 @@ __all__ = [
     "KuzuGraph",
     "HugeGraph",
     "RdfGraph",
-    "ArangoDBGraph",
+    "ArangoGraph",
 ]

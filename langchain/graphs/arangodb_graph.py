@@ -1,7 +1,8 @@
-from typing import Any, Dict, List, Optional, Union
+from math import ceil
+from typing import Any, Dict, List, Optional
 
 
-class ArangoDBGraph:
+class ArangoGraph:
     """ArangoDB wrapper for graph operations."""
 
     def __init__(self, db: Any) -> None:
@@ -25,47 +26,56 @@ class ArangoDBGraph:
             raise TypeError(msg)
 
         self.__db: Database = db
+        self.set_schema()
 
     def set_schema(self, schema: Optional[Dict[str, Any]] = None) -> None:
         """Set the schema of the ArangoDB Database. Auto-generates Schema if **schema** is None."""
         self.__schema = self.generate_schema() if schema is None else schema
 
-    def generate_schema(self, sample_ratio: float = 0) -> Dict[str, Any]:
-        """Generates the schema of the ArangoDB Database and returns it"""
+    def generate_schema(
+        self, sample_ratio: float = 0
+    ) -> Dict[str, List[Dict[str, Any]]]:
+        """
+        Generates the schema of the ArangoDB Database and returns it
+        User can specify a **sample_ratio** (0 to 1) to determine the
+        ratio of documents/edges used (in relation to the Collection size)
+        to render each Collection Schema.
+        """
         if not 0 <= sample_ratio <= 1:
             raise ValueError("**sample_ratio** value must be in between 0 to 1")
 
-        graph_schema = [
+        # Stores the Edge Relationships between each ArangoDB Document Collection
+        graph_schema: List[Dict[str, Any]] = [
             {"graph_name": g["name"], "edge_definitions": g["edge_definitions"]}
-            for g in self.__db.graphs()
+            for g in self.db.graphs()
         ]
 
-        collection_schema: List[Dict[str, Union[str, Dict[str, str]]]] = []
-        for collection in self.__db.collections():
+        # Stores the schema of every ArangoDB Document/Edge collection
+        collection_schema: List[Dict[str, Any]] = []
+
+        for collection in self.db.collections():
             if collection["system"]:
                 continue
 
+            # Extract collection name, type, and size
             col_name: str = collection["name"]
             col_type: str = collection["type"]
-            col_size: int = self.__db.collection(col_name).count()
+            col_size: int = self.db.collection(col_name).count()
 
-            limit_amount = round(sample_ratio * col_size) or 1
+            # Set number of ArangoDB documents/edges to retrieve
+            limit_amount = ceil(sample_ratio * col_size) or 1
 
             aql = f"""
                 FOR doc in {col_name}
-                    // SORT RAND() ?
                     LIMIT {limit_amount}
                     RETURN doc
             """
 
-            doc: dict
-            properties = {}  # defaultdict(set)
+            doc: Dict[str, Any]
+            properties: List[Dict[str, str]] = []
             for doc in self.__db.aql.execute(aql):
-                for k, v in doc.items():
-                    if k == "_rev":
-                        continue
-
-                    properties[k] = type(v).__name__
+                for key, value in doc.items():
+                    properties.append({"name": key, "type": type(value).__name__})
 
             collection_schema.append(
                 {
