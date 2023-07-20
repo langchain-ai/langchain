@@ -104,7 +104,15 @@ class MetaphorSearchAPIWrapper(BaseModel):
                     in YYYY-MM-DD format. Otherwise, None.
         """
         raw_search_results = self._metaphor_search_results(
-            query, num_results=num_results, include_domains=include_domains, exclude_domains=exclude_domains, start_crawl_date=start_crawl_date, end_crawl_date=end_crawl_date, start_published_date=start_published_date, end_published_date=end_published_date, use_autoprompt=use_autoprompt
+            query,
+            num_results=num_results,
+            include_domains=include_domains,
+            exclude_domains=exclude_domains,
+            start_crawl_date=start_crawl_date,
+            end_crawl_date=end_crawl_date,
+            start_published_date=start_published_date,
+            end_published_date=end_published_date,
+            use_autoprompt=use_autoprompt,
         )
         return self._clean_results(raw_search_results)
 
@@ -121,10 +129,21 @@ class MetaphorSearchAPIWrapper(BaseModel):
         use_autoprompt: Optional[bool] = None,
     ) -> List[Dict]:
         """Get results from the Metaphor Search API asynchronously."""
+
         # Function to perform the API call
         async def fetch() -> str:
             headers = {"X-Api-Key": self.metaphor_api_key}
-            params = {"numResults": num_results, "query": query, "includeDomains": include_domains, "excludeDomains": exclude_domains, "startCrawlDate": start_crawl_date, "endCrawlDate": end_crawl_date, "startPublishedDate": start_published_date, "endPublishedDate": end_published_date, "useAutoprompt": use_autoprompt}
+            params = {
+                "numResults": num_results,
+                "query": query,
+                "includeDomains": include_domains,
+                "excludeDomains": exclude_domains,
+                "startCrawlDate": start_crawl_date,
+                "endCrawlDate": end_crawl_date,
+                "startPublishedDate": start_published_date,
+                "endPublishedDate": end_published_date,
+                "useAutoprompt": use_autoprompt,
+            }
             params = {
                 "numResults": num_results,
                 "query": query,
