@@ -21,6 +21,7 @@ from langchain.retrievers.milvus import MilvusRetriever
 from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain.retrievers.pinecone_hybrid_search import PineconeHybridSearchRetriever
 from langchain.retrievers.pubmed import PubMedRetriever
+from langchain.retrievers.re_phraser import RePhraseQueryRetriever
 from langchain.retrievers.remote_retriever import RemoteLangChainRetriever
 from langchain.retrievers.self_query.base import SelfQueryRetriever
 from langchain.retrievers.svm import SVMRetriever
@@ -64,4 +65,5 @@ __all__ = [
     "ZepRetriever",
     "ZillizRetriever",
     "DocArrayRetriever",
+    "RePhraseQueryRetriever",
 ]
