@@ -1,13 +1,12 @@
 from typing import List
 from unittest import TestCase
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from langchain.docstore.document import Document
 from langchain.document_loaders import CubeSemanticLoader
 
 
 class TestCubeSemanticLoader(TestCase):
-    @patch("requests")
     def test_load_success(self, mock_get: MagicMock) -> None:
         # Arrange
         cube_api_url: str = "https://example.com/cube_api"
