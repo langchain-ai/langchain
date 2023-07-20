@@ -64,5 +64,5 @@ def test_get_eth_balance() -> None:
 def test_invalid_filter() -> None:
     account_address = "0x9dd134d14d1e65f84b706d6f205cd5b1cd03a46b"
     with pytest.raises(ValueError) as error_invalid_filter:
-        loader = EtherscanLoader(account_address, filter="internal_saction")
+        EtherscanLoader(account_address, filter="internal_saction")
     assert str(error_invalid_filter.value) == "Invalid filter internal_saction"

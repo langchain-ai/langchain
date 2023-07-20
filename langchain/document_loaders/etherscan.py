@@ -1,6 +1,6 @@
 import os
 import re
-from typing import List
+from typing import Iterator, List
 
 import requests
 
@@ -52,24 +52,36 @@ class EtherscanLoader(BaseLoader):
         ]:
             raise ValueError(f"Invalid filter {filter}")
 
-    def load(self) -> List[Document]:
+    def lazy_load(self) -> Iterator[Document]:
+        """Lazy load Documents from table."""
+        result = []
         if self.filter == "normal_transaction":
-            return self.getNormTx()
+            result = self.getNormTx()
         elif self.filter == "internal_transaction":
-            return self.getInternalTx()
+            result = self.getInternalTx()
         elif self.filter == "erc20_transaction":
-            return self.getERC20Tx()
+            result = self.getERC20Tx()
         elif self.filter == "eth_balance":
-            return self.getEthBalance()
+            result = self.getEthBalance()
         elif self.filter == "erc721_transaction":
-            return self.getERC721Tx()
+            result = self.getERC721Tx()
         elif self.filter == "erc1155_transaction":
-            return self.getERC1155Tx()
+            result = self.getERC1155Tx()
         else:
             raise ValueError(f"Invalid filter {filter}")
+        for doc in result:
+            yield doc
+
+    def load(self) -> List[Document]:
+        """Load transactions from spcifc account by Etherscan."""
+        return list(self.lazy_load())
 
     def getNormTx(self) -> List[Document]:
-        url = f"https://api.etherscan.io/api?module=account&action=txlist&address={self.account_address}&startblock=${self.start_block}&endblock=${self.end_block}&page={self.page}&offset={self.offset}&sort={self.sort}&apikey={self.api_key}"
+        url = (
+            f"https://api.etherscan.io/api?module=account&action=txlist&address={self.account_address}"
+            f"&startblock={self.start_block}&endblock={self.end_block}&page={self.page}"
+            f"&offset={self.offset}&sort={self.sort}&apikey={self.api_key}"
+        )
         try:
             response = requests.get(url)
             response.raise_for_status()
@@ -87,7 +99,11 @@ class EtherscanLoader(BaseLoader):
         return result
 
     def getEthBalance(self) -> List[Document]:
-        url = f"https://api.etherscan.io/api?module=account&action=balance&address={self.account_address}&tag=latest&apikey={self.api_key}"
+        url = (
+            f"https://api.etherscan.io/api?module=account&action=balance"
+            f"&address={self.account_address}&tag=latest&apikey={self.api_key}"
+        )
+
         try:
             response = requests.get(url)
             response.raise_for_status()
@@ -96,7 +112,13 @@ class EtherscanLoader(BaseLoader):
         return [Document(page_content=response.json()["result"])]
 
     def getInternalTx(self) -> List[Document]:
-        url = f"https://api.etherscan.io/api?module=account&action=txlistinternal&address={self.account_address}&startblock=${self.start_block}&endblock=${self.end_block}&page={self.page}&offset={self.offset}&sort={self.sort}&apikey={self.api_key}"
+        url = (
+            f"https://api.etherscan.io/api?module=account&action=txlistinternal"
+            f"&address={self.account_address}&startblock={self.start_block}"
+            f"&endblock={self.end_block}&page={self.page}&offset={self.offset}"
+            f"&sort={self.sort}&apikey={self.api_key}"
+        )
+
         try:
             response = requests.get(url)
             response.raise_for_status()
@@ -113,7 +135,13 @@ class EtherscanLoader(BaseLoader):
         return result
 
     def getERC20Tx(self) -> List[Document]:
-        url = f"https://api.etherscan.io/api?module=account&action=tokentx&address={self.account_address}&startblock=${self.start_block}&endblock=${self.end_block}&page={self.page}&offset={self.offset}&sort={self.sort}&apikey={self.api_key}"
+        url = (
+            f"https://api.etherscan.io/api?module=account&action=tokentx"
+            f"&address={self.account_address}&startblock={self.start_block}"
+            f"&endblock={self.end_block}&page={self.page}&offset={self.offset}"
+            f"&sort={self.sort}&apikey={self.api_key}"
+        )
+
         try:
             response = requests.get(url)
             response.raise_for_status()
@@ -130,7 +158,13 @@ class EtherscanLoader(BaseLoader):
         return result
 
     def getERC721Tx(self) -> List[Document]:
-        url = f"https://api.etherscan.io/api?module=account&action=tokennfttx&address={self.account_address}&startblock=${self.start_block}&endblock=${self.end_block}&page={self.page}&offset={self.offset}&sort={self.sort}&apikey={self.api_key}"
+        url = (
+            f"https://api.etherscan.io/api?module=account&action=tokennfttx"
+            f"&address={self.account_address}&startblock={self.start_block}"
+            f"&endblock={self.end_block}&page={self.page}&offset={self.offset}"
+            f"&sort={self.sort}&apikey={self.api_key}"
+        )
+
         try:
             response = requests.get(url)
             response.raise_for_status()
@@ -147,7 +181,13 @@ class EtherscanLoader(BaseLoader):
         return result
 
     def getERC1155Tx(self) -> List[Document]:
-        url = f"https://api.etherscan.io/api?module=account&action=token1155tx&address={self.account_address}&startblock=${self.start_block}&endblock=${self.end_block}&page={self.page}&offset={self.offset}&sort={self.sort}&apikey={self.api_key}"
+        url = (
+            f"https://api.etherscan.io/api?module=account&action=token1155tx"
+            f"&address={self.account_address}&startblock={self.start_block}"
+            f"&endblock={self.end_block}&page={self.page}&offset={self.offset}"
+            f"&sort={self.sort}&apikey={self.api_key}"
+        )
+
         try:
             response = requests.get(url)
             response.raise_for_status()
