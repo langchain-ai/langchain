@@ -25,7 +25,7 @@ class GraphQAChain(Chain):
 
     @property
     def input_keys(self) -> List[str]:
-        """Return the input keys.
+        """Input keys.
 
         :meta private:
         """
@@ -33,7 +33,7 @@ class GraphQAChain(Chain):
 
     @property
     def output_keys(self) -> List[str]:
-        """Return the output keys.
+        """Output keys.
 
         :meta private:
         """

@@ -87,23 +87,31 @@ class Chroma(VectorStore):
             )
 
         if client is not None:
+            self._client_settings = client_settings
             self._client = client
+            self._persist_directory = persist_directory
         else:
             if client_settings:
-                self._client_settings = client_settings
-            else:
-                self._client_settings = chromadb.config.Settings()
-                if persist_directory is not None:
-                    self._client_settings = chromadb.config.Settings(
+                _client_settings = client_settings
+            elif persist_directory:
+                # Maintain backwards compatibility with chromadb < 0.4.0
+                major, minor, _ = chromadb.__version__.split(".")
+                if int(major) == 0 and int(minor) < 4:
+                    _client_settings = chromadb.config.Settings(
                         chroma_db_impl="duckdb+parquet",
-                        persist_directory=persist_directory,
                     )
-            self._client = chromadb.Client(self._client_settings)
+                else:
+                    _client_settings = chromadb.config.Settings(is_persistent=True)
+                _client_settings.persist_directory = persist_directory
+            else:
+                _client_settings = chromadb.config.Settings()
+            self._client_settings = _client_settings
+            self._client = chromadb.Client(_client_settings)
+            self._persist_directory = (
+                _client_settings.persist_directory or persist_directory
+            )
 
         self._embedding_function = embedding_function
-        self._persist_directory = (
-            self._client_settings.persist_directory or persist_directory
-        )
         self._collection = self._client.get_or_create_collection(
             name=collection_name,
             embedding_function=self._embedding_function.embed_documents
@@ -161,9 +169,36 @@ class Chroma(VectorStore):
         embeddings = None
         if self._embedding_function is not None:
             embeddings = self._embedding_function.embed_documents(list(texts))
-        self._collection.upsert(
-            metadatas=metadatas, embeddings=embeddings, documents=texts, ids=ids
-        )
+
+        if metadatas:
+            texts = list(texts)
+            empty = []
+            non_empty = []
+            for i, m in enumerate(metadatas):
+                if m:
+                    non_empty.append(i)
+                else:
+                    empty.append(i)
+            if non_empty:
+                metadatas = [metadatas[i] for i in non_empty]
+                texts_with_metadatas = [texts[i] for i in non_empty]
+                embeddings_with_metadatas = (
+                    [embeddings[i] for i in non_empty] if embeddings else None
+                )
+                ids_with_metadata = [ids[i] for i in non_empty]
+                self._collection.upsert(
+                    metadatas=metadatas,
+                    embeddings=embeddings_with_metadatas,
+                    documents=texts_with_metadatas,
+                    ids=ids_with_metadata,
+                )
+
+            texts = [texts[j] for j in empty]
+            embeddings = [embeddings[j] for j in empty] if embeddings else None
+            ids = [ids[j] for j in empty]
+
+        if texts:
+            self._collection.upsert(embeddings=embeddings, documents=texts, ids=ids)
         return ids
 
     def similarity_search(
@@ -429,7 +464,12 @@ class Chroma(VectorStore):
                 "You must specify a persist_directory on"
                 "creation to persist the collection."
             )
-        self._client.persist()
+        import chromadb
+
+        # Maintain backwards compatibility with chromadb < 0.4.0
+        major, minor, _ = chromadb.__version__.split(".")
+        if int(major) == 0 and int(minor) < 4:
+            self._client.persist()
 
     def update_document(self, document_id: str, document: Document) -> None:
         """Update a document in the collection.

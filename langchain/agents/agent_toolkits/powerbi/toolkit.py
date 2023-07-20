@@ -29,7 +29,7 @@ from langchain.utilities.powerbi import PowerBIDataset
 
 
 class PowerBIToolkit(BaseToolkit):
-    """Toolkit for interacting with PowerBI dataset."""
+    """Toolkit for interacting with Power BI dataset."""
 
     powerbi: PowerBIDataset = Field(exclude=True)
     llm: Union[BaseLanguageModel, BaseChatModel] = Field(exclude=True)

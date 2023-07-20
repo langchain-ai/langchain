@@ -13,7 +13,7 @@ from langchain.utilities.dataforseo_api_search import DataForSeoAPIWrapper
 
 
 class DataForSeoAPISearchRun(BaseTool):
-    """Tool that adds the capability to query the DataForSeo Google search API."""
+    """Tool that queries the DataForSeo Google search API."""
 
     name = "dataforseo_api_search"
     description = (
@@ -41,7 +41,7 @@ class DataForSeoAPISearchRun(BaseTool):
 
 
 class DataForSeoAPISearchResults(BaseTool):
-    """Tool that has capability to query the DataForSeo Google Search API
+    """Tool that queries the DataForSeo Google Search API
     and get back json."""
 
     name = "DataForSeo Results JSON"

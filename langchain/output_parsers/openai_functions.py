@@ -12,7 +12,10 @@ from langchain.schema import (
 
 
 class OutputFunctionsParser(BaseLLMOutputParser[Any]):
+    """Parse an output that is one of sets of values."""
+
     args_only: bool = True
+    """Whether to only return the arguments to the function call."""
 
     def parse_result(self, result: List[Generation]) -> Any:
         generation = result[0]
@@ -32,6 +35,8 @@ class OutputFunctionsParser(BaseLLMOutputParser[Any]):
 
 
 class JsonOutputFunctionsParser(OutputFunctionsParser):
+    """Parse an output as the Json object."""
+
     def parse_result(self, result: List[Generation]) -> Any:
         func = super().parse_result(result)
         if self.args_only:
@@ -41,7 +46,10 @@ class JsonOutputFunctionsParser(OutputFunctionsParser):
 
 
 class JsonKeyOutputFunctionsParser(JsonOutputFunctionsParser):
+    """Parse an output as the element of the Json object."""
+
     key_name: str
+    """The name of the key to return."""
 
     def parse_result(self, result: List[Generation]) -> Any:
         res = super().parse_result(result)
@@ -49,7 +57,10 @@ class JsonKeyOutputFunctionsParser(JsonOutputFunctionsParser):
 
 
 class PydanticOutputFunctionsParser(OutputFunctionsParser):
+    """Parse an output as a pydantic object."""
+
     pydantic_schema: Union[Type[BaseModel], Dict[str, Type[BaseModel]]]
+    """The pydantic schema to parse the output with."""
 
     @root_validator(pre=True)
     def validate_schema(cls, values: Dict) -> Dict:
@@ -77,7 +88,10 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
 
 
 class PydanticAttrOutputFunctionsParser(PydanticOutputFunctionsParser):
+    """Parse an output as an attribute of a pydantic object."""
+
     attr_name: str
+    """The name of the attribute to return."""
 
     def parse_result(self, result: List[Generation]) -> Any:
         result = super().parse_result(result)

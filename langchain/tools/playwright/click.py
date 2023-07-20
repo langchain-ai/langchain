@@ -22,6 +22,8 @@ class ClickToolInput(BaseModel):
 
 
 class ClickTool(BaseBrowserTool):
+    """Tool for clicking on an element with the given CSS selector."""
+
     name: str = "click_element"
     description: str = "Click on an element with the given CSS selector"
     args_schema: Type[BaseModel] = ClickToolInput

@@ -27,7 +27,7 @@ def create_spark_sql_agent(
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
-    """Construct a sql agent from an LLM and tools."""
+    """Construct a Spark SQL agent from an LLM and tools."""
     tools = toolkit.get_tools()
     prefix = prefix.format(top_k=top_k)
     prompt = ZeroShotAgent.create_prompt(
