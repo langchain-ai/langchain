@@ -1,4 +1,3 @@
-"""Wrapper around NLP Cloud embedding models."""
 from typing import Any, Dict, List
 
 from pydantic import BaseModel, root_validator
@@ -8,7 +7,7 @@ from langchain.utils import get_from_dict_or_env
 
 
 class NLPCloudEmbeddings(BaseModel, Embeddings):
-    """Wrapper around NLP Cloud embedding models.
+    """NLP Cloud embedding models.
 
     To use, you should have the nlpcloud python package installed
 

@@ -1,4 +1,3 @@
-"""Wrapper around HuggingFace Hub embedding models."""
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
@@ -11,7 +10,7 @@ VALID_TASKS = ("feature-extraction",)
 
 
 class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
-    """Wrapper around HuggingFaceHub embedding models.
+    """HuggingFaceHub embedding models.
 
     To use, you should have the ``huggingface_hub`` python package installed, and the
     environment variable ``HUGGINGFACEHUB_API_TOKEN`` set with your API token, or pass
@@ -71,7 +70,7 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
                 )
             values["client"] = client
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import huggingface_hub python package. "
                 "Please install it with `pip install huggingface_hub`."
             )

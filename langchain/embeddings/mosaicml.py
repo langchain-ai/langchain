@@ -1,4 +1,3 @@
-"""Wrapper around MosaicML APIs."""
 from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 import requests
@@ -9,7 +8,7 @@ from langchain.utils import get_from_dict_or_env
 
 
 class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
-    """Wrapper around MosaicML's embedding inference service.
+    """MosaicML embedding service.
 
     To use, you should have the
     environment variable ``MOSAICML_API_TOKEN`` set with your API token, or pass
