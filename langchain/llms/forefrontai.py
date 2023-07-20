@@ -1,4 +1,3 @@
-"""Wrapper around ForefrontAI APIs."""
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
@@ -11,7 +10,7 @@ from langchain.utils import get_from_dict_or_env
 
 
 class ForefrontAI(LLM):
-    """Wrapper around ForefrontAI large language models.
+    """ForefrontAI large language models.
 
     To use, you should have the environment variable ``FOREFRONTAI_API_KEY``
     set with your API key.

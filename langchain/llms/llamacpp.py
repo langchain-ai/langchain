@@ -1,4 +1,3 @@
-"""Wrapper around llama.cpp."""
 import logging
 from typing import Any, Dict, Generator, List, Optional
 
@@ -11,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class LlamaCpp(LLM):
-    """Wrapper around the llama.cpp model.
+    """llama.cpp model.
 
     To use, you should have the llama-cpp-python library installed, and provide the
     path to the Llama model as a named parameter to the constructor.
@@ -136,7 +135,7 @@ class LlamaCpp(LLM):
 
             values["client"] = Llama(model_path, **model_params)
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import llama-cpp-python library. "
                 "Please install the llama-cpp-python library to "
                 "use this embedding model: pip install llama-cpp-python"

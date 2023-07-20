@@ -1,4 +1,3 @@
-"""Wrapper around Cohere APIs."""
 from __future__ import annotations
 
 import logging
@@ -89,7 +88,7 @@ def stream_generate_with_retry(llm: Tongyi, **kwargs: Any) -> Any:
 
 
 class Tongyi(LLM):
-    """Wrapper around Tongyi Qwen large language models.
+    """Tongyi Qwen large language models.
 
     To use, you should have the ``dashscope`` python package installed, and the
     environment variable ``DASHSCOPE_API_KEY`` set with your API key, or pass

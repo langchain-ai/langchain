@@ -1,4 +1,3 @@
-"""Wrapper around DeepInfra APIs."""
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
@@ -13,7 +12,7 @@ DEFAULT_MODEL_ID = "google/flan-t5-xl"
 
 
 class DeepInfra(LLM):
-    """Wrapper around DeepInfra deployed models.
+    """DeepInfra models.
 
     To use, you should have the ``requests`` python package installed, and the
     environment variable ``DEEPINFRA_API_TOKEN`` set with your API token, or pass

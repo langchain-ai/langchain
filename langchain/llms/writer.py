@@ -1,4 +1,3 @@
-"""Wrapper around Writer APIs."""
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
@@ -11,7 +10,7 @@ from langchain.utils import get_from_dict_or_env
 
 
 class Writer(LLM):
-    """Wrapper around Writer large language models.
+    """Writer large language models.
 
     To use, you should have the environment variable ``WRITER_API_KEY`` and
     ``WRITER_ORG_ID`` set with your API key and organization ID respectively.
