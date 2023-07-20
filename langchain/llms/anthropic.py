@@ -1,4 +1,3 @@
-"""Wrapper around Anthropic APIs."""
 import re
 import warnings
 from typing import Any, Callable, Dict, Generator, List, Mapping, Optional
@@ -16,7 +15,7 @@ from langchain.utils import check_package_version, get_from_dict_or_env
 class _AnthropicCommon(BaseModel):
     client: Any = None  #: :meta private:
     async_client: Any = None  #: :meta private:
-    model: str = "claude-v1"
+    model: str = "claude-2"
     """Model name to use."""
 
     max_tokens_to_sample: int = 256
@@ -117,7 +116,7 @@ class _AnthropicCommon(BaseModel):
 
 
 class Anthropic(LLM, _AnthropicCommon):
-    r"""Wrapper around Anthropic's large language models.
+    """Anthropic large language models.
 
     To use, you should have the ``anthropic`` python package installed, and the
     environment variable ``ANTHROPIC_API_KEY`` set with your API key, or pass

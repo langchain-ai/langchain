@@ -14,8 +14,7 @@ from langchain.schema import BaseRetriever
 
 
 class ElasticSearchBM25Retriever(BaseRetriever):
-    """Wrapper around Elasticsearch using BM25 as a retrieval method.
-
+    """Retriever for the Elasticsearch using BM25 as a retrieval method.
 
     To connect to an Elasticsearch instance that requires login credentials,
     including Elastic Cloud, use the Elasticsearch URL format
@@ -41,12 +40,26 @@ class ElasticSearchBM25Retriever(BaseRetriever):
     """
 
     client: Any
+    """Elasticsearch client."""
     index_name: str
+    """Name of the index to use in Elasticsearch."""
 
     @classmethod
     def create(
         cls, elasticsearch_url: str, index_name: str, k1: float = 2.0, b: float = 0.75
     ) -> ElasticSearchBM25Retriever:
+        """
+        Create a ElasticSearchBM25Retriever from a list of texts.
+
+        Args:
+            elasticsearch_url: URL of the Elasticsearch instance to connect to.
+            index_name: Name of the index to use in Elasticsearch.
+            k1: BM25 parameter k1.
+            b: BM25 parameter b.
+
+        Returns:
+
+        """
         from elasticsearch import Elasticsearch
 
         # Create an Elasticsearch client instance

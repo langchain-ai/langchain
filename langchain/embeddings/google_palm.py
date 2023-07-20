@@ -1,4 +1,3 @@
-"""Wrapper around Google's PaLM Embeddings APIs."""
 from __future__ import annotations
 
 import logging
@@ -55,6 +54,8 @@ def embed_with_retry(
 
 
 class GooglePalmEmbeddings(BaseModel, Embeddings):
+    """Google's PaLM Embeddings APIs."""
+
     client: Any
     google_api_key: Optional[str]
     model_name: str = "models/embedding-gecko-001"

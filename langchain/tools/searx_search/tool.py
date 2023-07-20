@@ -12,7 +12,7 @@ from langchain.utilities.searx_search import SearxSearchWrapper
 
 
 class SearxSearchRun(BaseTool):
-    """Tool that adds the capability to query a Searx instance."""
+    """Tool that queries a Searx instance."""
 
     name = "searx_search"
     description = (
@@ -41,7 +41,7 @@ class SearxSearchRun(BaseTool):
 
 
 class SearxSearchResults(BaseTool):
-    """Tool that has the capability to query a Searx instance and get back json."""
+    """Tool that queries a Searx instance and gets back json."""
 
     name = "Searx Search Results"
     description = (

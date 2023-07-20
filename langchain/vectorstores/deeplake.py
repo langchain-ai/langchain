@@ -171,11 +171,20 @@ class DeepLake(VectorStore):
             texts (Iterable[str]): Texts to add to the vectorstore.
             metadatas (Optional[List[dict]], optional): Optional list of metadatas.
             ids (Optional[List[str]], optional): Optional list of IDs.
-            **kwargs: other optional keyword arguments.
+            embedding_function (Optional[Embeddings], optional): Embedding function
+                to use to convert the text into embeddings.
+            **kwargs (Any): Any additional keyword arguments passed is not supported
+                by this method.
 
         Returns:
             List[str]: List of IDs of the added texts.
         """
+        if kwargs:
+            unsupported_items = "`, `".join(set(kwargs.keys()))
+            raise TypeError(
+                f"`{unsupported_items}` is/are not a valid argument to add_text method"
+            )
+
         kwargs = {}
         if ids:
             if self._id_tensor_name == "ids":  # for backwards compatibility
@@ -199,8 +208,7 @@ class DeepLake(VectorStore):
             metadata=metadatas,
             embedding_data=texts,
             embedding_tensor="embedding",
-            embedding_function=kwargs.get("embedding_function")
-            or self._embedding_function.embed_documents,  # type: ignore
+            embedding_function=self._embedding_function.embed_documents,  # type: ignore
             return_ids=True,
             **kwargs,
         )
@@ -707,6 +715,7 @@ class DeepLake(VectorStore):
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         dataset_path: str = _LANGCHAIN_DEFAULT_DEEPLAKE_PATH,
+        embedding_function: Optional[Embeddings] = None,
         **kwargs: Any,
     ) -> DeepLake:
         """Create a Deep Lake dataset from a raw documents.
@@ -753,20 +762,19 @@ class DeepLake(VectorStore):
             ValueError: If 'embedding' is provided in kwargs. This is deprecated,
                 please use `embedding_function` instead.
         """
-        if kwargs.get("embedding"):
+        if embedding:
             raise ValueError(
                 "using embedding as embedidng_functions is deprecated. "
                 "Please use `embedding_function` instead."
             )
 
         deeplake_dataset = cls(
-            dataset_path=dataset_path, embedding_function=embedding, **kwargs
+            dataset_path=dataset_path, embedding_function=embedding_function, **kwargs
         )
         deeplake_dataset.add_texts(
             texts=texts,
             metadatas=metadatas,
             ids=ids,
-            embedding_function=embedding.embed_documents,  # type: ignore
         )
         return deeplake_dataset
 

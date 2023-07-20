@@ -46,6 +46,7 @@ from langchain.tools.requests.tool import BaseRequestsTool
 # information in the response.
 # However, the goal for now is to have only a single inference step.
 MAX_RESPONSE_LENGTH = 5000
+"""Maximum length of the response to be returned."""
 
 
 def _get_default_llm_chain(prompt: BasePromptTemplate) -> LLMChain:
@@ -63,12 +64,18 @@ def _get_default_llm_chain_factory(
 
 
 class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
+    """Requests GET tool with LLM-instructed extraction of truncated responses."""
+
     name = "requests_get"
+    """Tool name."""
     description = REQUESTS_GET_TOOL_DESCRIPTION
+    """Tool description."""
     response_length: Optional[int] = MAX_RESPONSE_LENGTH
+    """Maximum length of the response to be returned."""
     llm_chain: LLMChain = Field(
         default_factory=_get_default_llm_chain_factory(PARSING_GET_PROMPT)
     )
+    """LLMChain used to extract the response."""
 
     def _run(self, text: str) -> str:
         try:
@@ -87,13 +94,18 @@ class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
 
 
 class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):
-    name = "requests_post"
-    description = REQUESTS_POST_TOOL_DESCRIPTION
+    """Requests POST tool with LLM-instructed extraction of truncated responses."""
 
+    name = "requests_post"
+    """Tool name."""
+    description = REQUESTS_POST_TOOL_DESCRIPTION
+    """Tool description."""
     response_length: Optional[int] = MAX_RESPONSE_LENGTH
+    """Maximum length of the response to be returned."""
     llm_chain: LLMChain = Field(
         default_factory=_get_default_llm_chain_factory(PARSING_POST_PROMPT)
     )
+    """LLMChain used to extract the response."""
 
     def _run(self, text: str) -> str:
         try:
@@ -111,13 +123,18 @@ class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):
 
 
 class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
-    name = "requests_patch"
-    description = REQUESTS_PATCH_TOOL_DESCRIPTION
+    """Requests PATCH tool with LLM-instructed extraction of truncated responses."""
 
+    name = "requests_patch"
+    """Tool name."""
+    description = REQUESTS_PATCH_TOOL_DESCRIPTION
+    """Tool description."""
     response_length: Optional[int] = MAX_RESPONSE_LENGTH
+    """Maximum length of the response to be returned."""
     llm_chain: LLMChain = Field(
         default_factory=_get_default_llm_chain_factory(PARSING_PATCH_PROMPT)
     )
+    """LLMChain used to extract the response."""
 
     def _run(self, text: str) -> str:
         try:
@@ -135,13 +152,19 @@ class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
 
 
 class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):
+    """A tool that sends a DELETE request and parses the response."""
+
     name = "requests_delete"
+    """The name of the tool."""
     description = REQUESTS_DELETE_TOOL_DESCRIPTION
+    """The description of the tool."""
 
     response_length: Optional[int] = MAX_RESPONSE_LENGTH
+    """The maximum length of the response."""
     llm_chain: LLMChain = Field(
         default_factory=_get_default_llm_chain_factory(PARSING_DELETE_PROMPT)
     )
+    """The LLM chain used to parse the response."""
 
     def _run(self, text: str) -> str:
         try:
@@ -265,7 +288,7 @@ def create_openapi_agent(
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
-    """Instantiate API planner and controller for a given spec.
+    """Instantiate OpenAI API planner and controller for a given spec.
 
     Inject credentials via requests_wrapper.
 

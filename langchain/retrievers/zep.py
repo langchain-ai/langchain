@@ -15,8 +15,9 @@ if TYPE_CHECKING:
 
 
 class ZepRetriever(BaseRetriever):
-    """A Retriever implementation for the Zep long-term memory store. Search your
-    user's long-term chat history with Zep.
+    """Retriever for the Zep long-term memory store.
+
+    Search your user's long-term chat history with Zep.
 
     Note: You will need to provide the user's `session_id` to use this retriever.
 
@@ -30,10 +31,11 @@ class ZepRetriever(BaseRetriever):
     """
 
     zep_client: Any
-
+    """Zep client."""
     session_id: str
-
+    """Zep session ID."""
     top_k: Optional[int]
+    """Number of documents to return."""
 
     @root_validator(pre=True)
     def create_client(cls, values: dict) -> dict:

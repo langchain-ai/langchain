@@ -1,5 +1,3 @@
-"""Wrapper around Jina embedding models."""
-
 import os
 from typing import Any, Dict, List, Optional
 
@@ -11,6 +9,8 @@ from langchain.utils import get_from_dict_or_env
 
 
 class JinaEmbeddings(BaseModel, Embeddings):
+    """Jina embedding models."""
+
     client: Any  #: :meta private:
 
     model_name: str = "ViT-B-32::openai"

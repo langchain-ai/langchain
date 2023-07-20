@@ -1,4 +1,3 @@
-"""Wrapper around embaas embeddings API."""
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
@@ -22,7 +21,7 @@ class EmbaasEmbeddingsPayload(TypedDict):
 
 
 class EmbaasEmbeddings(BaseModel, Embeddings):
-    """Wrapper around embaas's embedding service.
+    """Embaas's embedding service.
 
     To use, you should have the
     environment variable ``EMBAAS_API_KEY`` set with your API key, or pass

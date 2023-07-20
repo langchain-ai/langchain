@@ -1,4 +1,4 @@
-"""Toolkit for interacting with a SQL database."""
+"""Toolkit for interacting with an SQL database."""
 from typing import List
 
 from pydantic import Field
@@ -23,7 +23,7 @@ class SQLDatabaseToolkit(BaseToolkit):
 
     @property
     def dialect(self) -> str:
-        """Return string representation of dialect to use."""
+        """Return string representation of SQL dialect to use."""
         return self.db.dialect
 
     class Config:

@@ -10,7 +10,9 @@ from langchain.llms.utils import enforce_stop_tokens
 
 class LLMInputOutputAdapter:
     """Adapter class to prepare the inputs from Langchain to a format
-    that LLM model expects. Also, provides helper function to extract
+    that LLM model expects.
+
+    It also provides helper function to extract
     the generated text from the model response."""
 
     @classmethod
@@ -47,7 +49,7 @@ class LLMInputOutputAdapter:
 
 
 class Bedrock(LLM):
-    """LLM provider to invoke Bedrock models.
+    """Bedrock models.
 
     To authenticate, the AWS client uses the following methods to
     automatically load credentials:

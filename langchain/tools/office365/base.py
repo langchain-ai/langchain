@@ -1,4 +1,4 @@
-"""Base class for Gmail tools."""
+"""Base class for Office 365 tools."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -13,4 +13,7 @@ if TYPE_CHECKING:
 
 
 class O365BaseTool(BaseTool):
+    """Base class for the Office 365 tools."""
+
     account: Account = Field(default_factory=authenticate)
+    """The account object for the Office 365 account."""

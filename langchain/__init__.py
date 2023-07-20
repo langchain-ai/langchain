@@ -45,6 +45,7 @@ from langchain.prompts import (
 from langchain.schema.prompt_template import BasePromptTemplate
 from langchain.sql_database import SQLDatabase
 from langchain.utilities.arxiv import ArxivAPIWrapper
+from langchain.utilities.golden_query import GoldenQueryAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 from langchain.utilities.powerbi import PowerBIDataset
@@ -74,6 +75,7 @@ __all__ = [
     "LLMCheckerChain",
     "LLMMathChain",
     "ArxivAPIWrapper",
+    "GoldenQueryAPIWrapper",
     "SelfAskWithSearchChain",
     "SerpAPIWrapper",
     "SerpAPIChain",

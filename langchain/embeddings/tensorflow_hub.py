@@ -1,4 +1,3 @@
-"""Wrapper around TensorflowHub embedding models."""
 from typing import Any, List
 
 from pydantic import BaseModel, Extra
@@ -9,7 +8,7 @@ DEFAULT_MODEL_URL = "https://tfhub.dev/google/universal-sentence-encoder-multili
 
 
 class TensorflowHubEmbeddings(BaseModel, Embeddings):
-    """Wrapper around tensorflow_hub embedding models.
+    """TensorflowHub embedding models.
 
     To use, you should have the ``tensorflow_text`` python package installed.
 

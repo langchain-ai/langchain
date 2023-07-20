@@ -1,4 +1,3 @@
-"""Wrapper around GooseAI API."""
 import logging
 from typing import Any, Dict, List, Mapping, Optional
 
@@ -12,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class GooseAI(LLM):
-    """Wrapper around OpenAI large language models.
+    """GooseAI large language models.
 
     To use, you should have the ``openai`` python package installed, and the
     environment variable ``GOOSEAI_API_KEY`` set with your API key.
