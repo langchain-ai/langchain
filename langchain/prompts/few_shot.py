@@ -1,26 +1,23 @@
 """Prompt template that contains few shot examples."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional, Type
 
-from pydantic import Extra, root_validator
+from typing import Any, Dict, List, Optional, Type, Union
+
+from pydantic import BaseModel, Extra, Field, root_validator, validator
 
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
     StringPromptTemplate,
     check_valid_template,
 )
-from langchain.prompts.chat import BaseMessagePromptTemplate
+from langchain.prompts.chat import BaseChatPromptTemplate, BaseMessagePromptTemplate
 from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema.messages import BaseMessage, SystemMessage
 
 
-class _FewShotPromptTemplateMixin(StringPromptTemplate):
+class _FewShotPromptTemplateMixin(BaseModel):
     """Prompt template that contains few shot examples."""
-
-    @property
-    def lc_serializable(self) -> bool:
-        return False
 
     examples: Optional[List[dict]] = None
     """Examples to format into the prompt.
@@ -29,21 +26,6 @@ class _FewShotPromptTemplateMixin(StringPromptTemplate):
     example_selector: Optional[BaseExampleSelector] = None
     """ExampleSelector to choose the examples to format into the prompt.
     Either this or examples should be provided."""
-
-    example_prompt: PromptTemplate
-    """PromptTemplate used to format an individual example."""
-
-    suffix: str
-    """A prompt template string to put after the examples."""
-
-    example_separator: str = "\n\n"
-    """String separator used to join the prefix, the examples, and suffix."""
-
-    prefix: str = ""
-    """A prompt template string to put before the examples."""
-
-    template_format: str = "f-string"
-    """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
 
     @root_validator(pre=True)
     def check_examples_and_selector(cls, values: Dict) -> Dict:
@@ -75,6 +57,46 @@ class _FewShotPromptTemplateMixin(StringPromptTemplate):
             return self.example_selector.select_examples(kwargs)
         else:
             raise ValueError
+
+
+class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
+    """Prompt template that contains few shot examples."""
+
+    @property
+    def lc_serializable(self) -> bool:
+        return False
+
+    validate_template: bool = True
+    """Whether or not to try validating the template."""
+
+    input_variables: List[str]
+    """A list of the names of the variables the prompt template expects."""
+
+    example_prompt: PromptTemplate
+    """PromptTemplate used to format an individual example."""
+
+    suffix: str
+    """A prompt template string to put after the examples."""
+
+    example_separator: str = "\n\n"
+    """String separator used to join the prefix, the examples, and suffix."""
+
+    prefix: str = ""
+    """A prompt template string to put before the examples."""
+
+    template_format: str = "f-string"
+    """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
+
+    @root_validator()
+    def template_is_valid(cls, values: Dict) -> Dict:
+        """Check that prefix, suffix, and input variables are consistent."""
+        if values["validate_template"]:
+            check_valid_template(
+                values["prefix"] + values["suffix"],
+                values["template_format"],
+                values["input_variables"] + list(values["partial_variables"]),
+            )
+        return values
 
     def format(self, **kwargs: Any) -> str:
         """Format the prompt with the inputs.
@@ -120,34 +142,17 @@ class _FewShotPromptTemplateMixin(StringPromptTemplate):
         return super().dict(**kwargs)
 
 
-class FewShotPromptTemplate(_FewShotPromptTemplateMixin):
-    """Prompt template that contains few shot examples."""
-
-    validate_template: bool = True
-    """Whether or not to try validating the template."""
-
-    input_variables: List[str]
-    """A list of the names of the variables the prompt template expects."""
-
-    @root_validator()
-    def template_is_valid(cls, values: Dict) -> Dict:
-        """Check that prefix, suffix, and input variables are consistent."""
-        if values["validate_template"]:
-            check_valid_template(
-                values["prefix"] + values["suffix"],
-                values["template_format"],
-                values["input_variables"] + list(values["partial_variables"]),
-            )
-        return values
-
-
 class FewShotChatMessagePromptTemplate(
     BaseMessagePromptTemplate, _FewShotPromptTemplateMixin
 ):
     """Chat prompt template that contains few shot examples."""
 
-    message_class: Type[BaseMessage] = SystemMessage
-    """The message class to use for the prompt."""
+    @property
+    def lc_serializable(self) -> bool:
+        return False
+
+    example_prompt: Union[BaseMessagePromptTemplate, BaseChatPromptTemplate]
+    """The class to format each example."""
 
     @property
     def input_variables(self) -> List[str]:
@@ -156,7 +161,7 @@ class FewShotChatMessagePromptTemplate(
         Returns:
             List of input variables.
         """
-        return self.example_prompt.input_variables
+        return ["input"]
 
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """
@@ -168,5 +173,15 @@ class FewShotChatMessagePromptTemplate(
         Returns:
             List of messages.
         """
-        prompt = self.format(**kwargs)
-        return [self.message_class(content=prompt)]
+        # Get the examples to use.
+        examples = self._get_examples(**kwargs)
+        examples = [
+            {k: e[k] for k in self.example_prompt.input_variables} for e in examples
+        ]
+        # Format the examples.
+        messages = [
+            message
+            for example in examples
+            for message in self.example_prompt.format_messages(**example)
+        ]
+        return messages
