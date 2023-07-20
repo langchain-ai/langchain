@@ -449,8 +449,8 @@ class VectorStore(ABC):
     def as_retriever(self, **kwargs: Any) -> VectorStoreRetriever:
         tags = kwargs.pop("tags", None) or []
         if self.embeddings:
-            tags.append(type(self.embeddings))
-        return VectorStoreRetriever(vectorstore=self, **kwargs)
+            tags.append(self.embeddings.__class__.__name__)
+        return VectorStoreRetriever(vectorstore=self, **kwargs, tags=tags)
 
 
 class VectorStoreRetriever(BaseRetriever):

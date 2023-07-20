@@ -608,8 +608,8 @@ class Redis(VectorStore):
     def as_retriever(self, **kwargs: Any) -> RedisVectorStoreRetriever:
         tags = kwargs.pop("tags", None) or []
         if self.embeddings:
-            tags.append(type(self.embeddings))
-        return RedisVectorStoreRetriever(vectorstore=self, **kwargs)
+            tags.append(self.embeddings.__class__.__name__)
+        return RedisVectorStoreRetriever(vectorstore=self, **kwargs, tags=tags)
 
 
 class RedisVectorStoreRetriever(VectorStoreRetriever):
