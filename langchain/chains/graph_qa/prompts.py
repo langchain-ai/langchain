@@ -200,59 +200,110 @@ SPARQL_QA_PROMPT = PromptTemplate(
 
 AQL_GENERATION_TEMPLATE = """Task: Generate an Arango Query Language (AQL) statement to query an ArangoDB Database.
 
-You are an Arango Query Language (AQL) expert designed to translate the `User Input` into a read-only Arango Query Language (AQL) statement `AQL Query`.
+You are an Arango Query Language (AQL) expert designed to translate a `User Input` into an Arango Query Language (AQL) statement `AQL Query`.
 
 You are given an `ArangoDB Schema`. It is a JSON Object containing:
-    1. `Graph Schema`: Lists all ArangoDB Graphs within the ArangoDB Database Instance, along with their Edge Relationships. 
-    2. `Collection Schema`: Lists all ArangoDB Collections within the ArangoDB Database Instance, along with their document/edge properties and a document/edge example.
+1. `Graph Schema`: Lists all ArangoDB Graphs within the ArangoDB Database Instance, along with their Edge Relationships. 
+2. `Collection Schema`: Lists all ArangoDB Collections within the ArangoDB Database Instance, along with their document/edge properties and a document/edge example.
+
+You may also be given a set of `AQL Query Examples` to help you create the `AQL Query`. If provided, the `AQL Query Examples` should be used as a reference, similar to how `ArangoDB Schema` should be used.
 
 Things you should do:
-- Think step-by-step.
-- Rely on `ArangoDB Schema` to generated the query.
-- Begin the AQL Statement by the `WITH` AQL keyword to specify all of the collections required.
+- Think step by step.
+- Rely on `ArangoDB Schema` and `AQL Query Examples` (if provided) to generate the query.
+- Begin the AQL Statement by the `WITH` AQL keyword to specify all of the ArangoDB Collections required.
 - Return the `AQL Query` wrapped in 3 backticks (```).
-- Use only the provided relationship types and properties in the schema and example queries.
+- Use only the provided relationship types and properties in the `ArangoDB Schema` and any `AQL Query Examples` queries.
+- Only answer to requests that are related to generating an AQL Query.
+- If a request is unrelated to generating AQL Query, say that you cannot help the user.
 
 Things you should not do:
-- Do not generate any AQL queries that can't be deduced from the ArangoDB Schema.
-- Do not include any text except the generated AQL Statement.
+- Do not include any data properties/relationships that can't be inferred from the `ArangoDB Schema` or the `AQL Query Examples`. 
+- Do not include any text except the generated AQL Query.
 - Do not provide explanations or apologies in your responses.
-- Do not respond to any request that isn't related to generating an AQL Statement.
-- Do not generate any AQL Queries that Delete, Create, or Update any data whatsoever.
+- Do not respond to any request that isn't related to generating an AQL Query.
+- Do not generate an AQL Query that removes or deletes any data.
 
-Remember to think step by step.
+Under no circumstance should you generate an AQL Query that deletes any data whatsoever.
 
-ArangoDB Schema: {adb_schema}
-User Input: {user_input}
+ArangoDB Schema:
+{adb_schema}
+
+AQL Query Examples (Optional):
+{aql_examples}
+
+User Input:
+{user_input}
+
 AQL Query: 
 """
 
 AQL_GENERATION_PROMPT = PromptTemplate(
-    input_variables=["adb_schema", "user_input"], template=AQL_GENERATION_TEMPLATE
+    input_variables=["adb_schema", "aql_examples", "user_input"],
+    template=AQL_GENERATION_TEMPLATE,
 )
 
-AQL_QA_TEMPLATE = """Task: Generate a natural language response from the results of an Arango Query Language (AQL) Query.
-Instructions:
-1. Understand the original User Input, the equivalent AQL Query, and the retrieved AQL JSON Result.
-2. Generate a human-readable answer from the AQL JSON Result.
+AQL_FIX_TEMPLATE = """Task: Address the ArangoDB Query Language (AQL) error message of an ArangoDB Query Language query.
 
-Note:
-- The AQL JSON Result is authoritative. You must never doubt it or try to use your internal knowledge to correct it.
-- You will not add any extra information that is not explicitly provided in the AQL JSON Result.
-- If the AQL JSON Result is empty, say that you don't know the answer.
-- Make your answer sound as a response to the original User Input.
-- Do not mention that you based the result on the AQL JSON Result.
+You are an Arango Query Language (AQL) expert responsible for correcting the provided `AQL Query` based on the provided `AQL Error`. 
 
-The User Input is:
-{user_input}
+The `AQL Error` explains why the `AQL Query` could not be executed in the database.
+The `AQL Error` will also contain the position of the error relative to the total number of lines of the `AQL Query`.
+For example, 'error X at position 2:5' denotes that the error X occurs on line 2, column 5 of the `AQL Query`.  
 
-The AQL Query is:
+You will output the `Corrected AQL Query` wrapped in 3 backticks (```). Do not include any text except the Corrected AQL Query.
+
+Remember to think step by step.
+
+AQL Query:
 {aql_query}
 
-The AQL JSON Result is:
-{aql_result}
+AQL Error:
+{aql_error}
 
+Corrected AQL Query:
+"""
+
+AQL_FIX_PROMPT = PromptTemplate(
+    input_variables=[
+        "aql_query",
+        "aql_error",
+    ],
+    template=AQL_FIX_TEMPLATE,
+)
+
+AQL_QA_TEMPLATE = """Task: Generate a natural language response from the results of an ArangoDB Query Language query.
+
+You are a natural language expert that creates well-written & human-understandable answers from JSON data.
+
+A user has executed an ArangoDB Query Language query, which has returned a JSON result.
+
+You are responsible for creating a summary out of that JSON result.
+
+You are given the following information:
+- `ArangoDB Schema`: contains a schema representation of the user's ArangoDB Database.
+- `User Input`: the original question/request of the user, which has been translated into an AQL Query.
+- `AQL Query`: the AQL equivalent of the `User Input`.
+- `AQL Result`: the JSON output returned by executing the `AQL Query` within the ArangoDB Database.
+
+The `AQL Result` provided is authoritative, you must never doubt it or try to use your internal knowledge to correct it.
+Make your response sound like it is a direct response to the `User Input`.
+
+Remember to think step by step, but to keep your answer consice and straight to the point.
+
+ArangoDB Schema:
+{adb_schema}
+
+User Input:
+{user_input}
+
+AQL Query:
+{aql_query}
+
+AQL Result:
+{aql_result}
 """
 AQL_QA_PROMPT = PromptTemplate(
-    input_variables=["user_input", "aql_query", "aql_result"], template=AQL_QA_TEMPLATE
+    input_variables=["adb_schema", "user_input", "aql_query", "aql_result"],
+    template=AQL_QA_TEMPLATE,
 )
