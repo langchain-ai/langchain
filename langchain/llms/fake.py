@@ -1,4 +1,3 @@
-"""Fake LLM wrapper for testing purposes."""
 from typing import Any, List, Mapping, Optional
 
 from langchain.callbacks.manager import (
@@ -9,7 +8,7 @@ from langchain.llms.base import LLM
 
 
 class FakeListLLM(LLM):
-    """Fake LLM wrapper for testing purposes."""
+    """Fake LLM for testing purposes."""
 
     responses: List
     i: int = 0

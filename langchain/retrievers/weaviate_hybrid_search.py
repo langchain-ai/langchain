@@ -48,12 +48,12 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
             raise ValueError(
                 f"client should be an instance of weaviate.Client, got {type(client)}"
             )
-        if values["attributes"] is None:
+        if values.get("attributes") is None:
             values["attributes"] = []
 
         cast(List, values["attributes"]).append(values["text_key"])
 
-        if values["create_schema_if_missing"]:
+        if values.get("create_schema_if_missing", True):
             class_obj = {
                 "class": values["index_name"],
                 "properties": [{"name": values["text_key"], "dataType": ["text"]}],

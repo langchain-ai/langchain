@@ -1,4 +1,3 @@
-"""Wrapper for the GPT4All model."""
 from functools import partial
 from typing import Any, Dict, List, Mapping, Optional, Set
 
@@ -10,7 +9,7 @@ from langchain.llms.utils import enforce_stop_tokens
 
 
 class GPT4All(LLM):
-    r"""Wrapper around GPT4All language models.
+    """GPT4All language models.
 
     To use, you should have the ``gpt4all`` python package installed, the
     pre-trained model file, and the model's config information.

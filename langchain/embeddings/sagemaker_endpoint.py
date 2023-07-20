@@ -1,4 +1,3 @@
-"""Wrapper around Sagemaker InvokeEndpoint API."""
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
@@ -12,7 +11,7 @@ class EmbeddingsContentHandler(ContentHandlerBase[List[str], List[List[float]]])
 
 
 class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
-    """Wrapper around custom Sagemaker Inference Endpoints.
+    """Custom Sagemaker Inference Endpoints.
 
     To use, you must supply the endpoint name from your deployed
     Sagemaker model & the region where it is deployed.
@@ -133,7 +132,7 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
                 ) from e
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import boto3 python package. "
                 "Please install it with `pip install boto3`."
             )

@@ -1,4 +1,4 @@
-"""Wrapper for the RWKV model.
+"""RWKV models.
 
 Based on https://github.com/saharNooby/rwkv.cpp/blob/master/rwkv/chat_with_bot.py
          https://github.com/BlinkDL/ChatRWKV/blob/main/v2/chat.py
@@ -13,7 +13,7 @@ from langchain.llms.utils import enforce_stop_tokens
 
 
 class RWKV(LLM, BaseModel):
-    r"""Wrapper around RWKV language models.
+    """RWKV language models.
 
     To use, you should have the ``rwkv`` python package installed, the
     pre-trained model file, and the model's config information.
