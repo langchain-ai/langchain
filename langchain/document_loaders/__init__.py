@@ -59,6 +59,7 @@ from langchain.document_loaders.googledrive import GoogleDriveLoader
 from langchain.document_loaders.gutenberg import GutenbergLoader
 from langchain.document_loaders.hn import HNLoader
 from langchain.document_loaders.html import UnstructuredHTMLLoader
+from langchain.document_loaders.html2text import HTML2TextLoader
 from langchain.document_loaders.html_bs import BSHTMLLoader
 from langchain.document_loaders.hugging_face_dataset import HuggingFaceDatasetLoader
 from langchain.document_loaders.ifixit import IFixitLoader
@@ -210,6 +211,7 @@ __all__ = [
     "GoogleDriveLoader",
     "GutenbergLoader",
     "HNLoader",
+    "HTML2TextLoader",
     "HuggingFaceDatasetLoader",
     "HuggingFaceDatasetLoader",
     "IFixitLoader",
