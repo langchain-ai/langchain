@@ -30,8 +30,8 @@ class ArangoGraph:
 
     def set_schema(self, schema: Optional[Dict[str, Any]] = None) -> None:
         """
-            Set the schema of the ArangoDB Database.
-            Auto-generates Schema if **schema** is None.
+        Set the schema of the ArangoDB Database.
+        Auto-generates Schema if **schema** is None.
         """
         self.__schema = self.generate_schema() if schema is None else schema
 
