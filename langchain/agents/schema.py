@@ -5,6 +5,8 @@ from langchain.schema import AgentAction
 
 
 class AgentScratchPadChatPromptTemplate(ChatPromptTemplate):
+    """Chat prompt template for the agent scratchpad."""
+
     def _construct_agent_scratchpad(
         self, intermediate_steps: List[Tuple[AgentAction, str]]
     ) -> str:

@@ -14,6 +14,7 @@ from langchain.llms.baseten import Baseten
 from langchain.llms.beam import Beam
 from langchain.llms.bedrock import Bedrock
 from langchain.llms.cerebriumai import CerebriumAI
+from langchain.llms.chatglm import ChatGLM
 from langchain.llms.clarifai import Clarifai
 from langchain.llms.cohere import Cohere
 from langchain.llms.ctransformers import CTransformers
@@ -32,6 +33,7 @@ from langchain.llms.human import HumanInputLLM
 from langchain.llms.koboldai import KoboldApiLLM
 from langchain.llms.llamacpp import LlamaCpp
 from langchain.llms.manifest import ManifestWrapper
+from langchain.llms.mlflow_ai_gateway import MlflowAIGateway
 from langchain.llms.modal import Modal
 from langchain.llms.mosaicml import MosaicML
 from langchain.llms.nlpcloud import NLPCloud
@@ -69,6 +71,7 @@ __all__ = [
     "Bedrock",
     "CTransformers",
     "CerebriumAI",
+    "ChatGLM",
     "Clarifai",
     "Cohere",
     "Databricks",
@@ -87,6 +90,7 @@ __all__ = [
     "LlamaCpp",
     "TextGen",
     "ManifestWrapper",
+    "MlflowAIGateway",
     "Modal",
     "MosaicML",
     "NLPCloud",
@@ -125,6 +129,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "baseten": Baseten,
     "beam": Beam,
     "cerebriumai": CerebriumAI,
+    "chat_glm": ChatGLM,
     "clarifai": Clarifai,
     "cohere": Cohere,
     "ctransformers": CTransformers,
@@ -143,6 +148,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "koboldai": KoboldApiLLM,
     "llamacpp": LlamaCpp,
     "textgen": TextGen,
+    "mlflow-gateway": MlflowAIGateway,
     "modal": Modal,
     "mosaic": MosaicML,
     "nlpcloud": NLPCloud,

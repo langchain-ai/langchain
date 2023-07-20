@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.234"
+version = "0.0.237"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -120,7 +120,9 @@ cassio = {version = "^0.0.7", optional = true}
 rdflib = {version = "^6.3.2", optional = true}
 sympy = {version = "^1.12", optional = true}
 rapidfuzz = {version = "^3.1.1", optional = true}
-langsmith = "^0.0.7"
+langsmith = "~0.0.11"
+rank-bm25 = {version = "^0.2.2", optional = true}
+geopandas = {version = "^0.13.1", optional = true}
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
@@ -192,7 +194,7 @@ deeplake = "^3.6.8"
 libdeeplake = "^0.0.60"
 weaviate-client = "^3.15.5"
 torch = "^1.0.0"
-chromadb = "^0.3.21"
+chromadb = "^0.4.0"
 tiktoken = "^0.3.3"
 python-dotenv = "^1.0.0"
 sentence-transformers = "^2"
@@ -361,6 +363,9 @@ extended_testing = [
  "openai",
  "sympy",
  "rapidfuzz",
+ "openai",
+ "rank_bm25",
+ "geopandas",
 ]
 
 [[tool.poetry.source]]
@@ -416,4 +421,4 @@ ignore-regex = '.*(Stati Uniti|Tense=Pres).*'
 # whats is a typo but used frequently in queries so kept as is
 # aapply - async apply
 # unsecure - typo but part of API, decided to not bother for now
-ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure'
+ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon'

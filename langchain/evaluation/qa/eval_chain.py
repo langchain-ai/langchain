@@ -1,6 +1,7 @@
 """LLM Chain specifically for evaluating question answering."""
 from __future__ import annotations
 
+import re
 from typing import Any, List, Optional, Sequence
 
 from pydantic import Extra
@@ -12,6 +13,16 @@ from langchain.evaluation.qa.eval_prompt import CONTEXT_PROMPT, COT_PROMPT, PROM
 from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
 from langchain.schema import RUN_KEY
 from langchain.schema.language_model import BaseLanguageModel
+
+
+def _get_score(verdict: str) -> Optional[int]:
+    match = re.search(r"(?i)(?:grade:\s*)?(correct|incorrect)", verdict)
+    if match:
+        if match.group(1).upper() == "CORRECT":
+            return 1
+        elif match.group(1).upper() == "INCORRECT":
+            return 0
+    return None
 
 
 def _parse_string_eval_output(text: str) -> dict:
@@ -30,11 +41,7 @@ def _parse_string_eval_output(text: str) -> dict:
     else:
         reasoning, verdict = splits
         reasoning = reasoning.strip()
-    score = (
-        1
-        if verdict.upper() == "CORRECT"
-        else (0 if verdict.upper() == "INCORRECT" else None)
-    )
+    score = _get_score(verdict)
     return {
         "reasoning": reasoning,
         "value": verdict,
