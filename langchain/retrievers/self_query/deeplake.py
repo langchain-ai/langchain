@@ -62,10 +62,18 @@ class DeepLakeTranslator(Visitor):
 
     def visit_comparison(self, comparison: Comparison) -> str:
         comparator = self._format_func(comparison.comparator)
-        value = comparison.value
+        values = comparison.value
+        if isinstance(values, list):
+            tql = []
+            for value in values:
+                comparison.value = value
+                tql.append(self.visit_comparison(comparison))
+
+            return "(" + (" or ").join(tql) + ")"
+
         if not can_cast_to_float(comparison.value):
-            value = f"'{value}'"
-        return f"metadata['{comparison.attribute}'] {comparator} {value}"
+            values = f"'{values}'"
+        return f"metadata['{comparison.attribute}'] {comparator} {values}"
 
     def visit_structured_query(
         self, structured_query: StructuredQuery
