@@ -51,8 +51,8 @@ agent.run("What was the high temperature in SF yesterday in Fahrenheit? What is 
 
 **You can see the requests' logs along with the trace id on Portkey dashboard:**
 
-<img src="../../../docs_skeleton/static/img/portkey-dashboard.gif" height=250 />
-<img src="../../../docs_skeleton/static/img/portkey-tracing.png" height=250 />
+<img src="/img/portkey-dashboard.gif" height="250"/>
+<img src="/img/portkey-tracing.png" height="250"/>
 
 ## Advanced Features
 
