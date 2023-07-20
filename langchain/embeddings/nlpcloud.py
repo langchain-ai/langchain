@@ -21,6 +21,7 @@ class NLPCloudEmbeddings(BaseModel, Embeddings):
     """
 
     model_name: str  # Define model_name as a class attribute
+    gpu: bool  # Define gpu as a class attribut
     client: Any  #: :meta private:
 
     def __init__(
