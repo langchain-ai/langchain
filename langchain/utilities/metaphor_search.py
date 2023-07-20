@@ -144,17 +144,6 @@ class MetaphorSearchAPIWrapper(BaseModel):
                 "endPublishedDate": end_published_date,
                 "useAutoprompt": use_autoprompt,
             }
-            params = {
-                "numResults": num_results,
-                "query": query,
-                "includeDomains": include_domains,
-                "excludeDomains": exclude_domains,
-                "startCrawlDate": start_crawl_date,
-                "endCrawlDate": end_crawl_date,
-                "startPublishedDate": start_published_date,
-                "endPublishedDate": end_published_date,
-                "useAutoprompt": use_autoprompt,
-            }
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                     f"{METAPHOR_API_URL}/search", json=params, headers=headers
