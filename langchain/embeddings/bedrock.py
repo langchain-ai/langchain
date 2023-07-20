@@ -8,7 +8,7 @@ from langchain.embeddings.base import Embeddings
 
 
 class BedrockEmbeddings(BaseModel, Embeddings):
-    """Embeddings provider to invoke Bedrock embedding models.
+    """Bedrock embedding models.
 
     To authenticate, the AWS client uses the following methods to
     automatically load credentials:
@@ -39,7 +39,7 @@ class BedrockEmbeddings(BaseModel, Embeddings):
     """
 
     client: Any  #: :meta private:
-
+    """Bedrock client."""
     region_name: Optional[str] = None
     """The aws region e.g., `us-west-2`. Fallsback to AWS_DEFAULT_REGION env variable
     or region specified in ~/.aws/config in case it is not provided here.
@@ -59,6 +59,9 @@ class BedrockEmbeddings(BaseModel, Embeddings):
 
     model_kwargs: Optional[Dict] = None
     """Key word arguments to pass to the model."""
+
+    endpoint_url: Optional[str] = None
+    """Needed if you don't want to default to us-east-1 endpoint"""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -84,6 +87,9 @@ class BedrockEmbeddings(BaseModel, Embeddings):
             client_params = {}
             if values["region_name"]:
                 client_params["region_name"] = values["region_name"]
+
+            if values["endpoint_url"]:
+                client_params["endpoint_url"] = values["endpoint_url"]
 
             values["client"] = session.client("bedrock", **client_params)
 

@@ -1,4 +1,3 @@
-"""Wrapper around Pipeline Cloud API."""
 import logging
 from typing import Any, Dict, List, Mapping, Optional
 
@@ -13,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class PipelineAI(LLM, BaseModel):
-    """Wrapper around PipelineAI large language models.
+    """PipelineAI large language models.
 
     To use, you should have the ``pipeline-ai`` python package installed,
     and the environment variable ``PIPELINE_API_KEY`` set with your API key.

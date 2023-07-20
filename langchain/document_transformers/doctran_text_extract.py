@@ -53,10 +53,14 @@ class DoctranPropertyExtractor(BaseDocumentTransformer):
         self,
         properties: List[dict],
         openai_api_key: Optional[str] = None,
+        openai_api_model: Optional[str] = None,
     ) -> None:
         self.properties = properties
         self.openai_api_key = openai_api_key or get_from_env(
             "openai_api_key", "OPENAI_API_KEY"
+        )
+        self.openai_api_model = openai_api_model or get_from_env(
+            "openai_api_model", "OPENAI_API_MODEL"
         )
 
     def transform_documents(
@@ -71,7 +75,9 @@ class DoctranPropertyExtractor(BaseDocumentTransformer):
         try:
             from doctran import Doctran, ExtractProperty
 
-            doctran = Doctran(openai_api_key=self.openai_api_key)
+            doctran = Doctran(
+                openai_api_key=self.openai_api_key, openai_model=self.openai_api_model
+            )
         except ImportError:
             raise ImportError(
                 "Install doctran to use this parser. (pip install doctran)"

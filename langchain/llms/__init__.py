@@ -1,4 +1,4 @@
-"""Wrappers on top of large language models APIs."""
+"""Access to the large language model APIs and services."""
 from typing import Dict, Type
 
 from langchain.llms.ai21 import AI21

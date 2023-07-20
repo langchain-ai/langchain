@@ -1,4 +1,3 @@
-"""Wrapper around Cohere APIs."""
 from __future__ import annotations
 
 import logging
@@ -49,7 +48,7 @@ def completion_with_retry(llm: Cohere, **kwargs: Any) -> Any:
 
 
 class Cohere(LLM):
-    """Wrapper around Cohere large language models.
+    """Cohere large language models.
 
     To use, you should have the ``cohere`` python package installed, and the
     environment variable ``COHERE_API_KEY`` set with your API key, or pass

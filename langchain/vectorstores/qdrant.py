@@ -149,8 +149,7 @@ class Qdrant(VectorStore):
             texts, metadatas, ids, batch_size
         ):
             self.client.upsert(
-                collection_name=self.collection_name,
-                points=points,
+                collection_name=self.collection_name, points=points, **kwargs
             )
             added_ids.extend(batch_ids)
 
@@ -266,7 +265,7 @@ class Qdrant(VectorStore):
         Returns:
             List of Documents most similar to the query.
         """
-        results = await self.asimilarity_search_with_score(query, k, filter)
+        results = await self.asimilarity_search_with_score(query, k, filter, **kwargs)
         return list(map(itemgetter(0), results))
 
     def similarity_search_with_score(
