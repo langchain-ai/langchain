@@ -446,10 +446,16 @@ class VectorStore(ABC):
         """Return VectorStore initialized from texts and embeddings."""
         raise NotImplementedError
 
-    def as_retriever(self, **kwargs: Any) -> VectorStoreRetriever:
-        tags = kwargs.pop("tags", None) or []
+    def __get_retriever_tags(self) -> List[str]:
+        """Get tags for retriever."""
+        tags = [self.__class__.__name__]
         if self.embeddings:
             tags.append(self.embeddings.__class__.__name__)
+        return tags
+
+    def as_retriever(self, **kwargs: Any) -> VectorStoreRetriever:
+        tags = kwargs.pop("tags", None) or []
+        tags.extend(self.__get_retriever_tags())
         return VectorStoreRetriever(vectorstore=self, **kwargs, tags=tags)
 
 
