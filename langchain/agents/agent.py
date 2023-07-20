@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import yaml
-from pydantic import BaseModel, root_validator
+from pydantic import BaseModel, ValidationError, root_validator
 
 from langchain.agents.agent_types import AgentType
 from langchain.agents.tools import InvalidTool
@@ -846,14 +846,21 @@ s
                 tool_run_kwargs = self.agent.tool_run_logging_kwargs()
                 if return_direct:
                     tool_run_kwargs["llm_prefix"] = ""
-                # We then call the tool on the tool input to get an observation
-                observation = tool.run(
-                    agent_action.tool_input,
-                    verbose=self.verbose,
-                    color=color,
-                    callbacks=run_manager.get_child() if run_manager else None,
-                    **tool_run_kwargs,
-                )
+                try:
+                    # We then call the tool on the tool input to get an observation
+                    observation = tool.run(
+                        agent_action.tool_input,
+                        verbose=self.verbose,
+                        color=color,
+                        callbacks=run_manager.get_child() if run_manager else None,
+                        **tool_run_kwargs,
+                    )
+                except ValidationError as ve:
+                    observation = (
+                        'Please review the "arguments" to correctly execute '
+                        f"{agent_action.tool}. The execution ended with the following "
+                        f"error: {str(ve)}"
+                    )
             else:
                 tool_run_kwargs = self.agent.tool_run_logging_kwargs()
                 observation = InvalidTool().run(
@@ -939,14 +946,21 @@ s
                 tool_run_kwargs = self.agent.tool_run_logging_kwargs()
                 if return_direct:
                     tool_run_kwargs["llm_prefix"] = ""
-                # We then call the tool on the tool input to get an observation
-                observation = await tool.arun(
-                    agent_action.tool_input,
-                    verbose=self.verbose,
-                    color=color,
-                    callbacks=run_manager.get_child() if run_manager else None,
-                    **tool_run_kwargs,
-                )
+                    try:
+                        # We then call the tool on the tool input to get an observation
+                        observation = await tool.arun(
+                            agent_action.tool_input,
+                            verbose=self.verbose,
+                            color=color,
+                            callbacks=run_manager.get_child() if run_manager else None,
+                            **tool_run_kwargs,
+                        )
+                    except ValidationError as ve:
+                        observation = (
+                            'Please review the "arguments" to correctly execute '
+                            f"{agent_action.tool}. The execution ended with the following "
+                            f"error: {str(ve)}"
+                        )
             else:
                 tool_run_kwargs = self.agent.tool_run_logging_kwargs()
                 observation = await InvalidTool().arun(
