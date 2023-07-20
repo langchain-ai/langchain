@@ -36,8 +36,8 @@ def test_redis_cache_chat() -> None:
     params = llm.dict()
     params["stop"] = None
     with pytest.warns():
-        llm.generate(["foo"])
-    llm.generate(["foo"])
+        llm.predict("foo")
+    llm.predict("foo")
     langchain.llm_cache.redis.flushall()
 
 
@@ -74,6 +74,6 @@ def test_redis_semantic_cache_chat() -> None:
     params = llm.dict()
     params["stop"] = None
     with pytest.warns():
-        llm.generate(["foo"])
-    llm.generate(["foo"])
+        llm.predict("foo")
+    llm.predict("foo")
     langchain.llm_cache.redis.flushall()
