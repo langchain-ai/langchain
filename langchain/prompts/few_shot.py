@@ -1,5 +1,6 @@
 """Prompt template that contains few shot examples."""
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
+from typing import Any, Dict, List, Optional, Type
 
 from pydantic import Extra, root_validator
 
@@ -8,11 +9,13 @@ from langchain.prompts.base import (
     StringPromptTemplate,
     check_valid_template,
 )
+from langchain.prompts.chat import BaseMessagePromptTemplate
 from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.prompts.prompt import PromptTemplate
+from langchain.schema.messages import BaseMessage, SystemMessage
 
 
-class FewShotPromptTemplate(StringPromptTemplate):
+class _FewShotPromptTemplateMixin(StringPromptTemplate):
     """Prompt template that contains few shot examples."""
 
     @property
@@ -33,9 +36,6 @@ class FewShotPromptTemplate(StringPromptTemplate):
     suffix: str
     """A prompt template string to put after the examples."""
 
-    input_variables: List[str]
-    """A list of the names of the variables the prompt template expects."""
-
     example_separator: str = "\n\n"
     """String separator used to join the prefix, the examples, and suffix."""
 
@@ -44,9 +44,6 @@ class FewShotPromptTemplate(StringPromptTemplate):
 
     template_format: str = "f-string"
     """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
-
-    validate_template: bool = True
-    """Whether or not to try validating the template."""
 
     @root_validator(pre=True)
     def check_examples_and_selector(cls, values: Dict) -> Dict:
@@ -63,17 +60,6 @@ class FewShotPromptTemplate(StringPromptTemplate):
                 "One of 'examples' and 'example_selector' should be provided"
             )
 
-        return values
-
-    @root_validator()
-    def template_is_valid(cls, values: Dict) -> Dict:
-        """Check that prefix, suffix, and input variables are consistent."""
-        if values["validate_template"]:
-            check_valid_template(
-                values["prefix"] + values["suffix"],
-                values["template_format"],
-                values["input_variables"] + list(values["partial_variables"]),
-            )
         return values
 
     class Config:
@@ -132,3 +118,55 @@ class FewShotPromptTemplate(StringPromptTemplate):
         if self.example_selector:
             raise ValueError("Saving an example selector is not currently supported")
         return super().dict(**kwargs)
+
+
+class FewShotPromptTemplate(_FewShotPromptTemplateMixin):
+    """Prompt template that contains few shot examples."""
+
+    validate_template: bool = True
+    """Whether or not to try validating the template."""
+
+    input_variables: List[str]
+    """A list of the names of the variables the prompt template expects."""
+
+    @root_validator()
+    def template_is_valid(cls, values: Dict) -> Dict:
+        """Check that prefix, suffix, and input variables are consistent."""
+        if values["validate_template"]:
+            check_valid_template(
+                values["prefix"] + values["suffix"],
+                values["template_format"],
+                values["input_variables"] + list(values["partial_variables"]),
+            )
+        return values
+
+
+class FewShotChatMessagePromptTemplate(
+    BaseMessagePromptTemplate, _FewShotPromptTemplateMixin
+):
+    """Chat prompt template that contains few shot examples."""
+
+    message_class: Type[BaseMessage] = SystemMessage
+    """The message class to use for the prompt."""
+
+    @property
+    def input_variables(self) -> List[str]:
+        """Input variables for this prompt template.
+
+        Returns:
+            List of input variables.
+        """
+        return self.example_prompt.input_variables
+
+    def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
+        """
+        Format kwargs into a list of messages.
+
+        Args:
+            **kwargs: keyword arguments to use for formatting.
+
+        Returns:
+            List of messages.
+        """
+        prompt = self.format(**kwargs)
+        return [self.message_class(content=prompt)]
