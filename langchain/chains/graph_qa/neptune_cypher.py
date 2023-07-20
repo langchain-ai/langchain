@@ -8,7 +8,7 @@ from pydantic import Field
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
-from langchain.chains.graph_qa.prompts import CYPHER_QA_PROMPT, NEPTUNE_CYPHER_GENERATION_PROMPT
+from langchain.chains.graph_qa.prompts import CYPHER_QA_PROMPT, NEPTUNE_OPENCYPHER_GENERATION_PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.prompts.base import BasePromptTemplate
 from langchain.graphs import NeptuneGraph
@@ -74,7 +74,7 @@ class NeptuneOpenCypherQAChain(Chain):
         llm: BaseLanguageModel,
         *,
         qa_prompt: BasePromptTemplate = CYPHER_QA_PROMPT,
-        cypher_prompt: BasePromptTemplate = NEPTUNE_CYPHER_GENERATION_PROMPT,
+        cypher_prompt: BasePromptTemplate = NEPTUNE_OPENCYPHER_GENERATION_PROMPT,
         **kwargs: Any,
     ) -> NeptuneOpenCypherQAChain:
         """Initialize from LLM."""
