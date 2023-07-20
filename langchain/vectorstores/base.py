@@ -454,6 +454,13 @@ class VectorStoreRetriever(BaseRetriever):
 
         arbitrary_types_allowed = True
 
+    @property
+    def lc_serializable(self) -> bool:
+        """
+        Return whether or not the class is serializable.
+        """
+        return True
+
     @root_validator()
     def validate_search_type(cls, values: Dict) -> Dict:
         """Validate search type."""

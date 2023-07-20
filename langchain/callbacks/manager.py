@@ -1203,7 +1203,6 @@ class CallbackManager(BaseCallbackManager):
         """Run when retriever starts running."""
         if run_id is None:
             run_id = uuid4()
-
         _handle_event(
             self.handlers,
             "on_retriever_start",
