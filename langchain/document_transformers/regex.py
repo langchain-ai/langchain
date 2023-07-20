@@ -1,5 +1,5 @@
 import re
-from typing import Sequence
+from typing import Any, Sequence
 
 from langchain.schema import BaseDocumentTransformer, Document
 
@@ -22,6 +22,7 @@ class RegexTransformer(BaseDocumentTransformer):
     def transform_documents(
         self,
         documents: Sequence[Document],
+        **kwargs: Any,
     ) -> Sequence[Document]:
         for d in documents:
             d.page_content = re.sub(self.regex, self.replacement_str, d.page_content)
@@ -30,5 +31,6 @@ class RegexTransformer(BaseDocumentTransformer):
     async def atransform_documents(
         self,
         documents: Sequence[Document],
+        **kwargs: Any,
     ) -> Sequence[Document]:
         raise NotImplementedError
