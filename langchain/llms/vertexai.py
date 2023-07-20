@@ -1,4 +1,3 @@
-"""Wrapper around Google VertexAI models."""
 from __future__ import annotations
 
 import asyncio
@@ -142,7 +141,7 @@ class _VertexAICommon(BaseModel):
 
 
 class VertexAI(_VertexAICommon, LLM):
-    """Wrapper around Google Vertex AI large language models."""
+    """Google Vertex AI large language models."""
 
     model_name: str = "text-bison"
     "The name of the Vertex AI large language model."

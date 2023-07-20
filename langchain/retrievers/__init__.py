@@ -6,6 +6,9 @@ from langchain.retrievers.chatgpt_plugin_retriever import ChatGPTPluginRetriever
 from langchain.retrievers.contextual_compression import ContextualCompressionRetriever
 from langchain.retrievers.docarray import DocArrayRetriever
 from langchain.retrievers.elastic_search_bm25 import ElasticSearchBM25Retriever
+from langchain.retrievers.google_cloud_enterprise_search import (
+    GoogleCloudEnterpriseSearchRetriever,
+)
 from langchain.retrievers.kendra import AmazonKendraRetriever
 from langchain.retrievers.knn import KNNRetriever
 from langchain.retrievers.llama_index import (
@@ -39,6 +42,7 @@ __all__ = [
     "ContextualCompressionRetriever",
     "ChaindeskRetriever",
     "ElasticSearchBM25Retriever",
+    "GoogleCloudEnterpriseSearchRetriever",
     "KNNRetriever",
     "LlamaIndexGraphRetriever",
     "LlamaIndexRetriever",

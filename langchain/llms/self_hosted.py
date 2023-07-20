@@ -1,4 +1,3 @@
-"""Run model inference on self-hosted remote hardware."""
 import importlib.util
 import logging
 import pickle
@@ -63,7 +62,7 @@ def _send_pipeline_to_device(pipeline: Any, device: int) -> Any:
 
 
 class SelfHostedPipeline(LLM):
-    """Run model inference on self-hosted remote hardware.
+    """Model inference on self-hosted remote hardware.
 
     Supported hardware includes auto-launched instances on AWS, GCP, Azure,
     and Lambda, as well as servers specified

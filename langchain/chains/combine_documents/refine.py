@@ -1,4 +1,4 @@
-"""Combining documents by doing a first pass and then refining on more documents."""
+"""Combine documents by doing a first pass and then refining on more documents."""
 
 from __future__ import annotations
 
@@ -161,7 +161,8 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
     async def acombine_docs(
         self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
     ) -> Tuple[str, dict]:
-        """Combine by mapping first chain over all, then stuffing into final chain.
+        """Async combine by mapping a first chain over all, then stuffing
+         into a final chain.
 
         Args:
             docs: List of documents to combine

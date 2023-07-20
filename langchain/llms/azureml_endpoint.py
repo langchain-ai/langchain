@@ -1,4 +1,3 @@
-"""Wrapper around AzureML Managed Online Endpoint API."""
 import json
 import urllib.request
 from abc import abstractmethod
@@ -12,7 +11,7 @@ from langchain.utils import get_from_dict_or_env
 
 
 class AzureMLEndpointClient(object):
-    """Wrapper around AzureML Managed Online Endpoint Client."""
+    """AzureML Managed Endpoint client."""
 
     def __init__(
         self, endpoint_url: str, endpoint_api_key: str, deployment_name: str
@@ -43,8 +42,8 @@ class AzureMLEndpointClient(object):
 
 
 class ContentFormatterBase:
-    """A handler class to transform request and response of
-    AzureML endpoint to match with required schema.
+    """Transform request and response of AzureML endpoint to match with
+    required schema.
     """
 
     """
@@ -134,7 +133,7 @@ class DollyContentFormatter(ContentFormatterBase):
 
 
 class AzureMLOnlineEndpoint(LLM, BaseModel):
-    """Wrapper around Azure ML Hosted models using Managed Online Endpoints.
+    """Azure ML Online Endpoint models.
 
     Example:
         .. code-block:: python

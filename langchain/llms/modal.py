@@ -1,4 +1,3 @@
-"""Wrapper around Modal API."""
 import logging
 from typing import Any, Dict, List, Mapping, Optional
 
@@ -13,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class Modal(LLM):
-    """Wrapper around Modal large language models.
+    """Modal large language models.
 
     To use, you should have the ``modal-client`` python package installed.
 

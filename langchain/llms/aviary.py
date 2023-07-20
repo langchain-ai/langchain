@@ -1,4 +1,3 @@
-"""Wrapper around Aviary"""
 import dataclasses
 import os
 from typing import Any, Dict, List, Mapping, Optional, Union, cast
@@ -77,14 +76,14 @@ def get_completions(
 
 
 class Aviary(LLM):
-    """Allow you to use an Aviary.
+    """Aviary hosted models.
 
     Aviary is a backend for hosted models. You can
     find out more about aviary at
     http://github.com/ray-project/aviary
 
     To get a list of the models supported on an
-    aviary, follow the instructions on the web site to
+    aviary, follow the instructions on the website to
     install the aviary CLI and then use:
     `aviary models`
 

@@ -1,4 +1,3 @@
-"""Wrapper around Replicate API."""
 import logging
 from typing import Any, Dict, List, Mapping, Optional
 
@@ -12,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class Replicate(LLM):
-    """Wrapper around Replicate models.
+    """Replicate models.
 
     To use, you should have the ``replicate`` python package installed,
     and the environment variable ``REPLICATE_API_TOKEN`` set with your API token.

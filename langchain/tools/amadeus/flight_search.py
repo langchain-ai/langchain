@@ -2,7 +2,6 @@ import logging
 from datetime import datetime as dt
 from typing import Dict, Optional, Type
 
-from amadeus import ResponseError
 from pydantic import BaseModel, Field
 
 from langchain.callbacks.manager import (
@@ -71,6 +70,13 @@ class AmadeusFlightSearch(AmadeusBaseTool):
         page_number: int = 1,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> list:
+        try:
+            from amadeus import ResponseError
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import amadeus, please install with `pip install amadeus`."
+            ) from e
+
         RESULTS_PER_PAGE = 10
 
         # Authenticate and retrieve a client

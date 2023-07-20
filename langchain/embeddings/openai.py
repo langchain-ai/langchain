@@ -1,4 +1,3 @@
-"""Wrapper around OpenAI embedding models."""
 from __future__ import annotations
 
 import logging
@@ -120,7 +119,7 @@ async def async_embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) ->
 
 
 class OpenAIEmbeddings(BaseModel, Embeddings):
-    """Wrapper around OpenAI embedding models.
+    """OpenAI embedding models.
 
     To use, you should have the ``openai`` python package installed, and the
     environment variable ``OPENAI_API_KEY`` set with your API key or pass it
@@ -171,6 +170,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     # to support explicit proxy for OpenAI
     openai_proxy: Optional[str] = None
     embedding_ctx_length: int = 8191
+    """The maximum number of tokens to embed at once."""
     openai_api_key: Optional[str] = None
     openai_organization: Optional[str] = None
     allowed_special: Union[Literal["all"], Set[str]] = set()
