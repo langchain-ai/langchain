@@ -116,7 +116,9 @@ def update_cache(
 
 
 class BaseLLM(BaseLanguageModel, ABC):
-    """LLM wrapper should take in a prompt and return a string."""
+    """Base LLM abstract interface.
+
+    It should take in a prompt and return a string."""
 
     cache: Optional[bool] = None
     verbose: bool = Field(default_factory=_get_verbosity)
@@ -560,7 +562,7 @@ class BaseLLM(BaseLanguageModel, ABC):
 
 
 class LLM(BaseLLM):
-    """LLM class that expect subclasses to implement a simpler call method.
+    """Base LLM abstract class.
 
     The purpose of this class is to expose a simpler interface for working
     with LLMs, rather than expect the user to implement the full _generate method.

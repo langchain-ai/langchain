@@ -1,4 +1,3 @@
-"""Wrapper around OctoAI APIs."""
 from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import Extra, root_validator
@@ -10,7 +9,7 @@ from langchain.utils import get_from_dict_or_env
 
 
 class OctoAIEndpoint(LLM):
-    """Wrapper around OctoAI Inference Endpoints.
+    """OctoAI LLM Endpoints.
 
     OctoAIEndpoint is a class to interact with OctoAI
      Compute Service large language model endpoints.

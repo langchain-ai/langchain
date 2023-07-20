@@ -1,4 +1,3 @@
-"""Wrapper around Huggingface text generation inference API."""
 from functools import partial
 from typing import Any, Dict, List, Optional
 
@@ -13,10 +12,9 @@ from langchain.llms.base import LLM
 
 class HuggingFaceTextGenInference(LLM):
     """
-    HuggingFace text generation inference API.
+    HuggingFace text generation API.
 
-    This class is a wrapper around the HuggingFace text generation inference API.
-    It is used to generate text from a given prompt.
+    It generates text from a given prompt.
 
     Attributes:
     - max_new_tokens: The maximum number of tokens to generate.

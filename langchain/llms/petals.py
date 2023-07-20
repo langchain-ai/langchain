@@ -1,4 +1,3 @@
-"""Wrapper around Petals API."""
 import logging
 from typing import Any, Dict, List, Mapping, Optional
 
@@ -13,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class Petals(LLM):
-    """Wrapper around Petals Bloom models.
+    """Petals Bloom models.
 
     To use, you should have the ``petals`` python package installed, and the
     environment variable ``HUGGINGFACE_API_KEY`` set with your API key.

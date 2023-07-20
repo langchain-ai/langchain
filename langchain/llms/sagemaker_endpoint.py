@@ -1,4 +1,4 @@
-"""Wrapper around Sagemaker InvokeEndpoint API."""
+"""Sagemaker InvokeEndpoint API."""
 from abc import abstractmethod
 from typing import Any, Dict, Generic, List, Mapping, Optional, TypeVar, Union
 
@@ -14,8 +14,9 @@ OUTPUT_TYPE = TypeVar("OUTPUT_TYPE", bound=Union[str, List[List[float]]])
 
 class ContentHandlerBase(Generic[INPUT_TYPE, OUTPUT_TYPE]):
     """A handler class to transform input from LLM to a
-    format that SageMaker endpoint expects. Similarly,
-    the class also handles transforming output from the
+    format that SageMaker endpoint expects.
+
+    Similarly, the class handles transforming output from the
     SageMaker endpoint to a format that LLM class expects.
     """
 
@@ -62,7 +63,7 @@ class LLMContentHandler(ContentHandlerBase[str, str]):
 
 
 class SagemakerEndpoint(LLM):
-    """Wrapper around custom Sagemaker Inference Endpoints.
+    """Sagemaker Inference Endpoint models.
 
     To use, you must supply the endpoint name from your deployed
     Sagemaker model & the region where it is deployed.
