@@ -958,8 +958,8 @@ s
                     except ValidationError as ve:
                         observation = (
                             'Please review the "arguments" to correctly execute '
-                            f"{agent_action.tool}. The execution ended with the following "
-                            f"error: {str(ve)}"
+                            f"{agent_action.tool}. The execution ended with the "
+                            f"following error: {str(ve)}"
                         )
             else:
                 tool_run_kwargs = self.agent.tool_run_logging_kwargs()
