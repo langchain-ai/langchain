@@ -18,7 +18,7 @@ class NLPCloud(LLM):
         .. code-block:: python
 
             from langchain.llms import NLPCloud
-            nlpcloud = NLPCloud(model="gpt-neox-20b")
+            nlpcloud = NLPCloud(model="finetuned-gpt-neox-20b")
     """
 
     client: Any  #: :meta private:
