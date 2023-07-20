@@ -1,16 +1,17 @@
 import unittest
-from unittest.mock import patch, Mock
+from unittest.mock import MagicMock, Mock, patch
+
 from langchain.document_loaders import CubeSemanticLoader
 
 
 class TestCubeSemanticLoader(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.loader = CubeSemanticLoader(
             cube_api_url="http://example.com", cube_api_token="test_token"
         )
 
     @patch("langchain.document_loaders.requests.request")
-    def test_get_dimension_values(self, mock_request):
+    def test_get_dimension_values(self, mock_request: MagicMock) -> None:
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = {"data": [{"test_dimension": "value1"}]}
@@ -19,9 +20,11 @@ class TestCubeSemanticLoader(unittest.TestCase):
         values = self.loader._get_dimension_values("test_dimension")
         self.assertEqual(values, ["value1"])
 
-    @patch("cube_loader.requests.get")
-    @patch("cube_loader.CubeSemanticLoader._get_dimension_values")
-    def test_load(self, mock_get_dimension_values, mock_get):
+    @patch("langchain.document_loaders.requests.get")
+    @patch("langchain.document_loaders.CubeSemanticLoader._get_dimension_values")
+    def test_load(
+        self, mock_get_dimension_values: MagicMock, mock_get: MagicMock
+    ) -> None:
         # Mocking the response
         mock_response = Mock()
         mock_response.raise_for_status.return_value = None
