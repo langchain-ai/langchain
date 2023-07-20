@@ -93,6 +93,7 @@ class MetaphorSearchAPIWrapper(BaseModel):
             end_crawl_date: If specified, only pages we crawled before end_crawl_date will be returned.
             start_published_date: If specified, only pages published after start_published_date will be returned.
             end_published_date: If specified, only pages published before end_published_date will be returned.
+            use_autoprompt: If true, we turn your query into a more Metaphor-friendly query. Adds latency.
 
         Returns:
             A list of dictionaries with the following keys:
