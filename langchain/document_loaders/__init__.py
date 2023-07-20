@@ -152,6 +152,7 @@ from langchain.document_loaders.youtube import (
     GoogleApiYoutubeLoader,
     YoutubeLoader,
 )
+from langchain.document_loaders.web_loader import AsyncRawWebLoader
 
 # Legacy: only for backwards compatibility. Use PyPDFLoader instead
 PagedPDFSplitter = PyPDFLoader
@@ -299,4 +300,5 @@ __all__ = [
     "XorbitsLoader",
     "YoutubeAudioLoader",
     "YoutubeLoader",
+    "AsyncRawWebLoader",
 ]
