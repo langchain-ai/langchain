@@ -3,6 +3,8 @@ from unittest.mock import MagicMock, Mock, patch
 
 from langchain.document_loaders import CubeSemanticLoader
 
+MODULE_PATH = "langchain.document_loaders.cube_semantic.CubeSemanticLoader"
+
 
 class TestCubeSemanticLoader(unittest.TestCase):
     def setUp(self) -> None:
@@ -21,7 +23,7 @@ class TestCubeSemanticLoader(unittest.TestCase):
         self.assertEqual(values, ["value1"])
 
     @patch("requests.get")
-    @patch("langchain.document_loaders.cube_semantic._get_dimension_values")
+    @patch(f"{MODULE_PATH}._get_dimension_values")
     def test_load(
         self, mock_get_dimension_values: MagicMock, mock_get: MagicMock
     ) -> None:
