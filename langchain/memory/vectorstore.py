@@ -64,7 +64,6 @@ class VectorStoreRetrieverMemory(BaseMemory):
         texts = [
             f"{k}: {v}"
             for k, v in list(filtered_inputs.items()) + list(outputs.items())
-            if k not in exclude
         ]
         page_content = "\n".join(texts)
         return [Document(page_content=page_content)]
