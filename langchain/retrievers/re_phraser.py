@@ -66,9 +66,7 @@ class RePhraseQueryRetriever(BaseRetriever):
         Returns:
             Re-phased user question
         """
-        response = self.llm_chain(
-            {"question": question}, callbacks=run_manager.get_child()
-        )
+        response = self.llm_chain(question, callbacks=run_manager.get_child())
         return response["text"]
 
     def _get_relevant_documents(
