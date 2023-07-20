@@ -8,10 +8,13 @@ from pydantic import Field
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
-from langchain.chains.graph_qa.prompts import CYPHER_QA_PROMPT, NEPTUNE_OPENCYPHER_GENERATION_PROMPT
+from langchain.chains.graph_qa.prompts import (
+    CYPHER_QA_PROMPT,
+    NEPTUNE_OPENCYPHER_GENERATION_PROMPT,
+)
 from langchain.chains.llm import LLMChain
-from langchain.prompts.base import BasePromptTemplate
 from langchain.graphs import NeptuneGraph
+from langchain.prompts.base import BasePromptTemplate
 
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 
@@ -27,14 +30,14 @@ def extract_cypher(text: str) -> str:
 
 
 class NeptuneOpenCypherQAChain(Chain):
-    """Chain for question-answering against a Neptune graph 
-    by generating openCypher statements. 
-    
+    """Chain for question-answering against a Neptune graph
+    by generating openCypher statements.
+
     Example:
         .. code-block:: python
 
         chain = NeptuneOpenCypherQAChain.from_llm(
-            llm=llm, 
+            llm=llm,
             graph=graph
         )
         response = chain.run(query)
@@ -50,7 +53,7 @@ class NeptuneOpenCypherQAChain(Chain):
     """Whether or not to return the intermediate steps along with the final answer."""
     return_direct: bool = False
     """Whether or not to return the result of querying the graph directly."""
-    
+
     @property
     def input_keys(self) -> List[str]:
         """Return the input keys.
