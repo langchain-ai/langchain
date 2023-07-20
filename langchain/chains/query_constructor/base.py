@@ -27,6 +27,8 @@ from langchain.schema.language_model import BaseLanguageModel
 
 
 class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
+    """Output parser that parses a structured query."""
+
     ast_parse: Callable
     """Callable that parses dict into internal representation of query language."""
 
@@ -57,6 +59,16 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
         allowed_comparators: Optional[Sequence[Comparator]] = None,
         allowed_operators: Optional[Sequence[Operator]] = None,
     ) -> StructuredQueryOutputParser:
+        """
+        Create a structured query output parser from components.
+
+        Args:
+            allowed_comparators: allowed comparators
+            allowed_operators: allowed operators
+
+        Returns:
+            a structured query output parser
+        """
         ast_parser = get_parser(
             allowed_comparators=allowed_comparators, allowed_operators=allowed_operators
         )

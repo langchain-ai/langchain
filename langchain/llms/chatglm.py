@@ -8,7 +8,7 @@ from langchain.llms.utils import enforce_stop_tokens
 
 
 class ChatGLM(LLM):
-    """Wrapper around ChatGLM's LLM inference service.
+    """ChatGLM LLM service.
 
     Example:
         .. code-block:: python

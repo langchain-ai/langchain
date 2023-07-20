@@ -43,12 +43,16 @@ Passage:
 """  # noqa: E501
 
 
-def create_extraction_chain(schema: dict, llm: BaseLanguageModel) -> Chain:
+def create_extraction_chain(
+    schema: dict, llm: BaseLanguageModel, verbose: bool = False
+) -> Chain:
     """Creates a chain that extracts information from a passage.
 
     Args:
         schema: The schema of the entities to extract.
         llm: The language model to use.
+        verbose: Whether to run in verbose mode. In verbose mode, some intermediate
+            logs will be printed to the console. Defaults to `langchain.verbose` value.
 
     Returns:
         Chain that can be used to extract information from a passage.
@@ -62,6 +66,7 @@ def create_extraction_chain(schema: dict, llm: BaseLanguageModel) -> Chain:
         prompt=prompt,
         llm_kwargs=llm_kwargs,
         output_parser=output_parser,
+        verbose=verbose,
     )
     return chain
 

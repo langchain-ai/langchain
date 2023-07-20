@@ -7,7 +7,7 @@ from langchain.schema import BaseOutputParser
 
 
 class ListOutputParser(BaseOutputParser):
-    """Class to parse the output of an LLM call to a list."""
+    """Parse the output of an LLM call to a list."""
 
     @property
     def _type(self) -> str:
@@ -19,7 +19,7 @@ class ListOutputParser(BaseOutputParser):
 
 
 class CommaSeparatedListOutputParser(ListOutputParser):
-    """Parse out comma separated lists."""
+    """Parse the output of an LLM call to a comma-separated list."""
 
     @property
     def lc_serializable(self) -> bool:

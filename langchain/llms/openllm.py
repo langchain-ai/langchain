@@ -1,4 +1,3 @@
-"""Wrapper around OpenLLM APIs."""
 from __future__ import annotations
 
 import copy
@@ -46,7 +45,7 @@ logger = logging.getLogger(__name__)
 
 
 class OpenLLM(LLM):
-    """Wrapper for accessing OpenLLM, supporting both in-process model
+    """OpenLLM, supporting both in-process model
     instance and remote OpenLLM servers.
 
     To use, you should have the openllm library installed:
