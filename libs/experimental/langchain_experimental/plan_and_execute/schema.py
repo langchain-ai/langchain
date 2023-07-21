@@ -1,9 +1,8 @@
 from abc import abstractmethod
 from typing import List, Tuple
 
-from pydantic import BaseModel, Field
-
 from langchain.schema import BaseOutputParser
+from pydantic import BaseModel, Field
 
 
 class Step(BaseModel):
