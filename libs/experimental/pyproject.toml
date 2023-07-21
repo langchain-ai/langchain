@@ -1,16 +1,19 @@
 [tool.poetry]
-name = "langchain.experimental"
+name = "langchain-experimental"
 version = "0.0.1"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
 readme = "README.md"
 repository = "https://www.github.com/hwchase17/langchain"
+packages = [
+    {include = "langchain"}
+]
 
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain = "^0.0.235"
+langchain = ">=0.0.239"
 
 
 [tool.poetry.group.lint.dependencies]
@@ -19,6 +22,7 @@ black = "^23.1.0"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^0.991"
+types-pyyaml = "^6.0.12.2"
 
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"

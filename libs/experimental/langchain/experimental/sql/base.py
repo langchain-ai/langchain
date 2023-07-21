@@ -19,14 +19,14 @@ from langchain.utilities.sql_database import SQLDatabase
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 
 
-# TODO: deprecate
 class SQLDatabaseChain(Chain):
     """Chain for interacting with SQL Database.
 
     Example:
         .. code-block:: python
 
-            from langchain import SQLDatabaseChain, OpenAI, SQLDatabase
+            from langchain.experimental.sql import SQLDatabaseChain
+            from langchain import OpenAI, SQLDatabase
             db = SQLDatabase(...)
             db_chain = SQLDatabaseChain.from_llm(OpenAI(), db)
     """
