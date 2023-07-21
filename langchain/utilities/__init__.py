@@ -25,6 +25,7 @@ from langchain.utilities.scenexplain import SceneXplainAPIWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
 from langchain.utilities.spark_sql import SparkSQL
+from langchain.utilities.sql_database import SQLDatabase
 from langchain.utilities.twilio import TwilioAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
@@ -56,6 +57,7 @@ __all__ = [
     "SearxSearchWrapper",
     "SerpAPIWrapper",
     "SparkSQL",
+    "SQLDatabase",
     "TextRequestsWrapper",
     "TwilioAPIWrapper",
     "WikipediaAPIWrapper",
