@@ -1,3 +1,4 @@
+# flake8: noqa
 GET_ISSUES_PROMPT = """
 This tool will fetch a list of the repository's issues. It will return the title, and issue number of 5 issues. It takes no input.
 """
