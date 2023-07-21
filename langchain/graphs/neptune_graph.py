@@ -79,8 +79,10 @@ class NeptuneGraph:
         if not response.ok:
             raise NeptuneQueryException(
                 {
-                    "message": ("Summary API is not available for this instance of Neptune," 
-                                "ensure the engine version is >=1.2.1.0"),
+                    "message": (
+                        "Summary API is not available for this instance of Neptune,"
+                        "ensure the engine version is >=1.2.1.0"
+                    ),
                     "details": response.content.decode(),
                 }
             )
