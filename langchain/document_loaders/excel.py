@@ -1,4 +1,4 @@
-"""Loader that loads Microsoft Excel files."""
+"""Loads Microsoft Excel files."""
 from typing import Any, List
 
 from langchain.document_loaders.unstructured import (
@@ -8,7 +8,21 @@ from langchain.document_loaders.unstructured import (
 
 
 class UnstructuredExcelLoader(UnstructuredFileLoader):
-    """Loader that uses unstructured to load Microsoft Excel files."""
+    """Loader that uses unstructured to load Excel files. Like other
+    Unstructured loaders, UnstructuredExcelLoader can be used in both
+    "single" and "elements" mode. If you use the loader in "elements"
+    mode, each sheet in the Excel file will be a an Unstructured Table
+    element. If you use the loader in "elements" mode, an
+    HTML representation of the table will be available in the
+    "text_as_html" key in the document metadata.
+
+    Examples
+    --------
+    from langchain.document_loaders.excel import UnstructuredExcelLoader
+
+    loader = UnstructuredExcelLoader("stanley-cups.xlsd", mode="elements")
+    docs = loader.load()
+    """
 
     def __init__(
         self, file_path: str, mode: str = "single", **unstructured_kwargs: Any

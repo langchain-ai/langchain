@@ -1,4 +1,4 @@
-"""Loader that loads ReadTheDocs documentation directory dump."""
+"""Loads ReadTheDocs documentation directory dump."""
 from pathlib import Path
 from typing import Any, List, Optional, Tuple, Union
 
@@ -7,7 +7,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class ReadTheDocsLoader(BaseLoader):
-    """Loader that loads ReadTheDocs documentation directory dump."""
+    """Loads ReadTheDocs documentation directory dump."""
 
     def __init__(
         self,
@@ -20,7 +20,7 @@ class ReadTheDocsLoader(BaseLoader):
         """
         Initialize ReadTheDocsLoader
 
-        The loader loops over all files under `path` and extract the actual content of
+        The loader loops over all files under `path` and extracts the actual content of
         the files by retrieving main html tags. Default main html tags include
         `<main id="main-content>`, <`div role="main>`, and `<article role="main">`. You
         can also define your own html tags by passing custom_html_tag, e.g.
@@ -31,7 +31,7 @@ class ReadTheDocsLoader(BaseLoader):
         Args:
             path: The location of pulled readthedocs folder.
             encoding: The encoding with which to open the documents.
-            errors: Specifies how encoding and decoding errors are to be handled—this
+            errors: Specify how encoding and decoding errors are to be handled—this
                 cannot be used in binary mode.
             custom_html_tag: Optional custom html tag to retrieve the content from
                 files.

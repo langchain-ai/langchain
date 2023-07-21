@@ -10,6 +10,8 @@ from langchain.tools.gmail.base import GmailBaseTool
 
 
 class GetThreadSchema(BaseModel):
+    """Input for GetMessageTool."""
+
     # From https://support.google.com/mail/answer/7190?hl=en
     thread_id: str = Field(
         ...,
@@ -18,6 +20,8 @@ class GetThreadSchema(BaseModel):
 
 
 class GmailGetThread(GmailBaseTool):
+    """Tool that gets a thread by ID from Gmail."""
+
     name: str = "get_gmail_thread"
     description: str = (
         "Use this tool to search for email messages."

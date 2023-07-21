@@ -8,7 +8,7 @@ from langchain.tools import BaseTool
 
 
 class BaseToolkit(BaseModel, ABC):
-    """Class representing a collection of related tools."""
+    """Base Toolkit representing a collection of related tools."""
 
     @abstractmethod
     def get_tools(self) -> List[BaseTool]:

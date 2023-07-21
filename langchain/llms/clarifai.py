@@ -1,4 +1,3 @@
-"""Wrapper around Clarifai's APIs."""
 import logging
 from typing import Any, Dict, List, Optional
 
@@ -13,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class Clarifai(LLM):
-    """Wrapper around Clarifai's large language models.
+    """Clarifai large language models.
 
     To use, you should have an account on the Clarifai platform,
     the ``clarifai`` python package installed, and the

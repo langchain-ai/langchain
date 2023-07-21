@@ -1,4 +1,3 @@
-"""Wrapper around AI21 APIs."""
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -21,7 +20,7 @@ class AI21PenaltyData(BaseModel):
 
 
 class AI21(LLM):
-    """Wrapper around AI21 large language models.
+    """AI21 large language models.
 
     To use, you should have the environment variable ``AI21_API_KEY``
     set with your API key.

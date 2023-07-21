@@ -10,6 +10,8 @@ from langchain.tools.office365.base import O365BaseTool
 
 
 class SendMessageSchema(BaseModel):
+    """Input for SendMessageTool."""
+
     body: str = Field(
         ...,
         description="The message body to be sent.",
@@ -33,6 +35,8 @@ class SendMessageSchema(BaseModel):
 
 
 class O365SendMessage(O365BaseTool):
+    """Tool for sending an email in Office 365."""
+
     name: str = "send_email"
     description: str = (
         "Use this tool to send an email with the provided message fields."

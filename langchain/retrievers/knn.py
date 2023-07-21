@@ -36,10 +36,15 @@ class KNNRetriever(BaseRetriever):
     """KNN Retriever."""
 
     embeddings: Embeddings
+    """Embeddings model to use."""
     index: Any
+    """Index of embeddings."""
     texts: List[str]
+    """List of texts to index."""
     k: int = 4
+    """Number of results to return."""
     relevancy_threshold: Optional[float] = None
+    """Threshold for relevancy."""
 
     class Config:
 

@@ -2,14 +2,18 @@ from langchain.schema import BaseOutputParser
 
 
 class BooleanOutputParser(BaseOutputParser[bool]):
+    """Parse the output of an LLM call to a boolean."""
+
     true_val: str = "YES"
+    """The string value that should be parsed as True."""
     false_val: str = "NO"
+    """The string value that should be parsed as False."""
 
     def parse(self, text: str) -> bool:
         """Parse the output of an LLM call to a boolean.
 
         Args:
-            text: output of language model
+            text: output of a language model
 
         Returns:
             boolean
@@ -25,5 +29,5 @@ class BooleanOutputParser(BaseOutputParser[bool]):
 
     @property
     def _type(self) -> str:
-        """Snake-case string identifier for output parser type."""
+        """Snake-case string identifier for an output parser type."""
         return "boolean_output_parser"

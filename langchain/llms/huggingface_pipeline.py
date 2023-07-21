@@ -1,4 +1,3 @@
-"""Wrapper around HuggingFace Pipeline APIs."""
 import importlib.util
 import logging
 from typing import Any, List, Mapping, Optional
@@ -17,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class HuggingFacePipeline(LLM):
-    """Wrapper around HuggingFace Pipeline API.
+    """HuggingFace Pipeline API.
 
     To use, you should have the ``transformers`` python package installed.
 

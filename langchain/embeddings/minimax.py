@@ -1,4 +1,3 @@
-"""Wrapper around MiniMax APIs."""
 from __future__ import annotations
 
 import logging
@@ -47,7 +46,7 @@ def embed_with_retry(embeddings: MiniMaxEmbeddings, *args: Any, **kwargs: Any) -
 
 
 class MiniMaxEmbeddings(BaseModel, Embeddings):
-    """Wrapper around MiniMax's embedding inference service.
+    """MiniMax's embedding service.
 
     To use, you should have the environment variable ``MINIMAX_GROUP_ID`` and
     ``MINIMAX_API_KEY`` set with your API token, or pass it as a named parameter to

@@ -118,6 +118,8 @@ def _get_prompt_and_tools(
 ) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
     try:
         import pandas as pd
+
+        pd.set_option("display.max_columns", None)
     except ImportError:
         raise ValueError(
             "pandas package not found, please install with `pip install pandas`"
@@ -227,6 +229,8 @@ def _get_functions_prompt_and_tools(
 ) -> Tuple[BasePromptTemplate, List[PythonAstREPLTool]]:
     try:
         import pandas as pd
+
+        pd.set_option("display.max_columns", None)
     except ImportError:
         raise ValueError(
             "pandas package not found, please install with `pip install pandas`"

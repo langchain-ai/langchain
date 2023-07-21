@@ -10,7 +10,9 @@ from langchain.llms.utils import enforce_stop_tokens
 
 class LLMInputOutputAdapter:
     """Adapter class to prepare the inputs from Langchain to a format
-    that LLM model expects. Also, provides helper function to extract
+    that LLM model expects.
+
+    It also provides helper function to extract
     the generated text from the model response."""
 
     @classmethod
@@ -47,7 +49,7 @@ class LLMInputOutputAdapter:
 
 
 class Bedrock(LLM):
-    """LLM provider to invoke Bedrock models.
+    """Bedrock models.
 
     To authenticate, the AWS client uses the following methods to
     automatically load credentials:
@@ -95,6 +97,9 @@ class Bedrock(LLM):
     model_kwargs: Optional[Dict] = None
     """Key word arguments to pass to the model."""
 
+    endpoint_url: Optional[str] = None
+    """Needed if you don't want to default to us-east-1 endpoint"""
+
     class Config:
         """Configuration for this pydantic object."""
 
@@ -120,6 +125,8 @@ class Bedrock(LLM):
             client_params = {}
             if values["region_name"]:
                 client_params["region_name"] = values["region_name"]
+            if values["endpoint_url"]:
+                client_params["endpoint_url"] = values["endpoint_url"]
 
             values["client"] = session.client("bedrock", **client_params)
 

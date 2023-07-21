@@ -1,23 +1,25 @@
-"""Document compressor that uses embeddings to drop documents unrelated to the query."""
 from typing import Callable, Dict, Optional, Sequence
 
 import numpy as np
 from pydantic import root_validator
 
 from langchain.callbacks.manager import Callbacks
-from langchain.document_transformers import (
+from langchain.document_transformers.embeddings_redundant_filter import (
     _get_embeddings_from_stateful_docs,
     get_stateful_documents,
 )
 from langchain.embeddings.base import Embeddings
-from langchain.math_utils import cosine_similarity
 from langchain.retrievers.document_compressors.base import (
     BaseDocumentCompressor,
 )
 from langchain.schema import Document
+from langchain.utils.math import cosine_similarity
 
 
 class EmbeddingsFilter(BaseDocumentCompressor):
+    """Document compressor that uses embeddings to drop documents
+    unrelated to the query."""
+
     embeddings: Embeddings
     """Embeddings to use for embedding document contents and queries."""
     similarity_fn: Callable = cosine_similarity

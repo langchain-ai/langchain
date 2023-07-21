@@ -1,4 +1,3 @@
-"""Running custom embedding models on self-hosted remote hardware."""
 from typing import Any, Callable, List
 
 from pydantic import Extra
@@ -17,7 +16,7 @@ def _embed_documents(pipeline: Any, *args: Any, **kwargs: Any) -> List[List[floa
 
 
 class SelfHostedEmbeddings(SelfHostedPipeline, Embeddings):
-    """Runs custom embedding models on self-hosted remote hardware.
+    """Custom embedding models on self-hosted remote hardware.
 
     Supported hardware includes auto-launched instances on AWS, GCP, Azure,
     and Lambda, as well as servers specified

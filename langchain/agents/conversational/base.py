@@ -18,10 +18,12 @@ from langchain.tools.base import BaseTool
 
 
 class ConversationalAgent(Agent):
-    """An agent designed to hold a conversation in addition to using tools."""
+    """An agent that holds a conversation in addition to using tools."""
 
     ai_prefix: str = "AI"
+    """Prefix to use before AI output."""
     output_parser: AgentOutputParser = Field(default_factory=ConvoOutputParser)
+    """Output parser for the agent."""
 
     @classmethod
     def _get_default_output_parser(
@@ -55,7 +57,7 @@ class ConversationalAgent(Agent):
         human_prefix: str = "Human",
         input_variables: Optional[List[str]] = None,
     ) -> PromptTemplate:
-        """Create prompt in the style of the zero shot agent.
+        """Create prompt in the style of the zero-shot agent.
 
         Args:
             tools: List of tools the agent will have access to, used to format the

@@ -159,7 +159,12 @@ class SerpAPIWrapper(BaseModel):
             toret = res["organic_results"][0]["snippet"]
         elif "link" in res["organic_results"][0].keys():
             toret = res["organic_results"][0]["link"]
-
+        elif (
+            "images_results" in res.keys()
+            and "thumbnail" in res["images_results"][0].keys()
+        ):
+            thumbnails = [item["thumbnail"] for item in res["images_results"][:10]]
+            toret = thumbnails
         else:
             toret = "No good search result found"
         return toret

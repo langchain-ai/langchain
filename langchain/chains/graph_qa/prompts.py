@@ -98,7 +98,7 @@ GREMLIN_GENERATION_PROMPT = PromptTemplate(
 
 CYPHER_QA_TEMPLATE = """You are an assistant that helps to form nice and human understandable answers.
 The information part contains the provided information that you must use to construct an answer.
-The provided information is authorative, you must never doubt it or try to use your internal knowledge to correct it.
+The provided information is authoritative, you must never doubt it or try to use your internal knowledge to correct it.
 Make the answer sound as a response to the question. Do not mention that you based the result on the given information.
 If the provided information is empty, say that you don't know the answer.
 Information:
@@ -195,4 +195,22 @@ Question: {prompt}
 Helpful Answer:"""
 SPARQL_QA_PROMPT = PromptTemplate(
     input_variables=["context", "prompt"], template=SPARQL_QA_TEMPLATE
+)
+
+
+NEPTUNE_OPENCYPHER_EXTRA_INSTRUCTIONS = """
+Instructions:
+Generate the query in openCypher format and follow these rules:
+Do not use `NONE`, `ALL` or `ANY` predicate functions, rather use list comprehensions.
+Do not use `REDUCE` function. Rather use a combination of list comprehension and the `UNWIND` clause to achieve similar results.
+Do not use `FOREACH` clause. Rather use a combination of `WITH` and `UNWIND` clauses to achieve similar results.
+\n"""
+
+NEPTUNE_OPENCYPHER_GENERATION_TEMPLATE = CYPHER_GENERATION_TEMPLATE.replace(
+    "Instructions:", NEPTUNE_OPENCYPHER_EXTRA_INSTRUCTIONS
+)
+
+NEPTUNE_OPENCYPHER_GENERATION_PROMPT = PromptTemplate(
+    input_variables=["schema", "question"],
+    template=NEPTUNE_OPENCYPHER_GENERATION_TEMPLATE,
 )

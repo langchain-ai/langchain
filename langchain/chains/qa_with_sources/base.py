@@ -31,7 +31,7 @@ from langchain.schema.language_model import BaseLanguageModel
 
 
 class BaseQAWithSourcesChain(Chain, ABC):
-    """Question answering with sources over documents."""
+    """Question answering chain with sources over documents."""
 
     combine_documents_chain: BaseCombineDocumentsChain
     """Chain to use to combine documents."""
