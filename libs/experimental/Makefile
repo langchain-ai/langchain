@@ -7,10 +7,10 @@ all: help
 TEST_FILE ?= tests/unit_tests/
 
 test:
-	poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE)
+	poetry run pytest $(TEST_FILE)
 
 tests: 
-	poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE)
+	poetry run pytest $(TEST_FILE)
 
 test_watch:
 	poetry run ptw --now . -- tests/unit_tests
