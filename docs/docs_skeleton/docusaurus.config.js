@@ -167,7 +167,7 @@ const config = {
           },
           {
             href: "https://api.python.langchain.com",
-            label: "API reference",
+            label: "API",
             position: "left",
           },
           {
@@ -183,8 +183,9 @@ const config = {
           // Please keep GitHub link to the right for consistency.
           {
             href: "https://github.com/hwchase17/langchain",
-            label: "GitHub",
-            position: "right",
+            position: 'right',
+            className: 'header-github-link',
+            'aria-label': 'GitHub repository',
           },
         ],
       },
