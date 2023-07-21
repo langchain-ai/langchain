@@ -352,6 +352,7 @@ extended_testing = [
  "openai",
  "rank_bm25",
  "geopandas",
+ "jinja2",
 ]
 
 [[tool.poetry.source]]
