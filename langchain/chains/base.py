@@ -91,7 +91,8 @@ class Chain(Serializable, ABC):
 
     @property
     def _chain_type(self) -> str:
-        raise NotImplementedError("Saving not supported for this chain type.")
+        warnings.warn("Saving not supported for this chain type.", UserWarning)
+        return 'NotImplemented'
 
     @root_validator()
     def raise_callback_manager_deprecation(cls, values: Dict) -> Dict:
@@ -551,7 +552,9 @@ class Chain(Serializable, ABC):
                 # -> {"_type": "foo", "verbose": False, ...}
         """
         if self.memory is not None:
-            raise ValueError("Saving of memory is not yet supported.")
+            warnings.warn("Saving not supported for this chain type.", UserWarning)
+            return 'NotImplemented'
+
         _dict = super().dict(**kwargs)
         _dict["_type"] = self._chain_type
         return _dict
