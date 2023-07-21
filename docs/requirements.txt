@@ -1,6 +1,5 @@
 -e ../libs/langchain
 autodoc_pydantic==1.8.0
-pydantic<2
 myst_parser
 nbsphinx==0.8.9
 sphinx==4.5.0
