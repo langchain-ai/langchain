@@ -4,7 +4,11 @@ Utility functions for langchain.
 These functions do not depend on any other langchain modules.
 """
 
-from langchain.utils.env import get_from_dict_or_env, get_from_env
+from langchain.utils.env import (
+    get_from_dict_or_env,
+    get_from_env,
+    get_runtime_environment,
+)
 from langchain.utils.formatting import StrictFormatter, formatter
 from langchain.utils.input import (
     get_bolded_text,
@@ -36,6 +40,7 @@ __all__ = [
     "get_from_dict_or_env",
     "get_from_env",
     "get_pydantic_field_names",
+    "get_runtime_environment",
     "guard_import",
     "mock_now",
     "print_text",
