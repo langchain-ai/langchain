@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import requests
 
@@ -79,13 +79,14 @@ class NeptuneGraph:
         if not response.ok:
             raise NeptuneQueryException(
                 {
-                    "message": "Summary API is not available for this instance of Neptune, ensure the engine version is >=1.2.1.0",
+                    "message": ("Summary API is not available for this instance of Neptune," 
+                                "ensure the engine version is >=1.2.1.0"),
                     "details": response.content.decode(),
                 }
             )
         try:
             summary = response.json()["payload"]["graphSummary"]
-        except Exception as e:
+        except Exception:
             raise NeptuneQueryException(
                 {
                     "message": "Summary API did not return a valid response.",
