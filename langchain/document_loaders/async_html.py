@@ -24,8 +24,8 @@ default_header_template = {
 }
 
 
-class HTML2TextLoader(BaseLoader):
-    """Loads HTML asynchronously and returns the markdown-formatted text."""
+class AsyncHtmlLoader(BaseLoader):
+    """Loads HTML asynchronously."""
 
     web_paths: List[str]
 
@@ -129,22 +129,10 @@ class HTML2TextLoader(BaseLoader):
     def load(self) -> List[Document]:
         """Load text from the url(s) in web_path."""
 
-        try:
-            import html2text
-        except ImportError:
-            raise ValueError(
-                """html2text package not found, please 
-                install it with `pip install html2text`"""
-            )
-
-        h = html2text.HTML2Text()
-        h.ignore_links = True
-        h.ignore_images = True
-
         results = asyncio.run(self.fetch_all(self.web_paths))
         docs = []
         for i, text in enumerate(results):
             metadata = {"source": self.web_paths[i]}
-            docs.append(Document(page_content=h.handle(text), metadata=metadata))
+            docs.append(Document(page_content=text, metadata=metadata))
 
         return docs
