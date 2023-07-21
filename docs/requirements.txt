@@ -1,4 +1,4 @@
--e ../libs/langchain
+-e libs/langchain
 autodoc_pydantic==1.8.0
 myst_parser
 nbsphinx==0.8.9
