@@ -379,7 +379,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
 
     async def _aprocess_next_step_output(
         self,
-        next_step_output: Union[AgentFinish, Dict[Tuple[AgentAction, str]]],
+        next_step_output: Union[AgentFinish, List[Tuple[AgentAction, str]]],
         run_manager: Optional[AsyncCallbackManagerForChainRun],
     ) -> Dict[str, Union[str, List[Tuple[AgentAction, str]]]]:
         """
