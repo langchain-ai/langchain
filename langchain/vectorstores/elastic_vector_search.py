@@ -153,6 +153,10 @@ class ElasticVectorSearch(VectorStore, ABC):
                 f"Your elasticsearch client string is mis-formatted. Got error: {e} "
             )
 
+    @property
+    def embeddings(self) -> Embeddings:
+        return self.embeddings
+
     def add_texts(
         self,
         texts: Iterable[str],

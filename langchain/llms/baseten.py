@@ -1,4 +1,3 @@
-"""Wrapper around Baseten deployed model API."""
 import logging
 from typing import Any, Dict, List, Mapping, Optional
 
@@ -11,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class Baseten(LLM):
-    """Use your Baseten models in Langchain
+    """Baseten models.
 
     To use, you should have the ``baseten`` python package installed,
     and run ``baseten.login()`` with your Baseten API key.
@@ -60,7 +59,7 @@ class Baseten(LLM):
         try:
             import baseten
         except ImportError as exc:
-            raise ValueError(
+            raise ImportError(
                 "Could not import Baseten Python package. "
                 "Please install it with `pip install baseten`."
             ) from exc

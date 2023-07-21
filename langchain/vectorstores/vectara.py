@@ -61,6 +61,10 @@ class Vectara(VectorStore):
         adapter = requests.adapters.HTTPAdapter(max_retries=3)
         self._session.mount("http://", adapter)
 
+    @property
+    def embeddings(self) -> Optional[Embeddings]:
+        return None
+
     def _get_post_headers(self) -> dict:
         """Returns headers that should be attached to each post request."""
         return {
@@ -402,7 +406,9 @@ class Vectara(VectorStore):
         return vectara
 
     def as_retriever(self, **kwargs: Any) -> VectaraRetriever:
-        return VectaraRetriever(vectorstore=self, **kwargs)
+        tags = kwargs.pop("tags", None) or []
+        tags.extend(self.__get_retriever_tags())
+        return VectaraRetriever(vectorstore=self, **kwargs, tags=tags)
 
 
 class VectaraRetriever(VectorStoreRetriever):

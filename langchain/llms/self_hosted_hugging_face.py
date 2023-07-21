@@ -1,4 +1,3 @@
-"""Wrapper around HuggingFace Pipeline API to run on self-hosted remote hardware."""
 import importlib.util
 import logging
 from typing import Any, Callable, List, Mapping, Optional
@@ -112,7 +111,7 @@ def _load_transformer(
 
 
 class SelfHostedHuggingFaceLLM(SelfHostedPipeline):
-    """Wrapper around HuggingFace Pipeline API to run on self-hosted remote hardware.
+    """HuggingFace Pipeline API to run on self-hosted remote hardware.
 
     Supported hardware includes auto-launched instances on AWS, GCP, Azure,
     and Lambda, as well as servers specified

@@ -1,4 +1,3 @@
-"""Wrapper around Clarifai embedding models."""
 import logging
 from typing import Any, Dict, List, Optional
 
@@ -11,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class ClarifaiEmbeddings(BaseModel, Embeddings):
-    """Wrapper around Clarifai embedding models.
+    """Clarifai embedding models.
 
     To use, you should have the ``clarifai`` python package installed, and the
     environment variable ``CLARIFAI_PAT`` set with your personal access token or pass it
@@ -27,22 +26,19 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
     """
 
     stub: Any  #: :meta private:
+    """Clarifai stub."""
     userDataObject: Any
-
+    """Clarifai user data object."""
     model_id: Optional[str] = None
     """Model id to use."""
-
     model_version_id: Optional[str] = None
     """Model version id to use."""
-
     app_id: Optional[str] = None
     """Clarifai application id to use."""
-
     user_id: Optional[str] = None
     """Clarifai user id to use."""
-
     pat: Optional[str] = None
-
+    """Clarifai personal access token to use."""
     api_base: str = "https://api.clarifai.com"
 
     class Config:

@@ -8,6 +8,7 @@ from langchain.document_transformers.embeddings_redundant_filter import (
     EmbeddingsRedundantFilter,
     get_stateful_documents,
 )
+from langchain.document_transformers.html2text import Html2TextTransformer
 from langchain.document_transformers.long_context_reorder import LongContextReorder
 
 __all__ = [
@@ -19,6 +20,7 @@ __all__ = [
     "get_stateful_documents",
     "LongContextReorder",
     "OpenAIMetadataTagger",
+    "Html2TextTransformer",
 ]
 
 from langchain.document_transformers.openai_functions import OpenAIMetadataTagger

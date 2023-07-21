@@ -225,7 +225,7 @@ class RdfGraph:
     def _res_to_str(self, res: rdflib.query.ResultRow, var: str) -> str:
         return (
             "<"
-            + res[var]
+            + str(res[var])
             + "> ("
             + self._get_local_name(res[var])
             + ", "

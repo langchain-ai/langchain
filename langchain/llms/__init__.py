@@ -1,4 +1,4 @@
-"""Wrappers on top of large language models APIs."""
+"""Access to the large language model APIs and services."""
 from typing import Dict, Type
 
 from langchain.llms.ai21 import AI21
@@ -33,6 +33,7 @@ from langchain.llms.human import HumanInputLLM
 from langchain.llms.koboldai import KoboldApiLLM
 from langchain.llms.llamacpp import LlamaCpp
 from langchain.llms.manifest import ManifestWrapper
+from langchain.llms.mlflow_ai_gateway import MlflowAIGateway
 from langchain.llms.modal import Modal
 from langchain.llms.mosaicml import MosaicML
 from langchain.llms.nlpcloud import NLPCloud
@@ -42,6 +43,7 @@ from langchain.llms.openllm import OpenLLM
 from langchain.llms.openlm import OpenLM
 from langchain.llms.petals import Petals
 from langchain.llms.pipelineai import PipelineAI
+from langchain.llms.predibase import Predibase
 from langchain.llms.predictionguard import PredictionGuard
 from langchain.llms.promptlayer_openai import PromptLayerOpenAI, PromptLayerOpenAIChat
 from langchain.llms.replicate import Replicate
@@ -89,6 +91,7 @@ __all__ = [
     "LlamaCpp",
     "TextGen",
     "ManifestWrapper",
+    "MlflowAIGateway",
     "Modal",
     "MosaicML",
     "NLPCloud",
@@ -98,6 +101,7 @@ __all__ = [
     "OpenLM",
     "Petals",
     "PipelineAI",
+    "Predibase",
     "PredictionGuard",
     "PromptLayerOpenAI",
     "PromptLayerOpenAIChat",
@@ -146,6 +150,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "koboldai": KoboldApiLLM,
     "llamacpp": LlamaCpp,
     "textgen": TextGen,
+    "mlflow-gateway": MlflowAIGateway,
     "modal": Modal,
     "mosaic": MosaicML,
     "nlpcloud": NLPCloud,
@@ -153,6 +158,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "openlm": OpenLM,
     "petals": Petals,
     "pipelineai": PipelineAI,
+    "predibase": Predibase,
     "replicate": Replicate,
     "rwkv": RWKV,
     "sagemaker_endpoint": SagemakerEndpoint,

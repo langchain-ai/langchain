@@ -29,6 +29,10 @@ class Tigris(VectorStore):
         self._vector_store = TigrisVectorStore(client.get_search(), index_name)
 
     @property
+    def embeddings(self) -> Embeddings:
+        return self._embed_fn
+
+    @property
     def search_index(self) -> TigrisVectorStore:
         return self._vector_store
 

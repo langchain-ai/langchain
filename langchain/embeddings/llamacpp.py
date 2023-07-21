@@ -1,4 +1,3 @@
-"""Wrapper around llama.cpp embedding models."""
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, Field, root_validator
@@ -7,7 +6,7 @@ from langchain.embeddings.base import Embeddings
 
 
 class LlamaCppEmbeddings(BaseModel, Embeddings):
-    """Wrapper around llama.cpp embedding models.
+    """llama.cpp embedding models.
 
     To use, you should have the llama-cpp-python library installed, and provide the
     path to the Llama model as a named parameter to the constructor.

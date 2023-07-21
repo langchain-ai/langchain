@@ -77,6 +77,10 @@ class Cassandra(VectorStore):
             primary_key_type="TEXT",
         )
 
+    @property
+    def embeddings(self) -> Embeddings:
+        return self.embedding
+
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         return self._cosine_relevance_score_fn
 

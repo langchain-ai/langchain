@@ -5,6 +5,7 @@ from langchain.document_loaders.airbyte_json import AirbyteJSONLoader
 from langchain.document_loaders.airtable import AirtableLoader
 from langchain.document_loaders.apify_dataset import ApifyDatasetLoader
 from langchain.document_loaders.arxiv import ArxivLoader
+from langchain.document_loaders.async_html import AsyncHtmlLoader
 from langchain.document_loaders.azlyrics import AZLyricsLoader
 from langchain.document_loaders.azure_blob_storage_container import (
     AzureBlobStorageContainerLoader,
@@ -51,6 +52,7 @@ from langchain.document_loaders.fauna import FaunaLoader
 from langchain.document_loaders.figma import FigmaFileLoader
 from langchain.document_loaders.gcs_directory import GCSDirectoryLoader
 from langchain.document_loaders.gcs_file import GCSFileLoader
+from langchain.document_loaders.geodataframe import GeoDataFrameLoader
 from langchain.document_loaders.git import GitLoader
 from langchain.document_loaders.gitbook import GitbookLoader
 from langchain.document_loaders.github import GitHubIssuesLoader
@@ -160,6 +162,7 @@ TelegramChatLoader = TelegramChatFileLoader
 
 __all__ = [
     "AcreomLoader",
+    "AsyncHtmlLoader",
     "AZLyricsLoader",
     "AirbyteJSONLoader",
     "AirtableLoader",
@@ -200,6 +203,7 @@ __all__ = [
     "FileSystemBlobLoader",
     "GCSDirectoryLoader",
     "GCSFileLoader",
+    "GeoDataFrameLoader",
     "GitHubIssuesLoader",
     "GitLoader",
     "GitbookLoader",

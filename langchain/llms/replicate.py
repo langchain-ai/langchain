@@ -1,4 +1,3 @@
-"""Wrapper around Replicate API."""
 import logging
 from typing import Any, Dict, List, Mapping, Optional
 
@@ -12,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class Replicate(LLM):
-    """Wrapper around Replicate models.
+    """Replicate models.
 
     To use, you should have the ``replicate`` python package installed,
     and the environment variable ``REPLICATE_API_TOKEN`` set with your API token.
@@ -35,6 +34,9 @@ class Replicate(LLM):
     input: Dict[str, Any] = Field(default_factory=dict)
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     replicate_api_token: Optional[str] = None
+
+    streaming: bool = Field(default=False)
+    """Whether to stream the results."""
 
     class Config:
         """Configuration for this pydantic config."""
@@ -110,8 +112,14 @@ class Replicate(LLM):
             key=lambda item: item[1].get("x-order", 0),
         )
         first_input_name = input_properties[0][0]
-
         inputs = {first_input_name: prompt, **self.input}
-        iterator = replicate_python.run(self.model, input={**inputs, **kwargs})
 
-        return "".join([output for output in iterator])
+        iterator = replicate_python.run(self.model, input={**inputs, **kwargs})
+        full_completion = ""
+        for output in iterator:
+            full_completion += output
+            if self.streaming and run_manager:
+                run_manager.on_llm_new_token(
+                    output,
+                )
+        return full_completion
