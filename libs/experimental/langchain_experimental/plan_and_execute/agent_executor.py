@@ -1,7 +1,5 @@
 from typing import Any, Dict, List, Optional
 
-from pydantic import Field
-
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.experimental.plan_and_execute.executors.base import BaseExecutor
@@ -10,6 +8,7 @@ from langchain.experimental.plan_and_execute.schema import (
     BaseStepContainer,
     ListStepContainer,
 )
+from pydantic import Field
 
 
 class PlanAndExecute(Chain):
