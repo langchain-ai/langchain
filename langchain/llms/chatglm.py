@@ -1,3 +1,4 @@
+import logging
 from typing import Any, List, Mapping, Optional
 
 import requests
@@ -5,6 +6,8 @@ import requests
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
+
+logger = logging.getLogger(__name__)
 
 
 class ChatGLM(LLM):
@@ -34,6 +37,8 @@ class ChatGLM(LLM):
     """History of the conversation"""
     top_p: float = 0.7
     """Top P for nucleus sampling from 0 to 1"""
+    with_history: bool = True
+    """Whether to use history or not"""
 
     @property
     def _llm_type(self) -> str:
@@ -85,7 +90,7 @@ class ChatGLM(LLM):
         payload.update(_model_kwargs)
         payload.update(kwargs)
 
-        # print("ChatGLM payload:", payload)
+        logger.debug(f"ChatGLM payload: {payload}")
 
         # call api
         try:
@@ -93,7 +98,7 @@ class ChatGLM(LLM):
         except requests.exceptions.RequestException as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
 
-        # print("ChatGLM resp:", response)
+        logger.debug(f"ChatGLM response: {response}")
 
         if response.status_code != 200:
             raise ValueError(f"Failed with response: {response}")
@@ -119,5 +124,6 @@ class ChatGLM(LLM):
 
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
-        self.history = self.history + [[None, parsed_response["response"]]]
+        if self.with_history:
+            self.history = self.history + [[None, parsed_response["response"]]]
         return text
