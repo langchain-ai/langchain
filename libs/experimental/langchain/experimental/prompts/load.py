@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Union
 
 import yaml
+
 from langchain.prompts.loading import load_prompt_from_config, try_load_from_hub
 from langchain.schema.prompts import BasePromptTemplate
 

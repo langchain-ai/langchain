@@ -2,11 +2,12 @@ import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
-from langchain import LLMChain
+from pydantic import BaseModel, Field
+
+from langchain.chains import LLMChain
 from langchain.experimental.generative_agents.memory import GenerativeAgentMemory
 from langchain.prompts import PromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
-from pydantic import BaseModel, Field
 
 
 class GenerativeAgent(BaseModel):

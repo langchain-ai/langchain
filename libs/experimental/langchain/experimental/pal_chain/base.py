@@ -11,6 +11,8 @@ import ast
 import warnings
 from typing import Any, Dict, List, Optional
 
+from pydantic import Extra, Field, root_validator
+
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -19,7 +21,6 @@ from langchain.chains.pal.math_prompt import MATH_PROMPT
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.utilities import PythonREPL
-from pydantic import Extra, Field, root_validator
 
 COMMAND_EXECUTION_FUNCTIONS = ["system", "exec", "execfile", "eval"]
 

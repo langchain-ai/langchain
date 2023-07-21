@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import List, Optional
 
+from pydantic import ValidationError
+
 from langchain.chains.llm import LLMChain
 from langchain.chat_models.base import BaseChatModel
 from langchain.experimental.autonomous_agents.autogpt.output_parser import (
@@ -21,7 +23,6 @@ from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
 from langchain.tools.base import BaseTool
 from langchain.tools.human.tool import HumanInputRun
 from langchain.vectorstores.base import VectorStoreRetriever
-from pydantic import ValidationError
 
 
 class AutoGPT:
