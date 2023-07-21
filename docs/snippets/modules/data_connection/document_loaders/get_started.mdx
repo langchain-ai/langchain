@@ -1,0 +1,18 @@
+The simplest loader reads in a file as text and places it all into one Document.
+
+```python
+from langchain.document_loaders import TextLoader
+
+loader = TextLoader("./index.md")
+loader.load()
+```
+
+<CodeOutputBlock language="python">
+
+```
+[
+    Document(page_content='---\nsidebar_position: 0\n---\n# Document loaders\n\nUse document loaders to load data from a source as `Document`\'s. A `Document` is a piece of text\nand associated metadata. For example, there are document loaders for loading a simple `.txt` file, for loading the text\ncontents of any web page, or even for loading a transcript of a YouTube video.\n\nEvery document loader exposes two methods:\n1. "Load": load documents from the configured source\n2. "Load and split": load documents from the configured source and split them using the passed in text splitter\n\nThey optionally implement:\n\n3. "Lazy load": load documents into memory lazily\n', metadata={'source': '../docs/docs_skeleton/docs/modules/data_connection/document_loaders/index.md'})
+]
+```
+
+</CodeOutputBlock>
