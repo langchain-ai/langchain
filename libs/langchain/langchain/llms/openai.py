@@ -65,7 +65,12 @@ def _streaming_response_template() -> Dict[str, Any]:
     }
 
 
-def _create_retry_decorator(llm: Union[BaseOpenAI, OpenAIChat]) -> Callable[[Any], Any]:
+def _create_retry_decorator(
+    llm: Union[BaseOpenAI, OpenAIChat],
+    run_manager: Optional[
+        Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
+    ] = None,
+) -> Callable[[Any], Any]:
     import openai
 
     errors = [
@@ -75,12 +80,18 @@ def _create_retry_decorator(llm: Union[BaseOpenAI, OpenAIChat]) -> Callable[[Any
         openai.error.RateLimitError,
         openai.error.ServiceUnavailableError,
     ]
-    return create_base_retry_decorator(error_types=errors, max_retries=llm.max_retries)
+    return create_base_retry_decorator(
+        error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
+    )
 
 
-def completion_with_retry(llm: Union[BaseOpenAI, OpenAIChat], **kwargs: Any) -> Any:
+def completion_with_retry(
+    llm: Union[BaseOpenAI, OpenAIChat],
+    run_manager: Optional[CallbackManagerForLLMRun] = None,
+    **kwargs: Any,
+) -> Any:
     """Use tenacity to retry the completion call."""
-    retry_decorator = _create_retry_decorator(llm)
+    retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
     def _completion_with_retry(**kwargs: Any) -> Any:
@@ -90,10 +101,12 @@ def completion_with_retry(llm: Union[BaseOpenAI, OpenAIChat], **kwargs: Any) -> 
 
 
 async def acompletion_with_retry(
-    llm: Union[BaseOpenAI, OpenAIChat], **kwargs: Any
+    llm: Union[BaseOpenAI, OpenAIChat],
+    run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+    **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the async completion call."""
-    retry_decorator = _create_retry_decorator(llm)
+    retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
     async def _completion_with_retry(**kwargs: Any) -> Any:
@@ -305,7 +318,7 @@ class BaseOpenAI(BaseLLM):
                 params["stream"] = True
                 response = _streaming_response_template()
                 for stream_resp in completion_with_retry(
-                    self, prompt=_prompts, **params
+                    self, prompt=_prompts, run_manager=run_manager, **params
                 ):
                     if run_manager:
                         run_manager.on_llm_new_token(
@@ -316,7 +329,9 @@ class BaseOpenAI(BaseLLM):
                     _update_response(response, stream_resp)
                 choices.extend(response["choices"])
             else:
-                response = completion_with_retry(self, prompt=_prompts, **params)
+                response = completion_with_retry(
+                    self, prompt=_prompts, run_manager=run_manager, **params
+                )
                 choices.extend(response["choices"])
             if not self.streaming:
                 # Can't update token usage if streaming
@@ -346,7 +361,7 @@ class BaseOpenAI(BaseLLM):
                 params["stream"] = True
                 response = _streaming_response_template()
                 async for stream_resp in await acompletion_with_retry(
-                    self, prompt=_prompts, **params
+                    self, prompt=_prompts, run_manager=run_manager, **params
                 ):
                     if run_manager:
                         await run_manager.on_llm_new_token(
@@ -357,7 +372,9 @@ class BaseOpenAI(BaseLLM):
                     _update_response(response, stream_resp)
                 choices.extend(response["choices"])
             else:
-                response = await acompletion_with_retry(self, prompt=_prompts, **params)
+                response = await acompletion_with_retry(
+                    self, prompt=_prompts, run_manager=run_manager, **params
+                )
                 choices.extend(response["choices"])
             if not self.streaming:
                 # Can't update token usage if streaming
@@ -789,7 +806,9 @@ class OpenAIChat(BaseLLM):
         if self.streaming:
             response = ""
             params["stream"] = True
-            for stream_resp in completion_with_retry(self, messages=messages, **params):
+            for stream_resp in completion_with_retry(
+                self, messages=messages, run_manager=run_manager, **params
+            ):
                 token = stream_resp["choices"][0]["delta"].get("content", "")
                 response += token
                 if run_manager:
@@ -800,7 +819,9 @@ class OpenAIChat(BaseLLM):
                 generations=[[Generation(text=response)]],
             )
         else:
-            full_response = completion_with_retry(self, messages=messages, **params)
+            full_response = completion_with_retry(
+                self, messages=messages, run_manager=run_manager, **params
+            )
             llm_output = {
                 "token_usage": full_response["usage"],
                 "model_name": self.model_name,
@@ -825,7 +846,7 @@ class OpenAIChat(BaseLLM):
             response = ""
             params["stream"] = True
             async for stream_resp in await acompletion_with_retry(
-                self, messages=messages, **params
+                self, messages=messages, run_manager=run_manager, **params
             ):
                 token = stream_resp["choices"][0]["delta"].get("content", "")
                 response += token
@@ -838,7 +859,7 @@ class OpenAIChat(BaseLLM):
             )
         else:
             full_response = await acompletion_with_retry(
-                self, messages=messages, **params
+                self, messages=messages, run_manager=run_manager, **params
             )
             llm_output = {
                 "token_usage": full_response["usage"],

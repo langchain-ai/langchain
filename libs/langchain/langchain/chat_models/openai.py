@@ -1,8 +1,6 @@
 """OpenAI chat wrapper."""
 from __future__ import annotations
 
-import asyncio
-import functools
 import logging
 import sys
 from typing import (
@@ -17,15 +15,8 @@ from typing import (
     Union,
 )
 
+from libs.langchain.langchain.llms.base import create_base_retry_decorator
 from pydantic import Field, root_validator
-from tenacity import (
-    RetryCallState,
-    before_sleep_log,
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_exponential,
-)
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -64,12 +55,6 @@ def _import_tiktoken() -> Any:
     return tiktoken
 
 
-@functools.lru_cache(maxsize=1)
-def _log_error_once(msg: str) -> None:
-    """Log an error once."""
-    logger.error(msg)
-
-
 def _create_retry_decorator(
     llm: ChatOpenAI,
     run_manager: Optional[
@@ -78,37 +63,15 @@ def _create_retry_decorator(
 ) -> Callable[[Any], Any]:
     import openai
 
-    _logging = before_sleep_log(logger, logging.WARNING)
-
-    def _before_sleep(retry_state: RetryCallState) -> None:
-        _logging(retry_state)
-        if run_manager:
-            if isinstance(run_manager, AsyncCallbackManagerForLLMRun):
-                coro = run_manager.on_retry(retry_state)
-                try:
-                    asyncio.run(coro)
-                except Exception as e:
-                    _log_error_once(f"Error in on_llm_retry: {e}")
-            else:
-                run_manager.on_retry(retry_state)
-        return None
-
-    min_seconds = 1
-    max_seconds = 60
-    # Wait 2^x * 1 second between each retry starting with
-    # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
-    return retry(
-        reraise=True,
-        stop=stop_after_attempt(llm.max_retries),
-        wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
-        retry=(
-            retry_if_exception_type(openai.error.Timeout)
-            | retry_if_exception_type(openai.error.APIError)
-            | retry_if_exception_type(openai.error.APIConnectionError)
-            | retry_if_exception_type(openai.error.RateLimitError)
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)
-        ),
-        before_sleep=_before_sleep,
+    errors = [
+        openai.error.Timeout,
+        openai.error.APIError,
+        openai.error.APIConnectionError,
+        openai.error.RateLimitError,
+        openai.error.ServiceUnavailableError,
+    ]
+    return create_base_retry_decorator(
+        error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
     )
 
 

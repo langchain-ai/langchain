@@ -11,7 +11,7 @@ from tenacity import RetryCallState
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.tracers.schemas import Run, RunTypeEnum
-from langchain.load.dump import dumpd, dumps
+from langchain.load.dump import dumpd
 from langchain.schema.document import Document
 from langchain.schema.output import ChatGeneration, LLMResult
 
@@ -148,17 +148,31 @@ class BaseTracer(BaseCallbackHandler, ABC):
         **kwargs: Any,
     ) -> None:
         if not run_id:
-            raise TracerException("No run_id provided for on_llm_retry callback.")
+            raise TracerException("No run_id provided for on_retry callback.")
         run_id_ = str(run_id)
         llm_run = self.run_map.get(run_id_)
         if llm_run is None or llm_run.run_type != RunTypeEnum.llm:
-            raise TracerException("No LLM Run found to be traced for on_llm_retry")
-
+            raise TracerException("No LLM Run found to be traced for on_retry")
+        retry_d = {
+            "slept": retry_state.idle_for,
+            "fn": retry_state.fn.__class__.__name__,
+            "attempt": retry_state.attempt_number,
+        }
+        if retry_state.outcome is None:
+            retry_d["outcome"] = "N/A"
+        elif retry_state.outcome.failed:
+            retry_d["outcome"] = "failed"
+            exception = retry_state.outcome.exception()
+            retry_d["exception"] = str(exception)
+            retry_d["exception_cls"] = exception.__class__.__name__
+        else:
+            retry_d["outcome"] = "success"
+            retry_d["result"] = str(retry_state.outcome.result())
         llm_run.events.append(
             {
                 "name": "retry",
                 "time": datetime.utcnow(),
-                "kwargs": {"retry_state": str(retry_state)},
+                "kwargs": retry_d,
             },
         )
 
