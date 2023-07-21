@@ -151,13 +151,15 @@ class HuggingFaceTextGenInference(LLM):
             stop = self.stop_sequences
         else:
             stop += self.stop_sequences
-
+        generate_params = {
+            **self._default_params,
+            "stop_sequences": stop,
+            **kwargs,
+        }
         if not self.stream:
             res = self.client.generate(
                 prompt,
-                **self._default_params,
-                stop_sequences=stop,
-                **kwargs,
+                **generate_params
             )
             # remove stop sequences from the end of the generated text
             for stop_seq in stop:
@@ -172,13 +174,8 @@ class HuggingFaceTextGenInference(LLM):
                 text_callback = partial(
                     run_manager.on_llm_new_token, verbose=self.verbose
                 )
-            params = {
-                **self._default_params,
-                "stop_sequences": stop,
-                **kwargs,
-            }
             text = ""
-            for res in self.client.generate_stream(prompt, **params):
+            for res in self.client.generate_stream(prompt, **generate_params):
                 token = res.token
                 is_stop = False
                 for stop_seq in stop:
@@ -204,13 +201,15 @@ class HuggingFaceTextGenInference(LLM):
             stop = self.stop_sequences
         else:
             stop += self.stop_sequences
-
+        generate_params = {
+            **self._default_params,
+            "stop_sequences": stop,
+            **kwargs,
+        }
         if not self.stream:
             res = await self.async_client.generate(
                 prompt,
-                **self._default_params,
-                stop_sequences=stop,
-                **kwargs,
+                **generate_params,
             )
             # remove stop sequences from the end of the generated text
             for stop_seq in stop:
@@ -225,13 +224,8 @@ class HuggingFaceTextGenInference(LLM):
                 text_callback = partial(
                     run_manager.on_llm_new_token, verbose=self.verbose
                 )
-            params = {
-                **self._default_params,
-                "stop_sequences": stop,
-                **kwargs,
-            }
             text = ""
-            async for res in self.async_client.generate_stream(prompt, **params):
+            async for res in self.async_client.generate_stream(prompt, **generate_params):
                 token = res.token
                 is_stop = False
                 for stop_seq in stop:
