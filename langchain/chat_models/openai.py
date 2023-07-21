@@ -1,6 +1,8 @@
 """OpenAI chat wrapper."""
 from __future__ import annotations
 
+import asyncio
+import functools
 import logging
 import sys
 from typing import (
@@ -62,24 +64,33 @@ def _import_tiktoken() -> Any:
     return tiktoken
 
 
+@functools.lru_cache(maxsize=1)
+def _log_error_once(msg: str) -> None:
+    """Log an error once."""
+    logger.error(msg)
+
+
 def _create_retry_decorator(
-    llm: ChatOpenAI, run_manager: Optional[AsyncCallbackManagerForLLMRun] = None
+    llm: ChatOpenAI,
+    run_manager: Optional[
+        Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
+    ] = None,
 ) -> Callable[[Any], Any]:
     import openai
 
     _logging = before_sleep_log(logger, logging.WARNING)
-    _logging = before_sleep_log(logger, logging.WARNING)
 
     def _before_sleep(retry_state: RetryCallState) -> None:
         _logging(retry_state)
         if run_manager:
-            run_manager.on_llm_retry(retry_state)
-        return None
-
-    def _before_sleep(retry_state: RetryCallState) -> None:
-        _logging(retry_state)
-        if run_manager:
-            run_manager.on_llm_retry(retry_state)
+            if isinstance(run_manager, AsyncCallbackManagerForLLMRun):
+                coro = run_manager.on_llm_retry(retry_state)
+                try:
+                    asyncio.run(coro)
+                except Exception as e:
+                    _log_error_once(f"Error in on_llm_retry: {e}")
+            else:
+                run_manager.on_llm_retry(retry_state)
         return None
 
     min_seconds = 1
@@ -104,7 +115,7 @@ def _create_retry_decorator(
 async def acompletion_with_retry(
     llm: ChatOpenAI,
     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-    *kwargs: Any,
+    **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the async completion call."""
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
@@ -311,9 +322,11 @@ class ChatOpenAI(BaseChatModel):
             **self.model_kwargs,
         }
 
-    def completion_with_retry(self, **kwargs: Any) -> Any:
+    def completion_with_retry(
+        self, run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any
+    ) -> Any:
         """Use tenacity to retry the completion call."""
-        retry_decorator = _create_retry_decorator(self)
+        retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
 
         @retry_decorator
         def _completion_with_retry(**kwargs: Any) -> Any:
@@ -350,7 +363,7 @@ class ChatOpenAI(BaseChatModel):
             params["stream"] = True
             function_call: Optional[dict] = None
             for stream_resp in self.completion_with_retry(
-                messages=message_dicts, **params
+                messages=message_dicts, run_manager=run_manager, **params
             ):
                 role = stream_resp["choices"][0]["delta"].get("role", role)
                 token = stream_resp["choices"][0]["delta"].get("content") or ""
@@ -371,7 +384,9 @@ class ChatOpenAI(BaseChatModel):
                 }
             )
             return ChatResult(generations=[ChatGeneration(message=message)])
-        response = self.completion_with_retry(messages=message_dicts, **params)
+        response = self.completion_with_retry(
+            messages=message_dicts, run_manager=run_manager, **params
+        )
         return self._create_chat_result(response)
 
     def _create_message_dicts(
@@ -436,7 +451,7 @@ class ChatOpenAI(BaseChatModel):
             return ChatResult(generations=[ChatGeneration(message=message)])
         else:
             response = await acompletion_with_retry(
-                self, messages=message_dicts, **params
+                self, messages=message_dicts, run_manager=run_manager, **params
             )
             return self._create_chat_result(response)
 

@@ -7,9 +7,11 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Sequence, Union, cast
 from uuid import UUID
 
+from tenacity import RetryCallState
+
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.tracers.schemas import Run, RunTypeEnum
-from langchain.load.dump import dumpd
+from langchain.load.dump import dumpd, dumps
 from langchain.schema.document import Document
 from langchain.schema.output import ChatGeneration, LLMResult
 
@@ -135,6 +137,27 @@ class BaseTracer(BaseCallbackHandler, ABC):
                 "name": "new_token",
                 "time": datetime.utcnow(),
                 "kwargs": {"token": token},
+            },
+        )
+
+    def on_llm_retry(
+        self,
+        retry_state: RetryCallState,
+        *,
+        run_id: UUID,
+        **kwargs: Any,
+    ) -> None:
+        if not run_id:
+            raise TracerException("No run_id provided for on_llm_retry callback.")
+        run_id_ = str(run_id)
+        llm_run = self.run_map.get(run_id_)
+        if llm_run is None or llm_run.run_type != RunTypeEnum.llm:
+            raise TracerException("No LLM Run found to be traced for on_llm_retry")
+        llm_run.events.append(
+            {
+                "name": "retry",
+                "time": datetime.utcnow(),
+                "kwargs": {"retry_state": dumps(retry_state)},
             },
         )
 

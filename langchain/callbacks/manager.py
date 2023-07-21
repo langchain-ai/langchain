@@ -20,8 +20,9 @@ from typing import (
     Union,
     cast,
 )
-from tenacity import RetryCallState
 from uuid import UUID, uuid4
+
+from tenacity import RetryCallState
 
 import langchain
 from langchain.callbacks.base import (
@@ -375,6 +376,7 @@ async def _ahandle_event(
 ) -> None:
     """Generic event handler for AsyncCallbackManager."""
     for handler in [h for h in handlers if h.run_inline]:
+        logger.error(f"HANDLING: {handler}")
         await _ahandle_event_for_handler(
             handler, event_name, ignore_condition_name, *args, **kwargs
         )
@@ -566,6 +568,22 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
             "on_llm_new_token",
             "ignore_llm",
             token=token,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            **kwargs,
+        )
+
+    def on_llm_retry(
+        self,
+        retry_state: RetryCallState,
+        **kwargs: Any,
+    ) -> None:
+        _handle_event(
+            self.handlers,
+            "on_llm_retry",
+            "ignore_llm",
+            retry_state,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
             tags=self.tags,
