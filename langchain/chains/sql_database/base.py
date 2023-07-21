@@ -120,8 +120,7 @@ class SQLDatabaseChain(Chain):
                 **llm_inputs,
             ).strip()
             if self.return_sql:
-                chain_result: Dict[str, Any] = {self.output_key: sql_cmd}
-                return chain_result
+                return {self.output_key: sql_cmd}
             if not self.use_query_checker:
                 _run_manager.on_text(sql_cmd, color="green", verbose=self.verbose)
                 intermediate_steps.append(
