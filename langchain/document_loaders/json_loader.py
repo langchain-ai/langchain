@@ -32,7 +32,8 @@ class JSONLoader(BaseLoader):
             jq_schema (str): The jq schema to use to extract the data or text from
                 the JSON.
             content_key (str): The key to use to extract the content from the JSON if
-                the jq_schema results to a list of objects (dict).
+                the jq_schema results to a list of objects (dict). This have to be matched
+                jq schema.
             metadata_func (Callable[Dict, Dict]): A function that takes in the JSON
                 object extracted by the jq_schema and the default metadata and returns
                 a dict of the updated metadata.
@@ -50,7 +51,7 @@ class JSONLoader(BaseLoader):
 
         self.file_path = Path(file_path).resolve()
         self._jq_schema = jq.compile(jq_schema)
-        self._content_key = content_key
+        self._content_key = jq.compile(content_key)
         self._metadata_func = metadata_func
         self._text_content = text_content
         self._json_lines = json_lines
@@ -89,7 +90,8 @@ class JSONLoader(BaseLoader):
     def _get_text(self, sample: Any, metadata: dict) -> str:
         """Convert sample to string format"""
         if self._content_key is not None:
-            content = sample.get(self._content_key)
+            content = self._content_key.input(sample).text()
+
             if self._metadata_func is not None:
                 # We pass in the metadata dict to the metadata_func
                 # so that the user can customize the default metadata
@@ -122,7 +124,7 @@ class JSONLoader(BaseLoader):
                     so sample must be a dict but got `{type(sample)}`"
             )
 
-        if sample.get(self._content_key) is None:
+        if self._content_key.input(sample).text() is None:
             raise ValueError(
                 f"Expected the jq schema to result in a list of objects (dict) \
                     with the key `{self._content_key}`"
