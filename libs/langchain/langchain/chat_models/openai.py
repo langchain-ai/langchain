@@ -15,7 +15,6 @@ from typing import (
     Union,
 )
 
-from libs.langchain.langchain.llms.base import create_base_retry_decorator
 from pydantic import Field, root_validator
 
 from langchain.callbacks.manager import (
@@ -23,10 +22,8 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models.base import BaseChatModel
-from langchain.schema import (
-    ChatGeneration,
-    ChatResult,
-)
+from langchain.llms.base import create_base_retry_decorator
+from langchain.schema import ChatGeneration, ChatResult
 from langchain.schema.messages import (
     AIMessage,
     BaseMessage,

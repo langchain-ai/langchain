@@ -376,7 +376,6 @@ async def _ahandle_event(
 ) -> None:
     """Generic event handler for AsyncCallbackManager."""
     for handler in [h for h in handlers if h.run_inline]:
-        logger.error(f"HANDLING: {handler}")
         await _ahandle_event_for_handler(
             handler, event_name, ignore_condition_name, *args, **kwargs
         )
