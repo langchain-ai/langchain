@@ -9,12 +9,8 @@ from langchain.vectorstores import Qdrant
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
 )
-
-from .common import qdrant_is_not_running
-
-# Skipping all the tests in the module if Qdrant is not running on localhost.
-pytestmark = pytest.mark.skipif(
-    qdrant_is_not_running(), reason="Qdrant server is not running"
+from tests.integration_tests.vectorstores.qdrant.async_api.fixtures import (
+    qdrant_locations,
 )
 
 
@@ -23,11 +19,13 @@ pytestmark = pytest.mark.skipif(
 @pytest.mark.parametrize("content_payload_key", [Qdrant.CONTENT_KEY, "foo"])
 @pytest.mark.parametrize("metadata_payload_key", [Qdrant.METADATA_KEY, "bar"])
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
+@pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_similarity_search(
     batch_size: int,
     content_payload_key: str,
     metadata_payload_key: str,
     vector_name: Optional[str],
+    qdrant_location: str,
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -38,6 +36,7 @@ async def test_qdrant_similarity_search(
         metadata_payload_key=metadata_payload_key,
         batch_size=batch_size,
         vector_name=vector_name,
+        location=qdrant_location,
     )
     output = await docsearch.asimilarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
@@ -48,11 +47,13 @@ async def test_qdrant_similarity_search(
 @pytest.mark.parametrize("content_payload_key", [Qdrant.CONTENT_KEY, "foo"])
 @pytest.mark.parametrize("metadata_payload_key", [Qdrant.METADATA_KEY, "bar"])
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
+@pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_similarity_search_by_vector(
     batch_size: int,
     content_payload_key: str,
     metadata_payload_key: str,
     vector_name: Optional[str],
+    qdrant_location: str,
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -63,6 +64,7 @@ async def test_qdrant_similarity_search_by_vector(
         metadata_payload_key=metadata_payload_key,
         batch_size=batch_size,
         vector_name=vector_name,
+        location=qdrant_location,
     )
     embeddings = ConsistentFakeEmbeddings().embed_query("foo")
     output = await docsearch.asimilarity_search_by_vector(embeddings, k=1)
@@ -74,11 +76,13 @@ async def test_qdrant_similarity_search_by_vector(
 @pytest.mark.parametrize("content_payload_key", [Qdrant.CONTENT_KEY, "foo"])
 @pytest.mark.parametrize("metadata_payload_key", [Qdrant.METADATA_KEY, "bar"])
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
+@pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_similarity_search_with_score_by_vector(
     batch_size: int,
     content_payload_key: str,
     metadata_payload_key: str,
     vector_name: Optional[str],
+    qdrant_location: str,
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -89,6 +93,7 @@ async def test_qdrant_similarity_search_with_score_by_vector(
         metadata_payload_key=metadata_payload_key,
         batch_size=batch_size,
         vector_name=vector_name,
+        location=qdrant_location,
     )
     embeddings = ConsistentFakeEmbeddings().embed_query("foo")
     output = await docsearch.asimilarity_search_with_score_by_vector(embeddings, k=1)
@@ -101,8 +106,9 @@ async def test_qdrant_similarity_search_with_score_by_vector(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("batch_size", [1, 64])
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
+@pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_similarity_search_filters(
-    batch_size: int, vector_name: Optional[str]
+    batch_size: int, vector_name: Optional[str], qdrant_location: str
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -116,6 +122,7 @@ async def test_qdrant_similarity_search_filters(
         metadatas=metadatas,
         batch_size=batch_size,
         vector_name=vector_name,
+        location=qdrant_location,
     )
 
     output = await docsearch.asimilarity_search(
@@ -131,8 +138,10 @@ async def test_qdrant_similarity_search_filters(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
+@pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_similarity_search_with_relevance_score_no_threshold(
     vector_name: Optional[str],
+    qdrant_location: str,
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -145,6 +154,7 @@ async def test_qdrant_similarity_search_with_relevance_score_no_threshold(
         ConsistentFakeEmbeddings(),
         metadatas=metadatas,
         vector_name=vector_name,
+        location=qdrant_location,
     )
     output = await docsearch.asimilarity_search_with_relevance_scores(
         "foo", k=3, score_threshold=None
@@ -157,8 +167,10 @@ async def test_qdrant_similarity_search_with_relevance_score_no_threshold(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
+@pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_similarity_search_with_relevance_score_with_threshold(
     vector_name: Optional[str],
+    qdrant_location: str,
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -171,6 +183,7 @@ async def test_qdrant_similarity_search_with_relevance_score_with_threshold(
         ConsistentFakeEmbeddings(),
         metadatas=metadatas,
         vector_name=vector_name,
+        location=qdrant_location,
     )
 
     score_threshold = 0.98
@@ -184,8 +197,10 @@ async def test_qdrant_similarity_search_with_relevance_score_with_threshold(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
+@pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_similarity_search_with_relevance_score_with_threshold_and_filter(
     vector_name: Optional[str],
+    qdrant_location: str,
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -198,6 +213,7 @@ async def test_similarity_search_with_relevance_score_with_threshold_and_filter(
         ConsistentFakeEmbeddings(),
         metadatas=metadatas,
         vector_name=vector_name,
+        location=qdrant_location,
     )
     score_threshold = 0.99  # for almost exact match
     # test negative filter condition
@@ -217,8 +233,10 @@ async def test_similarity_search_with_relevance_score_with_threshold_and_filter(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
+@pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_similarity_search_filters_with_qdrant_filters(
     vector_name: Optional[str],
+    qdrant_location: str,
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -231,6 +249,7 @@ async def test_qdrant_similarity_search_filters_with_qdrant_filters(
         ConsistentFakeEmbeddings(),
         metadatas=metadatas,
         vector_name=vector_name,
+        location=qdrant_location,
     )
 
     qdrant_filter = rest.Filter(
@@ -263,11 +282,13 @@ async def test_qdrant_similarity_search_filters_with_qdrant_filters(
 @pytest.mark.parametrize("content_payload_key", [Qdrant.CONTENT_KEY, "foo"])
 @pytest.mark.parametrize("metadata_payload_key", [Qdrant.METADATA_KEY, "bar"])
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
+@pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_similarity_search_with_relevance_scores(
     batch_size: int,
     content_payload_key: str,
     metadata_payload_key: str,
     vector_name: str,
+    qdrant_location: str,
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -278,6 +299,7 @@ async def test_qdrant_similarity_search_with_relevance_scores(
         metadata_payload_key=metadata_payload_key,
         batch_size=batch_size,
         vector_name=vector_name,
+        location=qdrant_location,
     )
     output = await docsearch.asimilarity_search_with_relevance_scores("foo", k=3)
 

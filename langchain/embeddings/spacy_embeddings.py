@@ -7,8 +7,8 @@ from langchain.embeddings.base import Embeddings
 
 
 class SpacyEmbeddings(BaseModel, Embeddings):
-    """
-    SpacyEmbeddings is a class for generating embeddings using the Spacy library.
+    """Embeddings by SpaCy models.
+
     It only supports the 'en_core_web_sm' model.
 
     Attributes:

@@ -1,4 +1,3 @@
-"""Wrapper around Huggingface text generation inference API."""
 from functools import partial
 from typing import Any, Dict, List, Optional
 
@@ -13,10 +12,9 @@ from langchain.llms.base import LLM
 
 class HuggingFaceTextGenInference(LLM):
     """
-    HuggingFace text generation inference API.
+    HuggingFace text generation API.
 
-    This class is a wrapper around the HuggingFace text generation inference API.
-    It is used to generate text from a given prompt.
+    It generates text from a given prompt.
 
     Attributes:
     - max_new_tokens: The maximum number of tokens to generate.
@@ -38,6 +36,8 @@ class HuggingFaceTextGenInference(LLM):
     - _call: Generates text based on a given prompt and stop sequences.
     - _acall: Async generates text based on a given prompt and stop sequences.
     - _llm_type: Returns the type of LLM.
+    - _default_params: Returns the default parameters for calling text generation
+     inference API.
     """
 
     """
@@ -125,6 +125,28 @@ class HuggingFaceTextGenInference(LLM):
         """Return type of llm."""
         return "huggingface_textgen_inference"
 
+    @property
+    def _default_params(self) -> Dict[str, Any]:
+        """Get the default parameters for calling text generation inference API."""
+        return {
+            "max_new_tokens": self.max_new_tokens,
+            "top_k": self.top_k,
+            "top_p": self.top_p,
+            "typical_p": self.typical_p,
+            "temperature": self.temperature,
+            "repetition_penalty": self.repetition_penalty,
+            "truncate": self.truncate,
+            "stop_sequences": self.stop_sequences,
+            "seed": self.seed,
+        }
+
+    def _invocation_params(
+        self, runtime_stop: Optional[List[str]], **kwargs: Any
+    ) -> Dict[str, Any]:
+        params = {**self._default_params, **kwargs}
+        params["stop_sequences"] = params["stop_sequences"] + (runtime_stop or [])
+        return params
+
     def _call(
         self,
         prompt: str,
@@ -132,27 +154,11 @@ class HuggingFaceTextGenInference(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        if stop is None:
-            stop = self.stop_sequences
-        else:
-            stop += self.stop_sequences
-
+        invocation_params = self._invocation_params(stop, **kwargs)
         if not self.stream:
-            res = self.client.generate(
-                prompt,
-                stop_sequences=stop,
-                max_new_tokens=self.max_new_tokens,
-                top_k=self.top_k,
-                top_p=self.top_p,
-                typical_p=self.typical_p,
-                temperature=self.temperature,
-                repetition_penalty=self.repetition_penalty,
-                truncate=self.truncate,
-                seed=self.seed,
-                **kwargs,
-            )
+            res = self.client.generate(prompt, **invocation_params)
             # remove stop sequences from the end of the generated text
-            for stop_seq in stop:
+            for stop_seq in invocation_params["stop_sequences"]:
                 if stop_seq in res.generated_text:
                     res.generated_text = res.generated_text[
                         : res.generated_text.index(stop_seq)
@@ -164,22 +170,11 @@ class HuggingFaceTextGenInference(LLM):
                 text_callback = partial(
                     run_manager.on_llm_new_token, verbose=self.verbose
                 )
-            params = {
-                "stop_sequences": stop,
-                "max_new_tokens": self.max_new_tokens,
-                "top_k": self.top_k,
-                "top_p": self.top_p,
-                "typical_p": self.typical_p,
-                "temperature": self.temperature,
-                "repetition_penalty": self.repetition_penalty,
-                "truncate": self.truncate,
-                "seed": self.seed,
-            }
             text = ""
-            for res in self.client.generate_stream(prompt, **params):
+            for res in self.client.generate_stream(prompt, **invocation_params):
                 token = res.token
                 is_stop = False
-                for stop_seq in stop:
+                for stop_seq in invocation_params["stop_sequences"]:
                     if stop_seq in token.text:
                         is_stop = True
                         break
@@ -198,27 +193,14 @@ class HuggingFaceTextGenInference(LLM):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        if stop is None:
-            stop = self.stop_sequences
-        else:
-            stop += self.stop_sequences
-
+        invocation_params = self._invocation_params(stop, **kwargs)
         if not self.stream:
             res = await self.async_client.generate(
                 prompt,
-                stop_sequences=stop,
-                max_new_tokens=self.max_new_tokens,
-                top_k=self.top_k,
-                top_p=self.top_p,
-                typical_p=self.typical_p,
-                temperature=self.temperature,
-                repetition_penalty=self.repetition_penalty,
-                truncate=self.truncate,
-                seed=self.seed,
-                **kwargs,
+                **invocation_params,
             )
             # remove stop sequences from the end of the generated text
-            for stop_seq in stop:
+            for stop_seq in invocation_params["stop_sequences"]:
                 if stop_seq in res.generated_text:
                     res.generated_text = res.generated_text[
                         : res.generated_text.index(stop_seq)
@@ -230,25 +212,13 @@ class HuggingFaceTextGenInference(LLM):
                 text_callback = partial(
                     run_manager.on_llm_new_token, verbose=self.verbose
                 )
-            params = {
-                **{
-                    "stop_sequences": stop,
-                    "max_new_tokens": self.max_new_tokens,
-                    "top_k": self.top_k,
-                    "top_p": self.top_p,
-                    "typical_p": self.typical_p,
-                    "temperature": self.temperature,
-                    "repetition_penalty": self.repetition_penalty,
-                    "truncate": self.truncate,
-                    "seed": self.seed,
-                },
-                **kwargs,
-            }
             text = ""
-            async for res in self.async_client.generate_stream(prompt, **params):
+            async for res in self.async_client.generate_stream(
+                prompt, **invocation_params
+            ):
                 token = res.token
                 is_stop = False
-                for stop_seq in stop:
+                for stop_seq in invocation_params["stop_sequences"]:
                     if stop_seq in token.text:
                         is_stop = True
                         break
@@ -257,4 +227,5 @@ class HuggingFaceTextGenInference(LLM):
                 if not token.special:
                     if text_callback:
                         await text_callback(token.text)
+                    text += token.text
         return text

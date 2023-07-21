@@ -9,13 +9,18 @@ from langchain.llms.base import LLM
 
 
 class Params(BaseModel, extra=Extra.allow):
+    """Parameters for the MLflow AI Gateway LLM."""
+
     temperature: float = 0.0
     candidate_count: int = 1
+    """The number of candidates to return."""
     stop: Optional[List[str]] = None
     max_tokens: Optional[int] = None
 
 
 class MlflowAIGateway(LLM):
+    """The MLflow AI Gateway models."""
+
     route: str
     gateway_uri: Optional[str] = None
     params: Optional[Params] = None

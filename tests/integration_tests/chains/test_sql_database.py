@@ -6,7 +6,7 @@ from langchain.chains.sql_database.base import (
     SQLDatabaseSequentialChain,
 )
 from langchain.llms.openai import OpenAI
-from langchain.sql_database import SQLDatabase
+from langchain.utilities.sql_database import SQLDatabase
 
 metadata_obj = MetaData()
 

@@ -207,6 +207,10 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
     def escape_str(self, value: str) -> str:
         return "".join(f"{self.BS}{c}" if c in self.must_escape else c for c in value)
 
+    @property
+    def embeddings(self) -> Embeddings:
+        return self.embedding_function
+
     def _build_insert_sql(self, transac: Iterable, column_names: Iterable[str]) -> str:
         ks = ",".join(column_names)
         embed_tuple_index = tuple(column_names).index(

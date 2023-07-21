@@ -316,6 +316,10 @@ class OpenSearchVectorSearch(VectorStore):
         self.index_name = index_name
         self.client = _get_opensearch_client(opensearch_url, **kwargs)
 
+    @property
+    def embeddings(self) -> Embeddings:
+        return self.embedding_function
+
     def add_texts(
         self,
         texts: Iterable[str],

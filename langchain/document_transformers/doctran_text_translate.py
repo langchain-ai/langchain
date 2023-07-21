@@ -23,10 +23,16 @@ class DoctranTextTranslator(BaseDocumentTransformer):
     """
 
     def __init__(
-        self, openai_api_key: Optional[str] = None, language: str = "english"
+        self,
+        openai_api_key: Optional[str] = None,
+        language: str = "english",
+        openai_api_model: Optional[str] = None,
     ) -> None:
         self.openai_api_key = openai_api_key or get_from_env(
             "openai_api_key", "OPENAI_API_KEY"
+        )
+        self.openai_api_model = openai_api_model or get_from_env(
+            "openai_api_model", "OPENAI_API_MODEL"
         )
         self.language = language
 
@@ -42,7 +48,9 @@ class DoctranTextTranslator(BaseDocumentTransformer):
         try:
             from doctran import Doctran
 
-            doctran = Doctran(openai_api_key=self.openai_api_key)
+            doctran = Doctran(
+                openai_api_key=self.openai_api_key, openai_model=self.openai_api_model
+            )
         except ImportError:
             raise ImportError(
                 "Install doctran to use this parser. (pip install doctran)"

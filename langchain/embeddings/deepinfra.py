@@ -10,7 +10,7 @@ DEFAULT_MODEL_ID = "sentence-transformers/clip-ViT-B-32"
 
 
 class DeepInfraEmbeddings(BaseModel, Embeddings):
-    """Wrapper around Deep Infra's embedding inference service.
+    """Deep Infra's embedding inference service.
 
     To use, you should have the
     environment variable ``DEEPINFRA_API_TOKEN`` set with your API token, or pass
