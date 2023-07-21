@@ -1,4 +1,3 @@
-"""Wrapper around text-generation-webui."""
 import logging
 from typing import Any, Dict, List, Optional
 
@@ -12,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class TextGen(LLM):
-    """Wrapper around the text-generation-webui model.
+    """text-generation-webui models.
 
     To use, you should have the text-generation-webui installed, a model loaded,
     and --api added as a command-line option.

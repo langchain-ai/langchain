@@ -79,6 +79,10 @@ class AnalyticDB(VectorStore):
         self.engine = create_engine(self.connection_string, **_engine_args)
         self.create_collection()
 
+    @property
+    def embeddings(self) -> Embeddings:
+        return self.embedding_function
+
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         return self._euclidean_relevance_score_fn
 

@@ -1,4 +1,3 @@
-"""Wrapper around StochasticAI APIs."""
 import logging
 import time
 from typing import Any, Dict, List, Mapping, Optional
@@ -15,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class StochasticAI(LLM):
-    """Wrapper around StochasticAI large language models.
+    """StochasticAI large language models.
 
     To use, you should have the environment variable ``STOCHASTICAI_API_KEY``
     set with your API key.

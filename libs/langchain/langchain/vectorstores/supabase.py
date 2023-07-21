@@ -67,6 +67,10 @@ class SupabaseVectorStore(VectorStore):
         self.table_name = table_name or "documents"
         self.query_name = query_name or "match_documents"
 
+    @property
+    def embeddings(self) -> Embeddings:
+        return self._embedding
+
     def add_texts(
         self,
         texts: Iterable[str],

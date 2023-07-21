@@ -1,4 +1,3 @@
-"""Wrapper around OpenAI APIs."""
 from __future__ import annotations
 
 import logging
@@ -105,7 +104,7 @@ async def acompletion_with_retry(
 
 
 class BaseOpenAI(BaseLLM):
-    """Wrapper around OpenAI large language models."""
+    """Base OpenAI large language model class."""
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
@@ -579,7 +578,7 @@ class BaseOpenAI(BaseLLM):
 
 
 class OpenAI(BaseOpenAI):
-    """Wrapper around OpenAI large language models.
+    """OpenAI large language models.
 
     To use, you should have the ``openai`` python package installed, and the
     environment variable ``OPENAI_API_KEY`` set with your API key.
@@ -600,7 +599,7 @@ class OpenAI(BaseOpenAI):
 
 
 class AzureOpenAI(BaseOpenAI):
-    """Wrapper around Azure-specific OpenAI large language models.
+    """Azure-specific OpenAI large language models.
 
     To use, you should have the ``openai`` python package installed, and the
     environment variable ``OPENAI_API_KEY`` set with your API key.
@@ -655,7 +654,7 @@ class AzureOpenAI(BaseOpenAI):
 
 
 class OpenAIChat(BaseLLM):
-    """Wrapper around OpenAI Chat large language models.
+    """OpenAI Chat large language models.
 
     To use, you should have the ``openai`` python package installed, and the
     environment variable ``OPENAI_API_KEY`` set with your API key.

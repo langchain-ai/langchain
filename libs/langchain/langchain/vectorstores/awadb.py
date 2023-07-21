@@ -73,6 +73,12 @@ class AwaDB(VectorStore):
             self.table2embeddings[table_name] = embedding
         self.using_table_name = table_name
 
+    @property
+    def embeddings(self) -> Optional[Embeddings]:
+        if self.using_table_name in self.table2embeddings:
+            return self.table2embeddings[self.using_table_name]
+        return None
+
     def add_texts(
         self,
         texts: Iterable[str],

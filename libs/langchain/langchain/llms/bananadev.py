@@ -1,4 +1,3 @@
-"""Wrapper around Banana API."""
 import logging
 from typing import Any, Dict, List, Mapping, Optional
 
@@ -13,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class Banana(LLM):
-    """Wrapper around Banana large language models.
+    """Banana large language models.
 
     To use, you should have the ``banana-dev`` python package installed,
     and the environment variable ``BANANA_API_KEY`` set with your API key.

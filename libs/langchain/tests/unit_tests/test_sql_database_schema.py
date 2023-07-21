@@ -18,7 +18,7 @@ from sqlalchemy import (
     schema,
 )
 
-from langchain.sql_database import SQLDatabase
+from langchain.utilities.sql_database import SQLDatabase
 
 metadata_obj = MetaData()
 

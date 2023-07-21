@@ -1,4 +1,3 @@
-"""Wrapper around HuggingFace embedding models."""
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, Field
@@ -14,7 +13,7 @@ DEFAULT_QUERY_INSTRUCTION = (
 
 
 class HuggingFaceEmbeddings(BaseModel, Embeddings):
-    """Wrapper around sentence_transformers embedding models.
+    """HuggingFace sentence_transformers embedding models.
 
     To use, you should have the ``sentence_transformers`` python package installed.
 

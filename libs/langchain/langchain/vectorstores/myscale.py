@@ -115,7 +115,7 @@ class MyScale(VectorStore):
     ) -> None:
         """MyScale Wrapper to LangChain
 
-        embedding_function (Embeddings):
+        embedding (Embeddings):
         config (MyScaleSettings): Configuration to MyScale Client
         Other keyword arguments will pass into
             [clickhouse-connect](https://docs.myscale.com/)
@@ -175,7 +175,7 @@ class MyScale(VectorStore):
         self.dim = dim
         self.BS = "\\"
         self.must_escape = ("\\", "'")
-        self.embedding_function = embedding.embed_query
+        self._embeddings = embedding
         self.dist_order = "ASC" if self.config.metric in ["cosine", "l2"] else "DESC"
 
         # Create a connection to myscale
@@ -188,6 +188,10 @@ class MyScale(VectorStore):
         )
         self.client.command("SET allow_experimental_object_type=1")
         self.client.command(schema_)
+
+    @property
+    def embeddings(self) -> Embeddings:
+        return self._embeddings
 
     def escape_str(self, value: str) -> str:
         return "".join(f"{self.BS}{c}" if c in self.must_escape else c for c in value)
@@ -238,7 +242,7 @@ class MyScale(VectorStore):
         column_names = {
             colmap_["id"]: ids,
             colmap_["text"]: texts,
-            colmap_["vector"]: map(self.embedding_function, texts),
+            colmap_["vector"]: map(self._embeddings.embed_query, texts),
         }
         metadatas = metadatas or [{} for _ in texts]
         column_names[colmap_["metadata"]] = map(json.dumps, metadatas)
@@ -269,7 +273,7 @@ class MyScale(VectorStore):
     @classmethod
     def from_texts(
         cls,
-        texts: List[str],
+        texts: Iterable[str],
         embedding: Embeddings,
         metadatas: Optional[List[Dict[Any, Any]]] = None,
         config: Optional[MyScaleSettings] = None,
@@ -280,8 +284,8 @@ class MyScale(VectorStore):
         """Create Myscale wrapper with existing texts
 
         Args:
-            embedding_function (Embeddings): Function to extract text embedding
             texts (Iterable[str]): List or tuple of strings to be added
+            embedding (Embeddings): Function to extract text embedding
             config (MyScaleSettings, Optional): Myscale configuration
             text_ids (Optional[Iterable], optional): IDs for the texts.
                                                      Defaults to None.
@@ -357,7 +361,7 @@ class MyScale(VectorStore):
             List[Document]: List of Documents
         """
         return self.similarity_search_by_vector(
-            self.embedding_function(query), k, where_str, **kwargs
+            self._embeddings.embed_query(query), k, where_str, **kwargs
         )
 
     def similarity_search_by_vector(
@@ -417,7 +421,7 @@ class MyScale(VectorStore):
             and cosine distance in float for each.
             Lower score represents more similarity.
         """
-        q_str = self._build_qstr(self.embedding_function(query), k, where_str)
+        q_str = self._build_qstr(self._embeddings.embed_query(query), k, where_str)
         try:
             return [
                 (

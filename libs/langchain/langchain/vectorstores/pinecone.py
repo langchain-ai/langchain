@@ -62,6 +62,11 @@ class Pinecone(VectorStore):
         self._namespace = namespace
         self.distance_strategy = distance_strategy
 
+    @property
+    def embeddings(self) -> Optional[Embeddings]:
+        # TODO: Accept this object directly
+        return None
+
     def add_texts(
         self,
         texts: Iterable[str],

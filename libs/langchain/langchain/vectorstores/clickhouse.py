@@ -212,6 +212,10 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         self.client.command("SET allow_experimental_annoy_index=1")
         self.client.command(self.schema)
 
+    @property
+    def embeddings(self) -> Embeddings:
+        return self.embedding_function
+
     def escape_str(self, value: str) -> str:
         return "".join(f"{self.BS}{c}" if c in self.must_escape else c for c in value)
 

@@ -1,4 +1,3 @@
-"""Wrapper around the C Transformers library."""
 from functools import partial
 from typing import Any, Dict, List, Optional, Sequence
 
@@ -12,7 +11,7 @@ from langchain.llms.base import LLM
 
 
 class CTransformers(LLM):
-    """Wrapper around the C Transformers LLM interface.
+    """C Transformers LLM models.
 
     To use, you should have the ``ctransformers`` python package installed.
     See https://github.com/marella/ctransformers

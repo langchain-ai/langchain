@@ -5,6 +5,7 @@ import hashlib
 import inspect
 import json
 import logging
+import warnings
 from abc import ABC, abstractmethod
 from datetime import timedelta
 from typing import (
@@ -34,7 +35,7 @@ except ImportError:
 from langchain.embeddings.base import Embeddings
 from langchain.load.dump import dumps
 from langchain.load.load import loads
-from langchain.schema import Generation
+from langchain.schema import ChatGeneration, Generation
 from langchain.vectorstores.redis import Redis as RedisVectorstore
 
 logger = logging.getLogger(__file__)
@@ -232,6 +233,12 @@ class RedisCache(BaseCache):
                     "RedisCache only supports caching of normal LLM generations, "
                     f"got {type(gen)}"
                 )
+            if isinstance(gen, ChatGeneration):
+                warnings.warn(
+                    "NOTE: Generation has not been cached. RedisCache does not"
+                    " support caching ChatModel outputs."
+                )
+                return
         # Write to a Redis HASH
         key = self._key(prompt, llm_string)
         self.redis.hset(
@@ -345,6 +352,12 @@ class RedisSemanticCache(BaseCache):
                     "RedisSemanticCache only supports caching of "
                     f"normal LLM generations, got {type(gen)}"
                 )
+            if isinstance(gen, ChatGeneration):
+                warnings.warn(
+                    "NOTE: Generation has not been cached. RedisSentimentCache does not"
+                    " support caching ChatModel outputs."
+                )
+                return
         llm_cache = self._get_llm_cache(llm_string)
         # Write to vectorstore
         metadata = {

@@ -1,4 +1,3 @@
-"""Wrapper around KoboldAI API."""
 import logging
 from typing import Any, Dict, List, Optional
 
@@ -21,8 +20,7 @@ def clean_url(url: str) -> str:
 
 
 class KoboldApiLLM(LLM):
-    """
-    A class that acts as a wrapper for the Kobold API language model.
+    """Kobold API language model.
 
     It includes several fields that can be used to control the text generation process.
 
