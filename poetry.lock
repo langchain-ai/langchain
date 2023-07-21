@@ -329,7 +329,6 @@ dev = ["black", "docutils", "flake8", "ipython", "m2r", "mistune (<2.0.0)", "pyt
 name = "amadeus"
 version = "8.1.0"
 description = "Python module for the Amadeus travel APIs"
-category = "main"
 optional = true
 python-versions = ">=3.4.8"
 files = [
@@ -1687,7 +1686,6 @@ tests-cov = ["coverage", "coveralls", "pytest", "pytest-cov"]
 name = "click-plugins"
 version = "1.1.1"
 description = "An extension module for click to enable registering CLI commands via setuptools entry-points."
-category = "main"
 optional = true
 python-versions = "*"
 files = [
@@ -1794,7 +1792,6 @@ superset = ["apache-superset (>=1.4.1)"]
 name = "cligj"
 version = "0.7.2"
 description = "Click params for commmand line interfaces to GeoJSON"
-category = "main"
 optional = true
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, <4"
 files = [
@@ -2733,7 +2730,6 @@ files = [
 name = "fiona"
 version = "1.9.4.post1"
 description = "Fiona reads and writes spatial data files"
-category = "main"
 optional = true
 python-versions = ">=3.7"
 files = [
@@ -3016,7 +3012,6 @@ six = "*"
 name = "geopandas"
 version = "0.13.2"
 description = "Geographic pandas extensions"
-category = "main"
 optional = true
 python-versions = ">=3.8"
 files = [
@@ -8346,7 +8341,6 @@ files = [
 name = "pyproj"
 version = "3.5.0"
 description = "Python interface to PROJ (cartographic projections and coordinate transformations library)"
-category = "main"
 optional = true
 python-versions = ">=3.8"
 files = [
@@ -9766,7 +9760,6 @@ files = [
 name = "shapely"
 version = "2.0.1"
 description = "Manipulation and analysis of geometric objects"
-category = "main"
 optional = true
 python-versions = ">=3.7"
 files = [
@@ -9814,7 +9807,7 @@ files = [
 numpy = ">=1.14"
 
 [package.extras]
-docs = ["matplotlib", "numpydoc (>=1.1.0,<1.2.0)", "sphinx", "sphinx-book-theme", "sphinx-remove-toctrees"]
+docs = ["matplotlib", "numpydoc (==1.1.*)", "sphinx", "sphinx-book-theme", "sphinx-remove-toctrees"]
 test = ["pytest", "pytest-cov"]
 
 [[package]]
