@@ -1,7 +1,6 @@
 """Loads data from JSON."""
 import json
 from pathlib import Path
-from re import I
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from langchain.docstore.document import Document
