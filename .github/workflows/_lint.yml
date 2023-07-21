@@ -37,6 +37,10 @@ jobs:
       - name: Install dependencies
         run: |
           poetry install
+      - name: Install langchain editable
+        if: ${{ inputs.working-directory != 'langchain' }}
+        run: |
+          pip install -e ../langchain
       - name: Analysing the code with our lint
         run: |
           make lint
