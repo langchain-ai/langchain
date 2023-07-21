@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).parents[2].absolute()
-PKG_DIR = ROOT_DIR / "langchain"
+PKG_DIR = ROOT_DIR / "libs" / "langchain"
 WRITE_FILE = Path(__file__).parent / "api_reference.rst"
 
 
