@@ -195,7 +195,7 @@ class AzureSearch(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
-        extra_fields: Optional[Dict[str, str]] = None,
+        extra_fields: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> List[str]:
         extra_fields = kwargs.get("extra_fields", extra_fields)
@@ -205,7 +205,7 @@ class AzureSearch(VectorStore):
         Args:
             texts (Iterable[str]): A collection of texts to be added to the index.
             metadatas (Optional[List[dict]]): Optional. A list of dictionaries containing metadata for each text. Default is None.
-            extra_fields (Optional[Dict[str, str]]): Optional. Additional fields to be associated with the texts. Default is None.
+            extra_fields (Optional[List[dict]]): Optional. Additional fields to be associated with the texts. Default is None.
             **kwargs (Any): Additional keyword arguments.
 
         Returns:
