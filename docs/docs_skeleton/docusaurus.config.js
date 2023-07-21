@@ -149,9 +149,15 @@ const config = {
         title: "🦜️🔗 LangChain",
         items: [
           {
-            to: "/docs/get_started/introduction"
-            label: "Documentation",
-            position: "left,"
+            to: "/docs/get_started/introduction",
+            label: "Docs",
+            position: "left",
+          },
+          {
+            type: 'docSidebar',
+            position: 'left',
+            sidebarId: 'use_cases',
+            label: 'Use cases',
           },
           {
             type: 'docSidebar',
@@ -160,9 +166,9 @@ const config = {
             label: 'Integrations',
           },
           {
-            to: ""
-            label: "Integrations",
-            position: "left,"
+            href: "https://api.python.langchain.com",
+            label: "API reference",
+            position: "left",
           },
           {
             to: "https://smith.langchain.com",
