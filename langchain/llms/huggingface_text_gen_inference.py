@@ -157,10 +157,7 @@ class HuggingFaceTextGenInference(LLM):
             **kwargs,
         }
         if not self.stream:
-            res = self.client.generate(
-                prompt,
-                **generate_params
-            )
+            res = self.client.generate(prompt, **generate_params)
             # remove stop sequences from the end of the generated text
             for stop_seq in stop:
                 if stop_seq in res.generated_text:
@@ -225,7 +222,9 @@ class HuggingFaceTextGenInference(LLM):
                     run_manager.on_llm_new_token, verbose=self.verbose
                 )
             text = ""
-            async for res in self.async_client.generate_stream(prompt, **generate_params):
+            async for res in self.async_client.generate_stream(
+                prompt, **generate_params
+            ):
                 token = res.token
                 is_stop = False
                 for stop_seq in stop:
