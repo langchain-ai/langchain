@@ -19,7 +19,9 @@ class Params(BaseModel, extra=Extra.allow):
 
 
 class MlflowAIGateway(LLM):
-    """The MLflow AI Gateway models."""
+    """MLflow AI Gateway completions models.
+    For more information, see https://mlflow.org/docs/latest/gateway/index.html.
+    """
 
     route: str
     gateway_uri: Optional[str] = None
