@@ -41,6 +41,8 @@ class SQLDatabaseChain(Chain):
     """Number of results to return from the query"""
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
+    return_sql: bool = False
+    """Will return sql-command directly without executing it"""
     return_intermediate_steps: bool = False
     """Whether or not to return the intermediate steps along with the final answer."""
     return_direct: bool = False
@@ -117,6 +119,8 @@ class SQLDatabaseChain(Chain):
                 callbacks=_run_manager.get_child(),
                 **llm_inputs,
             ).strip()
+            if self.return_sql:
+                return {self.output_key: sql_cmd}
             if not self.use_query_checker:
                 _run_manager.on_text(sql_cmd, color="green", verbose=self.verbose)
                 intermediate_steps.append(
