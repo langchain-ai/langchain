@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Iterable, List, Optional
+from typing import Any, Iterable, List, Sequence, Optional, Union
 
 import sqlalchemy
 from sqlalchemy import MetaData, Table, create_engine, inspect, select, text
@@ -368,12 +368,11 @@ class SQLDatabase:
             f"{sample_rows_str}"
         )
 
-    def run(self, command: str, fetch: str = "all") -> str:
-        """Execute a SQL command and return a string representing the results.
+    def _execute(self, command: str, fetch: Optional[str] = "all") -> Sequence[Any]:
+        """
+        Executes SQL command through underlying engine.
 
-        If the statement returns rows, a string of the results is returned.
-        If the statement returns no rows, an empty string is returned.
-
+        If the statement returns no rows, an empty list is returned.
         """
         with self._engine.begin() as connection:
             if self._schema is not None:
@@ -393,25 +392,33 @@ class SQLDatabase:
                     result = cursor.fetchone()  # type: ignore
                 else:
                     raise ValueError("Fetch parameter must be either 'one' or 'all'")
+                return result
+        return []
 
-                # Convert columns values to string to avoid issues with sqlalchmey
-                # trunacating text
-                if isinstance(result, list):
-                    return str(
-                        [
-                            tuple(
-                                truncate_word(c, length=self._max_string_length)
-                                for c in r
-                            )
-                            for r in result
-                        ]
-                    )
+    def run(self, command: str, fetch: str = "all") -> str:
+        """Execute a SQL command and return a string representing the results.
 
+        If the statement returns rows, a string of the results is returned.
+        If the statement returns no rows, an empty string is returned.
+
+        """
+        result = self._execute(command, fetch)
+        # Convert columns values to string to avoid issues with sqlalchmey
+        # trunacating text
+        if result:
+            if isinstance(result, list):
                 return str(
-                    tuple(
-                        truncate_word(c, length=self._max_string_length) for c in result
-                    )
+                    [
+                        tuple(
+                            truncate_word(c, length=self._max_string_length) for c in r
+                        )
+                        for r in result
+                    ]
                 )
+
+            return str(
+                tuple(truncate_word(c, length=self._max_string_length) for c in result)
+            )
         return ""
 
     def get_table_info_no_throw(self, table_names: Optional[List[str]] = None) -> str:
