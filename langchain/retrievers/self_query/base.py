@@ -13,21 +13,21 @@ from langchain.chains.query_constructor.base import load_query_constructor_chain
 from langchain.chains.query_constructor.ir import StructuredQuery, Visitor
 from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.retrievers.self_query.chroma import ChromaTranslator
+from langchain.retrievers.self_query.deeplake import DeepLakeTranslator
 from langchain.retrievers.self_query.myscale import MyScaleTranslator
 from langchain.retrievers.self_query.pinecone import PineconeTranslator
 from langchain.retrievers.self_query.qdrant import QdrantTranslator
 from langchain.retrievers.self_query.weaviate import WeaviateTranslator
-from langchain.retrievers.self_query.deeplake import DeepLakeTranslator
 from langchain.schema import BaseRetriever, Document
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.vectorstores import (
     Chroma,
+    DeepLake,
     MyScale,
     Pinecone,
     Qdrant,
     VectorStore,
     Weaviate,
-    DeepLake,
 )
 
 
