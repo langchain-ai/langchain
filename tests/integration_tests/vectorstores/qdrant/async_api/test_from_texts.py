@@ -9,56 +9,53 @@ from langchain.vectorstores.qdrant import QdrantException
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
 )
-
-from .common import qdrant_is_not_running
-
-# Skipping all the tests in the module if Qdrant is not running on localhost.
-pytestmark = pytest.mark.skipif(
-    qdrant_is_not_running(), reason="Qdrant server is not running"
+from tests.integration_tests.vectorstores.qdrant.async_api.fixtures import (
+    qdrant_locations,
 )
+from tests.integration_tests.vectorstores.qdrant.common import qdrant_is_not_running
 
 
 @pytest.mark.asyncio
-async def test_qdrant_from_texts_stores_duplicated_texts() -> None:
+@pytest.mark.parametrize("qdrant_location", qdrant_locations())
+async def test_qdrant_from_texts_stores_duplicated_texts(qdrant_location: str) -> None:
     """Test end to end Qdrant.afrom_texts stores duplicated texts separately."""
-    from qdrant_client import QdrantClient
-
     collection_name = uuid.uuid4().hex
 
-    await Qdrant.afrom_texts(
+    vec_store = await Qdrant.afrom_texts(
         ["abc", "abc"],
         ConsistentFakeEmbeddings(),
         collection_name=collection_name,
+        location=qdrant_location,
     )
 
-    client = QdrantClient()
+    client = vec_store.client
     assert 2 == client.count(collection_name).count
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("batch_size", [1, 64])
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
+@pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_from_texts_stores_ids(
-    batch_size: int, vector_name: Optional[str]
+    batch_size: int, vector_name: Optional[str], qdrant_location: str
 ) -> None:
     """Test end to end Qdrant.afrom_texts stores provided ids."""
-    from qdrant_client import QdrantClient
-
     collection_name = uuid.uuid4().hex
     ids = [
         "fa38d572-4c31-4579-aedc-1960d79df6df",
         "cdc1aa36-d6ab-4fb2-8a94-56674fd27484",
     ]
-    await Qdrant.afrom_texts(
+    vec_store = await Qdrant.afrom_texts(
         ["abc", "def"],
         ConsistentFakeEmbeddings(),
         ids=ids,
         collection_name=collection_name,
         batch_size=batch_size,
         vector_name=vector_name,
+        location=qdrant_location,
     )
 
-    client = QdrantClient()
+    client = vec_store.client
     assert 2 == client.count(collection_name).count
     stored_ids = [point.id for point in client.scroll(collection_name)[0]]
     assert set(ids) == set(stored_ids)
@@ -66,22 +63,23 @@ async def test_qdrant_from_texts_stores_ids(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("vector_name", ["custom-vector"])
+@pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_from_texts_stores_embeddings_as_named_vectors(
     vector_name: str,
+    qdrant_location: str,
 ) -> None:
     """Test end to end Qdrant.afrom_texts stores named vectors if name is provided."""
-    from qdrant_client import QdrantClient
-
     collection_name = uuid.uuid4().hex
 
-    await Qdrant.afrom_texts(
+    vec_store = await Qdrant.afrom_texts(
         ["lorem", "ipsum", "dolor", "sit", "amet"],
         ConsistentFakeEmbeddings(),
         collection_name=collection_name,
         vector_name=vector_name,
+        location=qdrant_location,
     )
 
-    client = QdrantClient()
+    client = vec_store.client
     assert 5 == client.count(collection_name).count
     assert all(
         vector_name in point.vector  # type: ignore[operator]
@@ -91,12 +89,11 @@ async def test_qdrant_from_texts_stores_embeddings_as_named_vectors(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("vector_name", [None, "custom-vector"])
+@pytest.mark.skipif(qdrant_is_not_running(), reason="Qdrant is not running")
 async def test_qdrant_from_texts_reuses_same_collection(
     vector_name: Optional[str],
 ) -> None:
     """Test if Qdrant.afrom_texts reuses the same collection"""
-    from qdrant_client import QdrantClient
-
     collection_name = uuid.uuid4().hex
     embeddings = ConsistentFakeEmbeddings()
 
@@ -107,19 +104,20 @@ async def test_qdrant_from_texts_reuses_same_collection(
         vector_name=vector_name,
     )
 
-    await Qdrant.afrom_texts(
+    vec_store = await Qdrant.afrom_texts(
         ["foo", "bar"],
         embeddings,
         collection_name=collection_name,
         vector_name=vector_name,
     )
 
-    client = QdrantClient()
+    client = vec_store.client
     assert 7 == client.count(collection_name).count
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("vector_name", [None, "custom-vector"])
+@pytest.mark.skipif(qdrant_is_not_running(), reason="Qdrant is not running")
 async def test_qdrant_from_texts_raises_error_on_different_dimensionality(
     vector_name: Optional[str],
 ) -> None:
@@ -152,6 +150,7 @@ async def test_qdrant_from_texts_raises_error_on_different_dimensionality(
         ("my-first-vector", "my-second_vector"),
     ],
 )
+@pytest.mark.skipif(qdrant_is_not_running(), reason="Qdrant is not running")
 async def test_qdrant_from_texts_raises_error_on_different_vector_name(
     first_vector_name: Optional[str],
     second_vector_name: Optional[str],
@@ -176,6 +175,7 @@ async def test_qdrant_from_texts_raises_error_on_different_vector_name(
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(qdrant_is_not_running(), reason="Qdrant is not running")
 async def test_qdrant_from_texts_raises_error_on_different_distance() -> None:
     """Test if Qdrant.afrom_texts raises an exception if distance does not match"""
     collection_name = uuid.uuid4().hex
@@ -198,6 +198,7 @@ async def test_qdrant_from_texts_raises_error_on_different_distance() -> None:
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("vector_name", [None, "custom-vector"])
+@pytest.mark.skipif(qdrant_is_not_running(), reason="Qdrant is not running")
 async def test_qdrant_from_texts_recreates_collection_on_force_recreate(
     vector_name: Optional[str],
 ) -> None:
@@ -229,8 +230,12 @@ async def test_qdrant_from_texts_recreates_collection_on_force_recreate(
 @pytest.mark.parametrize("batch_size", [1, 64])
 @pytest.mark.parametrize("content_payload_key", [Qdrant.CONTENT_KEY, "foo"])
 @pytest.mark.parametrize("metadata_payload_key", [Qdrant.METADATA_KEY, "bar"])
+@pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_from_texts_stores_metadatas(
-    batch_size: int, content_payload_key: str, metadata_payload_key: str
+    batch_size: int,
+    content_payload_key: str,
+    metadata_payload_key: str,
+    qdrant_location: str,
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -242,6 +247,7 @@ async def test_qdrant_from_texts_stores_metadatas(
         content_payload_key=content_payload_key,
         metadata_payload_key=metadata_payload_key,
         batch_size=batch_size,
+        location=qdrant_location,
     )
     output = await docsearch.asimilarity_search("foo", k=1)
     assert output == [Document(page_content="foo", metadata={"page": 0})]

@@ -1,6 +1,8 @@
 """Wrapper around Qdrant vector database."""
 from __future__ import annotations
 
+import asyncio
+import functools
 import uuid
 import warnings
 from itertools import islice
@@ -38,6 +40,30 @@ if TYPE_CHECKING:
 
 class QdrantException(Exception):
     """Base class for all the Qdrant related exceptions"""
+
+
+def sync_call_fallback(method: Callable) -> Callable:
+    """
+    Decorator to call the synchronous method of the class if the async method is not
+    implemented. This decorator might be only used for the methods that are defined
+    as async in the class.
+    """
+
+    @functools.wraps(method)
+    async def wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:
+        try:
+            return await method(self, *args, **kwargs)
+        except NotImplementedError:
+            # If the async method is not implemented, call the synchronous method
+            # by removing the first letter from the method name. For example,
+            # if the async method is called ``aaad_texts``, the synchronous method
+            # will be called ``aad_texts``.
+            sync_method = functools.partial(
+                getattr(self, method.__name__[1:]), *args, **kwargs
+            )
+            return await asyncio.get_event_loop().run_in_executor(None, sync_method)
+
+    return wrapper
 
 
 class Qdrant(VectorStore):
@@ -155,6 +181,7 @@ class Qdrant(VectorStore):
 
         return added_ids
 
+    @sync_call_fallback
     async def aadd_texts(
         self,
         texts: Iterable[str],
@@ -250,6 +277,7 @@ class Qdrant(VectorStore):
         )
         return list(map(itemgetter(0), results))
 
+    @sync_call_fallback
     async def asimilarity_search(
         self,
         query: str,
@@ -322,6 +350,7 @@ class Qdrant(VectorStore):
             **kwargs,
         )
 
+    @sync_call_fallback
     async def asimilarity_search_with_score(
         self,
         query: str,
@@ -431,6 +460,7 @@ class Qdrant(VectorStore):
         )
         return list(map(itemgetter(0), results))
 
+    @sync_call_fallback
     async def asimilarity_search_by_vector(
         self,
         embedding: List[float],
@@ -567,6 +597,7 @@ class Qdrant(VectorStore):
             for result in results
         ]
 
+    @sync_call_fallback
     async def asimilarity_search_with_score_by_vector(
         self,
         embedding: List[float],
@@ -685,6 +716,7 @@ class Qdrant(VectorStore):
             query_embedding, k, fetch_k, lambda_mult, **kwargs
         )
 
+    @sync_call_fallback
     async def amax_marginal_relevance_search(
         self,
         query: str,
@@ -739,33 +771,12 @@ class Qdrant(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        query_vector = embedding
-        if self.vector_name is not None:
-            query_vector = (self.vector_name, query_vector)  # type: ignore[assignment]
-
-        results = self.client.search(
-            collection_name=self.collection_name,
-            query_vector=query_vector,
-            with_payload=True,
-            with_vectors=True,
-            limit=fetch_k,
+        results = self.max_marginal_relevance_search_with_score_by_vector(
+            embedding=embedding, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult, **kwargs
         )
-        embeddings = [
-            result.vector.get(self.vector_name)  # type: ignore[index, union-attr]
-            if self.vector_name is not None
-            else result.vector
-            for result in results
-        ]
-        mmr_selected = maximal_marginal_relevance(
-            np.array(embedding), embeddings, k=k, lambda_mult=lambda_mult
-        )
-        return [
-            self._document_from_scored_point(
-                results[i], self.content_payload_key, self.metadata_payload_key
-            )
-            for i in mmr_selected
-        ]
+        return list(map(itemgetter(0), results))
 
+    @sync_call_fallback
     async def amax_marginal_relevance_search_by_vector(
         self,
         embedding: List[float],
@@ -795,6 +806,61 @@ class Qdrant(VectorStore):
         )
         return list(map(itemgetter(0), results))
 
+    def max_marginal_relevance_search_with_score_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs selected using the maximal marginal relevance.
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+                     Defaults to 20.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        Returns:
+            List of Documents selected by maximal marginal relevance and distance for
+            each.
+        """
+        query_vector = embedding
+        if self.vector_name is not None:
+            query_vector = (self.vector_name, query_vector)  # type: ignore[assignment]
+
+        results = self.client.search(
+            collection_name=self.collection_name,
+            query_vector=query_vector,
+            with_payload=True,
+            with_vectors=True,
+            limit=fetch_k,
+        )
+        embeddings = [
+            result.vector.get(self.vector_name)  # type: ignore[index, union-attr]
+            if self.vector_name is not None
+            else result.vector
+            for result in results
+        ]
+        mmr_selected = maximal_marginal_relevance(
+            np.array(embedding), embeddings, k=k, lambda_mult=lambda_mult
+        )
+        return [
+            (
+                self._document_from_scored_point(
+                    results[i], self.content_payload_key, self.metadata_payload_key
+                ),
+                results[i].score,
+            )
+            for i in mmr_selected
+        ]
+
+    @sync_call_fallback
     async def amax_marginal_relevance_search_with_score_by_vector(
         self,
         embedding: List[float],
@@ -1038,7 +1104,6 @@ class Qdrant(VectorStore):
             content_payload_key,
             metadata_payload_key,
             vector_name,
-            batch_size,
             shard_number,
             replication_factor,
             write_consistency_factor,
@@ -1055,6 +1120,7 @@ class Qdrant(VectorStore):
         return qdrant
 
     @classmethod
+    @sync_call_fallback
     async def afrom_texts(
         cls: Type[Qdrant],
         texts: List[str],
@@ -1214,7 +1280,6 @@ class Qdrant(VectorStore):
             content_payload_key,
             metadata_payload_key,
             vector_name,
-            batch_size,
             shard_number,
             replication_factor,
             write_consistency_factor,
@@ -1253,7 +1318,6 @@ class Qdrant(VectorStore):
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
         vector_name: Optional[str] = VECTOR_NAME,
-        batch_size: int = 64,
         shard_number: Optional[int] = None,
         replication_factor: Optional[int] = None,
         write_consistency_factor: Optional[int] = None,
