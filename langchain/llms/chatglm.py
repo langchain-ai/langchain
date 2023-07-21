@@ -1,6 +1,6 @@
+import logging
 from typing import Any, List, Mapping, Optional
 
-import logging
 import requests
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
