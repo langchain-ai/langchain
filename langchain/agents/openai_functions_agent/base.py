@@ -52,12 +52,16 @@ def _convert_agent_action_to_messages(
         AIMessage that corresponds to the original tool invocation.
     """
     if isinstance(agent_action, _FunctionsAgentAction):
-        return agent_action.message_log + [_create_function_message(agent_action, observation)]
+        return agent_action.message_log + [
+            _create_function_message(agent_action, observation)
+        ]
     else:
         return [AIMessage(content=agent_action.log)]
 
 
-def _create_function_message(agent_action: AgentAction, observation: str) -> FunctionMessage:
+def _create_function_message(
+    agent_action: AgentAction, observation: str
+) -> FunctionMessage:
     """Convert agent action and observation into a function message.
     Args:
         agent_action: the tool invocation request from the agent
@@ -108,6 +112,7 @@ def _parse_ai_message(message: BaseMessage) -> Union[AgentAction, AgentFinish]:
         try:
             _tool_input = json.loads(function_call["arguments"])
         except JSONDecodeError:
+            # Sometimes the agent just passes a string as an argument
             _tool_input = {"__arg1": function_call["arguments"]}
 
         # HACK HACK HACK:
@@ -258,11 +263,15 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
             )
         elif early_stopping_method == "generate":
             # Generate does one final forward pass
-            agent_decision = self.plan(intermediate_steps, with_functions=False, **kwargs)
+            agent_decision = self.plan(
+                intermediate_steps, with_functions=False, **kwargs
+            )
             if type(agent_decision) == AgentFinish:
                 return agent_decision
             else:
-                raise ValueError(f"got AgentAction with no functions provided: {agent_decision}")
+                raise ValueError(
+                    f"got AgentAction with no functions provided: {agent_decision}"
+                )
         else:
             raise ValueError(
                 "early_stopping_method should be one of `force` or `generate`, "
