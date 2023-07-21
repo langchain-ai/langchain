@@ -35,7 +35,7 @@ This tool is a wrapper for the GitHub API, useful when you need to read the cont
 UPDATE_FILE_PROMPT = """
 This tool is a wrapper for the GitHub API, useful when you need to update the contents of a file in a GitHub repository. **VERY IMPORTANT**: Your input to this tool MUST strictly follow these rules:
 
-- First you must specify which file to modfiy by passing a full file path (**IMPORTANT**: the path must not start with a slash)
+- First you must specify which file to modify by passing a full file path (**IMPORTANT**: the path must not start with a slash)
 - Then you must specify the old contents which you would like to replace wrapped in OLD <<<< and >>>> OLD
 - Then you must specify the new contents which you would like to replace the old contents with wrapped in NEW <<<< and >>>> NEW
 
