@@ -1,4 +1,3 @@
-"""Wrapper around CerebriumAI API."""
 import logging
 from typing import Any, Dict, List, Mapping, Optional
 
@@ -13,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class CerebriumAI(LLM):
-    """Wrapper around CerebriumAI large language models.
+    """CerebriumAI large language models.
 
     To use, you should have the ``cerebrium`` python package installed, and the
     environment variable ``CEREBRIUMAI_API_KEY`` set with your API key.

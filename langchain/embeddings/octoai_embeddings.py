@@ -1,5 +1,3 @@
-"""Module providing a wrapper around OctoAI Compute Service embedding models."""
-
 from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, Field, root_validator
@@ -12,7 +10,7 @@ DEFAULT_QUERY_INSTRUCTION = "Represent the question for retrieving similar docum
 
 
 class OctoAIEmbeddings(BaseModel, Embeddings):
-    """Wrapper around OctoAI Compute Service embedding models.
+    """OctoAI Compute Service embedding models.
 
     The environment variable ``OCTOAI_API_TOKEN`` should be set
     with your API token, or it can be passed

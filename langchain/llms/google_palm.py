@@ -1,4 +1,3 @@
-"""Wrapper around Google's PaLM Text APIs."""
 from __future__ import annotations
 
 import logging
@@ -77,6 +76,8 @@ def _strip_erroneous_leading_spaces(text: str) -> str:
 
 
 class GooglePalm(BaseLLM, BaseModel):
+    """Google PaLM models."""
+
     client: Any  #: :meta private:
     google_api_key: Optional[str]
     model_name: str = "models/text-bison-001"

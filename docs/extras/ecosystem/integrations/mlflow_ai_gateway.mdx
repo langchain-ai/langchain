@@ -21,7 +21,7 @@ Create a configuration file:
 ```yaml
 routes:
   - name: completions
-    type: llm/v1/completions
+    route_type: llm/v1/completions
     model:
       provider: openai
       name: text-davinci-003
@@ -29,7 +29,7 @@ routes:
         openai_api_key: $OPENAI_API_KEY
 
   - name: embeddings
-    type: llm/v1/embeddings
+    route_type: llm/v1/embeddings
     model:
       provider: openai
       name: text-embedding-ada-002

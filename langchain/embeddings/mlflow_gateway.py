@@ -13,8 +13,12 @@ def _chunk(texts: List[str], size: int) -> Iterator[List[str]]:
 
 
 class MlflowAIGatewayEmbeddings(Embeddings, BaseModel):
+    """MLflow AI Gateway Embeddings APIs."""
+
     route: str
+    """The route to use for the MLflow AI Gateway API."""
     gateway_uri: Optional[str] = None
+    """The URI for the MLflow AI Gateway API."""
 
     def __init__(self, **kwargs: Any):
         try:
