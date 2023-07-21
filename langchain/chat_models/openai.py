@@ -17,6 +17,7 @@ from typing import (
 
 from pydantic import Field, root_validator
 from tenacity import (
+    RetryCallState,
     before_sleep_log,
     retry,
     retry_if_exception_type,
@@ -61,8 +62,25 @@ def _import_tiktoken() -> Any:
     return tiktoken
 
 
-def _create_retry_decorator(llm: ChatOpenAI) -> Callable[[Any], Any]:
+def _create_retry_decorator(
+    llm: ChatOpenAI, run_manager: Optional[AsyncCallbackManagerForLLMRun] = None
+) -> Callable[[Any], Any]:
     import openai
+
+    _logging = before_sleep_log(logger, logging.WARNING)
+    _logging = before_sleep_log(logger, logging.WARNING)
+
+    def _before_sleep(retry_state: RetryCallState) -> None:
+        _logging(retry_state)
+        if run_manager:
+            run_manager.on_llm_retry(retry_state)
+        return None
+
+    def _before_sleep(retry_state: RetryCallState) -> None:
+        _logging(retry_state)
+        if run_manager:
+            run_manager.on_llm_retry(retry_state)
+        return None
 
     min_seconds = 1
     max_seconds = 60
@@ -79,13 +97,17 @@ def _create_retry_decorator(llm: ChatOpenAI) -> Callable[[Any], Any]:
             | retry_if_exception_type(openai.error.RateLimitError)
             | retry_if_exception_type(openai.error.ServiceUnavailableError)
         ),
-        before_sleep=before_sleep_log(logger, logging.WARNING),
+        before_sleep=_before_sleep,
     )
 
 
-async def acompletion_with_retry(llm: ChatOpenAI, **kwargs: Any) -> Any:
+async def acompletion_with_retry(
+    llm: ChatOpenAI,
+    run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+    *kwargs: Any,
+) -> Any:
     """Use tenacity to retry the async completion call."""
-    retry_decorator = _create_retry_decorator(llm)
+    retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
     async def _completion_with_retry(**kwargs: Any) -> Any:
@@ -391,7 +413,7 @@ class ChatOpenAI(BaseChatModel):
             params["stream"] = True
             function_call: Optional[dict] = None
             async for stream_resp in await acompletion_with_retry(
-                self, messages=message_dicts, **params
+                self, messages=message_dicts, run_manager=run_manager, **params
             ):
                 role = stream_resp["choices"][0]["delta"].get("role", role)
                 token = stream_resp["choices"][0]["delta"].get("content", "")

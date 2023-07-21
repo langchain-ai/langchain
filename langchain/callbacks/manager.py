@@ -20,6 +20,7 @@ from typing import (
     Union,
     cast,
 )
+from tenacity import RetryCallState
 from uuid import UUID, uuid4
 
 import langchain
@@ -628,6 +629,22 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
             "on_llm_new_token",
             "ignore_llm",
             token,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            **kwargs,
+        )
+
+    async def on_llm_retry(
+        self,
+        retry_state: RetryCallState,
+        **kwargs: Any,
+    ) -> None:
+        await _ahandle_event(
+            self.handlers,
+            "on_llm_retry",
+            "ignore_llm",
+            retry_state,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
             tags=self.tags,
