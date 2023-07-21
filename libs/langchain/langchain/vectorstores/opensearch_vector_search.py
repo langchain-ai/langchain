@@ -236,15 +236,13 @@ def _default_script_query(
 
 
 def __get_painless_scripting_source(
-    space_type: str, query_vector: List[float], vector_field: str = "vector_field"
+    space_type: str, vector_field: str = "vector_field"
 ) -> str:
     """For Painless Scripting, it returns the script source based on space type."""
     source_value = (
         "(1.0 + "
         + space_type
-        + "("
-        + str(query_vector)
-        + ", doc['"
+        + "(params.query_value, doc['"
         + vector_field
         + "']))"
     )
@@ -265,7 +263,7 @@ def _default_painless_scripting_query(
     if not pre_filter:
         pre_filter = MATCH_ALL_QUERY
 
-    source = __get_painless_scripting_source(space_type, query_vector)
+    source = __get_painless_scripting_source(space_type)
     return {
         "query": {
             "script_score": {
