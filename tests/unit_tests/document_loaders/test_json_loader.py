@@ -162,7 +162,7 @@ def test_load_jsonlines(mocker: MockerFixture) -> None:
     )
 
     loader = JSONLoader(
-        file_path=file_path, jq_schema=".", content_key="text", json_lines=True
+        file_path=file_path, jq_schema=".", content_key=".text", json_lines=True
     )
     result = loader.load()
 
@@ -173,7 +173,7 @@ def test_load_jsonlines(mocker: MockerFixture) -> None:
     "params",
     (
         {"jq_schema": ".[].text"},
-        {"jq_schema": ".[]", "content_key": "text"},
+        {"jq_schema": ".[]", "content_key": ".text"},
     ),
 )
 def test_load_jsonlines_list(params: Dict, mocker: MockerFixture) -> None:
@@ -229,7 +229,7 @@ def test_load_empty_jsonlines(mocker: MockerFixture) -> None:
         (
             "pathlib.Path.read_text",
             '[{"text": "value1"}, {"text": "value2"}]',
-            {"jq_schema": ".[]", "content_key": "text"},
+            {"jq_schema": ".[]", "content_key": ".text"},
         ),
         # JSON Lines content.
         (
@@ -240,7 +240,7 @@ def test_load_empty_jsonlines(mocker: MockerFixture) -> None:
                 {"text": "value2"}
                 """
             ),
-            {"jq_schema": ".", "content_key": "text", "json_lines": True},
+            {"jq_schema": ".", "content_key": ".text", "json_lines": True},
         ),
     ),
 )

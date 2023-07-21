@@ -1,6 +1,7 @@
 """Loads data from JSON."""
 import json
 from pathlib import Path
+from re import I
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from langchain.docstore.document import Document
@@ -51,7 +52,7 @@ class JSONLoader(BaseLoader):
 
         self.file_path = Path(file_path).resolve()
         self._jq_schema = jq.compile(jq_schema)
-        self._content_key = jq.compile(content_key)
+        self._content_key = jq.compile(content_key) if content_key else None
         self._metadata_func = metadata_func
         self._text_content = text_content
         self._json_lines = json_lines
@@ -90,7 +91,7 @@ class JSONLoader(BaseLoader):
     def _get_text(self, sample: Any, metadata: dict) -> str:
         """Convert sample to string format"""
         if self._content_key is not None:
-            content = self._content_key.input(sample).text()
+            content = self._content_key.input(sample).first()
 
             if self._metadata_func is not None:
                 # We pass in the metadata dict to the metadata_func
