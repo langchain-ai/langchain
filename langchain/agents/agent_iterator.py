@@ -5,7 +5,18 @@ import time
 from abc import ABC, abstractmethod
 from asyncio import CancelledError
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, NoReturn, Optional, Type
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    NoReturn,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 from langchain.callbacks.manager import (
     AsyncCallbackManager,
@@ -49,7 +60,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
     def __init__(
         self,
         agent_executor: AgentExecutor,
-        inputs: dict[str, str] | Any,
+        inputs: Any,
         callbacks: Callbacks = None,
         *,
         tags: Optional[list[str]] = None,
@@ -70,10 +81,12 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         self.run_manager = None
         self.reset()
 
-    _callback_manager: AsyncCallbackManager | CallbackManager
+    _callback_manager: Union[AsyncCallbackManager, CallbackManager]
     _inputs: dict[str, str]
     _final_outputs: Optional[dict[str, str]]
-    run_manager: Optional[AsyncCallbackManagerForChainRun | CallbackManagerForChainRun]
+    run_manager: Optional[
+        Union[AsyncCallbackManagerForChainRun, CallbackManagerForChainRun]
+    ]
     timeout_manager: Any  # TODO: Fix a type here; the shim makes it tricky.
 
     @property
@@ -81,7 +94,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         return self._inputs
 
     @inputs.setter
-    def inputs(self, inputs: dict[str, str] | Any) -> None:
+    def inputs(self, inputs: Any) -> None:
         self._inputs = self.agent_executor.prep_inputs(inputs)
 
     @property
@@ -95,12 +108,12 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         self._callbacks = callbacks
 
     @property
-    def tags(self) -> list[str] | None:
+    def tags(self) -> Optional[List[str]]:
         return self._tags
 
     @tags.setter
     @rebuild_callback_manager_on_set
-    def tags(self, tags: list[str] | None) -> None:
+    def tags(self, tags: Optional[List[str]]) -> None:
         """When tags are changed after __init__, rebuild callback mgr"""
         self._tags = tags
 
@@ -116,7 +129,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         self.inputs = self.inputs
 
     @property
-    def callback_manager(self) -> AsyncCallbackManager | CallbackManager:
+    def callback_manager(self) -> Union[AsyncCallbackManager, CallbackManager]:
         return self._callback_manager
 
     def build_callback_manager(self) -> None:
@@ -124,7 +137,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         Create and configure the callback manager based on the current
         callbacks and tags.
         """
-        CallbackMgr: Type[AsyncCallbackManager] | Type[CallbackManager] = (
+        CallbackMgr: Union[Type[AsyncCallbackManager], Type[CallbackManager]] = (
             AsyncCallbackManager if self.async_ else CallbackManager
         )
         self._callback_manager = CallbackMgr.configure(
@@ -191,7 +204,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
         return self._final_outputs
 
     @final_outputs.setter
-    def final_outputs(self, outputs: dict[str, Any] | None) -> None:
+    def final_outputs(self, outputs: Optional[Dict[str, Any]]) -> None:
         # have access to intermediate steps by design in iterator,
         # so return only outputs may as well always be true.
 
@@ -295,7 +308,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
 
     def _execute_next_step(
         self, run_manager: Optional[CallbackManagerForChainRun]
-    ) -> AgentFinish | list[tuple[AgentAction, str]]:
+    ) -> Union[AgentFinish, List[Tuple[AgentAction, str]]]:
         """
         Execute the next step in the chain using the
         AgentExecutor's _take_next_step method.
@@ -310,7 +323,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
 
     async def _execute_next_async_step(
         self, run_manager: Optional[AsyncCallbackManagerForChainRun]
-    ) -> (AgentFinish | list[tuple[AgentAction, str]]):
+    ) -> Union[AgentFinish, List[Tuple[AgentAction, str]]]:
         """
         Execute the next step in the chain using the
         AgentExecutor's _atake_next_step method.
@@ -325,9 +338,9 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
 
     def _process_next_step_output(
         self,
-        next_step_output: AgentFinish | list[tuple[AgentAction, str]],
+        next_step_output: Union[AgentFinish, List[Tuple[AgentAction, str]]],
         run_manager: Optional[CallbackManagerForChainRun],
-    ) -> dict[str, str | list[tuple[AgentAction, str]]]:
+    ) -> Dict[str, Union[str, List[Tuple[AgentAction, str]]]]:
         """
         Process the output of the next step,
         handling AgentFinish and tool return cases.
@@ -366,9 +379,9 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
 
     async def _aprocess_next_step_output(
         self,
-        next_step_output: AgentFinish | list[tuple[AgentAction, str]],
+        next_step_output: Union[AgentFinish, Dict[Tuple[AgentAction, str]]],
         run_manager: Optional[AsyncCallbackManagerForChainRun],
-    ) -> (dict[str, str | list[tuple[AgentAction, str]]]):
+    ) -> Dict[str, Union[str, List[Tuple[AgentAction, str]]]]:
         """
         Process the output of the next async step,
         handling AgentFinish and tool return cases.

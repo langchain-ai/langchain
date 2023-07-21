@@ -735,7 +735,7 @@ s
 
     def iter(
         self,
-        inputs: dict[str, str] | Any,
+        inputs: Any,
         callbacks: Callbacks = None,
         *,
         include_run_info: bool = False,
