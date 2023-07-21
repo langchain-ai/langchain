@@ -11,7 +11,8 @@ class ResponseGenerationChain(LLMChain):
     @classmethod
     def from_llm(cls, llm: BaseLanguageModel, verbose: bool = True) -> LLMChain:
         execution_template = (
-            "The AI assistant has parsed the user input into several tasks and executed them. The results are as follows:\n"
+            "The AI assistant has parsed the user input into several tasks"
+            "and executed them. The results are as follows:\n"
             "{task_execution}"
             "\nPlease summarize the results and generate a response."
         )

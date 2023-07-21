@@ -1,6 +1,6 @@
 import copy
 import uuid
-from typing import Dict, List, Union
+from typing import Dict, List
 
 import cv2
 import numpy as np
