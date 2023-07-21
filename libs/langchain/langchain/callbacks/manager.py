@@ -574,7 +574,7 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
             **kwargs,
         )
 
-    def on_llm_retry(
+    def on_retry(
         self,
         retry_state: RetryCallState,
         **kwargs: Any,
@@ -653,7 +653,7 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
             **kwargs,
         )
 
-    async def on_llm_retry(
+    async def on_retry(
         self,
         retry_state: RetryCallState,
         **kwargs: Any,

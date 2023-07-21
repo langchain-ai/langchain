@@ -84,13 +84,13 @@ def _create_retry_decorator(
         _logging(retry_state)
         if run_manager:
             if isinstance(run_manager, AsyncCallbackManagerForLLMRun):
-                coro = run_manager.on_llm_retry(retry_state)
+                coro = run_manager.on_retry(retry_state)
                 try:
                     asyncio.run(coro)
                 except Exception as e:
                     _log_error_once(f"Error in on_llm_retry: {e}")
             else:
-                run_manager.on_llm_retry(retry_state)
+                run_manager.on_retry(retry_state)
         return None
 
     min_seconds = 1

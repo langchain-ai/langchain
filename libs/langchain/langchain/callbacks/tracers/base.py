@@ -140,7 +140,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             },
         )
 
-    def on_llm_retry(
+    def on_retry(
         self,
         retry_state: RetryCallState,
         *,
