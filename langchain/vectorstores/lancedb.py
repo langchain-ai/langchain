@@ -51,6 +51,10 @@ class LanceDB(VectorStore):
         self._id_key = id_key
         self._text_key = text_key
 
+    @property
+    def embeddings(self) -> Embeddings:
+        return self._embedding
+
     def add_texts(
         self,
         texts: Iterable[str],

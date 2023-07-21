@@ -163,6 +163,10 @@ class SKLearnVectorStore(VectorStore):
         if self._persist_path is not None and os.path.isfile(self._persist_path):
             self._load()
 
+    @property
+    def embeddings(self) -> Embeddings:
+        return self._embedding_function
+
     def persist(self) -> None:
         if self._serializer is None:
             raise SKLearnVectorStoreException(

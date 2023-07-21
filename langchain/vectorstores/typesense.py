@@ -81,6 +81,10 @@ class Typesense(VectorStore):
     def _collection(self) -> Collection:
         return self._typesense_client.collections[self._typesense_collection_name]
 
+    @property
+    def embeddings(self) -> Embeddings:
+        return self._embedding
+
     def _prep_texts(
         self,
         texts: Iterable[str],

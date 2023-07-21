@@ -77,6 +77,10 @@ class MongoDBAtlasVectorSearch(VectorStore):
         self._text_key = text_key
         self._embedding_key = embedding_key
 
+    @property
+    def embeddings(self) -> Embeddings:
+        return self._embedding
+
     @classmethod
     def from_connection_string(
         cls,

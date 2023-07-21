@@ -61,6 +61,11 @@ class Annoy(VectorStore):
         self.docstore = docstore
         self.index_to_docstore_id = index_to_docstore_id
 
+    @property
+    def embeddings(self) -> Optional[Embeddings]:
+        # TODO: Accept embedding object directly
+        return None
+
     def add_texts(
         self,
         texts: Iterable[str],

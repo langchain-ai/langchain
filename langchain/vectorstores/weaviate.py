@@ -118,6 +118,10 @@ class Weaviate(VectorStore):
         if attributes is not None:
             self._query_attrs.extend(attributes)
 
+    @property
+    def embeddings(self) -> Optional[Embeddings]:
+        return self._embedding
+
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         return (
             self.relevance_score_fn

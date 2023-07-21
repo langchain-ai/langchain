@@ -123,7 +123,7 @@ class Qdrant(VectorStore):
                 "Use `embeddings` only."
             )
 
-        self.embeddings = embeddings
+        self._embeddings = embeddings
         self._embeddings_function = embedding_function
         self.client: qdrant_client.QdrantClient = client
         self.collection_name = collection_name
@@ -143,9 +143,13 @@ class Qdrant(VectorStore):
                 "Using `embeddings` as `embedding_function` which is deprecated"
             )
             self._embeddings_function = embeddings
-            self.embeddings = None
+            self._embeddings = None
 
         self.distance_strategy = distance_strategy.upper()
+
+    @property
+    def embeddings(self) -> Optional[Embeddings]:
+        return self._embeddings
 
     def add_texts(
         self,

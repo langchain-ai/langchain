@@ -82,6 +82,10 @@ class Marqo(VectorStore):
 
         self._document_batch_size = 1024
 
+    @property
+    def embeddings(self) -> Optional[Embeddings]:
+        return None
+
     def add_texts(
         self,
         texts: Iterable[str],

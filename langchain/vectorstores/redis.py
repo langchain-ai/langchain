@@ -161,6 +161,11 @@ class Redis(VectorStore):
         self.distance_metric = distance_metric
         self.relevance_score_fn = relevance_score_fn
 
+    @property
+    def embeddings(self) -> Optional[Embeddings]:
+        # TODO: Accept embedding object directly
+        return None
+
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         if self.relevance_score_fn:
             return self.relevance_score_fn
@@ -601,7 +606,9 @@ class Redis(VectorStore):
         )
 
     def as_retriever(self, **kwargs: Any) -> RedisVectorStoreRetriever:
-        return RedisVectorStoreRetriever(vectorstore=self, **kwargs)
+        tags = kwargs.pop("tags", None) or []
+        tags.extend(self.__get_retriever_tags())
+        return RedisVectorStoreRetriever(vectorstore=self, **kwargs, tags=tags)
 
 
 class RedisVectorStoreRetriever(VectorStoreRetriever):
