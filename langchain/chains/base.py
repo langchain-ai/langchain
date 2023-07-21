@@ -66,7 +66,9 @@ class Chain(Serializable, ABC):
     starting with on_chain_start, ending with on_chain_end or on_chain_error.
     Each custom chain can optionally call additional callback methods, see Callback docs
     for full details."""
-    callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
+    callback_manager: Optional[BaseCallbackManager] = Field(
+        default=None, exclude=True
+    )
     """Deprecated, use `callbacks` instead."""
     verbose: bool = Field(default_factory=_get_verbosity)
     """Whether or not run in verbose mode. In verbose mode, some intermediate logs
@@ -92,7 +94,7 @@ class Chain(Serializable, ABC):
     @property
     def _chain_type(self) -> str:
         warnings.warn("Saving not supported for this chain type.", UserWarning)
-        return 'NotImplemented'
+        return "NotImplemented"
 
     @root_validator()
     def raise_callback_manager_deprecation(cls, values: Dict) -> Dict:
@@ -181,7 +183,9 @@ class Chain(Serializable, ABC):
             A dict of named outputs. Should contain all outputs specified in
                 `Chain.output_keys`.
         """
-        raise NotImplementedError("Async call not supported for this chain type.")
+        raise NotImplementedError(
+            "Async call not supported for this chain type."
+        )
 
     def __call__(
         self,
@@ -228,7 +232,9 @@ class Chain(Serializable, ABC):
             metadata,
             self.metadata,
         )
-        new_arg_supported = inspect.signature(self._call).parameters.get("run_manager")
+        new_arg_supported = inspect.signature(self._call).parameters.get(
+            "run_manager"
+        )
         run_manager = callback_manager.on_chain_start(
             dumpd(self),
             inputs,
@@ -295,7 +301,9 @@ class Chain(Serializable, ABC):
             metadata,
             self.metadata,
         )
-        new_arg_supported = inspect.signature(self._acall).parameters.get("run_manager")
+        new_arg_supported = inspect.signature(self._acall).parameters.get(
+            "run_manager"
+        )
         run_manager = await callback_manager.on_chain_start(
             dumpd(self),
             inputs,
@@ -343,7 +351,9 @@ class Chain(Serializable, ABC):
         else:
             return {**inputs, **outputs}
 
-    def prep_inputs(self, inputs: Union[Dict[str, Any], Any]) -> Dict[str, str]:
+    def prep_inputs(
+        self, inputs: Union[Dict[str, Any], Any]
+    ) -> Dict[str, str]:
         """Validate and prepare chain inputs, including adding inputs from memory.
 
         Args:
@@ -360,7 +370,9 @@ class Chain(Serializable, ABC):
             if self.memory is not None:
                 # If there are multiple input keys, but some get set by memory so that
                 # only one is not set, we can still figure out which key it is.
-                _input_keys = _input_keys.difference(self.memory.memory_variables)
+                _input_keys = _input_keys.difference(
+                    self.memory.memory_variables
+                )
             if len(_input_keys) != 1:
                 raise ValueError(
                     f"A single string input was passed in, but this chain expects "
@@ -437,15 +449,17 @@ class Chain(Serializable, ABC):
 
         if args and not kwargs:
             if len(args) != 1:
-                raise ValueError("`run` supports only one positional argument.")
-            return self(args[0], callbacks=callbacks, tags=tags, metadata=metadata)[
-                _output_key
-            ]
+                raise ValueError(
+                    "`run` supports only one positional argument."
+                )
+            return self(
+                args[0], callbacks=callbacks, tags=tags, metadata=metadata
+            )[_output_key]
 
         if kwargs and not args:
-            return self(kwargs, callbacks=callbacks, tags=tags, metadata=metadata)[
-                _output_key
-            ]
+            return self(
+                kwargs, callbacks=callbacks, tags=tags, metadata=metadata
+            )[_output_key]
 
         if not kwargs and not args:
             raise ValueError(
@@ -513,7 +527,9 @@ class Chain(Serializable, ABC):
             )
         elif args and not kwargs:
             if len(args) != 1:
-                raise ValueError("`run` supports only one positional argument.")
+                raise ValueError(
+                    "`run` supports only one positional argument."
+                )
             return (
                 await self.acall(
                     args[0], callbacks=callbacks, tags=tags, metadata=metadata
@@ -552,8 +568,10 @@ class Chain(Serializable, ABC):
                 # -> {"_type": "foo", "verbose": False, ...}
         """
         if self.memory is not None:
-            warnings.warn("Saving not supported for this chain type.", UserWarning)
-            return 'NotImplemented'
+            warnings.warn(
+                "Saving not supported for this chain type.", UserWarning
+            )
+            return {}
 
         _dict = super().dict(**kwargs)
         _dict["_type"] = self._chain_type
