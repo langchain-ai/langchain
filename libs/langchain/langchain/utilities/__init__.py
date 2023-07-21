@@ -8,7 +8,6 @@ from langchain.utilities.bibtex import BibtexparserWrapper
 from langchain.utilities.bing_search import BingSearchAPIWrapper
 from langchain.utilities.brave_search import BraveSearchWrapper
 from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
-from langchain.utilities.example_generator import generate_example
 from langchain.utilities.golden_query import GoldenQueryAPIWrapper
 from langchain.utilities.google_places_api import GooglePlacesAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
@@ -64,5 +63,4 @@ __all__ = [
     "WikipediaAPIWrapper",
     "WolframAlphaAPIWrapper",
     "ZapierNLAWrapper",
-    "generate_example",
 ]
