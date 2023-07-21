@@ -7,7 +7,6 @@ import json
 from typing import Any, ClassVar, Dict, List, Optional, Type
 
 import pydantic
-
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain

@@ -3,11 +3,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, List, Optional, cast
 
-from pydantic import Field, root_validator
-
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.llms.utils import enforce_stop_tokens
+from pydantic import Field, root_validator
 
 if TYPE_CHECKING:
     import rellm
