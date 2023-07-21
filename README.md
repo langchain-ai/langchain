@@ -3,8 +3,8 @@
 ⚡ Building applications with LLMs through composability ⚡
 
 [![Release Notes](https://img.shields.io/github/release/hwchase17/langchain)](https://github.com/hwchase17/langchain/releases)
-[![lint](https://github.com/hwchase17/langchain/actions/workflows/lint.yml/badge.svg)](https://github.com/hwchase17/langchain/actions/workflows/lint.yml)
-[![test](https://github.com/hwchase17/langchain/actions/workflows/test.yml/badge.svg)](https://github.com/hwchase17/langchain/actions/workflows/test.yml)
+[![CI](https://github.com/hwchase17/langchain/actions/workflows/langchain_ci.yml/badge.svg)](https://github.com/hwchase17/langchain/actions/workflows/langchain_ci.yml)
+[![Experimental CI](https://github.com/hwchase17/langchain/actions/workflows/langchain_experimental_ci.yml/badge.svg)](https://github.com/hwchase17/langchain/actions/workflows/langchain_experimental_ci.yml)
 [![Downloads](https://static.pepy.tech/badge/langchain/month)](https://pepy.tech/project/langchain)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchainai.svg?style=social&label=Follow%20%40LangChainAI)](https://twitter.com/langchainai)
