@@ -284,17 +284,12 @@ class AzureSearch(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        from azure.search.documents.models import Vector
 
         results = self.client.search(
             search_text="",
-            vector=Vector(
-                value=np.array(
-                    self.embedding_function(query), dtype=np.float32
-                ).tolist(),
-                k=k,
-                fields=FIELDS_CONTENT_VECTOR,
-            ),
+            vector=self.embedding_function(query),
+            top_k=k,
+            vector_fields=FIELDS_CONTENT_VECTOR,
             select=[f"{FIELDS_ID},{FIELDS_CONTENT},{FIELDS_METADATA}"],
             filter=filters,
         )
@@ -339,17 +334,12 @@ class AzureSearch(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        from azure.search.documents.models import Vector
 
         results = self.client.search(
             search_text=query,
-            vector=Vector(
-                value=np.array(
-                    self.embedding_function(query), dtype=np.float32
-                ).tolist(),
-                k=k,
-                fields=FIELDS_CONTENT_VECTOR,
-            ),
+            vector=self.embedding_function(query),
+            top_k=k,
+            vector_fields=FIELDS_CONTENT_VECTOR,
             select=[f"{FIELDS_ID},{FIELDS_CONTENT},{FIELDS_METADATA}"],
             filter=filters,
             top=k,
@@ -397,17 +387,12 @@ class AzureSearch(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        from azure.search.documents.models import Vector
 
         results = self.client.search(
             search_text=query,
-            vector=Vector(
-                value=np.array(
-                    self.embedding_function(query), dtype=np.float32
-                ).tolist(),
-                k=50,  # Hardcoded value to maximize L2 retrieval
-                fields=FIELDS_CONTENT_VECTOR,
-            ),
+            vector=self.embedding_function(query),
+            top_k=50,  # Hardcoded value to maximize L2 retrieval
+            vector_fields=FIELDS_CONTENT_VECTOR,
             select=[f"{FIELDS_ID},{FIELDS_CONTENT},{FIELDS_METADATA}"],
             filter=filters,
             query_type="semantic",
