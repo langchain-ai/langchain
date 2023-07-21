@@ -5,6 +5,7 @@ from langchain.document_loaders.airbyte_json import AirbyteJSONLoader
 from langchain.document_loaders.airtable import AirtableLoader
 from langchain.document_loaders.apify_dataset import ApifyDatasetLoader
 from langchain.document_loaders.arxiv import ArxivLoader
+from langchain.document_loaders.async_html import AsyncHtmlLoader
 from langchain.document_loaders.azlyrics import AZLyricsLoader
 from langchain.document_loaders.azure_blob_storage_container import (
     AzureBlobStorageContainerLoader,
@@ -161,6 +162,7 @@ TelegramChatLoader = TelegramChatFileLoader
 
 __all__ = [
     "AcreomLoader",
+    "AsyncHtmlLoader",
     "AZLyricsLoader",
     "AirbyteJSONLoader",
     "AirtableLoader",
