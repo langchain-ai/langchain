@@ -154,6 +154,12 @@ const config = {
             position: "left,"
           },
           {
+            type: 'docSidebar',
+            position: 'left',
+            sidebarId: 'integrations',
+            label: 'Integrations',
+          },
+          {
             to: ""
             label: "Integrations",
             position: "left,"
