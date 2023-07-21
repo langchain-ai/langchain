@@ -10,7 +10,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
 
-from langchain import utils
+from langchain.utils import get_from_env
 
 
 def _format_index(index: sqlalchemy.engine.interfaces.ReflectedIndex) -> str:
@@ -192,13 +192,11 @@ class SQLDatabase:
 
         default_host = context.browserHostName if context else None
         if host is None:
-            host = utils.get_from_env("host", "DATABRICKS_HOST", default_host)
+            host = get_from_env("host", "DATABRICKS_HOST", default_host)
 
         default_api_token = context.apiToken if context else None
         if api_token is None:
-            api_token = utils.get_from_env(
-                "api_token", "DATABRICKS_TOKEN", default_api_token
-            )
+            api_token = get_from_env("api_token", "DATABRICKS_TOKEN", default_api_token)
 
         if warehouse_id is None and cluster_id is None:
             if context:

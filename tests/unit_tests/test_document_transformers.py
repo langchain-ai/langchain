@@ -2,7 +2,7 @@
 from langchain.document_transformers.embeddings_redundant_filter import (
     _filter_similar_embeddings,
 )
-from langchain.math_utils import cosine_similarity
+from langchain.utils.math import cosine_similarity
 
 
 def test__filter_similar_embeddings() -> None:
