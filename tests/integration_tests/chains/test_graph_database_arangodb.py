@@ -1,21 +1,10 @@
 """Test Graph Database Chain."""
-import os
 from typing import Any
 
 from langchain.chains.graph_qa.arangodb import ArangoGraphQAChain
 from langchain.graphs import ArangoGraph
+from langchain.graphs.arangodb_graph import get_arangodb_client
 from langchain.llms.openai import OpenAI
-
-
-def get_arangodb_client() -> Any:
-    from arango import ArangoClient
-
-    url = os.environ.get("ARANGODB_URL", "http://localhost:8529")
-    dbname = os.environ.get("ARANGODB_DBNAME", "_system")
-    username = os.environ.get("ARANGODB_USERNAME", "root")
-    password = os.environ.get("ARANGODB_PASSWORD", "openSesame")
-
-    return ArangoClient(url).db(dbname, username, password, verify=True)
 
 
 def populate_arangodb_database(db: Any) -> None:
