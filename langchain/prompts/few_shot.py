@@ -27,6 +27,12 @@ class _FewShotPromptTemplateMixin(BaseModel):
     """ExampleSelector to choose the examples to format into the prompt.
     Either this or examples should be provided."""
 
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
+        arbitrary_types_allowed = True
+
     @root_validator(pre=True)
     def check_examples_and_selector(cls, values: Dict) -> Dict:
         """Check that one and only one of examples/example_selector are provided."""
