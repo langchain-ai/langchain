@@ -17,7 +17,6 @@ class Html2TextTransformer(BaseDocumentTransformer):
         documents: Sequence[Document],
         **kwargs: Any,
     ) -> Sequence[Document]:
-        
         try:
             import html2text
         except ImportError:
@@ -25,8 +24,8 @@ class Html2TextTransformer(BaseDocumentTransformer):
                 """html2text package not found, please 
                 install it with `pip install html2text`"""
             )
-        
-         # Create an html2text.HTML2Text object and override some properties
+
+        # Create an html2text.HTML2Text object and override some properties
         h = html2text.HTML2Text()
         h.ignore_links = True
         h.ignore_images = True

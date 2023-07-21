@@ -5,6 +5,7 @@ from langchain.document_loaders.airbyte_json import AirbyteJSONLoader
 from langchain.document_loaders.airtable import AirtableLoader
 from langchain.document_loaders.apify_dataset import ApifyDatasetLoader
 from langchain.document_loaders.arxiv import ArxivLoader
+from langchain.document_loaders.async_html import AsyncHtmlLoader
 from langchain.document_loaders.azlyrics import AZLyricsLoader
 from langchain.document_loaders.azure_blob_storage_container import (
     AzureBlobStorageContainerLoader,
@@ -59,7 +60,6 @@ from langchain.document_loaders.googledrive import GoogleDriveLoader
 from langchain.document_loaders.gutenberg import GutenbergLoader
 from langchain.document_loaders.hn import HNLoader
 from langchain.document_loaders.html import UnstructuredHTMLLoader
-from langchain.document_loaders.async_html import AsyncHtmlLoader
 from langchain.document_loaders.html_bs import BSHTMLLoader
 from langchain.document_loaders.hugging_face_dataset import HuggingFaceDatasetLoader
 from langchain.document_loaders.ifixit import IFixitLoader
