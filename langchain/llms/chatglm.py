@@ -9,6 +9,7 @@ from langchain.llms.utils import enforce_stop_tokens
 
 logger = logging.getLogger(__name__)
 
+
 class ChatGLM(LLM):
     """ChatGLM LLM service.
 
