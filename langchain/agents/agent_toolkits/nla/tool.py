@@ -1,12 +1,12 @@
-"""Tool for interacting with a single API with natural language efinition."""
+"""Tool for interacting with a single API with natural language definition."""
 
 
 from typing import Any, Optional
 
 from langchain.agents.tools import Tool
-from langchain.base_language import BaseLanguageModel
 from langchain.chains.api.openapi.chain import OpenAPIEndpointChain
 from langchain.requests import Requests
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.openapi.utils.api_models import APIOperation
 from langchain.tools.openapi.utils.openapi_utils import OpenAPISpec
 

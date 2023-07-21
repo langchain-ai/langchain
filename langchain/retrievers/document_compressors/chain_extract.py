@@ -5,13 +5,13 @@ import asyncio
 from typing import Any, Callable, Dict, Optional, Sequence
 
 from langchain import LLMChain, PromptTemplate
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import Callbacks
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 from langchain.retrievers.document_compressors.chain_extract_prompt import (
     prompt_template,
 )
 from langchain.schema import BaseOutputParser, Document
+from langchain.schema.language_model import BaseLanguageModel
 
 
 def default_get_input(query: str, doc: Document) -> Dict[str, Any]:
@@ -42,6 +42,9 @@ def _get_default_chain_prompt() -> PromptTemplate:
 
 
 class LLMChainExtractor(BaseDocumentCompressor):
+    """DocumentCompressor that uses an LLM chain to extract
+    the relevant parts of documents."""
+
     llm_chain: LLMChain
     """LLM wrapper to use for compressing documents."""
 

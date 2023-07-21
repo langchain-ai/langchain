@@ -16,7 +16,10 @@ from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 
 
 class Vectara(VectorStore):
-    """Implementation of Vector Store using Vectara (https://vectara.com).
+    """Implementation of Vector Store using Vectara.
+
+     See (https://vectara.com).
+
     Example:
         .. code-block:: python
 
@@ -49,7 +52,7 @@ class Vectara(VectorStore):
             or self._vectara_api_key is None
         ):
             logging.warning(
-                "Cant find Vectara credentials, customer_id or corpus_id in "
+                "Can't find Vectara credentials, customer_id or corpus_id in "
                 "environment."
             )
         else:

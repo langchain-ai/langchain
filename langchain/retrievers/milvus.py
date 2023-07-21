@@ -2,6 +2,8 @@
 import warnings
 from typing import Any, Dict, List, Optional
 
+from pydantic import root_validator
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
@@ -16,21 +18,28 @@ from langchain.vectorstores.milvus import Milvus
 class MilvusRetriever(BaseRetriever):
     """Retriever that uses the Milvus API."""
 
-    def __init__(
-        self,
-        embedding_function: Embeddings,
-        collection_name: str = "LangChainCollection",
-        connection_args: Optional[Dict[str, Any]] = None,
-        consistency_level: str = "Session",
-        search_params: Optional[dict] = None,
-    ):
-        self.store = Milvus(
-            embedding_function,
-            collection_name,
-            connection_args,
-            consistency_level,
+    embedding_function: Embeddings
+    collection_name: str = "LangChainCollection"
+    connection_args: Optional[Dict[str, Any]] = None
+    consistency_level: str = "Session"
+    search_params: Optional[dict] = None
+
+    store: Milvus
+    retriever: BaseRetriever
+
+    @root_validator(pre=True)
+    def create_retriever(cls, values: Dict) -> Dict:
+        """Create the Milvus store and retriever."""
+        values["store"] = Milvus(
+            values["embedding_function"],
+            values["collection_name"],
+            values["connection_args"],
+            values["consistency_level"],
         )
-        self.retriever = self.store.as_retriever(search_kwargs={"param": search_params})
+        values["retriever"] = values["store"].as_retriever(
+            search_kwargs={"param": values["search_params"]}
+        )
+        return values
 
     def add_texts(
         self, texts: List[str], metadatas: Optional[List[dict]] = None

@@ -1,4 +1,3 @@
-"""Logic for converting internal query language to a valid Weaviate query."""
 from typing import Dict, Tuple, Union
 
 from langchain.chains.query_constructor.ir import (
@@ -12,7 +11,7 @@ from langchain.chains.query_constructor.ir import (
 
 
 class WeaviateTranslator(Visitor):
-    """Logic for converting internal query language elements to valid filters."""
+    """Translate the internal query language elements to valid filters."""
 
     allowed_operators = [Operator.AND, Operator.OR]
     """Subset of allowed logical operators."""

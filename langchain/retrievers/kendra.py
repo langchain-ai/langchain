@@ -1,7 +1,8 @@
 import re
-from typing import Any, Dict, List, Literal, Optional
+from abc import ABC, abstractmethod
+from typing import Any, Dict, List, Literal, Optional, Union
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel, Extra, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -12,6 +13,15 @@ from langchain.schema import BaseRetriever
 
 
 def clean_excerpt(excerpt: str) -> str:
+    """Cleans an excerpt from Kendra.
+
+    Args:
+        excerpt: The excerpt to clean.
+
+    Returns:
+        The cleaned excerpt.
+
+    """
     if not excerpt:
         return excerpt
     res = re.sub("\s+", " ", excerpt).replace("...", "")
@@ -19,46 +29,180 @@ def clean_excerpt(excerpt: str) -> str:
 
 
 def combined_text(title: str, excerpt: str) -> str:
-    if not title or not excerpt:
-        return ""
-    return f"Document Title: {title} \nDocument Excerpt: \n{excerpt}\n"
+    """Combines a title and an excerpt into a single string.
+
+    Args:
+        title: The title of the document.
+        excerpt: The excerpt of the document.
+
+    Returns:
+        The combined text.
+
+    """
+    text = ""
+    if title:
+        text += f"Document Title: {title}\n"
+    if excerpt:
+        text += f"Document Excerpt: \n{excerpt}\n"
+    return text
 
 
 class Highlight(BaseModel, extra=Extra.allow):
+    """
+    Represents the information that can be
+    used to highlight key words in the excerpt.
+    """
+
     BeginOffset: int
+    """The zero-based location in the excerpt where the highlight starts."""
     EndOffset: int
+    """The zero-based location in the excerpt where the highlight ends."""
     TopAnswer: Optional[bool]
+    """Indicates whether the result is the best one."""
     Type: Optional[str]
+    """The highlight type: STANDARD or THESAURUS_SYNONYM."""
 
 
 class TextWithHighLights(BaseModel, extra=Extra.allow):
+    """Text with highlights."""
+
     Text: str
+    """The text."""
     Highlights: Optional[Any]
+    """The highlights."""
 
 
 class AdditionalResultAttributeValue(BaseModel, extra=Extra.allow):
+    """The value of an additional result attribute."""
+
     TextWithHighlightsValue: TextWithHighLights
+    """The text with highlights value."""
 
 
 class AdditionalResultAttribute(BaseModel, extra=Extra.allow):
+    """An additional result attribute."""
+
     Key: str
+    """The key of the attribute."""
     ValueType: Literal["TEXT_WITH_HIGHLIGHTS_VALUE"]
+    """The type of the value."""
     Value: AdditionalResultAttributeValue
+    """The value of the attribute."""
 
     def get_value_text(self) -> str:
         return self.Value.TextWithHighlightsValue.Text
 
 
-class QueryResultItem(BaseModel, extra=Extra.allow):
-    DocumentId: str
-    DocumentTitle: TextWithHighLights
-    DocumentURI: Optional[str]
-    FeedbackToken: Optional[str]
-    Format: Optional[str]
+class DocumentAttributeValue(BaseModel, extra=Extra.allow):
+    """The value of a document attribute."""
+
+    DateValue: Optional[str]
+    """The date value."""
+    LongValue: Optional[int]
+    """The long value."""
+    StringListValue: Optional[List[str]]
+    """The string list value."""
+    StringValue: Optional[str]
+    """The string value."""
+
+    @property
+    def value(self) -> Optional[Union[str, int, List[str]]]:
+        """The only defined document attribute value or None.
+        According to Amazon Kendra, you can only provide one
+        value for a document attribute.
+        """
+        if self.DateValue:
+            return self.DateValue
+        if self.LongValue:
+            return self.LongValue
+        if self.StringListValue:
+            return self.StringListValue
+        if self.StringValue:
+            return self.StringValue
+
+        return None
+
+
+class DocumentAttribute(BaseModel, extra=Extra.allow):
+    """A document attribute."""
+
+    Key: str
+    """The key of the attribute."""
+    Value: DocumentAttributeValue
+    """The value of the attribute."""
+
+
+class ResultItem(BaseModel, ABC, extra=Extra.allow):
+    """Abstract class that represents a result item."""
+
     Id: Optional[str]
+    """The ID of the item."""
+    DocumentId: Optional[str]
+    """The document ID."""
+    DocumentURI: Optional[str]
+    """The document URI."""
+    DocumentAttributes: Optional[List[DocumentAttribute]] = []
+    """The document attributes."""
+
+    @abstractmethod
+    def get_title(self) -> str:
+        """Document title."""
+
+    @abstractmethod
+    def get_excerpt(self) -> str:
+        """Document excerpt or passage."""
+
+    def get_additional_metadata(self) -> dict:
+        """Document additional metadata dict.
+        This returns any extra metadata except these values:
+        ['source', 'title', 'excerpt' and 'document_attributes'].
+        """
+        return {}
+
+    def get_document_attributes_dict(self) -> dict:
+        return {attr.Key: attr.Value.value for attr in (self.DocumentAttributes or [])}
+
+    def to_doc(self) -> Document:
+        title = self.get_title()
+        excerpt = self.get_excerpt()
+        page_content = combined_text(title, excerpt)
+        source = self.DocumentURI
+        document_attributes = self.get_document_attributes_dict()
+        metadata = self.get_additional_metadata()
+        metadata.update(
+            {
+                "source": source,
+                "title": title,
+                "excerpt": excerpt,
+                "document_attributes": document_attributes,
+            }
+        )
+
+        return Document(page_content=page_content, metadata=metadata)
+
+
+class QueryResultItem(ResultItem):
+    """A Query API result item."""
+
+    DocumentTitle: TextWithHighLights
+    """The document title."""
+    FeedbackToken: Optional[str]
+    """Identifies a particular result from a particular query."""
+    Format: Optional[str]
+    """
+    If the Type is ANSWER, then format is either:
+        * TABLE: a table excerpt is returned in TableExcerpt;
+        * TEXT: a text excerpt is returned in DocumentExcerpt.
+    """
     Type: Optional[str]
+    """Type of result: DOCUMENT or QUESTION_ANSWER or ANSWER"""
     AdditionalAttributes: Optional[List[AdditionalResultAttribute]] = []
+    """One or more additional attributes associated with the result."""
     DocumentExcerpt: Optional[TextWithHighLights]
+    """Excerpt of the document text."""
+
+    def get_title(self) -> str:
+        return self.DocumentTitle.Text
 
     def get_attribute_value(self) -> str:
         if not self.AdditionalAttributes:
@@ -81,20 +225,26 @@ class QueryResultItem(BaseModel, extra=Extra.allow):
 
         return clean_excerpt(excerpt)
 
-    def to_doc(self) -> Document:
-        title = self.DocumentTitle.Text
-        source = self.DocumentURI
-        excerpt = self.get_excerpt()
-        type = self.Type
-        page_content = combined_text(title, excerpt)
-        metadata = {"source": source, "title": title, "excerpt": excerpt, "type": type}
-        return Document(page_content=page_content, metadata=metadata)
+    def get_additional_metadata(self) -> dict:
+        additional_metadata = {"type": self.Type}
+        return additional_metadata
 
 
 class QueryResult(BaseModel, extra=Extra.allow):
+    """A Query API result."""
+
     ResultItems: List[QueryResultItem]
+    """The result items."""
 
     def get_top_k_docs(self, top_n: int) -> List[Document]:
+        """Gets the top k documents.
+
+        Args:
+            top_n: The number of documents to return.
+
+        Returns:
+            The top k documents.
+        """
         items_len = len(self.ResultItems)
         count = items_len if items_len < top_n else top_n
         docs = [self.ResultItems[i].to_doc() for i in range(0, count)]
@@ -102,43 +252,30 @@ class QueryResult(BaseModel, extra=Extra.allow):
         return docs
 
 
-class DocumentAttributeValue(BaseModel, extra=Extra.allow):
-    DateValue: Optional[str]
-    LongValue: Optional[int]
-    StringListValue: Optional[List[str]]
-    StringValue: Optional[str]
+class RetrieveResultItem(ResultItem):
+    """A Retrieve API result item."""
 
-
-class DocumentAttribute(BaseModel, extra=Extra.allow):
-    Key: str
-    Value: DocumentAttributeValue
-
-
-class RetrieveResultItem(BaseModel, extra=Extra.allow):
-    Content: Optional[str]
-    DocumentAttributes: Optional[List[DocumentAttribute]] = []
-    DocumentId: Optional[str]
     DocumentTitle: Optional[str]
-    DocumentURI: Optional[str]
-    Id: Optional[str]
+    """The document title."""
+    Content: Optional[str]
+    """The content of the item."""
+
+    def get_title(self) -> str:
+        return self.DocumentTitle or ""
 
     def get_excerpt(self) -> str:
         if not self.Content:
             return ""
         return clean_excerpt(self.Content)
 
-    def to_doc(self) -> Document:
-        title = self.DocumentTitle if self.DocumentTitle else ""
-        source = self.DocumentURI
-        excerpt = self.get_excerpt()
-        page_content = combined_text(title, excerpt)
-        metadata = {"source": source, "title": title, "excerpt": excerpt}
-        return Document(page_content=page_content, metadata=metadata)
-
 
 class RetrieveResult(BaseModel, extra=Extra.allow):
+    """A Retrieve API result."""
+
     QueryId: str
+    """The ID of the query."""
     ResultItems: List[RetrieveResultItem]
+    """The result items."""
 
     def get_top_k_docs(self, top_n: int) -> List[Document]:
         items_len = len(self.ResultItems)
@@ -149,7 +286,7 @@ class RetrieveResult(BaseModel, extra=Extra.allow):
 
 
 class AmazonKendraRetriever(BaseRetriever):
-    """Retriever class to query documents from Amazon Kendra Index.
+    """Retriever for the Amazon Kendra Index.
 
     Args:
         index_id: Kendra index id
@@ -179,37 +316,34 @@ class AmazonKendraRetriever(BaseRetriever):
 
     """
 
-    def __init__(
-        self,
-        index_id: str,
-        region_name: Optional[str] = None,
-        credentials_profile_name: Optional[str] = None,
-        top_k: int = 3,
-        attribute_filter: Optional[Dict] = None,
-        client: Optional[Any] = None,
-    ):
-        self.index_id = index_id
-        self.top_k = top_k
-        self.attribute_filter = attribute_filter
+    index_id: str
+    region_name: Optional[str] = None
+    credentials_profile_name: Optional[str] = None
+    top_k: int = 3
+    attribute_filter: Optional[Dict] = None
+    client: Any
 
-        if client is not None:
-            self.client = client
-            return
+    @root_validator(pre=True)
+    def create_client(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        if values.get("client") is not None:
+            return values
 
         try:
             import boto3
 
-            if credentials_profile_name is not None:
-                session = boto3.Session(profile_name=credentials_profile_name)
+            if values.get("credentials_profile_name"):
+                session = boto3.Session(profile_name=values["credentials_profile_name"])
             else:
                 # use default credentials
                 session = boto3.Session()
 
             client_params = {}
-            if region_name is not None:
-                client_params["region_name"] = region_name
+            if values.get("region_name"):
+                client_params["region_name"] = values["region_name"]
 
-            self.client = session.client("kendra", **client_params)
+            values["client"] = session.client("kendra", **client_params)
+
+            return values
         except ImportError:
             raise ModuleNotFoundError(
                 "Could not import boto3 python package. "

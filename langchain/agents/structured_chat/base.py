@@ -8,25 +8,27 @@ from langchain.agents.structured_chat.output_parser import (
     StructuredChatOutputParserWithRetries,
 )
 from langchain.agents.structured_chat.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
-from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain.schema import AgentAction
+from langchain.schema import AgentAction, BasePromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool
 
 HUMAN_MESSAGE_TEMPLATE = "{input}\n\n{agent_scratchpad}"
 
 
 class StructuredChatAgent(Agent):
+    """Structured Chat Agent."""
+
     output_parser: AgentOutputParser = Field(
         default_factory=StructuredChatOutputParserWithRetries
     )
+    """Output parser for the agent."""
 
     @property
     def observation_prefix(self) -> str:

@@ -2,9 +2,18 @@
 
 from __future__ import annotations
 
-import enum
 import json
-from typing import Any, ClassVar, Collection, Iterable, List, Optional, Tuple, Type
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Collection,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+)
 
 from sqlalchemy.pool import QueuePool
 
@@ -15,14 +24,7 @@ from langchain.callbacks.manager import (
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
-
-
-class DistanceStrategy(str, enum.Enum):
-    """Enumerator of the Distance strategies for SingleStoreDB."""
-
-    EUCLIDEAN_DISTANCE = "EUCLIDEAN_DISTANCE"
-    DOT_PRODUCT = "DOT_PRODUCT"
-
+from langchain.vectorstores.utils import DistanceStrategy
 
 DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.DOT_PRODUCT
 
@@ -198,13 +200,9 @@ class SingleStoreDB(VectorStore):
         """Add program name and version to connection attributes."""
         if "conn_attrs" not in self.connection_kwargs:
             self.connection_kwargs["conn_attrs"] = dict()
-        if "program_name" not in self.connection_kwargs["conn_attrs"]:
-            self.connection_kwargs["conn_attrs"][
-                "program_name"
-            ] = "langchain python sdk"
-            self.connection_kwargs["conn_attrs"][
-                "program_version"
-            ] = "0.0.205"  # the version of SingleStoreDB VectorStore implementation
+
+        self.connection_kwargs["conn_attrs"]["_connector_name"] = "langchain python sdk"
+        self.connection_kwargs["conn_attrs"]["_connector_version"] = "1.0.0"
 
         """Create connection pool."""
         self.connection_pool = QueuePool(
@@ -214,6 +212,9 @@ class SingleStoreDB(VectorStore):
             timeout=timeout,
         )
         self._create_table()
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        return self._max_inner_product_relevance_score_fn
 
     def _create_table(self: SingleStoreDB) -> None:
         """Create table if it doesn't exist."""
@@ -451,7 +452,7 @@ class SingleStoreDBRetriever(VectorStoreRetriever):
     allowed_search_types: ClassVar[Collection[str]] = ("similarity",)
 
     def _get_relevant_documents(
-        self, query: str, *, run_manager: Optional[CallbackManagerForRetrieverRun]
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(query, k=self.k)
@@ -460,7 +461,7 @@ class SingleStoreDBRetriever(VectorStoreRetriever):
         return docs
 
     async def _aget_relevant_documents(
-        self, query: str, *, run_manager: Optional[AsyncCallbackManagerForRetrieverRun]
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         raise NotImplementedError(
             "SingleStoreDBVectorStoreRetriever does not support async"

@@ -13,7 +13,7 @@ from langchain.utilities.pupmed import PubMedAPIWrapper
 
 
 class PubmedQueryRun(BaseTool):
-    """Tool that adds the capability to search using the PubMed API."""
+    """Tool that searches the PubMed API."""
 
     name = "PubMed"
     description = (

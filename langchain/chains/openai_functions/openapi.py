@@ -7,8 +7,7 @@ import requests
 from openapi_schema_pydantic import Parameter
 from requests import Response
 
-from langchain import BasePromptTemplate, LLMChain
-from langchain.base_language import BaseLanguageModel
+from langchain import LLMChain
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.sequential import SequentialChain
@@ -16,6 +15,8 @@ from langchain.chat_models import ChatOpenAI
 from langchain.input import get_colored_text
 from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
 from langchain.prompts import ChatPromptTemplate
+from langchain.schema import BasePromptTemplate
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import APIOperation
 from langchain.utilities.openapi import OpenAPISpec
 
@@ -187,9 +188,14 @@ def openapi_spec_to_openai_fn(
 
 
 class SimpleRequestChain(Chain):
+    """Chain for making a simple request to an API endpoint."""
+
     request_method: Callable
+    """Method to use for making the request."""
     output_key: str = "response"
+    """Key to use for the output of the request."""
     input_key: str = "function"
+    """Key to use for the input of the request."""
 
     @property
     def input_keys(self) -> List[str]:
@@ -232,7 +238,7 @@ def get_openapi_chain(
     llm: Optional[BaseLanguageModel] = None,
     prompt: Optional[BasePromptTemplate] = None,
     request_chain: Optional[Chain] = None,
-    llm_kwargs: Optional[Dict] = None,
+    llm_chain_kwargs: Optional[Dict] = None,
     verbose: bool = False,
     headers: Optional[Dict] = None,
     params: Optional[Dict] = None,
@@ -274,7 +280,7 @@ def get_openapi_chain(
         output_parser=JsonOutputFunctionsParser(args_only=False),
         output_key="function",
         verbose=verbose,
-        **(llm_kwargs or {}),
+        **(llm_chain_kwargs or {}),
     )
     request_chain = request_chain or SimpleRequestChain(
         request_method=lambda name, args: call_api_fn(

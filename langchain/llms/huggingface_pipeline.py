@@ -1,4 +1,3 @@
-"""Wrapper around HuggingFace Pipeline APIs."""
 import importlib.util
 import logging
 from typing import Any, List, Mapping, Optional
@@ -17,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class HuggingFacePipeline(LLM):
-    """Wrapper around HuggingFace Pipeline API.
+    """HuggingFace Pipeline API.
 
     To use, you should have the ``transformers`` python package installed.
 
@@ -179,7 +178,7 @@ class HuggingFacePipeline(LLM):
                 f"Got invalid task {self.pipeline.task}, "
                 f"currently only {VALID_TASKS} are supported"
             )
-        if stop is not None:
+        if stop:
             # This is a bit hacky, but I can't figure out a better way to enforce
             # stop tokens when making calls to huggingface_hub.
             text = enforce_stop_tokens(text, stop)

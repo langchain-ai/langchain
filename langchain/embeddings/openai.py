@@ -1,7 +1,7 @@
-"""Wrapper around OpenAI embedding models."""
 from __future__ import annotations
 
 import logging
+import warnings
 from typing import (
     Any,
     Callable,
@@ -16,7 +16,7 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import BaseModel, Extra, Field, root_validator
 from tenacity import (
     AsyncRetrying,
     before_sleep_log,
@@ -27,7 +27,7 @@ from tenacity import (
 )
 
 from langchain.embeddings.base import Embeddings
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
 
 logger = logging.getLogger(__name__)
 
@@ -86,13 +86,23 @@ def _async_retry_decorator(embeddings: OpenAIEmbeddings) -> Any:
     return wrap
 
 
+# https://stackoverflow.com/questions/76469415/getting-embeddings-of-length-1-from-langchain-openaiembeddings
+def _check_response(response: dict) -> dict:
+    if any(len(d["embedding"]) == 1 for d in response["data"]):
+        import openai
+
+        raise openai.error.APIError("OpenAI API returned an empty embedding")
+    return response
+
+
 def embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) -> Any:
     """Use tenacity to retry the embedding call."""
     retry_decorator = _create_retry_decorator(embeddings)
 
     @retry_decorator
     def _embed_with_retry(**kwargs: Any) -> Any:
-        return embeddings.client.create(**kwargs)
+        response = embeddings.client.create(**kwargs)
+        return _check_response(response)
 
     return _embed_with_retry(**kwargs)
 
@@ -102,13 +112,14 @@ async def async_embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) ->
 
     @_async_retry_decorator(embeddings)
     async def _async_embed_with_retry(**kwargs: Any) -> Any:
-        return await embeddings.client.acreate(**kwargs)
+        response = await embeddings.client.acreate(**kwargs)
+        return _check_response(response)
 
     return await _async_embed_with_retry(**kwargs)
 
 
 class OpenAIEmbeddings(BaseModel, Embeddings):
-    """Wrapper around OpenAI embedding models.
+    """OpenAI embedding models.
 
     To use, you should have the ``openai`` python package installed, and the
     environment variable ``OPENAI_API_KEY`` set with your API key or pass it
@@ -133,7 +144,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             os.environ["OPENAI_API_TYPE"] = "azure"
             os.environ["OPENAI_API_BASE"] = "https://<your-endpoint.openai.azure.com/"
             os.environ["OPENAI_API_KEY"] = "your AzureOpenAI key"
-            os.environ["OPENAI_API_VERSION"] = "2023-03-15-preview"
+            os.environ["OPENAI_API_VERSION"] = "2023-05-15"
             os.environ["OPENAI_PROXY"] = "http://your-corporate-proxy:8080"
 
             from langchain.embeddings.openai import OpenAIEmbeddings
@@ -159,6 +170,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     # to support explicit proxy for OpenAI
     openai_proxy: Optional[str] = None
     embedding_ctx_length: int = 8191
+    """The maximum number of tokens to embed at once."""
     openai_api_key: Optional[str] = None
     openai_organization: Optional[str] = None
     allowed_special: Union[Literal["all"], Set[str]] = set()
@@ -180,11 +192,41 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     when using one of the many model providers that expose an OpenAI-like 
     API but with different models. In those cases, in order to avoid erroring 
     when tiktoken is called, you can specify a model name to use here."""
+    show_progress_bar: bool = False
+    """Whether to show a progress bar when embedding."""
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """Holds any model parameters valid for `create` call not explicitly specified."""
 
     class Config:
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
+
+    @root_validator(pre=True)
+    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Build extra kwargs from additional params that were passed in."""
+        all_required_field_names = get_pydantic_field_names(cls)
+        extra = values.get("model_kwargs", {})
+        for field_name in list(values):
+            if field_name in extra:
+                raise ValueError(f"Found {field_name} supplied twice.")
+            if field_name not in all_required_field_names:
+                warnings.warn(
+                    f"""WARNING! {field_name} is not default parameter.
+                    {field_name} was transferred to model_kwargs.
+                    Please confirm that {field_name} is what you intended."""
+                )
+                extra[field_name] = values.pop(field_name)
+
+        invalid_model_kwargs = all_required_field_names.intersection(extra.keys())
+        if invalid_model_kwargs:
+            raise ValueError(
+                f"Parameters {invalid_model_kwargs} should be specified explicitly. "
+                f"Instead they were passed in as part of `model_kwargs` parameter."
+            )
+
+        values["model_kwargs"] = extra
+        return values
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -240,7 +282,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     @property
     def _invocation_params(self) -> Dict:
         openai_args = {
-            "engine": self.deployment,
+            "model": self.model,
             "request_timeout": self.request_timeout,
             "headers": self.headers,
             "api_key": self.openai_api_key,
@@ -248,7 +290,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             "api_base": self.openai_api_base,
             "api_type": self.openai_api_type,
             "api_version": self.openai_api_version,
+            **self.model_kwargs,
         }
+        if self.openai_api_type in ("azure", "azure_ad", "azuread"):
+            openai_args["engine"] = self.deployment
         if self.openai_proxy:
             import openai
 
@@ -298,7 +343,18 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
         batched_embeddings = []
         _chunk_size = chunk_size or self.chunk_size
-        for i in range(0, len(tokens), _chunk_size):
+
+        if self.show_progress_bar:
+            try:
+                import tqdm
+
+                _iter = tqdm.tqdm(range(0, len(tokens), _chunk_size))
+            except ImportError:
+                _iter = range(0, len(tokens), _chunk_size)
+        else:
+            _iter = range(0, len(tokens), _chunk_size)
+
+        for i in _iter:
             response = embed_with_retry(
                 self,
                 input=tokens[i : i + _chunk_size],

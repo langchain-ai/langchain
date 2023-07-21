@@ -7,7 +7,10 @@ from langchain.embeddings.base import Embeddings
 
 
 class FakeEmbeddings(Embeddings, BaseModel):
+    """Fake embedding model."""
+
     size: int
+    """The size of the embedding vector."""
 
     def _get_embedding(self) -> List[float]:
         return list(np.random.normal(size=self.size))

@@ -7,6 +7,8 @@ from langchain.load.serializable import Serializable
 
 
 class Reviver:
+    """Reviver for JSON objects."""
+
     def __init__(self, secrets_map: Optional[Dict[str, str]] = None) -> None:
         self.secrets_map = secrets_map or dict()
 
@@ -65,4 +67,13 @@ class Reviver:
 
 
 def loads(text: str, *, secrets_map: Optional[Dict[str, str]] = None) -> Any:
+    """Load a JSON object from a string.
+
+    Args:
+        text: The string to load.
+        secrets_map: A map of secrets to load.
+
+    Returns:
+
+    """
     return json.loads(text, object_hook=Reviver(secrets_map))

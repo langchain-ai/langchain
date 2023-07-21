@@ -23,11 +23,15 @@ from langchain.document_loaders.blob_loaders import (
     YoutubeAudioLoader,
 )
 from langchain.document_loaders.blockchain import BlockchainDocumentLoader
+from langchain.document_loaders.brave_search import BraveSearchLoader
+from langchain.document_loaders.browserless import BrowserlessLoader
 from langchain.document_loaders.chatgpt import ChatGPTLoader
 from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
 from langchain.document_loaders.confluence import ConfluenceLoader
 from langchain.document_loaders.conllu import CoNLLULoader
 from langchain.document_loaders.csv_loader import CSVLoader, UnstructuredCSVLoader
+from langchain.document_loaders.cube_semantic import CubeSemanticLoader
+from langchain.document_loaders.datadog_logs import DatadogLogsLoader
 from langchain.document_loaders.dataframe import DataFrameLoader
 from langchain.document_loaders.diffbot import DiffbotLoader
 from langchain.document_loaders.directory import DirectoryLoader
@@ -47,6 +51,7 @@ from langchain.document_loaders.fauna import FaunaLoader
 from langchain.document_loaders.figma import FigmaFileLoader
 from langchain.document_loaders.gcs_directory import GCSDirectoryLoader
 from langchain.document_loaders.gcs_file import GCSFileLoader
+from langchain.document_loaders.geodataframe import GeoDataFrameLoader
 from langchain.document_loaders.git import GitLoader
 from langchain.document_loaders.gitbook import GitbookLoader
 from langchain.document_loaders.github import GitHubIssuesLoader
@@ -100,6 +105,7 @@ from langchain.document_loaders.readthedocs import ReadTheDocsLoader
 from langchain.document_loaders.recursive_url_loader import RecursiveUrlLoader
 from langchain.document_loaders.reddit import RedditPostsLoader
 from langchain.document_loaders.roam import RoamLoader
+from langchain.document_loaders.rocksetdb import RocksetLoader
 from langchain.document_loaders.rst import UnstructuredRSTLoader
 from langchain.document_loaders.rtf import UnstructuredRTFLoader
 from langchain.document_loaders.s3_directory import S3DirectoryLoader
@@ -120,6 +126,7 @@ from langchain.document_loaders.text import TextLoader
 from langchain.document_loaders.tomarkdown import ToMarkdownLoader
 from langchain.document_loaders.toml import TomlLoader
 from langchain.document_loaders.trello import TrelloLoader
+from langchain.document_loaders.tsv import UnstructuredTSVLoader
 from langchain.document_loaders.twitter import TwitterTweetLoader
 from langchain.document_loaders.unstructured import (
     UnstructuredAPIFileIOLoader,
@@ -139,6 +146,7 @@ from langchain.document_loaders.word_document import (
     UnstructuredWordDocumentLoader,
 )
 from langchain.document_loaders.xml import UnstructuredXMLLoader
+from langchain.document_loaders.xorbits import XorbitsLoader
 from langchain.document_loaders.youtube import (
     GoogleApiClient,
     GoogleApiYoutubeLoader,
@@ -168,11 +176,15 @@ __all__ = [
     "Blob",
     "BlobLoader",
     "BlockchainDocumentLoader",
+    "BraveSearchLoader",
+    "BrowserlessLoader",
     "CSVLoader",
     "ChatGPTLoader",
     "CoNLLULoader",
     "CollegeConfidentialLoader",
     "ConfluenceLoader",
+    "CubeSemanticLoader",
+    "DatadogLogsLoader",
     "DataFrameLoader",
     "DiffbotLoader",
     "DirectoryLoader",
@@ -189,6 +201,7 @@ __all__ = [
     "FileSystemBlobLoader",
     "GCSDirectoryLoader",
     "GCSFileLoader",
+    "GeoDataFrameLoader",
     "GitHubIssuesLoader",
     "GitLoader",
     "GitbookLoader",
@@ -238,6 +251,7 @@ __all__ = [
     "RecursiveUrlLoader",
     "RedditPostsLoader",
     "RoamLoader",
+    "RocksetLoader",
     "S3DirectoryLoader",
     "S3FileLoader",
     "SRTLoader",
@@ -274,6 +288,7 @@ __all__ = [
     "UnstructuredPowerPointLoader",
     "UnstructuredRSTLoader",
     "UnstructuredRTFLoader",
+    "UnstructuredTSVLoader",
     "UnstructuredURLLoader",
     "UnstructuredWordDocumentLoader",
     "UnstructuredXMLLoader",
@@ -281,6 +296,7 @@ __all__ = [
     "WebBaseLoader",
     "WhatsAppChatLoader",
     "WikipediaLoader",
+    "XorbitsLoader",
     "YoutubeAudioLoader",
     "YoutubeLoader",
 ]

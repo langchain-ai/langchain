@@ -1,6 +1,7 @@
-"""Zilliz Retriever"""
 import warnings
 from typing import Any, Dict, List, Optional
+
+from pydantic import root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -14,23 +15,35 @@ from langchain.vectorstores.zilliz import Zilliz
 
 
 class ZillizRetriever(BaseRetriever):
-    """Retriever that uses the Zilliz API."""
+    """Retriever for the Zilliz API."""
 
-    def __init__(
-        self,
-        embedding_function: Embeddings,
-        collection_name: str = "LangChainCollection",
-        connection_args: Optional[Dict[str, Any]] = None,
-        consistency_level: str = "Session",
-        search_params: Optional[dict] = None,
-    ):
-        self.store = Zilliz(
-            embedding_function,
-            collection_name,
-            connection_args,
-            consistency_level,
+    embedding_function: Embeddings
+    """The underlying embedding function from which documents will be retrieved."""
+    collection_name: str = "LangChainCollection"
+    """The name of the collection in Zilliz."""
+    connection_args: Optional[Dict[str, Any]] = None
+    """The connection arguments for the Zilliz client."""
+    consistency_level: str = "Session"
+    """The consistency level for the Zilliz client."""
+    search_params: Optional[dict] = None
+    """The search parameters for the Zilliz client."""
+    store: Zilliz
+    """The underlying Zilliz store."""
+    retriever: BaseRetriever
+    """The underlying retriever."""
+
+    @root_validator(pre=True)
+    def create_client(cls, values: dict) -> dict:
+        values["store"] = Zilliz(
+            values["embedding_function"],
+            values["collection_name"],
+            values["connection_args"],
+            values["consistency_level"],
         )
-        self.retriever = self.store.as_retriever(search_kwargs={"param": search_params})
+        values["retriever"] = values["store"].as_retriever(
+            search_kwargs={"param": values["search_params"]}
+        )
+        return values
 
     def add_texts(
         self, texts: List[str], metadatas: Optional[List[dict]] = None
@@ -65,8 +78,10 @@ class ZillizRetriever(BaseRetriever):
 
 
 def ZillizRetreiver(*args: Any, **kwargs: Any) -> ZillizRetriever:
-    """
-    Deprecated ZillizRetreiver. Please use ZillizRetriever ('i' before 'e') instead.
+    """Deprecated ZillizRetreiver.
+
+    Please use ZillizRetriever ('i' before 'e') instead.
+
     Args:
         *args:
         **kwargs:

@@ -1,5 +1,3 @@
-"""Wrapper for retrieving documents from Vespa."""
-
 from __future__ import annotations
 
 import json
@@ -16,31 +14,19 @@ if TYPE_CHECKING:
 
 
 class VespaRetriever(BaseRetriever):
-    """Retriever that uses the Vespa."""
+    """Retriever that uses Vespa."""
 
-    def __init__(
-        self,
-        app: Vespa,
-        body: Dict,
-        content_field: str,
-        metadata_fields: Optional[Sequence[str]] = None,
-    ):
-        """
-
-        Args:
-            app: Vespa client.
-            body: query body.
-            content_field: result field with document contents.
-            metadata_fields: result fields to include in document metadata.
-
-        """
-        self._application = app
-        self._query_body = body
-        self._content_field = content_field
-        self._metadata_fields = metadata_fields or ()
+    app: Vespa
+    """Vespa application to query."""
+    body: Dict
+    """Body of the query."""
+    content_field: str
+    """Name of the content field."""
+    metadata_fields: Sequence[str]
+    """Names of the metadata fields."""
 
     def _query(self, body: Dict) -> List[Document]:
-        response = self._application.query(body)
+        response = self.app.query(body)
 
         if not str(response.status_code).startswith("2"):
             raise RuntimeError(
@@ -55,11 +41,11 @@ class VespaRetriever(BaseRetriever):
 
         docs = []
         for child in response.hits:
-            page_content = child["fields"].pop(self._content_field, "")
-            if self._metadata_fields == "*":
+            page_content = child["fields"].pop(self.content_field, "")
+            if self.metadata_fields == "*":
                 metadata = child["fields"]
             else:
-                metadata = {mf: child["fields"].get(mf) for mf in self._metadata_fields}
+                metadata = {mf: child["fields"].get(mf) for mf in self.metadata_fields}
             metadata["id"] = child["id"]
             docs.append(Document(page_content=page_content, metadata=metadata))
         return docs
@@ -67,7 +53,7 @@ class VespaRetriever(BaseRetriever):
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
-        body = self._query_body.copy()
+        body = self.body.copy()
         body["query"] = query
         return self._query(body)
 
@@ -79,7 +65,7 @@ class VespaRetriever(BaseRetriever):
     def get_relevant_documents_with_filter(
         self, query: str, *, _filter: Optional[str] = None
     ) -> List[Document]:
-        body = self._query_body.copy()
+        body = self.body.copy()
         _filter = f" and {_filter}" if _filter else ""
         body["yql"] = body["yql"] + _filter
         body["query"] = query
@@ -113,6 +99,9 @@ class VespaRetriever(BaseRetriever):
             yql (Optional[str]): Full YQL query to be used. Should not be specified
                 if _filter or sources are specified. Defaults to None.
             kwargs (Any): Keyword arguments added to query body.
+
+        Returns:
+            VespaRetriever: Instantiated VespaRetriever.
         """
         try:
             from vespa.application import Vespa
@@ -139,4 +128,9 @@ class VespaRetriever(BaseRetriever):
         body["yql"] = yql
         if k:
             body["hits"] = k
-        return cls(app, body, content_field, metadata_fields=metadata_fields)
+        return cls(
+            app=app,
+            body=body,
+            content_field=content_field,
+            metadata_fields=metadata_fields,
+        )

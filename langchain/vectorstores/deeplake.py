@@ -61,7 +61,7 @@ class DeepLake(VectorStore):
         ingestion_batch_size: int = 1000,
         num_workers: int = 0,
         verbose: bool = True,
-        exec_option: str = "python",
+        exec_option: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Creates an empty DeepLakeVectorStore or loads an existing one.
@@ -96,19 +96,21 @@ class DeepLake(VectorStore):
                 Default is 0.
             verbose (bool): Print dataset summary after each operation.
                 Default is True.
-            exec_option (str): DeepLakeVectorStore supports 3 ways to perform
-                searching - "python", "compute_engine", "tensor_db".
-                Default is "python".
+            exec_option (str, optional): DeepLakeVectorStore supports 3 ways to perform
+                searching - "python", "compute_engine", "tensor_db" and auto.
+                Default is None.
+                - ``auto``- Selects the best execution method based on the storage
+                    location of the Vector Store. It is the default option.
                 - ``python`` - Pure-python implementation that runs on the client.
-                WARNING: using this with big datasets can lead to memory
-                issues. Data can be stored anywhere.
+                    WARNING: using this with big datasets can lead to memory
+                    issues. Data can be stored anywhere.
                 - ``compute_engine`` - C++ implementation of the Deep Lake Compute
-                Engine that runs on the client. Can be used for any data stored in
-                or connected to Deep Lake. Not for in-memory or local datasets.
+                    Engine that runs on the client. Can be used for any data stored in
+                    or connected to Deep Lake. Not for in-memory or local datasets.
                 - ``tensor_db`` - Hosted Managed Tensor Database that is
-                responsible for storage and query execution. Only for data stored in
-                the Deep Lake Managed Database. Use runtime = {"db_engine": True} during
-                dataset creation.
+                    responsible for storage and query execution. Only for data stored in
+                    the Deep Lake Managed Database. Use runtime = {"db_engine": True}
+                    during dataset creation.
             **kwargs: Other optional keyword arguments.
 
         Raises:
@@ -122,15 +124,18 @@ class DeepLake(VectorStore):
         if _DEEPLAKE_INSTALLED is False:
             raise ValueError(
                 "Could not import deeplake python package. "
-                "Please install it with `pip install deeplake`."
+                "Please install it with `pip install deeplake[enterprise]`."
             )
 
-        if version_compare(deeplake.__version__, "3.6.2") == -1:
+        if (
+            kwargs.get("runtime") == {"tensor_db": True}
+            and version_compare(deeplake.__version__, "3.6.7") == -1
+        ):
             raise ValueError(
-                "deeplake version should be >= 3.6.3, but you've installed"
-                f" {deeplake.__version__}. Consider upgrading deeplake version \
-                    pip install --upgrade deeplake."
+                "To use tensor_db option you need to update deeplake to `3.6.7`. "
+                f"Currently installed deeplake version is {deeplake.__version__}. "
             )
+
         self.dataset_path = dataset_path
 
         self.vectorstore = DeepLakeVectorStore(
@@ -166,11 +171,20 @@ class DeepLake(VectorStore):
             texts (Iterable[str]): Texts to add to the vectorstore.
             metadatas (Optional[List[dict]], optional): Optional list of metadatas.
             ids (Optional[List[str]], optional): Optional list of IDs.
-            **kwargs: other optional keyword arguments.
+            embedding_function (Optional[Embeddings], optional): Embedding function
+                to use to convert the text into embeddings.
+            **kwargs (Any): Any additional keyword arguments passed is not supported
+                by this method.
 
         Returns:
             List[str]: List of IDs of the added texts.
         """
+        if kwargs:
+            unsupported_items = "`, `".join(set(kwargs.keys()))
+            raise TypeError(
+                f"`{unsupported_items}` is/are not a valid argument to add_text method"
+            )
+
         kwargs = {}
         if ids:
             if self._id_tensor_name == "ids":  # for backwards compatibility
@@ -181,13 +195,20 @@ class DeepLake(VectorStore):
         if metadatas is None:
             metadatas = [{}] * len(list(texts))
 
+        if not isinstance(texts, list):
+            texts = list(texts)
+
+        if texts is None:
+            raise ValueError("`texts` parameter shouldn't be None.")
+        elif len(texts) == 0:
+            raise ValueError("`texts` parameter shouldn't be empty.")
+
         return self.vectorstore.add(
             text=texts,
             metadata=metadatas,
             embedding_data=texts,
             embedding_tensor="embedding",
-            embedding_function=kwargs.get("embedding_function")
-            or self._embedding_function.embed_documents,  # type: ignore
+            embedding_function=self._embedding_function.embed_documents,  # type: ignore
             return_ids=True,
             **kwargs,
         )
@@ -196,8 +217,8 @@ class DeepLake(VectorStore):
         self,
         tql_query: Optional[str],
         exec_option: Optional[str] = None,
-        return_score: bool = False,
-    ) -> Any[List[Document], List[Tuple[Document, float]]]:
+        **kwargs: Any,
+    ) -> List[Document]:
         """Function for performing tql_search.
 
         Args:
@@ -216,7 +237,9 @@ class DeepLake(VectorStore):
             return_score (bool): Return score with document. Default is False.
 
         Returns:
-            List[Document] - A list of documents
+            Tuple[List[Document], List[Tuple[Document, float]]] - A tuple of two lists.
+                The first list contains Documents, and the second list contains
+                tuples of Document and float score.
 
         Raises:
             ValueError: If return_score is True but some condition is not met.
@@ -236,8 +259,13 @@ class DeepLake(VectorStore):
             for text, metadata in zip(texts, metadatas)
         ]
 
-        if return_score:
-            raise ValueError("scores can't be returned with tql search")
+        if kwargs:
+            unsupported_argument = next(iter(kwargs))
+            if kwargs[unsupported_argument] is not False:
+                raise ValueError(
+                    f"specifying {unsupported_argument} is "
+                    "not supported with tql search."
+                )
 
         return docs
 
@@ -301,6 +329,11 @@ class DeepLake(VectorStore):
                 tql_query=kwargs["tql_query"],
                 exec_option=exec_option,
                 return_score=return_score,
+                embedding=embedding,
+                embedding_function=embedding_function,
+                distance_metric=distance_metric,
+                use_maximal_marginal_relevance=use_maximal_marginal_relevance,
+                filter=filter,
             )
 
         if embedding_function:
@@ -384,7 +417,8 @@ class DeepLake(VectorStore):
             ...     exec_option=<preferred_exec_option>,
             ... )
             >>> # Run tql search:
-            >>> data = vector_store.tql_search(
+            >>> data = vector_store.similarity_search(
+            ...     query=None,
             ...     tql_query="SELECT * WHERE id == <id>",
             ...     exec_option="compute_engine",
             ... )
@@ -681,6 +715,7 @@ class DeepLake(VectorStore):
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         dataset_path: str = _LANGCHAIN_DEFAULT_DEEPLAKE_PATH,
+        embedding_function: Optional[Embeddings] = None,
         **kwargs: Any,
     ) -> DeepLake:
         """Create a Deep Lake dataset from a raw documents.
@@ -727,20 +762,19 @@ class DeepLake(VectorStore):
             ValueError: If 'embedding' is provided in kwargs. This is deprecated,
                 please use `embedding_function` instead.
         """
-        if kwargs.get("embedding"):
+        if embedding:
             raise ValueError(
                 "using embedding as embedidng_functions is deprecated. "
                 "Please use `embedding_function` instead."
             )
 
         deeplake_dataset = cls(
-            dataset_path=dataset_path, embedding_function=embedding, **kwargs
+            dataset_path=dataset_path, embedding_function=embedding_function, **kwargs
         )
         deeplake_dataset.add_texts(
             texts=texts,
             metadatas=metadatas,
             ids=ids,
-            embedding_function=embedding.embed_documents,  # type: ignore
         )
         return deeplake_dataset
 
@@ -787,3 +821,10 @@ class DeepLake(VectorStore):
     def delete_dataset(self) -> None:
         """Delete the collection."""
         self.delete(delete_all=True)
+
+    def ds(self) -> Any:
+        logger.warning(
+            "this method is deprecated and will be removed, "
+            "better to use `db.vectorstore.dataset` instead."
+        )
+        return self.vectorstore.dataset

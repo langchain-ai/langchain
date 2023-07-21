@@ -16,7 +16,7 @@ DEFAULT_HEADERS = {
 
 
 class LLMRequestsChain(Chain):
-    """Chain that hits a URL and then uses an LLM to parse results."""
+    """Chain that requests a URL and then uses an LLM to parse results."""
 
     llm_chain: LLMChain
     requests_wrapper: TextRequestsWrapper = Field(

@@ -1,4 +1,4 @@
-"""Common utility functions for working with LLM APIs."""
+"""Common utility functions for LLM APIs."""
 import re
 from typing import List
 

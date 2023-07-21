@@ -8,25 +8,10 @@ from langchain.schema import BaseRetriever, Document
 
 
 class MergerRetriever(BaseRetriever):
-    """
-    This class merges the results of multiple retrievers.
+    """Retriever that merges the results of multiple retrievers."""
 
-    Args:
-        retrievers: A list of retrievers to merge.
-    """
-
-    def __init__(
-        self,
-        retrievers: List[BaseRetriever],
-    ):
-        """
-        Initialize the MergerRetriever class.
-
-        Args:
-            retrievers: A list of retrievers to merge.
-        """
-
-        self.retrievers = retrievers
+    retrievers: List[BaseRetriever]
+    """A list of retrievers to merge."""
 
     def _get_relevant_documents(
         self,

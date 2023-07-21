@@ -1,10 +1,8 @@
-"""Retriever that combines embedding similarity with recency in retrieving values."""
-
 import datetime
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -19,8 +17,9 @@ def _get_hours_passed(time: datetime.datetime, ref_time: datetime.datetime) -> f
     return (time - ref_time).total_seconds() / 3600
 
 
-class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
-    """Retriever combining embedding similarity with recency."""
+class TimeWeightedVectorStoreRetriever(BaseRetriever):
+    """Retriever that combines embedding similarity with
+    recency in retrieving values."""
 
     vectorstore: VectorStore
     """The vectorstore to store documents and determine salience."""

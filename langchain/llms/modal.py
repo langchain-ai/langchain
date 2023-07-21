@@ -1,4 +1,3 @@
-"""Wrapper around Modal API."""
 import logging
 from typing import Any, Dict, List, Mapping, Optional
 
@@ -13,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class Modal(LLM):
-    """Wrapper around Modal large language models.
+    """Modal large language models.
 
     To use, you should have the ``modal-client`` python package installed.
 
@@ -51,7 +50,7 @@ class Modal(LLM):
                 if field_name in extra:
                     raise ValueError(f"Found {field_name} supplied twice.")
                 logger.warning(
-                    f"""{field_name} was transfered to model_kwargs.
+                    f"""{field_name} was transferred to model_kwargs.
                     Please confirm that {field_name} is what you intended."""
                 )
                 extra[field_name] = values.pop(field_name)

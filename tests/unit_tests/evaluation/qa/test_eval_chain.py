@@ -25,8 +25,8 @@ def test_eval_chain() -> None:
 
     outputs = fake_qa_eval_chain.evaluate([example, example], [prediction, prediction])
     assert outputs[0] == outputs[1]
-    assert "text" in outputs[0]
-    assert outputs[0]["text"] == "foo"
+    assert fake_qa_eval_chain.output_key in outputs[0]
+    assert outputs[0][fake_qa_eval_chain.output_key] == "foo"
 
 
 @pytest.mark.skipif(
@@ -52,7 +52,7 @@ def test_context_eval_chain(chain_cls: Type[ContextQAEvalChain]) -> None:
 def test_implements_string_evaluator_protocol(
     chain_cls: Type[LLMChain],
 ) -> None:
-    assert isinstance(chain_cls, StringEvaluator)
+    assert issubclass(chain_cls, StringEvaluator)
 
 
 @pytest.mark.parametrize("chain_cls", [QAEvalChain, ContextQAEvalChain, CotQAEvalChain])

@@ -1,4 +1,3 @@
-"""Wrapper around MosaicML APIs."""
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
@@ -28,7 +27,7 @@ PROMPT_FOR_GENERATION_FORMAT = """{intro}
 
 
 class MosaicML(LLM):
-    """Wrapper around MosaicML's LLM inference service.
+    """MosaicML LLM service.
 
     To use, you should have the
     environment variable ``MOSAICML_API_TOKEN`` set with your API token, or pass
@@ -122,7 +121,7 @@ class MosaicML(LLM):
 
         prompt = self._transform_prompt(prompt)
 
-        payload = {"input_strings": [prompt]}
+        payload = {"inputs": [prompt]}
         payload.update(_model_kwargs)
         payload.update(kwargs)
 
@@ -160,15 +159,16 @@ class MosaicML(LLM):
             # The inference API has changed a couple of times, so we add some handling
             # to be robust to multiple response formats.
             if isinstance(parsed_response, dict):
-                if "data" in parsed_response:
-                    output_item = parsed_response["data"]
-                elif "output" in parsed_response:
-                    output_item = parsed_response["output"]
+                output_keys = ["data", "output", "outputs"]
+                for key in output_keys:
+                    if key in parsed_response:
+                        output_item = parsed_response[key]
+                        break
                 else:
                     raise ValueError(
-                        f"No key data or output in response: {parsed_response}"
+                        f"No valid key ({', '.join(output_keys)}) in response:"
+                        f" {parsed_response}"
                     )
-
                 if isinstance(output_item, list):
                     text = output_item[0]
                 else:

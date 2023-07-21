@@ -1,9 +1,23 @@
-"""Chains are easily reusable components which can be linked together."""
+"""Chains are easily reusable components which can be linked together.
+
+    Chains should be used to encode a sequence of calls to components like
+    models, document retrievers, other chains, etc., and provide a simple interface
+    to this sequence.
+
+    The Chain interface makes it easy to create apps that are:
+        - Stateful: add Memory to any Chain to give it state,
+        - Observable: pass Callbacks to a Chain to execute additional functionality,
+            like logging, outside the main sequence of component calls,
+        - Composable: the Chain API is flexible enough that it is easy to combine
+            Chains with other components, including other Chains.
+    """
+
 from langchain.chains.api.base import APIChain
 from langchain.chains.api.openapi.chain import OpenAPIEndpointChain
 from langchain.chains.combine_documents.base import AnalyzeDocumentChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
 from langchain.chains.combine_documents.map_rerank import MapRerankDocumentsChain
+from langchain.chains.combine_documents.reduce import ReduceDocumentsChain
 from langchain.chains.combine_documents.refine import RefineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.constitutional_ai.base import ConstitutionalChain
@@ -15,8 +29,10 @@ from langchain.chains.conversational_retrieval.base import (
 from langchain.chains.flare.base import FlareChain
 from langchain.chains.graph_qa.base import GraphQAChain
 from langchain.chains.graph_qa.cypher import GraphCypherQAChain
+from langchain.chains.graph_qa.hugegraph import HugeGraphQAChain
 from langchain.chains.graph_qa.kuzu import KuzuQAChain
 from langchain.chains.graph_qa.nebulagraph import NebulaGraphQAChain
+from langchain.chains.graph_qa.sparql import GraphSparqlQAChain
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_bash.base import LLMBashChain
@@ -67,8 +83,10 @@ __all__ = [
     "FlareChain",
     "GraphCypherQAChain",
     "GraphQAChain",
+    "GraphSparqlQAChain",
     "HypotheticalDocumentEmbedder",
     "KuzuQAChain",
+    "HugeGraphQAChain",
     "LLMBashChain",
     "LLMChain",
     "LLMCheckerChain",
@@ -109,4 +127,5 @@ __all__ = [
     "MapRerankDocumentsChain",
     "MapReduceDocumentsChain",
     "RefineDocumentsChain",
+    "ReduceDocumentsChain",
 ]

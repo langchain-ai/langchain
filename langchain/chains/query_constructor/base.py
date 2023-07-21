@@ -4,8 +4,7 @@ from __future__ import annotations
 import json
 from typing import Any, Callable, List, Optional, Sequence
 
-from langchain import BasePromptTemplate, FewShotPromptTemplate, LLMChain
-from langchain.base_language import BaseLanguageModel
+from langchain import FewShotPromptTemplate, LLMChain
 from langchain.chains.query_constructor.ir import (
     Comparator,
     Operator,
@@ -23,10 +22,13 @@ from langchain.chains.query_constructor.prompt import (
 )
 from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.output_parsers.json import parse_and_check_json_markdown
-from langchain.schema import BaseOutputParser, OutputParserException
+from langchain.schema import BaseOutputParser, BasePromptTemplate, OutputParserException
+from langchain.schema.language_model import BaseLanguageModel
 
 
 class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
+    """Output parser that parses a structured query."""
+
     ast_parse: Callable
     """Callable that parses dict into internal representation of query language."""
 
@@ -57,6 +59,16 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
         allowed_comparators: Optional[Sequence[Comparator]] = None,
         allowed_operators: Optional[Sequence[Operator]] = None,
     ) -> StructuredQueryOutputParser:
+        """
+        Create a structured query output parser from components.
+
+        Args:
+            allowed_comparators: allowed comparators
+            allowed_operators: allowed operators
+
+        Returns:
+            a structured query output parser
+        """
         ast_parser = get_parser(
             allowed_comparators=allowed_comparators, allowed_operators=allowed_operators
         )
@@ -123,8 +135,8 @@ def load_query_constructor_chain(
     enable_limit: bool = False,
     **kwargs: Any,
 ) -> LLMChain:
-    """
-    Load a query constructor chain.
+    """Load a query constructor chain.
+
     Args:
         llm: BaseLanguageModel to use for the chain.
         document_contents: The contents of the document to be queried.

@@ -1,8 +1,4 @@
-"""Retriever that wraps a base retriever and filters the results."""
-
 from typing import Any, List
-
-from pydantic import BaseModel, Extra
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -14,7 +10,7 @@ from langchain.retrievers.document_compressors.base import (
 from langchain.schema import BaseRetriever, Document
 
 
-class ContextualCompressionRetriever(BaseRetriever, BaseModel):
+class ContextualCompressionRetriever(BaseRetriever):
     """Retriever that wraps a base retriever and compresses the results."""
 
     base_compressor: BaseDocumentCompressor
@@ -26,7 +22,6 @@ class ContextualCompressionRetriever(BaseRetriever, BaseModel):
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.forbid
         arbitrary_types_allowed = True
 
     def _get_relevant_documents(

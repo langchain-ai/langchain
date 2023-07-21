@@ -7,27 +7,32 @@ chain (LLMChain) to generate the reasoning and scores.
 
 from typing import Any, Dict, List, NamedTuple, Optional, Sequence, Tuple, Union
 
-from pydantic import Field
+from pydantic import Extra, Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
     Callbacks,
 )
-from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chat_models.base import BaseChatModel
 from langchain.evaluation.agents.trajectory_eval_prompt import (
     EVAL_CHAT_PROMPT,
     TOOL_FREE_EVAL_CHAT_PROMPT,
 )
+from langchain.evaluation.schema import AgentTrajectoryEvaluator, LLMEvalChain
 from langchain.schema import AgentAction, BaseOutputParser, OutputParserException
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 
 
 class TrajectoryEval(NamedTuple):
-    score: int
+    """A named tuple containing the score and reasoning for a trajectory."""
+
+    score: float
+    """The score for the trajectory, normalized from 0 to 1.s"""
     reasoning: str
+    """The reasoning for the score."""
 
 
 class TrajectoryOutputParser(BaseOutputParser):
@@ -42,18 +47,18 @@ class TrajectoryOutputParser(BaseOutputParser):
             text (str): The output text to parse.
 
         Returns:
-            TrajectoryEval: A named tuple containing the score and reasoning.
+            TrajectoryEval: A named tuple containing the normalized score and reasoning.
 
         Raises:
             OutputParserException: If the score is not found in the output text or
-                if the score is not a digit in the range 1-5.
+                if the LLM's score is not a digit in the range 1-5.
         """
         if "Score:" not in text:
             raise OutputParserException(
                 f"Could not find score in model eval output: {text}"
             )
 
-        reasoning, score_str = text.split("Score: ")
+        reasoning, score_str = text.split("Score: ", maxsplit=1)
 
         reasoning, score_str = reasoning.strip(), score_str.strip()
 
@@ -65,51 +70,53 @@ class TrajectoryOutputParser(BaseOutputParser):
             raise OutputParserException(
                 f"Score is not a digit in the range 1-5: {text}"
             )
+        normalized_score = (int(score_str) - 1) / 4
+        return TrajectoryEval(score=normalized_score, reasoning=reasoning)
 
-        return TrajectoryEval(score=int(score_str), reasoning=reasoning)
 
-
-class TrajectoryEvalChain(Chain):
+class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
     """A chain for evaluating ReAct style agents.
 
     This chain is used to evaluate ReAct style agents by reasoning about
     the sequence of actions taken and their outcomes.
 
     Example:
-        .. code-block:: python
-            from langchain.agents import AgentType, initialize_agent
-            from langchain.chat_models import ChatOpenAI
-            from langchain.evaluation import TrajectoryEvalChain
-            from langchain.tools import tool
 
-            @tool
-            def geography_answers(country: str, question: str) -> str:
-                \"\"\"Very helpful answers to geography questions.\"\"\"
-                return f"{country}? IDK - We may never know {question}."
+    .. code-block:: python
 
-            llm = ChatOpenAI(model="gpt-3.5-turbo-0613", temperature=0)
-            agent = initialize_agent(
-                tools=[geography_answers],
-                llm=llm,
-                agent=AgentType.OPENAI_FUNCTIONS,
-                return_intermediate_steps=True,
-            )
+        from langchain.agents import AgentType, initialize_agent
+        from langchain.chat_models import ChatOpenAI
+        from langchain.evaluation import TrajectoryEvalChain
+        from langchain.tools import tool
 
-            question = "How many dwell in the largest minor region in Argentina?"
-            response = agent(question)
+        @tool
+        def geography_answers(country: str, question: str) -> str:
+            \"\"\"Very helpful answers to geography questions.\"\"\"
+            return f"{country}? IDK - We may never know {question}."
 
-            eval_chain = TrajectoryEvalChain.from_llm(
-                llm=llm, agent_tools=[geography_answers], return_reasoning=True
-            )
+        llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+        agent = initialize_agent(
+            tools=[geography_answers],
+            llm=llm,
+            agent=AgentType.OPENAI_FUNCTIONS,
+            return_intermediate_steps=True,
+        )
 
-            result = eval_chain.evaluate_agent_trajectory(
-                input=question,
-                agent_trajectory=response["intermediate_steps"],
-                prediction=response["output"],
-                reference="Paris",
-            )
-            print(result["score"])
-            # 0
+        question = "How many dwell in the largest minor region in Argentina?"
+        response = agent(question)
+
+        eval_chain = TrajectoryEvalChain.from_llm(
+            llm=llm, agent_tools=[geography_answers], return_reasoning=True
+        )
+
+        result = eval_chain.evaluate_agent_trajectory(
+            input=question,
+            agent_trajectory=response["intermediate_steps"],
+            prediction=response["output"],
+            reference="Paris",
+        )
+        print(result["score"])
+        # 0
     """  # noqa: E501
 
     agent_tools: Optional[List[BaseTool]] = None
@@ -122,6 +129,16 @@ class TrajectoryEvalChain(Chain):
     """The output parser used to parse the output."""
     return_reasoning: bool = False
     """Whether to return the reasoning along with the score."""
+
+    class Config:
+        """Configuration for the QAEvalChain."""
+
+        extra = Extra.ignore
+
+    @property
+    def requires_reference(self) -> bool:
+        """Whether this evaluator requires a reference label."""
+        return False
 
     @property
     def _tools_description(self) -> str:
@@ -141,7 +158,9 @@ Description: {tool.description}"""
         )
 
     @staticmethod
-    def get_agent_trajectory(steps: Union[str, List[Tuple[AgentAction, str]]]) -> str:
+    def get_agent_trajectory(
+        steps: Union[str, Sequence[Tuple[AgentAction, str]]]
+    ) -> str:
         """Get the agent trajectory as a formatted string.
 
         Args:
@@ -186,17 +205,18 @@ The following is the expected answer. Use this to measure correctness:
     @classmethod
     def from_llm(
         cls,
-        llm: BaseChatModel,
+        llm: BaseLanguageModel,
         agent_tools: Optional[Sequence[BaseTool]] = None,
         output_parser: Optional[TrajectoryOutputParser] = None,
-        return_reasoning: bool = False,
+        return_reasoning: bool = True,
+        **kwargs: Any,
     ) -> "TrajectoryEvalChain":
         """Create a TrajectoryEvalChain object from a language model chain.
 
         Args:
             llm (BaseChatModel): The language model chain.
             agent_tools (Optional[Sequence[BaseTool]]): A list of tools
-                available tothe agent.
+                available to the agent.
             output_parser (Optional[TrajectoryOutputParser]): The output parser
                 used to parse the chain output into a score.
             return_reasoning (bool): Whether to return the
@@ -205,6 +225,10 @@ The following is the expected answer. Use this to measure correctness:
         Returns:
             TrajectoryEvalChain: The TrajectoryEvalChain object.
         """
+        if not isinstance(llm, BaseChatModel):
+            raise NotImplementedError(
+                "Only chat models supported by the current trajectory eval"
+            )
         if agent_tools:
             prompt = EVAL_CHAT_PROMPT
         else:
@@ -215,6 +239,7 @@ The following is the expected answer. Use this to measure correctness:
             return_reasoning=return_reasoning,
             eval_chain=eval_chain,
             output_parser=output_parser or TrajectoryOutputParser(),
+            **kwargs,
         )
 
     @property
@@ -237,38 +262,11 @@ The following is the expected answer. Use this to measure correctness:
             return ["score", "reasoning"]
         return ["score"]
 
-    def __call__(
-        self,
-        inputs: Union[Dict[str, Any], Any],
-        return_only_outputs: bool = False,
-        callbacks: Callbacks = None,
-        *,
-        tags: Optional[List[str]] = None,
-        include_run_info: bool = False,
-    ) -> Dict[str, Any]:
-        """Run the logic of this chain and add to output if desired.
-
-        Args:
-            inputs: Dictionary of inputs, or single input if chain expects
-                only one param.
-            return_only_outputs: boolean for whether to return only outputs in the
-                response. If True, only new keys generated by this chain will be
-                returned. If False, both input keys and new keys generated by this
-                chain will be returned. Defaults to False.
-            callbacks: Callbacks to use for this chain run. If not provided, will
-                use the callbacks provided to the chain.
-            include_run_info: Whether to include run info in the response. Defaults
-                to False.
-        """
+    def prep_inputs(self, inputs: Union[Dict[str, Any], Any]) -> Dict[str, str]:
+        """Validate and prep inputs."""
         if "reference" not in inputs:
-            inputs["reference"] = ""
-        return super().__call__(
-            inputs=inputs,
-            return_only_outputs=return_only_outputs,
-            callbacks=callbacks,
-            tags=tags,
-            include_run_info=include_run_info,
-        )
+            inputs["reference"] = self._format_reference(inputs.get("reference"))
+        return super().prep_inputs(inputs)
 
     def _call(
         self,
@@ -288,7 +286,10 @@ The following is the expected answer. Use this to measure correctness:
         chain_input = {**inputs}
         if self.agent_tools:
             chain_input["tool_descriptions"] = self._tools_description
-        raw_output = self.eval_chain.run(chain_input)
+        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
+        raw_output = self.eval_chain.run(
+            chain_input, callbacks=_run_manager.get_child()
+        )
         parsed_output = self.output_parser.parse(raw_output)
 
         if self.return_reasoning:
@@ -314,7 +315,10 @@ The following is the expected answer. Use this to measure correctness:
         chain_input = {**inputs}
         if self.agent_tools:
             chain_input["tool_descriptions"] = self._tools_description
-        raw_output = await self.eval_chain.arun(chain_input)
+        _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
+        raw_output = await self.eval_chain.arun(
+            chain_input, callbacks=_run_manager.get_child()
+        )
         parsed_output = self.output_parser.parse(raw_output)
 
         if self.return_reasoning:
@@ -322,66 +326,86 @@ The following is the expected answer. Use this to measure correctness:
 
         return {"score": parsed_output.score}
 
-    def evaluate_agent_trajectory(
+    def _evaluate_agent_trajectory(
         self,
         *,
         prediction: str,
         input: str,
-        agent_trajectory: Union[str, List[Tuple[AgentAction, str]]],
+        agent_trajectory: Sequence[Tuple[AgentAction, str]],
         reference: Optional[str] = None,
         callbacks: Callbacks = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
         """Evaluate a trajectory.
 
         Args:
-            input (str): The input question.
-            agent_trajectory (Union[str, List[Tuple[AgentAction, str]]]):
+            prediction (str): The final predicted response.
+            input (str): The input to the agent.
+            agent_trajectory (List[Tuple[AgentAction, str]]):
                 The intermediate steps forming the agent trajectory.
-            prediction (str): The expected prediction.
             reference (Optional[str]): The reference answer.
+            callbacks (Callbacks): Callbacks to use for this chain run.
 
         Returns:
-            dict: The evaluation result.
+            dict: The evaluation result, which includes the score and optionally
+                the reasoning for reaching that.
         """
         inputs = {
             "question": input,
             "agent_trajectory": self.get_agent_trajectory(agent_trajectory),
             "answer": prediction,
-            "reference": self._format_reference(reference),
+            "reference": reference,
         }
-        return self(inputs=inputs, callbacks=callbacks, **kwargs)
+        return self.__call__(
+            inputs=inputs,
+            callbacks=callbacks,
+            tags=tags,
+            metadata=metadata,
+            include_run_info=include_run_info,
+            return_only_outputs=True,
+        )
 
-    async def aevaluate_agent_trajectory(
+    async def _aevaluate_agent_trajectory(
         self,
         *,
         prediction: str,
         input: str,
-        agent_trajectory: Union[str, List[Tuple[AgentAction, str]]],
+        agent_trajectory: Sequence[Tuple[AgentAction, str]],
         reference: Optional[str] = None,
         callbacks: Callbacks = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
         """Asynchronously evaluate a trajectory.
 
         Args:
-            input (str): The input question.
-            agent_trajectory (Union[str, List[Tuple[AgentAction, str]]]):
+            prediction (str): The final predicted response.
+            input (str): The input to the agent.
+            agent_trajectory (List[Tuple[AgentAction, str]]):
                 The intermediate steps forming the agent trajectory.
-            prediction (str): The expected prediction.
             reference (Optional[str]): The reference answer.
+            callbacks (Callbacks): Callbacks to use for this chain run.
 
         Returns:
-            dict: The evaluation result.
+            dict: The evaluation result, which includes the score and optionally
+                the reasoning for reaching that.
         """
         inputs = {
             "question": input,
             "agent_trajectory": self.get_agent_trajectory(agent_trajectory),
             "answer": prediction,
-            "reference": self._format_reference(reference),
+            "reference": reference,
         }
         return await self.acall(
             inputs=inputs,
             callbacks=callbacks,
-            **kwargs,
+            tags=tags,
+            metadata=metadata,
+            include_run_info=include_run_info,
+            return_only_outputs=True,
         )

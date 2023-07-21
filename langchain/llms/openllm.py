@@ -1,4 +1,3 @@
-"""Wrapper around OpenLLM APIs."""
 from __future__ import annotations
 
 import copy
@@ -32,6 +31,8 @@ ServerType = Literal["http", "grpc"]
 
 
 class IdentifyingParams(TypedDict):
+    """Parameters for identifying a model as a typed dict."""
+
     model_name: str
     model_id: Optional[str]
     server_url: Optional[str]
@@ -44,7 +45,7 @@ logger = logging.getLogger(__name__)
 
 
 class OpenLLM(LLM):
-    """Wrapper for accessing OpenLLM, supporting both in-process model
+    """OpenLLM, supporting both in-process model
     instance and remote OpenLLM servers.
 
     To use, you should have the openllm library installed:

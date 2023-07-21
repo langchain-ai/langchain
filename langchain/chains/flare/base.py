@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 import numpy as np
 from pydantic import Field
 
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
     CallbackManagerForChainRun,
 )
@@ -19,11 +18,13 @@ from langchain.chains.flare.prompts import (
 )
 from langchain.chains.llm import LLMChain
 from langchain.llms import OpenAI
-from langchain.prompts import BasePromptTemplate
-from langchain.schema import BaseRetriever, Generation
+from langchain.schema import BasePromptTemplate, BaseRetriever, Generation
+from langchain.schema.language_model import BaseLanguageModel
 
 
 class _ResponseChain(LLMChain):
+    """Base class for chains that generate responses."""
+
     prompt: BasePromptTemplate = PROMPT
 
     @property
@@ -47,6 +48,8 @@ class _ResponseChain(LLMChain):
 
 
 class _OpenAIResponseChain(_ResponseChain):
+    """Chain that generates responses from user input and context."""
+
     llm: OpenAI = Field(
         default_factory=lambda: OpenAI(
             max_tokens=32, model_kwargs={"logprobs": 1}, temperature=0
@@ -67,10 +70,14 @@ class _OpenAIResponseChain(_ResponseChain):
 
 
 class QuestionGeneratorChain(LLMChain):
+    """Chain that generates questions from uncertain spans."""
+
     prompt: BasePromptTemplate = QUESTION_GENERATOR_PROMPT
+    """Prompt template for the chain."""
 
     @property
     def input_keys(self) -> List[str]:
+        """Input keys for the chain."""
         return ["user_input", "context", "response"]
 
 
@@ -96,22 +103,36 @@ def _low_confidence_spans(
 
 
 class FlareChain(Chain):
+    """Chain that combines a retriever, a question generator,
+    and a response generator."""
+
     question_generator_chain: QuestionGeneratorChain
+    """Chain that generates questions from uncertain spans."""
     response_chain: _ResponseChain = Field(default_factory=_OpenAIResponseChain)
+    """Chain that generates responses from user input and context."""
     output_parser: FinishedOutputParser = Field(default_factory=FinishedOutputParser)
+    """Parser that determines whether the chain is finished."""
     retriever: BaseRetriever
+    """Retriever that retrieves relevant documents from a user input."""
     min_prob: float = 0.2
+    """Minimum probability for a token to be considered low confidence."""
     min_token_gap: int = 5
+    """Minimum number of tokens between two low confidence spans."""
     num_pad_tokens: int = 2
+    """Number of tokens to pad around a low confidence span."""
     max_iter: int = 10
+    """Maximum number of iterations."""
     start_with_retrieval: bool = True
+    """Whether to start with retrieval."""
 
     @property
     def input_keys(self) -> List[str]:
+        """Input keys for the chain."""
         return ["user_input"]
 
     @property
     def output_keys(self) -> List[str]:
+        """Output keys for the chain."""
         return ["response"]
 
     def _do_generation(
@@ -214,6 +235,16 @@ class FlareChain(Chain):
     def from_llm(
         cls, llm: BaseLanguageModel, max_generation_len: int = 32, **kwargs: Any
     ) -> FlareChain:
+        """Creates a FlareChain from a language model.
+
+        Args:
+            llm: Language model to use.
+            max_generation_len: Maximum length of the generated response.
+            **kwargs: Additional arguments to pass to the constructor.
+
+        Returns:
+            FlareChain class with the given language model.
+        """
         question_gen_chain = QuestionGeneratorChain(llm=llm)
         response_llm = OpenAI(
             max_tokens=max_generation_len, model_kwargs={"logprobs": 1}, temperature=0

@@ -1,4 +1,3 @@
-"""Wrapper around HuggingFace APIs."""
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
@@ -13,7 +12,7 @@ VALID_TASKS = ("text2text-generation", "text-generation", "summarization")
 
 
 class HuggingFaceEndpoint(LLM):
-    """Wrapper around HuggingFaceHub Inference Endpoints.
+    """HuggingFace Endpoint models.
 
     To use, you should have the ``huggingface_hub`` python package installed, and the
     environment variable ``HUGGINGFACEHUB_API_TOKEN`` set with your API token, or pass
@@ -137,8 +136,10 @@ class HuggingFaceEndpoint(LLM):
                 f"Error raised by inference API: {generated_text['error']}"
             )
         if self.task == "text-generation":
-            # Text generation return includes the starter text.
-            text = generated_text[0]["generated_text"][len(prompt) :]
+            text = generated_text[0]["generated_text"]
+            # Remove prompt if included in generated text.
+            if text.startswith(prompt):
+                text = text[len(prompt) :]
         elif self.task == "text2text-generation":
             text = generated_text[0]["generated_text"]
         elif self.task == "summarization":

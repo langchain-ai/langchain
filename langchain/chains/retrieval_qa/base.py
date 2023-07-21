@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Extra, Field, root_validator
 
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
@@ -21,16 +20,19 @@ from langchain.chains.question_answering import load_qa_chain
 from langchain.chains.question_answering.stuff_prompt import PROMPT_SELECTOR
 from langchain.prompts import PromptTemplate
 from langchain.schema import BaseRetriever, Document
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.vectorstores.base import VectorStore
 
 
 class BaseRetrievalQA(Chain):
+    """Base class for question-answering chains."""
+
     combine_documents_chain: BaseCombineDocumentsChain
     """Chain to use to combine the documents."""
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
     return_source_documents: bool = False
-    """Return the source documents."""
+    """Return the source documents or not."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -41,7 +43,7 @@ class BaseRetrievalQA(Chain):
 
     @property
     def input_keys(self) -> List[str]:
-        """Return the input keys.
+        """Input keys.
 
         :meta private:
         """
@@ -49,7 +51,7 @@ class BaseRetrievalQA(Chain):
 
     @property
     def output_keys(self) -> List[str]:
-        """Return the output keys.
+        """Output keys.
 
         :meta private:
         """

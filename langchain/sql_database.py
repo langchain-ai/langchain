@@ -10,7 +10,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
 
-from langchain import utils
+from langchain.utils import get_from_env
 
 
 def _format_index(index: sqlalchemy.engine.interfaces.ReflectedIndex) -> str:
@@ -192,13 +192,11 @@ class SQLDatabase:
 
         default_host = context.browserHostName if context else None
         if host is None:
-            host = utils.get_from_env("host", "DATABRICKS_HOST", default_host)
+            host = get_from_env("host", "DATABRICKS_HOST", default_host)
 
         default_api_token = context.apiToken if context else None
         if api_token is None:
-            api_token = utils.get_from_env(
-                "api_token", "DATABRICKS_TOKEN", default_api_token
-            )
+            api_token = get_from_env("api_token", "DATABRICKS_TOKEN", default_api_token)
 
         if warehouse_id is None and cluster_id is None:
             if context:
@@ -221,6 +219,47 @@ class SQLDatabase:
             f"http_path={http_path}&catalog={catalog}&schema={schema}"
         )
         return cls.from_uri(database_uri=uri, engine_args=engine_args, **kwargs)
+
+    @classmethod
+    def from_cnosdb(
+        cls,
+        url: str = "127.0.0.1:8902",
+        user: str = "root",
+        password: str = "",
+        tenant: str = "cnosdb",
+        database: str = "public",
+    ) -> SQLDatabase:
+        """
+        Class method to create an SQLDatabase instance from a CnosDB connection.
+        This method requires the 'cnos-connector' package. If not installed, it
+        can be added using `pip install cnos-connector`.
+
+        Args:
+            url (str): The HTTP connection host name and port number of the CnosDB
+                service, excluding "http://" or "https://", with a default value
+                of "127.0.0.1:8902".
+            user (str): The username used to connect to the CnosDB service, with a
+                default value of "root".
+            password (str): The password of the user connecting to the CnosDB service,
+                with a default value of "".
+            tenant (str): The name of the tenant used to connect to the CnosDB service,
+                with a default value of "cnosdb".
+            database (str): The name of the database in the CnosDB tenant.
+
+        Returns:
+            SQLDatabase: An instance of SQLDatabase configured with the provided
+            CnosDB connection details.
+        """
+        try:
+            from cnosdb_connector import make_cnosdb_langchain_uri
+
+            uri = make_cnosdb_langchain_uri(url, user, password, tenant, database)
+            return cls.from_uri(database_uri=uri)
+        except ImportError:
+            raise ValueError(
+                "cnos-connector package not found, please install with"
+                " `pip install cnos-connector`"
+            )
 
     @property
     def dialect(self) -> str:

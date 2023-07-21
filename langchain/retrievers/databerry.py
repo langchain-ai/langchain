@@ -11,21 +11,11 @@ from langchain.schema import BaseRetriever, Document
 
 
 class DataberryRetriever(BaseRetriever):
-    """Retriever that uses the Databerry API."""
+    """Retriever for the Databerry API."""
 
     datastore_url: str
     top_k: Optional[int]
     api_key: Optional[str]
-
-    def __init__(
-        self,
-        datastore_url: str,
-        top_k: Optional[int] = None,
-        api_key: Optional[str] = None,
-    ):
-        self.datastore_url = datastore_url
-        self.api_key = api_key
-        self.top_k = top_k
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun

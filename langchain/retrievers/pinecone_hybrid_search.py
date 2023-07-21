@@ -3,7 +3,7 @@
 import hashlib
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -98,13 +98,20 @@ def create_index(
         index.upsert(vectors)
 
 
-class PineconeHybridSearchRetriever(BaseRetriever, BaseModel):
+class PineconeHybridSearchRetriever(BaseRetriever):
+    """Pinecone Hybrid Search Retriever."""
+
     embeddings: Embeddings
+    """Embeddings model to use."""
     """description"""
     sparse_encoder: Any
+    """Sparse encoder to use."""
     index: Any
+    """Pinecone index to use."""
     top_k: int = 4
+    """Number of documents to return."""
     alpha: float = 0.5
+    """Alpha value for hybrid search."""
 
     class Config:
         """Configuration for this pydantic object."""

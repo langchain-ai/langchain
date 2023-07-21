@@ -11,7 +11,10 @@ T = TypeVar("T", bound=BaseModel)
 
 
 class PydanticOutputParser(BaseOutputParser[T]):
+    """Parse an output using a pydantic model."""
+
     pydantic_object: Type[T]
+    """The pydantic model to parse."""
 
     def parse(self, text: str) -> T:
         try:
@@ -28,7 +31,7 @@ class PydanticOutputParser(BaseOutputParser[T]):
         except (json.JSONDecodeError, ValidationError) as e:
             name = self.pydantic_object.__name__
             msg = f"Failed to parse {name} from completion {text}. Got: {e}"
-            raise OutputParserException(msg)
+            raise OutputParserException(msg, llm_output=text)
 
     def get_format_instructions(self) -> str:
         schema = self.pydantic_object.schema()

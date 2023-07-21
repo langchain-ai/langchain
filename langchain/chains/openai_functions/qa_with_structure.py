@@ -2,7 +2,6 @@ from typing import Any, List, Optional, Type, Union
 
 from pydantic import BaseModel, Field
 
-from langchain.base_language import BaseLanguageModel
 from langchain.chains.llm import LLMChain
 from langchain.chains.openai_functions.utils import get_llm_kwargs
 from langchain.output_parsers.openai_functions import (
@@ -12,11 +11,12 @@ from langchain.output_parsers.openai_functions import (
 from langchain.prompts import PromptTemplate
 from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain.schema import BaseLLMOutputParser
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import HumanMessage, SystemMessage
 
 
 class AnswerWithSources(BaseModel):
-    """An answer to the question being asked, with sources."""
+    """An answer to the question, with sources."""
 
     answer: str = Field(..., description="Answer to the question that was asked")
     sources: List[str] = Field(
@@ -30,7 +30,8 @@ def create_qa_with_structure_chain(
     output_parser: str = "base",
     prompt: Optional[Union[PromptTemplate, ChatPromptTemplate]] = None,
 ) -> LLMChain:
-    """Create a question answering chain that returns an answer with sources.
+    """Create a question answering chain that returns an answer with sources
+     based on schema.
 
     Args:
         llm: Language model to use for the chain.

@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Optional, Type, cast
 from pydantic import BaseModel, Field, root_validator
 
 from langchain import LLMChain
-from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
@@ -19,6 +18,7 @@ from langchain.retrievers.self_query.pinecone import PineconeTranslator
 from langchain.retrievers.self_query.qdrant import QdrantTranslator
 from langchain.retrievers.self_query.weaviate import WeaviateTranslator
 from langchain.schema import BaseRetriever, Document
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.vectorstores import (
     Chroma,
     MyScale,
@@ -52,7 +52,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
 
 
 class SelfQueryRetriever(BaseRetriever, BaseModel):
-    """Retriever that wraps around a vector store and uses an LLM to generate
+    """Retriever that uses a vector store and an LLM to generate
     the vector store queries."""
 
     vectorstore: VectorStore
@@ -117,7 +117,7 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         return docs
 
     async def _aget_relevant_documents(
-        self, query: str, *, run_manager: Optional[AsyncCallbackManagerForRetrieverRun]
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         raise NotImplementedError
 

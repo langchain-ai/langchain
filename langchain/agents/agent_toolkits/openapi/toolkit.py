@@ -9,8 +9,8 @@ from langchain.agents.agent_toolkits.json.base import create_json_agent
 from langchain.agents.agent_toolkits.json.toolkit import JsonToolkit
 from langchain.agents.agent_toolkits.openapi.prompt import DESCRIPTION
 from langchain.agents.tools import Tool
-from langchain.base_language import BaseLanguageModel
 from langchain.requests import TextRequestsWrapper
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool
 from langchain.tools.json.tool import JsonSpec
 from langchain.tools.requests.tool import (
@@ -23,7 +23,7 @@ from langchain.tools.requests.tool import (
 
 
 class RequestsToolkit(BaseToolkit):
-    """Toolkit for making requests."""
+    """Toolkit for making REST requests."""
 
     requests_wrapper: TextRequestsWrapper
 
@@ -39,7 +39,7 @@ class RequestsToolkit(BaseToolkit):
 
 
 class OpenAPIToolkit(BaseToolkit):
-    """Toolkit for interacting with a OpenAPI api."""
+    """Toolkit for interacting with an OpenAPI API."""
 
     json_agent: AgentExecutor
     requests_wrapper: TextRequestsWrapper
