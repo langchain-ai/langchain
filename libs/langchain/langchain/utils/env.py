@@ -1,4 +1,6 @@
 import os
+import platform
+from functools import lru_cache
 from typing import Any, Dict, Optional
 
 
@@ -24,3 +26,18 @@ def get_from_env(key: str, env_key: str, default: Optional[str] = None) -> str:
             f" `{env_key}` which contains it, or pass"
             f"  `{key}` as a named parameter."
         )
+
+
+@lru_cache(maxsize=1)
+def get_runtime_environment() -> dict:
+    """Get information about the environment."""
+    # Lazy import to avoid circular imports
+    from langchain import __version__
+
+    return {
+        "library_version": __version__,
+        "library": "langchain",
+        "platform": platform.platform(),
+        "runtime": "python",
+        "runtime_version": platform.python_version(),
+    }
