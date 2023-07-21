@@ -13,7 +13,6 @@ from tests.integration_tests.vectorstores.fake_embeddings import (
 @pytest.mark.parametrize("content_payload_key", [Qdrant.CONTENT_KEY, "test_content"])
 @pytest.mark.parametrize("metadata_payload_key", [Qdrant.METADATA_KEY, "test_metadata"])
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
-@pytest.mark.skip(reason="Qdrant local behaves differently from Qdrant server")
 def test_qdrant_max_marginal_relevance_search(
     batch_size: int,
     content_payload_key: str,
@@ -32,8 +31,11 @@ def test_qdrant_max_marginal_relevance_search(
         metadata_payload_key=metadata_payload_key,
         batch_size=batch_size,
         vector_name=vector_name,
+        distance_func="EUCLID",  # Euclid distance used to avoid normalization
     )
-    output = docsearch.max_marginal_relevance_search("foo", k=2, fetch_k=3)
+    output = docsearch.max_marginal_relevance_search(
+        "foo", k=2, fetch_k=3, lambda_mult=0.0
+    )
     assert output == [
         Document(page_content="foo", metadata={"page": 0}),
         Document(page_content="baz", metadata={"page": 2}),
