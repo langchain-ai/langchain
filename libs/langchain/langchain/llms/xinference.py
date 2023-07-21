@@ -26,18 +26,28 @@ class Xinference(LLM):
         Starting the worker:
         .. code-block:: bash
             $ xinference-worker
-    Then, you can accessing Xinference's model inference service.
+
+    Then, launch a model using command line interface (CLI). For example:
+
+    ```bash
+    xinference launch -n orca -s 3 -q q4_0
+
+    It will return a model UID. 
+
     Example:
         .. code-block:: python
+            from langchain.llms import Xinference
 
-        from langchain.llms import Xinference
-        llm = Xinference(
-            server_url="http://0.0.0.0:9997",
-            model_name="orca",
-            model_size_in_billions=3,
-            quantization="q4_0",
-        )
-        llm("Q: what is the capital of France? A:")
+            llm = Xinference(
+                server_url="http://0.0.0.0:9997",
+                model_uid = {model_uid} # replace model_uid with the model UID return from launching the model
+            )
+
+            llm(
+                prompt="Q: where can we visit in the capital of France? A:",
+                generate_config={"max_tokens": 1024, "stream": True},
+            )
+
     To view all the supported builtin models, run:
     .. code-block:: bash
         $ xinference list --all
@@ -45,11 +55,14 @@ class Xinference(LLM):
 
     client: Any
     server_url: Optional[str]
+    """URL of the xinference server"""
     model_uid: Optional[str]
     """UID of the launched model"""
 
     def __init__(
-        self, server_url: Optional[str] = None, model_uid: Optional[str] = None
+        self,
+        server_url: Optional[str] = None,
+        model_uid: Optional[str] = None
     ):
         try:
             from xinference.client import RESTfulClient
@@ -93,7 +106,16 @@ class Xinference(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         generate_config: Optional[LlamaCppGenerateConfig] = None,
     ) -> str:
-        """ """
+        """Call the xinference model and return the output.
+
+        Args:
+            prompt: The prompt to use for generation.
+            stop: Optional list of stop words to use when generating.
+            generate_config: Optinal dictionary for the configuration used for generation.
+
+        Returns:
+            The generated string by the model.
+        """
         model = self.client.get_model(self.model_uid)
 
         if stop:
@@ -120,8 +142,16 @@ class Xinference(LLM):
         prompt: str,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         generate_config: Optional[LlamaCppGenerateConfig] = None,
-    ):
-        """ """
+    ) -> str:
+        """
+        Args:
+            prompt: The prompt to use for generation.
+            stop: Optional list of stop words to use when generating.
+            generate_config: Optinal dictionary for the configuration used for generation.
+
+        Yields:
+            A string token.
+        """
         streaming_response = model.generate(
             prompt=prompt, generate_config=generate_config
         )
