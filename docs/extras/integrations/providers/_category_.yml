@@ -1,0 +1,3 @@
+position: -1
+label: 'By provider'
+collapsed: true # keep the category open by default
