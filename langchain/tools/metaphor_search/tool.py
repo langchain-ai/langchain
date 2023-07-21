@@ -31,6 +31,7 @@ class MetaphorSearchResults(BaseTool):
         end_crawl_date: Optional[str] = None,
         start_published_date: Optional[str] = None,
         end_published_date: Optional[str] = None,
+        use_autoprompt: Optional[bool] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> Union[List[Dict], str]:
         """Use the tool."""
@@ -44,6 +45,7 @@ class MetaphorSearchResults(BaseTool):
                 end_crawl_date,
                 start_published_date,
                 end_published_date,
+                use_autoprompt,
             )
         except Exception as e:
             return repr(e)
@@ -58,6 +60,7 @@ class MetaphorSearchResults(BaseTool):
         end_crawl_date: Optional[str] = None,
         start_published_date: Optional[str] = None,
         end_published_date: Optional[str] = None,
+        use_autoprompt: Optional[bool] = None,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> Union[List[Dict], str]:
         """Use the tool asynchronously."""
@@ -71,6 +74,7 @@ class MetaphorSearchResults(BaseTool):
                 end_crawl_date,
                 start_published_date,
                 end_published_date,
+                use_autoprompt,
             )
         except Exception as e:
             return repr(e)

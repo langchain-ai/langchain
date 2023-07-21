@@ -310,7 +310,8 @@ def _handle_event(
                 )
             else:
                 logger.warning(
-                    f"Error in {handler.__class__.__name__}.{event_name} callback: {e}"
+                    f"NotImplementedError in {handler.__class__.__name__}.{event_name}"
+                    f" callback: {e}"
                 )
         except Exception as e:
             logger.warning(
@@ -353,7 +354,8 @@ async def _ahandle_event_for_handler(
             )
         else:
             logger.warning(
-                f"Error in {handler.__class__.__name__}.{event_name} callback: {e}"
+                f"NotImplementedError in {handler.__class__.__name__}.{event_name}"
+                f" callback: {e}"
             )
     except Exception as e:
         logger.warning(

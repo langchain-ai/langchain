@@ -7,8 +7,8 @@ from langchain.utils import get_from_dict_or_env
 
 
 class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
-    """
-    Wrapper for Aleph Alpha's Asymmetric Embeddings
+    """Aleph Alpha's asymmetric semantic embedding.
+
     AA provides you with an endpoint to embed a document and a query.
     The models were optimized to make the embeddings of documents and
     the query for a document as similar as possible.
@@ -30,7 +30,7 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
     """
 
     client: Any  #: :meta private:
-
+    """Aleph Alpha client."""
     model: Optional[str] = "luminous-base"
     """Model name to use."""
     hosting: Optional[str] = "https://api.aleph-alpha.com"

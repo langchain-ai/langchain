@@ -1,4 +1,3 @@
-"""Wrapper around MosaicML APIs."""
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
@@ -28,7 +27,7 @@ PROMPT_FOR_GENERATION_FORMAT = """{intro}
 
 
 class MosaicML(LLM):
-    """Wrapper around MosaicML's LLM inference service.
+    """MosaicML LLM service.
 
     To use, you should have the
     environment variable ``MOSAICML_API_TOKEN`` set with your API token, or pass

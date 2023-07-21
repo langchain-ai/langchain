@@ -7,23 +7,23 @@ from langchain.vectorstores import Qdrant
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
 )
-
-from .common import qdrant_is_not_running
-
-# Skipping all the tests in the module if Qdrant is not running on localhost.
-pytestmark = pytest.mark.skipif(
-    qdrant_is_not_running(), reason="Qdrant server is not running"
+from tests.integration_tests.vectorstores.qdrant.async_api.fixtures import (  # noqa
+    qdrant_locations,
 )
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("batch_size", [1, 64])
-async def test_qdrant_aadd_texts_returns_all_ids(batch_size: int) -> None:
+@pytest.mark.parametrize("qdrant_location", qdrant_locations())
+async def test_qdrant_aadd_texts_returns_all_ids(
+    batch_size: int, qdrant_location: str
+) -> None:
     """Test end to end Qdrant.aadd_texts returns unique ids."""
     docsearch: Qdrant = Qdrant.from_texts(
         ["foobar"],
         ConsistentFakeEmbeddings(),
         batch_size=batch_size,
+        location=qdrant_location,
     )
 
     ids = await docsearch.aadd_texts(["foo", "bar", "baz"])
@@ -33,14 +33,15 @@ async def test_qdrant_aadd_texts_returns_all_ids(batch_size: int) -> None:
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
+@pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_aadd_texts_stores_duplicated_texts(
-    vector_name: Optional[str],
+    vector_name: Optional[str], qdrant_location: str
 ) -> None:
     """Test end to end Qdrant.aadd_texts stores duplicated texts separately."""
     from qdrant_client import QdrantClient
     from qdrant_client.http import models as rest
 
-    client = QdrantClient()
+    client = QdrantClient(location=qdrant_location)
     collection_name = "test"
     vectors_config = rest.VectorParams(size=10, distance=rest.Distance.COSINE)
     if vector_name is not None:
@@ -61,7 +62,10 @@ async def test_qdrant_aadd_texts_stores_duplicated_texts(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("batch_size", [1, 64])
-async def test_qdrant_aadd_texts_stores_ids(batch_size: int) -> None:
+@pytest.mark.parametrize("qdrant_location", qdrant_locations())
+async def test_qdrant_aadd_texts_stores_ids(
+    batch_size: int, qdrant_location: str
+) -> None:
     """Test end to end Qdrant.aadd_texts stores provided ids."""
     from qdrant_client import QdrantClient
 
@@ -70,7 +74,7 @@ async def test_qdrant_aadd_texts_stores_ids(batch_size: int) -> None:
         "cdc1aa36-d6ab-4fb2-8a94-56674fd27484",
     ]
 
-    client = QdrantClient()
+    client = QdrantClient(location=qdrant_location)
     collection_name = "test"
     client.recreate_collection(
         collection_name,
@@ -90,15 +94,16 @@ async def test_qdrant_aadd_texts_stores_ids(batch_size: int) -> None:
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("vector_name", ["custom-vector"])
+@pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_aadd_texts_stores_embeddings_as_named_vectors(
-    vector_name: str,
+    vector_name: str, qdrant_location: str
 ) -> None:
     """Test end to end Qdrant.aadd_texts stores named vectors if name is provided."""
     from qdrant_client import QdrantClient
 
     collection_name = "test"
 
-    client = QdrantClient()
+    client = QdrantClient(location=qdrant_location)
     client.recreate_collection(
         collection_name,
         vectors_config={

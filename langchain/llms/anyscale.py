@@ -1,4 +1,3 @@
-"""Wrapper around Anyscale"""
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
@@ -11,7 +10,8 @@ from langchain.utils import get_from_dict_or_env
 
 
 class Anyscale(LLM):
-    """Wrapper around Anyscale Services.
+    """Anyscale Service models.
+
     To use, you should have the environment variable ``ANYSCALE_SERVICE_URL``,
     ``ANYSCALE_SERVICE_ROUTE`` and ``ANYSCALE_SERVICE_TOKEN`` set with your Anyscale
     Service, or pass it as a named parameter to the constructor.

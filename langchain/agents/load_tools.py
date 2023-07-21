@@ -14,6 +14,7 @@ from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.pal.base import PALChain
 from langchain.requests import TextRequestsWrapper
 from langchain.tools.arxiv.tool import ArxivQueryRun
+from langchain.tools.golden_query.tool import GoldenQueryRun
 from langchain.tools.pubmed.tool import PubmedQueryRun
 from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
@@ -41,6 +42,7 @@ from langchain.tools.openweathermap.tool import OpenWeatherMapQueryRun
 from langchain.tools.dataforseo_api_search import DataForSeoAPISearchRun
 from langchain.tools.dataforseo_api_search import DataForSeoAPISearchResults
 from langchain.utilities import ArxivAPIWrapper
+from langchain.utilities import GoldenQueryAPIWrapper
 from langchain.utilities import PubMedAPIWrapper
 from langchain.utilities.bing_search import BingSearchAPIWrapper
 from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
@@ -209,6 +211,10 @@ def _get_arxiv(**kwargs: Any) -> BaseTool:
     return ArxivQueryRun(api_wrapper=ArxivAPIWrapper(**kwargs))
 
 
+def _get_golden_query(**kwargs: Any) -> BaseTool:
+    return GoldenQueryRun(api_wrapper=GoldenQueryAPIWrapper(**kwargs))
+
+
 def _get_pupmed(**kwargs: Any) -> BaseTool:
     return PubmedQueryRun(api_wrapper=PubMedAPIWrapper(**kwargs))
 
@@ -325,6 +331,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
         _get_arxiv,
         ["top_k_results", "load_max_docs", "load_all_available_meta"],
     ),
+    "golden-query": (_get_golden_query, ["golden_api_key"]),
     "pupmed": (
         _get_pupmed,
         ["top_k_results", "load_max_docs", "load_all_available_meta"],

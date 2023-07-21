@@ -14,8 +14,8 @@ from langchain.chains.base import Chain
 from langchain.embeddings.base import Embeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.evaluation.schema import PairwiseStringEvaluator, StringEvaluator
-from langchain.math_utils import cosine_similarity
 from langchain.schema import RUN_KEY
+from langchain.utils.math import cosine_similarity
 
 
 class EmbeddingDistance(str, Enum):

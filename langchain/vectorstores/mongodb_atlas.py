@@ -69,6 +69,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
                 document.
             embedding_key: MongoDB field that will contain the embedding for
                 each document.
+            index_name: Name of the Atlas Search index.
         """
         self._collection = collection
         self._embedding = embedding
