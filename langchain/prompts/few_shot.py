@@ -1,9 +1,9 @@
 """Prompt template that contains few shot examples."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, Extra, Field, root_validator, validator
+from pydantic import BaseModel, Extra, root_validator
 
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
@@ -13,7 +13,7 @@ from langchain.prompts.base import (
 from langchain.prompts.chat import BaseChatPromptTemplate, BaseMessagePromptTemplate
 from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema.messages import BaseMessage, SystemMessage
+from langchain.schema.messages import BaseMessage
 
 
 class _FewShotPromptTemplateMixin(BaseModel):
@@ -43,12 +43,6 @@ class _FewShotPromptTemplateMixin(BaseModel):
             )
 
         return values
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
 
     def _get_examples(self, **kwargs: Any) -> List[dict]:
         if self.examples is not None:
@@ -97,6 +91,12 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
                 values["input_variables"] + list(values["partial_variables"]),
             )
         return values
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
+        arbitrary_types_allowed = True
 
     def format(self, **kwargs: Any) -> str:
         """Format the prompt with the inputs.
@@ -153,6 +153,12 @@ class FewShotChatMessagePromptTemplate(
 
     example_prompt: Union[BaseMessagePromptTemplate, BaseChatPromptTemplate]
     """The class to format each example."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
+        arbitrary_types_allowed = True
 
     @property
     def input_variables(self) -> List[str]:
