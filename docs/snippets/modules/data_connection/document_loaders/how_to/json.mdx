@@ -171,7 +171,7 @@ Another option is set `jq_schema='.'` and provide `content_key`:
 loader = JSONLoader(
     file_path='./example_data/facebook_chat_messages.jsonl',
     jq_schema='.',
-    content_key='sender_name',
+    content_key='.sender_name',
     json_lines=True)
 
 data = loader.load()
@@ -228,7 +228,7 @@ def metadata_func(record: dict, metadata: dict) -> dict:
 loader = JSONLoader(
     file_path='./example_data/facebook_chat.json',
     jq_schema='.messages[]',
-    content_key="content",
+    content_key=".content",
     metadata_func=metadata_func
 )
 
@@ -287,7 +287,7 @@ def metadata_func(record: dict, metadata: dict) -> dict:
 loader = JSONLoader(
     file_path='./example_data/facebook_chat.json',
     jq_schema='.messages[]',
-    content_key="content",
+    content_key=".content",
     metadata_func=metadata_func
 )
 
