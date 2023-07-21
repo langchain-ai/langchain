@@ -164,6 +164,10 @@ class Milvus(VectorStore):
         # Initialize the vector store
         self._init()
 
+    @property
+    def embeddings(self) -> Embeddings:
+        return self.embedding_func
+
     def _create_connection_alias(self, connection_args: dict) -> str:
         """Create the connection to the Milvus server."""
         from pymilvus import MilvusException, connections

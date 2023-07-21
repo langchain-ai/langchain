@@ -51,6 +51,10 @@ class Tair(VectorStore):
         self.metadata_key = metadata_key
         self.search_params = search_params
 
+    @property
+    def embeddings(self) -> Embeddings:
+        return self.embedding_function
+
     def create_index_if_not_exist(
         self,
         dim: int,

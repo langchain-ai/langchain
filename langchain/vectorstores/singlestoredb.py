@@ -213,6 +213,10 @@ class SingleStoreDB(VectorStore):
         )
         self._create_table()
 
+    @property
+    def embeddings(self) -> Embeddings:
+        return self.embedding
+
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         return self._max_inner_product_relevance_score_fn
 
@@ -441,7 +445,9 @@ class SingleStoreDB(VectorStore):
         return instance
 
     def as_retriever(self, **kwargs: Any) -> SingleStoreDBRetriever:
-        return SingleStoreDBRetriever(vectorstore=self, **kwargs)
+        tags = kwargs.pop("tags", None) or []
+        tags.extend(self.__get_retriever_tags())
+        return SingleStoreDBRetriever(vectorstore=self, **kwargs, tags=tags)
 
 
 class SingleStoreDBRetriever(VectorStoreRetriever):

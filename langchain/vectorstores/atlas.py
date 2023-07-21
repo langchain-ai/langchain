@@ -46,7 +46,7 @@ class AtlasDB(VectorStore):
         Args:
             name (str): The name of your project. If the project already exists,
                 it will be loaded.
-            embedding_function (Optional[Callable]): An optional function used for
+            embedding_function (Optional[Embeddings]): An optional function used for
                 embedding your data. If None, data will be embedded with
                 Nomic's embed model.
             api_key (str): Your nomic API key
@@ -85,6 +85,10 @@ class AtlasDB(VectorStore):
             unique_id_field=AtlasDB._ATLAS_DEFAULT_ID_FIELD,
         )
         self.project._latest_project_state()
+
+    @property
+    def embeddings(self) -> Optional[Embeddings]:
+        return self._embedding_function
 
     def add_texts(
         self,

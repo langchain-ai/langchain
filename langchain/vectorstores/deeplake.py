@@ -151,6 +151,10 @@ class DeepLake(VectorStore):
         self._embedding_function = embedding_function
         self._id_tensor_name = "ids" if "ids" in self.vectorstore.tensors() else "id"
 
+    @property
+    def embeddings(self) -> Optional[Embeddings]:
+        return self._embedding_function
+
     def add_texts(
         self,
         texts: Iterable[str],

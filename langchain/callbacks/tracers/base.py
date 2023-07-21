@@ -326,6 +326,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
+        tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
@@ -346,6 +347,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             start_time=start_time,
             execution_order=execution_order,
             child_execution_order=execution_order,
+            tags=tags,
             child_runs=[],
             run_type=RunTypeEnum.retriever,
         )
