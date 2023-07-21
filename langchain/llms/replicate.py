@@ -114,18 +114,12 @@ class Replicate(LLM):
         first_input_name = input_properties[0][0]
         inputs = {first_input_name: prompt, **self.input}
 
-        if self.streaming:
-            prediction = replicate_python.predictions.create(
-                version=version, input={**inputs, **kwargs}
-            )
-            current_completion = ""
-            for output in prediction.output_iterator():
-                current_completion += output
-                if run_manager:
-                    run_manager.on_llm_new_token(
-                        output,
-                    )
-            return current_completion
-        else:
-            iterator = replicate_python.run(self.model, input={**inputs, **kwargs})
-            return "".join([output for output in iterator])
+        iterator = replicate_python.run(self.model, input={**inputs, **kwargs})
+        full_completion = ""
+        for output in iterator:
+            full_completion += output
+            if self.streaming and run_manager:
+                run_manager.on_llm_new_token(
+                    output,
+                )
+        return full_completion
