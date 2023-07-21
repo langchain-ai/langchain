@@ -153,7 +153,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         llm_run = self.run_map.get(run_id_)
         if llm_run is None or llm_run.run_type != RunTypeEnum.llm:
             raise TracerException("No LLM Run found to be traced for on_retry")
-        retry_d = {
+        retry_d: Dict[str, Any] = {
             "slept": retry_state.idle_for,
             "attempt": retry_state.attempt_number,
         }
