@@ -18,7 +18,7 @@ class PydanticOutputParser(BaseOutputParser[T]):
 
     def parse(self, text: str) -> T:
         try:
-            text = self._remove_illegal_quatations(text)
+            text = self._remove_illegal_quotations(text)
             # Greedy search for 1st json candidate.
             match = re.search(
                 r"\{.*\}", text.strip(), re.MULTILINE | re.IGNORECASE | re.DOTALL
@@ -48,7 +48,7 @@ class PydanticOutputParser(BaseOutputParser[T]):
 
         return PYDANTIC_FORMAT_INSTRUCTIONS.format(schema=schema_str)
 
-    def _remove_illegal_quatations(self, text: str) -> str:
+    def _remove_illegal_quotations(self, text: str) -> str:
         lines = text.split("\n")
         for i, line in enumerate(lines):
             if "[" in line and "]" in line:
