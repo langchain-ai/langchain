@@ -149,6 +149,16 @@ const config = {
         title: "🦜️🔗 LangChain",
         items: [
           {
+            to: "/docs/get_started/introduction"
+            label: "Documentation",
+            position: "left,"
+          },
+          {
+            to: ""
+            label: "Integrations",
+            position: "left,"
+          },
+          {
             to: "https://smith.langchain.com",
             label: "LangSmith",
             position: "right",
