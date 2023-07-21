@@ -18,7 +18,7 @@ import toml
 
 sys.path.insert(0, os.path.abspath("."))
 
-with open("../../pyproject.toml") as f:
+with open("../../libs/langchain/pyproject.toml") as f:
     data = toml.load(f)
 
 # -- Project information -----------------------------------------------------
