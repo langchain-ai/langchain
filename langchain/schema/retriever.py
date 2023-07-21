@@ -3,7 +3,8 @@ from __future__ import annotations
 import warnings
 from abc import ABC, abstractmethod
 from inspect import signature
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, ClassVar, Collection
+from pydantic import Field
 
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
@@ -47,6 +48,15 @@ class BaseRetriever(Serializable, ABC):
                 async def aget_relevant_documents(self, query: str) -> List[Document]:
                     raise NotImplementedError
     """  # noqa: E501
+    vectorstore: Any
+    k: int = 4
+    search_type: str = "similarity"
+    search_kwargs: dict = Field(default_factory=dict)
+    allowed_search_types: ClassVar[Collection[str]] = (
+        "similarity",
+        "similarity_score_threshold",
+        "mmr",
+    )
 
     class Config:
         """Configuration for this pydantic object."""
@@ -59,14 +69,14 @@ class BaseRetriever(Serializable, ABC):
     """Optional list of tags associated with the retriever. Defaults to None
     These tags will be associated with each call to this retriever,
     and passed as arguments to the handlers defined in `callbacks`.
-    You can use these to eg identify a specific instance of a retriever with its 
+    You can use these to eg identify a specific instance of a retriever with its
     use case.
     """
     metadata: Optional[Dict[str, Any]] = None
     """Optional metadata associated with the retriever. Defaults to None
     This metadata will be associated with each call to this retriever,
     and passed as arguments to the handlers defined in `callbacks`.
-    You can use these to eg identify a specific instance of a retriever with its 
+    You can use these to eg identify a specific instance of a retriever with its
     use case.
     """
 
@@ -126,7 +136,6 @@ class BaseRetriever(Serializable, ABC):
         """Asynchronously get documents relevant to a query.
         Args:
             query: String to find relevant documents for
-            k: Number of documents to return
             run_manager: The callbacks handler to use
         Returns:
             List of relevant documents
@@ -144,7 +153,6 @@ class BaseRetriever(Serializable, ABC):
         """Retrieve documents relevant to a query.
         Args:
             query: string to find relevant documents for
-            k: Number of documents to return
             callbacks: Callback manager or list of callbacks
             tags: Optional list of tags associated with the retriever. Defaults to None
                 These tags will be associated with each call to this retriever,
