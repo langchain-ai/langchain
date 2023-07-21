@@ -208,6 +208,7 @@ def _approximate_search_query_with_lucene_filter(
 
 def _default_script_query(
     query_vector: List[float],
+    k: int = 4,
     space_type: str = "l2",
     pre_filter: Optional[Dict] = None,
     vector_field: str = "vector_field",
@@ -218,6 +219,7 @@ def _default_script_query(
         pre_filter = MATCH_ALL_QUERY
 
     return {
+        "size": k,
         "query": {
             "script_score": {
                 "query": pre_filter,
@@ -256,6 +258,7 @@ def __get_painless_scripting_source(
 
 def _default_painless_scripting_query(
     query_vector: List[float],
+    k: int = 4,
     space_type: str = "l2Squared",
     pre_filter: Optional[Dict] = None,
     vector_field: str = "vector_field",
@@ -265,8 +268,9 @@ def _default_painless_scripting_query(
     if not pre_filter:
         pre_filter = MATCH_ALL_QUERY
 
-    source = __get_painless_scripting_source(space_type, query_vector)
+    source = __get_painless_scripting_source(space_type, query_vector, vector_field)
     return {
+        "size": k,
         "query": {
             "script_score": {
                 "query": pre_filter,
@@ -523,13 +527,13 @@ class OpenSearchVectorSearch(VectorStore):
             space_type = _get_kwargs_value(kwargs, "space_type", "l2")
             pre_filter = _get_kwargs_value(kwargs, "pre_filter", MATCH_ALL_QUERY)
             search_query = _default_script_query(
-                embedding, space_type, pre_filter, vector_field
+                embedding, k, space_type, pre_filter, vector_field
             )
         elif search_type == PAINLESS_SCRIPTING_SEARCH:
             space_type = _get_kwargs_value(kwargs, "space_type", "l2Squared")
             pre_filter = _get_kwargs_value(kwargs, "pre_filter", MATCH_ALL_QUERY)
             search_query = _default_painless_scripting_query(
-                embedding, space_type, pre_filter, vector_field
+                embedding, k, space_type, pre_filter, vector_field
             )
         else:
             raise ValueError("Invalid `search_type` provided as an argument")
