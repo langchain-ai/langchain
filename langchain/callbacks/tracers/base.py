@@ -153,11 +153,12 @@ class BaseTracer(BaseCallbackHandler, ABC):
         llm_run = self.run_map.get(run_id_)
         if llm_run is None or llm_run.run_type != RunTypeEnum.llm:
             raise TracerException("No LLM Run found to be traced for on_llm_retry")
+
         llm_run.events.append(
             {
                 "name": "retry",
                 "time": datetime.utcnow(),
-                "kwargs": {"retry_state": dumps(retry_state)},
+                "kwargs": {"retry_state": str(retry_state)},
             },
         )
 
