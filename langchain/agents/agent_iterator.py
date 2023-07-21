@@ -125,7 +125,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
     @rebuild_callback_manager_on_set
     def agent_executor(self, agent_executor: AgentExecutor) -> None:
         self._agent_executor = agent_executor
-        # force re-prep inputs incase agent_executor's prep_inputs fn changed
+        # force re-prep inputs in case agent_executor's prep_inputs fn changed
         self.inputs = self.inputs
 
     @property
