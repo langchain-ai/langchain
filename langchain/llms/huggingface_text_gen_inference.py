@@ -144,8 +144,7 @@ class HuggingFaceTextGenInference(LLM):
         self, runtime_stop: Optional[List[str]], **kwargs: Any
     ) -> Dict[str, Any]:
         params = {**self._default_params, **kwargs}
-        runtime_stop = runtime_stop or []
-        params["stop_sequences"] += runtime_stop
+        params["stop_sequences"] = params["stop_sequences"] + (runtime_stop or [])
         return params
 
     def _call(
