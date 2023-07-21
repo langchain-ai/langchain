@@ -580,8 +580,8 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
     ) -> None:
         _handle_event(
             self.handlers,
-            "on_llm_retry",
-            "ignore_llm",
+            "on_retry",
+            "ignore_retry",
             retry_state,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
@@ -659,8 +659,8 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
     ) -> None:
         await _ahandle_event(
             self.handlers,
-            "on_llm_retry",
-            "ignore_llm",
+            "on_retry",
+            "ignore_retry",
             retry_state,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,

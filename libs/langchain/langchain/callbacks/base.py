@@ -240,6 +240,11 @@ class BaseCallbackHandler(
     def ignore_llm(self) -> bool:
         """Whether to ignore LLM callbacks."""
         return False
+    
+    @property
+    def ignore_retry(self) -> bool:
+        """Whether to ignore retry callbacks."""
+        return False
 
     @property
     def ignore_chain(self) -> bool:
