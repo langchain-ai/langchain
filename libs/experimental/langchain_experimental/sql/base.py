@@ -19,7 +19,6 @@ from langchain.utilities.sql_database import SQLDatabase
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 
 
-# TODO: deprecate
 class SQLDatabaseChain(Chain):
     """Chain for interacting with SQL Database.
 
