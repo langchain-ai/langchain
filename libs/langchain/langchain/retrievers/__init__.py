@@ -9,6 +9,7 @@ from langchain.retrievers.elastic_search_bm25 import ElasticSearchBM25Retriever
 from langchain.retrievers.google_cloud_enterprise_search import (
     GoogleCloudEnterpriseSearchRetriever,
 )
+from langchain.retrievers.hybrid_retriever import HybridRetriever
 from langchain.retrievers.kendra import AmazonKendraRetriever
 from langchain.retrievers.knn import KNNRetriever
 from langchain.retrievers.llama_index import (
@@ -31,7 +32,6 @@ from langchain.retrievers.time_weighted_retriever import (
 from langchain.retrievers.vespa_retriever import VespaRetriever
 from langchain.retrievers.weaviate_hybrid_search import WeaviateHybridSearchRetriever
 from langchain.retrievers.wikipedia import WikipediaRetriever
-from langchain.retrievers.hybrid_retriever import HybridRetriever
 from langchain.retrievers.zep import ZepRetriever
 from langchain.retrievers.zilliz import ZillizRetriever
 

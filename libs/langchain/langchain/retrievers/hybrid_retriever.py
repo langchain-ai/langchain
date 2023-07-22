@@ -119,8 +119,7 @@ class HybridRetriever(BaseRetriever):
         return fused_documents
 
     def weighted_reciprocal_rank(
-        self,
-        doc_lists: List[List[Document]]
+        self, doc_lists: List[List[Document]]
     ) -> List[Document]:
         """
         Perform weighted Reciprocal Rank Fusion on multiple rank lists.
