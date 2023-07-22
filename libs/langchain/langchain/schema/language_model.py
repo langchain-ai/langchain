@@ -183,7 +183,7 @@ class BaseLanguageModel(Serializable, Runnable[LanguageModelInput, str], ABC):
 
             # add iter callback handler to config
             config = config or {}
-            callbacks: Optional[Callbacks] = config.pop("callbacks", None)
+            callbacks: Optional[Callbacks] = config.get("callbacks", None)
             callback_handler = IteratorCallbackHandler()
             if callbacks is None:
                 config["callbacks"] = [callback_handler]
@@ -227,7 +227,7 @@ class BaseLanguageModel(Serializable, Runnable[LanguageModelInput, str], ABC):
 
             # add aiter callback handler to config
             config = config or {}
-            callbacks: Optional[Callbacks] = config.pop("callbacks", None)
+            callbacks: Optional[Callbacks] = config.get("callbacks", None)
             callback_handler = AsyncIteratorCallbackHandler()
             if callbacks is None:
                 config["callbacks"] = [callback_handler]
