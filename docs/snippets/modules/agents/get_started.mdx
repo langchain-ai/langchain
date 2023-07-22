@@ -1,18 +1,28 @@
+This will go over how to get started building an agent.
+We will use a LangChain agent class, but show how to customize it to give it specific context.
+We will then define custom tools, and then run it all in the standard LangChain AgentExecutor.
+
+### Set up the agent
+
+We will use the OpenAIFunctionsAgent.
+This is easiest and best agent to get started with.
+It does however require usage of ChatOpenAI models.
+If you want to use a different language model, we would recommend using the [ReAct](/docs/modules/agents/agent_types/react) agent.
+
 ```python
-from langchain.agents import load_tools
-from langchain.agents import initialize_agent
-from langchain.agents import AgentType
-from langchain.llms import OpenAI
+from langchain.agents import OpenAIFunctionsAgent
+from langchain.chat_models import ChatOpenAI
 ```
 
 First, let's load the language model we're going to use to control the agent.
 
 
 ```python
-llm = OpenAI(temperature=0)
+llm = ChatOpenAI(temperature=0)
 ```
 
-Next, let's load some tools to use. Note that the `llm-math` tool uses an LLM, so we need to pass that in.
+Next, let's define some tools to use.
+Note that we need to define these tools BEFORE we initialize the agent, because 
 
 
 ```python
