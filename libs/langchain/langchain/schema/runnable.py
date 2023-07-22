@@ -136,6 +136,10 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
     middle: List[Runnable[Any, Any]] = Field(default_factory=list)
     last: Runnable[Any, Output]
 
+    @property
+    def lc_serializable(self) -> bool:
+        return True
+
     class Config:
         arbitrary_types_allowed = True
 
