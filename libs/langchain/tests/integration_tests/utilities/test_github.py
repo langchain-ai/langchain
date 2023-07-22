@@ -1,6 +1,6 @@
 """Integration test for Github Wrapper."""
-from typing import Any, List, Dict
 import pytest
+
 from langchain.utilities.github import GitHubAPIWrapper
 
 # Make sure you have set the following env variables:

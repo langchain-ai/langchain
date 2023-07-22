@@ -1,17 +1,10 @@
 """Util that calls GitHub."""
 import json
 from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Extra, root_validator
+
 from github.Issue import Issue
-from langchain.tools.github.prompt import (
-    COMMENT_ON_ISSUE_PROMPT,
-    CREATE_FILE_PROMPT,
-    DELETE_FILE_PROMPT,
-    GET_ISSUE_PROMPT,
-    GET_ISSUES_PROMPT,
-    READ_FILE_PROMPT,
-    UPDATE_FILE_PROMPT,
-)
+from pydantic import BaseModel, Extra, root_validator
+
 from langchain.utils import get_from_dict_or_env
 
 
@@ -98,7 +91,8 @@ class GitHubAPIWrapper(BaseModel):
         Fetches all open issues from the repo
 
         Returns:
-            str: A plaintext report containing the number of issues and each issue's title and number.
+            str: A plaintext report containing the number of issues 
+            and each issue's title and number.
         """
         issues = self.github_repo_instance.get_issues(state="open")
         if len(issues) > 0:
@@ -116,7 +110,8 @@ class GitHubAPIWrapper(BaseModel):
         Parameters:
             issue_number(int): The number for the github issue
         Returns:
-            dict: A doctionary containing the issue's title, body, and comments as a string
+            dict: A doctionary containing the issue's title, 
+            body, and comments as a string
         """
         issue = self.github_repo_instance.get_issue(number=issue_number)
         page = 0
@@ -139,8 +134,10 @@ class GitHubAPIWrapper(BaseModel):
         """
         Adds a comment to a github issue
         Parameters:
-            comment_query(str): a string which contains the issue number, two newlines, and the comment.
-                for example: "1\n\nWorking on it now" adds the comment "working on it now" to issue 1
+            comment_query(str): a string which contains the issue number, 
+            two newlines, and the comment.
+            for example: "1\n\nWorking on it now" 
+            adds the comment "working on it now" to issue 1
         Returns:
             str: A success or failure message
         """
@@ -157,9 +154,10 @@ class GitHubAPIWrapper(BaseModel):
         """
         Creates a new file on the Github repo
         Parameters:
-            file_query(str): a string which contains the file path and the file contents.
-                The file path is the first line in the string, and the contents are the rest of the string.
-                For example, "hello_world.md\n# Hello World!"
+            file_query(str): a string which contains the file path 
+            and the file contents. The file path is the first line 
+            in the string, and the contents are the rest of the string.
+            For example, "hello_world.md\n# Hello World!"
         Returns:
             str: A success or failure message
         """
@@ -221,7 +219,7 @@ class GitHubAPIWrapper(BaseModel):
 
             if file_content == updated_file_content:
                 return (
-                    "File content was not updated because the old content was not found. "
+                    "File content was not updated because old content was not found."
                     "It may be helpful to use the read_file action to get "
                     "the current file contents."
                 )
