@@ -1,8 +1,8 @@
 """Test functionality related to prompts."""
 import pytest
 
-from langchain.prompts.prompt import PromptTemplate
-
+from langchain.prompts.prompt import PromptTemplate, doc_repr_temp, doc_format_temp
+from langchain.schema import Document
 
 def test_prompt_valid() -> None:
     """Test prompts can be constructed."""
@@ -146,6 +146,39 @@ def test_partial() -> None:
     result = prompt.format(foo="foo")
     assert result == "This is a foo test."
 
+
+def test_doc_repr_temp() -> None:
+    """Test temporary __repr__ method for Document."""
+    doc = Document(page_content="foo")
+    assert doc_repr_temp(doc) == "'foo'"
+    
+    doc = Document(page_content="foo", meta_data={"bar": "baz"})
+    assert doc_repr_temp(doc) == "'foo'"
+    
+def test_doc_format_temp() -> None:
+    """Test temporary __format__ method for Document."""
+    doc = Document(page_content="foo")
+    assert doc_format_temp(doc, "") == "'foo'"
+    
+    doc = Document(page_content="foo", meta_data={"bar": "baz"})
+    assert doc_format_temp(doc, "") == "'foo'"
+    
+def test_format() -> None:
+    """Test formatting works as expected."""
+    prompt = PromptTemplate.from_template("This is a {var} test.")
+    # if the variable is string
+    output = prompt.format(var="good")
+    assert output == "This is a good test."
+
+    # if the variable is Document without meta_data
+    doc = Document(page_content="good")
+    output = prompt.format(var=doc)
+    print(output)
+    assert output == "This is a 'good' test."
+
+    # if the variable is Document with meta_data
+    output = prompt.format(var=Document(page_content="good", meta_data={"bar": "baz"}))
+    assert output == "This is a 'good' test."
 
 @pytest.mark.requires("jinja2")
 def test_prompt_from_jinja2_template() -> None:
