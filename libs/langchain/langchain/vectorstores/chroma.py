@@ -173,23 +173,27 @@ class Chroma(VectorStore):
         embeddings = None
         if self._embedding_function is not None:
             embeddings = self._embedding_function.embed_documents(list(texts))
-
         if metadatas:
             texts = list(texts)
-            empty = []
-            non_empty = []
-            for i, m in enumerate(metadatas):
+            # fill metadatas with empty dicts if somebody
+            # did not specify metadata for all texts
+            length_diff = len(texts) - len(metadatas)
+            if length_diff:
+                metadatas = metadatas + [{}] * length_diff
+            empty_ids = []
+            non_empty_ids = []
+            for idx, m in enumerate(metadatas):
                 if m:
-                    non_empty.append(i)
+                    non_empty_ids.append(idx)
                 else:
-                    empty.append(i)
-            if non_empty:
-                metadatas = [metadatas[i] for i in non_empty]
-                texts_with_metadatas = [texts[i] for i in non_empty]
+                    empty_ids.append(idx)
+            if non_empty_ids:
+                metadatas = [metadatas[idx] for idx in non_empty_ids]
+                texts_with_metadatas = [texts[idx] for idx in non_empty_ids]
                 embeddings_with_metadatas = (
-                    [embeddings[i] for i in non_empty] if embeddings else None
+                    [embeddings[idx] for idx in non_empty_ids] if embeddings else None
                 )
-                ids_with_metadata = [ids[i] for i in non_empty]
+                ids_with_metadata = [ids[idx] for idx in non_empty_ids]
                 self._collection.upsert(
                     metadatas=metadatas,
                     embeddings=embeddings_with_metadatas,
@@ -197,12 +201,17 @@ class Chroma(VectorStore):
                     ids=ids_with_metadata,
                 )
 
-            texts = [texts[j] for j in empty]
-            embeddings = [embeddings[j] for j in empty] if embeddings else None
-            ids = [ids[j] for j in empty]
-
-        if texts:
-            self._collection.upsert(embeddings=embeddings, documents=texts, ids=ids)
+            texts = [texts[j] for j in empty_ids]
+            embeddings_without_metadatas = (
+                [embeddings[j] for j in empty_ids] if embeddings else None
+            )
+            ids_without_metadatas = [ids[j] for j in empty_ids]
+            if texts:
+                self._collection.upsert(
+                    embeddings=embeddings_without_metadatas,
+                    documents=texts,
+                    ids=ids_without_metadatas,
+                )
         return ids
 
     def similarity_search(
