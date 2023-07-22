@@ -95,7 +95,7 @@ class GitHubAPIWrapper(BaseModel):
             and each issue's title and number.
         """
         issues = self.github_repo_instance.get_issues(state="open")
-        if len(issues) > 0:
+        if issues.totalCount > 0:
             parsed_issues = self.parse_issues(issues)
             parsed_issues_str = (
                 "Found " + str(len(parsed_issues)) + " issues:\n" + str(parsed_issues)
@@ -164,13 +164,17 @@ class GitHubAPIWrapper(BaseModel):
         file_path = file_query.split("\n")[0]
         file_contents = file_query[len(file_path) + 2 :]
         try:
-            self.github_repo_instance.create_file(
-                path=file_path,
-                message="Create " + file_path,
-                content=file_contents,
-                branch=self.github_branch,
-            )
-            return "Created file " + file_path
+            exists = self.github_repo_instance.get_contents(file_path)
+            if(exists is None):
+                self.github_repo_instance.create_file(
+                    path=file_path,
+                    message="Create " + file_path,
+                    content=file_contents,
+                    branch=self.github_branch,
+                )
+                return "Created file " + file_path
+            else:
+                return f"File already exists at {file_path}. Use update_file instead"
         except Exception as e:
             return "Unable to make file due to error:\n" + str(e)
 
