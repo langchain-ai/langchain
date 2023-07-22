@@ -1,5 +1,5 @@
+import os
 from datetime import datetime
-from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
@@ -50,8 +50,9 @@ def test_save_local_load_local() -> None:
             folder_path=temp_folder,
             file_name=file_name,
         )
-        assert Path(temp_folder / f"{file_name}.joblib").exists()
-        assert Path(temp_folder / f"{file_name}.pickle").exists()
+        assert os.path.exists(os.path.join(temp_folder, f"{file_name}.joblib"))
+        assert os.path.exists(os.path.join(temp_folder, f"{file_name}.pkl"))
+
         loaded_tfidf_retriever = TFIDFRetriever.load_local(
             folder_path=temp_folder,
             file_name=file_name,
