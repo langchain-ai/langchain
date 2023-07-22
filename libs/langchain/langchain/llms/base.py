@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 import inspect
 import json
 import logging
@@ -10,8 +11,10 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import (
     Any,
+    AsyncIterator,
     Callable,
     Dict,
+    Iterator,
     List,
     Mapping,
     Optional,
@@ -19,7 +22,11 @@ from typing import (
     Tuple,
     Type,
     Union,
+    cast,
 )
+from langchain.prompts.base import StringPromptValue
+from langchain.prompts.chat import ChatPromptValue
+from langchain.schema.runnable import RunnableConfig
 
 import yaml
 from pydantic import Field, root_validator, validator
@@ -48,7 +55,7 @@ from langchain.schema import (
     PromptValue,
     RunInfo,
 )
-from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema.language_model import BaseLanguageModel, LanguageModelInput
 from langchain.schema.messages import AIMessage, BaseMessage, get_buffer_string
 
 logger = logging.getLogger(__name__)
@@ -115,7 +122,7 @@ def update_cache(
     return llm_output
 
 
-class BaseLLM(BaseLanguageModel, ABC):
+class BaseLLM(BaseLanguageModel[str], ABC):
     """Base LLM abstract interface.
 
     It should take in a prompt and return a string."""
@@ -156,6 +163,191 @@ class BaseLLM(BaseLanguageModel, ABC):
             return _get_verbosity()
         else:
             return verbose
+
+    # --- Runnable methods ---
+
+    def _convert_input(self, input: LanguageModelInput) -> PromptValue:
+        if isinstance(input, PromptValue):
+            return input
+        elif isinstance(input, str):
+            return StringPromptValue(text=input)
+        elif isinstance(input, list):
+            return ChatPromptValue(messages=input)
+        else:
+            raise ValueError(
+                f"Invalid input type {type(input)}. "
+                "Must be a PromptValue, str, or list of BaseMessages."
+            )
+
+    def invoke(
+        self,
+        input: LanguageModelInput,
+        config: Optional[RunnableConfig] = None,
+        *,
+        stop: Optional[List[str]] = None,
+    ) -> str:
+        return (
+            self.generate_prompt(
+                [self._convert_input(input)], stop=stop, **(config or {})
+            )
+            .generations[0][0]
+            .text
+        )
+
+    async def ainvoke(
+        self,
+        input: LanguageModelInput,
+        config: Optional[RunnableConfig] = None,
+        *,
+        stop: Optional[List[str]] = None,
+    ) -> str:
+        llm_result = await self.agenerate_prompt(
+            [self._convert_input(input)], stop=stop, **(config or {})
+        )
+        return llm_result.generations[0][0].text
+
+    def batch(
+        self,
+        inputs: List[LanguageModelInput],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        max_concurrency: Optional[int] = None,
+    ) -> List[str]:
+        if isinstance(config, list):
+            config = config[0]
+        if config is None:
+            config = {}
+
+        if max_concurrency is None:
+            llm_result = self.generate_prompt(
+                [self._convert_input(input) for input in inputs], **(config or {})
+            )
+            return [g[0].text for g in llm_result.generations]
+        else:
+            batches = [
+                inputs[i : i + max_concurrency]
+                for i in range(0, len(inputs), max_concurrency)
+            ]
+            return [
+                output
+                for batch in batches
+                for output in self.batch(batch, config=config)
+            ]
+
+    async def abatch(
+        self,
+        inputs: List[LanguageModelInput],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        max_concurrency: Optional[int] = None,
+    ) -> List[str]:
+        if isinstance(config, list):
+            config = config[0]
+        if config is None:
+            config = {}
+
+        if max_concurrency is None:
+            llm_result = await self.agenerate_prompt(
+                [self._convert_input(input) for input in inputs], **(config or {})
+            )
+            return [g[0].text for g in llm_result.generations]
+        else:
+            batches = [
+                inputs[i : i + max_concurrency]
+                for i in range(0, len(inputs), max_concurrency)
+            ]
+            return [
+                output
+                for batch in batches
+                for output in await self.abatch(batch, config=config)
+            ]
+
+    def stream(
+        self,
+        input: LanguageModelInput,
+        config: Optional[RunnableConfig] = None,
+        *,
+        stop: Optional[List[str]] = None,
+    ) -> Iterator[str]:
+        if not hasattr(self, "streaming"):
+            # model doesn't support streaming, so use default implementation
+            yield self.invoke(input, stop=stop, config=config)
+        else:
+            from langchain.callbacks.streaming_iter import IteratorCallbackHandler
+
+            # enable streaming, if it's not already enabled
+            original_streaming = cast(bool, self.streaming)  # type: ignore
+            self.streaming = True
+
+            # add iter callback handler to config
+            config = config or {}
+            callbacks: Optional[Callbacks] = config.get("callbacks", None)
+            callback_handler = IteratorCallbackHandler()
+            if callbacks is None:
+                config["callbacks"] = [callback_handler]
+            elif isinstance(callbacks, list):
+                callbacks.append(callback_handler)
+            else:
+                callbacks.add_handler(callback_handler)
+
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                # run the model non-blocking
+                task = executor.submit(
+                    self.invoke, self._convert_input(input), stop=stop, config=config
+                )
+
+                # yield tokens from the callback handler
+                for token in callback_handler.iter():
+                    yield token
+
+                # block until the model is finished
+                task.result()
+
+            # disable streaming
+            self.streaming = original_streaming
+
+    async def astream(
+        self,
+        input: LanguageModelInput,
+        config: Optional[RunnableConfig] = None,
+        *,
+        stop: Optional[List[str]] = None,
+    ) -> AsyncIterator[str]:
+        if not hasattr(self, "streaming"):
+            # model doesn't support streaming, so use default implementation
+            yield await self.ainvoke(input, stop=stop, config=config)
+        else:
+            from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
+
+            # enable streaming, if it's not already enabled
+            original_streaming = cast(bool, self.streaming)  # type: ignore
+            self.streaming = True
+
+            # add aiter callback handler to config
+            config = config or {}
+            callbacks: Optional[Callbacks] = config.get("callbacks", None)
+            callback_handler = AsyncIteratorCallbackHandler()
+            if callbacks is None:
+                config["callbacks"] = [callback_handler]
+            elif isinstance(callbacks, list):
+                callbacks.append(callback_handler)
+            else:
+                callbacks.add_handler(callback_handler)
+
+            # run the model asynchronously
+            task = asyncio.create_task(
+                self.ainvoke(self._convert_input(input), stop=stop, config=config)
+            )
+
+            # yield tokens from the callback handler
+            async for token in callback_handler.aiter():
+                yield token
+
+            # wait for the model to finish
+            await task
+
+            # restore original streaming value
+            self.streaming = original_streaming
+
+    # --- Custom methods ---
 
     @abstractmethod
     def _generate(
