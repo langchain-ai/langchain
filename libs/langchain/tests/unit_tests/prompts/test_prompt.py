@@ -185,9 +185,10 @@ def test_format() -> None:
     assert output == "This is a 'good' test."
     
     # if the variable is Document and it is inside a list
-    doc = Document(page_content="good", meta_data={"bar": "baz"})
-    output = prompt.format(var=[doc])
-    assert output == "This is a ['good'] test."
+    doc1 = Document(page_content="good1", meta_data={"bar": "baz"})
+    doc2 = Document(page_content="good2", meta_data={"bar": "baz"})
+    output = prompt.format(var=[doc1, doc2])
+    assert output == "This is a ['good1', 'good2'] test."
 
 
 @pytest.mark.requires("jinja2")
