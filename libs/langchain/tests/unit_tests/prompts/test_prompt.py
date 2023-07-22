@@ -152,7 +152,6 @@ def test_doc_repr_temp() -> None:
     """Test temporary __repr__ method for Document."""
     doc = Document(page_content="foo")
     assert doc_repr_temp(doc) == "'foo'"
-
     doc = Document(page_content="foo", meta_data={"bar": "baz"})
     assert doc_repr_temp(doc) == "'foo'"
 
@@ -161,7 +160,6 @@ def test_doc_format_temp() -> None:
     """Test temporary __format__ method for Document."""
     doc = Document(page_content="foo")
     assert doc_format_temp(doc, "") == "'foo'"
-
     doc = Document(page_content="foo", meta_data={"bar": "baz"})
     assert doc_format_temp(doc, "") == "'foo'"
 
@@ -172,7 +170,6 @@ def test_format() -> None:
     # if the variable is string
     output = prompt.format(var="good")
     assert output == "This is a good test."
-
     # if the variable is Document without meta_data
     doc = Document(page_content="good")
     output = prompt.format(var=doc)
@@ -183,7 +180,6 @@ def test_format() -> None:
     doc = Document(page_content="good", meta_data={"bar": "baz"})
     output = prompt.format(var=doc)
     assert output == "This is a 'good' test."
-    
     # if the variable is Document and it is inside a list
     doc1 = Document(page_content="good1", meta_data={"bar": "baz"})
     doc2 = Document(page_content="good2", meta_data={"bar": "baz"})
