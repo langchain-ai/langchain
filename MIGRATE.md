@@ -1,4 +1,4 @@
-# Migrating to `langchain._experimental`
+# Migrating to `langchain_experimental`
 
 We are moving any experimental components of LangChain, or components with vulnerability issues, into `langchain_experimental`.
 This guide covers how to migrate.
