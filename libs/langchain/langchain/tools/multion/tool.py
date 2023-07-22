@@ -1,21 +1,19 @@
 """Tool for MultiOn Extension API"""
-import sys
-from io import StringIO
-from typing import Dict, Optional,Any
+from typing import Any, Optional
 
-from pydantic import BaseModel, Field
-from langchain.tools.base import BaseTool
+from pydantic import Field
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-
+from langchain.tools.base import BaseTool
 from langchain.utilities.multion import MultionClientAPIWrapper
-
 
 
 def _get_default_multion_client() -> MultionClientAPIWrapper:
     return MultionClientAPIWrapper()
+
 
 class MultionClientTool(BaseTool):
     """Simulates a Browser interacting agent."""
@@ -27,17 +25,19 @@ class MultionClientTool(BaseTool):
         "Input should be a task and a url."
         "The result is text form of action that was executed in the given url."
     )
-    api_wrapper: MultionClientAPIWrapper = Field(default_factory=_get_default_multion_client)
+    api_wrapper: MultionClientAPIWrapper = Field(
+        default_factory=_get_default_multion_client
+    )
 
     def _run(
         self,
         task: str,
-        url: Optional[str] = "https://www.google.com/",
+        url: str = "https://www.google.com/",
         tabId: Optional[Any] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        return self.api_wrapper.run(task,url,tabId)
+        return self.api_wrapper.run(task, url, tabId)
 
     async def _arun(
         self,

@@ -23,7 +23,6 @@ def create_multion_agent(
     prefix: str = PREFIX,
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Dict[str, Any],
-    
 ) -> AgentExecutor:
     """Construct a multion agent from an LLM and tool."""
     tools = [tool]
@@ -57,4 +56,3 @@ def create_multion_agent(
         verbose=verbose,
         **(agent_executor_kwargs or {}),
     )
-
