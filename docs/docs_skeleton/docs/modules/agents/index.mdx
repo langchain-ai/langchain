@@ -7,8 +7,37 @@ The core idea of agents is to use an LLM to control the sequence of actions that
 In chains, the sequence of actions is hardcoded (in code).
 In agents, the language model is used as a reasoning engine to determine which actions to take and in which order.
 
-There are many different run times agents, as this field is very new and still rapidly developing.
-The main runtime supported by LangChain is one where the agent decides an action to take, then takes that action, and loops until it decides that it is
+There are several key components here:
+
+## Agent
+
+This is the class responsible for deciding what step to take next.
+This is powered by a language model and a prompt.
+This prompt can include things like:
+
+1. The personality of the agent (useful for having it respond in a certain way)
+2. Background context for the agent (useful for giving it more context on the types of tasks it's being asked to do)
+3. Prompting strategies to invoke better reasoning (the most famous/widely used being ReAct)
+The information passed to the language model to determine what step it should take next consists of:
+
+1. instructions for the agent generically
+2. previous actions it took
+3. the outcomes of those actions.
+- Tools: these are basically functions that the agent can call.
+
+There are many different run times for agents, as this field is very new and still rapidly developing.
+The main runtime supported by LangChain is one where the agent decides an action to take, then takes that action, and loops until it decides that it is finished.
+This is best shown by the psuedocode below:
+
+```python
+next_action = agent.get_action(...)
+while next_action != AgentFinish:
+    observation = run(next_action)
+    next_action = agent.get_action(..., next_action, observation)
+return next_action
+```
+
+The remain
 
 Some applications require a flexible chain of calls to LLMs and other tools based on user input. The **Agent** interface provides the flexibility for such applications. An agent has access to a suite of tools, and determines which ones to use depending on the user input. Agents can use multiple tools, and use the output of one tool as the input to the next.
 
