@@ -91,7 +91,7 @@ class GitHubAPIWrapper(BaseModel):
         Fetches all open issues from the repo
 
         Returns:
-            str: A plaintext report containing the number of issues 
+            str: A plaintext report containing the number of issues
             and each issue's title and number.
         """
         issues = self.github_repo_instance.get_issues(state="open")
@@ -110,7 +110,7 @@ class GitHubAPIWrapper(BaseModel):
         Parameters:
             issue_number(int): The number for the github issue
         Returns:
-            dict: A doctionary containing the issue's title, 
+            dict: A doctionary containing the issue's title,
             body, and comments as a string
         """
         issue = self.github_repo_instance.get_issue(number=issue_number)
@@ -134,9 +134,9 @@ class GitHubAPIWrapper(BaseModel):
         """
         Adds a comment to a github issue
         Parameters:
-            comment_query(str): a string which contains the issue number, 
+            comment_query(str): a string which contains the issue number,
             two newlines, and the comment.
-            for example: "1\n\nWorking on it now" 
+            for example: "1\n\nWorking on it now"
             adds the comment "working on it now" to issue 1
         Returns:
             str: A success or failure message
@@ -154,8 +154,8 @@ class GitHubAPIWrapper(BaseModel):
         """
         Creates a new file on the Github repo
         Parameters:
-            file_query(str): a string which contains the file path 
-            and the file contents. The file path is the first line 
+            file_query(str): a string which contains the file path
+            and the file contents. The file path is the first line
             in the string, and the contents are the rest of the string.
             For example, "hello_world.md\n# Hello World!"
         Returns:
