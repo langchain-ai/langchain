@@ -12,6 +12,7 @@ EXAMPLE_PROMPT = PromptTemplate(
 
 
 @pytest.fixture()
+@pytest.mark.requires("jinja2")
 def example_jinja2_prompt() -> Tuple[PromptTemplate, List[Dict[str, str]]]:
     example_template = "{{ word }}: {{ antonym }}"
 
@@ -197,6 +198,7 @@ def test_partial() -> None:
     assert output == expected_output
 
 
+@pytest.mark.requires("jinja2")
 def test_prompt_jinja2_functionality(
     example_jinja2_prompt: Tuple[PromptTemplate, List[Dict[str, str]]]
 ) -> None:
@@ -219,6 +221,7 @@ def test_prompt_jinja2_functionality(
     assert output == expected_output
 
 
+@pytest.mark.requires("jinja2")
 def test_prompt_jinja2_missing_input_variables(
     example_jinja2_prompt: Tuple[PromptTemplate, List[Dict[str, str]]]
 ) -> None:
@@ -248,6 +251,7 @@ def test_prompt_jinja2_missing_input_variables(
         )
 
 
+@pytest.mark.requires("jinja2")
 def test_prompt_jinja2_extra_input_variables(
     example_jinja2_prompt: Tuple[PromptTemplate, List[Dict[str, str]]]
 ) -> None:

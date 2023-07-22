@@ -140,6 +140,7 @@ def _load_prompt_from_file(file: Union[str, Path]) -> BasePromptTemplate:
     elif file_path.suffix == ".yaml":
         with open(file_path, "r") as f:
             config = yaml.safe_load(f)
+    # TODO: deprecate this
     elif file_path.suffix == ".py":
         spec = importlib.util.spec_from_loader(
             "prompt", loader=None, origin=str(file_path)

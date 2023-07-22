@@ -1,6 +1,6 @@
 """Experimental LLM wrappers."""
 
-from langchain.experimental.llms.jsonformer_decoder import JsonFormer
-from langchain.experimental.llms.rellm_decoder import RELLM
+from langchain_experimental.llms.jsonformer_decoder import JsonFormer
+from langchain_experimental.llms.rellm_decoder import RELLM
 
 __all__ = ["RELLM", "JsonFormer"]

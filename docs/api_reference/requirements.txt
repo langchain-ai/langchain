@@ -1,3 +1,4 @@
+-e libs/langchain
 autodoc_pydantic==1.8.0
 myst_parser
 nbsphinx==0.8.9
@@ -10,5 +11,3 @@ toml
 myst_nb
 sphinx_copybutton
 pydata-sphinx-theme==0.13.1
-nbdoc
-urllib3<2

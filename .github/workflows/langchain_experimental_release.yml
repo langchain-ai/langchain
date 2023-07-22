@@ -1,5 +1,5 @@
 ---
-name: libs/langchain Release
+name: libs/langchain-experimental Release
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ on:
     branches:
       - master
     paths:
-      - 'libs/langchain/pyproject.toml'
+      - 'libs/experimental/pyproject.toml'
   workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
 
 jobs:
@@ -16,5 +16,5 @@ jobs:
     uses:
       ./.github/workflows/_release.yml
     with:
-      working-directory: libs/langchain
+      working-directory: libs/experimental
     secrets: inherit
