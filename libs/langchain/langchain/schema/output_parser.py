@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, TypeVar, Union
+from typing import Any, Dict, Generic, List, Optional, TypeVar, Union
 
 from langchain.load.serializable import Serializable
 from langchain.schema.messages import BaseMessage
@@ -12,7 +12,7 @@ from langchain.schema.runnable import Runnable, RunnableConfig
 T = TypeVar("T")
 
 
-class BaseLLMOutputParser(Serializable, ABC):
+class BaseLLMOutputParser(Serializable, Generic[T], ABC):
     """Abstract base class for parsing the outputs of a model."""
 
     @abstractmethod
