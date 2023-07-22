@@ -180,8 +180,14 @@ def test_format() -> None:
     assert output == "This is a 'good' test."
 
     # if the variable is Document with meta_data
-    output = prompt.format(var=Document(page_content="good", meta_data={"bar": "baz"}))
+    doc = Document(page_content="good", meta_data={"bar": "baz"})
+    output = prompt.format(var=doc)
     assert output == "This is a 'good' test."
+    
+    # if the variable is Document and it is inside a list
+    doc = Document(page_content="good", meta_data={"bar": "baz"})
+    output = prompt.format(var=[doc])
+    assert output == "This is a ['good'] test."
 
 
 @pytest.mark.requires("jinja2")
