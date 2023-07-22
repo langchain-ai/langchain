@@ -372,8 +372,8 @@ class Redis(VectorStore):
         self, query: str, k: int = 4, score_threshold: float = 0.2, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """
-        Returns the most similar indexed documents and its score to the query text within the
-        score_threshold range.
+        Returns the most similar indexed documents and its score
+        to the query text within the score_threshold range.
 
         Args:
             query (str): The query text for which to find similar documents.
