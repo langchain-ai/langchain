@@ -35,7 +35,7 @@ FROM langchain-dev-base AS langchain-dev-dependencies
 ARG PYTHON_VIRTUALENV_HOME
 
 # Copy only the dependency files for installation
-COPY pyproject.toml poetry.toml ./
+COPY libs/langchain/pyproject.toml libs/langchain/poetry.toml ./
 
 # Install the Poetry dependencies (this layer will be cached as long as the dependencies don't change)
 RUN poetry install --no-interaction --no-ansi --with dev,test,docs
