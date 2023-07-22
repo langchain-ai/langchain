@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import (
     Any,
     AsyncIterator,
+    Callable,
     Coroutine,
     Dict,
     Generic,
@@ -68,7 +69,31 @@ class Runnable(Generic[Input, Output], ABC):
     def __or__(
         self, __value: "Runnable[Any, Other]"
     ) -> "RunnableSequence[Input, Other]":
-        return RunnableSequence(first=self, last=__value)
+        if isinstance(__value, Runnable):
+            return RunnableSequence(first=self, last=__value)
+        else:
+            raise TypeError(f"unsupported type: {type(__value)}")
+
+    def __ror__(
+        self,
+        __value: Union[
+            "Runnable[Other, Any]",
+            Dict[str, Union["Runnable[Other, Any]", Callable[[Other], Any]]],
+        ],
+    ) -> "RunnableSequence[Other, Output]":
+        if isinstance(__value, dict):
+            runnables = {
+                key: r if isinstance(r, Runnable) else RunnableLambda(r)
+                for key, r in __value.items()
+            }
+            return RunnableSequence(
+                first=RunnableCombine(runnables=runnables),
+                last=self,
+            )
+        elif isinstance(__value, Runnable):
+            return RunnableSequence(first=__value, last=self)
+        else:
+            raise TypeError(f"unsupported type: {type(__value)}")
 
     @abstractmethod
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
@@ -150,24 +175,42 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                 middle=self.middle + [self.last] + __value.middle,
                 last=__value.last,
             )
-        else:
+        elif isinstance(__value, Runnable):
             return RunnableSequence(
                 first=self.first, middle=self.middle + [self.last], last=__value
             )
+        else:
+            raise TypeError(f"unsupported type: {type(__value)}")
 
     def __ror__(
-        self, __value: Runnable[Other, Any]
+        self,
+        __value: Union[
+            Runnable[Other, Any],
+            Dict[str, Union["Runnable[Other, Any]", Callable[[Other], Any]]],
+        ],
     ) -> "RunnableSequence[Other, Output]":
-        if isinstance(__value, RunnableSequence):
+        if isinstance(__value, dict):
+            runnables = {
+                key: r if isinstance(r, Runnable) else RunnableLambda(r)
+                for key, r in __value.items()
+            }
+            return RunnableSequence(
+                first=RunnableCombine(runnables=runnables),
+                middle=[self.first] + self.middle,
+                last=self.last,
+            )
+        elif isinstance(__value, RunnableSequence):
             return RunnableSequence(
                 first=__value.first,
                 middle=__value.middle + [__value.last] + self.middle,
                 last=self.last,
             )
-        else:
+        elif isinstance(__value, Runnable):
             return RunnableSequence(
                 first=__value, middle=[self.first] + self.middle, last=self.last
             )
+        else:
+            raise TypeError(f"unsupported type: {type(__value)}")
 
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
         from langchain.callbacks.manager import CallbackManager
@@ -183,7 +226,9 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             inheritable_metadata=config.get("metadata"),
             local_metadata=None,
         )
-        rm = cm.on_chain_start(dumpd(self), {"input": input})
+        rm = cm.on_chain_start(
+            dumpd(self), input if isinstance(input, dict) else {"input": input}
+        )
 
         # invoke
         try:
@@ -193,7 +238,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             rm.on_chain_error(e)
             raise
         else:
-            rm.on_chain_end({"output": input})
+            rm.on_chain_end(input if isinstance(input, dict) else {"output": input})
             return cast(Output, input)
 
     async def ainvoke(
@@ -212,7 +257,9 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             inheritable_metadata=config.get("metadata"),
             local_metadata=None,
         )
-        rm = await cm.on_chain_start(dumpd(self), {"input": input})
+        rm = await cm.on_chain_start(
+            dumpd(self), input if isinstance(input, dict) else {"input": input}
+        )
 
         # invoke
         try:
@@ -222,7 +269,9 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             await rm.on_chain_error(e)
             raise
         else:
-            await rm.on_chain_end({"output": input})
+            await rm.on_chain_end(
+                input if isinstance(input, dict) else {"output": input}
+            )
             return cast(Output, input)
 
     def batch(
@@ -249,7 +298,9 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             for config in configs
         ]
         rms = [
-            cm.on_chain_start(dumpd(self), {"input": input})
+            cm.on_chain_start(
+                dumpd(self), input if isinstance(input, dict) else {"input": input}
+            )
             for cm, input in zip(cms, inputs)
         ]
 
@@ -270,7 +321,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             raise
         else:
             for rm, input in zip(rms, inputs):
-                rm.on_chain_end({"output": input})
+                rm.on_chain_end(input if isinstance(input, dict) else {"output": input})
             return cast(List[Output], inputs)
 
     async def abatch(
@@ -301,7 +352,9 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         ]
         rms: List[AsyncCallbackManagerForChainRun] = await asyncio.gather(
             *[
-                cm.on_chain_start(dumpd(self), {"input": input})
+                cm.on_chain_start(
+                    dumpd(self), input if isinstance(input, dict) else {"input": input}
+                )
                 for cm, input in zip(cms, inputs)
             ]
         )
@@ -323,7 +376,12 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             raise
         else:
             await asyncio.gather(
-                *[rm.on_chain_end({"output": input}) for rm, input in zip(rms, inputs)]
+                *[
+                    rm.on_chain_end(
+                        input if isinstance(input, dict) else {"output": input}
+                    )
+                    for rm, input in zip(rms, inputs)
+                ]
             )
             return cast(List[Output], inputs)
 
@@ -343,7 +401,9 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             inheritable_metadata=config.get("metadata"),
             local_metadata=None,
         )
-        rm = cm.on_chain_start(dumpd(self), {"input": input})
+        rm = cm.on_chain_start(
+            dumpd(self), input if isinstance(input, dict) else {"input": input}
+        )
 
         # invoke the first steps
         try:
@@ -376,7 +436,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             rm.on_chain_error(e)
             raise
         else:
-            rm.on_chain_end({"output": final})
+            rm.on_chain_end(final if isinstance(final, dict) else {"output": final})
 
     async def astream(
         self, input: Input, config: Optional[RunnableConfig] = None
@@ -394,7 +454,9 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             inheritable_metadata=config.get("metadata"),
             local_metadata=None,
         )
-        rm = await cm.on_chain_start(dumpd(self), {"input": input})
+        rm = await cm.on_chain_start(
+            dumpd(self), input if isinstance(input, dict) else {"input": input}
+        )
 
         # invoke the first steps
         try:
@@ -427,7 +489,102 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             await rm.on_chain_error(e)
             raise
         else:
-            await rm.on_chain_end({"output": final})
+            await rm.on_chain_end(
+                final if isinstance(final, dict) else {"output": final}
+            )
+
+
+class RunnableCombine(Serializable, Runnable[Input, Dict[str, Any]]):
+    runnables: Dict[str, Runnable[Input, Any]]
+
+    @property
+    def lc_serializable(self) -> bool:
+        return True
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    def invoke(
+        self, input: Input, config: Optional[RunnableConfig] = None
+    ) -> Dict[str, Any]:
+        from langchain.callbacks.manager import CallbackManager
+
+        # setup callbacks
+        config = config or {}
+        cm = CallbackManager.configure(
+            inheritable_callbacks=config.get("callbacks"),
+            local_callbacks=None,
+            verbose=False,
+            inheritable_tags=config.get("tags"),
+            local_tags=None,
+            inheritable_metadata=config.get("metadata"),
+            local_metadata=None,
+        )
+        rm = cm.on_chain_start(dumpd(self), {"input": input})
+
+        # invoke
+        try:
+            with ThreadPoolExecutor() as executor:
+                futures = [
+                    executor.submit(
+                        step.invoke, input, _patch_config(config, rm.get_child())
+                    )
+                    for step in self.runnables.values()
+                ]
+                output = {
+                    key: future.result() for key, future in zip(self.runnables, futures)
+                }
+        except (KeyboardInterrupt, Exception) as e:
+            rm.on_chain_error(e)
+            raise
+        else:
+            rm.on_chain_end(output)
+            return output
+
+    async def ainvoke(
+        self, input: Input, config: Optional[RunnableConfig] = None
+    ) -> Dict[str, Any]:
+        from langchain.callbacks.manager import AsyncCallbackManager
+
+        # setup callbacks
+        config = config or {}
+        cm = AsyncCallbackManager.configure(
+            inheritable_callbacks=config.get("callbacks"),
+            local_callbacks=None,
+            verbose=False,
+            inheritable_tags=config.get("tags"),
+            local_tags=None,
+            inheritable_metadata=config.get("metadata"),
+            local_metadata=None,
+        )
+        rm = await cm.on_chain_start(dumpd(self), {"input": input})
+
+        # invoke
+        try:
+            results = await asyncio.gather(
+                *[
+                    step.ainvoke(input, _patch_config(config, rm.get_child()))
+                    for step in self.runnables.values()
+                ]
+            )
+            output = {key: value for key, value in zip(self.runnables, results)}
+        except (KeyboardInterrupt, Exception) as e:
+            await rm.on_chain_error(e)
+            raise
+        else:
+            await rm.on_chain_end(output)
+            return output
+
+
+class RunnableLambda(Runnable[Input, Output]):
+    def __init__(self, func: Callable[[Input], Output]) -> None:
+        if callable(func):
+            self.func = func
+        else:
+            raise TypeError(f"unsupported type: {type(func)}")
+
+    def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
+        return self.func(input)
 
 
 def _patch_config(
