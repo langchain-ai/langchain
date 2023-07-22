@@ -165,7 +165,7 @@ class GitHubAPIWrapper(BaseModel):
         file_contents = file_query[len(file_path) + 2 :]
         try:
             exists = self.github_repo_instance.get_contents(file_path)
-            if(exists is None):
+            if exists is None:
                 self.github_repo_instance.create_file(
                     path=file_path,
                     message="Create " + file_path,
