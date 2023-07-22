@@ -59,8 +59,6 @@ class MultionClientAPIWrapper(BaseModel):
         """  
         if self.client.tabId == None or tabId==None :
             self.client = MultionAPI()
-            print("test1")
-            print(task,url)
             message = self.client.create_session(task,url)
         else:
             message = self.client.update_session(task,url)
