@@ -461,6 +461,7 @@ class VectorStore(ABC):
 
 class VectorStoreRetriever(BaseRetriever):
     vectorstore: VectorStore
+    k: int = 4
     search_type: str = "similarity"
     search_kwargs: dict = Field(default_factory=dict)
     allowed_search_types: ClassVar[Collection[str]] = (
@@ -496,17 +497,17 @@ class VectorStoreRetriever(BaseRetriever):
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         if self.search_type == "similarity":
-            docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
+            docs = self.vectorstore.similarity_search(query, self.k, **self.search_kwargs)
         elif self.search_type == "similarity_score_threshold":
             docs_and_similarities = (
                 self.vectorstore.similarity_search_with_relevance_scores(
-                    query, **self.search_kwargs
+                    query, self.k, **self.search_kwargs
                 )
             )
             docs = [doc for doc, _ in docs_and_similarities]
         elif self.search_type == "mmr":
             docs = self.vectorstore.max_marginal_relevance_search(
-                query, **self.search_kwargs
+                query, self.k, **self.search_kwargs
             )
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
@@ -517,18 +518,18 @@ class VectorStoreRetriever(BaseRetriever):
     ) -> List[Document]:
         if self.search_type == "similarity":
             docs = await self.vectorstore.asimilarity_search(
-                query, **self.search_kwargs
+                query, self.k, **self.search_kwargs
             )
         elif self.search_type == "similarity_score_threshold":
             docs_and_similarities = (
                 await self.vectorstore.asimilarity_search_with_relevance_scores(
-                    query, **self.search_kwargs
+                    query, self.k, **self.search_kwargs
                 )
             )
             docs = [doc for doc, _ in docs_and_similarities]
         elif self.search_type == "mmr":
             docs = await self.vectorstore.amax_marginal_relevance_search(
-                query, **self.search_kwargs
+                query, self.k, **self.search_kwargs
             )
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
