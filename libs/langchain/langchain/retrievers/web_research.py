@@ -64,7 +64,6 @@ class WebResearchRetriever(BaseRetriever):
     vectorstore: VectorStore = Field(
         ..., description="Vector store for handling document embeddings"
     )
-    llm: BaseLLM = Field(..., description="Language model for generating questions")
     llm: Union[BaseLLM, ChatOpenAI] = Field(
         ..., description="Language model for generating questions"
     )
@@ -75,7 +74,7 @@ class WebResearchRetriever(BaseRetriever):
     )
     max_splits_per_doc: int = Field(100, description="Maximum splits per document")
 
-    def search_tool(self, query: str, num_pages: int = 1):
+    def search_tool(self, query: str, num_pages: int = 1) -> List[dict]:
         """Google search for up to 3 queries."""
         try:
             os.environ["GOOGLE_CSE_ID"] = self.GOOGLE_CSE_ID
