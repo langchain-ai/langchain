@@ -545,38 +545,62 @@ class FAISS(VectorStore):
 
     @classmethod
     def from_texts(
-        cls,
-        texts: List[str],
-        embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
-        ids: Optional[List[str]] = None,
-        **kwargs: Any,
-    ) -> FAISS:
-        """Construct FAISS wrapper from raw documents.
-
-        This is a user friendly interface that:
-            1. Embeds documents.
-            2. Creates an in memory docstore
-            3. Initializes the FAISS database
-
-        This is intended to be a quick way to get started.
-
+            cls,
+            texts: List[str],
+            embedding: Embeddings,
+            metadatas: Optional[List[dict]] = None,
+            ids: Optional[List[str]] = None,
+            batch_size: Optional[int] = None,  # Default is None
+            wait_time: Optional[int] = None,  # Default is None
+            **kwargs: Any,
+    ) -> 'FAISS':
+        """
+        Build a FAISS wrapper from raw documents.
+        This is a user-friendly interface that does the following:
+            1. Embeds the documents.
+            2. Creates an in-memory docstore.
+            3. Initializes the FAISS database.
+        This is intended to provide a way to get started quickly.
+        If batch_size and wait_time are specified as optional arguments, the method will process the texts in batches,
+        waiting for a specified amount of time between each batch. This batch processing only happens when both batch_size and wait_time are specified.
+        This can be useful when dealing with rate-limited APIs. Adjust the batch_size and wait_time according to the rate limits of the API you are using.
         Example:
             .. code-block:: python
-
                 from langchain import FAISS
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
-                faiss = FAISS.from_texts(texts, embeddings)
+                faiss = FAISS.from_texts(texts, embeddings, batch_size=100, wait_time=1)  # Process texts in batches of 100, waiting 1 second between each batch.
         """
-        embeddings = embedding.embed_documents(texts)
+        all_embeddings = []
+
+        if batch_size is not None and wait_time is not None:
+            # Import tqdm only when batch_size and wait_time are specified.
+            try:
+                from tqdm import tqdm
+            except ImportError:
+                raise ImportError("tqdm module is not installed. Install with `pip install tqdm`")
+
+            # Add texts to the FAISS index in batches.
+            for i in tqdm(range(0, len(texts), batch_size)):
+                # Create a batch.
+                batch_texts = texts[i:i + batch_size]
+                # Convert the batch texts to embeddings.
+                batch_embeddings = embedding.embed_documents(batch_texts)
+                # Add the embeddings to the overall list.
+                all_embeddings.extend(batch_embeddings)
+                # Wait until the next batch processing.
+                time.sleep(wait_time)
+        else:
+            # If batch_size and wait_time are not specified, process all texts at once.
+            all_embeddings = embedding.embed_documents(texts)
+
         return cls.__from(
             texts,
-            embeddings,
+            all_embeddings,
             embedding,
             metadatas=metadatas,
             ids=ids,
-            **kwargs,
+            **kwargs
         )
 
     @classmethod
