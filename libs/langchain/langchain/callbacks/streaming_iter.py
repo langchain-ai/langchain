@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from queue import Queue
 import threading
+from queue import Queue
 from typing import Any, Dict, Iterator, List, Union
 
 from langchain.callbacks.base import BaseCallbackHandler
@@ -45,5 +45,5 @@ class IteratorCallbackHandler(BaseCallbackHandler):
         while not self.done.is_set():
             try:
                 yield self.queue.get(timeout=0.01)
-            except:
+            except Exception:
                 pass

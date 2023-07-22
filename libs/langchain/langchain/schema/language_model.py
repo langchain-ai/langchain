@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 import asyncio
+from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from typing import (
     TYPE_CHECKING,
@@ -15,17 +15,15 @@ from typing import (
     Union,
     cast,
 )
-from typing_extensions import Unpack
 
 from langchain.load.serializable import Serializable
+from langchain.prompts.base import StringPromptValue
+from langchain.prompts.chat import ChatPromptValue
 from langchain.schema.messages import BaseMessage, get_buffer_string
 from langchain.schema.output import LLMResult
 from langchain.schema.prompt import PromptValue
-from langchain.utils import get_pydantic_field_names
 from langchain.schema.runnable import Runnable, RunnableConfig
-from langchain.prompts.base import StringPromptValue
-from langchain.prompts.chat import ChatPromptValue
-
+from langchain.utils import get_pydantic_field_names
 
 if TYPE_CHECKING:
     from langchain.callbacks.manager import Callbacks
@@ -88,11 +86,14 @@ class BaseLanguageModel(Serializable, Runnable[LanguageModelInput, str], ABC):
     def invoke(
         self,
         input: LanguageModelInput,
+        config: Optional[RunnableConfig] = None,
+        *,
         stop: Optional[List[str]] = None,
-        **kwargs: Unpack[RunnableConfig],
     ) -> str:
         return (
-            self.generate_prompt([self._convert_input(input)], stop=stop, **kwargs)
+            self.generate_prompt(
+                [self._convert_input(input)], stop=stop, **(config or {})
+            )
             .generations[0][0]
             .text
         )
@@ -100,11 +101,12 @@ class BaseLanguageModel(Serializable, Runnable[LanguageModelInput, str], ABC):
     async def ainvoke(
         self,
         input: LanguageModelInput,
+        config: Optional[RunnableConfig] = None,
+        *,
         stop: Optional[List[str]] = None,
-        **kwargs: Unpack[RunnableConfig],
     ) -> str:
         llm_result = await self.agenerate_prompt(
-            [self._convert_input(input)], stop=stop, **kwargs
+            [self._convert_input(input)], stop=stop, **(config or {})
         )
         return llm_result.generations[0][0].text
 
@@ -120,7 +122,7 @@ class BaseLanguageModel(Serializable, Runnable[LanguageModelInput, str], ABC):
             config = {}
 
         llm_result = self.generate_prompt(
-            [self._convert_input(input) for input in inputs], **config
+            [self._convert_input(input) for input in inputs], **(config or {})
         )
         return [g[0].text for g in llm_result.generations]
 
@@ -136,19 +138,20 @@ class BaseLanguageModel(Serializable, Runnable[LanguageModelInput, str], ABC):
             config = {}
 
         llm_result = await self.agenerate_prompt(
-            [self._convert_input(input) for input in inputs], **config
+            [self._convert_input(input) for input in inputs], **(config or {})
         )
         return [g[0].text for g in llm_result.generations]
 
     def stream(
         self,
         input: LanguageModelInput,
+        config: Optional[RunnableConfig] = None,
+        *,
         stop: Optional[List[str]] = None,
-        **kwargs: Unpack[RunnableConfig],
     ) -> Iterator[str]:
         if not hasattr(self, "streaming"):
             # model doesn't support streaming, so use default implementation
-            yield self.invoke(input, stop=stop, **kwargs)
+            yield self.invoke(input, stop=stop, config=config)
         else:
             from langchain.callbacks.streaming_iter import IteratorCallbackHandler
 
@@ -156,11 +159,12 @@ class BaseLanguageModel(Serializable, Runnable[LanguageModelInput, str], ABC):
             original_streaming = cast(bool, self.streaming)  # type: ignore
             self.streaming = True
 
-            # add iter callback handler to kwargs
-            callbacks: Optional[Callbacks] = kwargs.pop("callbacks", None)
+            # add iter callback handler to config
+            config = config or {}
+            callbacks: Optional[Callbacks] = config.pop("callbacks", None)
             callback_handler = IteratorCallbackHandler()
             if callbacks is None:
-                kwargs["callbacks"] = [callback_handler]
+                config["callbacks"] = [callback_handler]
             elif isinstance(callbacks, list):
                 callbacks.append(callback_handler)
             else:
@@ -169,7 +173,7 @@ class BaseLanguageModel(Serializable, Runnable[LanguageModelInput, str], ABC):
             with ThreadPoolExecutor(max_workers=1) as executor:
                 # run the model non-blocking
                 task = executor.submit(
-                    self.invoke, self._convert_input(input), stop=stop, **kwargs
+                    self.invoke, self._convert_input(input), stop=stop, config=config
                 )
 
                 # yield tokens from the callback handler
@@ -185,12 +189,13 @@ class BaseLanguageModel(Serializable, Runnable[LanguageModelInput, str], ABC):
     async def astream(
         self,
         input: LanguageModelInput,
+        config: Optional[RunnableConfig] = None,
+        *,
         stop: Optional[List[str]] = None,
-        **kwargs: Unpack[RunnableConfig],
     ) -> AsyncIterator[str]:
         if not hasattr(self, "streaming"):
             # model doesn't support streaming, so use default implementation
-            yield await self.ainvoke(input, stop=stop, **kwargs)
+            yield await self.ainvoke(input, stop=stop, config=config)
         else:
             from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
 
@@ -198,11 +203,12 @@ class BaseLanguageModel(Serializable, Runnable[LanguageModelInput, str], ABC):
             original_streaming = cast(bool, self.streaming)  # type: ignore
             self.streaming = True
 
-            # add aiter callback handler to kwargs
-            callbacks: Optional[Callbacks] = kwargs.pop("callbacks", None)
+            # add aiter callback handler to config
+            config = config or {}
+            callbacks: Optional[Callbacks] = config.pop("callbacks", None)
             callback_handler = AsyncIteratorCallbackHandler()
             if callbacks is None:
-                kwargs["callbacks"] = [callback_handler]
+                config["callbacks"] = [callback_handler]
             elif isinstance(callbacks, list):
                 callbacks.append(callback_handler)
             else:
@@ -210,7 +216,7 @@ class BaseLanguageModel(Serializable, Runnable[LanguageModelInput, str], ABC):
 
             # run the model asynchronously
             task = asyncio.create_task(
-                self.ainvoke(self._convert_input(input), stop=stop, **kwargs)
+                self.ainvoke(self._convert_input(input), stop=stop, config=config)
             )
 
             # yield tokens from the callback handler

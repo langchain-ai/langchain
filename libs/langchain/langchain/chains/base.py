@@ -9,7 +9,6 @@ from typing import Any, Dict, List, Optional, Union
 
 import yaml
 from pydantic import Field, root_validator, validator
-from typing_extensions import Unpack
 
 import langchain
 from langchain.callbacks.base import BaseCallbackManager
@@ -56,14 +55,14 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
     """
 
     def invoke(
-        self, input: Dict[str, Any], **kwargs: Unpack[RunnableConfig]
+        self, input: Dict[str, Any], config: Optional[RunnableConfig] = None
     ) -> Dict[str, Any]:
-        return self(input, **kwargs)
+        return self(input, **(config or {}))
 
     async def ainvoke(
-        self, input: Dict[str, Any], **kwargs: Unpack[RunnableConfig]
+        self, input: Dict[str, Any], config: Optional[RunnableConfig] = None
     ) -> Dict[str, Any]:
-        return await self.acall(input, **kwargs)
+        return await self.acall(input, **(config or {}))
 
     memory: Optional[BaseMemory] = None
     """Optional memory object. Defaults to None.
