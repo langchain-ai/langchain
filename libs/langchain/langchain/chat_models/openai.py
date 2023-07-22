@@ -446,7 +446,7 @@ class ChatOpenAI(BaseChatModel):
             **super()._get_invocation_params(stop=stop, **kwargs),
             **self._default_params,
             "model": self.model_name,
-            "function": kwargs.get("functions"),
+            "functions": kwargs.get("functions"),
         }
 
     @property
