@@ -15,7 +15,8 @@ class HybridRetriever(BaseRetriever):
         retrievers: A list of retrievers to ensemble.
         weights: A list of weights corresponding to the rank lists.
         c: A constant added to the rank, controlling the balance between the importance
-            of high-ranked items and the consideration given to lower-ranked items. Default is 60.
+            of high-ranked items and the consideration given to lower-ranked items. 
+            Default is 60.
     """
 
     retrievers: List[BaseRetriever]
@@ -95,8 +96,8 @@ class HybridRetriever(BaseRetriever):
         self, query: str, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         """
-        Asynchronously retrieve the results of the retrievers and use rank_fusion_func to get
-        the final result.
+        Asynchronously retrieve the results of the retrievers 
+        and use rank_fusion_func to get the final result.
 
         Args:
             query: The query to search for.
@@ -123,13 +124,15 @@ class HybridRetriever(BaseRetriever):
     ) -> List[Document]:
         """
         Perform weighted Reciprocal Rank Fusion on multiple rank lists.
-        You can find more details about RRF here: https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf
+        You can find more details about RRF here: 
+        https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf
 
         Args:
             doc_lists: A list of rank lists, where each rank list contains unique items.
 
         Returns:
-            list: The final aggregated list of items sorted by their weighted RRF scores in descending order.
+            list: The final aggregated list of items sorted by their weighted RRF 
+                    scores in descending order.
         """
         if len(doc_lists) != len(self.weights):
             raise ValueError(
