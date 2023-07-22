@@ -468,13 +468,13 @@ class FAISS(VectorStore):
         """delete IDs from the current FAISS object.
         
         Args:
-            IDs: List of IDs to you wish to remove from the current one
+            IDs: List of IDs you wish to remove from the current one
         
         Returns:
             None.
         """
         if not isinstance(self.docstore, AddableMixin):
-            raise ValueError("Cannot merge with this type of docstore")
+            raise ValueError("Cannot delete from this type of docstore")
 
         overlapping = set(IDs).intersection(self.index_to_docstore_id)
         if not overlapping:
