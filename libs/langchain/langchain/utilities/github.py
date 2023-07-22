@@ -123,9 +123,9 @@ class GitHubAPIWrapper(BaseModel):
         """
         Extracts title and number from each Issue and puts them in a dictionary
         Parameters:
-            issues(List[github.Issue.Issue]): A list of Github Issue objects
+            issues(List[Issue]): A list of Github Issue objects
         Returns:
-            List[dict] A dictionary of issue titles and numbers
+            List[dict]: A dictionary of issue titles and numbers
         """
         parsed = []
         for issue in issues:
@@ -154,16 +154,14 @@ class GitHubAPIWrapper(BaseModel):
     def get_issue(self, issue_number: int) -> Dict[str, Any]:
         """
         Fetches a specific issue and its first 10 comments
-
         Parameters:
             issue_number(int): The number for the github issue
-        
         Returns:
             dict: A doctionary containing the issue's title, body, and comments as a string
         """
         issue = self.github_repo_instance.get_issue(number=issue_number)
         page = 0
-        comments = []
+        comments: List[dict] = []
         while len(comments) <= 10:
             comments_page = issue.get_comments().get_page(page)
             if len(comments_page) == 0:
