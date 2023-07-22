@@ -1,3 +1,7 @@
+"""
+Hybrid retriever that ensemble the results of 
+multiple retrievers by using weighted  Reciprocal Rank Fusion
+"""
 from typing import List
 
 from langchain.callbacks.manager import (
@@ -15,7 +19,7 @@ class HybridRetriever(BaseRetriever):
         retrievers: A list of retrievers to ensemble.
         weights: A list of weights corresponding to the rank lists.
         c: A constant added to the rank, controlling the balance between the importance
-            of high-ranked items and the consideration given to lower-ranked items. 
+            of high-ranked items and the consideration given to lower-ranked items.
             Default is 60.
     """
 
@@ -82,7 +86,7 @@ class HybridRetriever(BaseRetriever):
         # Get the results of all retrievers.
         retriever_docs = [
             retriever.get_relevant_documents(
-                query, callbacks=run_manager.get_child("retriever_{}".format(i + 1))
+                query, callbacks=run_manager.get_child(f"retriever_{i+1}")
             )
             for i, retriever in enumerate(self.retrievers)
         ]
@@ -96,7 +100,7 @@ class HybridRetriever(BaseRetriever):
         self, query: str, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         """
-        Asynchronously retrieve the results of the retrievers 
+        Asynchronously retrieve the results of the retrievers
         and use rank_fusion_func to get the final result.
 
         Args:
@@ -124,14 +128,14 @@ class HybridRetriever(BaseRetriever):
     ) -> List[Document]:
         """
         Perform weighted Reciprocal Rank Fusion on multiple rank lists.
-        You can find more details about RRF here: 
+        You can find more details about RRF here:
         https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf
 
         Args:
             doc_lists: A list of rank lists, where each rank list contains unique items.
 
         Returns:
-            list: The final aggregated list of items sorted by their weighted RRF 
+            list: The final aggregated list of items sorted by their weighted RRF
                     scores in descending order.
         """
         if len(doc_lists) != len(self.weights):
