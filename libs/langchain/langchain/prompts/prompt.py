@@ -57,7 +57,7 @@ class PromptTemplate(StringPromptTemplate):
             input_variables = list(
                 set(self.input_variables) | set(other.input_variables)
             )
-            template = self.template + "\n\n" + other.template
+            template = self.template + other.template
             # If any do not want to validate, then don't
             validate_template = self.validate_template and other.validate_template
             partial_variables = {k: v for k, v in self.partial_variables.items()}
