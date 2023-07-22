@@ -1,6 +1,6 @@
 # Migrating to `langchain.experimental`
 
-We are moving any experimental components of langchain, or components with vulnerability issues, into `langchain.experimental`.
+We are moving any experimental components of langchain, or components with vulnerability issues, into `langchain_experimental`.
 This guide covers how to migrate.
 
 ## Installation
@@ -11,7 +11,7 @@ Previously:
 
 Now:
 
-`pip install -U langchain langchain.experimental`
+`pip install -U langchain langchain_experimental`
 
 ## PALChain
 
@@ -21,7 +21,7 @@ Previously:
 
 Now:
 
-`from langchain.experimental.pal_chain import PALChain`
+`from langchain_experimental.pal_chain import PALChain`
 
 ## SQLDatabaseChain
 
@@ -31,7 +31,7 @@ Previously:
 
 Now:
 
-`from langchain.experimental.sql import SQLDatabaseChain`
+`from langchain_experimental.sql import SQLDatabaseChain`
 
 ## `load_prompt` for Python files
 
@@ -44,4 +44,4 @@ Previously:
 
 Now:
 
-`from langchain.experimental.prompts import load_prompt`
+`from langchain_experimental.prompts import load_prompt`
