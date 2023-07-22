@@ -26,6 +26,15 @@ class InMemoryDocstore(Docstore, AddableMixin):
             raise ValueError(f"Tried to add ids that already exist: {overlapping}")
         self._dict = {**self._dict, **texts}
 
+    def delete(self, IDs: List) -> None:
+        """ Deleting IDs from in memory dictionary."""
+        overlapping = set(IDs).intersection(self._dict)
+        if not overlapping:
+            raise ValueError(f"Tried to delete ids that does not  exist: {IDs}")
+        for id in IDs:
+            self._dict.pop(id)
+
+
     def search(self, search: str) -> Union[str, Document]:
         """Search via direct lookup.
 
