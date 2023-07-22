@@ -3,6 +3,13 @@ sidebar_position: 4
 ---
 # Agents
 
+The core idea of agents is to use an LLM to control the sequence of actions that are taken.
+In chains, the sequence of actions is hardcoded (in code).
+In agents, the language model is used as a reasoning engine to determine which actions to take and in which order.
+
+There are many different run times agents, as this field is very new and still rapidly developing.
+The main runtime supported by LangChain is one where the agent decides an action to take, then takes that action, and loops until it decides that it is
+
 Some applications require a flexible chain of calls to LLMs and other tools based on user input. The **Agent** interface provides the flexibility for such applications. An agent has access to a suite of tools, and determines which ones to use depending on the user input. Agents can use multiple tools, and use the output of one tool as the input to the next.
 
 There are two main types of agents:
