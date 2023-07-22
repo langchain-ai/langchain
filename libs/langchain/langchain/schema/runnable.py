@@ -39,24 +39,23 @@ async def _gather_with_concurrency(n: Union[int, None], *coros: Coroutine) -> li
 
 
 class RunnableConfig(TypedDict, total=False):
+    tags: List[str]
     """
     Tags for this call and any sub-calls (eg. a Chain calling an LLM).
     You can use these to filter calls.
     """
 
-    tags: List[str]
-
+    metadata: Dict[str, Any]
     """
     Metadata for this call and any sub-calls (eg. a Chain calling an LLM).
     Keys should be strings, values should be JSON-serializable.
     """
-    metadata: Dict[str, Any]
 
+    callbacks: Callbacks
     """
     Callbacks for this call and any sub-calls (eg. a Chain calling an LLM).
     Tags are passed to all callbacks, metadata is passed to handle*Start callbacks.
     """
-    callbacks: Callbacks
 
 
 Input = TypeVar("Input")
