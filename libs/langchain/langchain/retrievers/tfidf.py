@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pickle
+from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
 from langchain.callbacks.manager import (
@@ -84,3 +86,49 @@ class TFIDFRetriever(BaseRetriever):
         self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         raise NotImplementedError
+
+    def save_local(
+        self,
+        folder_path: str,
+        file_name: str = "tfidf_vectorizer",
+    ) -> None:
+        try:
+            import joblib
+        except ImportError:
+            raise ImportError(
+                "Could not import joblib, please install with `pip install joblib`."
+            )
+
+        path = Path(folder_path)
+        path.mkdir(exist_ok=True, parents=True)
+
+        # Save vectorizer with joblib dump.
+        joblib.dump(self.vectorizer, path / f"{file_name}.joblib")
+
+        # Save docs and tfidf array as pickle.
+        with open(path / f"{file_name}.pkl", "wb") as f:
+            pickle.dump((self.docs, self.tfidf_array), f)
+
+    @classmethod
+    def load_local(
+        cls,
+        folder_path: str,
+        file_name: str = "tfidf_vectorizer",
+    ) -> TFIDFRetriever:
+        try:
+            import joblib
+        except ImportError:
+            raise ImportError(
+                "Could not import joblib, please install with `pip install joblib`."
+            )
+
+        path = Path(folder_path)
+
+        # Load vectorizer with joblib load.
+        vectorizer = joblib.load(path / f"{file_name}.joblib")
+
+        # Load docs and tfidf array as pickle.
+        with open(path / f"{file_name}.pkl", "rb") as f:
+            docs, tfidf_array = pickle.load(f)
+
+        return cls(vectorizer=vectorizer, docs=docs, tfidf_array=tfidf_array)
