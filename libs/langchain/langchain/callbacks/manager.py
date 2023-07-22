@@ -26,6 +26,7 @@ import langchain
 from langchain.callbacks.base import (
     BaseCallbackHandler,
     BaseCallbackManager,
+    Callbacks,
     ChainManagerMixin,
     LLMManagerMixin,
     RetrieverManagerMixin,
@@ -50,7 +51,6 @@ if TYPE_CHECKING:
     from langsmith import Client as LangSmithClient
 
 logger = logging.getLogger(__name__)
-Callbacks = Optional[Union[List[BaseCallbackHandler], BaseCallbackManager]]
 
 openai_callback_var: ContextVar[Optional[OpenAICallbackHandler]] = ContextVar(
     "openai_callback", default=None
