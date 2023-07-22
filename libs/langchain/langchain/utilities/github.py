@@ -4,15 +4,6 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
-from langchain.tools.github.prompt import (
-    COMMENT_ON_ISSUE_PROMPT,
-    CREATE_FILE_PROMPT,
-    DELETE_FILE_PROMPT,
-    GET_ISSUE_PROMPT,
-    GET_ISSUES_PROMPT,
-    READ_FILE_PROMPT,
-    UPDATE_FILE_PROMPT,
-)
 from langchain.utils import get_from_dict_or_env
 
 
@@ -26,51 +17,10 @@ class GitHubAPIWrapper(BaseModel):
     github_app_private_key: Optional[str] = None
     github_branch: Optional[str] = None
 
-    operations: List[Dict] = [
-        {
-            "mode": "get_issues",
-            "name": "Get Issues",
-            "description": GET_ISSUES_PROMPT,
-        },
-        {
-            "mode": "get_issue",
-            "name": "Get Issue",
-            "description": GET_ISSUE_PROMPT,
-        },
-        {
-            "mode": "comment_on_issue",
-            "name": "Comment on Issue",
-            "description": COMMENT_ON_ISSUE_PROMPT,
-        },
-        {
-            "mode": "create_file",
-            "name": "Create File",
-            "description": CREATE_FILE_PROMPT,
-        },
-        {
-            "mode": "read_file",
-            "name": "Read File",
-            "description": READ_FILE_PROMPT,
-        },
-        {
-            "mode": "update_file",
-            "name": "Update File",
-            "description": UPDATE_FILE_PROMPT,
-        },
-        {
-            "mode": "delete_file",
-            "name": "Delete File",
-            "description": DELETE_FILE_PROMPT,
-        },
-    ]
-
     class Config:
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
-
-    def list(self) -> List[Dict]:
-        return self.operations
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
