@@ -13,23 +13,25 @@ from langchain.prompts.base import (
     _get_jinja2_variables_from_template,
     check_valid_template,
 )
-
 from langchain.schema import Document
 
 doc_repr_default = Document.__repr__
 doc_format_default = Document.__format__
 
+
 def doc_repr_temp(self: Document) -> str:
     """Temporary __repr__ method for Document.
-        To prevent the meta data from being represented.
+    To prevent the meta data from being represented.
     """
     return f"'{self.page_content}'"
 
+
 def doc_format_temp(self: Document, format_spec: str) -> str:
     """Temporary __format__ method for Document.
-        To prevent the meta data from being formatted.
+    To prevent the meta data from being formatted.
     """
-    return doc_format_default( f"'{self.page_content}'", format_spec)
+    return doc_format_default(f"'{self.page_content}'", format_spec)
+
 
 class PromptTemplate(StringPromptTemplate):
     """Schema to represent a prompt for an LLM.
@@ -66,7 +68,7 @@ class PromptTemplate(StringPromptTemplate):
 
     def format(self, **kwargs: Any) -> str:
         """Format the prompt with the inputs.
-            To prevent the meta data from being printed, 
+            To prevent the meta data from being printed,
             temporarily change the __repr__ and __format__ method of Document.
 
         Args:
@@ -82,13 +84,14 @@ class PromptTemplate(StringPromptTemplate):
             prompt.format(variable1="foo")
         """
         kwargs = self._merge_partial_and_user_variables(**kwargs)
-        setattr(Document, '__repr__', doc_repr_temp)
-        setattr(Document, '__format__', doc_format_temp)
-        result = DEFAULT_FORMATTER_MAPPING[self.template_format](self.template, **kwargs)
-        setattr(Document, '__repr__', doc_repr_default)
-        setattr(Document, '__format__', doc_format_default)
+        setattr(Document, "__repr__", doc_repr_temp)
+        setattr(Document, "__format__", doc_format_temp)
+        result = DEFAULT_FORMATTER_MAPPING[self.template_format](
+            self.template, **kwargs
+        )
+        setattr(Document, "__repr__", doc_repr_default)
+        setattr(Document, "__format__", doc_format_default)
         return result
-
 
     @root_validator()
     def template_is_valid(cls, values: Dict) -> Dict:
