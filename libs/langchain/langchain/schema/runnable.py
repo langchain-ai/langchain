@@ -1,7 +1,6 @@
-from abc import ABC, abstractmethod
 import asyncio
+from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
-from functools import partial
 from typing import (
     Any,
     AsyncIterator,
@@ -16,11 +15,7 @@ from typing import (
     Union,
 )
 
-from typing_extensions import Unpack
-
 from langchain.callbacks.manager import Callbacks
-
-from langchain.load.serializable import Serializable
 
 
 async def _gated_coro(semaphore: asyncio.Semaphore, coro: Coroutine) -> Any:
@@ -65,12 +60,14 @@ Output = TypeVar("Output")
 
 class Runnable(Generic[Input, Output], ABC):
     @abstractmethod
-    def invoke(self, input: Input, **kwargs: Unpack[RunnableConfig]) -> Output:
+    def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
         ...
 
-    async def ainvoke(self, input: Input, **kwargs: Unpack[RunnableConfig]) -> Output:
+    async def ainvoke(
+        self, input: Input, config: Optional[RunnableConfig] = None
+    ) -> Output:
         return await asyncio.get_running_loop().run_in_executor(
-            None, partial(self.invoke, input, **kwargs)
+            None, self.invoke, input, config
         )
 
     def batch(
@@ -83,7 +80,7 @@ class Runnable(Generic[Input, Output], ABC):
 
         with ThreadPoolExecutor(max_workers=max_concurrency) as executor:
             futures = [
-                executor.submit(self.invoke, input, **config)
+                executor.submit(self.invoke, input, config)
                 for input, config in zip(inputs, configs)
             ]
             return [future.result() for future in futures]
@@ -95,21 +92,17 @@ class Runnable(Generic[Input, Output], ABC):
         max_concurrency: Optional[int] = None,
     ) -> List[Output]:
         configs = self._get_config_list(config, len(inputs))
-        coros = (
-            self.ainvoke(input, **config) for input, config in zip(inputs, configs)
-        )
+        coros = (self.ainvoke(input, config) for input, config in zip(inputs, configs))
 
         return await _gather_with_concurrency(max_concurrency, *coros)
 
-    def stream(
-        self, input: Input, **kwargs: Unpack[RunnableConfig]
-    ) -> Iterator[Output]:
-        yield self.invoke(input, **kwargs)
+    def stream(self, input: Input, config: RunnableConfig) -> Iterator[Output]:
+        yield self.invoke(input, config)
 
     async def astream(
-        self, input: Input, **kwargs: Unpack[RunnableConfig]
+        self, input: Input, config: Optional[RunnableConfig] = None
     ) -> AsyncIterator[Output]:
-        yield await self.ainvoke(input, **kwargs)
+        yield await self.ainvoke(input, config)
 
     def _get_config_list(
         self, config: Optional[Union[RunnableConfig, List[RunnableConfig]]], length: int
