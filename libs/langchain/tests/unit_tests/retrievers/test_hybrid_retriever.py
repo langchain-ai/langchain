@@ -1,6 +1,5 @@
 import pytest
 
-from langchain.embeddings import OpenAIEmbeddings
 from langchain.retrievers.bm25 import BM25Retriever
 from langchain.retrievers.hybrid_retriever import HybridRetriever
 from langchain.schema import Document
