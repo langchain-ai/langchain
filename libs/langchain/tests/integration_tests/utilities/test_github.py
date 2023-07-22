@@ -9,9 +9,11 @@ from langchain.utilities.github import GitHubAPIWrapper
 # GITHUB_APP_ID
 # GITHUB_PRIVATE_KEY
 
+
 @pytest.fixture
 def api_client() -> GitHubAPIWrapper:
     return GitHubAPIWrapper()
+
 
 def test_get_open_issues(api_client: GitHubAPIWrapper) -> None:
     """Basic test to fetch issues"""

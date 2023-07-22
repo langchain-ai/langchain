@@ -101,7 +101,7 @@ class GitHubAPIWrapper(BaseModel):
             str: A plaintext report containing the number of issues and each issue's title and number.
         """
         issues = self.github_repo_instance.get_issues(state="open")
-        if(len(issues) > 0):
+        if len(issues) > 0:
             parsed_issues = self.parse_issues(issues)
             parsed_issues_str = (
                 "Found " + str(len(parsed_issues)) + " issues:\n" + str(parsed_issues)
@@ -126,9 +126,7 @@ class GitHubAPIWrapper(BaseModel):
             if len(comments_page) == 0:
                 break
             for comment in comments_page:
-                comments.append(
-                    {"body": comment.body, "user": comment.user.login}
-                )
+                comments.append({"body": comment.body, "user": comment.user.login})
             page += 1
 
         return {
@@ -159,7 +157,7 @@ class GitHubAPIWrapper(BaseModel):
         """
         Creates a new file on the Github repo
         Parameters:
-            file_query(str): a string which contains the file path and the file contents. 
+            file_query(str): a string which contains the file path and the file contents.
                 The file path is the first line in the string, and the contents are the rest of the string.
                 For example, "hello_world.md\n# Hello World!"
         Returns:
@@ -209,8 +207,12 @@ class GitHubAPIWrapper(BaseModel):
         """
         try:
             file_path = file_query.split("\n")[0]
-            old_file_contents = file_query.split("OLD <<<<")[1].split(">>>> OLD")[0].strip()
-            new_file_contents = file_query.split("NEW <<<<")[1].split(">>>> NEW")[0].strip()
+            old_file_contents = (
+                file_query.split("OLD <<<<")[1].split(">>>> OLD")[0].strip()
+            )
+            new_file_contents = (
+                file_query.split("NEW <<<<")[1].split(">>>> NEW")[0].strip()
+            )
 
             file_content = self.read_file(file_path)
             updated_file_content = file_content.replace(
