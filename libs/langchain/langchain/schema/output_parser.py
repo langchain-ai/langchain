@@ -1,17 +1,27 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, List, Optional, TypeVar
+from typing import Any, Dict, List, Optional, TypeVar, Union
 
 from langchain.load.serializable import Serializable
-from langchain.schema.output import Generation
+from langchain.schema.messages import BaseMessage
+from langchain.schema.output import ChatGeneration, Generation
 from langchain.schema.prompt import PromptValue
+from langchain.schema.runnable import Runnable, RunnableConfig
 
 T = TypeVar("T")
 
 
-class BaseLLMOutputParser(Serializable, ABC, Generic[T]):
+class BaseLLMOutputParser(Serializable, Runnable[Union[str, BaseMessage], T], ABC):
     """Abstract base class for parsing the outputs of a model."""
+
+    def invoke(
+        self, input: str | BaseMessage, config: RunnableConfig | None = None
+    ) -> T:
+        if isinstance(input, BaseMessage):
+            return self.parse_result([ChatGeneration(message=input)])
+        else:
+            return self.parse_result([Generation(text=input)])
 
     @abstractmethod
     def parse_result(self, result: List[Generation]) -> T:
@@ -26,7 +36,7 @@ class BaseLLMOutputParser(Serializable, ABC, Generic[T]):
         """
 
 
-class BaseOutputParser(BaseLLMOutputParser, ABC, Generic[T]):
+class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T], ABC):
     """Base class to parse the output of an LLM call.
 
     Output parsers help structure language model responses.
