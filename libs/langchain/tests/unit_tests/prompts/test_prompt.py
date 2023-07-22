@@ -173,7 +173,6 @@ def test_format() -> None:
     # if the variable is Document without meta_data
     doc = Document(page_content="good")
     output = prompt.format(var=doc)
-    print(output)
     assert output == "This is a 'good' test."
     # if the variable is Document with meta_data
     doc = Document(page_content="good", meta_data={"bar": "baz"})
