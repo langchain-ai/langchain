@@ -12,16 +12,8 @@ from langchain.schema.runnable import Runnable, RunnableConfig
 T = TypeVar("T")
 
 
-class BaseLLMOutputParser(Serializable, Runnable[Union[str, BaseMessage], T], ABC):
+class BaseLLMOutputParser(Serializable, ABC):
     """Abstract base class for parsing the outputs of a model."""
-
-    def invoke(
-        self, input: str | BaseMessage, config: RunnableConfig | None = None
-    ) -> T:
-        if isinstance(input, BaseMessage):
-            return self.parse_result([ChatGeneration(message=input)])
-        else:
-            return self.parse_result([Generation(text=input)])
 
     @abstractmethod
     def parse_result(self, result: List[Generation]) -> T:
@@ -36,7 +28,19 @@ class BaseLLMOutputParser(Serializable, Runnable[Union[str, BaseMessage], T], AB
         """
 
 
-class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T], ABC):
+class BaseGenerationOutputParser(
+    BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
+):
+    def invoke(
+        self, input: str | BaseMessage, config: RunnableConfig | None = None
+    ) -> T:
+        if isinstance(input, BaseMessage):
+            return self.parse_result([ChatGeneration(message=input)])
+        else:
+            return self.parse_result([Generation(text=input)])
+
+
+class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]):
     """Base class to parse the output of an LLM call.
 
     Output parsers help structure language model responses.
@@ -62,6 +66,14 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
                     def _type(self) -> str:
                             return "boolean_output_parser"
     """  # noqa: E501
+
+    def invoke(
+        self, input: str | BaseMessage, config: RunnableConfig | None = None
+    ) -> T:
+        if isinstance(input, BaseMessage):
+            return self.parse_result([ChatGeneration(message=input)])
+        else:
+            return self.parse_result([Generation(text=input)])
 
     def parse_result(self, result: List[Generation]) -> T:
         """Parse a list of candidate model Generations into a specific format.
