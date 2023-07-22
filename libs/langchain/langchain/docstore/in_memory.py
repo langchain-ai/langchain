@@ -34,7 +34,6 @@ class InMemoryDocstore(Docstore, AddableMixin):
         for id in IDs:
             self._dict.pop(id)
 
-
     def search(self, search: str) -> Union[str, Document]:
         """Search via direct lookup.
 

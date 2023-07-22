@@ -463,6 +463,35 @@ class FAISS(VectorStore):
         )
         return docs
 
+
+    def delete(self, IDs: List) -> None:
+        """delete IDs from the current FAISS object.
+        
+        Args:
+            IDs: List of IDs to you wish to remove from the current one
+        
+        Returns:
+            None.
+        """
+        if not isinstance(self.docstore, AddableMixin):
+            raise ValueError("Cannot merge with this type of docstore")
+
+        overlapping = set(IDs).intersection(self.index_to_docstore_id)
+        if not overlapping:
+            raise ValueError("IDs does not exist in the current object")
+        
+        #removing ids from index
+        n_items_removed = self.index.remove_ids(np.array(IDs, dtype=np.int64))
+
+        docstore_id = []
+        for id in overlapping:
+            docstore_id.append(self.index_to_docstore_id[id])
+            self.index_to_docstore_id.pop(id)
+            
+        #remove items from docstore
+        self.docstore.delete(docstore_id)
+
+
     def merge_from(self, target: FAISS) -> None:
         """Merge another FAISS object with the current one.
 
