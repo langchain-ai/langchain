@@ -66,8 +66,21 @@ Other = TypeVar("Other")
 
 class Runnable(Generic[Input, Output], ABC):
     def __or__(
-        self, __value: "Runnable[Any, Other]"
+        self,
+        __value: Union[
+            "Runnable[Any, Other]",
+            Dict[str, Union["Runnable[Any, Other]", Callable[[Any], Other]]],
+        ],
     ) -> "RunnableSequence[Input, Other]":
+        if isinstance(__value, dict):
+            runnables = {
+                key: r if isinstance(r, Runnable) else RunnableLambda(r)
+                for key, r in __value.items()
+            }
+            return RunnableSequence(
+                first=self,
+                last=RunnableCombine(runnables=runnables),
+            )
         if isinstance(__value, Runnable):
             return RunnableSequence(first=self, last=__value)
         else:
