@@ -214,6 +214,8 @@ This allows us to pass the records (dict) into the `metadata_func` that has to b
 
 Additionally, we now have to explicitly specify in the loader, via the `content_key` argument, the key from the record where the value for the `page_content` needs to be extracted from.
 
+The `content_key` also needs to be described according to the [jq schema](https://en.wikipedia.org/wiki/Jq_(programming_language)), just like `jq_schema`.
+
 
 ```python
 # Define the metadata extraction function.
