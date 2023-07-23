@@ -120,60 +120,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         )
         return cast(ChatGeneration, llm_result.generations[0][0]).message
 
-    def batch(
-        self,
-        inputs: List[LanguageModelInput],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
-        max_concurrency: Optional[int] = None,
-    ) -> List[BaseMessage]:
-        if isinstance(config, list):
-            config = config[0]
-        if config is None:
-            config = {}
-
-        if max_concurrency is None:
-            llm_result = self.generate_prompt(
-                [self._convert_input(input) for input in inputs], **(config or {})
-            )
-            return [cast(ChatGeneration, g[0]).message for g in llm_result.generations]
-        else:
-            batches = [
-                inputs[i : i + max_concurrency]
-                for i in range(0, len(inputs), max_concurrency)
-            ]
-            return [
-                output
-                for batch in batches
-                for output in self.batch(batch, config=config)
-            ]
-
-    async def abatch(
-        self,
-        inputs: List[LanguageModelInput],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
-        max_concurrency: Optional[int] = None,
-    ) -> List[BaseMessage]:
-        if isinstance(config, list):
-            config = config[0]
-        if config is None:
-            config = {}
-
-        if max_concurrency is None:
-            llm_result = await self.agenerate_prompt(
-                [self._convert_input(input) for input in inputs], **(config or {})
-            )
-            return [(ChatGeneration, g[0]).message for g in llm_result.generations]
-        else:
-            batches = [
-                inputs[i : i + max_concurrency]
-                for i in range(0, len(inputs), max_concurrency)
-            ]
-            return [
-                output
-                for batch in batches
-                for output in await self.abatch(batch, config=config)
-            ]
-
     # TODO make this return BaseMessageChunk
 
     def stream(
