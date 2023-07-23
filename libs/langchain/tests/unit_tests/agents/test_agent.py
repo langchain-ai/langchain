@@ -1,6 +1,6 @@
 """Unit tests for agents."""
 
-from typing import Any, List, Mapping, Optional
+from typing import Any, Dict, List, Optional
 
 from langchain.agents import AgentExecutor, AgentType, initialize_agent
 from langchain.agents.tools import Tool
@@ -33,7 +33,7 @@ class FakeListLLM(LLM):
         return len(text.split())
 
     @property
-    def _identifying_params(self) -> Mapping[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         return {}
 
     @property
