@@ -212,14 +212,14 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
         max_concurrency: Optional[int] = None,
     ) -> List[str]:
-        if isinstance(config, list):
-            config = config[0]
-        if config is None:
-            config = {}
+        config = self._get_config_list(config, len(inputs))
 
         if max_concurrency is None:
             llm_result = self.generate_prompt(
-                [self._convert_input(input) for input in inputs], **(config or {})
+                [self._convert_input(input) for input in inputs],
+                callbacks=[c.get("callbacks") for c in config],
+                tags=[c.get("tags") for c in config],
+                metadata=[c.get("metadata") for c in config],
             )
             return [g[0].text for g in llm_result.generations]
         else:
@@ -239,14 +239,14 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
         max_concurrency: Optional[int] = None,
     ) -> List[str]:
-        if isinstance(config, list):
-            config = config[0]
-        if config is None:
-            config = {}
+        config = self._get_config_list(config, len(inputs))
 
         if max_concurrency is None:
             llm_result = await self.agenerate_prompt(
-                [self._convert_input(input) for input in inputs], **(config or {})
+                [self._convert_input(input) for input in inputs],
+                callbacks=[c.get("callbacks") for c in config],
+                tags=[c.get("tags") for c in config],
+                metadata=[c.get("metadata") for c in config],
             )
             return [g[0].text for g in llm_result.generations]
         else:
@@ -373,7 +373,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         self,
         prompts: List[PromptValue],
         stop: Optional[List[str]] = None,
-        callbacks: Callbacks = None,
+        callbacks: Optional[Union[Callbacks, List[Callbacks]]] = None,
         **kwargs: Any,
     ) -> LLMResult:
         prompt_strings = [p.to_string() for p in prompts]
@@ -383,7 +383,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         self,
         prompts: List[PromptValue],
         stop: Optional[List[str]] = None,
-        callbacks: Callbacks = None,
+        callbacks: Optional[Union[Callbacks, List[Callbacks]]] = None,
         **kwargs: Any,
     ) -> LLMResult:
         prompt_strings = [p.to_string() for p in prompts]
@@ -428,10 +428,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         self,
         prompts: List[str],
         stop: Optional[List[str]] = None,
-        callbacks: Callbacks = None,
+        callbacks: Optional[Union[Callbacks, List[Callbacks]]] = None,
         *,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[Union[List[str], List[List[str]]]] = None,
+        metadata: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
@@ -440,6 +440,45 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 "Argument 'prompts' is expected to be of type List[str], received"
                 f" argument of type {type(prompts)}."
             )
+        # Create callback managers
+        if isinstance(callbacks, list) and isinstance(
+            callbacks[0], (list, BaseCallbackManager)
+        ):
+            # We've received a list of callbacks args to apply to each input
+            assert len(callbacks) == len(prompts)
+            assert tags is None or (
+                isinstance(tags, list) and len(tags) == len(prompts)
+            )
+            assert metadata is None or (
+                isinstance(metadata, list) and len(metadata) == len(prompts)
+            )
+            callbacks = cast(List[Callbacks], callbacks)
+            callback_managers = [
+                CallbackManager.configure(
+                    callback,
+                    self.callbacks,
+                    self.verbose,
+                    tag,
+                    self.tags,
+                    meta,
+                    self.metadata,
+                )
+                for callback, tag, meta in zip(callbacks, tags, metadata)
+            ]
+        else:
+            # We've received a single callbacks arg to apply to all inputs
+            callback_managers = [
+                CallbackManager.configure(
+                    callbacks,
+                    self.callbacks,
+                    self.verbose,
+                    tags,
+                    self.tags,
+                    metadata,
+                    self.metadata,
+                )
+            ] * len(prompts)
+
         params = self.dict()
         params["stop"] = stop
         options = {"stop": stop}
@@ -450,15 +489,6 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             missing_prompts,
         ) = get_prompts(params, prompts)
         disregard_cache = self.cache is not None and not self.cache
-        callback_manager = CallbackManager.configure(
-            callbacks,
-            self.callbacks,
-            self.verbose,
-            tags,
-            self.tags,
-            metadata,
-            self.metadata,
-        )
         new_arg_supported = inspect.signature(self._generate).parameters.get(
             "run_manager"
         )
@@ -467,17 +497,26 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
-            run_managers = callback_manager.on_llm_start(
-                dumpd(self), prompts, invocation_params=params, options=options
-            )
+            run_managers = [
+                callback_manager.on_llm_start(
+                    dumpd(self), [prompt], invocation_params=params, options=options
+                )[0]
+                for callback_manager, prompt in zip(callback_managers, prompts)
+            ]
             output = self._generate_helper(
                 prompts, stop, run_managers, bool(new_arg_supported), **kwargs
             )
             return output
         if len(missing_prompts) > 0:
-            run_managers = callback_manager.on_llm_start(
-                dumpd(self), missing_prompts, invocation_params=params, options=options
-            )
+            run_managers = [
+                callback_managers[idx].on_llm_start(
+                    dumpd(self),
+                    [prompts[idx]],
+                    invocation_params=params,
+                    options=options,
+                )[0]
+                for idx in missing_prompt_idxs
+            ]
             new_results = self._generate_helper(
                 missing_prompts, stop, run_managers, bool(new_arg_supported), **kwargs
             )
@@ -538,13 +577,52 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         self,
         prompts: List[str],
         stop: Optional[List[str]] = None,
-        callbacks: Callbacks = None,
+        callbacks: Optional[Union[Callbacks, List[Callbacks]]] = None,
         *,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[Union[List[str], List[List[str]]]] = None,
+        metadata: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
+        # Create callback managers
+        if isinstance(callbacks, list) and isinstance(
+            callbacks[0], (list, BaseCallbackManager)
+        ):
+            # We've received a list of callbacks args to apply to each input
+            assert len(callbacks) == len(prompts)
+            assert tags is None or (
+                isinstance(tags, list) and len(tags) == len(prompts)
+            )
+            assert metadata is None or (
+                isinstance(metadata, list) and len(metadata) == len(prompts)
+            )
+            callbacks = cast(List[Callbacks], callbacks)
+            callback_managers = [
+                AsyncCallbackManager.configure(
+                    callback,
+                    self.callbacks,
+                    self.verbose,
+                    tag,
+                    self.tags,
+                    meta,
+                    self.metadata,
+                )
+                for callback, tag, meta in zip(callbacks, tags, metadata)
+            ]
+        else:
+            # We've received a single callbacks arg to apply to all inputs
+            callback_managers = [
+                AsyncCallbackManager.configure(
+                    callbacks,
+                    self.callbacks,
+                    self.verbose,
+                    tags,
+                    self.tags,
+                    metadata,
+                    self.metadata,
+                )
+            ] * len(prompts)
+
         params = self.dict()
         params["stop"] = stop
         options = {"stop": stop}
@@ -555,15 +633,6 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             missing_prompts,
         ) = get_prompts(params, prompts)
         disregard_cache = self.cache is not None and not self.cache
-        callback_manager = AsyncCallbackManager.configure(
-            callbacks,
-            self.callbacks,
-            self.verbose,
-            tags,
-            self.tags,
-            metadata,
-            self.metadata,
-        )
         new_arg_supported = inspect.signature(self._agenerate).parameters.get(
             "run_manager"
         )
@@ -572,17 +641,32 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
-            run_managers = await callback_manager.on_llm_start(
-                dumpd(self), prompts, invocation_params=params, options=options
+            run_managers = await asyncio.gather(
+                *[
+                    callback_manager.on_llm_start(
+                        dumpd(self), [prompt], invocation_params=params, options=options
+                    )
+                    for callback_manager, prompt in zip(callback_managers, prompts)
+                ]
             )
+            run_managers = [r[0] for r in run_managers]
             output = await self._agenerate_helper(
                 prompts, stop, run_managers, bool(new_arg_supported), **kwargs
             )
             return output
         if len(missing_prompts) > 0:
-            run_managers = await callback_manager.on_llm_start(
-                dumpd(self), missing_prompts, invocation_params=params, options=options
+            run_managers = await asyncio.gather(
+                *[
+                    callback_managers[idx].on_llm_start(
+                        dumpd(self),
+                        [prompts[idx]],
+                        invocation_params=params,
+                        options=options,
+                    )
+                    for idx in missing_prompt_idxs
+                ]
             )
+            run_managers = [r[0] for r in run_managers]
             new_results = await self._agenerate_helper(
                 missing_prompts, stop, run_managers, bool(new_arg_supported), **kwargs
             )
