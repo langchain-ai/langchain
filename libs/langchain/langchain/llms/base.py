@@ -453,6 +453,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 isinstance(metadata, list) and len(metadata) == len(prompts)
             )
             callbacks = cast(List[Callbacks], callbacks)
+            tags_list = cast(List[Optional[List[str]]], tags or [None] * len(prompts))
+            metadata_list = cast(
+                List[Optional[Dict[str, Any]]], metadata or [{}] * len(prompts)
+            )
             callback_managers = [
                 CallbackManager.configure(
                     callback,
@@ -463,18 +467,18 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     meta,
                     self.metadata,
                 )
-                for callback, tag, meta in zip(callbacks, tags, metadata)
+                for callback, tag, meta in zip(callbacks, tags_list, metadata_list)
             ]
         else:
             # We've received a single callbacks arg to apply to all inputs
             callback_managers = [
                 CallbackManager.configure(
-                    callbacks,
+                    cast(Callbacks, callbacks),
                     self.callbacks,
                     self.verbose,
-                    tags,
+                    cast(List[str], tags),
                     self.tags,
-                    metadata,
+                    cast(Dict[str, Any], metadata),
                     self.metadata,
                 )
             ] * len(prompts)
@@ -597,6 +601,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 isinstance(metadata, list) and len(metadata) == len(prompts)
             )
             callbacks = cast(List[Callbacks], callbacks)
+            tags_list = cast(List[Optional[List[str]]], tags or [None] * len(prompts))
+            metadata_list = cast(
+                List[Optional[Dict[str, Any]]], metadata or [{}] * len(prompts)
+            )
             callback_managers = [
                 AsyncCallbackManager.configure(
                     callback,
@@ -607,18 +615,18 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     meta,
                     self.metadata,
                 )
-                for callback, tag, meta in zip(callbacks, tags, metadata)
+                for callback, tag, meta in zip(callbacks, tags_list, metadata_list)
             ]
         else:
             # We've received a single callbacks arg to apply to all inputs
             callback_managers = [
                 AsyncCallbackManager.configure(
-                    callbacks,
+                    cast(Callbacks, callbacks),
                     self.callbacks,
                     self.verbose,
-                    tags,
+                    cast(List[str], tags),
                     self.tags,
-                    metadata,
+                    cast(Dict[str, Any], metadata),
                     self.metadata,
                 )
             ] * len(prompts)

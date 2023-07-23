@@ -72,7 +72,7 @@ class FakeRetriever(BaseRetriever):
 
 
 @pytest.fixture()
-def fixed_uuids(mocker: MockerFixture):
+def fixed_uuids(mocker: MockerFixture) -> MockerFixture._Patcher:
     """Note this mock only works with `import uuid; uuid.uuid4()`, it does not work with `from uuid import uuid4; uuid4()`."""
 
     # Disable tracing to avoid fixed UUIDs causing tracing errors.
@@ -85,7 +85,7 @@ def fixed_uuids(mocker: MockerFixture):
 
 
 @pytest.mark.asyncio
-async def test_default_method_implementations(mocker: MockerFixture):
+async def test_default_method_implementations(mocker: MockerFixture) -> None:
     fake = FakeRunnable()
     spy = mocker.spy(fake, "invoke")
 
@@ -140,7 +140,7 @@ async def test_default_method_implementations(mocker: MockerFixture):
 
 
 @pytest.mark.asyncio
-async def test_prompt():
+async def test_prompt() -> None:
     prompt = SystemMessage(content="You are a nice assistant.") + "{question}"
     expected = ChatPromptValue(
         messages=[
@@ -194,7 +194,7 @@ async def test_prompt():
 @freeze_time("2023-01-01")
 async def test_prompt_with_chat_model(
     mocker: MockerFixture, snapshot: SnapshotAssertion, fixed_uuids: None
-):
+) -> None:
     prompt = SystemMessage(content="You are a nice assistant.") + "{question}"
     chat = FakeListChatModel(responses=["foo", "bar"])
 
@@ -280,7 +280,7 @@ async def test_prompt_with_chat_model(
 @freeze_time("2023-01-01")
 async def test_prompt_with_llm(
     mocker: MockerFixture, snapshot: SnapshotAssertion, fixed_uuids: None
-):
+) -> None:
     prompt = SystemMessage(content="You are a nice assistant.") + "{question}"
     llm = FakeListLLM(responses=["foo", "bar"])
 
@@ -368,7 +368,7 @@ async def test_prompt_with_llm(
 @freeze_time("2023-01-01")
 def test_prompt_with_chat_model_and_parser(
     mocker: MockerFixture, snapshot: SnapshotAssertion, fixed_uuids: None
-):
+) -> None:
     prompt = SystemMessage(content="You are a nice assistant.") + "{question}"
     chat = FakeListChatModel(responses=["foo, bar"])
     parser = CommaSeparatedListOutputParser()
@@ -403,7 +403,7 @@ def test_prompt_with_chat_model_and_parser(
 @freeze_time("2023-01-01")
 def test_seq_dict_prompt_llm(
     mocker: MockerFixture, snapshot: SnapshotAssertion, fixed_uuids: None
-):
+) -> None:
     passthrough = mocker.Mock(side_effect=lambda x: x)
 
     retriever = FakeRetriever()
@@ -469,14 +469,14 @@ What is your name?"""
 @freeze_time("2023-01-01")
 def test_seq_prompt_dict(
     mocker: MockerFixture, snapshot: SnapshotAssertion, fixed_uuids: None
-):
+) -> None:
     prompt = SystemMessage(content="You are a nice assistant.") + "{question}"
 
     chat = FakeListChatModel(responses=["i'm a chatbot"])
 
     llm = FakeListLLM(responses=["i'm a textbot"])
 
-    chain = prompt | {
+    chain = prompt | {  # type: ignore[operator]
         "chat": chat,
         "llm": llm,
     }
