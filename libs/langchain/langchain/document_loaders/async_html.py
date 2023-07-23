@@ -86,7 +86,12 @@ class AsyncHtmlLoader(BaseLoader):
                         headers=self.session.headers,
                         ssl=None if self.session.verify else False,
                     ) as response:
-                        return await response.text()
+                        try:
+                            text = await response.text()
+                        except UnicodeDecodeError:
+                            print(f"Failed to decode content from {url}")
+                            text = ""
+                        return text
                 except aiohttp.ClientConnectionError as e:
                     if i == retries - 1:
                         raise

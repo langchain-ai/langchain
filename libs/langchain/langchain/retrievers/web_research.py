@@ -73,17 +73,18 @@ class WebResearchRetriever(BaseRetriever):
         DEFAULT_SEARCH_PROMPT, description="Search Prompt Template"
     )
     max_splits_per_doc: int = Field(100, description="Maximum splits per document")
+    num_search_results: int = Field(1, description="Number of pages per Google search")
 
-    def search_tool(self, query: str, num_pages: int = 1) -> List[dict]:
-        """Google search for up to 3 queries."""
+    def search_tool(self, query: str, num_search_results: int = 1) -> List[dict]:
+        """Returns num_serch_results pages per Google search."""
         try:
             os.environ["GOOGLE_CSE_ID"] = self.GOOGLE_CSE_ID
             os.environ["GOOGLE_API_KEY"] = self.GOOGLE_API_KEY
             search = GoogleSearchAPIWrapper()
         except Exception as e:
             print(f"Error: {str(e)}")
-        result = search.results(query, num_pages)
-        return result if isinstance(result, list) else [result]
+        result = search.results(query, num_search_results)
+        return result
 
     def _get_relevant_documents(
         self,
@@ -117,7 +118,7 @@ class WebResearchRetriever(BaseRetriever):
         urls_to_look = []
         for query in questions:
             # Google search
-            search_results = self.search_tool(query)
+            search_results = self.search_tool(query, self.num_search_results)
             logger.info("Searching for relevat urls ...")
             logger.info(f"Search results: {search_results}")
             for res in search_results:
