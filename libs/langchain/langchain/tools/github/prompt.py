@@ -14,7 +14,10 @@ This tool is useful when you need to comment on a GitHub issue. Simply pass in t
 - Then you must place two newlines
 - Then you must specify your comment
 """
+CREATE_PULL_REQUEST_PROMPT = """
+This tool is a wrapper for the GitHub API, useful when you need to create a file in a GitHub repository. **VERY IMPORTANT**: Your input to this tool MUST strictly follow these rules:
 
+"""
 CREATE_FILE_PROMPT = """
 This tool is a wrapper for the GitHub API, useful when you need to create a file in a GitHub repository. **VERY IMPORTANT**: Your input to this tool MUST strictly follow these rules:
 
