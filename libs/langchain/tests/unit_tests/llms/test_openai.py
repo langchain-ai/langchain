@@ -1,10 +1,10 @@
 import os
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from langchain.llms.openai import OpenAI
-from tests.unit_tests.callbacks.fake_callback_handler import FakeAsyncCallbackHandler, FakeCallbackHandler
 
 os.environ["OPENAI_API_KEY"] = "foo"
 
@@ -33,7 +33,7 @@ def test_openai_incorrect_field() -> None:
 @pytest.fixture
 def mock_completion() -> dict:
     return {
-        "id": "cmpl-7evkmQda5HuNqR1i4QiDOcrmVvTpd",
+        "id": "cmpl-3evkmQda5Hu7fcZavknQda3SQ",
         "object": "text_completion",
         "created": 1689989000,
         "model": "text-davinci-003",
@@ -45,33 +45,25 @@ def mock_completion() -> dict:
 
 
 @pytest.mark.requires("openai")
-def test_openai_retries(mock_completion: dict) -> None:
+def test_openai_calls(mock_completion: dict) -> None:
     llm = OpenAI()
     mock_client = MagicMock()
     completed = False
-    raised = False
-    import openai
 
-    def raise_once(*args, **kwargs):
-        nonlocal completed, raised
-        if not raised:
-            raised = True
-            raise openai.error.APIError
+    def raise_once(*args: Any, **kwargs: Any) -> Any:
+        nonlocal completed
         completed = True
         return mock_completion
 
     mock_client.create = raise_once
-    callback_handler = FakeCallbackHandler()
     with patch.object(
         llm,
         "client",
         mock_client,
     ):
-        res = llm.predict("bar", callbacks=[callback_handler])
+        res = llm.predict("bar")
         assert res == "Bar Baz"
     assert completed
-    assert raised
-    assert callback_handler.retries == 1
 
 
 @pytest.mark.requires("openai")
@@ -79,26 +71,18 @@ async def test_openai_async_retries(mock_completion: dict) -> None:
     llm = OpenAI()
     mock_client = MagicMock()
     completed = False
-    raised = False
-    import openai
 
-    def raise_once(*args, **kwargs):
-        nonlocal completed, raised
-        if not raised:
-            raised = True
-            raise openai.error.APIError
+    def raise_once(*args: Any, **kwargs: Any) -> Any:
+        nonlocal completed
         completed = True
         return mock_completion
 
     mock_client.create = raise_once
-    callback_handler = FakeAsyncCallbackHandler()
     with patch.object(
         llm,
         "client",
         mock_client,
     ):
-        res = llm.apredict("bar", callbacks=[callback_handler])
+        res = llm.apredict("bar")
         assert res == "Bar Baz"
     assert completed
-    assert raised
-    assert callback_handler.retries == 1

@@ -426,6 +426,82 @@ class BaseTracer(BaseCallbackHandler, ABC):
         self._end_trace(retrieval_run)
         self._on_retriever_end(retrieval_run)
 
+    def on_embedding_start(
+        self,
+        serialized: Dict[str, Any],
+        texts: List[str],
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Run when embeddings model starts running.
+        Args:
+            serialized (Dict[str, Any]): The serialized embeddings model.
+            texts (List[str]): The list of texts.
+        Returns:
+            None
+        """
+        parent_run_id_ = str(parent_run_id) if parent_run_id else None
+        execution_order = self._get_execution_order(parent_run_id_)
+        start_time = datetime.utcnow()
+        if metadata:
+            kwargs.update({"metadata": metadata})
+        embeddings_run = Run(
+            id=run_id,
+            name="Embeddings",  # TODO: Derive from serialized model
+            parent_run_id=parent_run_id,
+            serialized=serialized,
+            inputs={"texts": texts},
+            extra=kwargs,
+            events=[{"name": "start", "time": start_time}],
+            start_time=start_time,
+            execution_order=execution_order,
+            child_execution_order=execution_order,
+            child_runs=[],
+            tags=tags,
+            run_type=RunTypeEnum.embedding,
+        )
+        self._start_trace(embeddings_run)
+        self._on_embedding_start(embeddings_run)
+
+    def on_embedding_error(
+        self,
+        error: Union[Exception, KeyboardInterrupt],
+        *,
+        run_id: UUID,
+        **kwargs: Any,
+    ) -> None:
+        """Run when embeddings model errors."""
+        if not run_id:
+            raise TracerException("No run_id provided for on_embedding_error callback.")
+        embeddings_run = self.run_map.get(str(run_id))
+        if embeddings_run is None or embeddings_run.run_type != RunTypeEnum.embedding:
+            raise TracerException("No embeddings Run found to be traced")
+
+        embeddings_run.error = repr(error)
+        embeddings_run.end_time = datetime.utcnow()
+        embeddings_run.events.append({"name": "error", "time": embeddings_run.end_time})
+        self._end_trace(embeddings_run)
+        self._on_embedding_error(embeddings_run)
+
+    def on_embedding_end(
+        self, vector: List[float], *, run_id: UUID, **kwargs: Any
+    ) -> None:
+        """Run when embeddings model ends running."""
+        if not run_id:
+            raise TracerException("No run_id provided for on_embedding_end callback.")
+        embeddings_run = self.run_map.get(str(run_id))
+        if embeddings_run is None or embeddings_run.run_type != RunTypeEnum.embedding:
+            raise TracerException("No embeddings Run found to be traced")
+        embeddings_run.outputs = {"vector": vector}
+        embeddings_run.end_time = datetime.utcnow()
+        embeddings_run.events.append({"name": "end", "time": embeddings_run.end_time})
+        self._end_trace(embeddings_run)
+        self._on_embedding_end(embeddings_run)
+
     def __deepcopy__(self, memo: dict) -> BaseTracer:
         """Deepcopy the tracer."""
         return self
@@ -472,3 +548,12 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
     def _on_retriever_error(self, run: Run) -> None:
         """Process the Retriever Run upon error."""
+
+    def _on_embedding_start(self, run: Run) -> None:
+        """Process the Embeddings Run upon start."""
+
+    def _on_embedding_end(self, run: Run) -> None:
+        """Process the Embeddings Run."""
+
+    def _on_embedding_error(self, run: Run) -> None:
+        """Process the Embeddings Run upon error."""
