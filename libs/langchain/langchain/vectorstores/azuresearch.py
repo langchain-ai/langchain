@@ -34,6 +34,12 @@ logger = logging.getLogger()
 
 if TYPE_CHECKING:
     from azure.search.documents import SearchClient
+    from azure.search.documents.indexes.models import (
+    ScoringProfile,
+    SearchField,
+    SemanticSettings,
+    VectorSearch,
+    )
 
 
 # Allow overriding field names for Azure Search
@@ -68,7 +74,7 @@ def _get_search_client(
     semantic_settings: Optional[SemanticSettings] = None,
     scoring_profiles: Optional[list[ScoringProfile]] = None,
     default_scoring_profile: Optional[str] = None,
-    default_fields: list[SearchField] = None
+    default_fields: Optional[list[SearchField]] = None
 ) -> SearchClient:
     from azure.core.credentials import AzureKeyCredential
     from azure.core.exceptions import ResourceNotFoundError
@@ -76,6 +82,7 @@ def _get_search_client(
     from azure.search.documents import SearchClient
     from azure.search.documents.indexes import SearchIndexClient
     from azure.search.documents.indexes.models import (
+        HnswParameters,
         PrioritizedFields,
         SearchableField,
         SearchField,
@@ -100,7 +107,7 @@ def _get_search_client(
         index_client.get_index(name=index_name)
     except ResourceNotFoundError:
         # Fields configuration
-        if fields != None:
+        if fields is not None and default_fields is not None:
             # Check mandatory fields
             fields_types = {f.name: f.type for f in fields}
             mandatory_fields = {df.name: df.type for df in default_fields}
@@ -134,17 +141,17 @@ def _get_search_client(
                     VectorSearchAlgorithmConfiguration(
                         name="default",
                         kind="hnsw",
-                        hnsw_parameters={
-                            "m": 4,
-                            "efConstruction": 400,
-                            "efSearch": 500,
-                            "metric": "cosine",
-                        },
+                        hnsw_parameters=HnswParameters(
+                            m=4,
+                            ef_construction=400,
+                            ef_search=500,
+                            metric="cosine"
+                        ),
                     )
                 ]
             )
         # Create the semantic settings with the configuration
-        if semantic_settings == None and semantic_configuration_name != None:
+        if semantic_settings is None and semantic_configuration_name is not None:
             semantic_settings = SemanticSettings(
             configurations=[
                 SemanticConfiguration(
@@ -181,9 +188,9 @@ class AzureSearch(VectorStore):
         search_type: str = "hybrid",
         semantic_configuration_name: Optional[str] = None,
         semantic_query_language: str = "en-us",
-        fields: list[SearchField] = None,
-        vector_search: VectorSearch = None,
-        semantic_settings: SemanticSettings = None,
+        fields: Optional[list[SearchField]] = None,
+        vector_search: Optional[VectorSearch] = None,
+        semantic_settings: Optional[SemanticSettings] = None,
         scoring_profiles: Optional[list[ScoringProfile]] = None,
         default_scoring_profile: Optional[str] = None,
         **kwargs: Any,
