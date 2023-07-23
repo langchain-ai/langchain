@@ -299,6 +299,8 @@ class GitHubAPIWrapper(BaseModel):
             return self.comment_on_issue(query)
         elif mode == "create_file":
             return self.create_file(query)
+        elif mode == "create_pull_request":
+            return self.create_pull_request(query)
         elif mode == "read_file":
             return self.read_file(query)
         elif mode == "update_file":

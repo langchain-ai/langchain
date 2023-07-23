@@ -15,8 +15,17 @@ This tool is useful when you need to comment on a GitHub issue. Simply pass in t
 - Then you must specify your comment
 """
 CREATE_PULL_REQUEST_PROMPT = """
-This tool is a wrapper for the GitHub API, useful when you need to create a file in a GitHub repository. **VERY IMPORTANT**: Your input to this tool MUST strictly follow these rules:
+This tool is useful when you need to create a new pull request in a GitHub repository. **VERY IMPORTANT**: Your input to this tool MUST strictly follow these rules:
 
+- First you must specify the title of the pull request
+- Then you must place two newlines
+- Then you must write the body or description of the pull request
+
+For example, if you would like to create a pull request called "README updates" with contents "added contributors' names", you would pass in the following string:
+
+README updates
+
+added contributors' names
 """
 CREATE_FILE_PROMPT = """
 This tool is a wrapper for the GitHub API, useful when you need to create a file in a GitHub repository. **VERY IMPORTANT**: Your input to this tool MUST strictly follow these rules:
