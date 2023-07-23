@@ -17,6 +17,7 @@ class GitHubAPIWrapper(BaseModel):
     github_app_id: Optional[str] = None
     github_app_private_key: Optional[str] = None
     github_branch: Optional[str] = None
+    github_base_branch: Optional[str] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -38,6 +39,9 @@ class GitHubAPIWrapper(BaseModel):
 
         github_branch = get_from_dict_or_env(
             values, "github_branch", "GITHUB_BRANCH", default="master"
+        )
+        github_base_branch = get_from_dict_or_env(
+            values, "github_base_branch", "GITHUB_BASE_BRANCH", default="master"
         )
 
         try:
@@ -68,6 +72,7 @@ class GitHubAPIWrapper(BaseModel):
         values["github_app_id"] = github_app_id
         values["github_app_private_key"] = github_app_private_key
         values["github_branch"] = github_branch
+        values["github_base_branch"] = github_base_branch
 
         return values
 
@@ -165,7 +170,7 @@ class GitHubAPIWrapper(BaseModel):
         file_contents = file_query[len(file_path) + 2 :]
         try:
             exists = self.github_repo_instance.get_contents(file_path)
-            if(exists is None):
+            if exists is None :
                 self.github_repo_instance.create_file(
                     path=file_path,
                     message="Create " + file_path,
@@ -177,6 +182,32 @@ class GitHubAPIWrapper(BaseModel):
                 return f"File already exists at {file_path}. Use update_file instead"
         except Exception as e:
             return "Unable to make file due to error:\n" + str(e)
+    def create_pull_request(self, pr_query:str)->str:
+        """
+        Makes a pull request from the bot's branch to the base branch
+        Parameters:
+            pr_query(str): a string which contains the PR title
+            and the PR body. The title is the first line
+            in the string, and the body are the rest of the string.
+            For example, "Updated README\nmade changes to add info"
+        Returns:
+            str: A success or failure message 
+        """
+        if self.github_base_branch == self.github_branch:
+            return "Cannot make a pull request because commits are already in the master branch"
+        else:
+            try:
+                title = pr_query.split("\n")[0]
+                body = pr_query[len(title) + 2 :]
+                pr = self.github_repo_instance.create_pull(
+                    title = title,
+                    body = body,
+                    head = self.github_branch,
+                    base = self.github_base_branch
+                )
+                return f"Successfully created PR number {pr.number}"
+            except Exception as e:
+                return f"Unable to make pull request due to error:\n"+e
 
     def read_file(self, file_path: str) -> str:
         """

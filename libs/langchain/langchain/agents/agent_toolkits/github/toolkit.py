@@ -11,6 +11,7 @@ from langchain.tools.github.prompt import (
     GET_ISSUES_PROMPT,
     READ_FILE_PROMPT,
     UPDATE_FILE_PROMPT,
+    CREATE_PULL_REQUEST_PROMPT,
 )
 from langchain.tools.github.tool import GitHubAction
 from langchain.utilities.github import GitHubAPIWrapper
@@ -40,6 +41,11 @@ class GitHubToolkit(BaseToolkit):
                 "mode": "comment_on_issue",
                 "name": "Comment on Issue",
                 "description": COMMENT_ON_ISSUE_PROMPT,
+            },
+            {
+                "mode": "create_pull_request",
+                "name": "Create pull request",
+                "description": CREATE_PULL_REQUEST_PROMPT,
             },
             {
                 "mode": "create_file",
