@@ -144,10 +144,9 @@ def test_faiss_mmr_with_metadatas_and_filter() -> None:
     output = docsearch.max_marginal_relevance_search_with_score_by_vector(
         query_vec, k=10, lambda_mult=0.1, filter={"page": 1}
     )
-    assert len(output) == len(texts)
+    assert len(output) == 1
     assert output[0][0] == Document(page_content="foo", metadata={"page": 1})
     assert output[0][1] == 0.0
-    assert output[1][0] != Document(page_content="foo", metadata={"page": 1})
 
 
 def test_faiss_mmr_with_metadatas_and_list_filter() -> None:
@@ -158,7 +157,7 @@ def test_faiss_mmr_with_metadatas_and_list_filter() -> None:
     output = docsearch.max_marginal_relevance_search_with_score_by_vector(
         query_vec, k=10, lambda_mult=0.1, filter={"page": [0, 1, 2]}
     )
-    assert len(output) == len(texts)
+    assert len(output) == 3
     assert output[0][0] == Document(page_content="foo", metadata={"page": 0})
     assert output[0][1] == 0.0
     assert output[1][0] != Document(page_content="foo", metadata={"page": 0})
