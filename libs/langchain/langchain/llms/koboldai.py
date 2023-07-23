@@ -1,3 +1,4 @@
+"""Wrapper around KoboldAI API."""
 import logging
 from typing import Any, Dict, List, Optional
 
@@ -20,7 +21,8 @@ def clean_url(url: str) -> str:
 
 
 class KoboldApiLLM(LLM):
-    """Kobold API language model.
+    """
+    A class that acts as a wrapper for the KoboldAI api that hosts a large language model.
 
     It includes several fields that can be used to control the text generation process.
 
@@ -43,7 +45,7 @@ class KoboldApiLLM(LLM):
     use_authors_note: Optional[bool] = False
     """Whether to use the author's note from the KoboldAI GUI when generating text.
     
-    This has no effect unless use_story is also enabled.
+    This parameter is only effective when use_story is enabled.
     """
 
     use_world_info: Optional[bool] = False
@@ -52,13 +54,13 @@ class KoboldApiLLM(LLM):
     use_memory: Optional[bool] = False
     """Whether to use the memory from the KoboldAI GUI when generating text."""
 
-    max_context_length: Optional[int] = 1600
+    max_context_length: Optional[int] = 2048
     """Maximum number of tokens to send to the model.
     
     minimum: 1
     """
 
-    max_length: Optional[int] = 80
+    max_length: Optional[int] = 512
     """Number of tokens to generate.
     
     maximum: 512
@@ -77,13 +79,13 @@ class KoboldApiLLM(LLM):
     minimum: 0
     """
 
-    rep_pen_slope: Optional[float] = 0.9
+    rep_pen_slope: Optional[float] = 0.7
     """Repetition penalty slope.
     
     minimum: 0
     """
 
-    temperature: Optional[float] = 0.6
+    temperature: Optional[float] = 0.65
     """Temperature value.
     
     exclusiveMinimum: 0
@@ -122,36 +124,20 @@ class KoboldApiLLM(LLM):
     minimum: 0
     """
 
+    stop_sequence: Optional[List[str]] = []
+    """List of stop sequences to use when generating text."""
+
+    frmttriminc: Optional[bool] = False
+    """Output formatting option. When enabled, removes some characters from the end of the output such that the output doesn't end in the middle of a sentence. If the output is less than one sentence long, does nothing."""
+
+    quiet: Optional[bool] = False
+    """When enabled, Generated output will not be displayed in the console."""
+
+
     @property
-    def _llm_type(self) -> str:
-        return "koboldai"
-
-    def _call(
-        self,
-        prompt: str,
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> str:
-        """Call the API and return the output.
-
-        Args:
-            prompt: The prompt to use for generation.
-            stop: A list of strings to stop generation when encountered.
-
-        Returns:
-            The generated text.
-
-        Example:
-            .. code-block:: python
-
-                from langchain.llms import KoboldApiLLM
-
-                llm = KoboldApiLLM(endpoint="http://localhost:5000")
-                llm("Write a story about dragons.")
-        """
-        data: Dict[str, Any] = {
-            "prompt": prompt,
+    def _default_params(self) -> Dict[str, Any]:
+        """Get the default parameters for calling koboldApiLLM."""
+        return {
             "use_story": self.use_story,
             "use_authors_note": self.use_authors_note,
             "use_world_info": self.use_world_info,
@@ -167,32 +153,91 @@ class KoboldApiLLM(LLM):
             "top_p": self.top_p,
             "top_k": self.top_k,
             "typical": self.typical,
+            "stop_sequence": self.stop_sequence,
+            "frmttriminc": self.frmttriminc,
+            "quiet": self.quiet
         }
 
-        if stop is not None:
-            data["stop_sequence"] = stop
 
-        response = requests.post(
-            f"{clean_url(self.endpoint)}/api/v1/generate", json=data
-        )
+    @property
+    def _identifying_params(self) -> Dict[str, Any]:
+        """Get the identifying parameters."""
+        return {**{"endpoint": self.endpoint}, **self._default_params}
 
-        response.raise_for_status()
-        json_response = response.json()
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "koboldai"
 
-        if (
-            "results" in json_response
-            and len(json_response["results"]) > 0
-            and "text" in json_response["results"][0]
-        ):
-            text = json_response["results"][0]["text"].strip()
+    def _get_parameters(self, stop: Optional[List[str]] = None) -> Dict[str, Any]:
+        """
+        Prepare parameters in format needed by KoboldAI.
 
-            if stop is not None:
-                for sequence in stop:
+        Args:
+            stop (Optional[List[str]]): List of stop sequences for koboldApiLLM.
+
+        Returns:
+            Dictionary containing the combined parameters.
+        """
+
+        # Raise error if stop sequences are in both input and default params
+        if self.stop_sequence and stop is not None:
+            raise ValueError("`stop` found in both the input and default params.")
+
+        params = self._default_params
+
+
+        # then sets it as configured, or default to an empty list:
+        params["stop_sequence"] = self.stop_sequence or stop or []
+
+        return params
+
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
+        """
+        Calls the koboldApiLLM web API and returns the output.
+
+        This function sends a request to the koboldApiLLM web API with the provided prompt 
+        and stop sequences. It then processes the response, ensuring the stop sequences are 
+        removed from the text and any leading or trailing whitespace is stripped off.
+
+        Args:
+            prompt: The prompt to use for generation.
+            stop: A list of strings to stop generation when encountered.
+
+        Returns:
+            The generated text stripped of stop sequences and leading or trailing whitespace.
+
+        Example:
+            .. code-block:: python
+
+                from langchain.llms import koboldApiLLM
+                llm = koboldApiLLM(endpoint="http://localhost:5000")
+                llm("Write a story about llamas.")
+        """
+        
+        url = f"{clean_url(self.endpoint)}/api/v1/generate"
+        params = self._get_parameters(stop)
+        request = params.copy()
+        request["prompt"] = prompt
+
+        response = requests.post(url, json=request)
+
+        if response.status_code == 200:
+            text = response.json()["results"][0]["text"]
+            stop_sequences = params["stop_sequence"]
+            
+            if stop_sequences:
+                for sequence in stop_sequences:
                     if text.endswith(sequence):
-                        text = text[: -len(sequence)].rstrip()
-
-            return text
+                        text = text.rsplit(sequence, 1)[0]
         else:
-            raise ValueError(
-                f"Unexpected response format from Kobold API:  {json_response}"
-            )
+            # If the response was not successful, print an error and set the text to an empty string
+            print(f"ERROR: response: {response}")
+            text = ""
+        return text.lstrip()
