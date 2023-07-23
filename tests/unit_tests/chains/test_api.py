@@ -4,9 +4,10 @@ import json
 from typing import Any
 
 import pytest
+import re
 
 from langchain import LLMChain
-from langchain.chains.api.base import APIChain
+from langchain.chains.api.base import APIChain, BASE_URL_RE
 from langchain.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
 from langchain.requests import TextRequestsWrapper
 from tests.unit_tests.llms.fake_llm import FakeLLM
@@ -54,11 +55,13 @@ class FakeAPIChainBuilder:
         api_request_chain = LLMChain(llm=fake_llm, prompt=API_URL_PROMPT)
         api_answer_chain = LLMChain(llm=fake_llm, prompt=API_RESPONSE_PROMPT)
         requests_wrapper = FakeRequestsChain(output=TEST_API_RESPONSE)
+        allowed_base_urls = BASE_URL_RE.findall(TEST_API_DOCS)
         return APIChain(
             api_request_chain=api_request_chain,
             api_answer_chain=api_answer_chain,
             requests_wrapper=requests_wrapper,
             api_docs=TEST_API_DOCS,
+            allowed_base_urls = allowed_base_urls,
             allow_unverified_urls=allow_unverified_urls,
         )
 

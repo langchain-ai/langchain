@@ -16,6 +16,7 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.prompts import BasePromptTemplate
 from langchain.requests import TextRequestsWrapper
+BASE_URL_RE = re.compile("http[s]?://((?:[-\w.]|(?:%[\da-fA-F]{2}))+)")
 
 
 class APIChain(Chain):
@@ -25,6 +26,7 @@ class APIChain(Chain):
     api_answer_chain: LLMChain
     requests_wrapper: TextRequestsWrapper = Field(exclude=True)
     api_docs: str
+    allowed_base_urls: list[str]
     allow_unverified_urls: bool = False
     question_key: str = "question"  #: :meta private:
     output_key: str = "output"  #: :meta private:
@@ -70,10 +72,8 @@ class APIChain(Chain):
     def verify_api_url_is_legit(self, parsed_url: str) -> None:
         """Verify that the parsed URL corresponds to one of the URLs in the API spec"""
 
-        base_url_re = re.compile("http[s]?://((?:[-\w.]|(?:%[\da-fA-F]{2}))+)")
-        base_parsed_url = base_url_re.findall(parsed_url)[0].strip().lower()
-        api_doc_allowed_urls = base_url_re.findall(self.api_docs)
-        for url in api_doc_allowed_urls:
+        base_parsed_url = BASE_URL_RE.findall(parsed_url)[0].strip().lower()
+        for url in self.allowed_base_urls:
             if base_parsed_url == url.strip().lower():
                 return
         raise ValueError(
@@ -154,11 +154,13 @@ class APIChain(Chain):
         get_request_chain = LLMChain(llm=llm, prompt=api_url_prompt)
         requests_wrapper = TextRequestsWrapper(headers=headers)
         get_answer_chain = LLMChain(llm=llm, prompt=api_response_prompt)
+        allowed_base_urls = BASE_URL_RE.findall(api_docs)
         return cls(
             api_request_chain=get_request_chain,
             api_answer_chain=get_answer_chain,
             requests_wrapper=requests_wrapper,
             api_docs=api_docs,
+            allowed_base_urls=allowed_base_urls,
             allow_unverified_urls=allow_unverified_urls,
             **kwargs,
         )
