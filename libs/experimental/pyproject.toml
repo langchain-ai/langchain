@@ -11,6 +11,12 @@ repository = "https://www.github.com/hwchase17/langchain"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain = ">=0.0.239"
+diffusers = "^0.18.2"
+transformers = "^4.31.0"
+torch = "1.13.1"
+accelerate = "^0.21.0"
+opencv-python = "^4.8.0.74"
+openai = "^0.27.8"
 
 
 [tool.poetry.group.lint.dependencies]

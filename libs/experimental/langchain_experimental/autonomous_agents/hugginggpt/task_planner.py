@@ -108,7 +108,7 @@ class BasePlanner(BaseModel):
         """Given input, decide what to do."""
 
 
-class PlanningOutputParser:
+class PlanningOutputParser(BaseModel):
     def parse(self, text: str, hf_tools: List[BaseTool]) -> Plan:
         steps = []
         for v in json.loads(re.findall(r"\[.*\]", text)[0]):

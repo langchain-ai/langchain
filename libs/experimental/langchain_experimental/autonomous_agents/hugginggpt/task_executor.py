@@ -5,8 +5,9 @@ from typing import Dict, List
 import cv2
 import numpy as np
 from diffusers.utils import load_image
-from langchain.experimental.autonomous_agents.hugginggpt.task_planner import Plan
 from langchain.tools.base import BaseTool
+
+from langchain_experimental.autonomous_agents.hugginggpt.task_planner import Plan
 
 
 class Task:
@@ -30,7 +31,7 @@ class Task:
             nframe, height, width, _ = product.shape
             video_filename = uuid.uuid4().hex[:6] + ".mp4"
             fps = 30  # Frames per second
-            fourcc = cv2.VideoWriter_fourcc(*"mp4v")  # Codec for MP4 video
+            fourcc = cv2.VideoWriter_fourcc(*"mp4v")  # type: ignore
             video_out = cv2.VideoWriter(video_filename, fourcc, fps, (width, height))
             for frame in self.product:
                 video_out.write(frame)

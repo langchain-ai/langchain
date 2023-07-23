@@ -1,16 +1,17 @@
 from typing import List
 
 from langchain.base_language import BaseLanguageModel
-from langchain.experimental.autonomous_agents.hugginggpt.repsonse_generator import (
+from langchain.tools.base import BaseTool
+
+from langchain_experimental.autonomous_agents.hugginggpt.repsonse_generator import (
     load_response_generator,
 )
-from langchain.experimental.autonomous_agents.hugginggpt.task_executor import (
+from langchain_experimental.autonomous_agents.hugginggpt.task_executor import (
     TaskExecutor,
 )
-from langchain.experimental.autonomous_agents.hugginggpt.task_planner import (
+from langchain_experimental.autonomous_agents.hugginggpt.task_planner import (
     load_chat_planner,
 )
-from langchain.tools.base import BaseTool
 
 
 class HuggingGPT:
