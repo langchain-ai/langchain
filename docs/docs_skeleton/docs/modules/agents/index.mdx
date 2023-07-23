@@ -3,9 +3,9 @@ sidebar_position: 4
 ---
 # Agents
 
-The core idea of agents is to use an LLM to control the sequence of actions that are taken.
-In chains, the sequence of actions is hardcoded (in code).
-In agents, the language model is used as a reasoning engine to determine which actions to take and in which order.
+The core idea of agents is to use an LLM to choose a sequence of actions to take.
+In chains, a sequence of actions is hardcoded (in code).
+In agents, a language model is used as a reasoning engine to determine which actions to take and in which order.
 
 There are several key components here:
 
@@ -31,26 +31,26 @@ There are two important considerations here:
 1. Giving the agent access to the right tools
 2. Describing the tools in a way that is most helpful to the agent
 
-Without either, the agent you are trying to build will not work.
-If you don't give the access to a correct set of tools, it will never be able to accomplish the correct objective.
-If you do not describe the tools properly, the agent will never be able to know how to properly use them.
+Without both, the agent you are trying to build will not work.
+If you don't give the agent access to a correct set of tools, it will never be able to accomplish the objective.
+If you don't describe the tools properly, the agent won't know how to properly use them.
 
 LangChain provides a wide set of tools to get started, but also makes it easy to define your own (including custom descriptions).
 For a full list of tools, see [here](/docs/modules/agents/tools/)
 
 ## Toolkits
 
-Often times, the group of tools an agent has access to is more important than a single tool.
-LangChain provides a concept of toolkits - groups of tools specifically focused on accomplishing a single objective.
-These are generally around 3-5 tools in total.
+Often the set of tools an agent has access to is more important than a single tool.
+For this LangChain provides the concept of toolkits - groups of tools needed to accomplish specific objectives.
+There are generally around 3-5 tools in a toolkit.
 
 LangChain provides a wide set of toolkits to get started.
 For a full list of toolkits, see [here](/docs/modules/agents/toolkits/)
 
 ## AgentExecutor
 
-The agent executor is the runtime for the agent.
-This is what actually calls the agent and executes the actions it suggests.
+The agent executor is the runtime for an agent.
+This is what actually calls the agent and executes the actions it chooses.
 Pseudocode for this runtime is below:
 
 ```python
@@ -66,7 +66,7 @@ While this may seem simple, there are several complexities this runtime handles 
 1. Handling cases where the agent selects a non-existent tool
 2. Handling cases where the tool errors
 3. Handling cases where the agent produces output that cannot be parsed into a tool invocation
-4. Logging and observability at all levels (agent decisions, tool calls) either to stdout or [LangSmith](https://smith.langchain.com/).
+4. Logging and observability at all levels (agent decisions, tool calls) either to stdout or [LangSmith](https://smith.langchain.com).
 
 ## Other types of agent runtimes
 
@@ -75,8 +75,8 @@ However, there are other, more experimental runtimes we also support.
 These include:
 
 - [Plan-and-execute Agent](/docs/modules/agents/agent_types/plan_and_execute.html)
-- [Baby AGI](/use_cases/autonomous_agents/baby_agi.html)
-- [Auto GPT](/use_cases/autonomous_agents/autogpt.html)
+- [Baby AGI](/docs/use_cases/autonomous_agents/baby_agi.html)
+- [Auto GPT](/docs/use_cases/autonomous_agents/autogpt.html)
 
 ## Get started
 
