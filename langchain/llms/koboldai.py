@@ -200,9 +200,9 @@ class KoboldApiLLM(LLM):
         **kwargs: Any,
     ) -> str:
         """
-        Calls the koboldApiLLM web API and returns the output.
+        Calls the koboldApiLLM API and returns the output.
 
-        This function sends a request to the koboldApiLLM web API with the provided prompt 
+        This function sends a request to the koboldApiLLM API with the provided prompt 
         and stop sequences. It then processes the response, ensuring the stop sequences are 
         removed from the text and any leading or trailing whitespace is stripped off.
 
@@ -220,7 +220,7 @@ class KoboldApiLLM(LLM):
                 llm = koboldApiLLM(endpoint="http://localhost:5000")
                 llm("Write a story about llamas.")
         """
-        
+
         url = f"{clean_url(self.endpoint)}/api/v1/generate"
         params = self._get_parameters(stop)
         request = params.copy()
