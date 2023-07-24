@@ -1,7 +1,10 @@
 """Chain that runs an arbitrary python function."""
-from typing import Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+)
 from langchain.chains.base import Chain
 
 
@@ -17,8 +20,13 @@ class TransformChain(Chain):
     """
 
     input_variables: List[str]
+    """The keys expected by the transform's input dictionary."""
     output_variables: List[str]
+    """The keys returned by the transform's output dictionary."""
     transform: Callable[[Dict[str, str]], Dict[str, str]]
+    """The transform function."""
+    coroutine: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None
+    """The coroutine transform function."""
 
     @property
     def input_keys(self) -> List[str]:
@@ -42,3 +50,13 @@ class TransformChain(Chain):
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
         return self.transform(inputs)
+
+    async def _acall(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: AsyncCallbackManagerForChainRun | None = None,
+    ) -> Dict[str, Any]:
+        if self.coroutine is not None:
+            return await self.coroutine(inputs)
+        else:
+            return self.transform(inputs)
