@@ -23,6 +23,7 @@ from langchain.embeddings.huggingface import (
 from langchain.embeddings.huggingface_hub import HuggingFaceHubEmbeddings
 from langchain.embeddings.jina import JinaEmbeddings
 from langchain.embeddings.llamacpp import LlamaCppEmbeddings
+from langchain.embeddings.localai import LocalAIEmbeddings
 from langchain.embeddings.minimax import MiniMaxEmbeddings
 from langchain.embeddings.mlflow_gateway import MlflowAIGatewayEmbeddings
 from langchain.embeddings.modelscope_hub import ModelScopeEmbeddings
@@ -30,7 +31,6 @@ from langchain.embeddings.mosaicml import MosaicMLInstructorEmbeddings
 from langchain.embeddings.nlpcloud import NLPCloudEmbeddings
 from langchain.embeddings.octoai_embeddings import OctoAIEmbeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.embeddings.localai import LocalAIEmbeddings
 from langchain.embeddings.sagemaker_endpoint import SagemakerEndpointEmbeddings
 from langchain.embeddings.self_hosted import SelfHostedEmbeddings
 from langchain.embeddings.self_hosted_hugging_face import (

@@ -264,9 +264,9 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             self,
             input=[text],
             **self._invocation_params,
-        )[
-            "data"
-        ][0]["embedding"]
+        )["data"][
+            0
+        ]["embedding"]
 
     async def _aembedding_func(self, text: str, *, engine: str) -> List[float]:
         """Call out to LocalAI's embedding endpoint."""
@@ -297,9 +297,7 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         # call _embedding_func for each text
-        return [
-            self._embedding_func(text, engine=self.deployment) for text in texts
-        ]
+        return [self._embedding_func(text, engine=self.deployment) for text in texts]
 
     async def aembed_documents(
         self, texts: List[str], chunk_size: Optional[int] = 0
@@ -318,6 +316,7 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             self._aembedding_func(text, engine=self.deployment) for text in texts
         ]
         return embedding
+
     def embed_query(self, text: str) -> List[float]:
         """Call out to LocalAI's embedding endpoint for embedding query text.
 
