@@ -1,4 +1,5 @@
-from langchain import LLMChain, PromptTemplate
+from langchain.chains import LLMChain
+from langchain.prompts import PromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 
 

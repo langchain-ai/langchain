@@ -4,18 +4,19 @@ from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
-from langchain.experimental.autonomous_agents.baby_agi.task_creation import (
-    TaskCreationChain,
-)
-from langchain.experimental.autonomous_agents.baby_agi.task_execution import (
-    TaskExecutionChain,
-)
-from langchain.experimental.autonomous_agents.baby_agi.task_prioritization import (
-    TaskPrioritizationChain,
-)
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.vectorstores.base import VectorStore
 from pydantic import BaseModel, Field
+
+from langchain_experimental.autonomous_agents.baby_agi.task_creation import (
+    TaskCreationChain,
+)
+from langchain_experimental.autonomous_agents.baby_agi.task_execution import (
+    TaskExecutionChain,
+)
+from langchain_experimental.autonomous_agents.baby_agi.task_prioritization import (
+    TaskPrioritizationChain,
+)
 
 
 class BabyAGI(Chain, BaseModel):
