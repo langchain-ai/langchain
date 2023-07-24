@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Type
 
 from pydantic import BaseModel, root_validator
 
+from langchain.callbacks.manager import Callbacks
 from langchain.chains.llm import LLMChain
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.prompt import SUMMARY_PROMPT
@@ -67,7 +68,9 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
         """
         return [self.memory_key]
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    def load_memory_variables(
+        self, inputs: Dict[str, Any], callbacks: Callbacks = None
+    ) -> Dict[str, Any]:
         """Return history buffer."""
         if self.return_messages:
             buffer: Any = [self.summary_message_cls(content=self.buffer)]

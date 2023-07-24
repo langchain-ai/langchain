@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Type, Union
 
 from pydantic import Field
 
+from langchain.callbacks.manager import Callbacks
 from langchain.chains.llm import LLMChain
 from langchain.graphs import NetworkxEntityGraph
 from langchain.graphs.networkx_graph import KnowledgeTriple, get_entities, parse_triples
@@ -34,7 +35,9 @@ class ConversationKGMemory(BaseChatMemory):
     """Number of previous utterances to include in the context."""
     memory_key: str = "history"  #: :meta private:
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    def load_memory_variables(
+        self, inputs: Dict[str, Any], callbacks: Callbacks = None
+    ) -> Dict[str, Any]:
         """Return history buffer."""
         entities = self._get_current_entities(inputs)
 

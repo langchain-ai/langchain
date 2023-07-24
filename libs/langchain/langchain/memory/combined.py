@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Set
 
 from pydantic import validator
 
+from langchain.callbacks.manager import Callbacks
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.schema import BaseMemory
 
@@ -54,7 +55,9 @@ class CombinedMemory(BaseMemory):
 
         return memory_variables
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def load_memory_variables(
+        self, inputs: Dict[str, Any], callbacks: Callbacks = None
+    ) -> Dict[str, str]:
         """Load all vars from sub-memories."""
         memory_data: Dict[str, Any] = {}
 

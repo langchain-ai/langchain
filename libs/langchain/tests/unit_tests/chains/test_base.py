@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 import pytest
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
+from langchain.callbacks.manager import CallbackManagerForChainRun, Callbacks
 from langchain.chains.base import Chain
 from langchain.schema import RUN_KEY, BaseMemory
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
@@ -18,7 +18,7 @@ class FakeMemory(BaseMemory):
         return ["baz"]
 
     def load_memory_variables(
-        self, inputs: Optional[Dict[str, Any]] = None
+        self, inputs: Optional[Dict[str, Any]] = None, callbacks: Callbacks = None
     ) -> Dict[str, str]:
         """Return baz variable."""
         return {"baz": "foo"}

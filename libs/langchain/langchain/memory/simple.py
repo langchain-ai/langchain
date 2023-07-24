@@ -1,5 +1,6 @@
 from typing import Any, Dict, List
 
+from langchain.callbacks.manager import Callbacks
 from langchain.schema import BaseMemory
 
 
@@ -14,7 +15,9 @@ class SimpleMemory(BaseMemory):
     def memory_variables(self) -> List[str]:
         return list(self.memories.keys())
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def load_memory_variables(
+        self, inputs: Dict[str, Any], callbacks: Callbacks = None
+    ) -> Dict[str, str]:
         return self.memories
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:

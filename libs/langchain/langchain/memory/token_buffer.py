@@ -1,5 +1,6 @@
 from typing import Any, Dict, List
 
+from langchain.callbacks.manager import Callbacks
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage, get_buffer_string
@@ -27,7 +28,9 @@ class ConversationTokenBufferMemory(BaseChatMemory):
         """
         return [self.memory_key]
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    def load_memory_variables(
+        self, inputs: Dict[str, Any], callbacks: Callbacks = None
+    ) -> Dict[str, Any]:
         """Return history buffer."""
         buffer: Any = self.buffer
         if self.return_messages:

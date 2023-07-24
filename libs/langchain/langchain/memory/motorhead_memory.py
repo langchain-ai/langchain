@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
+from langchain.callbacks.manager import Callbacks
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.schema.messages import get_buffer_string
 
@@ -64,7 +65,9 @@ class MotorheadMemory(BaseChatMemory):
         if context and context != "NONE":
             self.context = context
 
-    def load_memory_variables(self, values: Dict[str, Any]) -> Dict[str, Any]:
+    def load_memory_variables(
+        self, inputs: Dict[str, Any], callbacks: Callbacks = None
+    ) -> Dict[str, Any]:
         if self.return_messages:
             return {self.memory_key: self.chat_memory.messages}
         else:

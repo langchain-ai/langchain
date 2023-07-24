@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 
 from pydantic import Field
 
+from langchain.callbacks.manager import Callbacks
 from langchain.memory.chat_memory import BaseMemory
 from langchain.memory.utils import get_prompt_input_key
 from langchain.schema import Document
@@ -40,12 +41,12 @@ class VectorStoreRetrieverMemory(BaseMemory):
         return self.input_key
 
     def load_memory_variables(
-        self, inputs: Dict[str, Any]
+        self, inputs: Dict[str, Any], callbacks: Callbacks = None
     ) -> Dict[str, Union[List[Document], str]]:
         """Return history buffer."""
         input_key = self._get_prompt_input_key(inputs)
         query = inputs[input_key]
-        docs = self.retriever.get_relevant_documents(query)
+        docs = self.retriever.get_relevant_documents(query, callbacks=callbacks)
         result: Union[List[Document], str]
         if not self.return_docs:
             result = "\n".join([doc.page_content for doc in docs])

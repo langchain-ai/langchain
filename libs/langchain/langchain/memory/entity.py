@@ -5,6 +5,7 @@ from typing import Any, Dict, Iterable, List, Optional
 
 from pydantic import BaseModel, Field
 
+from langchain.callbacks.manager import Callbacks
 from langchain.chains.llm import LLMChain
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.prompt import (
@@ -285,7 +286,9 @@ class ConversationEntityMemory(BaseChatMemory):
         """
         return ["entities", self.chat_history_key]
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    def load_memory_variables(
+        self, inputs: Dict[str, Any], callbacks: Callbacks = None
+    ) -> Dict[str, Any]:
         """
         Returns chat history and all generated entities with summaries if available,
         and updates or clears the recent entity cache.

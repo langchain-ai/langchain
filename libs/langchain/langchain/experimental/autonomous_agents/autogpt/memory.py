@@ -2,6 +2,7 @@ from typing import Any, Dict, List
 
 from pydantic import Field
 
+from langchain.callbacks.manager import Callbacks
 from langchain.memory.chat_memory import BaseChatMemory, get_prompt_input_key
 from langchain.vectorstores.base import VectorStoreRetriever
 
@@ -20,7 +21,9 @@ class AutoGPTMemory(BaseChatMemory):
             return get_prompt_input_key(inputs, self.memory_variables)
         return self.input_key
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    def load_memory_variables(
+        self, inputs: Dict[str, Any], callbacks: Callbacks = None
+    ) -> Dict[str, Any]:
         input_key = self._get_prompt_input_key(inputs)
         query = inputs[input_key]
         docs = self.retriever.get_relevant_documents(query)

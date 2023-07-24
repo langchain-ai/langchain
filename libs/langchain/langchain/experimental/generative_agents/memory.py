@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from langchain import LLMChain
+from langchain.callbacks.manager import Callbacks
 from langchain.prompts import PromptTemplate
 from langchain.retrievers import TimeWeightedVectorStoreRetriever
 from langchain.schema import BaseMemory, Document
@@ -260,7 +261,9 @@ class GenerativeAgentMemory(BaseMemory):
         """Input keys this memory class will load dynamically."""
         return []
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def load_memory_variables(
+        self, inputs: Dict[str, Any], callbacks: Callbacks = None
+    ) -> Dict[str, str]:
         """Return key-value pairs given the text input to the chain."""
         queries = inputs.get(self.queries_key)
         now = inputs.get(self.now_key)

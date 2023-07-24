@@ -1,5 +1,6 @@
 from typing import Any, Dict, List
 
+from langchain.callbacks.manager import Callbacks
 from langchain.schema import BaseMemory
 
 
@@ -13,7 +14,9 @@ class ReadOnlySharedMemory(BaseMemory):
         """Return memory variables."""
         return self.memory.memory_variables
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def load_memory_variables(
+        self, inputs: Dict[str, Any], callbacks: Callbacks = None
+    ) -> Dict[str, str]:
         """Load memory variables from memory."""
         return self.memory.load_memory_variables(inputs)
 

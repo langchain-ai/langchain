@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import root_validator
 
+from langchain.callbacks.manager import Callbacks
 from langchain.memory.chat_memory import BaseChatMemory, BaseMemory
 from langchain.memory.utils import get_prompt_input_key
 from langchain.schema.messages import get_buffer_string
@@ -34,7 +35,9 @@ class ConversationBufferMemory(BaseChatMemory):
         """
         return [self.memory_key]
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    def load_memory_variables(
+        self, inputs: Dict[str, Any], callbacks: Callbacks = None
+    ) -> Dict[str, Any]:
         """Return history buffer."""
         return {self.memory_key: self.buffer}
 
@@ -66,7 +69,9 @@ class ConversationStringBufferMemory(BaseMemory):
         """
         return [self.memory_key]
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def load_memory_variables(
+        self, inputs: Dict[str, Any], callbacks: Callbacks = None
+    ) -> Dict[str, str]:
         """Return history buffer."""
         return {self.memory_key: self.buffer}
 

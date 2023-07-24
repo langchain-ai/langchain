@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
+from langchain.callbacks.manager import Callbacks
 from langchain.load.serializable import Serializable
 from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
 
@@ -27,7 +28,7 @@ class BaseMemory(Serializable, ABC):
                 def memory_variables(self) -> List[str]:
                     return list(self.memories.keys())
 
-                def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+                def load_memory_variables(self, inputs: Dict[str, Any], callbacks: Callbacks = None) -> Dict[str, Any]:
                     return self.memories
 
                 def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
@@ -48,7 +49,9 @@ class BaseMemory(Serializable, ABC):
         """The string keys this memory class will add to chain inputs."""
 
     @abstractmethod
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    def load_memory_variables(
+        self, inputs: Dict[str, Any], callbacks: Callbacks = None
+    ) -> Dict[str, Any]:
         """Return key-value pairs given the text input to the chain."""
 
     @abstractmethod
