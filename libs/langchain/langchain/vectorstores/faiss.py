@@ -370,7 +370,12 @@ class FAISS(VectorStore):
                 doc = self.docstore.search(_id)
                 if not isinstance(doc, Document):
                     raise ValueError(f"Could not find document for id {_id}, got {doc}")
-                if all(doc.metadata.get(key) == value for key, value in filter.items()):
+                if all(
+                    doc.metadata.get(key) in value
+                    if isinstance(value, list)
+                    else doc.metadata.get(key) == value
+                    for key, value in filter.items()
+                ):
                     filtered_indices.append(i)
             indices = np.array([filtered_indices])
         # -1 happens when not enough docs are returned.
