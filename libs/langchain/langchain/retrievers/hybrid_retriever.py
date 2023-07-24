@@ -31,7 +31,7 @@ class HybridRetriever(BaseRetriever):
     c: int = 60
 
     @root_validator(pre=True)
-    def set_weights(self, values: Dict[str, Any]) -> Dict[str, Any]:
+    def set_weights(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if not values.get("weights"):
             n_retrievers = len(values["retrievers"])
             values["weights"] = [1 / n_retrievers] * n_retrievers
