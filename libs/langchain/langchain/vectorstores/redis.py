@@ -612,10 +612,16 @@ class Redis(VectorStore):
 
 
 class RedisVectorStoreRetriever(VectorStoreRetriever):
+    """Retriever for Redis VectorStore."""
+
     vectorstore: Redis
+    """Redis VectorStore."""
     search_type: str = "similarity"
+    """Type of search to perform. Can be either 'similarity' or 'similarity_limit'."""
     k: int = 4
+    """Number of documents to return."""
     score_threshold: float = 0.4
+    """Score threshold for similarity_limit search."""
 
     class Config:
         """Configuration for this pydantic object."""

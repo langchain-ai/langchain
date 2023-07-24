@@ -13,9 +13,14 @@ from langchain.experimental.plan_and_execute.schema import (
 
 
 class PlanAndExecute(Chain):
+    """Plan and execute a chain of steps."""
+
     planner: BasePlanner
+    """The planner to use."""
     executor: BaseExecutor
+    """The executor to use."""
     step_container: BaseStepContainer = Field(default_factory=ListStepContainer)
+    """The step container to use."""
     input_key: str = "input"
     output_key: str = "output"
 
