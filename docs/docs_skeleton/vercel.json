@@ -1325,6 +1325,18 @@
       "destination": "/docs/integrations/toolkits/vectorstore"
     },
     {
+      "source": "/docs/modules/agents/toolkits/amadeus",
+      "destination": "/docs/integrations/toolkits/amadeus"
+    },
+    {
+      "source": "/docs/modules/agents/toolkits/github",
+      "destination": "/docs/integrations/toolkits/github"
+    },
+    {
+      "source": "/docs/modules/agents/toolkits/multion",
+      "destination": "/docs/integrations/toolkits/multion"
+    },
+    {
       "source": "/en/latest/modules/agents/tools/custom_tools.html",
       "destination": "/docs/modules/agents/tools/how_to/custom_tools"
     },
