@@ -150,7 +150,6 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "koboldai": KoboldApiLLM,
     "llamacpp": LlamaCpp,
     "textgen": TextGen,
-    # "mlflow-gateway": MlflowAIGateway,
     "mlflow-ai-gateway": MlflowAIGateway,
     "modal": Modal,
     "mosaic": MosaicML,
