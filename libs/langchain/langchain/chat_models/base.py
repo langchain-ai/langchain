@@ -1,5 +1,4 @@
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
 import inspect
 import warnings
 from abc import ABC, abstractmethod
@@ -13,7 +12,6 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
-    Union,
     cast,
 )
 from langchain.prompts.base import StringPromptValue
@@ -40,16 +38,19 @@ from langchain.schema import (
     RunInfo,
 )
 from langchain.schema.language_model import BaseLanguageModel, LanguageModelInput
-from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
+from langchain.schema.messages import (
+    AIMessage,
+    BaseMessage,
+    BaseMessageChunk,
+    HumanMessage,
+)
 
 
 def _get_verbosity() -> bool:
     return langchain.verbose
 
 
-class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
-    """Base class for chat models."""
-
+class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
     cache: Optional[bool] = None
     """Whether to cache the response."""
     verbose: bool = Field(default_factory=_get_verbosity)
@@ -100,13 +101,16 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         config: Optional[RunnableConfig] = None,
         *,
         stop: Optional[List[str]] = None,
-    ) -> BaseMessage:
+    ) -> BaseMessageChunk:
         return cast(
-            ChatGeneration,
-            self.generate_prompt(
-                [self._convert_input(input)], stop=stop, **(config or {})
-            ).generations[0][0],
-        ).message
+            BaseMessageChunk,
+            cast(
+                ChatGeneration,
+                self.generate_prompt(
+                    [self._convert_input(input)], stop=stop, **(config or {})
+                ).generations[0][0],
+            ).message,
+        )
 
     async def ainvoke(
         self,
@@ -114,11 +118,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         config: Optional[RunnableConfig] = None,
         *,
         stop: Optional[List[str]] = None,
-    ) -> BaseMessage:
+    ) -> BaseMessageChunk:
         llm_result = await self.agenerate_prompt(
             [self._convert_input(input)], stop=stop, **(config or {})
         )
-        return cast(ChatGeneration, llm_result.generations[0][0]).message
+        return cast(
+            BaseMessageChunk, cast(ChatGeneration, llm_result.generations[0][0]).message
+        )
 
     # TODO make this return BaseMessageChunk
 
@@ -128,43 +134,46 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         config: Optional[RunnableConfig] = None,
         *,
         stop: Optional[List[str]] = None,
-    ) -> Iterator[str]:
-        if not hasattr(self, "streaming"):
-            # model doesn't support streaming, so use default implementation
+        **kwargs: Any,
+    ) -> Iterator[BaseMessageChunk]:
+        if type(self)._stream == BaseChatModel._stream:
+            # model doesn't implement streaming, so use default implementation
             yield self.invoke(input, stop=stop, config=config)
         else:
-            from langchain.callbacks.streaming_iter import IteratorCallbackHandler
-
-            # enable streaming, if it's not already enabled
-            original_streaming = cast(bool, self.streaming)  # type: ignore
-            self.streaming = True
-
-            # add iter callback handler to config
             config = config or {}
-            callbacks: Optional[Callbacks] = config.get("callbacks", None)
-            callback_handler = IteratorCallbackHandler()
-            if callbacks is None:
-                config["callbacks"] = [callback_handler]
-            elif isinstance(callbacks, list):
-                callbacks.append(callback_handler)
+            messages = self._convert_input(input).to_messages()
+            params = self._get_invocation_params(stop=stop, **kwargs)
+            options = {"stop": stop, **kwargs}
+            callback_manager = CallbackManager.configure(
+                config.get("callbacks"),
+                self.callbacks,
+                self.verbose,
+                config.get("tags"),
+                self.tags,
+                config.get("metadata"),
+                self.metadata,
+            )
+            [run_manager] = callback_manager.on_chat_model_start(
+                dumpd(self), [messages], invocation_params=params, options=options
+            )
+            try:
+                message: BaseMessageChunk | None = None
+                for chunk in self._stream(
+                    messages, stop=stop, run_manager=run_manager, **kwargs
+                ):
+                    yield chunk
+                    if message is None:
+                        message = chunk
+                    else:
+                        message += chunk
+                assert message is not None
+            except (KeyboardInterrupt, Exception) as e:
+                run_manager.on_llm_error(e)
+                raise e
             else:
-                callbacks.add_handler(callback_handler)
-
-            with ThreadPoolExecutor(max_workers=1) as executor:
-                # run the model non-blocking
-                task = executor.submit(
-                    self.invoke, self._convert_input(input), stop=stop, config=config
+                run_manager.on_llm_end(
+                    LLMResult(generations=[[ChatGeneration(message=message)]]),
                 )
-
-                # yield tokens from the callback handler
-                for token in callback_handler.iter():
-                    yield token
-
-                # block until the model is finished
-                task.result()
-
-            # disable streaming
-            self.streaming = original_streaming
 
     async def astream(
         self,
@@ -172,42 +181,46 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         config: Optional[RunnableConfig] = None,
         *,
         stop: Optional[List[str]] = None,
-    ) -> AsyncIterator[str]:
-        if not hasattr(self, "streaming"):
-            # model doesn't support streaming, so use default implementation
-            yield await self.ainvoke(input, stop=stop, config=config)
+        **kwargs: Any,
+    ) -> AsyncIterator[BaseMessageChunk]:
+        if type(self)._astream == BaseChatModel._astream:
+            # model doesn't implement streaming, so use default implementation
+            yield self.invoke(input, stop=stop, config=config)
         else:
-            from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
-
-            # enable streaming, if it's not already enabled
-            original_streaming = cast(bool, self.streaming)  # type: ignore
-            self.streaming = True
-
-            # add aiter callback handler to config
             config = config or {}
-            callbacks: Optional[Callbacks] = config.get("callbacks", None)
-            callback_handler = AsyncIteratorCallbackHandler()
-            if callbacks is None:
-                config["callbacks"] = [callback_handler]
-            elif isinstance(callbacks, list):
-                callbacks.append(callback_handler)
-            else:
-                callbacks.add_handler(callback_handler)
-
-            # run the model asynchronously
-            task = asyncio.create_task(
-                self.ainvoke(self._convert_input(input), stop=stop, config=config)
+            messages = self._convert_input(input).to_messages()
+            params = self._get_invocation_params(stop=stop, **kwargs)
+            options = {"stop": stop, **kwargs}
+            callback_manager = AsyncCallbackManager.configure(
+                config.get("callbacks"),
+                self.callbacks,
+                self.verbose,
+                config.get("tags"),
+                self.tags,
+                config.get("metadata"),
+                self.metadata,
             )
-
-            # yield tokens from the callback handler
-            async for token in callback_handler.aiter():
-                yield token
-
-            # wait for the model to finish
-            await task
-
-            # restore original streaming value
-            self.streaming = original_streaming
+            [run_manager] = await callback_manager.on_chat_model_start(
+                dumpd(self), [messages], invocation_params=params, options=options
+            )
+            try:
+                message: BaseMessageChunk | None = None
+                async for chunk in self._astream(
+                    messages, stop=stop, run_manager=run_manager, **kwargs
+                ):
+                    yield chunk
+                    if message is None:
+                        message = chunk
+                    else:
+                        message += chunk
+                assert message is not None
+            except (KeyboardInterrupt, Exception) as e:
+                await run_manager.on_llm_error(e)
+                raise e
+            else:
+                await run_manager.on_llm_end(
+                    LLMResult(generations=[[ChatGeneration(message=message)]]),
+                )
 
     # --- Custom methods ---
 
@@ -490,6 +503,24 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         **kwargs: Any,
     ) -> ChatResult:
         """Top Level call"""
+
+    def _stream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[BaseMessageChunk]:
+        raise NotImplementedError
+
+    def _astream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[BaseMessageChunk]:
+        raise NotImplementedError
 
     def __call__(
         self,
