@@ -1078,7 +1078,7 @@
     },
     {
       "source": "/docs/ecosystem/integrations/",
-      "destination": "/docs/integrations/providers/"
+      "destination": "/docs/integrations/"
     },
     {
       "source": "/docs/ecosystem/integrations/:path*",
