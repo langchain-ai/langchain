@@ -464,8 +464,8 @@ class FAISS(VectorStore):
         return docs
 
 
-    def delete(self, ids: Optional[List[str]] = None) -> Optional[bool]:
-         """Delete by vector ID 
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+         """Delete by vector ID. 
 
         Args:
             ids: List of ids to delete.
@@ -474,13 +474,15 @@ class FAISS(VectorStore):
             Optional[bool]: True if deletion is successful,
             False otherwise, None if not implemented.
         """
+        if ids is None:
+            raise ValueError("No ids provided to delete.")
 
-        overlapping = set(IDs).intersection(self.index_to_docstore_id)
+        overlapping = set(ids).intersection(self.index_to_docstore_id)
         if not overlapping:
-            raise ValueError("IDs does not exist in the current object")
+            raise ValueError("ids do not exist in the current object")
         
         #removing ids from index
-        n_items_removed = self.index.remove_ids(np.array(IDs, dtype=np.int64))
+        n_items_removed = self.index.remove_ids(np.array(ids, dtype=np.int64))
 
         docstore_id = []
         for id in overlapping:
@@ -489,7 +491,7 @@ class FAISS(VectorStore):
             
         #remove items from docstore
         self.docstore.delete(docstore_id)
-
+        return True
 
     def merge_from(self, target: FAISS) -> None:
         """Merge another FAISS object with the current one.
