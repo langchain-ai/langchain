@@ -8,7 +8,7 @@ from langchain.schema import BaseMemory
 
 
 class CombinedMemory(BaseMemory):
-    """Class for combining multiple memories' data together."""
+    """Combining multiple memories' data together."""
 
     memories: List[BaseMemory]
     """For tracking all the memories that should be accessed."""
