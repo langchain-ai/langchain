@@ -9,7 +9,24 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class CubeSemanticLoader(BaseLoader):
-    """Load Cube semantic layer metadata."""
+    """Load Cube semantic layer metadata.
+
+    Args:
+        cube_api_url: REST API endpoint.
+            Use the REST API of your Cube's deployment.
+            Please find out more information here:
+            https://cube.dev/docs/http-api/rest#configuration-base-path
+        cube_api_token: Cube API token.
+            Authentication tokens are generated based on your Cube's API secret.
+            Please find out more information here:
+            https://cube.dev/docs/security#generating-json-web-tokens-jwt
+        load_dimension_values: Whether to load dimension values for every string
+            dimension or not.
+        dimension_values_limit: Maximum number of dimension values to load.
+        dimension_values_max_retries: Maximum number of retries to load dimension
+            values.
+        dimension_values_retry_delay: Delay between retries to load dimension values.
+    """
 
     def __init__(
         self,
@@ -21,25 +38,11 @@ class CubeSemanticLoader(BaseLoader):
         dimension_values_retry_delay: int = 3,
     ):
         self.cube_api_url = cube_api_url
-        """REST API endpoint.
-        Use the REST API of your Cube's deployment.
-        Please find out more information here:
-        https://cube.dev/docs/http-api/rest#configuration-base-path
-        """
         self.cube_api_token = cube_api_token
-        """Cube API token.
-        Authentication tokens are generated based on your Cube's API secret.
-        Please find out more information here:
-        https://cube.dev/docs/security#generating-json-web-tokens-jwt
-        """
         self.load_dimension_values = load_dimension_values
-        """Whether to load dimension values for every string dimension or not."""
         self.dimension_values_limit = dimension_values_limit
-        """Maximum number of dimension values to load."""
         self.dimension_values_max_retries = dimension_values_max_retries
-        """Maximum number of retries to load dimension values."""
         self.dimension_values_retry_delay = dimension_values_retry_delay
-        """Delay between retries to load dimension values."""
 
     def _get_dimension_values(self, dimension_name: str) -> List[str]:
         """Makes a call to Cube's REST API load endpoint to retrieve
