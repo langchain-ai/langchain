@@ -2,9 +2,7 @@ import copy
 import uuid
 from typing import Dict, List
 
-import cv2
 import numpy as np
-from diffusers.utils import load_image
 from langchain.tools.base import BaseTool
 
 from langchain_experimental.autonomous_agents.hugginggpt.task_planner import Plan
@@ -25,6 +23,8 @@ class Task:
         return f"{self.task}({self.args})"
 
     def save_product(self) -> None:
+        import cv2
+
         if self.task == "video_generator":
             # ndarray to video
             product = np.array(self.product)
@@ -53,6 +53,8 @@ class Task:
         return self.status == "pending"
 
     def run(self) -> str:
+        from diffusers.utils import load_image
+
         try:
             new_args = copy.deepcopy(self.args)
             for k, v in new_args.items():
