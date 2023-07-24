@@ -121,7 +121,8 @@ class Xinference(LLM):
         Args:
             prompt: The prompt to use for generation.
             stop: Optional list of stop words to use when generating.
-            generate_config: Optional dictionary for the configuration used for generation.
+            generate_config: Optional dictionary for the configuration used for
+                generation.
 
         Returns:
             The generated string by the model.
