@@ -1,5 +1,4 @@
 """General utilities."""
-from langchain.requests import TextRequestsWrapper
 from langchain.utilities.arxiv import ArxivAPIWrapper
 from langchain.utilities.awslambda import LambdaWrapper
 from langchain.utilities.bash import BashProcess
@@ -29,6 +28,7 @@ from langchain.utilities.twilio import TwilioAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 from langchain.utilities.zapier import ZapierNLAWrapper
+from langchain.utils.requests import TextRequestsWrapper
 
 __all__ = [
     "ArxivAPIWrapper",
