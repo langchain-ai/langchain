@@ -3705,6 +3705,26 @@
       "destination": "/docs/modules/model_io/models/llms/:path*"
     },
     {
+      "source": "/docs/modules/callbacks/integrations/:path*",
+      "destination": "/docs/integrations/callbacks/:path*"
+    },
+    {
+      "source": "/docs/modules/data_connection/document_loaders/integrations/:path*",
+      "destination": "/docs/integrations/document_loaders/:path*"
+    },
+    {
+      "source": "/docs/modules/data_connection/text_embedding/integrations/:path*",
+      "destination": "/docs/integrations/text_embedding/:path*"
+    },
+    {
+      "source": "/docs/modules/model_io/models/llms/integrations/:path*",
+      "destination": "/docs/integrations/llms/:path*"
+    },
+    {
+      "source": "/docs/modules/model_io/models/chat/integrations/:path*",
+      "destination": "/docs/integrations/chat/:path*"
+    },
+    {
       "source": "/en/latest/modules/indexes/:path*",
       "destination": "/docs/modules/data_connection/:path*"
     },
