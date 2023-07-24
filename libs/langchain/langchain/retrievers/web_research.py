@@ -1,7 +1,6 @@
 import logging
-import os
 import re
-from typing import List, Union
+from typing import List
 
 from pydantic import BaseModel, Field
 
@@ -10,7 +9,6 @@ from langchain.callbacks.manager import (
     CallbackManagerForRetrieverRun,
 )
 from langchain.chains import LLMChain
-from langchain.chat_models.openai import ChatOpenAI
 from langchain.document_loaders import AsyncHtmlLoader
 from langchain.document_transformers import Html2TextTransformer
 from langchain.llms.base import BaseLLM
@@ -64,26 +62,65 @@ class WebResearchRetriever(BaseRetriever):
     vectorstore: VectorStore = Field(
         ..., description="Vector store for handling document embeddings"
     )
-    llm: Union[BaseLLM, ChatOpenAI] = Field(
-        ..., description="Language model for generating questions"
-    )
-    GOOGLE_CSE_ID: str = Field(..., description="Google Custom Search Engine ID")
-    GOOGLE_API_KEY: str = Field(..., description="Google API Key")
+    llm_chain: LLMChain
+    search: GoogleSearchAPIWrapper = Field(..., description="Google Search API Wrapper")
     search_prompt: PromptTemplate = Field(
         DEFAULT_SEARCH_PROMPT, description="Search Prompt Template"
     )
     max_splits_per_doc: int = Field(100, description="Maximum splits per document")
     num_search_results: int = Field(1, description="Number of pages per Google search")
+    text_splitter: RecursiveCharacterTextSplitter = Field(
+        RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=50),
+        description="Text splitter for splitting web pages into chunks",
+    )
+
+    @classmethod
+    def from_llm(
+        cls,
+        vectorstore: VectorStore,
+        llm: BaseLLM,
+        search: GoogleSearchAPIWrapper,
+        search_prompt: PromptTemplate = DEFAULT_SEARCH_PROMPT,
+        max_splits_per_doc: int = 100,
+        num_search_results: int = 1,
+        text_splitter: RecursiveCharacterTextSplitter = RecursiveCharacterTextSplitter(
+            chunk_size=1500, chunk_overlap=50
+        ),
+    ) -> "WebResearchRetriever":
+        """Initialize from llm using default template.
+
+        Args:
+            search: GoogleSearchAPIWrapper
+            llm: llm for search question generation using DEFAULT_SEARCH_PROMPT
+            search_prompt: prompt to generating search questions
+            max_splits_per_doc: Maximum splits per document to keep
+            num_search_results: Number of pages per Google search
+            text_splitter: Text splitter for splitting web pages into chunks
+
+        Returns:
+            WebResearchRetriever
+        """
+        llm_chain = LLMChain(
+            llm=llm,
+            prompt=search_prompt,
+            output_parser=QuestionListOutputParser(),
+        )
+        return cls(
+            vectorstore=vectorstore,
+            llm_chain=llm_chain,
+            search=search,
+            search_prompt=search_prompt,
+            max_splits_per_doc=max_splits_per_doc,
+            num_search_results=num_search_results,
+            text_splitter=text_splitter,
+        )
 
     def search_tool(self, query: str, num_search_results: int = 1) -> List[dict]:
         """Returns num_serch_results pages per Google search."""
         try:
-            os.environ["GOOGLE_CSE_ID"] = self.GOOGLE_CSE_ID
-            os.environ["GOOGLE_API_KEY"] = self.GOOGLE_API_KEY
-            search = GoogleSearchAPIWrapper()
+            result = self.search.results(query, num_search_results)
         except Exception as e:
-            print(f"Error: {str(e)}")
-        result = search.results(query, num_search_results)
+            raise Exception(f"Error: {str(e)}")
         return result
 
     def _get_relevant_documents(
@@ -103,12 +140,7 @@ class WebResearchRetriever(BaseRetriever):
 
         # Get search questions
         logger.info("Generating questions for Google Search ...")
-        llm_chain = LLMChain(
-            llm=self.llm,
-            prompt=self.search_prompt,
-            output_parser=QuestionListOutputParser(),
-        )
-        result = llm_chain({"question": query})
+        result = self.llm_chain({"question": query})
         logger.info(f"Questions for Google Search (raw): {result}")
         questions = getattr(result["text"], "lines", [])
         logger.info(f"Questions for Google Search: {questions}")
@@ -134,9 +166,7 @@ class WebResearchRetriever(BaseRetriever):
         # This can use rate limit w/ embedding
         logger.info("Grabbing most relevant splits from urls ...")
         filtered_splits = []
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1500, chunk_overlap=50
-        )
+        text_splitter = self.text_splitter
         for doc in html2text.transform_documents(loader.load()):
             doc_splits = text_splitter.split_documents([doc])
             if len(doc_splits) > self.max_splits_per_doc:

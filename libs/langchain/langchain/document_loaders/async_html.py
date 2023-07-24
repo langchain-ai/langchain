@@ -1,4 +1,3 @@
-"""Web base loader class."""
 import asyncio
 import logging
 import warnings
@@ -89,7 +88,7 @@ class AsyncHtmlLoader(BaseLoader):
                         try:
                             text = await response.text()
                         except UnicodeDecodeError:
-                            print(f"Failed to decode content from {url}")
+                            logger.error(f"Failed to decode content from {url}")
                             text = ""
                         return text
                 except aiohttp.ClientConnectionError as e:
