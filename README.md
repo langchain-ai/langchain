@@ -21,6 +21,14 @@ Looking for the JS/TS version? Check out [LangChain.js](https://github.com/hwcha
 **Production Support:** As you move your LangChains into production, we'd love to offer more comprehensive support.
 Please fill out [this form](https://forms.gle/57d8AmXBYp8PP8tZA) and we'll set up a dedicated support Slack channel.
 
+## 🚨Breaking Changes for select chains (SQLDatabase) on 7/28
+
+In an effort to make `langchain` leaner and safer, we are moving select chains to `langchain_experimental`.
+This migration has already started, but we are remaining backwards compatible until 7/28.
+On that date, we will remove functionality from `langchain`.
+Read more about the motivation and the progress [here](https://github.com/hwchase17/langchain/discussions/8043).
+Read how to migrate your code [here](MIGRATE.md).
+
 ## Quick Install
 
 `pip install langchain`
