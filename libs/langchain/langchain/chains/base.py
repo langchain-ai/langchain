@@ -217,7 +217,6 @@ class Chain(Serializable, ABC):
             A dict of named outputs. Should contain all outputs specified in
                 `Chain.output_keys`.
         """
-        inputs = self.prep_inputs(inputs)
         callback_manager = CallbackManager.configure(
             callbacks,
             self.callbacks,
@@ -227,6 +226,7 @@ class Chain(Serializable, ABC):
             metadata,
             self.metadata,
         )
+        inputs = self.prep_inputs(inputs, callbacks=callback_manager)
         new_arg_supported = inspect.signature(self._call).parameters.get("run_manager")
         run_manager = callback_manager.on_chain_start(
             dumpd(self),
@@ -284,7 +284,6 @@ class Chain(Serializable, ABC):
             A dict of named outputs. Should contain all outputs specified in
                 `Chain.output_keys`.
         """
-        inputs = self.prep_inputs(inputs)
         callback_manager = AsyncCallbackManager.configure(
             callbacks,
             self.callbacks,
@@ -294,6 +293,7 @@ class Chain(Serializable, ABC):
             metadata,
             self.metadata,
         )
+        inputs = self.prep_inputs(inputs, callbacks=callback_manager)
         new_arg_supported = inspect.signature(self._acall).parameters.get("run_manager")
         run_manager = await callback_manager.on_chain_start(
             dumpd(self),
@@ -342,7 +342,9 @@ class Chain(Serializable, ABC):
         else:
             return {**inputs, **outputs}
 
-    def prep_inputs(self, inputs: Union[Dict[str, Any], Any]) -> Dict[str, str]:
+    def prep_inputs(
+        self, inputs: Union[Dict[str, Any], Any], *, callbacks: Callbacks
+    ) -> Dict[str, str]:
         """Validate and prepare chain inputs, including adding inputs from memory.
 
         Args:
@@ -369,7 +371,9 @@ class Chain(Serializable, ABC):
                 )
             inputs = {list(_input_keys)[0]: inputs}
         if self.memory is not None:
-            external_context = self.memory.load_memory_variables(inputs)
+            external_context = self.memory.load_memory_variables(
+                inputs, callbacks=callbacks
+            )
             inputs = dict(inputs, **external_context)
         self._validate_inputs(inputs)
         return inputs

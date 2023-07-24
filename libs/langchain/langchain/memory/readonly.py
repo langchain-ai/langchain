@@ -18,7 +18,7 @@ class ReadOnlySharedMemory(BaseMemory):
         self, inputs: Dict[str, Any], callbacks: Callbacks = None
     ) -> Dict[str, str]:
         """Load memory variables from memory."""
-        return self.memory.load_memory_variables(inputs)
+        return self.memory.load_memory_variables(inputs, callbacks=callbacks)
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Nothing should be saved or changed"""

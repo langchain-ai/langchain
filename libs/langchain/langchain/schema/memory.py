@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
-from langchain.callbacks.manager import Callbacks
+import langchain
 from langchain.load.serializable import Serializable
 from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
 
@@ -50,7 +50,9 @@ class BaseMemory(Serializable, ABC):
 
     @abstractmethod
     def load_memory_variables(
-        self, inputs: Dict[str, Any], callbacks: Callbacks = None
+        self,
+        inputs: Dict[str, Any],
+        callbacks: "langchain.callbacks.manager.Callbacks" = None,
     ) -> Dict[str, Any]:
         """Return key-value pairs given the text input to the chain."""
 

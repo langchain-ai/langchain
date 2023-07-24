@@ -95,7 +95,7 @@ class AgentExecutorIterator(BaseAgentExecutorIterator):
 
     @inputs.setter
     def inputs(self, inputs: Any) -> None:
-        self._inputs = self.agent_executor.prep_inputs(inputs)
+        self._inputs = self.agent_executor.prep_inputs(inputs, callbacks=None)
 
     @property
     def callbacks(self) -> Callbacks:

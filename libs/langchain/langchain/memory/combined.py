@@ -63,7 +63,7 @@ class CombinedMemory(BaseMemory):
 
         # Collect vars from all sub-memories
         for memory in self.memories:
-            data = memory.load_memory_variables(inputs)
+            data = memory.load_memory_variables(inputs, callbacks=callbacks)
             memory_data = {
                 **memory_data,
                 **data,

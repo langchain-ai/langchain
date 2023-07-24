@@ -94,7 +94,9 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         Returns:
             List of relevant documents
         """
-        inputs = self.llm_chain.prep_inputs({"query": query})
+        inputs = self.llm_chain.prep_inputs(
+            {"query": query}, callbacks=run_manager.get_child()
+        )
         structured_query = cast(
             StructuredQuery,
             self.llm_chain.predict_and_parse(
