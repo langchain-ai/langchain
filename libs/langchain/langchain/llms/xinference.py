@@ -12,31 +12,40 @@ class Xinference(LLM):
     """Wrapper for accessing Xinference's large-scale model inference service.
     To use, you should have the xinference library installed:
     .. code-block:: bash
+
         pip install "xinference[all]"
+
     Check out: https://github.com/xorbitsai/inference
     To run, you need to start a Xinference supervisor on one server and Xinference workers on the other servers
     Example:
         To start a local instance of Xinference, run
          .. code-block:: bash
+
             $ xinference
+
         You can also deploy Xinference in a distributed cluster. Here are the steps:
         Starting the supervisor:
         .. code-block:: bash
+
             $ xinference-supervisor
+
         Starting the worker:
         .. code-block:: bash
+
             $ xinference-worker
 
     Then, launch a model using command line interface (CLI).
 
     Example:
     .. code-block:: bash
+
             $ xinference launch -n orca -s 3 -q q4_0
 
     It will return a model UID. Then, you can use Xinference with LangChain.
 
     Example:
         .. code-block:: python
+
             from langchain.llms import Xinference
 
             llm = Xinference(
@@ -53,7 +62,7 @@ class Xinference(LLM):
     .. code-block:: bash
         $ xinference list --all
 
-    """
+    """  # noqa: E501
 
     client: Any
     server_url: Optional[str]
@@ -68,7 +77,8 @@ class Xinference(LLM):
             from xinference.client import RESTfulClient
         except ImportError as e:
             raise ImportError(
-                "Could not import RESTfulClient from xinference. Make sure to install xinference in advance"
+                "Could not import RESTfulClient from xinference. Please install it"
+                " with `pip install xinference`."
             ) from e
 
         super().__init__(
@@ -79,10 +89,10 @@ class Xinference(LLM):
         )
 
         if self.server_url is None:
-            raise ValueError(f"Please provide server URL")
+            raise ValueError("Please provide server URL")
 
         if self.model_uid is None:
-            raise ValueError(f"Please provide the model UID")
+            raise ValueError("Please provide the model UID")
 
         self.client = RESTfulClient(server_url)
 
@@ -123,7 +133,7 @@ class Xinference(LLM):
         if stop:
             generate_config["stop"] = stop
 
-        if generate_config and generate_config.get("stream") == True:
+        if generate_config and generate_config.get("stream"):
             combined_text_output = ""
             for token in self._stream(
                 model=model,
@@ -149,7 +159,8 @@ class Xinference(LLM):
         Args:
             prompt: The prompt to use for generation.
             stop: Optional list of stop words to use when generating.
-            generate_config: Optional dictionary for the configuration used for generation.
+            generate_config: Optional dictionary for the configuration used for
+                generation.
 
         Yields:
             A string token.

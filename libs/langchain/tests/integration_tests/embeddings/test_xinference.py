@@ -9,15 +9,10 @@ from langchain.embeddings import XinferenceEmbeddings
 
 @pytest_asyncio.fixture
 async def setup() -> AsyncGenerator[Tuple[str, str], None]:
-    try:
-        import xoscar as xo
-        from xinference.deploy.supervisor import start_supervisor_components
-        from xinference.deploy.utils import create_worker_actor_pool
-        from xinference.deploy.worker import start_worker_components
-    except ImportError as e:
-        raise ImportError(
-            "Could not import xinference or xoscar. Make sure to install them in advance"
-        ) from e
+    import xoscar as xo
+    from xinference.deploy.supervisor import start_supervisor_components
+    from xinference.deploy.utils import create_worker_actor_pool
+    from xinference.deploy.worker import start_worker_components
 
     pool = await create_worker_actor_pool(
         f"test://127.0.0.1:{xo.utils.get_next_port()}"
@@ -39,12 +34,7 @@ async def setup() -> AsyncGenerator[Tuple[str, str], None]:
 
 def test_xinference_embedding_documents(setup: Tuple[str, str]) -> None:
     """Test xinference embeddings for documents."""
-    try:
-        from xinference.client import RESTfulClient
-    except ImportError as e:
-        raise ImportError(
-            "Could not import RESTfulClient from xinference. Make sure to install xinference in advance"
-        ) from e
+    from xinference.client import RESTfulClient
 
     endpoint, _ = setup
 
@@ -67,12 +57,7 @@ def test_xinference_embedding_documents(setup: Tuple[str, str]) -> None:
 
 def test_xinference_embedding_query(setup: Tuple[str, str]) -> None:
     """Test xinference embeddings for query."""
-    try:
-        from xinference.client import RESTfulClient
-    except ImportError as e:
-        raise ImportError(
-            "Could not import RESTfulClient from xinference. Make sure to install xinference in advance"
-        ) from e
+    from xinference.client import RESTfulClient
 
     endpoint, _ = setup
 

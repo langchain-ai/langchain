@@ -9,31 +9,38 @@ class XinferenceEmbeddings(Embeddings):
     """Wrapper around xinference embedding models.
     To use, you should have the xinference library installed:
     .. code-block:: bash
+
         pip install xinference
+
     Check out: https://github.com/xorbitsai/inference
     To run, you need to start a Xinference supervisor on one server and Xinference workers on the other servers
     Example:
         To start a local instance of Xinference, run
          .. code-block:: bash
+
             $ xinference
         You can also deploy Xinference in a distributed cluster. Here are the steps:
         Starting the supervisor:
         .. code-block:: bash
+
             $ xinference-supervisor
         Starting the worker:
         .. code-block:: bash
+
             $ xinference-worker
 
     Then, launch a model using command line interface (CLI).
 
     Example:
     .. code-block:: bash
+
             $ xinference launch -n orca -s 3 -q q4_0
 
     It will return a model UID. Then you can use Xinference Embedding with LangChain.
 
     Example:
     .. code-block:: python
+
         from langchain.embeddings import XinferenceEmbeddings
 
         xinference = XinferenceEmbeddings(
@@ -41,7 +48,7 @@ class XinferenceEmbeddings(Embeddings):
             model_uid = {model_uid} # replace model_uid with the model UID return from launching the model
         )
 
-    """
+    """  # noqa: E501
 
     client: Any
     server_url: Optional[str]
@@ -56,16 +63,17 @@ class XinferenceEmbeddings(Embeddings):
             from xinference.client import RESTfulClient
         except ImportError as e:
             raise ImportError(
-                "Could not import RESTfulClient from xinference. Make sure to install xinference in advance"
+                "Could not import RESTfulClient from xinference. Please install it"
+                " with `pip install xinference`."
             ) from e
 
         super().__init__()
 
         if server_url is None:
-            raise ValueError(f"Please provide server URL")
+            raise ValueError("Please provide server URL")
 
         if model_uid is None:
-            raise ValueError(f"Please provide the model UID")
+            raise ValueError("Please provide the model UID")
 
         self.server_url = server_url
 
