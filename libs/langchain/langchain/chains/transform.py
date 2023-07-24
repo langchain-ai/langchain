@@ -1,6 +1,6 @@
 """Chain that runs an arbitrary python function."""
-from typing import Any, Awaitable, Callable, Dict, List, Optional
 import warnings
+from typing import Any, Awaitable, Callable, Dict, List, Optional
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -61,6 +61,7 @@ class TransformChain(Chain):
             return await self.coroutine(inputs)
         else:
             warnings.warn(
-                "TransformChain coroutine is None, falling back to synchronous transform"
+                "TransformChain coroutine is None, falling"
+                " back to synchronous transform"
             )
             return self.transform(inputs)
