@@ -1,0 +1,411 @@
+[tool.poetry]
+name = "langchain"
+version = "0.0.240"
+description = "Building applications with LLMs through composability"
+authors = []
+license = "MIT"
+readme = "README.md"
+repository = "https://www.github.com/hwchase17/langchain"
+
+[tool.poetry.scripts]
+langchain-server = "langchain.server:main"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+pydantic = "^1"
+SQLAlchemy = ">=1.4,<3"
+requests = "^2"
+PyYAML = ">=5.4.1"
+numpy = "^1"
+azure-core = {version = "^1.26.4", optional=true}
+tqdm = {version = ">=4.48.0", optional = true}
+openapi-schema-pydantic = "^1.2"
+faiss-cpu = {version = "^1", optional = true}
+wikipedia = {version = "^1", optional = true}
+elasticsearch = {version = "^8", optional = true}
+opensearch-py = {version = "^2.0.0", optional = true}
+redis = {version = "^4", optional = true}
+manifest-ml = {version = "^0.0.1", optional = true}
+spacy = {version = "^3", optional = true}
+nltk = {version = "^3", optional = true}
+transformers = {version = "^4", optional = true}
+beautifulsoup4 = {version = "^4", optional = true}
+torch = {version = ">=1,<3", optional = true}
+jinja2 = {version = "^3", optional = true}
+tiktoken = {version = "^0.3.2", optional = true, python="^3.9"}
+pinecone-client = {version = "^2", optional = true}
+pinecone-text = {version = "^0.4.2", optional = true}
+pymongo = {version = "^4.3.3", optional = true}
+clickhouse-connect = {version="^0.5.14", optional=true}
+weaviate-client = {version = "^3", optional = true}
+marqo = {version = "^0.11.0", optional=true}
+google-api-python-client = {version = "2.70.0", optional = true}
+google-auth = {version = "^2.18.1", optional = true}
+wolframalpha = {version = "5.0.0", optional = true}
+anthropic = {version = "^0.3", optional = true}
+qdrant-client = {version = "^1.3.1", optional = true, python = ">=3.8.1,<3.12"}
+dataclasses-json = "^0.5.7"
+tensorflow-text = {version = "^2.11.0", optional = true, python = "^3.10, <3.12"}
+tenacity = "^8.1.0"
+cohere = {version = "^3", optional = true}
+openai = {version = "^0", optional = true}
+nlpcloud = {version = "^1", optional = true}
+nomic = {version = "^1.0.43", optional = true}
+huggingface_hub = {version = "^0", optional = true}
+octoai-sdk = {version = "^0.1.1", optional = true}
+jina = {version = "^3.14", optional = true}
+google-search-results = {version = "^2", optional = true}
+sentence-transformers = {version = "^2", optional = true}
+aiohttp = "^3.8.3"
+arxiv = {version = "^1.4", optional = true}
+pypdf = {version = "^3.4.0", optional = true}
+networkx = {version="^2.6.3", optional = true}
+aleph-alpha-client = {version="^2.15.0", optional = true}
+deeplake = {version = "^3.6.8", optional = true}
+libdeeplake = {version = "^0.0.60", optional = true}
+pgvector = {version = "^0.1.6", optional = true}
+psycopg2-binary = {version = "^2.9.5", optional = true}
+pyowm = {version = "^3.3.0", optional = true}
+async-timeout = {version = "^4.0.0", python = "<3.11"}
+azure-identity = {version = "^1.12.0", optional=true}
+gptcache = {version = ">=0.1.7", optional = true}
+atlassian-python-api = {version = "^3.36.0", optional=true}
+pytesseract = {version = "^0.3.10", optional=true}
+html2text = {version="^2020.1.16", optional=true}
+numexpr = "^2.8.4"
+duckduckgo-search = {version="^3.8.3", optional=true}
+azure-cosmos = {version="^4.4.0b1", optional=true}
+lark = {version="^1.1.5", optional=true}
+lancedb = {version = "^0.1", optional = true}
+pexpect = {version = "^4.8.0", optional = true}
+pyvespa = {version = "^0.33.0", optional = true}
+O365 = {version = "^2.0.26", optional = true}
+jq = {version = "^1.4.1", optional = true}
+steamship = {version = "^2.16.9", optional = true}
+pdfminer-six = {version = "^20221105", optional = true}
+docarray = {version="^0.32.0", extras=["hnswlib"], optional=true}
+lxml = {version = "^4.9.2", optional = true}
+pymupdf = {version = "^1.22.3", optional = true}
+pypdfium2 = {version = "^4.10.0", optional = true}
+gql = {version = "^3.4.1", optional = true}
+pandas = {version = "^2.0.1", optional = true}
+telethon = {version = "^1.28.5", optional = true}
+neo4j = {version = "^5.8.1", optional = true}
+zep-python = {version=">=0.32", optional=true}
+langkit = {version = ">=0.0.6, <0.1.0", optional = true}
+chardet = {version="^5.1.0", optional=true}
+requests-toolbelt = {version = "^1.0.0", optional = true}
+openlm = {version = "^0.0.5", optional = true}
+scikit-learn = {version = "^1.2.2", optional = true}
+azure-ai-formrecognizer = {version = "^3.2.1", optional = true}
+azure-ai-vision = {version = "^0.11.1b1", optional = true}
+azure-cognitiveservices-speech = {version = "^1.28.0", optional = true}
+py-trello = {version = "^0.19.0", optional = true}
+momento = {version = "^1.5.0", optional = true}
+bibtexparser = {version = "^1.4.0", optional = true}
+singlestoredb = {version = "^0.7.1", optional = true}
+pyspark = {version = "^3.4.0", optional = true}
+clarifai = {version = ">=9.1.0", optional = true}
+tigrisdb = {version = "^1.0.0b6", optional = true}
+nebula3-python = {version = "^3.4.0", optional = true}
+mwparserfromhell = {version = "^0.6.4", optional = true}
+mwxml = {version = "^0.3.3", optional = true}
+awadb = {version = "^0.3.3", optional = true}
+azure-search-documents = {version = "11.4.0a20230509004", source = "azure-sdk-dev", optional = true}
+esprima = {version = "^4.0.1", optional = true}
+openllm = {version = ">=0.1.19", optional = true}
+streamlit = {version = "^1.18.0", optional = true, python = ">=3.8.1,<3.9.7 || >3.9.7,<4.0"}
+psychicapi = {version = "^0.8.0", optional = true}
+cassio = {version = "^0.0.7", optional = true}
+rdflib = {version = "^6.3.2", optional = true}
+sympy = {version = "^1.12", optional = true}
+rapidfuzz = {version = "^3.1.1", optional = true}
+langsmith = "~0.0.11"
+rank-bm25 = {version = "^0.2.2", optional = true}
+amadeus = {version = ">=8.1.0", optional = true}
+geopandas = {version = "^0.13.1", optional = true}
+
+[tool.poetry.group.test.dependencies]
+# The only dependencies that should be added are
+# dependencies used for running tests (e.g., pytest, freezegun, response).
+# Any dependencies that do not meet that criteria will be removed.
+pytest = "^7.3.0"
+pytest-cov = "^4.0.0"
+pytest-dotenv = "^0.5.2"
+duckdb-engine = "^0.7.0"
+pytest-watcher = "^0.2.6"
+freezegun = "^1.2.2"
+responses = "^0.22.0"
+pytest-asyncio = "^0.20.3"
+lark = "^1.1.5"
+pandas = "^2.0.0"
+pytest-mock  = "^3.10.0"
+pytest-socket = "^0.6.0"
+syrupy = "^4.0.2"
+
+[tool.poetry.group.codespell.dependencies]
+codespell = "^2.2.0"
+
+[tool.poetry.group.test_integration]
+optional = true
+
+[tool.poetry.group.test_integration.dependencies]
+# Do not add dependencies in the test_integration group
+# Instead:
+# 1. Add an optional dependency to the main group
+#       poetry add --optional [package name]
+# 2. Add the package name to the extended_testing extra (find it below)
+# 3. Relock the poetry file
+#       poetry lock --no-update
+# 4. Favor unit tests not integration tests.
+#    Use the @pytest.mark.requires(pkg_name) decorator in unit_tests.
+#    Your tests should not rely on network access, as it prevents other
+#    developers from being able to easily run them.
+#    Instead write unit tests that use the `responses` library or mock.patch with
+#    fixtures. Keep the fixtures minimal.
+# See CONTRIBUTING.md for more instructions on working with optional dependencies.
+# https://github.com/hwchase17/langchain/blob/master/.github/CONTRIBUTING.md#working-with-optional-dependencies
+pytest-vcr = "^1.0.2"
+wrapt = "^1.15.0"
+openai = "^0.27.4"
+elasticsearch = {extras = ["async"], version = "^8.6.2"}
+redis = "^4.5.4"
+pinecone-client = "^2.2.1"
+pinecone-text = "^0.4.2"
+pymongo = "^4.3.3"
+clickhouse-connect = "^0.5.14"
+transformers = "^4.27.4"
+deeplake = "^3.6.8"
+libdeeplake = "^0.0.60"
+weaviate-client = "^3.15.5"
+torch = "^1.0.0"
+chromadb = "^0.4.0"
+tiktoken = "^0.3.3"
+python-dotenv = "^1.0.0"
+sentence-transformers = "^2"
+gptcache = "^0.1.9"
+promptlayer = "^0.1.80"
+tair = "^1.3.3"
+wikipedia = "^1"
+cassio = "^0.0.7"
+arxiv = "^1.4"
+mastodon-py = "^1.8.1"
+momento = "^1.5.0"
+# Please do not add any dependencies in the test_integration group
+# See instructions above ^^
+
+[tool.poetry.group.lint.dependencies]
+ruff = "^0.0.249"
+types-toml = "^0.10.8.1"
+types-redis = "^4.3.21.6"
+types-pytz = "^2023.3.0.0"
+black = "^23.1.0"
+types-chardet = "^5.0.4.6"
+mypy-protobuf = "^3.0.0"
+
+[tool.poetry.group.typing.dependencies]
+mypy = "^0.991"
+types-pyyaml = "^6.0.12.2"
+types-requests = "^2.28.11.5"
+
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+jupyter = "^1.0.0"
+playwright = "^1.28.0"
+setuptools = "^67.6.1"
+
+[tool.poetry.extras]
+llms = ["anthropic", "clarifai", "cohere", "openai", "openllm", "openlm", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
+qdrant = ["qdrant-client"]
+openai = ["openai", "tiktoken"]
+text_helpers = ["chardet"]
+clarifai = ["clarifai"]
+cohere = ["cohere"]
+docarray = ["docarray"]
+embeddings = ["sentence-transformers"]
+javascript = ["esprima"]
+azure = [
+    "azure-identity",
+    "azure-cosmos",
+    "openai",
+    "azure-core",
+    "azure-ai-formrecognizer",
+    "azure-ai-vision",
+    "azure-cognitiveservices-speech",
+    "azure-search-documents",
+]
+all = [
+    "anthropic",
+    "clarifai",
+    "cohere",
+    "openai",
+    "nlpcloud",
+    "huggingface_hub",
+    "jina",
+    "manifest-ml",
+    "elasticsearch",
+    "opensearch-py",
+    "google-search-results",
+    "faiss-cpu",
+    "sentence-transformers",
+    "transformers",
+    "spacy",
+    "nltk",
+    "wikipedia",
+    "beautifulsoup4",
+    "tiktoken",
+    "torch",
+    "jinja2",
+    "pinecone-client",
+    "pinecone-text",
+    "marqo",
+    "pymongo",
+    "weaviate-client",
+    "redis",
+    "google-api-python-client",
+    "google-auth",
+    "wolframalpha",
+    "qdrant-client",
+    "tensorflow-text",
+    "pypdf",
+    "networkx",
+    "nomic",
+    "aleph-alpha-client",
+    "deeplake",
+    "libdeeplake",
+    "pgvector",
+    "psycopg2-binary",
+    "pyowm",
+    "pytesseract",
+    "html2text",
+    "atlassian-python-api",
+    "gptcache",
+    "duckduckgo-search",
+    "arxiv",
+    "azure-identity",
+    "clickhouse-connect",
+    "azure-cosmos",
+    "lancedb",
+    "langkit",
+    "lark",
+    "pexpect",
+    "pyvespa",
+    "O365",
+    "jq",
+    "docarray",
+    "steamship",
+    "pdfminer-six",
+    "lxml",
+    "requests-toolbelt",
+    "neo4j",
+    "openlm",
+    "azure-ai-formrecognizer",
+    "azure-ai-vision",
+    "azure-cognitiveservices-speech",
+    "momento",
+    "singlestoredb",
+    "tigrisdb",
+    "nebula3-python",
+    "awadb",
+    "esprima",
+    "octoai-sdk",
+    "rdflib",
+    "amadeus",
+]
+
+# An extra used to be able to add extended testing.
+# Please use new-line on formatting to make it easier to add new packages without
+# merge-conflicts
+extended_testing = [
+ "beautifulsoup4",
+ "bibtexparser",
+ "cassio",
+ "chardet",
+ "esprima",
+ "jq",
+ "pdfminer.six",
+ "pgvector",
+ "pypdf",
+ "pymupdf",
+ "pypdfium2",
+ "tqdm",
+ "lxml",
+ "atlassian-python-api",
+ "mwparserfromhell",
+ "mwxml",
+ "pandas",
+ "telethon",
+ "psychicapi",
+ "zep-python",
+ "gql",
+ "requests_toolbelt",
+ "html2text",
+ "py-trello",
+ "scikit-learn",
+ "streamlit",
+ "pyspark",
+ "openai",
+ "sympy",
+ "rapidfuzz",
+ "openai",
+ "rank_bm25",
+ "geopandas",
+ "jinja2",
+]
+
+[[tool.poetry.source]]
+name = "azure-sdk-dev"
+url = "https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-python/pypi/simple/"
+secondary = true
+
+[tool.ruff]
+select = [
+  "E",  # pycodestyle
+  "F",  # pyflakes
+  "I",  # isort
+]
+exclude = [
+  "tests/integration_tests/examples/non-utf8-encoding.py",
+]
+
+[tool.mypy]
+ignore_missing_imports = "True"
+disallow_untyped_defs = "True"
+exclude = ["notebooks", "examples", "example_data"]
+
+[tool.coverage.run]
+omit = [
+    "tests/*",
+]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+# --strict-markers will raise errors on unknown marks.
+# https://docs.pytest.org/en/7.1.x/how-to/mark.html#raising-errors-on-unknown-marks
+#
+# https://docs.pytest.org/en/7.1.x/reference/reference.html
+# --strict-config       any warnings encountered while parsing the `pytest`
+#                       section of the configuration file raise errors.
+#
+# https://github.com/tophat/syrupy
+# --snapshot-warn-unused    Prints a warning on unused snapshots rather than fail the test suite.
+addopts = "--strict-markers --strict-config --durations=5 --snapshot-warn-unused"
+# Registering custom markers.
+# https://docs.pytest.org/en/7.1.x/example/markers.html#registering-markers
+markers = [
+  "requires: mark tests as requiring a specific library"
+]
+
+[tool.codespell]
+skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples'
+# Ignore latin etc
+ignore-regex = '.*(Stati Uniti|Tense=Pres).*'
+# whats is a typo but used frequently in queries so kept as is
+# aapply - async apply
+# unsecure - typo but part of API, decided to not bother for now
+ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon'
