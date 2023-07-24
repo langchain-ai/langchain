@@ -3,7 +3,7 @@ import inspect
 import warnings
 from abc import ABC, abstractmethod
 from functools import partial
-from typing import Any, Dict, List, Mapping, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
 from pydantic import Field, root_validator
 
@@ -424,7 +424,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
         return await self._call_async(messages, stop=_stop, **kwargs)
 
     @property
-    def _identifying_params(self) -> Mapping[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
         return {}
 
