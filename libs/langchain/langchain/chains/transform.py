@@ -54,9 +54,13 @@ class TransformChain(Chain):
     async def _acall(
         self,
         inputs: Dict[str, Any],
-        run_manager: AsyncCallbackManagerForChainRun | None = None,
+        run_manager: Optional[AsyncCallbackManagerForChainRun],
     ) -> Dict[str, Any]:
         if self.coroutine is not None:
             return await self.coroutine(inputs)
         else:
-            return self.transform(inputs)
+            raise NotImplementedError(
+                "This transform chain does not have a coroutine transform"
+                " function. Try using TransformChain(... couroutine=my_async_function)"
+                " instead."
+            )
