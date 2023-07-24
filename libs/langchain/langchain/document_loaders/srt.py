@@ -1,8 +1,9 @@
 """Loader for .srt (subtitle) files."""
-from typing import List
+from typing import List, Optional
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.utils.transcripts import chunk_transcripts, format_pysrt
 
 
 class SRTLoader(BaseLoader):
@@ -18,11 +19,30 @@ class SRTLoader(BaseLoader):
             )
         self.file_path = file_path
 
-    def load(self) -> List[Document]:
+    def load(self, duration: Optional[int] = None) -> List[Document]:
         """Load using pysrt file."""
         import pysrt
 
         parsed_info = pysrt.open(self.file_path)
-        text = " ".join([t.text for t in parsed_info])
         metadata = {"source": self.file_path}
-        return [Document(page_content=text, metadata=metadata)]
+        if duration == None:
+            text = " ".join([t.text for t in parsed_info])
+            return [Document(page_content=text, metadata=metadata)]
+        else:
+            transcript_pieces = format_pysrt(parsed_info)
+            transcript_pieces = chunk_transcripts(transcript_pieces, duration=duration)
+            docs = []
+            for t in transcript_pieces:
+                dct = {
+                    **metadata,
+                    **{
+                        "TimeStamp": t["start"],
+                        "duration": t["duration"],
+                    },
+                }
+                doc = Document(
+                    page_content=t["text"],
+                    metadata=dct,
+                )
+                docs += [doc]
+            return docs

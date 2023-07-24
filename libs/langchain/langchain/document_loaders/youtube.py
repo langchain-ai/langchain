@@ -14,6 +14,8 @@ from langchain.document_loaders.base import BaseLoader
 
 logger = logging.getLogger(__name__)
 
+from langchain.utils.transcripts import chunk_transcripts
+
 SCOPES = ["https://www.googleapis.com/auth/youtube.readonly"]
 
 
@@ -177,7 +179,7 @@ class YoutubeLoader(BaseLoader):
         video_id = cls.extract_video_id(youtube_url)
         return cls(video_id, **kwargs)
 
-    def load(self) -> List[Document]:
+    def load(self, duration: Optional[float] = None) -> List[Document]:
         """Load documents."""
         try:
             from youtube_transcript_api import (
@@ -212,9 +214,30 @@ class YoutubeLoader(BaseLoader):
 
         transcript_pieces = transcript.fetch()
 
-        transcript = " ".join([t["text"].strip(" ") for t in transcript_pieces])
-
-        return [Document(page_content=transcript, metadata=metadata)]
+        if duration == None:
+            transcript = " ".join([t["text"].strip(" ") for t in transcript_pieces])
+            return [Document(page_content=transcript, metadata=metadata)]
+        else:
+            transcript_pieces = chunk_transcripts(transcript_pieces, duration=duration)
+            docs = []
+            for t in transcript_pieces:
+                dct = {
+                    **metadata,
+                    **{
+                        "TimeStamp": t["start"],
+                        "TimeStampUrl": "https://youtu.be/"
+                        + str(self.video_id)
+                        + "?t="
+                        + t["start"],
+                        "duration": t["duration"],
+                    },
+                }
+                doc = Document(
+                    page_content=t["text"],
+                    metadata=dct,
+                )
+                docs += [doc]
+            return docs
 
     def _get_video_info(self) -> dict:
         """Get important video information.
