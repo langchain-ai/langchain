@@ -140,6 +140,7 @@ from langchain.document_loaders.url_playwright import PlaywrightURLLoader
 from langchain.document_loaders.url_selenium import SeleniumURLLoader
 from langchain.document_loaders.weather import WeatherDataLoader
 from langchain.document_loaders.web_base import WebBaseLoader
+from langchain.document_loaders.web_loader import AsyncRawWebLoader
 from langchain.document_loaders.whatsapp_chat import WhatsAppChatLoader
 from langchain.document_loaders.wikipedia import WikipediaLoader
 from langchain.document_loaders.word_document import (
@@ -153,7 +154,6 @@ from langchain.document_loaders.youtube import (
     GoogleApiYoutubeLoader,
     YoutubeLoader,
 )
-from langchain.document_loaders.web_loader import AsyncRawWebLoader
 
 # Legacy: only for backwards compatibility. Use PyPDFLoader instead
 PagedPDFSplitter = PyPDFLoader

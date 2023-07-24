@@ -25,7 +25,7 @@ default_header_template = {
 
 
 class AsyncRawWebLoader(BaseLoader):
-    """Loader that loads all HTML asyncronously and returns the raw HTML."""
+    """Loader that loads all HTML asynchronously and returns the raw HTML."""
 
     web_paths: List[str]
 
@@ -74,7 +74,6 @@ class AsyncRawWebLoader(BaseLoader):
 
         if proxies:
             self.session.proxies.update(proxies)
-
 
     async def _fetch(
         self, url: str, retries: int = 3, cooldown: int = 2, backoff: float = 1.5
