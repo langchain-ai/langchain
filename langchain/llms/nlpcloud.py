@@ -76,7 +76,10 @@ class NLPCloud(LLM):
             import nlpcloud
 
             values["client"] = nlpcloud.Client(
-                values["model_name"], nlpcloud_api_key, gpu=values["gpu"], lang=values["lang"]
+                values["model_name"],
+                nlpcloud_api_key,
+                gpu=values["gpu"],
+                lang=values["lang"],
             )
         except ImportError:
             raise ImportError(
@@ -109,7 +112,12 @@ class NLPCloud(LLM):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model_name": self.model_name}, **{"gpu": self.gpu}, **{"lang": self.lang}, **self._default_params}
+        return {
+            **{"model_name": self.model_name},
+            **{"gpu": self.gpu},
+            **{"lang": self.lang},
+            **self._default_params,
+        }
 
     @property
     def _llm_type(self) -> str:
