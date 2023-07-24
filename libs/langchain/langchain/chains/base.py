@@ -226,12 +226,12 @@ class Chain(Serializable, ABC):
             metadata,
             self.metadata,
         )
-        inputs = self.prep_inputs(inputs, callbacks=callback_manager)
         new_arg_supported = inspect.signature(self._call).parameters.get("run_manager")
         run_manager = callback_manager.on_chain_start(
             dumpd(self),
             inputs,
         )
+        inputs = self.prep_inputs(inputs, callbacks=run_manager.get_child())
         try:
             outputs = (
                 self._call(inputs, run_manager=run_manager)
@@ -293,12 +293,12 @@ class Chain(Serializable, ABC):
             metadata,
             self.metadata,
         )
-        inputs = self.prep_inputs(inputs, callbacks=callback_manager)
         new_arg_supported = inspect.signature(self._acall).parameters.get("run_manager")
         run_manager = await callback_manager.on_chain_start(
             dumpd(self),
             inputs,
         )
+        inputs = self.prep_inputs(inputs, callbacks=run_manager.get_child())
         try:
             outputs = (
                 await self._acall(inputs, run_manager=run_manager)
