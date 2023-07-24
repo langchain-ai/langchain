@@ -1,5 +1,6 @@
 """Chain that runs an arbitrary python function."""
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Awaitable, Callable, Dict, List, Optional
+import warnings
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -25,7 +26,7 @@ class TransformChain(Chain):
     """The keys returned by the transform's output dictionary."""
     transform: Callable[[Dict[str, str]], Dict[str, str]]
     """The transform function."""
-    coroutine: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None
+    coroutine: Optional[Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]] = None
     """The coroutine transform function."""
 
     @property
@@ -54,13 +55,12 @@ class TransformChain(Chain):
     async def _acall(
         self,
         inputs: Dict[str, Any],
-        run_manager: Optional[AsyncCallbackManagerForChainRun],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         if self.coroutine is not None:
             return await self.coroutine(inputs)
         else:
-            raise NotImplementedError(
-                "This transform chain does not have a coroutine transform"
-                " function. Try using TransformChain(... couroutine=my_async_function)"
-                " instead."
+            warnings.warn(
+                "TransformChain coroutine is None, falling back to synchronous transform"
             )
+            return self.transform(inputs)
