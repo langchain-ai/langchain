@@ -7,14 +7,17 @@ from pydantic import BaseModel, Extra, root_validator
 class GraphQLAPIWrapper(BaseModel):
     """Wrapper around GraphQL API.
 
-    To use, you should have the ``gql`` python package installed.
+    To use, you should have the ``gql`` and ``graphql`` python packages installed.
     This wrapper will use the GraphQL API to conduct queries.
     """
 
     custom_headers: Optional[Dict[str, str]] = None
+    disable_schema_prompt: bool = False
     graphql_endpoint: str
     gql_client: Any  #: :meta private:
     gql_function: Callable[[str], Any]  #: :meta private:
+    custom_transport_auth: Any  #: :meta private:
+    gql_schema: str
 
     class Config:
         """Configuration for this pydantic object."""
@@ -23,23 +26,53 @@ class GraphQLAPIWrapper(BaseModel):
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that the python package exists in the environment."""
+        """Validate that the python package exists in the environment.
+        Pull graphql schema using introspection query if asked."""
         try:
             from gql import Client, gql
             from gql.transport.requests import RequestsHTTPTransport
+            from graphql import (
+                GraphQLScalarType,
+                build_client_schema,
+                get_introspection_query,
+            )
+            from graphql.utilities.print_schema import print_filtered_schema
+
         except ImportError as e:
             raise ImportError(
-                "Could not import gql python package. "
-                f"Try installing it with `pip install gql`. Received error: {e}"
+                "Could not import gql or graphql python package. "
+                f"Try installing it with `pip install gql graphql`. Received error: {e}"
             )
-        headers = values.get("custom_headers")
+        headers = values.get("custom_headers", {})
+        customAuth = values.get("custom_transport_auth", None)
         transport = RequestsHTTPTransport(
-            url=values["graphql_endpoint"],
-            headers=headers,
+            url=values["graphql_endpoint"], headers=headers, auth=customAuth
         )
+
         client = Client(transport=transport, fetch_schema_from_transport=True)
         values["gql_client"] = client
         values["gql_function"] = gql
+
+        disable_schema_prompt = values.get("disable_schema_prompt", False)
+        values["gql_schema"] = ""
+
+        if disable_schema_prompt:
+            return values
+
+        query_intros = get_introspection_query(descriptions=True)
+        document_node = gql(query_intros)
+        intros_result: Any = client.execute(document_node)
+
+        # Removes introspection fields, directives, and scalars from schema
+        # These are redundant and cause confusion with the model
+        values["gql_schema"] = print_filtered_schema(
+            build_client_schema(intros_result),
+            directive_filter=lambda n: False,
+            type_filter=lambda n: not (
+                n.name.startswith("_") or isinstance(n, GraphQLScalarType)
+            ),
+        )
+
         return values
 
     def run(self, query: str) -> str:

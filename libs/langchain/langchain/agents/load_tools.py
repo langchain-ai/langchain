@@ -278,9 +278,7 @@ def _get_scenexplain(**kwargs: Any) -> BaseTool:
 
 
 def _get_graphql_tool(**kwargs: Any) -> BaseTool:
-    graphql_endpoint = kwargs["graphql_endpoint"]
-    wrapper = GraphQLAPIWrapper(graphql_endpoint=graphql_endpoint)
-    return BaseGraphQLTool(graphql_wrapper=wrapper)
+    return BaseGraphQLTool(graphql_wrapper=GraphQLAPIWrapper(**kwargs))
 
 
 def _get_openweathermap(**kwargs: Any) -> BaseTool:
@@ -342,7 +340,15 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
         ["awslambda_tool_name", "awslambda_tool_description", "function_name"],
     ),
     "sceneXplain": (_get_scenexplain, []),
-    "graphql": (_get_graphql_tool, ["graphql_endpoint"]),
+    "graphql": (
+        _get_graphql_tool,
+        [
+            "graphql_endpoint",
+            "custom_headers",
+            "disable_schema_prompt",
+            "custom_transport_auth",
+        ],
+    ),
     "openweathermap-api": (_get_openweathermap, ["openweathermap_api_key"]),
     "dataforseo-api-search": (
         _get_dataforseo_api_search,
