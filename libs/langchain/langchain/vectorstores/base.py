@@ -460,9 +460,14 @@ class VectorStore(ABC):
 
 
 class VectorStoreRetriever(BaseRetriever):
+    """Retriever class for VectorStore."""
+
     vectorstore: VectorStore
+    """VectorStore to use for retrieval."""
     search_type: str = "similarity"
+    """Type of search to perform. Defaults to "similarity"."""
     search_kwargs: dict = Field(default_factory=dict)
+    """Keyword arguments to pass to the search function."""
     allowed_search_types: ClassVar[Collection[str]] = (
         "similarity",
         "similarity_score_threshold",
