@@ -69,6 +69,14 @@ This project uses [Poetry](https://python-poetry.org/) as a dependency manager. 
 3. Tell Poetry to use the virtualenv python environment (`poetry config virtualenvs.prefer-active-python true`)
 4. Continue with the following steps.
 
+There are two separate projects in this repository:
+- `langchain`: core langchain code, abstractions, and use cases
+- `langchain.experimental`: more experimental code
+
+Each of these has their OWN development environment. 
+In order to run any of the commands below, please move into their respective directories.
+For example, to contribute to `langchain` run `cd libs/langchain` before getting started with the below.
+
 To install requirements:
 
 ```bash
@@ -247,6 +255,9 @@ poetry run jupyter notebook
 When you run `poetry install`, the `langchain` package is installed as editable in the virtualenv, so your new logic can be imported into the notebook.
 
 ## Documentation
+
+While the code is split between `langchain` and `langchain.experimental`, the documentation is one holistic thing.
+This covers how to get started contributing to documentation.
 
 ### Contribute Documentation
 
