@@ -1081,18 +1081,6 @@
       "destination": "/docs/integrations/providers/:path*"
     },
     {
-      "source": "/docs/integrations/:path*",
-      "destination": "/docs/integrations/providers/:path*"
-    },
-    {
-      "source": "/docs/ecosystem/integrations(/?)",
-      "destination": "/docs/integrations/providers/"
-    },
-    {
-      "source": "/docs/integrations/",
-      "destination": "/docs/integrations/providers/"
-    },
-    {
       "source": "/en/latest/ecosystem/deployments.html",
       "destination": "/docs/guides/deployments/template_repos"
     },
