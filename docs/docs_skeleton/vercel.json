@@ -1218,123 +1218,123 @@
     },
     {
       "source": "/en/latest/modules/agents/toolkits/examples/azure_cognitive_services.html",
-      "destination": "/docs/integrations/tookits/azure_cognitive_services"
+      "destination": "/docs/integrations/toolkits/azure_cognitive_services"
     },
     {
       "source": "/docs/modules/agents/toolkits/azure_cognitive_services",
-      "destination": "/docs/integrations/tookits/azure_cognitive_services"
+      "destination": "/docs/integrations/toolkits/azure_cognitive_services"
     },
     {
       "source": "/en/latest/modules/agents/toolkits/examples/csv.html",
-      "destination": "/docs/integrations/tookits/csv"
+      "destination": "/docs/integrations/toolkits/csv"
     },
     {
       "source": "/docs/modules/agents/toolkits/csv",
-      "destination": "/docs/integrations/tookits/csv"
+      "destination": "/docs/integrations/toolkits/csv"
     },
     {
       "source": "/en/latest/modules/agents/toolkits/examples/gmail.html",
-      "destination": "/docs/integrations/tookits/gmail"
+      "destination": "/docs/integrations/toolkits/gmail"
     },
     {
       "source": "/docs/modules/agents/toolkits/gmail",
-      "destination": "/docs/integrations/tookits/gmail"
+      "destination": "/docs/integrations/toolkits/gmail"
     },
     {
       "source": "/en/latest/modules/agents/toolkits/examples/jira.html",
-      "destination": "/docs/integrations/tookits/jira"
+      "destination": "/docs/integrations/toolkits/jira"
     },
     {
       "source": "/docs/modules/agents/toolkits/jira",
-      "destination": "/docs/integrations/tookits/jira"
+      "destination": "/docs/integrations/toolkits/jira"
     },
     {
       "source": "/en/latest/modules/agents/toolkits/examples/json.html",
-      "destination": "/docs/integrations/tookits/json"
+      "destination": "/docs/integrations/toolkits/json"
     },
     {
       "source": "/docs/modules/agents/toolkits/json",
-      "destination": "/docs/integrations/tookits/json"
+      "destination": "/docs/integrations/toolkits/json"
     },
     {
       "source": "/en/latest/modules/agents/toolkits/examples/openapi.html",
-      "destination": "/docs/integrations/tookits/openapi"
+      "destination": "/docs/integrations/toolkits/openapi"
     },
     {
       "source": "/docs/modules/agents/toolkits/openapi",
-      "destination": "/docs/integrations/tookits/openapi"
+      "destination": "/docs/integrations/toolkits/openapi"
     },
     {
       "source": "/en/latest/modules/agents/toolkits/examples/openapi_nla.html",
-      "destination": "/docs/integrations/tookits/openapi_nla"
+      "destination": "/docs/integrations/toolkits/openapi_nla"
     },
     {
       "source": "/docs/modules/agents/toolkits/openapi_nla",
-      "destination": "/docs/integrations/tookits/openapi_nla"
+      "destination": "/docs/integrations/toolkits/openapi_nla"
     },
     {
       "source": "/en/latest/modules/agents/toolkits/examples/pandas.html",
-      "destination": "/docs/integrations/tookits/pandas"
+      "destination": "/docs/integrations/toolkits/pandas"
     },
     {
       "source": "/docs/modules/agents/toolkits/pandas",
-      "destination": "/docs/integrations/tookits/pandas"
+      "destination": "/docs/integrations/toolkits/pandas"
     },
     {
       "source": "/en/latest/modules/agents/toolkits/examples/playwright.html",
-      "destination": "/docs/integrations/tookits/playwright"
+      "destination": "/docs/integrations/toolkits/playwright"
     },
     {
       "source": "/docs/modules/agents/toolkits/playwright",
-      "destination": "/docs/integrations/tookits/playwright"
+      "destination": "/docs/integrations/toolkits/playwright"
     },
     {
       "source": "/en/latest/modules/agents/toolkits/examples/powerbi.html",
-      "destination": "/docs/integrations/tookits/powerbi"
+      "destination": "/docs/integrations/toolkits/powerbi"
     },
     {
       "source": "/docs/modules/agents/toolkits/powerbi",
-      "destination": "/docs/integrations/tookits/powerbi"
+      "destination": "/docs/integrations/toolkits/powerbi"
     },
     {
       "source": "/en/latest/modules/agents/toolkits/examples/python.html",
-      "destination": "/docs/integrations/tookits/python"
+      "destination": "/docs/integrations/toolkits/python"
     },
     {
       "source": "/docs/modules/agents/toolkits/python",
-      "destination": "/docs/integrations/tookits/python"
+      "destination": "/docs/integrations/toolkits/python"
     },
     {
       "source": "/en/latest/modules/agents/toolkits/examples/spark.html",
-      "destination": "/docs/integrations/tookits/spark"
+      "destination": "/docs/integrations/toolkits/spark"
     },
     {
       "source": "/docs/modules/agents/toolkits/spark",
-      "destination": "/docs/integrations/tookits/spark"
+      "destination": "/docs/integrations/toolkits/spark"
     },
     {
       "source": "/en/latest/modules/agents/toolkits/examples/spark_sql.html",
-      "destination": "/docs/integrations/tookits/spark_sql"
+      "destination": "/docs/integrations/toolkits/spark_sql"
     },
     {
       "source": "/docs/modules/agents/toolkits/spark_sql",
-      "destination": "/docs/integrations/tookits/spark_sql"
+      "destination": "/docs/integrations/toolkits/spark_sql"
     },
     {
       "source": "/en/latest/modules/agents/toolkits/examples/sql_database.html",
-      "destination": "/docs/integrations/tookits/sql_database"
+      "destination": "/docs/integrations/toolkits/sql_database"
     },
     {
       "source": "/docs/modules/agents/toolkits/sql_database",
-      "destination": "/docs/integrations/tookits/sql_database"
+      "destination": "/docs/integrations/toolkits/sql_database"
     },
     {
       "source": "/en/latest/modules/agents/toolkits/examples/vectorstore.html",
-      "destination": "/docs/integrations/tookits/vectorstore"
+      "destination": "/docs/integrations/toolkits/vectorstore"
     },
     {
       "source": "/docs/modules/agents/toolkits/vectorstore",
-      "destination": "/docs/integrations/tookits/vectorstore"
+      "destination": "/docs/integrations/toolkits/vectorstore"
     },
     {
       "source": "/en/latest/modules/agents/tools/custom_tools.html",
