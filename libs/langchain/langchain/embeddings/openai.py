@@ -169,7 +169,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     openai_api_type: Optional[str] = None
     # to support explicit proxy for OpenAI
     openai_proxy: Optional[str] = None
-    embedding_ctx_length: int = 8191
+    embedding_ctx_length: Optional[int] = 8191
     """The maximum number of tokens to embed at once."""
     openai_api_key: Optional[str] = None
     openai_organization: Optional[str] = None
@@ -457,7 +457,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     def _embedding_func(self, text: str, *, engine: str) -> List[float]:
         """Call out to OpenAI's embedding endpoint."""
         # handle large input text
-        if len(text) > self.embedding_ctx_length:
+        if self.embedding_ctx_length and len(text) > self.embedding_ctx_length:
             return self._get_len_safe_embeddings([text], engine=engine)[0]
         else:
             if self.model.endswith("001"):
@@ -475,7 +475,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     async def _aembedding_func(self, text: str, *, engine: str) -> List[float]:
         """Call out to OpenAI's embedding endpoint."""
         # handle large input text
-        if len(text) > self.embedding_ctx_length:
+        if self.embedding_ctx_length and len(text) > self.embedding_ctx_length:
             return (await self._aget_len_safe_embeddings([text], engine=engine))[0]
         else:
             if self.model.endswith("001"):
@@ -503,9 +503,48 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        # NOTE: to keep things simple, we assume the list may contain texts longer
-        #       than the maximum context and use length-safe embedding function.
-        return self._get_len_safe_embeddings(texts, engine=self.deployment)
+        # NOTE: to keep things simple, as long as the embedding_ctx_length is defined,
+        #       we assume the list may contain texts longer than the maximum context and
+        #       use length-safe embedding function.
+        if self.embedding_ctx_length:
+            return self._get_len_safe_embeddings(texts, engine=self.deployment)
+
+        embeddings: List[List[float]] = [[] for _ in range(len(texts))]
+        batched_embeddings = []
+        _chunk_size = chunk_size or self.chunk_size
+        if self.show_progress_bar:
+            try:
+                import tqdm
+
+                _iter = tqdm.tqdm(range(0, len(texts), _chunk_size))
+            except ImportError:
+                _iter = range(0, len(texts), _chunk_size)
+        else:
+            _iter = range(0, len(texts), _chunk_size)
+
+        for i in _iter:
+            response = embed_with_retry(
+                self,
+                input=texts[i : i + _chunk_size],
+                **self._invocation_params,
+            )
+            batched_embeddings += [r["embedding"] for r in response["data"]]
+
+        for i in range(len(texts)):
+            _result = [batched_embeddings[i]]
+            if len(_result) == 0:
+                average = embed_with_retry(
+                    self,
+                    input="",
+                    **self._invocation_params,
+                )[
+                    "data"
+                ][0]["embedding"]
+            else:
+                average = np.average(_result, axis=0)
+            embeddings[i] = (average / np.linalg.norm(average)).tolist()
+
+        return embeddings
 
     async def aembed_documents(
         self, texts: List[str], chunk_size: Optional[int] = 0
@@ -520,9 +559,48 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        # NOTE: to keep things simple, we assume the list may contain texts longer
-        #       than the maximum context and use length-safe embedding function.
-        return await self._aget_len_safe_embeddings(texts, engine=self.deployment)
+        # NOTE: to keep things simple, as long as the embedding_ctx_length is defined,
+        #       we assume the list may contain texts longer than the maximum context and
+        #       use length-safe embedding function.
+        if self.embedding_ctx_length:
+            return await self._aget_len_safe_embeddings(texts, engine=self.deployment)
+
+        embeddings: List[List[float]] = [[] for _ in range(len(texts))]
+        batched_embeddings = []
+        _chunk_size = chunk_size or self.chunk_size
+        if self.show_progress_bar:
+            try:
+                import tqdm
+
+                _iter = tqdm.tqdm(range(0, len(texts), _chunk_size))
+            except ImportError:
+                _iter = range(0, len(texts), _chunk_size)
+        else:
+            _iter = range(0, len(texts), _chunk_size)
+
+        for i in _iter:
+            response = await async_embed_with_retry(
+                self,
+                input=texts[i : i + _chunk_size],
+                **self._invocation_params,
+            )
+            batched_embeddings += [r["embedding"] for r in response["data"]]
+
+        for i in range(len(texts)):
+            _result = [batched_embeddings[i]]
+            if len(_result) == 0:
+                average = await async_embed_with_retry(
+                    self,
+                    input="",
+                    **self._invocation_params,
+                )[
+                    "data"
+                ][0]["embedding"]
+            else:
+                average = np.average(_result, axis=0)
+            embeddings[i] = (average / np.linalg.norm(average)).tolist()
+
+        return embeddings
 
     def embed_query(self, text: str) -> List[float]:
         """Call out to OpenAI's embedding endpoint for embedding query text.
