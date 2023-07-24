@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 class CosmosDBChatMessageHistory(BaseChatMessageHistory):
-    """Chat history backed by Azure CosmosDB."""
+    """Chat message history backed by Azure CosmosDB."""
 
     def __init__(
         self,
