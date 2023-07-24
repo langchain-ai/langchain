@@ -2,7 +2,9 @@
 Hybrid retriever that ensemble the results of 
 multiple retrievers by using weighted  Reciprocal Rank Fusion
 """
-from typing import List
+from typing import Any, Dict, List
+
+from pydantic import root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -17,7 +19,8 @@ class HybridRetriever(BaseRetriever):
 
     Args:
         retrievers: A list of retrievers to ensemble.
-        weights: A list of weights corresponding to the rank lists.
+        weights: A list of weights corresponding to the retrievers. Defaults to equal
+            weighting for all retrievers.
         c: A constant added to the rank, controlling the balance between the importance
             of high-ranked items and the consideration given to lower-ranked items.
             Default is 60.
@@ -26,6 +29,13 @@ class HybridRetriever(BaseRetriever):
     retrievers: List[BaseRetriever]
     weights: List[float]
     c: int = 60
+
+    @root_validator(pre=True)
+    def set_weights(self, values: Dict[str, Any]) -> Dict[str, Any]:
+        if not values.get("weights"):
+            n_retrievers = len(values["retrievers"])
+            values["weights"] = [1 / n_retrievers] * n_retrievers
+        return values
 
     def _get_relevant_documents(
         self,

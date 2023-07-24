@@ -16,9 +16,7 @@ def test_hybrid_retriever_get_relevant_docs() -> None:
     dummy_retriever = BM25Retriever.from_texts(doc_list)
     dummy_retriever.k = 1
 
-    hybrid_retriever = HybridRetriever(
-        retrievers=[dummy_retriever, dummy_retriever], weights=[0.5, 0.5]
-    )
+    hybrid_retriever = HybridRetriever(retrievers=[dummy_retriever, dummy_retriever])
     docs = hybrid_retriever.get_relevant_documents("I like apples")
     assert len(docs) == 1
 
