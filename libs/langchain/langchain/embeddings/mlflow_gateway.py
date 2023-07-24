@@ -26,7 +26,7 @@ class MlflowAIGatewayEmbeddings(Embeddings, BaseModel):
 
             embeddings = MlflowAIGatewayEmbeddings(
                 gateway_uri="<your-mlflow-ai-gateway-uri>",
-                route="your-mlflow-ai-gateway-embeddings-route"
+                route="<your-mlflow-ai-gateway-embeddings-route>"
             )
     """
 
