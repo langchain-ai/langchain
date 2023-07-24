@@ -1342,7 +1342,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         serialized: Dict[str, Any],
         messages: List[List[BaseMessage]],
         **kwargs: Any,
-    ) -> Any:
+    ) -> List[AsyncCallbackManagerForLLMRun]:
         """Run when LLM starts running.
 
         Args:
