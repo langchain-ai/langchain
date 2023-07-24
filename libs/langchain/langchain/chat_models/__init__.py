@@ -1,5 +1,8 @@
+from typing import Dict, Type
+
 from langchain.chat_models.anthropic import ChatAnthropic
 from langchain.chat_models.azure_openai import AzureChatOpenAI
+from langchain.chat_models.base import BaseChatModel
 from langchain.chat_models.fake import FakeListChatModel
 from langchain.chat_models.google_palm import ChatGooglePalm
 from langchain.chat_models.human import HumanInputChatModel
@@ -19,3 +22,8 @@ __all__ = [
     "JinaChat",
     "HumanInputChatModel",
 ]
+
+type_to_cls_dict: Dict[str, Type[BaseChatModel]] = {
+    "azure-openai-chat": AzureChatOpenAI,
+    "openai-chat": ChatOpenAI,
+}

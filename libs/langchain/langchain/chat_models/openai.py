@@ -421,7 +421,15 @@ class ChatOpenAI(BaseChatModel):
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model_name": self.model_name}, **self._default_params}
+        return {
+            "model_name": self.model_name,
+            "request_timeout": self.request_timeout,
+            "max_tokens": self.max_tokens,
+            "streaming": self.streaming,
+            "n": self.n,
+            "temperature": self.temperature,
+            "model_kwargs": self.model_kwargs,
+        }
 
     @property
     def _client_params(self) -> Dict[str, Any]:

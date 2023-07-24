@@ -24,6 +24,8 @@ from langchain.chains.qa_with_sources.base import QAWithSourcesChain
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
 from langchain.chains.retrieval_qa.base import RetrievalQA, VectorDBQA
 from langchain.chains.sql_database.base import SQLDatabaseChain
+from langchain.chat_models import type_to_cls_dict as chat_model_type_to_cls_dict
+from langchain.chat_models.loading import load_chat_model, load_chat_model_from_config
 from langchain.llms.loading import load_llm, load_llm_from_config
 from langchain.prompts.loading import (
     _load_output_parser,
@@ -39,9 +41,17 @@ def _load_llm_chain(config: dict, **kwargs: Any) -> LLMChain:
     """Load LLM chain from config dict."""
     if "llm" in config:
         llm_config = config.pop("llm")
-        llm = load_llm_from_config(llm_config)
+        llm_type = llm_config.get("_type")
+        if llm_type in chat_model_type_to_cls_dict:
+            llm = load_chat_model_from_config(llm_config)
+        else:
+            llm = load_llm_from_config(llm_config)
     elif "llm_path" in config:
-        llm = load_llm(config.pop("llm_path"))
+        llm_path = config.pop("llm_path")
+        if llm_type in chat_model_type_to_cls_dict:
+            llm = load_chat_model(llm_path)
+        else:
+            llm = load_llm(llm_path)
     else:
         raise ValueError("One of `llm` or `llm_path` must be present.")
 
