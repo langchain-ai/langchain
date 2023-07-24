@@ -2,7 +2,7 @@
 import asyncio
 from functools import partial
 from io import StringIO
-from typing import Any, Callable, List, Mapping, Optional
+from typing import Any, Callable, Dict, List, Mapping, Optional
 
 import yaml
 from pydantic import Field
@@ -76,7 +76,7 @@ class HumanInputChatModel(BaseChatModel):
     message_kwargs: Mapping[str, Any] = {}
 
     @property
-    def _identifying_params(self) -> Mapping[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         return {
             "input_func": self.input_func.__name__,
             "message_func": self.message_func.__name__,
