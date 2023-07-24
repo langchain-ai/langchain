@@ -28,6 +28,7 @@ from langchain.chains.conversational_retrieval.base import (
 )
 from langchain.chains.example_generator import generate_example
 from langchain.chains.flare.base import FlareChain
+from langchain.chains.graph_qa.arangodb import ArangoGraphQAChain
 from langchain.chains.graph_qa.base import GraphQAChain
 from langchain.chains.graph_qa.cypher import GraphCypherQAChain
 from langchain.chains.graph_qa.hugegraph import HugeGraphQAChain
@@ -77,6 +78,7 @@ from langchain.chains.transform import TransformChain
 __all__ = [
     "APIChain",
     "AnalyzeDocumentChain",
+    "ArangoGraphQAChain",
     "ChatVectorDBChain",
     "ConstitutionalChain",
     "ConversationChain",
