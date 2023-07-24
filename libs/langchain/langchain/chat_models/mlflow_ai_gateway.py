@@ -123,7 +123,7 @@ class ChatMLflowAIGateway(BaseChatModel):
         return await asyncio.get_event_loop().run_in_executor(None, func)
 
     @property
-    def _identifying_params(self) -> Mapping[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         return self._default_params
 
     def _get_invocation_params(
@@ -154,7 +154,7 @@ class ChatMLflowAIGateway(BaseChatModel):
             return ChatMessage(content=content, role=role)
 
     @staticmethod
-    def _raise_functions_not_supported():
+    def _raise_functions_not_supported() -> None:
         raise ValueError(
             "Function messages are not supported by the MLflow AI Gateway. Please"
             " create a feature request at https://github.com/mlflow/mlflow/issues."

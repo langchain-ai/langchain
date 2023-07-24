@@ -16,6 +16,7 @@ __all__ = [
     "PromptLayerChatOpenAI",
     "ChatAnthropic",
     "ChatGooglePalm",
+    "ChatMLflowAIGateway",
     "ChatVertexAI",
     "JinaChat",
     "HumanInputChatModel",
