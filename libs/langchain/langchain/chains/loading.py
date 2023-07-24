@@ -32,6 +32,7 @@ from langchain.prompts.loading import (
     load_prompt,
     load_prompt_from_config,
 )
+from langchain.schema.language_model import BaseLanguageModel
 from langchain.utilities.loading import try_load_from_hub
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/chains/"
@@ -39,6 +40,7 @@ URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/cha
 
 def _load_llm_chain(config: dict, **kwargs: Any) -> LLMChain:
     """Load LLM chain from config dict."""
+    llm: BaseLanguageModel = None
     if "llm" in config:
         llm_config = config.pop("llm")
         llm_type = llm_config.get("_type")
