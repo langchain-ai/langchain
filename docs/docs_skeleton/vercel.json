@@ -3733,7 +3733,7 @@
       "destination": "/docs/guides/evaluation"
     },
     {
-      "source": "/docs/modules/evaluation/:path*",
+      "source": "/docs/modules/evaluation/:path*(/?)",
       "destination": "/docs/guides/evaluation/:path*"
     },
     {
