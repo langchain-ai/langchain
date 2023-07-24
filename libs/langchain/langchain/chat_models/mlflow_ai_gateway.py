@@ -1,4 +1,6 @@
+import asyncio
 import logging
+from functools import partial
 
 from pydantic import BaseModel, Extra
 from typing import List, Optional, Dict, Any, Mapping
@@ -35,19 +37,27 @@ class ChatParams(BaseModel, extra=Extra.allow):
 
 
 class ChatMLflowAIGateway(BaseChatModel):
-    """Wrapper around OpenAI Chat large language models.
+    """
+    Wrapper around chat LLMs in the MLflow AI Gateway.
 
-    To use, you should have the ``openai`` python package installed, and the
-    environment variable ``OPENAI_API_KEY`` set with your API key.
-
-    Any parameters that are valid to be passed to the openai.create call can be passed
-    in, even if not explicitly saved on this class.
+    To use, you should have the ``mlflow[gateway]`` python package installed.
 
     Example:
         .. code-block:: python
 
-            from langchain.chat_models import ChatOpenAI
-            openai = ChatOpenAI(model_name="gpt-3.5-turbo")
+            import mlflow.gateway
+            from langchain.chat_models import ChatMLflowAIGateway
+
+            mlflow.gateway.set_gateway_uri("<your-mlflow-ai-gateway-uri>")
+
+            chat = ChatMLflowAIGateway(
+                route="your-mlflow-ai-gateway-chat-route",
+                params={
+                    "temperature": 0.7
+                }
+            )
+
+    For more information, see https://mlflow.org/docs/latest/gateway/index.html.
     """
 
     def __init__(self, **kwargs: Any):
@@ -92,7 +102,7 @@ class ChatMLflowAIGateway(BaseChatModel):
             ) from e
 
         message_dicts = [
-            ChatMLflowAIGateway._convert_dict_to_message(message)
+            ChatMLflowAIGateway._convert_message_to_dict(message)
             for message in messages
         ]
         data: Dict[str, Any] = {
@@ -103,52 +113,21 @@ class ChatMLflowAIGateway(BaseChatModel):
         resp = mlflow.gateway.query(self.route, data=data)
         return ChatMLflowAIGateway._create_chat_result(resp)
 
-    # async def _agenerate(
-    #     self,
-    #     messages: List[BaseMessage],
-    #     stop: Optional[List[str]] = None,
-    #     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-    #     **kwargs: Any,
-    # ) -> ChatResult:
-    #     message_dicts, params = self._create_message_dicts(messages, stop)
-    #     params = {**params, **kwargs}
-    #     if self.streaming:
-    #         inner_completion = ""
-    #         role = "assistant"
-    #         params["stream"] = True
-    #         function_call: Optional[dict] = None
-    #         async for stream_resp in await acompletion_with_retry(
-    #             self, messages=message_dicts, **params
-    #         ):
-    #             role = stream_resp["choices"][0]["delta"].get("role", role)
-    #             token = stream_resp["choices"][0]["delta"].get("content", "")
-    #             inner_completion += token or ""
-    #             _function_call = stream_resp["choices"][0]["delta"].get("function_call")
-    #             if _function_call:
-    #                 if function_call is None:
-    #                     function_call = _function_call
-    #                 else:
-    #                     function_call["arguments"] += _function_call["arguments"]
-    #             if run_manager:
-    #                 await run_manager.on_llm_new_token(token)
-    #         message = ChatMLflowAIGateway._convert_dict_to_message(
-    #             {
-    #                 "content": inner_completion,
-    #                 "role": role,
-    #                 "function_call": function_call,
-    #             }
-    #         )
-    #         return ChatResult(generations=[ChatGeneration(message=message)])
-    #     else:
-    #         response = await acompletion_with_retry(
-    #             self, messages=message_dicts, **params
-    #         )
-    #         return self._create_chat_result(response)
+    async def _agenerate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        func = partial(
+            self._generate, messages, stop=stop, run_manager=run_manager, **kwargs
+        )
+        return await asyncio.get_event_loop().run_in_executor(None, func)
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
-        """Get the identifying parameters."""
-        return {**{"model_name": self.model_name}, **self._default_params}
+        return self._default_params
 
     @property
     def _client_params(self) -> Mapping[str, Any]:
@@ -170,10 +149,8 @@ class ChatMLflowAIGateway(BaseChatModel):
     ) -> Dict[str, Any]:
         """Get the parameters used to invoke the model FOR THE CALLBACKS."""
         return {
-            **super()._get_invocation_params(stop=stop, **kwargs),
             **self._default_params,
-            "model": self.model_name,
-            "function": kwargs.get("functions"),
+            **super()._get_invocation_params(stop=stop, **kwargs)
         }
 
     @property

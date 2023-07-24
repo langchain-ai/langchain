@@ -13,7 +13,23 @@ def _chunk(texts: List[str], size: int) -> Iterator[List[str]]:
 
 
 class MlflowAIGatewayEmbeddings(Embeddings, BaseModel):
-    """MLflow AI Gateway Embeddings APIs."""
+    """
+    Wrapper around embeddings LLMs in the MLflow AI Gateway.
+
+    To use, you should have the ``mlflow[gateway]`` python package installed.
+
+    Example:
+        .. code-block:: python
+
+            import mlflow.gateway
+            from langchain.embeddings import MlflowAIGatewayEmbeddings
+
+            mlflow.gateway.set_gateway_uri("<your-mlflow-ai-gateway-uri>")
+
+            embeddings = ChatMLflowAIGateway(route="your-mlflow-ai-gateway-embeddings-route")
+
+    For more information, see https://mlflow.org/docs/latest/gateway/index.html.
+    """
 
     route: str
     """The route to use for the MLflow AI Gateway API."""
