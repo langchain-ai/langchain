@@ -40,7 +40,7 @@ URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/cha
 
 def _load_llm_chain(config: dict, **kwargs: Any) -> LLMChain:
     """Load LLM chain from config dict."""
-    llm: BaseLanguageModel = None
+    llm: BaseLanguageModel
     if "llm" in config:
         llm_config = config.pop("llm")
         llm_type = llm_config.get("_type")
