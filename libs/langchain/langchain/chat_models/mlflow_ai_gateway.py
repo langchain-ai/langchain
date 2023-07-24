@@ -126,21 +126,6 @@ class ChatMLflowAIGateway(BaseChatModel):
     def _identifying_params(self) -> Mapping[str, Any]:
         return self._default_params
 
-    @property
-    def _client_params(self) -> Mapping[str, Any]:
-        """Get the parameters used for the openai client."""
-        openai_creds: Dict[str, Any] = {
-            "api_key": self.openai_api_key,
-            "api_base": self.openai_api_base,
-            "organization": self.openai_organization,
-            "model": self.model_name,
-        }
-        if self.openai_proxy:
-            import openai
-
-            openai.proxy = {"http": self.openai_proxy, "https": self.openai_proxy}  # type: ignore[assignment]  # noqa: E501
-        return {**openai_creds, **self._default_params}
-
     def _get_invocation_params(
         self, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> Dict[str, Any]:
@@ -153,7 +138,7 @@ class ChatMLflowAIGateway(BaseChatModel):
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
-        return "openai-chat"
+        return "mlflow-ai-gateway-chat"
 
     @staticmethod
     def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
