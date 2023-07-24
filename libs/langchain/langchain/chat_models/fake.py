@@ -1,5 +1,5 @@
 """Fake ChatModel for testing purposes."""
-from typing import Any, List, Mapping, Optional
+from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import SimpleChatModel
@@ -29,5 +29,5 @@ class FakeListChatModel(SimpleChatModel):
         return response
 
     @property
-    def _identifying_params(self) -> Mapping[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         return {"responses": self.responses}

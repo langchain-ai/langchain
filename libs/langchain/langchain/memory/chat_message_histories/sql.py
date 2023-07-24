@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 def create_message_model(table_name, DynamicBase):  # type: ignore
     """
     Create a message model for a given table name.
+
     Args:
         table_name: The name of the table to use.
         DynamicBase: The base class to use for the model.

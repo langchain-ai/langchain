@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class ZepChatMessageHistory(BaseChatMessageHistory):
-    """A ChatMessageHistory implementation that uses Zep as a backend.
+    """Chat message history that uses Zep as a backend.
 
     Recommended usage::
 
