@@ -1,14 +1,14 @@
 """SQL Database Chain Retriever"""
 from typing import Any, Dict, List
 
-from pydantic import validator
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.chains.sql_database.base import SQLDatabaseChain
 from langchain.schema import BaseRetriever, Document
+from pydantic import validator
+
+from langchain_experimental.sql.base import SQLDatabaseChain
 
 
 class SQLDatabaseChainRetriever(BaseRetriever):

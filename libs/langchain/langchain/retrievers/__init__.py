@@ -23,7 +23,6 @@ from langchain.retrievers.pinecone_hybrid_search import PineconeHybridSearchRetr
 from langchain.retrievers.pubmed import PubMedRetriever
 from langchain.retrievers.remote_retriever import RemoteLangChainRetriever
 from langchain.retrievers.self_query.base import SelfQueryRetriever
-from langchain.retrievers.sql_database import SQLDatabaseChainRetriever
 from langchain.retrievers.svm import SVMRetriever
 from langchain.retrievers.tfidf import TFIDFRetriever
 from langchain.retrievers.time_weighted_retriever import (
@@ -65,5 +64,4 @@ __all__ = [
     "ZepRetriever",
     "ZillizRetriever",
     "DocArrayRetriever",
-    "SQLDatabaseChainRetriever",
 ]

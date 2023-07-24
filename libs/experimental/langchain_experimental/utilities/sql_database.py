@@ -2,15 +2,15 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 import sqlalchemy
+from langchain.utils import get_from_env
 from sqlalchemy import MetaData, Table, create_engine, inspect, select, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
-
-from langchain.utils import get_from_env
+from sqlalchemy.types import NullType
 
 
 def _format_index(index: sqlalchemy.engine.interfaces.ReflectedIndex) -> str:
@@ -18,6 +18,13 @@ def _format_index(index: sqlalchemy.engine.interfaces.ReflectedIndex) -> str:
         f'Name: {index["name"]}, Unique: {index["unique"]},'
         f' Columns: {str(index["column_names"])}'
     )
+
+
+def _try_eval(x: Any) -> Any:
+    try:
+        return eval(x)
+    except Exception:
+        return x
 
 
 def truncate_word(content: Any, *, length: int, suffix: str = "...") -> str:
@@ -314,6 +321,11 @@ class SQLDatabase:
                 tables.append(self._custom_table_info[table.name])
                 continue
 
+            # Ignore JSON datatyped columns
+            for k, v in table.columns.items():
+                if type(v.type) is NullType:
+                    table._columns.remove(v)
+
             # add create table command
             create_table = str(CreateTable(table).compile(self._engine))
             table_info = f"{create_table.rstrip()}"
@@ -355,7 +367,9 @@ class SQLDatabase:
                 )
 
             # save the sample rows in string format
-            sample_rows_str = "\n".join(["\t".join(row) for row in sample_rows])
+            sample_rows_str = "\n".join(
+                ["\t".join(row) for row in sample_rows]
+            ).replace('"', "'")
 
         # in some dialects when there are no rows in the table a
         # 'ProgrammingError' is returned
@@ -368,11 +382,15 @@ class SQLDatabase:
             f"{sample_rows_str}"
         )
 
-    def run(self, command: str, fetch: str = "all") -> str:
+    def run(
+        self, command: str, fetch: str = "all", native_format: bool = False
+    ) -> Union[str, List[Dict[str, Any]], Dict[str, Any]]:
         """Execute a SQL command and return a string representing the results.
 
-        If the statement returns rows, a string of the results is returned.
-        If the statement returns no rows, an empty string is returned.
+        If return_direct is set to true, then the result will be directly returned,
+        Otherwise:
+            If the statement returns rows, a string of the results is returned.
+            If the statement returns no rows, an empty string is returned.
 
         """
         with self._engine.begin() as connection:
@@ -393,6 +411,19 @@ class SQLDatabase:
                     result = cursor.fetchone()  # type: ignore
                 else:
                     raise ValueError("Fetch parameter must be either 'one' or 'all'")
+
+                # If return_direct then directly return the result
+                if native_format:
+                    if isinstance(result, list):
+                        return [
+                            {k: _try_eval(v) for k, v in dict(d._asdict()).items()}
+                            for d in result
+                        ]
+                    else:
+                        return {
+                            k: _try_eval(v)
+                            for k, v in dict(result._asdict()).items()  # type: ignore
+                        }
 
                 # Convert columns values to string to avoid issues with sqlalchmey
                 # trunacating text
@@ -430,7 +461,9 @@ class SQLDatabase:
             """Format the error message"""
             return f"Error: {e}"
 
-    def run_no_throw(self, command: str, fetch: str = "all") -> str:
+    def run_no_throw(
+        self, command: str, fetch: str = "all"
+    ) -> Union[str, List[Dict[str, Any]], Dict[str, Any]]:
         """Execute a SQL command and return a string representing the results.
 
         If the statement returns rows, a string of the results is returned.
