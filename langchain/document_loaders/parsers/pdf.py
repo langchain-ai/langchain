@@ -122,6 +122,7 @@ class PDFPlumberParser(BaseBlobParser):
 
         Args:
             text_kwargs: Keyword arguments to pass to ``pdfplumber.Page.extract_text()``
+            dedupe: Avoiding the error of duplicate characters if `dedupe=True`.
         """
         self.text_kwargs = text_kwargs or {}
         self.dedupe = dedupe

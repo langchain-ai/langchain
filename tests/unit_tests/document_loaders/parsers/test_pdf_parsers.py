@@ -7,11 +7,12 @@ from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.document_loaders.parsers.pdf import (
     PDFMinerParser,
+    PDFPlumberParser,
     PyMuPDFParser,
     PyPDFium2Parser,
     PyPDFParser,
 )
-from tests.data import HELLO_PDF, LAYOUT_PARSER_PAPER_PDF
+from tests.data import HELLO_PDF, LAYOUT_PARSER_PAPER_PDF, PARSE_DUPLICATE_CHARS
 
 
 def _assert_with_parser(parser: BaseBlobParser, splits_by_page: bool = True) -> None:
@@ -53,6 +54,29 @@ def _assert_with_parser(parser: BaseBlobParser, splits_by_page: bool = True) -> 
         assert metadata["page"] == 0
 
 
+def _assert_with_duplicate_parser(
+    parser: BaseBlobParser, dedupe: bool = False
+) -> None:
+    """PDFPlumber tests to verify that duplicate characters apear or not
+
+    Args:
+        parser (BaseBlobParser): The parser to test.
+        splits_by_page (bool): Whether the parser splits by page or not by default.
+        dedupe: Avoiding the error of duplicate characters if `dedupe=True`.
+    """
+    blob = Blob.from_path(PARSE_DUPLICATE_CHARS)
+    doc_generator = parser.lazy_parse(blob)
+    assert isinstance(doc_generator, Iterator)
+    docs = list(doc_generator)
+
+    if dedupe:
+        # use dedupe avoid duplicate characters.
+        assert "1000 Series" == docs[0].page_content.split("\n")[0]
+    else:
+        # duplicate characters will apear in doc if not dedupe
+        assert "11000000 SSeerriieess" == docs[0].page_content.split("\n")[0]
+
+
 @pytest.mark.requires("pypdf")
 def test_pypdf_parser() -> None:
     """Test PyPDF parser."""
@@ -77,3 +101,10 @@ def test_pypdfium2_parser() -> None:
     """Test PyPDFium2 parser."""
     # Does not follow defaults to split by page.
     _assert_with_parser(PyPDFium2Parser())
+
+
+@pytest.mark.requires("pdfplumber")
+def test_pdfplumber_parser() -> None:
+    """Test PDFPlumber parser."""
+    _assert_with_duplicate_parser(PDFPlumberParser())
+    _assert_with_duplicate_parser(PDFPlumberParser(dedupe=True), dedupe=True)
