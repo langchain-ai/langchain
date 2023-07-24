@@ -14,13 +14,6 @@ from typing import (
     Tuple,
     Union,
 )
-from langchain.schema.messages import (
-    AIMessageChunk,
-    BaseMessageChunk,
-    ChatMessageChunk,
-    HumanMessageChunk,
-    SystemMessageChunk,
-)
 
 from pydantic import Field, root_validator
 from tenacity import (
@@ -44,6 +37,13 @@ from langchain.schema import (
     ChatResult,
     HumanMessage,
     SystemMessage,
+)
+from langchain.schema.messages import (
+    AIMessageChunk,
+    BaseMessageChunk,
+    ChatMessageChunk,
+    HumanMessageChunk,
+    SystemMessageChunk,
 )
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
 

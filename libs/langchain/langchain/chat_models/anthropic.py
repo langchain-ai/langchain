@@ -166,7 +166,6 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-
         if self.streaming:
             completion = ""
             async for chunk in self._astream(messages, stop, run_manager, **kwargs):

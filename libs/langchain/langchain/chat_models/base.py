@@ -14,9 +14,6 @@ from typing import (
     Sequence,
     cast,
 )
-from langchain.prompts.base import StringPromptValue
-from langchain.prompts.chat import ChatPromptValue
-from langchain.schema.runnable import RunnableConfig
 
 from pydantic import Field, root_validator
 
@@ -30,6 +27,8 @@ from langchain.callbacks.manager import (
     Callbacks,
 )
 from langchain.load.dump import dumpd, dumps
+from langchain.prompts.base import StringPromptValue
+from langchain.prompts.chat import ChatPromptValue
 from langchain.schema import (
     ChatGeneration,
     ChatResult,
@@ -44,6 +43,7 @@ from langchain.schema.messages import (
     BaseMessageChunk,
     HumanMessage,
 )
+from langchain.schema.runnable import RunnableConfig
 
 
 def _get_verbosity() -> bool:
