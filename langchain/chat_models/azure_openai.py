@@ -118,7 +118,10 @@ class AzureChatOpenAI(ChatOpenAI):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {**self._default_params}
+        return {
+            **{"deployment_name": self.deployment_name},
+            **super()._identifying_params,
+        }
 
     @property
     def _invocation_params(self) -> Mapping[str, Any]:
