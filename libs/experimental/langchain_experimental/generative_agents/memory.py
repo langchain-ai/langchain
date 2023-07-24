@@ -3,6 +3,7 @@ import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from langchain.callbacks.manager import Callbacks
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain.retrievers import TimeWeightedVectorStoreRetriever
@@ -222,14 +223,21 @@ class GenerativeAgentMemory(BaseMemory):
         return result
 
     def fetch_memories(
-        self, observation: str, now: Optional[datetime] = None
+        self,
+        observation: str,
+        now: Optional[datetime] = None,
+        callbacks: Callbacks = None,
     ) -> List[Document]:
         """Fetch related memories."""
         if now is not None:
             with mock_now(now):
-                return self.memory_retriever.get_relevant_documents(observation)
+                return self.memory_retriever.get_relevant_documents(
+                    observation, callbacks=callbacks
+                )
         else:
-            return self.memory_retriever.get_relevant_documents(observation)
+            return self.memory_retriever.get_relevant_documents(
+                observation, callbacks=callbacks
+            )
 
     def format_memories_detail(self, relevant_memories: List[Document]) -> str:
         content = []
@@ -260,7 +268,9 @@ class GenerativeAgentMemory(BaseMemory):
         """Input keys this memory class will load dynamically."""
         return []
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def load_memory_variables(
+        self, inputs: Dict[str, Any], callbacks: Callbacks = None
+    ) -> Dict[str, Any]:
         """Return key-value pairs given the text input to the chain."""
         queries = inputs.get(self.queries_key)
         now = inputs.get(self.now_key)
