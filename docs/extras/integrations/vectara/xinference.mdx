@@ -26,9 +26,15 @@ xinference list --all
 ```
 
 
-### Wrapper for Xinference server
+### Wrapper for Xinference
 
-You can deploy Xinference in a distributed cluster. To do so, first start an Xinference supervisor
+You can start a local instance of Xinference by running:
+
+```bash
+xinference
+```
+
+You can also deploy Xinference in a distributed cluster. To do so, first start an Xinference supervisor
 on the server you want to run it:
 
 ```bash
@@ -56,14 +62,10 @@ For local deployment, the endpoint will be http://localhost:9997.
 
 For cluster deployment, the endpoint will be http://${supervisor_host}:9997.
 
-Along with the endpoint, also specify the model name and various attributes such as
-model_size_in_billions and quantization.
 
 Then, you need to launch a model. You can specify the model names and other attributes 
 including model_size_in_billions and quantization. You can use command line interface (CLI) to 
-launch the model.
-
-For example, 
+do it. For example, 
 
 ```bash
 xinference launch -n orca -s 3 -q q4_0

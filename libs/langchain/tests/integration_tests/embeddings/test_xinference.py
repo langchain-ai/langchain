@@ -50,7 +50,7 @@ def test_xinference_embedding_documents(setup) -> None:
     client = RESTfulClient(endpoint)
 
     model_uid = client.launch_model(
-        model_name="vicuna-v1.3", model_size_in_billions=7, model_format="ggmlv3", quantization="q4_0", embedding=True
+        model_name="vicuna-v1.3", model_size_in_billions=7, model_format="ggmlv3", quantization="q4_0"
     )
 
     xinference = XinferenceEmbeddings(
@@ -78,7 +78,7 @@ def test_xinference_embedding_query(setup) -> None:
     client = RESTfulClient(endpoint)
 
     model_uid = client.launch_model(
-        model_name="vicuna-v1.3", model_size_in_billions=7, quantization="q4_0", embedding=True
+        model_name="vicuna-v1.3", model_size_in_billions=7, quantization="q4_0"
     )
 
     xinference = XinferenceEmbeddings(
