@@ -12,6 +12,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 import yaml
 from pydantic import BaseModel, root_validator
 
+from langchain.agents.agent_iterator import AgentExecutorIterator
 from langchain.agents.agent_types import AgentType
 from langchain.agents.tools import InvalidTool
 from langchain.callbacks.base import BaseCallbackManager
@@ -731,6 +732,24 @@ s
     def save_agent(self, file_path: Union[Path, str]) -> None:
         """Save the underlying agent."""
         return self.agent.save(file_path)
+
+    def iter(
+        self,
+        inputs: Any,
+        callbacks: Callbacks = None,
+        *,
+        include_run_info: bool = False,
+        async_: bool = False,
+    ) -> AgentExecutorIterator:
+        """Enables iteration over steps taken to reach final output."""
+        return AgentExecutorIterator(
+            self,
+            inputs,
+            callbacks,
+            tags=self.tags,
+            include_run_info=include_run_info,
+            async_=async_,
+        )
 
     @property
     def input_keys(self) -> List[str]:
