@@ -23,18 +23,17 @@ class MlflowAIGateway(LLM):
     Wrapper around completions LLMs in the MLflow AI Gateway.
 
     To use, you should have the ``mlflow[gateway]`` python package installed.
+    For more information, see https://mlflow.org/docs/latest/gateway/index.html.
 
     Example:
         .. code-block:: python
 
-            import mlflow.gateway
             from langchain.llms import MlflowAIGateway
 
-            mlflow.gateway.set_gateway_uri("<your-mlflow-ai-gateway-uri>")
-
-            embeddings = MlflowAIGateway(route="<your-mlflow-ai-gateway-completions-route>")
-
-    For more information, see https://mlflow.org/docs/latest/gateway/index.html.
+            completions = MlflowAIGateway(
+                gateway_uri="<your-mlflow-ai-gateway-uri>",
+                route="<your-mlflow-ai-gateway-completions-route>"
+            )
     """
 
     route: str
