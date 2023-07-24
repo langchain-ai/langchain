@@ -40,11 +40,7 @@ API Reference
         functions = _members["functions"]
         if not (classes or functions):
             continue
-
-        module_title = module.replace("_", " ").title()
-        if module_title == "Llms":
-            module_title = "LLMs"
-        section = f":mod:`langchain.{module}`: {module_title}"
+        section = f":mod:`langchain.{module}`"
         full_doc += f"""\
 {section}
 {'=' * (len(section) + 1)}
