@@ -108,14 +108,6 @@ class AzureChatOpenAI(ChatOpenAI):
         return values
 
     @property
-    def _default_params(self) -> Dict[str, Any]:
-        """Get the default parameters for calling OpenAI API."""
-        return {
-            **super()._default_params,
-            "engine": self.deployment_name,
-        }
-
-    @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         return {
@@ -129,7 +121,11 @@ class AzureChatOpenAI(ChatOpenAI):
             "api_type": self.openai_api_type,
             "api_version": self.openai_api_version,
         }
-        return {**openai_creds, **super()._invocation_params}
+        return {
+            "engine": self.deployment_name,
+            **openai_creds,
+            **super()._invocation_params,
+        }
 
     @property
     def _llm_type(self) -> str:

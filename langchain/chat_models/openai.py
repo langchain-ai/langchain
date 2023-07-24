@@ -281,10 +281,8 @@ class ChatOpenAI(BaseChatModel):
             "model": self.model_name,
             "request_timeout": self.request_timeout,
             "max_tokens": self.max_tokens,
-            "stream": self.streaming,
             "n": self.n,
             "temperature": self.temperature,
-            **self.model_kwargs,
         }
 
     def _create_retry_decorator(self) -> Callable[[Any], Any]:
@@ -436,7 +434,11 @@ class ChatOpenAI(BaseChatModel):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model_name": self.model_name}, **self._default_params}
+        return {
+            "streaming": self.streaming,
+            "model_kwargs": self.model_kwargs,
+            **self._default_params,
+        }
 
     @property
     def _invocation_params(self) -> Mapping[str, Any]:
@@ -451,7 +453,12 @@ class ChatOpenAI(BaseChatModel):
             import openai
 
             openai.proxy = {"http": self.openai_proxy, "https": self.openai_proxy}  # type: ignore[assignment]  # noqa: E501
-        return {**openai_creds, **self._default_params}
+        return {
+            "stream": self.streaming,
+            **openai_creds,
+            **self.model_kwargs,
+            **self._default_params,
+        }
 
     @property
     def _llm_type(self) -> str:
