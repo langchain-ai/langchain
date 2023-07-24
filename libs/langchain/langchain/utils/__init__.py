@@ -5,6 +5,7 @@ These functions do not depend on any other langchain modules.
 """
 
 from langchain.utils.env import get_from_dict_or_env, get_from_env
+from langchain.utils.formatting import StrictFormatter, formatter
 from langchain.utils.math import cosine_similarity, cosine_similarity_top_k
 from langchain.utils.strings import comma_list, stringify_dict, stringify_value
 from langchain.utils.utils import (
@@ -17,10 +18,12 @@ from langchain.utils.utils import (
 )
 
 __all__ = [
+    "StrictFormatter",
     "check_package_version",
     "comma_list",
     "cosine_similarity",
     "cosine_similarity_top_k",
+    "formatter",
     "get_from_dict_or_env",
     "get_from_env",
     "get_pydantic_field_names",

@@ -47,6 +47,24 @@ def test_faiss_vector_sim() -> None:
     assert output == [Document(page_content="foo")]
 
 
+def test_faiss_vector_sim_with_score_threshold() -> None:
+    """Test vector similarity."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = FAISS.from_texts(texts, FakeEmbeddings())
+    index_to_id = docsearch.index_to_docstore_id
+    expected_docstore = InMemoryDocstore(
+        {
+            index_to_id[0]: Document(page_content="foo"),
+            index_to_id[1]: Document(page_content="bar"),
+            index_to_id[2]: Document(page_content="baz"),
+        }
+    )
+    assert docsearch.docstore.__dict__ == expected_docstore.__dict__
+    query_vec = FakeEmbeddings().embed_query(text="foo")
+    output = docsearch.similarity_search_by_vector(query_vec, k=2, score_threshold=0.2)
+    assert output == [Document(page_content="foo")]
+
+
 def test_similarity_search_with_score_by_vector() -> None:
     """Test vector similarity with score by vector."""
     texts = ["foo", "bar", "baz"]
@@ -64,6 +82,30 @@ def test_similarity_search_with_score_by_vector() -> None:
     output = docsearch.similarity_search_with_score_by_vector(query_vec, k=1)
     assert len(output) == 1
     assert output[0][0] == Document(page_content="foo")
+
+
+def test_similarity_search_with_score_by_vector_with_score_threshold() -> None:
+    """Test vector similarity with score by vector."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = FAISS.from_texts(texts, FakeEmbeddings())
+    index_to_id = docsearch.index_to_docstore_id
+    expected_docstore = InMemoryDocstore(
+        {
+            index_to_id[0]: Document(page_content="foo"),
+            index_to_id[1]: Document(page_content="bar"),
+            index_to_id[2]: Document(page_content="baz"),
+        }
+    )
+    assert docsearch.docstore.__dict__ == expected_docstore.__dict__
+    query_vec = FakeEmbeddings().embed_query(text="foo")
+    output = docsearch.similarity_search_with_score_by_vector(
+        query_vec,
+        k=2,
+        score_threshold=0.2,
+    )
+    assert len(output) == 1
+    assert output[0][0] == Document(page_content="foo")
+    assert output[0][1] < 0.2
 
 
 def test_faiss_mmr() -> None:
@@ -102,10 +144,9 @@ def test_faiss_mmr_with_metadatas_and_filter() -> None:
     output = docsearch.max_marginal_relevance_search_with_score_by_vector(
         query_vec, k=10, lambda_mult=0.1, filter={"page": 1}
     )
-    assert len(output) == len(texts)
+    assert len(output) == 1
     assert output[0][0] == Document(page_content="foo", metadata={"page": 1})
     assert output[0][1] == 0.0
-    assert output[1][0] != Document(page_content="foo", metadata={"page": 1})
 
 
 def test_faiss_mmr_with_metadatas_and_list_filter() -> None:
@@ -116,7 +157,7 @@ def test_faiss_mmr_with_metadatas_and_list_filter() -> None:
     output = docsearch.max_marginal_relevance_search_with_score_by_vector(
         query_vec, k=10, lambda_mult=0.1, filter={"page": [0, 1, 2]}
     )
-    assert len(output) == len(texts)
+    assert len(output) == 3
     assert output[0][0] == Document(page_content="foo", metadata={"page": 0})
     assert output[0][1] == 0.0
     assert output[1][0] != Document(page_content="foo", metadata={"page": 0})

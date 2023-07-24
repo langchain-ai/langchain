@@ -1,3 +1,4 @@
+"""Memory maintains Chain state, incorporating context from past runs."""
 from langchain.memory.buffer import (
     ConversationBufferMemory,
     ConversationStringBufferMemory,
