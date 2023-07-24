@@ -1,4 +1,5 @@
 import json
+import logging
 import time
 from typing import List
 
@@ -6,6 +7,8 @@ import requests
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+
+logger = logging.getLogger(__name__)
 
 
 class CubeSemanticLoader(BaseLoader):
@@ -50,7 +53,7 @@ class CubeSemanticLoader(BaseLoader):
 
         These values can be used to achieve a more accurate filtering.
         """
-        print(f"Loading dimension values for: {dimension_name}...")
+        logger.info("Loading dimension values for: {dimension_name}...")
 
         headers = {
             "Content-Type": "application/json",
@@ -79,7 +82,7 @@ class CubeSemanticLoader(BaseLoader):
                     "error" in response_data
                     and response_data["error"] == "Continue wait"
                 ):
-                    print("Retrying...")
+                    logger.info("Retrying...")
                     retries += 1
                     time.sleep(self.dimension_values_retry_delay)
                     continue
@@ -89,11 +92,11 @@ class CubeSemanticLoader(BaseLoader):
                     ]
                     return dimension_values
             else:
-                print("Request failed with status code:", response.status_code)
+                logger.error("Request failed with status code:", response.status_code)
                 break
 
         if retries == self.dimension_values_max_retries:
-            print("Maximum retries reached.")
+            logger.info("Maximum retries reached.")
         return []
 
     def load(self) -> List[Document]:
