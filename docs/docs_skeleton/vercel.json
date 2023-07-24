@@ -156,7 +156,7 @@
       "source": "/docs/integrations/bananadev",
       "destination": "/docs/integrations/providers/bananadev"
     },
-    {
+   his {
       "source": "/en/latest/ecosystem/baseten.html",
       "destination": "/docs/integrations/providers/baseten"
     },
@@ -1075,6 +1075,10 @@
     {
       "source": "/docs/integrations/zilliz",
       "destination": "/docs/integrations/providers/zilliz"
+    },
+    {
+      "source": "/docs/ecosystem/integrations/",
+      "destination": "/docs/integrations/providers/"
     },
     {
       "source": "/docs/ecosystem/integrations/:path*",
