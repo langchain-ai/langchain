@@ -15,7 +15,6 @@ from typing import (
     Union,
 )
 
-import numpy as np
 from pydantic import BaseModel, Extra, Field, root_validator
 from tenacity import (
     AsyncRetrying,
@@ -129,7 +128,10 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain.embeddings import LocalAIEmbeddings
-            openai = LocalAIEmbeddings(openai_api_key="random-key", openai_api_base="http://localhost:8080")
+            openai = LocalAIEmbeddings(
+                openai_api_key="random-key",
+                openai_api_base="http://localhost:8080"
+            )
 
     """
 
@@ -312,10 +314,11 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        embedding = await [
-            self._aembedding_func(text, engine=self.deployment) for text in texts
-        ]
-        return embedding
+        embeddings = []
+        for text in texts:
+            response = await self._aembedding_func(text, engine=self.deployment)
+            embeddings.append(response)
+        return embeddings
 
     def embed_query(self, text: str) -> List[float]:
         """Call out to LocalAI's embedding endpoint for embedding query text.
