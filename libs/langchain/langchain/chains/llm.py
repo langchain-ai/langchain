@@ -14,7 +14,6 @@ from langchain.callbacks.manager import (
     Callbacks,
 )
 from langchain.chains.base import Chain
-from langchain.input import get_colored_text
 from langchain.load.dump import dumpd
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
@@ -25,6 +24,7 @@ from langchain.schema import (
     PromptValue,
 )
 from langchain.schema.language_model import BaseLanguageModel
+from langchain.utils.input import get_colored_text
 
 
 class LLMChain(Chain):
