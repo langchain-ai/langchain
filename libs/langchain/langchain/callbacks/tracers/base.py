@@ -163,7 +163,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             retry_d["outcome"] = "failed"
             exception = retry_state.outcome.exception()
             retry_d["exception"] = str(exception)
-            retry_d["exception_cls"] = exception.__class__.__name__
+            retry_d["exception_type"] = exception.__class__.__name__
         else:
             retry_d["outcome"] = "success"
             retry_d["result"] = str(retry_state.outcome.result())
