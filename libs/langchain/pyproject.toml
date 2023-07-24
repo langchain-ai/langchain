@@ -193,6 +193,7 @@ mastodon-py = "^1.8.1"
 momento = "^1.5.0"
 # Please do not add any dependencies in the test_integration group
 # See instructions above ^^
+pygithub = "^1.59.0"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.0.249"
