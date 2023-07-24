@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Any, Generator, List, Mapping, Optional, Union
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -16,6 +16,10 @@ class Xinference(LLM):
     Check out: https://github.com/xorbitsai/inference
     To run, you need to start a Xinference supervisor on one server and Xinference workers on the other servers
     Example:
+        To start a local instance of Xinference, run
+         .. code-block:: bash
+            $ xinference
+        You can also deploy Xinference in a distributed cluster. Here are the steps:
         Starting the supervisor:
         .. code-block:: bash
             $ xinference-supervisor
@@ -23,7 +27,7 @@ class Xinference(LLM):
         .. code-block:: bash
             $ xinference-worker
 
-    Then, launch a model using command line interface (CLI). 
+    Then, launch a model using command line interface (CLI).
 
     Example:
     .. code-block:: bash
@@ -58,9 +62,7 @@ class Xinference(LLM):
     """UID of the launched model"""
 
     def __init__(
-        self,
-        server_url: Optional[str] = None,
-        model_uid: Optional[str] = None
+        self, server_url: Optional[str] = None, model_uid: Optional[str] = None
     ):
         try:
             from xinference.client import RESTfulClient
@@ -102,19 +104,21 @@ class Xinference(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        generate_config: Optional["LlamaCppGenerateConfig"] = None,
+        **kwargs: Any,
     ) -> str:
         """Call the xinference model and return the output.
 
         Args:
             prompt: The prompt to use for generation.
             stop: Optional list of stop words to use when generating.
-            generate_config: Optinal dictionary for the configuration used for generation.
+            generate_config: Optional dictionary for the configuration used for generation.
 
         Returns:
             The generated string by the model.
         """
         model = self.client.get_model(self.model_uid)
+
+        generate_config: "LlamaCppGenerateConfig" = kwargs.get("generate_config", {})
 
         if stop:
             generate_config["stop"] = stop
@@ -140,12 +144,12 @@ class Xinference(LLM):
         prompt: str,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         generate_config: Optional["LlamaCppGenerateConfig"] = None,
-    ) -> str:
+    ) -> Generator[str, None, None]:
         """
         Args:
             prompt: The prompt to use for generation.
             stop: Optional list of stop words to use when generating.
-            generate_config: Optinal dictionary for the configuration used for generation.
+            generate_config: Optional dictionary for the configuration used for generation.
 
         Yields:
             A string token.
@@ -159,7 +163,7 @@ class Xinference(LLM):
                 if choices:
                     choice = choices[0]
                     if isinstance(choice, dict):
-                        token = choice.get("text")
+                        token = choice.get("text", "")
                         log_probs = choice.get("logprobs")
                         if run_manager:
                             run_manager.on_llm_new_token(

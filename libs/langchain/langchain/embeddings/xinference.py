@@ -3,6 +3,7 @@ from typing import Any, List, Optional
 
 from langchain.embeddings.base import Embeddings
 
+
 class XinferenceEmbeddings(Embeddings):
 
     """Wrapper around xinference embedding models.
@@ -12,6 +13,10 @@ class XinferenceEmbeddings(Embeddings):
     Check out: https://github.com/xorbitsai/inference
     To run, you need to start a Xinference supervisor on one server and Xinference workers on the other servers
     Example:
+        To start a local instance of Xinference, run
+         .. code-block:: bash
+            $ xinference
+        You can also deploy Xinference in a distributed cluster. Here are the steps:
         Starting the supervisor:
         .. code-block:: bash
             $ xinference-supervisor
@@ -19,16 +24,13 @@ class XinferenceEmbeddings(Embeddings):
         .. code-block:: bash
             $ xinference-worker
 
-    
-    To use Xinference with LangChain, you need to first launch a model. You can use the RESTfulClient to do so:
-    
+    Then, launch a model using command line interface (CLI).
+
     Example:
-    .. code-block:: python
-        from xinference.client import RESTfulClient
-        client = RESTfulClient("http://0.0.0.0:9997")
-        model_uid = client.launch_model(model_name="orca", quantization="q4_0", embedding="True")
-    
-    Then you can use Xinference Embedding with LangChain.
+    .. code-block:: bash
+            $ xinference launch -n orca -s 3 -q q4_0
+
+    It will return a model UID. Then you can use Xinference Embedding with LangChain.
 
     Example:
     .. code-block:: python
@@ -36,7 +38,7 @@ class XinferenceEmbeddings(Embeddings):
 
         xinference = XinferenceEmbeddings(
             server_url="http://0.0.0.0:9997",
-            model_uid = model_uid
+            model_uid = {model_uid} # replace model_uid with the model UID return from launching the model
         )
 
     """
@@ -48,9 +50,7 @@ class XinferenceEmbeddings(Embeddings):
     """UID of the launched model"""
 
     def __init__(
-        self,
-        server_url: Optional[str] = None,
-        model_uid: Optional[str] = None
+        self, server_url: Optional[str] = None, model_uid: Optional[str] = None
     ):
         try:
             from xinference.client import RESTfulClient
