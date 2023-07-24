@@ -1,0 +1,46 @@
+name: lint
+
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        required: true
+        type: string
+        description: "From which folder this pipeline executes"
+
+env:
+  POETRY_VERSION: "1.4.2"
+
+jobs:
+  build:
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install poetry
+        run: |
+          pipx install poetry==$POETRY_VERSION
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: poetry
+      - name: Install dependencies
+        run: |
+          poetry install
+      - name: Install langchain editable
+        if: ${{ inputs.working-directory != 'langchain' }}
+        run: |
+          pip install -e ../langchain
+      - name: Analysing the code with our lint
+        run: |
+          make lint
