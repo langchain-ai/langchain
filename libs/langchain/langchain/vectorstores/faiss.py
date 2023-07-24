@@ -464,17 +464,16 @@ class FAISS(VectorStore):
         return docs
 
 
-    def delete(self, IDs: List) -> None:
-        """delete IDs from the current FAISS object.
-        
+    def delete(self, ids: Optional[List[str]] = None) -> Optional[bool]:
+         """Delete by vector ID 
+
         Args:
-            IDs: List of IDs you wish to remove from the current one
-        
+            ids: List of ids to delete.
+
         Returns:
-            None.
+            Optional[bool]: True if deletion is successful,
+            False otherwise, None if not implemented.
         """
-        if not isinstance(self.docstore, AddableMixin):
-            raise ValueError("Cannot delete from this type of docstore")
 
         overlapping = set(IDs).intersection(self.index_to_docstore_id)
         if not overlapping:
