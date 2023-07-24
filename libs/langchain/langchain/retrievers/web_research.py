@@ -73,6 +73,12 @@ class WebResearchRetriever(BaseRetriever):
         RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=50),
         description="Text splitter for splitting web pages into chunks",
     )
+    urls: List[str] = Field(
+        default_factory=list, description="Current URLs being processed"
+    )
+    url_database: List[str] = Field(
+        default_factory=list, description="List of processed URLs"
+    )
 
     @classmethod
     def from_llm(
@@ -123,6 +129,10 @@ class WebResearchRetriever(BaseRetriever):
             raise Exception(f"Error: {str(e)}")
         return result
 
+    def get_urls(self) -> List[str]:
+        """Return the list of URLs fetched during the most recent query."""
+        return self.urls
+
     def _get_relevant_documents(
         self,
         query: str,
@@ -156,27 +166,33 @@ class WebResearchRetriever(BaseRetriever):
             for res in search_results:
                 urls_to_look.append(res["link"])
 
-        # Load HTML to text
+        # Relevant urls
         urls = set(urls_to_look)
-        logger.info(f"URLs to load: {urls}")
-        loader = AsyncHtmlLoader(list(urls))
-        html2text = Html2TextTransformer()
+        self.urls = list(urls)
 
-        # Proect against very large documents
-        # This can use rate limit w/ embedding
-        logger.info("Grabbing most relevant splits from urls ...")
-        filtered_splits = []
-        text_splitter = self.text_splitter
-        for doc in html2text.transform_documents(loader.load()):
-            doc_splits = text_splitter.split_documents([doc])
-            if len(doc_splits) > self.max_splits_per_doc:
-                logger.info(
-                    f"Document {doc.metadata} has too many splits ({len(doc_splits)}), "
-                    f"keeping only the first {self.max_splits_per_doc}"
-                )
-                doc_splits = doc_splits[: self.max_splits_per_doc]
-            filtered_splits.extend(doc_splits)
-        self.vectorstore.add_documents(filtered_splits)
+        # Check for any new urls that we have not processed
+        new_urls = list(urls.difference(self.url_database))
+
+        logger.info(f"New URLs to load: {new_urls}")
+        # Load, split, and add new urls to vectorstore
+        if new_urls:
+            loader = AsyncHtmlLoader(new_urls)
+            html2text = Html2TextTransformer()
+            logger.info("Grabbing most relevant splits from urls ...")
+            filtered_splits = []
+            text_splitter = self.text_splitter
+            for doc in html2text.transform_documents(loader.load()):
+                doc_splits = text_splitter.split_documents([doc])
+                # Proect against very large documents
+                if len(doc_splits) > self.max_splits_per_doc:
+                    logger.info(
+                        f"{doc.metadata} has too many splits ({len(doc_splits)}), "
+                        f"keeping only the first {self.max_splits_per_doc}"
+                    )
+                    doc_splits = doc_splits[: self.max_splits_per_doc]
+                filtered_splits.extend(doc_splits)
+            self.vectorstore.add_documents(filtered_splits)
+            self.url_database.extend(new_urls)
 
         # Search for relevant splits
         docs = []
