@@ -56,7 +56,6 @@ pizza = Table(
 )
 
 
-@pytest.mark.requires("duckdb")
 def test_sql_database_run_native_format() -> None:
     """Test that commands can be run successfully and returned in correct format."""
     engine = create_engine("duckdb:///:memory:")

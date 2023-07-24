@@ -30,7 +30,8 @@ setuptools = "^67.6.1"
 # dependencies used for running tests (e.g., pytest, freezegun, response).
 # Any dependencies that do not meet that criteria will be removed.
 pytest = "^7.3.0"
-duckdb = {version = "^0.8.1", optional = true}
+duckdb = "^0.8.1"
+duckdb-engine = "^0.9.2"
 
 [tool.ruff]
 select = [
