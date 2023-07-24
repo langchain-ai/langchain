@@ -84,14 +84,10 @@ def _get_search_client(
     from azure.search.documents.indexes.models import (
         HnswParameters,
         PrioritizedFields,
-        SearchableField,
-        SearchField,
-        SearchFieldDataType,
         SearchIndex,
         SemanticConfiguration,
         SemanticField,
         SemanticSettings,
-        SimpleField,
         VectorSearch,
         VectorSearchAlgorithmConfiguration,
     )
@@ -121,21 +117,27 @@ def _get_search_client(
                 error = "\n" + "\n".join(
                     list(
                         map(
-                            lambda x: f"{x} current type: '{fields_types.get(x, 'MISSING')}'. It has to be '{mandatory_fields.get(x)}' or you can point to a different '{mandatory_fields.get(x)}' field name by using the env variable 'AZURESEARCH_FIELDS_{x.upper()}'",
+                            lambda x: f"{x} current type: \
+                                '{fields_types.get(x, 'MISSING')}'. It has to be \
+                                '{mandatory_fields.get(x)}' or you can point to a \
+                                different '{mandatory_fields.get(x)}' field name \
+                                by using the env variable \
+                                'AZURESEARCH_FIELDS_{x.upper()}'",
                             missing_fields,
                         )
                     )
                 )
                 raise ValueError(
                     f"""
-                You need to specify at least the following fields {missing_fields} or provide alternative field names in the env variables. 
+                You need to specify at least the following fields {missing_fields} or \
+                    provide alternative field names in the env variables. 
                 {error}
                 """
                 )
         else:
             fields = default_fields
         # Vector search configuration
-        if vector_search == None:
+        if vector_search is None:
             vector_search = VectorSearch(
                 algorithm_configurations=[
                     VectorSearchAlgorithmConfiguration(
@@ -198,17 +200,10 @@ class AzureSearch(VectorStore):
         **kwargs: Any,
     ):
         from azure.search.documents.indexes.models import (
-            PrioritizedFields,
             SearchableField,
             SearchField,
             SearchFieldDataType,
-            SearchIndex,
-            SemanticConfiguration,
-            SemanticField,
-            SemanticSettings,
             SimpleField,
-            VectorSearch,
-            VectorSearchAlgorithmConfiguration,
         )
 
         """Initialize with necessary components."""
@@ -464,7 +459,6 @@ class AzureSearch(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        from azure.search.documents.models import Vector
 
         results = self.client.search(
             search_text=query,
