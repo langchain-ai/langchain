@@ -51,7 +51,7 @@ def test_xinference_llm_(setup) -> None:
     client = RESTfulClient(endpoint)
 
     model_uid = client.launch_model(
-        model_name="orca", model_size_in_billions=3, quantization="q4_0"
+        model_name="vicuna-v1.3", model_size_in_billions=7, quantization="q4_0"
     )
 
     llm = Xinference(server_url=endpoint, model_uid=model_uid)

@@ -50,7 +50,7 @@ def test_xinference_embedding_documents(setup) -> None:
     client = RESTfulClient(endpoint)
 
     model_uid = client.launch_model(
-        model_name="orca", model_size_in_billions=3, quantization="q4_0", embedding="True"
+        model_name="vicuna-v1.3", model_size_in_billions=7, model_format="ggmlv3", quantization="q4_0", embedding=True
     )
 
     xinference = XinferenceEmbeddings(
@@ -61,7 +61,7 @@ def test_xinference_embedding_documents(setup) -> None:
     documents = ["foo bar", "bar foo"]
     output = xinference.embed_documents(documents)
     assert len(output) == 2
-    assert len(output[0]) == 3200
+    assert len(output[0]) == 4096
 
 
 def test_xinference_embedding_query(setup) -> None:
@@ -78,7 +78,7 @@ def test_xinference_embedding_query(setup) -> None:
     client = RESTfulClient(endpoint)
 
     model_uid = client.launch_model(
-        model_name="orca", model_size_in_billions=3, quantization="q4_0", embedding="True"
+        model_name="vicuna-v1.3", model_size_in_billions=7, quantization="q4_0", embedding=True
     )
 
     xinference = XinferenceEmbeddings(
@@ -88,4 +88,4 @@ def test_xinference_embedding_query(setup) -> None:
 
     document = "foo bar"
     output = xinference.embed_query(document)
-    assert len(output) == 3200
+    assert len(output) == 4096

@@ -1,6 +1,4 @@
 """Wrapper around Xinference embedding models."""
-
-
 from typing import Any, List, Optional
 
 from langchain.embeddings.base import Embeddings
@@ -21,7 +19,25 @@ class XinferenceEmbeddings(Embeddings):
         .. code-block:: bash
             $ xinference-worker
 
+    
+    To use Xinference with LangChain, you need to first launch a model. You can use the RESTfulClient to do so:
+    
+    Example:
+    .. code-block:: python
+        from xinference.client import RESTfulClient
+        client = RESTfulClient("http://0.0.0.0:9997")
+        model_uid = client.launch_model(model_name="orca", quantization="q4_0", embedding="True")
+    
+    Then you can use Xinference Embedding with LangChain.
 
+    Example:
+    .. code-block:: python
+        from langchain.embeddings import XinferenceEmbeddings
+
+        xinference = XinferenceEmbeddings(
+            server_url="http://0.0.0.0:9997",
+            model_uid = model_uid
+        )
 
     """
 

@@ -6,10 +6,6 @@ from langchain.llms.base import LLM
 if TYPE_CHECKING:
     from xinference.client import RESTfulChatModelHandle, RESTfulGenerateModelHandle
     from xinference.model.llm.core import LlamaCppGenerateConfig
-else:
-    RESTfulGenerateModelHandle = Any
-    RESTfulChatModelHandle = Any
-    LlamaCppGenerateConfig = Any
 
 
 class Xinference(LLM):
@@ -27,12 +23,13 @@ class Xinference(LLM):
         .. code-block:: bash
             $ xinference-worker
 
-    Then, launch a model using command line interface (CLI). For example:
+    Then, launch a model using command line interface (CLI). 
 
-    ```bash
-    xinference launch -n orca -s 3 -q q4_0
+    Example:
+    .. code-block:: bash
+            $ xinference launch -n orca -s 3 -q q4_0
 
-    It will return a model UID. 
+    It will return a model UID. Then, you can use Xinference with LangChain.
 
     Example:
         .. code-block:: python
@@ -51,6 +48,7 @@ class Xinference(LLM):
     To view all the supported builtin models, run:
     .. code-block:: bash
         $ xinference list --all
+
     """
 
     client: Any
@@ -104,7 +102,7 @@ class Xinference(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        generate_config: Optional[LlamaCppGenerateConfig] = None,
+        generate_config: Optional["LlamaCppGenerateConfig"] = None,
     ) -> str:
         """Call the xinference model and return the output.
 
@@ -138,10 +136,10 @@ class Xinference(LLM):
 
     def _stream(
         self,
-        model: Union[RESTfulGenerateModelHandle, RESTfulChatModelHandle],
+        model: Union["RESTfulGenerateModelHandle", "RESTfulChatModelHandle"],
         prompt: str,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        generate_config: Optional[LlamaCppGenerateConfig] = None,
+        generate_config: Optional["LlamaCppGenerateConfig"] = None,
     ) -> str:
         """
         Args:
