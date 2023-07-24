@@ -132,7 +132,7 @@ class ChatMLflowAIGateway(BaseChatModel):
         """Get the parameters used to invoke the model FOR THE CALLBACKS."""
         return {
             **self._default_params,
-            **super()._get_invocation_params(stop=stop, **kwargs)
+            **super()._get_invocation_params(stop=stop, **kwargs),
         }
 
     @property
