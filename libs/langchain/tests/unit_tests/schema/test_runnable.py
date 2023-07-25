@@ -17,6 +17,7 @@ from langchain.prompts.chat import (
     ChatPromptTemplate,
     ChatPromptValue,
     HumanMessagePromptTemplate,
+    SystemMessagePromptTemplate,
 )
 from langchain.schema.document import Document
 from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
@@ -206,7 +207,10 @@ async def test_prompt() -> None:
 async def test_prompt_with_chat_model(
     mocker: MockerFixture, snapshot: SnapshotAssertion, fixed_uuids: None
 ) -> None:
-    prompt = SystemMessage(content="You are a nice assistant.") + "{question}"
+    prompt = (
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
+    )
     chat = FakeListChatModel(responses=["foo", "bar"])
 
     chain = prompt | chat
@@ -292,7 +296,10 @@ async def test_prompt_with_chat_model(
 async def test_prompt_with_llm(
     mocker: MockerFixture, snapshot: SnapshotAssertion, fixed_uuids: None
 ) -> None:
-    prompt = SystemMessage(content="You are a nice assistant.") + "{question}"
+    prompt = (
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
+    )
     llm = FakeListLLM(responses=["foo", "bar"])
 
     chain = prompt | llm
@@ -380,7 +387,10 @@ async def test_prompt_with_llm(
 def test_prompt_with_chat_model_and_parser(
     mocker: MockerFixture, snapshot: SnapshotAssertion, fixed_uuids: None
 ) -> None:
-    prompt = SystemMessage(content="You are a nice assistant.") + "{question}"
+    prompt = (
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
+    )
     chat = FakeListChatModel(responses=["foo, bar"])
     parser = CommaSeparatedListOutputParser()
 
@@ -420,7 +430,7 @@ def test_seq_dict_prompt_llm(
     retriever = FakeRetriever()
 
     prompt = (
-        SystemMessage(content="You are a nice assistant.")
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
         + """Context:
 {documents}
 
@@ -483,7 +493,10 @@ What is your name?"""
 def test_seq_prompt_dict(
     mocker: MockerFixture, snapshot: SnapshotAssertion, fixed_uuids: None
 ) -> None:
-    prompt = SystemMessage(content="You are a nice assistant.") + "{question}"
+    prompt = (
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
+    )
 
     chat = FakeListChatModel(responses=["i'm a chatbot"])
 
