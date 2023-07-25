@@ -16,7 +16,9 @@ def test_ensemble_retriever_get_relevant_docs() -> None:
     dummy_retriever = BM25Retriever.from_texts(doc_list)
     dummy_retriever.k = 1
 
-    ensemble_retriever = EnsembleRetriever(retrievers=[dummy_retriever, dummy_retriever])
+    ensemble_retriever = EnsembleRetriever(
+        retrievers=[dummy_retriever, dummy_retriever]
+    )
     docs = ensemble_retriever.get_relevant_documents("I like apples")
     assert len(docs) == 1
 
