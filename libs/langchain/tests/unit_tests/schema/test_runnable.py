@@ -25,6 +25,7 @@ from langchain.schema.retriever import BaseRetriever
 from langchain.schema.runnable import (
     Runnable,
     RunnableConfig,
+    RunnableLambda,
     RunnableMap,
     RunnablePassthrough,
     RunnableSequence,
@@ -444,8 +445,8 @@ Question:
 
     chain = (
         {
-            "question": RunnablePassthrough[str](),
-            "documents": retriever,
+            "question": RunnablePassthrough[str]() | passthrough,
+            "documents": passthrough | retriever,
             "just_to_test_lambda": passthrough,
         }
         | prompt
@@ -493,6 +494,8 @@ What is your name?"""
 def test_seq_prompt_dict(
     mocker: MockerFixture, snapshot: SnapshotAssertion, fixed_uuids: None
 ) -> None:
+    passthrough = mocker.Mock(side_effect=lambda x: x)
+
     prompt = (
         SystemMessagePromptTemplate.from_template("You are a nice assistant.")
         + "{question}"
@@ -502,14 +505,18 @@ def test_seq_prompt_dict(
 
     llm = FakeListLLM(responses=["i'm a textbot"])
 
-    chain = prompt | {  # type: ignore
-        "chat": chat,
-        "llm": llm,
-    }
+    chain = (
+        prompt
+        | passthrough
+        | {  # type: ignore
+            "chat": chat,
+            "llm": llm,
+        }
+    )
 
     assert isinstance(chain, RunnableSequence)
     assert chain.first == prompt
-    assert chain.middle == []
+    assert chain.middle == [RunnableLambda(passthrough)]
     assert isinstance(chain.last, RunnableMap)
     assert dumps(chain, pretty=True) == snapshot
 

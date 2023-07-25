@@ -74,19 +74,7 @@ class Runnable(Generic[Input, Output], ABC):
             Dict[str, Union[Runnable[Any, Other], Callable[[Any], Other]]],
         ],
     ) -> RunnableSequence[Input, Other]:
-        if isinstance(other, dict):
-            runnables = {
-                key: r if isinstance(r, Runnable) else RunnableLambda(r)
-                for key, r in other.items()
-            }
-            return RunnableSequence(
-                first=self,
-                last=RunnableMap(steps=runnables),
-            )
-        elif isinstance(other, Runnable):
-            return RunnableSequence(first=self, last=other)
-        else:
-            raise TypeError(f"unsupported type: {type(other)}")
+        return RunnableSequence(first=self, last=_coerce_to_runnable(other))
 
     def __ror__(
         self,
@@ -95,19 +83,7 @@ class Runnable(Generic[Input, Output], ABC):
             Dict[str, Union[Runnable[Other, Any], Callable[[Other], Any]]],
         ],
     ) -> RunnableSequence[Other, Output]:
-        if isinstance(other, dict):
-            runnables = {
-                key: r if isinstance(r, Runnable) else RunnableLambda(r)
-                for key, r in other.items()
-            }
-            return RunnableSequence(
-                first=RunnableMap(steps=runnables),
-                last=self,
-            )
-        elif isinstance(other, Runnable):
-            return RunnableSequence(first=other, last=self)
-        else:
-            raise TypeError(f"unsupported type: {type(other)}")
+        return RunnableSequence(first=_coerce_to_runnable(other), last=self)
 
     @abstractmethod
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
@@ -221,28 +197,18 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             Dict[str, Union[Runnable[Any, Other], Callable[[Any], Other]]],
         ],
     ) -> RunnableSequence[Input, Other]:
-        if isinstance(other, dict):
-            runnables = {
-                key: r if isinstance(r, Runnable) else RunnableLambda(r)
-                for key, r in other.items()
-            }
-            return RunnableSequence(
-                first=self.first,
-                middle=self.middle + [self.last],
-                last=RunnableMap(steps=runnables),
-            )
-        elif isinstance(other, RunnableSequence):
+        if isinstance(other, RunnableSequence):
             return RunnableSequence(
                 first=self.first,
                 middle=self.middle + [self.last] + other.middle,
                 last=other.last,
             )
-        elif isinstance(other, Runnable):
-            return RunnableSequence(
-                first=self.first, middle=self.middle + [self.last], last=other
-            )
         else:
-            raise TypeError(f"unsupported type: {type(other)}")
+            return RunnableSequence(
+                first=self.first,
+                middle=self.middle + [self.last],
+                last=_coerce_to_runnable(other),
+            )
 
     def __ror__(
         self,
@@ -251,28 +217,18 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             Dict[str, Union[Runnable[Other, Any], Callable[[Other], Any]]],
         ],
     ) -> RunnableSequence[Other, Output]:
-        if isinstance(other, dict):
-            runnables = {
-                key: r if isinstance(r, Runnable) else RunnableLambda(r)
-                for key, r in other.items()
-            }
-            return RunnableSequence(
-                first=RunnableMap(steps=runnables),
-                middle=[self.first] + self.middle,
-                last=self.last,
-            )
-        elif isinstance(other, RunnableSequence):
+        if isinstance(other, RunnableSequence):
             return RunnableSequence(
                 first=other.first,
                 middle=other.middle + [other.last] + self.middle,
                 last=self.last,
             )
-        elif isinstance(other, Runnable):
-            return RunnableSequence(
-                first=other, middle=[self.first] + self.middle, last=self.last
-            )
         else:
-            raise TypeError(f"unsupported type: {type(other)}")
+            return RunnableSequence(
+                first=_coerce_to_runnable(other),
+                middle=[self.first] + self.middle,
+                last=self.last,
+            )
 
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
         from langchain.callbacks.manager import CallbackManager
@@ -701,6 +657,12 @@ class RunnableLambda(Runnable[Input, Output]):
                 f"Instead got an unsupported type: {type(func)}"
             )
 
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, RunnableLambda):
+            return self.func == other.func
+        else:
+            return False
+
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
         return self._call_with_config(self.func, input, config)
 
@@ -720,3 +682,24 @@ def _patch_config(
     config = config.copy()
     config["callbacks"] = callback_manager
     return config
+
+
+def _coerce_to_runnable(
+    thing: Union[
+        Runnable[Input, Output],
+        Callable[[Input], Output],
+        Dict[str, Union[Runnable[Input, Output], Callable[[Input], Output]]],
+    ]
+) -> Runnable[Input, Output]:
+    if isinstance(thing, Runnable):
+        return thing
+    elif callable(thing):
+        return RunnableLambda(thing)
+    elif isinstance(thing, dict):
+        runnables = {key: _coerce_to_runnable(r) for key, r in thing.items()}
+        return cast(Runnable[Input, Output], RunnableMap(steps=runnables))
+    else:
+        raise TypeError(
+            f"Expected a Runnable, callable or dict."
+            f"Instead got an unsupported type: {type(thing)}"
+        )
