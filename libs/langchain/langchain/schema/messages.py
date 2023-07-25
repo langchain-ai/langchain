@@ -89,7 +89,8 @@ class BaseMessageChunk(BaseMessage):
                 merged[k] = v
             elif type(merged[k]) != type(v):
                 raise ValueError(
-                    f'additional_kwargs["{k}"] already exists in this message, but with a different type.'
+                    f'additional_kwargs["{k}"] already exists in this message,'
+                    " but with a different type."
                 )
             elif isinstance(merged[k], str):
                 merged[k] += v

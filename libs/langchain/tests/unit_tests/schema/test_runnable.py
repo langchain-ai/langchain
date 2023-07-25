@@ -73,7 +73,8 @@ class FakeRetriever(BaseRetriever):
 
 @pytest.fixture()
 def fixed_uuids(mocker: MockerFixture) -> MockerFixture._Patcher:
-    """Note this mock only works with `import uuid; uuid.uuid4()`, it does not work with `from uuid import uuid4; uuid4()`."""
+    """Note this mock only works with `import uuid; uuid.uuid4()`,
+    it does not work with `from uuid import uuid4; uuid4()`."""
 
     # Disable tracing to avoid fixed UUIDs causing tracing errors.
     mocker.patch.dict("os.environ", {"LANGCHAIN_TRACING_V2": "false"})

@@ -22,13 +22,13 @@ def test_message_chunks() -> None:
         content=" indeed."
     ) == AIMessageChunk(
         content="I am indeed."
-    ), "MessageChunk + MessageChunk should be a MessageChunk of same class as the left side"
+    ), "MessageChunk + MessageChunk should be a MessageChunk of same class as the left side"  # noqa: E501
 
     assert AIMessageChunk(
         content="", additional_kwargs={"foo": "bar"}
     ) + AIMessageChunk(content="", additional_kwargs={"baz": "foo"}) == AIMessageChunk(
         content="", additional_kwargs={"foo": "bar", "baz": "foo"}
-    ), "MessageChunk + MessageChunk should be a MessageChunk with merged additional_kwargs"
+    ), "MessageChunk + MessageChunk should be a MessageChunk with merged additional_kwargs"  # noqa: E501
 
     assert AIMessageChunk(
         content="", additional_kwargs={"function_call": {"name": "web_search"}}
@@ -45,4 +45,4 @@ def test_message_chunks() -> None:
                 "arguments": '{\n  "query": "turtles"\n}',
             }
         },
-    ), "MessageChunk + MessageChunk should be a MessageChunk with merged additional_kwargs"
+    ), "MessageChunk + MessageChunk should be a MessageChunk with merged additional_kwargs"  # noqa: E501
