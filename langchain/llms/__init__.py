@@ -19,6 +19,7 @@ from langchain.llms.cohere import Cohere
 from langchain.llms.ctransformers import CTransformers
 from langchain.llms.databricks import Databricks
 from langchain.llms.deepinfra import DeepInfra
+from langchain.llms.edenai import EdenAI
 from langchain.llms.fake import FakeListLLM
 from langchain.llms.forefrontai import ForefrontAI
 from langchain.llms.google_palm import GooglePalm
@@ -54,6 +55,7 @@ from langchain.llms.tongyi import Tongyi
 from langchain.llms.vertexai import VertexAI
 from langchain.llms.writer import Writer
 
+
 __all__ = [
     "AI21",
     "AlephAlpha",
@@ -73,6 +75,7 @@ __all__ = [
     "Cohere",
     "Databricks",
     "DeepInfra",
+    "EdenAI",
     "FakeListLLM",
     "ForefrontAI",
     "GPT4All",
@@ -130,6 +133,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "ctransformers": CTransformers,
     "databricks": Databricks,
     "deepinfra": DeepInfra,
+    "edenai": EdenAI,
     "fake-list": FakeListLLM,
     "forefrontai": ForefrontAI,
     "google_palm": GooglePalm,
