@@ -41,11 +41,11 @@ class LlamaContentFormatter(ContentFormatterBase):
                              Supported roles for the LLaMa Foundation Model: {supported}""")
 
 
-    def format_request_payload(self, messages: List[Dict], model_kwargs: Dict) -> bytes:
+    def format_request_payload(self, messages: List[BaseMessage], model_kwargs: Dict) -> bytes:
         """Formats the request according the the chosen api"""
-        prompt = ContentFormatterBase.escape_special_characters(prompt)
+        chat_messages = [LlamaContentFormatter._convert_message_to_dict(message) for message in messages]
         request_payload = json.dumps(
-            {"input_data": {"input_string": messages, "parameters": model_kwargs}}
+            {"input_data": {"input_string": chat_messages, "parameters": model_kwargs}}
         )
         return str.encode(request_payload)
 
@@ -106,4 +106,5 @@ class AzureMLChatOnlineEndpoint(LLM, BaseModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        pass
+        _model_kwargs = self.model_kwargs or {}
+        request_payload = self.content_formatter.format_request_payload(messages, _model_kwargs)
