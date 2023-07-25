@@ -254,6 +254,7 @@ class Anthropic(LLM, _AnthropicCommon):
             A generator representing the stream of tokens from Anthropic.
         Example:
             .. code-block:: python
+
                 prompt = "Write a poem about a stream."
                 prompt = f"\n\nHuman: {prompt}\n\nAssistant:"
                 generator = anthropic.stream(prompt)
