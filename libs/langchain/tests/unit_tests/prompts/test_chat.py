@@ -13,7 +13,8 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain.schema.messages import HumanMessage
+from langchain.schema.messages import HumanMessage, SystemMessage, ChatMessage
+from langchain.prompts.chat import C_
 
 
 def create_messages() -> List[BaseMessagePromptTemplate]:
@@ -190,3 +191,49 @@ def test_chat_valid_infer_variables() -> None:
     )
     assert set(prompt.input_variables) == set(["question", "context"])
     assert prompt.partial_variables == {"formatins": "some structure"}
+
+
+def test_chat_templates() -> None:
+    """Test chat templates."""
+    assert C_(["{question}"]).format_messages(question="What is your name?") == [
+        HumanMessage(content="What is your name?")
+    ]
+
+    # Regular human message does not require formatting!
+    assert C_([HumanMessage(content="{question}")]).format_messages() == [
+        HumanMessage(content="{question}")
+    ]
+
+    assert (
+        C_(
+            [
+                HumanMessage(content="{question}"),
+                HumanMessagePromptTemplate(
+                    prompt=PromptTemplate.from_template("{question}")
+                ),
+            ]
+        ).format_messages(question="What is your name?")
+    ) == [
+        HumanMessage(content="{question}"),
+        HumanMessage(content="What is your name?"),
+    ]
+
+    assert C_(
+        [
+            ("system", "hello"),
+            ("human", "{question}"),
+        ]
+    ).format_messages(question="What is your name?") == [
+        # TODO(): Do we really want these to be chat messages?
+        ChatMessage(content="hello", additional_kwargs={}, role="system"),
+        ChatMessage(content="What is your name?", additional_kwargs={}, role="human"),
+    ]
+    # SystemMessage(content="hello"),
+    # HumanMessage(content="What is your name?"),
+
+    assert C_([SystemMessage(content="hello"), "{question}"]).format_messages(
+        question="What is your name?"
+    ) == [
+        SystemMessage(content="hello"),
+        HumanMessage(content="What is your name?"),
+    ]

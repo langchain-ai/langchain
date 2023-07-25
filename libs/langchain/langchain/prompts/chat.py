@@ -3,9 +3,8 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Callable, List, Sequence, Tuple, Type, TypeVar, Union
-
 from pydantic import Field, root_validator
+from typing import Any, Callable, List, Tuple, Type, TypeVar, Union, Sequence
 
 from langchain.load.serializable import Serializable
 from langchain.prompts.base import StringPromptTemplate
@@ -361,6 +360,52 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
         return cls.from_messages(messages)
 
     @classmethod
+    def from_diverse(
+        cls,
+        messages: Sequence[
+            Union[
+                Tuple[str, str],
+                Tuple[Type, str],
+                str,
+                BaseMessagePromptTemplate,
+                BaseMessage,
+            ]
+        ],
+    ) -> ChatPromptTemplate:
+        """Flexible classmethod that accepts a variety of message formats.
+
+        Args:
+            messages: list of messages, where a message can be one of:
+                - BaseMessagePromptTemplate
+                - BaseMessage
+                - (role string, template) tuples
+                - (role class, template) tuples
+                - string -- creates a Human Message
+        """
+        _messages = []
+        for message in messages:
+            if isinstance(message, (BaseMessage, BaseMessagePromptTemplate)):
+                _message = message
+            elif isinstance(message, str):
+                _message = HumanMessagePromptTemplate.from_template(message)
+            elif isinstance(message, tuple):
+                role, template = message
+                if isinstance(role, str):
+                    _message = ChatMessagePromptTemplate(
+                        prompt=PromptTemplate.from_template(template), role=role
+                    )
+                else:
+                    _message = role(prompt=PromptTemplate.from_template(template))
+            else:
+                raise NotImplementedError(f"Unsupported message type: {type(message)}")
+
+            _messages.append(_message)
+
+        return ChatPromptTemplate(
+            messages=_messages,
+        )
+
+    @classmethod
     def from_messages(
         cls, messages: Sequence[Union[BaseMessagePromptTemplate, BaseMessage]]
     ) -> ChatPromptTemplate:
@@ -424,3 +469,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
             file_path: path to file.
         """
         raise NotImplementedError
+
+
+# C_ is shorthand for a chat template.
+C_ = ChatPromptTemplate.from_diverse
