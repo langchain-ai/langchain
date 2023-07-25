@@ -190,7 +190,7 @@ class AzureMLOnlineEndpoint(LLM, BaseModel):
         env var `AZUREML_ENDPOINT_API_KEY`."""
 
     deployment_name: str = ""
-    """Deployment Name for Endpoint. Not required to call endpont. Should be passed 
+    """Deployment Name for Endpoint. NOT REQUIRED to call endpont. Should be passed 
         to constructor or specified as env var `AZUREML_DEPLOYMENT_NAME`."""
     
     http_client: Any = None  #: :meta private:
