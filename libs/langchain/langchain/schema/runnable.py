@@ -1,5 +1,4 @@
 from __future__ import annotations
-from ast import In
 
 import asyncio
 from abc import ABC, abstractmethod
@@ -169,6 +168,34 @@ class Runnable(Generic[Input, Output], ABC):
             if isinstance(config, list)
             else [config.copy() if config is not None else {} for _ in range(length)]
         )
+
+    def _call_with_config(
+        self,
+        func: Callable[[Input], Output],
+        input: Input,
+        config: Optional[RunnableConfig],
+    ) -> Output:
+        from langchain.callbacks.manager import CallbackManager
+
+        config = config or {}
+        callback_manager = CallbackManager.configure(
+            inheritable_callbacks=config.get("callbacks"),
+            inheritable_tags=config.get("tags"),
+            inheritable_metadata=config.get("metadata"),
+        )
+        run_manager = callback_manager.on_chain_start(
+            dumpd(self), input if isinstance(input, dict) else {"input": input}
+        )
+        try:
+            output = func(input)
+        except Exception as e:
+            run_manager.on_chain_error(e)
+            raise
+        else:
+            run_manager.on_chain_end(
+                output if isinstance(output, dict) else {"output": output}
+            )
+            return output
 
 
 class RunnableSequence(Serializable, Runnable[Input, Output]):
@@ -598,7 +625,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
 
         # gather results from all steps
         try:
-            # copy steps to avoid issues from the caller mutating the steps during invoke()
+            # copy to avoid issues from the caller mutating the steps during invoke()
             steps = self.steps.copy()
             with ThreadPoolExecutor() as executor:
                 futures = [
@@ -642,7 +669,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
 
         # gather results from all steps
         try:
-            # copy steps to avoid issues from the caller mutating the steps during invoke()
+            # copy to avoid issues from the caller mutating the steps during invoke()
             steps = self.steps.copy()
             results = await asyncio.gather(
                 *(
@@ -675,7 +702,7 @@ class RunnableLambda(Runnable[Input, Output]):
             )
 
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
-        return self.func(input)
+        return self._call_with_config(self.func, input, config)
 
 
 class RunnablePassthrough(Serializable, Runnable[Input, Input]):
@@ -684,7 +711,7 @@ class RunnablePassthrough(Serializable, Runnable[Input, Input]):
         return True
 
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Input:
-        return input
+        return self._call_with_config(lambda x: x, input, config)
 
 
 def _patch_config(
