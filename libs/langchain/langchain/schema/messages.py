@@ -1,14 +1,11 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, List, Sequence
+from typing import List, Sequence
 
 from pydantic import Field
 
 from langchain.load.serializable import Serializable
-
-if TYPE_CHECKING:
-    from langchain.prompts.chat import ChatPromptTemplate
 
 
 def get_buffer_string(
