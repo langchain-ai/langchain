@@ -134,7 +134,8 @@ class GitHubAPIWrapper(BaseModel):
             "body": issue.body,
             "comments": str(comments),
         }
-    def create_pull_request(self, pr_query:str)->str:
+
+    def create_pull_request(self, pr_query: str) -> str:
         """
         Makes a pull request from the bot's branch to the base branch
         Parameters:
@@ -143,24 +144,24 @@ class GitHubAPIWrapper(BaseModel):
             in the string, and the body are the rest of the string.
             For example, "Updated README\nmade changes to add info"
         Returns:
-            str: A success or failure message 
+            str: A success or failure message
         """
         if self.github_base_branch == self.github_branch:
-            return "Cannot make a pull request because commits are already in the master branch"
+            return """Cannot make a pull request because 
+            commits are already in the master branch"""
         else:
             try:
                 title = pr_query.split("\n")[0]
                 body = pr_query[len(title) + 2 :]
                 pr = self.github_repo_instance.create_pull(
-                    title = title,
-                    body = body,
-                    head = self.github_branch,
-                    base = self.github_base_branch
+                    title=title,
+                    body=body,
+                    head=self.github_branch,
+                    base=self.github_base_branch,
                 )
                 return f"Successfully created PR number {pr.number}"
             except Exception as e:
-                return f"Unable to make pull request due to error:\n" + str(e)
-
+                return "Unable to make pull request due to error:\n" + str(e)
 
     def comment_on_issue(self, comment_query: str) -> str:
         """
