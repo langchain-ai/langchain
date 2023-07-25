@@ -44,9 +44,6 @@ class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
                     # Op -- (n_docs,1) -- Cosine Sim with each doc
                     results = cosine_similarity(self.tfidf_array, query_vec).reshape((-1,))
                     return [self.docs[i] for i in results.argsort()[-self.k :][::-1]]
-
-                async def aget_relevant_documents(self, query: str) -> List[Document]:
-                    raise NotImplementedError
     """  # noqa: E501
 
     class Config:
@@ -115,10 +112,11 @@ class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
     async def ainvoke(
         self, input: str, config: Optional[RunnableConfig] = None
     ) -> List[Document]:
-        try:
-            return await self.aget_relevant_documents(input, **(config or {}))
-        except NotImplementedError:
+        if type(self).aget_relevant_documents == BaseRetriever.aget_relevant_documents:
+            # If the retriever doesn't implement async, use default implementation
             return await super().ainvoke(input, config)
+
+        return await self.aget_relevant_documents(input, **(config or {}))
 
     @abstractmethod
     def _get_relevant_documents(
@@ -132,7 +130,6 @@ class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
             List of relevant documents
         """
 
-    @abstractmethod
     async def _aget_relevant_documents(
         self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
@@ -143,6 +140,7 @@ class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
         Returns:
             List of relevant documents
         """
+        raise NotImplementedError()
 
     def get_relevant_documents(
         self,
