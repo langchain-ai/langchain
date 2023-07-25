@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 
 class FirestoreChatMessageHistory(BaseChatMessageHistory):
-    """Chat history backed by Google Firestore."""
+    """Chat message history backed by Google Firestore."""
 
     def __init__(
         self,
