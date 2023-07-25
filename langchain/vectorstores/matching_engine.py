@@ -213,11 +213,11 @@ class MatchingEngine(VectorStore):
         """
 
         logger.debug(f"Embedding query {query}.")
-        embedding_query = self.embedding.embed_documents([query])
+        embedding_query = self.embedding.embed_query([query])
 
         response = self.endpoint.match(
             deployed_index_id=self._get_index_id(),
-            queries=embedding_query,
+            queries=[embedding_query],
             num_neighbors=k,
         )
 
