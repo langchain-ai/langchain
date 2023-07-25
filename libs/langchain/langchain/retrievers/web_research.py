@@ -11,6 +11,7 @@ from langchain.callbacks.manager import (
 from langchain.chains import LLMChain
 from langchain.document_loaders import AsyncHtmlLoader
 from langchain.document_transformers import Html2TextTransformer
+from langchain.llms import LlamaCpp
 from langchain.llms.base import BaseLLM
 from langchain.output_parsers.pydantic import PydanticOutputParser
 from langchain.prompts import PromptTemplate
@@ -30,13 +31,20 @@ class SearchQueries(BaseModel):
     )
 
 
+DEFAULT_LLAMA_SEARCH_PROMPT = PromptTemplate(
+    input_variables=["question"],
+    template="""<<SYS>> \n You are an assistant tasked with improving Google search 
+    results. \n <</SYS>> \n\n [INST] Generate FIVE Google search queries that 
+    are similar to this question. The output should be a numbered list of questions 
+    and each should have a question mark at the end: \n\n {question} [/INST]""",
+)
+
 DEFAULT_SEARCH_PROMPT = PromptTemplate(
     input_variables=["question"],
-    template="""<<SYS>> \n You are a web research assistant to help users
-    answer questions. Answer using a numeric list. Do not include any extra
-    test. \n <</SYS>> \n\n [INST] Given a user input search query, 
-    generate a numbered list of five search queries to run to help answer their 
-    question: \n\n {question} [/INST]""",
+    template="""You are an assistant tasked with improving Google search 
+    results. Generate FIVE Google search queries that are similar to
+    this question. The output should be a numbered list of questions and each
+    should have a question mark at the end: {question}""",
 )
 
 
@@ -64,9 +72,6 @@ class WebResearchRetriever(BaseRetriever):
     )
     llm_chain: LLMChain
     search: GoogleSearchAPIWrapper = Field(..., description="Google Search API Wrapper")
-    search_prompt: PromptTemplate = Field(
-        DEFAULT_SEARCH_PROMPT, description="Search Prompt Template"
-    )
     max_splits_per_doc: int = Field(100, description="Maximum splits per document")
     num_search_results: int = Field(1, description="Number of pages per Google search")
     text_splitter: RecursiveCharacterTextSplitter = Field(
@@ -86,7 +91,6 @@ class WebResearchRetriever(BaseRetriever):
         vectorstore: VectorStore,
         llm: BaseLLM,
         search: GoogleSearchAPIWrapper,
-        search_prompt: PromptTemplate = DEFAULT_SEARCH_PROMPT,
         max_splits_per_doc: int = 100,
         num_search_results: int = 1,
         text_splitter: RecursiveCharacterTextSplitter = RecursiveCharacterTextSplitter(
@@ -106,16 +110,24 @@ class WebResearchRetriever(BaseRetriever):
         Returns:
             WebResearchRetriever
         """
+
+        if isinstance(llm, LlamaCpp):
+            prompt = DEFAULT_LLAMA_SEARCH_PROMPT
+
+        else:
+            prompt = DEFAULT_SEARCH_PROMPT
+
+        # Use chat model prompt
         llm_chain = LLMChain(
             llm=llm,
-            prompt=search_prompt,
+            prompt=prompt,
             output_parser=QuestionListOutputParser(),
         )
+
         return cls(
             vectorstore=vectorstore,
             llm_chain=llm_chain,
             search=search,
-            search_prompt=search_prompt,
             max_splits_per_doc=max_splits_per_doc,
             num_search_results=num_search_results,
             text_splitter=text_splitter,
