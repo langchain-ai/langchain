@@ -53,8 +53,8 @@ class FakeRetriever(BaseRetriever):
         query: str,
         *,
         callbacks: Callbacks = None,
-        tags: List[str] | None = None,
-        metadata: Dict[str, Any] | None = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         return [Document(page_content="foo"), Document(page_content="bar")]
@@ -64,8 +64,8 @@ class FakeRetriever(BaseRetriever):
         query: str,
         *,
         callbacks: Callbacks = None,
-        tags: List[str] | None = None,
-        metadata: Dict[str, Any] | None = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         return [Document(page_content="foo"), Document(page_content="bar")]
