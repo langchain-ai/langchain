@@ -1,4 +1,5 @@
 from __future__ import annotations
+from ast import In
 
 import asyncio
 from abc import ABC, abstractmethod
@@ -675,6 +676,15 @@ class RunnableLambda(Runnable[Input, Output]):
 
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
         return self.func(input)
+
+
+class RunnablePassthrough(Serializable, Runnable[Input, Input]):
+    @property
+    def lc_serializable(self) -> bool:
+        return True
+
+    def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Input:
+        return input
 
 
 def _patch_config(
