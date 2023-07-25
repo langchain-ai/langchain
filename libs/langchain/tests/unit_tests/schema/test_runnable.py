@@ -25,6 +25,7 @@ from langchain.schema.runnable import (
     Runnable,
     RunnableConfig,
     RunnableMap,
+    RunnablePassthrough,
     RunnableSequence,
 )
 
@@ -433,8 +434,9 @@ Question:
 
     chain = (
         {
+            "question": RunnablePassthrough[str](),
             "documents": retriever,
-            "question": passthrough,
+            "just_to_test_lambda": passthrough,
         }
         | prompt
         | chat
@@ -459,6 +461,7 @@ Question:
     assert prompt_spy.call_args.args[1] == {
         "documents": [Document(page_content="foo"), Document(page_content="bar")],
         "question": "What is your name?",
+        "just_to_test_lambda": "What is your name?",
     }
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
