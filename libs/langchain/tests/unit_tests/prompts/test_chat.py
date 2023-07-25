@@ -14,7 +14,7 @@ from langchain.prompts.chat import (
     SystemMessagePromptTemplate,
 )
 from langchain.schema.messages import HumanMessage, SystemMessage, ChatMessage
-from langchain.prompts.chat import C_
+from langchain.prompts.chat import c_
 
 
 def create_messages() -> List[BaseMessagePromptTemplate]:
@@ -195,17 +195,17 @@ def test_chat_valid_infer_variables() -> None:
 
 def test_chat_templates() -> None:
     """Test chat templates."""
-    assert C_(["{question}"]).format_messages(question="What is your name?") == [
+    assert c_(["{question}"]).format_messages(question="What is your name?") == [
         HumanMessage(content="What is your name?")
     ]
 
     # Regular human message does not require formatting!
-    assert C_([HumanMessage(content="{question}")]).format_messages() == [
+    assert c_([HumanMessage(content="{question}")]).format_messages() == [
         HumanMessage(content="{question}")
     ]
 
     assert (
-        C_(
+        c_(
             [
                 HumanMessage(content="{question}"),
                 HumanMessagePromptTemplate(
@@ -218,7 +218,7 @@ def test_chat_templates() -> None:
         HumanMessage(content="What is your name?"),
     ]
 
-    assert C_(
+    assert c_(
         [
             ("system", "hello"),
             ("human", "{question}"),
@@ -231,7 +231,7 @@ def test_chat_templates() -> None:
     # SystemMessage(content="hello"),
     # HumanMessage(content="What is your name?"),
 
-    assert C_([SystemMessage(content="hello"), "{question}"]).format_messages(
+    assert c_([SystemMessage(content="hello"), "{question}"]).format_messages(
         question="What is your name?"
     ) == [
         SystemMessage(content="hello"),

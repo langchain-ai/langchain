@@ -270,6 +270,20 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
             return ChatPromptTemplate(messages=self.messages + other.messages)
         elif isinstance(other, (BaseMessagePromptTemplate, BaseMessage)):
             return ChatPromptTemplate(messages=self.messages + [other])
+        elif isinstance(other, dict):
+            required_keys = {"role", "template"}
+            if required_keys != set(other.keys()):
+                raise ValueError(
+                    f"Expected keys {required_keys}, got {set(other.keys())}"
+                )
+            prompt = ChatMessagePromptTemplate.from_template(other)
+            return ChatPromptTemplate(messages=self.messages + [prompt])
+        elif isinstance(other, tuple):
+            if not len(other) == 2:
+                raise ValueError(f"Expected tuple of length 2, got {len(other)}")
+            role, template = other
+            prompt = ChatMessagePromptTemplate.from_template(other[1], role=other[0])
+            return ChatPromptTemplate(messages=self.messages + [prompt])
         elif isinstance(other, str):
             prompt = HumanMessagePromptTemplate.from_template(other)
             return ChatPromptTemplate(messages=self.messages + [prompt])
@@ -372,7 +386,22 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
             ]
         ],
     ) -> ChatPromptTemplate:
-        """Flexible classmethod that accepts a variety of message formats.
+        """Create a chat prompt template from a variety of message formats.
+
+        Examples:
+
+            .. code-block:: python
+
+                template = ChatPromptTemplate.from_diverse([
+                    ("human", "Hello, how are you?"),
+                    ("AI", "I'm doing well, thanks!"),
+                    ("human", "That's good to hear."),
+                ])
+
+                template = ChatPromptTemplate.from_diverse([
+                    SystemMessage(content="hello"),
+                    ("human", "Hello, how are you?"),
+                ])
 
         Args:
             messages: list of messages, where a message can be one of:
@@ -471,5 +500,54 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
         raise NotImplementedError
 
 
-# C_ is shorthand for a chat template.
-C_ = ChatPromptTemplate.from_diverse
+# An alias for ChatPromptTemplate.from_diverse to make it faster to type.
+def create_chat_template(
+    messages: Sequence[
+        Union[
+            Tuple[str, str],
+            Tuple[Type, str],
+            str,
+            BaseMessagePromptTemplate,
+            BaseMessage,
+        ]
+    ],
+) -> ChatPromptTemplate:
+    """Create a chat prompt template from a variety of message formats.
+
+    Examples:
+
+        .. code-block:: python
+
+            template = create_chat_template([
+                ("human", "Hello, how are you?"),
+                ("AI", "I'm doing well, thanks!"),
+                ("human", "That's good to hear."),
+            ])
+
+            template = create_chat_template([
+                SystemMessage(content="hello"),
+                ("human", "{question}"),
+            ])
+
+            template.format(question="Hello, how are you?")
+
+            template = create_chat_template([
+                SystemMessage(content="hello"),
+                "{question}",
+            ])
+
+            template.format(question="Hello, how are you?")
+
+    Args:
+        messages: list of messages, where a message can be one of:
+            - BaseMessagePromptTemplate
+            - BaseMessage
+            - (role string, template) tuples
+            - (role class, template) tuples
+            - string -- creates a Human Message
+    """
+    return ChatPromptTemplate.from_diverse(messages)
+
+
+# Potential alias
+C_ = create_chat_template
