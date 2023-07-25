@@ -63,3 +63,35 @@ class PlanAndExecute(Chain):
                 )
             self.step_container.add_step(step, response)
         return {self.output_key: self.step_container.get_final_response()}
+    
+    async def _acall(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
+        plan = await self.planner.aplan(
+            inputs,
+            callbacks=run_manager.get_child() if run_manager else None,
+        )
+        if run_manager:
+            await run_manager.on_text(str(plan), verbose=self.verbose)
+        for step in plan.steps:
+            _new_inputs = {
+                "previous_steps": self.step_container,
+                "current_step": step,
+                "objective": inputs[self.input_key],
+            }
+            new_inputs = {**_new_inputs, **inputs}
+            response = await self.executor.astep(
+                new_inputs,
+                callbacks=run_manager.get_child() if run_manager else None,
+            )
+            if run_manager:
+                await run_manager.on_text(
+                    f"*****\n\nStep: {step.value}", verbose=self.verbose
+                )
+                await run_manager.on_text(
+                    f"\n\nResponse: {response.response}", verbose=self.verbose
+                )
+            self.step_container.add_step(step, response)
+        return {self.output_key: self.step_container.get_final_response()}
