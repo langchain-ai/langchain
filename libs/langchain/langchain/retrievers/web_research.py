@@ -15,7 +15,7 @@ from langchain.document_transformers import Html2TextTransformer
 from langchain.llms import LlamaCpp
 from langchain.llms.base import BaseLLM
 from langchain.output_parsers.pydantic import PydanticOutputParser
-from langchain.prompts import PromptTemplate
+from langchain.prompts import BasePromptTemplate, PromptTemplate
 from langchain.schema import BaseRetriever, Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.utilities import GoogleSearchAPIWrapper
@@ -92,7 +92,7 @@ class WebResearchRetriever(BaseRetriever):
         vectorstore: VectorStore,
         llm: BaseLLM,
         search: GoogleSearchAPIWrapper,
-        prompt: Optional[PromptTemplate] = None,
+        prompt: Optional[BasePromptTemplate] = None,
         max_splits_per_doc: int = 100,
         num_search_results: int = 1,
         text_splitter: RecursiveCharacterTextSplitter = RecursiveCharacterTextSplitter(
