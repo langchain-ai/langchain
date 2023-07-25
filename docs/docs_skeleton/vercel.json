@@ -3729,6 +3729,14 @@
       "destination": "/docs/integrations/chat/:path*"
     },
     {
+      "source": "/docs/modules/evaluation(/?)",
+      "destination": "/docs/guides/evaluation"
+    },
+    {
+      "source": "/docs/modules/evaluation/:path*(/?)",
+      "destination": "/docs/guides/evaluation/:path*"
+    },
+    {
       "source": "/en/latest/modules/indexes/:path*",
       "destination": "/docs/modules/data_connection/:path*"
     },
