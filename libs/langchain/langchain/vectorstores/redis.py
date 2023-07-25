@@ -66,7 +66,7 @@ def _check_redis_module_exist(client: RedisType, required_modules: List[dict]) -
         "Please head to https://redis.io/docs/stack/search/quick_start/"
         "to know more about installing the RediSearch module within Redis Stack."
     )
-    logging.error(error_message)
+    logger.error(error_message)
     raise ValueError(error_message)
 
 
