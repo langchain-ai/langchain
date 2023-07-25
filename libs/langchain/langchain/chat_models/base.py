@@ -124,6 +124,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
             return await asyncio.get_running_loop().run_in_executor(
                 None, partial(self.invoke, input, config, stop=stop)
             )
+
         llm_result = await self.agenerate_prompt(
             [self._convert_input(input)], stop=stop, **(config or {})
         )
