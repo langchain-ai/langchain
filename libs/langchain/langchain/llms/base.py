@@ -473,8 +473,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 f" argument of type {type(prompts)}."
             )
         # Create callback managers
-        if isinstance(callbacks, list) and isinstance(
-            callbacks[0], (list, BaseCallbackManager)
+        if isinstance(callbacks, list) and (
+            isinstance(callbacks[0], (list, BaseCallbackManager))
+            or callbacks[0] is None
         ):
             # We've received a list of callbacks args to apply to each input
             assert len(callbacks) == len(prompts)
@@ -485,9 +486,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 isinstance(metadata, list) and len(metadata) == len(prompts)
             )
             callbacks = cast(List[Callbacks], callbacks)
-            tags_list = cast(List[Optional[List[str]]], tags or [None] * len(prompts))
+            tags_list = cast(List[Optional[List[str]]], tags or ([None] * len(prompts)))
             metadata_list = cast(
-                List[Optional[Dict[str, Any]]], metadata or [{}] * len(prompts)
+                List[Optional[Dict[str, Any]]], metadata or ([{}] * len(prompts))
             )
             callback_managers = [
                 CallbackManager.configure(
@@ -621,8 +622,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
         # Create callback managers
-        if isinstance(callbacks, list) and isinstance(
-            callbacks[0], (list, BaseCallbackManager)
+        if isinstance(callbacks, list) and (
+            isinstance(callbacks[0], (list, BaseCallbackManager))
+            or callbacks[0] is None
         ):
             # We've received a list of callbacks args to apply to each input
             assert len(callbacks) == len(prompts)
@@ -633,9 +635,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 isinstance(metadata, list) and len(metadata) == len(prompts)
             )
             callbacks = cast(List[Callbacks], callbacks)
-            tags_list = cast(List[Optional[List[str]]], tags or [None] * len(prompts))
+            tags_list = cast(List[Optional[List[str]]], tags or ([None] * len(prompts)))
             metadata_list = cast(
-                List[Optional[Dict[str, Any]]], metadata or [{}] * len(prompts)
+                List[Optional[Dict[str, Any]]], metadata or ([{}] * len(prompts))
             )
             callback_managers = [
                 AsyncCallbackManager.configure(
