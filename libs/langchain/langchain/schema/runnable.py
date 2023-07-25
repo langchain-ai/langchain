@@ -597,6 +597,8 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
 
         # gather results from all steps
         try:
+            # copy steps to avoid issues from the caller mutating the steps during invoke()
+            steps = self.steps.copy()
             with ThreadPoolExecutor() as executor:
                 futures = [
                     executor.submit(
@@ -605,11 +607,9 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
                         # mark each step as a child run
                         _patch_config(config, run_manager.get_child()),
                     )
-                    for step in self.steps.values()
+                    for step in steps.values()
                 ]
-                output = {
-                    key: future.result() for key, future in zip(self.steps, futures)
-                }
+                output = {key: future.result() for key, future in zip(steps, futures)}
         # finish the root run
         except (KeyboardInterrupt, Exception) as e:
             run_manager.on_chain_error(e)
@@ -641,6 +641,8 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
 
         # gather results from all steps
         try:
+            # copy steps to avoid issues from the caller mutating the steps during invoke()
+            steps = self.steps.copy()
             results = await asyncio.gather(
                 *(
                     step.ainvoke(
@@ -648,10 +650,10 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
                         # mark each step as a child run
                         _patch_config(config, run_manager.get_child()),
                     )
-                    for step in self.steps.values()
+                    for step in steps.values()
                 )
             )
-            output = {key: value for key, value in zip(self.steps, results)}
+            output = {key: value for key, value in zip(steps, results)}
         # finish the root run
         except (KeyboardInterrupt, Exception) as e:
             await run_manager.on_chain_error(e)
