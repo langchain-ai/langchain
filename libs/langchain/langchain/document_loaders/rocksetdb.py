@@ -5,10 +5,13 @@ from langchain.schema import Document
 
 
 def default_joiner(docs: List[Tuple[str, Any]]) -> str:
+    """Default joiner for content columns."""
     return "\n".join([doc[1] for doc in docs])
 
 
 class ColumnNotFoundError(Exception):
+    """Column not found error."""
+
     def __init__(self, missing_key: str, query: str):
         super().__init__(f'Column "{missing_key}" not selected in query:\n{query}')
 

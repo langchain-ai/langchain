@@ -1,6 +1,5 @@
 """General utilities."""
 from langchain.requests import TextRequestsWrapper
-from langchain.utilities.apify import ApifyWrapper
 from langchain.utilities.arxiv import ArxivAPIWrapper
 from langchain.utilities.awslambda import LambdaWrapper
 from langchain.utilities.bash import BashProcess
@@ -32,7 +31,6 @@ from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 from langchain.utilities.zapier import ZapierNLAWrapper
 
 __all__ = [
-    "ApifyWrapper",
     "ArxivAPIWrapper",
     "GoldenQueryAPIWrapper",
     "BashProcess",

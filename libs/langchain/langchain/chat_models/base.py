@@ -3,7 +3,7 @@ import inspect
 import warnings
 from abc import ABC, abstractmethod
 from functools import partial
-from typing import Any, Dict, List, Mapping, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
 from pydantic import Field, root_validator
 
@@ -33,11 +33,16 @@ def _get_verbosity() -> bool:
 
 
 class BaseChatModel(BaseLanguageModel, ABC):
+    """Base class for chat models."""
+
     cache: Optional[bool] = None
+    """Whether to cache the response."""
     verbose: bool = Field(default_factory=_get_verbosity)
     """Whether to print out response text."""
     callbacks: Callbacks = Field(default=None, exclude=True)
+    """Callbacks to add to the run trace."""
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
+    """Callback manager to add to the run trace."""
     tags: Optional[List[str]] = Field(default=None, exclude=True)
     """Tags to add to the run trace."""
     metadata: Optional[Dict[str, Any]] = Field(default=None, exclude=True)
@@ -424,7 +429,7 @@ class BaseChatModel(BaseLanguageModel, ABC):
         return await self._call_async(messages, stop=_stop, **kwargs)
 
     @property
-    def _identifying_params(self) -> Mapping[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
         return {}
 
@@ -441,6 +446,8 @@ class BaseChatModel(BaseLanguageModel, ABC):
 
 
 class SimpleChatModel(BaseChatModel):
+    """Simple Chat Model."""
+
     def _generate(
         self,
         messages: List[BaseMessage],
