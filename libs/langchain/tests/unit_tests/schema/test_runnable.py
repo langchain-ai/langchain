@@ -477,7 +477,7 @@ def test_seq_prompt_dict(
 
     llm = FakeListLLM(responses=["i'm a textbot"])
 
-    chain = prompt | {  # type: ignore[operator]
+    chain = prompt | {  # type: ignore
         "chat": chat,
         "llm": llm,
     }
