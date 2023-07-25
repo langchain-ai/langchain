@@ -16,9 +16,12 @@ class ConvoOutputParser(AgentOutputParser):
         """Returns formatting instructions for the given output parser."""
         return FORMAT_INSTRUCTIONS
 
-    # Attempts to parse the given text into an AgentAction or AgentFinish
-    # Raises an OutputParserException if parsing fails
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
+        """Attempts to parse the given text into an AgentAction or AgentFinish.
+
+        Raises:
+             OutputParserException if parsing fails.
+        """
         try:
             # Attempt to parse the text into a structured format (assumed to be JSON
             # stored as markdown)
@@ -46,7 +49,6 @@ class ConvoOutputParser(AgentOutputParser):
             # OutputParserException
             raise OutputParserException(f"Could not parse LLM output: {text}") from e
 
-    # Specifies the type of the current class
     @property
     def _type(self) -> str:
         return "conversational_chat"
