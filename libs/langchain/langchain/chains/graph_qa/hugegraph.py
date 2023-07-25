@@ -88,7 +88,7 @@ class HugeGraphQAChain(Chain):
         )
 
         result = self.qa_chain(
-            {"question": question, "context": context},
+            {"question": question, "context": context, "sql": generated_gremlin},
             callbacks=callbacks,
         )
         return {self.output_key: result}
