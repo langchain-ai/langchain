@@ -7,6 +7,7 @@ import json
 import logging
 import warnings
 from abc import ABC, abstractmethod
+from functools import partial
 from pathlib import Path
 from typing import (
     Any,
@@ -201,6 +202,12 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         *,
         stop: Optional[List[str]] = None,
     ) -> str:
+        if type(self)._agenerate == BaseLLM._agenerate:
+            # model doesn't implement async invoke, so use default implementation
+            return await asyncio.get_running_loop().run_in_executor(
+                None, partial(self.invoke, input, config, stop=stop)
+            )
+
         llm_result = await self.agenerate_prompt(
             [self._convert_input(input)], stop=stop, **(config or {})
         )
@@ -360,7 +367,6 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     ) -> LLMResult:
         """Run the LLM on the given prompts."""
 
-    @abstractmethod
     async def _agenerate(
         self,
         prompts: List[str],
@@ -369,6 +375,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         **kwargs: Any,
     ) -> LLMResult:
         """Run the LLM on the given prompts."""
+        raise NotImplementedError()
 
     def _stream(
         self,
@@ -377,7 +384,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def _astream(
         self,
@@ -386,7 +393,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def generate_prompt(
         self,
@@ -889,7 +896,7 @@ class LLM(BaseLLM):
         **kwargs: Any,
     ) -> str:
         """Run the LLM on the given prompt and input."""
-        raise NotImplementedError("Async generation not implemented for this LLM.")
+        raise NotImplementedError()
 
     def _generate(
         self,
@@ -918,6 +925,12 @@ class LLM(BaseLLM):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
+        if type(self)._acall == LLM._acall:
+            # model doesn't implement async call, so use default implementation
+            return await asyncio.get_running_loop().run_in_executor(
+                None, partial(self._generate, prompts, stop, run_manager, **kwargs)
+            )
+
         """Run the LLM on the given prompt and input."""
         generations = []
         new_arg_supported = inspect.signature(self._acall).parameters.get("run_manager")
