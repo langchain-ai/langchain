@@ -79,9 +79,6 @@ class WebResearchRetriever(BaseRetriever):
         RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=50),
         description="Text splitter for splitting web pages into chunks",
     )
-    urls: List[str] = Field(
-        default_factory=list, description="Current URLs being processed"
-    )
     url_database: List[str] = Field(
         default_factory=list, description="List of processed URLs"
     )
@@ -141,15 +138,8 @@ class WebResearchRetriever(BaseRetriever):
 
     def search_tool(self, query: str, num_search_results: int = 1) -> List[dict]:
         """Returns num_serch_results pages per Google search."""
-        try:
-            result = self.search.results(query, num_search_results)
-        except Exception as e:
-            raise Exception(f"Error: {str(e)}")
+        result = self.search.results(query, num_search_results)
         return result
-
-    def get_urls(self) -> List[str]:
-        """Return the list of URLs fetched during the most recent query."""
-        return self.urls
 
     def _get_relevant_documents(
         self,
@@ -186,7 +176,6 @@ class WebResearchRetriever(BaseRetriever):
 
         # Relevant urls
         urls = set(urls_to_look)
-        self.urls = list(urls)
 
         # Check for any new urls that we have not processed
         new_urls = list(urls.difference(self.url_database))
@@ -197,19 +186,12 @@ class WebResearchRetriever(BaseRetriever):
             loader = AsyncHtmlLoader(new_urls)
             html2text = Html2TextTransformer()
             logger.info("Grabbing most relevant splits from urls ...")
-            filtered_splits = []
+            _splits = []
             text_splitter = self.text_splitter
             for doc in html2text.transform_documents(loader.load()):
                 doc_splits = text_splitter.split_documents([doc])
-                # Proect against very large documents
-                if len(doc_splits) > self.max_splits_per_doc:
-                    logger.info(
-                        f"{doc.metadata} has too many splits ({len(doc_splits)}), "
-                        f"keeping only the first {self.max_splits_per_doc}"
-                    )
-                    doc_splits = doc_splits[: self.max_splits_per_doc]
-                filtered_splits.extend(doc_splits)
-            self.vectorstore.add_documents(filtered_splits)
+                _splits.extend(doc_splits)
+            self.vectorstore.add_documents(_splits)
             self.url_database.extend(new_urls)
 
         # Search for relevant splits
