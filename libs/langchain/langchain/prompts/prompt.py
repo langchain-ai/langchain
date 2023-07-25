@@ -189,9 +189,11 @@ class PromptTemplate(StringPromptTemplate):
             template: The template to load.
             template_format: The format of the template. Use `jinja2` for jinja2,
                              and `f-string` or None for f-strings.
-            partial_variables: A dictionary of variables that have been partially
-                               filled in. These variables will be removed from
-                               the list of input variables.
+            partial_variables: A dictionary of variables that can be used to partially
+                               fill in the template. For example, if the template is
+                              `"{variable1} {variable2}"`, and `partial_variables` is
+                              `{"variable1": "foo"}`, then the final prompt will be
+                              `"foo {variable2}"`.
 
         Returns:
             The prompt template loaded from the template.
