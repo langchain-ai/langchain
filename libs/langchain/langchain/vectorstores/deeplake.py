@@ -719,7 +719,6 @@ class DeepLake(VectorStore):
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         dataset_path: str = _LANGCHAIN_DEFAULT_DEEPLAKE_PATH,
-        embedding_function: Optional[Embeddings] = None,
         **kwargs: Any,
     ) -> DeepLake:
         """Create a Deep Lake dataset from a raw documents.
@@ -766,14 +765,8 @@ class DeepLake(VectorStore):
             ValueError: If 'embedding' is provided in kwargs. This is deprecated,
                 please use `embedding_function` instead.
         """
-        if embedding:
-            raise ValueError(
-                "using embedding as embedidng_functions is deprecated. "
-                "Please use `embedding_function` instead."
-            )
-
         deeplake_dataset = cls(
-            dataset_path=dataset_path, embedding_function=embedding_function, **kwargs
+            dataset_path=dataset_path, embedding_function=embedding, **kwargs
         )
         deeplake_dataset.add_texts(
             texts=texts,

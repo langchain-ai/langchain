@@ -16,7 +16,20 @@ def deeplake_datastore() -> DeepLake:
         dataset_path="./test_path",
         texts=texts,
         metadatas=metadatas,
-        embedding_function=FakeEmbeddings(),
+        embedding=FakeEmbeddings(),
+        overwrite=True,
+    )
+    return docsearch
+
+
+def test_deeplake_from_documents() -> DeepLake:
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    docsearch = DeepLake.from_texts(
+        dataset_path="./test_path",
+        texts=texts,
+        metadatas=metadatas,
+        embedding=FakeEmbeddings(),
         overwrite=True,
     )
     return docsearch
@@ -122,6 +135,7 @@ def test_deeplake_overwrite_flag() -> None:
         embedding_function=FakeEmbeddings(),
         overwrite=True,
     )
+    
     with pytest.raises(ValueError):
         output = docsearch.similarity_search("foo", k=1)
 
@@ -137,10 +151,11 @@ def test_similarity_search(deeplake_datastore: DeepLake, distance_metric: str) -
         f"SELECT * WHERE "
         f"id=='{deeplake_datastore.vectorstore.dataset.id[0].numpy()[0]}'"
     )
-    with pytest.raises(ValueError):
-        output = deeplake_datastore.similarity_search(
-            query="foo", tql_query=tql_query, k=1, distance_metric=distance_metric
-        )
+    
+    output = deeplake_datastore.similarity_search(
+        query="foo", tql_query=tql_query, k=1, distance_metric=distance_metric
+    )
+    assert len(output) == 1
     deeplake_datastore.delete_dataset()
 
 
