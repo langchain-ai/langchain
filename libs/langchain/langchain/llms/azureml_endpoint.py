@@ -14,13 +14,14 @@ class AzureMLEndpointClient(object):
     """AzureML Managed Endpoint client."""
 
     def __init__(
-        self, endpoint_url: str, endpoint_api_key: str
+        self, endpoint_url: str, endpoint_api_key: str, deployment_name: str = ""
     ) -> None:
         """Initialize the class."""
-        if not endpoint_api_key:
-            raise ValueError("A key should be provided to invoke the endpoint")
+        if not endpoint_api_key or not endpoint_url:
+            raise ValueError("A key/token and REST endpoint should be provided to invoke the endpoint")
         self.endpoint_url = endpoint_url
         self.endpoint_api_key = endpoint_api_key
+        self.deployment_name = deployment_name
 
     def call(self, body: bytes, **kwargs: Any) -> bytes:
         """call."""
@@ -32,6 +33,8 @@ class AzureMLEndpointClient(object):
             "Content-Type": "application/json",
             "Authorization": ("Bearer " + self.endpoint_api_key),
         }
+        if self.deployment_name != "":
+            headers["azureml-model-deployment"] = self.deployment_name
 
         req = urllib.request.Request(self.endpoint_url, body, headers)
         response = urllib.request.urlopen(req, timeout=kwargs.get("timeout", 50))
@@ -151,6 +154,10 @@ class AzureMLOnlineEndpoint(LLM, BaseModel):
     """Authentication Key for Endpoint. Should be passed to constructor or specified as
         env var `AZUREML_ENDPOINT_API_KEY`."""
 
+    deployment_name: str = ""
+    """Deployment Name for Endpoint. Not required to call endpont. Should be passed 
+        to constructor or specified as env var `AZUREML_DEPLOYMENT_NAME`."""
+    
     http_client: Any = None  #: :meta private:
 
     content_formatter: Any = None
@@ -171,6 +178,9 @@ class AzureMLOnlineEndpoint(LLM, BaseModel):
         endpoint_url = get_from_dict_or_env(
             values, "endpoint_url", "AZUREML_ENDPOINT_URL"
         )
+        deployment_name = get_from_dict_or_env(
+            values, "deployment_name", "AZUREML_DEPLOYMENT_NAME", ""
+        )
         http_client = AzureMLEndpointClient(endpoint_url, endpoint_key)
         return http_client
 
@@ -179,6 +189,7 @@ class AzureMLOnlineEndpoint(LLM, BaseModel):
         """Get the identifying parameters."""
         _model_kwargs = self.model_kwargs or {}
         return {
+            **{"deployment_name": self.deployment_name}
             **{"model_kwargs": _model_kwargs},
         }
 
