@@ -309,6 +309,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         self, texts: List[str], *, engine: str, chunk_size: Optional[int] = None
     ) -> List[List[float]]:
         embeddings: List[List[float]] = [[] for _ in range(len(texts))]
+
+        if not self.embedding_ctx_length:
+            raise ValueError("embedding_ctx_length must be defined to use _get_len_safe_embeddings.")
+
         try:
             import tiktoken
         except ImportError:
@@ -390,6 +394,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         self, texts: List[str], *, engine: str, chunk_size: Optional[int] = None
     ) -> List[List[float]]:
         embeddings: List[List[float]] = [[] for _ in range(len(texts))]
+
+        if not self.embedding_ctx_length:
+            raise ValueError("embedding_ctx_length must be defined to use _aget_len_safe_embeddings.")
+
         try:
             import tiktoken
         except ImportError:
