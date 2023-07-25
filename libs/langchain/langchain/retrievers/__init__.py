@@ -9,7 +9,7 @@ from langchain.retrievers.elastic_search_bm25 import ElasticSearchBM25Retriever
 from langchain.retrievers.google_cloud_enterprise_search import (
     GoogleCloudEnterpriseSearchRetriever,
 )
-from langchain.retrievers.hybrid_retriever import HybridRetriever
+from langchain.retrievers.ensemble_retriever import EnsembleRetriever
 from langchain.retrievers.kendra import AmazonKendraRetriever
 from langchain.retrievers.knn import KNNRetriever
 from langchain.retrievers.llama_index import (
@@ -65,5 +65,5 @@ __all__ = [
     "ZepRetriever",
     "ZillizRetriever",
     "DocArrayRetriever",
-    "HybridRetriever",
+    "EnsembleRetriever",
 ]

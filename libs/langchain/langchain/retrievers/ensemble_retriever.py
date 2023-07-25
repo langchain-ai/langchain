@@ -1,5 +1,5 @@
 """
-Hybrid retriever that ensemble the results of 
+Ensemble retriever that ensemble the results of 
 multiple retrievers by using weighted  Reciprocal Rank Fusion
 """
 from typing import Any, Dict, List
@@ -13,7 +13,7 @@ from langchain.callbacks.manager import (
 from langchain.schema import BaseRetriever, Document
 
 
-class HybridRetriever(BaseRetriever):
+class EnsembleRetriever(BaseRetriever):
     """
     This class ensemble the results of multiple retrievers by using rank fusion.
 
