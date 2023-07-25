@@ -84,7 +84,7 @@ class GraphSparqlQAChain(Chain):
 
         _intent = self.sparql_intent_chain.run({"prompt": prompt}, callbacks=callbacks)
         intent = _intent.strip()
-        
+
         if intent.find("SELECT") == intent.find("UPDATE"):
             raise ValueError(
                 "I am sorry, but this prompt seems to fit none of the currently "
