@@ -13,7 +13,11 @@ from langchain.chat_models.fake import FakeListChatModel
 from langchain.llms.fake import FakeListLLM
 from langchain.load.dump import dumps
 from langchain.output_parsers.list import CommaSeparatedListOutputParser
-from langchain.prompts.chat import ChatPromptValue
+from langchain.prompts.chat import (
+    ChatPromptTemplate,
+    ChatPromptValue,
+    HumanMessagePromptTemplate,
+)
 from langchain.schema.document import Document
 from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
 from langchain.schema.retriever import BaseRetriever
@@ -142,7 +146,12 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
 
 @pytest.mark.asyncio
 async def test_prompt() -> None:
-    prompt = SystemMessage(content="You are a nice assistant.") + "{question}"
+    prompt = ChatPromptTemplate.from_messages(
+        messages=[
+            SystemMessage(content="You are a nice assistant."),
+            HumanMessagePromptTemplate.from_template("{question}"),
+        ]
+    )
     expected = ChatPromptValue(
         messages=[
             SystemMessage(content="You are a nice assistant."),
