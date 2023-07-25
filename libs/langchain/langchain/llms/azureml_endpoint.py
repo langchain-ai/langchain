@@ -125,8 +125,7 @@ class OSSContentFormatter(ContentFormatterBase):
         return str.encode(input_str)
 
     def format_response_payload(self, output: bytes) -> str:
-        response_json = json.loads(output)
-        return response_json[0]["0"]
+        return json.loads(output)[0]["0"]
 
 
 class HFContentFormatter(ContentFormatterBase):
@@ -138,8 +137,7 @@ class HFContentFormatter(ContentFormatterBase):
         return str.encode(input_str)
 
     def format_response_payload(self, output: bytes) -> str:
-        response_json = json.loads(output)
-        return response_json[0]["generated_text"]
+        return json.loads(output)[0]["generated_text"]
 
 
 class DollyContentFormatter(ContentFormatterBase):
@@ -153,8 +151,7 @@ class DollyContentFormatter(ContentFormatterBase):
         return str.encode(input_str)
 
     def format_response_payload(self, output: bytes) -> str:
-        response_json = json.loads(output)
-        return response_json[0]
+        return json.loads(output)[0]
 
 class LlamaContentFormatter(ContentFormatterBase):
     """Content formatter for LLaMa"""
