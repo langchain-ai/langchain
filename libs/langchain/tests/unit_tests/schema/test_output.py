@@ -1,7 +1,7 @@
 from langchain.schema.output import GenerationChunk
 
 
-def test_generation_chunk():
+def test_generation_chunk() -> None:
     assert GenerationChunk(text="Hello, ") + GenerationChunk(
         text="world!"
     ) == GenerationChunk(

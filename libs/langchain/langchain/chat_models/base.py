@@ -136,7 +136,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
     ) -> Iterator[BaseMessageChunk]:
         if type(self)._stream == BaseChatModel._stream:
             # model doesn't implement streaming, so use default implementation
-            yield self.invoke(input, stop=stop, config=config)
+            yield self.invoke(input, config=config, stop=stop, **kwargs)
         else:
             config = config or {}
             messages = self._convert_input(input).to_messages()
@@ -155,7 +155,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
                 dumpd(self), [messages], invocation_params=params, options=options
             )
             try:
-                message: BaseMessageChunk | None = None
+                message: Optional[BaseMessageChunk] = None
                 for chunk in self._stream(
                     messages, stop=stop, run_manager=run_manager, **kwargs
                 ):
@@ -183,7 +183,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
     ) -> AsyncIterator[BaseMessageChunk]:
         if type(self)._astream == BaseChatModel._astream:
             # model doesn't implement streaming, so use default implementation
-            yield self.invoke(input, stop=stop, config=config)
+            yield self.invoke(input, config=config, stop=stop, **kwargs)
         else:
             config = config or {}
             messages = self._convert_input(input).to_messages()
@@ -202,7 +202,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
                 dumpd(self), [messages], invocation_params=params, options=options
             )
             try:
-                message: BaseMessageChunk | None = None
+                message: Optional[BaseMessageChunk] = None
                 async for chunk in self._astream(
                     messages, stop=stop, run_manager=run_manager, **kwargs
                 ):
