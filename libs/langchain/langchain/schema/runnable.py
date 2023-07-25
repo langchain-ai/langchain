@@ -667,7 +667,8 @@ class RunnableLambda(Runnable[Input, Output]):
             self.func = func
         else:
             raise TypeError(
-                f"Expected a callable type for `func`. Instead got an unsupported type: {type(func)}"
+                "Expected a callable type for `func`."
+                f"Instead got an unsupported type: {type(func)}"
             )
 
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
