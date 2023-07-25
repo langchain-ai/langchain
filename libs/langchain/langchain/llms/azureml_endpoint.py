@@ -119,10 +119,10 @@ class OSSContentFormatter(ContentFormatterBase):
 
     def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
         prompt = ContentFormatterBase.escape_special_characters(prompt)
-        input_str = json.dumps(
+        request_payload = json.dumps(
             {"inputs": {"input_string": [f'"{prompt}"']}, "parameters": model_kwargs}
         )
-        return str.encode(input_str)
+        return str.encode(request_payload)
 
     def format_response_payload(self, output: bytes) -> str:
         return json.loads(output)[0]["0"]
@@ -133,8 +133,8 @@ class HFContentFormatter(ContentFormatterBase):
 
     def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
         ContentFormatterBase.escape_special_characters(prompt)
-        input_str = json.dumps({"inputs": [f'"{prompt}"'], "parameters": model_kwargs})
-        return str.encode(input_str)
+        request_payload = json.dumps({"inputs": [f'"{prompt}"'], "parameters": model_kwargs})
+        return str.encode(request_payload)
 
     def format_response_payload(self, output: bytes) -> str:
         return json.loads(output)[0]["generated_text"]
@@ -145,10 +145,10 @@ class DollyContentFormatter(ContentFormatterBase):
 
     def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
         prompt = ContentFormatterBase.escape_special_characters(prompt)
-        input_str = json.dumps(
+        request_payload = json.dumps(
             {"input_data": {"input_string": [f'"{prompt}"']}, "parameters": model_kwargs}
         )
-        return str.encode(input_str)
+        return str.encode(request_payload)
 
     def format_response_payload(self, output: bytes) -> str:
         return json.loads(output)[0]
@@ -252,7 +252,7 @@ class AzureMLOnlineEndpoint(LLM, BaseModel):
         """
         _model_kwargs = self.model_kwargs or {}
 
-        body = self.content_formatter.format_request_payload(prompt, _model_kwargs)
-        endpoint_response = self.http_client.call(body, **kwargs)
-        response = self.content_formatter.format_response_payload(endpoint_response)
-        return response
+        request_payload = self.content_formatter.format_request_payload(prompt, _model_kwargs)
+        response_payload = self.http_client.call(request_payload, **kwargs)
+        generated_text = self.content_formatter.format_response_payload(response_payload)
+        return generated_text
