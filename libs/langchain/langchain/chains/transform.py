@@ -1,5 +1,6 @@
 """Chain that runs an arbitrary python function."""
-import warnings
+import functools
+import logging
 from typing import Any, Awaitable, Callable, Dict, List, Optional
 
 from langchain.callbacks.manager import (
@@ -7,6 +8,8 @@ from langchain.callbacks.manager import (
     CallbackManagerForChainRun,
 )
 from langchain.chains.base import Chain
+
+logger = logging.getLogger(__name__)
 
 
 class TransformChain(Chain):
@@ -26,8 +29,17 @@ class TransformChain(Chain):
     """The keys returned by the transform's output dictionary."""
     transform: Callable[[Dict[str, str]], Dict[str, str]]
     """The transform function."""
-    coroutine: Optional[Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]] = None
-    """The coroutine transform function."""
+    atransform: Optional[Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]] = None
+    """The async coroutine transform function."""
+
+    @staticmethod
+    @functools.lru_cache
+    def _log_once(msg: str) -> None:
+        """Log a message once.
+
+        :meta private:
+        """
+        logger.warning(msg)
 
     @property
     def input_keys(self) -> List[str]:
@@ -57,11 +69,11 @@ class TransformChain(Chain):
         inputs: Dict[str, Any],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
-        if self.coroutine is not None:
-            return await self.coroutine(inputs)
+        if self.atransform is not None:
+            return await self.atransform(inputs)
         else:
-            warnings.warn(
-                "TransformChain coroutine is None, falling"
+            self._log_once(
+                "TransformChain's atransform is not provided, falling"
                 " back to synchronous transform"
             )
             return self.transform(inputs)
