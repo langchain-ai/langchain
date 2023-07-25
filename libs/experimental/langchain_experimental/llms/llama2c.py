@@ -4,10 +4,9 @@ import shlex
 import subprocess
 from typing import Any, Dict, List, Optional
 
-from pydantic import root_validator
-
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
+from pydantic import root_validator
 
 logger = logging.getLogger(__name__)
 
@@ -15,16 +14,21 @@ logger = logging.getLogger(__name__)
 class Llama2c(LLM):
     """llama2c model.
 
-    To use, you should have the llama2c inference c code complied
-    (gcc -O3 -o run run.c -lm) and have a model downloaded, with
-    path to the Llama2c model as a named parameter to the constructor.
-    Check out: https://github.com/karpathy/llama2.c
+    Clone:
+    git clone https://github.com/karpathy/llama2.c
 
+    Get the inference inference c code w/ prompt:
+     https://github.com/karpathy/llama2.c/issues/62#issue-1819724122
+
+    Compile it:
+    gcc -O3 -o run run_with_prompt.c -lm -funsafe-math-optimizations
+      -Ofast -ffast-mat
+    .
     Example:
         .. code-block:: python
-            from langchain.llms import Llama2c
-            llm = Llama2c(directory="/path/to/llama2.c", 
-            model_dir="rel/path/to/weights")
+            from langchain_experimental.llms.llama2c import Llama2c
+            llm = Llama2c(directory="/Users/rlm/Desktop/Code/llama2.c/",
+              model_dir="out44m/model44m.bin")
     """
 
     directory: str  # The path to the Llama2c directory.
@@ -52,22 +56,6 @@ class Llama2c(LLM):
         """Return type of llm."""
         return "llama2c"
 
-    def _get_parameters(self, stop: Optional[List[str]] = None) -> Dict[str, Any]:
-        """
-        Performs sanity check, preparing parameters in format needed by llama2c.
-
-        Args:
-            stop (Optional[List[str]]): List of stop sequences for llama2c.
-
-        Returns:
-            Dictionary containing the combined parameters.
-        """
-
-        # Placeholder for future parameters
-        # params = self._default_params
-
-        return None
-
     def _call(
         self,
         prompt: str,
@@ -77,13 +65,11 @@ class Llama2c(LLM):
     ) -> str:
         """Call the Llama2c binary and return the output."""
 
-        # params = self._get_parameters(stop)
-        # params_str = " ".join(f"--{k}={v}" for k, v in params.items())
-        # cmd = f"{self.inference_path} {self.model_dir} {params_str}"
         original_dir = os.getcwd()
         os.chdir(self.directory)
         inference_binary = os.path.join(self.directory, "run")
-        cmd = f"{inference_binary} {self.model_dir}"
+        # See: https://github.com/karpathy/llama2.c/issues/62#issue-1819724122
+        cmd = f"{inference_binary} {self.model_dir} 0.0 256 {shlex.quote(prompt)}"
         process = subprocess.run(shlex.split(cmd), capture_output=True, text=True)
         os.chdir(original_dir)
         if process.returncode != 0:
@@ -99,13 +85,11 @@ class Llama2c(LLM):
     ) -> str:
         """Call the Llama2c binary and stream the output."""
 
-        # params = self._get_parameters(stop)
-        # params_str = " ".join(f"--{k}={v}" for k, v in params.items())
-        # cmd = f"{self.inference_path} {self.model_dir} {params_str}"
         original_dir = os.getcwd()
         os.chdir(self.directory)
         inference_binary = os.path.join(self.directory, "run")
-        cmd = f"{inference_binary} {self.model_dir}"
+        # See: https://github.com/karpathy/llama2.c/issues/62#issue-1819724122
+        cmd = f"{inference_binary} {self.model_dir} 0.0 256 {shlex.quote(prompt)}"
         process = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, text=True)
         os.chdir(original_dir)
         output = []
