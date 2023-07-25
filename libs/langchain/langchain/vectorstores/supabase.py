@@ -5,12 +5,13 @@ from itertools import repeat
 from typing import (
     TYPE_CHECKING,
     Any,
+    Dict,
     Iterable,
     List,
     Optional,
     Tuple,
     Type,
-    Union, Dict,
+    Union,
 )
 
 import numpy as np
@@ -125,10 +126,16 @@ class SupabaseVectorStore(VectorStore):
         return self._add_vectors(self._client, self.table_name, vectors, documents, ids)
 
     def similarity_search(
-        self, query: str, k: int = 4, filter: Optional[Dict[str, Any]] = None, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         vectors = self._embedding.embed_documents([query])
-        return self.similarity_search_by_vector(vectors[0], k=k, filter=filter, **kwargs)
+        return self.similarity_search_by_vector(
+            vectors[0], k=k, filter=filter, **kwargs
+        )
 
     def similarity_search_by_vector(
         self,
@@ -146,7 +153,11 @@ class SupabaseVectorStore(VectorStore):
         return documents
 
     def similarity_search_with_relevance_scores(
-        self, query: str, k: int = 4, filter: Optional[Dict[str, Any]] = None, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         vectors = self._embedding.embed_documents([query])
         return self.similarity_search_by_vector_with_relevance_scores(
