@@ -96,7 +96,7 @@ class EnsembleRetriever(BaseRetriever):
         # Get the results of all retrievers.
         retriever_docs = [
             retriever.get_relevant_documents(
-                query, callbacks=run_manager.get_child(f"retriever_{i+1}")
+                query, callbacks=run_manager.get_child(tag=f"retriever_{i+1}")
             )
             for i, retriever in enumerate(self.retrievers)
         ]
@@ -123,7 +123,7 @@ class EnsembleRetriever(BaseRetriever):
         # Get the results of all retrievers.
         retriever_docs = [
             await retriever.aget_relevant_documents(
-                query, callbacks=run_manager.get_child(f"retriever_{i+1}")
+                query, callbacks=run_manager.get_child(tag=f"retriever_{i+1}")
             )
             for i, retriever in enumerate(self.retrievers)
         ]

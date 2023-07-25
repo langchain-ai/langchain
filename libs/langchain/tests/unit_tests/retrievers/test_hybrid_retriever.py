@@ -1,7 +1,7 @@
 import pytest
 
 from langchain.retrievers.bm25 import BM25Retriever
-from langchain.retrievers.ensemble_retriever import EnsembleRetriever
+from langchain.retrievers.ensemble import EnsembleRetriever
 from langchain.schema import Document
 
 
