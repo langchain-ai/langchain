@@ -28,6 +28,22 @@ class Generation(Serializable):
         return True
 
 
+class GenerationChunk(Generation):
+    def __add__(self, other: GenerationChunk) -> GenerationChunk:
+        if isinstance(other, GenerationChunk):
+            generation_info = (
+                (self.generation_info or {}) | (other.generation_info or {})
+                if self.generation_info is not None or other.generation_info is not None
+                else None
+            )
+            return GenerationChunk(
+                text=self.text + other.text,
+                generation_info=generation_info,
+            )
+        else:
+            return super().__add__(other)
+
+
 class ChatGeneration(Generation):
     """A single chat generation output."""
 
