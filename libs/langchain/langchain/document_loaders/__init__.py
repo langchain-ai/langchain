@@ -45,6 +45,7 @@ from langchain.document_loaders.email import (
 )
 from langchain.document_loaders.embaas import EmbaasBlobLoader, EmbaasLoader
 from langchain.document_loaders.epub import UnstructuredEPubLoader
+from langchain.document_loaders.etherscan import EtherscanLoader
 from langchain.document_loaders.evernote import EverNoteLoader
 from langchain.document_loaders.excel import UnstructuredExcelLoader
 from langchain.document_loaders.facebook_chat import FacebookChatLoader
@@ -196,6 +197,7 @@ __all__ = [
     "DuckDBLoader",
     "EmbaasBlobLoader",
     "EmbaasLoader",
+    "EtherscanLoader",
     "EverNoteLoader",
     "FacebookChatLoader",
     "FaunaLoader",

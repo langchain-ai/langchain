@@ -26,7 +26,9 @@ from langchain.chains.conversational_retrieval.base import (
     ChatVectorDBChain,
     ConversationalRetrievalChain,
 )
+from langchain.chains.example_generator import generate_example
 from langchain.chains.flare.base import FlareChain
+from langchain.chains.graph_qa.arangodb import ArangoGraphQAChain
 from langchain.chains.graph_qa.base import GraphQAChain
 from langchain.chains.graph_qa.cypher import GraphCypherQAChain
 from langchain.chains.graph_qa.hugegraph import HugeGraphQAChain
@@ -76,6 +78,7 @@ from langchain.chains.transform import TransformChain
 __all__ = [
     "APIChain",
     "AnalyzeDocumentChain",
+    "ArangoGraphQAChain",
     "ChatVectorDBChain",
     "ConstitutionalChain",
     "ConversationChain",
@@ -84,9 +87,9 @@ __all__ = [
     "GraphCypherQAChain",
     "GraphQAChain",
     "GraphSparqlQAChain",
+    "HugeGraphQAChain",
     "HypotheticalDocumentEmbedder",
     "KuzuQAChain",
-    "HugeGraphQAChain",
     "LLMBashChain",
     "LLMChain",
     "LLMCheckerChain",
@@ -95,6 +98,8 @@ __all__ = [
     "LLMRouterChain",
     "LLMSummarizationCheckerChain",
     "MapReduceChain",
+    "MapReduceDocumentsChain",
+    "MapRerankDocumentsChain",
     "MultiPromptChain",
     "MultiRetrievalQAChain",
     "MultiRouteChain",
@@ -105,6 +110,8 @@ __all__ = [
     "PALChain",
     "QAGenerationChain",
     "QAWithSourcesChain",
+    "ReduceDocumentsChain",
+    "RefineDocumentsChain",
     "RetrievalQA",
     "RetrievalQAWithSourcesChain",
     "RouterChain",
@@ -112,20 +119,17 @@ __all__ = [
     "SQLDatabaseSequentialChain",
     "SequentialChain",
     "SimpleSequentialChain",
+    "StuffDocumentsChain",
     "TransformChain",
     "VectorDBQA",
     "VectorDBQAWithSourcesChain",
+    "create_citation_fuzzy_match_chain",
     "create_extraction_chain",
     "create_extraction_chain_pydantic",
+    "create_qa_with_sources_chain",
+    "create_qa_with_structure_chain",
     "create_tagging_chain",
     "create_tagging_chain_pydantic",
+    "generate_example",
     "load_chain",
-    "create_citation_fuzzy_match_chain",
-    "create_qa_with_structure_chain",
-    "create_qa_with_sources_chain",
-    "StuffDocumentsChain",
-    "MapRerankDocumentsChain",
-    "MapReduceDocumentsChain",
-    "RefineDocumentsChain",
-    "ReduceDocumentsChain",
 ]

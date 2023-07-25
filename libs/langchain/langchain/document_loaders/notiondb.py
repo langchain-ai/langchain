@@ -15,6 +15,7 @@ BLOCK_URL = NOTION_BASE_URL + "/blocks/{block_id}/children"
 
 class NotionDBLoader(BaseLoader):
     """Notion DB Loader.
+
     Reads content from pages within a Notion Database.
     Args:
         integration_token (str): Notion integration token.

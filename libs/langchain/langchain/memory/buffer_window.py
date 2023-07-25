@@ -5,12 +5,13 @@ from langchain.schema.messages import BaseMessage, get_buffer_string
 
 
 class ConversationBufferWindowMemory(BaseChatMemory):
-    """Buffer for storing conversation memory."""
+    """Buffer for storing conversation memory inside a limited size window."""
 
     human_prefix: str = "Human"
     ai_prefix: str = "AI"
     memory_key: str = "history"  #: :meta private:
     k: int = 5
+    """Number of messages to store in buffer."""
 
     @property
     def buffer(self) -> List[BaseMessage]:

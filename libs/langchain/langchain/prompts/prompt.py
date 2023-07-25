@@ -43,6 +43,42 @@ class PromptTemplate(StringPromptTemplate):
     validate_template: bool = True
     """Whether or not to try validating the template."""
 
+    def __add__(self, other: Any) -> PromptTemplate:
+        # Allow for easy combining
+        if isinstance(other, PromptTemplate):
+            if self.template_format != "f-string":
+                raise ValueError(
+                    "Adding prompt templates only supported for f-strings."
+                )
+            if other.template_format != "f-string":
+                raise ValueError(
+                    "Adding prompt templates only supported for f-strings."
+                )
+            input_variables = list(
+                set(self.input_variables) | set(other.input_variables)
+            )
+            template = self.template + other.template
+            # If any do not want to validate, then don't
+            validate_template = self.validate_template and other.validate_template
+            partial_variables = {k: v for k, v in self.partial_variables.items()}
+            for k, v in other.partial_variables.items():
+                if k in partial_variables:
+                    raise ValueError("Cannot have same variable partialed twice.")
+                else:
+                    partial_variables[k] = v
+            return PromptTemplate(
+                template=template,
+                input_variables=input_variables,
+                partial_variables=partial_variables,
+                template_format="f-string",
+                validate_template=validate_template,
+            )
+        elif isinstance(other, str):
+            prompt = PromptTemplate.from_template(other)
+            return self + prompt
+        else:
+            raise NotImplementedError(f"Unsupported operand type for +: {type(other)}")
+
     @property
     def _prompt_type(self) -> str:
         """Return the prompt type key."""
