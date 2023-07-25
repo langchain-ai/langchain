@@ -85,7 +85,7 @@ class ContentFormatterBase:
         """Escapes any special characters in `prompt`"""
         escape_map = {
             "\\": "\\\\",
-            '"': '"',
+            '"': '\\"',
             "\b": "\\b",
             "\f": "\\f",
             "\n": "\\n",
