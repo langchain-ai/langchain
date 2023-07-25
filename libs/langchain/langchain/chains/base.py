@@ -62,10 +62,11 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
     async def ainvoke(
         self, input: Dict[str, Any], config: Optional[RunnableConfig] = None
     ) -> Dict[str, Any]:
-        try:
-            return await self.acall(input, **(config or {}))
-        except NotImplementedError:
+        if type(self)._acall == Chain._acall:
+            # If the chain does not implement async, fall back to default implementation
             return await super().ainvoke(input, config)
+
+        return await self.acall(input, **(config or {}))
 
     memory: Optional[BaseMemory] = None
     """Optional memory object. Defaults to None.

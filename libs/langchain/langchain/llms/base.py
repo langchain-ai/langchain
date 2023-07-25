@@ -246,6 +246,12 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
         max_concurrency: Optional[int] = None,
     ) -> List[str]:
+        if type(self)._agenerate == BaseLLM._agenerate:
+            # model doesn't implement async batch, so use default implementation
+            return await asyncio.get_running_loop().run_in_executor(
+                None, self.batch, inputs, config, max_concurrency
+            )
+
         config = self._get_config_list(config, len(inputs))
 
         if max_concurrency is None:

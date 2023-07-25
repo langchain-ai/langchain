@@ -809,6 +809,38 @@ class OpenAIChat(BaseLLM):
             del params["max_tokens"]
         return messages, params
 
+    def _stream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[GenerationChunk]:
+        messages, params = self._get_chat_params([prompt], stop)
+        params = {**params, **kwargs, "stream": True}
+        for stream_resp in completion_with_retry(self, messages=messages, **params):
+            token = stream_resp["choices"][0]["delta"].get("content", "")
+            yield GenerationChunk(text=token)
+            if run_manager:
+                run_manager.on_llm_new_token(token)
+
+    async def _astream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[GenerationChunk]:
+        messages, params = self._get_chat_params([prompt], stop)
+        params = {**params, **kwargs, "stream": True}
+        async for stream_resp in await acompletion_with_retry(
+            self, messages=messages, **params
+        ):
+            token = stream_resp["choices"][0]["delta"].get("content", "")
+            yield GenerationChunk(text=token)
+            if run_manager:
+                await run_manager.on_llm_new_token(token)
+
     def _generate(
         self,
         prompts: List[str],
@@ -816,33 +848,29 @@ class OpenAIChat(BaseLLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
+        if self.streaming:
+            generation: Optional[GenerationChunk] = None
+            for chunk in self._stream(prompts[0], stop, run_manager, **kwargs):
+                if generation is None:
+                    generation = chunk
+                else:
+                    generation += chunk
+            assert generation is not None
+            return LLMResult(generations=[[generation]])
+
         messages, params = self._get_chat_params(prompts, stop)
         params = {**params, **kwargs}
-        if self.streaming:
-            response = ""
-            params["stream"] = True
-            for stream_resp in completion_with_retry(self, messages=messages, **params):
-                token = stream_resp["choices"][0]["delta"].get("content", "")
-                response += token
-                if run_manager:
-                    run_manager.on_llm_new_token(
-                        token,
-                    )
-            return LLMResult(
-                generations=[[Generation(text=response)]],
-            )
-        else:
-            full_response = completion_with_retry(self, messages=messages, **params)
-            llm_output = {
-                "token_usage": full_response["usage"],
-                "model_name": self.model_name,
-            }
-            return LLMResult(
-                generations=[
-                    [Generation(text=full_response["choices"][0]["message"]["content"])]
-                ],
-                llm_output=llm_output,
-            )
+        full_response = completion_with_retry(self, messages=messages, **params)
+        llm_output = {
+            "token_usage": full_response["usage"],
+            "model_name": self.model_name,
+        }
+        return LLMResult(
+            generations=[
+                [Generation(text=full_response["choices"][0]["message"]["content"])]
+            ],
+            llm_output=llm_output,
+        )
 
     async def _agenerate(
         self,
@@ -851,37 +879,29 @@ class OpenAIChat(BaseLLM):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
+        if self.streaming:
+            generation: Optional[GenerationChunk] = None
+            async for chunk in self._astream(prompts[0], stop, run_manager, **kwargs):
+                if generation is None:
+                    generation = chunk
+                else:
+                    generation += chunk
+            assert generation is not None
+            return LLMResult(generations=[[generation]])
+
         messages, params = self._get_chat_params(prompts, stop)
         params = {**params, **kwargs}
-        if self.streaming:
-            response = ""
-            params["stream"] = True
-            async for stream_resp in await acompletion_with_retry(
-                self, messages=messages, **params
-            ):
-                token = stream_resp["choices"][0]["delta"].get("content", "")
-                response += token
-                if run_manager:
-                    await run_manager.on_llm_new_token(
-                        token,
-                    )
-            return LLMResult(
-                generations=[[Generation(text=response)]],
-            )
-        else:
-            full_response = await acompletion_with_retry(
-                self, messages=messages, **params
-            )
-            llm_output = {
-                "token_usage": full_response["usage"],
-                "model_name": self.model_name,
-            }
-            return LLMResult(
-                generations=[
-                    [Generation(text=full_response["choices"][0]["message"]["content"])]
-                ],
-                llm_output=llm_output,
-            )
+        full_response = await acompletion_with_retry(self, messages=messages, **params)
+        llm_output = {
+            "token_usage": full_response["usage"],
+            "model_name": self.model_name,
+        }
+        return LLMResult(
+            generations=[
+                [Generation(text=full_response["choices"][0]["message"]["content"])]
+            ],
+            llm_output=llm_output,
+        )
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
