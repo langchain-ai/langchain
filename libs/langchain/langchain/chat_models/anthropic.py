@@ -14,11 +14,11 @@ from langchain.schema.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
-    BaseMessageChunk,
     ChatMessage,
     HumanMessage,
     SystemMessage,
 )
+from langchain.schema.output import ChatGenerationChunk
 
 
 class ChatAnthropic(BaseChatModel, _AnthropicCommon):
@@ -102,7 +102,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> Iterator[BaseMessageChunk]:
+    ) -> Iterator[ChatGenerationChunk]:
         prompt = self._convert_messages_to_prompt(messages)
         params: Dict[str, Any] = {"prompt": prompt, **self._default_params, **kwargs}
         if stop:
@@ -111,9 +111,9 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         stream_resp = self.client.completions.create(**params, stream=True)
         for data in stream_resp:
             delta = data.completion
+            yield ChatGenerationChunk(message=AIMessageChunk(content=delta))
             if run_manager:
                 run_manager.on_llm_new_token(delta)
-            yield AIMessageChunk(content=delta)
 
     async def _astream(
         self,
@@ -121,7 +121,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[BaseMessageChunk]:
+    ) -> AsyncIterator[ChatGenerationChunk]:
         prompt = self._convert_messages_to_prompt(messages)
         params: Dict[str, Any] = {"prompt": prompt, **self._default_params, **kwargs}
         if stop:
@@ -130,7 +130,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         stream_resp = await self.async_client.completions.create(**params, stream=True)
         async for data in stream_resp:
             delta = data.completion
-            yield AIMessageChunk(content=delta)
+            yield ChatGenerationChunk(message=AIMessageChunk(content=delta))
             if run_manager:
                 await run_manager.on_llm_new_token(delta)
 
@@ -144,7 +144,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         if self.streaming:
             completion = ""
             for chunk in self._stream(messages, stop, run_manager, **kwargs):
-                completion += chunk.content
+                completion += chunk.text
         else:
             prompt = self._convert_messages_to_prompt(messages)
             params: Dict[str, Any] = {
@@ -169,7 +169,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         if self.streaming:
             completion = ""
             async for chunk in self._astream(messages, stop, run_manager, **kwargs):
-                completion += chunk.content
+                completion += chunk.text
         else:
             prompt = self._convert_messages_to_prompt(messages)
             params: Dict[str, Any] = {
