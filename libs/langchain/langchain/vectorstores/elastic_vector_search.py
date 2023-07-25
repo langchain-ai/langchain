@@ -336,34 +336,35 @@ class ElasticVectorSearch(VectorStore, ABC):
         for id in ids:
             self.client.delete(index=self.index_name, id=id)
 
+
 class ElasticKnnSearch(VectorStore, ABC):
     """
-        ElasticKnnSearch is a class for performing k-nearest neighbor
-        (k-NN) searches on text data using Elasticsearch.
+    ElasticKnnSearch is a class for performing k-nearest neighbor
+    (k-NN) searches on text data using Elasticsearch.
 
-        This class is used to create an Elasticsearch index of text data that
-        can be searched using k-NN search. The text data is transformed into
-        vector embeddings using a provided embedding model, and these embeddings
-        are stored in the Elasticsearch index.
+    This class is used to create an Elasticsearch index of text data that
+    can be searched using k-NN search. The text data is transformed into
+    vector embeddings using a provided embedding model, and these embeddings
+    are stored in the Elasticsearch index.
 
-        Attributes:
-            index_name (str): The name of the Elasticsearch index.
-            embedding (Embeddings): The embedding model to use for transforming text data into vector embeddings.
-            es_connection (Elasticsearch, optional): An existing Elasticsearch connection.
-            es_cloud_id (str, optional): The Cloud ID of your Elasticsearch Service deployment.
-            es_user (str, optional): The username for your Elasticsearch Service deployment.
-            es_password (str, optional): The password for your Elasticsearch Service deployment.
-            vector_query_field (str, optional): The name of the field in the Elasticsearch index that contains the vector embeddings.
-            query_field (str, optional): The name of the field in the Elasticsearch index that contains the original text data.
+    Attributes:
+        index_name (str): The name of the Elasticsearch index.
+        embedding (Embeddings): The embedding model to use for transforming text data into vector embeddings.
+        es_connection (Elasticsearch, optional): An existing Elasticsearch connection.
+        es_cloud_id (str, optional): The Cloud ID of your Elasticsearch Service deployment.
+        es_user (str, optional): The username for your Elasticsearch Service deployment.
+        es_password (str, optional): The password for your Elasticsearch Service deployment.
+        vector_query_field (str, optional): The name of the field in the Elasticsearch index that contains the vector embeddings.
+        query_field (str, optional): The name of the field in the Elasticsearch index that contains the original text data.
 
-        Usage:
-            >>> from embeddings import Embeddings
-            >>> embedding = Embeddings.load('glove')
-            >>> es_search = ElasticKnnSearch('my_index', embedding)
-            >>> es_search.add_texts(['Hello world!', 'Another text'])
-            >>> results = es_search.knn_search('Hello')
-            [(Document(page_content='Hello world!', metadata={}), 0.9)]
-        """
+    Usage:
+        >>> from embeddings import Embeddings
+        >>> embedding = Embeddings.load('glove')
+        >>> es_search = ElasticKnnSearch('my_index', embedding)
+        >>> es_search.add_texts(['Hello world!', 'Another text'])
+        >>> results = es_search.knn_search('Hello')
+        [(Document(page_content='Hello world!', metadata={}), 0.9)]
+    """
 
     def __init__(
         self,
@@ -376,7 +377,6 @@ class ElasticKnnSearch(VectorStore, ABC):
         vector_query_field: Optional[str] = "vector",
         query_field: Optional[str] = "text",
     ):
-
         try:
             import elasticsearch
         except ImportError:
@@ -406,11 +406,10 @@ class ElasticKnnSearch(VectorStore, ABC):
                 or valid credentials for creating a new connection."""
                 )
 
-
     @staticmethod
-    def _default_knn_mapping(dims: int,
-                            similarity: Optional[str] = 'dot_product'
-                            ) -> Dict:
+    def _default_knn_mapping(
+        dims: int, similarity: Optional[str] = "dot_product"
+    ) -> Dict:
         return {
             "properties": {
                 "text": {"type": "text"},
@@ -457,7 +456,6 @@ class ElasticKnnSearch(VectorStore, ABC):
 
         return knn
 
-
     def similarity_search(
         self, query: str, k: int = 4, filter: Optional[dict] = None, **kwargs: Any
     ) -> List[Document]:
@@ -467,11 +465,11 @@ class ElasticKnnSearch(VectorStore, ABC):
         results = self.knn_search(query=query, k=k, **kwargs)
         return [doc for doc, score in results]
 
-
-    def similarity_search_with_score(self, query: str, k: int = 10, **kwargs: Any) -> List[Tuple[Document, float]]:
-        '''Pass through to `knn_search including score`'''
+    def similarity_search_with_score(
+        self, query: str, k: int = 10, **kwargs: Any
+    ) -> List[Tuple[Document, float]]:
+        """Pass through to `knn_search including score`"""
         return self.knn_search(query=query, k=k, **kwargs)
-
 
     def knn_search(
         self,
@@ -484,33 +482,30 @@ class ElasticKnnSearch(VectorStore, ABC):
         fields: Optional[
             Union[List[Mapping[str, Any]], Tuple[Mapping[str, Any], ...], None]
         ] = None,
-        page_content: Optional[str] = 'text'
+        page_content: Optional[str] = "text",
     ) -> List[Tuple[Document, float]]:
         """
-            Perform a k-NN search on the Elasticsearch index.
+        Perform a k-NN search on the Elasticsearch index.
 
-            Args:
-                query (str, optional): The query text to search for.
-                k (int, optional): The number of nearest neighbors to return.
-                query_vector (List[float], optional): The query vector to search for.
-                model_id (str, optional): The ID of the model to use for transforming the query text into a vector.
-                size (int, optional): The number of search results to return.
-                source (bool, optional): Whether to return the source of the search results.
-                fields (List[Mapping[str, Any]], optional): The fields to return in the search results.
-                page_content (str, optional): The name of the field that contains the page content.
+        Args:
+            query (str, optional): The query text to search for.
+            k (int, optional): The number of nearest neighbors to return.
+            query_vector (List[float], optional): The query vector to search for.
+            model_id (str, optional): The ID of the model to use for transforming the query text into a vector.
+            size (int, optional): The number of search results to return.
+            source (bool, optional): Whether to return the source of the search results.
+            fields (List[Mapping[str, Any]], optional): The fields to return in the search results.
+            page_content (str, optional): The name of the field that contains the page content.
 
-            Returns:
-                A list of tuples, where each tuple contains a Document object and a score.
-            """
+        Returns:
+            A list of tuples, where each tuple contains a Document object and a score.
+        """
 
-
-
-        #if not source and (fields == None or page_content not in fields):
-        if not source and (fields is None or not any(page_content in field for field in fields)):
-            raise ValueError(
-                 "If source=False `page_content` field must be in `fields`"
-            )
-
+        # if not source and (fields == None or page_content not in fields):
+        if not source and (
+            fields is None or not any(page_content in field for field in fields)
+        ):
+            raise ValueError("If source=False `page_content` field must be in `fields`")
 
         knn_query_body = self._default_knn_query(
             query_vector=query_vector, query=query, model_id=model_id, k=k
@@ -529,8 +524,10 @@ class ElasticKnnSearch(VectorStore, ABC):
         docs_and_scores = [
             (
                 Document(
-                    page_content=hit["_source"][page_content] if source else hit['fields'][page_content][0],
-                    metadata=hit['fields'] if fields else {}
+                    page_content=hit["_source"][page_content]
+                    if source
+                    else hit["fields"][page_content][0],
+                    metadata=hit["fields"] if fields else {},
                 ),
                 hit["_score"],
             )
@@ -552,34 +549,32 @@ class ElasticKnnSearch(VectorStore, ABC):
         fields: Optional[
             Union[List[Mapping[str, Any]], Tuple[Mapping[str, Any], ...], None]
         ] = None,
-        page_content: Optional[str] = 'text'
+        page_content: Optional[str] = "text",
     ) -> List[Tuple[Document, float]]:
         """
-            Perform a hybrid k-NN and text search on the Elasticsearch index.
+        Perform a hybrid k-NN and text search on the Elasticsearch index.
 
-            Args:
-                query (str, optional): The query text to search for.
-                k (int, optional): The number of nearest neighbors to return.
-                query_vector (List[float], optional): The query vector to search for.
-                model_id (str, optional): The ID of the model to use for transforming the query text into a vector.
-                size (int, optional): The number of search results to return.
-                source (bool, optional): Whether to return the source of the search results.
-                knn_boost (float, optional): The boost value to apply to the k-NN search results.
-                query_boost (float, optional): The boost value to apply to the text search results.
-                fields (List[Mapping[str, Any]], optional): The fields to return in the search results.
-                page_content (str, optional): The name of the field that contains the page content.
+        Args:
+            query (str, optional): The query text to search for.
+            k (int, optional): The number of nearest neighbors to return.
+            query_vector (List[float], optional): The query vector to search for.
+            model_id (str, optional): The ID of the model to use for transforming the query text into a vector.
+            size (int, optional): The number of search results to return.
+            source (bool, optional): Whether to return the source of the search results.
+            knn_boost (float, optional): The boost value to apply to the k-NN search results.
+            query_boost (float, optional): The boost value to apply to the text search results.
+            fields (List[Mapping[str, Any]], optional): The fields to return in the search results.
+            page_content (str, optional): The name of the field that contains the page content.
 
-            Returns:
-                A list of tuples, where each tuple contains a Document object and a score.
-            """
+        Returns:
+            A list of tuples, where each tuple contains a Document object and a score.
+        """
 
-
-        #if not source and (fields == None or page_content not in fields):
-        if not source and (fields is None or not any(page_content in field for field in fields)):
-            raise ValueError(
-                 "If source=False `page_content` field must be in `fields`"
-            )
-
+        # if not source and (fields == None or page_content not in fields):
+        if not source and (
+            fields is None or not any(page_content in field for field in fields)
+        ):
+            raise ValueError("If source=False `page_content` field must be in `fields`")
 
         knn_query_body = self._default_knn_query(
             query_vector=query_vector, query=query, model_id=model_id, k=k
@@ -607,8 +602,10 @@ class ElasticKnnSearch(VectorStore, ABC):
         docs_and_scores = [
             (
                 Document(
-                    page_content=hit["_source"][page_content] if source else hit['fields'][page_content][0],
-                    metadata=hit['fields'] if fields else {}
+                    page_content=hit["_source"][page_content]
+                    if source
+                    else hit["fields"][page_content][0],
+                    metadata=hit["fields"] if fields else {},
                 ),
                 hit["_score"],
             )
@@ -617,55 +614,47 @@ class ElasticKnnSearch(VectorStore, ABC):
 
         return docs_and_scores
 
-
-    def create_knn_index(self,
-                         mapping: Dict
-                         ) -> None:
+    def create_knn_index(self, mapping: Dict) -> None:
         """
-            Create a new k-NN index in Elasticsearch.
+        Create a new k-NN index in Elasticsearch.
 
-            Args:
-                mapping (Dict): The mapping to use for the new index.
+        Args:
+            mapping (Dict): The mapping to use for the new index.
 
-            Returns:
-                None
+        Returns:
+            None
         """
 
+        self.client.indices.create(index=self.index_name, mappings=mapping)
 
-        self.client.indices.create(
-            index=self.index_name,
-            mappings= mapping
-        )
-
-
-    def add_texts(self,
-               texts: Iterable[str],
-               metadatas: Optional[List[Dict[Any, Any]]] = None,
-               model_id: Optional[str] = None,
-               refresh_indices: bool = False,
-               **kwargs: Any
-        ) -> List[str]:
+    def add_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[Dict[Any, Any]]] = None,
+        model_id: Optional[str] = None,
+        refresh_indices: bool = False,
+        **kwargs: Any,
+    ) -> List[str]:
         """
-            Add a list of texts to the Elasticsearch index.
+        Add a list of texts to the Elasticsearch index.
 
-            Args:
-                texts (Iterable[str]): The texts to add to the index.
-                metadatas (List[Dict[Any, Any]], optional): A list of metadata dictionaries to associate with the texts.
-                model_id (str, optional): The ID of the model to use for transforming the texts into vectors.
-                refresh_indices (bool, optional): Whether to refresh the Elasticsearch indices after adding the texts.
-                **kwargs: Arbitrary keyword arguments.
+        Args:
+            texts (Iterable[str]): The texts to add to the index.
+            metadatas (List[Dict[Any, Any]], optional): A list of metadata dictionaries to associate with the texts.
+            model_id (str, optional): The ID of the model to use for transforming the texts into vectors.
+            refresh_indices (bool, optional): Whether to refresh the Elasticsearch indices after adding the texts.
+            **kwargs: Arbitrary keyword arguments.
 
-            Returns:
-                A list of IDs for the added texts.
+        Returns:
+            A list of IDs for the added texts.
         """
-
 
         try:
             from elasticsearch.helpers import bulk
         except ImportError:
             raise ImportError(
-                 "Could not import elasticsearch python package. "
-                 "Please install it with `pip install elasticsearch`."
+                "Could not import elasticsearch python package. "
+                "Please install it with `pip install elasticsearch`."
             )
 
         # Check if the index exists.
@@ -679,27 +668,30 @@ class ElasticKnnSearch(VectorStore, ABC):
             optional_args = {}
 
             if similarity is not None:
-                optional_args['similarity'] = similarity
+                optional_args["similarity"] = similarity
 
             mapping = self._default_knn_mapping(dims=dims, **optional_args)
             self.create_knn_index(mapping)
 
-
         embeddings = self.embedding.embed_documents(list(texts))
 
-        #body = []
+        # body = []
         body: List[Mapping[str, Any]] = []
         for text, vector in zip(texts, embeddings):
-            body.extend([
-                {"index": {"_index": self.index_name}},
-                {"text": text, "vector": vector}
-            ])
+            body.extend(
+                [
+                    {"index": {"_index": self.index_name}},
+                    {"text": text, "vector": vector},
+                ]
+            )
 
-        responses = self.client.bulk(
-            operations= body
-        )
+        responses = self.client.bulk(operations=body)
 
-        ids = [item['index']['_id'] for item in responses['items'] if item['index']['result'] == 'created']
+        ids = [
+            item["index"]["_id"]
+            for item in responses["items"]
+            if item["index"]["result"] == "created"
+        ]
 
         if refresh_indices:
             self.client.indices.refresh(index=self.index_name)
@@ -707,23 +699,24 @@ class ElasticKnnSearch(VectorStore, ABC):
         return ids
 
     @classmethod
-    def from_texts(cls,
-                   texts: List[str],
-                   embedding: Embeddings,
-                   metadatas: Optional[List[Dict[Any, Any]]] = None,
-                   **kwargs: Any
-                ) -> ElasticKnnSearch:
+    def from_texts(
+        cls,
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[Dict[Any, Any]]] = None,
+        **kwargs: Any,
+    ) -> ElasticKnnSearch:
         """
-            Create a new ElasticKnnSearch instance and add a list of texts to the Elasticsearch index.
+        Create a new ElasticKnnSearch instance and add a list of texts to the Elasticsearch index.
 
-            Args:
-                texts (List[str]): The texts to add to the index.
-                embedding (Embeddings): The embedding model to use for transforming the texts into vectors.
-                metadatas (List[Dict[Any, Any]], optional): A list of metadata dictionaries to associate with the texts.
-                **kwargs: Arbitrary keyword arguments.
+        Args:
+            texts (List[str]): The texts to add to the index.
+            embedding (Embeddings): The embedding model to use for transforming the texts into vectors.
+            metadatas (List[Dict[Any, Any]], optional): A list of metadata dictionaries to associate with the texts.
+            **kwargs: Arbitrary keyword arguments.
 
-            Returns:
-                A new ElasticKnnSearch instance.
+        Returns:
+            A new ElasticKnnSearch instance.
         """
 
         index_name = kwargs.get("index_name", str(uuid.uuid4()))
@@ -742,24 +735,21 @@ class ElasticKnnSearch(VectorStore, ABC):
         optional_args = {}
 
         if vector_query_field is not None:
-            optional_args['vector_query_field'] = vector_query_field
+            optional_args["vector_query_field"] = vector_query_field
 
         if query_field is not None:
-            optional_args['query_field'] = query_field
+            optional_args["query_field"] = query_field
 
-        knnvectorsearch = cls(index_name = index_name,
-                              embedding=embedding,
-                              es_connection=es_connection,
-                              es_cloud_id=es_cloud_id,
-                              es_user=es_user,
-                              es_password=es_password,
-                              **optional_args
-                             )
+        knnvectorsearch = cls(
+            index_name=index_name,
+            embedding=embedding,
+            es_connection=es_connection,
+            es_cloud_id=es_cloud_id,
+            es_user=es_user,
+            es_password=es_password,
+            **optional_args,
+        )
         # Encode the provided texts and add them to the newly created index.
-        knnvectorsearch.add_texts(texts,
-                                  model_id=model_id,
-                                  dims=dims,
-                                  **optional_args
-                                 )
+        knnvectorsearch.add_texts(texts, model_id=model_id, dims=dims, **optional_args)
 
         return knnvectorsearch
