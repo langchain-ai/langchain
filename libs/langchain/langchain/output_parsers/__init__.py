@@ -1,3 +1,19 @@
+"""**OutputParser** classes parse the output of an LLM call.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    BaseLLMOutputParser
+        BaseOutputParser(BaseLLMOutputParser, ABC, Generic[T])
+            ...OutputParser(BaseOutputParser) or ...OutputParser(BaseOutputParser[Any])
+
+**Main helpers:**
+
+.. code-block::
+
+    Serializable, Generation, PromptValue
+"""
 from langchain.output_parsers.boolean import BooleanOutputParser
 from langchain.output_parsers.combining import CombiningOutputParser
 from langchain.output_parsers.datetime import DatetimeOutputParser

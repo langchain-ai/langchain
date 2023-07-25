@@ -1,4 +1,17 @@
-"""Wrappers around embedding modules."""
+"""**Embedding models**  are wrappers around embedding models
+from different APIs and services.
+
+**Embedding models** can be LLMs or not.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    Embeddings
+        ...Embeddings(Embeddings)
+"""
+
+
 import logging
 from typing import Any
 

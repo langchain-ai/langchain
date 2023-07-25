@@ -1,4 +1,26 @@
-"""Functionality for splitting text."""
+"""**Text Splitters** are classes for splitting text.
+
+
+**Class hierarchy:**
+
+.. code-block::
+
+    TextSplitter(BaseDocumentTransformer, ABC)
+        ...TextSplitter(TextSplitter)
+        RecursiveCharacterTextSplitter(TextSplitter)
+            ...TextSplitter(RecursiveCharacterTextSplitter)
+
+Note: **MarkdownHeaderTextSplitter** does not derive from TextSplitter.
+
+
+**Main helpers:**
+
+.. code-block::
+
+    Document, Tokenizer, Language, LineType, HeaderType
+
+"""
+
 from __future__ import annotations
 
 import copy

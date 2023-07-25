@@ -1,4 +1,34 @@
-"""Memory maintains Chain state, incorporating context from past runs."""
+"""**Memory** maintains Chain state, incorporating context from past runs.
+
+**Class hierarchy for Memory:**
+
+.. code-block::
+
+    BaseMemory
+        BaseChatMemory(BaseMemory, ABC)
+            ...Memory(BaseChatMemory)
+
+**Main helpers:**
+
+.. code-block::
+
+        BaseChatMessageHistory
+
+**Chat Message History** stores the chat message history in different stores.
+
+**Class hierarchy for ChatMessageHistory:**
+
+.. code-block::
+
+    BaseChatMessageHistory
+        ...ChatMessageHistory(BaseChatMessageHistory)
+
+**Main helpers:**
+
+.. code-block::
+
+        AIMessage, BaseMessage, HumanMessage
+"""
 from langchain.memory.buffer import (
     ConversationBufferMemory,
     ConversationStringBufferMemory,

@@ -1,3 +1,21 @@
+"""**Document Transformers** are classes to transform Documents.
+
+**Document Transformers** usually used to transform a lot of Documents in a single run.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    BaseDocumentTransformer
+        ...(BaseDocumentTransformer)
+
+**Main helpers:**
+
+.. code-block::
+
+    Document
+"""
+
 from langchain.document_transformers.doctran_text_extract import (
     DoctranPropertyExtractor,
 )
