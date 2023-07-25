@@ -1,4 +1,4 @@
-import urllib.request
+import json
 
 from typing import Any, Optional, Mapping, List, Dict
 
@@ -9,37 +9,50 @@ from langchain.llms.base import LLM
 from langchain.schema import ChatResult
 from langchain.schema.messages import BaseMessage
 from langchain.utils import get_from_dict_or_env
+from langchain.schema.messages import (
+    AIMessage,
+    BaseMessage,
+    ChatMessage,
+    FunctionMessage,
+    HumanMessage,
+    SystemMessage,
+)
+from langchain.llms.azureml_endpoint import (
+    AzureMLEndpointClient,
+    ContentFormatterBase
+)
 
-class AzureMLEndpointClient(object):
-    """AzureML Managed Endpoint client."""
+class LlamaContentFormatter(ContentFormatterBase):
+    """Content formatter for LLaMa"""
+    SUPPORTED_ROLES = ["user", "assistant", "system"]
+    @staticmethod
+    def _convert_message_to_dict(message: BaseMessage) -> Dict:
+        if isinstance(message, HumanMessage):
+            return {"role": "user", "content": message.content}
+        elif isinstance(message, AIMessage):
+            return {"role": "assistant", "content": message.content}
+        elif isinstance(message, SystemMessage):
+            return {"role": "system", "content": message.content}
+        elif (isinstance(message, ChatMessage) 
+              and message.role in LlamaContentFormatter.SUPPORTED_ROLES):
+            return {"role": message.role, "content": message.content}
+        else:
+            supported = ",".join([role for role in LlamaContentFormatter.SUPPORTED_ROLES])
+            raise ValueError(f"""Received unsupported role '{message.role}'.
+                             Supported roles for the LLaMa Foundation Model: {supported}""")
 
-    def __init__(
-        self, endpoint_url: str, endpoint_api_key: str, deployment_name: str = ""
-    ) -> None:
-        """Initialize the class."""
-        if not endpoint_api_key or not endpoint_url:
-            raise ValueError("A key/token and REST endpoint should be provided to invoke the endpoint")
-        self.endpoint_url = endpoint_url
-        self.endpoint_api_key = endpoint_api_key
-        self.deployment_name = deployment_name
 
-    def call(self, body: bytes, **kwargs: Any) -> bytes:
-        """call."""
+    def format_request_payload(self, messages: List[Dict], model_kwargs: Dict) -> bytes:
+        """Formats the request according the the chosen api"""
+        prompt = ContentFormatterBase.escape_special_characters(prompt)
+        request_payload = json.dumps(
+            {"input_data": {"input_string": messages, "parameters": model_kwargs}}
+        )
+        return str.encode(request_payload)
 
-        # The azureml-model-deployment header will force the request to go to a
-        # specific deployment. Remove this header to have the request observe the
-        # endpoint traffic rules.
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": ("Bearer " + self.endpoint_api_key),
-        }
-        if self.deployment_name != "":
-            headers["azureml-model-deployment"] = self.deployment_name
-
-        req = urllib.request.Request(self.endpoint_url, body, headers)
-        response = urllib.request.urlopen(req, timeout=kwargs.get("timeout", 50))
-        result = response.read()
-        return result
+    def format_response_payload(self, output: bytes) -> str:
+        """Formats response"""
+        return json.loads(output)[0]["output"]
 
 class AzureMLChatOnlineEndpoint(LLM, BaseModel):
     endpoint_url: str = ""
