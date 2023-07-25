@@ -150,6 +150,8 @@ class Weaviate(VectorStore):
                 data_properties = {self._text_key: text}
                 if metadatas is not None:
                     for key, val in metadatas[i].items():
+                        # Check if an id property is provided and rename it to 'textid'
+                        key = "textid" if key == "id" else key
                         data_properties[key] = _json_serializable(val)
 
                 # Allow for ids (consistent w/ other methods)
