@@ -43,7 +43,7 @@ class Llama2c(LLM):
         if not os.path.exists(inference_path):
             raise ValueError(f"Inference binary not found: {inference_path}")
 
-        model_param_names = [
+        model_param_names: List[str] = [
             # List your model's parameters here...
         ]
         model_params = {k: values[k] for k in model_param_names}
@@ -83,7 +83,7 @@ class Llama2c(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        """Call the Llama2c binary and stream the output."""
+        """Call the Llama2c binary and stream output."""
 
         original_dir = os.getcwd()
         os.chdir(self.directory)
@@ -92,17 +92,17 @@ class Llama2c(LLM):
         cmd = f"{inference_binary} {self.model_dir} 0.0 256 {shlex.quote(prompt)}"
         process = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, text=True)
         os.chdir(original_dir)
-        output = []
 
         # Read output from stdout
-        output = []
+        output: List[str] = []
         while True:
-            char = process.stdout.read(1)
-            if char == "" and process.poll() is not None:
-                break
-            if char:
-                output.append(char)
-                print(char, end="")  # print character in 'real-time'
+            if process.stdout is not None:
+                char = process.stdout.read(1)
+                if char == "" and process.poll() is not None:
+                    break
+                if char:
+                    output.append(char)
+                    print(char, end="")  # print character in 'real-time'
 
         # Wait for the subprocess to finish
         process.wait()
