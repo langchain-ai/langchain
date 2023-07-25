@@ -80,12 +80,6 @@ class BaseMessage(Serializable):
         """Whether this class is LangChain serializable."""
         return True
 
-    def __add__(self, other: Any) -> ChatPromptTemplate:
-        from langchain.prompts.chat import ChatPromptTemplate
-
-        prompt = ChatPromptTemplate(messages=[self])
-        return prompt + other
-
 
 class HumanMessage(BaseMessage):
     """A Message from a human."""
