@@ -13,7 +13,7 @@ from langchain.prompts.base import (
 from langchain.prompts.chat import BaseChatPromptTemplate, BaseMessagePromptTemplate
 from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema.messages import BaseMessage
+from langchain.schema.messages import BaseMessage, get_buffer_string
 from langchain.schema.prompt_template import BasePromptTemplate
 
 
@@ -52,12 +52,22 @@ class _FewShotPromptTemplateMixin(BaseModel):
         return values
 
     def _get_examples(self, **kwargs: Any) -> List[dict]:
+        """Get the examples to use for formatting the prompt.
+
+        Args:
+            **kwargs: Keyword arguments to be passed to the example selector.
+
+        Returns:
+            List of examples.
+        """
         if self.examples is not None:
             return self.examples
         elif self.example_selector is not None:
             return self.example_selector.select_examples(kwargs)
         else:
-            raise ValueError
+            raise ValueError(
+                "One of 'examples' and 'example_selector' should be provided"
+            )
 
 
 class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
@@ -65,6 +75,11 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
 
     @property
     def lc_serializable(self) -> bool:
+        """Return whether the prompt template is lc_serializable.
+
+        Returns:
+            Boolean indicating whether the prompt template is lc_serializable.
+        """
         return False
 
     validate_template: bool = True
@@ -109,7 +124,7 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
         """Format the prompt with the inputs.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
             A formatted string.
@@ -150,10 +165,10 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
 
 
 class FewShotChatMessagePromptTemplate(
-    BaseMessagePromptTemplate, _FewShotPromptTemplateMixin
+    BaseChatPromptTemplate, _FewShotPromptTemplateMixin
 ):
     """Chat prompt template for injecting few-shot examples.
-    
+
     .. code-block:: python
 
         from langchain.prompts import SemanticSimilarityExampleSelector
@@ -187,21 +202,38 @@ class FewShotChatMessagePromptTemplate(
         # In this case, each example will become 2 messages:
         # 1 human, and 1 AI
         example_prompt= ChatPromptTemplate.from_role_strings([
-            ("user", "{input}"), 
+            ("user", "{input}"),
             ("assistant", "{output}")
         ])
 
         # Define the overall prompt.
         few_shot_prompt = FewShotChatMessagePromptTemplate(
+            input_variables=["input"],
             prefix = [SystemMessage(content="You are a helpful AI Assistant")],
             example_selector=example_selector,
             example_prompt=example_prompt,
             suffix = [HumanMessagePromptTemplate.from_template("{input}")],
         )
+        # Show the prompt
+        print(few_shot_prompt.format_messages(input="What's 3+3?"))
+        
+        # Use within an LLMChain
+        from langchain.chains import LLMChain
+        from langchain.chat_models import ChatOpenAI
+        chain = LLMChain(
+            llm=ChatOpenAI(),
+            prompt=few_shot_prompt,
+        )
+        chain({"input": "What's 3+3?"})
     """
 
     @property
     def lc_serializable(self) -> bool:
+        """Return whether the prompt template is lc_serializable.
+
+        Returns:
+            Boolean indicating whether the prompt template is lc_serializable.
+        """
         return False
 
     prefix: List[
@@ -220,15 +252,6 @@ class FewShotChatMessagePromptTemplate(
 
         extra = Extra.forbid
         arbitrary_types_allowed = True
-
-    @property
-    def input_variables(self) -> List[str]:
-        """Input variables for this prompt template.
-
-        Returns:
-            List of input variables.
-        """
-        return ["input"]
 
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """
@@ -273,3 +296,6 @@ class FewShotChatMessagePromptTemplate(
         ]
         return prefix_messages + messages + suffix_messages
 
+    def format(self, **kwargs: Any) -> str:
+        messages = self.format_messages(**kwargs)
+        return get_buffer_string(messages)
