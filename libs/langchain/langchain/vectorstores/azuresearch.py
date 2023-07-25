@@ -63,6 +63,7 @@ def _get_search_client(
     index_name: str,
     embedding_function: Callable,
     semantic_configuration_name: Optional[str] = None,
+    metadata_fields:Optional[str] = [],
 ) -> SearchClient:
     from azure.core.credentials import AzureKeyCredential
     from azure.core.exceptions import ResourceNotFoundError
@@ -121,6 +122,8 @@ def _get_search_client(
                 retrievable=True,
             ),
         ]
+        for item in metadata_fields:
+            fields.append(SearchableField(name=item), type="Edm.String", searchable=True, retrievable=True, filterable=True)
         # Vector search configuration
         vector_search = VectorSearch(
             algorithm_configurations=[
@@ -188,6 +191,7 @@ class AzureSearch(VectorStore):
             index_name,
             embedding_function,
             semantic_configuration_name,
+            metadata_fields = kwargs.get('metadata_fields', []),
         )
         self.search_type = search_type
         self.semantic_configuration_name = semantic_configuration_name
@@ -216,8 +220,7 @@ class AzureSearch(VectorStore):
             key = base64.urlsafe_b64encode(bytes(key, "utf-8")).decode("ascii")
             metadata = metadatas[i] if metadatas else {}
             # Add data to index
-            data.append(
-                {
+            data_item = {
                     "@search.action": "upload",
                     FIELDS_ID: key,
                     FIELDS_CONTENT: text,
@@ -226,7 +229,9 @@ class AzureSearch(VectorStore):
                     ).tolist(),
                     FIELDS_METADATA: json.dumps(metadata),
                 }
-            )
+            for met_key, value in metadata.items():
+                    data_item[met_key] = value
+            data.append(data_item)
             ids.append(key)
             # Upload data in batches
             if len(data) == MAX_UPLOAD_BATCH_SIZE:
