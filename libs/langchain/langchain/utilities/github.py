@@ -229,6 +229,7 @@ class GitHubAPIWrapper(BaseModel):
                 The new file contents is wrapped in NEW <<<< and >>>> NEW
                 For example:
                 /test/hello.txt
+                This is text that will not be changed
                 OLD <<<<
                 Hello Earth!
                 >>>> OLD
