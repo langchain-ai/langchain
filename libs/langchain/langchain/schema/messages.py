@@ -91,9 +91,9 @@ class BaseMessageChunk(BaseMessage):
                 raise ValueError(
                     f'additional_kwargs["{k}"] already exists in this message, but with a different type.'
                 )
-            elif type(merged[k]) == str:
+            elif isinstance(merged[k], str):
                 merged[k] += v
-            elif type(merged[k]) == dict:
+            elif isinstance(merged[k], dict):
                 merged[k] = self._merge_kwargs_dict(merged[k], v)
             else:
                 raise ValueError(
