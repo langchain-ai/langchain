@@ -5,9 +5,9 @@ from typing import List, Optional, Sequence
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.input import get_color_mapping, print_text
 from langchain.llms.base import BaseLLM
 from langchain.prompts.prompt import PromptTemplate
+from langchain.utils.input import get_color_mapping, print_text
 
 
 class ModelLaboratory:

@@ -412,7 +412,10 @@ class Vectara(VectorStore):
 
 
 class VectaraRetriever(VectorStoreRetriever):
+    """Retriever class for Vectara."""
+
     vectorstore: Vectara
+    """Vectara vectorstore."""
     search_kwargs: dict = Field(
         default_factory=lambda: {
             "lambda_val": 0.025,

@@ -55,6 +55,7 @@ def standardize_model_name(
 ) -> str:
     """
     Standardize the model name to a format that can be used in the OpenAI API.
+
     Args:
         model_name: Model name to standardize.
         is_completion: Whether the model is used for completion or not.
