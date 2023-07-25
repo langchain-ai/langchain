@@ -4,85 +4,54 @@ sidebar_position: 0
 
 # QA and Chat over Documents
 
-Chat and Question-Answering (QA) over `data` are popular LLM use-cases.
+## Use case
+Suppose you have some text documents (PDF, blog, Notion pages, etc.) and want to ask questions related to the contents of those documents. Given their proficiency in understanding text, this is a perfect use case for LLMs.
 
-`data` can include many things, including:
-
-* `Unstructured data` (e.g., PDFs)
-* `Structured data` (e.g., SQL)
-* `Code` (e.g., Python)
-
-LangChain supports Chat and QA on various `data` types:
-
-* See [here](https://python.langchain.com/docs/use_cases/code/) and [here](https://twitter.com/cristobal_dev/status/1675745314592915456?s=20) for `Code` 
-* See [here](https://python.langchain.com/docs/use_cases/tabular) for `Structured data`
-
-Below we will review Chat and QA on `Unstructured data`. 
+In this walkthrough we'll go over how to build a question-answering over documents application using LLMs. Two very related use cases covered elsewhere are:
+- [QA over structured data](/docs/use_cases/tabular) (e.g., SQL)
+- [QA over code](/docs/use_cases/code) (e.g., Python)
 
 ![intro.png](/img/qa_intro.png)
 
-`Unstructured data` can be loaded from many sources.
-
-Use the [LangChain integration hub](https://integrations.langchain.com/) to browse the full set of loaders.
-
+## Quickstart
+The pipeline for converting raw unstructured data into a QA chain looks like this:
+- `Loading`: First we need to load our data. Unstructured data can be loaded from many sources. Use the [LangChain integration hub](https://integrations.langchain.com/) to browse the full set of loaders.
 Each loader returns data as a LangChain [`Document`](https://docs.langchain.com/docs/components/schema/document).
-
-`Documents` are turned into a Chat or QA app following the general steps below:
-
-* `Splitting`: [Text splitters](https://python.langchain.com/docs/modules/data_connection/document_transformers/) break `Documents` into splits of specified size 
-* `Storage`: Storage (e.g., often a [vectorstore](https://python.langchain.com/docs/modules/data_connection/vectorstores/)) will house [and often embed](https://www.pinecone.io/learn/vector-embeddings/) the splits
-* `Retrieval`: The app retrieves splits from storage (e.g., often [with similar embeddings](https://www.pinecone.io/learn/k-nearest-neighbor/) to the input question) 
-* `Output`: An [LLM](https://python.langchain.com/docs/modules/model_io/models/llms/) produces an answer using a prompt that includes the question and the retrieved splits 
+- `Splitting`: [Text splitters](https://python.langchain.com/docs/modules/data_connection/document_transformers/) break `Documents` into splits of specified size
+- `Storage`: Storage (e.g., often a [vectorstore](https://python.langchain.com/docs/modules/data_connection/vectorstores/)) will house [and often embed](https://www.pinecone.io/learn/vector-embeddings/) the splits
+- `Retrieval`: The app retrieves splits from storage (e.g., often [with similar embeddings](https://www.pinecone.io/learn/k-nearest-neighbor/) to the input question)
+- `Generation`: An [LLM](https://python.langchain.com/docs/modules/model_io/models/llms/) produces an answer using a prompt that includes the question and the retrieved data
 
 ![flow.jpeg](/img/qa_flow.jpeg)
 
-## Quickstart 
+### Jumping ahead
+To give you a sneak preview, the above pipeline can be all be wrapped in a single object: `VectorstoreIndexCreator`. Suppose we want a QA app over this [blog post](https://lilianweng.github.io/posts/2023-06-23-agent/). We can create this in a few lines of code:
 
-The above pipeline can be wrapped with a `VectorstoreIndexCreator`.
-
-In particular: 
-
-* Specify a `Document` loader
-* The `splitting`, `storage`, `retrieval`, and `output` generation stages are wrapped
-
-Let's load this [blog post](https://lilianweng.github.io/posts/2023-06-23-agent/) on agents as an example `Document`.
-
-We have a QA app in a few lines of code.
-
-Set environment variables and get packages:
-```python 
-pip install openai
-pip install chromadb
+First set environment variables and install packages:
+```bash
+pip install openai chromadb
 export OPENAI_API_KEY="..."
 ```
 
-Run:
+Then run:
 ```python
 from langchain.document_loaders import WebBaseLoader
 from langchain.indexes import VectorstoreIndexCreator
-# Document loader
+
 loader = WebBaseLoader("https://lilianweng.github.io/posts/2023-06-23-agent/")
-# Index that wraps above steps
 index = VectorstoreIndexCreator().from_loaders([loader])
-# Question-answering
-question = "What is Task Decomposition?"
-index.query(question)
 ```
 
-
-
+And now ask your questions:
+```python
+index.query("What is Task Decomposition?")
+```
 
     ' Task decomposition is a technique used to break down complex tasks into smaller and simpler steps. It can be done using LLM with simple prompting, task-specific instructions, or human inputs. Tree of Thoughts (Yao et al. 2023) is an example of a task decomposition technique that explores multiple reasoning possibilities at each step and generates multiple thoughts per step, creating a tree structure.'
 
-
-
-Of course, some users do not want this level of abstraction.
-
-Below, we will discuss each stage in more detail.
+Ok, but what's going on under the hood, and how could we customize this for our specific use case? For that, let's take a look at how we can construct this pipeline piece by piece.
 
 ## 1. Loading, Splitting, Storage
-
-
 
 ### 1.1 Getting started
 
