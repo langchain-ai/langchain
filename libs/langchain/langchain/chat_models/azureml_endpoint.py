@@ -13,7 +13,6 @@ from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
     ChatMessage,
-    FunctionMessage,
     HumanMessage,
     SystemMessage,
 )
