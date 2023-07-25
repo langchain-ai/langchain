@@ -7,7 +7,7 @@ from uuid import UUID
 from pydantic import BaseModel, root_validator
 
 from langchain.load.serializable import Serializable
-from langchain.schema.messages import BaseMessage
+from langchain.schema.messages import BaseMessage, BaseMessageChunk
 
 
 class Generation(Serializable):
@@ -32,7 +32,7 @@ class GenerationChunk(Generation):
     def __add__(self, other: GenerationChunk) -> GenerationChunk:
         if isinstance(other, GenerationChunk):
             generation_info = (
-                (self.generation_info or {}) | (other.generation_info or {})
+                {**(self.generation_info or {}), **(other.generation_info or {})}
                 if self.generation_info is not None or other.generation_info is not None
                 else None
             )
@@ -57,6 +57,24 @@ class ChatGeneration(Generation):
         """Set the text attribute to be the contents of the message."""
         values["text"] = values["message"].content
         return values
+
+
+class ChatGenerationChunk(ChatGeneration):
+    message: BaseMessageChunk
+
+    def __add__(self, other: ChatGenerationChunk) -> ChatGenerationChunk:
+        if isinstance(other, ChatGenerationChunk):
+            generation_info = (
+                {**(self.generation_info or {}), **(other.generation_info or {})}
+                if self.generation_info is not None or other.generation_info is not None
+                else None
+            )
+            return ChatGenerationChunk(
+                message=self.message + other.message,
+                generation_info=generation_info,
+            )
+        else:
+            return super().__add__(other)
 
 
 class RunInfo(BaseModel):
