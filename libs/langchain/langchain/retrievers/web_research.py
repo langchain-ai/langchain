@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -9,6 +9,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForRetrieverRun,
 )
 from langchain.chains import LLMChain
+from langchain.chains.prompt_selector import ConditionalPromptSelector
 from langchain.document_loaders import AsyncHtmlLoader
 from langchain.document_transformers import Html2TextTransformer
 from langchain.llms import LlamaCpp
@@ -68,7 +69,7 @@ class QuestionListOutputParser(PydanticOutputParser):
 class WebResearchRetriever(BaseRetriever):
     # Inputs
     vectorstore: VectorStore = Field(
-        ..., description="Vector store for handling document embeddings"
+        ..., description="Vector store for storing web pages"
     )
     llm_chain: LLMChain
     search: GoogleSearchAPIWrapper = Field(..., description="Google Search API Wrapper")
@@ -91,6 +92,7 @@ class WebResearchRetriever(BaseRetriever):
         vectorstore: VectorStore,
         llm: BaseLLM,
         search: GoogleSearchAPIWrapper,
+        prompt: Optional[PromptTemplate] = None,
         max_splits_per_doc: int = 100,
         num_search_results: int = 1,
         text_splitter: RecursiveCharacterTextSplitter = RecursiveCharacterTextSplitter(
@@ -100,9 +102,10 @@ class WebResearchRetriever(BaseRetriever):
         """Initialize from llm using default template.
 
         Args:
+            vectorstore: Vector store for storing web pages
+            llm: llm for search question generation
             search: GoogleSearchAPIWrapper
-            llm: llm for search question generation using DEFAULT_SEARCH_PROMPT
-            search_prompt: prompt to generating search questions
+            prompt: prompt to generating search questions
             max_splits_per_doc: Maximum splits per document to keep
             num_search_results: Number of pages per Google search
             text_splitter: Text splitter for splitting web pages into chunks
@@ -111,11 +114,14 @@ class WebResearchRetriever(BaseRetriever):
             WebResearchRetriever
         """
 
-        if isinstance(llm, LlamaCpp):
-            prompt = DEFAULT_LLAMA_SEARCH_PROMPT
-
-        else:
-            prompt = DEFAULT_SEARCH_PROMPT
+        if not prompt:
+            QUESTION_PROMPT_SELECTOR = ConditionalPromptSelector(
+                default_prompt=DEFAULT_SEARCH_PROMPT,
+                conditionals=[
+                    (lambda llm: isinstance(llm, LlamaCpp), DEFAULT_LLAMA_SEARCH_PROMPT)
+                ],
+            )
+            prompt = QUESTION_PROMPT_SELECTOR.get_prompt(llm)
 
         # Use chat model prompt
         llm_chain = LLMChain(
