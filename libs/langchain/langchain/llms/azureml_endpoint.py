@@ -181,7 +181,7 @@ class AzureMLOnlineEndpoint(LLM, BaseModel):
         deployment_name = get_from_dict_or_env(
             values, "deployment_name", "AZUREML_DEPLOYMENT_NAME", ""
         )
-        http_client = AzureMLEndpointClient(endpoint_url, endpoint_key)
+        http_client = AzureMLEndpointClient(endpoint_url, endpoint_key, deployment_name)
         return http_client
 
     @property
