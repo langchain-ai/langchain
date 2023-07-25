@@ -19,7 +19,7 @@ from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
 from langchain.schema.retriever import BaseRetriever
 from langchain.schema.runnable import (
     Runnable,
-    RunnableCombine,
+    RunnableMap,
     RunnableConfig,
     RunnableSequence,
 )
@@ -432,7 +432,7 @@ Question:
     )
 
     assert isinstance(chain, RunnableSequence)
-    assert isinstance(chain.first, RunnableCombine)
+    assert isinstance(chain.first, RunnableMap)
     assert chain.middle == [prompt, chat]
     assert chain.last == parser
     assert dumps(chain, pretty=True) == snapshot
@@ -484,7 +484,7 @@ def test_seq_prompt_dict(
     assert isinstance(chain, RunnableSequence)
     assert chain.first == prompt
     assert chain.middle == []
-    assert isinstance(chain.last, RunnableCombine)
+    assert isinstance(chain.last, RunnableMap)
     assert dumps(chain, pretty=True) == snapshot
 
     # Test invoke

@@ -126,8 +126,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
             BaseMessageChunk, cast(ChatGeneration, llm_result.generations[0][0]).message
         )
 
-    # TODO make this return BaseMessageChunk
-
     def stream(
         self,
         input: LanguageModelInput,
@@ -153,7 +151,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
                 config.get("metadata"),
                 self.metadata,
             )
-            [run_manager] = callback_manager.on_chat_model_start(
+            (run_manager,) = callback_manager.on_chat_model_start(
                 dumpd(self), [messages], invocation_params=params, options=options
             )
             try:
@@ -200,7 +198,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
                 config.get("metadata"),
                 self.metadata,
             )
-            [run_manager] = await callback_manager.on_chat_model_start(
+            (run_manager,) = await callback_manager.on_chat_model_start(
                 dumpd(self), [messages], invocation_params=params, options=options
             )
             try:
