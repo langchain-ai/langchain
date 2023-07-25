@@ -69,6 +69,14 @@ This project uses [Poetry](https://python-poetry.org/) as a dependency manager. 
 3. Tell Poetry to use the virtualenv python environment (`poetry config virtualenvs.prefer-active-python true`)
 4. Continue with the following steps.
 
+There are two separate projects in this repository:
+- `langchain`: core langchain code, abstractions, and use cases
+- `langchain.experimental`: more experimental code
+
+Each of these has their OWN development environment. 
+In order to run any of the commands below, please move into their respective directories.
+For example, to contribute to `langchain` run `cd libs/langchain` before getting started with the below.
+
 To install requirements:
 
 ```bash
@@ -122,6 +130,32 @@ make lint_diff
 This can be very helpful when you've made changes to only certain parts of the project and want to ensure your changes meet the linting standards without having to check the entire codebase.
 
 We recognize linting can be annoying - if you do not want to do it, please contact a project maintainer, and they can help you with it. We do not want this to be a blocker for good code getting contributed.
+
+### Spellcheck
+
+Spellchecking for this project is done via [codespell](https://github.com/codespell-project/codespell).
+Note that `codespell` finds common typos, so could have false-positive (correctly spelled but rarely used) and false-negatives (not finding misspelled) words.
+
+To check spelling for this project:
+
+```bash
+make spell_check
+```
+
+To fix spelling in place:
+
+```bash
+make spell_fix
+```
+
+If codespell is incorrectly flagging a word, you can skip spellcheck for that word by adding it to the codespell config in the `pyproject.toml` file.
+
+```python
+[tool.codespell]
+...
+# Add here:
+ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure'
+```
 
 ### Coverage
 
@@ -221,6 +255,9 @@ poetry run jupyter notebook
 When you run `poetry install`, the `langchain` package is installed as editable in the virtualenv, so your new logic can be imported into the notebook.
 
 ## Documentation
+
+While the code is split between `langchain` and `langchain.experimental`, the documentation is one holistic thing.
+This covers how to get started contributing to documentation.
 
 ### Contribute Documentation
 

@@ -149,6 +149,33 @@ const config = {
         title: "🦜️🔗 LangChain",
         items: [
           {
+            to: "/docs/get_started/introduction",
+            label: "Docs",
+            position: "left",
+          },
+          {
+            type: 'docSidebar',
+            position: 'left',
+            sidebarId: 'use_cases',
+            label: 'Use cases',
+          },
+          {
+            type: 'docSidebar',
+            position: 'left',
+            sidebarId: 'integrations',
+            label: 'Integrations',
+          },
+          {
+            href: "https://api.python.langchain.com",
+            label: "API",
+            position: "left",
+          },
+          {
+            to: "https://smith.langchain.com",
+            label: "LangSmith",
+            position: "right",
+          },
+          {
             to: "https://js.langchain.com/docs",
             label: "JS/TS Docs",
             position: "right",
@@ -156,8 +183,9 @@ const config = {
           // Please keep GitHub link to the right for consistency.
           {
             href: "https://github.com/hwchase17/langchain",
-            label: "GitHub",
-            position: "right",
+            position: 'right',
+            className: 'header-github-link',
+            'aria-label': 'GitHub repository',
           },
         ],
       },
