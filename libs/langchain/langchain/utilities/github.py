@@ -207,7 +207,7 @@ class GitHubAPIWrapper(BaseModel):
                 )
                 return f"Successfully created PR number {pr.number}"
             except Exception as e:
-                return f"Unable to make pull request due to error:\n"+e
+                return f"Unable to make pull request due to error:\n"+str(e)
 
     def read_file(self, file_path: str) -> str:
         """
