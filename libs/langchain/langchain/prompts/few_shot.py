@@ -14,6 +14,7 @@ from langchain.prompts.chat import BaseChatPromptTemplate, BaseMessagePromptTemp
 from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema.messages import BaseMessage
+from langchain.schema.prompt_template import BasePromptTemplate
 
 
 class _FewShotPromptTemplateMixin(BaseModel):
@@ -151,14 +152,68 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
 class FewShotChatMessagePromptTemplate(
     BaseMessagePromptTemplate, _FewShotPromptTemplateMixin
 ):
-    """Chat prompt template that contains few shot examples."""
+    """Chat prompt template for injecting few-shot examples.
+    
+    .. code-block:: python
+
+        from langchain.prompts import SemanticSimilarityExampleSelector
+        from langchain.embeddings import OpenAIEmbeddings
+        from langchain.vectorstores import Chroma
+
+        examples = [
+            {"input": "2+2", "output": "4"},
+            {"input": "2+3", "output": "5"},
+            {"input": "2+4", "output": "6"},
+            # ...
+        ]
+
+        to_vectorize = [
+            " ".join(example.values())
+            for example in examples
+        ]
+        embeddings = OpenAIEmbeddings()
+        vectorstore = Chroma.from_texts(
+            to_vectorize, embeddings, metadatas=examples
+        )
+        example_selector = SemanticSimilarityExampleSelector(
+            vectorstore=vectorstore
+        )
+
+        from langchain.schema import SystemMessage
+        from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
+        from langchain.prompts.few_shot import FewShotChatMessagePromptTemplate
+
+        # Define how each example will be formatted.
+        # In this case, each example will become 2 messages:
+        # 1 human, and 1 AI
+        example_prompt= ChatPromptTemplate.from_role_strings([
+            ("user", "{input}"), 
+            ("assistant", "{output}")
+        ])
+
+        # Define the overall prompt.
+        few_shot_prompt = FewShotChatMessagePromptTemplate(
+            prefix = [SystemMessage(content="You are a helpful AI Assistant")],
+            example_selector=example_selector,
+            example_prompt=example_prompt,
+            suffix = [HumanMessagePromptTemplate.from_template("{input}")],
+        )
+    """
 
     @property
     def lc_serializable(self) -> bool:
         return False
 
+    prefix: List[
+        Union[BaseMessagePromptTemplate, BaseChatPromptTemplate, BaseMessage]
+    ] = []
+    """The class to format the prefix."""
     example_prompt: Union[BaseMessagePromptTemplate, BaseChatPromptTemplate]
     """The class to format each example."""
+    suffix: List[
+        Union[BaseMessagePromptTemplate, BaseChatPromptTemplate, BaseMessage]
+    ] = []
+    """The class to format the suffix."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -190,10 +245,31 @@ class FewShotChatMessagePromptTemplate(
         examples = [
             {k: e[k] for k in self.example_prompt.input_variables} for e in examples
         ]
+        # Format prefix examples
+        prefix_messages = [
+            message
+            for template in self.prefix
+            for message in (
+                template.format_messages(**kwargs)
+                if isinstance(template, (BasePromptTemplate, BaseMessagePromptTemplate))
+                else [template]
+            )
+        ]
         # Format the examples.
         messages = [
             message
             for example in examples
             for message in self.example_prompt.format_messages(**example)
         ]
-        return messages
+        # Format suffix examples
+        suffix_messages = [
+            message
+            for template in self.suffix
+            for message in (
+                template.format_messages(**kwargs)
+                if isinstance(template, (BasePromptTemplate, BaseMessagePromptTemplate))
+                else [template]
+            )
+        ]
+        return prefix_messages + messages + suffix_messages
+
