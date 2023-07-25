@@ -1,10 +1,11 @@
 import logging
-from typing import Any, Dict, Generator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 from pydantic import Field, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
+from langchain.schema.output import GenerationChunk
 
 logger = logging.getLogger(__name__)
 
@@ -226,10 +227,10 @@ class LlamaCpp(LLM):
             # method that yields as they are generated
             # and return the combined strings from the first choices's text:
             combined_text_output = ""
-            for token in self._stream(
-                prompt=prompt, stop=stop, run_manager=run_manager
+            for chunk in self._stream(
+                prompt=prompt, stop=stop, run_manager=run_manager, **kwargs
             ):
-                combined_text_output += token["choices"][0]["text"]
+                combined_text_output += chunk.text
             return combined_text_output
         else:
             params = self._get_parameters(stop)
@@ -242,11 +243,9 @@ class LlamaCpp(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-    ) -> Generator[Dict, None, None]:
+        **kwargs: Any,
+    ) -> Iterator[GenerationChunk]:
         """Yields results objects as they are generated in real time.
-
-        BETA: this is a beta feature while we figure out the right abstraction.
-        Once that happens, this interface could change.
 
         It also calls the callback manager's on_llm_new_token event with
         similar parameters to the OpenAI LLM class method of the same name.
@@ -276,16 +275,19 @@ class LlamaCpp(LLM):
                     print(result["text"], end='', flush=True)
 
         """
-        params = self._get_parameters(stop)
+        params = {**self._get_parameters(stop), **kwargs}
         result = self.client(prompt=prompt, stream=True, **params)
-        for chunk in result:
-            token = chunk["choices"][0]["text"]
-            log_probs = chunk["choices"][0].get("logprobs", None)
+        for part in result:
+            logprobs = part["choices"][0].get("logprobs", None)
+            chunk = GenerationChunk(
+                text=part["choices"][0]["text"],
+                generation_info={"logprobs": logprobs},
+            )
+            yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(
-                    token=token, verbose=self.verbose, log_probs=log_probs
+                    token=chunk.text, verbose=self.verbose, log_probs=logprobs
                 )
-            yield chunk
 
     def get_num_tokens(self, text: str) -> int:
         tokenized_text = self.client.tokenize(text.encode("utf-8"))
