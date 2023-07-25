@@ -7,9 +7,9 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 import numpy as np
 
 try:
-    import deeplake
-    from deeplake.core.fast_forwarding import version_compare
-    from deeplake.core.vectorstore import DeepLakeVectorStore
+    import deeplake  # type: ignore
+    from deeplake.core.fast_forwarding import version_compare  # type: ignore
+    from deeplake.core.vectorstore import DeepLakeVectorStore  # type: ignore
 
     _DEEPLAKE_INSTALLED = True
 except ImportError:
