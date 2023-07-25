@@ -19,8 +19,8 @@ from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
 from langchain.schema.retriever import BaseRetriever
 from langchain.schema.runnable import (
     Runnable,
-    RunnableMap,
     RunnableConfig,
+    RunnableMap,
     RunnableSequence,
 )
 

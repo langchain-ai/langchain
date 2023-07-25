@@ -2,7 +2,7 @@ from langchain.prompts.chat import ChatPromptTemplate
 from langchain.schema.messages import AIMessageChunk, HumanMessage, HumanMessageChunk
 
 
-def test_message_chunks():
+def test_message_chunks() -> None:
     assert HumanMessage(content="You are a nice assistant") + AIMessageChunk(
         content="I am indeed."
     ) == ChatPromptTemplate(
