@@ -8,7 +8,7 @@ from langchain.chains.api.openapi.chain import OpenAPIEndpointChain
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.openapi.utils.api_models import APIOperation
 from langchain.tools.openapi.utils.openapi_utils import OpenAPISpec
-from langchain.utils.requests import Requests
+from langchain.utilities.requests import Requests
 
 
 class NLATool(Tool):

@@ -11,7 +11,7 @@ from langchain.tools.requests.tool import (
     RequestsPutTool,
     _parse_input,
 )
-from langchain.utils.requests import TextRequestsWrapper
+from langchain.utilities.requests import TextRequestsWrapper
 
 
 class _MockTextRequestsWrapper(TextRequestsWrapper):

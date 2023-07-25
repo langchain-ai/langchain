@@ -14,7 +14,7 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.openapi.utils.api_models import APIOperation
-from langchain.utils.requests import Requests
+from langchain.utilities.requests import Requests
 
 
 class _ParamMapping(NamedTuple):

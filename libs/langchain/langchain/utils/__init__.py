@@ -13,7 +13,6 @@ from langchain.utils.input import (
     print_text,
 )
 from langchain.utils.math import cosine_similarity, cosine_similarity_top_k
-from langchain.utils.requests import Requests, RequestsWrapper, TextRequestsWrapper
 from langchain.utils.strings import comma_list, stringify_dict, stringify_value
 from langchain.utils.utils import (
     check_package_version,

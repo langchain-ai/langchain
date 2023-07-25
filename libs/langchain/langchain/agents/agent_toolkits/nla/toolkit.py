@@ -10,7 +10,7 @@ from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 from langchain.tools.openapi.utils.openapi_utils import OpenAPISpec
 from langchain.tools.plugin import AIPlugin
-from langchain.utils.requests import Requests
+from langchain.utilities.requests import Requests
 
 
 class NLAToolkit(BaseToolkit):
