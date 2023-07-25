@@ -145,7 +145,7 @@ class SupabaseVectorStore(VectorStore):
         **kwargs: Any,
     ) -> List[Document]:
         result = self.similarity_search_by_vector_with_relevance_scores(
-            embedding, k=k, filter=filter
+            embedding, k=k, filter=filter, **kwargs
         )
 
         documents = [doc for doc, _ in result]
