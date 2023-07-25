@@ -298,7 +298,7 @@ def test_faiss_similarity_search_with_relevance_scores_with_threshold() -> None:
         relevance_score_fn=lambda score: 1.0 - score / math.sqrt(2),
     )
     outputs = docsearch.similarity_search_with_relevance_scores(
-        "foo", k=2, score_threshold=0.1
+        "foo", k=2, score_threshold=0.5
     )
     assert len(outputs) == 1
     output, score = outputs[0]
