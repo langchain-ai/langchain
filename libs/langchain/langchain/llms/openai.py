@@ -3,12 +3,15 @@ from __future__ import annotations
 import logging
 import sys
 import warnings
+from functools import partial
 from typing import (
     AbstractSet,
     Any,
+    AsyncIterator,
     Callable,
     Collection,
     Dict,
+    Iterator,
     List,
     Literal,
     Mapping,
@@ -26,6 +29,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.llms.base import BaseLLM, create_base_retry_decorator
 from langchain.schema import Generation, LLMResult
+from langchain.schema.output import GenerationChunk
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
 
 logger = logging.getLogger(__name__)
@@ -41,6 +45,19 @@ def update_token_usage(
             token_usage[_key] = response["usage"][_key]
         else:
             token_usage[_key] += response["usage"][_key]
+
+
+def _stream_response_to_generation_chunk(
+    stream_response: Dict[str, Any],
+) -> GenerationChunk:
+    """Convert a stream response to a generation chunk."""
+    return GenerationChunk(
+        text=stream_response["choices"][0]["text"],
+        generation_info=dict(
+            finish_reason=stream_response["choices"][0].get("finish_reason", None),
+            logprobs=stream_response["choices"][0].get("logprobs", None),
+        ),
+    )
 
 
 def _update_response(response: Dict[str, Any], stream_response: Dict[str, Any]) -> None:
@@ -267,6 +284,50 @@ class BaseOpenAI(BaseLLM):
 
         return {**normal_params, **self.model_kwargs}
 
+    def _stream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[GenerationChunk]:
+        params = {**self._invocation_params, **kwargs, "stream": True}
+        self.get_sub_prompts(params, [prompt], stop)  # this mutate params
+        for stream_resp in completion_with_retry(self, prompt=prompt, **params):
+            chunk = _stream_response_to_generation_chunk(stream_resp)
+            yield chunk
+            if run_manager:
+                run_manager.on_llm_new_token(
+                    chunk.text,
+                    verbose=self.verbose,
+                    logprobs=chunk.generation_info["logprobs"]
+                    if chunk.generation_info
+                    else None,
+                )
+
+    async def _astream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[GenerationChunk]:
+        params = {**self._invocation_params, **kwargs, "stream": True}
+        self.get_sub_prompts(params, [prompt], stop)  # this mutate params
+        async for stream_resp in await acompletion_with_retry(
+            self, prompt=prompt, **params
+        ):
+            chunk = _stream_response_to_generation_chunk(stream_resp)
+            yield chunk
+            if run_manager:
+                await run_manager.on_llm_new_token(
+                    chunk.text,
+                    verbose=self.verbose,
+                    logprobs=chunk.generation_info["logprobs"]
+                    if chunk.generation_info
+                    else None,
+                )
+
     def _generate(
         self,
         prompts: List[str],
@@ -301,24 +362,28 @@ class BaseOpenAI(BaseLLM):
             if self.streaming:
                 if len(_prompts) > 1:
                     raise ValueError("Cannot stream results with multiple prompts.")
-                params["stream"] = True
-                response = _streaming_response_template()
-                for stream_resp in completion_with_retry(
-                    self, prompt=_prompts, **params
-                ):
-                    if run_manager:
-                        run_manager.on_llm_new_token(
-                            stream_resp["choices"][0]["text"],
-                            verbose=self.verbose,
-                            logprobs=stream_resp["choices"][0]["logprobs"],
-                        )
-                    _update_response(response, stream_resp)
-                choices.extend(response["choices"])
+
+                generation: Optional[GenerationChunk] = None
+                for chunk in self._stream(_prompts[0], stop, run_manager, **kwargs):
+                    if generation is None:
+                        generation = chunk
+                    else:
+                        generation += chunk
+                assert generation is not None
+                choices.append(
+                    {
+                        "text": generation.text,
+                        "finish_reason": generation.generation_info.get("finish_reason")
+                        if generation.generation_info
+                        else None,
+                        "logprobs": generation.generation_info.get("logprobs")
+                        if generation.generation_info
+                        else None,
+                    }
+                )
             else:
                 response = completion_with_retry(self, prompt=_prompts, **params)
                 choices.extend(response["choices"])
-            if not self.streaming:
-                # Can't update token usage if streaming
                 update_token_usage(_keys, response, token_usage)
         return self.create_llm_result(choices, prompts, token_usage)
 
@@ -342,24 +407,30 @@ class BaseOpenAI(BaseLLM):
             if self.streaming:
                 if len(_prompts) > 1:
                     raise ValueError("Cannot stream results with multiple prompts.")
-                params["stream"] = True
-                response = _streaming_response_template()
-                async for stream_resp in await acompletion_with_retry(
-                    self, prompt=_prompts, **params
+
+                generation: Optional[GenerationChunk] = None
+                async for chunk in self._astream(
+                    _prompts[0], stop, run_manager, **kwargs
                 ):
-                    if run_manager:
-                        await run_manager.on_llm_new_token(
-                            stream_resp["choices"][0]["text"],
-                            verbose=self.verbose,
-                            logprobs=stream_resp["choices"][0]["logprobs"],
-                        )
-                    _update_response(response, stream_resp)
-                choices.extend(response["choices"])
+                    if generation is None:
+                        generation = chunk
+                    else:
+                        generation += chunk
+                assert generation is not None
+                choices.append(
+                    {
+                        "text": generation.text,
+                        "finish_reason": generation.generation_info.get("finish_reason")
+                        if generation.generation_info
+                        else None,
+                        "logprobs": generation.generation_info.get("logprobs")
+                        if generation.generation_info
+                        else None,
+                    }
+                )
             else:
                 response = await acompletion_with_retry(self, prompt=_prompts, **params)
                 choices.extend(response["choices"])
-            if not self.streaming:
-                # Can't update token usage if streaming
                 update_token_usage(_keys, response, token_usage)
         return self.create_llm_result(choices, prompts, token_usage)
 

@@ -7,7 +7,6 @@ import json
 import logging
 import warnings
 from abc import ABC, abstractmethod
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import (
     Any,
@@ -56,6 +55,7 @@ from langchain.schema import (
 )
 from langchain.schema.language_model import BaseLanguageModel, LanguageModelInput
 from langchain.schema.messages import AIMessage, BaseMessage, get_buffer_string
+from langchain.schema.output import GenerationChunk
 from langchain.schema.runnable import RunnableConfig
 
 logger = logging.getLogger(__name__)
@@ -267,42 +267,41 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         *,
         stop: Optional[List[str]] = None,
     ) -> Iterator[str]:
-        if not hasattr(self, "streaming"):
-            # model doesn't support streaming, so use default implementation
-            yield self.invoke(input, stop=stop, config=config)
+        if type(self)._stream == BaseLLM._stream:
+            # model doesn't implement streaming, so use default implementation
+            yield self.invoke(input, config=config, stop=stop)
         else:
-            from langchain.callbacks.streaming_iter import IteratorCallbackHandler
-
-            # enable streaming, if it's not already enabled
-            original_streaming = cast(bool, self.streaming)  # type: ignore
-            self.streaming = True
-
-            # add iter callback handler to config
+            prompt = self._convert_input(input).to_string()
             config = config or {}
-            callbacks: Optional[Callbacks] = config.get("callbacks", None)
-            callback_handler = IteratorCallbackHandler()
-            if callbacks is None:
-                config["callbacks"] = [callback_handler]
-            elif isinstance(callbacks, list):
-                callbacks.append(callback_handler)
+            params = self.dict()
+            params["stop"] = stop
+            options = {"stop": stop}
+            callback_manager = CallbackManager.configure(
+                config.get("callbacks"),
+                self.callbacks,
+                self.verbose,
+                config.get("tags"),
+                self.tags,
+                config.get("metadata"),
+                self.metadata,
+            )
+            (run_manager,) = callback_manager.on_llm_start(
+                dumpd(self), [prompt], invocation_params=params, options=options
+            )
+            try:
+                generation: Optional[GenerationChunk] = None
+                for chunk in self._stream(prompt, stop=stop, run_manager=run_manager):
+                    yield chunk.text
+                    if generation is None:
+                        generation = chunk
+                    else:
+                        generation += chunk
+                assert generation is not None
+            except (KeyboardInterrupt, Exception) as e:
+                run_manager.on_llm_error(e)
+                raise e
             else:
-                callbacks.add_handler(callback_handler)
-
-            with ThreadPoolExecutor(max_workers=1) as executor:
-                # run the model non-blocking
-                task = executor.submit(
-                    self.invoke, self._convert_input(input), stop=stop, config=config
-                )
-
-                # yield tokens from the callback handler
-                for token in callback_handler.iter():
-                    yield token
-
-                # block until the model is finished
-                task.result()
-
-            # disable streaming
-            self.streaming = original_streaming
+                run_manager.on_llm_end(LLMResult(generations=[[generation]]))
 
     async def astream(
         self,
@@ -311,41 +310,43 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         *,
         stop: Optional[List[str]] = None,
     ) -> AsyncIterator[str]:
-        if not hasattr(self, "streaming"):
-            # model doesn't support streaming, so use default implementation
-            yield await self.ainvoke(input, stop=stop, config=config)
+        if type(self)._astream == BaseLLM._astream:
+            # model doesn't implement streaming, so use default implementation
+            yield await self.ainvoke(input, config=config, stop=stop)
         else:
-            from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
-
-            # enable streaming, if it's not already enabled
-            original_streaming = cast(bool, self.streaming)  # type: ignore
-            self.streaming = True
-
-            # add aiter callback handler to config
+            prompt = self._convert_input(input).to_string()
             config = config or {}
-            callbacks: Optional[Callbacks] = config.get("callbacks", None)
-            callback_handler = AsyncIteratorCallbackHandler()
-            if callbacks is None:
-                config["callbacks"] = [callback_handler]
-            elif isinstance(callbacks, list):
-                callbacks.append(callback_handler)
-            else:
-                callbacks.add_handler(callback_handler)
-
-            # run the model asynchronously
-            task = asyncio.create_task(
-                self.ainvoke(self._convert_input(input), stop=stop, config=config)
+            params = self.dict()
+            params["stop"] = stop
+            options = {"stop": stop}
+            callback_manager = AsyncCallbackManager.configure(
+                config.get("callbacks"),
+                self.callbacks,
+                self.verbose,
+                config.get("tags"),
+                self.tags,
+                config.get("metadata"),
+                self.metadata,
             )
-
-            # yield tokens from the callback handler
-            async for token in callback_handler.aiter():
-                yield token
-
-            # wait for the model to finish
-            await task
-
-            # restore original streaming value
-            self.streaming = original_streaming
+            (run_manager,) = await callback_manager.on_llm_start(
+                dumpd(self), [prompt], invocation_params=params, options=options
+            )
+            try:
+                generation: Optional[GenerationChunk] = None
+                async for chunk in self._astream(
+                    prompt, stop=stop, run_manager=run_manager
+                ):
+                    yield chunk.text
+                    if generation is None:
+                        generation = chunk
+                    else:
+                        generation += chunk
+                assert generation is not None
+            except (KeyboardInterrupt, Exception) as e:
+                await run_manager.on_llm_error(e)
+                raise e
+            else:
+                await run_manager.on_llm_end(LLMResult(generations=[[generation]]))
 
     # --- Custom methods ---
 
@@ -368,6 +369,24 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         **kwargs: Any,
     ) -> LLMResult:
         """Run the LLM on the given prompts."""
+
+    def _stream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[GenerationChunk]:
+        raise NotImplementedError
+
+    def _astream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[GenerationChunk]:
+        raise NotImplementedError
 
     def generate_prompt(
         self,
