@@ -41,7 +41,9 @@ class GenerationChunk(Generation):
                 generation_info=generation_info,
             )
         else:
-            return super().__add__(other)
+            raise TypeError(
+                f"unsupported operand type(s) for +: '{type(self)}' and '{type(other)}'"
+            )
 
 
 class ChatGeneration(Generation):
@@ -74,7 +76,9 @@ class ChatGenerationChunk(ChatGeneration):
                 generation_info=generation_info,
             )
         else:
-            return super().__add__(other)
+            raise TypeError(
+                f"unsupported operand type(s) for +: '{type(self)}' and '{type(other)}'"
+            )
 
 
 class RunInfo(BaseModel):
