@@ -220,7 +220,10 @@ class SystemMessagePromptTemplate(BaseStringMessagePromptTemplate):
 
 
 class ChatPromptValue(PromptValue):
-    """Chat prompt value."""
+    """Chat prompt value.
+    
+    A type of a prompt value that is built from messages.
+    """
 
     messages: List[BaseMessage]
     """List of messages."""
