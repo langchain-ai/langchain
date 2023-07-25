@@ -113,7 +113,7 @@ class HFContentFormatter(ContentFormatterBase):
 
     def format_response_payload(self, output: bytes) -> str:
         response_json = json.loads(output)
-        return response_json[0][0]["generated_text"]
+        return response_json[0]["generated_text"]
 
 
 class DollyContentFormatter(ContentFormatterBase):
