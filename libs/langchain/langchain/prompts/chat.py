@@ -525,12 +525,15 @@ def create_chat_template(
             template.format(question="Hello, how are you?")
 
     Args:
-        messages: list of messages, where a message can be one of:
+        messages: sequence of messages, a message can be one of:
             - BaseMessagePromptTemplate
             - BaseMessage
             - (role string, template) tuples
             - (role class, template) tuples
             - string -- creates a Human Message
+
+    Returns:
+        A new instance of ChatPromptTemplate.
     """
     return ChatPromptTemplate.from_diverse(messages)
 
