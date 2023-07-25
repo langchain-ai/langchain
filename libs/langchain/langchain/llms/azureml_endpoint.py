@@ -5,6 +5,8 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import BaseModel, validator
 
+from jinja2 import Template
+
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.utils import get_from_dict_or_env
@@ -78,6 +80,25 @@ class ContentFormatterBase:
     accepts: Optional[str] = "application/json"
     """The MIME type of the response data returned form the endpoint"""
 
+    @staticmethod
+    def escape_special_characters(prompt: str) -> str:
+        """Escapes any special characters in `prompt`"""
+        escape_map = {
+            "\\": "\\\\",
+            '"': '"',
+            "\b": "\\b",
+            "\f": "\\f",
+            "\n": "\\n",
+            "\r": "\\r",
+            "\t": "\\t",
+        }
+
+        # Replace each occurrence of the specified characters with their escaped versions
+        for escape_sequence, escaped_sequence in escape_map.items():
+            prompt = prompt.replace(escape_sequence, escaped_sequence)
+
+        return prompt
+    
     @abstractmethod
     def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
         """Formats the request body according to the input schema of
@@ -97,8 +118,9 @@ class OSSContentFormatter(ContentFormatterBase):
     """Content handler for LLMs from the OSS catalog."""
 
     def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
+        prompt = ContentFormatterBase.escape_special_characters(prompt)
         input_str = json.dumps(
-            {"inputs": {"input_string": [prompt]}, "parameters": model_kwargs}
+            {"inputs": {"input_string": [f'"{prompt}"']}, "parameters": model_kwargs}
         )
         return str.encode(input_str)
 
@@ -111,7 +133,8 @@ class HFContentFormatter(ContentFormatterBase):
     """Content handler for LLMs from the HuggingFace catalog."""
 
     def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
-        input_str = json.dumps({"inputs": [prompt], "parameters": model_kwargs})
+        ContentFormatterBase.escape_special_characters(prompt)
+        input_str = json.dumps({"inputs": [f'"{prompt}"'], "parameters": model_kwargs})
         return str.encode(input_str)
 
     def format_response_payload(self, output: bytes) -> str:
@@ -123,8 +146,9 @@ class DollyContentFormatter(ContentFormatterBase):
     """Content handler for the Dolly-v2-12b model"""
 
     def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
+        prompt = ContentFormatterBase.escape_special_characters(prompt)
         input_str = json.dumps(
-            {"input_data": {"input_string": [prompt]}, "parameters": model_kwargs}
+            {"input_data": {"input_string": [f'"{prompt}"']}, "parameters": model_kwargs}
         )
         return str.encode(input_str)
 
@@ -132,6 +156,20 @@ class DollyContentFormatter(ContentFormatterBase):
         response_json = json.loads(output)
         return response_json[0]
 
+class LlamaContentFormatter(ContentFormatterBase):
+    """Content formatter for LLaMa"""
+
+    def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
+        """Formats the request according the the chosen api"""
+        prompt = ContentFormatterBase.escape_special_characters(prompt)
+        request_payload = json.dumps(
+            {"input_data": {"input_string": [f'"{prompt}"'], "parameters": model_kwargs}}
+        )
+        return str.encode(request_payload)
+
+    def format_response_payload(self, output: bytes) -> str:
+        """Formats response"""
+        return json.loads(output)[0]["0"]
 
 class AzureMLOnlineEndpoint(LLM, BaseModel):
     """Azure ML Online Endpoint models.
