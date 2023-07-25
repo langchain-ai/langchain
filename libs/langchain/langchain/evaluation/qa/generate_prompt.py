@@ -18,5 +18,6 @@ These questions should be detailed and be based explicitly on information in the
 {doc}
 <End Document>"""
 PROMPT = PromptTemplate(
-    input_variables=["doc"], template=template,
+    input_variables=["doc"],
+    template=template,
 )
