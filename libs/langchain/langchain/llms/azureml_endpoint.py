@@ -22,7 +22,7 @@ class AzureMLEndpointClient(object):
         self.endpoint_url = endpoint_url
         self.endpoint_api_key = endpoint_api_key
 
-    def call(self, body: bytes) -> bytes:
+    def call(self, body: bytes, **kwargs: Any) -> bytes:
         """call."""
 
         # The azureml-model-deployment header will force the request to go to a
@@ -34,7 +34,7 @@ class AzureMLEndpointClient(object):
         }
 
         req = urllib.request.Request(self.endpoint_url, body, headers)
-        response = urllib.request.urlopen(req, timeout=50)
+        response = urllib.request.urlopen(req, timeout=kwargs.get("timeout", 50))
         result = response.read()
         return result
 
@@ -207,6 +207,6 @@ class AzureMLOnlineEndpoint(LLM, BaseModel):
         _model_kwargs = self.model_kwargs or {}
 
         body = self.content_formatter.format_request_payload(prompt, _model_kwargs)
-        endpoint_response = self.http_client.call(body)
+        endpoint_response = self.http_client.call(body, **kwargs)
         response = self.content_formatter.format_response_payload(endpoint_response)
         return response
