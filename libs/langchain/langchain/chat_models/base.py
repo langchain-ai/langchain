@@ -42,6 +42,7 @@ from langchain.schema.messages import (
     BaseMessageChunk,
     HumanMessage,
 )
+from langchain.schema.output import ChatGenerationChunk
 from langchain.schema.runnable import RunnableConfig
 
 
@@ -158,11 +159,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
                 for chunk in self._stream(
                     messages, stop=stop, run_manager=run_manager, **kwargs
                 ):
-                    yield chunk
+                    yield chunk.message
                     if message is None:
-                        message = chunk
+                        message = chunk.message
                     else:
-                        message += chunk
+                        message += chunk.message
                 assert message is not None
             except (KeyboardInterrupt, Exception) as e:
                 run_manager.on_llm_error(e)
@@ -205,11 +206,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
                 async for chunk in self._astream(
                     messages, stop=stop, run_manager=run_manager, **kwargs
                 ):
-                    yield chunk
+                    yield chunk.message
                     if message is None:
-                        message = chunk
+                        message = chunk.message
                     else:
-                        message += chunk
+                        message += chunk.message
                 assert message is not None
             except (KeyboardInterrupt, Exception) as e:
                 await run_manager.on_llm_error(e)
@@ -507,7 +508,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> Iterator[BaseMessageChunk]:
+    ) -> Iterator[ChatGenerationChunk]:
         raise NotImplementedError
 
     def _astream(
@@ -516,7 +517,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[BaseMessageChunk]:
+    ) -> AsyncIterator[ChatGenerationChunk]:
         raise NotImplementedError
 
     def __call__(

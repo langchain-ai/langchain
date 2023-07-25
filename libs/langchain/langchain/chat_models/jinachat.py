@@ -45,6 +45,7 @@ from langchain.schema.messages import (
     HumanMessageChunk,
     SystemMessageChunk,
 )
+from langchain.schema.output import ChatGenerationChunk
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
 
 logger = logging.getLogger(__name__)
@@ -291,7 +292,7 @@ class JinaChat(BaseChatModel):
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> Iterator[BaseMessageChunk]:
+    ) -> Iterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
 
@@ -300,7 +301,7 @@ class JinaChat(BaseChatModel):
             delta = chunk["choices"][0]["delta"]
             chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
             default_chunk_class = chunk.__class__
-            yield chunk
+            yield ChatGenerationChunk(message=chunk)
             if run_manager:
                 run_manager.on_llm_new_token(chunk.content)
 
@@ -312,15 +313,16 @@ class JinaChat(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         if self.streaming:
-            message: Optional[BaseMessageChunk] = None
+            generation: Optional[ChatGenerationChunk] = None
             for chunk in self._stream(
                 messages=messages, stop=stop, run_manager=run_manager, **kwargs
             ):
-                if message is None:
-                    message = chunk
+                if generation is None:
+                    generation = chunk
                 else:
-                    message += chunk
-            return ChatResult(generations=[ChatGeneration(message=message)])
+                    generation += chunk
+            assert generation is not None
+            return ChatResult(generations=[generation])
 
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
@@ -353,7 +355,7 @@ class JinaChat(BaseChatModel):
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[BaseMessageChunk]:
+    ) -> AsyncIterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
 
@@ -364,7 +366,7 @@ class JinaChat(BaseChatModel):
             delta = chunk["choices"][0]["delta"]
             chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
             default_chunk_class = chunk.__class__
-            yield chunk
+            yield ChatGenerationChunk(message=chunk)
             if run_manager:
                 await run_manager.on_llm_new_token(chunk.content)
 
@@ -376,15 +378,16 @@ class JinaChat(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         if self.streaming:
-            message: Optional[BaseMessageChunk] = None
+            generation: Optional[ChatGenerationChunk] = None
             async for chunk in self._astream(
                 messages=messages, stop=stop, run_manager=run_manager, **kwargs
             ):
-                if message is None:
-                    message = chunk
+                if generation is None:
+                    generation = chunk
                 else:
-                    message += chunk
-            return ChatResult(generations=[ChatGeneration(message=message)])
+                    generation += chunk
+            assert generation is not None
+            return ChatResult(generations=[generation])
 
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
