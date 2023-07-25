@@ -16,8 +16,8 @@ from langchain.prompts.example_selector import (
     SemanticSimilarityExampleSelector,
 )
 from langchain.prompts.few_shot import (
-    FewShotPromptTemplate,
     FewShotChatMessagePromptTemplate,
+    FewShotPromptTemplate,
 )
 from langchain.prompts.few_shot_with_templates import FewShotPromptWithTemplates
 from langchain.prompts.loading import load_prompt

@@ -216,7 +216,7 @@ class FewShotChatMessagePromptTemplate(
         )
         # Show the prompt
         print(few_shot_prompt.format_messages(input="What's 3+3?"))
-        
+
         # Use within an LLMChain
         from langchain.chains import LLMChain
         from langchain.chat_models import ChatOpenAI
