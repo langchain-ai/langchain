@@ -99,7 +99,7 @@ class AzureMLChatOnlineEndpoint(LLM, BaseModel):
         """Return type of llm."""
         return "azureml_chat_endpoint"
     
-    def _generate(
+    def _call(
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
@@ -108,3 +108,6 @@ class AzureMLChatOnlineEndpoint(LLM, BaseModel):
     ) -> ChatResult:
         _model_kwargs = self.model_kwargs or {}
         request_payload = self.content_formatter.format_request_payload(messages, _model_kwargs)
+        response_payload = self.http_client.call(request_payload, **kwargs)
+        generated_text = self.content_formatter.format_response_payload(response_payload)
+        return generated_text
