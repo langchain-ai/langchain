@@ -1,4 +1,5 @@
-"""Graph implementations."""
+"""**Graphs** provide a natural language interface to graph databases."""
+
 from langchain.graphs.arangodb_graph import ArangoGraph
 from langchain.graphs.hugegraph import HugeGraph
 from langchain.graphs.kuzu_graph import KuzuGraph

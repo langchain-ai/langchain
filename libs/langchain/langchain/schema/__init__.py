@@ -1,3 +1,4 @@
+"""**Schemas** are the LangChain Base Classes and Interfaces."""
 from langchain.schema.agent import AgentAction, AgentFinish
 from langchain.schema.document import BaseDocumentTransformer, Document
 from langchain.schema.memory import BaseChatMessageHistory, BaseMemory

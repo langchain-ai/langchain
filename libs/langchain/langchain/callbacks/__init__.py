@@ -1,4 +1,12 @@
-"""Callback handlers that allow listening to events in LangChain."""
+"""**Callback handlers** allow listening to events in LangChain.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    BaseCallbackHandler
+        ...CallbackHandler(BaseCallbackHandler)
+"""
 
 from langchain.callbacks.aim_callback import AimCallbackHandler
 from langchain.callbacks.argilla_callback import ArgillaCallbackHandler

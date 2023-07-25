@@ -1,4 +1,22 @@
-"""Core toolkit implementations."""
+"""**Tools** are classes that an Agent uses to interact with the world.
+
+Each tool has a **description**. Agent uses the description to choose the right
+tool for the job.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    ToolMetaclass
+        BaseTool(ABC, metaclass=ToolMetaclass)
+            ...Tool(BaseTool) or ...(BaseTool)
+
+**Main helpers:**
+
+.. code-block::
+
+    CallbackManagerForToolRun, AsyncCallbackManagerForToolRun
+"""
 
 from langchain.tools.arxiv.tool import ArxivQueryRun
 from langchain.tools.azure_cognitive_services import (
@@ -112,8 +130,6 @@ __all__ = [
     "BaseRequestsTool",
     "BaseSQLDatabaseTool",
     "BaseSparkSQLTool",
-    "BaseTool",
-    "BaseTool",
     "BaseTool",
     "BingSearchResults",
     "BingSearchRun",

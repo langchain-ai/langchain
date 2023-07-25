@@ -1,3 +1,23 @@
+"""**Chat Models** are a variation on language models.
+
+While Chat Models use language models under the hood, the interface they expose
+is a bit different. Rather than expose a "text in, text out" API, they expose
+an interface where "chat messages" are the inputs and outputs.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    BaseChatModel(BaseLanguageModel, ABC)
+        ...ChatModel(BaseChatModel); ...(BaseChatModel)
+
+**Main helpers:**
+
+.. code-block::
+
+    AIMessage, BaseMessage, HumanMessage
+"""
+
 from langchain.chat_models.anthropic import ChatAnthropic
 from langchain.chat_models.azure_openai import AzureChatOpenAI
 from langchain.chat_models.fake import FakeListChatModel
