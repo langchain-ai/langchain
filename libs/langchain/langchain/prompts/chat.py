@@ -270,20 +270,6 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
             return ChatPromptTemplate(messages=self.messages + other.messages)
         elif isinstance(other, (BaseMessagePromptTemplate, BaseMessage)):
             return ChatPromptTemplate(messages=self.messages + [other])
-        elif isinstance(other, dict):
-            required_keys = {"role", "template"}
-            if required_keys != set(other.keys()):
-                raise ValueError(
-                    f"Expected keys {required_keys}, got {set(other.keys())}"
-                )
-            prompt = ChatMessagePromptTemplate.from_template(other)
-            return ChatPromptTemplate(messages=self.messages + [prompt])
-        elif isinstance(other, tuple):
-            if not len(other) == 2:
-                raise ValueError(f"Expected tuple of length 2, got {len(other)}")
-            role, template = other
-            prompt = ChatMessagePromptTemplate.from_template(other[1], role=other[0])
-            return ChatPromptTemplate(messages=self.messages + [prompt])
         elif isinstance(other, str):
             prompt = HumanMessagePromptTemplate.from_template(other)
             return ChatPromptTemplate(messages=self.messages + [prompt])
