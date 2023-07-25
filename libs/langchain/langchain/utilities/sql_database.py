@@ -383,7 +383,9 @@ class SQLDatabase:
                     )
                 elif self.dialect == "bigquery":
                     connection.exec_driver_sql(f"SET @@dataset_id='{self._schema}'")
-                else:
+                elif self.dialect == "mssql":
+                    pass
+                else:  # postgresql and compatible dialects
                     connection.exec_driver_sql(f"SET search_path TO {self._schema}")
             cursor = connection.execute(text(command))
             if cursor.returns_rows:

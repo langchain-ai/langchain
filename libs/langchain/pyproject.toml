@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.239"
+version = "0.0.242"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -124,22 +124,7 @@ langsmith = "~0.0.11"
 rank-bm25 = {version = "^0.2.2", optional = true}
 amadeus = {version = ">=8.1.0", optional = true}
 geopandas = {version = "^0.13.1", optional = true}
-
-[tool.poetry.group.docs.dependencies]
-autodoc_pydantic = "^1.8.0"
-myst_parser = "^0.18.1"
-nbsphinx = "^0.8.9"
-sphinx = "^4.5.0"
-sphinx-autobuild = "^2021.3.14"
-sphinx_book_theme = "^0.3.3"
-sphinx_rtd_theme = "^1.0.0"
-sphinx-typlog-theme = "^0.8.0"
-sphinx-panels = "^0.6.0"
-toml = "^0.10.2"
-myst-nb = "^0.17.1"
-linkchecker = "^10.2.1"
-sphinx-copybutton = "^0.5.1"
-nbdoc = "^0.0.82"
+python-arango = {version = "^7.5.9", optional = true}
 
 [tool.poetry.group.test.dependencies]
 # The only dependencies that should be added are
@@ -209,6 +194,7 @@ mastodon-py = "^1.8.1"
 momento = "^1.5.0"
 # Please do not add any dependencies in the test_integration group
 # See instructions above ^^
+pygithub = "^1.59.0"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.0.249"
@@ -329,6 +315,7 @@ all = [
     "octoai-sdk",
     "rdflib",
     "amadeus",
+    "python-arango",
 ]
 
 # An extra used to be able to add extended testing.
@@ -368,6 +355,7 @@ extended_testing = [
  "openai",
  "rank_bm25",
  "geopandas",
+ "jinja2",
 ]
 
 [[tool.poetry.source]]

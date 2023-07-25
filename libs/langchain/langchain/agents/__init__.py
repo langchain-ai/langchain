@@ -7,6 +7,7 @@ from langchain.agents.agent import (
     BaseSingleActionAgent,
     LLMSingleActionAgent,
 )
+from langchain.agents.agent_iterator import AgentExecutorIterator
 from langchain.agents.agent_toolkits import (
     create_csv_agent,
     create_json_agent,
@@ -42,6 +43,7 @@ from langchain.agents.tools import Tool, tool
 __all__ = [
     "Agent",
     "AgentExecutor",
+    "AgentExecutorIterator",
     "AgentOutputParser",
     "AgentType",
     "BaseMultiActionAgent",

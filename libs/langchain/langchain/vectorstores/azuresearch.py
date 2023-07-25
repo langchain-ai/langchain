@@ -166,6 +166,8 @@ def _get_search_client(
 
 
 class AzureSearch(VectorStore):
+    """Azure Cognitive Search vector store."""
+
     def __init__(
         self,
         azure_search_endpoint: str,
@@ -481,9 +483,15 @@ class AzureSearch(VectorStore):
 
 
 class AzureSearchVectorStoreRetriever(BaseRetriever):
+    """Retriever that uses Azure Search to find similar documents."""
+
     vectorstore: AzureSearch
+    """Azure Search instance used to find similar documents."""
     search_type: str = "hybrid"
+    """Type of search to perform. Options are "similarity", "hybrid", 
+    "semantic_hybrid"."""
     k: int = 4
+    """Number of documents to return."""
 
     class Config:
         """Configuration for this pydantic object."""
