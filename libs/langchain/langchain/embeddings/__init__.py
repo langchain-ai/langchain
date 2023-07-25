@@ -23,6 +23,7 @@ from langchain.embeddings.huggingface import (
 from langchain.embeddings.huggingface_hub import HuggingFaceHubEmbeddings
 from langchain.embeddings.jina import JinaEmbeddings
 from langchain.embeddings.llamacpp import LlamaCppEmbeddings
+from langchain.embeddings.localai import LocalAIEmbeddings
 from langchain.embeddings.minimax import MiniMaxEmbeddings
 from langchain.embeddings.mlflow_gateway import MlflowAIGatewayEmbeddings
 from langchain.embeddings.modelscope_hub import ModelScopeEmbeddings
@@ -78,6 +79,7 @@ __all__ = [
     "NLPCloudEmbeddings",
     "GPT4AllEmbeddings",
     "XinferenceEmbeddings",
+    "LocalAIEmbeddings",
 ]
 
 

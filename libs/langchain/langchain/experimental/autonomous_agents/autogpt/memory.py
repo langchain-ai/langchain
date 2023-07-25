@@ -7,6 +7,8 @@ from langchain.vectorstores.base import VectorStoreRetriever
 
 
 class AutoGPTMemory(BaseChatMemory):
+    """Memory for AutoGPT."""
+
     retriever: VectorStoreRetriever = Field(exclude=True)
     """VectorStoreRetriever object to connect to."""
 
