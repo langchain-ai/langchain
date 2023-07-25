@@ -31,6 +31,7 @@ from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.llms.huggingface_text_gen_inference import HuggingFaceTextGenInference
 from langchain.llms.human import HumanInputLLM
 from langchain.llms.koboldai import KoboldApiLLM
+from langchain.llms.llama2c import Llama2c
 from langchain.llms.llamacpp import LlamaCpp
 from langchain.llms.manifest import ManifestWrapper
 from langchain.llms.mlflow_ai_gateway import MlflowAIGateway
@@ -88,6 +89,7 @@ __all__ = [
     "HuggingFaceTextGenInference",
     "HumanInputLLM",
     "KoboldApiLLM",
+    "Llama2c",
     "LlamaCpp",
     "TextGen",
     "ManifestWrapper",
