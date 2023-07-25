@@ -49,8 +49,8 @@ class Chain(Serializable, ABC):
             execute a Chain. This takes inputs as a dictionary and returns a
             dictionary output.
         - `run`: A convenience method that takes inputs as args/kwargs and returns the
-            output as a string. This method can only be used for a subset of chains and
-            cannot return as rich of an output as `__call__`.
+            output as a string or object. This method can only be used for a subset of
+            chains and cannot return as rich of an output as `__call__`.
     """
 
     memory: Optional[BaseMemory] = None
@@ -390,17 +390,13 @@ class Chain(Serializable, ABC):
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
-    ) -> str:
-        """Execute chain when there's a single string output.
+    ) -> Any:
+        """Convenience method for executing chain.
 
-        The main difference between this method and `Chain.__call__` is that this method
-            can only be used for chains that return a single string output. If a Chain
-            has more outputs, a non-string output, or you want to return the inputs/run
-            info along with the outputs, use `Chain.__call__`.
-
-        The other difference is that this method expects inputs to be passed directly in
-        as positional arguments or keyword arguments, whereas `Chain.__call__` expects
-        a single input dictionary with all the inputs.
+        The main difference between this method and `Chain.__call__` is that this
+        method expects inputs to be passed directly in as positional arguments or
+        keyword arguments, whereas `Chain.__call__` expects a single input dictionary
+        with all the inputs
 
         Args:
             *args: If the chain expects a single input, it can be passed in as the
@@ -415,7 +411,7 @@ class Chain(Serializable, ABC):
                 directly as keyword arguments.
 
         Returns:
-            The chain output as a string.
+            The chain output.
 
         Example:
             .. code-block:: python
@@ -464,17 +460,14 @@ class Chain(Serializable, ABC):
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
-    ) -> str:
-        """Execute chain when there's a single string output.
+    ) -> Any:
+        """Convenience method for executing chain.
 
-        The main difference between this method and `Chain.__call__` is that this method
-            can only be used for chains that return a single string output. If a Chain
-            has more outputs, a non-string output, or you want to return the inputs/run
-            info along with the outputs, use `Chain.__call__`.
+        The main difference between this method and `Chain.__call__` is that this
+        method expects inputs to be passed directly in as positional arguments or
+        keyword arguments, whereas `Chain.__call__` expects a single input dictionary
+        with all the inputs
 
-        The other difference is that this method expects inputs to be passed directly in
-        as positional arguments or keyword arguments, whereas `Chain.__call__` expects
-        a single input dictionary with all the inputs.
 
         Args:
             *args: If the chain expects a single input, it can be passed in as the
@@ -489,7 +482,7 @@ class Chain(Serializable, ABC):
                 directly as keyword arguments.
 
         Returns:
-            The chain output as a string.
+            The chain output.
 
         Example:
             .. code-block:: python
