@@ -1,3 +1,7 @@
+---
+sidebar_position: 0
+---
+
 # QA and Chat over Documents
 
 Chat and Question-Answering (QA) over `data` are popular LLM use-cases.
@@ -45,7 +49,7 @@ Let's load this [blog post](https://lilianweng.github.io/posts/2023-06-23-agent/
 
 We have a QA app in a few lines of code.
 
-Set enviorment varaibles and get packages:
+Set environment variables and get packages:
 ```python 
 pip install openai
 pip install chromadb
@@ -140,7 +144,7 @@ Here are the three pieces together:
  
 #### 1.2.2 Retaining metadata
 
-`Context-aware splitters` keep the location ("context") of each split in the origional `Document`:
+`Context-aware splitters` keep the location ("context") of each split in the original `Document`:
 
 * [Markdown files](https://python.langchain.com/docs/use_cases/question_answering/document-context-aware-QA)
 * [Code (py or js)](https://python.langchain.com/docs/modules/data_connection/document_loaders/integrations/source_code)
@@ -264,7 +268,7 @@ The popularity of [PrivateGPT](https://github.com/imartinez/privateGPT) and [GPT
 
 LangChain has integrations with many open source LLMs that can be run locally.
  
-Using `GPT4All` is as simple as [downloading the binary]((https://python.langchain.com/docs/modules/model_io/models/llms/integrations/gpt4all)) and then:
+Using `GPT4All` is as simple as [downloading the binary]((https://python.langchain.com/docs/integrations/llms/gpt4all)) and then:
 
 
 ```python
