@@ -29,7 +29,12 @@ class ConversationTokenBufferMemory(BaseChatMemory):
 
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Return history buffer."""
-        buffer: Any = self.buffer
+        # Prune buffer if it exceeds max token limit
+        buffer = self.chat_memory.messages.copy()
+        curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)
+        while curr_buffer_length > self.max_token_limit:
+            buffer.pop(0)
+            curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)
         if self.return_messages:
             final_buffer: Any = buffer
         else:
@@ -39,15 +44,3 @@ class ConversationTokenBufferMemory(BaseChatMemory):
                 ai_prefix=self.ai_prefix,
             )
         return {self.memory_key: final_buffer}
-
-    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
-        """Save context from this conversation to buffer. Pruned."""
-        super().save_context(inputs, outputs)
-        # Prune buffer if it exceeds max token limit
-        buffer = self.chat_memory.messages
-        curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)
-        if curr_buffer_length > self.max_token_limit:
-            pruned_memory = []
-            while curr_buffer_length > self.max_token_limit:
-                pruned_memory.append(buffer.pop(0))
-                curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)
