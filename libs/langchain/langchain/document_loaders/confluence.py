@@ -205,7 +205,7 @@ class ConfluenceLoader(BaseLoader):
         limit: Optional[int] = 50,
         max_pages: Optional[int] = 1000,
         ocr_languages: Optional[str] = None,
-        keep_markdown_format: Optional[bool] = False,
+        keep_markdown_format: bool = False,
     ) -> List[Document]:
         """
         :param space_key: Space key retrieved from a confluence URL, defaults to None
@@ -236,7 +236,7 @@ class ConfluenceLoader(BaseLoader):
                               Tesseract language pack.
         :type ocr_languages: str, optional
         :param keep_markdown_format: Whether to keep the markdown format, default to False
-        :type keep_markdown_format: bool, optional
+        :type keep_markdown_format: bool
         :raises ValueError: _description_
         :raises ImportError: _description_
         :return: _description_

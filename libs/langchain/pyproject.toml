@@ -356,7 +356,6 @@ extended_testing = [
  "rank_bm25",
  "geopandas",
  "jinja2",
- "markdownify"
 ]
 
 [[tool.poetry.source]]
