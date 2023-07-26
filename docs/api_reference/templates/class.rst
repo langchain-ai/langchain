@@ -27,13 +27,4 @@
    {% endif %}
    {% endblock %}
 
-   {% if objname in imported_classes %}
-   Examples using this class
-   --------------------------
-
-   {% for example in imported_classes[objname] %}
-   * `Example <{{ example }}>`_
-   {%- endfor %}
-   {% endif %}
-
 .. example_links:: {{ objname }}
