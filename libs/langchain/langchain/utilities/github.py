@@ -1,11 +1,15 @@
 """Util that calls GitHub."""
-import json
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
 
-from github.Issue import Issue
+import json
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.utils import get_from_dict_or_env
+
+if TYPE_CHECKING:
+    from github.Issue import Issue
 
 
 class GitHubAPIWrapper(BaseModel):
