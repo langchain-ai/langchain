@@ -11,9 +11,9 @@ from tenacity import RetryCallState
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.tracers.schemas import Run
-from langchain.load.dump import dumpd
 from langchain.schema.document import Document
 from langchain.schema.output import ChatGeneration, LLMResult
+from langchain.utils.dump import dumpd
 
 logger = logging.getLogger(__name__)
 

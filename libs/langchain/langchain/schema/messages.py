@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Sequence
 
 from pydantic import Field
 
-from langchain.load.serializable import Serializable
+from langchain.utils.serializable import Serializable
 
 if TYPE_CHECKING:
     from langchain.prompts.chat import ChatPromptTemplate

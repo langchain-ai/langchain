@@ -3,11 +3,11 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, List, Optional, TypeVar, Union
 
-from langchain.load.serializable import Serializable
 from langchain.schema.messages import BaseMessage
 from langchain.schema.output import ChatGeneration, Generation
 from langchain.schema.prompt import PromptValue
 from langchain.schema.runnable import Runnable, RunnableConfig
+from langchain.utils.serializable import Serializable
 
 T = TypeVar("T")
 
@@ -31,6 +31,8 @@ class BaseLLMOutputParser(Serializable, Generic[T], ABC):
 class BaseGenerationOutputParser(
     BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
 ):
+    """Base class to parse the generation output of an LLM call."""
+
     def invoke(
         self, input: str | BaseMessage, config: RunnableConfig | None = None
     ) -> T:

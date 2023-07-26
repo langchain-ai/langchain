@@ -6,8 +6,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, root_validator
 
-from langchain.load.serializable import Serializable
 from langchain.schema.messages import BaseMessage, BaseMessageChunk
+from langchain.utils.serializable import Serializable
 
 
 class Generation(Serializable):
@@ -29,6 +29,8 @@ class Generation(Serializable):
 
 
 class GenerationChunk(Generation):
+    """Chunk generation output."""
+
     def __add__(self, other: GenerationChunk) -> GenerationChunk:
         if isinstance(other, GenerationChunk):
             generation_info = (
@@ -62,6 +64,8 @@ class ChatGeneration(Generation):
 
 
 class ChatGenerationChunk(ChatGeneration):
+    """Chat generation chunk output."""
+
     message: BaseMessageChunk
 
     def __add__(self, other: ChatGenerationChunk) -> ChatGenerationChunk:

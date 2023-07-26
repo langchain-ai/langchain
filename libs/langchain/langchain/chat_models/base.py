@@ -25,7 +25,6 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
     Callbacks,
 )
-from langchain.load.dump import dumpd, dumps
 from langchain.prompts.base import StringPromptValue
 from langchain.prompts.chat import ChatPromptValue
 from langchain.schema import (
@@ -44,6 +43,7 @@ from langchain.schema.messages import (
 )
 from langchain.schema.output import ChatGenerationChunk
 from langchain.schema.runnable import RunnableConfig
+from langchain.utils.dump import dumpd, dumps
 
 
 def _get_verbosity() -> bool:
@@ -51,6 +51,8 @@ def _get_verbosity() -> bool:
 
 
 class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
+    """Base class for chat models."""
+
     cache: Optional[bool] = None
     """Whether to cache the response."""
     verbose: bool = Field(default_factory=_get_verbosity)

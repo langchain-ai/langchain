@@ -13,8 +13,8 @@ from langsmith import Client
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import Run, TracerSession
 from langchain.env import get_runtime_environment
-from langchain.load.dump import dumpd
 from langchain.schema.messages import BaseMessage
+from langchain.utils.dump import dumpd
 
 logger = logging.getLogger(__name__)
 _LOGGED = set()

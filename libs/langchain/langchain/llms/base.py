@@ -47,7 +47,6 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
     Callbacks,
 )
-from langchain.load.dump import dumpd
 from langchain.prompts.base import StringPromptValue
 from langchain.prompts.chat import ChatPromptValue
 from langchain.schema import (
@@ -60,6 +59,7 @@ from langchain.schema.language_model import BaseLanguageModel, LanguageModelInpu
 from langchain.schema.messages import AIMessage, BaseMessage, get_buffer_string
 from langchain.schema.output import GenerationChunk
 from langchain.schema.runnable import RunnableConfig
+from langchain.utils.dump import dumpd
 
 logger = logging.getLogger(__name__)
 

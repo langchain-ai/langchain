@@ -12,12 +12,12 @@ from typing import (
     Union,
 )
 
-from langchain.load.serializable import Serializable
 from langchain.schema.messages import BaseMessage, get_buffer_string
 from langchain.schema.output import LLMResult
 from langchain.schema.prompt import PromptValue
 from langchain.schema.runnable import Runnable
 from langchain.utils import get_pydantic_field_names
+from langchain.utils.serializable import Serializable
 
 if TYPE_CHECKING:
     from langchain.callbacks.manager import Callbacks

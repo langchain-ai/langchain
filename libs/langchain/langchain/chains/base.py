@@ -19,10 +19,10 @@ from langchain.callbacks.manager import (
     CallbackManagerForChainRun,
     Callbacks,
 )
-from langchain.load.dump import dumpd
-from langchain.load.serializable import Serializable
 from langchain.schema import RUN_KEY, BaseMemory, RunInfo
 from langchain.schema.runnable import Runnable, RunnableConfig
+from langchain.utils.dump import dumpd
+from langchain.utils.serializable import Serializable
 
 logger = logging.getLogger(__name__)
 

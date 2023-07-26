@@ -13,11 +13,11 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import StringEvaluator
-from langchain.load.dump import dumpd
-from langchain.load.load import load
-from langchain.load.serializable import Serializable
 from langchain.schema import RUN_KEY, messages_from_dict
 from langchain.schema.messages import BaseMessage, get_buffer_string
+from langchain.utils.dump import dumpd
+from langchain.utils.load import load
+from langchain.utils.serializable import Serializable
 
 
 def _get_messages_from_run_dict(messages: List[dict]) -> List[BaseMessage]:

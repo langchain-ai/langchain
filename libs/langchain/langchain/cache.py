@@ -53,9 +53,9 @@ except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
 from langchain.embeddings.base import Embeddings
-from langchain.load.dump import dumps
-from langchain.load.load import loads
 from langchain.schema import ChatGeneration, Generation
+from langchain.utils.dump import dumps
+from langchain.utils.load import loads
 from langchain.vectorstores.redis import Redis as RedisVectorstore
 
 logger = logging.getLogger(__file__)

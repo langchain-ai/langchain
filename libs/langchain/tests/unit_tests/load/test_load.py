@@ -4,9 +4,9 @@ import pytest
 
 from langchain.chains.llm import LLMChain
 from langchain.llms.openai import OpenAI
-from langchain.load.dump import dumpd, dumps
-from langchain.load.load import load, loads
 from langchain.prompts.prompt import PromptTemplate
+from langchain.utils.dump import dumpd, dumps
+from langchain.utils.load import load, loads
 
 
 class NotSerializable:

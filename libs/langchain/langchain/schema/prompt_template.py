@@ -8,11 +8,11 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 import yaml
 from pydantic import Field, root_validator
 
-from langchain.load.serializable import Serializable
 from langchain.schema.document import Document
 from langchain.schema.output_parser import BaseOutputParser
 from langchain.schema.prompt import PromptValue
 from langchain.schema.runnable import Runnable, RunnableConfig
+from langchain.utils.serializable import Serializable
 
 
 class BasePromptTemplate(Serializable, Runnable[Dict, PromptValue], ABC):

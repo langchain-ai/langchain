@@ -11,7 +11,6 @@ from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import Run
 from langchain.chat_models.fake import FakeListChatModel
 from langchain.llms.fake import FakeListLLM
-from langchain.load.dump import dumpd, dumps
 from langchain.output_parsers.list import CommaSeparatedListOutputParser
 from langchain.prompts.chat import (
     ChatPromptTemplate,
@@ -31,6 +30,7 @@ from langchain.schema.runnable import (
     RunnablePassthrough,
     RunnableSequence,
 )
+from langchain.utils.dump import dumpd, dumps
 
 
 class FakeTracer(BaseTracer):

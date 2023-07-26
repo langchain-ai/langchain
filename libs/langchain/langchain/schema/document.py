@@ -5,7 +5,7 @@ from typing import Any, Sequence
 
 from pydantic import Field
 
-from langchain.load.serializable import Serializable
+from langchain.utils.serializable import Serializable
 
 
 class Document(Serializable):

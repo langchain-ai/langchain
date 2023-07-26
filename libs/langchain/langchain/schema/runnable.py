@@ -23,8 +23,8 @@ from typing import (
 from pydantic import Field
 
 from langchain.callbacks.base import BaseCallbackManager, Callbacks
-from langchain.load.dump import dumpd
-from langchain.load.serializable import Serializable
+from langchain.utils.dump import dumpd
+from langchain.utils.serializable import Serializable
 
 
 async def _gated_coro(semaphore: asyncio.Semaphore, coro: Coroutine) -> Any:

@@ -7,7 +7,6 @@ from typing import Any, Callable, List, Sequence, Tuple, Type, TypeVar, Union
 
 from pydantic import Field, root_validator
 
-from langchain.load.serializable import Serializable
 from langchain.prompts.base import StringPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
@@ -22,6 +21,7 @@ from langchain.schema.messages import (
     SystemMessage,
     get_buffer_string,
 )
+from langchain.utils.serializable import Serializable
 
 
 class BaseMessagePromptTemplate(Serializable, ABC):
