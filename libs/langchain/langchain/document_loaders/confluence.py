@@ -235,7 +235,8 @@ class ConfluenceLoader(BaseLoader):
                               language, you'll first need to install the appropriate
                               Tesseract language pack.
         :type ocr_languages: str, optional
-        :param keep_markdown_format: Whether to keep the markdown format, default to False
+        :param keep_markdown_format: Whether to keep the markdown format, defaults to
+            False
         :type keep_markdown_format: bool
         :raises ValueError: _description_
         :raises ImportError: _description_
