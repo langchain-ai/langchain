@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 import requests
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import model_validator, ConfigDict, BaseModel
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -68,13 +68,10 @@ class AI21(LLM):
 
     base_url: Optional[str] = None
     """Base url to use, if None decides based on model name."""
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
         ai21_api_key = get_from_dict_or_env(values, "ai21_api_key", "AI21_API_KEY")

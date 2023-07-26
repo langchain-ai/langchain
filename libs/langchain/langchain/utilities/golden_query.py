@@ -3,7 +3,7 @@ import json
 from typing import Dict, Optional
 
 import requests
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import model_validator, ConfigDict, BaseModel
 
 from langchain.utils import get_from_dict_or_env
 
@@ -23,13 +23,10 @@ class GoldenQueryAPIWrapper(BaseModel):
     """
 
     golden_api_key: Optional[str] = None
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         golden_api_key = get_from_dict_or_env(

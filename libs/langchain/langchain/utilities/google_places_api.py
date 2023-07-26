@@ -4,7 +4,7 @@
 import logging
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import model_validator, ConfigDict, BaseModel
 
 from langchain.utils import get_from_dict_or_env
 
@@ -30,16 +30,12 @@ class GooglePlacesAPIWrapper(BaseModel):
     """
 
     gplaces_api_key: Optional[str] = None
-    google_map_client: Any  #: :meta private:
+    google_map_client: Any = None  #: :meta private:
     top_k_results: Optional[int] = None
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key is in your environment variable."""
         gplaces_api_key = get_from_dict_or_env(

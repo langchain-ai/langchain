@@ -1,6 +1,6 @@
 from typing import Any, List
 
-from pydantic import BaseModel, Extra
+from pydantic import ConfigDict, BaseModel
 
 from langchain.embeddings.base import Embeddings
 
@@ -18,7 +18,7 @@ class ModelScopeEmbeddings(BaseModel, Embeddings):
             embed = ModelScopeEmbeddings(model_id=model_id)
     """
 
-    embed: Any
+    embed: Any = None
     model_id: str = "damo/nlp_corom_sentence-embedding_english-base"
     """Model name to use."""
 
@@ -36,11 +36,7 @@ class ModelScopeEmbeddings(BaseModel, Embeddings):
                 "Could not import some python packages."
                 "Please install it with `pip install modelscope`."
             ) from e
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a modelscope embedding model.

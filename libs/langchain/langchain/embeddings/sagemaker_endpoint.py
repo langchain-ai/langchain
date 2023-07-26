@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import model_validator, ConfigDict, BaseModel
 
 from langchain.embeddings.base import Embeddings
 from langchain.llms.sagemaker_endpoint import ContentHandlerBase
@@ -48,7 +48,7 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
                 credentials_profile_name=credentials_profile_name
             )
     """
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
 
     endpoint_name: str = ""
     """The name of the endpoint from the deployed Sagemaker model.
@@ -98,14 +98,10 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
     function. See `boto3`_. docs for more info.
     .. _boto3: <https://boto3.amazonaws.com/v1/documentation/api/latest/index.html>
     """
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that AWS credentials to and python package exists in environment."""
         try:

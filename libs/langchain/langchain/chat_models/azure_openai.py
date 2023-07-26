@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, Mapping
 
-from pydantic import root_validator
+from pydantic import model_validator
 
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.schema import ChatResult
@@ -52,7 +52,8 @@ class AzureChatOpenAI(ChatOpenAI):
     openai_organization: str = ""
     openai_proxy: str = ""
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["openai_api_key"] = get_from_dict_or_env(

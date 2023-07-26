@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from pydantic import Extra, root_validator
+from pydantic import model_validator, ConfigDict
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
@@ -47,14 +47,10 @@ class ElasticsearchDatabaseChain(Chain):
     sample_documents_in_index_info: int = 3
     return_intermediate_steps: bool = False
     """Whether or not to return the intermediate steps along with the final answer."""
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_indices(cls, values: dict) -> dict:
         if values["include_indices"] and values["ignore_indices"]:
             raise ValueError(

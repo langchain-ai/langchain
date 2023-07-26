@@ -4,7 +4,7 @@ import asyncio
 from concurrent.futures import Executor, ThreadPoolExecutor
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Optional
 
-from pydantic import BaseModel, root_validator
+from pydantic import model_validator, BaseModel
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -148,7 +148,8 @@ class VertexAI(_VertexAICommon, LLM):
     tuned_model_name: Optional[str] = None
     "The name of a tuned model. If provided, model_name is ignored."
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         cls._try_init_vertexai(values)

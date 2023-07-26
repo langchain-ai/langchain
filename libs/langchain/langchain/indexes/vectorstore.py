@@ -1,6 +1,6 @@
 from typing import Any, List, Optional, Type
 
-from pydantic import BaseModel, Extra, Field
+from pydantic import ConfigDict, BaseModel, Field
 
 from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
 from langchain.chains.retrieval_qa.base import RetrievalQA
@@ -23,12 +23,7 @@ class VectorStoreIndexWrapper(BaseModel):
     """Wrapper around a vectorstore for easy access."""
 
     vectorstore: VectorStore
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     def query(
         self, question: str, llm: Optional[BaseLanguageModel] = None, **kwargs: Any
@@ -58,12 +53,7 @@ class VectorstoreIndexCreator(BaseModel):
     embedding: Embeddings = Field(default_factory=OpenAIEmbeddings)
     text_splitter: TextSplitter = Field(default_factory=_get_default_text_splitter)
     vectorstore_kwargs: dict = Field(default_factory=dict)
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     def from_loaders(self, loaders: List[BaseLoader]) -> VectorStoreIndexWrapper:
         """Create a vectorstore index from loaders."""

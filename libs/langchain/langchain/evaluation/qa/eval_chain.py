@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from typing import Any, List, Optional, Sequence
 
-from pydantic import Extra
+from pydantic import ConfigDict
 
 from langchain import PromptTemplate
 from langchain.callbacks.manager import Callbacks
@@ -53,11 +53,7 @@ class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
     """LLM Chain for evaluating question answering."""
 
     output_key: str = "results"  #: :meta private:
-
-    class Config:
-        """Configuration for the QAEvalChain."""
-
-        extra = Extra.ignore
+    model_config = ConfigDict(extra="ignore")
 
     @property
     def evaluation_name(self) -> str:
@@ -195,11 +191,7 @@ class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
     def requires_input(self) -> bool:
         """Whether the chain requires an input string."""
         return True
-
-    class Config:
-        """Configuration for the QAEvalChain."""
-
-        extra = Extra.ignore
+    model_config = ConfigDict(extra="ignore")
 
     @classmethod
     def _validate_input_vars(cls, prompt: PromptTemplate) -> None:

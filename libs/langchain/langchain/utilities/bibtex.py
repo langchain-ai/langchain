@@ -2,7 +2,7 @@
 import logging
 from typing import Any, Dict, List, Mapping
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import model_validator, ConfigDict, BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -34,13 +34,10 @@ class BibtexparserWrapper(BaseModel):
     This wrapper will use bibtexparser to load a collection of references from
     a bibtex file and fetch document summaries.
     """
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         try:

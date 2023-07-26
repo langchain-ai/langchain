@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Tuple
 
-from pydantic import root_validator
+from pydantic import model_validator
 
 from langchain.prompts.chat import BaseChatPromptTemplate
 from langchain.schema import BasePromptTemplate, PromptValue
@@ -28,7 +28,8 @@ class PipelinePromptTemplate(BasePromptTemplate):
     pipeline_prompts: List[Tuple[str, BasePromptTemplate]]
     """A list of tuples, consisting of a string (`name`) and a Prompt Template."""
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def get_input_variables(cls, values: Dict) -> Dict:
         """Get input variables."""
         created_variables = set()

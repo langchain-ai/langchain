@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Type, cast
 
-from pydantic import root_validator
+from pydantic import model_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -22,7 +22,8 @@ class LLMRouterChain(RouterChain):
     llm_chain: LLMChain
     """LLM chain used to perform routing"""
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_prompt(cls, values: dict) -> dict:
         prompt = values["llm_chain"].prompt
         if prompt.output_parser is None:

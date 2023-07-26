@@ -4,19 +4,14 @@ from urllib.parse import quote
 
 import aiohttp
 import requests
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import model_validator, ConfigDict, BaseModel, Field
 
 from langchain.utils import get_from_dict_or_env
 
 
 class DataForSeoAPIWrapper(BaseModel):
     """Wrapper around the DataForSeo API."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     default_params: dict = Field(
         default={
@@ -43,7 +38,8 @@ class DataForSeoAPIWrapper(BaseModel):
     aiosession: Optional[aiohttp.ClientSession] = None
     """The aiohttp session to use for the DataForSEO SERP API."""
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that login and password exists in environment."""
         login = get_from_dict_or_env(values, "api_login", "DATAFORSEO_LOGIN")

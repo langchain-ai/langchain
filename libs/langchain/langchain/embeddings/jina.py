@@ -2,7 +2,7 @@ import os
 from typing import Any, Dict, List, Optional
 
 import requests
-from pydantic import BaseModel, root_validator
+from pydantic import model_validator, BaseModel
 
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
@@ -11,7 +11,7 @@ from langchain.utils import get_from_dict_or_env
 class JinaEmbeddings(BaseModel, Embeddings):
     """Jina embedding models."""
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
 
     model_name: str = "ViT-B-32::openai"
     """Model name to use."""
@@ -20,7 +20,8 @@ class JinaEmbeddings(BaseModel, Embeddings):
     jina_api_url: str = "https://api.clip.jina.ai/api/v1/models/"
     request_headers: Optional[dict] = None
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that auth token exists in environment."""
         # Set Auth

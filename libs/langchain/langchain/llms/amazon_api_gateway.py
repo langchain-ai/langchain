@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
-from pydantic import Extra
+from pydantic import ConfigDict
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -43,11 +43,7 @@ class AmazonAPIGateway(LLM):
     output transform functions to handle formats between LLM
     and the endpoint.
     """
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:

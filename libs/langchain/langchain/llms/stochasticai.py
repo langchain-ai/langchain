@@ -3,7 +3,7 @@ import time
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
-from pydantic import Extra, Field, root_validator
+from pydantic import model_validator, ConfigDict, Field
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -34,13 +34,10 @@ class StochasticAI(LLM):
     explicitly specified."""
 
     stochasticai_api_key: Optional[str] = None
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = {field.alias for field in cls.__fields__.values()}
@@ -58,7 +55,8 @@ class StochasticAI(LLM):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
         stochasticai_api_key = get_from_dict_or_env(

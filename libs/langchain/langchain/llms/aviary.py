@@ -3,7 +3,7 @@ import os
 from typing import Any, Dict, List, Mapping, Optional, Union, cast
 
 import requests
-from pydantic import Extra, root_validator
+from pydantic import model_validator, ConfigDict
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -106,13 +106,10 @@ class Aviary(LLM):
     use_prompt_format: bool = True
     # API version to use for Aviary
     version: Optional[str] = None
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         aviary_url = get_from_dict_or_env(values, "aviary_url", "AVIARY_URL")

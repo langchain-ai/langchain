@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Callable, Dict, List, Optional
 
-from pydantic import BaseModel, root_validator
+from pydantic import model_validator, BaseModel
 from tenacity import (
     before_sleep_log,
     retry,
@@ -75,8 +75,8 @@ def _strip_erroneous_leading_spaces(text: str) -> str:
 class GooglePalm(BaseLLM, BaseModel):
     """Google PaLM models."""
 
-    client: Any  #: :meta private:
-    google_api_key: Optional[str]
+    client: Any = None  #: :meta private:
+    google_api_key: Optional[str] = None
     model_name: str = "models/text-bison-001"
     """Model name to use."""
     temperature: float = 0.7
@@ -95,7 +95,8 @@ class GooglePalm(BaseLLM, BaseModel):
     """Number of chat completions to generate for each prompt. Note that the API may
        not return the full n completions if duplicates are generated."""
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate api key, python package exists."""
         google_api_key = get_from_dict_or_env(

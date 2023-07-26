@@ -79,9 +79,9 @@ class WalkInput(BaseModel):
     """Input for walking."""
 
     direction: Direction
-    speed: Optional[float]
+    speed: Optional[float] = None
     style_or_cautiousness: Union[Style, Cautiousness]
-    other_commands: Any
+    other_commands: Any = None
 
 
 class PublicCues(BaseModel):

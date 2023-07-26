@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from pydantic import root_validator
+from pydantic import model_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -37,7 +37,8 @@ class ZepRetriever(BaseRetriever):
     top_k: Optional[int]
     """Number of documents to return."""
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def create_client(cls, values: dict) -> dict:
         try:
             from zep_python import ZepClient

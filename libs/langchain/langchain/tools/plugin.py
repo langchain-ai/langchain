@@ -32,9 +32,9 @@ class AIPlugin(BaseModel):
     description_for_human: str
     auth: Optional[dict] = None
     api: ApiConfig
-    logo_url: Optional[str]
-    contact_email: Optional[str]
-    legal_info_url: Optional[str]
+    logo_url: Optional[str] = None
+    contact_email: Optional[str] = None
+    legal_info_url: Optional[str] = None
 
     @classmethod
     def from_url(cls, url: str) -> AIPlugin:

@@ -7,7 +7,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 import numpy as np
-from pydantic import Extra
+from pydantic import ConfigDict
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
@@ -25,12 +25,7 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
 
     base_embeddings: Embeddings
     llm_chain: LLMChain
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     @property
     def input_keys(self) -> List[str]:

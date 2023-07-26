@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from pydantic import root_validator
+from pydantic import model_validator
 
 from langchain.schema import BaseOutputParser
 
@@ -16,7 +16,8 @@ class CombiningOutputParser(BaseOutputParser):
 
     parsers: List[BaseOutputParser]
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_parsers(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate the parsers."""
         parsers = values["parsers"]

@@ -1,7 +1,7 @@
 from functools import partial
 from typing import Any, Dict, List, Optional, Sequence
 
-from pydantic import root_validator
+from pydantic import model_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -58,7 +58,8 @@ class CTransformers(LLM):
         """Return type of llm."""
         return "ctransformers"
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that ``ctransformers`` package is installed."""
         try:

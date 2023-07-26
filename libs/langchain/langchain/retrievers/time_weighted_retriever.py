@@ -2,7 +2,7 @@ import datetime
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document
@@ -42,11 +42,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
 
     None assigns no salience to documents not fetched from the vector store.
     """
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def _get_combined_score(
         self,

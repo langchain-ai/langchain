@@ -12,6 +12,7 @@ import numpy as np
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseRetriever, Document
+from pydantic import ConfigDict
 
 
 def create_index(contexts: List[str], embeddings: Embeddings) -> np.ndarray:
@@ -42,12 +43,7 @@ class KNNRetriever(BaseRetriever):
     """Number of results to return."""
     relevancy_threshold: Optional[float] = None
     """Threshold for relevancy."""
-
-    class Config:
-
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @classmethod
     def from_texts(

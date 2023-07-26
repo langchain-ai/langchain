@@ -1,7 +1,7 @@
 """Toolkit for interacting with a Power BI dataset."""
 from typing import List, Optional, Union
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.callbacks.base import BaseCallbackManager
@@ -38,11 +38,7 @@ class PowerBIToolkit(BaseToolkit):
     callback_manager: Optional[BaseCallbackManager] = None
     output_token_limit: Optional[int] = None
     tiktoken_model_name: Optional[str] = None
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""

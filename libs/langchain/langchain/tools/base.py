@@ -7,11 +7,10 @@ from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from pydantic import (
-    BaseModel,
+    model_validator, ConfigDict, BaseModel,
     Extra,
     Field,
     create_model,
-    root_validator,
     validate_arguments,
 )
 from pydantic.main import ModelMetaclass
@@ -170,12 +169,7 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         Union[bool, str, Callable[[ToolException], str]]
     ] = False
     """Handle the content of the ToolException thrown."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     @property
     def is_single_input(self) -> bool:
@@ -208,7 +202,8 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
                 return {k: v for k, v in result.dict().items() if k in tool_input}
         return tool_input
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def raise_deprecation(cls, values: Dict) -> Dict:
         """Raise deprecation warning if callback_manager is used."""
         if values.get("callback_manager") is not None:

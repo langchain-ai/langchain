@@ -1,7 +1,7 @@
 """Tool for the SearxNG search API."""
 from typing import Optional
 
-from pydantic import Extra
+from pydantic import ConfigDict
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
@@ -52,11 +52,7 @@ class SearxSearchResults(BaseTool):
     wrapper: SearxSearchWrapper
     num_results: int = 4
     kwargs: dict = Field(default_factory=dict)
-
-    class Config:
-        """Pydantic config."""
-
-        extra = Extra.allow
+    model_config = ConfigDict(extra="allow")
 
     def _run(
         self,

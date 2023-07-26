@@ -7,7 +7,7 @@ from uuid import UUID
 
 from langsmith.schemas import RunBase as BaseRunV2
 from langsmith.schemas import RunTypeEnum
-from pydantic import BaseModel, Field, root_validator
+from pydantic import model_validator, BaseModel, Field
 
 from langchain.schema import LLMResult
 
@@ -96,7 +96,8 @@ class Run(BaseRunV2):
     child_runs: List[Run] = Field(default_factory=list)
     tags: Optional[List[str]] = Field(default_factory=list)
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def assign_name(cls, values: dict) -> dict:
         """Assign name to the run."""
         if values.get("name") is None:

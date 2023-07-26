@@ -5,7 +5,7 @@ Based on https://github.com/saharNooby/rwkv.cpp/blob/master/rwkv/chat_with_bot.p
 """
 from typing import Any, Dict, List, Mapping, Optional, Set
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import model_validator, ConfigDict, BaseModel
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -71,11 +71,7 @@ class RWKV(LLM, BaseModel):
     model_tokens: Any = None  #: :meta private:
 
     model_state: Any = None  #: :meta private:
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -97,7 +93,8 @@ class RWKV(LLM, BaseModel):
             "verbose",
         }
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in the environment."""
         try:

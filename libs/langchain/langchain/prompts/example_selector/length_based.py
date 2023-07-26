@@ -2,7 +2,8 @@
 import re
 from typing import Callable, Dict, List
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel
+from pydantic.v1 import validator as v1_validator
 
 from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.prompts.prompt import PromptTemplate
@@ -35,7 +36,9 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
         string_example = self.example_prompt.format(**example)
         self.example_text_lengths.append(self.get_text_length(string_example))
 
-    @validator("example_text_lengths", always=True)
+    # TODO[pydantic]: Replace with a Pydantic v2 `field_validator`.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
+    @v1_validator("example_text_lengths", always=True)
     def calculate_example_text_lengths(cls, v: List[int], values: Dict) -> List[int]:
         """Calculate text lengths if they don't exist."""
         # Check if text lengths were passed in

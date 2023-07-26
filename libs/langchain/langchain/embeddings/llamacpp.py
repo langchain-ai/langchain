@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import model_validator, ConfigDict, BaseModel, Field
 
 from langchain.embeddings.base import Embeddings
 
@@ -19,7 +19,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
             llama = LlamaCppEmbeddings(model_path="/path/to/model.bin")
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model_path: str
 
     n_ctx: int = Field(512, alias="n_ctx")
@@ -54,13 +54,10 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
 
     n_gpu_layers: Optional[int] = Field(None, alias="n_gpu_layers")
     """Number of layers to be loaded into gpu memory. Default None."""
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that llama-cpp-python library is installed."""
         model_path = values["model_path"]

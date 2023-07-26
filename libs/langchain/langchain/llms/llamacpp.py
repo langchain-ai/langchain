@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, Iterator, List, Optional
 
-from pydantic import Field, root_validator
+from pydantic import model_validator, Field
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -106,7 +106,8 @@ class LlamaCpp(LLM):
     verbose: bool = True
     """Print verbose output to stderr."""
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that llama-cpp-python library is installed."""
         model_path = values["model_path"]

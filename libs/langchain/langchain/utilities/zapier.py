@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 import requests
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import model_validator, ConfigDict, BaseModel
 from requests import Request, Session
 
 from langchain.utils import get_from_dict_or_env
@@ -44,11 +44,7 @@ class ZapierNLAWrapper(BaseModel):
     zapier_nla_api_key: str
     zapier_nla_oauth_access_token: str
     zapier_nla_api_base: str = "https://nla.zapier.com/api/v1/"
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     def _format_headers(self) -> Dict[str, str]:
         """Format headers for requests."""
@@ -110,7 +106,8 @@ class ZapierNLAWrapper(BaseModel):
             json=data,
         )
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
 

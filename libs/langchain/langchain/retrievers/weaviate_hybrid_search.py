@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, cast
 from uuid import uuid4
 
-from pydantic import root_validator
+from pydantic import model_validator, ConfigDict
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.docstore.document import Document
@@ -28,7 +28,8 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
     create_schema_if_missing: bool = True
     """Whether to create the schema if it doesn't exist."""
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_client(
         cls,
         values: Dict[str, Any],
@@ -61,11 +62,7 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
                 values["client"].schema.create_class(class_obj)
 
         return values
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     # added text_key
     def add_documents(self, docs: List[Document], **kwargs: Any) -> List[str]:

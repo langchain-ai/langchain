@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional
 
-from pydantic import Extra
+from pydantic import ConfigDict
 
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
@@ -30,12 +30,7 @@ class LLMSymbolicMathChain(Chain):
     llm_chain: LLMChain
     input_key: str = "question"  #: :meta private:
     output_key: str = "answer"  #: :meta private:
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     @property
     def input_keys(self) -> List[str]:

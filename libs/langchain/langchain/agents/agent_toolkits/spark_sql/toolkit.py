@@ -1,7 +1,7 @@
 """Toolkit for interacting with Spark SQL."""
 from typing import List
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.schema.language_model import BaseLanguageModel
@@ -20,11 +20,7 @@ class SparkSQLToolkit(BaseToolkit):
 
     db: SparkSQL = Field(exclude=True)
     llm: BaseLanguageModel = Field(exclude=True)
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""

@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Callable, Dict, List, Optional
 
-from pydantic import BaseModel, root_validator
+from pydantic import model_validator, BaseModel
 from tenacity import (
     before_sleep_log,
     retry,
@@ -56,12 +56,13 @@ def embed_with_retry(
 class GooglePalmEmbeddings(BaseModel, Embeddings):
     """Google's PaLM Embeddings APIs."""
 
-    client: Any
-    google_api_key: Optional[str]
+    client: Any = None
+    google_api_key: Optional[str] = None
     model_name: str = "models/embedding-gecko-001"
     """Model name to use."""
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate api key, python package exists."""
         google_api_key = get_from_dict_or_env(

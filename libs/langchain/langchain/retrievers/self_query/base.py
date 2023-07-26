@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List, Optional, Type, cast
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic import model_validator, ConfigDict, BaseModel, Field
 
 from langchain import LLMChain
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
@@ -68,13 +68,10 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
     verbose: bool = False
     """Use original query instead of the revised new query from LLM"""
     use_original_query: bool = False
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
-
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_translator(cls, values: Dict) -> Dict:
         """Validate translator."""
         if "structured_query_translator" not in values:

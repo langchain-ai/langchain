@@ -9,6 +9,7 @@ from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
 from langchain.schema.document import Document
 from langchain.schema.runnable import Runnable, RunnableConfig
+from pydantic import ConfigDict
 
 if TYPE_CHECKING:
     from langchain.callbacks.manager import (
@@ -45,11 +46,7 @@ class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
                     results = cosine_similarity(self.tfidf_array, query_vec).reshape((-1,))
                     return [self.docs[i] for i in results.argsort()[-self.k :][::-1]]
     """  # noqa: E501
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     _new_arg_supported: bool = False
     _expects_other_args: bool = False

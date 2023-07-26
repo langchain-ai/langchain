@@ -1,7 +1,7 @@
 """Util that calls Jira."""
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import model_validator, ConfigDict, BaseModel
 
 from langchain.utils import get_from_dict_or_env
 
@@ -10,18 +10,15 @@ from langchain.utils import get_from_dict_or_env
 class JiraAPIWrapper(BaseModel):
     """Wrapper for Jira API."""
 
-    jira: Any  #: :meta private:
-    confluence: Any
+    jira: Any = None  #: :meta private:
+    confluence: Any = None
     jira_username: Optional[str] = None
     jira_api_token: Optional[str] = None
     jira_instance_url: Optional[str] = None
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         jira_username = get_from_dict_or_env(values, "jira_username", "JIRA_USERNAME")

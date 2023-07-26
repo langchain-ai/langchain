@@ -2,7 +2,7 @@
 from abc import abstractmethod
 from typing import Any, Dict, Generic, List, Mapping, Optional, TypeVar, Union
 
-from pydantic import Extra, root_validator
+from pydantic import model_validator, ConfigDict
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -150,13 +150,10 @@ class SagemakerEndpoint(LLM):
     function. See `boto3`_. docs for more info.
     .. _boto3: <https://boto3.amazonaws.com/v1/documentation/api/latest/index.html>
     """
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that AWS credentials to and python package exists in environment."""
         try:

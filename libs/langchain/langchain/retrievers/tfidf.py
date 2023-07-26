@@ -4,6 +4,7 @@ from typing import Any, Dict, Iterable, List, Optional
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document
+from pydantic import ConfigDict
 
 
 class TFIDFRetriever(BaseRetriever):
@@ -21,11 +22,7 @@ class TFIDFRetriever(BaseRetriever):
     """TF-IDF array."""
     k: int = 4
     """Number of documents to return."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @classmethod
     def from_texts(

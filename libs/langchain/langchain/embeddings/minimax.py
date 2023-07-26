@@ -4,7 +4,7 @@ import logging
 from typing import Any, Callable, Dict, List, Optional
 
 import requests
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import model_validator, ConfigDict, BaseModel
 from tenacity import (
     before_sleep_log,
     retry,
@@ -79,13 +79,10 @@ class MiniMaxEmbeddings(BaseModel, Embeddings):
     """Group ID for MiniMax API."""
     minimax_api_key: Optional[str] = None
     """API Key for MiniMax API."""
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that group id and api key exists in environment."""
         minimax_group_id = get_from_dict_or_env(

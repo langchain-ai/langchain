@@ -5,7 +5,7 @@ https://pypi.org/project/duckduckgo-search/
 """
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel, Extra
+from pydantic import model_validator, ConfigDict, BaseModel
 from pydantic.class_validators import root_validator
 
 
@@ -19,13 +19,10 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
     safesearch: str = "moderate"
     time: Optional[str] = "y"
     max_results: int = 5
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that python package exists in environment."""
         try:

@@ -7,7 +7,7 @@ import re
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
-from pydantic import Extra, root_validator
+from pydantic import model_validator, ConfigDict
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -86,12 +86,7 @@ class BaseQAWithSourcesChain(Chain, ABC):
             llm, chain_type=chain_type, **_chain_kwargs
         )
         return cls(combine_documents_chain=combine_documents_chain, **kwargs)
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     @property
     def input_keys(self) -> List[str]:
@@ -112,7 +107,8 @@ class BaseQAWithSourcesChain(Chain, ABC):
             _output_keys = _output_keys + ["source_documents"]
         return _output_keys
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_naming(cls, values: Dict) -> Dict:
         """Fix backwards compatibility in naming."""
         if "combine_document_chain" in values:

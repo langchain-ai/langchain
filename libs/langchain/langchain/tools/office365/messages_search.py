@@ -6,7 +6,7 @@ https://learn.microsoft.com/en-us/graph/auth/
 
 from typing import Any, Dict, List, Optional, Type
 
-from pydantic import BaseModel, Extra, Field
+from pydantic import ConfigDict, BaseModel, Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
@@ -68,11 +68,7 @@ class O365SearchEmails(O365BaseTool):
         " The input must be a valid Microsoft Graph v1.0 $search query."
         " The output is a JSON list of the requested resource."
     )
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     def _run(
         self,

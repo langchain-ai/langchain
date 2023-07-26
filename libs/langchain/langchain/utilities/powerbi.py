@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 import aiohttp
 import requests
 from aiohttp import ServerTimeoutError
-from pydantic import BaseModel, Field, root_validator, validator
+from pydantic import field_validator, model_validator, ConfigDict, BaseModel, Field
 from requests.exceptions import Timeout
 
 _LOGGER = logging.getLogger(__name__)
@@ -38,18 +38,16 @@ class PowerBIDataset(BaseModel):
     sample_rows_in_table_info: int = Field(default=1, gt=0, le=10)
     schemas: Dict[str, str] = Field(default_factory=dict)
     aiosession: Optional[aiohttp.ClientSession] = None
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
-
-    @validator("table_names", allow_reuse=True)
+    @field_validator("table_names")
+    @classmethod
     def fix_table_names(cls, table_names: List[str]) -> List[str]:
         """Fix the table names."""
         return [fix_table_name(table) for table in table_names]
 
-    @root_validator(pre=True, allow_reuse=True)
+    @model_validator(mode="before")
+    @classmethod
     def token_or_credential_present(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that at least one of token and credentials is present."""
         if "token" in values or "credential" in values:

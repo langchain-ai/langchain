@@ -9,7 +9,7 @@ from typing import (
     Optional,
 )
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import model_validator, ConfigDict, BaseModel
 from requests.exceptions import HTTPError
 from tenacity import (
     before_sleep_log,
@@ -91,19 +91,16 @@ class DashScopeEmbeddings(BaseModel, Embeddings):
 
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     """The DashScope client."""
     model: str = "text-embedding-v1"
     dashscope_api_key: Optional[str] = None
     max_retries: int = 5
     """Maximum number of retries to make when generating."""
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         import dashscope
 

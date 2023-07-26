@@ -1,7 +1,7 @@
 """Prompt template that contains few shot examples."""
 from typing import Any, Dict, List, Optional
 
-from pydantic import Extra, root_validator
+from pydantic import model_validator, ConfigDict
 
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
@@ -48,7 +48,8 @@ class FewShotPromptTemplate(StringPromptTemplate):
     validate_template: bool = True
     """Whether or not to try validating the template."""
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def check_examples_and_selector(cls, values: Dict) -> Dict:
         """Check that one and only one of examples/example_selector are provided."""
         examples = values.get("examples", None)
@@ -65,7 +66,8 @@ class FewShotPromptTemplate(StringPromptTemplate):
 
         return values
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def template_is_valid(cls, values: Dict) -> Dict:
         """Check that prefix, suffix, and input variables are consistent."""
         if values["validate_template"]:
@@ -75,12 +77,7 @@ class FewShotPromptTemplate(StringPromptTemplate):
                 values["input_variables"] + list(values["partial_variables"]),
             )
         return values
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     def _get_examples(self, **kwargs: Any) -> List[dict]:
         if self.examples is not None:

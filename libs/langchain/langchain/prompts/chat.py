@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Callable, List, Sequence, Tuple, Type, TypeVar, Union
 
-from pydantic import Field, root_validator
+from pydantic import model_validator, Field
 
 from langchain.load.serializable import Serializable
 from langchain.prompts.base import StringPromptTemplate
@@ -333,7 +333,8 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
         else:
             raise NotImplementedError(f"Unsupported operand type for +: {type(other)}")
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_input_variables(cls, values: dict) -> dict:
         """Validate input variables.
 

@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from inspect import signature
 from typing import List, Optional, Sequence, Union
 
-from pydantic import BaseModel
+from pydantic import ConfigDict, BaseModel
 
 from langchain.callbacks.manager import Callbacks
 from langchain.schema import BaseDocumentTransformer, Document
@@ -36,11 +36,7 @@ class DocumentCompressorPipeline(BaseDocumentCompressor):
 
     transformers: List[Union[BaseDocumentTransformer, BaseDocumentCompressor]]
     """List of document filters that are chained together and run in sequence."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def compress_documents(
         self,

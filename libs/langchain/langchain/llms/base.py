@@ -26,7 +26,8 @@ from typing import (
 )
 
 import yaml
-from pydantic import Field, root_validator, validator
+from pydantic import model_validator, ConfigDict, Field
+from pydantic.v1 import validator as v1_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -137,13 +138,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     """Tags to add to the run trace."""
     metadata: Optional[Dict[str, Any]] = Field(default=None, exclude=True)
     """Metadata to add to the run trace."""
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def raise_deprecation(cls, values: Dict) -> Dict:
         """Raise deprecation warning if callback_manager is used."""
         if values.get("callback_manager") is not None:
@@ -154,7 +152,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             values["callbacks"] = values.pop("callback_manager", None)
         return values
 
-    @validator("verbose", pre=True, always=True)
+    # TODO[pydantic]: Replace with a Pydantic v2 `field_validator`.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
+    @v1_validator("verbose", pre=True, always=True)
     def set_verbose(cls, verbose: Optional[bool]) -> bool:
         """If verbose is None, set it.
 

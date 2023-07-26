@@ -7,7 +7,7 @@ from typing import Dict, List, Optional
 
 import aiohttp
 import requests
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import model_validator, ConfigDict, BaseModel
 
 from langchain.utils import get_from_dict_or_env
 
@@ -19,11 +19,7 @@ class MetaphorSearchAPIWrapper(BaseModel):
 
     metaphor_api_key: str
     k: int = 10
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     def _metaphor_search_results(
         self,
@@ -60,7 +56,8 @@ class MetaphorSearchAPIWrapper(BaseModel):
         search_results = response.json()
         return search_results["results"]
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and endpoint exists in environment."""
         metaphor_api_key = get_from_dict_or_env(

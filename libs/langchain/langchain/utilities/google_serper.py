@@ -8,6 +8,7 @@ from pydantic.main import BaseModel
 from typing_extensions import Literal
 
 from langchain.utils import get_from_dict_or_env
+from pydantic import model_validator, ConfigDict
 
 
 class GoogleSerperAPIWrapper(BaseModel):
@@ -42,13 +43,10 @@ class GoogleSerperAPIWrapper(BaseModel):
     tbs: Optional[str] = None
     serper_api_key: Optional[str] = None
     aiosession: Optional[aiohttp.ClientSession] = None
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
         serper_api_key = get_from_dict_or_env(

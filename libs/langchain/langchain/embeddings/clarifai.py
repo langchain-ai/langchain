@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import model_validator, ConfigDict, BaseModel
 
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
@@ -25,9 +25,9 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    stub: Any  #: :meta private:
+    stub: Any = None  #: :meta private:
     """Clarifai stub."""
-    userDataObject: Any
+    userDataObject: Any = None
     """Clarifai user data object."""
     model_id: Optional[str] = None
     """Model id to use."""
@@ -40,13 +40,10 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
     pat: Optional[str] = None
     """Clarifai personal access token to use."""
     api_base: str = "https://api.clarifai.com"
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["pat"] = get_from_dict_or_env(values, "pat", "CLARIFAI_PAT")

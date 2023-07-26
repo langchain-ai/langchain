@@ -2,7 +2,7 @@ import re
 import warnings
 from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Mapping, Optional
 
-from pydantic import root_validator
+from pydantic import model_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -46,7 +46,8 @@ class _AnthropicCommon(BaseLanguageModel):
     AI_PROMPT: Optional[str] = None
     count_tokens: Optional[Callable[[str], int]] = None
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["anthropic_api_key"] = get_from_dict_or_env(
@@ -142,7 +143,8 @@ class Anthropic(LLM, _AnthropicCommon):
             response = model(prompt)
     """
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def raise_warning(cls, values: Dict) -> Dict:
         """Raise warning that this class is deprecated."""
         warnings.warn(

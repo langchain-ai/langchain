@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, List
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.tools import BaseTool
@@ -18,11 +18,7 @@ class AmadeusToolkit(BaseToolkit):
     """Toolkit for interacting with Office365."""
 
     client: Client = Field(default_factory=authenticate)
-
-    class Config:
-        """Pydantic config."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""

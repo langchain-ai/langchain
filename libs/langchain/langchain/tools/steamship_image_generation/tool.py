@@ -16,7 +16,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import TYPE_CHECKING, Dict, Optional
 
-from pydantic import root_validator
+from pydantic import model_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
@@ -59,7 +59,8 @@ class SteamshipImageGenerationTool(BaseTool):
         "Output: the UUID of a generated image"
     )
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_size(cls, values: Dict) -> Dict:
         if "size" in values:
             size = values["size"]
@@ -69,7 +70,8 @@ class SteamshipImageGenerationTool(BaseTool):
 
         return values
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         steamship_api_key = get_from_dict_or_env(

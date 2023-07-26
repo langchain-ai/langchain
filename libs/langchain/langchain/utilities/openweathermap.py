@@ -1,7 +1,7 @@
 """Util that calls OpenWeatherMap using PyOWM."""
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import model_validator, ConfigDict, BaseModel
 
 from langchain.utils import get_from_dict_or_env
 
@@ -16,15 +16,12 @@ class OpenWeatherMapAPIWrapper(BaseModel):
     3. pip install pyowm
     """
 
-    owm: Any
+    owm: Any = None
     openweathermap_api_key: Optional[str] = None
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
         openweathermap_api_key = get_from_dict_or_env(

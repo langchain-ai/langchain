@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import yaml
-from pydantic import BaseModel, root_validator
+from pydantic import model_validator, BaseModel
 
 from langchain.agents.agent_iterator import AgentExecutorIterator
 from langchain.agents.agent_types import AgentType
@@ -494,7 +494,8 @@ class Agent(BaseSingleActionAgent):
         """
         return list(set(self.llm_chain.input_keys) - {"agent_scratchpad"})
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_prompt(cls, values: Dict) -> Dict:
         """Validate that prompt matches format."""
         prompt = values["llm_chain"].prompt
@@ -693,7 +694,8 @@ s
             agent=agent, tools=tools, callback_manager=callback_manager, **kwargs
         )
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_tools(cls, values: Dict) -> Dict:
         """Validate that tools are compatible with agent."""
         agent = values["agent"]
@@ -707,7 +709,8 @@ s
                 )
         return values
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_return_direct_tool(cls, values: Dict) -> Dict:
         """Validate that tools are compatible with agent."""
         agent = values["agent"]

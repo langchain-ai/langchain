@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
 
-from pydantic import Extra
+from pydantic import ConfigDict
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.router.base import RouterChain
@@ -16,12 +16,7 @@ class EmbeddingRouterChain(RouterChain):
 
     vectorstore: VectorStore
     routing_keys: List[str] = ["query"]
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     @property
     def input_keys(self) -> List[str]:

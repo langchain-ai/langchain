@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
-from pydantic import Extra, root_validator
+from pydantic import model_validator, ConfigDict
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -71,12 +71,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
     return_intermediate_steps: bool = False
     """Return intermediate steps.
     Intermediate steps include the results of calling llm_chain on each document."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     @property
     def output_keys(self) -> List[str]:
@@ -91,7 +86,8 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
             _output_keys += self.metadata_keys
         return _output_keys
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_llm_output(cls, values: Dict) -> Dict:
         """Validate that the combine chain outputs a dictionary."""
         output_parser = values["llm_chain"].prompt.output_parser
@@ -113,7 +109,8 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
             )
         return values
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def get_default_document_variable_name(cls, values: Dict) -> Dict:
         """Get default document variable name, if not provided."""
         if "document_variable_name" not in values:

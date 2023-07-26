@@ -3,7 +3,7 @@ import logging
 import os
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, root_validator
+from pydantic import model_validator, BaseModel
 
 from langchain.schema import Document
 
@@ -32,15 +32,16 @@ class ArxivAPIWrapper(BaseModel):
 
     """
 
-    arxiv_search: Any  #: :meta private:
-    arxiv_exceptions: Any  # :meta private:
+    arxiv_search: Any = None  #: :meta private:
+    arxiv_exceptions: Any = None  # :meta private:
     top_k_results: int = 3
     ARXIV_MAX_QUERY_LENGTH = 300
     load_max_docs: int = 100
     load_all_available_meta: bool = False
     doc_content_chars_max: Optional[int] = 4000
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         try:

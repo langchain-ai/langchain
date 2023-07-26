@@ -7,7 +7,7 @@ chain (LLMChain) to generate the reasoning and scores.
 
 from typing import Any, Dict, List, NamedTuple, Optional, Sequence, Tuple, Union
 
-from pydantic import Extra, Field
+from pydantic import ConfigDict, Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -131,11 +131,7 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
     """The output parser used to parse the output."""
     return_reasoning: bool = False
     """Whether to return the reasoning along with the score."""
-
-    class Config:
-        """Configuration for the QAEvalChain."""
-
-        extra = Extra.ignore
+    model_config = ConfigDict(extra="ignore")
 
     @property
     def requires_reference(self) -> bool:

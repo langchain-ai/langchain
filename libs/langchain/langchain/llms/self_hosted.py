@@ -3,7 +3,7 @@ import logging
 import pickle
 from typing import Any, Callable, List, Mapping, Optional
 
-from pydantic import Extra
+from pydantic import ConfigDict
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -136,11 +136,7 @@ class SelfHostedPipeline(LLM):
     """Key word arguments to pass to the model load function."""
     model_reqs: List[str] = ["./", "torch"]
     """Requirements to install on hardware to inference the model."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     def __init__(self, **kwargs: Any):
         """Init the pipeline with an auxiliary function.

@@ -1,7 +1,7 @@
 """Pass input through a moderation endpoint."""
 from typing import Any, Dict, List, Optional
 
-from pydantic import root_validator
+from pydantic import model_validator
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
@@ -34,7 +34,8 @@ class OpenAIModerationChain(Chain):
     openai_api_key: Optional[str] = None
     openai_organization: Optional[str] = None
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         openai_api_key = get_from_dict_or_env(

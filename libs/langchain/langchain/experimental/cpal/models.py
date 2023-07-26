@@ -5,7 +5,7 @@ from typing import Any, Optional, Union
 
 import duckdb
 import pandas as pd
-from pydantic import BaseModel, Field, PrivateAttr, root_validator, validator
+from pydantic import field_validator, ConfigDict, BaseModel, Field, PrivateAttr, root_validator
 
 from langchain.experimental.cpal.constants import Constant
 from langchain.graphs.networkx_graph import NetworkxEntityGraph
@@ -20,7 +20,8 @@ class NarrativeModel(BaseModel):
     story_hypothetical: str
     story_plot: str  # causal stack of operations
 
-    @validator("*", pre=True)
+    @field_validator("*", mode="before")
+    @classmethod
     def empty_str_to_none(cls, v: str) -> Union[str, None]:
         """Empty strings are not allowed"""
         if v == "":
@@ -33,14 +34,10 @@ class EntityModel(BaseModel):
     code: str = Field(description="entity actions")
     value: float = Field(description="entity initial value")
     depends_on: list[str] = Field(default=[], description="ancestor entities")
+    model_config = ConfigDict(validate_assignment=True)
 
-    # TODO: generalize to multivariate math
-    # TODO: acyclic graph
-
-    class Config:
-        validate_assignment = True
-
-    @validator("name")
+    @field_validator("name")
+    @classmethod
     def lower_case_name(cls, v: str) -> str:
         v = v.lower()
         return v
@@ -64,7 +61,8 @@ class EntitySettingModel(BaseModel):
     attribute: str = Field(description="name of the attribute to be calculated")
     value: float = Field(description="entity's attribute value (calculated)")
 
-    @validator("name")
+    @field_validator("name")
+    @classmethod
     def lower_case_transform(cls, v: str) -> str:
         v = v.lower()
         return v
@@ -98,7 +96,8 @@ class InterventionModel(BaseModel):
     entity_settings: list[EntitySettingModel]
     system_settings: Optional[list[SystemSettingModel]] = None
 
-    @validator("system_settings")
+    @field_validator("system_settings")
+    @classmethod
     def lower_case_name(cls, v: str) -> Union[str, None]:
         if v is not None:
             raise NotImplementedError("system_setting is not implemented yet")

@@ -3,7 +3,7 @@
 import hashlib
 from typing import Any, Dict, List, Optional
 
-from pydantic import Extra, root_validator
+from pydantic import model_validator, ConfigDict
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.embeddings.base import Embeddings
@@ -109,12 +109,7 @@ class PineconeHybridSearchRetriever(BaseRetriever):
     """Number of documents to return."""
     alpha: float = 0.5
     """Alpha value for hybrid search."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     def add_texts(
         self,
@@ -131,7 +126,8 @@ class PineconeHybridSearchRetriever(BaseRetriever):
             metadatas=metadatas,
         )
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         try:

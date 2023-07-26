@@ -2,7 +2,7 @@
 """Tools for interacting with Spark SQL."""
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import model_validator, BaseModel, Extra, Field
 
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.callbacks.manager import (
@@ -23,6 +23,8 @@ class BaseSparkSQLTool(BaseModel):
 
     # Override BaseTool.Config to appease mypy
     # See https://github.com/pydantic/pydantic/issues/4173
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(BaseTool.Config):
         """Configuration for this pydantic object."""
 
@@ -118,7 +120,8 @@ class QueryCheckerTool(BaseSparkSQLTool, BaseTool):
     Always use this tool before executing a query with query_sql_db!
     """
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def initialize_llm_chain(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if "llm_chain" not in values:
             values["llm_chain"] = LLMChain(

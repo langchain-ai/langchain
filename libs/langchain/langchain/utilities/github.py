@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import model_validator, ConfigDict, BaseModel
 
 from langchain.utils import get_from_dict_or_env
 
@@ -15,19 +15,16 @@ if TYPE_CHECKING:
 class GitHubAPIWrapper(BaseModel):
     """Wrapper for GitHub API."""
 
-    github: Any  #: :meta private:
-    github_repo_instance: Any  #: :meta private:
+    github: Any = None  #: :meta private:
+    github_repo_instance: Any = None  #: :meta private:
     github_repository: Optional[str] = None
     github_app_id: Optional[str] = None
     github_app_private_key: Optional[str] = None
     github_branch: Optional[str] = None
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         github_repository = get_from_dict_or_env(

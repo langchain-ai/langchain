@@ -1,6 +1,6 @@
 from typing import Any, Dict, List
 
-from pydantic import BaseModel, root_validator
+from pydantic import model_validator, BaseModel
 
 from langchain.embeddings.base import Embeddings
 
@@ -18,9 +18,10 @@ class GPT4AllEmbeddings(BaseModel, Embeddings):
             embeddings = GPT4AllEmbeddings()
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that GPT4All library is installed."""
 

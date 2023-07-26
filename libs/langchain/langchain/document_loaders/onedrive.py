@@ -8,11 +8,12 @@ from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional, Type, Union
 
-from pydantic import BaseModel, BaseSettings, Field, FilePath, SecretStr
+from pydantic import BaseModel, Field, FilePath, SecretStr
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.onedrive_file import OneDriveFileLoader
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 if TYPE_CHECKING:
     from O365 import Account
@@ -23,13 +24,9 @@ logger = logging.getLogger(__name__)
 
 
 class _OneDriveSettings(BaseSettings):
-    client_id: str = Field(..., env="O365_CLIENT_ID")
-    client_secret: SecretStr = Field(..., env="O365_CLIENT_SECRET")
-
-    class Config:
-        env_prefix = ""
-        case_sentive = False
-        env_file = ".env"
+    client_id: str = Field(..., validation_alias="O365_CLIENT_ID")
+    client_secret: SecretStr = Field(..., validation_alias="O365_CLIENT_SECRET")
+    model_config = SettingsConfigDict(env_prefix="", case_sentive=False, env_file=".env")
 
 
 class _OneDriveTokenStorage(BaseSettings):

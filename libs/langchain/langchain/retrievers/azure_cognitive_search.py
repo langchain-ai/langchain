@@ -7,7 +7,7 @@ from typing import Dict, List, Optional
 
 import aiohttp
 import requests
-from pydantic import Extra, root_validator
+from pydantic import model_validator, ConfigDict
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -35,12 +35,10 @@ class AzureCognitiveSearchRetriever(BaseRetriever):
     """Key in a retrieved result to set as the Document page_content."""
     top_k: Optional[int] = None
     """Number of results to retrieve. Set to None to retrieve all results."""
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
-    class Config:
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that service name, index name and api key exists in environment."""
         values["service_name"] = get_from_dict_or_env(

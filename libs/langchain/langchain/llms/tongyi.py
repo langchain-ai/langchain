@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Callable, Dict, List, Optional
 
-from pydantic import Field, root_validator
+from pydantic import model_validator, Field
 from requests.exceptions import HTTPError
 from tenacity import (
     before_sleep_log,
@@ -135,7 +135,8 @@ class Tongyi(LLM):
         """Return type of llm."""
         return "tongyi"
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         get_from_dict_or_env(values, "dashscope_api_key", "DASHSCOPE_API_KEY")

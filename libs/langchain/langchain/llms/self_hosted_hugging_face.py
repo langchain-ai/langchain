@@ -2,7 +2,7 @@ import importlib.util
 import logging
 from typing import Any, Callable, List, Mapping, Optional
 
-from pydantic import Extra
+from pydantic import ConfigDict
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.self_hosted import SelfHostedPipeline
@@ -168,11 +168,7 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline):
     """Function to load the model remotely on the server."""
     inference_fn: Callable = _generate_text  #: :meta private:
     """Inference function to send to the remote hardware."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     def __init__(self, **kwargs: Any):
         """Construct the pipeline remotely using an auxiliary function.

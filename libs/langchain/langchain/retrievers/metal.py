@@ -1,6 +1,6 @@
 from typing import Any, List, Optional
 
-from pydantic import root_validator
+from pydantic import model_validator
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document
@@ -14,7 +14,8 @@ class MetalRetriever(BaseRetriever):
     params: Optional[dict] = None
     """The parameters to pass to the Metal client."""
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_client(cls, values: dict) -> dict:
         """Validate that the client is of the correct type."""
         from metal_sdk.metal import Metal

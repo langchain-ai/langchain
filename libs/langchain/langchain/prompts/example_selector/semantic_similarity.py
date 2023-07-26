@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Type
 
-from pydantic import BaseModel, Extra
+from pydantic import ConfigDict, BaseModel
 
 from langchain.embeddings.base import Embeddings
 from langchain.prompts.example_selector.base import BaseExampleSelector
@@ -27,12 +27,7 @@ class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
     input_keys: Optional[List[str]] = None
     """Optional keys to filter input to. If provided, the search is based on
     the input variables instead of all variables."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     def add_example(self, example: Dict[str, str]) -> str:
         """Add new example to vectorstore."""

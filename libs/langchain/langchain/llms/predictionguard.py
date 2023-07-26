@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-from pydantic import Extra, root_validator
+from pydantic import model_validator, ConfigDict
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -47,13 +47,10 @@ class PredictionGuard(LLM):
     """Your Prediction Guard access token."""
 
     stop: Optional[List[str]] = None
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the access token and python package exists in environment."""
         token = get_from_dict_or_env(values, "token", "PREDICTIONGUARD_TOKEN")

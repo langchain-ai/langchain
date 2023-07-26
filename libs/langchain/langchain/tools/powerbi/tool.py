@@ -3,7 +3,7 @@ import logging
 from time import perf_counter
 from typing import Any, Dict, Optional, Tuple
 
-from pydantic import Field, validator
+from pydantic import field_validator, ConfigDict, Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
@@ -38,13 +38,10 @@ class QueryPowerBITool(BaseTool):
     max_iterations: int = 5
     output_token_limit: int = 4000
     tiktoken_model_name: Optional[str] = None  # "cl100k_base"
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
-
-    @validator("llm_chain")
+    @field_validator("llm_chain")
+    @classmethod
     def validate_llm_chain_input_variables(  # pylint: disable=E0213
         cls, llm_chain: LLMChain
     ) -> LLMChain:
@@ -224,11 +221,7 @@ class InfoPowerBITool(BaseTool):
     Example Input: "table1, table2, table3"
     """  # noqa: E501
     powerbi: PowerBIDataset = Field(exclude=True)
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def _run(
         self,
@@ -252,11 +245,7 @@ class ListPowerBITool(BaseTool):
     name = "list_tables_powerbi"
     description = "Input is an empty string, output is a comma separated list of tables in the database."  # noqa: E501 # pylint: disable=C0301
     powerbi: PowerBIDataset = Field(exclude=True)
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def _run(
         self,

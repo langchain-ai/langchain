@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, List, Optional, Protocol, Tuple
 
-from pydantic import Extra
+from pydantic import ConfigDict
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -156,12 +156,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     """The maximum number of tokens to group documents into. For example, if
     set to 3000 then documents will be grouped into chunks of no greater than
     3000 tokens before trying to combine them into a smaller chunk."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     @property
     def _collapse_chain(self) -> BaseCombineDocumentsChain:

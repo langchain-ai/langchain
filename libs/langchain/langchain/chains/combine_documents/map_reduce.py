@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import Extra, root_validator
+from pydantic import model_validator, ConfigDict
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -109,14 +109,10 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         if self.return_intermediate_steps:
             _output_keys = _output_keys + ["intermediate_steps"]
         return _output_keys
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def get_reduce_chain(cls, values: Dict) -> Dict:
         """For backwards compatibility."""
         if "combine_document_chain" in values:
@@ -139,7 +135,8 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
 
         return values
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def get_return_intermediate_steps(cls, values: Dict) -> Dict:
         """For backwards compatibility."""
         if "return_map_steps" in values:
@@ -147,7 +144,8 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
             del values["return_map_steps"]
         return values
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def get_default_document_variable_name(cls, values: Dict) -> Dict:
         """Get default document variable name, if not provided."""
         if "document_variable_name" not in values:

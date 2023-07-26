@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-from pydantic import root_validator
+from pydantic import model_validator
 
 from langchain.memory.chat_memory import BaseChatMemory, BaseMemory
 from langchain.memory.utils import get_prompt_input_key
@@ -50,7 +50,8 @@ class ConversationStringBufferMemory(BaseMemory):
     input_key: Optional[str] = None
     memory_key: str = "history"  #: :meta private:
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_chains(cls, values: Dict) -> Dict:
         """Validate that return messages is not True."""
         if values.get("return_messages", False):

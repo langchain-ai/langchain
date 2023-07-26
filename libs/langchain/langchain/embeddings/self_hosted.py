@@ -1,6 +1,6 @@
 from typing import Any, Callable, List
 
-from pydantic import Extra
+from pydantic import ConfigDict
 
 from langchain.embeddings.base import Embeddings
 from langchain.llms import SelfHostedPipeline
@@ -65,11 +65,7 @@ class SelfHostedEmbeddings(SelfHostedPipeline, Embeddings):
     """Inference function to extract the embeddings on the remote hardware."""
     inference_kwargs: Any = None
     """Any kwargs to pass to the model's inference function."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.

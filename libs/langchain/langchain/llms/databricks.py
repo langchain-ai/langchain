@@ -3,7 +3,8 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional
 
 import requests
-from pydantic import BaseModel, Extra, Field, PrivateAttr, root_validator, validator
+from pydantic import model_validator, ConfigDict, BaseModel, Field, PrivateAttr
+from pydantic.v1 import validator as v1_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -36,7 +37,8 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
     host: str
     endpoint_name: str
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def set_api_url(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if "api_url" not in values:
             host = values["host"]
@@ -62,7 +64,8 @@ class _DatabricksClusterDriverProxyClient(_DatabricksClientBase):
     cluster_id: str
     cluster_driver_port: str
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def set_api_url(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if "api_url" not in values:
             host = values["host"]
@@ -227,12 +230,11 @@ class Databricks(LLM):
     """
 
     _client: _DatabricksClientBase = PrivateAttr()
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        extra = Extra.forbid
-        underscore_attrs_are_private = True
-
-    @validator("cluster_id", always=True)
+    # TODO[pydantic]: Replace with a Pydantic v2 `field_validator`.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
+    @v1_validator("cluster_id", always=True)
     def set_cluster_id(cls, v: Any, values: Dict[str, Any]) -> Optional[str]:
         if v and values["endpoint_name"]:
             raise ValueError("Cannot set both endpoint_name and cluster_id.")
@@ -252,7 +254,9 @@ class Databricks(LLM):
                     f" error: {e}"
                 )
 
-    @validator("cluster_driver_port", always=True)
+    # TODO[pydantic]: Replace with a Pydantic v2 `field_validator`.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
+    @v1_validator("cluster_driver_port", always=True)
     def set_cluster_driver_port(cls, v: Any, values: Dict[str, Any]) -> Optional[str]:
         if v and values["endpoint_name"]:
             raise ValueError("Cannot set both endpoint_name and cluster_driver_port.")
@@ -267,7 +271,9 @@ class Databricks(LLM):
         else:
             return v
 
-    @validator("model_kwargs", always=True)
+    # TODO[pydantic]: Replace with a Pydantic v2 `field_validator`.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
+    @v1_validator("model_kwargs", always=True)
     def set_model_kwargs(cls, v: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
         if v:
             assert "prompt" not in v, "model_kwargs must not contain key 'prompt'"

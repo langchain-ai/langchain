@@ -15,7 +15,7 @@ from typing import (
     overload,
 )
 
-from pydantic import PrivateAttr
+from pydantic import ConfigDict, PrivateAttr
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -95,9 +95,7 @@ class OpenLLM(LLM):
     _client: Union[
         openllm.client.HTTPClient, openllm.client.GrpcClient, None
     ] = PrivateAttr(default=None)
-
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid")
 
     @overload
     def __init__(

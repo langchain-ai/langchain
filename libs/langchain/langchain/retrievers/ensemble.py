@@ -4,7 +4,7 @@ multiple retrievers by using weighted  Reciprocal Rank Fusion
 """
 from typing import Any, Dict, List
 
-from pydantic import root_validator
+from pydantic import model_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -30,7 +30,8 @@ class EnsembleRetriever(BaseRetriever):
     weights: List[float]
     c: int = 60
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def set_weights(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if not values.get("weights"):
             n_retrievers = len(values["retrievers"])

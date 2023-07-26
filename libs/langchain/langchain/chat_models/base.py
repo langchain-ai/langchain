@@ -14,7 +14,7 @@ from typing import (
     cast,
 )
 
-from pydantic import Field, root_validator
+from pydantic import model_validator, ConfigDict, Field
 
 import langchain
 from langchain.callbacks.base import BaseCallbackManager
@@ -64,7 +64,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
     metadata: Optional[Dict[str, Any]] = Field(default=None, exclude=True)
     """Metadata to add to the run trace."""
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def raise_deprecation(cls, values: Dict) -> Dict:
         """Raise deprecation warning if callback_manager is used."""
         if values.get("callback_manager") is not None:
@@ -74,11 +75,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
             )
             values["callbacks"] = values.pop("callback_manager", None)
         return values
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     # --- Runnable methods ---
 

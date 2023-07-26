@@ -39,11 +39,11 @@ class DocugamiLoader(BaseLoader, BaseModel):
 
     access_token: Optional[str] = os.environ.get("DOCUGAMI_API_KEY")
     """The Docugami API access token to use."""
-    docset_id: Optional[str]
+    docset_id: Optional[str] = None
     """The Docugami API docset ID to use."""
-    document_ids: Optional[Sequence[str]]
+    document_ids: Optional[Sequence[str]] = None
     """The Docugami API document IDs to use."""
-    file_paths: Optional[Sequence[Union[Path, str]]]
+    file_paths: Optional[Sequence[Union[Path, str]]] = None
     """The local file paths to use."""
     min_chunk_size: int = 32  # appended to the next chunk to avoid over-chunking
     """The minimum chunk size to use when parsing DGML. Defaults to 32."""

@@ -132,7 +132,7 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 import requests
-from pydantic import BaseModel, Extra, Field, PrivateAttr, root_validator, validator
+from pydantic import field_validator, model_validator, ConfigDict, BaseModel, Field, PrivateAttr
 
 from langchain.utils import get_from_dict_or_env
 
@@ -209,7 +209,8 @@ class SearxSearchWrapper(BaseModel):
     k: int = 10
     aiosession: Optional[Any] = None
 
-    @validator("unsecure")
+    @field_validator("unsecure")
+    @classmethod
     def disable_ssl_warnings(cls, v: bool) -> bool:
         """Disable SSL warnings."""
         if v:
@@ -223,7 +224,8 @@ class SearxSearchWrapper(BaseModel):
 
         return v
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_params(cls, values: Dict) -> Dict:
         """Validate that custom searx params are merged with default ones."""
         user_params = values["params"]
@@ -251,11 +253,7 @@ class SearxSearchWrapper(BaseModel):
         values["searx_host"] = searx_host
 
         return values
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     def _searx_api_query(self, params: dict) -> SearxResults:
         """Actual request to searx API."""

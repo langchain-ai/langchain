@@ -1,7 +1,7 @@
 """Reorder documents"""
 from typing import Any, List, Sequence
 
-from pydantic import BaseModel
+from pydantic import ConfigDict, BaseModel
 
 from langchain.schema import BaseDocumentTransformer, Document
 
@@ -26,11 +26,7 @@ class LongContextReorder(BaseDocumentTransformer, BaseModel):
     Performance degrades when models must access relevant information
     in the middle of long contexts.
     See: https://arxiv.org/abs//2307.03172"""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def transform_documents(
         self, documents: Sequence[Document], **kwargs: Any

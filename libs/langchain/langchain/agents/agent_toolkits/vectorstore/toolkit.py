@@ -1,7 +1,7 @@
 """Toolkit for interacting with a vector store."""
 from typing import List
 
-from pydantic import BaseModel, Field
+from pydantic import ConfigDict, BaseModel, Field
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.llms.openai import OpenAI
@@ -20,11 +20,7 @@ class VectorStoreInfo(BaseModel):
     vectorstore: VectorStore = Field(exclude=True)
     name: str
     description: str
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class VectorStoreToolkit(BaseToolkit):
@@ -32,11 +28,7 @@ class VectorStoreToolkit(BaseToolkit):
 
     vectorstore_info: VectorStoreInfo = Field(exclude=True)
     llm: BaseLanguageModel = Field(default_factory=lambda: OpenAI(temperature=0))
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
@@ -66,11 +58,7 @@ class VectorStoreRouterToolkit(BaseToolkit):
 
     vectorstores: List[VectorStoreInfo] = Field(exclude=True)
     llm: BaseLanguageModel = Field(default_factory=lambda: OpenAI(temperature=0))
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""

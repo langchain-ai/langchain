@@ -1,7 +1,7 @@
 import json
 from typing import Any, Callable, Dict, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import model_validator, ConfigDict, BaseModel
 
 
 class GraphQLAPIWrapper(BaseModel):
@@ -13,15 +13,12 @@ class GraphQLAPIWrapper(BaseModel):
 
     custom_headers: Optional[Dict[str, str]] = None
     graphql_endpoint: str
-    gql_client: Any  #: :meta private:
+    gql_client: Any = None  #: :meta private:
     gql_function: Callable[[str], Any]  #: :meta private:
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in the environment."""
         try:

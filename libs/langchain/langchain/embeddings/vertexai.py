@@ -1,6 +1,6 @@
 from typing import Dict, List
 
-from pydantic import root_validator
+from pydantic import model_validator
 
 from langchain.embeddings.base import Embeddings
 from langchain.llms.vertexai import _VertexAICommon
@@ -12,7 +12,8 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
 
     model_name: str = "textembedding-gecko"
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validates that the python package exists in environment."""
         cls._try_init_vertexai(values)

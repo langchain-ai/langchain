@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
-from pydantic import BaseModel, root_validator
+from pydantic import model_validator, BaseModel
 from tenacity import (
     before_sleep_log,
     retry,
@@ -231,7 +231,7 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
 
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model_name: str = "models/chat-bison-001"
     """Model name to use."""
     google_api_key: Optional[str] = None
@@ -248,7 +248,8 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
     """Number of chat completions to generate for each prompt. Note that the API may
        not return the full n completions if duplicates are generated."""
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate api key, python package exists, temperature, top_p, and top_k."""
         google_api_key = get_from_dict_or_env(

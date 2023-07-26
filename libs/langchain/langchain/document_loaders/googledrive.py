@@ -13,7 +13,7 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union
 
-from pydantic import BaseModel, root_validator, validator
+from pydantic import field_validator, BaseModel, root_validator
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -96,7 +96,8 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
             values["file_types"] = [full_form(file_type) for file_type in file_types]
         return values
 
-    @validator("credentials_path")
+    @field_validator("credentials_path")
+    @classmethod
     def validate_credentials_path(cls, v: Any, **kwargs: Any) -> Any:
         """Validate that credentials_path exists."""
         if not v.exists():

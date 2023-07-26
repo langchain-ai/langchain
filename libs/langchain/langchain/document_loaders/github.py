@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Dict, Iterator, List, Literal, Optional, Union
 
 import requests
-from pydantic import BaseModel, root_validator, validator
+from pydantic import field_validator, model_validator, BaseModel
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -18,7 +18,8 @@ class BaseGitHubLoader(BaseLoader, BaseModel, ABC):
     access_token: str
     """Personal access token - see https://github.com/settings/tokens?type=beta"""
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that access token exists in environment."""
         values["access_token"] = get_from_dict_or_env(
@@ -63,7 +64,8 @@ class GitHubIssuesLoader(BaseGitHubLoader):
     """Only show notifications updated after the given time.
         This is a timestamp in ISO 8601 format: YYYY-MM-DDTHH:MM:SSZ."""
 
-    @validator("since")
+    @field_validator("since")
+    @classmethod
     def validate_since(cls, v: Optional[str]) -> Optional[str]:
         if v:
             try:

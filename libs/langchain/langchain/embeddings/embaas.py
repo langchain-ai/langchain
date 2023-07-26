@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import model_validator, ConfigDict, BaseModel
 from typing_extensions import NotRequired, TypedDict
 
 from langchain.embeddings.base import Embeddings
@@ -51,13 +51,10 @@ class EmbaasEmbeddings(BaseModel, Embeddings):
     api_url: str = EMBAAS_API_URL
     """The URL for the embaas embeddings API."""
     embaas_api_key: Optional[str] = None
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         embaas_api_key = get_from_dict_or_env(

@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any, Dict, List, Type
 
-from pydantic import root_validator
+from pydantic import model_validator
 
 from langchain.schema import BaseOutputParser, OutputParserException
 
@@ -12,7 +12,8 @@ class EnumOutputParser(BaseOutputParser):
     enum: Type[Enum]
     """The enum to parse. Its values must be strings."""
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def raise_deprecation(cls, values: Dict) -> Dict:
         enum = values["enum"]
         if not all(isinstance(e.value, str) for e in enum):

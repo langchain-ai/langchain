@@ -8,9 +8,10 @@ You can obtain a key by following the steps below.
 from typing import Dict
 
 import requests
-from pydantic import BaseModel, BaseSettings, Field, root_validator
+from pydantic import model_validator, BaseModel, Field
 
 from langchain.utils import get_from_dict_or_env
+from pydantic_settings import BaseSettings
 
 
 class SceneXplainAPIWrapper(BaseSettings, BaseModel):
@@ -23,7 +24,7 @@ class SceneXplainAPIWrapper(BaseSettings, BaseModel):
       and create a new API key.
     """
 
-    scenex_api_key: str = Field(..., env="SCENEX_API_KEY")
+    scenex_api_key: str = Field(..., validation_alias="SCENEX_API_KEY")
     scenex_api_url: str = "https://api.scenex.jina.ai/v1/describe"
 
     def _describe_image(self, image: str) -> str:
@@ -47,7 +48,8 @@ class SceneXplainAPIWrapper(BaseSettings, BaseModel):
 
         return img.get("text", "")
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
         scenex_api_key = get_from_dict_or_env(

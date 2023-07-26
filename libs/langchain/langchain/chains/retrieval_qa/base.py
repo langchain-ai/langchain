@@ -6,7 +6,7 @@ import warnings
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
-from pydantic import Extra, Field, root_validator
+from pydantic import model_validator, ConfigDict, Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -33,13 +33,7 @@ class BaseRetrievalQA(Chain):
     output_key: str = "result"  #: :meta private:
     return_source_documents: bool = False
     """Return the source documents or not."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-        allow_population_by_field_name = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True, populate_by_name=True)
 
     @property
     def input_keys(self) -> List[str]:
@@ -240,7 +234,8 @@ class VectorDBQA(BaseRetrievalQA):
     search_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Extra search args."""
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def raise_deprecation(cls, values: Dict) -> Dict:
         warnings.warn(
             "`VectorDBQA` is deprecated - "
@@ -248,7 +243,8 @@ class VectorDBQA(BaseRetrievalQA):
         )
         return values
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_search_type(cls, values: Dict) -> Dict:
         """Validate search type."""
         if "search_type" in values:

@@ -2,7 +2,7 @@
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from pydantic import root_validator
+from pydantic import model_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import BaseChatModel
@@ -97,7 +97,8 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
 
     model_name: str = "chat-bison"
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         cls._try_init_vertexai(values)

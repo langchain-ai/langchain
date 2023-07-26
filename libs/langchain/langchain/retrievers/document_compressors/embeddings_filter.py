@@ -1,7 +1,7 @@
 from typing import Callable, Dict, Optional, Sequence
 
 import numpy as np
-from pydantic import root_validator
+from pydantic import model_validator, ConfigDict
 
 from langchain.callbacks.manager import Callbacks
 from langchain.document_transformers.embeddings_redundant_filter import (
@@ -33,13 +33,10 @@ class EmbeddingsFilter(BaseDocumentCompressor):
     """Threshold for determining when two documents are similar enough
     to be considered redundant. Defaults to None, must be specified if `k` is set
     to None."""
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_params(cls, values: Dict) -> Dict:
         """Validate similarity parameters."""
         if values["k"] is None and values["similarity_threshold"] is None:

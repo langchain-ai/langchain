@@ -1,7 +1,7 @@
 from functools import partial
 from typing import Any, Dict, List, Mapping, Optional, Set
 
-from pydantic import Extra, Field, root_validator
+from pydantic import model_validator, ConfigDict, Field
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -91,11 +91,7 @@ class GPT4All(LLM):
     """If model does not exist in ~/.cache/gpt4all/, download it."""
 
     client: Any = None  #: :meta private:
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     @staticmethod
     def _model_param_names() -> Set[str]:
@@ -122,7 +118,8 @@ class GPT4All(LLM):
             "repeat_last_n": self.repeat_last_n,
         }
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in the environment."""
         try:

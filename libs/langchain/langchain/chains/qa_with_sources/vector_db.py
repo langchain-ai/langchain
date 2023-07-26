@@ -3,7 +3,7 @@
 import warnings
 from typing import Any, Dict, List
 
-from pydantic import Field, root_validator
+from pydantic import model_validator, Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -63,7 +63,8 @@ class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain):
     ) -> List[Document]:
         raise NotImplementedError("VectorDBQAWithSourcesChain does not support async")
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def raise_deprecation(cls, values: Dict) -> Dict:
         warnings.warn(
             "`VectorDBQAWithSourcesChain` is deprecated - "

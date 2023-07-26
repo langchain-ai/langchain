@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from pydantic import Extra, Field, root_validator
+from pydantic import model_validator, ConfigDict, Field
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains import LLMChain
@@ -27,12 +27,7 @@ class LLMRequestsChain(Chain):
     requests_key: str = "requests_result"  #: :meta private:
     input_key: str = "url"  #: :meta private:
     output_key: str = "output"  #: :meta private:
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     @property
     def input_keys(self) -> List[str]:
@@ -50,7 +45,8 @@ class LLMRequestsChain(Chain):
         """
         return [self.output_key]
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         try:

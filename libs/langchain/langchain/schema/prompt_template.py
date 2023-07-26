@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
 import yaml
-from pydantic import Field, root_validator
+from pydantic import model_validator, ConfigDict, Field
 
 from langchain.load.serializable import Serializable
 from langchain.schema.document import Document
@@ -29,11 +29,7 @@ class BasePromptTemplate(Serializable, Runnable[Dict, PromptValue], ABC):
     @property
     def lc_serializable(self) -> bool:
         return True
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def invoke(self, input: Dict, config: RunnableConfig | None = None) -> PromptValue:
         return self._call_with_config(
@@ -44,7 +40,8 @@ class BasePromptTemplate(Serializable, Runnable[Dict, PromptValue], ABC):
     def format_prompt(self, **kwargs: Any) -> PromptValue:
         """Create Chat Messages."""
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_variable_names(cls, values: Dict) -> Dict:
         """Validate variable names do not include restricted names."""
         if "stop" in values["input_variables"]:

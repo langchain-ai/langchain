@@ -6,7 +6,7 @@ from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.vectorstores.base import VectorStore
-from pydantic import BaseModel, Field
+from pydantic import ConfigDict, BaseModel, Field
 
 from langchain_experimental.autonomous_agents.baby_agi.task_creation import (
     TaskCreationChain,
@@ -29,11 +29,7 @@ class BabyAGI(Chain, BaseModel):
     task_id_counter: int = Field(1)
     vectorstore: VectorStore = Field(init=False)
     max_iterations: Optional[int] = None
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def add_task(self, task: Dict) -> None:
         self.task_list.append(task)

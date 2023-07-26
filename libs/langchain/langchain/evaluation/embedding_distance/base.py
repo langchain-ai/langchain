@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 import numpy as np
-from pydantic import Field, root_validator
+from pydantic import model_validator, ConfigDict, Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -48,7 +48,8 @@ class _EmbeddingDistanceChainMixin(Chain):
     embeddings: Embeddings = Field(default_factory=OpenAIEmbeddings)
     distance_metric: EmbeddingDistance = Field(default=EmbeddingDistance.COSINE)
 
-    @root_validator(pre=False)
+    @model_validator()
+    @classmethod
     def _validate_tiktoken_installed(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that the TikTok library is installed.
 
@@ -70,11 +71,7 @@ class _EmbeddingDistanceChainMixin(Chain):
                     " or install tiktoken using `pip install tiktoken`."
                 )
         return values
-
-    class Config:
-        """Permit embeddings to go unvalidated."""
-
-        arbitrary_types_allowed: bool = True
+    model_config = ConfigDict()
 
     @property
     def output_keys(self) -> List[str]:

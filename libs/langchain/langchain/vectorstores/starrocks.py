@@ -8,11 +8,10 @@ from hashlib import sha1
 from threading import Thread
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-from pydantic import BaseSettings
-
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 logger = logging.getLogger()
 DEBUG = False
@@ -114,11 +113,7 @@ class StarRocksSettings(BaseSettings):
 
     def __getitem__(self, item: str) -> Any:
         return getattr(self, item)
-
-    class Config:
-        env_file = ".env"
-        env_prefix = "starrocks_"
-        env_file_encoding = "utf-8"
+    model_config = SettingsConfigDict(env_file=".env", env_prefix="starrocks_", env_file_encoding="utf-8")
 
 
 class StarRocks(VectorStore):

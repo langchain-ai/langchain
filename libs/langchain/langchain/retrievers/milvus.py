@@ -2,7 +2,7 @@
 import warnings
 from typing import Any, Dict, List, Optional
 
-from pydantic import root_validator
+from pydantic import model_validator
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.embeddings.base import Embeddings
@@ -24,7 +24,8 @@ class MilvusRetriever(BaseRetriever):
     store: Milvus
     retriever: BaseRetriever
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def create_retriever(cls, values: Dict) -> Dict:
         """Create the Milvus store and retriever."""
         values["store"] = Milvus(

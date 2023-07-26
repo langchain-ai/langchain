@@ -1,7 +1,7 @@
 import importlib.util
 from typing import Any, Dict, List
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import model_validator, ConfigDict, BaseModel
 
 from langchain.embeddings.base import Embeddings
 
@@ -21,14 +21,11 @@ class SpacyEmbeddings(BaseModel, Embeddings):
             Generates an embedding for a single piece of text.
     """
 
-    nlp: Any  # The Spacy model loaded into memory
+    nlp: Any = None  # The Spacy model loaded into memory
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid  # Forbid extra attributes during model initialization
-
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """
         Validates that the Spacy package and the 'en_core_web_sm' model are installed.

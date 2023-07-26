@@ -20,7 +20,7 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import root_validator
+from pydantic import model_validator, ConfigDict
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -622,13 +622,10 @@ class RedisVectorStoreRetriever(VectorStoreRetriever):
     """Number of documents to return."""
     score_threshold: float = 0.4
     """Score threshold for similarity_limit search."""
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_search_type(cls, values: Dict) -> Dict:
         """Validate search type."""
         if "search_type" in values:

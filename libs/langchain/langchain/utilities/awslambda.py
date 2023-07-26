@@ -2,7 +2,7 @@
 import json
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import model_validator, ConfigDict, BaseModel
 
 
 class LambdaWrapper(BaseModel):
@@ -16,17 +16,14 @@ class LambdaWrapper(BaseModel):
 
     """
 
-    lambda_client: Any  #: :meta private:
+    lambda_client: Any = None  #: :meta private:
     function_name: Optional[str] = None
     awslambda_tool_name: Optional[str] = None
     awslambda_tool_description: Optional[str] = None
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that python package exists in environment."""
 

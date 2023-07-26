@@ -1,7 +1,7 @@
 """Chain that carries on a conversation and calls an LLM."""
 from typing import Dict, List
 
-from pydantic import Extra, Field, root_validator
+from pydantic import model_validator, ConfigDict, Field
 
 from langchain.chains.conversation.prompt import PROMPT
 from langchain.chains.llm import LLMChain
@@ -27,19 +27,15 @@ class ConversationChain(LLMChain):
 
     input_key: str = "input"  #: :meta private:
     output_key: str = "response"  #: :meta private:
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     @property
     def input_keys(self) -> List[str]:
         """Use this since so some prompt vars come from history."""
         return [self.input_key]
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_prompt_input_variables(cls, values: Dict) -> Dict:
         """Validate that prompt input variables are consistent."""
         memory_keys = values["memory"].memory_variables

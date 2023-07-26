@@ -7,7 +7,7 @@ https://learn.microsoft.com/en-us/graph/auth/
 from datetime import datetime as dt
 from typing import Any, Dict, List, Optional, Type
 
-from pydantic import BaseModel, Extra, Field
+from pydantic import ConfigDict, BaseModel, Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
@@ -72,11 +72,7 @@ class O365SearchEvents(O365BaseTool):
         " not schedule any meeting over existing meetings, and that the user "
         "is busy during meetings. Any times without events are free for the user. "
     )
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     def _run(
         self,

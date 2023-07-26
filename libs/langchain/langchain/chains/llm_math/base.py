@@ -7,7 +7,7 @@ import warnings
 from typing import Any, Dict, List, Optional
 
 import numexpr
-from pydantic import Extra, root_validator
+from pydantic import model_validator, ConfigDict
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -37,14 +37,10 @@ class LLMMathChain(Chain):
     """[Deprecated] Prompt to use to translate to python if necessary."""
     input_key: str = "question"  #: :meta private:
     output_key: str = "answer"  #: :meta private:
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def raise_deprecation(cls, values: Dict) -> Dict:
         if "llm" in values:
             warnings.warn(

@@ -6,7 +6,7 @@ https://levelup.gitconnected.com/api-tutorial-how-to-use-bing-web-search-api-in-
 from typing import Dict, List
 
 import requests
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import model_validator, ConfigDict, BaseModel
 
 from langchain.utils import get_from_dict_or_env
 
@@ -21,11 +21,7 @@ class BingSearchAPIWrapper(BaseModel):
     bing_subscription_key: str
     bing_search_url: str
     k: int = 10
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     def _bing_search_results(self, search_term: str, count: int) -> List[dict]:
         headers = {"Ocp-Apim-Subscription-Key": self.bing_subscription_key}
@@ -42,7 +38,8 @@ class BingSearchAPIWrapper(BaseModel):
         search_results = response.json()
         return search_results["webPages"]["value"]
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and endpoint exists in environment."""
         bing_subscription_key = get_from_dict_or_env(

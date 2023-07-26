@@ -10,6 +10,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForRetrieverRun,
 )
 from langchain.schema import BaseRetriever, Document
+from pydantic import ConfigDict
 
 
 class ChatGPTPluginRetriever(BaseRetriever):
@@ -25,12 +26,7 @@ class ChatGPTPluginRetriever(BaseRetriever):
     """Filter to apply to the results."""
     aiosession: Optional[aiohttp.ClientSession] = None
     """Aiohttp session to use for requests."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
-        """Allow arbitrary types."""
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun

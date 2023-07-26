@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from pydantic import Field, root_validator
+from pydantic import model_validator, Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -43,7 +43,8 @@ class APIChain(Chain):
         """
         return [self.output_key]
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_api_request_prompt(cls, values: Dict) -> Dict:
         """Check that api request prompt expects the right variables."""
         input_vars = values["api_request_chain"].prompt.input_variables
@@ -54,7 +55,8 @@ class APIChain(Chain):
             )
         return values
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_api_answer_prompt(cls, values: Dict) -> Dict:
         """Check that api answer prompt expects the right variables."""
         input_vars = values["api_answer_chain"].prompt.input_variables

@@ -3,7 +3,7 @@
 from typing import Any, Dict, List, Optional, Union
 
 from langsmith import RunEvaluator
-from pydantic import BaseModel, Field
+from pydantic import ConfigDict, BaseModel, Field
 
 from langchain.embeddings.base import Embeddings
 from langchain.evaluation.criteria.eval_chain import CRITERIA_TYPE
@@ -105,9 +105,7 @@ class RunEvalConfig(BaseModel):
     input. If not provided, it will be inferred automatically."""
     eval_llm: Optional[BaseLanguageModel] = None
     """The language model to pass to any evaluators that require one."""
-
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict()
 
     class Criteria(EvalConfig):
         """Configuration for a reference-free criteria evaluator.
@@ -166,9 +164,7 @@ class RunEvalConfig(BaseModel):
         evaluator_type: EvaluatorType = EvaluatorType.EMBEDDING_DISTANCE
         embeddings: Optional[Embeddings] = None
         distance_metric: Optional[EmbeddingDistanceEnum] = None
-
-        class Config:
-            arbitrary_types_allowed = True
+        model_config = ConfigDict(arbitrary_types_allowed=True, arbitrary_types_allowed=True)
 
     class StringDistance(EvalConfig):
         """Configuration for a string distance evaluator.

@@ -2,7 +2,7 @@ import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import BaseModel, Field
+from pydantic import ConfigDict, BaseModel, Field
 
 from langchain import LLMChain
 from langchain.experimental.generative_agents.memory import GenerativeAgentMemory
@@ -34,11 +34,7 @@ class GenerativeAgent(BaseModel):
     """The last time the character's summary was regenerated."""
     daily_summaries: List[str] = Field(default_factory=list)  # : :meta private:
     """Summary of the events in the plan that the agent took."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     # LLM-related methods
     @staticmethod

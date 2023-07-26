@@ -2,7 +2,7 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, root_validator
+from pydantic import model_validator, BaseModel
 
 from langchain.schema import Document
 
@@ -21,13 +21,14 @@ class WikipediaAPIWrapper(BaseModel):
     It limits the Document content by doc_content_chars_max.
     """
 
-    wiki_client: Any  #: :meta private:
+    wiki_client: Any = None  #: :meta private:
     top_k_results: int = 3
     lang: str = "en"
     load_all_available_meta: bool = False
     doc_content_chars_max: int = 4000
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         try:

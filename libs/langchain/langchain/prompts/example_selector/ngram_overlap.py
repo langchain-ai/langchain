@@ -6,7 +6,7 @@ https://aclanthology.org/P02-1040.pdf
 from typing import Dict, List
 
 import numpy as np
-from pydantic import BaseModel, root_validator
+from pydantic import model_validator, BaseModel
 
 from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.prompts.prompt import PromptTemplate
@@ -63,7 +63,8 @@ class NGramOverlapExampleSelector(BaseExampleSelector, BaseModel):
     and excludes examples with no ngram overlap with input.
     """
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def check_dependencies(cls, values: Dict) -> Dict:
         """Check that valid dependencies exist."""
         try:

@@ -19,7 +19,7 @@ from typing import (
     cast,
 )
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from langchain.callbacks.base import BaseCallbackManager, Callbacks
 from langchain.load.dump import dumpd
@@ -186,9 +186,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
     @property
     def lc_serializable(self) -> bool:
         return True
-
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def __or__(
         self,
@@ -556,9 +554,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
     @property
     def lc_serializable(self) -> bool:
         return True
-
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None

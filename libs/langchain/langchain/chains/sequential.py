@@ -1,7 +1,7 @@
 """Chain pipeline where the outputs of one step feed directly into next."""
 from typing import Any, Dict, List, Optional
 
-from pydantic import Extra, root_validator
+from pydantic import model_validator, ConfigDict
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -18,12 +18,7 @@ class SequentialChain(Chain):
     input_variables: List[str]
     output_variables: List[str]  #: :meta private:
     return_all: bool = False
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     @property
     def input_keys(self) -> List[str]:
@@ -41,7 +36,8 @@ class SequentialChain(Chain):
         """
         return self.output_variables
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_chains(cls, values: Dict) -> Dict:
         """Validate that the correct inputs exist for all chains."""
         chains = values["chains"]
@@ -129,12 +125,7 @@ class SimpleSequentialChain(Chain):
     strip_outputs: bool = False
     input_key: str = "input"  #: :meta private:
     output_key: str = "output"  #: :meta private:
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     @property
     def input_keys(self) -> List[str]:
@@ -152,7 +143,8 @@ class SimpleSequentialChain(Chain):
         """
         return [self.output_key]
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_chains(cls, values: Dict) -> Dict:
         """Validate that chains are all single input/output."""
         for chain in values["chains"]:

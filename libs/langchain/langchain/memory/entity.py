@@ -77,7 +77,7 @@ class RedisEntityStore(BaseEntityStore):
     that TTL is extended by 3 days every time the entity is read back.
     """
 
-    redis_client: Any
+    redis_client: Any = None
     session_id: str = "default"
     key_prefix: str = "memory_store"
     ttl: Optional[int] = 60 * 60 * 24

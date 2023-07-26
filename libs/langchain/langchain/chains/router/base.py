@@ -4,7 +4,7 @@ from __future__ import annotations
 from abc import ABC
 from typing import Any, Dict, List, Mapping, NamedTuple, Optional
 
-from pydantic import Extra
+from pydantic import ConfigDict
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -59,12 +59,7 @@ class MultiRouteChain(Chain):
     silent_errors: bool = False
     """If True, use default_chain when an invalid destination name is provided. 
     Defaults to False."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     @property
     def input_keys(self) -> List[str]:
