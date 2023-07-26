@@ -607,9 +607,7 @@ class Redis(VectorStore):
 
     def as_retriever(self, **kwargs: Any) -> RedisVectorStoreRetriever:
         tags = kwargs.pop("tags", None) or []
-        # pylint: disable-all
-        tags.extend(self._VectorStore__get_retriever_tags())
-        # pylint: enable-all
+        tags.extend(self._get_retriever_tags())
         return RedisVectorStoreRetriever(vectorstore=self, **kwargs, tags=tags)
 
 
