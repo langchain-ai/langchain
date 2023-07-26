@@ -8,6 +8,8 @@ from langchain.memory.chat_message_histories.in_memory import ChatMessageHistory
 from langchain.memory.utils import get_prompt_input_key
 from langchain.schema import BaseChatMessageHistory, BaseMemory
 
+from libs.langchain.langchain.schema import BaseMemoryAsync
+
 
 class BaseChatMemory(BaseMemory, ABC):
     """Abstract base class for chat memory."""
@@ -43,7 +45,7 @@ class BaseChatMemory(BaseMemory, ABC):
         self.chat_memory.clear()
 
 
-class BaseChatMemoryAsync(BaseMemory, ABC):
+class BaseChatMemoryAsync(BaseMemoryAsync, ABC):
     """Abstract base class for chat memory."""
 
     chat_memory: BaseChatMessageHistoryAsync = Field(default_factory=ChatMessageHistory)
@@ -55,7 +57,7 @@ class BaseChatMemoryAsync(BaseMemory, ABC):
         self, inputs: Dict[str, Any], outputs: Dict[str, str]
     ) -> Tuple[str, str]:
         if self.input_key is None:
-            prompt_input_key = get_prompt_input_key(inputs, self.memory_variables)
+            prompt_input_key = get_prompt_input_key(inputs, await self.memory_variables)
         else:
             prompt_input_key = self.input_key
         if self.output_key is None:
