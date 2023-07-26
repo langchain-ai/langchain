@@ -87,7 +87,7 @@ class ContentFormatterBase:
     headers: Optional[Dict[str, str]] = None
     """The http request headers passed to the endpoint"""
 
-    def get_http_headers(self):
+    def get_http_headers(self) -> Dict[str, str]:
         return self.headers or {}
 
     @abstractmethod
