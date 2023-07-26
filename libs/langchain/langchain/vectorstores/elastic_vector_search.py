@@ -294,6 +294,8 @@ class ElasticVectorSearch(VectorStore, ABC):
         elasticsearch_url = get_from_dict_or_env(
             kwargs, "elasticsearch_url", "ELASTICSEARCH_URL"
         )
+        if "elasticsearch_url" in kwargs:
+            del kwargs["elasticsearch_url"]
         index_name = index_name or uuid.uuid4().hex
         vectorsearch = cls(elasticsearch_url, index_name, embedding, **kwargs)
         vectorsearch.add_texts(
