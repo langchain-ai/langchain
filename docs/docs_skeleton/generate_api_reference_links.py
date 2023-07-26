@@ -102,6 +102,10 @@ def replace_imports(file):
             except AttributeError as e:
                 logger.warning(f"Could not find module for {class_name}, {e}")
                 continue
+            except ImportError as e:
+                # Some CentOS OpenSSL issues can cause this to fail
+                logger.warning(f"Failed to load for class {class_name}, {e}")
+                continue
 
             url = (
                 _BASE_URL
