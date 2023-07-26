@@ -45,8 +45,8 @@ class ExampleLinksDirective(SphinxDirective):
 
         Called any time :example_links:`ClassName` is used
         in the template *.rst files."""
-        class_name = self.arguments[0]
-        links = imported_classes.get(class_name, {})
+        class_or_func_name = self.arguments[0]
+        links = imported_classes.get(class_or_func_name, {})
         list_node = nodes.bullet_list()
         for doc_name, link in links.items():
             item_node = nodes.list_item()
@@ -59,7 +59,7 @@ class ExampleLinksDirective(SphinxDirective):
             list_node.append(item_node)
         if list_node.children:
             title_node = nodes.title()
-            title_node.append(nodes.Text("Examples using this class"))
+            title_node.append(nodes.Text(f"Examples using {class_or_func_name}"))
             return [title_node, list_node]
         return [list_node]
 
