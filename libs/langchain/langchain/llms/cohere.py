@@ -155,7 +155,7 @@ class Cohere(LLM):
         """Return type of llm."""
         return "cohere"
 
-    def _invocation_params(self, stop: Optional[List[str]], **kwargs: Any):
+    def _invocation_params(self, stop: Optional[List[str]], **kwargs: Any) -> dict:
         params = self._default_params
         if self.stop is not None and stop is not None:
             raise ValueError("`stop` found in both the input and default params.")

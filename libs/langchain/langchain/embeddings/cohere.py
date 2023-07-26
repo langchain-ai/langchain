@@ -94,10 +94,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        embedding = self.client.embed(
-            model=self.model, texts=[text], truncate=self.truncate
-        ).embeddings[0]
-        return list(map(float, embedding))
+        return self.embed_documents([text])[0]
 
     async def aembed_query(self, text: str) -> List[float]:
         """Async call out to Cohere's embedding endpoint.
@@ -108,7 +105,5 @@ class CohereEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        embedding = await self.async_client.embed(
-            model=self.model, texts=[text], truncate=self.truncate
-        )
-        return list(map(float, embedding.embeddings[0]))
+        embeddings = await self.aembed_documents([text])
+        return embeddings[0]
