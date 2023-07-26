@@ -37,6 +37,28 @@ class SummarizerMixin(BaseModel):
         return chain.predict(summary=existing_summary, new_lines=new_lines)
 
 
+class SummarizerMixinAsync(BaseModel):
+    """Mixin for summarizer."""
+
+    human_prefix: str = "Human"
+    ai_prefix: str = "AI"
+    llm: BaseLanguageModel
+    prompt: BasePromptTemplate = SUMMARY_PROMPT
+    summary_message_cls: Type[BaseMessage] = SystemMessage
+
+    async def predict_new_summary(
+        self, messages: List[BaseMessage], existing_summary: str
+    ) -> str:
+        new_lines = get_buffer_string(
+            messages,
+            human_prefix=self.human_prefix,
+            ai_prefix=self.ai_prefix,
+        )
+
+        chain = LLMChain(llm=self.llm, prompt=self.prompt)
+        return await chain.apredict(summary=existing_summary, new_lines=new_lines)
+
+
 class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
     """Conversation summarizer to chat memory."""
 

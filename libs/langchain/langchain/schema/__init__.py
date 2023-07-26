@@ -1,7 +1,7 @@
 from langchain.schema.agent import AgentAction, AgentFinish
 from langchain.schema.document import BaseDocumentTransformer, Document
 from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.memory import BaseChatMessageHistory, BaseMemory
+from langchain.schema.memory import BaseChatMessageHistory, BaseChatMessageHistoryAsync, BaseMemory
 from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
@@ -32,12 +32,16 @@ from langchain.schema.prompt import PromptValue
 from langchain.schema.prompt_template import BasePromptTemplate, format_document
 from langchain.schema.retriever import BaseRetriever
 
+from libs.langchain.langchain.schema.memory import BaseMemoryAsync
+
 RUN_KEY = "__run"
-Memory = BaseMemory
+Memory = BaseMemory | BaseMemoryAsync
 
 __all__ = [
     "BaseMemory",
+    "BaseMemoryAsync",
     "BaseChatMessageHistory",
+    "BaseChatMessageHistoryAsync",
     "AgentFinish",
     "AgentAction",
     "Document",
