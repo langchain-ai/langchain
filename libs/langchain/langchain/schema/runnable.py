@@ -553,6 +553,21 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
 class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
     steps: Dict[str, Runnable[Input, Any]]
 
+    def __init__(
+        self,
+        steps: Dict[
+            str,
+            Union[
+                Runnable[Input, Any],
+                Callable[[Input], Any],
+                Dict[str, Union[Runnable[Input, Any], Callable[[Input], Any]]],
+            ],
+        ],
+    ) -> None:
+        super().__init__(
+            steps={key: _coerce_to_runnable(r) for key, r in steps.items()}
+        )
+
     @property
     def lc_serializable(self) -> bool:
         return True
