@@ -1,7 +1,8 @@
 #!/bin/bash
 
-yum remove openssl-devel -y
-yum install gcc openssl-devel bzip2-devel libffi-devel zlib-devel -y 
+yum install gcc bzip2-devel libffi-devel zlib-devel wget tar -y
+# Make sure openssl-devel is installed before Python compilation
+yum install openssl-devel -y
 yum install wget tar -y
 
 # Install python 3.11 to connect with openSSL 1.1.1
