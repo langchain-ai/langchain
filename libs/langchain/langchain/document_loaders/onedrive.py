@@ -203,7 +203,7 @@ class OneDriveLoader(BaseLoader, BaseModel):
             for object_id in self.object_ids if self.object_ids else [""]:
                 file = drive.get_item(object_id)
                 if not file:
-                    logging.warning(
+                    logger.warning(
                         "There isn't a file with "
                         f"object_id {object_id} in drive {drive}."
                     )
