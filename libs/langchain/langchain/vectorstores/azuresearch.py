@@ -123,7 +123,7 @@ def _get_search_client(
             ),
         ]
         for item in metadata_fields:
-            fields.append(SearchableField(name=item), type="Edm.String", searchable=True, retrievable=True, filterable=True)
+            fields.append(SearchableField(name=item, type="Edm.String", searchable=True, retrievable=True, filterable=True))
         # Vector search configuration
         vector_search = VectorSearch(
             algorithm_configurations=[
