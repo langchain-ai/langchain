@@ -68,7 +68,12 @@ class CriteriaResultOutputParser(BaseOutputParser[dict]):
         Returns:
             Any: The parsed output.
         """
-        reasoning, verdict = text.strip().rsplit("\n", maxsplit=1)
+        parsed = text.strip().rsplit("\n", maxsplit=1)
+        if len(parsed) == 1:
+            reasoning = ""
+            verdict = parsed[0]
+        else:
+            reasoning, verdict = parsed
         score = 1 if verdict.upper() == "Y" else (0 if verdict.upper() == "N" else None)
         return {
             "reasoning": reasoning.strip(),
