@@ -186,7 +186,7 @@ class FewShotChatMessagePromptTemplate(
 
     Examples:
 
-        Prompt template with fixed a fixed list of examples (matching the sample
+        Prompt template with a fixed list of examples (matching the sample
         conversation above):
 
         .. code-block:: python
