@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.abspath("../../libs/langchain"))
 
 with (_DIR.parents[1] / "libs" / "langchain" / "pyproject.toml").open("r") as f:
     data = toml.load(f)
-with (_DIR / "example_imports.json").open("r") as f:
+with (_DIR / "guide_imports.json").open("r") as f:
     imported_classes = json.load(f)
 
 
@@ -46,7 +46,7 @@ class ExampleLinksDirective(SphinxDirective):
         class_name = self.arguments[0]
         links = imported_classes.get(class_name, {})
         list_node = nodes.bullet_list()
-        for doc_name, link in links:
+        for doc_name, link in links.items():
             item_node = nodes.list_item()
             para_node = nodes.paragraph()
             link_node = nodes.reference()
