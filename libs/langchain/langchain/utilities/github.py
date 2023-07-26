@@ -2,6 +2,7 @@
 import json
 from typing import Any, Dict, List, Optional
 
+from github.Issue import Issue
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.utils import get_from_dict_or_env
@@ -41,6 +42,7 @@ class GitHubAPIWrapper(BaseModel):
 
         try:
             from github import Auth, GithubIntegration
+
         except ImportError:
             raise ImportError(
                 "PyGithub is not installed. "
@@ -69,135 +71,193 @@ class GitHubAPIWrapper(BaseModel):
 
         return values
 
-    def parse_issues(self, issues: List[dict]) -> List[dict]:
+    def parse_issues(self, issues: List[Issue]) -> List[dict]:
+        """
+        Extracts title and number from each Issue and puts them in a dictionary
+        Parameters:
+            issues(List[Issue]): A list of Github Issue objects
+        Returns:
+            List[dict]: A dictionary of issue titles and numbers
+        """
         parsed = []
         for issue in issues:
-            title = issue["title"]
-            number = issue["number"]
+            title = issue.title
+            number = issue.number
             parsed.append({"title": title, "number": number})
         return parsed
 
     def get_issues(self) -> str:
+        """
+        Fetches all open issues from the repo
+
+        Returns:
+            str: A plaintext report containing the number of issues
+            and each issue's title and number.
+        """
         issues = self.github_repo_instance.get_issues(state="open")
-        parsed_issues = self.parse_issues(issues)
-        parsed_issues_str = (
-            "Found " + str(len(parsed_issues)) + " issues:\n" + str(parsed_issues)
-        )
-        return parsed_issues_str
+        if issues.totalCount > 0:
+            parsed_issues = self.parse_issues(issues)
+            parsed_issues_str = (
+                "Found " + str(len(parsed_issues)) + " issues:\n" + str(parsed_issues)
+            )
+            return parsed_issues_str
+        else:
+            return "No open issues available"
 
     def get_issue(self, issue_number: int) -> Dict[str, Any]:
+        """
+        Fetches a specific issue and its first 10 comments
+        Parameters:
+            issue_number(int): The number for the github issue
+        Returns:
+            dict: A doctionary containing the issue's title,
+            body, and comments as a string
+        """
         issue = self.github_repo_instance.get_issue(number=issue_number)
-
-        # If there are too many comments
-        # We can't add them all to context so for now we'll just skip
-        if issue.get_comments().totalCount > 10:
-            return {
-                "message": (
-                    "There are too many comments to add them all to context. "
-                    "Please visit the issue on GitHub to see them all."
-                )
-            }
         page = 0
-        comments = []
-        while True:
+        comments: List[dict] = []
+        while len(comments) <= 10:
             comments_page = issue.get_comments().get_page(page)
             if len(comments_page) == 0:
                 break
             for comment in comments_page:
-                comments.append(
-                    {"body": comment["body"], "user": comment["user"]["login"]}
-                )
+                comments.append({"body": comment.body, "user": comment.user.login})
             page += 1
 
         return {
-            "title": issue["title"],
-            "body": issue["body"],
+            "title": issue.title,
+            "body": issue.body,
             "comments": str(comments),
         }
 
     def comment_on_issue(self, comment_query: str) -> str:
-        # comment_query is a string which contains the issue number and the comment
-        # the issue number is the first word in the string
-        # the comment is the rest of the string
+        """
+        Adds a comment to a github issue
+        Parameters:
+            comment_query(str): a string which contains the issue number,
+            two newlines, and the comment.
+            for example: "1\n\nWorking on it now"
+            adds the comment "working on it now" to issue 1
+        Returns:
+            str: A success or failure message
+        """
         issue_number = int(comment_query.split("\n\n")[0])
         comment = comment_query[len(str(issue_number)) + 2 :]
-
-        issue = self.github_repo_instance.get_issue(number=issue_number)
-        issue.create_comment(comment)
-        return "Commented on issue " + str(issue_number)
+        try:
+            issue = self.github_repo_instance.get_issue(number=issue_number)
+            issue.create_comment(comment)
+            return "Commented on issue " + str(issue_number)
+        except Exception as e:
+            return "Unable to make comment due to error:\n" + str(e)
 
     def create_file(self, file_query: str) -> str:
-        # file_query is a string which contains the file path and the file contents
-        # the file path is the first line in the string
-        # the file contents is the rest of the string
+        """
+        Creates a new file on the Github repo
+        Parameters:
+            file_query(str): a string which contains the file path
+            and the file contents. The file path is the first line
+            in the string, and the contents are the rest of the string.
+            For example, "hello_world.md\n# Hello World!"
+        Returns:
+            str: A success or failure message
+        """
         file_path = file_query.split("\n")[0]
         file_contents = file_query[len(file_path) + 2 :]
-
-        self.github_repo_instance.create_file(
-            path=file_path,
-            message="Create " + file_path,
-            content=file_contents,
-            branch=self.github_branch,
-        )
-        return "Created file " + file_path
+        try:
+            exists = self.github_repo_instance.get_contents(file_path)
+            if exists is None:
+                self.github_repo_instance.create_file(
+                    path=file_path,
+                    message="Create " + file_path,
+                    content=file_contents,
+                    branch=self.github_branch,
+                )
+                return "Created file " + file_path
+            else:
+                return f"File already exists at {file_path}. Use update_file instead"
+        except Exception as e:
+            return "Unable to make file due to error:\n" + str(e)
 
     def read_file(self, file_path: str) -> str:
-        # file_path is a string which contains the file path
+        """
+        Reads a file from the github repo
+        Parameters:
+            file_path(str): the file path
+        Returns:
+            str: The file decoded as a string
+        """
         file = self.github_repo_instance.get_contents(file_path)
         return file.decoded_content.decode("utf-8")
 
     def update_file(self, file_query: str) -> str:
-        # file_query is a string which contains the file path and the file contents
-        # the file path is the first line in the string
-        # the old file contents is wrapped in OLD <<<< and >>>> OLD
-        # the new file contents is wrapped in NEW <<<< and >>>> NEW
-
-        # for example:
-
-        # /test/test.txt
-        # OLD <<<<
-        # old contents
-        # >>>> OLD
-        # NEW <<<<
-        # new contents
-        # >>>> NEW
-
-        # the old contents will be replaced with the new contents
-        file_path = file_query.split("\n")[0]
-        old_file_contents = file_query.split("OLD <<<<")[1].split(">>>> OLD")[0].strip()
-        new_file_contents = file_query.split("NEW <<<<")[1].split(">>>> NEW")[0].strip()
-
-        file_content = self.read_file(file_path)
-        updated_file_content = file_content.replace(
-            old_file_contents, new_file_contents
-        )
-
-        if file_content == updated_file_content:
-            return (
-                "File content was not updated because the old content was not found. "
-                "It may be helpful to use the read_file action to get "
-                "the current file contents."
+        """
+        Updates a file with new content.
+        Parameters:
+            file_query(str): Contains the file path and the file contents.
+                The old file contents is wrapped in OLD <<<< and >>>> OLD
+                The new file contents is wrapped in NEW <<<< and >>>> NEW
+                For example:
+                /test/hello.txt
+                OLD <<<<
+                Hello Earth!
+                >>>> OLD
+                NEW <<<<
+                Hello Mars!
+                >>>> NEW
+        Returns:
+            A success or failure message
+        """
+        try:
+            file_path = file_query.split("\n")[0]
+            old_file_contents = (
+                file_query.split("OLD <<<<")[1].split(">>>> OLD")[0].strip()
+            )
+            new_file_contents = (
+                file_query.split("NEW <<<<")[1].split(">>>> NEW")[0].strip()
             )
 
-        self.github_repo_instance.update_file(
-            path=file_path,
-            message="Update " + file_path,
-            content=updated_file_content,
-            branch=self.github_branch,
-            sha=self.github_repo_instance.get_contents(file_path).sha,
-        )
-        return "Updated file " + file_path
+            file_content = self.read_file(file_path)
+            updated_file_content = file_content.replace(
+                old_file_contents, new_file_contents
+            )
+
+            if file_content == updated_file_content:
+                return (
+                    "File content was not updated because old content was not found."
+                    "It may be helpful to use the read_file action to get "
+                    "the current file contents."
+                )
+
+            self.github_repo_instance.update_file(
+                path=file_path,
+                message="Update " + file_path,
+                content=updated_file_content,
+                branch=self.github_branch,
+                sha=self.github_repo_instance.get_contents(file_path).sha,
+            )
+            return "Updated file " + file_path
+        except Exception as e:
+            return "Unable to update file due to error:\n" + str(e)
 
     def delete_file(self, file_path: str) -> str:
-        # file_path is a string which contains the file path
-        file = self.github_repo_instance.get_contents(file_path)
-        self.github_repo_instance.delete_file(
-            path=file_path,
-            message="Delete " + file_path,
-            branch=self.github_branch,
-            sha=file.sha,
-        )
-        return "Deleted file " + file_path
+        """
+        Deletes a file from the repo
+        Parameters:
+            file_path(str): Where the file is
+        Returns:
+            str: Success or failure message
+        """
+        try:
+            file = self.github_repo_instance.get_contents(file_path)
+            self.github_repo_instance.delete_file(
+                path=file_path,
+                message="Delete " + file_path,
+                branch=self.github_branch,
+                sha=file.sha,
+            )
+            return "Deleted file " + file_path
+        except Exception as e:
+            return "Unable to delete file due to error:\n" + str(e)
 
     def run(self, mode: str, query: str) -> str:
         if mode == "get_issues":

@@ -330,17 +330,20 @@ class ChatOpenAI(BaseChatModel):
             for stream_resp in self.completion_with_retry(
                 messages=message_dicts, **params
             ):
-                role = stream_resp["choices"][0]["delta"].get("role", role)
-                token = stream_resp["choices"][0]["delta"].get("content") or ""
-                inner_completion += token
-                _function_call = stream_resp["choices"][0]["delta"].get("function_call")
-                if _function_call:
-                    if function_call is None:
-                        function_call = _function_call
-                    else:
-                        function_call["arguments"] += _function_call["arguments"]
-                if run_manager:
-                    run_manager.on_llm_new_token(token)
+                if len(stream_resp["choices"]) > 0:
+                    role = stream_resp["choices"][0]["delta"].get("role", role)
+                    token = stream_resp["choices"][0]["delta"].get("content") or ""
+                    inner_completion += token
+                    _function_call = stream_resp["choices"][0]["delta"].get(
+                        "function_call"
+                    )
+                    if _function_call:
+                        if function_call is None:
+                            function_call = _function_call
+                        else:
+                            function_call["arguments"] += _function_call["arguments"]
+                    if run_manager:
+                        run_manager.on_llm_new_token(token)
             message = _convert_dict_to_message(
                 {
                     "content": inner_completion,
@@ -355,7 +358,7 @@ class ChatOpenAI(BaseChatModel):
     def _create_message_dicts(
         self, messages: List[BaseMessage], stop: Optional[List[str]]
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-        params = dict(self._client_params)
+        params = self._client_params
         if stop is not None:
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
@@ -393,17 +396,20 @@ class ChatOpenAI(BaseChatModel):
             async for stream_resp in await acompletion_with_retry(
                 self, messages=message_dicts, **params
             ):
-                role = stream_resp["choices"][0]["delta"].get("role", role)
-                token = stream_resp["choices"][0]["delta"].get("content", "")
-                inner_completion += token or ""
-                _function_call = stream_resp["choices"][0]["delta"].get("function_call")
-                if _function_call:
-                    if function_call is None:
-                        function_call = _function_call
-                    else:
-                        function_call["arguments"] += _function_call["arguments"]
-                if run_manager:
-                    await run_manager.on_llm_new_token(token)
+                if len(stream_resp["choices"]) > 0:
+                    role = stream_resp["choices"][0]["delta"].get("role", role)
+                    token = stream_resp["choices"][0]["delta"].get("content", "")
+                    inner_completion += token or ""
+                    _function_call = stream_resp["choices"][0]["delta"].get(
+                        "function_call"
+                    )
+                    if _function_call:
+                        if function_call is None:
+                            function_call = _function_call
+                        else:
+                            function_call["arguments"] += _function_call["arguments"]
+                    if run_manager:
+                        await run_manager.on_llm_new_token(token)
             message = _convert_dict_to_message(
                 {
                     "content": inner_completion,
@@ -419,12 +425,12 @@ class ChatOpenAI(BaseChatModel):
             return self._create_chat_result(response)
 
     @property
-    def _identifying_params(self) -> Mapping[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
         return {**{"model_name": self.model_name}, **self._default_params}
 
     @property
-    def _client_params(self) -> Mapping[str, Any]:
+    def _client_params(self) -> Dict[str, Any]:
         """Get the parameters used for the openai client."""
         openai_creds: Dict[str, Any] = {
             "api_key": self.openai_api_key,
@@ -436,17 +442,17 @@ class ChatOpenAI(BaseChatModel):
             import openai
 
             openai.proxy = {"http": self.openai_proxy, "https": self.openai_proxy}  # type: ignore[assignment]  # noqa: E501
-        return {**openai_creds, **self._default_params}
+        return {**self._default_params, **openai_creds}
 
     def _get_invocation_params(
         self, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> Dict[str, Any]:
-        """Get the parameters used to invoke the model FOR THE CALLBACKS."""
+        """Get the parameters used to invoke the model."""
         return {
-            **super()._get_invocation_params(stop=stop, **kwargs),
-            **self._default_params,
             "model": self.model_name,
-            "function": kwargs.get("functions"),
+            **super()._get_invocation_params(stop=stop),
+            **self._default_params,
+            **kwargs,
         }
 
     @property

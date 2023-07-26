@@ -9,7 +9,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForToolRun,
 )
 
-from langchain.requests import TextRequestsWrapper
+from langchain.utilities.requests import TextRequestsWrapper
 from langchain.tools.base import BaseTool
 
 

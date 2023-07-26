@@ -19,7 +19,25 @@ class Params(BaseModel, extra=Extra.allow):
 
 
 class MlflowAIGateway(LLM):
-    """The MLflow AI Gateway models."""
+    """
+    Wrapper around completions LLMs in the MLflow AI Gateway.
+
+    To use, you should have the ``mlflow[gateway]`` python package installed.
+    For more information, see https://mlflow.org/docs/latest/gateway/index.html.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.llms import MlflowAIGateway
+
+            completions = MlflowAIGateway(
+                gateway_uri="<your-mlflow-ai-gateway-uri>",
+                route="<your-mlflow-ai-gateway-completions-route>",
+                params={
+                    "temperature": 0.1
+                }
+            )
+    """
 
     route: str
     gateway_uri: Optional[str] = None
