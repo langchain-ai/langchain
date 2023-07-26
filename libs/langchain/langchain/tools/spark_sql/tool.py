@@ -2,7 +2,7 @@
 """Tools for interacting with Spark SQL."""
 from typing import Any, Dict, Optional
 
-from pydantic import model_validator, BaseModel, Extra, Field
+from pydantic import model_validator, BaseModel, Extra, Field, ConfigDict
 
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.callbacks.manager import (
@@ -20,16 +20,7 @@ class BaseSparkSQLTool(BaseModel):
     """Base tool for interacting with Spark SQL."""
 
     db: SparkSQL = Field(exclude=True)
-
-    # Override BaseTool.Config to appease mypy
-    # See https://github.com/pydantic/pydantic/issues/4173
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(BaseTool.Config):
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
-        extra = Extra.forbid
+    model_config=ConfigDict(arbitrary_types_allowed = True, extra = Extra.forbid)
 
 
 class QuerySparkSQLTool(BaseSparkSQLTool, BaseTool):
