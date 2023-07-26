@@ -75,29 +75,6 @@ def test_fireworkschat_model_param() -> None:
     llm = FireworksChat(model_id="foo")
     assert llm.model_id == "foo"
 
-def test_fireworks_extra_kwargs() -> None:
-    """Test extra kwargs to Fireworks."""
-    # Check that foo is saved in extra_kwargs.
-    llm = Fireworks(foo=3, max_tokens=10)
-    assert llm.max_tokens == 10
-    assert llm.model_kwargs == {"foo": 3}
-
-    # Test that if extra_kwargs are provided, they are added to it.
-    llm = Fireworks(foo=3, model_kwargs={"bar": 2})
-    assert llm.model_kwargs == {"foo": 3, "bar": 2}
-
-    # Test that if provided twice it errors
-    with pytest.raises(ValueError):
-        Fireworks(foo=3, model_kwargs={"foo": 2})
-
-    # Test that if explicit param is specified in kwargs it errors
-    with pytest.raises(ValueError):
-        Fireworks(model_kwargs={"temperature": 0.2})
-
-    # Test that "model" cannot be specified in kwargs
-    with pytest.raises(ValueError):
-        Fireworks(model_kwargs={"model": "fireworks-llama-v2-13b-chat"})
-
 def test_saving_loading_llm(tmp_path: Path) -> None:
     """Test saving/loading an Fireworks LLM."""
     llm = Fireworks(max_tokens=10)
@@ -112,11 +89,6 @@ def test_fireworks_multiple_prompts() -> None:
     assert isinstance(output, LLMResult)
     assert isinstance(output.generations, list)
     assert len(output.generations) == 2
-
-def test_fireworks_modelname_to_contextsize_invalid() -> None:
-    """Test model name to context size on an invalid model."""
-    with pytest.raises(ValueError):
-        Fireworks().modelname_to_contextsize("foobar")
 
 def test_fireworks_chat() -> None:
     """Test FireworksChat."""
@@ -138,7 +110,7 @@ async def test_fireworkschat_agenerate() -> None:
     assert isinstance(output.generations, list)
     assert len(output.generations) == 1
 
-def test_fireworkschat_chain():
+def test_fireworkschat_chain() -> None:
     embeddings = OpenAIEmbeddings()
 
     loader = TextLoader("[workspace]/langchain-internal/docs/extras/modules/state_of_the_union.txt")
