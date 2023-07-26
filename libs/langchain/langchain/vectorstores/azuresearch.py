@@ -213,6 +213,7 @@ class AzureSearch(VectorStore):
         ids = []
         # Write data to index
         data = []
+        metadata_fields = kwargs.get('metadata_fields', [])
         for i, text in enumerate(texts):
             # Use provided key otherwise use default key
             key = keys[i] if keys else str(uuid.uuid4())
@@ -229,8 +230,9 @@ class AzureSearch(VectorStore):
                     ).tolist(),
                     FIELDS_METADATA: json.dumps(metadata),
                 }
-            for met_key, value in metadata.items():
-                    data_item[met_key] = value
+            if metadata_fields:
+                for met_key, value in metadata.items():
+                        data_item[met_key] = value
             data.append(data_item)
             ids.append(key)
             # Upload data in batches
