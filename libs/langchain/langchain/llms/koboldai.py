@@ -133,7 +133,6 @@ class KoboldApiLLM(LLM):
     quiet: Optional[bool] = False
     """When enabled, Generated output will not be displayed in the console."""
 
-
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling koboldApiLLM."""
@@ -155,9 +154,8 @@ class KoboldApiLLM(LLM):
             "typical": self.typical,
             "stop_sequence": self.stop_sequence,
             "frmttriminc": self.frmttriminc,
-            "quiet": self.quiet
+            "quiet": self.quiet,
         }
-
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
@@ -186,7 +184,6 @@ class KoboldApiLLM(LLM):
 
         params = self._default_params
 
-
         # then sets it as configured, or default to an empty list:
         params["stop_sequence"] = self.stop_sequence or stop or []
 
@@ -202,8 +199,8 @@ class KoboldApiLLM(LLM):
         """
         Calls the koboldApiLLM web API and returns the output.
 
-        This function sends a request to the koboldApiLLM web API with the provided prompt 
-        and stop sequences. It then processes the response, ensuring the stop sequences are 
+        This function sends a request to the koboldApiLLM web API with the provided prompt
+        and stop sequences. It then processes the response, ensuring the stop sequences are
         removed from the text and any leading or trailing whitespace is stripped off.
 
         Args:
@@ -220,7 +217,7 @@ class KoboldApiLLM(LLM):
                 llm = koboldApiLLM(endpoint="http://localhost:5000")
                 llm("Write a story about llamas.")
         """
-        
+
         url = f"{clean_url(self.endpoint)}/api/v1/generate"
         params = self._get_parameters(stop)
         request = params.copy()
@@ -231,7 +228,7 @@ class KoboldApiLLM(LLM):
         if response.status_code == 200:
             text = response.json()["results"][0]["text"]
             stop_sequences = params["stop_sequence"]
-            
+
             if stop_sequences:
                 for sequence in stop_sequences:
                     if text.endswith(sequence):
