@@ -5,8 +5,8 @@ from typing import Any, Optional, Mapping, List, Dict
 from pydantic import BaseModel, validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import LLM
-from langchain.schema import ChatResult
+from langchain.chat_models.base import SimpleChatModel
+from langchain.schema import ChatResult, ChatGeneration
 from langchain.schema.messages import BaseMessage
 from langchain.utils import get_from_dict_or_env
 from langchain.schema.messages import (
@@ -51,9 +51,9 @@ class LlamaContentFormatter(ContentFormatterBase):
 
     def format_response_payload(self, output: bytes) -> str:
         """Formats response"""
-        return json.loads(output)[0]["output"]
+        return json.loads(output)["output"]
 
-class AzureMLChatOnlineEndpoint(LLM, BaseModel):
+class AzureMLChatOnlineEndpoint(SimpleChatModel):
     endpoint_url: str = ""
     """URL of pre-existing Endpoint. Should be passed to constructor or specified as 
         env var `AZUREML_ENDPOINT_URL`."""
@@ -105,7 +105,7 @@ class AzureMLChatOnlineEndpoint(LLM, BaseModel):
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> ChatResult:
+    ) -> str:
         _model_kwargs = self.model_kwargs or {}
         request_payload = self.content_formatter.format_request_payload(messages, _model_kwargs)
         response_payload = self.http_client.call(request_payload, **kwargs)
