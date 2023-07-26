@@ -2,7 +2,8 @@
 
 # Prerequisites:
 # 1. Create a Dropbox app.
-# 2. Give the app these scope permissions: `files.metadata.read` and `files.content.read`.
+# 2. Give the app these scope permissions: `files.metadata.read`
+#    and `files.content.read`.
 # 3. Generate access token: https://www.dropbox.com/developers/apps/create.
 # 4. `pip install dropbox` (requires `pip install unstructured` for PDF filetype).
 
@@ -10,11 +11,9 @@
 import os
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional
 
-from dropbox import Dropbox, exceptions
-from dropbox.files import FileMetadata
-from pydantic import BaseModel, root_validator, validator
+from pydantic import BaseModel, root_validator
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -23,7 +22,8 @@ from langchain.document_loaders.base import BaseLoader
 class DropboxLoader(BaseLoader, BaseModel):
     """Loads files from Dropbox.
 
-    In addition to common files such as text and PDF files, it also supports *Dropbox Paper* files.
+    In addition to common files such as text and PDF files, it also supports
+    *Dropbox Paper* files.
     """
 
     dropbox_access_token: str
@@ -50,8 +50,13 @@ class DropboxLoader(BaseLoader, BaseModel):
 
         return values
 
-    def _create_dropbox_client(self) -> Dropbox:
+    def _create_dropbox_client(self) -> Any:
         """Create a Dropbox client."""
+        try:
+            from dropbox import Dropbox, exceptions
+        except ImportError:
+            raise ImportError("You must run " "`pip install dropbox")
+
         try:
             dbx = Dropbox(self.dropbox_access_token)
             dbx.users_get_current_account()
@@ -66,10 +71,17 @@ class DropboxLoader(BaseLoader, BaseModel):
         dbx = self._create_dropbox_client()
 
         try:
+            from dropbox import exceptions
+            from dropbox.files import FileMetadata
+        except ImportError:
+            raise ImportError("You must run " "`pip install dropbox")
+
+        try:
             results = dbx.files_list_folder(folder_path, recursive=self.recursive)
         except exceptions.ApiError as ex:
             raise ValueError(
-                f"Could not list files in the folder: {folder_path}. Please verify the folder path and try again."
+                f"Could not list files in the folder: {folder_path}. "
+                "Please verify the folder path and try again."
             ) from ex
 
         files = [entry for entry in results.entries if isinstance(entry, FileMetadata)]
@@ -85,6 +97,11 @@ class DropboxLoader(BaseLoader, BaseModel):
         dbx = self._create_dropbox_client()
 
         try:
+            from dropbox import exceptions
+        except ImportError:
+            raise ImportError("You must run " "`pip install dropbox")
+
+        try:
             file_metadata = dbx.files_get_metadata(file_path)
 
             if file_metadata.is_downloadable:
@@ -96,7 +113,8 @@ class DropboxLoader(BaseLoader, BaseModel):
 
         except exceptions.ApiError as ex:
             raise ValueError(
-                f"Could not load file: {file_path}. Please verify the file path and try again."
+                f"Could not load file: {file_path}. Please verify the file path"
+                "and try again."
             ) from ex
 
         try:
@@ -119,7 +137,6 @@ class DropboxLoader(BaseLoader, BaseModel):
                     loader = UnstructuredPDFLoader(str(temp_pdf))
                     docs = loader.load()
                     if docs:
-                        # Since UnstructuredPDFLoader returns a list of Document objects, we return the first one.
                         return docs[0]
                 except Exception as pdf_ex:
                     print(f"Error while trying to parse PDF {file_path}: {pdf_ex}")
