@@ -45,7 +45,12 @@ class PairwiseStringResultOutputParser(BaseOutputParser[dict]):
             ValueError: If the verdict is invalid.
 
         """
-        reasoning, verdict = text.strip().rsplit("\n", maxsplit=1)
+        parsed = text.strip().rsplit("\n", maxsplit=1)
+        if len(parsed) == 1:
+            reasoning = ""
+            verdict = parsed[0]
+        else:
+            reasoning, verdict = parsed
         verdict = verdict.strip("[").strip("]")
         if verdict not in {"A", "B", "C"}:
             raise ValueError(
