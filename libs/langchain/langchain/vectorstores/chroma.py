@@ -94,7 +94,7 @@ class Chroma(VectorStore):
             if client_settings:
                 # If client_settings is provided with persist_directory specified,
                 # then it is "in-memory and persisting to disk" mode.
-                if client_settings.persist_directory is not None and persist_directory:
+                if client_settings.persist_directory is not None:
                     if client_settings.chroma_db_impl is None or \
                         client_settings.chroma_db_impl == "":
                         raise ValueError("client_settings.chroma_db_impl is required when "
