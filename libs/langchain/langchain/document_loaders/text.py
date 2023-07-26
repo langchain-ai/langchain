@@ -37,7 +37,7 @@ class TextLoader(BaseLoader):
         """Load from file path."""
         text = ""
         try:
-            with open(self.file_path, encoding=self.encoding) as f:
+            with open(self.file_path, encoding=self.encoding,errors='ignore') as f:
                 text = f.read()
         except UnicodeDecodeError as e:
             if self.autodetect_encoding:
@@ -45,7 +45,7 @@ class TextLoader(BaseLoader):
                 for encoding in detected_encodings:
                     logger.debug("Trying encoding: ", encoding.encoding)
                     try:
-                        with open(self.file_path, encoding=encoding.encoding) as f:
+                        with open(self.file_path, encoding=encoding.encoding,errors='ignore') as f:
                             text = f.read()
                         break
                     except UnicodeDecodeError:
