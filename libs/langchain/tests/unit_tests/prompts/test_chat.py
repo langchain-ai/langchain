@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List
+from typing import List, Union
 
 import pytest
 
@@ -139,9 +139,9 @@ def test_chat_prompt_template_from_messages() -> None:
 
 
 def test_chat_prompt_template_with_messages() -> None:
-    messages: List[BaseMessagePromptTemplate] = create_messages() + [
-        HumanMessage(content="foo")
-    ]
+    messages: List[
+        Union[BaseMessagePromptTemplate, BaseMessage]
+    ] = create_messages() + [HumanMessage(content="foo")]
     chat_prompt_template = ChatPromptTemplate.from_messages(messages)
     assert sorted(chat_prompt_template.input_variables) == sorted(
         ["context", "foo", "bar"]
