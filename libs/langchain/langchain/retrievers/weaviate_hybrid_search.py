@@ -5,10 +5,7 @@ from uuid import uuid4
 
 from pydantic import root_validator
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
+from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.docstore.document import Document
 from langchain.schema import BaseRetriever
 
@@ -118,8 +115,3 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
             text = res.pop(self.text_key)
             docs.append(Document(page_content=text, metadata=res))
         return docs
-
-    async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        raise NotImplementedError
