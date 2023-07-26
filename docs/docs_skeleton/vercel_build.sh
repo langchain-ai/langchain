@@ -7,8 +7,8 @@ yum install openssl11 -y
 yum install openssl11-devel -y
 
 # Locate openssl 1.1.1 library and headers
-OPENSSL_LIB_PATH=$(dirname $(find / -name 'libssl.so.*' | grep 'openssl11'))
-OPENSSL_INCLUDE_PATH=$(dirname $(find / -name 'openssl' | grep 'openssl11'))
+# OPENSSL_LIB_PATH=$(dirname $(find / -name 'libssl.so.*' | grep 'openssl11'))
+# OPENSSL_INCLUDE_PATH=$(dirname $(find / -name 'openssl' | grep 'openssl11'))
 
 echo "OPENSSL VERSION"
 openssl11 version 
@@ -17,7 +17,8 @@ openssl11 version
 wget https://www.python.org/ftp/python/3.11.4/Python-3.11.4.tgz 
 tar xzf Python-3.11.4.tgz 
 cd Python-3.11.4 
-./configure --with-openssl=${OPENSSL_LIB_PATH} CPPFLAGS="-I${OPENSSL_INCLUDE_PATH}"
+./configure 
+#--with-openssl=${OPENSSL_LIB_PATH} CPPFLAGS="-I${OPENSSL_INCLUDE_PATH}"
 make altinstall
 
 # Check python version
