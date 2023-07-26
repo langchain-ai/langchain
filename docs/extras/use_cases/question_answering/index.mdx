@@ -189,13 +189,11 @@ Note, you can pass in an `LLM` or a `ChatModel` (like we did here) to the `Retri
 - Use local LLMS: The popularity of [PrivateGPT](https://github.com/imartinez/privateGPT) and [GPT4All](https://github.com/nomic-ai/gpt4all) underscore the importance of running LLMs locally.
 Using `GPT4All` is as simple as [downloading the binary]((/docs/integrations/llms/gpt4all)) and then:
 
-    ```python
     from langchain.llms import GPT4All
     from langchain.chains import RetrievalQA
 
     llm = GPT4All(model="/Users/rlm/Desktop/Code/gpt4all/models/nous-hermes-13b.ggmlv3.q4_0.bin",max_tokens=2048)
     qa_chain = RetrievalQA.from_chain_type(llm, retriever=vectorstore.as_retriever())
-    ```
 
 #### Customizing the prompt
 
