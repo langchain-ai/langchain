@@ -185,16 +185,16 @@ class WebResearchRetriever(BaseRetriever):
         if new_urls:
             loader = AsyncHtmlLoader(new_urls)
             html2text = Html2TextTransformer()
-            logger.info("Grabbing most relevant splits from urls ...")
-            _splits = []
-            text_splitter = self.text_splitter
-            for doc in html2text.transform_documents(loader.load()):
-                doc_splits = text_splitter.split_documents([doc])
-                _splits.extend(doc_splits)
-            self.vectorstore.add_documents(_splits)
+            logger.info("Indexing new urls...")
+            docs = loader.load()
+            docs = html2text.transform_documents(docs)
+            docs = self.text_splitter.split_documents(docs)
+            self.vectorstore.add_documents(docs)
             self.url_database.extend(new_urls)
 
         # Search for relevant splits
+        # TODO: make this async
+        logger.info("Grabbing most relevant splits from urls...")
         docs = []
         for query in questions:
             docs.extend(self.vectorstore.similarity_search(query))
