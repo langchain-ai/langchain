@@ -5,7 +5,7 @@ yum install openssl11 openssl11-devel -y
 # Remove python 3.9 and install python 3.10
 yum list
 yum remove python39 -y
-yum install python310 -y
+yum install python3.11 -y
 python3 --version
 
 cd ..
