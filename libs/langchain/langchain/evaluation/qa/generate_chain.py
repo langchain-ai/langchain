@@ -1,4 +1,4 @@
-"""LLM Chain specifically for generating examples for question answering."""
+"""LLM Chain for generating examples for question answering."""
 from __future__ import annotations
 
 from typing import Any
@@ -9,7 +9,7 @@ from langchain.schema.language_model import BaseLanguageModel
 
 
 class QAGenerateChain(LLMChain):
-    """LLM Chain specifically for generating examples for question answering."""
+    """LLM Chain for generating examples for question answering."""
 
     @classmethod
     def from_llm(cls, llm: BaseLanguageModel, **kwargs: Any) -> QAGenerateChain:

@@ -12,6 +12,8 @@ from langchain.tools.amadeus.base import AmadeusBaseTool
 
 
 class ClosestAirportSchema(BaseModel):
+    """Schema for the AmadeusClosestAirport tool."""
+
     location: str = Field(
         description=(
             " The location for which you would like to find the nearest airport "
@@ -29,6 +31,8 @@ class ClosestAirportSchema(BaseModel):
 
 
 class AmadeusClosestAirport(AmadeusBaseTool):
+    """Tool for finding the closest airport to a particular location."""
+
     name: str = "closest_airport"
     description: str = (
         "Use this tool to find the closest airport to a particular location."
