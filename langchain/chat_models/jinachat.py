@@ -36,7 +36,7 @@ from langchain.schema import (
     HumanMessage,
     SystemMessage,
 )
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
 
 logger = logging.getLogger(__name__)
 
@@ -109,7 +109,8 @@ class JinaChat(BaseChatModel):
     image chat capabilities in comparison to other LLM APIs.
 
     To use, you should have the ``openai`` python package installed, and the
-    environment variable ``JINACHAT_API_KEY`` set with your API key.
+    environment variable ``JINACHAT_API_KEY`` set to your API key, which you
+    can generate at https://chat.jina.ai/api.
 
     Any parameters that are valid to be passed to the openai.create call can be passed
     in, even if not explicitly saved on this class.
@@ -154,7 +155,7 @@ class JinaChat(BaseChatModel):
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
-        all_required_field_names = cls._all_required_field_names()
+        all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
             if field_name in extra:

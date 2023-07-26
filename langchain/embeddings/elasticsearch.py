@@ -12,8 +12,7 @@ from langchain.embeddings.base import Embeddings
 
 
 class ElasticsearchEmbeddings(Embeddings):
-    """
-    Wrapper around Elasticsearch embedding models.
+    """Elasticsearch embedding models.
 
     This class provides an interface to generate embeddings using a model deployed
     in an Elasticsearch cluster. It requires an Elasticsearch connection object

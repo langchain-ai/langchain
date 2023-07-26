@@ -155,7 +155,7 @@ def load_qa_with_sources_chain(
     verbose: Optional[bool] = None,
     **kwargs: Any,
 ) -> BaseCombineDocumentsChain:
-    """Load question answering with sources chain.
+    """Load a question answering with sources chain.
 
     Args:
         llm: Language Model to use in the chain.

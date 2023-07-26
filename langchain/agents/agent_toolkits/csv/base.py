@@ -1,4 +1,3 @@
-"""Agent for working with csv files."""
 from typing import Any, List, Optional, Union
 
 from langchain.agents.agent import AgentExecutor

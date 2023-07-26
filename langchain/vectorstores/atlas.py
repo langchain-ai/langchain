@@ -46,7 +46,7 @@ class AtlasDB(VectorStore):
         Args:
             name (str): The name of your project. If the project already exists,
                 it will be loaded.
-            embedding_function (Optional[Callable]): An optional function used for
+            embedding_function (Optional[Embeddings]): An optional function used for
                 embedding your data. If None, data will be embedded with
                 Nomic's embed model.
             api_key (str): Your nomic API key
@@ -55,7 +55,7 @@ class AtlasDB(VectorStore):
                 True by default.
             reset_project_if_exists (bool): Whether to reset this project if it
                 already exists. Default False.
-                Generally userful during development and testing.
+                Generally useful during development and testing.
         """
         try:
             import nomic
@@ -85,6 +85,10 @@ class AtlasDB(VectorStore):
             unique_id_field=AtlasDB._ATLAS_DEFAULT_ID_FIELD,
         )
         self.project._latest_project_state()
+
+    @property
+    def embeddings(self) -> Optional[Embeddings]:
+        return self._embedding_function
 
     def add_texts(
         self,
@@ -200,10 +204,10 @@ class AtlasDB(VectorStore):
             neighbors, _ = self.project.projections[0].vector_search(
                 queries=embedding, k=k
             )
-            datas = self.project.get_data(ids=neighbors[0])
+            data = self.project.get_data(ids=neighbors[0])
 
         docs = [
-            Document(page_content=datas[i]["text"], metadata=datas[i])
+            Document(page_content=data[i]["text"], metadata=data[i])
             for i, neighbor in enumerate(neighbors)
         ]
         return docs
@@ -238,7 +242,7 @@ class AtlasDB(VectorStore):
                 True by default.
             reset_project_if_exists (bool): Whether to reset this project if it
                 already exists. Default False.
-                Generally userful during development and testing.
+                Generally useful during development and testing.
             index_kwargs (Optional[dict]): Dict of kwargs for index creation.
                 See https://docs.nomic.ai/atlas_api.html
 
@@ -297,7 +301,7 @@ class AtlasDB(VectorStore):
                 True by default.
             reset_project_if_exists (bool): Whether to reset this project if
                 it already exists. Default False.
-                Generally userful during development and testing.
+                Generally useful during development and testing.
             index_kwargs (Optional[dict]): Dict of kwargs for index creation.
                 See https://docs.nomic.ai/atlas_api.html
 

@@ -84,6 +84,10 @@ class MatchingEngine(VectorStore):
         self.credentials = credentials
         self.gcs_bucket_name = gcs_bucket_name
 
+    @property
+    def embeddings(self) -> Embeddings:
+        return self.embedding
+
     def _validate_google_libraries_installation(self) -> None:
         """Validates that Google libraries that are needed are installed."""
         try:
@@ -185,7 +189,7 @@ class MatchingEngine(VectorStore):
         results = []
 
         # I'm only getting the first one because queries receives an array
-        # and the similarity_search method only recevies one query. This
+        # and the similarity_search method only receives one query. This
         # means that the match method will always return an array with only
         # one element.
         for doc in response[0]:

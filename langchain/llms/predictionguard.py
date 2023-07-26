@@ -1,4 +1,3 @@
-"""Wrapper around Prediction Guard APIs."""
 import logging
 from typing import Any, Dict, List, Optional
 
@@ -13,7 +12,8 @@ logger = logging.getLogger(__name__)
 
 
 class PredictionGuard(LLM):
-    """Wrapper around Prediction Guard large language models.
+    """Prediction Guard large language models.
+
     To use, you should have the ``predictionguard`` python package installed, and the
     environment variable ``PREDICTIONGUARD_TOKEN`` set with your access token, or pass
     it as a named parameter to the constructor. To use Prediction Guard's API along

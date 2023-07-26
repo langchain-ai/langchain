@@ -5,6 +5,7 @@ from langchain.document_loaders.airbyte_json import AirbyteJSONLoader
 from langchain.document_loaders.airtable import AirtableLoader
 from langchain.document_loaders.apify_dataset import ApifyDatasetLoader
 from langchain.document_loaders.arxiv import ArxivLoader
+from langchain.document_loaders.async_html import AsyncHtmlLoader
 from langchain.document_loaders.azlyrics import AZLyricsLoader
 from langchain.document_loaders.azure_blob_storage_container import (
     AzureBlobStorageContainerLoader,
@@ -24,6 +25,7 @@ from langchain.document_loaders.blob_loaders import (
 )
 from langchain.document_loaders.blockchain import BlockchainDocumentLoader
 from langchain.document_loaders.brave_search import BraveSearchLoader
+from langchain.document_loaders.browserless import BrowserlessLoader
 from langchain.document_loaders.chatgpt import ChatGPTLoader
 from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
 from langchain.document_loaders.confluence import ConfluenceLoader
@@ -50,6 +52,7 @@ from langchain.document_loaders.fauna import FaunaLoader
 from langchain.document_loaders.figma import FigmaFileLoader
 from langchain.document_loaders.gcs_directory import GCSDirectoryLoader
 from langchain.document_loaders.gcs_file import GCSFileLoader
+from langchain.document_loaders.geodataframe import GeoDataFrameLoader
 from langchain.document_loaders.git import GitLoader
 from langchain.document_loaders.gitbook import GitbookLoader
 from langchain.document_loaders.github import GitHubIssuesLoader
@@ -103,6 +106,7 @@ from langchain.document_loaders.readthedocs import ReadTheDocsLoader
 from langchain.document_loaders.recursive_url_loader import RecursiveUrlLoader
 from langchain.document_loaders.reddit import RedditPostsLoader
 from langchain.document_loaders.roam import RoamLoader
+from langchain.document_loaders.rocksetdb import RocksetLoader
 from langchain.document_loaders.rst import UnstructuredRSTLoader
 from langchain.document_loaders.rtf import UnstructuredRTFLoader
 from langchain.document_loaders.s3_directory import S3DirectoryLoader
@@ -158,6 +162,7 @@ TelegramChatLoader = TelegramChatFileLoader
 
 __all__ = [
     "AcreomLoader",
+    "AsyncHtmlLoader",
     "AZLyricsLoader",
     "AirbyteJSONLoader",
     "AirtableLoader",
@@ -174,6 +179,7 @@ __all__ = [
     "BlobLoader",
     "BlockchainDocumentLoader",
     "BraveSearchLoader",
+    "BrowserlessLoader",
     "CSVLoader",
     "ChatGPTLoader",
     "CoNLLULoader",
@@ -197,6 +203,7 @@ __all__ = [
     "FileSystemBlobLoader",
     "GCSDirectoryLoader",
     "GCSFileLoader",
+    "GeoDataFrameLoader",
     "GitHubIssuesLoader",
     "GitLoader",
     "GitbookLoader",
@@ -246,6 +253,7 @@ __all__ = [
     "RecursiveUrlLoader",
     "RedditPostsLoader",
     "RoamLoader",
+    "RocksetLoader",
     "S3DirectoryLoader",
     "S3FileLoader",
     "SRTLoader",

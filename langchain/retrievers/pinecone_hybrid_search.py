@@ -99,12 +99,19 @@ def create_index(
 
 
 class PineconeHybridSearchRetriever(BaseRetriever):
+    """Pinecone Hybrid Search Retriever."""
+
     embeddings: Embeddings
+    """Embeddings model to use."""
     """description"""
     sparse_encoder: Any
+    """Sparse encoder to use."""
     index: Any
+    """Pinecone index to use."""
     top_k: int = 4
+    """Number of documents to return."""
     alpha: float = 0.5
+    """Alpha value for hybrid search."""
 
     class Config:
         """Configuration for this pydantic object."""

@@ -52,7 +52,7 @@ class Vectara(VectorStore):
             or self._vectara_api_key is None
         ):
             logging.warning(
-                "Cant find Vectara credentials, customer_id or corpus_id in "
+                "Can't find Vectara credentials, customer_id or corpus_id in "
                 "environment."
             )
         else:
@@ -60,6 +60,10 @@ class Vectara(VectorStore):
         self._session = requests.Session()  # to reuse connections
         adapter = requests.adapters.HTTPAdapter(max_retries=3)
         self._session.mount("http://", adapter)
+
+    @property
+    def embeddings(self) -> Optional[Embeddings]:
+        return None
 
     def _get_post_headers(self) -> dict:
         """Returns headers that should be attached to each post request."""
@@ -402,7 +406,9 @@ class Vectara(VectorStore):
         return vectara
 
     def as_retriever(self, **kwargs: Any) -> VectaraRetriever:
-        return VectaraRetriever(vectorstore=self, **kwargs)
+        tags = kwargs.pop("tags", None) or []
+        tags.extend(self.__get_retriever_tags())
+        return VectaraRetriever(vectorstore=self, **kwargs, tags=tags)
 
 
 class VectaraRetriever(VectorStoreRetriever):

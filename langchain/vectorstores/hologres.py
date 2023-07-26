@@ -148,6 +148,10 @@ class Hologres(VectorStore):
         self.create_vector_extension()
         self.create_table()
 
+    @property
+    def embeddings(self) -> Embeddings:
+        return self.embedding_function
+
     def create_vector_extension(self) -> None:
         try:
             self.storage.create_vector_extension()

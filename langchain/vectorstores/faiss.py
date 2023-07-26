@@ -87,6 +87,11 @@ class FAISS(VectorStore):
                 )
             )
 
+    @property
+    def embeddings(self) -> Optional[Embeddings]:
+        # TODO: Accept embeddings object directly
+        return None
+
     def __add(
         self,
         texts: Iterable[str],
@@ -521,6 +526,13 @@ class FAISS(VectorStore):
             metadata = metadatas[i] if metadatas else {}
             documents.append(Document(page_content=text, metadata=metadata))
         index_to_id = dict(enumerate(ids))
+
+        if len(index_to_id) != len(documents):
+            raise Exception(
+                f"{len(index_to_id)} ids provided for {len(documents)} documents."
+                " Each document should have an id."
+            )
+
         docstore = InMemoryDocstore(dict(zip(index_to_id.values(), documents)))
         return cls(
             embedding.embed_query,
@@ -691,6 +703,9 @@ class FAISS(VectorStore):
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs and their similarity scores on a scale from 0 to 1."""
+        # Pop score threshold so that only relevancy scores, not raw scores, are
+        # filtered.
+        score_threshold = kwargs.pop("score_threshold", None)
         relevance_score_fn = self._select_relevance_score_fn()
         if relevance_score_fn is None:
             raise ValueError(
@@ -704,4 +719,13 @@ class FAISS(VectorStore):
             fetch_k=fetch_k,
             **kwargs,
         )
-        return [(doc, relevance_score_fn(score)) for doc, score in docs_and_scores]
+        docs_and_rel_scores = [
+            (doc, relevance_score_fn(score)) for doc, score in docs_and_scores
+        ]
+        if score_threshold is not None:
+            docs_and_rel_scores = [
+                (doc, similarity)
+                for doc, similarity in docs_and_rel_scores
+                if similarity >= score_threshold
+            ]
+        return docs_and_rel_scores

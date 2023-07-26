@@ -191,6 +191,11 @@ class AzureSearch(VectorStore):
         self.semantic_configuration_name = semantic_configuration_name
         self.semantic_query_language = semantic_query_language
 
+    @property
+    def embeddings(self) -> Optional[Embeddings]:
+        # TODO: Support embedding object directly
+        return None
+
     def add_texts(
         self,
         texts: Iterable[str],

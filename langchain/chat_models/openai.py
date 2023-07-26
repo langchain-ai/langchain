@@ -41,7 +41,7 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
 
 if TYPE_CHECKING:
     import tiktoken
@@ -100,7 +100,9 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     if role == "user":
         return HumanMessage(content=_dict["content"])
     elif role == "assistant":
-        content = _dict["content"] or ""  # OpenAI returns None for tool invocations
+        # Fix for azure
+        # Also OpenAI returns None for tool invocations
+        content = _dict.get("content", "") or ""
         if _dict.get("function_call"):
             additional_kwargs = {"function_call": dict(_dict["function_call"])}
         else:
@@ -205,7 +207,7 @@ class ChatOpenAI(BaseChatModel):
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
-        all_required_field_names = cls._all_required_field_names()
+        all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
             if field_name in extra:
@@ -287,30 +289,9 @@ class ChatOpenAI(BaseChatModel):
             **self.model_kwargs,
         }
 
-    def _create_retry_decorator(self) -> Callable[[Any], Any]:
-        import openai
-
-        min_seconds = 1
-        max_seconds = 60
-        # Wait 2^x * 1 second between each retry starting with
-        # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
-        return retry(
-            reraise=True,
-            stop=stop_after_attempt(self.max_retries),
-            wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
-            retry=(
-                retry_if_exception_type(openai.error.Timeout)
-                | retry_if_exception_type(openai.error.APIError)
-                | retry_if_exception_type(openai.error.APIConnectionError)
-                | retry_if_exception_type(openai.error.RateLimitError)
-                | retry_if_exception_type(openai.error.ServiceUnavailableError)
-            ),
-            before_sleep=before_sleep_log(logger, logging.WARNING),
-        )
-
     def completion_with_retry(self, **kwargs: Any) -> Any:
         """Use tenacity to retry the completion call."""
-        retry_decorator = self._create_retry_decorator()
+        retry_decorator = _create_retry_decorator(self)
 
         @retry_decorator
         def _completion_with_retry(**kwargs: Any) -> Any:
@@ -386,9 +367,13 @@ class ChatOpenAI(BaseChatModel):
         generations = []
         for res in response["choices"]:
             message = _convert_dict_to_message(res["message"])
-            gen = ChatGeneration(message=message)
+            gen = ChatGeneration(
+                message=message,
+                generation_info=dict(finish_reason=res.get("finish_reason")),
+            )
             generations.append(gen)
-        llm_output = {"token_usage": response["usage"], "model_name": self.model_name}
+        token_usage = response.get("usage", {})
+        llm_output = {"token_usage": token_usage, "model_name": self.model_name}
         return ChatResult(generations=generations, llm_output=llm_output)
 
     async def _agenerate(

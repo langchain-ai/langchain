@@ -9,8 +9,10 @@ from langchain.llms.utils import enforce_stop_tokens
 
 
 class ContentHandlerAmazonAPIGateway:
-    """Adapter class to prepare the inputs from Langchain to a format
-    that LLM model expects. Also, provides helper function to extract
+    """Adapter to prepare the inputs from Langchain to a format
+    that LLM model expects.
+
+    It also provides helper function to extract
     the generated text from the model response."""
 
     @classmethod
@@ -25,7 +27,7 @@ class ContentHandlerAmazonAPIGateway:
 
 
 class AmazonAPIGateway(LLM):
-    """Wrapper around custom Amazon API Gateway"""
+    """Amazon API Gateway to access LLM models hosted on AWS."""
 
     api_url: str
     """API Gateway URL"""

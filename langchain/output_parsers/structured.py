@@ -15,9 +15,14 @@ line_template = '\t"{name}": {type}  // {description}'
 
 
 class ResponseSchema(BaseModel):
+    """A schema for a response from a structured output parser."""
+
     name: str
+    """The name of the schema."""
     description: str
+    """The description of the schema."""
     type: str = "string"
+    """The type of the response."""
 
 
 def _get_sub_string(schema: ResponseSchema) -> str:
@@ -27,7 +32,10 @@ def _get_sub_string(schema: ResponseSchema) -> str:
 
 
 class StructuredOutputParser(BaseOutputParser):
+    """Parse the output of an LLM call to a structured output."""
+
     response_schemas: List[ResponseSchema]
+    """The schemas for the response."""
 
     @classmethod
     def from_response_schemas(
@@ -36,8 +44,7 @@ class StructuredOutputParser(BaseOutputParser):
         return cls(response_schemas=response_schemas)
 
     def get_format_instructions(self, only_json: bool = False) -> str:
-        """
-        Method to get the format instructions for the output parser.
+        """Get format instructions for the output parser.
 
         example:
         ```python
@@ -63,7 +70,7 @@ class StructuredOutputParser(BaseOutputParser):
         print(parser.get_format_instructions())
 
         output:
-        # The output should be a markdown code snippet formatted in the following
+        # The output should be a Markdown code snippet formatted in the following
         # schema, including the leading and trailing "```json" and "```":
         #
         # ```json
@@ -73,7 +80,7 @@ class StructuredOutputParser(BaseOutputParser):
         # }
 
         Args:
-            only_json (bool): If True, only the json in the markdown code snippet
+            only_json (bool): If True, only the json in the Markdown code snippet
                 will be returned, without the introducing text. Defaults to False.
         """
         schema_str = "\n".join(

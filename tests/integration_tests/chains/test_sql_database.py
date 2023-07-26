@@ -6,7 +6,7 @@ from langchain.chains.sql_database.base import (
     SQLDatabaseSequentialChain,
 )
 from langchain.llms.openai import OpenAI
-from langchain.sql_database import SQLDatabase
+from langchain.utilities.sql_database import SQLDatabase
 
 metadata_obj = MetaData()
 
@@ -67,7 +67,7 @@ def test_sql_database_sequential_chain_run() -> None:
 
 def test_sql_database_sequential_chain_intermediate_steps() -> None:
     """Test that commands can be run successfully SEQUENTIALLY and returned
-    in correct format. sWith Intermediate steps"""
+    in correct format. switch Intermediate steps"""
     engine = create_engine("sqlite:///:memory:")
     metadata_obj.create_all(engine)
     stmt = insert(user).values(user_id=13, user_name="Harrison", user_company="Foo")

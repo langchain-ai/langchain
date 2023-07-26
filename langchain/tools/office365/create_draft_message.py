@@ -10,6 +10,8 @@ from langchain.tools.office365.base import O365BaseTool
 
 
 class CreateDraftMessageSchema(BaseModel):
+    """Input for SendMessageTool."""
+
     body: str = Field(
         ...,
         description="The message body to include in the draft.",
@@ -33,6 +35,8 @@ class CreateDraftMessageSchema(BaseModel):
 
 
 class O365CreateDraftMessage(O365BaseTool):
+    """Tool for creating a draft email in Office 365."""
+
     name: str = "create_email_draft"
     description: str = (
         "Use this tool to create a draft email with the provided message fields."

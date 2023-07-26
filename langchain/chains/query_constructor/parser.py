@@ -54,7 +54,8 @@ GRAMMAR = """
 @v_args(inline=True)
 class QueryTransformer(Transformer):
     """Transforms a query string into an IR representation
-    (intermediate representation)."""
+    (intermediate representation).
+    """
 
     def __init__(
         self,

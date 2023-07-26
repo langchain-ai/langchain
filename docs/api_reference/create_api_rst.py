@@ -20,7 +20,9 @@ def load_members() -> dict:
                 cls = re.findall(r"^class ([^_].*)\(", line)
                 members[top_level]["classes"].extend([module + "." + c for c in cls])
                 func = re.findall(r"^def ([^_].*)\(", line)
-                members[top_level]["functions"].extend([module + "." + f for f in func])
+                afunc = re.findall(r"^async def ([^_].*)\(", line)
+                func_strings = [module + "." + f for f in func + afunc]
+                members[top_level]["functions"].extend(func_strings)
     return members
 
 

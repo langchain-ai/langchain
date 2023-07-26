@@ -17,10 +17,15 @@ logger = logging.getLogger(__name__)
 
 
 class LineList(BaseModel):
+    """List of lines."""
+
     lines: List[str] = Field(description="Lines of text")
+    """List of lines."""
 
 
 class LineListOutputParser(PydanticOutputParser):
+    """Output parser for a list of lines."""
+
     def __init__(self) -> None:
         super().__init__(pydantic_object=LineList)
 
@@ -38,7 +43,7 @@ DEFAULT_QUERY_PROMPT = PromptTemplate(
     By generating multiple perspectives on the user question, 
     your goal is to help the user overcome some of the limitations 
     of distance-based similarity search. Provide these alternative 
-    questions seperated by newlines. Original question: {question}""",
+    questions separated by newlines. Original question: {question}""",
 )
 
 
@@ -132,7 +137,7 @@ class MultiQueryRetriever(BaseRetriever):
             queries: query list
 
         Returns:
-            List of retrived Documents
+            List of retrieved Documents
         """
         documents = []
         for query in queries:
@@ -143,13 +148,13 @@ class MultiQueryRetriever(BaseRetriever):
         return documents
 
     def unique_union(self, documents: List[Document]) -> List[Document]:
-        """Get uniqe Documents.
+        """Get unique Documents.
 
         Args:
-            documents: List of retrived Documents
+            documents: List of retrieved Documents
 
         Returns:
-            List of unique retrived Documents
+            List of unique retrieved Documents
         """
         # Create a dictionary with page_content as keys to remove duplicates
         # TODO: Add Document ID property (e.g., UUID)

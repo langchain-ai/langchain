@@ -1,4 +1,3 @@
-"""Wrapper around ModelScopeHub embedding models."""
 from typing import Any, List
 
 from pydantic import BaseModel, Extra
@@ -7,7 +6,7 @@ from langchain.embeddings.base import Embeddings
 
 
 class ModelScopeEmbeddings(BaseModel, Embeddings):
-    """Wrapper around modelscope_hub embedding models.
+    """ModelScopeHub embedding models.
 
     To use, you should have the ``modelscope`` python package installed.
 
