@@ -446,7 +446,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
         for message in messages:
             if isinstance(message, BaseMessagePromptTemplate):
                 input_vars.update(message.input_variables)
-        return cls(input_variables=list(input_vars), messages=messages)
+        return cls(input_variables=sorted(input_vars), messages=messages)
 
     def format(self, **kwargs: Any) -> str:
         """Format the chat template into a string.

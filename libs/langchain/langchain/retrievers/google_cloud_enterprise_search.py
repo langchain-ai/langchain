@@ -5,10 +5,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 
 from pydantic import Extra, Field, root_validator
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
+from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document
 from langchain.utils import get_from_dict_or_env
 
@@ -184,8 +181,3 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
         documents = self._convert_search_response(response.results)
 
         return documents
-
-    async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        raise NotImplementedError
