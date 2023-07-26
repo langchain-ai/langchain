@@ -7,20 +7,18 @@
 
 # -- Path setup --------------------------------------------------------------
 
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-#
-from docutils import nodes
-from docutils.parsers.rst import roles
-from docutils import nodes
-from sphinx.util.docutils import SphinxDirective
+import json
 import os
 import sys
-import json
 from pathlib import Path
 
 import toml
+from docutils import nodes
+from sphinx.util.docutils import SphinxDirective
+
+# If extensions (or modules to document with autodoc) are in another directory,
+# add these directories to sys.path here. If the directory is relative to the
+# documentation root, use os.path.abspath to make it absolute, like shown here.
 
 _DIR = Path(__file__).parent.absolute()
 sys.path.insert(0, os.path.abspath("."))
@@ -43,6 +41,10 @@ class ExampleLinksDirective(SphinxDirective):
     required_arguments = 1
 
     def run(self):
+        """Run the directive.
+
+        Called any time :example_links:`ClassName` is used
+        in the template *.rst files."""
         class_name = self.arguments[0]
         links = imported_classes.get(class_name, {})
         list_node = nodes.bullet_list()
