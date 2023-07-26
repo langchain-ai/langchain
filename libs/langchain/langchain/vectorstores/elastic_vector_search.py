@@ -155,7 +155,7 @@ class ElasticVectorSearch(VectorStore, ABC):
 
     @property
     def embeddings(self) -> Embeddings:
-        return self.embeddings
+        return self.embedding
 
     def add_texts(
         self,
