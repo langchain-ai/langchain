@@ -63,7 +63,7 @@ def _get_search_client(
     index_name: str,
     embedding_function: Callable,
     semantic_configuration_name: Optional[str] = None,
-    metadata_fields:Optional[str] = [],
+    metadata_fields:Optional[str] = None,
 ) -> SearchClient:
     from azure.core.credentials import AzureKeyCredential
     from azure.core.exceptions import ResourceNotFoundError
@@ -117,14 +117,15 @@ def _get_search_client(
             ),
             SearchableField(
                 name=FIELDS_METADATA,
-                type=SearchFieldDataType.String,
+                type=SearchFieldDataType.String,metadata_fi
                 searchable=True,
                 retrievable=True,
             ),
         ]
-        for item in metadata_fields:
-            fields.append(SearchableField(name=item, type="Edm.String", searchable=True, retrievable=True, filterable=True))
-        # Vector search configuration
+        if metadata_fields:
+            for item in metadata_fields:
+                fields.append(SearchableField(name=item, type="Edm.String", searchable=True, retrievable=True, filterable=True))
+            # Vector search configuration
         vector_search = VectorSearch(
             algorithm_configurations=[
                 VectorSearchAlgorithmConfiguration(
@@ -191,7 +192,7 @@ class AzureSearch(VectorStore):
             index_name,
             embedding_function,
             semantic_configuration_name,
-            metadata_fields = kwargs.get('metadata_fields', []),
+            metadata_fields = kwargs.get('metadata_fields', None),
         )
         self.search_type = search_type
         self.semantic_configuration_name = semantic_configuration_name
@@ -213,7 +214,7 @@ class AzureSearch(VectorStore):
         ids = []
         # Write data to index
         data = []
-        metadata_fields = kwargs.get('metadata_fields', [])
+        metadata_fields = kwargs.get('metadata_fields', None)
         for i, text in enumerate(texts):
             # Use provided key otherwise use default key
             key = keys[i] if keys else str(uuid.uuid4())
