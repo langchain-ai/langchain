@@ -62,7 +62,9 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
         snippets = self.get_snippets(query)
         return " ".join(snippets)
 
-    def results(self, query: str, num_results: int, backend: str="api") -> List[Dict[str, str]]:
+    def results(
+        self, query: str, num_results: int, backend: str = "api"
+    ) -> List[Dict[str, str]]:
         """Run query through DuckDuckGo and return metadata.
 
         Args:

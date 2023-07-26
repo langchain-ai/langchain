@@ -71,7 +71,7 @@ class DuckDuckGoSearchResults(BaseTool):
             for k, v in d.items():
                 items.append(f"{k}: {v}")
             return ", ".join(items)
-        
+
         res = [f"[{dict2str(r)}]" for r in res]
         return ", ".join(res)
 
