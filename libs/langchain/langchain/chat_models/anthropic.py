@@ -20,7 +20,7 @@ from langchain.schema.messages import (
 
 
 class ChatAnthropic(BaseChatModel, _AnthropicCommon):
-    r"""Wrapper around Anthropic's large language model.
+    """Anthropic's large language chat model.
 
     To use, you should have the ``anthropic`` python package installed, and the
     environment variable ``ANTHROPIC_API_KEY`` set with your API key, or pass

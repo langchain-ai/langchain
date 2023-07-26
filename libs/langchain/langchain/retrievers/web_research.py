@@ -67,6 +67,8 @@ class QuestionListOutputParser(PydanticOutputParser):
 
 
 class WebResearchRetriever(BaseRetriever):
+    """Retriever for web research based on the Google Search API."""
+
     # Inputs
     vectorstore: VectorStore = Field(
         ..., description="Vector store for storing web pages"
