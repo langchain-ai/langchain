@@ -1,7 +1,9 @@
 from typing import Any, Dict, List, Optional
 
-from langchain.callbacks.manager import CallbackManagerForChainRun, \
-    AsyncCallbackManagerForChainRun
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+)
 from langchain.chains.base import Chain
 from pydantic import Field
 
@@ -61,9 +63,9 @@ class PlanAndExecute(Chain):
         return {self.output_key: self.step_container.get_final_response()}
 
     async def _acall(
-            self,
-            inputs: Dict[str, Any],
-            run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         plan = await self.planner.aplan(
             inputs,
