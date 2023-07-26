@@ -320,9 +320,8 @@ class ChatOpenAI(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs}
-        if self.streaming:
+        message_dicts, params = self._create_message_dicts(messages, stop, **kwargs)
+        if params["stream"]:
             inner_completion = ""
             role = "assistant"
             params["stream"] = True
@@ -352,13 +351,14 @@ class ChatOpenAI(BaseChatModel):
                 }
             )
             return ChatResult(generations=[ChatGeneration(message=message)])
+        params["stream"] = False
         response = self.completion_with_retry(messages=message_dicts, **params)
         return self._create_chat_result(response)
 
     def _create_message_dicts(
-        self, messages: List[BaseMessage], stop: Optional[List[str]]
+        self, messages: List[BaseMessage], stop: Optional[List[str]], **kwargs
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-        params = self._client_params
+        params = {**self._client_params, **kwargs}
         if stop is not None:
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
@@ -386,9 +386,8 @@ class ChatOpenAI(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs}
-        if self.streaming:
+        message_dicts, params = self._create_message_dicts(messages, stop, **kwargs)
+        if params["stream"]:
             inner_completion = ""
             role = "assistant"
             params["stream"] = True
@@ -419,6 +418,7 @@ class ChatOpenAI(BaseChatModel):
             )
             return ChatResult(generations=[ChatGeneration(message=message)])
         else:
+            params["stream"] = False
             response = await acompletion_with_retry(
                 self, messages=message_dicts, **params
             )
