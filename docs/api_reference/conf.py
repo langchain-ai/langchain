@@ -11,6 +11,10 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+from docutils import nodes
+from docutils.parsers.rst import roles
+from docutils import nodes
+from sphinx.util.docutils import SphinxDirective
 import os
 import sys
 import json
@@ -26,6 +30,31 @@ with (_DIR.parents[1] / "libs" / "langchain" / "pyproject.toml").open("r") as f:
     data = toml.load(f)
 with (_DIR / "example_imports.json").open("r") as f:
     imported_classes = json.load(f)
+
+
+class ExampleLinksDirective(SphinxDirective):
+    has_content = False
+    required_arguments = 1
+
+    def run(self):
+        class_name = self.arguments[0]
+        links = imported_classes.get(class_name, [])
+        list_node = nodes.bullet_list()
+        for link in links:
+            item_node = nodes.list_item()
+            para_node = nodes.paragraph()
+            link_node = nodes.reference()
+            link_node['refuri'] = link
+            link_node.append(nodes.Text("Example"))
+            para_node.append(link_node)
+            item_node.append(para_node)
+            list_node.append(item_node)
+
+        return [list_node]
+
+def setup(app):
+    app.add_directive("example_links", ExampleLinksDirective)
+
 
 # -- Project information -----------------------------------------------------
 
@@ -110,7 +139,6 @@ html_context = {
     "github_version": "master",  # Version
     "conf_py_path": "/docs/api_reference",  # Path in the checkout to the docs root
     "redirects": redirects,
-    "imported_classes": imported_classes
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
