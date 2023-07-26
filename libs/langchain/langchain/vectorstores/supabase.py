@@ -5,6 +5,7 @@ from itertools import repeat
 from typing import (
     TYPE_CHECKING,
     Any,
+    Dict,
     Iterable,
     List,
     Optional,
@@ -74,7 +75,7 @@ class SupabaseVectorStore(VectorStore):
     def add_texts(
         self,
         texts: Iterable[str],
-        metadatas: Optional[List[dict[Any, Any]]] = None,
+        metadatas: Optional[List[Dict[Any, Any]]] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
@@ -125,30 +126,56 @@ class SupabaseVectorStore(VectorStore):
         return self._add_vectors(self._client, self.table_name, vectors, documents, ids)
 
     def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         vectors = self._embedding.embed_documents([query])
-        return self.similarity_search_by_vector(vectors[0], k)
+        return self.similarity_search_by_vector(
+            vectors[0], k=k, filter=filter, **kwargs
+        )
 
     def similarity_search_by_vector(
-        self, embedding: List[float], k: int = 4, **kwargs: Any
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
-        result = self.similarity_search_by_vector_with_relevance_scores(embedding, k)
+        result = self.similarity_search_by_vector_with_relevance_scores(
+            embedding, k=k, filter=filter, **kwargs
+        )
 
         documents = [doc for doc, _ in result]
 
         return documents
 
     def similarity_search_with_relevance_scores(
-        self, query: str, k: int = 4, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         vectors = self._embedding.embed_documents([query])
-        return self.similarity_search_by_vector_with_relevance_scores(vectors[0], k)
+        return self.similarity_search_by_vector_with_relevance_scores(
+            vectors[0], k=k, filter=filter
+        )
+
+    def match_args(
+        self, query: List[float], k: int, filter: Optional[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        ret = dict(query_embedding=query, match_count=k)
+        if filter:
+            ret["filter"] = filter
+        return ret
 
     def similarity_search_by_vector_with_relevance_scores(
-        self, query: List[float], k: int
+        self, query: List[float], k: int, filter: Optional[Dict[str, Any]] = None
     ) -> List[Tuple[Document, float]]:
-        match_documents_params = dict(query_embedding=query, match_count=k)
+        match_documents_params = self.match_args(query, k, filter)
         res = self._client.rpc(self.query_name, match_documents_params).execute()
 
         match_result = [
@@ -166,9 +193,9 @@ class SupabaseVectorStore(VectorStore):
         return match_result
 
     def similarity_search_by_vector_returning_embeddings(
-        self, query: List[float], k: int
+        self, query: List[float], k: int, filter: Optional[Dict[str, Any]] = None
     ) -> List[Tuple[Document, float, np.ndarray[np.float32, Any]]]:
-        match_documents_params = dict(query_embedding=query, match_count=k)
+        match_documents_params = self.match_args(query, k, filter)
         res = self._client.rpc(self.query_name, match_documents_params).execute()
 
         match_result = [
@@ -193,7 +220,7 @@ class SupabaseVectorStore(VectorStore):
     @staticmethod
     def _texts_to_documents(
         texts: Iterable[str],
-        metadatas: Optional[Iterable[dict[Any, Any]]] = None,
+        metadatas: Optional[Iterable[Dict[Any, Any]]] = None,
     ) -> List[Document]:
         """Return list of Documents from list of texts and metadatas."""
         if metadatas is None:
@@ -216,7 +243,7 @@ class SupabaseVectorStore(VectorStore):
     ) -> List[str]:
         """Add vectors to Supabase table."""
 
-        rows: List[dict[str, Any]] = [
+        rows: List[Dict[str, Any]] = [
             {
                 "id": ids[idx],
                 "content": documents[idx].page_content,
@@ -360,7 +387,7 @@ class SupabaseVectorStore(VectorStore):
         if ids is None:
             raise ValueError("No ids provided to delete.")
 
-        rows: List[dict[str, Any]] = [
+        rows: List[Dict[str, Any]] = [
             {
                 "id": id,
             }

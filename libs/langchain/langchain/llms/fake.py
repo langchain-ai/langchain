@@ -27,7 +27,10 @@ class FakeListLLM(LLM):
     ) -> str:
         """Return next response"""
         response = self.responses[self.i]
-        self.i += 1
+        if self.i < len(self.responses) - 1:
+            self.i += 1
+        else:
+            self.i = 0
         return response
 
     async def _acall(
@@ -39,7 +42,10 @@ class FakeListLLM(LLM):
     ) -> str:
         """Return next response"""
         response = self.responses[self.i]
-        self.i += 1
+        if self.i < len(self.responses) - 1:
+            self.i += 1
+        else:
+            self.i = 0
         return response
 
     @property
