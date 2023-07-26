@@ -2,11 +2,10 @@ import json
 
 from typing import Any, Optional, Mapping, List, Dict
 
-from pydantic import BaseModel, validator
+from pydantic import validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import SimpleChatModel
-from langchain.schema import ChatResult, ChatGeneration
 from langchain.schema.messages import BaseMessage
 from langchain.utils import get_from_dict_or_env
 from langchain.schema.messages import (
