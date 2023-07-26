@@ -6,21 +6,23 @@ import DocCardList from "@theme/DocCardList";
 
 # Evaluation
 
-Building applications with language models involves many moving parts. One of the most critical components is ensuring that the outcomes produced by your models are reliable and useful across a broad array of inputs. This process of assurance is known as "evaluation".
+Building applications with language models involves many moving parts. One of the most critical components is ensuring that the outcomes produced by your models are reliable and useful across a broad array of inputs, and that they work well with your application's other software components. Ensuring reliability usually boils down to some combination of application design, testing & evaluation, and runtime checks. 
 
-LangChain provides tools to help you evaluate your language models. This is critical because even though language models can sometimes produce unpredictable results, deploying them in a production environment requires repeatable and useful outcomes. 
+The guides in this section review the APIs and functionality LangChain provides to help yous better evaluate your applications. Evaluation and testing are both critical when thinking about deploying LLM applications, since production environments require repeatable and useful outcomes.
 
-We offer various types of evaluators that help you ensure your model's performance and integrity while handling diverse data sets. This document will walk you through these evaluator types, how to use them, and provide some examples of their use in real-world scenarios.
+LangChain offers various types of evaluators to help you measure performance and integrity on diverse data, and we hope to encourage the the community to create and share other useful evaluators so everyone can improve. These docs will introduce the evaluator types, how to use them, and provide some examples of their use in real-world scenarios.
 
-Each evaluator type in LangChain comes with ready-to-use implementations and an extensible API that allows for customization according to your unique requirements. Here are the types of evaluators we offer:
+Each evaluator type in LangChain comes with ready-to-use implementations and an extensible API that allows for customization according to your unique requirements. Here are some of the types of evaluators we offer:
 
 - [String Evaluators](/docs/guides/evaluation/string/): These evaluators assess the predicted string for a given input, usually comparing it against a reference string.
 - [Trajectory Evaluators](/docs/guides/evaluation/trajectory/): These are used to evaluate the entire trajectory of agent actions.
 - [Comparison Evaluators](/docs/guides/evaluation/comparison/): These evaluators are designed to compare predictions from two runs on a common input.
 
-These evaluators can be used across various scenarios and can be applied to different chain implementations in the LangChain library. For instance, you might use them in a scenario like:
+These evaluators can be used across various scenarios and can be applied to different chain and LLM implementations in the LangChain library.
 
-- [Preference Scoring Chain Outputs](/docs/guides/evaluation/examples/comparisons): This example uses a comparison evaluator to select statistically significant differences in aggregate preference scores across different models or prompts.
+We also are working to share guides and cookbooks that demonstrate how to use these evaluators in real-world scenarios, such as:
+
+- [Chain Comparisons](/docs/guides/evaluation/examples/comparisons): This example uses a comparison evaluator to predict the preferred output. It reviews ways to measure confidence intervals to select statistically significant differences in aggregate preference scores across different models or prompts.
 
 ## Reference Docs
 
