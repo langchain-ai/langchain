@@ -345,6 +345,7 @@ class Weaviate(VectorStore):
             content["certainty"] = kwargs.get("search_distance")
         query_obj = self._client.query.get(self._index_name, self._query_attrs)
 
+        embedding = None
         if not self._by_text:
             embedding = self._embedding.embed_query(query)
             vector = {"vector": embedding}
@@ -367,9 +368,12 @@ class Weaviate(VectorStore):
 
         docs_and_scores = []
         for res in result["data"]["Get"][self._index_name]:
+            if embedding is None:
+                embedding = self._embedding.embed_query(query)
+
             text = res.pop(self._text_key)
             score = np.dot(
-                res["_additional"]["vector"], self._embedding.embed_query(query)
+                res["_additional"]["vector"], embedding
             )
             docs_and_scores.append((Document(page_content=text, metadata=res), score))
         return docs_and_scores
