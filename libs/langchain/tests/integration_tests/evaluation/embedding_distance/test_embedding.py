@@ -5,6 +5,7 @@ import pytest
 
 from langchain.evaluation.embedding_distance import (
     EmbeddingDistance,
+    EmbeddingDistanceEvalChain,
     PairwiseEmbeddingDistanceEvalChain,
 )
 
@@ -44,18 +45,25 @@ def vectors() -> Tuple[np.ndarray, np.ndarray]:
 
 
 @pytest.fixture
-def chain() -> PairwiseEmbeddingDistanceEvalChain:
+def pairwise_embedding_distance_eval_chain() -> PairwiseEmbeddingDistanceEvalChain:
     """Create a PairwiseEmbeddingDistanceEvalChain."""
     return PairwiseEmbeddingDistanceEvalChain()
 
 
+@pytest.fixture
+def embedding_distance_eval_chain() -> EmbeddingDistanceEvalChain:
+    """Create a EmbeddingDistanceEvalChain."""
+    return EmbeddingDistanceEvalChain()
+
+
 @pytest.mark.requires("scipy")
-def test_cosine_similarity(
-    chain: PairwiseEmbeddingDistanceEvalChain, vectors: Tuple[np.ndarray, np.ndarray]
+def test_pairwise_embedding_distance_eval_chain_cosine_similarity(
+    pairwise_embedding_distance_eval_chain: PairwiseEmbeddingDistanceEvalChain,
+    vectors: Tuple[np.ndarray, np.ndarray],
 ) -> None:
     """Test the cosine similarity."""
-    chain.distance_metric = EmbeddingDistance.COSINE
-    result = chain._compute_score(np.array(vectors))
+    pairwise_embedding_distance_eval_chain.distance_metric = EmbeddingDistance.COSINE
+    result = pairwise_embedding_distance_eval_chain._compute_score(np.array(vectors))
     expected = 1.0 - np.dot(vectors[0], vectors[1]) / (
         np.linalg.norm(vectors[0]) * np.linalg.norm(vectors[1])
     )
@@ -63,61 +71,81 @@ def test_cosine_similarity(
 
 
 @pytest.mark.requires("scipy")
-def test_euclidean_distance(
-    chain: PairwiseEmbeddingDistanceEvalChain, vectors: Tuple[np.ndarray, np.ndarray]
+def test_pairwise_embedding_distance_eval_chain_euclidean_distance(
+    pairwise_embedding_distance_eval_chain: PairwiseEmbeddingDistanceEvalChain,
+    vectors: Tuple[np.ndarray, np.ndarray],
 ) -> None:
     """Test the euclidean distance."""
     from scipy.spatial.distance import euclidean
 
-    chain.distance_metric = EmbeddingDistance.EUCLIDEAN
-    result = chain._compute_score(np.array(vectors))
+    pairwise_embedding_distance_eval_chain.distance_metric = EmbeddingDistance.EUCLIDEAN
+    result = pairwise_embedding_distance_eval_chain._compute_score(np.array(vectors))
     expected = euclidean(*vectors)
     assert np.isclose(result, expected)
 
 
 @pytest.mark.requires("scipy")
-def test_manhattan_distance(
-    chain: PairwiseEmbeddingDistanceEvalChain, vectors: Tuple[np.ndarray, np.ndarray]
+def test_pairwise_embedding_distance_eval_chain_manhattan_distance(
+    pairwise_embedding_distance_eval_chain: PairwiseEmbeddingDistanceEvalChain,
+    vectors: Tuple[np.ndarray, np.ndarray],
 ) -> None:
     """Test the manhattan distance."""
     from scipy.spatial.distance import cityblock
 
-    chain.distance_metric = EmbeddingDistance.MANHATTAN
-    result = chain._compute_score(np.array(vectors))
+    pairwise_embedding_distance_eval_chain.distance_metric = EmbeddingDistance.MANHATTAN
+    result = pairwise_embedding_distance_eval_chain._compute_score(np.array(vectors))
     expected = cityblock(*vectors)
     assert np.isclose(result, expected)
 
 
 @pytest.mark.requires("scipy")
-def test_chebyshev_distance(
-    chain: PairwiseEmbeddingDistanceEvalChain, vectors: Tuple[np.ndarray, np.ndarray]
+def test_pairwise_embedding_distance_eval_chain_chebyshev_distance(
+    pairwise_embedding_distance_eval_chain: PairwiseEmbeddingDistanceEvalChain,
+    vectors: Tuple[np.ndarray, np.ndarray],
 ) -> None:
     """Test the chebyshev distance."""
     from scipy.spatial.distance import chebyshev
 
-    chain.distance_metric = EmbeddingDistance.CHEBYSHEV
-    result = chain._compute_score(np.array(vectors))
+    pairwise_embedding_distance_eval_chain.distance_metric = EmbeddingDistance.CHEBYSHEV
+    result = pairwise_embedding_distance_eval_chain._compute_score(np.array(vectors))
     expected = chebyshev(*vectors)
     assert np.isclose(result, expected)
 
 
 @pytest.mark.requires("scipy")
-def test_hamming_distance(
-    chain: PairwiseEmbeddingDistanceEvalChain, vectors: Tuple[np.ndarray, np.ndarray]
+def test_pairwise_embedding_distance_eval_chain_hamming_distance(
+    pairwise_embedding_distance_eval_chain: PairwiseEmbeddingDistanceEvalChain,
+    vectors: Tuple[np.ndarray, np.ndarray],
 ) -> None:
     """Test the hamming distance."""
     from scipy.spatial.distance import hamming
 
-    chain.distance_metric = EmbeddingDistance.HAMMING
-    result = chain._compute_score(np.array(vectors))
+    pairwise_embedding_distance_eval_chain.distance_metric = EmbeddingDistance.HAMMING
+    result = pairwise_embedding_distance_eval_chain._compute_score(np.array(vectors))
     expected = hamming(*vectors)
     assert np.isclose(result, expected)
 
 
 @pytest.mark.requires("openai", "tiktoken")
-def test_embedding_distance(chain: PairwiseEmbeddingDistanceEvalChain) -> None:
+def test_pairwise_embedding_distance_eval_chain_embedding_distance(
+    pairwise_embedding_distance_eval_chain: PairwiseEmbeddingDistanceEvalChain,
+) -> None:
     """Test the embedding distance."""
-    result = chain.evaluate_string_pairs(
+    result = pairwise_embedding_distance_eval_chain.evaluate_string_pairs(
         prediction="A single cat", prediction_b="A single cat"
     )
     assert np.isclose(result["score"], 0.0)
+
+
+@pytest.mark.requires("scipy")
+def test_embedding_distance_eval_chain(
+    embedding_distance_eval_chain: EmbeddingDistanceEvalChain,
+) -> None:
+    embedding_distance_eval_chain.distance_metric = EmbeddingDistance.COSINE
+    prediction = "Hi"
+    reference = "Hello"
+    result = embedding_distance_eval_chain.evaluate_strings(
+        prediction=prediction,
+        reference=reference,
+    )
+    assert result["score"] < 1.0
