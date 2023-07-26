@@ -105,7 +105,7 @@ Alex's dog Frosty is a labrador and likes to play hide and seek.
 """
 ```
 
-And our output is a list of `Properties` objects (our target class which we defined previously).
+And our output is a list of `Properties` objects (effectively respecting the schema we defined earlier).
 
 ```python
 chain.run(inp)
@@ -114,6 +114,6 @@ chain.run(inp)
     [Properties(person_name='Alex', person_height=5, person_hair_color='blonde', dog_breed='labrador', dog_name='Frosty'),
      Properties(person_name='Claudia', person_height=6, person_hair_color='brunette', dog_breed=None, dog_name=None)]
 
-## More info
+## Going deeper
 
 As we have seen, by leveraging OpenAI `-0613` models we can extract structured data from unstructured documents with minimal hallucination. For more detail on how to use these chains, please check out the [docs](docs/extras/modules/chains/additional/extraction.ipynb) for the extraction chain.
