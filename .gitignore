@@ -73,6 +73,7 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/docs/_build/
 
 # PyBuilder
 target/
@@ -150,3 +151,22 @@ wandb/
 # integration test artifacts
 data_map*
 \[('_type', 'fake'), ('stop', None)]
+
+# Replit files
+*replit*
+
+node_modules
+docs/.yarn/
+docs/node_modules/
+docs/.docusaurus/
+docs/.cache-loader/
+docs/_dist
+docs/api_reference/api_reference.rst
+docs/api_reference/_build
+docs/api_reference/*/
+!docs/api_reference/_static/
+!docs/api_reference/templates/
+!docs/api_reference/themes/
+docs/docs_skeleton/build
+docs/docs_skeleton/node_modules
+docs/docs_skeleton/yarn.lock

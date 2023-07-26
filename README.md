@@ -2,9 +2,9 @@
 
 ⚡ Building applications with LLMs through composability ⚡
 
-[![lint](https://github.com/hwchase17/langchain/actions/workflows/lint.yml/badge.svg)](https://github.com/hwchase17/langchain/actions/workflows/lint.yml)
-[![test](https://github.com/hwchase17/langchain/actions/workflows/test.yml/badge.svg)](https://github.com/hwchase17/langchain/actions/workflows/test.yml)
-[![linkcheck](https://github.com/hwchase17/langchain/actions/workflows/linkcheck.yml/badge.svg)](https://github.com/hwchase17/langchain/actions/workflows/linkcheck.yml)
+[![Release Notes](https://img.shields.io/github/release/hwchase17/langchain)](https://github.com/hwchase17/langchain/releases)
+[![CI](https://github.com/hwchase17/langchain/actions/workflows/langchain_ci.yml/badge.svg)](https://github.com/hwchase17/langchain/actions/workflows/langchain_ci.yml)
+[![Experimental CI](https://github.com/hwchase17/langchain/actions/workflows/langchain_experimental_ci.yml/badge.svg)](https://github.com/hwchase17/langchain/actions/workflows/langchain_experimental_ci.yml)
 [![Downloads](https://static.pepy.tech/badge/langchain/month)](https://pepy.tech/project/langchain)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchainai.svg?style=social&label=Follow%20%40LangChainAI)](https://twitter.com/langchainai)
@@ -12,18 +12,28 @@
 [![Open in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/hwchase17/langchain)
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/hwchase17/langchain)
 [![GitHub star chart](https://img.shields.io/github/stars/hwchase17/langchain?style=social)](https://star-history.com/#hwchase17/langchain)
+[![Dependency Status](https://img.shields.io/librariesio/github/hwchase17/langchain)](https://libraries.io/github/hwchase17/langchain)
+[![Open Issues](https://img.shields.io/github/issues-raw/hwchase17/langchain)](https://github.com/hwchase17/langchain/issues)
 
 
 Looking for the JS/TS version? Check out [LangChain.js](https://github.com/hwchase17/langchainjs).
 
 **Production Support:** As you move your LangChains into production, we'd love to offer more comprehensive support.
-Please fill out [this form](https://forms.gle/57d8AmXBYp8PP8tZA) and we'll set up a dedicated support Slack channel.
+Please fill out [this form](https://6w1pwbss0py.typeform.com/to/rrbrdTH2) and we'll set up a dedicated support Slack channel.
+
+## 🚨Breaking Changes for select chains (SQLDatabase) on 7/28
+
+In an effort to make `langchain` leaner and safer, we are moving select chains to `langchain_experimental`.
+This migration has already started, but we are remaining backwards compatible until 7/28.
+On that date, we will remove functionality from `langchain`.
+Read more about the motivation and the progress [here](https://github.com/hwchase17/langchain/discussions/8043).
+Read how to migrate your code [here](MIGRATE.md).
 
 ## Quick Install
 
 `pip install langchain`
 or
-`conda install langchain -c conda-forge`
+`pip install langsmith && conda install langchain -c conda-forge`
 
 ## 🤔 What is this?
 
@@ -33,22 +43,22 @@ This library aims to assist in the development of those types of applications. C
 
 **❓ Question Answering over specific documents**
 
-- [Documentation](https://langchain.readthedocs.io/en/latest/use_cases/question_answering.html)
+- [Documentation](https://python.langchain.com/docs/use_cases/question_answering/)
 - End-to-end Example: [Question Answering over Notion Database](https://github.com/hwchase17/notion-qa)
 
 **💬 Chatbots**
 
-- [Documentation](https://langchain.readthedocs.io/en/latest/use_cases/chatbots.html)
+- [Documentation](https://python.langchain.com/docs/use_cases/chatbots/)
 - End-to-end Example: [Chat-LangChain](https://github.com/hwchase17/chat-langchain)
 
 **🤖 Agents**
 
-- [Documentation](https://langchain.readthedocs.io/en/latest/modules/agents.html)
+- [Documentation](https://python.langchain.com/docs/modules/agents/)
 - End-to-end Example: [GPT+WolframAlpha](https://huggingface.co/spaces/JavaFXpert/Chat-GPT-LangChain)
 
 ## 📖 Documentation
 
-Please see [here](https://langchain.readthedocs.io/en/latest/?) for full documentation on:
+Please see [here](https://python.langchain.com) for full documentation on:
 
 - Getting started (installation, setting up the environment, simple examples)
 - How-To examples (demos, integrations, helper functions)
@@ -84,7 +94,7 @@ Memory refers to persisting state between calls of a chain/agent. LangChain prov
 
 [BETA] Generative models are notoriously hard to evaluate with traditional metrics. One new way of evaluating them is using language models themselves to do the evaluation. LangChain provides some prompts/chains for assisting in this.
 
-For more information on these concepts, please see our [full documentation](https://langchain.readthedocs.io/en/latest/).
+For more information on these concepts, please see our [full documentation](https://python.langchain.com).
 
 ## 💁 Contributing
 
