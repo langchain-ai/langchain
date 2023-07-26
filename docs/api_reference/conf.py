@@ -33,24 +33,31 @@ with (_DIR / "example_imports.json").open("r") as f:
 
 
 class ExampleLinksDirective(SphinxDirective):
+    """Directive to generate a list of links to examples.
+
+    We have a script that extracts links to API reference docs
+    from our notebook examples. This directive uses that information
+    to backlink to the examples from the API reference docs."""
+
     has_content = False
     required_arguments = 1
 
     def run(self):
         class_name = self.arguments[0]
-        links = imported_classes.get(class_name, [])
+        links = imported_classes.get(class_name, {})
         list_node = nodes.bullet_list()
-        for link in links:
+        for doc_name, link in links:
             item_node = nodes.list_item()
             para_node = nodes.paragraph()
             link_node = nodes.reference()
-            link_node['refuri'] = link
-            link_node.append(nodes.Text("Example"))
+            link_node["refuri"] = link
+            link_node.append(nodes.Text(doc_name))
             para_node.append(link_node)
             item_node.append(para_node)
             list_node.append(item_node)
 
         return [list_node]
+
 
 def setup(app):
     app.add_directive("example_links", ExampleLinksDirective)
