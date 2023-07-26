@@ -155,6 +155,24 @@ class Cohere(LLM):
         """Return type of llm."""
         return "cohere"
 
+    def _invocation_params(self, stop: Optional[List[str]], **kwargs: Any):
+        params = self._default_params
+        if self.stop is not None and stop is not None:
+            raise ValueError("`stop` found in both the input and default params.")
+        elif self.stop is not None:
+            params["stop_sequences"] = self.stop
+        else:
+            params["stop_sequences"] = stop
+        return {**params, **kwargs}
+
+    def _process_response(self, response: Any, stop: Optional[List[str]]) -> str:
+        text = response.generations[0].text
+        # If stop tokens are provided, Cohere's endpoint returns them.
+        # In order to make this consistent with other endpoints, we strip them.
+        if stop:
+            text = enforce_stop_tokens(text, stop)
+        return text
+
     def _call(
         self,
         prompt: str,
@@ -176,23 +194,12 @@ class Cohere(LLM):
 
                 response = cohere("Tell me a joke.")
         """
-        params = self._default_params
-        if self.stop is not None and stop is not None:
-            raise ValueError("`stop` found in both the input and default params.")
-        elif self.stop is not None:
-            params["stop_sequences"] = self.stop
-        else:
-            params["stop_sequences"] = stop
-        params = {**params, **kwargs}
+        params = self._invocation_params(stop, **kwargs)
         response = completion_with_retry(
             self, model=self.model, prompt=prompt, **params
         )
-        text = response.generations[0].text
-        # If stop tokens are provided, Cohere's endpoint returns them.
-        # In order to make this consistent with other endpoints, we strip them.
-        if stop is not None or self.stop is not None:
-            text = enforce_stop_tokens(text, params["stop_sequences"])
-        return text
+        _stop = params.get("stop_sequences")
+        return self._process_response(response, _stop)
 
     async def _acall(
         self,
@@ -215,20 +222,9 @@ class Cohere(LLM):
 
                 response = await cohere("Tell me a joke.")
         """
-        params = self._default_params
-        if self.stop is not None and stop is not None:
-            raise ValueError("`stop` found in both the input and default params.")
-        elif self.stop is not None:
-            params["stop_sequences"] = self.stop
-        else:
-            params["stop_sequences"] = stop
-        params = {**params, **kwargs}
+        params = self._invocation_params(stop, **kwargs)
         response = await acompletion_with_retry(
             self, model=self.model, prompt=prompt, **params
         )
-        text = response.generations[0].text
-        # If stop tokens are provided, Cohere's endpoint returns them.
-        # In order to make this consistent with other endpoints, we strip them.
-        if stop is not None or self.stop is not None:
-            text = enforce_stop_tokens(text, params["stop_sequences"])
-        return text
+        _stop = params.get("stop_sequences")
+        return self._process_response(response, _stop)
