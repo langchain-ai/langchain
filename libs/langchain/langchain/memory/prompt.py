@@ -54,7 +54,7 @@ The conversation history is provided just in case of a coreference (e.g. "What d
 
 Return the output as a single comma-separated list, or NONE if there is nothing of note to return (e.g. the user is just issuing a greeting or having a simple conversation).
 
-EXAMPLE
+EXAMPLE #1
 Conversation history:
 Person #1: how's it going today?
 AI: "It's going great! How about you?"
@@ -63,9 +63,8 @@ AI: "That sounds like a lot of work! What kind of things are you doing to make L
 Last line:
 Person #1: i'm trying to improve Langchain's interfaces, the UX, its integrations with various products the user might want ... a lot of stuff.
 Output: Langchain
-END OF EXAMPLE
 
-EXAMPLE
+EXAMPLE #2
 Conversation history:
 Person #1: how's it going today?
 AI: "It's going great! How about you?"
@@ -74,7 +73,6 @@ AI: "That sounds like a lot of work! What kind of things are you doing to make L
 Last line:
 Person #1: i'm trying to improve Langchain's interfaces, the UX, its integrations with various products the user might want ... a lot of stuff. I'm working with Person #2.
 Output: Langchain, Person #2
-END OF EXAMPLE
 
 Conversation history (for reference only):
 {history}
