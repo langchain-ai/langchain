@@ -22,3 +22,98 @@ when doing extraction you often want to extract more complicated or nested struc
 For a deep dive on extraction, we recommend checking out [`kor`](https://eyurtsev.github.io/kor/),
 a library that uses the existing LangChain chain and OutputParser abstractions
 but deep dives on allowing extraction of more complicated schemas.
+
+In LangChain we provide a few useful abstractions that help you leverage OpenAI [function calling](https://openai.com/blog/function-calling-and-other-api-updates) (`-0613` models) and which go a long way to avoid model hallucination.
+
+Let's see how we can quickly and easily extract structured data with LangChain.
+
+## Example #1: using a JSON schema
+
+```python
+from langchain.chat_models import ChatOpenAI
+from langchain.chains import create_extraction_chain
+from langchain.prompts import ChatPromptTemplate
+```
+
+```python
+llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-0613")
+```
+
+To extract entities, we need to create a schema where we specify all the properties we want to find and the type we expect each of them to have.
+
+```python
+schema = {
+    "properties": {
+        "name": {"type": "string"},
+        "height": {"type": "integer"},
+        "hair_color": {"type": "string"},
+    },
+    "required": ["name", "height"],
+}
+```
+
+Let's try it out! To create our extraction chain, we will use the `create_extraction_chain` function.
+
+```python
+inp = """
+Alex is 5 feet tall. Claudia is 1 feet taller Alex and jumps higher than him. Claudia is a brunette and Alex is blonde.
+"""
+```
+
+```python
+chain = create_extraction_chain(schema, llm)
+```
+
+As we can see, we extracted the required entities and their properties in the required format.
+
+```python
+chain.run(inp)
+```
+
+    [{'name': 'Alex', 'height': 5, 'hair_color': 'blonde'},
+     {'name': 'Claudia', 'height': 6, 'hair_color': 'brunette'}]
+
+## Example #2: using a Pydantic schema
+
+We can also use a Pydantic schema instead of a json schema. For this we will use the `create_extraction_chain_pydantic` function.
+
+```python
+from typing import Optional, List
+from pydantic import BaseModel, Field
+from langchain.chains import create_extraction_chain_pydantic
+```
+
+As before we will define our schema, only this time using a Pydantic class.
+
+```python
+class Properties(BaseModel):
+    person_name: str
+    person_height: int
+    person_hair_color: str
+    dog_breed: Optional[str]
+    dog_name: Optional[str]
+```
+
+```python
+chain = create_extraction_chain_pydantic(pydantic_schema=Properties, llm=llm)
+```
+
+```python
+inp = """
+Alex is 5 feet tall. Claudia is 1 feet taller Alex and jumps higher than him. Claudia is a brunette and Alex is blonde.
+Alex's dog Frosty is a labrador and likes to play hide and seek.
+"""
+```
+
+And our output is a list of `Properties` objects (our target class which we defined previously).
+
+```python
+chain.run(inp)
+```
+
+    [Properties(person_name='Alex', person_height=5, person_hair_color='blonde', dog_breed='labrador', dog_name='Frosty'),
+     Properties(person_name='Claudia', person_height=6, person_hair_color='brunette', dog_breed=None, dog_name=None)]
+
+## More info
+
+As we have seen, by leveraging OpenAI `-0613` models we can extract structured data from unstructured documents with minimal hallucination. For more detail on how to use these chains, please check out the [docs](docs/extras/modules/chains/additional/extraction.ipynb) for the extraction chain.
