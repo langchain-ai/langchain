@@ -14,14 +14,14 @@ from __future__ import annotations
 from textwrap import indent
 from typing import Any, Dict, List, Optional, Type
 
-from pydantic import Extra
-
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
 from langchain.chains.base import Chain
+from pydantic import Extra
+
 from langchain_experimental.tot.checker import ToTChecker
 from langchain_experimental.tot.controller import ToTController
 from langchain_experimental.tot.memory import ToTDFSMemory
@@ -112,6 +112,7 @@ class ToTChain(Chain):
         inputs: Dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
+        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         if run_manager:
             run_manager.on_text(text="Starting the ToT solve procedure.\n")
 
@@ -126,10 +127,12 @@ class ToTChain(Chain):
         for _ in range(self.k):
             level = self.tot_memory.level
             thought_text = thought_generator.next_thought(
-                problem_description, thoughts_path
+                problem_description, thoughts_path, callbacks=_run_manager.get_child()
             )
             checker_inputs["thoughts"] = thoughts_path + (thought_text,)
-            thought_validity = self.checker(checker_inputs)["validity"]
+            thought_validity = self.checker(
+                checker_inputs, callbacks=_run_manager.get_child()
+            )["validity"]
             thought = Thought(text=thought_text, validity=thought_validity)
             if thought.validity == ThoughtValidity.VALID_FINAL:
                 self.log_thought(thought, level, run_manager)

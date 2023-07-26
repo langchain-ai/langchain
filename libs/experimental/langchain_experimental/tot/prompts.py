@@ -2,9 +2,10 @@ import json
 from textwrap import dedent
 from typing import List
 
-from langchain_experimental.tot.thought import ThoughtValidity
 from langchain.prompts import PromptTemplate
 from langchain.schema import BaseOutputParser
+
+from langchain_experimental.tot.thought import ThoughtValidity
 
 COT_PROMPT = PromptTemplate(
     template_format="jinja2",

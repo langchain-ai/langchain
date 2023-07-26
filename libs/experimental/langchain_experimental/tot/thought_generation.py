@@ -7,13 +7,13 @@ non-repeating thoughts, which are crucial for problem-solving tasks that require
 exploration.
 """
 from abc import abstractmethod
-from typing import Dict, List, Tuple
-
-from pydantic import Field
+from typing import Any, Dict, List, Tuple
 
 from langchain.chains.llm import LLMChain
-from langchain_experimental.tot.prompts import COT_PROMPT, PROPOSE_PROMPT
 from langchain.prompts.base import BasePromptTemplate
+from pydantic import Field
+
+from langchain_experimental.tot.prompts import COT_PROMPT, PROPOSE_PROMPT
 
 
 class BaseThoughtGenerationStrategy(LLMChain):
@@ -26,7 +26,10 @@ class BaseThoughtGenerationStrategy(LLMChain):
 
     @abstractmethod
     def next_thought(
-        self, problem_description: str, thoughts_path: Tuple[str, ...] = ()
+        self,
+        problem_description: str,
+        thoughts_path: Tuple[str, ...] = (),
+        **kwargs: Any
     ) -> str:
         """
         Generate the next thought given the problem description and the thoughts
@@ -46,11 +49,13 @@ class SampleCoTStrategy(BaseThoughtGenerationStrategy):
     prompt: BasePromptTemplate = COT_PROMPT
 
     def next_thought(
-        self, problem_description: str, thoughts_path: Tuple[str, ...] = ()
+        self,
+        problem_description: str,
+        thoughts_path: Tuple[str, ...] = (),
+        **kwargs: Any
     ) -> str:
         response_text = self.predict_and_parse(
-            problem_description=problem_description,
-            thoughts=thoughts_path,
+            problem_description=problem_description, thoughts=thoughts_path, **kwargs
         )
         return response_text if isinstance(response_text, str) else ""
 
@@ -68,13 +73,17 @@ class ProposePromptStrategy(BaseThoughtGenerationStrategy):
     tot_memory: Dict[Tuple[str, ...], List[str]] = Field(default_factory=dict)
 
     def next_thought(
-        self, problem_description: str, thoughts_path: Tuple[str, ...] = ()
+        self,
+        problem_description: str,
+        thoughts_path: Tuple[str, ...] = (),
+        **kwargs: Any
     ) -> str:
         if thoughts_path not in self.tot_memory or not self.tot_memory[thoughts_path]:
             new_thoughts = self.predict_and_parse(
                 problem_description=problem_description,
                 thoughts=thoughts_path,
                 n=self.c,
+                **kwargs
             )
             if not new_thoughts:
                 return ""
