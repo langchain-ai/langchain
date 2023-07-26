@@ -1,14 +1,11 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, List, Sequence
+from typing import List, Sequence
 
 from pydantic import Field
 
 from langchain.load.serializable import Serializable
-
-if TYPE_CHECKING:
-    from langchain.prompts.chat import ChatPromptTemplate
 
 
 def get_buffer_string(
@@ -79,12 +76,6 @@ class BaseMessage(Serializable):
     def lc_serializable(self) -> bool:
         """Whether this class is LangChain serializable."""
         return True
-
-    def __add__(self, other: Any) -> ChatPromptTemplate:
-        from langchain.prompts.chat import ChatPromptTemplate
-
-        prompt = ChatPromptTemplate(messages=[self])
-        return prompt + other
 
 
 class HumanMessage(BaseMessage):
