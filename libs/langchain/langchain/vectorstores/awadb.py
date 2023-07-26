@@ -167,7 +167,7 @@ class AwaDB(VectorStore):
         if self.using_table_name in self.table2embeddings:
             embedding = self.table2embeddings[self.using_table_name].embed_query(query)
         else:
-            from awadb import AwaEmbedding 
+            from awadb import AwaEmbedding
 
             embedding = AwaEmbedding().Embedding(query)
 
