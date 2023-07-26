@@ -93,9 +93,11 @@ class Chroma(VectorStore):
         else:
             if client_settings:
                 # Check the client settings required input values
-                if client_settings.chroma_db_impl is None or client_settings.chroma_db_impl == '':
+                if client_settings.chroma_db_impl is None or \
+                    client_settings.chroma_db_impl == "":
                     raise ValueError("client_settings.chroma_db_impl is required")
-                if client_settings.persist_directory is None or client_settings.persist_directory == '':
+                if client_settings.persist_directory is None or \
+                    client_settings.persist_directory == "":
                     raise ValueError("client_settings.persist_directory is required")
                 _client_settings = client_settings
             elif persist_directory:
