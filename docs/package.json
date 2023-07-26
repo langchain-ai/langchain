@@ -1,0 +1,12 @@
+{
+  "name": "docs",
+  "packageManager": "yarn@3.5.1",
+  "scripts": {
+    "build": "bash ./.local_build.sh",
+    "dev": "yarn run build && yarn run serve",
+    "serve": "bash ./.local_serve.sh"
+  },
+  "devDependencies": {
+    "chokidar-cli": "^3.0.0"
+  }
+}

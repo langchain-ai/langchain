@@ -11,7 +11,8 @@ cd "${SCRIPT_DIR}"
 mkdir -p _dist/docs_skeleton
 cp -r {docs_skeleton,snippets} _dist
 cp -r extras/* _dist/docs_skeleton/docs
+cp ./vercel_requirements.txt _dist/docs_skeleton
 cd _dist/docs_skeleton
 poetry run nbdoc_build
 yarn install
-yarn start
+rm -rf ./build && yarn run docusaurus build
