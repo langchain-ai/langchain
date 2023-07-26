@@ -12,7 +12,7 @@ from typing import Dict, List, Tuple
 from pydantic import Field
 
 from langchain.chains.llm import LLMChain
-from langchain.chains.tot.prompts import COT_PROMPT, PROPOSE_PROMPT
+from langchain_experimental.tot.prompts import COT_PROMPT, PROPOSE_PROMPT
 from langchain.prompts.base import BasePromptTemplate
 
 

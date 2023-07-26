@@ -1,7 +1,7 @@
 from typing import Tuple
 
-from langchain.chains.tot.memory import ToTDFSMemory
-from langchain.chains.tot.thought import ThoughtValidity
+from langchain_experimental.tot.memory import ToTDFSMemory
+from langchain_experimental.tot.thought import ThoughtValidity
 
 
 class ToTController:

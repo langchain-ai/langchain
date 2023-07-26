@@ -22,11 +22,11 @@ from langchain.callbacks.manager import (
     CallbackManagerForChainRun,
 )
 from langchain.chains.base import Chain
-from langchain.chains.tot.checker import ToTChecker
-from langchain.chains.tot.controller import ToTController
-from langchain.chains.tot.memory import ToTDFSMemory
-from langchain.chains.tot.thought import Thought, ThoughtValidity
-from langchain.chains.tot.thought_generation import (
+from langchain_experimental.tot.checker import ToTChecker
+from langchain_experimental.tot.controller import ToTController
+from langchain_experimental.tot.memory import ToTDFSMemory
+from langchain_experimental.tot.thought import Thought, ThoughtValidity
+from langchain_experimental.tot.thought_generation import (
     BaseThoughtGenerationStrategy,
     ProposePromptStrategy,
 )

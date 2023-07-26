@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from langchain.chains.tot.thought import Thought
+from langchain_experimental.tot.thought import Thought
 
 
 class ToTDFSMemory:

@@ -2,7 +2,7 @@ import json
 from textwrap import dedent
 from typing import List
 
-from langchain.chains.tot.thought import ThoughtValidity
+from langchain_experimental.tot.thought import ThoughtValidity
 from langchain.prompts import PromptTemplate
 from langchain.schema import BaseOutputParser
 

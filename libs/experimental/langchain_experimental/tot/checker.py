@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
-from langchain.chains.tot.thought import ThoughtValidity
+from langchain_experimental.tot.thought import ThoughtValidity
 
 
 class ToTChecker(Chain, ABC):
