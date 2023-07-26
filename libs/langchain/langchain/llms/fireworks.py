@@ -309,64 +309,40 @@ def execute(prompt, model, api_key, max_tokens=256, temperature=0.0, top_p=1.0):
   response = requests.post(requestUrl, headers=requestHeaders, json=requestBody)
   return response.text
 
-def _create_retry_decorator(llm: Union[FireworksChat, BaseFireworks]) -> Callable[[Any], Any]:
-    import openai
-
-    errors = [
-        openai.error.Timeout,
-        openai.error.APIError,
-        openai.error.APIConnectionError,
-        openai.error.RateLimitError,
-        openai.error.ServiceUnavailableError,
-    ]
-
-    return create_base_retry_decorator(error_types=errors, max_retries=llm.max_retries)
-
 def completion_with_retry(llm: Union[BaseFireworks, FireworksChat], **kwargs: Any) -> Any:
     """Use tenacity to retry the completion call."""
-    retry_decorator = _create_retry_decorator(llm)
-
-    @retry_decorator
-    def _completion_with_retry(**kwargs: Any) -> Any:
-        if "prompt" not in kwargs.keys():
-            answers = []
-            for i in range(len(kwargs['messages'])):
-                result = kwargs['messages'][i]['content']
-                result = execute(result, kwargs['model'], llm.fireworks_api_key, llm.max_tokens, llm.temperature, llm.top_p)
-                curr_string = json.loads(result)['choices'][0]['text']
-                answers.append(curr_string)
-        else:
-            answers = []
-            for i in range(len(kwargs['prompt'])):
-                result = kwargs['prompt'][i]
-                result = execute(result, kwargs['model'], llm.fireworks_api_key, llm.max_tokens, llm.temperature, llm.top_p)
-                curr_string = json.loads(result)['choices'][0]['text']
-                answers.append(curr_string)
-        return answers
-
-    return _completion_with_retry(**kwargs)
+    if "prompt" not in kwargs.keys():
+        answers = []
+        for i in range(len(kwargs['messages'])):
+            result = kwargs['messages'][i]['content']
+            result = execute(result, kwargs['model'], llm.fireworks_api_key, llm.max_tokens, llm.temperature, llm.top_p)
+            curr_string = json.loads(result)['choices'][0]['text']
+            answers.append(curr_string)
+    else:
+        answers = []
+        for i in range(len(kwargs['prompt'])):
+            result = kwargs['prompt'][i]
+            result = execute(result, kwargs['model'], llm.fireworks_api_key, llm.max_tokens, llm.temperature, llm.top_p)
+            curr_string = json.loads(result)['choices'][0]['text']
+            answers.append(curr_string)
+    return answers
 
 async def acompletion_with_retry(
     llm: Union[BaseFireworks, FireworksChat], **kwargs: Any
 ) -> Any:
     """Use tenacity to retry the async completion call."""
-    retry_decorator = _create_retry_decorator(llm)
-
-    @retry_decorator
-    async def _completion_with_retry(**kwargs: Any) -> Any:
-        if "prompt" not in kwargs.keys():
-            answers = []
-            for i in range(len(kwargs['messages'])):
-                result = kwargs['messages'][i]['content']
-                result = execute(result, kwargs['model'], llm.fireworks_api_key, llm.max_tokens, llm.temperature)
-                curr_string = json.loads(result)['choices'][0]['text']
-                answers.append(curr_string)
-        else:
-            answers = []
-            for i in range(len(kwargs['prompt'])):
-                result = kwargs['prompt'][i]
-                result = execute(result, kwargs['model'], llm.fireworks_api_key, llm.max_tokens, llm.temperature)
-                curr_string = json.loads(result)['choices'][0]['text']
-                answers.append(curr_string)
-        return answers
-    return await _completion_with_retry(**kwargs)
+    if "prompt" not in kwargs.keys():
+        answers = []
+        for i in range(len(kwargs['messages'])):
+            result = kwargs['messages'][i]['content']
+            result = execute(result, kwargs['model'], llm.fireworks_api_key, llm.max_tokens, llm.temperature)
+            curr_string = json.loads(result)['choices'][0]['text']
+            answers.append(curr_string)
+    else:
+        answers = []
+        for i in range(len(kwargs['prompt'])):
+            result = kwargs['prompt'][i]
+            result = execute(result, kwargs['model'], llm.fireworks_api_key, llm.max_tokens, llm.temperature)
+            curr_string = json.loads(result)['choices'][0]['text']
+            answers.append(curr_string)
+    return answers
