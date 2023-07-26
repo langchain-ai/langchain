@@ -6,8 +6,10 @@ import sys
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncIterator,
     Callable,
     Dict,
+    Iterator,
     List,
     Mapping,
     Optional,
@@ -35,12 +37,19 @@ from langchain.schema import (
 )
 from langchain.schema.messages import (
     AIMessage,
+    AIMessageChunk,
     BaseMessage,
+    BaseMessageChunk,
     ChatMessage,
+    ChatMessageChunk,
     FunctionMessage,
+    FunctionMessageChunk,
     HumanMessage,
+    HumanMessageChunk,
     SystemMessage,
+    SystemMessageChunk,
 )
+from langchain.schema.output import ChatGenerationChunk
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
 
 if TYPE_CHECKING:
@@ -93,6 +102,30 @@ async def acompletion_with_retry(llm: ChatOpenAI, **kwargs: Any) -> Any:
         return await llm.client.acreate(**kwargs)
 
     return await _completion_with_retry(**kwargs)
+
+
+def _convert_delta_to_message_chunk(
+    _dict: Mapping[str, Any], default_class: type[BaseMessageChunk]
+) -> BaseMessageChunk:
+    role = _dict.get("role")
+    content = _dict.get("content") or ""
+    if _dict.get("function_call"):
+        additional_kwargs = {"function_call": dict(_dict["function_call"])}
+    else:
+        additional_kwargs = {}
+
+    if role == "user" or default_class == HumanMessageChunk:
+        return HumanMessageChunk(content=content)
+    elif role == "assistant" or default_class == AIMessageChunk:
+        return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
+    elif role == "system" or default_class == SystemMessageChunk:
+        return SystemMessageChunk(content=content)
+    elif role == "function" or default_class == FunctionMessageChunk:
+        return FunctionMessageChunk(content=content, name=_dict["name"])
+    elif role or default_class == ChatMessageChunk:
+        return ChatMessageChunk(content=content, role=role)
+    else:
+        return default_class(content=content)
 
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
@@ -313,6 +346,27 @@ class ChatOpenAI(BaseChatModel):
                     overall_token_usage[k] = v
         return {"token_usage": overall_token_usage, "model_name": self.model_name}
 
+    def _stream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        message_dicts, params = self._create_message_dicts(messages, stop)
+        params = {**params, **kwargs, "stream": True}
+
+        default_chunk_class = AIMessageChunk
+        for chunk in self.completion_with_retry(messages=message_dicts, **params):
+            if len(chunk["choices"]) == 0:
+                continue
+            delta = chunk["choices"][0]["delta"]
+            chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
+            default_chunk_class = chunk.__class__
+            yield ChatGenerationChunk(message=chunk)
+            if run_manager:
+                run_manager.on_llm_new_token(chunk.content)
+
     def _generate(
         self,
         messages: List[BaseMessage],
@@ -320,40 +374,20 @@ class ChatOpenAI(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        if self.streaming:
+            generation: Optional[ChatGenerationChunk] = None
+            for chunk in self._stream(
+                messages=messages, stop=stop, run_manager=run_manager, **kwargs
+            ):
+                if generation is None:
+                    generation = chunk
+                else:
+                    generation += chunk
+            assert generation is not None
+            return ChatResult(generations=[generation])
+
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
-        if self.streaming:
-            inner_completion = ""
-            role = "assistant"
-            params["stream"] = True
-            function_call: Optional[dict] = None
-            for stream_resp in self.completion_with_retry(
-                messages=message_dicts, **params
-            ):
-                if len(stream_resp["choices"]) > 0:
-                    role = stream_resp["choices"][0]["delta"].get("role", role)
-                    token = stream_resp["choices"][0]["delta"].get("content") or ""
-                    inner_completion += token
-                    _function_call = stream_resp["choices"][0]["delta"].get(
-                        "function_call"
-                    )
-                    if _function_call:
-                        if function_call is None:
-                            function_call = _function_call
-                        elif "arguments" in function_call:
-                            function_call["arguments"] += _function_call["arguments"]
-                        else:
-                            function_call["arguments"] = _function_call["arguments"]
-                    if run_manager:
-                        run_manager.on_llm_new_token(token)
-            message = _convert_dict_to_message(
-                {
-                    "content": inner_completion,
-                    "role": role,
-                    "function_call": function_call,
-                }
-            )
-            return ChatResult(generations=[ChatGeneration(message=message)])
         response = self.completion_with_retry(messages=message_dicts, **params)
         return self._create_chat_result(response)
 
@@ -381,6 +415,29 @@ class ChatOpenAI(BaseChatModel):
         llm_output = {"token_usage": token_usage, "model_name": self.model_name}
         return ChatResult(generations=generations, llm_output=llm_output)
 
+    async def _astream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        message_dicts, params = self._create_message_dicts(messages, stop)
+        params = {**params, **kwargs, "stream": True}
+
+        default_chunk_class = AIMessageChunk
+        async for chunk in await acompletion_with_retry(
+            self, messages=message_dicts, **params
+        ):
+            if len(chunk["choices"]) == 0:
+                continue
+            delta = chunk["choices"][0]["delta"]
+            chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
+            default_chunk_class = chunk.__class__
+            yield ChatGenerationChunk(message=chunk)
+            if run_manager:
+                await run_manager.on_llm_new_token(chunk.content)
+
     async def _agenerate(
         self,
         messages: List[BaseMessage],
@@ -388,45 +445,22 @@ class ChatOpenAI(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        if self.streaming:
+            generation: Optional[ChatGenerationChunk] = None
+            async for chunk in self._astream(
+                messages=messages, stop=stop, run_manager=run_manager, **kwargs
+            ):
+                if generation is None:
+                    generation = chunk
+                else:
+                    generation += chunk
+            assert generation is not None
+            return ChatResult(generations=[generation])
+
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
-        if self.streaming:
-            inner_completion = ""
-            role = "assistant"
-            params["stream"] = True
-            function_call: Optional[dict] = None
-            async for stream_resp in await acompletion_with_retry(
-                self, messages=message_dicts, **params
-            ):
-                if len(stream_resp["choices"]) > 0:
-                    role = stream_resp["choices"][0]["delta"].get("role", role)
-                    token = stream_resp["choices"][0]["delta"].get("content", "")
-                    inner_completion += token or ""
-                    _function_call = stream_resp["choices"][0]["delta"].get(
-                        "function_call"
-                    )
-                    if _function_call:
-                        if function_call is None:
-                            function_call = _function_call
-                        elif "arguments" in function_call:
-                            function_call["arguments"] += _function_call["arguments"]
-                        else:
-                            function_call["arguments"] = _function_call["arguments"]
-                    if run_manager:
-                        await run_manager.on_llm_new_token(token)
-            message = _convert_dict_to_message(
-                {
-                    "content": inner_completion,
-                    "role": role,
-                    "function_call": function_call,
-                }
-            )
-            return ChatResult(generations=[ChatGeneration(message=message)])
-        else:
-            response = await acompletion_with_retry(
-                self, messages=message_dicts, **params
-            )
-            return self._create_chat_result(response)
+        response = await acompletion_with_retry(self, messages=message_dicts, **params)
+        return self._create_chat_result(response)
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
