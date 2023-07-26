@@ -330,17 +330,20 @@ class ChatOpenAI(BaseChatModel):
             for stream_resp in self.completion_with_retry(
                 messages=message_dicts, **params
             ):
-                role = stream_resp["choices"][0]["delta"].get("role", role)
-                token = stream_resp["choices"][0]["delta"].get("content") or ""
-                inner_completion += token
-                _function_call = stream_resp["choices"][0]["delta"].get("function_call")
-                if _function_call:
-                    if function_call is None:
-                        function_call = _function_call
-                    else:
-                        function_call["arguments"] += _function_call["arguments"]
-                if run_manager:
-                    run_manager.on_llm_new_token(token)
+                if len(stream_resp["choices"]) > 0:
+                    role = stream_resp["choices"][0]["delta"].get("role", role)
+                    token = stream_resp["choices"][0]["delta"].get("content") or ""
+                    inner_completion += token
+                    _function_call = stream_resp["choices"][0]["delta"].get(
+                        "function_call"
+                    )
+                    if _function_call:
+                        if function_call is None:
+                            function_call = _function_call
+                        else:
+                            function_call["arguments"] += _function_call["arguments"]
+                    if run_manager:
+                        run_manager.on_llm_new_token(token)
             message = _convert_dict_to_message(
                 {
                     "content": inner_completion,
@@ -393,17 +396,20 @@ class ChatOpenAI(BaseChatModel):
             async for stream_resp in await acompletion_with_retry(
                 self, messages=message_dicts, **params
             ):
-                role = stream_resp["choices"][0]["delta"].get("role", role)
-                token = stream_resp["choices"][0]["delta"].get("content", "")
-                inner_completion += token or ""
-                _function_call = stream_resp["choices"][0]["delta"].get("function_call")
-                if _function_call:
-                    if function_call is None:
-                        function_call = _function_call
-                    else:
-                        function_call["arguments"] += _function_call["arguments"]
-                if run_manager:
-                    await run_manager.on_llm_new_token(token)
+                if len(stream_resp["choices"]) > 0:
+                    role = stream_resp["choices"][0]["delta"].get("role", role)
+                    token = stream_resp["choices"][0]["delta"].get("content", "")
+                    inner_completion += token or ""
+                    _function_call = stream_resp["choices"][0]["delta"].get(
+                        "function_call"
+                    )
+                    if _function_call:
+                        if function_call is None:
+                            function_call = _function_call
+                        else:
+                            function_call["arguments"] += _function_call["arguments"]
+                    if run_manager:
+                        await run_manager.on_llm_new_token(token)
             message = _convert_dict_to_message(
                 {
                     "content": inner_completion,
