@@ -340,8 +340,10 @@ class ChatOpenAI(BaseChatModel):
                     if _function_call:
                         if function_call is None:
                             function_call = _function_call
-                        else:
+                        elif "arguments" in function_call:
                             function_call["arguments"] += _function_call["arguments"]
+                        else:
+                            function_call["arguments"] = _function_call["arguments"]
                     if run_manager:
                         run_manager.on_llm_new_token(token)
             message = _convert_dict_to_message(
@@ -406,8 +408,10 @@ class ChatOpenAI(BaseChatModel):
                     if _function_call:
                         if function_call is None:
                             function_call = _function_call
-                        else:
+                        elif "arguments" in function_call:
                             function_call["arguments"] += _function_call["arguments"]
+                        else:
+                            function_call["arguments"] = _function_call["arguments"]
                     if run_manager:
                         await run_manager.on_llm_new_token(token)
             message = _convert_dict_to_message(
