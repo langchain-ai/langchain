@@ -2,7 +2,7 @@
 
 These evaluators are useful for evaluating the
 output of a language model or chain against
-speciefied criteria or rubric.
+specified criteria or rubric.
 
 Classes
 -------

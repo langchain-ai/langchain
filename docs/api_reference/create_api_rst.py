@@ -78,6 +78,7 @@ Functions
 
 .. autosummary::
     :toctree: {module}
+    :template: function.rst
 
     {fstring}
 
