@@ -2,17 +2,25 @@
 yum -y update
 yum remove openssl-devel -y
 yum install gcc bzip2-devel libffi-devel zlib-devel wget tar -y
-# Make sure openssl-devel is installed before Python compilation
+# Make sure openssl11 is installed before Python compilation
 yum install openssl11 -y
+yum install openssl11-devel -y
+
+# Locate openssl 1.1.1 library and headers
+OPENSSL_LIB_PATH=$(dirname $(find / -name 'libssl.so.*' | grep 'openssl11'))
+OPENSSL_INCLUDE_PATH=$(dirname $(find / -name 'openssl' | grep 'openssl11'))
+
 echo "OPENSSL VERSION"
-openssl version 
+openssl11 version 
 
 # Install python 3.11 to connect with openSSL 1.1.1
 wget https://www.python.org/ftp/python/3.11.4/Python-3.11.4.tgz 
 tar xzf Python-3.11.4.tgz 
 cd Python-3.11.4 
-./configure
+./configure --with-openssl=${OPENSSL_LIB_PATH} CPPFLAGS="-I${OPENSSL_INCLUDE_PATH}"
 make altinstall
+
+# Check python version
 echo "Python Version"
 python3.11 --version
 cd ..
