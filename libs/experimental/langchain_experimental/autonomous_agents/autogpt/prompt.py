@@ -14,6 +14,7 @@ from langchain_experimental.autonomous_agents.autogpt.prompt_generator import ge
 
 class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):
     """Prompt for AutoGPT."""
+
     ai_name: str
     ai_role: str
     tools: List[BaseTool]
