@@ -64,9 +64,12 @@ def create_spark_dataframe_agent(
             tools,
             prefix=prefix,
             suffix=suffix,
-            input_variables=input_variables + ["num_dfs"],  # Add 'num_dfs' to input variables
+            input_variables=input_variables
+            + ["num_dfs"],  # Add 'num_dfs' to input variables
         )
-        partial_prompt = prompt.partial(num_dfs=str(len(dfs)))  # Add 'num_dfs' to partial_prompt
+        partial_prompt = prompt.partial(
+            num_dfs=str(len(dfs))
+        )  # Add 'num_dfs' to partial_prompt
     else:
         prompt = ZeroShotAgent.create_prompt(
             tools,
@@ -99,5 +102,3 @@ def create_spark_dataframe_agent(
         early_stopping_method=early_stopping_method,
         **(agent_executor_kwargs or {}),
     )
-
-
