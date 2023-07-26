@@ -468,7 +468,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
 
 class BaseCallbackManager(CallbackManagerMixin):
-    """Base callback manager that can be used to handle callbacks from LangChain."""
+    """Base callback manager that handles callbacks from LangChain."""
 
     def __init__(
         self,

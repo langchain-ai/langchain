@@ -18,7 +18,8 @@ if TYPE_CHECKING:
 
 
 class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
-    """Wrapper around Google Cloud Enterprise Search Service API.
+    """Retriever for the Google Cloud Enterprise Search Service API.
+
     For the detailed explanation of the Enterprise Search concepts
     and configuration parameters refer to the product documentation.
 

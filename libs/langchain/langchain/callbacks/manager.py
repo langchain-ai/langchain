@@ -1004,7 +1004,7 @@ class AsyncCallbackManagerForRetrieverRun(
 
 
 class CallbackManager(BaseCallbackManager):
-    """Callback manager that can be used to handle callbacks from langchain."""
+    """Callback manager that handles callbacks from langchain."""
 
     def on_llm_start(
         self,
@@ -1273,7 +1273,7 @@ class CallbackManager(BaseCallbackManager):
 
 
 class AsyncCallbackManager(BaseCallbackManager):
-    """Async callback manager that can be used to handle callbacks from LangChain."""
+    """Async callback manager that handles callbacks from LangChain."""
 
     @property
     def is_async(self) -> bool:
