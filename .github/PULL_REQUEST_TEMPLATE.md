@@ -7,16 +7,18 @@ Replace this comment with:
   - Tag maintainer: for a quicker response, tag the relevant maintainer (see below),
   - Twitter handle: we announce bigger features on Twitter. If your PR gets announced and you'd like a mention, we'll gladly shout you out!
 
+Please make sure you're PR is passing linting and testing before submitting. Run `make format`, `make lint` and `make test` to check this locally.
+
 If you're adding a new integration, please include:
   1. a test for the integration, preferably unit tests that do not rely on network access,
   2. an example notebook showing its use.
 
 Maintainer responsibilities:
-  - General / Misc / if you don't know who to tag: @dev2049
+  - General / Misc / if you don't know who to tag: @baskaryan
   - DataLoaders / VectorStores / Retrievers: @rlancemartin, @eyurtsev
-  - Models / Prompts: @hwchase17, @dev2049
+  - Models / Prompts: @hwchase17, @baskaryan
   - Memory: @hwchase17
-  - Agents / Tools / Toolkits: @vowelparrot
+  - Agents / Tools / Toolkits: @hinthornw
   - Tracing / Callbacks: @agola11
   - Async: @agola11
 
