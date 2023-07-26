@@ -1,5 +1,8 @@
 #!/bin/bash
 
+yum remove openssl-devel -y
+yum install openssl11 openssl11-devel -y
+
 cd ..
 python3 --version
 python3 -m venv .venv

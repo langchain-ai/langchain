@@ -100,7 +100,7 @@ def replace_imports(file):
             try:
                 module_path = get_full_module_name(import_match.group(2), class_name)
             except AttributeError as e:
-                logger.error(f"Could not find module for {class_name}", e)
+                logger.warning(f"Could not find module for {class_name}, {e}")
                 continue
 
             url = (
