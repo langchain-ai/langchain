@@ -36,6 +36,7 @@ from langchain.chat_models.javelin_ai_gateway import ChatJavelinAIGateway
 from langchain.chat_models.jinachat import JinaChat
 from langchain.chat_models.konko import ChatKonko
 from langchain.chat_models.litellm import ChatLiteLLM
+from langchain.chat_models.llm_wrapper import Llama2Chat, Orca, Vicuna
 from langchain.chat_models.minimax import MiniMaxChat
 from langchain.chat_models.mlflow_ai_gateway import ChatMLflowAIGateway
 from langchain.chat_models.ollama import ChatOllama
@@ -59,6 +60,9 @@ __all__ = [
     "ChatOllama",
     "ChatVertexAI",
     "JinaChat",
+    "Llama2Chat",
+    "Orca",
+    "Vicuna",
     "HumanInputChatModel",
     "MiniMaxChat",
     "ChatAnyscale",
