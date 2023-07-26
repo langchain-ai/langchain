@@ -16,12 +16,10 @@ code_block_re = re.compile(r"^(```python\n)(.*?)(```\n)", re.DOTALL | re.MULTILI
 # Regular expression to match langchain import lines
 _IMPORT_RE = re.compile(r"(from\s+(langchain\.\w+(\.\w+)*?)\s+import\s+)(\w+)")
 
-_CODEBLOCK_PATH = "src/theme/CodeBlock/"
 _CURRENT_PATH = Path(__file__).parent.absolute()
 # Directory where generated markdown files are stored
 _DOCS_DIR = _CURRENT_PATH / "docs"
-# Will dump to the codeblock directory / imports.json
-_JSON_PATH = _CURRENT_PATH / _CODEBLOCK_PATH / "imports.json"
+_JSON_PATH = _CURRENT_PATH.parent / 'api_reference' / "example_imports.json"
 
 
 def find_files(path):
@@ -52,7 +50,12 @@ def main():
         if file_imports:
             # Use relative file path as key
             relative_path = os.path.relpath(file, _DOCS_DIR)
-            global_imports[relative_path] = file_imports
+            doc_url = f"https://python.langchain.com/docs/{relative_path.replace('.mdx', '').replace('.md', '')}"
+            for import_info in file_imports:
+                class_name = import_info["imported"]
+                if class_name not in global_imports:
+                    global_imports[class_name] = []
+                global_imports[class_name].append(doc_url)
 
     # Write the global imports information to a JSON file
     with _JSON_PATH.open("w") as f:

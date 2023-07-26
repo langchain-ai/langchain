@@ -13,14 +13,19 @@
 #
 import os
 import sys
+import json
+from pathlib import Path
 
 import toml
 
+_DIR = Path(__file__).parent.absolute()
 sys.path.insert(0, os.path.abspath("."))
 sys.path.insert(0, os.path.abspath("../../libs/langchain"))
 
-with open("../../libs/langchain/pyproject.toml") as f:
+with (_DIR.parents[1] / "libs" / "langchain" / "pyproject.toml").open("r") as f:
     data = toml.load(f)
+with (_DIR / "example_imports.json").open("r") as f:
+    imported_classes = json.load(f)
 
 # -- Project information -----------------------------------------------------
 
@@ -105,6 +110,7 @@ html_context = {
     "github_version": "master",  # Version
     "conf_py_path": "/docs/api_reference",  # Path in the checkout to the docs root
     "redirects": redirects,
+    "imported_classes": imported_classes
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
