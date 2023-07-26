@@ -2,13 +2,14 @@
 
 yum remove openssl-devel -y
 yum install gcc openssl-devel bzip2-devel libffi-devel zlib-devel -y 
+yum install wget tar -y
 
 # Install python 3.11 to connect with openSSL 1.1.1
 wget https://www.python.org/ftp/python/3.11.4/Python-3.11.4.tgz 
 tar xzf Python-3.11.4.tgz 
 cd Python-3.11.4 
-sudo ./configure
-sudo make altinstall
+./configure
+make altinstall
 echo "Python Version"
 python3.11 --version
 cd ..
