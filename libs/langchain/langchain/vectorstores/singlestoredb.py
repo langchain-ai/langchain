@@ -446,7 +446,9 @@ class SingleStoreDB(VectorStore):
 
     def as_retriever(self, **kwargs: Any) -> SingleStoreDBRetriever:
         tags = kwargs.pop("tags", None) or []
-        tags.extend(self.__get_retriever_tags())
+        # pylint: disable-all
+        tags.extend(self._VectorStore__get_retriever_tags())
+        # pylint: enable-all
         return SingleStoreDBRetriever(vectorstore=self, **kwargs, tags=tags)
 
 
