@@ -34,7 +34,6 @@ from langchain.callbacks.manager import (
 import requests
 
 logger = logging.getLogger(__name__)
-LLAMA2_SYSTEM_PROMPT = "Below are a series of dialogues between various people and an AI assistant. The AI tries to be helpful, polite, honest, sophisticated, emotionally aware, and humble-but-knowledgeable. The assistant is happy to help with almost anything, and will do its best to understand exactly what is needed. It also tries to avoid giving false or misleading information, and it caveats when it isn't entirely sure about the right answer. That said, the assistant is practical and really does its best, and doesn't let caution get too much in the way of being useful."
 
 class BaseFireworks(BaseLLM):
     """Wrapper around Fireworks large language models."""
@@ -333,15 +332,6 @@ def completion_with_retry(llm: Union[BaseFireworks, FireworksChat], **kwargs: An
             answers = []
             for i in range(len(kwargs['messages'])):
                 result = kwargs['messages'][i]['content']
-                if kwargs['model'].startswith('fireworks-llama-v2'):
-                    result = LLAMA2_SYSTEM_PROMPT + "\n\n\n" + result
-
-                result = """[INST] <<SYS>>
-You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.  Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. Please ensure that your responses are socially unbiased and positive in nature.
-If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don't know the answer to a question, please don't share false information.
-<</SYS>>
-"""
-                result += kwargs['messages'][i]['content'] + " [/INST]"
                 result = execute(result, kwargs['model'], llm.fireworks_api_key, llm.max_tokens, llm.temperature, llm.top_p)
                 curr_string = json.loads(result)['choices'][0]['text']
                 answers.append(curr_string)
@@ -349,15 +339,6 @@ If a question does not make any sense, or is not factually coherent, explain why
             answers = []
             for i in range(len(kwargs['prompt'])):
                 result = kwargs['prompt'][i]
-                if kwargs['model'].startswith('fireworks-llama-v2'):
-                    result = LLAMA2_SYSTEM_PROMPT + "\n\n\n" + result
-
-                result = """[INST] <<SYS>>
-You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.  Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. Please ensure that your responses are socially unbiased and positive in nature.
-If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don't know the answer to a question, please don't share false information.
-<</SYS>>
-"""
-                result += kwargs['prompt'][i] + " [/INST]"
                 result = execute(result, kwargs['model'], llm.fireworks_api_key, llm.max_tokens, llm.temperature, llm.top_p)
                 curr_string = json.loads(result)['choices'][0]['text']
                 answers.append(curr_string)
@@ -377,15 +358,6 @@ async def acompletion_with_retry(
             answers = []
             for i in range(len(kwargs['messages'])):
                 result = kwargs['messages'][i]['content']
-                if kwargs['model'].startswith('fireworks-llama-v2'):
-                    result = LLAMA2_SYSTEM_PROMPT + "\n\n\n" + result
-
-                result = """[INST] <<SYS>>
-You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.  Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. Please ensure that your responses are socially unbiased and positive in nature.
-If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don't know the answer to a question, please don't share false information.
-<</SYS>>
-"""
-                result += kwargs['prompt'][i] + " [/INST]"
                 result = execute(result, kwargs['model'], llm.fireworks_api_key, llm.max_tokens, llm.temperature)
                 curr_string = json.loads(result)['choices'][0]['text']
                 answers.append(curr_string)
@@ -393,15 +365,6 @@ If a question does not make any sense, or is not factually coherent, explain why
             answers = []
             for i in range(len(kwargs['prompt'])):
                 result = kwargs['prompt'][i]
-                if kwargs['model'].startswith('fireworks-llama-v2'):
-                    result = LLAMA2_SYSTEM_PROMPT + "\n\n\n" + result
-
-                result = """[INST] <<SYS>>
-You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.  Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. Please ensure that your responses are socially unbiased and positive in nature.
-If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don't know the answer to a question, please don't share false information.
-<</SYS>>
-"""
-                result += kwargs['prompt'][i] + " [/INST]"
                 result = execute(result, kwargs['model'], llm.fireworks_api_key, llm.max_tokens, llm.temperature)
                 curr_string = json.loads(result)['choices'][0]['text']
                 answers.append(curr_string)
