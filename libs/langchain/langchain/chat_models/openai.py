@@ -356,7 +356,7 @@ class ChatOpenAI(BaseChatModel):
         return self._create_chat_result(response)
 
     def _create_message_dicts(
-        self, messages: List[BaseMessage], stop: Optional[List[str]], **kwargs
+        self, messages: List[BaseMessage], stop: Optional[List[str]], **kwargs: Any
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         params = {**self._client_params, **kwargs}
         if stop is not None:
