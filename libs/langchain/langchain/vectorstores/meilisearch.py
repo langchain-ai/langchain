@@ -186,7 +186,7 @@ class Meilisearch(VectorStore):
         """
         _query = self._embedding.embed_query(query)
 
-        docs = self.similarity_search_with_score_by_vector(
+        docs = self.similarity_search_by_vector_with_scores(
             embedding=_query,
             k=k,
             filter=filter,
@@ -194,7 +194,7 @@ class Meilisearch(VectorStore):
         )
         return docs
 
-    def similarity_search_with_score_by_vector(
+    def similarity_search_by_vector_with_scores(
         self,
         embedding: List[float],
         k: int = 4,
@@ -248,7 +248,7 @@ class Meilisearch(VectorStore):
             List[Document]: List of Documents most similar to the query
                 vector and score for each.
         """
-        docs = self.similarity_search_with_score_by_vector(
+        docs = self.similarity_search_by_vector_with_scores(
             embedding=embedding,
             k=k,
             filter=filter,
