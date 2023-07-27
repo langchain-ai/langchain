@@ -588,7 +588,7 @@ def test_seq_prompt_map(
     ) == {
         "chat": AIMessage(content="i'm a chatbot"),
         "llm": "i'm a textbot",
-        "passthrouhg": ChatPromptValue(
+        "passthrough": ChatPromptValue(
             messages=[
                 SystemMessage(content="You are a nice assistant."),
                 HumanMessage(content="What is your name?"),
