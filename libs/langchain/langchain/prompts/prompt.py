@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from string import Formatter
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import root_validator
 
@@ -179,7 +179,7 @@ class PromptTemplate(StringPromptTemplate):
         cls,
         template: str,
         *,
-        template_format: Optional[str] = None,
+        template_format: str = "f-string",
         partial_variables: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> PromptTemplate:
@@ -198,11 +198,10 @@ class PromptTemplate(StringPromptTemplate):
         Returns:
             The prompt template loaded from the template.
         """
-        _template_format = template_format or "f-string"
-        if _template_format == "jinja2":
+        if template_format == "jinja2":
             # Get the variables for the template
             input_variables = _get_jinja2_variables_from_template(template)
-        elif _template_format == "f-string":
+        elif template_format == "f-string":
             input_variables = {
                 v for _, v, _, _ in Formatter().parse(template) if v is not None
             }
@@ -219,7 +218,7 @@ class PromptTemplate(StringPromptTemplate):
         return cls(
             input_variables=sorted(input_variables),
             template=template,
-            template_format=cast(str, _template_format),
+            template_format=template_format,
             partial_variables=_partial_variables,
             **kwargs,
         )
