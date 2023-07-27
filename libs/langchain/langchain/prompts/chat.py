@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Any, Callable, List, Sequence, Tuple, Type, TypeVar, Union
 
 from pydantic import Field, root_validator
-from typing import Any, Callable, List, Tuple, Type, TypeVar, Union, Sequence
 
 from langchain.load.serializable import Serializable
 from langchain.prompts.base import StringPromptTemplate
