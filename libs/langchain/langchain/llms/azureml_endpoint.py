@@ -236,8 +236,8 @@ class AzureMLOnlineEndpoint(LLM, BaseModel):
         """Get the identifying parameters."""
         _model_kwargs = self.model_kwargs or {}
         return {
-            ** {"deployment_name": self.deployment_name},
-            ** {"model_kwargs": _model_kwargs},
+            **{"deployment_name": self.deployment_name},
+            **{"model_kwargs": _model_kwargs},
         }
 
     @property

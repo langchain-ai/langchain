@@ -1,7 +1,4 @@
-"""Test AzureML Endpoint wrapper."""
-import os
-
-import pytest
+"""Test AzureML Chat Endpoint wrapper."""
 
 from langchain.chat_models.azureml_endpoint import (
     AzureMLChatOnlineEndpoint,

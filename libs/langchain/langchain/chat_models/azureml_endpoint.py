@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import validator
 
@@ -42,11 +42,9 @@ class LlamaContentFormatter(ContentFormatterBase):
             raise ValueError(
                 f"""Received unsupported role. Supported roles for the LLaMa Foundation Model: {supported}"""
             )
-        
+
     def _format_request_payload(
-        self, 
-        messages: List[BaseMessage], 
-        model_kwargs: Dict
+        self, messages: List[BaseMessage], model_kwargs: Dict
     ) -> bytes:
         chat_messages = [
             LlamaContentFormatter._convert_message_to_dict(message)
@@ -55,14 +53,9 @@ class LlamaContentFormatter(ContentFormatterBase):
         prompt = json.dumps(
             {"input_data": {"input_string": chat_messages, "parameters": model_kwargs}}
         )
-        return self.format_request_payload(
-            prompt=prompt, 
-            model_kwargs=model_kwargs
-        ) 
+        return self.format_request_payload(prompt=prompt, model_kwargs=model_kwargs)
 
-    def format_request_payload(
-        self, prompt: str, model_kwargs: Dict
-    ) -> bytes:
+    def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
         """Formats the request according the the chosen api"""
         return str.encode(prompt)
 
