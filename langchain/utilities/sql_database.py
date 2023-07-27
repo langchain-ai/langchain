@@ -368,7 +368,7 @@ class SQLDatabase:
             f"{sample_rows_str}"
         )
 
-    def _execute(self, command: str, fetch: Optional[str] = "all") -> Sequence[Any]:
+    def _execute(self, command: str, fetch: Optional[str] = "all") -> Sequence:
         """
         Executes SQL command through underlying engine.
 
@@ -403,23 +403,20 @@ class SQLDatabase:
 
         """
         result = self._execute(command, fetch)
-        # Convert columns values to string to avoid issues with sqlalchmey
-        # trunacating text
-        if result:
-            if isinstance(result, list):
-                return str(
-                    [
-                        tuple(
-                            truncate_word(c, length=self._max_string_length) for c in r
-                        )
-                        for r in result
-                    ]
+        # Convert columns values to string to avoid issues with sqlalchemy
+        # truncating text
+        if not result:
+            return ""
+        elif isinstance(result, list):
+            res: Sequence = [
+                tuple(
+                    truncate_word(c, length=self._max_string_length) for c in r
                 )
-
-            return str(
-                tuple(truncate_word(c, length=self._max_string_length) for c in result)
-            )
-        return ""
+                for r in result
+            ]
+        else:
+            res = tuple(truncate_word(c, length=self._max_string_length) for c in result)
+        return str(res)
 
     def get_table_info_no_throw(self, table_names: Optional[List[str]] = None) -> str:
         """Get information about specified tables.
