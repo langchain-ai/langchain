@@ -1,13 +1,11 @@
 import json
-
-from typing import Any, Optional, Mapping, List, Dict
+from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import SimpleChatModel
-from langchain.schema.messages import BaseMessage
-from langchain.utils import get_from_dict_or_env
+from langchain.llms.azureml_endpoint import AzureMLEndpointClient, ContentFormatterBase
 from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
@@ -15,13 +13,12 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain.llms.azureml_endpoint import (
-    AzureMLEndpointClient,
-    ContentFormatterBase
-)
+from langchain.utils import get_from_dict_or_env
+
 
 class LlamaContentFormatter(ContentFormatterBase):
     """Content formatter for LLaMa"""
+
     SUPPORTED_ROLES = ["user", "assistant", "system"]
 
     @staticmethod
@@ -33,20 +30,39 @@ class LlamaContentFormatter(ContentFormatterBase):
             return {"role": "assistant", "content": message.content}
         elif isinstance(message, SystemMessage):
             return {"role": "system", "content": message.content}
-        elif (isinstance(message, ChatMessage) 
-              and message.role in LlamaContentFormatter.SUPPORTED_ROLES):
+        elif (
+            isinstance(message, ChatMessage)
+            and message.role in LlamaContentFormatter.SUPPORTED_ROLES
+        ):
             return {"role": message.role, "content": message.content}
         else:
-            supported = ",".join([role for role in LlamaContentFormatter.SUPPORTED_ROLES])
-            raise ValueError(f"""Received unsupported role '{message.role}'.
-                             Supported roles for the LLaMa Foundation Model: {supported}""")
+            supported = ",".join(
+                [role for role in LlamaContentFormatter.SUPPORTED_ROLES]
+            )
+            raise ValueError(
+                f"""Received unsupported role. Supported roles for the LLaMa Foundation Model: {supported}"""
+            )
+        
+    def _format_request_payload(
+        self, 
+        messages: List[BaseMessage], 
+        model_kwargs: Dict
+    ) -> bytes:
+        chat_messages = [
+            LlamaContentFormatter._convert_message_to_dict(message)
+            for message in messages
+        ]
+        return self.format_request_payload(
+            prompt=json.dumps(chat_messages), 
+            model_kwargs=model_kwargs
+        ) 
 
-
-    def format_request_payload(self, messages: List[BaseMessage], model_kwargs: Dict) -> bytes:
+    def format_request_payload(
+        self, prompt: str, model_kwargs: Dict
+    ) -> bytes:
         """Formats the request according the the chosen api"""
-        chat_messages = [LlamaContentFormatter._convert_message_to_dict(message) for message in messages]
         request_payload = json.dumps(
-            {"input_data": {"input_string": chat_messages, "parameters": model_kwargs}}
+            {"input_data": {"input_string": prompt, "parameters": model_kwargs}}
         )
         return str.encode(request_payload)
 
@@ -54,9 +70,10 @@ class LlamaContentFormatter(ContentFormatterBase):
         """Formats response"""
         return json.loads(output)["output"]
 
+
 class AzureMLChatOnlineEndpoint(SimpleChatModel):
     """Azure ML Chat Online Endpoint models.
-    
+
     Example:
         .. code-block:: python
 
@@ -74,7 +91,7 @@ class AzureMLChatOnlineEndpoint(SimpleChatModel):
     endpoint_api_key: str = ""
     """Authentication Key for Endpoint. Should be passed to constructor or specified as
         env var `AZUREML_ENDPOINT_API_KEY`."""
-    
+
     http_client: Any = None  #: :meta private:
 
     content_formatter: Any = None
@@ -85,7 +102,6 @@ class AzureMLChatOnlineEndpoint(SimpleChatModel):
     model_kwargs: Optional[dict] = None
     """Key word arguments to pass to the model."""
 
-    
     @validator("http_client", always=True, allow_reuse=True)
     @classmethod
     def validate_client(cls, field_value: Any, values: Dict) -> AzureMLEndpointClient:
@@ -98,20 +114,20 @@ class AzureMLChatOnlineEndpoint(SimpleChatModel):
         )
         http_client = AzureMLEndpointClient(endpoint_url, endpoint_key)
         return http_client
-    
+
     @property
-    def _identifying_params(self) -> Mapping[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
         _model_kwargs = self.model_kwargs or {}
         return {
             **{"model_kwargs": _model_kwargs},
         }
-    
+
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "azureml_chat_endpoint"
-    
+
     def _call(
         self,
         messages: List[BaseMessage],
@@ -130,8 +146,12 @@ class AzureMLChatOnlineEndpoint(SimpleChatModel):
                 response = azureml_model("Tell me a joke.")
         """
         _model_kwargs = self.model_kwargs or {}
-        
-        request_payload = self.content_formatter.format_request_payload(messages, _model_kwargs)
+
+        request_payload = self.content_formatter._format_request_payload(
+            messages, _model_kwargs
+        )
         response_payload = self.http_client.call(request_payload, **kwargs)
-        generated_text = self.content_formatter.format_response_payload(response_payload)
+        generated_text = self.content_formatter.format_response_payload(
+            response_payload
+        )
         return generated_text

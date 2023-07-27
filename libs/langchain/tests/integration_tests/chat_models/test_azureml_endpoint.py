@@ -4,57 +4,50 @@ import os
 import pytest
 
 from langchain.chat_models.azureml_endpoint import (
+    AzureMLChatOnlineEndpoint,
     LlamaContentFormatter,
-    AzureMLChatOnlineEndpoint
 )
 from langchain.schema import (
+    AIMessage,
     BaseMessage,
     ChatGeneration,
     HumanMessage,
     LLMResult,
-    AIMessage,
 )
+
 
 def test_llama_call() -> None:
     """Test valid call to Open Source Foundation Model."""
-    chat = AzureMLChatOnlineEndpoint(
-        content_formatter=LlamaContentFormatter()
-    )
-    response = chat(messages=[
-                HumanMessage(content="Foo")
-            ]
-        )
+    chat = AzureMLChatOnlineEndpoint(content_formatter=LlamaContentFormatter())
+    response = chat(messages=[HumanMessage(content="Foo")])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
+
 
 def test_timeout_kwargs() -> None:
     """Test that timeout kwarg works."""
-    chat = AzureMLChatOnlineEndpoint(
-        content_formatter=LlamaContentFormatter()
-    )
-    response = chat(messages=[
-        HumanMessage(content="FOO")
-    ], timeout=60)
+    chat = AzureMLChatOnlineEndpoint(content_formatter=LlamaContentFormatter())
+    response = chat(messages=[HumanMessage(content="FOO")], timeout=60)
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
+
 
 def test_message_history() -> None:
     """Test that multiple messages works."""
-    chat = AzureMLChatOnlineEndpoint(
-        content_formatter=LlamaContentFormatter()
+    chat = AzureMLChatOnlineEndpoint(content_formatter=LlamaContentFormatter())
+    response = chat(
+        messages=[
+            HumanMessage(content="Hello."),
+            AIMessage(content="Hello!"),
+            HumanMessage(content="How are you doing?"),
+        ]
     )
-    response = chat(messages=[
-        HumanMessage(content="Hello."),
-        AIMessage(content="Hello!"),
-        HumanMessage(content="How are you doing?")
-    ])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
+
 def test_multiple_messages() -> None:
-    chat = AzureMLChatOnlineEndpoint(
-        content_formatter=LlamaContentFormatter()
-    )
+    chat = AzureMLChatOnlineEndpoint(content_formatter=LlamaContentFormatter())
     message = HumanMessage(content="Hi!")
     response = chat.generate([[message], [message]])
 
@@ -65,4 +58,4 @@ def test_multiple_messages() -> None:
         for generation in generations:
             assert isinstance(generation, ChatGeneration)
             assert isinstance(generation.text, str)
-            assert generation.text == generation.message.content 
+            assert generation.text == generation.message.content

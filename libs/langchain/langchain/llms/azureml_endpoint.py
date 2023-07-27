@@ -18,7 +18,9 @@ class AzureMLEndpointClient(object):
     ) -> None:
         """Initialize the class."""
         if not endpoint_api_key or not endpoint_url:
-            raise ValueError("A key/token and REST endpoint should be provided to invoke the endpoint")
+            raise ValueError(
+                "A key/token and REST endpoint should be provided to invoke the endpoint"
+            )
         self.endpoint_url = endpoint_url
         self.endpoint_api_key = endpoint_api_key
         self.deployment_name = deployment_name
@@ -96,7 +98,7 @@ class ContentFormatterBase:
             prompt = prompt.replace(escape_sequence, escaped_sequence)
 
         return prompt
-    
+
     @abstractmethod
     def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
         """Formats the request body according to the input schema of
@@ -131,7 +133,9 @@ class HFContentFormatter(ContentFormatterBase):
 
     def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
         ContentFormatterBase.escape_special_characters(prompt)
-        request_payload = json.dumps({"inputs": [f'"{prompt}"'], "parameters": model_kwargs})
+        request_payload = json.dumps(
+            {"inputs": [f'"{prompt}"'], "parameters": model_kwargs}
+        )
         return str.encode(request_payload)
 
     def format_response_payload(self, output: bytes) -> str:
@@ -144,7 +148,10 @@ class DollyContentFormatter(ContentFormatterBase):
     def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
         prompt = ContentFormatterBase.escape_special_characters(prompt)
         request_payload = json.dumps(
-            {"input_data": {"input_string": [f'"{prompt}"']}, "parameters": model_kwargs}
+            {
+                "input_data": {"input_string": [f'"{prompt}"']},
+                "parameters": model_kwargs,
+            }
         )
         return str.encode(request_payload)
 
@@ -159,7 +166,12 @@ class LlamaContentFormatter(ContentFormatterBase):
         """Formats the request according the the chosen api"""
         prompt = ContentFormatterBase.escape_special_characters(prompt)
         request_payload = json.dumps(
-            {"input_data": {"input_string": [f'"{prompt}"'], "parameters": model_kwargs}}
+            {
+                "input_data": {
+                    "input_string": [f'"{prompt}"'],
+                    "parameters": model_kwargs,
+                }
+            }
         )
         return str.encode(request_payload)
 
@@ -192,7 +204,7 @@ class AzureMLOnlineEndpoint(LLM, BaseModel):
     deployment_name: str = ""
     """Deployment Name for Endpoint. NOT REQUIRED to call endpont. Should be passed 
         to constructor or specified as env var `AZUREML_DEPLOYMENT_NAME`."""
-    
+
     http_client: Any = None  #: :meta private:
 
     content_formatter: Any = None
@@ -224,8 +236,8 @@ class AzureMLOnlineEndpoint(LLM, BaseModel):
         """Get the identifying parameters."""
         _model_kwargs = self.model_kwargs or {}
         return {
-            **{"deployment_name": self.deployment_name}
-            **{"model_kwargs": _model_kwargs},
+            ** {"deployment_name": self.deployment_name},
+            ** {"model_kwargs": _model_kwargs},
         }
 
     @property
@@ -238,7 +250,7 @@ class AzureMLOnlineEndpoint(LLM, BaseModel):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> str:
         """Call out to an AzureML Managed Online endpoint.
         Args:
@@ -252,7 +264,11 @@ class AzureMLOnlineEndpoint(LLM, BaseModel):
         """
         _model_kwargs = self.model_kwargs or {}
 
-        request_payload = self.content_formatter.format_request_payload(prompt, _model_kwargs)
+        request_payload = self.content_formatter.format_request_payload(
+            prompt, _model_kwargs
+        )
         response_payload = self.http_client.call(request_payload, **kwargs)
-        generated_text = self.content_formatter.format_response_payload(response_payload)
+        generated_text = self.content_formatter.format_response_payload(
+            response_payload
+        )
         return generated_text

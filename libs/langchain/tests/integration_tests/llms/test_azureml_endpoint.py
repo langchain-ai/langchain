@@ -12,8 +12,8 @@ from langchain.llms.azureml_endpoint import (
     AzureMLOnlineEndpoint,
     ContentFormatterBase,
     DollyContentFormatter,
-    HFContentFormatter,
     GPT2ContentFormatter,
+    HFContentFormatter,
 )
 from langchain.llms.loading import load_llm
 
