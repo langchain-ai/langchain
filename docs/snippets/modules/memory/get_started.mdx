@@ -14,7 +14,7 @@ When using memory in a chain, there are a few key concepts to understand.
 Note that here we cover general concepts that are useful for most types of memory.
 Each individual memory type may very well have its own parameters and concepts that are necessary to understand.
 
-## What variables get returned from memory
+### What variables get returned from memory
 Before going into the chain, various variables are read from memory.
 This have specific names which need to align with the variables the chain expects.
 You can see what these variables are by calling `memory.load_memory_variables({})`.
@@ -53,7 +53,7 @@ memory.chat_memory.add_ai_message("whats up?")
 
 The parameter name to control these keys may vary per memory type, but it's important to understand that (1) this is controllable, (2) how to control it.
 
-## Whether memory is a string or a list of messages
+### Whether memory is a string or a list of messages
 
 One of the most common types of memory involves returning a list of chat messages.
 These can either be returned as a single string, all concatenated together (useful when they will be passed in LLMs)
@@ -76,7 +76,7 @@ memory.chat_memory.add_ai_message("whats up?")
 
 </CodeOutputBlock>
 
-## What keys are saved to memory
+### What keys are saved to memory
 
 Often times chains take in or return multiple input/output keys.
 In these cases, how can we know which keys we want to save to the chat message history?
@@ -84,12 +84,12 @@ This is generally controllable by `input_key` and `output_key` parameters on the
 These default to None - and if there is only one input/output key it is known to just use that.
 However, if there are multiple input/output keys then you MUST specify the name of which one to use
 
-## End to end example
+### End to end example
 
 Finally, let's take a look at using this in a chain.
 We'll use an LLMChain, and show working with both an LLM and a ChatModel.
 
-## Using an LLM
+#### Using an LLM
 
 
 ```python
@@ -126,7 +126,7 @@ conversation({"question": "hi"})
 ```
 
 
-## Using a ChatModel
+#### Using a ChatModel
 
 
 ```python
@@ -169,10 +169,5 @@ conversation = LLMChain(
 conversation({"question": "hi"})
 ```
 
-## Next steps
 
-
-And that's it for the getting started!
-Please see the other sections for more detailed walkthroughs and guides of more advanced topics,
-like custom memory, multiple memories, and more.
 

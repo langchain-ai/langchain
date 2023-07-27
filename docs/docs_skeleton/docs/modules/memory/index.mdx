@@ -5,10 +5,6 @@ sidebar_position: 3
 # Memory
 
 
-:::info
-Head to [Integrations](/docs/integrations/memory/) for documentation on built-in memory integrations with 3rd-party tools.
-:::
-
 The main interface for generative AI applications is a conversational interface.
 An important part of being able to have a conversation is the system you are talking to remembers things.
 at the bare minimum it should remember previous messages in the conversation.
@@ -31,12 +27,12 @@ This largely involves two parts:
 ## List of chat messages
 Underlying memory is this list of chat interactions.
 Even if these may not all be used directly, they need to be stored in some form.
-One of the key parts of the LangChain memory module therefor is a series of integrations for storing these chat messages,
+One of the key parts of the LangChain memory module therefore is a series of integrations for storing these chat messages,
 from in memory lists to persistent databases.
 
 ## Data structures and algorithms top of chat messages
 Keeping a list of these chat messages is fairly straight-forward algorithmically.
-What is less straight-forward, and therefor more interesting, are datastructures and algorithms built on top of chat messages that serve as memory.
+What is less straight-forward, and therefore more interesting, are datastructures and algorithms built on top of chat messages that serve as memory.
 A concrete example of this would be a summary of the chat messages.
 In this case, reading the memory would just involve reading a string, and writing to memory would involve updating that string based on the most recent chat messages.
 Different applications can involve different types of memory - for example, you could easily want to combine a summary of the whole conversation with the most recent N messages.
@@ -55,4 +51,11 @@ This will cover the basics of interacting with an using an arbitrary memory clas
 import GetStarted from "@snippets/modules/memory/get_started.mdx"
 
 <GetStarted/>
+
+## Next steps
+
+
+And that's it for the getting started!
+Please see the other sections for more detailed walkthroughs and guides of more advanced topics,
+like custom memory, multiple memories, and more.
 
