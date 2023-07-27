@@ -424,8 +424,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
     def from_messages(
         cls, messages: Sequence[Union[BaseMessagePromptTemplate, BaseMessage]]
     ) -> ChatPromptTemplate:
-        """
-        Create a class from a list of messages.
+        """Create a class from a list of messages.
 
         Args:
             messages: list of messages.
@@ -443,8 +442,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
         return self.format_prompt(**kwargs).to_string()
 
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
-        """
-        Format kwargs into a list of messages.
+        """Format kwargs into a list of messages.
 
         Args:
             **kwargs: keyword arguments to use for formatting.
