@@ -52,8 +52,11 @@ class LlamaContentFormatter(ContentFormatterBase):
             LlamaContentFormatter._convert_message_to_dict(message)
             for message in messages
         ]
+        prompt = json.dumps(
+            {"input_data": {"input_string": chat_messages, "parameters": model_kwargs}}
+        )
         return self.format_request_payload(
-            prompt=json.dumps(chat_messages), 
+            prompt=prompt, 
             model_kwargs=model_kwargs
         ) 
 
@@ -61,10 +64,7 @@ class LlamaContentFormatter(ContentFormatterBase):
         self, prompt: str, model_kwargs: Dict
     ) -> bytes:
         """Formats the request according the the chosen api"""
-        request_payload = json.dumps(
-            {"input_data": {"input_string": prompt, "parameters": model_kwargs}}
-        )
-        return str.encode(request_payload)
+        return str.encode(prompt)
 
     def format_response_payload(self, output: bytes) -> str:
         """Formats response"""
