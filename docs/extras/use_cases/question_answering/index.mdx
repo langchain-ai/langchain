@@ -189,7 +189,7 @@ All retrievers implement some common methods, such as `get_relevant_documents()`
 from langchain.retrievers import SVMRetriever
 svm_retriever = SVMRetriever.from_documents(all_splits,OpenAIEmbeddings())
 docs_svm=svm_retriever.get_relevant_documents(question)
-len(docs)
+len(docs_svm)
 ```
 
 

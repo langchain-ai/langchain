@@ -93,7 +93,7 @@ def analyze_text(
 
 
 class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
-    """This callback handler is designed specifically for usage within a Flyte task."""
+    """This callback handler that is used within a Flyte task."""
 
     def __init__(self) -> None:
         """Initialize callback handler."""

@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
 from langchain.schema.document import Document
+from langchain.schema.runnable import Runnable, RunnableConfig
 
 if TYPE_CHECKING:
     from langchain.callbacks.manager import (
@@ -17,7 +18,7 @@ if TYPE_CHECKING:
     )
 
 
-class BaseRetriever(Serializable, ABC):
+class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
     """Abstract base class for a Document retrieval system.
 
     A retrieval system is defined as something that can take string queries and return
@@ -43,9 +44,6 @@ class BaseRetriever(Serializable, ABC):
                     # Op -- (n_docs,1) -- Cosine Sim with each doc
                     results = cosine_similarity(self.tfidf_array, query_vec).reshape((-1,))
                     return [self.docs[i] for i in results.argsort()[-self.k :][::-1]]
-
-                async def aget_relevant_documents(self, query: str) -> List[Document]:
-                    raise NotImplementedError
     """  # noqa: E501
 
     class Config:
@@ -106,6 +104,20 @@ class BaseRetriever(Serializable, ABC):
             len(set(parameters.keys()) - {"self", "query", "run_manager"}) > 0
         )
 
+    def invoke(
+        self, input: str, config: Optional[RunnableConfig] = None
+    ) -> List[Document]:
+        return self.get_relevant_documents(input, **(config or {}))
+
+    async def ainvoke(
+        self, input: str, config: Optional[RunnableConfig] = None
+    ) -> List[Document]:
+        if type(self).aget_relevant_documents == BaseRetriever.aget_relevant_documents:
+            # If the retriever doesn't implement async, use default implementation
+            return await super().ainvoke(input, config)
+
+        return await self.aget_relevant_documents(input, **(config or {}))
+
     @abstractmethod
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
@@ -118,7 +130,6 @@ class BaseRetriever(Serializable, ABC):
             List of relevant documents
         """
 
-    @abstractmethod
     async def _aget_relevant_documents(
         self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
@@ -129,6 +140,7 @@ class BaseRetriever(Serializable, ABC):
         Returns:
             List of relevant documents
         """
+        raise NotImplementedError()
 
     def get_relevant_documents(
         self,

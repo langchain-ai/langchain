@@ -20,6 +20,8 @@ from langchain.utilities.github import GitHubAPIWrapper
 
 
 class GitHubAction(BaseTool):
+    """Tool for interacting with the GitHub API."""
+
     api_wrapper: GitHubAPIWrapper = Field(default_factory=GitHubAPIWrapper)
     mode: str
     name = ""
