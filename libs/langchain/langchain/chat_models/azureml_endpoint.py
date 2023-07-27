@@ -40,7 +40,8 @@ class LlamaContentFormatter(ContentFormatterBase):
                 [role for role in LlamaContentFormatter.SUPPORTED_ROLES]
             )
             raise ValueError(
-                f"""Received unsupported role. Supported roles for the LLaMa Foundation Model: {supported}"""
+                f"""Received unsupported role. 
+                Supported roles for the LLaMa Foundation Model: {supported}"""
             )
 
     def _format_request_payload(

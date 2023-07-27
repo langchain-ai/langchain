@@ -19,7 +19,8 @@ class AzureMLEndpointClient(object):
         """Initialize the class."""
         if not endpoint_api_key or not endpoint_url:
             raise ValueError(
-                "A key/token and REST endpoint should be provided to invoke the endpoint"
+                """A key/token and REST endpoint should 
+                be provided to invoke the endpoint"""
             )
         self.endpoint_url = endpoint_url
         self.endpoint_api_key = endpoint_api_key
@@ -93,7 +94,7 @@ class ContentFormatterBase:
             "\t": "\\t",
         }
 
-        # Replace each occurrence of the specified characters with their escaped versions
+        # Replace each occurrence of the specified characters with escaped versions
         for escape_sequence, escaped_sequence in escape_map.items():
             prompt = prompt.replace(escape_sequence, escaped_sequence)
 
@@ -202,7 +203,7 @@ class AzureMLOnlineEndpoint(LLM, BaseModel):
         env var `AZUREML_ENDPOINT_API_KEY`."""
 
     deployment_name: str = ""
-    """Deployment Name for Endpoint. NOT REQUIRED to call endpont. Should be passed 
+    """Deployment Name for Endpoint. NOT REQUIRED to call endpoint. Should be passed 
         to constructor or specified as env var `AZUREML_DEPLOYMENT_NAME`."""
 
     http_client: Any = None  #: :meta private:
