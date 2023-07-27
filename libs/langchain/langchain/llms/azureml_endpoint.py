@@ -112,7 +112,7 @@ class ContentFormatterBase:
         """
 
 
-class OSSContentFormatter(ContentFormatterBase):
+class GPT2ContentFormatter(ContentFormatterBase):
     """Content handler for LLMs from the OSS catalog."""
 
     def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
@@ -151,6 +151,7 @@ class DollyContentFormatter(ContentFormatterBase):
     def format_response_payload(self, output: bytes) -> str:
         return json.loads(output)[0]
 
+
 class LlamaContentFormatter(ContentFormatterBase):
     """Content formatter for LLaMa"""
 
@@ -165,6 +166,7 @@ class LlamaContentFormatter(ContentFormatterBase):
     def format_response_payload(self, output: bytes) -> str:
         """Formats response"""
         return json.loads(output)[0]["0"]
+
 
 class AzureMLOnlineEndpoint(LLM, BaseModel):
     """Azure ML Online Endpoint models.
