@@ -293,21 +293,22 @@ def update_token_usage(
             token_usage[_key] += response["usage"][_key]
 
 def execute(prompt, model, api_key, max_tokens=256, temperature=0.0, top_p=1.0):
-  requestUrl = "https://api.fireworks.ai/inference/v1/completions"
-  requestBody = {
-    "model": model,
-    "prompt": prompt,
-    "max_tokens": max_tokens,
-    "temperature": temperature,
-    "top_p": top_p,
-  }
-  requestHeaders = {
-    "Authorization": f"Bearer {api_key}",
-    "Accept": "application/json",
-    "Content-Type": "application/json",  
-  }
-  response = requests.post(requestUrl, headers=requestHeaders, json=requestBody)
-  return response.text
+    """Execute LLM query"""
+    requestUrl = "https://api.fireworks.ai/inference/v1/completions"
+    requestBody = {
+        "model": model,
+        "prompt": prompt,
+        "max_tokens": max_tokens,
+        "temperature": temperature,
+        "top_p": top_p,
+    }
+    requestHeaders = {
+        "Authorization": f"Bearer {api_key}",
+        "Accept": "application/json",
+        "Content-Type": "application/json",  
+    }
+    response = requests.post(requestUrl, headers=requestHeaders, json=requestBody)
+    return response.text
 
 def completion_with_retry(llm: Union[BaseFireworks, FireworksChat], **kwargs: Any) -> Any:
     """Use tenacity to retry the completion call."""

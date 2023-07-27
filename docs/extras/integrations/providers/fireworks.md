@@ -15,8 +15,8 @@ In this example, we'll work the llama-v2-13b.
 ```python
 from langchain.llms.fireworks import Fireworks 
 
-llm = Fireworks(model="fireworks-llama-v2-13b", max_tokens=256, temperature=0.4)
-llm("What is the weather like in Boston?")
+llm = Fireworks(model="fireworks-llama-v2-13b-chat", max_tokens=256, temperature=0.4)
+llm("Name 3 sports.")
 ```
 
 For a more detailed walkthrough, see [here](/docs/extras/modules/model_io/models/llms/integrations/Fireworks.ipynb).
