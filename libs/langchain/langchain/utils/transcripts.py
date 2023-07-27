@@ -1,5 +1,6 @@
-from typing import Any, Dict, Iterable, List, Optional
 from copy import deepcopy
+from typing import Any, Dict, Iterable, List, Optional
+
 
 def format_pysrt(pysrt_object: Iterable) -> List[Dict[str, Any]]:
     """
@@ -88,7 +89,7 @@ def chunk_transcripts(
         curr_chunk = transcripts[p1].copy()
         curr_dur = transcripts[p1]["duration"]
         curr_err = abs(curr_dur - duration)
-        p2 = p1+1
+        p2 = p1 + 1
         while p2 < n:
             curr_dur += deepcopy(transcripts[p2]["duration"])
             new_err = abs(curr_dur - duration)
