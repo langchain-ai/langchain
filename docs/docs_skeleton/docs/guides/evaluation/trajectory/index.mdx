@@ -1,10 +1,9 @@
 ---
 sidebar_position: 4
-sidebar_label: Trajectory Evaluators
 ---
 # Trajectory Evaluators
 
-Trajectory Evaluators in LangChain provide a holistic approach to evaluating an agent. These evaluators assess the full sequence of actions taken by an agent and their corresponding responses, which we refer to as the "trajectory". This comprehensive approach allows you to better gauge an agent's effectiveness and capabilities.
+Trajectory Evaluators in LangChain provide a more holistic approach to evaluating an agent. These evaluators assess the full sequence of actions taken by an agent and their corresponding responses, which we refer to as the "trajectory". This allows you to better measure an agent's effectiveness and capabilities.
 
 A Trajectory Evaluator implements the `AgentTrajectoryEvaluator` interface, which requires two main methods:
 
@@ -17,11 +16,9 @@ Both methods accept three main parameters:
 - `prediction`: The final predicted response from the agent.
 - `agent_trajectory`: The intermediate steps taken by the agent, given as a list of tuples.
 
-These methods return a dictionary with a `score` (a float from 0 to 1 indicating the effectiveness of the agent, where 1 means "most effective" and 0 means "least effective") and `reasoning` (a string explaining the reasoning behind the score).
+These methods return a dictionary. It is recommended that custom implementations return a `score` (a float indicating the effectiveness of the agent) and `reasoning` (a string explaining the reasoning behind the score).
 
-You can capture an agent's trajectory by initializing the agent with the `return_intermediate_steps=True` parameter. This lets you collect all intermediate steps without relying on special tracing callbacks.
-
-Additionally, you can specify the list of valid tools an agent is permitted to use via the `agent_tools` argument. 
+You can capture an agent's trajectory by initializing the agent with the `return_intermediate_steps=True` parameter. This lets you collect all intermediate steps without relying on special callbacks.
 
 For a deeper dive into the implementation and use of Trajectory Evaluators, refer to the sections below.
 
