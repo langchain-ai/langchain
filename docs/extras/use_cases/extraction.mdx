@@ -12,9 +12,9 @@ Examples of this include:
 - Extracting multiple rows to insert into a database from a long document
 - Extracting the correct API parameters from a user query
 
-In LangChain we provide a few useful abstractions that help you leverage OpenAI [function calling](https://openai.com/blog/function-calling-and-other-api-updates) (`-0613` models) and which go a long way to avoid model hallucination. This is in general the best go-to to extract structured data from text using langchain. However there's other two options that we should also consider:
+In LangChain we provide a few useful abstractions that help you leverage OpenAI [function calling](https://openai.com/blog/function-calling-and-other-api-updates) (`-0613` models) and which go a long way to avoid model hallucination. This is in general the best go-to to extract structured data from text using langchain. However there's other two options that you should also consider:
 
-1. This work is extremely related to output parsing. Output parsers are responsible for instructing the LLM to respond in a specific format. We suggest using output parsers when either you are not using OpenAI models or you want to have very close control over the parsing (e.g. checking that the output is a date in a specific datetime format).
+1. This work is extremely related to [output parsing](docs/modules/model_io/output_parsers/). Output parsers are responsible for instructing the LLM to respond in a specific format. We suggest using output parsers when either you are not using OpenAI models or you want to have very close control over the parsing (e.g. checking that the output is a date in a specific datetime format).
 2. While the conventional extraction chain is good enough for basic structuring of response data,
    when doing extraction you often want to extract more complicated or nested structures.
    For a deep dive on extraction, we recommend checking out [`kor`](https://eyurtsev.github.io/kor/),
