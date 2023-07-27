@@ -23,6 +23,8 @@ from typing import (
 )
 from uuid import UUID
 
+from tenacity import RetryCallState
+
 import langchain
 from langchain.callbacks.base import (
     BaseCallbackHandler,
@@ -572,6 +574,22 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
             **kwargs,
         )
 
+    def on_retry(
+        self,
+        retry_state: RetryCallState,
+        **kwargs: Any,
+    ) -> None:
+        _handle_event(
+            self.handlers,
+            "on_retry",
+            "ignore_retry",
+            retry_state,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            **kwargs,
+        )
+
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Run when LLM ends running.
 
@@ -629,6 +647,22 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
             "on_llm_new_token",
             "ignore_llm",
             token,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            **kwargs,
+        )
+
+    async def on_retry(
+        self,
+        retry_state: RetryCallState,
+        **kwargs: Any,
+    ) -> None:
+        await _ahandle_event(
+            self.handlers,
+            "on_retry",
+            "ignore_retry",
+            retry_state,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
             tags=self.tags,
