@@ -1,11 +1,10 @@
 from typing import Optional
 
 from langchain.chains.sql_database.prompt import PROMPT, SQL_PROMPTS
-from langchain.chat_models.base import BaseChatModel
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.output_parser import NoOpOutputParser
 from langchain.schema.prompt_template import BasePromptTemplate
-from langchain.schema.runnable import RunnableSequence
+from langchain.schema.runnable import RunnableSequence, RunnableMap
 from langchain.utilities.sql_database import SQLDatabase
 
 
@@ -35,7 +34,7 @@ def create_sql_query_chain(
     if "dialect" in prompt_to_use.input_variables:
         inputs["dialect"] = lambda _: db.dialect, prompt_to_use
     return (
-        inputs
+        RunnableMap(inputs)
         | prompt_to_use
         | llm.bind(stop=["\nSQLResult:"])
         | NoOpOutputParser()
