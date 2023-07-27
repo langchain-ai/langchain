@@ -1,7 +1,7 @@
 import json
 from typing import Any, Dict, List, Type, Union
 
-from pydantic import model_validator, BaseModel
+from pydantic import BaseModel, model_validator
 
 from langchain.schema import (
     ChatGeneration,

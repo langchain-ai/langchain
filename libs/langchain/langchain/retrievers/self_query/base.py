@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List, Optional, Type, cast
 
-from pydantic import model_validator, ConfigDict, BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from langchain import LLMChain
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun

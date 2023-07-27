@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Callable, List, Sequence, Tuple, Type, TypeVar, Union
 
-from pydantic import model_validator, Field
+from pydantic import Field, model_validator
 
 from langchain.load.serializable import Serializable
 from langchain.prompts.base import StringPromptTemplate

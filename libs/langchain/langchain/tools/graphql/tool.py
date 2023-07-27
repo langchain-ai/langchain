@@ -1,13 +1,14 @@
 import json
 from typing import Optional
 
+from pydantic import ConfigDict
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
 from langchain.tools.base import BaseTool
 from langchain.utilities.graphql import GraphQLAPIWrapper
-from pydantic import ConfigDict
 
 
 class BaseGraphQLTool(BaseTool):

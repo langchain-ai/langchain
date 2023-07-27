@@ -290,7 +290,9 @@ class SKLearnVectorStore(VectorStore):
             embedding, k=fetch_k, **kwargs
         )
         indices, _ = zip(*indices_dists)
-        result_embeddings = self._embeddings_np[indices,]
+        result_embeddings = self._embeddings_np[
+            indices,
+        ]
         mmr_selected = maximal_marginal_relevance(
             self._np.array(embedding, dtype=self._np.float32),
             result_embeddings,

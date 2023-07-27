@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Dict, Iterator, List, Literal, Optional, Union
 
 import requests
-from pydantic import field_validator, model_validator, BaseModel
+from pydantic import BaseModel, field_validator, model_validator
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader

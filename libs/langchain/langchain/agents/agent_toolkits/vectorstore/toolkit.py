@@ -1,7 +1,7 @@
 """Toolkit for interacting with a vector store."""
 from typing import List
 
-from pydantic import ConfigDict, BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.llms.openai import OpenAI

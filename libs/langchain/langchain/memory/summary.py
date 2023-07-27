@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Type
 
-from pydantic import model_validator, BaseModel
+from pydantic import BaseModel, model_validator
 
 from langchain.chains.llm import LLMChain
 from langchain.memory.chat_memory import BaseChatMemory

@@ -25,6 +25,7 @@ class SQLDatabaseToolkit(BaseToolkit):
     def dialect(self) -> str:
         """Return string representation of SQL dialect to use."""
         return self.db.dialect
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def get_tools(self) -> List[BaseTool]:

@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
-from pydantic import model_validator, ConfigDict, BaseModel
+from pydantic import BaseModel, ConfigDict, model_validator
 from typing_extensions import NotRequired, TypedDict
 
 from langchain.embeddings.base import Embeddings

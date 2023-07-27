@@ -3,7 +3,7 @@
 from typing import Any, Dict, List, Optional, Union
 
 from langsmith import RunEvaluator
-from pydantic import ConfigDict, BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain.embeddings.base import Embeddings
 from langchain.evaluation.criteria.eval_chain import CRITERIA_TYPE
@@ -164,7 +164,7 @@ class RunEvalConfig(BaseModel):
         evaluator_type: EvaluatorType = EvaluatorType.EMBEDDING_DISTANCE
         embeddings: Optional[Embeddings] = None
         distance_metric: Optional[EmbeddingDistanceEnum] = None
-        model_config = ConfigDict(arbitrary_types_allowed=True, arbitrary_types_allowed=True)
+        model_config = ConfigDict(arbitrary_types_allowed=True)
 
     class StringDistance(EvalConfig):
         """Configuration for a string distance evaluator.

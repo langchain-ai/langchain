@@ -191,6 +191,7 @@ class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
     def requires_input(self) -> bool:
         """Whether the chain requires an input string."""
         return True
+
     model_config = ConfigDict(extra="ignore")
 
     @classmethod

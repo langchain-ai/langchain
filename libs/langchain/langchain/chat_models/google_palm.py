@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
-from pydantic import model_validator, BaseModel
+from pydantic import BaseModel, model_validator
 from tenacity import (
     before_sleep_log,
     retry,

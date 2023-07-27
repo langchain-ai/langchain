@@ -3,7 +3,7 @@
 import json
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
@@ -21,7 +21,7 @@ class BaseVectorStoreTool(BaseModel):
 
     vectorstore: VectorStore = Field(exclude=True)
     llm: BaseLanguageModel = Field(default_factory=lambda: OpenAI(temperature=0))
-    model_config=ConfigDict(arbitrary_types_allowed = True)
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 def _create_description_from_template(values: Dict[str, Any]) -> Dict[str, Any]:

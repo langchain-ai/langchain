@@ -20,7 +20,7 @@ from typing import (
     Union,
 )
 
-from pydantic import model_validator, ConfigDict, Field
+from pydantic import ConfigDict, Field, model_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -191,6 +191,7 @@ class BaseOpenAI(BaseLLM):
             )
             return OpenAIChat(**data)
         return super().__new__(cls)
+
     model_config = ConfigDict(populate_by_name=True)
 
     @model_validator(mode="before")

@@ -132,7 +132,14 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 import requests
-from pydantic import field_validator, model_validator, ConfigDict, BaseModel, Field, PrivateAttr
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    field_validator,
+    model_validator,
+)
 
 from langchain.utils import get_from_dict_or_env
 
@@ -253,6 +260,7 @@ class SearxSearchWrapper(BaseModel):
         values["searx_host"] = searx_host
 
         return values
+
     model_config = ConfigDict(extra="forbid")
 
     def _searx_api_query(self, params: dict) -> SearxResults:

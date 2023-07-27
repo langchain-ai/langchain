@@ -6,7 +6,7 @@ https://levelup.gitconnected.com/api-tutorial-how-to-use-bing-web-search-api-in-
 from typing import Dict, List
 
 import requests
-from pydantic import model_validator, ConfigDict, BaseModel
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from langchain.utils import get_from_dict_or_env
 

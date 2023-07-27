@@ -2,7 +2,7 @@
 from abc import abstractmethod
 from typing import Any, Dict, Generic, List, Mapping, Optional, TypeVar, Union
 
-from pydantic import model_validator, ConfigDict
+from pydantic import ConfigDict, model_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM

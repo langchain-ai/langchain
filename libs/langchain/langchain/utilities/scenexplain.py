@@ -8,10 +8,10 @@ You can obtain a key by following the steps below.
 from typing import Dict
 
 import requests
-from pydantic import model_validator, BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
+from pydantic_settings import BaseSettings
 
 from langchain.utils import get_from_dict_or_env
-from pydantic_settings import BaseSettings
 
 
 class SceneXplainAPIWrapper(BaseSettings, BaseModel):

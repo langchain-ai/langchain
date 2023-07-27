@@ -14,7 +14,7 @@ from typing import (
     cast,
 )
 
-from pydantic import model_validator, ConfigDict, Field
+from pydantic import ConfigDict, Field, model_validator
 
 import langchain
 from langchain.callbacks.base import BaseCallbackManager
@@ -75,6 +75,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
             )
             values["callbacks"] = values.pop("callback_manager", None)
         return values
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     # --- Runnable methods ---

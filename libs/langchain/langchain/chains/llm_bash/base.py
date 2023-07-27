@@ -5,7 +5,7 @@ import logging
 import warnings
 from typing import Any, Dict, List, Optional
 
-from pydantic import model_validator, ConfigDict, Field, root_validator
+from pydantic import ConfigDict, Field, model_validator, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain

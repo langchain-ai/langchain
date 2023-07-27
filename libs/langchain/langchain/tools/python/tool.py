@@ -8,7 +8,7 @@ from contextlib import redirect_stdout
 from io import StringIO
 from typing import Any, Dict, Optional
 
-from pydantic import model_validator, Field
+from pydantic import Field, model_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,

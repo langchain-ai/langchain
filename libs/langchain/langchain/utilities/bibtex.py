@@ -2,7 +2,7 @@
 import logging
 from typing import Any, Dict, List, Mapping
 
-from pydantic import model_validator, ConfigDict, BaseModel
+from pydantic import BaseModel, ConfigDict, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +34,7 @@ class BibtexparserWrapper(BaseModel):
     This wrapper will use bibtexparser to load a collection of references from
     a bibtex file and fetch document summaries.
     """
+
     model_config = ConfigDict(extra="forbid")
 
     @model_validator()

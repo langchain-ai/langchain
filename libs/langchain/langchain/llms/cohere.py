@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Callable, Dict, List, Optional
 
-from pydantic import model_validator, ConfigDict
+from pydantic import ConfigDict, model_validator
 from tenacity import (
     before_sleep_log,
     retry,

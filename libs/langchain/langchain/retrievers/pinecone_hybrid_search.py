@@ -3,7 +3,7 @@
 import hashlib
 from typing import Any, Dict, List, Optional
 
-from pydantic import model_validator, ConfigDict
+from pydantic import ConfigDict, model_validator
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.embeddings.base import Embeddings

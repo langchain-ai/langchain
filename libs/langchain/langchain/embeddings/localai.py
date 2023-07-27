@@ -15,7 +15,7 @@ from typing import (
     Union,
 )
 
-from pydantic import model_validator, ConfigDict, BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from tenacity import (
     AsyncRetrying,
     before_sleep_log,
@@ -260,11 +260,7 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             # See: https://github.com/openai/openai-python/issues/418#issuecomment-1525939500
             # replace newlines, which can negatively affect performance.
             text = text.replace("\n", " ")
-        return embed_with_retry(
-            self,
-            input=[text],
-            **self._invocation_params,
-        )["data"][
+        return embed_with_retry(self, input=[text], **self._invocation_params,)["data"][
             0
         ]["embedding"]
 

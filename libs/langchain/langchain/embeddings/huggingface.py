@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-from pydantic import ConfigDict, BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain.embeddings.base import Embeddings
 
@@ -58,6 +58,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         self.client = sentence_transformers.SentenceTransformer(
             self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
         )
+
     model_config = ConfigDict(extra="forbid")
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
@@ -134,6 +135,7 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
             )
         except ImportError as e:
             raise ValueError("Dependencies for InstructorEmbedding not found.") from e
+
     model_config = ConfigDict(extra="forbid")
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:

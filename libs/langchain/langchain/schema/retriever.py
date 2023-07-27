@@ -5,11 +5,12 @@ from abc import ABC, abstractmethod
 from inspect import signature
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from pydantic import ConfigDict
+
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
 from langchain.schema.document import Document
 from langchain.schema.runnable import Runnable, RunnableConfig
-from pydantic import ConfigDict
 
 if TYPE_CHECKING:
     from langchain.callbacks.manager import (
@@ -46,6 +47,7 @@ class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
                     results = cosine_similarity(self.tfidf_array, query_vec).reshape((-1,))
                     return [self.docs[i] for i in results.argsort()[-self.k :][::-1]]
     """  # noqa: E501
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     _new_arg_supported: bool = False

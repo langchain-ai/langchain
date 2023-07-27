@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional
 
 import requests
-from pydantic import model_validator, ConfigDict, BaseModel, Field, PrivateAttr
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator
 from pydantic.v1 import validator as v1_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun

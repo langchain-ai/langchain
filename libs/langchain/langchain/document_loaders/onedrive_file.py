@@ -3,7 +3,7 @@ from __future__ import annotations
 import tempfile
 from typing import TYPE_CHECKING, List
 
-from pydantic import ConfigDict, BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader

@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 import numpy as np
-from pydantic import model_validator, ConfigDict, Field
+from pydantic import ConfigDict, Field, model_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -71,6 +71,7 @@ class _EmbeddingDistanceChainMixin(Chain):
                     " or install tiktoken using `pip install tiktoken`."
                 )
         return values
+
     model_config = ConfigDict()
 
     @property

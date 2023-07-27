@@ -20,7 +20,7 @@ class BaseSparkSQLTool(BaseModel):
     """Base tool for interacting with Spark SQL."""
 
     db: SparkSQL = Field(exclude=True)
-    model_config=ConfigDict(arbitrary_types_allowed = True, extra = Extra.forbid)
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra=Extra.forbid)
 
 
 class QuerySparkSQLTool(BaseSparkSQLTool, BaseTool):

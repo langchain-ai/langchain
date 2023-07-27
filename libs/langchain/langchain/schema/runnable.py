@@ -186,6 +186,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
     @property
     def lc_serializable(self) -> bool:
         return True
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def __or__(
@@ -554,6 +555,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
     @property
     def lc_serializable(self) -> bool:
         return True
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def invoke(

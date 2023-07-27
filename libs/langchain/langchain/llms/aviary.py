@@ -3,7 +3,7 @@ import os
 from typing import Any, Dict, List, Mapping, Optional, Union, cast
 
 import requests
-from pydantic import model_validator, ConfigDict
+from pydantic import ConfigDict, model_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM

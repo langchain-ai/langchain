@@ -12,7 +12,7 @@ langchain-server = "langchain.server:main"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-pydantic = "^2"
+pydantic = "^2.1.1"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
 PyYAML = ">=5.4.1"
@@ -26,7 +26,6 @@ elasticsearch = {version = "^8", optional = true}
 opensearch-py = {version = "^2.0.0", optional = true}
 redis = {version = "^4", optional = true}
 manifest-ml = {version = "^0.0.1", optional = true}
-spacy = {version = "^3", optional = true}
 nltk = {version = "^3", optional = true}
 transformers = {version = "^4", optional = true}
 beautifulsoup4 = {version = "^4", optional = true}
@@ -52,7 +51,6 @@ openai = {version = "^0", optional = true}
 nlpcloud = {version = "^1", optional = true}
 nomic = {version = "^1.0.43", optional = true}
 huggingface_hub = {version = "^0", optional = true}
-octoai-sdk = {version = "^0.1.1", optional = true}
 jina = {version = "^3.14", optional = true}
 google-search-results = {version = "^2", optional = true}
 sentence-transformers = {version = "^2", optional = true}
@@ -81,7 +79,6 @@ pexpect = {version = "^4.8.0", optional = true}
 pyvespa = {version = "^0.33.0", optional = true}
 O365 = {version = "^2.0.26", optional = true}
 jq = {version = "^1.4.1", optional = true}
-steamship = {version = "^2.16.9", optional = true}
 pdfminer-six = {version = "^20221105", optional = true}
 docarray = {version="^0.32.0", extras=["hnswlib"], optional=true}
 lxml = {version = "^4.9.2", optional = true}
@@ -91,7 +88,6 @@ gql = {version = "^3.4.1", optional = true}
 pandas = {version = "^2.0.1", optional = true}
 telethon = {version = "^1.28.5", optional = true}
 neo4j = {version = "^5.8.1", optional = true}
-zep-python = {version=">=0.32", optional=true}
 langkit = {version = ">=0.0.6, <0.1.0", optional = true}
 chardet = {version="^5.1.0", optional=true}
 requests-toolbelt = {version = "^1.0.0", optional = true}
@@ -120,7 +116,6 @@ cassio = {version = "^0.0.7", optional = true}
 rdflib = {version = "^6.3.2", optional = true}
 sympy = {version = "^1.12", optional = true}
 rapidfuzz = {version = "^3.1.1", optional = true}
-langsmith = "~0.0.11"
 rank-bm25 = {version = "^0.2.2", optional = true}
 amadeus = {version = ">=8.1.0", optional = true}
 geopandas = {version = "^0.13.1", optional = true}
@@ -180,7 +175,6 @@ deeplake = "^3.6.8"
 libdeeplake = "^0.0.60"
 weaviate-client = "^3.15.5"
 torch = "^1.0.0"
-chromadb = "^0.4.0"
 tiktoken = "^0.3.3"
 python-dotenv = "^1.0.0"
 sentence-transformers = "^2"

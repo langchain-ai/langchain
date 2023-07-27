@@ -1,6 +1,6 @@
 from typing import Any, Dict, List
 
-from pydantic import model_validator, BaseModel
+from pydantic import BaseModel, model_validator
 
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env

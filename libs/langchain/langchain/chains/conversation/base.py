@@ -1,7 +1,7 @@
 """Chain that carries on a conversation and calls an LLM."""
 from typing import Dict, List
 
-from pydantic import model_validator, ConfigDict, Field
+from pydantic import ConfigDict, Field, model_validator
 
 from langchain.chains.conversation.prompt import PROMPT
 from langchain.chains.llm import LLMChain

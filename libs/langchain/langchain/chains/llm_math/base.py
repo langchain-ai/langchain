@@ -7,7 +7,7 @@ import warnings
 from typing import Any, Dict, List, Optional
 
 import numexpr
-from pydantic import model_validator, ConfigDict
+from pydantic import ConfigDict, model_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,

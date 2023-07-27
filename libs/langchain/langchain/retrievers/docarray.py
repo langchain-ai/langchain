@@ -2,12 +2,12 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
+from pydantic import ConfigDict
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseRetriever, Document
 from langchain.vectorstores.utils import maximal_marginal_relevance
-from pydantic import ConfigDict
 
 
 class SearchType(str, Enum):

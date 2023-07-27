@@ -3,12 +3,12 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 import requests
+from pydantic import ConfigDict, model_validator
 from pydantic.class_validators import root_validator
 from pydantic.main import BaseModel
 from typing_extensions import Literal
 
 from langchain.utils import get_from_dict_or_env
-from pydantic import model_validator, ConfigDict
 
 
 class GoogleSerperAPIWrapper(BaseModel):

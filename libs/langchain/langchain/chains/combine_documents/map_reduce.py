@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import model_validator, ConfigDict
+from pydantic import ConfigDict, model_validator
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -109,6 +109,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         if self.return_intermediate_steps:
             _output_keys = _output_keys + ["intermediate_steps"]
         return _output_keys
+
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     @model_validator(mode="before")

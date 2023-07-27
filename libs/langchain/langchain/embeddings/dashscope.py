@@ -9,7 +9,7 @@ from typing import (
     Optional,
 )
 
-from pydantic import model_validator, ConfigDict, BaseModel
+from pydantic import BaseModel, ConfigDict, model_validator
 from requests.exceptions import HTTPError
 from tenacity import (
     before_sleep_log,

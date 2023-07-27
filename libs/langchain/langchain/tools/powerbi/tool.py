@@ -3,7 +3,7 @@ import logging
 from time import perf_counter
 from typing import Any, Dict, Optional, Tuple
 
-from pydantic import field_validator, ConfigDict, Field
+from pydantic import ConfigDict, Field, field_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,

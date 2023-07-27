@@ -6,7 +6,7 @@ import warnings
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
-from pydantic import model_validator, ConfigDict, Field
+from pydantic import ConfigDict, Field, model_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -33,7 +33,9 @@ class BaseRetrievalQA(Chain):
     output_key: str = "result"  #: :meta private:
     return_source_documents: bool = False
     """Return the source documents or not."""
-    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True, populate_by_name=True)
+    model_config = ConfigDict(
+        extra="forbid", arbitrary_types_allowed=True, populate_by_name=True
+    )
 
     @property
     def input_keys(self) -> List[str]:

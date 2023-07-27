@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, cast
 from uuid import uuid4
 
-from pydantic import model_validator, ConfigDict
+from pydantic import ConfigDict, model_validator
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.docstore.document import Document
@@ -62,6 +62,7 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
                 values["client"].schema.create_class(class_obj)
 
         return values
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     # added text_key

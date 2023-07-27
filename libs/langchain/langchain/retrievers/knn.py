@@ -8,11 +8,11 @@ import concurrent.futures
 from typing import Any, List, Optional
 
 import numpy as np
+from pydantic import ConfigDict
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseRetriever, Document
-from pydantic import ConfigDict
 
 
 def create_index(contexts: List[str], embeddings: Embeddings) -> np.ndarray:

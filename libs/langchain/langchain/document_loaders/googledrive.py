@@ -13,7 +13,7 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union
 
-from pydantic import field_validator, BaseModel, root_validator
+from pydantic import BaseModel, field_validator, root_validator
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader

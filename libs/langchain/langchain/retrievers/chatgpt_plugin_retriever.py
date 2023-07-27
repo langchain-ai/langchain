@@ -4,13 +4,13 @@ from typing import List, Optional
 
 import aiohttp
 import requests
+from pydantic import ConfigDict
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
 from langchain.schema import BaseRetriever, Document
-from pydantic import ConfigDict
 
 
 class ChatGPTPluginRetriever(BaseRetriever):

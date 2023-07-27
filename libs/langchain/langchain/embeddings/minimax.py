@@ -4,7 +4,7 @@ import logging
 from typing import Any, Callable, Dict, List, Optional
 
 import requests
-from pydantic import model_validator, ConfigDict, BaseModel
+from pydantic import BaseModel, ConfigDict, model_validator
 from tenacity import (
     before_sleep_log,
     retry,

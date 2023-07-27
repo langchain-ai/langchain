@@ -1,5 +1,7 @@
 from typing import Any, List
 
+from pydantic import ConfigDict
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
@@ -8,7 +10,6 @@ from langchain.retrievers.document_compressors.base import (
     BaseDocumentCompressor,
 )
 from langchain.schema import BaseRetriever, Document
-from pydantic import ConfigDict
 
 
 class ContextualCompressionRetriever(BaseRetriever):

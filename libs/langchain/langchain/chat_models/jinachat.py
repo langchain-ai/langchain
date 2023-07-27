@@ -15,7 +15,7 @@ from typing import (
     Union,
 )
 
-from pydantic import model_validator, ConfigDict, Field
+from pydantic import ConfigDict, Field, model_validator
 from tenacity import (
     before_sleep_log,
     retry,

@@ -1,7 +1,7 @@
 import importlib.util
 from typing import Any, Dict, List
 
-from pydantic import model_validator, ConfigDict, BaseModel
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from langchain.embeddings.base import Embeddings
 

@@ -1,6 +1,6 @@
 from typing import Any, List
 
-from pydantic import ConfigDict, BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from langchain.embeddings.base import Embeddings
 
@@ -43,6 +43,7 @@ class TensorflowHubEmbeddings(BaseModel, Embeddings):
             )
 
         self.embed = tensorflow_hub.load(self.model_url)
+
     model_config = ConfigDict(extra="forbid")
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:

@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
 import yaml
-from pydantic import model_validator, ConfigDict, Field
+from pydantic import ConfigDict, Field, model_validator
 
 from langchain.load.serializable import Serializable
 from langchain.schema.document import Document
@@ -29,6 +29,7 @@ class BasePromptTemplate(Serializable, Runnable[Dict, PromptValue], ABC):
     @property
     def lc_serializable(self) -> bool:
         return True
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def invoke(self, input: Dict, config: RunnableConfig | None = None) -> PromptValue:

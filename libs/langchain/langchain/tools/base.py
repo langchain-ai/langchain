@@ -7,10 +7,12 @@ from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from pydantic import (
-    model_validator, ConfigDict, BaseModel,
+    BaseModel,
+    ConfigDict,
     Extra,
     Field,
     create_model,
+    model_validator,
     validate_arguments,
 )
 from pydantic.main import ModelMetaclass

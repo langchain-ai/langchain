@@ -3,7 +3,7 @@
 import warnings
 from typing import Any, Dict, List
 
-from pydantic import model_validator, Field
+from pydantic import Field, model_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,

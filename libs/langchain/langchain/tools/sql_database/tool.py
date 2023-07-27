@@ -20,7 +20,7 @@ class BaseSQLDatabaseTool(BaseModel):
     """Base tool for interacting with a SQL database."""
 
     db: SQLDatabase = Field(exclude=True)
-    model_config=ConfigDict(arbitrary_types_allowed = True, extra = Extra.forbid)
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra=Extra.forbid)
 
 
 class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):

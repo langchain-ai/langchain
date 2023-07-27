@@ -1,6 +1,6 @@
 from typing import Any, List
 
-from pydantic import ConfigDict, BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from langchain.embeddings.base import Embeddings
 
@@ -36,6 +36,7 @@ class ModelScopeEmbeddings(BaseModel, Embeddings):
                 "Could not import some python packages."
                 "Please install it with `pip install modelscope`."
             ) from e
+
     model_config = ConfigDict(extra="forbid")
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:

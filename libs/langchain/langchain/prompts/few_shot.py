@@ -1,7 +1,7 @@
 """Prompt template that contains few shot examples."""
 from typing import Any, Dict, List, Optional
 
-from pydantic import model_validator, ConfigDict
+from pydantic import ConfigDict, model_validator
 
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
@@ -77,6 +77,7 @@ class FewShotPromptTemplate(StringPromptTemplate):
                 values["input_variables"] + list(values["partial_variables"]),
             )
         return values
+
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     def _get_examples(self, **kwargs: Any) -> List[dict]:

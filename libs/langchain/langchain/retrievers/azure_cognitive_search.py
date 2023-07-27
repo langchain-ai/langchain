@@ -7,7 +7,7 @@ from typing import Dict, List, Optional
 
 import aiohttp
 import requests
-from pydantic import model_validator, ConfigDict
+from pydantic import ConfigDict, model_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,

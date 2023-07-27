@@ -13,7 +13,7 @@ from io import BufferedReader, BytesIO
 from pathlib import PurePath
 from typing import Any, Generator, Iterable, Mapping, Optional, Union
 
-from pydantic import model_validator, ConfigDict, BaseModel
+from pydantic import BaseModel, ConfigDict, model_validator
 
 PathLike = Union[str, PurePath]
 

@@ -7,7 +7,7 @@ import re
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
-from pydantic import model_validator, ConfigDict
+from pydantic import ConfigDict, model_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -86,6 +86,7 @@ class BaseQAWithSourcesChain(Chain, ABC):
             llm, chain_type=chain_type, **_chain_kwargs
         )
         return cls(combine_documents_chain=combine_documents_chain, **kwargs)
+
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     @property

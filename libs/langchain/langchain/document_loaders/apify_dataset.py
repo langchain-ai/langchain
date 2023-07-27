@@ -1,6 +1,6 @@
 from typing import Any, Callable, Dict, List
 
-from pydantic import model_validator, BaseModel
+from pydantic import BaseModel, model_validator
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader

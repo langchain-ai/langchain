@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from typing import Any, Dict, Iterable, List, Optional
 
+from pydantic import ConfigDict
+
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document
-from pydantic import ConfigDict
 
 
 class TFIDFRetriever(BaseRetriever):

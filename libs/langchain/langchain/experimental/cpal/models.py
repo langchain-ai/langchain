@@ -5,7 +5,14 @@ from typing import Any, Optional, Union
 
 import duckdb
 import pandas as pd
-from pydantic import field_validator, ConfigDict, BaseModel, Field, PrivateAttr, root_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    field_validator,
+    root_validator,
+)
 
 from langchain.experimental.cpal.constants import Constant
 from langchain.graphs.networkx_graph import NetworkxEntityGraph

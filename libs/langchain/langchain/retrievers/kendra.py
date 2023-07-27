@@ -2,7 +2,7 @@ import re
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Literal, Optional, Union
 
-from pydantic import model_validator, BaseModel, Extra
+from pydantic import BaseModel, Extra, model_validator
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.docstore.document import Document

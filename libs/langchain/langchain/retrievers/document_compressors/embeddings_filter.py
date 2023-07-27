@@ -1,7 +1,7 @@
 from typing import Callable, Dict, Optional, Sequence
 
 import numpy as np
-from pydantic import model_validator, ConfigDict
+from pydantic import ConfigDict, model_validator
 
 from langchain.callbacks.manager import Callbacks
 from langchain.document_transformers.embeddings_redundant_filter import (
