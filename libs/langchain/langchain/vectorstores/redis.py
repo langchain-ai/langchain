@@ -66,7 +66,7 @@ def _check_redis_module_exist(client: RedisType, required_modules: List[dict]) -
         "Please head to https://redis.io/docs/stack/search/quick_start/"
         "to know more about installing the RediSearch module within Redis Stack."
     )
-    logging.error(error_message)
+    logger.error(error_message)
     raise ValueError(error_message)
 
 
@@ -607,7 +607,7 @@ class Redis(VectorStore):
 
     def as_retriever(self, **kwargs: Any) -> RedisVectorStoreRetriever:
         tags = kwargs.pop("tags", None) or []
-        tags.extend(self.__get_retriever_tags())
+        tags.extend(self._get_retriever_tags())
         return RedisVectorStoreRetriever(vectorstore=self, **kwargs, tags=tags)
 
 
