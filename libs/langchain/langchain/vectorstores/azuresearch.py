@@ -34,6 +34,12 @@ logger = logging.getLogger()
 
 if TYPE_CHECKING:
     from azure.search.documents import SearchClient
+    from azure.search.documents.indexes.models import (
+        ScoringProfile,
+        SearchField,
+        SemanticSettings,
+        VectorSearch,
+    )
 
 
 # Allow overriding field names for Azure Search
@@ -61,14 +67,13 @@ def _get_search_client(
     endpoint: str,
     key: str,
     index_name: str,
-    embedding_function: Callable,
     semantic_configuration_name: Optional[str] = None,
-    fields: Optional[list[SearchField]] = None,
+    fields: Optional[List[SearchField]] = None,
     vector_search: Optional[VectorSearch] = None,
     semantic_settings: Optional[SemanticSettings] = None,
-    scoring_profiles: Optional[list[ScoringProfile]] = None,
+    scoring_profiles: Optional[List[ScoringProfile]] = None,
     default_scoring_profile: Optional[str] = None,
-    default_fields: list[SearchField] = None,
+    default_fields: Optional[List[SearchField]] = None,
 ) -> SearchClient:
     from azure.core.credentials import AzureKeyCredential
     from azure.core.exceptions import ResourceNotFoundError
@@ -77,18 +82,15 @@ def _get_search_client(
     from azure.search.documents.indexes import SearchIndexClient
     from azure.search.documents.indexes.models import (
         PrioritizedFields,
-        SearchableField,
-        SearchField,
-        SearchFieldDataType,
         SearchIndex,
         SemanticConfiguration,
         SemanticField,
         SemanticSettings,
-        SimpleField,
         VectorSearch,
         VectorSearchAlgorithmConfiguration,
     )
 
+    default_fields = default_fields or []
     if key is None:
         credential = DefaultAzureCredential()
     else:
@@ -100,7 +102,7 @@ def _get_search_client(
         index_client.get_index(name=index_name)
     except ResourceNotFoundError:
         # Fields configuration
-        if fields != None:
+        if fields is not None:
             # Check mandatory fields
             fields_types = {f.name: f.type for f in fields}
             mandatory_fields = {df.name: df.type for df in default_fields}
@@ -111,30 +113,28 @@ def _get_search_client(
                 - set(fields_types.items())
             }
             if len(missing_fields) > 0:
-                error = "\n" + "\n".join(
-                    list(
-                        map(
-                            lambda x: f"{x} current type: '{fields_types.get(x, 'MISSING')}'. It has to be '{mandatory_fields.get(x)}' or you can point to a different '{mandatory_fields.get(x)}' field name by using the env variable 'AZURESEARCH_FIELDS_{x.upper()}'",
-                            missing_fields,
-                        )
-                    )
+                fmt_err = lambda x: (  # noqa: E731
+                    f"{x} current type: '{fields_types.get(x, 'MISSING')}'. It has to "
+                    f"be '{mandatory_fields.get(x)}' or you can point to a different "
+                    f"'{mandatory_fields.get(x)}' field name by using the env variable "
+                    f"'AZURESEARCH_FIELDS_{x.upper()}'"
                 )
+                error = "\n".join([fmt_err(x) for x in missing_fields])
                 raise ValueError(
-                    f"""
-                You need to specify at least the following fields {missing_fields} or provide alternative field names in the env variables. 
-                {error}
-                """
+                    f"You need to specify at least the following fields "
+                    f"{missing_fields} or provide alternative field names in the env "
+                    f"variables.\n\n{error}"
                 )
         else:
             fields = default_fields
         # Vector search configuration
-        if vector_search == None:
+        if vector_search is None:
             vector_search = VectorSearch(
                 algorithm_configurations=[
                     VectorSearchAlgorithmConfiguration(
                         name="default",
                         kind="hnsw",
-                        hnsw_parameters={
+                        hnsw_parameters={  # type: ignore
                             "m": 4,
                             "efConstruction": 400,
                             "efSearch": 500,
@@ -144,7 +144,7 @@ def _get_search_client(
                 ]
             )
         # Create the semantic settings with the configuration
-        if semantic_settings == None and semantic_configuration_name != None:
+        if semantic_settings is None and semantic_configuration_name is not None:
             semantic_settings = SemanticSettings(
                 configurations=[
                     SemanticConfiguration(
@@ -188,25 +188,18 @@ class AzureSearch(VectorStore):
         search_type: str = "hybrid",
         semantic_configuration_name: Optional[str] = None,
         semantic_query_language: str = "en-us",
-        fields: list[SearchField] = None,
-        vector_search: VectorSearch = None,
-        semantic_settings: SemanticSettings = None,
-        scoring_profiles: Optional[list[ScoringProfile]] = None,
+        fields: Optional[List[SearchField]] = None,
+        vector_search: Optional[VectorSearch] = None,
+        semantic_settings: Optional[SemanticSettings] = None,
+        scoring_profiles: Optional[List[ScoringProfile]] = None,
         default_scoring_profile: Optional[str] = None,
         **kwargs: Any,
     ):
         from azure.search.documents.indexes.models import (
-            PrioritizedFields,
             SearchableField,
             SearchField,
             SearchFieldDataType,
-            SearchIndex,
-            SemanticConfiguration,
-            SemanticField,
-            SemanticSettings,
             SimpleField,
-            VectorSearch,
-            VectorSearchAlgorithmConfiguration,
         )
 
         """Initialize with necessary components."""
@@ -239,15 +232,13 @@ class AzureSearch(VectorStore):
             azure_search_endpoint,
             azure_search_key,
             index_name,
-            embedding_function,
-            semantic_configuration_name,
-            fields,
-            vector_search,
-            semantic_settings,
-            scoring_profiles,
-            default_scoring_profile,
-            default_fields,
-            **kwargs,
+            semantic_configuration_name=semantic_configuration_name,
+            fields=fields,
+            vector_search=vector_search,
+            semantic_settings=semantic_settings,
+            scoring_profiles=scoring_profiles,
+            default_scoring_profile=default_scoring_profile,
+            default_fields=default_fields,
         )
         self.search_type = search_type
         self.semantic_configuration_name = semantic_configuration_name
@@ -462,8 +453,6 @@ class AzureSearch(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        from azure.search.documents.models import Vector
-
         results = self.client.search(
             search_text=query,
             vector=np.array(self.embedding_function(query), dtype=np.float32).tolist(),
@@ -479,8 +468,8 @@ class AzureSearch(VectorStore):
             top=k,
         )
         # Get Semantic Answers
-        semantic_answers = results.get_answers()
-        semantic_answers_dict = {}
+        semantic_answers = results.get_answers() or []
+        semantic_answers_dict: Dict = {}
         for semantic_answer in semantic_answers:
             semantic_answers_dict[semantic_answer.key] = {
                 "text": semantic_answer.text,
