@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class TransformChain(Chain):
-    """Chain transform chain output.
+    """Chain that transforms the chain output.
 
     Example:
         .. code-block:: python

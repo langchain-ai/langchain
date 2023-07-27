@@ -22,6 +22,7 @@ from langchain.callbacks.manager import (
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
 from langchain.schema import RUN_KEY, BaseMemory, RunInfo
+from langchain.schema.runnable import Runnable, RunnableConfig
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ def _get_verbosity() -> bool:
     return langchain.verbose
 
 
-class Chain(Serializable, ABC):
+class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
     """Abstract base class for creating structured sequences of calls to components.
 
     Chains should be used to encode a sequence of calls to components like
@@ -52,6 +53,20 @@ class Chain(Serializable, ABC):
             output as a string or object. This method can only be used for a subset of
             chains and cannot return as rich of an output as `__call__`.
     """
+
+    def invoke(
+        self, input: Dict[str, Any], config: Optional[RunnableConfig] = None
+    ) -> Dict[str, Any]:
+        return self(input, **(config or {}))
+
+    async def ainvoke(
+        self, input: Dict[str, Any], config: Optional[RunnableConfig] = None
+    ) -> Dict[str, Any]:
+        if type(self)._acall == Chain._acall:
+            # If the chain does not implement async, fall back to default implementation
+            return await super().ainvoke(input, config)
+
+        return await self.acall(input, **(config or {}))
 
     memory: Optional[BaseMemory] = None
     """Optional memory object. Defaults to None.

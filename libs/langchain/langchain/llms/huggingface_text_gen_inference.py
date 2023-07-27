@@ -1,5 +1,4 @@
-from functools import partial
-from typing import Any, Dict, List, Optional
+from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
 from pydantic import Extra, Field, root_validator
 
@@ -8,6 +7,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import LLM
+from langchain.schema.output import GenerationChunk
 
 
 class HuggingFaceTextGenInference(LLM):
@@ -69,7 +69,7 @@ class HuggingFaceTextGenInference(LLM):
                 temperature = 0.01,
                 repetition_penalty = 1.03,
                 callbacks = callbacks,
-                stream = True
+                streaming = True
             )
             print(llm("What is Deep Learning?"))
             
@@ -87,7 +87,7 @@ class HuggingFaceTextGenInference(LLM):
     inference_server_url: str = ""
     timeout: int = 120
     server_kwargs: Dict[str, Any] = Field(default_factory=dict)
-    stream: bool = False
+    streaming: bool = False
     client: Any
     async_client: Any
 
@@ -154,37 +154,21 @@ class HuggingFaceTextGenInference(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
+        if self.streaming:
+            completion = ""
+            for chunk in self._stream(prompt, stop, run_manager, **kwargs):
+                completion += chunk.text
+            return completion
+
         invocation_params = self._invocation_params(stop, **kwargs)
-        if not self.stream:
-            res = self.client.generate(prompt, **invocation_params)
-            # remove stop sequences from the end of the generated text
-            for stop_seq in invocation_params["stop_sequences"]:
-                if stop_seq in res.generated_text:
-                    res.generated_text = res.generated_text[
-                        : res.generated_text.index(stop_seq)
-                    ]
-            text = res.generated_text
-        else:
-            text_callback = None
-            if run_manager:
-                text_callback = partial(
-                    run_manager.on_llm_new_token, verbose=self.verbose
-                )
-            text = ""
-            for res in self.client.generate_stream(prompt, **invocation_params):
-                token = res.token
-                is_stop = False
-                for stop_seq in invocation_params["stop_sequences"]:
-                    if stop_seq in token.text:
-                        is_stop = True
-                        break
-                if is_stop:
-                    break
-                if not token.special:
-                    if text_callback:
-                        text_callback(token.text)
-                    text += token.text
-        return text
+        res = self.client.generate(prompt, **invocation_params)
+        # remove stop sequences from the end of the generated text
+        for stop_seq in invocation_params["stop_sequences"]:
+            if stop_seq in res.generated_text:
+                res.generated_text = res.generated_text[
+                    : res.generated_text.index(stop_seq)
+                ]
+        return res.generated_text
 
     async def _acall(
         self,
@@ -193,39 +177,90 @@ class HuggingFaceTextGenInference(LLM):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
+        if self.streaming:
+            completion = ""
+            async for chunk in self._astream(prompt, stop, run_manager, **kwargs):
+                completion += chunk.text
+            return completion
+
         invocation_params = self._invocation_params(stop, **kwargs)
-        if not self.stream:
-            res = await self.async_client.generate(
-                prompt,
-                **invocation_params,
-            )
-            # remove stop sequences from the end of the generated text
+        res = await self.async_client.generate(prompt, **invocation_params)
+        # remove stop sequences from the end of the generated text
+        for stop_seq in invocation_params["stop_sequences"]:
+            if stop_seq in res.generated_text:
+                res.generated_text = res.generated_text[
+                    : res.generated_text.index(stop_seq)
+                ]
+        return res.generated_text
+
+    def _stream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[GenerationChunk]:
+        invocation_params = self._invocation_params(stop, **kwargs)
+
+        for res in self.client.generate_stream(prompt, **invocation_params):
+            # identify stop sequence in generated text, if any
+            stop_seq_found: Optional[str] = None
             for stop_seq in invocation_params["stop_sequences"]:
-                if stop_seq in res.generated_text:
-                    res.generated_text = res.generated_text[
-                        : res.generated_text.index(stop_seq)
-                    ]
-            text: str = res.generated_text
-        else:
-            text_callback = None
-            if run_manager:
-                text_callback = partial(
-                    run_manager.on_llm_new_token, verbose=self.verbose
-                )
-            text = ""
-            async for res in self.async_client.generate_stream(
-                prompt, **invocation_params
-            ):
-                token = res.token
-                is_stop = False
-                for stop_seq in invocation_params["stop_sequences"]:
-                    if stop_seq in token.text:
-                        is_stop = True
-                        break
-                if is_stop:
-                    break
-                if not token.special:
-                    if text_callback:
-                        await text_callback(token.text)
-                    text += token.text
-        return text
+                if stop_seq in res.token.text:
+                    stop_seq_found = stop_seq
+
+            # identify text to yield
+            text: Optional[str] = None
+            if res.token.special:
+                text = None
+            elif stop_seq_found:
+                text = res.token.text[: res.token.text.index(stop_seq_found)]
+            else:
+                text = res.token.text
+
+            # yield text, if any
+            if text:
+                chunk = GenerationChunk(text=text)
+                yield chunk
+                if run_manager:
+                    run_manager.on_llm_new_token(chunk.text)
+
+            # break if stop sequence found
+            if stop_seq_found:
+                break
+
+    async def _astream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[GenerationChunk]:
+        invocation_params = self._invocation_params(stop, **kwargs)
+
+        async for res in self.async_client.generate_stream(prompt, **invocation_params):
+            # identify stop sequence in generated text, if any
+            stop_seq_found: Optional[str] = None
+            for stop_seq in invocation_params["stop_sequences"]:
+                if stop_seq in res.token.text:
+                    stop_seq_found = stop_seq
+
+            # identify text to yield
+            text: Optional[str] = None
+            if res.token.special:
+                text = None
+            elif stop_seq_found:
+                text = res.token.text[: res.token.text.index(stop_seq_found)]
+            else:
+                text = res.token.text
+
+            # yield text, if any
+            if text:
+                chunk = GenerationChunk(text=text)
+                yield chunk
+                if run_manager:
+                    await run_manager.on_llm_new_token(chunk.text)
+
+            # break if stop sequence found
+            if stop_seq_found:
+                break

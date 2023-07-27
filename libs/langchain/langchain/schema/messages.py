@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import List, Sequence
+from typing import Any, Dict, List, Sequence
 
 from pydantic import Field
 
@@ -78,6 +78,49 @@ class BaseMessage(Serializable):
         return True
 
 
+class BaseMessageChunk(BaseMessage):
+    def _merge_kwargs_dict(
+        self, left: Dict[str, Any], right: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Merge additional_kwargs from another BaseMessageChunk into this one."""
+        merged = left.copy()
+        for k, v in right.items():
+            if k not in merged:
+                merged[k] = v
+            elif type(merged[k]) != type(v):
+                raise ValueError(
+                    f'additional_kwargs["{k}"] already exists in this message,'
+                    " but with a different type."
+                )
+            elif isinstance(merged[k], str):
+                merged[k] += v
+            elif isinstance(merged[k], dict):
+                merged[k] = self._merge_kwargs_dict(merged[k], v)
+            else:
+                raise ValueError(
+                    f"Additional kwargs key {k} already exists in this message."
+                )
+        return merged
+
+    def __add__(self, other: Any) -> BaseMessageChunk:
+        if isinstance(other, BaseMessageChunk):
+            # If both are (subclasses of) BaseMessageChunk,
+            # concat into a single BaseMessageChunk
+
+            return self.__class__(
+                content=self.content + other.content,
+                additional_kwargs=self._merge_kwargs_dict(
+                    self.additional_kwargs, other.additional_kwargs
+                ),
+            )
+        else:
+            raise TypeError(
+                'unsupported operand type(s) for +: "'
+                f"{self.__class__.__name__}"
+                f'" and "{other.__class__.__name__}"'
+            )
+
+
 class HumanMessage(BaseMessage):
     """A Message from a human."""
 
@@ -90,6 +133,10 @@ class HumanMessage(BaseMessage):
     def type(self) -> str:
         """Type of the message, used for serialization."""
         return "human"
+
+
+class HumanMessageChunk(HumanMessage, BaseMessageChunk):
+    pass
 
 
 class AIMessage(BaseMessage):
@@ -106,6 +153,10 @@ class AIMessage(BaseMessage):
         return "ai"
 
 
+class AIMessageChunk(AIMessage, BaseMessageChunk):
+    pass
+
+
 class SystemMessage(BaseMessage):
     """A Message for priming AI behavior, usually passed in as the first of a sequence
     of input messages.
@@ -115,6 +166,10 @@ class SystemMessage(BaseMessage):
     def type(self) -> str:
         """Type of the message, used for serialization."""
         return "system"
+
+
+class SystemMessageChunk(SystemMessage, BaseMessageChunk):
+    pass
 
 
 class FunctionMessage(BaseMessage):
@@ -129,6 +184,10 @@ class FunctionMessage(BaseMessage):
         return "function"
 
 
+class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
+    pass
+
+
 class ChatMessage(BaseMessage):
     """A Message that can be assigned an arbitrary speaker (i.e. role)."""
 
@@ -139,6 +198,10 @@ class ChatMessage(BaseMessage):
     def type(self) -> str:
         """Type of the message, used for serialization."""
         return "chat"
+
+
+class ChatMessageChunk(ChatMessage, BaseMessageChunk):
+    pass
 
 
 def _message_to_dict(message: BaseMessage) -> dict:

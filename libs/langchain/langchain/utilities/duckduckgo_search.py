@@ -62,7 +62,9 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
         snippets = self.get_snippets(query)
         return " ".join(snippets)
 
-    def results(self, query: str, num_results: int) -> List[Dict[str, str]]:
+    def results(
+        self, query: str, num_results: int, backend: str = "api"
+    ) -> List[Dict[str, str]]:
         """Run query through DuckDuckGo and return metadata.
 
         Args:
@@ -83,11 +85,20 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
                 region=self.region,
                 safesearch=self.safesearch,
                 timelimit=self.time,
+                backend=backend,
             )
             if results is None:
                 return [{"Result": "No good DuckDuckGo Search Result was found"}]
 
             def to_metadata(result: Dict) -> Dict[str, str]:
+                if backend == "news":
+                    return {
+                        "date": result["date"],
+                        "title": result["title"],
+                        "snippet": result["body"],
+                        "source": result["source"],
+                        "link": result["url"],
+                    }
                 return {
                     "snippet": result["body"],
                     "title": result["title"],
