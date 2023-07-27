@@ -445,8 +445,10 @@ class GPTCache(BaseCache):
         """Get a cache object.
 
         When the corresponding llm model cache does not exist, it will be created."""
-
-        return self.gptcache_dict.get(llm_string, self._new_gptcache(llm_string))
+        _gptcache = self.gptcache_dict.get(llm_string, None)
+        if not _gptcache:
+            _gptcache = self._new_gptcache(llm_string)
+        return _gptcache
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up the cache data.
