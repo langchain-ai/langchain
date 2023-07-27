@@ -25,7 +25,23 @@ class AwaEmbeddings(BaseModel, Embeddings):
         self.client.model_name = model_name
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        """Embed a list of documents using AwaEmbedding.
+
+        Args:
+            texts: The list of texts need to be embeded
+
+        Returns:
+            List of embeddings, one for each text.
+        """
         return self.client.EmbeddingBatch(texts)
 
     def embed_query(self, text: str) -> List[float]:
+        """Compute query embeddings using AwaEmbedding.
+
+        Args:
+            text: The text to embed.
+
+        Returns:
+            Embeddings for the text.
+        """
         return self.client.Embedding(text)
