@@ -31,6 +31,7 @@ from langchain.retrievers.time_weighted_retriever import (
 )
 from langchain.retrievers.vespa_retriever import VespaRetriever
 from langchain.retrievers.weaviate_hybrid_search import WeaviateHybridSearchRetriever
+from langchain.retrievers.web_research import WebResearchRetriever
 from langchain.retrievers.wikipedia import WikipediaRetriever
 from langchain.retrievers.zep import ZepRetriever
 from langchain.retrievers.zilliz import ZillizRetriever
@@ -65,5 +66,6 @@ __all__ = [
     "ZepRetriever",
     "ZillizRetriever",
     "DocArrayRetriever",
+    "WebResearchRetriever",
     "EnsembleRetriever",
 ]

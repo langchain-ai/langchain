@@ -4,10 +4,7 @@ from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, Extra, root_validator
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
+from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.docstore.document import Document
 from langchain.schema import BaseRetriever
 
@@ -411,11 +408,3 @@ class AmazonKendraRetriever(BaseRetriever):
         """
         docs = self._kendra_query(query, self.top_k, self.attribute_filter)
         return docs
-
-    async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: AsyncCallbackManagerForRetrieverRun,
-    ) -> List[Document]:
-        raise NotImplementedError("Async version is not implemented for Kendra yet.")
