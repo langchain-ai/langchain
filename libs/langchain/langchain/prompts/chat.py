@@ -285,7 +285,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
     """
 
     input_variables: List[str]
-    """List of input variables."""
+    """List of input variables in template messages. Used for validation."""
     messages: List[Union[BaseMessagePromptTemplate, BaseMessage]]
     """List of messages consisting of either message prompt templates or messages."""
 
@@ -354,7 +354,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
     def from_role_strings(
         cls, string_messages: List[Tuple[str, str]]
     ) -> ChatPromptTemplate:
-        """Create a class from a list of (role, template) tuples.
+        """Create a chat prompt template from a list of (role, template) tuples.
 
         The roles `human`, `ai`, and `system` are special and will be converted
         to the appropriate message class. All other roles will be converted to a
@@ -372,7 +372,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
     def from_strings(
         cls, string_messages: List[Tuple[Type[BaseMessagePromptTemplate], str]]
     ) -> ChatPromptTemplate:
-        """Create a class from a list of (role class, template) tuples.
+        """Create a chat prompt template from a list of (role class, template) tuples.
 
         Args:
             string_messages: list of (role class, template) tuples.
