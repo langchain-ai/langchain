@@ -18,16 +18,18 @@ from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import DistanceStrategy, maximal_marginal_relevance
 
-def normalize(x: np.ndarray):
+
+def normalize(x: np.ndarray) -> np.ndarray:
     x /= np.clip(np.linalg.norm(x, axis=-1, keepdims=True), 1e-12, None)
     return x
+
 
 def dependable_scann_import() -> Any:
     """
     Import scann if available, otherwise raise error.
     """
     try:
-            import scann
+        import scann
     except ImportError:
         raise ImportError(
             "Could not import scann python package. "
@@ -44,24 +46,26 @@ class ScaNN(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain import ScaNN
-            scann = ScaNN(embedding_function, index, docstore, index_to_docstore_id)
+            from langchain.embeddings import HuggingFaceEmbeddings
+            from langchain.vectorstores import ScaNN
 
+            db = ScaNN.from_texts(['foo', 'bar', 'barz', 'qux'], HuggingFaceEmbeddings())
+            db.similarity_search('foo?', k=1)
     """
 
     def __init__(
         self,
-        embedding_function: Callable,
+        embedding: Embeddings,
         index: Any,
         docstore: Docstore,
         index_to_docstore_id: Dict[int, str],
         relevance_score_fn: Optional[Callable[[float], float]] = None,
         normalize_L2: bool = False,
         distance_strategy: DistanceStrategy = DistanceStrategy.EUCLIDEAN_DISTANCE,
-        scann_config: Optional[str] = None
+        scann_config: Optional[str] = None,
     ):
         """Initialize with necessary components."""
-        self.embedding_function = embedding_function
+        self.embedding = embedding
         self.index = index
         self.docstore = docstore
         self.index_to_docstore_id = index_to_docstore_id
@@ -102,13 +106,8 @@ class ScaNN(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        if not isinstance(self.docstore, AddableMixin):
-            raise ValueError(
-                "If trying to add texts, the underlying docstore should support "
-                f"adding items, which {self.docstore} does not"
-            )
         # Embed and create the documents.
-        embeddings = [self.embedding_function(text) for text in texts]
+        embeddings = self.embedding.embed_documents(list(texts))
         return self.__add(texts, embeddings, metadatas=metadatas, ids=ids, **kwargs)
 
     def add_embeddings(
@@ -181,7 +180,9 @@ class ScaNN(VectorStore):
         vector = np.array([embedding], dtype=np.float32)
         if self._normalize_L2:
             vector = normalize(vector)
-        indices, scores = self.index.search_batched(vector, k if filter is None else fetch_k)
+        indices, scores = self.index.search_batched(
+            vector, k if filter is None else fetch_k
+        )
         docs = []
         for j, i in enumerate(indices[0]):
             if i == -1:
@@ -237,7 +238,7 @@ class ScaNN(VectorStore):
             List of documents most similar to the query text with
             L2 distance in float. Lower score represents more similarity.
         """
-        embedding = self.embedding_function(query)
+        embedding = self.embedding.embed_query(query)
         docs = self.similarity_search_with_score_by_vector(
             embedding,
             k,
@@ -425,7 +426,7 @@ class ScaNN(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        embedding = self.embedding_function(query)
+        embedding = self.embedding.embed_query(query)
         docs = self.max_marginal_relevance_search_by_vector(
             embedding,
             k=k,
@@ -451,20 +452,27 @@ class ScaNN(VectorStore):
         distance_strategy = kwargs.get(
             "distance_strategy", DistanceStrategy.EUCLIDEAN_DISTANCE
         )
-        scann_config = kwargs.get(
-            "scann_config", None)
+        scann_config = kwargs.get("scann_config", None)
 
         vector = np.array(embeddings, dtype=np.float32)
         if normalize_L2:
             vector = normalize(vector)
         if scann_config is not None:
-          index = scann.scann_ops_pybind.create_searcher(vector, scann_config)
+            index = scann.scann_ops_pybind.create_searcher(vector, scann_config)
         else:
-          if distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
-              index = scann.scann_ops_pybind.builder(vector, 1, "dot_product").score_brute_force().build()
-          else:
-              # Default to L2, currently other metric types not initialized.
-              index = scann.scann_ops_pybind.builder(vector, 1, "squared_l2").score_brute_force().build()
+            if distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
+                index = (
+                    scann.scann_ops_pybind.builder(vector, 1, "dot_product")
+                    .score_brute_force()
+                    .build()
+                )
+            else:
+                # Default to L2, currently other metric types not initialized.
+                index = (
+                    scann.scann_ops_pybind.builder(vector, 1, "squared_l2")
+                    .score_brute_force()
+                    .build()
+                )
         documents = []
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
@@ -481,7 +489,7 @@ class ScaNN(VectorStore):
 
         docstore = InMemoryDocstore(dict(zip(index_to_id.values(), documents)))
         return cls(
-            embedding.embed_query,
+            embedding,
             index,
             docstore,
             index_to_id,
@@ -587,7 +595,7 @@ class ScaNN(VectorStore):
     def load_local(
         cls,
         folder_path: str,
-        embeddings: Embeddings,
+        embedding: Embeddings,
         index_name: str = "index",
         **kwargs: Any,
     ) -> ScaNN:
@@ -609,9 +617,7 @@ class ScaNN(VectorStore):
         # load docstore and index_to_docstore_id
         with open(path / "{index_name}.pkl".format(index_name=index_name), "rb") as f:
             docstore, index_to_docstore_id = pickle.load(f)
-        return cls(
-            embeddings.embed_query, index, docstore, index_to_docstore_id, **kwargs
-        )
+        return cls(embedding, index, docstore, index_to_docstore_id, **kwargs)
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """

@@ -34,6 +34,7 @@ from langchain.vectorstores.pinecone import Pinecone
 from langchain.vectorstores.qdrant import Qdrant
 from langchain.vectorstores.redis import Redis
 from langchain.vectorstores.rocksetdb import Rockset
+from langchain.vectorstores.scann import ScaNN
 from langchain.vectorstores.singlestoredb import SingleStoreDB
 from langchain.vectorstores.sklearn import SKLearnVectorStore
 from langchain.vectorstores.starrocks import StarRocks
@@ -85,6 +86,7 @@ __all__ = [
     "Qdrant",
     "Redis",
     "Rockset",
+    "ScaNN",
     "SKLearnVectorStore",
     "SingleStoreDB",
     "StarRocks",

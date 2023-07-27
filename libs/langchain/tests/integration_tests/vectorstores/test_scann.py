@@ -1,19 +1,20 @@
 """Test ScaNN functionality."""
 import datetime
 import math
-import numpy as np
 import tempfile
 
+import numpy as np
 import pytest
 
 from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
 from langchain.docstore.wikipedia import Wikipedia
-from langchain.vectorstores.scann import dependable_scann_import
-from langchain.vectorstores.scann import ScaNN
+from langchain.vectorstores.scann import ScaNN, dependable_scann_import, normalize
 from langchain.vectorstores.utils import DistanceStrategy
-from tests.integration_tests.vectorstores.fake_embeddings import ConsistentFakeEmbeddings
-from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
+from tests.integration_tests.vectorstores.fake_embeddings import (
+    ConsistentFakeEmbeddings,
+    FakeEmbeddings,
+)
 
 
 def test_scann() -> None:
@@ -36,20 +37,19 @@ def test_scann() -> None:
 def test_scann_vector_mips_l2() -> None:
     """Test vector similarity with MIPS and L2."""
     texts = ["foo", "bar", "baz"]
-    euclidean_search = ScaNN.from_texts(
-        texts,
-        FakeEmbeddings())
+    euclidean_search = ScaNN.from_texts(texts, FakeEmbeddings())
     output = euclidean_search.similarity_search_with_score("foo", k=1)
-    expected_euclidean = [(Document(page_content='foo', metadata={}), 0.0)]
+    expected_euclidean = [(Document(page_content="foo", metadata={}), 0.0)]
     assert output == expected_euclidean
 
     mips_search = ScaNN.from_texts(
         texts,
         FakeEmbeddings(),
         distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT,
-        normalize_L2=True)
+        normalize_L2=True,
+    )
     output = mips_search.similarity_search_with_score("foo", k=1)
-    expected_mips = [(Document(page_content='foo', metadata={}), 1.0)]
+    expected_mips = [(Document(page_content="foo", metadata={}), 1.0)]
     assert output == expected_mips
 
 
@@ -60,19 +60,24 @@ def test_scann_with_config() -> None:
     # Tree: search 10 leaves in a search tree of 100 leaves.
     # Quantization: uses 16-centroid quantizer every 2 dimension.
     # Reordering: reorder top 100 results.
-    scann_config = dependable_scann_import().scann_ops_pybind.builder(
-        np.zeros(shape=(0, 10)), 10, "squared_l2").tree(
-        num_leaves=100, num_leaves_to_search=10).score_ah(
-        2).reorder(100).create_config()
+    scann_config = (
+        dependable_scann_import()
+        .scann_ops_pybind.builder(np.zeros(shape=(0, 10)), 10, "squared_l2")
+        .tree(num_leaves=100, num_leaves_to_search=10)
+        .score_ah(2)
+        .reorder(100)
+        .create_config()
+    )
 
     mips_search = ScaNN.from_texts(
         texts,
         ConsistentFakeEmbeddings(),
         scann_config=scann_config,
         distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT,
-        normalize_L2=True)
+        normalize_L2=True,
+    )
     output = mips_search.similarity_search_with_score("42", k=1)
-    expected = [(Document(page_content='42', metadata={}), 0.0)]
+    expected = [(Document(page_content="42", metadata={}), 0.0)]
     assert output == expected
 
 
@@ -249,3 +254,11 @@ def test_scann_local_save_load() -> None:
     assert new_docsearch.index is not None
 
 
+def test_scann_normalize_l2() -> None:
+    """Test normalize L2."""
+    texts = ["foo", "bar", "baz"]
+    emb = np.array(FakeEmbeddings().embed_documents(texts))
+    # Test norm is 1.
+    np.testing.assert_allclose(1, np.linalg.norm(normalize(emb), axis=-1))
+    # Test that there is no NaN after normalization.
+    np.testing.assert_array_equal(False, np.isnan(normalize(np.zeros(10))))
