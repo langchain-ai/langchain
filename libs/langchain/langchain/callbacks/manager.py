@@ -1208,7 +1208,7 @@ class CallbackManager(BaseCallbackManager):
         """
         managers = []
         for text in texts:
-            run_id_ = uuid4()
+            run_id_ = uuid.uuid4()
             _handle_event(
                 self.handlers,
                 "on_embedding_start",
@@ -1535,7 +1535,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         tasks = []
         managers: List[AsyncCallbackManagerForEmbeddingsRun] = []
         for text in texts:
-            run_id_ = uuid4()
+            run_id_ = uuid.uuid4()
             tasks.append(
                 _ahandle_event(
                     self.handlers,
