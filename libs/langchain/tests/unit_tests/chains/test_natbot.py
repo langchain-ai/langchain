@@ -1,6 +1,6 @@
 """Test functionality related to natbot."""
 
-from typing import Any, List, Mapping, Optional
+from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chains.natbot.base import NatBotChain
@@ -32,7 +32,7 @@ class FakeLLM(LLM):
         return len(text.split())
 
     @property
-    def _identifying_params(self) -> Mapping[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         return {}
 
 

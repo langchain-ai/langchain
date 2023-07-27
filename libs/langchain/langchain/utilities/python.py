@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 @functools.lru_cache(maxsize=None)
 def warn_once() -> None:
-    # Warn that the PythonREPL
+    """Warn once about the dangers of PythonREPL."""
     logger.warning("Python REPL can execute arbitrary code. Use with caution.")
 
 

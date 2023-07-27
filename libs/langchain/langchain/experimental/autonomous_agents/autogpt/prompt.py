@@ -13,6 +13,8 @@ from langchain.vectorstores.base import VectorStoreRetriever
 
 
 class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):
+    """Prompt for AutoGPT."""
+
     ai_name: str
     ai_role: str
     tools: List[BaseTool]

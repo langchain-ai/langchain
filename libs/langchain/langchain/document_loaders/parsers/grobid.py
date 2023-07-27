@@ -8,6 +8,8 @@ from langchain.document_loaders.blob_loaders import Blob
 
 
 class ServerUnavailableException(Exception):
+    """Exception raised when the GROBID server is unavailable."""
+
     pass
 
 

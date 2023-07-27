@@ -9,7 +9,8 @@ from langchain.prompts import PromptTemplate
 
 template = """Act as a fair judge and rate the two responses to the question below.\
  Choose the response that best followed the instructions and answered the question.\
- Your assessment should weigh helpfulness, relevance, accuracy, depth, creativity, and detail.\
+ Your assessment should weigh the following criteria:
+{criteria}\
  Start by comparing both responses and give a brief rationale.\
  Avoid bias from the order of presentation or response length.
 After giving your rationale, make your final decision using this format:\
@@ -28,12 +29,14 @@ After giving your rationale, make your final decision using this format:\
 {prediction_b}
 [/RESPONSE B]"""
 PROMPT = PromptTemplate(
-    input_variables=["input", "prediction", "prediction_b"], template=template
+    input_variables=["input", "prediction", "prediction_b", "criteria"],
+    template=template,
 )
 
 template = """Act as a fair judge and rate the two responses to the question below.\
  Choose the response that best followed the instructions and answered the question.\
- Your assessment should weigh helpfulness, relevance, accuracy, depth, creativity, and detail.\
+ Your assessment should weigh the following criteria:
+{criteria}\
  Start by comparing both responses and give a brief rationale.\
  Avoid bias from the order of presentation or response length.\
  Weigh accuracy based on the following ground truth reference\
@@ -60,6 +63,6 @@ After giving your rationale, make your final decision using this format:\
 [/RESPONSE B]"""
 
 PROMPT_WITH_REFERENCE = PromptTemplate(
-    input_variables=["input", "prediction", "prediction_b", "reference"],
+    input_variables=["input", "prediction", "prediction_b", "reference", "criteria"],
     template=template,
 )
