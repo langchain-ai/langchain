@@ -12,6 +12,7 @@ from typing import (
     Generic,
     Iterator,
     List,
+    Mapping,
     Optional,
     TypedDict,
     TypeVar,
@@ -71,7 +72,7 @@ class Runnable(Generic[Input, Output], ABC):
         self,
         other: Union[
             Runnable[Any, Other],
-            Dict[str, Union[Runnable[Any, Other], Callable[[Any], Other]]],
+            Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other]]],
         ],
     ) -> RunnableSequence[Input, Other]:
         return RunnableSequence(first=self, last=_coerce_to_runnable(other))
@@ -80,7 +81,7 @@ class Runnable(Generic[Input, Output], ABC):
         self,
         other: Union[
             Runnable[Other, Any],
-            Dict[str, Union[Runnable[Other, Any], Callable[[Other], Any]]],
+            Mapping[str, Union[Runnable[Other, Any], Callable[[Other], Any]]],
         ],
     ) -> RunnableSequence[Other, Output]:
         return RunnableSequence(first=_coerce_to_runnable(other), last=self)
@@ -194,7 +195,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         self,
         other: Union[
             Runnable[Any, Other],
-            Dict[str, Union[Runnable[Any, Other], Callable[[Any], Other]]],
+            Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other]]],
         ],
     ) -> RunnableSequence[Input, Other]:
         if isinstance(other, RunnableSequence):
@@ -214,7 +215,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         self,
         other: Union[
             Runnable[Other, Any],
-            Dict[str, Union[Runnable[Other, Any], Callable[[Other], Any]]],
+            Mapping[str, Union[Runnable[Other, Any], Callable[[Other], Any]]],
         ],
     ) -> RunnableSequence[Other, Output]:
         if isinstance(other, RunnableSequence):
@@ -551,7 +552,22 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
 
 
 class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
-    steps: Dict[str, Runnable[Input, Any]]
+    steps: Mapping[str, Runnable[Input, Any]]
+
+    def __init__(
+        self,
+        steps: Mapping[
+            str,
+            Union[
+                Runnable[Input, Any],
+                Callable[[Input], Any],
+                Mapping[str, Union[Runnable[Input, Any], Callable[[Input], Any]]],
+            ],
+        ],
+    ) -> None:
+        super().__init__(
+            steps={key: _coerce_to_runnable(r) for key, r in steps.items()}
+        )
 
     @property
     def lc_serializable(self) -> bool:
@@ -582,7 +598,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
         # gather results from all steps
         try:
             # copy to avoid issues from the caller mutating the steps during invoke()
-            steps = self.steps.copy()
+            steps = dict(self.steps)
             with ThreadPoolExecutor() as executor:
                 futures = [
                     executor.submit(
@@ -626,7 +642,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
         # gather results from all steps
         try:
             # copy to avoid issues from the caller mutating the steps during invoke()
-            steps = self.steps.copy()
+            steps = dict(self.steps)
             results = await asyncio.gather(
                 *(
                     step.ainvoke(
@@ -688,7 +704,7 @@ def _coerce_to_runnable(
     thing: Union[
         Runnable[Input, Output],
         Callable[[Input], Output],
-        Dict[str, Union[Runnable[Input, Output], Callable[[Input], Output]]],
+        Mapping[str, Union[Runnable[Input, Output], Callable[[Input], Output]]],
     ]
 ) -> Runnable[Input, Output]:
     if isinstance(thing, Runnable):
