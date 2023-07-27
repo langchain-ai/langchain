@@ -261,11 +261,15 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
 
 
 class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
-    """Use to create flexible templated prompts for chat models.
+    """A prompt template for a chat models.
+
+    Use to create flexible templated prompts for chat models.
 
     Examples:
 
         .. code-block:: python
+
+            from langchain.prompts import ChatPromptTemplate
 
             template = ChatPromptTemplate.from_messages([
                 ("system", "You are a helpful AI bot. Your name is {name}."),
@@ -352,7 +356,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
     ) -> ChatPromptTemplate:
         """Create a class from a list of (role, template) tuples.
 
-        The roles "human", "ai", and "system" are special and will be converted
+        The roles `human`, `ai`, and `system` are special and will be converted
         to the appropriate message class. All other roles will be converted to a
         generic ChatMessagePromptTemplate.
 
@@ -416,6 +420,9 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
 
             Instantiation from a list message templates:
 
+
+            .. code-block:: python
+
                 template = ChatPromptTemplate.from_messages([
                     ("human", "Hello, how are you?"),
                     ("AI", "I'm doing well, thanks!"),
@@ -426,11 +433,10 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
         Args:
             messages: sequence of message representations.
                   A message can be represented using the following formats:
-                  - BaseMessagePromptTemplate
-                  - BaseMessage
-                  - 2-tuple of (role string, template); e.g., ("human", "{user_input}")
-                  - 2-tuple of (message class, template)
-                  - string: short-hand for ("human", template); e.g., "{user_input}"
+                  (1) BaseMessagePromptTemplate, (2) BaseMessage, (3) 2-tuple of
+                  (role string, template); e.g., ("human", "{user_input}"),
+                  (4) 2-tuple of (message class, template), (4) a string which is
+                  short-hand for ("human", template); e.g., "{user_input}"
 
         Returns:
             a chat prompt template
@@ -505,6 +511,7 @@ def _create_template_from_role_string(
     role: str, template: str
 ) -> BaseMessagePromptTemplate:
     """Create a message prompt template from a role string and template."""
+    messaeg: BaseMessagePromptTemplate
     if role == "human":
         message = HumanMessagePromptTemplate.from_template(template)
     elif role == "ai":
