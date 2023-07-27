@@ -508,7 +508,7 @@ def test_seq_prompt_dict(
     chain = (
         prompt
         | passthrough
-        | {  # type: ignore
+        | {
             "chat": chat,
             "llm": llm,
         }
@@ -530,6 +530,70 @@ def test_seq_prompt_dict(
     ) == {
         "chat": AIMessage(content="i'm a chatbot"),
         "llm": "i'm a textbot",
+    }
+    assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
+    assert chat_spy.call_args.args[1] == ChatPromptValue(
+        messages=[
+            SystemMessage(content="You are a nice assistant."),
+            HumanMessage(content="What is your name?"),
+        ]
+    )
+    assert llm_spy.call_args.args[1] == ChatPromptValue(
+        messages=[
+            SystemMessage(content="You are a nice assistant."),
+            HumanMessage(content="What is your name?"),
+        ]
+    )
+    assert tracer.runs == snapshot
+
+
+@freeze_time("2023-01-01")
+def test_seq_prompt_map(
+    mocker: MockerFixture, snapshot: SnapshotAssertion, fixed_uuids: None
+) -> None:
+    passthrough = mocker.Mock(side_effect=lambda x: x)
+
+    prompt = (
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
+    )
+
+    chat = FakeListChatModel(responses=["i'm a chatbot"])
+
+    llm = FakeListLLM(responses=["i'm a textbot"])
+
+    chain = (
+        prompt
+        | passthrough
+        | {
+            "chat": chat,
+            "llm": llm,
+            "passthrough": passthrough,
+        }
+    )
+
+    assert isinstance(chain, RunnableSequence)
+    assert chain.first == prompt
+    assert chain.middle == [RunnableLambda(passthrough)]
+    assert isinstance(chain.last, RunnableMap)
+    assert dumps(chain, pretty=True) == snapshot
+
+    # Test invoke
+    prompt_spy = mocker.spy(prompt.__class__, "invoke")
+    chat_spy = mocker.spy(chat.__class__, "invoke")
+    llm_spy = mocker.spy(llm.__class__, "invoke")
+    tracer = FakeTracer()
+    assert chain.invoke(
+        {"question": "What is your name?"}, dict(callbacks=[tracer])
+    ) == {
+        "chat": AIMessage(content="i'm a chatbot"),
+        "llm": "i'm a textbot",
+        "passthrough": ChatPromptValue(
+            messages=[
+                SystemMessage(content="You are a nice assistant."),
+                HumanMessage(content="What is your name?"),
+            ]
+        ),
     }
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
