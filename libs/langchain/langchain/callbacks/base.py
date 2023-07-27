@@ -243,6 +243,11 @@ class BaseCallbackHandler(
         return False
 
     @property
+    def ignore_retry(self) -> bool:
+        """Whether to ignore retry callbacks."""
+        return False
+
+    @property
     def ignore_chain(self) -> bool:
         """Whether to ignore chain callbacks."""
         return False
@@ -468,7 +473,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
 
 class BaseCallbackManager(CallbackManagerMixin):
-    """Base callback manager that can be used to handle callbacks from LangChain."""
+    """Base callback manager that handles callbacks from LangChain."""
 
     def __init__(
         self,

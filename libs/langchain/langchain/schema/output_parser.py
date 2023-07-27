@@ -137,8 +137,8 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
         return output_parser_dict
 
 
-class NoOpOutputParser(BaseOutputParser[str]):
-    """'No operation' OutputParser that returns the text as is."""
+class StrOutputParser(BaseOutputParser[str]):
+    """OutputParser that parses LLMResult into the top likely string.."""
 
     @property
     def lc_serializable(self) -> bool:
@@ -153,6 +153,10 @@ class NoOpOutputParser(BaseOutputParser[str]):
     def parse(self, text: str) -> str:
         """Returns the input text with no changes."""
         return text
+
+
+# TODO: Deprecate
+NoOpOutputParser = StrOutputParser
 
 
 class OutputParserException(ValueError):

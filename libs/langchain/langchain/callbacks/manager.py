@@ -23,6 +23,8 @@ from typing import (
 )
 from uuid import UUID
 
+from tenacity import RetryCallState
+
 import langchain
 from langchain.callbacks.base import (
     BaseCallbackHandler,
@@ -475,6 +477,22 @@ class RunManager(BaseRunManager):
             **kwargs,
         )
 
+    def on_retry(
+        self,
+        retry_state: RetryCallState,
+        **kwargs: Any,
+    ) -> None:
+        _handle_event(
+            self.handlers,
+            "on_retry",
+            "ignore_retry",
+            retry_state,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            **kwargs,
+        )
+
 
 class ParentRunManager(RunManager):
     """Sync Parent Run Manager."""
@@ -519,6 +537,22 @@ class AsyncRunManager(BaseRunManager):
             "on_text",
             None,
             text,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            **kwargs,
+        )
+
+    async def on_retry(
+        self,
+        retry_state: RetryCallState,
+        **kwargs: Any,
+    ) -> None:
+        await _ahandle_event(
+            self.handlers,
+            "on_retry",
+            "ignore_retry",
+            retry_state,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
             tags=self.tags,
@@ -1004,7 +1038,7 @@ class AsyncCallbackManagerForRetrieverRun(
 
 
 class CallbackManager(BaseCallbackManager):
-    """Callback manager that can be used to handle callbacks from langchain."""
+    """Callback manager that handles callbacks from langchain."""
 
     def on_llm_start(
         self,
@@ -1273,7 +1307,7 @@ class CallbackManager(BaseCallbackManager):
 
 
 class AsyncCallbackManager(BaseCallbackManager):
-    """Async callback manager that can be used to handle callbacks from LangChain."""
+    """Async callback manager that handles callbacks from LangChain."""
 
     @property
     def is_async(self) -> bool:
