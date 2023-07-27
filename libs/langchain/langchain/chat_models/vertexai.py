@@ -4,10 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from pydantic import root_validator
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.vertexai import _VertexAICommon, is_codey_model
 from langchain.schema import (
@@ -162,14 +159,3 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         response = chat.send_message(question.content)
         text = self._enforce_stop_words(response.text, stop)
         return ChatResult(generations=[ChatGeneration(message=AIMessage(content=text))])
-
-    async def _agenerate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> ChatResult:
-        raise NotImplementedError(
-            """Vertex AI doesn't support async requests at the moment."""
-        )
