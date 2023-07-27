@@ -151,6 +151,8 @@ class SagemakerEndpoint(LLM):
     .. _boto3: <https://boto3.amazonaws.com/v1/documentation/api/latest/index.html>
     """
 
+    custom_attributes: Optional[str] = None
+
     class Config:
         """Configuration for this pydantic object."""
 
@@ -239,6 +241,7 @@ class SagemakerEndpoint(LLM):
                 Body=body,
                 ContentType=content_type,
                 Accept=accepts,
+                CustomAttributes=self.custom_attributes,
                 **_endpoint_kwargs,
             )
         except Exception as e:
