@@ -18,7 +18,7 @@ class AzureMLEndpointClient(object):
         endpoint_url: str,
         endpoint_api_key: str,
         deployment_name: str,
-        extra_headers: dict
+        extra_headers: dict,
     ) -> None:
         """Initialize the class."""
         if not endpoint_api_key:
@@ -195,9 +195,13 @@ class AzureMLOnlineEndpoint(LLM, BaseModel):
             values, "deployment_name", "AZUREML_DEPLOYMENT_NAME"
         )
         content_formatter = values.get("content_formatter")
-        endpoint_headers = (content_formatter and content_formatter.get_http_headers()) or {}
+        endpoint_headers = (
+            content_formatter and content_formatter.get_http_headers()
+        ) or {}
 
-        http_client = AzureMLEndpointClient(endpoint_url, endpoint_key, deployment_name, endpoint_headers)
+        http_client = AzureMLEndpointClient(
+            endpoint_url, endpoint_key, deployment_name, endpoint_headers
+        )
         return http_client
 
     @property
