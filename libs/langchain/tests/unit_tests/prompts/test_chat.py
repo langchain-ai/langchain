@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Union
+from typing import List, Union, Any
 
 import pytest
 
@@ -13,6 +13,7 @@ from langchain.prompts.chat import (
     ChatPromptValue,
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
+    _convert_to_message,
 )
 from langchain.schema.messages import (
     AIMessage,
@@ -138,6 +139,31 @@ def test_chat_prompt_template_from_messages() -> None:
     assert len(chat_prompt_template.messages) == 4
 
 
+def test_chat_prompt_template_from_messages_using_role_strings() -> None:
+    """Test creating a chat prompt template from role string messages."""
+    template = ChatPromptTemplate.from_messages(
+        [
+            ("system", "You are a helpful AI bot. Your name is {name}."),
+            ("human", "Hello, how are you doing?"),
+            ("AI", "I'm doing well, thanks!"),
+            ("human", "{user_input}"),
+        ]
+    )
+
+    messages = template.format_messages(name="Bob", user_input="What is your name?")
+
+    assert messages == [
+        SystemMessage(
+            content="You are a helpful AI bot. Your name is Bob.", additional_kwargs={}
+        ),
+        HumanMessage(
+            content="Hello, how are you doing?", additional_kwargs={}, example=False
+        ),
+        ChatMessage(content="I'm doing well, thanks!", additional_kwargs={}, role="AI"),
+        HumanMessage(content="What is your name?", additional_kwargs={}, example=False),
+    ]
+
+
 def test_chat_prompt_template_with_messages() -> None:
     messages: List[
         Union[BaseMessagePromptTemplate, BaseMessage]
@@ -220,48 +246,41 @@ def test_chat_from_role_strings() -> None:
     ]
 
 
-
-def test_chat_templates() -> None:
-    """Test chat templates."""
-    assert c_(["{question}"]).format_messages(question="What is your name?") == [
-        HumanMessage(content="What is your name?")
-    ]
-
-    # Regular human message does not require formatting!
-    assert c_([HumanMessage(content="{question}")]).format_messages() == [
-        HumanMessage(content="{question}")
-    ]
-
-    assert (
-        c_(
-            [
-                HumanMessage(content="{question}"),
-                HumanMessagePromptTemplate(
-                    prompt=PromptTemplate.from_template("{question}")
-                ),
-            ]
-        ).format_messages(question="What is your name?")
-    ) == [
-        HumanMessage(content="{question}"),
-        HumanMessage(content="What is your name?"),
-    ]
-
-    assert c_(
-        [
-            ("system", "hello"),
+@pytest.mark.parametrize(
+    "args,expected",
+    [
+        (
             ("human", "{question}"),
-        ]
-    ).format_messages(question="What is your name?") == [
-        # TODO(): Do we really want these to be chat messages?
-        ChatMessage(content="hello", additional_kwargs={}, role="system"),
-        ChatMessage(content="What is your name?", additional_kwargs={}, role="human"),
-    ]
-    # SystemMessage(content="hello"),
-    # HumanMessage(content="What is your name?"),
-
-    assert c_([SystemMessage(content="hello"), "{question}"]).format_messages(
-        question="What is your name?"
-    ) == [
-        SystemMessage(content="hello"),
-        HumanMessage(content="What is your name?"),
-    ]
+            HumanMessagePromptTemplate(
+                prompt=PromptTemplate.from_template("{question}")
+            ),
+        ),
+        (
+            ("meow", "{question}"),
+            ChatMessagePromptTemplate(
+                prompt=PromptTemplate.from_template("{question}"),
+                role="meow",
+            ),
+        ),
+        (
+            "{question}",
+            HumanMessagePromptTemplate(
+                prompt=PromptTemplate.from_template("{question}")
+            ),
+        ),
+        (HumanMessage(content="question"), HumanMessage(content="question")),
+        (
+            HumanMessagePromptTemplate(
+                prompt=PromptTemplate.from_template("{question}")
+            ),
+            HumanMessagePromptTemplate(
+                prompt=PromptTemplate.from_template("{question}")
+            ),
+        ),
+    ],
+)
+def test_convert_to_message(
+    args: Any, expected: Union[BaseMessage, BaseMessagePromptTemplate]
+) -> None:
+    """Test convert to message."""
+    assert _convert_to_message(args) == expected
