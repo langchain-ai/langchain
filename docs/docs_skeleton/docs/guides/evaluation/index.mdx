@@ -6,23 +6,26 @@ import DocCardList from "@theme/DocCardList";
 
 # Evaluation
 
-Language models can be unpredictable. This makes it challenging to ship reliable applications to production, where repeatable, useful outcomes across diverse inputs are a minimum requirement. Tests help demonstrate each component in an LLM application can produce the required or expected functionality. These tests also safeguard against regressions while you improve interconnected pieces of an integrated system. However, measuring the quality of generated text can be challenging. It can be hard to agree on the right set of metrics for your application, and it can be difficult to translate those into better performance. Furthermore, it's common to lack sufficient evaluation data to adequately test the range of inputs and expected outputs for each component when you're just getting started. The LangChain community is building open source tools and guides to help address these challenges.
+Building applications with language models involves many moving parts. One of the most critical components is ensuring that the outcomes produced by your models are reliable and useful across a broad array of inputs, and that they work well with your application's other software components. Ensuring reliability usually boils down to some combination of application design, testing & evaluation, and runtime checks. 
 
-LangChain exposes different types of evaluators for common types of evaluation. Each type has off-the-shelf implementations you can use to get started, as well as an
- extensible API so you can create your own or contribute improvements for everyone to use. The following sections have example notebooks for you to get started.
+The guides in this section review the APIs and functionality LangChain provides to help yous better evaluate your applications. Evaluation and testing are both critical when thinking about deploying LLM applications, since production environments require repeatable and useful outcomes.
 
-- [String Evaluators](/docs/modules/evaluation/string/): Evaluate the predicted string for a given input, usually against a reference string
-- [Trajectory Evaluators](/docs/modules/evaluation/trajectory/): Evaluate the whole trajectory of agent actions
-- [Comparison Evaluators](/docs/modules/evaluation/comparison/): Compare predictions from two runs on a common input
+LangChain offers various types of evaluators to help you measure performance and integrity on diverse data, and we hope to encourage the the community to create and share other useful evaluators so everyone can improve. These docs will introduce the evaluator types, how to use them, and provide some examples of their use in real-world scenarios.
 
+Each evaluator type in LangChain comes with ready-to-use implementations and an extensible API that allows for customization according to your unique requirements. Here are some of the types of evaluators we offer:
 
-This section also provides some additional examples of how you could use these evaluators for different scenarios or apply to different chain implementations in the LangChain library. Some examples include:
+- [String Evaluators](/docs/guides/evaluation/string/): These evaluators assess the predicted string for a given input, usually comparing it against a reference string.
+- [Trajectory Evaluators](/docs/guides/evaluation/trajectory/): These are used to evaluate the entire trajectory of agent actions.
+- [Comparison Evaluators](/docs/guides/evaluation/comparison/): These evaluators are designed to compare predictions from two runs on a common input.
 
-- [Preference Scoring Chain Outputs](/docs/modules/evaluation/examples/comparisons): An example using a comparison evaluator on different models or prompts to select statistically significant differences in aggregate preference scores
+These evaluators can be used across various scenarios and can be applied to different chain and LLM implementations in the LangChain library.
 
+We also are working to share guides and cookbooks that demonstrate how to use these evaluators in real-world scenarios, such as:
+
+- [Chain Comparisons](/docs/guides/evaluation/examples/comparisons): This example uses a comparison evaluator to predict the preferred output. It reviews ways to measure confidence intervals to select statistically significant differences in aggregate preference scores across different models or prompts.
 
 ## Reference Docs
 
-For detailed information of the available evaluators, including how to instantiate, configure, and customize them. Check out the [reference documentation](https://api.python.langchain.com/en/latest/api_reference.html#module-langchain.evaluation) directly.
+For detailed information on the available evaluators, including how to instantiate, configure, and customize them, check out the [reference documentation](https://api.python.langchain.com/en/latest/api_reference.html#module-langchain.evaluation) directly.
 
 <DocCardList />

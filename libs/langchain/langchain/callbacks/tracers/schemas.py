@@ -31,7 +31,7 @@ class TracerSessionV1(TracerSessionV1Base):
 
 
 class TracerSessionBase(TracerSessionV1Base):
-    """A creation class for TracerSession."""
+    """Base class for TracerSession."""
 
     tenant_id: UUID
 

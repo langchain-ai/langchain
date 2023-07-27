@@ -191,10 +191,13 @@ class FewShotChatMessagePromptTemplate(
 
         .. code-block:: python
 
+            from langchain.schema import SystemMessage
             from langchain.prompts import (
-                ChatPromptTemplate, HumanMessagePromptTemplate, AIMessagePromptTemplate
+                ChatPromptTemplate,
+                FewShotChatMessagePromptTemplate,
+                HumanMessagePromptTemplate,
+                AIMessagePromptTemplate
             )
-            from langchain.prompts.few_shot import FewShotChatMessagePromptTemplate
 
             examples = [
                 {"input": "2+2", "output": "4"},
