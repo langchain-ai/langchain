@@ -13,7 +13,7 @@ Below is a sample script that uses the Jira tool:
 ```python
 from langchain.agents import AgentType
 from langchain.agents import initialize_agent
-from langchain.agents.agent_toolkits.jira.toolkit import JiraToolkit
+from langchain.toolkits.jira.toolkit import JiraToolkit
 from langchain.llms import OpenAI
 from langchain.utilities.jira import JiraAPIWrapper
 

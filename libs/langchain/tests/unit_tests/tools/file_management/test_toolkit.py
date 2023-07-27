@@ -4,7 +4,7 @@ from tempfile import TemporaryDirectory
 
 import pytest
 
-from langchain.agents.agent_toolkits.file_management.toolkit import (
+from langchain.toolkits.file_management import (
     FileManagementToolkit,
 )
 from langchain.tools.base import BaseTool

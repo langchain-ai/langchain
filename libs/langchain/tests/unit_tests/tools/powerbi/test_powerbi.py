@@ -6,5 +6,5 @@ def test_power_bi_can_be_imported() -> None:
     installed.
     """
     from langchain.tools.powerbi.tool import QueryPowerBITool  # noqa
-    from langchain.agents.agent_toolkits import PowerBIToolkit, create_pbi_agent  # noqa
+    from langchain.toolkits import PowerBIToolkit, create_pbi_agent  # noqa
     from langchain.utilities.powerbi import PowerBIDataset  # noqa
