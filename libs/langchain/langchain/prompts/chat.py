@@ -511,9 +511,10 @@ def _create_template_from_role_string(
     role: str, template: str
 ) -> BaseMessagePromptTemplate:
     """Create a message prompt template from a role string and template."""
-    messaeg: BaseMessagePromptTemplate
     if role == "human":
-        message = HumanMessagePromptTemplate.from_template(template)
+        message: BaseMessagePromptTemplate = HumanMessagePromptTemplate.from_template(
+            template
+        )
     elif role == "ai":
         message = AIMessagePromptTemplate.from_template(template)
     elif role == "system":
@@ -549,7 +550,7 @@ def _convert_to_message(
         an instance of a message or a message template
     """
     if isinstance(message, BaseMessagePromptTemplate):
-        _message = message
+        _message: Union[BaseMessage, BaseMessagePromptTemplate] = message
     elif isinstance(message, BaseMessage):
         _message = message
     elif isinstance(message, str):
