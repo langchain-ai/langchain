@@ -13,6 +13,6 @@ Double check the {dialect} query above for common mistakes, including:
 
 If there are any of the above mistakes, rewrite the query. If there are no mistakes, just reproduce the original query.
 
-Use the following format. Ouput the final SQL query only.
-SQL Query
-"""
+Output the final SQL query only.
+
+SQL Query: """

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Iterable, List, Sequence, Optional, Union
+from typing import Any, Iterable, List, Optional, Sequence
 
 import sqlalchemy
 from sqlalchemy import MetaData, Table, create_engine, inspect, select, text
@@ -402,7 +402,6 @@ class SQLDatabase:
 
         If the statement returns rows, a string of the results is returned.
         If the statement returns no rows, an empty string is returned.
-
         """
         result = self._execute(command, fetch)
         # Convert columns values to string to avoid issues with sqlalchemy
@@ -411,13 +410,13 @@ class SQLDatabase:
             return ""
         elif isinstance(result, list):
             res: Sequence = [
-                tuple(
-                    truncate_word(c, length=self._max_string_length) for c in r
-                )
+                tuple(truncate_word(c, length=self._max_string_length) for c in r)
                 for r in result
             ]
         else:
-            res = tuple(truncate_word(c, length=self._max_string_length) for c in result)
+            res = tuple(
+                truncate_word(c, length=self._max_string_length) for c in result
+            )
         return str(res)
 
     def get_table_info_no_throw(self, table_names: Optional[List[str]] = None) -> str:
