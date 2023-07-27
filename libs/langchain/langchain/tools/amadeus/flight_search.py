@@ -14,6 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 class FlightSearchSchema(BaseModel):
+    """Schema for the AmadeusFlightSearch tool."""
+
     originLocationCode: str = Field(
         description=(
             " The three letter International Air Transport "
@@ -53,6 +55,8 @@ class FlightSearchSchema(BaseModel):
 
 
 class AmadeusFlightSearch(AmadeusBaseTool):
+    """Tool for searching for a single flight between two airports."""
+
     name: str = "single_flight_search"
     description: str = (
         " Use this tool to search for a single flight between the origin and "
