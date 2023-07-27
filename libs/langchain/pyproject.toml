@@ -358,11 +358,6 @@ extended_testing = [
  "jinja2",
 ]
 
-[[tool.poetry.source]]
-name = "azure-sdk-dev"
-url = "https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-python/pypi/simple/"
-secondary = true
-
 [tool.ruff]
 select = [
   "E",  # pycodestyle
