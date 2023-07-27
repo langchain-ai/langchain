@@ -12,7 +12,7 @@ from langchain.chains.api import news_docs, open_meteo_docs, podcast_docs, tmdb_
 from langchain.chains.api.base import APIChain
 from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.pal.base import PALChain
-from langchain.requests import TextRequestsWrapper
+from langchain.utilities.requests import TextRequestsWrapper
 from langchain.tools.arxiv.tool import ArxivQueryRun
 from langchain.tools.golden_query.tool import GoldenQueryRun
 from langchain.tools.pubmed.tool import PubmedQueryRun

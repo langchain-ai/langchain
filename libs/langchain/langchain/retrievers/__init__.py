@@ -6,6 +6,7 @@ from langchain.retrievers.chatgpt_plugin_retriever import ChatGPTPluginRetriever
 from langchain.retrievers.contextual_compression import ContextualCompressionRetriever
 from langchain.retrievers.docarray import DocArrayRetriever
 from langchain.retrievers.elastic_search_bm25 import ElasticSearchBM25Retriever
+from langchain.retrievers.ensemble import EnsembleRetriever
 from langchain.retrievers.google_cloud_enterprise_search import (
     GoogleCloudEnterpriseSearchRetriever,
 )
@@ -30,6 +31,7 @@ from langchain.retrievers.time_weighted_retriever import (
 )
 from langchain.retrievers.vespa_retriever import VespaRetriever
 from langchain.retrievers.weaviate_hybrid_search import WeaviateHybridSearchRetriever
+from langchain.retrievers.web_research import WebResearchRetriever
 from langchain.retrievers.wikipedia import WikipediaRetriever
 from langchain.retrievers.zep import ZepRetriever
 from langchain.retrievers.zilliz import ZillizRetriever
@@ -64,4 +66,6 @@ __all__ = [
     "ZepRetriever",
     "ZillizRetriever",
     "DocArrayRetriever",
+    "WebResearchRetriever",
+    "EnsembleRetriever",
 ]

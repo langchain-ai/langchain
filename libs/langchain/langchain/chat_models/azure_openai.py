@@ -14,7 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 class AzureChatOpenAI(ChatOpenAI):
-    """Wrapper around Azure OpenAI Chat Completion API. To use this class you
+    """Wrapper around Azure OpenAI Chat Completion API.
+
+    To use this class you
     must have a deployed model on Azure OpenAI. Use `deployment_name` in the
     constructor to refer to the "Model deployment name" in the Azure portal.
 
@@ -116,18 +118,18 @@ class AzureChatOpenAI(ChatOpenAI):
         }
 
     @property
-    def _identifying_params(self) -> Mapping[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
         return {**self._default_params}
 
     @property
     def _client_params(self) -> Dict[str, Any]:
         """Get the config params used for the openai client."""
-        openai_creds = {
+        return {
+            **super()._client_params,
             "api_type": self.openai_api_type,
             "api_version": self.openai_api_version,
         }
-        return {**super()._client_params, **openai_creds}
 
     @property
     def _llm_type(self) -> str:

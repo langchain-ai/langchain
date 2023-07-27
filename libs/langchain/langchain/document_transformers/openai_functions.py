@@ -6,7 +6,8 @@ from pydantic import BaseModel
 from langchain.chains.llm import LLMChain
 from langchain.chains.openai_functions import create_tagging_chain
 from langchain.prompts import ChatPromptTemplate
-from langchain.schema import BaseDocumentTransformer, BaseLanguageModel, Document
+from langchain.schema import BaseDocumentTransformer, Document
+from langchain.schema.language_model import BaseLanguageModel
 
 
 class OpenAIMetadataTagger(BaseDocumentTransformer, BaseModel):

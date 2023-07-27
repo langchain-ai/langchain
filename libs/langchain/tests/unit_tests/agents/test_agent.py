@@ -1,6 +1,6 @@
 """Unit tests for agents."""
 
-from typing import Any, List, Mapping, Optional
+from typing import Any, Dict, List, Optional
 
 from langchain.agents import AgentExecutor, AgentType, initialize_agent
 from langchain.agents.tools import Tool
@@ -32,8 +32,11 @@ class FakeListLLM(LLM):
         """Return number of tokens in text."""
         return len(text.split())
 
+    async def _acall(self, *args: Any, **kwargs: Any) -> str:
+        return self._call(*args, **kwargs)
+
     @property
-    def _identifying_params(self) -> Mapping[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         return {}
 
     @property
@@ -49,7 +52,8 @@ def _get_agent(**kwargs: Any) -> AgentExecutor:
         f"I'm turning evil\nAction: {bad_action_name}\nAction Input: misalignment",
         "Oh well\nFinal Answer: curses foiled again",
     ]
-    fake_llm = FakeListLLM(responses=responses)
+    fake_llm = FakeListLLM(cache=False, responses=responses)
+
     tools = [
         Tool(
             name="Search",
@@ -62,6 +66,7 @@ def _get_agent(**kwargs: Any) -> AgentExecutor:
             description="Useful for looking up things in a table",
         ),
     ]
+
     agent = initialize_agent(
         tools,
         fake_llm,
@@ -194,6 +199,7 @@ def test_agent_tool_return_direct_in_intermediate_steps() -> None:
     )
 
     resp = agent("when was langchain made")
+    assert isinstance(resp, dict)
     assert resp["output"] == "misalignment"
     assert len(resp["intermediate_steps"]) == 1
     action, _action_intput = resp["intermediate_steps"][0]

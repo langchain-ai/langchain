@@ -4,6 +4,7 @@ import asyncio
 import functools
 import logging
 import os
+import uuid
 from contextlib import asynccontextmanager, contextmanager
 from contextvars import ContextVar
 from typing import (
@@ -20,7 +21,7 @@ from typing import (
     Union,
     cast,
 )
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from tenacity import RetryCallState
 
@@ -28,6 +29,7 @@ import langchain
 from langchain.callbacks.base import (
     BaseCallbackHandler,
     BaseCallbackManager,
+    Callbacks,
     ChainManagerMixin,
     LLMManagerMixin,
     RetrieverManagerMixin,
@@ -52,7 +54,6 @@ if TYPE_CHECKING:
     from langsmith import Client as LangSmithClient
 
 logger = logging.getLogger(__name__)
-Callbacks = Optional[Union[List[BaseCallbackHandler], BaseCallbackManager]]
 
 openai_callback_var: ContextVar[Optional[OpenAICallbackHandler]] = ContextVar(
     "openai_callback", default=None
@@ -439,7 +440,7 @@ class BaseRunManager(RunManagerMixin):
             BaseRunManager: The noop manager.
         """
         return cls(
-            run_id=uuid4(),
+            run_id=uuid.uuid4(),
             handlers=[],
             inheritable_handlers=[],
             tags=[],
@@ -1037,7 +1038,7 @@ class AsyncCallbackManagerForRetrieverRun(
 
 
 class CallbackManager(BaseCallbackManager):
-    """Callback manager that can be used to handle callbacks from langchain."""
+    """Callback manager that handles callbacks from langchain."""
 
     def on_llm_start(
         self,
@@ -1058,7 +1059,7 @@ class CallbackManager(BaseCallbackManager):
         """
         managers = []
         for prompt in prompts:
-            run_id_ = uuid4()
+            run_id_ = uuid.uuid4()
             _handle_event(
                 self.handlers,
                 "on_llm_start",
@@ -1107,7 +1108,7 @@ class CallbackManager(BaseCallbackManager):
 
         managers = []
         for message_list in messages:
-            run_id_ = uuid4()
+            run_id_ = uuid.uuid4()
             _handle_event(
                 self.handlers,
                 "on_chat_model_start",
@@ -1154,7 +1155,7 @@ class CallbackManager(BaseCallbackManager):
             CallbackManagerForChainRun: The callback manager for the chain run.
         """
         if run_id is None:
-            run_id = uuid4()
+            run_id = uuid.uuid4()
 
         _handle_event(
             self.handlers,
@@ -1200,7 +1201,7 @@ class CallbackManager(BaseCallbackManager):
             CallbackManagerForToolRun: The callback manager for the tool run.
         """
         if run_id is None:
-            run_id = uuid4()
+            run_id = uuid.uuid4()
 
         _handle_event(
             self.handlers,
@@ -1236,7 +1237,7 @@ class CallbackManager(BaseCallbackManager):
     ) -> CallbackManagerForRetrieverRun:
         """Run when retriever starts running."""
         if run_id is None:
-            run_id = uuid4()
+            run_id = uuid.uuid4()
 
         _handle_event(
             self.handlers,
@@ -1306,7 +1307,7 @@ class CallbackManager(BaseCallbackManager):
 
 
 class AsyncCallbackManager(BaseCallbackManager):
-    """Async callback manager that can be used to handle callbacks from LangChain."""
+    """Async callback manager that handles callbacks from LangChain."""
 
     @property
     def is_async(self) -> bool:
@@ -1336,7 +1337,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         managers = []
 
         for prompt in prompts:
-            run_id_ = uuid4()
+            run_id_ = uuid.uuid4()
 
             tasks.append(
                 _ahandle_event(
@@ -1375,7 +1376,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         serialized: Dict[str, Any],
         messages: List[List[BaseMessage]],
         **kwargs: Any,
-    ) -> Any:
+    ) -> List[AsyncCallbackManagerForLLMRun]:
         """Run when LLM starts running.
 
         Args:
@@ -1392,7 +1393,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         managers = []
 
         for message_list in messages:
-            run_id_ = uuid4()
+            run_id_ = uuid.uuid4()
 
             tasks.append(
                 _ahandle_event(
@@ -1444,7 +1445,7 @@ class AsyncCallbackManager(BaseCallbackManager):
                 for the chain run.
         """
         if run_id is None:
-            run_id = uuid4()
+            run_id = uuid.uuid4()
 
         await _ahandle_event(
             self.handlers,
@@ -1492,7 +1493,7 @@ class AsyncCallbackManager(BaseCallbackManager):
                 for the tool run.
         """
         if run_id is None:
-            run_id = uuid4()
+            run_id = uuid.uuid4()
 
         await _ahandle_event(
             self.handlers,
@@ -1528,7 +1529,7 @@ class AsyncCallbackManager(BaseCallbackManager):
     ) -> AsyncCallbackManagerForRetrieverRun:
         """Run when retriever starts running."""
         if run_id is None:
-            run_id = uuid4()
+            run_id = uuid.uuid4()
 
         await _ahandle_event(
             self.handlers,
