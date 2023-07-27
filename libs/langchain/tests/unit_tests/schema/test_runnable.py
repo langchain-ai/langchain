@@ -566,7 +566,7 @@ def test_seq_prompt_map(
         prompt
         | passthrough
         | {
-            "chat": chat,
+            "chat": chat.bind(stop=["Thought:"]),
             "llm": llm,
             "passthrough": passthrough,
         }
