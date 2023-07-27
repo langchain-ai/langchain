@@ -6,6 +6,7 @@ from langchain.embeddings.aleph_alpha import (
     AlephAlphaAsymmetricSemanticEmbedding,
     AlephAlphaSymmetricSemanticEmbedding,
 )
+from langchain.embeddings.awa import AwaEmbeddings
 from langchain.embeddings.bedrock import BedrockEmbeddings
 from langchain.embeddings.clarifai import ClarifaiEmbeddings
 from langchain.embeddings.cohere import CohereEmbeddings
@@ -41,7 +42,6 @@ from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddi
 from langchain.embeddings.spacy_embeddings import SpacyEmbeddings
 from langchain.embeddings.tensorflow_hub import TensorflowHubEmbeddings
 from langchain.embeddings.vertexai import VertexAIEmbeddings
-from langchain.embeddings.awa import AwaEmbeddings
 
 logger = logging.getLogger(__name__)
 

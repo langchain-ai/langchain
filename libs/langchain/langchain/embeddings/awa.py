@@ -1,6 +1,9 @@
 from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, root_validator
+
 from langchain.embeddings.base import Embeddings
+
 
 class AwaEmbeddings(BaseModel, Embeddings):
     client: Any  #: :meta private:
@@ -21,6 +24,12 @@ class AwaEmbeddings(BaseModel, Embeddings):
         return values
 
     def set_model(self, model_name):
+        """Set the model used for embedding.
+        The default model used is all-mpnet-base-v2
+        
+        Args:
+            model_name: A string which represents the name of model.
+        """
         self.model = model_name
         self.client.model_name = model_name
 
