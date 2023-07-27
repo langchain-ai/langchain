@@ -131,6 +131,12 @@ class Runnable(Generic[Input, Output], ABC):
     ) -> AsyncIterator[Output]:
         yield await self.ainvoke(input, config)
 
+    def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
+        """
+        Bind arguments to a Runnable, returning a new Runnable.
+        """
+        return RunnableBinding(bound=self, kwargs=kwargs)
+
     def _get_config_list(
         self, config: Optional[Union[RunnableConfig, List[RunnableConfig]]], length: int
     ) -> List[RunnableConfig]:
@@ -690,6 +696,60 @@ class RunnablePassthrough(Serializable, Runnable[Input, Input]):
 
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Input:
         return self._call_with_config(lambda x: x, input, config)
+
+
+class RunnableBinding(Serializable, Runnable[Input, Output]):
+    bound: Runnable[Input, Output]
+
+    kwargs: Mapping[str, Any]
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    @property
+    def lc_serializable(self) -> bool:
+        return True
+
+    def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
+        return self.bound.invoke(input, config, **self.kwargs)
+
+    async def ainvoke(
+        self, input: Input, config: Optional[RunnableConfig] = None
+    ) -> Output:
+        return await self.bound.ainvoke(input, config, **self.kwargs)
+
+    def batch(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        max_concurrency: Optional[int] = None,
+    ) -> List[Output]:
+        return self.bound.batch(
+            inputs, config, max_concurrency=max_concurrency, **self.kwargs
+        )
+
+    async def abatch(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        max_concurrency: Optional[int] = None,
+    ) -> List[Output]:
+        return await self.bound.abatch(
+            inputs, config, max_concurrency=max_concurrency, **self.kwargs
+        )
+
+    def stream(
+        self, input: Input, config: Optional[RunnableConfig] = None
+    ) -> Iterator[Output]:
+        yield from self.bound.stream(input, config, **self.kwargs)
+
+    async def astream(
+        self, input: Input, config: Optional[RunnableConfig] = None
+    ) -> AsyncIterator[Output]:
+        async for item in self.bound.astream(input, config, **self.kwargs):
+            yield item
 
 
 def _patch_config(
