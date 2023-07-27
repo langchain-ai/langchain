@@ -106,7 +106,6 @@ class EdenAI(LLM):
 
         Args:
             prompt: The prompt to pass into the model.
-            stop: Optional list of stop words to use when generating.
 
         Returns:
             str response .
@@ -133,6 +132,5 @@ class EdenAI(LLM):
         
         if type(output) != str:
             output=json.dumps(output)
-            
-            
+
         return output
