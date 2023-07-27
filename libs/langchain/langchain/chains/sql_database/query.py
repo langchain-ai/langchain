@@ -25,14 +25,19 @@ def create_sql_query_chain(
         prompt_to_use = SQL_PROMPTS[db.dialect]
     else:
         prompt_to_use = PROMPT
-    formatted_prompt = {
+    inputs = {
         "input": lambda x: x["question"] + "\nSQLQuery: ",
-        "dialect": lambda _: db.dialect,
         "top_k": lambda _: k,
         "table_info": lambda x: db.get_table_info(
             table_names=x.get("table_names_to_use")
         ),
-    } | prompt_to_use
+    }
+    if "dialect" in prompt_to_use.input_variables:
+        inputs["dialect"] = lambda _: db.dialect, prompt_to_use
     return (
-        formatted_prompt | llm.bind(stop=["\nSQLResult:"]) | NoOpOutputParser() | _strip
+        inputs
+        | prompt_to_use
+        | llm.bind(stop=["\nSQLResult:"])
+        | NoOpOutputParser()
+        | _strip
     )
