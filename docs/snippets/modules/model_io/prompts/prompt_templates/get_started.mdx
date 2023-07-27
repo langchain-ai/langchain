@@ -1,69 +1,47 @@
+Typically, language models expect the prompt to either be a string or else a list of chat messages.
+
 ## Prompt template
 
 `PromptTemplate` to create a template for a string prompt.
 
 By default, `PromptTemplate` uses [Python's str.format](https://docs.python.org/3/library/stdtypes.html#str.format)
-syntax for templating; however
-
-For situations where advanced templating is needed, jinja2 can be used as the templating engine.
-
-`PromptTemplate` evaluates the template lazily and allows
-
+syntax for templating; however other templating syntax is available (e.g., `jinja2`).
 
 ```python
 from langchain import PromptTemplate
 
-
-template = """\
-You are a naming consultant for new companies.
-What is a good name for a company that makes {product}?
-"""
-
-prompt = PromptTemplate.from_template(template)
-prompt.format(product="colorful socks")
+prompt_template = PromptTemplate.from_template(
+    "Tell me a {adjective} joke about {content}."
+)
+prompt_template.format(adjective="funny", content="chickens")
 ```
 
 <CodeOutputBlock lang="python">
 
 ```
-You are a naming consultant for new companies.
-What is a good name for a company that makes colorful socks?
+"Tell me a funny joke about chickens."
 ```
 
 </CodeOutputBlock>
 
-Prompt templates can take any number of input variables:
-
 ```python
 from langchain import PromptTemplate
 
-# An example prompt with no input variables
-no_input_prompt = PromptTemplate.from_template("Tell me a joke.")
-no_input_prompt.format()
-# -> "Tell me a joke."
-
-# An example prompt with multiple input variables
-multiple_input_prompt = PromptTemplate.from_template(
-    "Tell me a {adjective} joke about {content}."
+prompt_template = PromptTemplate.from_template(
+"Tell me a joke"
 )
-multiple_input_prompt.format(adjective="funny", content="chickens")
-# -> "Tell me a funny joke about chickens."
+prompt_template.format()
 ```
 
-`input_variables` can be specified explicitly for additional validation. These
-input variables will be used to validate that the template uses the same variable names.
-Please note that this is generally unnecessary, and creates verbosity.
+For additional validation, specify `input_variables` explicitly. These variables
+will be compared against the variables present in the template string during instantiation, raising an exception if
+there is a mismatch. For example,
 
 ```python
-template = "Tell me a {adjective} joke about {content}."
-
-prompt_template = PromptTemplate(input_variables=["adjective", "content"], template=template)
-prompt_template.input_variables
-# -> ['adjective', 'content']
-prompt_template.format(adjective="funny", content="chickens")
-# -> Tell me a funny joke about chickens.
-prompt_template.format(adjective="funny", contentt="chickens")
-# Will raise an exception since `contentt` is not a valid input variable
+invalid_prompt = PromptTemplate(
+    input_variables=["adjective"],
+    template="Tell me a {adjective} joke about {content}."
+)
 ```
 
 You can create custom prompt templates that format the prompt in any way you want.
@@ -73,9 +51,9 @@ For more information, see [Custom Prompt Templates](./custom_prompt_template.htm
 
 ## Chat prompt template
 
-[Chat Models](../models/chat) take a list of chat messages as input - this list commonly referred to as a `prompt`.
-These chat messages differ from raw string (which you would pass into a [LLM](/docs/modules/model_io/models/llms) model) in that every message is associated with a `role`.
+The prompt to [Chat Models](../models/chat) is a list of chat messages.
 
+Each chat message is associated with content, and an additional parameter called `role`.
 For example, in OpenAI [Chat Completion API](https://platform.openai.com/docs/guides/chat/introduction), a chat message can be associated with the AI, human or system role. The model is supposed to follow instruction from system chat message more closely.
 
 LangChain provides several prompt templates to make constructing and working with prompts easily. You are encouraged to use these chat related prompt templates instead of `PromptTemplate` when querying chat models to fully exploit the potential of underlying chat model.
