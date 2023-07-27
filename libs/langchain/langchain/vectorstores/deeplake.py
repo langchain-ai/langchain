@@ -90,7 +90,7 @@ class DeepLake(VectorStore):
             embedding (Embeddings, optional): Function to convert
                 either documents or query. Optional.
             embedding_function (Embeddings, optional): Function to convert
-                either documents or query. Optional. Deprecated: keeping this 
+                either documents or query. Optional. Deprecated: keeping this
                 parameter for backwards compatibility.
             read_only (bool): Open dataset in read-only mode. Default is False.
             ingestion_batch_size (int): During data ingestion, data is divided
@@ -141,12 +141,12 @@ class DeepLake(VectorStore):
             )
 
         self.dataset_path = dataset_path
-        
+
         logger.warning(
             "Using embedding function is deprecated and will be removed "
             "in the future. Please use embedding instead."
         )
-        
+
         self.vectorstore = DeepLakeVectorStore(
             path=self.dataset_path,
             embedding_function=embedding_function or embedding,
@@ -770,9 +770,7 @@ class DeepLake(VectorStore):
         Returns:
             DeepLake: Deep Lake dataset.
         """
-        deeplake_dataset = cls(
-            dataset_path=dataset_path, embedding=embedding, **kwargs
-        )
+        deeplake_dataset = cls(dataset_path=dataset_path, embedding=embedding, **kwargs)
         deeplake_dataset.add_texts(
             texts=texts,
             metadatas=metadatas,
