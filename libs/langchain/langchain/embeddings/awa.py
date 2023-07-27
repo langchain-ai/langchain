@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from pydantic import BaseModel, root_validator
 
@@ -23,10 +23,10 @@ class AwaEmbeddings(BaseModel, Embeddings):
         values["client"] = AwaEmbedding()
         return values
 
-    def set_model(self, model_name):
+    def set_model(self, model_name: str) -> None:
         """Set the model used for embedding.
         The default model used is all-mpnet-base-v2
-        
+
         Args:
             model_name: A string which represents the name of model.
         """
@@ -37,7 +37,7 @@ class AwaEmbeddings(BaseModel, Embeddings):
         """Embed a list of documents using AwaEmbedding.
 
         Args:
-            texts: The list of texts need to be embeded
+            texts: The list of texts need to be embedded
 
         Returns:
             List of embeddings, one for each text.
