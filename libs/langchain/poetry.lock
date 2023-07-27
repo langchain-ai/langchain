@@ -1784,8 +1784,7 @@ types = ["chardet (>=5.1.0)", "mypy", "pytest", "pytest-cov", "pytest-dependency
 [[package]]
 name = "cohere"
 version = "4.18.0"
-description = "A Python library for the Cohere API"
-
+description = ""
 optional = true
 python-versions = ">=3.7,<4.0"
 files = [
@@ -2652,7 +2651,6 @@ test = ["anyio[trio] (>=3.2.1,<4.0.0)", "black (==23.1.0)", "coverage[toml] (>=6
 name = "fastavro"
 version = "1.7.4"
 description = "Fast read/write of AVRO files"
-category = "main"
 optional = true
 python-versions = ">=3.7"
 files = [
@@ -12706,4 +12704,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "c23d6fd6ecfae0a8538a418f0b905c2f8314ac79ad3587f29665af2d531e5f19"
+content-hash = "564b1f1f6f5c1fa686f1c020ee65f5c58f28b6072a2d2cb9685072d4dc1d2968"

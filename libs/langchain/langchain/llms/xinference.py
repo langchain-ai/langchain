@@ -136,7 +136,7 @@ class Xinference(LLM):
 
         if generate_config and generate_config.get("stream"):
             combined_text_output = ""
-            for token in self._stream(
+            for token in self.__stream(
                 model=model,
                 prompt=prompt,
                 run_manager=run_manager,
@@ -149,7 +149,7 @@ class Xinference(LLM):
             completion = model.generate(prompt=prompt, generate_config=generate_config)
             return completion["choices"][0]["text"]
 
-    def _stream(
+    def __stream(
         self,
         model: Union["RESTfulGenerateModelHandle", "RESTfulChatModelHandle"],
         prompt: str,
