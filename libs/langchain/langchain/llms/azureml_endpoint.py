@@ -14,7 +14,11 @@ class AzureMLEndpointClient(object):
     """AzureML Managed Endpoint client."""
 
     def __init__(
-        self, endpoint_url: str, endpoint_api_key: str, deployment_name: str
+        self,
+        endpoint_url: str,
+        endpoint_api_key: str,
+        deployment_name: str,
+        extra_headers: dict,
     ) -> None:
         """Initialize the class."""
         if not endpoint_api_key:
@@ -22,6 +26,7 @@ class AzureMLEndpointClient(object):
         self.endpoint_url = endpoint_url
         self.endpoint_api_key = endpoint_api_key
         self.deployment_name = deployment_name
+        self.extra_headers = extra_headers or {}
 
     def call(self, body: bytes) -> bytes:
         """call."""
@@ -34,6 +39,10 @@ class AzureMLEndpointClient(object):
             "Authorization": ("Bearer " + self.endpoint_api_key),
             "azureml-model-deployment": self.deployment_name,
         }
+
+        # The additional http headers passed to the endpoint
+        # Note: The duplicate header fields will be overwritten.
+        headers = {**headers, **self.extra_headers}
 
         req = urllib.request.Request(self.endpoint_url, body, headers)
         response = urllib.request.urlopen(req, timeout=50)
@@ -51,9 +60,13 @@ class ContentFormatterBase:
         .. code-block:: python
         
             class ContentFormatter(ContentFormatterBase):
-                content_type = "application/json"
-                accepts = "application/json"
-                
+                def __init__(self):
+                    self.headers = {
+                        "content_type": "application/json",
+                        "accepts": "application/json",
+                        "custom_field": "custom_value"
+                    }
+
                 def format_request_payload(
                     self, 
                     prompt: str, 
@@ -71,11 +84,11 @@ class ContentFormatterBase:
                     response_json = json.loads(output)
                     return response_json[0]["0"]
     """
-    content_type: Optional[str] = "application/json"
-    """The MIME type of the input data passed to the endpoint"""
+    headers: Optional[Dict[str, str]] = None
+    """The http request headers passed to the endpoint"""
 
-    accepts: Optional[str] = "application/json"
-    """The MIME type of the response data returned form the endpoint"""
+    def get_http_headers(self) -> Dict[str, str]:
+        return self.headers or {}
 
     @abstractmethod
     def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
@@ -158,12 +171,12 @@ class AzureMLOnlineEndpoint(LLM, BaseModel):
     """Deployment Name for Endpoint. Should be passed to constructor or specified as
         env var `AZUREML_DEPLOYMENT_NAME`."""
 
-    http_client: Any = None  #: :meta private:
-
     content_formatter: Any = None
     """The content formatter that provides an input and output
     transform function to handle formats between the LLM and
     the endpoint"""
+
+    http_client: Any = None  #: :meta private:
 
     model_kwargs: Optional[dict] = None
     """Key word arguments to pass to the model."""
@@ -181,7 +194,14 @@ class AzureMLOnlineEndpoint(LLM, BaseModel):
         deployment_name = get_from_dict_or_env(
             values, "deployment_name", "AZUREML_DEPLOYMENT_NAME"
         )
-        http_client = AzureMLEndpointClient(endpoint_url, endpoint_key, deployment_name)
+        content_formatter = values.get("content_formatter")
+        endpoint_headers = (
+            content_formatter and content_formatter.get_http_headers()
+        ) or {}
+
+        http_client = AzureMLEndpointClient(
+            endpoint_url, endpoint_key, deployment_name, endpoint_headers
+        )
         return http_client
 
     @property
