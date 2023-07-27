@@ -22,7 +22,9 @@ def StreamlitCallbackHandler(
     collapse_completed_thoughts: bool = True,
     thought_labeler: Optional[LLMThoughtLabeler] = None,
 ) -> BaseCallbackHandler:
-    """Construct a new StreamlitCallbackHandler. This CallbackHandler is geared towards
+    """Callback Handler that writes to a Streamlit app.
+
+    This CallbackHandler is geared towards
     use with a LangChain Agent; it displays the Agent's LLM and tool-usage "thoughts"
     inside a series of Streamlit expanders.
 
