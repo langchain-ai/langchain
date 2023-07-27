@@ -494,21 +494,70 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
 
     @classmethod
     def from_messages(
-        cls, messages: Sequence[Union[BaseMessagePromptTemplate, BaseMessage]]
+        cls,
+        messages: Sequence[
+            Union[
+                BaseMessagePromptTemplate,
+                BaseMessage,
+                Tuple[str, str],
+                Tuple[Type, str],
+                str,
+            ]
+        ],
     ) -> ChatPromptTemplate:
-        """Create a chat template from a sequence of messages.
+        """Create a chat prompt template from a variety of message formats.
+
+        Examples:
+
+            Instantiation from a list of role strings and templates:
+
+            .. code-block:: python
+
+                template = ChatPromptTemplate.from_messages([
+                    ("human", "Hello, how are you?"),
+                    ("AI", "I'm doing well, thanks!"),
+                    ("human", "That's good to hear."),
+                ])
+
+            Instantiation from mixed message formats:
+
+            .. code-block:: python
+
+                template = ChatPromptTemplate.from_messages([
+                    SystemMessage(content="hello"),
+                    ("human", "Hello, how are you?"),
+                ])
+
+            Instantiation from a list message templates:
+
+                template = ChatPromptTemplate.from_messages([
+                    ("human", "Hello, how are you?"),
+                    ("AI", "I'm doing well, thanks!"),
+                    ("human", "That's good to hear."),
+                ])
+
 
         Args:
-            messages: sequence of templated or regular messages
+            messages: sequence of messages. A variety of formats is supported for messages.
+                  A message can be one of:
+                  - BaseMessagePromptTemplate
+                  - BaseMessage
+                  - 2-tuple of (role string, template); e.g., ("human", "{user_input}")
+                  - 2-tuple of (message class, template)
+                  - string: short-hand for ("human", template); e.g., "{user_input}"
 
         Returns:
             a chat prompt template
         """
+        _messages = [_convert_to_message(message) for message in messages]
+
+        # Automatically infer input variables from messages
         input_vars = set()
-        for message in messages:
-            if isinstance(message, BaseMessagePromptTemplate):
-                input_vars.update(message.input_variables)
-        return cls(input_variables=sorted(input_vars), messages=messages)
+        for _message in _messages:
+            if isinstance(_message, BaseMessagePromptTemplate):
+                input_vars.update(_message.input_variables)
+
+        return cls(input_variables=sorted(input_vars), messages=_messages)
 
     def format(self, **kwargs: Any) -> str:
         """Format the chat template into a string.
@@ -564,3 +613,50 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
             file_path: path to file.
         """
         raise NotImplementedError
+
+
+def _convert_to_message(
+    message: Union[
+        BaseMessagePromptTemplate,
+        BaseMessage,
+        Tuple[str, str],
+        Tuple[Type, str],
+        str,
+    ]
+) -> Union[BaseMessage, BaseMessagePromptTemplate]:
+    """Instantiate a message from a variety of message formats.
+
+    The message format can be one of the following:
+
+    - BaseMessagePromptTemplate
+    - BaseMessage
+    - 2-tuple of (role string, template); e.g., ("human", "{user_input}")
+    - 2-tuple of (message class, template)
+    - string: short-hand for ("human", template); e.g., "{user_input}"
+
+    Args:
+        message: a representation of a message in one of the supported formats
+
+    Returns:
+        an instance of a message or a message template
+    """
+    if isinstance(message, BaseMessagePromptTemplate):
+        _message = message
+    elif isinstance(message, BaseMessage):
+        _message = message
+    elif isinstance(message, str):
+        _message = HumanMessagePromptTemplate.from_template(message)
+    elif isinstance(message, tuple):
+        if len(message) != 2:
+            raise ValueError(f"Expected 2-tuple of (role, template), got {message}")
+        role, template = message
+        if isinstance(role, str):
+            _message = ChatMessagePromptTemplate(
+                prompt=PromptTemplate.from_template(template), role=role
+            )
+        else:
+            _message = role(prompt=PromptTemplate.from_template(template))
+    else:
+        raise NotImplementedError(f"Unsupported message type: {type(message)}")
+
+    return _message
