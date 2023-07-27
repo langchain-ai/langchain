@@ -7,14 +7,20 @@ from langchain.schema import BaseOutputParser
 
 
 class AutoGPTAction(NamedTuple):
+    """Action for AutoGPT."""
+
     name: str
+    """Name of the action."""
     args: Dict
+    """Arguments for the action."""
 
 
 class BaseAutoGPTOutputParser(BaseOutputParser):
+    """Base class for AutoGPT output parsers."""
+
     @abstractmethod
     def parse(self, text: str) -> AutoGPTAction:
-        """Return AutoGPTAction"""
+        """Parse text and return AutoGPTAction"""
 
 
 def preprocess_json_input(input_str: str) -> str:
@@ -36,6 +42,8 @@ def preprocess_json_input(input_str: str) -> str:
 
 
 class AutoGPTOutputParser(BaseAutoGPTOutputParser):
+    """Output parser for AutoGPT."""
+
     def parse(self, text: str) -> AutoGPTAction:
         try:
             parsed = json.loads(text, strict=False)
