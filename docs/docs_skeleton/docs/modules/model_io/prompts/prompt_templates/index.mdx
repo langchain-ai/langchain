@@ -4,18 +4,19 @@ sidebar_position: 0
 
 # Prompt templates
 
-Language models take text as input - that text is commonly referred to as a prompt.
-Typically this is not simply a hardcoded string but rather a combination of a template, some examples, and user input.
-LangChain provides several classes and functions to make constructing and working with prompts easy.
+A prompt for a language model is a set of instructions or input provided by a user to
+guide the model's response, helping it understand the context and generate relevant
+and coherent language-based output, such as answering questions, completing sentences,
+or engaging in a conversation.
 
-## What is a prompt template?
+Prompts are typically generated from templates that can be reused and adapted to
+different use cases.
 
-A prompt template refers to a reproducible way to generate a prompt. It contains a text string ("the template"), that can take in a set of parameters from the end user and generates a prompt.
+A template may include:
 
-A prompt template can contain:
-- instructions to the language model,
-- a set of few shot examples to help the language model generate a better response,
-- a question to the language model.
+* instructions
+* few-shot examples
+* specific questions for the language model
 
 import GetStarted from "@snippets/modules/model_io/prompts/prompt_templates/get_started.mdx"
 
