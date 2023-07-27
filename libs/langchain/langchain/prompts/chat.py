@@ -360,7 +360,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
         return cls.from_messages(messages)
 
     @classmethod
-    def from_diverse(
+    def from_mixed_formats(
         cls,
         messages: Sequence[
             Union[
@@ -484,59 +484,3 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
             file_path: path to file.
         """
         raise NotImplementedError
-
-
-# An alias for ChatPromptTemplate.from_diverse to make it faster to type.
-def create_chat_template(
-    messages: Sequence[
-        Union[
-            Tuple[str, str],
-            Tuple[Type, str],
-            str,
-            BaseMessagePromptTemplate,
-            BaseMessage,
-        ]
-    ],
-) -> ChatPromptTemplate:
-    """Create a chat prompt template from a variety of message formats.
-
-    Examples:
-
-        .. code-block:: python
-
-            template = create_chat_template([
-                ("human", "Hello, how are you?"),
-                ("AI", "I'm doing well, thanks!"),
-                ("human", "That's good to hear."),
-            ])
-
-            template = create_chat_template([
-                SystemMessage(content="hello"),
-                ("human", "{question}"),
-            ])
-
-            template.format(question="Hello, how are you?")
-
-            template = create_chat_template([
-                SystemMessage(content="hello"),
-                "{question}",
-            ])
-
-            template.format(question="Hello, how are you?")
-
-    Args:
-        messages: sequence of messages, a message can be one of:
-            - BaseMessagePromptTemplate
-            - BaseMessage
-            - (role string, template) tuples
-            - (role class, template) tuples
-            - string -- creates a Human Message
-
-    Returns:
-        A new instance of ChatPromptTemplate.
-    """
-    return ChatPromptTemplate.from_diverse(messages)
-
-
-# Potential alias
-C_ = create_chat_template
