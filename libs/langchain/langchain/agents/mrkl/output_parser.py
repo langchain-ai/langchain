@@ -6,6 +6,15 @@ from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
 from langchain.schema import AgentAction, AgentFinish, OutputParserException
 
 FINAL_ANSWER_ACTION = "Final Answer:"
+MISSING_ACTION_AFTER_THOUGHT_ERROR_MESSAGE = (
+    "Invalid Format: Missing 'Action:' after 'Thought:"
+)
+MISSING_ACTION_INPUT_AFTER_ACTION_ERROR_MESSAGE = (
+    "Invalid Format: Missing 'Action Input:' after 'Action:'"
+)
+FINAL_ANSWER_AND_PARSABLE_ACTION_ERROR_MESSAGE = (
+    "Parsing LLM output produced both a final answer and a parse-able action:"
+)
 
 
 class MRKLOutputParser(AgentOutputParser):
@@ -23,8 +32,7 @@ class MRKLOutputParser(AgentOutputParser):
         if action_match:
             if includes_answer:
                 raise OutputParserException(
-                    "Parsing LLM output produced both a final answer "
-                    f"and a parse-able action: {text}"
+                    f"{FINAL_ANSWER_AND_PARSABLE_ACTION_ERROR_MESSAGE}: {text}"
                 )
             action = action_match.group(1).strip()
             action_input = action_match.group(2)
@@ -43,7 +51,7 @@ class MRKLOutputParser(AgentOutputParser):
         if not re.search(r"Action\s*\d*\s*:[\s]*(.*?)", text, re.DOTALL):
             raise OutputParserException(
                 f"Could not parse LLM output: `{text}`",
-                observation="Invalid Format: Missing 'Action:' after 'Thought:'",
+                observation=MISSING_ACTION_AFTER_THOUGHT_ERROR_MESSAGE,
                 llm_output=text,
                 send_to_llm=True,
             )
@@ -52,8 +60,7 @@ class MRKLOutputParser(AgentOutputParser):
         ):
             raise OutputParserException(
                 f"Could not parse LLM output: `{text}`",
-                observation="Invalid Format:"
-                " Missing 'Action Input:' after 'Action:'",
+                observation=MISSING_ACTION_INPUT_AFTER_ACTION_ERROR_MESSAGE,
                 llm_output=text,
                 send_to_llm=True,
             )
