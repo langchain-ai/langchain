@@ -508,7 +508,7 @@ def test_seq_prompt_dict(
     chain = (
         prompt
         | passthrough
-        | {  # type: ignore
+        | {
             "chat": chat,
             "llm": llm,
         }
@@ -565,10 +565,10 @@ def test_seq_prompt_map(
     chain = (
         prompt
         | passthrough
-        | {  # type: ignore
+        | {
             "chat": chat,
             "llm": llm,
-            "passthrouhg": passthrough,
+            "passthrough": passthrough,
         }
     )
 
