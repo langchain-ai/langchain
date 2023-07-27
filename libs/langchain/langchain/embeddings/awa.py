@@ -11,8 +11,6 @@ class AwaEmbeddings(BaseModel, Embeddings):
         """Validate that awadb library is installed."""
 
         try:
-            import sys
-            sys.path.insert(0, "/Users/taozhiwang/Desktop/Files/repo/awadb")
             from awadb import AwaEmbedding
         except ImportError as exc:
             raise ImportError(
@@ -22,9 +20,9 @@ class AwaEmbeddings(BaseModel, Embeddings):
         values["client"] = AwaEmbedding()
         return values
 
-    def set_model(model_name):
-        model = model_name
-        client = AwaEmbeddings(model_name)
+    def set_model(self, model_name):
+        self.model = model_name
+        self.client.model_name = model_name
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         return self.client.EmbeddingBatch(texts)

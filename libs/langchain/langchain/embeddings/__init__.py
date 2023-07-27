@@ -79,6 +79,7 @@ __all__ = [
     "NLPCloudEmbeddings",
     "GPT4AllEmbeddings",
     "LocalAIEmbeddings",
+    "AwaEmbeddings",
 ]
 
 
