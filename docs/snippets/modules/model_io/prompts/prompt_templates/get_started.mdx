@@ -1,4 +1,14 @@
-Here's the simplest example:
+## Prompt template
+
+`PromptTemplate` to create a template for a string prompt.
+
+By default, `PromptTemplate` uses [Python's str.format](https://docs.python.org/3/library/stdtypes.html#str.format)
+syntax for templating; however
+
+For situations where advanced templating is needed, jinja2 can be used as the templating engine.
+
+`PromptTemplate` evaluates the template lazily and allows
+
 
 ```python
 from langchain import PromptTemplate
@@ -22,48 +32,42 @@ What is a good name for a company that makes colorful socks?
 
 </CodeOutputBlock>
 
-
-## Create a prompt template
-
-You can create simple hardcoded prompts using the `PromptTemplate` class. Prompt templates can take any number of input variables, and can be formatted to generate a prompt.
-
+Prompt templates can take any number of input variables:
 
 ```python
 from langchain import PromptTemplate
 
 # An example prompt with no input variables
-no_input_prompt = PromptTemplate(input_variables=[], template="Tell me a joke.")
+no_input_prompt = PromptTemplate.from_template("Tell me a joke.")
 no_input_prompt.format()
 # -> "Tell me a joke."
 
-# An example prompt with one input variable
-one_input_prompt = PromptTemplate(input_variables=["adjective"], template="Tell me a {adjective} joke.")
-one_input_prompt.format(adjective="funny")
-# -> "Tell me a funny joke."
-
 # An example prompt with multiple input variables
-multiple_input_prompt = PromptTemplate(
-    input_variables=["adjective", "content"], 
-    template="Tell me a {adjective} joke about {content}."
+multiple_input_prompt = PromptTemplate.from_template(
+    "Tell me a {adjective} joke about {content}."
 )
 multiple_input_prompt.format(adjective="funny", content="chickens")
 # -> "Tell me a funny joke about chickens."
 ```
 
-If you do not wish to specify `input_variables` manually, you can also create a `PromptTemplate` using `from_template` class method. `langchain` will automatically infer the `input_variables` based on the `template` passed.
+`input_variables` can be specified explicitly for additional validation. These
+input variables will be used to validate that the template uses the same variable names.
+Please note that this is generally unnecessary, and creates verbosity.
 
 ```python
 template = "Tell me a {adjective} joke about {content}."
 
-prompt_template = PromptTemplate.from_template(template)
+prompt_template = PromptTemplate(input_variables=["adjective", "content"], template=template)
 prompt_template.input_variables
 # -> ['adjective', 'content']
 prompt_template.format(adjective="funny", content="chickens")
 # -> Tell me a funny joke about chickens.
+prompt_template.format(adjective="funny", contentt="chickens")
+# Will raise an exception since `contentt` is not a valid input variable
 ```
 
-You can create custom prompt templates that format the prompt in any way you want. For more information, see [Custom Prompt Templates](./custom_prompt_template.html).
-
+You can create custom prompt templates that format the prompt in any way you want.
+For more information, see [Custom Prompt Templates](./custom_prompt_template.html).
 
 <!-- TODO(shreya): Add link to Jinja -->
 
