@@ -4,13 +4,13 @@ from typing import Tuple
 
 import pytest
 
-from langchain.chains.tot.base import ToTChain
-from langchain.chains.tot.checker import ToTChecker
-from langchain.chains.tot.controller import ToTController
-from langchain.chains.tot.memory import ToTDFSMemory
-from langchain.chains.tot.thought import Thought, ThoughtValidity
-from langchain.chains.tot.thought_generation import SampleCoTStrategy
-from tests.unit_tests.llms.fake_llm import FakeLLM
+from langchain_experimental.tot.base import ToTChain
+from langchain_experimental.tot.checker import ToTChecker
+from langchain_experimental.tot.controller import ToTController
+from langchain_experimental.tot.memory import ToTDFSMemory
+from langchain_experimental.tot.thought import Thought, ThoughtValidity
+from langchain_experimental.tot.thought_generation import SampleCoTStrategy
+from tests.unit_tests.fake_llm import FakeLLM
 
 sudoku_puzzle = "3,*,*,2|1,*,3,*|*,1,*,3|4,*,*,1"
 solutions = [
