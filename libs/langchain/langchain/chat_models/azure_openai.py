@@ -142,4 +142,9 @@ class AzureChatOpenAI(ChatOpenAI):
                     "Azure has not provided the response due to a content"
                     " filter being triggered"
                 )
-        return super()._create_chat_result(response)
+        chat_result = super()._create_chat_result(response)
+
+        if "model" in response:
+            chat_result.llm_output["model_name"] = response["model"]
+
+        return chat_result
