@@ -261,8 +261,8 @@ class RdfGraph:
             self.schema = _rdf_s_schema(clss, rels)
         elif self.standard == "owl":
             clss = self.query(cls_query_owl)
-            ops = self.query(cls_query_owl)
-            dps = self.query(cls_query_owl)
+            ops = self.query(op_query_owl)
+            dps = self.query(dp_query_owl)
             self.schema = (
                 f"In the following, each IRI is followed by the local name and "
                 f"optionally its description in parentheses. \n"
