@@ -175,7 +175,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     openai_organization: Optional[str] = None
     allowed_special: Union[Literal["all"], Set[str]] = set()
     disallowed_special: Union[Literal["all"], Set[str], Sequence[str]] = "all"
-    chunk_size: int = 1000
+    chunk_size: int = 16
     """Maximum number of texts to embed in each batch"""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""

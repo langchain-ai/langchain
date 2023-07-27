@@ -103,6 +103,7 @@ class LLMChain(Chain):
             prompts,
             stop,
             callbacks=run_manager.get_child() if run_manager else None,
+            engine="gpt-35-turbo",
             **self.llm_kwargs,
         )
 
