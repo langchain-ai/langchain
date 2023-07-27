@@ -1,7 +1,7 @@
 """Test OpenAI API wrapper."""
-
 from pathlib import Path
-from typing import Generator
+from typing import Any, Generator
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -10,7 +10,10 @@ from langchain.chat_models.openai import ChatOpenAI
 from langchain.llms.loading import load_llm
 from langchain.llms.openai import OpenAI, OpenAIChat
 from langchain.schema import LLMResult
-from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
+from tests.unit_tests.callbacks.fake_callback_handler import (
+    FakeAsyncCallbackHandler,
+    FakeCallbackHandler,
+)
 
 
 def test_openai_call() -> None:
@@ -334,3 +337,77 @@ def test_chat_openai_get_num_tokens(model: str) -> None:
     """Test get_tokens."""
     llm = ChatOpenAI(model=model)
     assert llm.get_num_tokens("表情符号是\n🦜🔗") == _EXPECTED_NUM_TOKENS[model]
+
+
+@pytest.fixture
+def mock_completion() -> dict:
+    return {
+        "id": "cmpl-3evkmQda5Hu7fcZavknQda3SQ",
+        "object": "text_completion",
+        "created": 1689989000,
+        "model": "text-davinci-003",
+        "choices": [
+            {"text": "Bar Baz", "index": 0, "logprobs": None, "finish_reason": "length"}
+        ],
+        "usage": {"prompt_tokens": 1, "completion_tokens": 2, "total_tokens": 3},
+    }
+
+
+@pytest.mark.requires("openai")
+def test_openai_retries(mock_completion: dict) -> None:
+    llm = OpenAI()
+    mock_client = MagicMock()
+    completed = False
+    raised = False
+    import openai
+
+    def raise_once(*args: Any, **kwargs: Any) -> Any:
+        nonlocal completed, raised
+        if not raised:
+            raised = True
+            raise openai.error.APIError
+        completed = True
+        return mock_completion
+
+    mock_client.create = raise_once
+    callback_handler = FakeCallbackHandler()
+    with patch.object(
+        llm,
+        "client",
+        mock_client,
+    ):
+        res = llm.predict("bar", callbacks=[callback_handler])
+        assert res == "Bar Baz"
+    assert completed
+    assert raised
+    assert callback_handler.retries == 1
+
+
+@pytest.mark.requires("openai")
+async def test_openai_async_retries(mock_completion: dict) -> None:
+    llm = OpenAI()
+    mock_client = MagicMock()
+    completed = False
+    raised = False
+    import openai
+
+    def raise_once(*args: Any, **kwargs: Any) -> Any:
+        nonlocal completed, raised
+        if not raised:
+            raised = True
+            raise openai.error.APIError
+        completed = True
+        return mock_completion
+
+    mock_client.create = raise_once
+    callback_handler = FakeAsyncCallbackHandler()
+    with patch.object(
+        llm,
+        "client",
+        mock_client,
+    ):
+        res = llm.apredict("bar", callbacks=[callback_handler])
+        assert res == "Bar Baz"
+    assert completed
+    assert raised
+    assert callback_handler.retries == 1

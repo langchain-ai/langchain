@@ -59,6 +59,7 @@ def main():
                 global_imports[class_name][doc_title] = doc_url
 
     # Write the global imports information to a JSON file
+    _JSON_PATH.parent.mkdir(parents=True, exist_ok=True)
     with _JSON_PATH.open("w") as f:
         json.dump(global_imports, f)
 
