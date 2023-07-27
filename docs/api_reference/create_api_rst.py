@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).parents[2].absolute()
-PKG_DIR = ROOT_DIR / "langchain"
+PKG_DIR = ROOT_DIR / "libs" / "langchain" / "langchain"
 WRITE_FILE = Path(__file__).parent / "api_reference.rst"
 
 
@@ -40,11 +40,7 @@ API Reference
         functions = _members["functions"]
         if not (classes or functions):
             continue
-
-        module_title = module.replace("_", " ").title()
-        if module_title == "Llms":
-            module_title = "LLMs"
-        section = f":mod:`langchain.{module}`: {module_title}"
+        section = f":mod:`langchain.{module}`"
         full_doc += f"""\
 {section}
 {'=' * (len(section) + 1)}
@@ -78,6 +74,7 @@ Functions
 
 .. autosummary::
     :toctree: {module}
+    :template: function.rst
 
     {fstring}
 
