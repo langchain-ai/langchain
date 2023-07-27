@@ -141,6 +141,7 @@ def test_similarity_search(deeplake_datastore: DeepLake, distance_metric: str) -
     output = deeplake_datastore.similarity_search(
         query="foo", tql_query=tql_query, k=1, distance_metric=distance_metric
     )
+    assert len(output) == 1
     deeplake_datastore.delete_dataset()
 
 
