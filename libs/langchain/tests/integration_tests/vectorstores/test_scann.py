@@ -1,6 +1,5 @@
 """Test ScaNN functionality."""
 import datetime
-import math
 import tempfile
 
 import numpy as np
@@ -8,7 +7,6 @@ import pytest
 
 from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
-from langchain.docstore.wikipedia import Wikipedia
 from langchain.vectorstores.scann import ScaNN, dependable_scann_import, normalize
 from langchain.vectorstores.utils import DistanceStrategy
 from tests.integration_tests.vectorstores.fake_embeddings import (

@@ -2,10 +2,8 @@
 from __future__ import annotations
 
 import operator
-import os
 import pickle
 import uuid
-import warnings
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
@@ -49,7 +47,9 @@ class ScaNN(VectorStore):
             from langchain.embeddings import HuggingFaceEmbeddings
             from langchain.vectorstores import ScaNN
 
-            db = ScaNN.from_texts(['foo', 'bar', 'barz', 'qux'], HuggingFaceEmbeddings())
+            db = ScaNN.from_texts(
+                ['foo', 'bar', 'barz', 'qux'],
+                HuggingFaceEmbeddings())
             db.similarity_search('foo?', k=1)
     """
 
@@ -176,7 +176,6 @@ class ScaNN(VectorStore):
             List of documents most similar to the query text and L2 distance
             in float for each. Lower score represents more similarity.
         """
-        scann = dependable_scann_import()
         vector = np.array([embedding], dtype=np.float32)
         if self._normalize_L2:
             vector = normalize(vector)
@@ -584,7 +583,6 @@ class ScaNN(VectorStore):
         scann_path.mkdir(exist_ok=True, parents=True)
 
         # save index separately since it is not picklable
-        scann = dependable_scann_import()
         self.index.serialize(str(scann_path))
 
         # save docstore and index_to_docstore_id
