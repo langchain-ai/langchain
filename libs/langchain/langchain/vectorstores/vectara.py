@@ -14,6 +14,8 @@ from langchain.embeddings.base import Embeddings
 from langchain.schema import Document
 from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 
+logger = logging.getLogger(__name__)
+
 
 class Vectara(VectorStore):
     """Implementation of Vector Store using Vectara.
@@ -51,12 +53,12 @@ class Vectara(VectorStore):
             or self._vectara_corpus_id is None
             or self._vectara_api_key is None
         ):
-            logging.warning(
+            logger.warning(
                 "Can't find Vectara credentials, customer_id or corpus_id in "
                 "environment."
             )
         else:
-            logging.debug(f"Using corpus id {self._vectara_corpus_id}")
+            logger.debug(f"Using corpus id {self._vectara_corpus_id}")
         self._session = requests.Session()  # to reuse connections
         adapter = requests.adapters.HTTPAdapter(max_retries=3)
         self._session.mount("http://", adapter)
@@ -96,7 +98,7 @@ class Vectara(VectorStore):
             headers=self._get_post_headers(),
         )
         if response.status_code != 200:
-            logging.error(
+            logger.error(
                 f"Delete request failed for doc_id = {doc_id} with status code "
                 f"{response.status_code}, reason {response.reason}, text "
                 f"{response.text}"
@@ -152,7 +154,7 @@ class Vectara(VectorStore):
         doc_ids = []
         for inx, file in enumerate(files_list):
             if not os.path.exists(file):
-                logging.error(f"File {file} does not exist, skipping")
+                logger.error(f"File {file} does not exist, skipping")
                 continue
             md = metadatas[inx] if metadatas else {}
             files: dict = {
@@ -170,14 +172,14 @@ class Vectara(VectorStore):
 
             if response.status_code == 409:
                 doc_id = response.json()["document"]["documentId"]
-                logging.info(
+                logger.info(
                     f"File {file} already exists on Vectara (doc_id={doc_id}), skipping"
                 )
             elif response.status_code == 200:
                 doc_id = response.json()["document"]["documentId"]
                 doc_ids.append(doc_id)
             else:
-                logging.info(f"Error indexing file {file}: {response.json()}")
+                logger.info(f"Error indexing file {file}: {response.json()}")
 
         return doc_ids
 
@@ -290,7 +292,7 @@ class Vectara(VectorStore):
         )
 
         if response.status_code != 200:
-            logging.error(
+            logger.error(
                 "Query failed %s",
                 f"(code {response.status_code}, reason {response.reason}, details "
                 f"{response.text})",
@@ -407,7 +409,7 @@ class Vectara(VectorStore):
 
     def as_retriever(self, **kwargs: Any) -> VectaraRetriever:
         tags = kwargs.pop("tags", None) or []
-        tags.extend(self.__get_retriever_tags())
+        tags.extend(self._get_retriever_tags())
         return VectaraRetriever(vectorstore=self, **kwargs, tags=tags)
 
 

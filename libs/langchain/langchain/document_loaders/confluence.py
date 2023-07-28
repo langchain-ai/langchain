@@ -205,6 +205,7 @@ class ConfluenceLoader(BaseLoader):
         limit: Optional[int] = 50,
         max_pages: Optional[int] = 1000,
         ocr_languages: Optional[str] = None,
+        keep_markdown_format: bool = False,
     ) -> List[Document]:
         """
         :param space_key: Space key retrieved from a confluence URL, defaults to None
@@ -234,6 +235,9 @@ class ConfluenceLoader(BaseLoader):
                               language, you'll first need to install the appropriate
                               Tesseract language pack.
         :type ocr_languages: str, optional
+        :param keep_markdown_format: Whether to keep the markdown format, defaults to
+            False
+        :type keep_markdown_format: bool
         :raises ValueError: _description_
         :raises ImportError: _description_
         :return: _description_
@@ -263,6 +267,7 @@ class ConfluenceLoader(BaseLoader):
                 include_comments,
                 content_format,
                 ocr_languages,
+                keep_markdown_format,
             )
 
         if label:
@@ -294,6 +299,7 @@ class ConfluenceLoader(BaseLoader):
                 include_comments,
                 content_format,
                 ocr_languages,
+                keep_markdown_format,
             )
 
         if page_ids:
@@ -319,6 +325,7 @@ class ConfluenceLoader(BaseLoader):
                     include_comments,
                     content_format,
                     ocr_languages,
+                    keep_markdown_format,
                 )
                 docs.append(doc)
 
@@ -397,6 +404,7 @@ class ConfluenceLoader(BaseLoader):
         include_comments: bool,
         content_format: ContentFormat,
         ocr_languages: Optional[str] = None,
+        keep_markdown_format: Optional[bool] = False,
     ) -> List[Document]:
         """Process a list of pages into a list of documents."""
         docs = []
@@ -409,6 +417,7 @@ class ConfluenceLoader(BaseLoader):
                 include_comments,
                 content_format,
                 ocr_languages,
+                keep_markdown_format,
             )
             docs.append(doc)
 
@@ -421,24 +430,42 @@ class ConfluenceLoader(BaseLoader):
         include_comments: bool,
         content_format: ContentFormat,
         ocr_languages: Optional[str] = None,
+        keep_markdown_format: Optional[bool] = False,
     ) -> Document:
-        try:
-            from bs4 import BeautifulSoup  # type: ignore
-        except ImportError:
-            raise ImportError(
-                "`beautifulsoup4` package not found, please run "
-                "`pip install beautifulsoup4`"
-            )
+        if keep_markdown_format:
+            try:
+                from markdownify import markdownify
+            except ImportError:
+                raise ImportError(
+                    "`markdownify` package not found, please run "
+                    "`pip install markdownify`"
+                )
+        else:
+            try:
+                from bs4 import BeautifulSoup  # type: ignore
+            except ImportError:
+                raise ImportError(
+                    "`beautifulsoup4` package not found, please run "
+                    "`pip install beautifulsoup4`"
+                )
 
         if include_attachments:
             attachment_texts = self.process_attachment(page["id"], ocr_languages)
         else:
             attachment_texts = []
 
-        content = content_format.get_content(page)
-        text = BeautifulSoup(content, "lxml").get_text(" ", strip=True) + "".join(
-            attachment_texts
-        )
+        if keep_markdown_format:
+            # Use markdownify to keep the page Markdown style
+            text = markdownify(
+                page["body"]["storage"]["value"], heading_style="ATX"
+            ) + "".join(attachment_texts)
+
+        else:
+            content = content_format.get_content(page)
+            text = BeautifulSoup(content, "lxml").get_text(" ", strip=True) + "".join(
+                attachment_texts
+            )
+
         if include_comments:
             comments = self.confluence.get_page_comments(
                 page["id"], expand="body.view.value", depth="all"

@@ -9,7 +9,7 @@ from langchain.document_loaders.unstructured import UnstructuredFileLoader
 
 
 class TencentCOSFileLoader(BaseLoader):
-    """Loading logic for loading documents from Tencent Cloud COS."""
+    """Loader for Tencent Cloud COS file."""
 
     def __init__(self, conf: Any, bucket: str, key: str):
         """Initialize with COS config, bucket and key name.

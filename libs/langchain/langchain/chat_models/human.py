@@ -67,7 +67,7 @@ def _collect_yaml_input(
 
 
 class HumanInputChatModel(BaseChatModel):
-    """ChatModel wrapper which returns user input as the response.."""
+    """ChatModel which returns user input as the response."""
 
     input_func: Callable = Field(default_factory=lambda: _collect_yaml_input)
     message_func: Callable = Field(default_factory=lambda: _display_messages)
