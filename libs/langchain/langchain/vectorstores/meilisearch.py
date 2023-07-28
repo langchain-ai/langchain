@@ -28,7 +28,7 @@ def _create_client(
     if not client:
         url = url or get_from_env("url", "MEILI_HTTP_ADDR")
         try:
-            api_key = get_from_env("api_key", "MEILI_MASTER_KEY")
+            api_key = api_key or get_from_env("api_key", "MEILI_MASTER_KEY")
         except Exception:
             pass
         client = meilisearch.Client(url=url, api_key=api_key)
@@ -79,9 +79,9 @@ class Meilisearch(VectorStore):
         client: Optional[Client] = None,
         url: Optional[str] = None,
         api_key: Optional[str] = None,
-        index_name: Optional[str] = "langchain-demo",
-        text_key: Optional[str] = "text",
-        metadata_key: Optional[str] = "metadata",
+        index_name: str = "langchain-demo",
+        text_key: str = "text",
+        metadata_key: str = "metadata",
     ):
         """Initialize with Meilisearch client."""
         client = _create_client(client=client, url=url, api_key=api_key)
