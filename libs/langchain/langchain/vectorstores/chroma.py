@@ -201,7 +201,7 @@ class Chroma(VectorStore):
                     ids=ids_with_metadata,
                 )
 
-            texts = [texts[j] for j in empty_ids]
+            texts_with_metadatas = [texts[j] for j in empty_ids]
             embeddings_without_metadatas = (
                 [embeddings[j] for j in empty_ids] if embeddings else None
             )
@@ -209,9 +209,15 @@ class Chroma(VectorStore):
             if texts:
                 self._collection.upsert(
                     embeddings=embeddings_without_metadatas,
-                    documents=texts,
+                    documents=texts_with_metadatas,
                     ids=ids_without_metadatas,
                 )
+        else:
+            self._collection.upsert(
+                embeddings=embeddings,
+                documents=texts,
+                ids=ids,
+            )
         return ids
 
     def similarity_search(
