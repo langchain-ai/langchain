@@ -60,10 +60,11 @@ class ContentFormatterBase:
         .. code-block:: python
         
             class ContentFormatter(ContentFormatterBase):
+                content_type = "application/json"
+                accepts = "application/json"
+
                 def __init__(self):
                     self.headers = {
-                        "content_type": "application/json",
-                        "accepts": "application/json",
                         "custom_field": "custom_value"
                     }
 
@@ -84,6 +85,12 @@ class ContentFormatterBase:
                     response_json = json.loads(output)
                     return response_json[0]["0"]
     """
+    content_type: Optional[str] = "application/json"
+    """The MIME type of the input data passed to the endpoint"""
+
+    accepts: Optional[str] = "application/json"
+    """The MIME type of the response data returned form the endpoint"""
+
     headers: Optional[Dict[str, str]] = None
     """The http request headers passed to the endpoint"""
 
