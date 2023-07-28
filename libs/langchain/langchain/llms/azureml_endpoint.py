@@ -1,5 +1,6 @@
 import json
 import urllib.request
+import warnings
 from abc import abstractmethod
 from typing import Any, Dict, List, Mapping, Optional
 
@@ -116,7 +117,7 @@ class ContentFormatterBase:
 
 
 class GPT2ContentFormatter(ContentFormatterBase):
-    """Content handler for LLMs from the OSS catalog."""
+    """Content handler for GPT2"""
 
     def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
         prompt = ContentFormatterBase.escape_special_characters(prompt)
@@ -127,6 +128,28 @@ class GPT2ContentFormatter(ContentFormatterBase):
 
     def format_response_payload(self, output: bytes) -> str:
         return json.loads(output)[0]["0"]
+
+
+class OSSContentFormatter(ContentFormatterBase):
+    """Deprecated: Kept for backwards compatibility
+
+    Content handler for LLMs from the OSS catalog."""
+
+    content_formatter: Any = None
+
+    def __init__(self) -> None:
+        self.content_formatter = GPT2ContentFormatter()
+
+    def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
+        warnings.warn(
+            """`OSSContentFormatter` will be deprecated in the future. 
+                      Please use `GPT2ContentFormatter` instead.  
+                      """
+        )
+        return self.content_formatter.format_request_payload(prompt, model_kwargs)
+
+    def format_response_payload(self, output: bytes) -> str:
+        return self.content_formatter.format_response_payload(output)
 
 
 class HFContentFormatter(ContentFormatterBase):
