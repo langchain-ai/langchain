@@ -61,6 +61,7 @@ def fakeget(**kwargs: Any) -> Any:
 
 
 @mock.patch.dict(os.environ, {"NUCLIA_NUA_KEY": "_a_key_"})
+@pytest.mark.requires("nucliadb_protos")
 def test_nuclia_tool() -> None:
     with mock.patch(
         "nucliadb_protos.writer_pb2.BrokerMessage.ParseFromString",
@@ -85,6 +86,7 @@ def test_nuclia_tool() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.requires("nucliadb_protos")
 async def test_async_call() -> None:
     with mock.patch(
         "nucliadb_protos.writer_pb2.BrokerMessage.ParseFromString",
