@@ -4,6 +4,8 @@ sidebar_position: 2
 
 # Extraction
 
+## Use case
+
 Most APIs and databases still deal with structured information.
 Therefore, in order to better work with those, it can be useful to extract structured information from text.
 Examples of this include:
@@ -11,6 +13,8 @@ Examples of this include:
 - Extracting a structured row to insert into a database from a sentence
 - Extracting multiple rows to insert into a database from a long document
 - Extracting the correct API parameters from a user query
+
+## Overview
 
 In LangChain we provide a few useful abstractions that help you leverage OpenAI [function calling](https://openai.com/blog/function-calling-and-other-api-updates) (`-0613` models) and which go a long way to avoid model hallucination. This is in general the best go-to to extract structured data from text using langchain. However there's other two options that you should also consider:
 
