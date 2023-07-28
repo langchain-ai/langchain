@@ -42,6 +42,7 @@ from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddi
 from langchain.embeddings.spacy_embeddings import SpacyEmbeddings
 from langchain.embeddings.tensorflow_hub import TensorflowHubEmbeddings
 from langchain.embeddings.vertexai import VertexAIEmbeddings
+from langchain.embeddings.xinference import XinferenceEmbeddings
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +79,7 @@ __all__ = [
     "SpacyEmbeddings",
     "NLPCloudEmbeddings",
     "GPT4AllEmbeddings",
+    "XinferenceEmbeddings",
     "LocalAIEmbeddings",
     "AwaEmbeddings",
 ]
