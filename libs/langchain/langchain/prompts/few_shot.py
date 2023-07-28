@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
@@ -14,7 +14,6 @@ from langchain.prompts.chat import BaseChatPromptTemplate, BaseMessagePromptTemp
 from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema.messages import BaseMessage, get_buffer_string
-from langchain.schema.prompt_template import BasePromptTemplate
 
 
 class _FewShotPromptTemplateMixin(BaseModel):
@@ -193,9 +192,9 @@ class FewShotChatMessagePromptTemplate(
 
             from langchain.schema import SystemMessage
             from langchain.prompts import (
-                ChatPromptTemplate,
                 FewShotChatMessagePromptTemplate,
                 HumanMessagePromptTemplate,
+                SystemMessagePromptTemplate,
                 AIMessagePromptTemplate
             )
 
@@ -204,23 +203,25 @@ class FewShotChatMessagePromptTemplate(
                 {"input": "2+3", "output": "5"},
             ]
 
-            # This is a prompt template used to format each individual example.
-            example_prompt = ChatPromptTemplate.from_messages(
-                [
-                    HumanMessagePromptTemplate.from_template("{input}"),
-                    AIMessagePromptTemplate.from_template("{output}"),
-                ]
-            )
-
             few_shot_prompt = FewShotChatMessagePromptTemplate(
-                input_variables=["input"],
-                prefix=[SystemMessage(content="You are a helpful AI Assistant")],
-                example_prompt=example_prompt,
                 examples=examples,
-                suffix=[HumanMessagePromptTemplate.from_template("{input}")],
+                # This is a prompt template used to format each individual example.
+                example_prompt=(
+                    HumanMessagePromptTemplate.from_template("{input}")
+                    + AIMessagePromptTemplate.from_template("{output}")
+                ),
             )
 
-            few_shot_prompt.format(input="What is 4+4?")
+
+            final_prompt = (
+                SystemMessagePromptTemplate.from_template(
+                    "You are a helpful AI Assistant"
+                )
+                + few_shot_prompt
+                + HumanMessagePromptTemplate.from_template("{input}")
+            )
+
+            final_prompt.format(input="What is 4+4?")
 
         Prompt template with dynamically selected examples:
 
@@ -250,38 +251,36 @@ class FewShotChatMessagePromptTemplate(
             )
 
             from langchain.schema import SystemMessage
-            from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
+            from langchain.prompts import HumanMessagePromptTemplate
             from langchain.prompts.few_shot import FewShotChatMessagePromptTemplate
 
-            # Define how each example will be formatted.
-            # In this case, each example will become 2 messages:
-            # 1 human, and 1 AI
-            example_prompt = ChatPromptTemplate.from_messages(
-                [
-                    HumanMessagePromptTemplate.from_template("{input}"),
-                    AIMessagePromptTemplate.from_template("{output}"),
-                ]
-            )
-
-            # Define the overall prompt.
             few_shot_prompt = FewShotChatMessagePromptTemplate(
+                # Which variable(s) will be passed to the example selector.
                 input_variables=["input"],
-                prefix = [SystemMessage(content="You are a helpful AI Assistant")],
                 example_selector=example_selector,
-                example_prompt=example_prompt,
-                suffix = [HumanMessagePromptTemplate.from_template("{input}")],
+                # Define how each example will be formatted.
+                # In this case, each example will become 2 messages:
+                # 1 human, and 1 AI
+                example_prompt=(
+                    HumanMessagePromptTemplate.from_template("{input}")
+                    + AIMessagePromptTemplate.from_template("{output}")
+                ),
+            )
+            # Define the overall prompt.
+            final_prompt = (
+                SystemMessagePromptTemplate.from_template(
+                    "You are a helpful AI Assistant"
+                )
+                + few_shot_prompt
+                + HumanMessagePromptTemplate.from_template("{input}")
             )
             # Show the prompt
-            print(few_shot_prompt.format_messages(input="What's 3+3?"))
+            print(final_prompt.format_messages(input="What's 3+3?"))
 
-            # Use within an LLMChain
-            from langchain.chains import LLMChain
-            from langchain.chat_models import ChatOpenAI
-            chain = LLMChain(
-                llm=ChatOpenAI(),
-                prompt=few_shot_prompt,
-            )
-            chain({"input": "What's 3+3?"})
+            # Use within an LLM
+            from langchain.chat_models import ChatAnthropic
+            chain = final_prompt | ChatAnthropic()
+            chain.invoke({"input": "What's 3+3?"})
     """
 
     @property
@@ -293,16 +292,11 @@ class FewShotChatMessagePromptTemplate(
         """
         return False
 
-    prefix: List[
-        Union[BaseMessagePromptTemplate, BaseChatPromptTemplate, BaseMessage]
-    ] = []
-    """The class to format the prefix."""
+    input_variables: List[str] = Field(default_factory=list)
+    """A list of the names of the variables the prompt template will use
+    to pass to the example_selector, if provided."""
     example_prompt: Union[BaseMessagePromptTemplate, BaseChatPromptTemplate]
     """The class to format each example."""
-    suffix: List[
-        Union[BaseMessagePromptTemplate, BaseChatPromptTemplate, BaseMessage]
-    ] = []
-    """The class to format the suffix."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -324,33 +318,13 @@ class FewShotChatMessagePromptTemplate(
         examples = [
             {k: e[k] for k in self.example_prompt.input_variables} for e in examples
         ]
-        # Format prefix examples
-        prefix_messages = [
-            message
-            for template in self.prefix
-            for message in (
-                template.format_messages(**kwargs)
-                if isinstance(template, (BasePromptTemplate, BaseMessagePromptTemplate))
-                else [template]
-            )
-        ]
         # Format the examples.
         messages = [
             message
             for example in examples
             for message in self.example_prompt.format_messages(**example)
         ]
-        # Format suffix examples
-        suffix_messages = [
-            message
-            for template in self.suffix
-            for message in (
-                template.format_messages(**kwargs)
-                if isinstance(template, (BasePromptTemplate, BaseMessagePromptTemplate))
-                else [template]
-            )
-        ]
-        return prefix_messages + messages + suffix_messages
+        return messages
 
     def format(self, **kwargs: Any) -> str:
         """Format the prompt with inputs generating a string.
