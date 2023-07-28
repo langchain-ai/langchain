@@ -8,7 +8,7 @@ from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
-ANYSCLAE_ENDPOINT = "https://console.endpoints.anyscale.com"
+ANYSCALE_ENDPOINT = "https://console.endpoints.anyscale.com"
 
 
 class Anyscale(LLM):
@@ -113,7 +113,7 @@ class Anyscale(LLM):
         )
         headers = {"Authorization": f"Bearer {self.anyscale_service_token}"}
 
-        if self.anyscale_service_url.startswith(ANYSCLAE_ENDPOINT):
+        if self.anyscale_service_url.startswith(ANYSCALE_ENDPOINT):
             body = {
                 "model": "meta-llama/Llama-2-70b-chat-hf",
                 "messages": [
