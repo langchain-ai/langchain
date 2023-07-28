@@ -142,6 +142,18 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         return ChatMessage(content=_dict["content"], role=role)
 
 
+def convert_openai_messages(messages: List[dict]) -> List[BaseMessage]:
+    """Convert dictionaries representing OpenAI messages to LangChain format.
+
+    Args:
+        messages: List of dictionaries representing OpenAI messages
+
+    Returns:
+        List of LangChain BaseMessage objects.
+    """
+    return [_convert_dict_to_message(m) for m in messages]
+
+
 def _convert_message_to_dict(message: BaseMessage) -> dict:
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
