@@ -281,7 +281,7 @@ def test_convert_to_message(
     assert _convert_to_message(args) == expected
 
 
-def test_convert_to_message_is_strict():
+def test_convert_to_message_is_strict() -> None:
     """Verify that _convert_to_message is strict."""
     with pytest.raises(ValueError):
         # meow does not correspond to a valid message type.
