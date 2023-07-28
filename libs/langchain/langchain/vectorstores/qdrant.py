@@ -130,6 +130,8 @@ class Qdrant(VectorStore):
         self.content_payload_key = content_payload_key or self.CONTENT_KEY
         self.metadata_payload_key = metadata_payload_key or self.METADATA_KEY
         self.vector_name = vector_name or self.VECTOR_NAME
+        self.use_mmr = False
+        self.top_k = 4
 
         if embedding_function is not None:
             warnings.warn(
@@ -157,6 +159,8 @@ class Qdrant(VectorStore):
         metadatas: Optional[List[dict]] = None,
         ids: Optional[Sequence[str]] = None,
         batch_size: int = 64,
+        top_k: int = 4,
+        use_mmr: bool = False,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -175,6 +179,10 @@ class Qdrant(VectorStore):
             List of ids from adding the texts into the vectorstore.
         """
         added_ids = []
+        self.top_k = top_k
+        self.use_mmr = use_mmr
+        print("Top k: " + str(self.top_k))
+        print("Use MMR: " + str(self.use_mmr))
         for batch_ids, points in self._generate_rest_batches(
             texts, metadatas, ids, batch_size
         ):
@@ -229,7 +237,6 @@ class Qdrant(VectorStore):
     def similarity_search(
         self,
         query: str,
-        k: int = 4,
         filter: Optional[MetadataFilter] = None,
         search_params: Optional[common_types.SearchParams] = None,
         offset: int = 0,
@@ -271,7 +278,7 @@ class Qdrant(VectorStore):
         """
         results = self.similarity_search_with_score(
             query,
-            k,
+            self.top_k,
             filter=filter,
             search_params=search_params,
             offset=offset,
@@ -285,7 +292,6 @@ class Qdrant(VectorStore):
     async def asimilarity_search(
         self,
         query: str,
-        k: int = 4,
         filter: Optional[MetadataFilter] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -297,13 +303,12 @@ class Qdrant(VectorStore):
         Returns:
             List of Documents most similar to the query.
         """
-        results = await self.asimilarity_search_with_score(query, k, filter, **kwargs)
+        results = await self.asimilarity_search_with_score(query, self.top_k, filter, **kwargs)
         return list(map(itemgetter(0), results))
 
     def similarity_search_with_score(
         self,
         query: str,
-        k: int = 4,
         filter: Optional[MetadataFilter] = None,
         search_params: Optional[common_types.SearchParams] = None,
         offset: int = 0,
@@ -345,7 +350,7 @@ class Qdrant(VectorStore):
         """
         return self.similarity_search_with_score_by_vector(
             self._embed_query(query),
-            k,
+            self.top_k,
             filter=filter,
             search_params=search_params,
             offset=offset,
@@ -358,7 +363,6 @@ class Qdrant(VectorStore):
     async def asimilarity_search_with_score(
         self,
         query: str,
-        k: int = 4,
         filter: Optional[MetadataFilter] = None,
         search_params: Optional[common_types.SearchParams] = None,
         offset: int = 0,
@@ -400,7 +404,7 @@ class Qdrant(VectorStore):
         """
         return await self.asimilarity_search_with_score_by_vector(
             self._embed_query(query),
-            k,
+            self.top_k,
             filter=filter,
             search_params=search_params,
             offset=offset,
@@ -412,7 +416,6 @@ class Qdrant(VectorStore):
     def similarity_search_by_vector(
         self,
         embedding: List[float],
-        k: int = 4,
         filter: Optional[MetadataFilter] = None,
         search_params: Optional[common_types.SearchParams] = None,
         offset: int = 0,
@@ -454,7 +457,7 @@ class Qdrant(VectorStore):
         """
         results = self.similarity_search_with_score_by_vector(
             embedding,
-            k,
+            self.top_k,
             filter=filter,
             search_params=search_params,
             offset=offset,
@@ -468,7 +471,6 @@ class Qdrant(VectorStore):
     async def asimilarity_search_by_vector(
         self,
         embedding: List[float],
-        k: int = 4,
         filter: Optional[MetadataFilter] = None,
         search_params: Optional[common_types.SearchParams] = None,
         offset: int = 0,
@@ -510,7 +512,7 @@ class Qdrant(VectorStore):
         """
         results = await self.asimilarity_search_with_score_by_vector(
             embedding,
-            k,
+            self.top_k,
             filter=filter,
             search_params=search_params,
             offset=offset,
@@ -523,7 +525,6 @@ class Qdrant(VectorStore):
     def similarity_search_with_score_by_vector(
         self,
         embedding: List[float],
-        k: int = 4,
         filter: Optional[MetadataFilter] = None,
         search_params: Optional[common_types.SearchParams] = None,
         offset: int = 0,
@@ -578,34 +579,40 @@ class Qdrant(VectorStore):
         if self.vector_name is not None:
             query_vector = (self.vector_name, embedding)  # type: ignore[assignment]
 
-        results = self.client.search(
-            collection_name=self.collection_name,
-            query_vector=query_vector,
-            query_filter=qdrant_filter,
-            search_params=search_params,
-            limit=k,
-            offset=offset,
-            with_payload=True,
-            with_vectors=False,  # Langchain does not expect vectors to be returned
-            score_threshold=score_threshold,
-            consistency=consistency,
-            **kwargs,
-        )
-        return [
-            (
-                self._document_from_scored_point(
-                    result, self.content_payload_key, self.metadata_payload_key
-                ),
-                result.score,
+        if self.use_mmr == False:
+
+            results = self.client.search(
+                collection_name=self.collection_name,
+                query_vector=query_vector,
+                query_filter=qdrant_filter,
+                search_params=search_params,
+                limit=self.top_k,
+                offset=offset,
+                with_payload=True,
+                with_vectors=False,  # Langchain does not expect vectors to be returned
+                score_threshold=score_threshold,
+                consistency=consistency,
+                **kwargs,
             )
-            for result in results
-        ]
+            return [
+                (
+                    self._document_from_scored_point(
+                        result, self.content_payload_key, self.metadata_payload_key
+                    ),
+                    result.score,
+                )
+                for result in results
+            ]
+        else:
+            results = self.max_marginal_relevance_search_with_score_by_vector(
+            embedding=embedding, k=self.top_k, fetch_k=20, lambda_mult=0.5, **kwargs)
+            return list(map(itemgetter(0), results))
+
 
     @sync_call_fallback
     async def asimilarity_search_with_score_by_vector(
         self,
         embedding: List[float],
-        k: int = 4,
         filter: Optional[MetadataFilter] = None,
         search_params: Optional[common_types.SearchParams] = None,
         offset: int = 0,
@@ -670,7 +677,7 @@ class Qdrant(VectorStore):
                 vector=embedding,
                 filter=qdrant_filter,
                 params=search_params,
-                limit=k,
+                limit=self.top_k,
                 offset=offset,
                 with_payload=grpc.WithPayloadSelector(enable=True),
                 with_vectors=grpc.WithVectorsSelector(enable=False),
@@ -693,7 +700,6 @@ class Qdrant(VectorStore):
     def max_marginal_relevance_search(
         self,
         query: str,
-        k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         **kwargs: Any,
@@ -717,14 +723,13 @@ class Qdrant(VectorStore):
         """
         query_embedding = self._embed_query(query)
         return self.max_marginal_relevance_search_by_vector(
-            query_embedding, k, fetch_k, lambda_mult, **kwargs
+            query_embedding, self.top_k, fetch_k, lambda_mult, **kwargs
         )
 
     @sync_call_fallback
     async def amax_marginal_relevance_search(
         self,
         query: str,
-        k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         **kwargs: Any,
@@ -748,13 +753,12 @@ class Qdrant(VectorStore):
         """
         query_embedding = self._embed_query(query)
         return await self.amax_marginal_relevance_search_by_vector(
-            query_embedding, k, fetch_k, lambda_mult, **kwargs
+            query_embedding, self.top_k, fetch_k, lambda_mult, **kwargs
         )
 
     def max_marginal_relevance_search_by_vector(
         self,
         embedding: List[float],
-        k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         **kwargs: Any,
@@ -776,7 +780,7 @@ class Qdrant(VectorStore):
             List of Documents selected by maximal marginal relevance.
         """
         results = self.max_marginal_relevance_search_with_score_by_vector(
-            embedding=embedding, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult, **kwargs
+            embedding=embedding, k=self.top_k, fetch_k=fetch_k, lambda_mult=lambda_mult, **kwargs
         )
         return list(map(itemgetter(0), results))
 
@@ -784,7 +788,6 @@ class Qdrant(VectorStore):
     async def amax_marginal_relevance_search_by_vector(
         self,
         embedding: List[float],
-        k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         **kwargs: Any,
@@ -806,14 +809,13 @@ class Qdrant(VectorStore):
             each.
         """
         results = await self.amax_marginal_relevance_search_with_score_by_vector(
-            embedding, k, fetch_k, lambda_mult, **kwargs
+            embedding, self.top_k, fetch_k, lambda_mult, **kwargs
         )
         return list(map(itemgetter(0), results))
 
     def max_marginal_relevance_search_with_score_by_vector(
         self,
         embedding: List[float],
-        k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         **kwargs: Any,
@@ -852,7 +854,7 @@ class Qdrant(VectorStore):
             for result in results
         ]
         mmr_selected = maximal_marginal_relevance(
-            np.array(embedding), embeddings, k=k, lambda_mult=lambda_mult
+            np.array(embedding), embeddings, k=self.top_k, lambda_mult=lambda_mult
         )
         return [
             (
@@ -868,7 +870,6 @@ class Qdrant(VectorStore):
     async def amax_marginal_relevance_search_with_score_by_vector(
         self,
         embedding: List[float],
-        k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         **kwargs: Any,
@@ -914,7 +915,7 @@ class Qdrant(VectorStore):
         mmr_selected: List[int] = maximal_marginal_relevance(
             np.array(embedding),
             embeddings,
-            k=k,
+            k=self.top_k,
             lambda_mult=lambda_mult,
         )
         return [
@@ -1490,7 +1491,6 @@ class Qdrant(VectorStore):
     def _similarity_search_with_relevance_scores(
         self,
         query: str,
-        k: int = 4,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs and relevance scores in the range [0, 1].
@@ -1507,7 +1507,7 @@ class Qdrant(VectorStore):
         Returns:
             List of Tuples of (doc, similarity_score)
         """
-        return self.similarity_search_with_score(query, k, **kwargs)
+        return self.similarity_search_with_score(query, self.top_k, **kwargs)
 
     @classmethod
     def _build_payloads(
