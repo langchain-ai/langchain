@@ -8,6 +8,7 @@ from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.utils import get_from_dict_or_env
 from langchain.requests import Requests
+from langchain.llms.utils import enforce_stop_tokens
 import json
 logger = logging.getLogger(__name__)
 
@@ -42,6 +43,9 @@ class EdenAI(LLM):
     
     keys=['generated_text','result','items']
     """json formatting keys"""
+    
+    stop_sequences: Optional[List[str]] = None
+    """Stop sequences to use."""
     
 
     class Config:
@@ -111,6 +115,15 @@ class EdenAI(LLM):
             str response .
 
         """
+        stops=None
+        if self.stop_sequences is not None and stop is not None:
+            raise ValueError(
+                "stop sequences found in both the input and default params."
+            )
+        elif self.stop_sequences is not None:
+            stops = self.stop_sequences
+        else:
+            stops = stop
 
         headers = {"Authorization": f"Bearer {self.edenai_api_key}"}
         url = f"{self.base_url}/{self.feature}/{self.sub_feature}"
@@ -121,16 +134,19 @@ class EdenAI(LLM):
             url=url,
             data=payload,
         )
-        
+
         if response.status_code != 200:
             raise ValueError(
                 f"EDENAI complete call failed with status code {response.status_code}."
             )
-            
+ 
         result = json.loads(response.text)
         output=self._format_output(result)
         
         if type(output) != str:
             output=json.dumps(output)
+            
+        if stops != None:
+            output = enforce_stop_tokens(output, stops)
 
         return output
