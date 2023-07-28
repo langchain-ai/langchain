@@ -18,7 +18,6 @@ class AI21PenaltyData(BaseModel):
     applyToStopwords: bool = True
     applyToEmojis: bool = True
 
-    pass
 class AI21(LLM):
     """AI21 large language models.
 
