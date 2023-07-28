@@ -4,7 +4,7 @@ import pytest
 from langchain_experimental.pal_chain.base import PALChain, PALValidation
 from langchain_experimental.pal_chain.colored_object_prompt import COLORED_OBJECT_PROMPT
 from langchain_experimental.pal_chain.math_prompt import MATH_PROMPT
-from tests.unit_tests.llms.fake_llm import FakeLLM
+from tests.unit_tests.fake_llm import FakeLLM
 
 _MATH_SOLUTION_1 = """
 def solution():
