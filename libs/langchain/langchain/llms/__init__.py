@@ -33,6 +33,7 @@ from langchain.llms.human import HumanInputLLM
 from langchain.llms.koboldai import KoboldApiLLM
 from langchain.llms.llamacpp import LlamaCpp
 from langchain.llms.manifest import ManifestWrapper
+from langchain.llms.minimax import Minimax
 from langchain.llms.mlflow_ai_gateway import MlflowAIGateway
 from langchain.llms.modal import Modal
 from langchain.llms.mosaicml import MosaicML
@@ -92,6 +93,7 @@ __all__ = [
     "LlamaCpp",
     "TextGen",
     "ManifestWrapper",
+    "Minimax",
     "MlflowAIGateway",
     "Modal",
     "MosaicML",
@@ -152,6 +154,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "koboldai": KoboldApiLLM,
     "llamacpp": LlamaCpp,
     "textgen": TextGen,
+    "minimax": Minimax,
     "mlflow-ai-gateway": MlflowAIGateway,
     "modal": Modal,
     "mosaic": MosaicML,
