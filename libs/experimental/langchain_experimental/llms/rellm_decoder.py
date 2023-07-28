@@ -23,7 +23,7 @@ def import_rellm() -> rellm:
     try:
         import rellm
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "Could not import rellm python package. "
             "Please install it with `pip install rellm`."
         )
@@ -31,6 +31,8 @@ def import_rellm() -> rellm:
 
 
 class RELLM(HuggingFacePipeline):
+    """RELLM wrapped LLM using HuggingFace Pipeline API."""
+
     regex: RegexPattern = Field(..., description="The structured format to complete.")
     max_new_tokens: int = Field(
         default=200, description="Maximum number of new tokens to generate."
