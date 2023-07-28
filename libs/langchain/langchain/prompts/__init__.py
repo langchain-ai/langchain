@@ -15,7 +15,10 @@ from langchain.prompts.example_selector import (
     NGramOverlapExampleSelector,
     SemanticSimilarityExampleSelector,
 )
-from langchain.prompts.few_shot import FewShotPromptTemplate
+from langchain.prompts.few_shot import (
+    FewShotChatMessagePromptTemplate,
+    FewShotPromptTemplate,
+)
 from langchain.prompts.few_shot_with_templates import FewShotPromptWithTemplates
 from langchain.prompts.loading import load_prompt
 from langchain.prompts.pipeline import PipelinePromptTemplate
@@ -42,4 +45,5 @@ __all__ = [
     "StringPromptTemplate",
     "SystemMessagePromptTemplate",
     "load_prompt",
+    "FewShotChatMessagePromptTemplate",
 ]

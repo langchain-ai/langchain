@@ -5,10 +5,7 @@ from typing import Any, Dict, List, Optional, Type, cast
 from pydantic import BaseModel, Field, root_validator
 
 from langchain import LLMChain
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
+from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.chains.query_constructor.base import load_query_constructor_chain
 from langchain.chains.query_constructor.ir import StructuredQuery, Visitor
 from langchain.chains.query_constructor.schema import AttributeInfo
@@ -118,11 +115,6 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         search_kwargs = {**self.search_kwargs, **new_kwargs}
         docs = self.vectorstore.search(new_query, self.search_type, **search_kwargs)
         return docs
-
-    async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        raise NotImplementedError
 
     @classmethod
     def from_llm(
