@@ -95,10 +95,6 @@ class PALChain(Chain):
     """
 
     llm_chain: LLMChain
-    llm: Optional[BaseLanguageModel] = None
-    """[Deprecated]"""
-    prompt: BasePromptTemplate = MATH_PROMPT
-    """[Deprecated]"""
     stop: str = "\n\n"
     """Stop token to use when generating code."""
     get_answer_expr: str = "print(solution())"
@@ -121,18 +117,6 @@ class PALChain(Chain):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
-    @root_validator(pre=True)
-    def raise_deprecation(cls, values: Dict) -> Dict:
-        if "llm" in values:
-            warnings.warn(
-                "Directly instantiating a PALChain with an llm is deprecated. "
-                "Please instantiate with llm_chain argument or using one of "
-                "the class method constructors from_math_prompt, "
-                "from_colored_object_prompt."
-            )
-            if "llm_chain" not in values and values["llm"] is not None:
-                values["llm_chain"] = LLMChain(llm=values["llm"], prompt=MATH_PROMPT)
-        return values
 
     @property
     def input_keys(self) -> List[str]:
