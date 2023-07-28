@@ -88,11 +88,12 @@ class EdenAI(LLM):
         return "edenai"
 
     def _format_output(self, output: dict) -> str:
-        if self.feature == "image":
+        if self.feature == "text":
             return output[self.provider]["generated_text"]
         else:
-            return output[self.provider]["image"]
-
+            return output[self.provider]['items'][0]["image"]
+        
+        
     def _call(
         self,
         prompt: str,
@@ -121,7 +122,13 @@ class EdenAI(LLM):
 
         url = f"{self.base_url}/{self.feature}/{self.subfeature}"
         headers = {"Authorization": f"Bearer {self.edenai_api_key}"}
-        payload = {**self.params, "providers": self.provider, "text": prompt, **kwargs}
+        payload = {
+            **self.params,
+            "providers": self.provider,
+            "num_images": 1,  # always limit to 1 the number of image generated (ignored for text)
+            "text": prompt,
+            **kwargs,
+        }
         request = Requests(headers=headers)
 
         response = request.post(url=url, data=payload)
