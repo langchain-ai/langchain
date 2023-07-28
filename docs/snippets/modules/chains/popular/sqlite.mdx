@@ -447,6 +447,30 @@ db_chain.run("What are some example tracks by Bach?")
 
 </CodeOutputBlock>
 
+### SQL Views
+
+In some case, the table schema can be hidden behind a JSON or JSONB column. Adding row samples into the prompt might help won't always describe the data perfectly. 
+
+For this reason, a custom SQL views can help.
+
+```sql
+CREATE VIEW accounts_v AS
+    select id, firstname, lastname, email, created_at, updated_at,
+        cast(stats->>'total_post' as int) as total_post,
+        cast(stats->>'total_comments' as int) as total_comments,
+        cast(stats->>'ltv' as int) as ltv
+
+        FROM accounts;
+```
+
+Then limit the tables visible from SQLDatabase to the created view.
+
+```python
+db = SQLDatabase.from_uri(
+    "sqlite:///../../../../notebooks/Chinook.db",
+    include_tables=['accounts_v']) # we include only the view
+```
+
 ## SQLDatabaseSequentialChain
 
 Chain for querying SQL database that is a sequential chain.
