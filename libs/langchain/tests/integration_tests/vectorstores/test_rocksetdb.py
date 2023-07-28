@@ -6,11 +6,11 @@ import rockset
 import rockset.models
 
 from langchain.docstore.document import Document
+from langchain.vectorstores.rocksetdb import Rockset
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
     fake_texts,
 )
-from langchain.vectorstores.rocksetdb import Rockset
 
 logger = logging.getLogger(__name__)
 
