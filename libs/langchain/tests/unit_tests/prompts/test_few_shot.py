@@ -8,6 +8,7 @@ from langchain.prompts import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
 )
+from langchain.prompts.chat import SystemMessagePromptTemplate
 from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.prompts.few_shot import (
     FewShotChatMessagePromptTemplate,
@@ -295,13 +296,16 @@ def test_few_shot_chat_message_prompt_template() -> None:
 
     few_shot_prompt = FewShotChatMessagePromptTemplate(
         input_variables=["input"],
-        prefix=[SystemMessage(content="You are a helpful AI Assistant")],
         example_prompt=example_prompt,
         examples=examples,
-        suffix=[HumanMessagePromptTemplate.from_template("{input}")],
+    )
+    final_prompt: ChatPromptTemplate = (
+        SystemMessagePromptTemplate.from_template("You are a helpful AI Assistant")
+        + few_shot_prompt
+        + HumanMessagePromptTemplate.from_template("{input}")
     )
 
-    messages = few_shot_prompt.format_messages(input="100 + 1")
+    messages = final_prompt.format_messages(input="100 + 1")
     assert messages == [
         SystemMessage(content="You are a helpful AI Assistant", additional_kwargs={}),
         HumanMessage(content="2+2", additional_kwargs={}, example=False),
@@ -347,13 +351,15 @@ def test_few_shot_chat_message_prompt_template_with_selector() -> None:
 
     few_shot_prompt = FewShotChatMessagePromptTemplate(
         input_variables=["input"],
-        prefix=[SystemMessage(content="You are a helpful AI Assistant")],
         example_prompt=example_prompt,
         example_selector=example_selector,
-        suffix=[HumanMessagePromptTemplate.from_template("{input}")],
     )
-
-    messages = few_shot_prompt.format_messages(input="100 + 1")
+    final_prompt: ChatPromptTemplate = (
+        SystemMessagePromptTemplate.from_template("You are a helpful AI Assistant")
+        + few_shot_prompt
+        + HumanMessagePromptTemplate.from_template("{input}")
+    )
+    messages = final_prompt.format_messages(input="100 + 1")
     assert messages == [
         SystemMessage(content="You are a helpful AI Assistant", additional_kwargs={}),
         HumanMessage(content="2+2", additional_kwargs={}, example=False),
