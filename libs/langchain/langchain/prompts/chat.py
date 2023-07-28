@@ -274,7 +274,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
             template = ChatPromptTemplate.from_messages([
                 ("system", "You are a helpful AI bot. Your name is {name}."),
                 ("human", "Hello, how are you doing?"),
-                ("assistant", "I'm doing well, thanks!"),
+                ("ai", "I'm doing well, thanks!"),
                 ("human", "{user_input}"),
             ])
 
