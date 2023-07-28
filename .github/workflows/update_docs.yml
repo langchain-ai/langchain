@@ -31,4 +31,4 @@ jobs:
           git config --local user.name "GitHub Action"
           git add .
           git diff --quiet && git diff --staged --quiet || git commit -m "Update documentation"
-          git push
+          git push https://${{ secrets.PAT }}@github.com/<your-username>/langchain.git HEAD:master
