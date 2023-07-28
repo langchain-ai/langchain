@@ -360,7 +360,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
     ) -> ChatPromptTemplate:
         """Create a chat prompt template from a list of (role, template) tuples.
 
-        The roles `human`, `ai`, and `system` are special and will be converted
+        The roles `human`, `assistant`, and `system` are special and will be converted
         to the appropriate message class. All other roles will be converted to a
         generic ChatMessagePromptTemplate.
 
@@ -440,7 +440,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
                   (1) BaseMessagePromptTemplate, (2) BaseMessage, (3) 2-tuple of
                   (role string, template); e.g., ("human", "{user_input}"),
                   (4) 2-tuple of (message class, template), (4) a string which is
-                  short-hand for ("human", template); e.g., "{user_input}"
+                  shorthand for ("human", template); e.g., "{user_input}"
 
         Returns:
             a chat prompt template
@@ -547,7 +547,7 @@ def _convert_to_message(
     - BaseMessage
     - 2-tuple of (role string, template); e.g., ("human", "{user_input}")
     - 2-tuple of (message class, template)
-    - string: short-hand for ("human", template); e.g., "{user_input}"
+    - string: shorthand for ("human", template); e.g., "{user_input}"
 
     Args:
         message: a representation of a message in one of the supported formats
