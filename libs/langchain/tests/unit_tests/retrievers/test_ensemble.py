@@ -44,7 +44,7 @@ def test_weighted_reciprocal_rank() -> None:
     assert result[1].page_content == "2"
 
 
-@pytest.mark.requires("rank_bm25", "scikit-learn")
+@pytest.mark.requires("rank_bm25", "sklearn")
 def test_ensemble_retriever_get_relevant_docs_with_multiple_retrievers() -> None:
     doc_list_a = [
         "I like apples",
