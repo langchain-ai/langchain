@@ -14,6 +14,9 @@ def init_repo(tmpdir: py.path.local, dir_name: str) -> str:
     git = repo.git
     git.checkout(b="main")
 
+    git.config("user.name", "Test User")
+    git.config("user.email", "test@example.com")
+
     sample_file = "file.txt"
     with open(os.path.join(repo_dir, sample_file), "w") as f:
         f.write("content")
