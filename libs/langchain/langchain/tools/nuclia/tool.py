@@ -10,6 +10,7 @@ Installation:
 
 import asyncio
 import base64
+import logging
 import mimetypes
 import os
 from typing import Any, Dict, Optional, Type, Union
@@ -22,6 +23,8 @@ from langchain.callbacks.manager import (
     CallbackManagerForToolRun,
 )
 from langchain.tools.base import BaseTool
+
+logger = logging.getLogger(__name__)
 
 
 class NUASchema(BaseModel):
@@ -126,7 +129,7 @@ class NucliaUnderstandingAPI(BaseTool):
                 data=source_file.read(),
             )
             if response.status_code != 200:
-                print(
+                logger.info(
                     f"Error uploading {content_path}: "
                     f"{response.status_code} {response.text}"
                 )
@@ -139,7 +142,7 @@ class NucliaUnderstandingAPI(BaseTool):
                 return self._pushField(id, field)
 
     def _pushField(self, id: str, field: Any) -> str:
-        print(f"Pushing {id} in queue")
+        logger.info(f"Pushing {id} in queue")
         response = requests.post(
             self._config["BACKEND"] + "/processing/push",
             headers={
@@ -149,13 +152,13 @@ class NucliaUnderstandingAPI(BaseTool):
             json=field,
         )
         if response.status_code != 200:
-            print(
+            logger.info(
                 f"Error pushing field {id}:" f"{response.status_code} {response.text}"
             )
             raise ValueError("Error pushing field")
         else:
             uuid = response.json()["uuid"]
-            print(f"Field {id} pushed in queue, uuid: {uuid}")
+            logger.info(f"Field {id} pushed in queue, uuid: {uuid}")
             self._results[id] = {"uuid": uuid, "status": "pending"}
             return uuid
 
@@ -163,10 +166,10 @@ class NucliaUnderstandingAPI(BaseTool):
         self._pull_queue()
         result = self._results.get(id, None)
         if not result:
-            print(f"{id} not in queue")
+            logger.info(f"{id} not in queue")
             return ""
         elif result["status"] == "pending":
-            print(f'Waiting for {result["uuid"]} to be processed')
+            logger.info(f'Waiting for {result["uuid"]} to be processed')
             return ""
         else:
             return result["data"]
@@ -194,16 +197,16 @@ class NucliaUnderstandingAPI(BaseTool):
             },
         ).json()
         if res["status"] == "empty":
-            print("Queue empty")
+            logger.info("Queue empty")
         elif res["status"] == "ok":
             payload = res["payload"]
             pb = BrokerMessage()
             pb.ParseFromString(base64.b64decode(payload))
             uuid = pb.uuid
-            print(f"Pulled {uuid} from queue")
+            logger.info(f"Pulled {uuid} from queue")
             matching_id = self._find_matching_id(uuid)
             if not matching_id:
-                print(f"No matching id for {uuid}")
+                logger.info(f"No matching id for {uuid}")
             else:
                 self._results[matching_id]["status"] = "done"
                 data = MessageToJson(
