@@ -15,7 +15,6 @@ import os
 from typing import Any, Dict, Optional, Type, Union
 
 import requests
-from google.protobuf.json_format import MessageToJson
 from pydantic import BaseModel, Field
 
 from langchain.callbacks.manager import (
@@ -181,6 +180,13 @@ class NucliaUnderstandingAPI(BaseTool):
             return result["data"]
 
     def _pull_queue(self) -> None:
+        try:
+            from google.protobuf.json_format import MessageToJson
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import google.protobuf, please install with "
+                "`pip install protobuf`."
+            ) from e
         res = requests.get(
             self._config["BACKEND"] + "/processing/pull",
             headers={
