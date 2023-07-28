@@ -6,6 +6,9 @@ class PromptInterface(Generic[T], ABC):
     def format(self, **kwargs: Any) -> T:
         ...
 
+    def __str__(self):
+        raise NotImplementedError
+
 
 class Prompt(PromptInterface[str]):
     def __init__(
@@ -27,6 +30,9 @@ class Prompt(PromptInterface[str]):
             return
         else:
             raise ValueError
+
+    def __str__(self):
+        return self.content
 
 
 class Message(PromptInterface["Message"]):
@@ -67,6 +73,16 @@ class Message(PromptInterface["Message"]):
     def __add__(self, other) -> MessageSequence:
         return MessageSequence((self, other))
 
+    def __str__(self):
+        TYPE_TO_NAME = {
+            "human": "Human",
+            "ai": "AI",
+            "function": "Function",
+            "system": "System",
+        }
+        name = self.role if self.role else TYPE_TO_NAME[self.type]
+        return f"{name}: {str(self.prompt)}"
+
 
 class MessageSequence(PromptInterface[List[Message]]):
     def __init__(self, messages: Sequence[Message]):
@@ -80,3 +96,9 @@ class MessageSequence(PromptInterface[List[Message]]):
 
     def __getitem__(self, item):
         return self.messages.__getitem__(item)
+
+    def __iter__(self):
+        return self.messages.__iter__
+
+    def __str__(self):
+        return "\n".join(str(m) for m in self.messages)
