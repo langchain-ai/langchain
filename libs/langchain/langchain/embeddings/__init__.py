@@ -6,6 +6,7 @@ from langchain.embeddings.aleph_alpha import (
     AlephAlphaAsymmetricSemanticEmbedding,
     AlephAlphaSymmetricSemanticEmbedding,
 )
+from langchain.embeddings.awa import AwaEmbeddings
 from langchain.embeddings.bedrock import BedrockEmbeddings
 from langchain.embeddings.clarifai import ClarifaiEmbeddings
 from langchain.embeddings.cohere import CohereEmbeddings
@@ -80,6 +81,7 @@ __all__ = [
     "GPT4AllEmbeddings",
     "XinferenceEmbeddings",
     "LocalAIEmbeddings",
+    "AwaEmbeddings",
 ]
 
 

@@ -32,7 +32,14 @@ cls_query_rdfs = prefixes["rdfs"] + (
     """}"""
 )
 
-cls_query_owl = cls_query_rdfs
+cls_query_owl = prefixes["rdfs"] + (
+    """SELECT DISTINCT ?cls ?com\n"""
+    """WHERE { \n"""
+    """    ?instance a/rdfs:subClassOf* ?cls . \n"""
+    """    FILTER (isIRI(?cls)) . \n"""
+    """    OPTIONAL { ?cls rdfs:comment ?com } \n"""
+    """}"""
+)
 
 rel_query_rdf = prefixes["rdfs"] + (
     """SELECT DISTINCT ?rel ?com\n"""
