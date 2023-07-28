@@ -345,7 +345,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
         [
             "graphql_endpoint",
             "custom_headers",
-            "disable_schema_prompt",
+            "auto_fetch_schema",
             "custom_transport_auth",
         ],
     ),
