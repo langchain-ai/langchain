@@ -12,6 +12,9 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -27,8 +30,8 @@ jobs:
 
       - name: Commit changes
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
           git add .
           git diff --quiet && git diff --staged --quiet || git commit -m "Update documentation"
-          git push https://${{ secrets.PAT }}@github.com/<your-username>/langchain.git HEAD:master
+          git push
