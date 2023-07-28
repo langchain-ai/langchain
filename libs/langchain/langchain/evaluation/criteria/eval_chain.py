@@ -8,7 +8,7 @@ from pydantic import Extra, Field
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
-from langchain.evaluation.criteria.prompt import PROMPT, PROMPT_WITH_REFERENCES
+from langchain.evaluation.criteria.prompt import STRATEGY_TYPE, get_prompt_template
 from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
 from langchain.schema import RUN_KEY, BaseOutputParser, BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
@@ -85,6 +85,85 @@ class CriteriaResultOutputParser(BaseOutputParser[dict]):
             "reasoning": reasoning.strip(),
             "value": verdict,
             "score": score,
+        }
+
+
+class ScoringResultOutputParser(BaseOutputParser[dict]):
+    """A parser for the output of the ScoringEvalChain."""
+
+    @property
+    def _type(self) -> str:
+        return "scoring_result"
+
+    def parse(self, text: str) -> Any:
+        """Parse the output text.
+
+        Args:
+            text (str): The output text to parse.
+
+        Returns:
+            Any: The parsed output.
+        """
+        parsed = text.strip().rsplit("\n", maxsplit=1)
+        if len(parsed) == 1:
+            reasoning = ""
+            score = parsed[0]
+        else:
+            reasoning, score = parsed
+        score_ = int(score) if score.isdigit() and 1 <= int(score) <= 10 else None
+        scaled_score = score_ / 10 if score_ is not None else score_
+        return {
+            "reasoning": reasoning.strip(),
+            "value": score,
+            "score": scaled_score,
+        }
+
+
+class ConfidenceResultOutputParser(BaseOutputParser[dict]):
+    """A parser for the output of the ConfidenceEvalChain."""
+
+    @property
+    def _type(self) -> str:
+        return "confidence_result"
+
+    def parse(self, text: str) -> Any:
+        """Parse the output text.
+
+        Args:
+            text (str): The output text to parse.
+
+        Returns:
+            Any: The parsed output.
+        """
+        parsed = text.strip().rsplit("\n", maxsplit=1)
+        if len(parsed) == 1:
+            reasoning = ""
+            confidence = parsed[0]
+        else:
+            reasoning, confidence = parsed
+
+        confidence_scale = [
+            "extremely confident no",
+            "very confident no",
+            "slightly confident no",
+            "somewhat confident no",
+            "unsure",
+            "somewhat confident yes",
+            "slightly confident yes",
+            "very confident yes",
+            "extremely confident yes",
+        ]
+
+        score = (
+            confidence_scale.index(confidence.lower())
+            if confidence in confidence_scale
+            else None
+        )
+        scaled_score = score / len(confidence_scale) if score is not None else None
+        return {
+            "reasoning": reasoning.strip(),
+            "value": confidence,
+            "score": scaled_score,
         }
 
 
@@ -243,16 +322,42 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
 
     @classmethod
     def _resolve_prompt(
-        cls, prompt: Optional[BasePromptTemplate] = None
+        cls,
+        prompt: Optional[BasePromptTemplate] = None,
+        strategy: STRATEGY_TYPE = "binary",
     ) -> BasePromptTemplate:
         expected_input_vars = {"input", "output", "criteria"}
-        prompt_ = prompt or PROMPT
+        prompt_ = prompt or get_prompt_template(
+            strategy=strategy, requires_references=False
+        )
         if expected_input_vars != set(prompt_.input_variables):
             raise ValueError(
                 f"Input variables should be {expected_input_vars}, "
                 f"but got {prompt_.input_variables}"
             )
         return prompt_
+
+    @classmethod
+    def _resolve_parser(
+        cls,
+        output_parser: Optional[BaseOutputParser] = None,
+        strategy: STRATEGY_TYPE = "binary",
+    ) -> BasePromptTemplate:
+        if output_parser is not None:
+            return output_parser
+        parser_map = {
+            "binary": CriteriaResultOutputParser,
+            "score": ScoringResultOutputParser,
+            "confidence": ConfidenceResultOutputParser,
+        }
+        if strategy not in parser_map:
+            raise ValueError(
+                f"Evaluation strategy {strategy} not recognized."
+                "\nPlease select one of 'binary', 'score', or 'confidence'"
+                " or specify your own output_parser when loading"
+                " the criteria eval chain"
+            )
+        return parser_map[strategy]
 
     @classmethod
     def resolve_criteria(
@@ -289,6 +394,8 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         criteria: Optional[CRITERIA_TYPE] = None,
         *,
         prompt: Optional[BasePromptTemplate] = None,
+        strategy: STRATEGY_TYPE = "binary",
+        output_parser: Optional[BaseOutputParser] = None,
         **kwargs: Any,
     ) -> CriteriaEvalChain:
         """Create a `CriteriaEvalChain` instance from an llm and criteria.
@@ -305,6 +412,10 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         prompt : Optional[BasePromptTemplate], default=None
             The prompt template to use for generating prompts. If not provided,
             a default prompt template will be used.
+        strategy: str ("binary", "score", "confidence") - the scoring strategy.
+            Default to "binary" (Yes/No)
+        output_parser: Optional[BaseOutputParser] - the output parser to extract
+            the score and reasoning from the LLM output.
         **kwargs : Any
             Additional keyword arguments to pass to the `LLMChain`
             constructor.
@@ -330,7 +441,8 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
                 criteria=criteria,
             )
         """
-        prompt_ = cls._resolve_prompt(prompt)
+        prompt_ = cls._resolve_prompt(prompt, strategy=strategy)
+        parser = cls._resolve_parser(output_parser=output_parser, strategy=strategy)
         if criteria == Criteria.CORRECTNESS:
             raise ValueError(
                 "Correctness should not be used in the reference-free"
@@ -345,6 +457,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
             llm=llm,
             prompt=prompt_,
             criterion_name="-".join(criteria_),
+            output_parser=parser,
             **kwargs,
         )
 
@@ -491,10 +604,14 @@ class LabeledCriteriaEvalChain(CriteriaEvalChain):
 
     @classmethod
     def _resolve_prompt(
-        cls, prompt: Optional[BasePromptTemplate] = None
+        cls,
+        prompt: Optional[BasePromptTemplate] = None,
+        strategy: STRATEGY_TYPE = "binary",
     ) -> BasePromptTemplate:
         expected_input_vars = {"input", "output", "criteria", "reference"}
-        prompt_ = prompt or PROMPT_WITH_REFERENCES
+        prompt_ = prompt or get_prompt_template(
+            strategy=strategy, requires_references=True
+        )
         if expected_input_vars != set(prompt_.input_variables):
             raise ValueError(
                 f"Input variables should be {expected_input_vars}, "
@@ -509,6 +626,8 @@ class LabeledCriteriaEvalChain(CriteriaEvalChain):
         criteria: Optional[CRITERIA_TYPE] = None,
         *,
         prompt: Optional[BasePromptTemplate] = None,
+        strategy: STRATEGY_TYPE = "binary",
+        output_parser: Optional[BaseOutputParser] = None,
         **kwargs: Any,
     ) -> CriteriaEvalChain:
         """Create a `LabeledCriteriaEvalChain` instance from an llm and criteria.
@@ -525,6 +644,8 @@ class LabeledCriteriaEvalChain(CriteriaEvalChain):
         prompt : Optional[BasePromptTemplate], default=None
             The prompt template to use for generating prompts. If not provided,
             a default prompt will be used.
+        output_parser: Optional[BaseOutputParser] - the output parser to extract
+            the score and reasoning from the LLM output.
         **kwargs : Any
             Additional keyword arguments to pass to the `LLMChain`
             constructor.
@@ -550,13 +671,15 @@ class LabeledCriteriaEvalChain(CriteriaEvalChain):
                 criteria=criteria,
             )
         """
-        prompt = cls._resolve_prompt(prompt)
+        prompt_ = cls._resolve_prompt(prompt, strategy=strategy)
+        parser = cls._resolve_parser(output_parser=output_parser, strategy=strategy)
         criteria_ = cls.resolve_criteria(criteria)
         criteria_str = "\n".join(f"{k}: {v}" for k, v in criteria_.items())
-        prompt_ = prompt.partial(criteria=criteria_str)
+        prompt_ = prompt_.partial(criteria=criteria_str)
         return cls(
             llm=llm,
             prompt=prompt_,
             criterion_name="-".join(criteria_),
+            output_parser=parser,
             **kwargs,
         )
