@@ -123,7 +123,7 @@ class PromptGenerator:
 
 
 def get_prompt(tools: List[BaseTool]) -> str:
-    """This function generates a prompt string.
+    """Generates a prompt string.
 
     It includes various constraints, commands, resources, and performance evaluations.
 
