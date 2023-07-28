@@ -23,14 +23,6 @@ from langchain.callbacks.manager import (
 )
 from langchain.tools.base import BaseTool
 
-try:
-    from nucliadb_protos.writer_pb2 import BrokerMessage
-except ImportError:
-    raise ImportError(
-        "nucliadb-protos is not installed. "
-        "Run `pip install nucliadb-protos` to install."
-    )
-
 
 class NUASchema(BaseModel):
     action: str = Field(
@@ -181,12 +173,20 @@ class NucliaUnderstandingAPI(BaseTool):
 
     def _pull_queue(self) -> None:
         try:
+            from nucliadb_protos.writer_pb2 import BrokerMessage
+        except ImportError as e:
+            raise ImportError(
+                "nucliadb-protos is not installed. "
+                "Run `pip install nucliadb-protos` to install."
+            ) from e
+        try:
             from google.protobuf.json_format import MessageToJson
         except ImportError as e:
             raise ImportError(
                 "Unable to import google.protobuf, please install with "
                 "`pip install protobuf`."
             ) from e
+
         res = requests.get(
             self._config["BACKEND"] + "/processing/pull",
             headers={
