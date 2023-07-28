@@ -98,8 +98,7 @@
             "name"
           ],
           "template": "hello {name}!",
-          "template_format": "f-string",
-          "partial_variables": {}
+          "template_format": "f-string"
         }
       }
     }
@@ -177,8 +176,7 @@
                       "name"
                     ],
                     "template": "hello {name}!",
-                    "template_format": "f-string",
-                    "partial_variables": {}
+                    "template_format": "f-string"
                   }
                 }
               }
@@ -247,8 +245,7 @@
             "name"
           ],
           "template": "hello {name}!",
-          "template_format": "f-string",
-          "partial_variables": {}
+          "template_format": "f-string"
         }
       }
     }
@@ -276,28 +273,6 @@
           "OPENAI_API_KEY"
         ]
       }
-    }
-  }
-  '''
-# ---
-# name: test_serialize_prompt
-  '''
-  {
-    "lc": 1,
-    "type": "constructor",
-    "id": [
-      "langchain",
-      "prompts",
-      "prompt",
-      "PromptTemplate"
-    ],
-    "kwargs": {
-      "input_variables": [
-        "name"
-      ],
-      "template": "hello {name}!",
-      "template_format": "f-string",
-      "partial_variables": {}
     }
   }
   '''
