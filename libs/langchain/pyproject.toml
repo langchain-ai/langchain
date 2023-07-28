@@ -124,6 +124,7 @@ langsmith = "~0.0.11"
 rank-bm25 = {version = "^0.2.2", optional = true}
 amadeus = {version = ">=8.1.0", optional = true}
 geopandas = {version = "^0.13.1", optional = true}
+xinference = {version = "^0.0.6", optional = true}
 python-arango = {version = "^7.5.9", optional = true}
 
 [tool.poetry.group.test.dependencies]
@@ -219,7 +220,7 @@ playwright = "^1.28.0"
 setuptools = "^67.6.1"
 
 [tool.poetry.extras]
-llms = ["anthropic", "clarifai", "cohere", "openai", "openllm", "openlm", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
+llms = ["anthropic", "clarifai", "cohere", "openai", "openllm", "openlm", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers", "xinference"]
 qdrant = ["qdrant-client"]
 openai = ["openai", "tiktoken"]
 text_helpers = ["chardet"]
@@ -315,6 +316,7 @@ all = [
     "octoai-sdk",
     "rdflib",
     "amadeus",
+    "xinference",
     "python-arango",
 ]
 
@@ -356,6 +358,7 @@ extended_testing = [
  "rank_bm25",
  "geopandas",
  "jinja2",
+ "xinference",
 ]
 
 [tool.ruff]
