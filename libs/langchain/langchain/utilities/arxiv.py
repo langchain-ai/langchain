@@ -30,9 +30,9 @@ class ArxivAPIWrapper(BaseModel):
             meta info (see https://lukasschwab.me/arxiv.py/index.html#Result),
             if False: the `metadata` contains only the published date, title,
             authors and summary.
-        doc_content_chars_max (optional): an optional cut limit for 
+        doc_content_chars_max (optional): an optional cut limit for
             the length of a document's content
-    
+
     Example:
         .. code-block:: python
 
@@ -77,7 +77,7 @@ class ArxivAPIWrapper(BaseModel):
 
     def run(self, query: str) -> str:
         """
-        Performs an arxiv search and returns article metadata. Wrapper for 
+        Performs an arxiv search and returns article metadata. Wrapper for
         https://lukasschwab.me/arxiv.py/index.html#Search
 
         Parameters:
@@ -117,7 +117,7 @@ class ArxivAPIWrapper(BaseModel):
         them as Documents, and returns them in a List.
 
         Parameters:
-            query: a plaintext search query 
+            query: a plaintext search query
         Returns:
             A List of Documents with metadata
         """
