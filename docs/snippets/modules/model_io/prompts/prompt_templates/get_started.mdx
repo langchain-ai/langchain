@@ -24,6 +24,8 @@ prompt_template.format(adjective="funny", content="chickens")
 
 </CodeOutputBlock>
 
+The template supports any number of variables, including no variables:
+
 ```python
 from langchain import PromptTemplate
 
@@ -57,7 +59,14 @@ The prompt to [Chat Models](../models/chat) is a list of chat messages.
 
 Each chat message is associated with content, and an additional parameter called `role`.
 
+<<<<<<< HEAD
 For example, in the OpenAI [Chat Completions API](https://platform.openai.com/docs/guides/chat/introduction), a chat message can be associated with an AI assistant, a human or a system role.
+=======
+LangChain provides several prompt templates to make constructing and working with prompts easily. You are encouraged to use these chat related prompt templates instead of `PromptTemplate` when querying chat models to fully exploit the potential of underlying chat model.
+
+
+
+>>>>>>> master
 
 Create a chat prompt template like this:
 

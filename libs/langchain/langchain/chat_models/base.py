@@ -101,13 +101,14 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
         config: Optional[RunnableConfig] = None,
         *,
         stop: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> BaseMessageChunk:
         return cast(
             BaseMessageChunk,
             cast(
                 ChatGeneration,
                 self.generate_prompt(
-                    [self._convert_input(input)], stop=stop, **(config or {})
+                    [self._convert_input(input)], stop=stop, **(config or {}), **kwargs
                 ).generations[0][0],
             ).message,
         )
@@ -118,15 +119,16 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
         config: Optional[RunnableConfig] = None,
         *,
         stop: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> BaseMessageChunk:
         if type(self)._agenerate == BaseChatModel._agenerate:
             # model doesn't implement async generation, so use default implementation
             return await asyncio.get_running_loop().run_in_executor(
-                None, partial(self.invoke, input, config, stop=stop)
+                None, partial(self.invoke, input, config, stop=stop, **kwargs)
             )
 
         llm_result = await self.agenerate_prompt(
-            [self._convert_input(input)], stop=stop, **(config or {})
+            [self._convert_input(input)], stop=stop, **(config or {}), **kwargs
         )
         return cast(
             BaseMessageChunk, cast(ChatGeneration, llm_result.generations[0][0]).message

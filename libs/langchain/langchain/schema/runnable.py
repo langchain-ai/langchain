@@ -72,6 +72,7 @@ class Runnable(Generic[Input, Output], ABC):
         self,
         other: Union[
             Runnable[Any, Other],
+            Callable[[Any], Other],
             Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other]]],
         ],
     ) -> RunnableSequence[Input, Other]:
@@ -81,6 +82,7 @@ class Runnable(Generic[Input, Output], ABC):
         self,
         other: Union[
             Runnable[Other, Any],
+            Callable[[Any], Other],
             Mapping[str, Union[Runnable[Other, Any], Callable[[Other], Any]]],
         ],
     ) -> RunnableSequence[Other, Output]:
@@ -201,6 +203,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         self,
         other: Union[
             Runnable[Any, Other],
+            Callable[[Any], Other],
             Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other]]],
         ],
     ) -> RunnableSequence[Input, Other]:
@@ -221,6 +224,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         self,
         other: Union[
             Runnable[Other, Any],
+            Callable[[Any], Other],
             Mapping[str, Union[Runnable[Other, Any], Callable[[Other], Any]]],
         ],
     ) -> RunnableSequence[Other, Output]:

@@ -24,8 +24,8 @@ from langchain.schema.output import (
 from langchain.schema.output_parser import (
     BaseLLMOutputParser,
     BaseOutputParser,
-    NoOpOutputParser,
     OutputParserException,
+    StrOutputParser,
 )
 from langchain.schema.prompt import PromptValue
 from langchain.schema.prompt_template import BasePromptTemplate, format_document
@@ -62,7 +62,7 @@ __all__ = [
     "RUN_KEY",
     "Memory",
     "OutputParserException",
-    "NoOpOutputParser",
+    "StrOutputParser",
     "BaseOutputParser",
     "BaseLLMOutputParser",
     "BasePromptTemplate",
