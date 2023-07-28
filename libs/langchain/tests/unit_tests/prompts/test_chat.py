@@ -241,7 +241,7 @@ def test_chat_from_role_strings() -> None:
 
     messages = template.format_messages(question="How are you?", quack="duck")
     assert messages == [
-        ChatMessage(content="You are a bot.", role='system'),
+        ChatMessage(content="You are a bot.", role="system"),
         ChatMessage(content="hello!", role="assistant"),
         ChatMessage(content="How are you?", role="human"),
         ChatMessage(content="duck", role="other"),
