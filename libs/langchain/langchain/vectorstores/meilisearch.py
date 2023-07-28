@@ -265,7 +265,7 @@ class Meilisearch(VectorStore):
         client: Optional[Client] = None,
         url: Optional[str] = None,
         api_key: Optional[str] = None,
-        index_name: Optional[str] = "langchain-demo",
+        index_name: str = "langchain-demo",
         ids: Optional[List[str]] = None,
         text_key: Optional[str] = "text",
         metadata_key: Optional[str] = "metadata",
