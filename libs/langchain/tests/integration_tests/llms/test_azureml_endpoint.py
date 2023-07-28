@@ -12,8 +12,8 @@ from langchain.llms.azureml_endpoint import (
     AzureMLOnlineEndpoint,
     ContentFormatterBase,
     DollyContentFormatter,
-    GPT2ContentFormatter,
     HFContentFormatter,
+    OSSContentFormatter,
 )
 from langchain.llms.loading import load_llm
 
@@ -24,7 +24,7 @@ def test_gpt2_call() -> None:
         endpoint_api_key=os.getenv("OSS_ENDPOINT_API_KEY"),
         endpoint_url=os.getenv("OSS_ENDPOINT_URL"),
         deployment_name=os.getenv("OSS_DEPLOYMENT_NAME"),
-        content_formatter=GPT2ContentFormatter(),
+        content_formatter=OSSContentFormatter(),
     )
     output = llm("Foo")
     assert isinstance(output, str)
@@ -133,7 +133,7 @@ def test_incorrect_key() -> None:
             endpoint_api_key="incorrect-key",
             endpoint_url=os.getenv("OSS_ENDPOINT_URL"),
             deployment_name=os.getenv("OSS_DEPLOYMENT_NAME"),
-            content_formatter=GPT2ContentFormatter(),
+            content_formatter=OSSContentFormatter(),
         )
         llm("Foo")
 
