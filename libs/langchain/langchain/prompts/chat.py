@@ -536,7 +536,8 @@ def _create_template_from_message_type(
         message = SystemMessagePromptTemplate.from_template(template)
     else:
         raise ValueError(
-            f"Unexpected message type: {message_type}. Use one of 'human', 'ai', or 'system'."
+            f"Unexpected message type: {message_type}. Use one of 'human', 'ai', "
+            f"or 'system'."
         )
     return message
 
