@@ -34,6 +34,7 @@ from langchain.chains.graph_qa.cypher import GraphCypherQAChain
 from langchain.chains.graph_qa.hugegraph import HugeGraphQAChain
 from langchain.chains.graph_qa.kuzu import KuzuQAChain
 from langchain.chains.graph_qa.nebulagraph import NebulaGraphQAChain
+from langchain.chains.graph_qa.neptune_cypher import NeptuneOpenCypherQAChain
 from langchain.chains.graph_qa.sparql import GraphSparqlQAChain
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain.chains.llm import LLMChain
@@ -101,6 +102,7 @@ __all__ = [
     "MultiRouteChain",
     "NatBotChain",
     "NebulaGraphQAChain",
+    "NeptuneOpenCypherQAChain",
     "OpenAIModerationChain",
     "OpenAPIEndpointChain",
     "QAGenerationChain",
