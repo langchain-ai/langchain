@@ -292,7 +292,7 @@ def update_token_usage(
         else:
             token_usage[_key] += response["usage"][_key]
 
-def execute(prompt: str, model: str, api_key: str, max_tokens:int = 256, temperature:float = 0.0, top_p:float = 1.0) -> Any:
+def execute(prompt: str, model: str, api_key: Optional[str], max_tokens:int = 256, temperature:float = 0.0, top_p:float = 1.0) -> Any:
     """Execute LLM query"""
     requestUrl = "https://api.fireworks.ai/inference/v1/completions"
     requestBody = {
