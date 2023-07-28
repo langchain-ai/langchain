@@ -230,6 +230,8 @@ def _message_from_dict(message: dict) -> BaseMessage:
         return SystemMessage(**message["data"])
     elif _type == "chat":
         return ChatMessage(**message["data"])
+    elif _type == "function":
+        return FunctionMessage(**message["data"])
     else:
         raise ValueError(f"Got unexpected message type: {_type}")
 
