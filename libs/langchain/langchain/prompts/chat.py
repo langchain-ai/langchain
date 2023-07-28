@@ -274,7 +274,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
             template = ChatPromptTemplate.from_messages([
                 ("system", "You are a helpful AI bot. Your name is {name}."),
                 ("human", "Hello, how are you doing?"),
-                ("AI", "I'm doing well, thanks!"),
+                ("assistant", "I'm doing well, thanks!"),
                 ("human", "{user_input}"),
             ])
 
@@ -405,7 +405,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
 
                 template = ChatPromptTemplate.from_messages([
                     ("human", "Hello, how are you?"),
-                    ("AI", "I'm doing well, thanks!"),
+                    ("assistant", "I'm doing well, thanks!"),
                     ("human", "That's good to hear."),
                 ])
 
@@ -425,7 +425,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
 
                 template = ChatPromptTemplate.from_messages([
                     ("human", "Hello, how are you?"),
-                    ("AI", "I'm doing well, thanks!"),
+                    ("assistant", "I'm doing well, thanks!"),
                     ("human", "That's good to hear."),
                 ])
 
@@ -515,7 +515,7 @@ def _create_template_from_role_string(
         message: BaseMessagePromptTemplate = HumanMessagePromptTemplate.from_template(
             template
         )
-    elif role == "ai":
+    elif role == "assistant":
         message = AIMessagePromptTemplate.from_template(template)
     elif role == "system":
         message = SystemMessagePromptTemplate.from_template(template)

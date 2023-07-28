@@ -231,7 +231,7 @@ def test_chat_from_role_strings() -> None:
     template = ChatPromptTemplate.from_role_strings(
         [
             ("system", "You are a bot."),
-            ("ai", "hello!"),
+            ("assistant", "hello!"),
             ("human", "{question}"),
             ("other", "{quack}"),
         ]
