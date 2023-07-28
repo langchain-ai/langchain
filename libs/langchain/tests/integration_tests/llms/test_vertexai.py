@@ -1,6 +1,4 @@
 """Test Vertex AI API wrapper.
-In order to run this test, you need to install VertexAI SDK (that is is the private
-preview)  and be whitelisted to list the models themselves:
 In order to run this test, you need to install VertexAI SDK 
 pip install google-cloud-aiplatform>=1.25.0
 

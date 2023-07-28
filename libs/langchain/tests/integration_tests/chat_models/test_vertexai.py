@@ -1,6 +1,4 @@
 """Test Vertex AI API wrapper.
-In order to run this test, you need to install VertexAI SDK (that is is the private
-preview)  and be whitelisted to list the models themselves:
 In order to run this test, you need to install VertexAI SDK 
 pip install google-cloud-aiplatform>=1.25.0
 
@@ -12,7 +10,12 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 
 from langchain.chat_models import ChatVertexAI
-from langchain.chat_models.vertexai import _parse_chat_history, _parse_examples
+from langchain.chat_models.vertexai import (
+    TextChatVertexAI,
+    _history_to_str,
+    _parse_chat_history,
+    _parse_examples,
+)
 from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
 
 
@@ -148,8 +151,77 @@ def test_parse_examples_correct() -> None:
 def test_parse_exmaples_failes_wrong_sequence() -> None:
     with pytest.raises(ValueError) as exc_info:
         _ = _parse_examples([AIMessage(content="a")])
-    print(str(exc_info.value))
     assert (
         str(exc_info.value)
         == "Expect examples to have an even amount of messages, got 1."
     )
+
+
+def test_history_to_str() -> None:
+    text_question = (
+        "Hello, could you recommend a good movie for me to watch this evening, please?"
+    )
+    question = HumanMessage(content=text_question)
+    text_answer = (
+        "Sure, You might enjoy The Lord of the Rings: The Fellowship of the Ring "
+        "(2001): This is the first movie in the Lord of the Rings trilogy."
+    )
+    answer = AIMessage(content=text_answer)
+    history = _history_to_str([question, answer])
+    assert history == f"Input: {text_question}\nOutput: {text_answer}"
+
+
+def test_textchatvertexai() -> None:
+    model = TextChatVertexAI()
+    raw_context = (
+        "My name is Ned. You are my personal assistant. "
+        "Given the {history}, continue the dialogue."
+    )
+    text_question2 = "2+2"
+    text_question1, text_answer1 = "4+4", "8"
+    question1 = HumanMessage(content=text_question1)
+    answer1 = AIMessage(content=text_answer1)
+    context = SystemMessage(content=raw_context)
+    question2 = HumanMessage(content=text_question2)
+    response = model([context, question1, answer1, question2])
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)
+
+
+def test_textchatvertexai_call_args() -> None:
+    import vertexai
+
+    with patch.object(
+        vertexai.language_models._language_models.TextGenerationModel, "from_pretrained"
+    ) as mock_text_model:
+        mock_predict = MagicMock()
+        result = MagicMock()
+        result.text = "some_result"
+        mock_predict.return_value = result
+        mock_model = MagicMock()
+        mock_text_model.return_value = mock_model
+        mock_model.predict = mock_predict
+
+        model = TextChatVertexAI()
+        raw_context = (
+            "My name is Ned. You are my personal assistant. "
+            "Given the {history}, continue the dialogue."
+        )
+        text_question2 = "2+2"
+        text_question1, text_answer1 = "4+4", "8"
+        question1 = HumanMessage(content=text_question1)
+        answer1 = AIMessage(content=text_answer1)
+        context = SystemMessage(content=raw_context)
+        question2 = HumanMessage(content=text_question2)
+        _ = model([context, question1, answer1, question2])
+        expected_prompt = (
+            "My name is Ned. You are my personal assistant. "
+            "Given the Input: 4+4\nOutput: 8, continue the dialogue."
+        )
+        mock_predict.assert_called_once_with(
+            expected_prompt,
+            temperature=0.0,
+            max_output_tokens=128,
+            top_k=40,
+            top_p=0.95,
+        )
