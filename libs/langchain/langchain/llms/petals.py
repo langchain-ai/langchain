@@ -98,7 +98,9 @@ class Petals(LLM):
 
             model_name = values["model_name"]
             values["tokenizer"] = AutoTokenizer.from_pretrained(model_name)
-            values["client"] = AutoDistributedModelForCausalLM.from_pretrained(model_name)
+            values["client"] = AutoDistributedModelForCausalLM.from_pretrained(
+                model_name
+            )
             values["huggingface_api_key"] = huggingface_api_key
 
         except ImportError:
