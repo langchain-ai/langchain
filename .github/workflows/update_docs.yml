@@ -23,7 +23,7 @@ jobs:
           python -m pip install --upgrade pip
 
       - name: Run script
-        run: python .github/workflows/update_docs.py
+        run: python .github/update_docs.py
 
       - name: Commit changes
         run: |
