@@ -3450,7 +3450,7 @@
     },
     {
       "source": "/en/latest/modules/prompts.html",
-      "destination": "/docs/modules/model_io/prompts.html"
+      "destination": "/docs/modules/model_io/prompts"
     },
     {
       "source": "/en/latest/modules/prompts/output_parsers.html",
