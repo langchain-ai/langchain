@@ -73,6 +73,7 @@ from langchain.chains.sql_database.base import (
     SQLDatabaseChain,
     SQLDatabaseSequentialChain,
 )
+from langchain.chains.sql_database.query import create_sql_query_chain
 from langchain.chains.transform import TransformChain
 
 __all__ = [
@@ -132,4 +133,5 @@ __all__ = [
     "create_tagging_chain_pydantic",
     "generate_example",
     "load_chain",
+    "create_sql_query_chain",
 ]
