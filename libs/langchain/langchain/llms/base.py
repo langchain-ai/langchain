@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import functools
 import inspect
 import json
 import logging
@@ -28,6 +29,7 @@ from typing import (
 import yaml
 from pydantic import Field, root_validator, validator
 from tenacity import (
+    RetryCallState,
     before_sleep_log,
     retry,
     retry_base,
@@ -66,10 +68,35 @@ def _get_verbosity() -> bool:
     return langchain.verbose
 
 
+@functools.lru_cache
+def _log_error_once(msg: str) -> None:
+    """Log an error once."""
+    logger.error(msg)
+
+
 def create_base_retry_decorator(
-    error_types: List[Type[BaseException]], max_retries: int = 1
+    error_types: List[Type[BaseException]],
+    max_retries: int = 1,
+    run_manager: Optional[
+        Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
+    ] = None,
 ) -> Callable[[Any], Any]:
     """Create a retry decorator for a given LLM and provided list of error types."""
+
+    _logging = before_sleep_log(logger, logging.WARNING)
+
+    def _before_sleep(retry_state: RetryCallState) -> None:
+        _logging(retry_state)
+        if run_manager:
+            if isinstance(run_manager, AsyncCallbackManagerForLLMRun):
+                coro = run_manager.on_retry(retry_state)
+                try:
+                    asyncio.run(coro)
+                except Exception as e:
+                    _log_error_once(f"Error in on_retry: {e}")
+            else:
+                run_manager.on_retry(retry_state)
+        return None
 
     min_seconds = 4
     max_seconds = 10
@@ -83,7 +110,7 @@ def create_base_retry_decorator(
         stop=stop_after_attempt(max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
         retry=retry_instance,
-        before_sleep=before_sleep_log(logger, logging.WARNING),
+        before_sleep=_before_sleep,
     )
 
 
