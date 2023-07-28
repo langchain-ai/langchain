@@ -124,7 +124,7 @@ class PALChain(Chain):
 
         :meta private:
         """
-        return self.prompt.input_variables
+        return self.llm_chain.prompt.input_variables
 
     @property
     def output_keys(self) -> List[str]:
