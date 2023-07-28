@@ -1,16 +1,16 @@
-"""Wrapper around EdeneAI API."""
+"""Wrapper around EdenAI's Generation API."""
 import logging
-from typing import Any, Dict, List, Optional
-
-from pydantic import Extra, Field, root_validator
+from typing import Any, Dict, List, Literal, Optional
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
-from langchain.utils import get_from_dict_or_env
-from langchain.requests import Requests
 from langchain.llms.utils import enforce_stop_tokens
-import json
+from langchain.requests import Requests
+from langchain.utils import get_from_dict_or_env
+from pydantic import Extra, Field, root_validator
+
 logger = logging.getLogger(__name__)
+
 
 class EdenAI(LLM):
     """Wrapper around edenai models.
@@ -19,34 +19,37 @@ class EdenAI(LLM):
     the environment variable ``EDENAI_API_KEY`` set with your API token.
     You can find your token here: https://app.edenai.run/admin/account/settings
 
-    feature and sub_feature are required, but any other model parameters can also be passed in with the format params={model_param: value, ...}
+    `feature` and `subfeature` are required, but any other model parameters can also be
+    passed in with the format params={model_param: value, ...}
 
-    for exemple check edenai documentation.
+    for api reference check edenai documentation: http://docs.edenai.co.
     """
-    feature: str
-    """ what feature to use """
-    sub_feature: str
-    """ what subfeature to use """
-    
+
     base_url = "https://api.edenai.run/v2"
-    """ base url for edenai api"""
-    
-    params: Dict[str, Any] = Field(default_factory=dict)
-    """" parameters when calling the model """
-    
-    
+
     edenai_api_key: Optional[str] = None
-    """ api key """
-    
+
+    feature: Literal["text", "image"] = "text"
+    """Which generative feature to use, use text by default"""
+
+    subfeature: Literal["generation"] = "generation"
+    """Subfeature of above feature, use generation by default"""
+
+    provider: str
+    """Geneerative provider to use (eg: openai,stabilityai,cohere,google etc.)"""
+
+    params: Dict[str, Any]
+    """
+    Parameters to pass to above subfeature (excluding 'providers' & 'text')
+    ref text: https://docs.edenai.co/reference/text_generation_create
+    ref image: https://docs.edenai.co/reference/text_generation_create
+    """
+
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """extra parameters"""
-    
-    keys=['generated_text','result','items']
-    """json formatting keys"""
-    
+
     stop_sequences: Optional[List[str]] = None
     """Stop sequences to use."""
-    
 
     class Config:
         """Configuration for this pydantic object."""
@@ -55,14 +58,12 @@ class EdenAI(LLM):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key and python package exists in environment."""
-        edenai_api_key = get_from_dict_or_env(
+        """Validate that api key exists in environment."""
+        values["edenai_api_key"] = get_from_dict_or_env(
             values, "edenai_api_key", "EDENAI_API_KEY"
         )
-        values["edenai_api_key"] = edenai_api_key
         return values
-    
-    
+
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
@@ -80,24 +81,18 @@ class EdenAI(LLM):
                 extra[field_name] = values.pop(field_name)
         values["model_kwargs"] = extra
         return values
-    
 
     @property
     def _llm_type(self) -> str:
         """Return type of model."""
         return "edenai"
-    
 
-    def _format_output(self,result) -> str:
-        """find the correct json format"""
-        for key in self.keys:
-            try :
-                return(result[self.params["providers"]][key])
-            except:
-                pass
-            
-        raise ValueError("key does not exist")
-            
+    def _format_output(self, output: dict) -> str:
+        if self.feature == "image":
+            return output[self.provider]["generated_text"]
+        else:
+            return output[self.provider]["image"]
+
     def _call(
         self,
         prompt: str,
@@ -105,17 +100,16 @@ class EdenAI(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        
-        """Call out to EDENAI's complete endpoint.
+        """Call out to EdenAI's text generation endpoint.
 
         Args:
             prompt: The prompt to pass into the model.
 
         Returns:
-            str response .
+            json formatted str response.
 
         """
-        stops=None
+        stops = None
         if self.stop_sequences is not None and stop is not None:
             raise ValueError(
                 "stop sequences found in both the input and default params."
@@ -125,28 +119,26 @@ class EdenAI(LLM):
         else:
             stops = stop
 
+        url = f"{self.base_url}/{self.feature}/{self.subfeature}"
         headers = {"Authorization": f"Bearer {self.edenai_api_key}"}
-        url = f"{self.base_url}/{self.feature}/{self.sub_feature}"
+        payload = {**self.params, "providers": self.provider, "text": prompt, **kwargs}
+        request = Requests(headers=headers)
 
-        payload={**self.params,"text":prompt,**kwargs}
-        request=Requests(headers=headers)
-        response = request.post(
-            url=url,
-            data=payload,
-        )
+        response = request.post(url=url, data=payload)
 
-        if response.status_code != 200:
-            raise ValueError(
-                f"EDENAI complete call failed with status code {response.status_code}."
+        if response.status_code >= 500:
+            raise Exception(f"EdenAI Server: Error {response.status_code}")
+        elif response.status_code >= 400:
+            raise ValueError(f"EdenAI received an invalid payload: {response.text}")
+        elif response.status_code != 200:
+            raise Exception(
+                f"EdenAI returned an unexpected response with status "
+                f"{response.status_code}: {response.text}"
             )
- 
-        result = json.loads(response.text)
-        output=self._format_output(result)
-        
-        if type(output) != str:
-            output=json.dumps(output)
-            
-        if stops != None:
+
+        output = self._format_output(response.json())
+
+        if stops is not None:
             output = enforce_stop_tokens(output, stops)
 
         return output
