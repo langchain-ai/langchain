@@ -65,13 +65,15 @@ def test_ensemble_retriever_get_relevant_docs_with_multiple_retrievers() -> None
     dummy_retriever = BM25Retriever.from_texts(doc_list_a)
     dummy_retriever.k = 1
     tfidf_retriever = TFIDFRetriever.from_texts(texts=doc_list_b)
+    tfidf_retriever.k = 1
     knn_retriever = KNNRetriever.from_texts(
         texts=doc_list_c, embeddings=FakeEmbeddings(size=100)
     )
+    knn_retriever.k = 1
 
     ensemble_retriever = EnsembleRetriever(
         retrievers=[dummy_retriever, tfidf_retriever, knn_retriever],
-        weights=[0.4, 0.5, 0.1],
+        weights=[0.6, 0.3, 0.1],
     )
     docs = ensemble_retriever.get_relevant_documents("I like apples")
-    assert len(docs) == 1
+    assert len(docs) == 3
