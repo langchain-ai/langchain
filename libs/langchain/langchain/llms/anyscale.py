@@ -8,7 +8,7 @@ from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
-
+ANYSCLAE_ENDPOINT = 'https://console.endpoints.anyscale.com'
 class Anyscale(LLM):
     """Anyscale Service models.
 
@@ -110,14 +110,29 @@ class Anyscale(LLM):
             f"{self.anyscale_service_url}{self.anyscale_service_route}"
         )
         headers = {"Authorization": f"Bearer {self.anyscale_service_token}"}
-        body = {"prompt": prompt}
-        resp = requests.post(anyscale_service_endpoint, headers=headers, json=body)
 
-        if resp.status_code != 200:
-            raise ValueError(
-                f"Error returned by service, status code {resp.status_code}"
-            )
-        text = resp.text
+        if ANYSCLAE_ENDPOINT in self.anyscale_service_url:
+            body = {
+              "model": "meta-llama/Llama-2-70b-chat-hf",
+              "messages": [{"role": "system", "content": "You are a helpful assistant."}, 
+                           {"role": "user", "content": prompt}],
+              "temperature": 0.7
+            }
+            resp = requests.post(anyscale_service_endpoint, headers=headers, json=body)
+            if resp.status_code != 200:
+                raise ValueError(f"Error returned by service")
+            resp_json = resp.json()
+            text = resp_json['choices'][0]['message']['content']
+
+        else:
+            body = {"prompt": prompt}
+            resp = requests.post(anyscale_service_endpoint, headers=headers, json=body)
+
+            if resp.status_code != 200:
+                raise ValueError(
+                    f"Error returned by service, status code {resp.status_code}"
+                )
+            text = resp.text
 
         if stop is not None:
             # This is a bit hacky, but I can't figure out a better way to enforce
