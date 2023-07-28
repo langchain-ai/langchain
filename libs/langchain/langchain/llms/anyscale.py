@@ -111,7 +111,7 @@ class Anyscale(LLM):
         )
         headers = {"Authorization": f"Bearer {self.anyscale_service_token}"}
 
-        if ANYSCLAE_ENDPOINT in self.anyscale_service_url:
+        if self.anyscale_service_url.startswith(ANYSCLAE_ENDPOINT):
             body = {
               "model": "meta-llama/Llama-2-70b-chat-hf",
               "messages": [{"role": "system", "content": "You are a helpful assistant."}, 
