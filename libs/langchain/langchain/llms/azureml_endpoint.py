@@ -65,7 +65,7 @@ class ContentFormatterBase:
 
                 def __init__(self):
                     self.headers = {
-                        "custom_field": "custom_value"
+                        "custom_field": "custom_value",
                     }
 
                 def format_request_payload(
