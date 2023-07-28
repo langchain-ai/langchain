@@ -171,10 +171,10 @@ class Chroma(VectorStore):
         if ids is None:
             ids = [str(uuid.uuid1()) for _ in texts]
         embeddings = None
+        texts = list(texts)
         if self._embedding_function is not None:
-            embeddings = self._embedding_function.embed_documents(list(texts))
+            embeddings = self._embedding_function.embed_documents(texts)
         if metadatas:
-            texts = list(texts)
             # fill metadatas with empty dicts if somebody
             # did not specify metadata for all texts
             length_diff = len(texts) - len(metadatas)
@@ -200,16 +200,15 @@ class Chroma(VectorStore):
                     documents=texts_with_metadatas,
                     ids=ids_with_metadata,
                 )
-
-            texts_with_metadatas = [texts[j] for j in empty_ids]
-            embeddings_without_metadatas = (
-                [embeddings[j] for j in empty_ids] if embeddings else None
-            )
-            ids_without_metadatas = [ids[j] for j in empty_ids]
-            if texts:
+            if empty_ids:
+                texts_without_metadatas = [texts[j] for j in empty_ids]
+                embeddings_without_metadatas = (
+                    [embeddings[j] for j in empty_ids] if embeddings else None
+                )
+                ids_without_metadatas = [ids[j] for j in empty_ids]
                 self._collection.upsert(
                     embeddings=embeddings_without_metadatas,
-                    documents=texts_with_metadatas,
+                    documents=texts_without_metadatas,
                     ids=ids_without_metadatas,
                 )
         else:
