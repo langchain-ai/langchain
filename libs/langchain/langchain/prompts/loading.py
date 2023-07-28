@@ -1,5 +1,4 @@
 """Load prompts."""
-import importlib
 import json
 import logging
 from pathlib import Path
