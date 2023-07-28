@@ -1,18 +1,20 @@
 import re
 import warnings
-from typing import Any, Callable, Dict, Generator, List, Mapping, Optional
+from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Mapping, Optional
 
-from pydantic import BaseModel, root_validator
+from pydantic import root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import LLM
+from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema.output import GenerationChunk
 from langchain.utils import check_package_version, get_from_dict_or_env
 
 
-class _AnthropicCommon(BaseModel):
+class _AnthropicCommon(BaseLanguageModel):
     client: Any = None  #: :meta private:
     async_client: Any = None  #: :meta private:
     model: str = "claude-2"
@@ -193,24 +195,16 @@ class Anthropic(LLM, _AnthropicCommon):
                 response = model(prompt)
 
         """
+        if self.streaming:
+            completion = ""
+            for chunk in self._stream(
+                prompt=prompt, stop=stop, run_manager=run_manager, **kwargs
+            ):
+                completion += chunk.text
+            return completion
+
         stop = self._get_anthropic_stop(stop)
         params = {**self._default_params, **kwargs}
-        if self.streaming:
-            stream_resp = self.client.completions.create(
-                prompt=self._wrap_prompt(prompt),
-                stop_sequences=stop,
-                stream=True,
-                **params,
-            )
-            current_completion = ""
-            for data in stream_resp:
-                delta = data.completion
-                current_completion += delta
-                if run_manager:
-                    run_manager.on_llm_new_token(
-                        delta,
-                    )
-            return current_completion
         response = self.client.completions.create(
             prompt=self._wrap_prompt(prompt),
             stop_sequences=stop,
@@ -226,22 +220,17 @@ class Anthropic(LLM, _AnthropicCommon):
         **kwargs: Any,
     ) -> str:
         """Call out to Anthropic's completion endpoint asynchronously."""
+        if self.streaming:
+            completion = ""
+            async for chunk in self._astream(
+                prompt=prompt, stop=stop, run_manager=run_manager, **kwargs
+            ):
+                completion += chunk.text
+            return completion
+
         stop = self._get_anthropic_stop(stop)
         params = {**self._default_params, **kwargs}
-        if self.streaming:
-            stream_resp = await self.async_client.completions.create(
-                prompt=self._wrap_prompt(prompt),
-                stop_sequences=stop,
-                stream=True,
-                **params,
-            )
-            current_completion = ""
-            async for data in stream_resp:
-                delta = data.completion
-                current_completion += delta
-                if run_manager:
-                    await run_manager.on_llm_new_token(delta)
-            return current_completion
+
         response = await self.async_client.completions.create(
             prompt=self._wrap_prompt(prompt),
             stop_sequences=stop,
@@ -249,22 +238,22 @@ class Anthropic(LLM, _AnthropicCommon):
         )
         return response.completion
 
-    def stream(self, prompt: str, stop: Optional[List[str]] = None) -> Generator:
+    def _stream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[GenerationChunk]:
         r"""Call Anthropic completion_stream and return the resulting generator.
-
-        BETA: this is a beta feature while we figure out the right abstraction.
-        Once that happens, this interface could change.
 
         Args:
             prompt: The prompt to pass into the model.
             stop: Optional list of stop words to use when generating.
-
         Returns:
             A generator representing the stream of tokens from Anthropic.
-
         Example:
             .. code-block:: python
-
 
                 prompt = "Write a poem about a stream."
                 prompt = f"\n\nHuman: {prompt}\n\nAssistant:"
@@ -273,12 +262,49 @@ class Anthropic(LLM, _AnthropicCommon):
                     yield token
         """
         stop = self._get_anthropic_stop(stop)
-        return self.client.completions.create(
+        params = {**self._default_params, **kwargs}
+
+        for token in self.client.completions.create(
+            prompt=self._wrap_prompt(prompt), stop_sequences=stop, stream=True, **params
+        ):
+            yield GenerationChunk(text=token.completion)
+            if run_manager:
+                run_manager.on_llm_new_token(token.completion)
+
+    async def _astream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[GenerationChunk]:
+        r"""Call Anthropic completion_stream and return the resulting generator.
+
+        Args:
+            prompt: The prompt to pass into the model.
+            stop: Optional list of stop words to use when generating.
+        Returns:
+            A generator representing the stream of tokens from Anthropic.
+        Example:
+            .. code-block:: python
+                prompt = "Write a poem about a stream."
+                prompt = f"\n\nHuman: {prompt}\n\nAssistant:"
+                generator = anthropic.stream(prompt)
+                for token in generator:
+                    yield token
+        """
+        stop = self._get_anthropic_stop(stop)
+        params = {**self._default_params, **kwargs}
+
+        async for token in await self.async_client.completions.create(
             prompt=self._wrap_prompt(prompt),
             stop_sequences=stop,
             stream=True,
-            **self._default_params,
-        )
+            **params,
+        ):
+            yield GenerationChunk(text=token.completion)
+            if run_manager:
+                await run_manager.on_llm_new_token(token.completion)
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate number of tokens."""
