@@ -145,7 +145,7 @@ def test_chat_prompt_template_from_messages_using_role_strings() -> None:
         [
             ("system", "You are a helpful AI bot. Your name is {name}."),
             ("human", "Hello, how are you doing?"),
-            ("AI", "I'm doing well, thanks!"),
+            ("ai", "I'm doing well, thanks!"),
             ("human", "{user_input}"),
         ]
     )
@@ -159,7 +159,9 @@ def test_chat_prompt_template_from_messages_using_role_strings() -> None:
         HumanMessage(
             content="Hello, how are you doing?", additional_kwargs={}, example=False
         ),
-        ChatMessage(content="I'm doing well, thanks!", additional_kwargs={}, role="AI"),
+        AIMessage(
+            content="I'm doing well, thanks!", additional_kwargs={}, example=False
+        ),
         HumanMessage(content="What is your name?", additional_kwargs={}, example=False),
     ]
 
@@ -239,9 +241,9 @@ def test_chat_from_role_strings() -> None:
 
     messages = template.format_messages(question="How are you?", quack="duck")
     assert messages == [
-        SystemMessage(content="You are a bot."),
-        AIMessage(content="hello!"),
-        HumanMessage(content="How are you?"),
+        ChatMessage(content="You are a bot.", role='system'),
+        ChatMessage(content="hello!", role="assistant"),
+        ChatMessage(content="How are you?", role="human"),
         ChatMessage(content="duck", role="other"),
     ]
 
@@ -253,13 +255,6 @@ def test_chat_from_role_strings() -> None:
             ("human", "{question}"),
             HumanMessagePromptTemplate(
                 prompt=PromptTemplate.from_template("{question}")
-            ),
-        ),
-        (
-            ("meow", "{question}"),
-            ChatMessagePromptTemplate(
-                prompt=PromptTemplate.from_template("{question}"),
-                role="meow",
             ),
         ),
         (
@@ -284,3 +279,12 @@ def test_convert_to_message(
 ) -> None:
     """Test convert to message."""
     assert _convert_to_message(args) == expected
+
+
+def test_convert_to_message_is_strict():
+    """Verify that _convert_to_message is strict."""
+    with pytest.raises(ValueError):
+        # meow does not correspond to a valid message type.
+        # this test is here to ensure that functionality to interpret `meow`
+        # as a role is NOT added.
+        _convert_to_message(("meow", "question"))
