@@ -1,5 +1,5 @@
 """Test Deep Lake functionality."""
-import deeplake  # type: ignore
+import deeplake
 import pytest
 from pytest import FixtureRequest
 
@@ -16,20 +16,7 @@ def deeplake_datastore() -> DeepLake:
         dataset_path="./test_path",
         texts=texts,
         metadatas=metadatas,
-        embedding=FakeEmbeddings(),
-        overwrite=True,
-    )
-    return docsearch
-
-
-def test_deeplake_from_documents() -> DeepLake:
-    texts = ["foo", "bar", "baz"]
-    metadatas = [{"page": str(i)} for i in range(len(texts))]
-    docsearch = DeepLake.from_texts(
-        dataset_path="./test_path",
-        texts=texts,
-        metadatas=metadatas,
-        embedding=FakeEmbeddings(),
+        embedding_function=FakeEmbeddings(),
         overwrite=True,
     )
     return docsearch
@@ -135,7 +122,6 @@ def test_deeplake_overwrite_flag() -> None:
         embedding_function=FakeEmbeddings(),
         overwrite=True,
     )
-
     with pytest.raises(ValueError):
         output = docsearch.similarity_search("foo", k=1)
 
