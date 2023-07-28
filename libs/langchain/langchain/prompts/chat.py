@@ -318,14 +318,18 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
 
     input_variables: List[str]
     """List of input variables."""
-    messages: List[Union[BaseMessagePromptTemplate, BaseMessage]]
+    messages: List[
+        Union[BaseMessagePromptTemplate, BaseMessage, BaseChatPromptTemplate]
+    ]
     """List of messages consisting of either message prompt templates or messages."""
 
     def __add__(self, other: Any) -> ChatPromptTemplate:
         # Allow for easy combining
         if isinstance(other, ChatPromptTemplate):
             return ChatPromptTemplate(messages=self.messages + other.messages)
-        elif isinstance(other, (BaseMessagePromptTemplate, BaseMessage)):
+        elif isinstance(
+            other, (BaseMessagePromptTemplate, BaseMessage, BaseChatPromptTemplate)
+        ):
             return ChatPromptTemplate(messages=self.messages + [other])
         elif isinstance(other, str):
             prompt = HumanMessagePromptTemplate.from_template(other)
@@ -349,7 +353,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
         messages = values["messages"]
         input_vars = set()
         for message in messages:
-            if isinstance(message, BaseMessagePromptTemplate):
+            if isinstance(message, (BaseMessagePromptTemplate, BaseChatPromptTemplate)):
                 input_vars.update(message.input_variables)
         if "partial_variables" in values:
             input_vars = input_vars - set(values["partial_variables"])
@@ -475,7 +479,9 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
         for message_template in self.messages:
             if isinstance(message_template, BaseMessage):
                 result.extend([message_template])
-            elif isinstance(message_template, BaseMessagePromptTemplate):
+            elif isinstance(
+                message_template, (BaseMessagePromptTemplate, BaseChatPromptTemplate)
+            ):
                 rel_params = {
                     k: v
                     for k, v in kwargs.items()
