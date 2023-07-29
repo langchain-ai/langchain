@@ -498,7 +498,12 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
         return result
 
     def partial(self, **kwargs: Union[str, Callable[[], str]]) -> BasePromptTemplate:
-        raise NotImplementedError
+        prompt_dict = self.__dict__.copy()
+        prompt_dict["input_variables"] = list(
+            set(self.input_variables).difference(kwargs)
+        )
+        prompt_dict["partial_variables"] = {**self.partial_variables, **kwargs}
+        return type(self)(**prompt_dict)
 
     @property
     def _prompt_type(self) -> str:
