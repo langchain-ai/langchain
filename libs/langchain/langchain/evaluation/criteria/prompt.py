@@ -81,7 +81,7 @@ def get_prompt_template(
     }
     if strategy not in strat_map:
         raise ValueError(
-            f"Unrecognized evalution strategy {strategy}"
+            f"Unrecognized evaluation strategy {strategy}"
             f"\nMust be one of {list(strat_map.keys())}"
         )
     template = _LABELED_TEMPLATE if requires_references else _TEMPLATE

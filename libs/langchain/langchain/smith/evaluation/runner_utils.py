@@ -1053,12 +1053,12 @@ def _run_on_examples(
         llm_or_chain_factory, examples, evaluation, data_type
     )
     examples = _validate_example_inputs(examples, llm_or_chain_factory, input_mapper)
-    evalution_handler = EvaluatorCallbackHandler(
+    evaluation_handler = EvaluatorCallbackHandler(
         evaluators=run_evaluators or [],
         client=client,
         project_name=evaluator_project_name,
     )
-    callbacks: List[BaseCallbackHandler] = [tracer, evalution_handler]
+    callbacks: List[BaseCallbackHandler] = [tracer, evaluation_handler]
     for i, example in enumerate(examples):
         result = _run_llm_or_chain(
             example,
@@ -1072,7 +1072,7 @@ def _run_on_examples(
             print(f"{i+1} processed", flush=True, end="\r")
         results[str(example.id)] = result
     tracer.wait_for_futures()
-    evalution_handler.wait_for_futures()
+    evaluation_handler.wait_for_futures()
     return results
 
 
