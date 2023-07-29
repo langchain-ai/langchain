@@ -562,7 +562,8 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
         return result
 
     def partial(self, **kwargs: Union[str, Callable[[], str]]) -> ChatPromptTemplate:
-        """Return a new ChatPromptTemplate with some of the input variables already filled in.
+        """Return a new ChatPromptTemplate with some of the input variables already
+        filled in.
 
         Args:
             **kwargs: keyword arguments to use for filling in template variables. Ought
@@ -575,7 +576,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
         Example:
 
             .. code-block:: python
-            
+
                 from langchain.prompts import ChatPromptTemplate
 
                 template = ChatPromptTemplate.from_messages(
@@ -682,4 +683,3 @@ def _convert_to_message(
         raise NotImplementedError(f"Unsupported message type: {type(message)}")
 
     return _message
-
