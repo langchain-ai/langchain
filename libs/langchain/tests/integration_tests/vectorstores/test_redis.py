@@ -143,7 +143,7 @@ def test_similarity_search_with_score_with_limit_score(texts: List[str]) -> None
     docsearch = Redis.from_texts(
         texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL, distance_metric="COSINE"
     )
-    output = docsearch.similarity_search_with_score_with_limit_score(
+    output = docsearch.similarity_search_with_relevance_scores(
         "far", k=2, score_threshold=0.1
     )
     assert len(output) == 1
