@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from enum import Enum
 from typing import Any, Dict, List, Mapping, Optional, Union
 
@@ -59,7 +60,7 @@ _SUPPORTED_CRITERIA = {
 
 
 class CriteriaResultOutputParser(BaseOutputParser[dict]):
-    """A parser for the output of the CriteriaEvalChain."""
+    """A parser for the output of the binary strategy of the CriteriaEvalChain."""
 
     @property
     def _type(self) -> str:
@@ -74,22 +75,26 @@ class CriteriaResultOutputParser(BaseOutputParser[dict]):
         Returns:
             Any: The parsed output.
         """
-        parsed = text.strip().rsplit("\n", maxsplit=1)
-        if len(parsed) == 1:
-            reasoning = ""
-            verdict = parsed[0]
+        verdict_search = re.search(r"(?<=\s)[YN](?=[\s\W]*$)", text, re.IGNORECASE)
+
+        if verdict_search:
+            verdict = verdict_search.group().upper()
+            reasoning_index = verdict_search.start()
+            reasoning = text[:reasoning_index].strip()
         else:
-            reasoning, verdict = parsed
-        score = 1 if verdict.upper() == "Y" else (0 if verdict.upper() == "N" else None)
+            reasoning = text.strip()
+            verdict = None
+
+        score = 1 if verdict == "Y" else (0 if verdict == "N" else None)
         return {
-            "reasoning": reasoning.strip(),
+            "reasoning": reasoning,
             "value": verdict,
             "score": score,
         }
 
 
 class ScoringResultOutputParser(BaseOutputParser[dict]):
-    """A parser for the output of the ScoringEvalChain."""
+    """A parser for the output of the scoring strategy of the CriteriaEvalChain."""
 
     @property
     def _type(self) -> str:
@@ -110,7 +115,7 @@ class ScoringResultOutputParser(BaseOutputParser[dict]):
             score = parsed[0]
         else:
             reasoning, score = parsed
-        score_ = int(score) if score.isdigit() and 1 <= int(score) <= 10 else None
+        score_ = int(score) if score.isdigit() and 0 <= int(score) <= 9 else None
         scaled_score = score_ / 10 if score_ is not None else score_
         return {
             "reasoning": reasoning.strip(),
@@ -120,7 +125,10 @@ class ScoringResultOutputParser(BaseOutputParser[dict]):
 
 
 class ConfidenceResultOutputParser(BaseOutputParser[dict]):
-    """A parser for the output of the ConfidenceEvalChain."""
+    """A parser for output of the confidence strategy of the CriteriaEvalChain.
+
+    Used for Likert-scale like scores.
+    """
 
     @property
     def _type(self) -> str:
@@ -135,13 +143,6 @@ class ConfidenceResultOutputParser(BaseOutputParser[dict]):
         Returns:
             Any: The parsed output.
         """
-        parsed = text.strip().rsplit("\n", maxsplit=1)
-        if len(parsed) == 1:
-            reasoning = ""
-            confidence = parsed[0]
-        else:
-            reasoning, confidence = parsed
-
         confidence_scale = [
             "extremely confident no",
             "very confident no",
@@ -154,14 +155,24 @@ class ConfidenceResultOutputParser(BaseOutputParser[dict]):
             "extremely confident yes",
         ]
 
-        score = (
-            confidence_scale.index(confidence.lower())
-            if confidence in confidence_scale
-            else None
+        confidence_pattern = (
+            r"\b(?:" + "|".join(map(re.escape, confidence_scale)) + r")\b"
         )
-        scaled_score = score / len(confidence_scale) if score is not None else None
+        confidence_search = re.findall(confidence_pattern, text, re.IGNORECASE)
+
+        confidence = confidence_search[-1] if confidence_search else None
+        reasoning_index = text.rfind(confidence) if confidence else len(text)
+        reasoning = text[:reasoning_index].strip()
+
+        to_match = confidence.lower() if confidence else None
+        score = (
+            confidence_scale.index(to_match) if to_match in confidence_scale else None
+        )
+        scaled_score = (
+            score / (len(confidence_scale) - 1) if score is not None else None
+        )
         return {
-            "reasoning": reasoning.strip(),
+            "reasoning": reasoning,
             "value": confidence,
             "score": scaled_score,
         }
@@ -342,13 +353,13 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         cls,
         output_parser: Optional[BaseOutputParser] = None,
         strategy: STRATEGY_TYPE = "binary",
-    ) -> BasePromptTemplate:
+    ) -> BaseOutputParser:
         if output_parser is not None:
             return output_parser
         parser_map = {
-            "binary": CriteriaResultOutputParser,
-            "score": ScoringResultOutputParser,
-            "confidence": ConfidenceResultOutputParser,
+            "binary": CriteriaResultOutputParser(),
+            "score": ScoringResultOutputParser(),
+            "confidence": ConfidenceResultOutputParser(),
         }
         if strategy not in parser_map:
             raise ValueError(

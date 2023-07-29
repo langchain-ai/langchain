@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 from langchain.embeddings.base import Embeddings
 from langchain.evaluation.criteria.eval_chain import CRITERIA_TYPE
+from langchain.evaluation.criteria.prompt import STRATEGY_TYPE
 from langchain.evaluation.embedding_distance.base import (
     EmbeddingDistance as EmbeddingDistanceEnum,
 )
@@ -15,6 +16,7 @@ from langchain.evaluation.string_distance.base import (
     StringDistance as StringDistanceEnum,
 )
 from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema.output_parser import BaseOutputParser
 from langchain.schema.prompt_template import BasePromptTemplate
 
 
@@ -124,6 +126,11 @@ class RunEvalConfig(BaseModel):
         criteria: Optional[CRITERIA_TYPE] = None
         llm: Optional[BaseLanguageModel] = None
         evaluator_type: EvaluatorType = EvaluatorType.CRITERIA
+        strategy: STRATEGY_TYPE = "binary"
+        output_parser: Optional[BaseOutputParser] = None
+
+        class Config:
+            allow_extra = False
 
         def __init__(
             self, criteria: Optional[CRITERIA_TYPE] = None, **kwargs: Any
