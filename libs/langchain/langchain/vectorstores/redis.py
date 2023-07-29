@@ -368,7 +368,6 @@ class Redis(VectorStore):
             docs_and_scores.append((doc, float(result.vector_score)))
         return docs_and_scores
 
-
     @classmethod
     def from_texts_return_keys(
         cls,
