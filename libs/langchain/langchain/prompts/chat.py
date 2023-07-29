@@ -457,6 +457,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
         messages: Sequence[
             Union[
                 BaseMessagePromptTemplate,
+                BaseChatPromptTemplate,
                 BaseMessage,
                 Tuple[str, str],
                 Tuple[Type, str],
@@ -515,7 +516,9 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
         # Automatically infer input variables from messages
         input_vars = set()
         for _message in _messages:
-            if isinstance(_message, BaseMessagePromptTemplate):
+            if isinstance(
+                _message, (BaseChatPromptTemplate, BaseMessagePromptTemplate)
+            ):
                 input_vars.update(_message.input_variables)
 
         return cls(input_variables=sorted(input_vars), messages=_messages)
@@ -643,12 +646,13 @@ def _create_template_from_message_type(
 def _convert_to_message(
     message: Union[
         BaseMessagePromptTemplate,
+        BaseChatPromptTemplate,
         BaseMessage,
         Tuple[str, str],
         Tuple[Type, str],
         str,
     ]
-) -> Union[BaseMessage, BaseMessagePromptTemplate]:
+) -> Union[BaseMessage, BaseMessagePromptTemplate, BaseChatPromptTemplate]:
     """Instantiate a message from a variety of message formats.
 
     The message format can be one of the following:
@@ -665,8 +669,10 @@ def _convert_to_message(
     Returns:
         an instance of a message or a message template
     """
-    if isinstance(message, BaseMessagePromptTemplate):
-        _message: Union[BaseMessage, BaseMessagePromptTemplate] = message
+    if isinstance(message, (BaseMessagePromptTemplate, BaseChatPromptTemplate)):
+        _message: Union[
+            BaseMessage, BaseMessagePromptTemplate, BaseChatPromptTemplate
+        ] = message
     elif isinstance(message, BaseMessage):
         _message = message
     elif isinstance(message, str):
