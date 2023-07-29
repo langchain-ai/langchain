@@ -86,6 +86,7 @@ poetry install -E all
 This will install all requirements for running the package, examples, linting, formatting, tests, and coverage. Note the `-E all` flag will install all optional dependencies necessary for integration testing.
 
 ❗Note: If you're running Poetry 1.4.1 and receive a `WheelFileValidationError` for `debugpy` during installation, you can try either downgrading to Poetry 1.4.0 or disabling "modern installation" (`poetry config installer.modern-installation false`) and re-install requirements. See [this `debugpy` issue](https://github.com/microsoft/debugpy/issues/1246) for more details.
+❗Note: If you encounter error such as "fastavro (1.7.4) not supporting PEP 517 build", it is due to the required fastavro version defined in poetry.lock is not compatible with the PEP version you have. You could run `poetry update` which will resolve all dependencies and update poetry.lock. Then run `poetry install -E all` again.
 
 Now, you should be able to run the common tasks in the following section. To double check, run `make test`, all tests should pass. If they don't you may need to pip install additional dependencies, such as `numexpr` and `openapi_schema_pydantic`.
 
