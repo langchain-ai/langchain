@@ -1,3 +1,4 @@
+"""tests for Arxiv Loader."""
 from typing import List
 
 from langchain.document_loaders.arxiv import ArxivLoader
