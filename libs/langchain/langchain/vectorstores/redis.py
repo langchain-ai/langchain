@@ -138,7 +138,7 @@ class Redis(VectorStore):
         index_name: str,
         embedding_function: Callable,
         content_key: str = "content",
-        metadata_key: str = "metadata",
+        metadata_keys: List[str] = ["metadata"],
         vector_key: str = "content_vector",
         relevance_score_fn: Optional[Callable[[float], float]] = None,
         distance_metric: REDIS_DISTANCE_METRICS = "COSINE",
@@ -156,7 +156,7 @@ class Redis(VectorStore):
 
         self.client = redis_client
         self.content_key = content_key
-        self.metadata_key = metadata_key
+        self.metadata_keys = metadata_keys
         self.vector_key = vector_key
         self.distance_metric = distance_metric
         self.relevance_score_fn = relevance_score_fn
@@ -191,10 +191,11 @@ class Redis(VectorStore):
 
         # Check if index exists
         if not _check_index_exists(self.client, self.index_name):
+            metadata_textfields = [TextField(name=metadata_key) for metadata_key in self.metadata_keys]
             # Define schema
             schema = (
                 TextField(name=self.content_key),
-                TextField(name=self.metadata_key),
+                *metadata_textfields,
                 VectorField(
                     self.vector_key,
                     "FLAT",
@@ -255,7 +256,7 @@ class Redis(VectorStore):
                 mapping={
                     self.content_key: text,
                     self.vector_key: np.array(embedding, dtype=np.float32).tobytes(),
-                    self.metadata_key: json.dumps(metadata),
+                    **metadata
                 },
             )
             ids.append(key)
@@ -269,7 +270,7 @@ class Redis(VectorStore):
         return ids
 
     def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
+        self, query: str, k: int = 4,filter: Optional[dict] = None, **kwargs: Any
     ) -> List[Document]:
         """
         Returns the most similar indexed documents to the query text.
@@ -281,11 +282,11 @@ class Redis(VectorStore):
         Returns:
             List[Document]: A list of documents that are most similar to the query text.
         """
-        docs_and_scores = self.similarity_search_with_score(query, k=k)
+        docs_and_scores = self.similarity_search_with_score(query, k=k,filter=filter)
         return [doc for doc, _ in docs_and_scores]
 
     def similarity_search_limit_score(
-        self, query: str, k: int = 4, score_threshold: float = 0.2, **kwargs: Any
+        self, query: str, k: int = 4, score_threshold: float = 0.2,filter: Optional[dict] = None, **kwargs: Any
     ) -> List[Document]:
         """
         Returns the most similar indexed documents to the query text within the
@@ -308,10 +309,10 @@ class Redis(VectorStore):
             an empty list is returned.
 
         """
-        docs_and_scores = self.similarity_search_with_score(query, k=k)
+        docs_and_scores = self.similarity_search_with_score(query, k=k,filter=filter)
         return [doc for doc, score in docs_and_scores if score < score_threshold]
 
-    def _prepare_query(self, k: int) -> Query:
+    def _prepare_query(self, k: int,filter: Optional[dict] = None) -> Query:
         try:
             from redis.commands.search.query import Query
         except ImportError:
@@ -320,11 +321,14 @@ class Redis(VectorStore):
                 "Please install it with `pip install redis`."
             )
         # Prepare the Query
-        hybrid_fields = "*"
+        hybrid_fields = '*'
+        if filter:
+            filter_cond_list = [k+":"+v for k,v in filter.items()]
+            hybrid_fields = '(@'+",@".join(filter_cond_list)+')'
         base_query = (
             f"{hybrid_fields}=>[KNN {k} @{self.vector_key} $vector AS vector_score]"
         )
-        return_fields = [self.metadata_key, self.content_key, "vector_score", "id"]
+        return_fields = [*self.metadata_keys, self.content_key, "vector_score", "id"]
         return (
             Query(base_query)
             .return_fields(*return_fields)
@@ -334,7 +338,7 @@ class Redis(VectorStore):
         )
 
     def similarity_search_with_score(
-        self, query: str, k: int = 4
+        self, query: str, k: int = 4, filter: Optional[dict] = None
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
@@ -349,7 +353,7 @@ class Redis(VectorStore):
         embedding = self.embedding_function(query)
 
         # Creates Redis query
-        redis_query = self._prepare_query(k)
+        redis_query = self._prepare_query(k,filter)
 
         params_dict: Mapping[str, str] = {
             "vector": np.array(embedding)  # type: ignore
@@ -363,7 +367,8 @@ class Redis(VectorStore):
         # Prepare document results
         docs_and_scores: List[Tuple[Document, float]] = []
         for result in results.docs:
-            metadata = {**json.loads(result.metadata), "id": result.id}
+            metadata = {meta_key:getattr(result,meta_key) for meta_key in self.metadata_keys}
+            metadata["id"] = result.id
             doc = Document(page_content=result.content, metadata=metadata)
             docs_and_scores.append((doc, float(result.vector_score)))
         return docs_and_scores
@@ -376,7 +381,7 @@ class Redis(VectorStore):
         metadatas: Optional[List[dict]] = None,
         index_name: Optional[str] = None,
         content_key: str = "content",
-        metadata_key: str = "metadata",
+        metadata_keys: List[str] = ["metadata"],
         vector_key: str = "content_vector",
         distance_metric: REDIS_DISTANCE_METRICS = "COSINE",
         **kwargs: Any,
@@ -417,7 +422,7 @@ class Redis(VectorStore):
             index_name,
             embedding.embed_query,
             content_key=content_key,
-            metadata_key=metadata_key,
+            metadata_keys=metadata_keys,
             vector_key=vector_key,
             distance_metric=distance_metric,
             **kwargs,
@@ -441,7 +446,7 @@ class Redis(VectorStore):
         metadatas: Optional[List[dict]] = None,
         index_name: Optional[str] = None,
         content_key: str = "content",
-        metadata_key: str = "metadata",
+        metadata_keys: List[str] = ["metadata"],
         vector_key: str = "content_vector",
         **kwargs: Any,
     ) -> Redis:
@@ -471,7 +476,7 @@ class Redis(VectorStore):
             metadatas=metadatas,
             index_name=index_name,
             content_key=content_key,
-            metadata_key=metadata_key,
+            metadata_keys=metadata_keys,
             vector_key=vector_key,
             **kwargs,
         )
@@ -567,7 +572,7 @@ class Redis(VectorStore):
         embedding: Embeddings,
         index_name: str,
         content_key: str = "content",
-        metadata_key: str = "metadata",
+        metadata_keys: List[str] = ["metadata"],
         vector_key: str = "content_vector",
         **kwargs: Any,
     ) -> Redis:
@@ -600,7 +605,7 @@ class Redis(VectorStore):
             index_name,
             embedding.embed_query,
             content_key=content_key,
-            metadata_key=metadata_key,
+            metadata_keys=metadata_keys,
             vector_key=vector_key,
             **kwargs,
         )
