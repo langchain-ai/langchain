@@ -36,6 +36,7 @@ from langchain.agents.agent_toolkits.vectorstore.toolkit import (
     VectorStoreToolkit,
 )
 from langchain.agents.agent_toolkits.xorbits.base import create_xorbits_agent
+from langchain.agents.agent_toolkits.multion.base import create_multion_agent
 from langchain.agents.agent_toolkits.zapier.toolkit import ZapierToolkit
 
 __all__ = [
@@ -63,6 +64,7 @@ __all__ = [
     "create_pbi_agent",
     "create_pbi_chat_agent",
     "create_python_agent",
+    "create_multion_agent",
     "create_spark_dataframe_agent",
     "create_spark_sql_agent",
     "create_sql_agent",

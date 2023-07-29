@@ -14,7 +14,13 @@ _BASE_URL = "https://api.python.langchain.com/en/latest/"
 # Regular expression to match Python code blocks
 code_block_re = re.compile(r"^(```python\n)(.*?)(```\n)", re.DOTALL | re.MULTILINE)
 # Regular expression to match langchain import lines
-_IMPORT_RE = re.compile(r"(from\s+(langchain\.\w+(\.\w+)*?)\s+import\s+)(\w+)")
+_IMPORT_RE = re.compile(
+    r"from\s+(langchain\.\w+(\.\w+)*?)\s+import\s+"
+    r"((?:\w+(?:,\s*)?)+"  # Match one or more words separated by a comma and optional whitespace
+    r"(?:\s*\(.*?\))?)",  # Match optional parentheses block
+    re.DOTALL,  # Match newlines as well
+)
+
 
 _CURRENT_PATH = Path(__file__).parent.absolute()
 # Directory where generated markdown files are stored
@@ -97,37 +103,39 @@ def replace_imports(file):
         # Process imports in the code block
         imports = []
         for import_match in _IMPORT_RE.finditer(code):
-            class_name = import_match.group(4)
-            try:
-                module_path = get_full_module_name(import_match.group(2), class_name)
-            except AttributeError as e:
-                logger.warning(f"Could not find module for {class_name}, {e}")
-                continue
-            except ImportError as e:
-                # Some CentOS OpenSSL issues can cause this to fail
-                logger.warning(f"Failed to load for class {class_name}, {e}")
-                continue
+            module = import_match.group(1)
+            imports_str = import_match.group(3)
+            # remove any newline and spaces, then split by comma
+            imported_classes = [
+                imp.strip() for imp in imports_str.replace("\n", "").split(",")
+            ]
+            for class_name in imported_classes:
+                try:
+                    module_path = get_full_module_name(module, class_name)
+                except AttributeError as e:
+                    logger.warning(f"Could not find module for {class_name}, {e}")
+                    continue
+                except ImportError as e:
+                    logger.warning(f"Failed to load for class {class_name}, {e}")
+                    continue
 
-            url = (
-                _BASE_URL
-                + "/"
-                + module_path.split(".")[1]
-                + "/"
-                + module_path
-                + "."
-                + class_name
-                + ".html"
-            )
+                url = (
+                    _BASE_URL
+                    + module_path.replace("langchain", "").replace(".", "/")
+                    + "/"
+                    + class_name
+                    + ".html"
+                )
 
-            # Add the import information to our list
-            imports.append(
-                {
-                    "imported": class_name,
-                    "source": import_match.group(2),
-                    "docs": url,
-                    "title": _DOC_TITLE,
-                }
-            )
+                # Add the import information to our list
+                imports.append(
+                    {
+                        "imported": class_name,
+                        "source": import_match.group(2),
+                        "docs": url,
+                        "title": _DOC_TITLE,
+                    }
+                )
 
         if imports:
             all_imports.extend(imports)
