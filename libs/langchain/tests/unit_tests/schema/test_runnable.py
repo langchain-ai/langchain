@@ -611,7 +611,7 @@ def test_seq_prompt_map(
     assert tracer.runs == snapshot
 
 
-def test_bind_bind():
+def test_bind_bind() -> None:
     llm = FakeListLLM(responses=["i'm a textbot"])
 
     assert dumpd(
