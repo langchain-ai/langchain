@@ -5,13 +5,15 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).parents[2].absolute()
 PKG_DIR = ROOT_DIR / "libs" / "langchain" / "langchain"
+EXP_DIR = ROOT_DIR / "libs" / "experimental" / "langchain_experimental"
 WRITE_FILE = Path(__file__).parent / "api_reference.rst"
+EXP_WRITE_FILE = Path(__file__).parent / "experimental_api_reference.rst"
 
 
-def load_members() -> dict:
+def load_members(dir: Path) -> dict:
     members: dict = {}
-    for py in glob.glob(str(PKG_DIR) + "/**/*.py", recursive=True):
-        module = py[len(str(PKG_DIR)) + 1 :].replace(".py", "").replace("/", ".")
+    for py in glob.glob(str(dir) + "/**/*.py", recursive=True):
+        module = py[len(str(dir)) + 1 :].replace(".py", "").replace("/", ".")
         top_level = module.split(".")[0]
         if top_level not in members:
             members[top_level] = {"classes": [], "functions": []}
@@ -26,12 +28,10 @@ def load_members() -> dict:
     return members
 
 
-def construct_doc(members: dict) -> str:
-    full_doc = """\
-.. _api_reference:
-
+def construct_doc(pkg: str, members: dict) -> str:
+    full_doc = f"""\
 =============
-API Reference
+``{pkg}`` API Reference
 =============
 
 """
@@ -40,12 +40,12 @@ API Reference
         functions = _members["functions"]
         if not (classes or functions):
             continue
-        section = f":mod:`langchain.{module}`"
+        section = f":mod:`{pkg}.{module}`"
         full_doc += f"""\
 {section}
 {'=' * (len(section) + 1)}
 
-.. automodule:: langchain.{module}
+.. automodule:: {pkg}.{module}
     :no-members:
     :no-inherited-members:
 
@@ -56,7 +56,7 @@ API Reference
             full_doc += f"""\
 Classes
 --------------
-.. currentmodule:: langchain
+.. currentmodule:: {pkg}
 
 .. autosummary::
     :toctree: {module}
@@ -70,7 +70,7 @@ Classes
             full_doc += f"""\
 Functions
 --------------
-.. currentmodule:: langchain
+.. currentmodule:: {pkg}
 
 .. autosummary::
     :toctree: {module}
@@ -83,10 +83,14 @@ Functions
 
 
 def main() -> None:
-    members = load_members()
-    full_doc = construct_doc(members)
+    lc_members = load_members(PKG_DIR)
+    lc_doc = ".. _api_reference:\n\n" + construct_doc("langchain", lc_members)
     with open(WRITE_FILE, "w") as f:
-        f.write(full_doc)
+        f.write(lc_doc)
+    exp_members = load_members(EXP_DIR)
+    exp_doc = ".. _experimental_api_reference:\n\n" + construct_doc("langchain_experimental", exp_members)
+    with open(EXP_WRITE_FILE, "w") as f:
+        f.write(exp_doc)
 
 
 if __name__ == "__main__":

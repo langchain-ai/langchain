@@ -3449,6 +3449,10 @@
       "destination": "/docs/integrations/llms/writer"
     },
     {
+      "source": "/en/latest/modules/prompts.html",
+      "destination": "/docs/modules/model_io/prompts"
+    },
+    {
       "source": "/en/latest/modules/prompts/output_parsers.html",
       "destination": "/docs/modules/model_io/output_parsers/"
     },
