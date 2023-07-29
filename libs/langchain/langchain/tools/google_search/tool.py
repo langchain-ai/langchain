@@ -2,10 +2,7 @@
 
 from typing import Optional
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
+from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 
@@ -29,14 +26,6 @@ class GoogleSearchRun(BaseTool):
         """Use the tool."""
         return self.api_wrapper.run(query)
 
-    async def _arun(
-        self,
-        query: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the tool asynchronously."""
-        raise NotImplementedError("GoogleSearchRun does not support async")
-
 
 class GoogleSearchResults(BaseTool):
     """Tool that queries the Google Search API and gets back json."""
@@ -57,11 +46,3 @@ class GoogleSearchResults(BaseTool):
     ) -> str:
         """Use the tool."""
         return str(self.api_wrapper.results(query, self.num_results))
-
-    async def _arun(
-        self,
-        query: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the tool asynchronously."""
-        raise NotImplementedError("GoogleSearchRun does not support async")

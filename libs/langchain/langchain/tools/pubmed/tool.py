@@ -4,10 +4,7 @@ from typing import Optional
 
 from pydantic import Field
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
+from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
 from langchain.utilities.pupmed import PubMedAPIWrapper
 
@@ -33,11 +30,3 @@ class PubmedQueryRun(BaseTool):
     ) -> str:
         """Use the Arxiv tool."""
         return self.api_wrapper.run(query)
-
-    async def _arun(
-        self,
-        query: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the PubMed tool asynchronously."""
-        raise NotImplementedError("PubMedAPIWrapper does not support async")
