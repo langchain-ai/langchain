@@ -18,7 +18,6 @@ the backbone of a retriever, but there are other types of retrievers as well.
     CallbackManagerForRetrieverRun, AsyncCallbackManagerForRetrieverRun
 """
 
-from langchain.retrievers.arxiv import ArxivRetriever
 from langchain.retrievers.azure_cognitive_search import AzureCognitiveSearchRetriever
 from langchain.retrievers.bm25 import BM25Retriever
 from langchain.retrievers.chaindesk import ChaindeskRetriever
@@ -58,7 +57,6 @@ from langchain.retrievers.zilliz import ZillizRetriever
 
 __all__ = [
     "AmazonKendraRetriever",
-    "ArxivRetriever",
     "AzureCognitiveSearchRetriever",
     "ChatGPTPluginRetriever",
     "ContextualCompressionRetriever",

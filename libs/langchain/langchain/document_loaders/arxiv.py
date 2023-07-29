@@ -1,11 +1,11 @@
 from typing import List, Optional
 
 from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
+from langchain.document_loaders.base import BaseLoaderAsRetriever
 from langchain.utilities.arxiv import ArxivAPIWrapper
 
 
-class ArxivLoader(BaseLoader):
+class ArxivLoader(BaseLoaderAsRetriever):
     """Loads a query result from arxiv.org into a list of Documents.
 
     Each document represents one Document.
@@ -14,7 +14,7 @@ class ArxivLoader(BaseLoader):
 
     def __init__(
         self,
-        query: str,
+        query: Optional[str] = None,
         load_max_docs: Optional[int] = 100,
         load_all_available_meta: Optional[bool] = False,
     ):

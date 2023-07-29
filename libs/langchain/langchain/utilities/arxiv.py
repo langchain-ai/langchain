@@ -106,7 +106,7 @@ class ArxivAPIWrapper(BaseModel):
         else:
             return "No good Arxiv Result was found"
 
-    def load(self, query: str) -> List[Document]:
+    def load(self, query: Optional[str] = "") -> List[Document]:
         """
         Run Arxiv search and get the article texts plus the article meta information.
         See https://lukasschwab.me/arxiv.py/index.html#Search
@@ -126,6 +126,10 @@ class ArxivAPIWrapper(BaseModel):
                 "PyMuPDF package not found, please install it with "
                 "`pip install pymupdf`"
             )
+
+        if not query:
+            logger.debug("Query is empty, please define it.")
+            return []
 
         try:
             results = self.arxiv_search(  # type: ignore
