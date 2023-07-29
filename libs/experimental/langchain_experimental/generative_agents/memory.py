@@ -3,7 +3,7 @@ import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from langchain import LLMChain
+from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain.retrievers import TimeWeightedVectorStoreRetriever
 from langchain.schema import BaseMemory, Document
@@ -14,24 +14,21 @@ logger = logging.getLogger(__name__)
 
 
 class GenerativeAgentMemory(BaseMemory):
+    """Memory for the generative agent."""
+
     llm: BaseLanguageModel
     """The core language model."""
-
     memory_retriever: TimeWeightedVectorStoreRetriever
     """The retriever to fetch related memories."""
     verbose: bool = False
-
     reflection_threshold: Optional[float] = None
     """When aggregate_importance exceeds reflection_threshold, stop to reflect."""
-
     current_plan: List[str] = []
     """The current plan of the agent."""
-
     # A weight of 0.15 makes this less important than it
     # would be otherwise, relative to salience and time
     importance_weight: float = 0.15
     """How much weight to assign the memory importance."""
-
     aggregate_importance: float = 0.0  # : :meta private:
     """Track the sum of the 'importance' of recent memories.
 

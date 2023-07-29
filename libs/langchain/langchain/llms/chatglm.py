@@ -37,7 +37,7 @@ class ChatGLM(LLM):
     """History of the conversation"""
     top_p: float = 0.7
     """Top P for nucleus sampling from 0 to 1"""
-    with_history: bool = True
+    with_history: bool = False
     """Whether to use history or not"""
 
     @property

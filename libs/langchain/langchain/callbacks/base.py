@@ -1,13 +1,14 @@
 """Base callback handler that can be used to handle callbacks in langchain."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 from uuid import UUID
 
-from langchain.schema.agent import AgentAction, AgentFinish
-from langchain.schema.document import Document
-from langchain.schema.messages import BaseMessage
-from langchain.schema.output import LLMResult
+if TYPE_CHECKING:
+    from langchain.schema.agent import AgentAction, AgentFinish
+    from langchain.schema.document import Document
+    from langchain.schema.messages import BaseMessage
+    from langchain.schema.output import LLMResult
 
 
 class RetrieverManagerMixin:
@@ -242,6 +243,11 @@ class BaseCallbackHandler(
         return False
 
     @property
+    def ignore_retry(self) -> bool:
+        """Whether to ignore retry callbacks."""
+        return False
+
+    @property
     def ignore_chain(self) -> bool:
         """Whether to ignore chain callbacks."""
         return False
@@ -467,7 +473,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
 
 class BaseCallbackManager(CallbackManagerMixin):
-    """Base callback manager that can be used to handle callbacks from LangChain."""
+    """Base callback manager that handles callbacks from LangChain."""
 
     def __init__(
         self,
@@ -543,3 +549,6 @@ class BaseCallbackManager(CallbackManagerMixin):
         for key in keys:
             self.metadata.pop(key)
             self.inheritable_metadata.pop(key)
+
+
+Callbacks = Optional[Union[List[BaseCallbackHandler], BaseCallbackManager]]

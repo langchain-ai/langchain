@@ -17,12 +17,16 @@ class NLPCloud(LLM):
         .. code-block:: python
 
             from langchain.llms import NLPCloud
-            nlpcloud = NLPCloud(model="gpt-neox-20b")
+            nlpcloud = NLPCloud(model="finetuned-gpt-neox-20b")
     """
 
     client: Any  #: :meta private:
     model_name: str = "finetuned-gpt-neox-20b"
     """Model name to use."""
+    gpu: bool = True
+    """Whether to use a GPU or not"""
+    lang: str = "en"
+    """Language to use (multilingual addon)"""
     temperature: float = 0.7
     """What sampling temperature to use."""
     min_length: int = 1
@@ -71,7 +75,10 @@ class NLPCloud(LLM):
             import nlpcloud
 
             values["client"] = nlpcloud.Client(
-                values["model_name"], nlpcloud_api_key, gpu=True, lang="en"
+                values["model_name"],
+                nlpcloud_api_key,
+                gpu=values["gpu"],
+                lang=values["lang"],
             )
         except ImportError:
             raise ImportError(
@@ -104,7 +111,12 @@ class NLPCloud(LLM):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model_name": self.model_name}, **self._default_params}
+        return {
+            **{"model_name": self.model_name},
+            **{"gpu": self.gpu},
+            **{"lang": self.lang},
+            **self._default_params,
+        }
 
     @property
     def _llm_type(self) -> str:

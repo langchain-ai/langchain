@@ -1,6 +1,4 @@
-"""General utilities."""
-from langchain.requests import TextRequestsWrapper
-from langchain.utilities.apify import ApifyWrapper
+"""Generic integrations with third-part systems and packages."""
 from langchain.utilities.arxiv import ArxivAPIWrapper
 from langchain.utilities.awslambda import LambdaWrapper
 from langchain.utilities.bash import BashProcess
@@ -21,6 +19,7 @@ from langchain.utilities.portkey import Portkey
 from langchain.utilities.powerbi import PowerBIDataset
 from langchain.utilities.pupmed import PubMedAPIWrapper
 from langchain.utilities.python import PythonREPL
+from langchain.utilities.requests import Requests, RequestsWrapper, TextRequestsWrapper
 from langchain.utilities.scenexplain import SceneXplainAPIWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
@@ -32,14 +31,13 @@ from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 from langchain.utilities.zapier import ZapierNLAWrapper
 
 __all__ = [
-    "ApifyWrapper",
     "ArxivAPIWrapper",
-    "GoldenQueryAPIWrapper",
     "BashProcess",
     "BibtexparserWrapper",
     "BingSearchAPIWrapper",
     "BraveSearchWrapper",
     "DuckDuckGoSearchAPIWrapper",
+    "GoldenQueryAPIWrapper",
     "GooglePlacesAPIWrapper",
     "GoogleSearchAPIWrapper",
     "GoogleSerperAPIWrapper",
@@ -53,11 +51,14 @@ __all__ = [
     "PowerBIDataset",
     "PubMedAPIWrapper",
     "PythonREPL",
+    "Requests",
+    "RequestsWrapper",
+    "SQLDatabase",
     "SceneXplainAPIWrapper",
     "SearxSearchWrapper",
     "SerpAPIWrapper",
     "SparkSQL",
-    "SQLDatabase",
+    "TextRequestsWrapper",
     "TextRequestsWrapper",
     "TwilioAPIWrapper",
     "WikipediaAPIWrapper",

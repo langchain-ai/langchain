@@ -56,6 +56,7 @@ class DuckDuckGoSearchResults(BaseTool):
     api_wrapper: DuckDuckGoSearchAPIWrapper = Field(
         default_factory=DuckDuckGoSearchAPIWrapper
     )
+    backend: str = "api"
 
     def _run(
         self,
@@ -63,7 +64,9 @@ class DuckDuckGoSearchResults(BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        return str(self.api_wrapper.results(query, self.num_results))
+        res = self.api_wrapper.results(query, self.num_results, backend=self.backend)
+        res_strs = [", ".join([f"{k}: {v}" for k, v in d.items()]) for d in res]
+        return ", ".join([f"[{rs}]" for rs in res_strs])
 
     async def _arun(
         self,
