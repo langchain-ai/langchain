@@ -31,8 +31,9 @@ test_script = """
 
 
 @pytest.mark.requires("streamlit")
-def test_memory_with_message_store():
+def test_memory_with_message_store() -> None:
     from streamlit.testing.script_interactions import InteractiveScriptTests
+
     test_handler = InteractiveScriptTests()
     test_handler.setUp()
     sr = test_handler.script_from_string(test_script).run()
