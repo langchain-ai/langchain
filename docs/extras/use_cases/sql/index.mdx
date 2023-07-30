@@ -67,7 +67,7 @@ db.run(response)
     
     '[(8,)]'
 
-As we can see, the SQL Query Builder chain **only created** the query, and we handled the **query execution separetely**.
+As we can see, the SQL Query Builder chain **only created** the query, and we handled the **query execution separately**.
 
 ### Go deeper
 The query builder can be improved in several ways, such as (but not limited to):
@@ -113,7 +113,7 @@ chain.run("How many employees are there in the foobar table?")
     SELECT COUNT(*) FROM Employee
 
 We can also include **few-shot examples** in the prompt, which may be _harcoded question-SQL matches_ that are known to work
-correctly, or _dynamic question-SQL matches_ that were retreived before using the chain:
+correctly, or _dynamic question-SQL matches_ that were retrieved before using the chain:
 
 
 ```python
@@ -177,7 +177,7 @@ As we can see, we get the same result as the previous case,
 but now the chain **also handles the query execution**, and provides a final 
 answer based on the user question and the query result.
 
-**Be careful** while using this appraoch as it is susceptible to `SQL Injection`. The chain is
+**Be careful** while using this approach as it is susceptible to `SQL Injection`. The chain is
 executing queries that are created by an LLM, and weren't validated. (_e.g. records may be created, modified or deleted unintentionally_).
 This is why we see the `SQLDatabaseChain` is inside `langchain_experimental`.
 
@@ -307,7 +307,7 @@ from langchain.agents.agent_types import AgentType
 
 To initialize the agent, we use `create_sql_agent` function. This agent contains 
 the `SQLDatabaseToolkit` which contains tools to create and execute queries, check
-query syntax, retreive table descriptions, and more.
+query syntax, retrieve table descriptions, and more.
 
 ```python
 agent_executor = create_sql_agent(
