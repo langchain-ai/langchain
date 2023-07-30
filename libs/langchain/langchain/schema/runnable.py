@@ -759,6 +759,109 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
             yield item
 
 
+class RouterInput(TypedDict):
+    key: str
+    input: Any
+
+
+class RouterRunnable(Runnable[RouterInput, Output]):
+    def __init__(self, runnables: Dict[str, Runnable[Input, Output]]):
+        self.runnables = runnables
+
+    def invoke(
+        self, input: RouterInput, config: Optional[RunnableConfig] = None
+    ) -> Output:
+        key = input["key"]
+        actual_input = input["input"]
+        if key not in self.runnables:
+            raise ValueError(f"No runnable associated with key '{key}'")
+
+        runnable = self.runnables[key]
+        return runnable.invoke(actual_input, config)
+
+    async def ainvoke(
+        self, input: RouterInput, config: Optional[RunnableConfig] = None
+    ) -> Output:
+        key = input["key"]
+        actual_input = input["input"]
+        if key not in self.runnables:
+            raise ValueError(f"No runnable associated with key '{key}'")
+
+        runnable = self.runnables[key]
+        return await runnable.ainvoke(actual_input, config)
+
+    def batch(
+        self,
+        inputs: List[RouterInput],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        max_concurrency: Optional[int] = None,
+    ) -> List[Output]:
+        keys = [input["key"] for input in inputs]
+        actual_inputs = [input["input"] for input in inputs]
+        if any(key not in self.runnables for key in keys):
+            raise ValueError("One or more keys do not have a corresponding runnable")
+
+        runnables = [self.runnables[key] for key in keys]
+        configs = self._get_config_list(config, len(inputs))
+        return [
+            runnable.batch(
+                [actual_input], [actual_config], max_concurrency=max_concurrency
+            )[0]
+            for runnable, actual_input, actual_config in zip(
+                runnables, actual_inputs, configs
+            )
+        ]
+
+    async def abatch(
+        self,
+        inputs: List[RouterInput],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        max_concurrency: Optional[int] = None,
+    ) -> List[Output]:
+        keys = [input["key"] for input in inputs]
+        actual_inputs = [input["input"] for input in inputs]
+        if any(key not in self.runnables for key in keys):
+            raise ValueError("One or more keys do not have a corresponding runnable")
+
+        runnables = [self.runnables[key] for key in keys]
+        configs = self._get_config_list(config, len(inputs))
+        return await asyncio.gather(
+            *[
+                runnable.abatch(
+                    [actual_input], [actual_config], max_concurrency=max_concurrency
+                )
+                for runnable, actual_input, actual_config in zip(
+                    runnables, actual_inputs, configs
+                )
+            ]
+        )
+
+    def stream(
+        self, input: RouterInput, config: Optional[RunnableConfig] = None
+    ) -> Iterator[Output]:
+        key = input["key"]
+        actual_input = input["input"]
+        if key not in self.runnables:
+            raise ValueError(f"No runnable associated with key '{key}'")
+
+        runnable = self.runnables[key]
+        yield from runnable.stream(actual_input, config)
+
+    async def astream(
+        self, input: RouterInput, config: Optional[RunnableConfig] = None
+    ) -> AsyncIterator[Output]:
+        key = input["key"]
+        actual_input = input["input"]
+        if key not in self.runnables:
+            raise ValueError(f"No runnable associated with key '{key}'")
+
+        runnable = self.runnables[key]
+        async for output in runnable.astream(actual_input, config):
+            yield output
+
+
 def _patch_config(
     config: RunnableConfig, callback_manager: BaseCallbackManager
 ) -> RunnableConfig:
