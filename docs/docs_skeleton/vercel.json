@@ -3749,6 +3749,10 @@
       "destination": "/docs/guides/evaluation/:path*"
     },
     {
+      "source": "/en/latest/modules/indexes.html",
+      "destination": "/docs/modules/data_connection"
+    },
+    {
       "source": "/en/latest/modules/indexes/:path*",
       "destination": "/docs/modules/data_connection/:path*"
     },
