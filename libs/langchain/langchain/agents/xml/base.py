@@ -27,7 +27,7 @@ class XMLAgentOutputParser(AgentOutputParser):
 
     @property
     def _type(self) -> str:
-        raise NotImplementedError
+        raise "xml-agent"
 
 
 class XMLAgent(BaseSingleActionAgent):
