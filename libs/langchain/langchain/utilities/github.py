@@ -1,11 +1,15 @@
 """Util that calls GitHub."""
-import json
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
 
-from github.Issue import Issue
+import json
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.utils import get_from_dict_or_env
+
+if TYPE_CHECKING:
+    from github.Issue import Issue
 
 
 class GitHubAPIWrapper(BaseModel):
@@ -17,6 +21,7 @@ class GitHubAPIWrapper(BaseModel):
     github_app_id: Optional[str] = None
     github_app_private_key: Optional[str] = None
     github_branch: Optional[str] = None
+    github_base_branch: Optional[str] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -38,6 +43,9 @@ class GitHubAPIWrapper(BaseModel):
 
         github_branch = get_from_dict_or_env(
             values, "github_branch", "GITHUB_BRANCH", default="master"
+        )
+        github_base_branch = get_from_dict_or_env(
+            values, "github_base_branch", "GITHUB_BASE_BRANCH", default="master"
         )
 
         try:
@@ -68,6 +76,7 @@ class GitHubAPIWrapper(BaseModel):
         values["github_app_id"] = github_app_id
         values["github_app_private_key"] = github_app_private_key
         values["github_branch"] = github_branch
+        values["github_base_branch"] = github_base_branch
 
         return values
 
@@ -129,6 +138,34 @@ class GitHubAPIWrapper(BaseModel):
             "body": issue.body,
             "comments": str(comments),
         }
+
+    def create_pull_request(self, pr_query: str) -> str:
+        """
+        Makes a pull request from the bot's branch to the base branch
+        Parameters:
+            pr_query(str): a string which contains the PR title
+            and the PR body. The title is the first line
+            in the string, and the body are the rest of the string.
+            For example, "Updated README\nmade changes to add info"
+        Returns:
+            str: A success or failure message
+        """
+        if self.github_base_branch == self.github_branch:
+            return """Cannot make a pull request because 
+            commits are already in the master branch"""
+        else:
+            try:
+                title = pr_query.split("\n")[0]
+                body = pr_query[len(title) + 2 :]
+                pr = self.github_repo_instance.create_pull(
+                    title=title,
+                    body=body,
+                    head=self.github_branch,
+                    base=self.github_base_branch,
+                )
+                return f"Successfully created PR number {pr.number}"
+            except Exception as e:
+                return "Unable to make pull request due to error:\n" + str(e)
 
     def comment_on_issue(self, comment_query: str) -> str:
         """
@@ -268,6 +305,8 @@ class GitHubAPIWrapper(BaseModel):
             return self.comment_on_issue(query)
         elif mode == "create_file":
             return self.create_file(query)
+        elif mode == "create_pull_request":
+            return self.create_pull_request(query)
         elif mode == "read_file":
             return self.read_file(query)
         elif mode == "update_file":

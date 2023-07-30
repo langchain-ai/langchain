@@ -9,10 +9,7 @@ from typing import Any, Dict, List, Optional, Type
 
 from pydantic import BaseModel, Extra, Field
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
+from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.office365.base import O365BaseTool
 from langchain.tools.office365.utils import clean_body
 
@@ -130,12 +127,3 @@ class O365SearchEvents(O365BaseTool):
             output_events.append(output_event)
 
         return output_events
-
-    async def _arun(
-        self,
-        query: str,
-        max_results: int = 10,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> List[Dict[str, Any]]:
-        """Run the tool."""
-        raise NotImplementedError
