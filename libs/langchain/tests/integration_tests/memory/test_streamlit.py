@@ -8,6 +8,7 @@ from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import StreamlitChatMessageHistory
 from langchain.schema.messages import _message_to_dict
 
+
 @pytest.mark.requires("streamlit")
 def test_memory_with_message_store() -> None:
     """Test the memory with a message store."""

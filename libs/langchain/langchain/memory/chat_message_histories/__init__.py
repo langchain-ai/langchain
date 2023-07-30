@@ -13,7 +13,9 @@ from langchain.memory.chat_message_histories.mongodb import MongoDBChatMessageHi
 from langchain.memory.chat_message_histories.postgres import PostgresChatMessageHistory
 from langchain.memory.chat_message_histories.redis import RedisChatMessageHistory
 from langchain.memory.chat_message_histories.sql import SQLChatMessageHistory
-from langchain.memory.chat_message_histories.streamlit import StreamlitChatMessageHistory
+from langchain.memory.chat_message_histories.streamlit import (
+    StreamlitChatMessageHistory,
+)
 from langchain.memory.chat_message_histories.zep import ZepChatMessageHistory
 
 __all__ = [

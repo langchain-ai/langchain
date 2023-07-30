@@ -4,6 +4,7 @@ from langchain.schema import (
 )
 from langchain.schema.messages import BaseMessage
 
+
 class StreamlitChatMessageHistory(BaseChatMessageHistory):
     """
     Chat message history that stores messages in Streamlit session state.
@@ -12,7 +13,7 @@ class StreamlitChatMessageHistory(BaseChatMessageHistory):
         message_key: session state key to use for storing messages.
     """
 
-    def __init__(self, message_key="messages"):
+    def __init__(self, message_key: str = "messages"):
         import streamlit as st
 
         if message_key not in st.session_state:
@@ -21,7 +22,7 @@ class StreamlitChatMessageHistory(BaseChatMessageHistory):
         self._state = st.session_state
 
     @property
-    def messages(self) -> List[BaseMessage]:
+    def messages(self) -> List[BaseMessage]:  # type: ignore
         """Retrieve the current list of messages"""
         return self._state[self._message_key]
 
