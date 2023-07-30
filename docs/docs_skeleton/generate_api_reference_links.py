@@ -10,7 +10,7 @@ import argparse
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 # Base URL for all class documentation
-_BASE_URL = "https://api.python.langchain.com/en/latest"
+_BASE_URL = "https://api.python.langchain.com/en/latest/"
 
 # Regular expression to match Python code blocks
 code_block_re = re.compile(r"^(```python\n)(.*?)(```\n)", re.DOTALL | re.MULTILINE)
