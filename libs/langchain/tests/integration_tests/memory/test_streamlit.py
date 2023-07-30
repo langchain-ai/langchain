@@ -1,33 +1,56 @@
 """Integration tests for StreamlitChatMessageHistory functionality."""
-
-
-import json
-
 import pytest
 
-from langchain.memory import ConversationBufferMemory
-from langchain.memory.chat_message_histories import StreamlitChatMessageHistory
-from langchain.schema.messages import _message_to_dict
+test_script = """
+    import json
+    import streamlit as st
+    from langchain.memory import ConversationBufferMemory
+    from langchain.memory.chat_message_histories import StreamlitChatMessageHistory
+    from langchain.schema.messages import _message_to_dict
 
-
-@pytest.mark.requires("streamlit")
-def test_memory_with_message_store() -> None:
-    """Test the memory with a message store."""
     message_history = StreamlitChatMessageHistory()
     memory = ConversationBufferMemory(chat_memory=message_history, return_messages=True)
 
-    # add some messages
-    memory.chat_memory.add_ai_message("This is me, the AI")
-    memory.chat_memory.add_user_message("This is me, the human")
+    # Add some messages
+    if st.checkbox("add initial messages", value=True):
+        memory.chat_memory.add_ai_message("This is me, the AI")
+        memory.chat_memory.add_user_message("This is me, the human")
+    else:
+        st.text("Skipped add")
 
-    # get the message history from the memory store and turn it into a json
+    # Clear messages if checked
+    if st.checkbox("clear messages"):
+        st.text("Cleared!")
+        memory.chat_memory.clear()
+
+    # Write the output to st.code as a json blob for inspection
     messages = memory.chat_memory.messages
     messages_json = json.dumps([_message_to_dict(msg) for msg in messages])
+    st.code(messages_json)
+"""
 
+
+@pytest.mark.requires("streamlit")
+def test_memory_with_message_store():
+    from streamlit.testing.script_interactions import InteractiveScriptTests
+    test_handler = InteractiveScriptTests()
+    test_handler.setUp()
+    sr = test_handler.script_from_string(test_script).run()
+
+    # Initial run should write two messages
+    messages_json = sr.code[0].value
     assert "This is me, the AI" in messages_json
     assert "This is me, the human" in messages_json
 
-    # remove the record from Azure Cosmos DB, so the next test run won't pick it up
-    memory.chat_memory.clear()
+    # Uncheck the initial write, they should persist in session_state
+    sr = sr.checkbox[0].uncheck().run()
+    assert sr.text[0].value == "Skipped add"
+    messages_json = sr.code[0].value
+    assert "This is me, the AI" in messages_json
+    assert "This is me, the human" in messages_json
 
-    assert memory.chat_memory.messages == []
+    # Clear the message history
+    sr = sr.checkbox[1].check().run()
+    assert sr.text[1].value == "Cleared!"
+    messages_json = sr.code[0].value
+    assert sr.code[0].value == "[]"
