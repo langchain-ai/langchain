@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from pydantic import Field
 from typing import TYPE_CHECKING, Any, Dict, List, Sequence
+
+from pydantic import Field
 
 from langchain.load.serializable import Serializable
 
