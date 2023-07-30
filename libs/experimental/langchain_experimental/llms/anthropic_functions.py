@@ -3,7 +3,6 @@ from collections import defaultdict
 from html.parser import HTMLParser
 from typing import Any, DefaultDict, Dict, List, Optional
 
-from pydantic import root_validator
 from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
     Callbacks,
@@ -20,6 +19,7 @@ from langchain.schema.messages import (
     BaseMessage,
     SystemMessage,
 )
+from pydantic import root_validator
 
 prompt = """In addition to responding, you can use tools. \
 You have access to the following tools.
