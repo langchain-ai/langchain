@@ -469,7 +469,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
 
         Examples:
 
-            Instantiation from a list message templates:
+            Instantiation from a list of message templates:
 
             .. code-block:: python
 
