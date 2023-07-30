@@ -576,3 +576,24 @@ class ChatOpenAI(BaseChatModel):
         # every reply is primed with <im_start>assistant
         num_tokens += 3
         return num_tokens
+
+class GptTurboWith16kFallback(ChatOpenAI):
+    """
+    A custom language model with automatic fallback to a larger model if the initial model fails due to token limit.
+    """
+    fallback_model: str = Field("gpt-3.5-turbo-16k-0613")
+
+    class Config:
+        extra = Extra.forbid
+
+    def _generate(self, prompt: str, **kwargs) -> Dict[str, Any]:
+        try:
+            return  super()._generate(prompt, **kwargs)
+        except openai.error.InvalidRequestError as e:
+            if "maximum context length" in str(e):
+                # Create a new instance with the fallback model
+                fallback_instance = self.__class__(model=self.fallback_model)
+                return fallback_instance._generate(prompt, **kwargs)
+            else:
+                raise e
+
