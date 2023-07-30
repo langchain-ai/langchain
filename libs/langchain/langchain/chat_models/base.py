@@ -3,7 +3,16 @@ import inspect
 import warnings
 from abc import ABC, abstractmethod
 from functools import partial
-from typing import Any, Dict, List, Optional, Sequence
+from typing import (
+    Any,
+    AsyncIterator,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    cast,
+)
 
 from pydantic import Field, root_validator
 
@@ -17,6 +26,8 @@ from langchain.callbacks.manager import (
     Callbacks,
 )
 from langchain.load.dump import dumpd, dumps
+from langchain.prompts.base import StringPromptValue
+from langchain.prompts.chat import ChatPromptValue
 from langchain.schema import (
     ChatGeneration,
     ChatResult,
@@ -24,17 +35,22 @@ from langchain.schema import (
     PromptValue,
     RunInfo,
 )
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
+from langchain.schema.language_model import BaseLanguageModel, LanguageModelInput
+from langchain.schema.messages import (
+    AIMessage,
+    BaseMessage,
+    BaseMessageChunk,
+    HumanMessage,
+)
+from langchain.schema.output import ChatGenerationChunk
+from langchain.schema.runnable import RunnableConfig
 
 
 def _get_verbosity() -> bool:
     return langchain.verbose
 
 
-class BaseChatModel(BaseLanguageModel, ABC):
-    """Base class for chat models."""
-
+class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
     cache: Optional[bool] = None
     """Whether to cache the response."""
     verbose: bool = Field(default_factory=_get_verbosity)
@@ -63,6 +79,156 @@ class BaseChatModel(BaseLanguageModel, ABC):
         """Configuration for this pydantic object."""
 
         arbitrary_types_allowed = True
+
+    # --- Runnable methods ---
+
+    def _convert_input(self, input: LanguageModelInput) -> PromptValue:
+        if isinstance(input, PromptValue):
+            return input
+        elif isinstance(input, str):
+            return StringPromptValue(text=input)
+        elif isinstance(input, list):
+            return ChatPromptValue(messages=input)
+        else:
+            raise ValueError(
+                f"Invalid input type {type(input)}. "
+                "Must be a PromptValue, str, or list of BaseMessages."
+            )
+
+    def invoke(
+        self,
+        input: LanguageModelInput,
+        config: Optional[RunnableConfig] = None,
+        *,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> BaseMessageChunk:
+        return cast(
+            BaseMessageChunk,
+            cast(
+                ChatGeneration,
+                self.generate_prompt(
+                    [self._convert_input(input)], stop=stop, **(config or {}), **kwargs
+                ).generations[0][0],
+            ).message,
+        )
+
+    async def ainvoke(
+        self,
+        input: LanguageModelInput,
+        config: Optional[RunnableConfig] = None,
+        *,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> BaseMessageChunk:
+        if type(self)._agenerate == BaseChatModel._agenerate:
+            # model doesn't implement async generation, so use default implementation
+            return await asyncio.get_running_loop().run_in_executor(
+                None, partial(self.invoke, input, config, stop=stop, **kwargs)
+            )
+
+        llm_result = await self.agenerate_prompt(
+            [self._convert_input(input)], stop=stop, **(config or {}), **kwargs
+        )
+        return cast(
+            BaseMessageChunk, cast(ChatGeneration, llm_result.generations[0][0]).message
+        )
+
+    def stream(
+        self,
+        input: LanguageModelInput,
+        config: Optional[RunnableConfig] = None,
+        *,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> Iterator[BaseMessageChunk]:
+        if type(self)._stream == BaseChatModel._stream:
+            # model doesn't implement streaming, so use default implementation
+            yield self.invoke(input, config=config, stop=stop, **kwargs)
+        else:
+            config = config or {}
+            messages = self._convert_input(input).to_messages()
+            params = self._get_invocation_params(stop=stop, **kwargs)
+            options = {"stop": stop, **kwargs}
+            callback_manager = CallbackManager.configure(
+                config.get("callbacks"),
+                self.callbacks,
+                self.verbose,
+                config.get("tags"),
+                self.tags,
+                config.get("metadata"),
+                self.metadata,
+            )
+            (run_manager,) = callback_manager.on_chat_model_start(
+                dumpd(self), [messages], invocation_params=params, options=options
+            )
+            try:
+                message: Optional[BaseMessageChunk] = None
+                for chunk in self._stream(
+                    messages, stop=stop, run_manager=run_manager, **kwargs
+                ):
+                    yield chunk.message
+                    if message is None:
+                        message = chunk.message
+                    else:
+                        message += chunk.message
+                assert message is not None
+            except (KeyboardInterrupt, Exception) as e:
+                run_manager.on_llm_error(e)
+                raise e
+            else:
+                run_manager.on_llm_end(
+                    LLMResult(generations=[[ChatGeneration(message=message)]]),
+                )
+
+    async def astream(
+        self,
+        input: LanguageModelInput,
+        config: Optional[RunnableConfig] = None,
+        *,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[BaseMessageChunk]:
+        if type(self)._astream == BaseChatModel._astream:
+            # model doesn't implement streaming, so use default implementation
+            yield self.invoke(input, config=config, stop=stop, **kwargs)
+        else:
+            config = config or {}
+            messages = self._convert_input(input).to_messages()
+            params = self._get_invocation_params(stop=stop, **kwargs)
+            options = {"stop": stop, **kwargs}
+            callback_manager = AsyncCallbackManager.configure(
+                config.get("callbacks"),
+                self.callbacks,
+                self.verbose,
+                config.get("tags"),
+                self.tags,
+                config.get("metadata"),
+                self.metadata,
+            )
+            (run_manager,) = await callback_manager.on_chat_model_start(
+                dumpd(self), [messages], invocation_params=params, options=options
+            )
+            try:
+                message: Optional[BaseMessageChunk] = None
+                async for chunk in self._astream(
+                    messages, stop=stop, run_manager=run_manager, **kwargs
+                ):
+                    yield chunk.message
+                    if message is None:
+                        message = chunk.message
+                    else:
+                        message += chunk.message
+                assert message is not None
+            except (KeyboardInterrupt, Exception) as e:
+                await run_manager.on_llm_error(e)
+                raise e
+            else:
+                await run_manager.on_llm_end(
+                    LLMResult(generations=[[ChatGeneration(message=message)]]),
+                )
+
+    # --- Custom methods ---
 
     def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
         return {}
@@ -334,7 +500,6 @@ class BaseChatModel(BaseLanguageModel, ABC):
     ) -> ChatResult:
         """Top Level call"""
 
-    @abstractmethod
     async def _agenerate(
         self,
         messages: List[BaseMessage],
@@ -343,6 +508,25 @@ class BaseChatModel(BaseLanguageModel, ABC):
         **kwargs: Any,
     ) -> ChatResult:
         """Top Level call"""
+        raise NotImplementedError()
+
+    def _stream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        raise NotImplementedError()
+
+    def _astream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        raise NotImplementedError()
 
     def __call__(
         self,

@@ -11,10 +11,7 @@ Input to this tool should be a comma separated list,
 import json
 from typing import Optional
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
+from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools import BaseTool
 
 
@@ -51,11 +48,3 @@ class YouTubeSearchTool(BaseTool):
         else:
             num_results = 2
         return self._search(person, num_results)
-
-    async def _arun(
-        self,
-        query: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the tool asynchronously."""
-        raise NotImplementedError("YouTubeSearchTool  does not yet support async")

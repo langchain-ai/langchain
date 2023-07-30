@@ -5,10 +5,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 
 from pydantic import Extra, Field, root_validator
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
+from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document
 from langchain.utils import get_from_dict_or_env
 
@@ -21,7 +18,8 @@ if TYPE_CHECKING:
 
 
 class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
-    """Wrapper around Google Cloud Enterprise Search Service API.
+    """Retriever for the Google Cloud Enterprise Search Service API.
+
     For the detailed explanation of the Enterprise Search concepts
     and configuration parameters refer to the product documentation.
 
@@ -108,34 +106,23 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
         self, results: Sequence[SearchResult]
     ) -> List[Document]:
         """Converts a sequence of search results to a list of LangChain documents."""
-        from google.protobuf.json_format import MessageToDict
+        documents: List[Document] = []
 
-        documents = []
         for result in results:
-            document_dict = MessageToDict(result.document._pb)
-            derived_struct_data = document_dict.get("derivedStructData", None)
-            if derived_struct_data:
-                doc_metadata = document_dict.get("structData", {})
-                chunk_type = (
-                    "extractive_answers"
-                    if self.get_extractive_answers
-                    else "extractive_segments"
+            derived_struct_data = result.document.derived_struct_data
+            doc_metadata = result.document.struct_data
+            doc_metadata.source = derived_struct_data.link or ""
+            doc_metadata.id = result.document.id
+
+            for chunk in (
+                derived_struct_data.extractive_answers
+                or derived_struct_data.extractive_segments
+            ):
+                if hasattr(chunk, "page_number"):
+                    doc_metadata.source += f":{chunk.page_number}"
+                documents.append(
+                    Document(page_content=chunk.content, metadata=doc_metadata)
                 )
-                for chunk in derived_struct_data.get(chunk_type, []):
-                    if chunk_type == "extractive_answers":
-                        doc_metadata["source"] = (
-                            f"{derived_struct_data.get('link', '')}"
-                            f":{chunk.get('pageNumber', '')}"
-                        )
-                    else:
-                        doc_metadata[
-                            "source"
-                        ] = f"{derived_struct_data.get('link', '')}"
-                    doc_metadata["id"] = document_dict["id"]
-                    document = Document(
-                        page_content=chunk.get("content", ""), metadata=doc_metadata
-                    )
-                    documents.append(document)
 
         return documents
 
@@ -164,7 +151,7 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
             extractive_content_spec=extractive_content_spec,
         )
 
-        request = SearchRequest(
+        return SearchRequest(
             query=query,
             filter=self.filter,
             serving_config=self._serving_config,
@@ -172,8 +159,6 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
             content_search_spec=content_search_spec,
             query_expansion_spec=query_expansion_spec,
         )
-
-        return request
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
@@ -184,8 +169,3 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
         documents = self._convert_search_response(response.results)
 
         return documents
-
-    async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        raise NotImplementedError

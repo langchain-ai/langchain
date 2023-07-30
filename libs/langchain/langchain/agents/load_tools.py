@@ -11,7 +11,6 @@ from langchain.callbacks.manager import Callbacks
 from langchain.chains.api import news_docs, open_meteo_docs, podcast_docs, tmdb_docs
 from langchain.chains.api.base import APIChain
 from langchain.chains.llm_math.base import LLMMathChain
-from langchain.chains.pal.base import PALChain
 from langchain.utilities.requests import TextRequestsWrapper
 from langchain.tools.arxiv.tool import ArxivQueryRun
 from langchain.tools.golden_query.tool import GoldenQueryRun
@@ -105,22 +104,6 @@ _BASE_TOOLS: Dict[str, Callable[[], BaseTool]] = {
 }
 
 
-def _get_pal_math(llm: BaseLanguageModel) -> BaseTool:
-    return Tool(
-        name="PAL-MATH",
-        description="A language model that is really good at solving complex word math problems. Input should be a fully worded hard word math problem.",
-        func=PALChain.from_math_prompt(llm).run,
-    )
-
-
-def _get_pal_colored_objects(llm: BaseLanguageModel) -> BaseTool:
-    return Tool(
-        name="PAL-COLOR-OBJ",
-        description="A language model that is really good at reasoning about position and the color attributes of objects. Input should be a fully worded hard reasoning problem. Make sure to include all information about the objects AND the final question you want to answer.",
-        func=PALChain.from_colored_object_prompt(llm).run,
-    )
-
-
 def _get_llm_math(llm: BaseLanguageModel) -> BaseTool:
     return Tool(
         name="Calculator",
@@ -140,8 +123,6 @@ def _get_open_meteo_api(llm: BaseLanguageModel) -> BaseTool:
 
 
 _LLM_TOOLS: Dict[str, Callable[[BaseLanguageModel], BaseTool]] = {
-    "pal-math": _get_pal_math,
-    "pal-colored-objects": _get_pal_colored_objects,
     "llm-math": _get_llm_math,
     "open-meteo-api": _get_open_meteo_api,
 }
