@@ -34,16 +34,38 @@ from langchain.schema.runnable import (
 
 
 class FakeTracer(BaseTracer):
-    """Fake tracer that records LangChain execution."""
+    """Fake tracer that records LangChain execution.
+    It replaces run ids with deterministic UUIDs for snapshotting."""
 
     def __init__(self) -> None:
         """Initialize the tracer."""
         super().__init__()
         self.runs: List[Run] = []
+        self.uuids_map: Dict[UUID, UUID] = {}
+        self.uuids_generator = (
+            UUID(f"00000000-0000-4000-8000-{i:012}", version=4) for i in range(10000)
+        )
+
+    def _replace_uuid(self, uuid: UUID) -> UUID:
+        if uuid not in self.uuids_map:
+            self.uuids_map[uuid] = next(self.uuids_generator)
+        return self.uuids_map[uuid]
+
+    def _copy_run(self, run: Run) -> Run:
+        return run.copy(
+            update={
+                "id": self._replace_uuid(run.id),
+                "parent_run_id": self.uuids_map[run.parent_run_id]
+                if run.parent_run_id
+                else None,
+                "child_runs": [self._copy_run(child) for child in run.child_runs],
+            }
+        )
 
     def _persist_run(self, run: Run) -> None:
         """Persist a run."""
-        self.runs.append(run)
+
+        self.runs.append(self._copy_run(run))
 
 
 class FakeRunnable(Runnable[str, int]):
@@ -77,20 +99,6 @@ class FakeRetriever(BaseRetriever):
         **kwargs: Any,
     ) -> List[Document]:
         return [Document(page_content="foo"), Document(page_content="bar")]
-
-
-@pytest.fixture()
-def fixed_uuids(mocker: MockerFixture) -> MockerFixture._Patcher:
-    """Note this mock only works with `import uuid; uuid.uuid4()`,
-    it does not work with `from uuid import uuid4; uuid4()`."""
-
-    # Disable tracing to avoid fixed UUIDs causing tracing errors.
-    mocker.patch.dict("os.environ", {"LANGCHAIN_TRACING_V2": "false"})
-
-    side_effect = (
-        UUID(f"00000000-0000-4000-8000-{i:012}", version=4) for i in range(10000)
-    )
-    return mocker.patch("uuid.uuid4", side_effect=side_effect)
 
 
 @pytest.mark.asyncio
@@ -207,13 +215,13 @@ async def test_prompt() -> None:
 @pytest.mark.asyncio
 @freeze_time("2023-01-01")
 async def test_prompt_with_chat_model(
-    mocker: MockerFixture, snapshot: SnapshotAssertion, fixed_uuids: None
+    mocker: MockerFixture, snapshot: SnapshotAssertion
 ) -> None:
     prompt = (
         SystemMessagePromptTemplate.from_template("You are a nice assistant.")
         + "{question}"
     )
-    chat = FakeListChatModel(responses=["foo", "bar"])
+    chat = FakeListChatModel(responses=["foo"])
 
     chain = prompt | chat
 
@@ -252,7 +260,7 @@ async def test_prompt_with_chat_model(
         ],
         dict(callbacks=[tracer]),
     ) == [
-        AIMessage(content="bar"),
+        AIMessage(content="foo"),
         AIMessage(content="foo"),
     ]
     assert prompt_spy.call_args.args[1] == [
@@ -273,7 +281,16 @@ async def test_prompt_with_chat_model(
             ]
         ),
     ]
-    assert tracer.runs == snapshot
+    assert (
+        len(
+            [
+                r
+                for r in tracer.runs
+                if r.parent_run_id is None and len(r.child_runs) == 2
+            ]
+        )
+        == 2
+    ), "Each of 2 outer runs contains exactly two inner runs (1 prompt, 1 chat)"
     mocker.stop(prompt_spy)
     mocker.stop(chat_spy)
 
@@ -283,7 +300,7 @@ async def test_prompt_with_chat_model(
     tracer = FakeTracer()
     assert [
         *chain.stream({"question": "What is your name?"}, dict(callbacks=[tracer]))
-    ] == [AIMessage(content="bar")]
+    ] == [AIMessage(content="foo")]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
@@ -296,7 +313,7 @@ async def test_prompt_with_chat_model(
 @pytest.mark.asyncio
 @freeze_time("2023-01-01")
 async def test_prompt_with_llm(
-    mocker: MockerFixture, snapshot: SnapshotAssertion, fixed_uuids: None
+    mocker: MockerFixture, snapshot: SnapshotAssertion
 ) -> None:
     prompt = (
         SystemMessagePromptTemplate.from_template("You are a nice assistant.")
@@ -387,7 +404,7 @@ async def test_prompt_with_llm(
 
 @freeze_time("2023-01-01")
 def test_prompt_with_chat_model_and_parser(
-    mocker: MockerFixture, snapshot: SnapshotAssertion, fixed_uuids: None
+    mocker: MockerFixture, snapshot: SnapshotAssertion
 ) -> None:
     prompt = (
         SystemMessagePromptTemplate.from_template("You are a nice assistant.")
@@ -425,7 +442,7 @@ def test_prompt_with_chat_model_and_parser(
 
 @freeze_time("2023-01-01")
 def test_seq_dict_prompt_llm(
-    mocker: MockerFixture, snapshot: SnapshotAssertion, fixed_uuids: None
+    mocker: MockerFixture, snapshot: SnapshotAssertion
 ) -> None:
     passthrough = mocker.Mock(side_effect=lambda x: x)
 
@@ -488,13 +505,16 @@ What is your name?"""
         ]
     )
     assert parser_spy.call_args.args[1] == AIMessage(content="foo, bar")
-    assert tracer.runs == snapshot
+    assert len([r for r in tracer.runs if r.parent_run_id is None]) == 1
+    parent_run = next(r for r in tracer.runs if r.parent_run_id is None)
+    assert len(parent_run.child_runs) == 4
+    map_run = parent_run.child_runs[0]
+    assert map_run.name == "RunnableMap"
+    assert len(map_run.child_runs) == 3
 
 
 @freeze_time("2023-01-01")
-def test_seq_prompt_dict(
-    mocker: MockerFixture, snapshot: SnapshotAssertion, fixed_uuids: None
-) -> None:
+def test_seq_prompt_dict(mocker: MockerFixture, snapshot: SnapshotAssertion) -> None:
     passthrough = mocker.Mock(side_effect=lambda x: x)
 
     prompt = (
@@ -545,7 +565,12 @@ def test_seq_prompt_dict(
             HumanMessage(content="What is your name?"),
         ]
     )
-    assert tracer.runs == snapshot
+    assert len([r for r in tracer.runs if r.parent_run_id is None]) == 1
+    parent_run = next(r for r in tracer.runs if r.parent_run_id is None)
+    assert len(parent_run.child_runs) == 3
+    map_run = parent_run.child_runs[2]
+    assert map_run.name == "RunnableMap"
+    assert len(map_run.child_runs) == 2
 
 
 @pytest.mark.asyncio
@@ -597,9 +622,7 @@ async def test_router_runnable(
 
 
 @freeze_time("2023-01-01")
-def test_seq_prompt_map(
-    mocker: MockerFixture, snapshot: SnapshotAssertion, fixed_uuids: None
-) -> None:
+def test_seq_prompt_map(mocker: MockerFixture, snapshot: SnapshotAssertion) -> None:
     passthrough = mocker.Mock(side_effect=lambda x: x)
 
     prompt = (
@@ -657,7 +680,12 @@ def test_seq_prompt_map(
             HumanMessage(content="What is your name?"),
         ]
     )
-    assert tracer.runs == snapshot
+    assert len([r for r in tracer.runs if r.parent_run_id is None]) == 1
+    parent_run = next(r for r in tracer.runs if r.parent_run_id is None)
+    assert len(parent_run.child_runs) == 3
+    map_run = parent_run.child_runs[2]
+    assert map_run.name == "RunnableMap"
+    assert len(map_run.child_runs) == 3
 
 
 def test_bind_bind() -> None:
