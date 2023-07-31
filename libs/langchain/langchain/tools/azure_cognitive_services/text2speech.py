@@ -6,10 +6,7 @@ from typing import Any, Dict, Optional
 
 from pydantic import root_validator
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
+from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
 from langchain.utils import get_from_dict_or_env
 
@@ -104,11 +101,3 @@ class AzureCogsText2SpeechTool(BaseTool):
             return speech_file
         except Exception as e:
             raise RuntimeError(f"Error while running AzureCogsText2SpeechTool: {e}")
-
-    async def _arun(
-        self,
-        query: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the tool asynchronously."""
-        raise NotImplementedError("AzureCogsText2SpeechTool does not support async")

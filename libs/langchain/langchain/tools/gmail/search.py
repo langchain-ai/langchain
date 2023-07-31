@@ -5,10 +5,7 @@ from typing import Any, Dict, List, Optional, Type
 
 from pydantic import BaseModel, Field
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
+from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.gmail.base import GmailBaseTool
 from langchain.tools.gmail.utils import clean_email_body
 
@@ -132,13 +129,3 @@ class GmailSearch(GmailBaseTool):
             return self._parse_messages(results)
         else:
             raise NotImplementedError(f"Resource of type {resource} not implemented.")
-
-    async def _arun(
-        self,
-        query: str,
-        resource: Resource = Resource.MESSAGES,
-        max_results: int = 10,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> List[Dict[str, Any]]:
-        """Run the tool."""
-        raise NotImplementedError

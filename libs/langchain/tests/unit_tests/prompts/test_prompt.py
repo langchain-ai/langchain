@@ -161,6 +161,10 @@ Will it get confused{ }?
     )
     assert prompt == expected_prompt
 
+
+@pytest.mark.requires("jinja2")
+def test_prompt_from_jinja2_template_multiple_inputs() -> None:
+    """Test with multiple input variables."""
     # Multiple input variables.
     template = """\
 Hello world
@@ -186,7 +190,10 @@ You just set bar boolean variable to true
 
     assert prompt == expected_prompt
 
-    # Multiple input variables with repeats.
+
+@pytest.mark.requires("jinja2")
+def test_prompt_from_jinja2_template_multiple_inputs_with_repeats() -> None:
+    """Test with multiple input variables and repeats."""
     template = """\
 Hello world
 

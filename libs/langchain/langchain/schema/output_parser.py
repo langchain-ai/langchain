@@ -35,9 +35,19 @@ class BaseGenerationOutputParser(
         self, input: str | BaseMessage, config: RunnableConfig | None = None
     ) -> T:
         if isinstance(input, BaseMessage):
-            return self.parse_result([ChatGeneration(message=input)])
+            return self._call_with_config(
+                lambda inner_input: self.parse_result(
+                    [ChatGeneration(message=inner_input)]
+                ),
+                input,
+                config,
+            )
         else:
-            return self.parse_result([Generation(text=input)])
+            return self._call_with_config(
+                lambda inner_input: self.parse_result([Generation(text=inner_input)]),
+                input,
+                config,
+            )
 
 
 class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]):
@@ -71,9 +81,19 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
         self, input: str | BaseMessage, config: RunnableConfig | None = None
     ) -> T:
         if isinstance(input, BaseMessage):
-            return self.parse_result([ChatGeneration(message=input)])
+            return self._call_with_config(
+                lambda inner_input: self.parse_result(
+                    [ChatGeneration(message=inner_input)]
+                ),
+                input,
+                config,
+            )
         else:
-            return self.parse_result([Generation(text=input)])
+            return self._call_with_config(
+                lambda inner_input: self.parse_result([Generation(text=inner_input)]),
+                input,
+                config,
+            )
 
     def parse_result(self, result: List[Generation]) -> T:
         """Parse a list of candidate model Generations into a specific format.
