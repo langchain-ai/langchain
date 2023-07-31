@@ -469,7 +469,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
 
         Examples:
 
-            Instantiation from a list of role strings and templates:
+            Instantiation from a list of message templates:
 
             .. code-block:: python
 
@@ -487,18 +487,6 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
                     SystemMessage(content="hello"),
                     ("human", "Hello, how are you?"),
                 ])
-
-            Instantiation from a list message templates:
-
-
-            .. code-block:: python
-
-                template = ChatPromptTemplate.from_messages([
-                    ("human", "Hello, how are you?"),
-                    ("ai", "I'm doing well, thanks!"),
-                    ("human", "That's good to hear."),
-                ])
-
 
         Args:
             messages: sequence of message representations.
