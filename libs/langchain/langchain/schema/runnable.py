@@ -108,6 +108,10 @@ class Runnable(Generic[Input, Output], ABC):
     ) -> List[Output]:
         configs = self._get_config_list(config, len(inputs))
 
+        # If there's only one input, don't bother with the executor
+        if len(inputs) == 1:
+            return [self.invoke(inputs[0], configs[0])]
+
         with ThreadPoolExecutor(max_workers=max_concurrency) as executor:
             return list(executor.map(self.invoke, inputs, configs))
 
@@ -764,9 +768,29 @@ class RouterInput(TypedDict):
     input: Any
 
 
-class RouterRunnable(Runnable[RouterInput, Output]):
-    def __init__(self, runnables: Dict[str, Runnable[Input, Output]]):
-        self.runnables = runnables
+class RouterRunnable(Serializable, Runnable[RouterInput, Output]):
+    runnables: Mapping[str, Runnable[Input, Output]]
+
+    def __init__(self, runnables: Mapping[str, Runnable[Input, Output]]) -> None:
+        super().__init__(runnables=runnables)
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    @property
+    def lc_serializable(self) -> bool:
+        return True
+
+    def __or__(
+        self,
+        other: Union[
+            Runnable[Any, Other],
+            Callable[[Any], Other],
+            Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other]]],
+            Mapping[str, Any],
+        ],
+    ) -> RunnableSequence[Input, Other]:
+        return RunnableSequence(first=self, last=_coerce_to_runnable(other))
 
     def __ror__(
         self,
@@ -815,14 +839,15 @@ class RouterRunnable(Runnable[RouterInput, Output]):
 
         runnables = [self.runnables[key] for key in keys]
         configs = self._get_config_list(config, len(inputs))
-        return [
-            runnable.batch(
-                [actual_input], [actual_config], max_concurrency=max_concurrency
-            )[0]
-            for runnable, actual_input, actual_config in zip(
-                runnables, actual_inputs, configs
+        with ThreadPoolExecutor(max_workers=max_concurrency) as executor:
+            return list(
+                executor.map(
+                    lambda runnable, input, config: runnable.invoke(input, config),
+                    runnables,
+                    actual_inputs,
+                    configs,
+                )
             )
-        ]
 
     async def abatch(
         self,
@@ -838,15 +863,12 @@ class RouterRunnable(Runnable[RouterInput, Output]):
 
         runnables = [self.runnables[key] for key in keys]
         configs = self._get_config_list(config, len(inputs))
-        return await asyncio.gather(
-            *[
-                runnable.abatch(
-                    [actual_input], [actual_config], max_concurrency=max_concurrency
-                )
-                for runnable, actual_input, actual_config in zip(
-                    runnables, actual_inputs, configs
-                )
-            ]
+        return await _gather_with_concurrency(
+            max_concurrency,
+            *(
+                runnable.ainvoke(input, config)
+                for runnable, input, config in zip(runnables, actual_inputs, configs)
+            ),
         )
 
     def stream(

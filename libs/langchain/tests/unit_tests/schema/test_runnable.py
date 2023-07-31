@@ -548,8 +548,9 @@ def test_seq_prompt_dict(
     assert tracer.runs == snapshot
 
 
+@pytest.mark.asyncio
 @freeze_time("2023-01-01")
-def test_router_runnable(
+async def test_router_runnable(
     mocker: MockerFixture, snapshot: SnapshotAssertion, fixed_uuids: None
 ) -> None:
     chain1 = ChatPromptTemplate.from_template(
@@ -569,6 +570,14 @@ def test_router_runnable(
     assert result == "4"
 
     result2 = chain.batch(
+        [{"key": "math", "question": "2 + 2"}, {"key": "english", "question": "2 + 2"}]
+    )
+    assert result2 == ["4", "2"]
+
+    result = await chain.ainvoke({"key": "math", "question": "2 + 2"})
+    assert result == "4"
+
+    result2 = await chain.abatch(
         [{"key": "math", "question": "2 + 2"}, {"key": "english", "question": "2 + 2"}]
     )
     assert result2 == ["4", "2"]
