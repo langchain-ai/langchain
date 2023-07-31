@@ -6,8 +6,9 @@ from inspect import signature
 from typing import Any, Dict, List, Optional, cast
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
-from langchain.chains import LLMChain
 from langchain.chains.base import Chain
+from langchain.chains.llm import LLMChain
+from langchain.chains.sql_database.prompt import DECIDER_PROMPT, PROMPT, SQL_PROMPTS
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
@@ -15,7 +16,6 @@ from langchain.tools.sql_database.prompt import QUERY_CHECKER
 from pydantic import BaseModel, Extra, Field, root_validator, validator
 
 from langchain_experimental.sql.parser import SQLCommandOutputParser
-from langchain_experimental.sql.prompt import DECIDER_PROMPT, PROMPT, SQL_PROMPTS
 from langchain_experimental.utilities.sql_database import SQLDatabase
 
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"

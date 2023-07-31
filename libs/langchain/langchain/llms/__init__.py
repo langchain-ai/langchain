@@ -33,6 +33,7 @@ from langchain.llms.human import HumanInputLLM
 from langchain.llms.koboldai import KoboldApiLLM
 from langchain.llms.llamacpp import LlamaCpp
 from langchain.llms.manifest import ManifestWrapper
+from langchain.llms.minimax import Minimax
 from langchain.llms.mlflow_ai_gateway import MlflowAIGateway
 from langchain.llms.modal import Modal
 from langchain.llms.mosaicml import MosaicML
@@ -56,6 +57,7 @@ from langchain.llms.textgen import TextGen
 from langchain.llms.tongyi import Tongyi
 from langchain.llms.vertexai import VertexAI
 from langchain.llms.writer import Writer
+from langchain.llms.xinference import Xinference
 
 __all__ = [
     "AI21",
@@ -91,6 +93,7 @@ __all__ = [
     "LlamaCpp",
     "TextGen",
     "ManifestWrapper",
+    "Minimax",
     "MlflowAIGateway",
     "Modal",
     "MosaicML",
@@ -115,6 +118,7 @@ __all__ = [
     "VertexAI",
     "Writer",
     "OctoAIEndpoint",
+    "Xinference",
 ]
 
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
@@ -150,7 +154,8 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "koboldai": KoboldApiLLM,
     "llamacpp": LlamaCpp,
     "textgen": TextGen,
-    "mlflow-gateway": MlflowAIGateway,
+    "minimax": Minimax,
+    "mlflow-ai-gateway": MlflowAIGateway,
     "modal": Modal,
     "mosaic": MosaicML,
     "nlpcloud": NLPCloud,
@@ -170,4 +175,5 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "openllm": OpenLLM,
     "openllm_client": OpenLLM,
     "writer": Writer,
+    "xinference": Xinference,
 }

@@ -9,6 +9,8 @@ from langchain_experimental.plan_and_execute.schema import StepResponse
 
 
 class BaseExecutor(BaseModel):
+    """Base executor."""
+
     @abstractmethod
     def step(
         self, inputs: dict, callbacks: Callbacks = None, **kwargs: Any
@@ -19,11 +21,14 @@ class BaseExecutor(BaseModel):
     async def astep(
         self, inputs: dict, callbacks: Callbacks = None, **kwargs: Any
     ) -> StepResponse:
-        """Take step."""
+        """Take async step."""
 
 
 class ChainExecutor(BaseExecutor):
+    """Chain executor."""
+
     chain: Chain
+    """The chain to use."""
 
     def step(
         self, inputs: dict, callbacks: Callbacks = None, **kwargs: Any

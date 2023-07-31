@@ -10,6 +10,8 @@ MANAGED_URL = "https://api.getmetal.io/v1/motorhead"
 
 
 class MotorheadMemory(BaseChatMemory):
+    """Chat message memory backed by Motorhead service."""
+
     url: str = MANAGED_URL
     timeout = 3000
     memory_key = "history"

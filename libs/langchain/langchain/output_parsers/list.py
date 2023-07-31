@@ -6,7 +6,7 @@ from typing import List
 from langchain.schema import BaseOutputParser
 
 
-class ListOutputParser(BaseOutputParser):
+class ListOutputParser(BaseOutputParser[List[str]]):
     """Parse the output of an LLM call to a list."""
 
     @property

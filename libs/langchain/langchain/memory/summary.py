@@ -16,6 +16,8 @@ from langchain.schema.messages import BaseMessage, SystemMessage, get_buffer_str
 
 
 class SummarizerMixin(BaseModel):
+    """Mixin for summarizer."""
+
     human_prefix: str = "Human"
     ai_prefix: str = "AI"
     llm: BaseLanguageModel
@@ -36,7 +38,7 @@ class SummarizerMixin(BaseModel):
 
 
 class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
-    """Conversation summarizer to memory."""
+    """Conversation summarizer to chat memory."""
 
     buffer: str = ""
     memory_key: str = "history"  #: :meta private:

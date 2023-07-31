@@ -123,6 +123,11 @@ class _VertexAICommon(BaseModel):
         return text
 
     @property
+    def _identifying_params(self) -> Dict[str, Any]:
+        """Get the identifying parameters."""
+        return {**{"model_name": self.model_name}, **self._default_params}
+
+    @property
     def _llm_type(self) -> str:
         return "vertexai"
 

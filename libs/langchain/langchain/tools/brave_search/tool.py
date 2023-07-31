@@ -2,10 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
+from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
 from langchain.utilities.brave_search import BraveSearchWrapper
 
@@ -45,11 +42,3 @@ class BraveSearch(BaseTool):
     ) -> str:
         """Use the tool."""
         return self.search_wrapper.run(query)
-
-    async def _arun(
-        self,
-        query: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the tool asynchronously."""
-        raise NotImplementedError("BraveSearch does not support async")
