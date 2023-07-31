@@ -15,6 +15,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Type,
     TypedDict,
     TypeVar,
     Union,
@@ -187,13 +188,25 @@ class Runnable(Generic[Input, Output], ABC):
             )
             return output
 
-    def with_fallbacks(self, fallbacks: Sequence[Runnable]) -> RunnableWithFallbacks:
-        return RunnableWithFallbacks(runnable=self, fallbacks=fallbacks)
+    def with_fallbacks(
+        self,
+        fallbacks: Sequence[Runnable],
+        exceptions_to_handle: Sequence[Type[BaseException]] = (
+            KeyboardInterrupt,
+            Exception,
+        ),
+    ) -> RunnableWithFallbacks:
+        return RunnableWithFallbacks(
+            runnable=self,
+            fallbacks=fallbacks,
+            exceptions_to_handle=exceptions_to_handle,
+        )
 
 
 class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
     runnable: Runnable[Input, Output]
     fallbacks: Sequence[Runnable[Input, Output]]
+    exceptions_to_handle: Sequence[Type[BaseException]] = (KeyboardInterrupt, Exception)
 
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
         from langchain.callbacks.manager import CallbackManager
@@ -216,7 +229,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
 
         try:
             output = self.runnable.invoke(input, config)
-        except (KeyboardInterrupt, Exception) as e:
+        except self.exceptions_to_handle as e:
             run_manager.on_chain_error(e)
             first_error = e
         else:
@@ -227,10 +240,53 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
         for runnable in self.fallbacks:
             try:
                 output = runnable.invoke(input, config)
-            except (KeyboardInterrupt, Exception) as e:
+            except self.exceptions_to_handle as e:
                 run_manager.on_chain_error(e)
             else:
                 run_manager.on_chain_end(
+                    output if isinstance(output, dict) else {"output": output}
+                )
+                return output
+        raise first_error
+
+    async def ainvoke(
+        self, input: Input, config: Optional[RunnableConfig] = None
+    ) -> Output:
+        from langchain.callbacks.manager import AsyncCallbackManager
+
+        # setup callbacks
+        config = config or {}
+        callback_manager = AsyncCallbackManager.configure(
+            inheritable_callbacks=config.get("callbacks"),
+            local_callbacks=None,
+            verbose=False,
+            inheritable_tags=config.get("tags"),
+            local_tags=None,
+            inheritable_metadata=config.get("metadata"),
+            local_metadata=None,
+        )
+        # start the root run
+        run_manager = await callback_manager.on_chain_start(
+            dumpd(self), input if isinstance(input, dict) else {"input": input}
+        )
+
+        try:
+            output = await self.runnable.ainvoke(input, config)
+        except self.exceptions_to_handle as e:
+            await run_manager.on_chain_error(e)
+            first_error = e
+        else:
+            await run_manager.on_chain_end(
+                output if isinstance(output, dict) else {"output": output}
+            )
+            return output
+        for runnable in self.fallbacks:
+            try:
+                output = await runnable.ainvoke(input, config)
+            except self.exceptions_to_handle as e:
+                await run_manager.on_chain_error(e)
+            else:
+                await run_manager.on_chain_end(
                     output if isinstance(output, dict) else {"output": output}
                 )
                 return output
