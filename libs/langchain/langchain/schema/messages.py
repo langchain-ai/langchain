@@ -111,7 +111,7 @@ class BaseMessageChunk(BaseMessage):
                 )
         return merged
 
-    def __add__(self, other: Any) -> BaseMessageChunk:
+    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, BaseMessageChunk):
             # If both are (subclasses of) BaseMessageChunk,
             # concat into a single BaseMessageChunk
