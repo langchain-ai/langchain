@@ -2,10 +2,7 @@
 
 from typing import Optional
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
+from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
 from langchain.utilities.bing_search import BingSearchAPIWrapper
 
@@ -29,14 +26,6 @@ class BingSearchRun(BaseTool):
         """Use the tool."""
         return self.api_wrapper.run(query)
 
-    async def _arun(
-        self,
-        query: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the tool asynchronously."""
-        raise NotImplementedError("BingSearchRun does not support async")
-
 
 class BingSearchResults(BaseTool):
     """Tool that queries the Bing Search API and gets back json."""
@@ -57,11 +46,3 @@ class BingSearchResults(BaseTool):
     ) -> str:
         """Use the tool."""
         return str(self.api_wrapper.results(query, self.num_results))
-
-    async def _arun(
-        self,
-        query: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the tool asynchronously."""
-        raise NotImplementedError("BingSearchResults does not support async")

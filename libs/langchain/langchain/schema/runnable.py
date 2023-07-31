@@ -12,6 +12,7 @@ from typing import (
     Generic,
     Iterator,
     List,
+    Mapping,
     Optional,
     TypedDict,
     TypeVar,
@@ -71,7 +72,8 @@ class Runnable(Generic[Input, Output], ABC):
         self,
         other: Union[
             Runnable[Any, Other],
-            Dict[str, Union[Runnable[Any, Other], Callable[[Any], Other]]],
+            Callable[[Any], Other],
+            Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other]]],
         ],
     ) -> RunnableSequence[Input, Other]:
         return RunnableSequence(first=self, last=_coerce_to_runnable(other))
@@ -80,7 +82,8 @@ class Runnable(Generic[Input, Output], ABC):
         self,
         other: Union[
             Runnable[Other, Any],
-            Dict[str, Union[Runnable[Other, Any], Callable[[Other], Any]]],
+            Callable[[Any], Other],
+            Mapping[str, Union[Runnable[Other, Any], Callable[[Other], Any]]],
         ],
     ) -> RunnableSequence[Other, Output]:
         return RunnableSequence(first=_coerce_to_runnable(other), last=self)
@@ -129,6 +132,12 @@ class Runnable(Generic[Input, Output], ABC):
         self, input: Input, config: Optional[RunnableConfig] = None
     ) -> AsyncIterator[Output]:
         yield await self.ainvoke(input, config)
+
+    def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
+        """
+        Bind arguments to a Runnable, returning a new Runnable.
+        """
+        return RunnableBinding(bound=self, kwargs=kwargs)
 
     def _get_config_list(
         self, config: Optional[Union[RunnableConfig, List[RunnableConfig]]], length: int
@@ -194,7 +203,8 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         self,
         other: Union[
             Runnable[Any, Other],
-            Dict[str, Union[Runnable[Any, Other], Callable[[Any], Other]]],
+            Callable[[Any], Other],
+            Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other]]],
         ],
     ) -> RunnableSequence[Input, Other]:
         if isinstance(other, RunnableSequence):
@@ -214,7 +224,8 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         self,
         other: Union[
             Runnable[Other, Any],
-            Dict[str, Union[Runnable[Other, Any], Callable[[Other], Any]]],
+            Callable[[Any], Other],
+            Mapping[str, Union[Runnable[Other, Any], Callable[[Other], Any]]],
         ],
     ) -> RunnableSequence[Other, Output]:
         if isinstance(other, RunnableSequence):
@@ -551,7 +562,22 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
 
 
 class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
-    steps: Dict[str, Runnable[Input, Any]]
+    steps: Mapping[str, Runnable[Input, Any]]
+
+    def __init__(
+        self,
+        steps: Mapping[
+            str,
+            Union[
+                Runnable[Input, Any],
+                Callable[[Input], Any],
+                Mapping[str, Union[Runnable[Input, Any], Callable[[Input], Any]]],
+            ],
+        ],
+    ) -> None:
+        super().__init__(
+            steps={key: _coerce_to_runnable(r) for key, r in steps.items()}
+        )
 
     @property
     def lc_serializable(self) -> bool:
@@ -582,7 +608,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
         # gather results from all steps
         try:
             # copy to avoid issues from the caller mutating the steps during invoke()
-            steps = self.steps.copy()
+            steps = dict(self.steps)
             with ThreadPoolExecutor() as executor:
                 futures = [
                     executor.submit(
@@ -626,7 +652,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
         # gather results from all steps
         try:
             # copy to avoid issues from the caller mutating the steps during invoke()
-            steps = self.steps.copy()
+            steps = dict(self.steps)
             results = await asyncio.gather(
                 *(
                     step.ainvoke(
@@ -676,6 +702,63 @@ class RunnablePassthrough(Serializable, Runnable[Input, Input]):
         return self._call_with_config(lambda x: x, input, config)
 
 
+class RunnableBinding(Serializable, Runnable[Input, Output]):
+    bound: Runnable[Input, Output]
+
+    kwargs: Mapping[str, Any]
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    @property
+    def lc_serializable(self) -> bool:
+        return True
+
+    def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
+        return self.__class__(bound=self.bound, kwargs={**self.kwargs, **kwargs})
+
+    def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
+        return self.bound.invoke(input, config, **self.kwargs)
+
+    async def ainvoke(
+        self, input: Input, config: Optional[RunnableConfig] = None
+    ) -> Output:
+        return await self.bound.ainvoke(input, config, **self.kwargs)
+
+    def batch(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        max_concurrency: Optional[int] = None,
+    ) -> List[Output]:
+        return self.bound.batch(
+            inputs, config, max_concurrency=max_concurrency, **self.kwargs
+        )
+
+    async def abatch(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        max_concurrency: Optional[int] = None,
+    ) -> List[Output]:
+        return await self.bound.abatch(
+            inputs, config, max_concurrency=max_concurrency, **self.kwargs
+        )
+
+    def stream(
+        self, input: Input, config: Optional[RunnableConfig] = None
+    ) -> Iterator[Output]:
+        yield from self.bound.stream(input, config, **self.kwargs)
+
+    async def astream(
+        self, input: Input, config: Optional[RunnableConfig] = None
+    ) -> AsyncIterator[Output]:
+        async for item in self.bound.astream(input, config, **self.kwargs):
+            yield item
+
+
 def _patch_config(
     config: RunnableConfig, callback_manager: BaseCallbackManager
 ) -> RunnableConfig:
@@ -688,7 +771,7 @@ def _coerce_to_runnable(
     thing: Union[
         Runnable[Input, Output],
         Callable[[Input], Output],
-        Dict[str, Union[Runnable[Input, Output], Callable[[Input], Output]]],
+        Mapping[str, Union[Runnable[Input, Output], Callable[[Input], Output]]],
     ]
 ) -> Runnable[Input, Output]:
     if isinstance(thing, Runnable):

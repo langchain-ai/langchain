@@ -49,7 +49,18 @@ class GitLoader(BaseLoader):
         if not os.path.exists(self.repo_path) and self.clone_url is None:
             raise ValueError(f"Path {self.repo_path} does not exist")
         elif self.clone_url:
-            repo = Repo.clone_from(self.clone_url, self.repo_path)
+            # If the repo_path already contains a git repository, verify that it's the
+            # same repository as the one we're trying to clone.
+            if os.path.isdir(os.path.join(self.repo_path, ".git")):
+                repo = Repo(self.repo_path)
+                # If the existing repository is not the same as the one we're trying to
+                # clone, raise an error.
+                if repo.remotes.origin.url != self.clone_url:
+                    raise ValueError(
+                        "A different repository is already cloned at this path."
+                    )
+            else:
+                repo = Repo.clone_from(self.clone_url, self.repo_path)
             repo.git.checkout(self.branch)
         else:
             repo = Repo(self.repo_path)
