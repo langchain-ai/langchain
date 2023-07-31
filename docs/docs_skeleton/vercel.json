@@ -3478,7 +3478,7 @@
     },
     {
       "source": "/en/latest/modules/prompts/example_selectors.html",
-      "destination": "/docs/modules/model_io/example_selectors"
+      "destination": "/docs/modules/model_io/prompts/example_selectors"
     },
     {
       "source": "/en/latest/modules/prompts/example_selectors/examples/custom_example_selector.html",
@@ -3494,7 +3494,7 @@
     },
     {
       "source": "/en/latest/modules/prompts/prompt_templates.html",
-      "destination": "/docs/modules/model_io/prompt_templates"
+      "destination": "/docs/modules/model_io/prompts/prompt_templates"
     },
     {
       "source": "/en/latest/modules/prompts/prompt_templates/examples/connecting_to_a_feature_store.html",
