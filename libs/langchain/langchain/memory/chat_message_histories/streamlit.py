@@ -20,17 +20,17 @@ class StreamlitChatMessageHistory(BaseChatMessageHistory):
         if message_key not in st.session_state:
             st.session_state[message_key] = []
         self._message_key = message_key
-        self._state = st.session_state
+        self._messages = st.session_state[message_key]
 
     @property
     def messages(self) -> List[BaseMessage]:  # type: ignore
         """Retrieve the current list of messages"""
-        return self._state[self._message_key]
+        return self._messages
 
     def add_message(self, message: BaseMessage) -> None:
         """Add a message to the session memory"""
-        self._state[self._message_key].append(message)
+        self._messages.append(message)
 
     def clear(self) -> None:
         """Clear session memory"""
-        self._state[self._message_key] = []
+        self._messages.clear()
