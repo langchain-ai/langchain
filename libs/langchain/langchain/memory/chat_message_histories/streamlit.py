@@ -11,16 +11,15 @@ class StreamlitChatMessageHistory(BaseChatMessageHistory):
     Chat message history that stores messages in Streamlit session state.
 
     Args:
-        message_key: session state key to use for storing messages.
+        key: The key to use in Streamlit session state for storing messages.
     """
 
-    def __init__(self, message_key: str = "messages"):
+    def __init__(self, key: str = "messages"):
         import streamlit as st
 
-        if message_key not in st.session_state:
-            st.session_state[message_key] = []
-        self._message_key = message_key
-        self._messages = st.session_state[message_key]
+        if key not in st.session_state:
+            st.session_state[key] = []
+        self._messages = st.session_state[key]
 
     @property
     def messages(self) -> List[BaseMessage]:  # type: ignore
