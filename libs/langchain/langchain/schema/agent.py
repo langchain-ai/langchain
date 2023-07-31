@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import NamedTuple, Union
 
+from langchain.load.serializable import Serializable
 
-@dataclass
-class AgentAction:
+
+class AgentAction(Serializable):
     """A full description of an action for an ActionAgent to execute."""
 
     tool: str
@@ -14,6 +14,11 @@ class AgentAction:
     """The input to pass in to the Tool."""
     log: str
     """Additional information to log about the action."""
+
+    @property
+    def lc_serializable(self) -> bool:
+        """Whether this class is LangChain serializable."""
+        return True
 
 
 class AgentFinish(NamedTuple):

@@ -1,6 +1,5 @@
 """Module implements an agent that uses OpenAI's APIs function enabled API."""
 import json
-from dataclasses import dataclass
 from json import JSONDecodeError
 from typing import Any, List, Optional, Sequence, Tuple, Union
 
@@ -33,7 +32,6 @@ from langchain.tools import BaseTool
 from langchain.tools.convert_to_openai import format_tool_to_openai_function
 
 
-@dataclass
 class _FunctionsAgentAction(AgentAction):
     message_log: List[BaseMessage]
 
