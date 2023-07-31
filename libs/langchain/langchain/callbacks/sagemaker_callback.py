@@ -37,18 +37,6 @@ def save_json(data: dict, file_path: str) -> None:
         json.dump(data, outfile)
 
 
-def jsonf(
-    run: Run,
-    data: Dict[str, Any],
-    data_dir: str,
-    filename: str,
-    is_output: Optional[bool] = True,
-) -> None:
-    """To log the input data as json file artifact."""
-    file_path = os.path.join(data_dir, f"{filename}.json")
-    save_json(data, file_path)
-    run.log_file(file_path, name=filename, is_output=is_output)
-
 
 class SageMakerCallbackHandler(BaseCallbackHandler):
     """Callback Handler that logs prompt artifacts and metrics to SageMaker Experiments.
@@ -106,8 +94,7 @@ class SageMakerCallbackHandler(BaseCallbackHandler):
         for idx, prompt in enumerate(prompts):
             prompt_resp = deepcopy(resp)
             prompt_resp["prompt"] = prompt
-            jsonf(
-                self.run,
+            self.jsonf(
                 prompt_resp,
                 self.temp_dir,
                 f"llm_start_{llm_starts}_prompt_{idx}",
@@ -124,7 +111,7 @@ class SageMakerCallbackHandler(BaseCallbackHandler):
         resp.update({"action": "on_llm_new_token", "token": token})
         resp.update(self.metrics)
 
-        jsonf(self.run, resp, self.temp_dir, f"llm_new_tokens_{llm_streams}")
+        self.jsonf(resp, self.temp_dir, f"llm_new_tokens_{llm_streams}")
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Run when LLM ends running."""
@@ -145,8 +132,7 @@ class SageMakerCallbackHandler(BaseCallbackHandler):
                 generation_resp = deepcopy(resp)
                 generation_resp.update(flatten_dict(generation.dict()))
 
-                jsonf(
-                    self.run,
+                self.jsonf(
                     resp,
                     self.temp_dir,
                     f"llm_end_{llm_ends}_generation_{idx}",
@@ -178,7 +164,7 @@ class SageMakerCallbackHandler(BaseCallbackHandler):
         input_resp = deepcopy(resp)
         input_resp["inputs"] = chain_input
 
-        jsonf(self.run, input_resp, self.temp_dir, f"chain_start_{chain_starts}")
+        self.jsonf(input_resp, self.temp_dir, f"chain_start_{chain_starts}")
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Run when chain ends running."""
@@ -193,7 +179,7 @@ class SageMakerCallbackHandler(BaseCallbackHandler):
         resp.update({"action": "on_chain_end", "outputs": chain_output})
         resp.update(self.metrics)
 
-        jsonf(self.run, resp, self.temp_dir, f"chain_end_{chain_ends}")
+        self.jsonf(resp, self.temp_dir, f"chain_end_{chain_ends}")
 
     def on_chain_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
@@ -217,7 +203,7 @@ class SageMakerCallbackHandler(BaseCallbackHandler):
         resp.update(flatten_dict(serialized))
         resp.update(self.metrics)
 
-        jsonf(self.run, resp, self.temp_dir, f"tool_start_{tool_starts}")
+        self.jsonf(resp, self.temp_dir, f"tool_start_{tool_starts}")
 
     def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running."""
@@ -231,7 +217,7 @@ class SageMakerCallbackHandler(BaseCallbackHandler):
         resp.update({"action": "on_tool_end", "output": output})
         resp.update(self.metrics)
 
-        jsonf(self.run, resp, self.temp_dir, f"tool_end_{tool_ends}")
+        self.jsonf(resp, self.temp_dir, f"tool_end_{tool_ends}")
 
     def on_tool_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
@@ -253,7 +239,7 @@ class SageMakerCallbackHandler(BaseCallbackHandler):
         resp.update({"action": "on_text", "text": text})
         resp.update(self.metrics)
 
-        jsonf(self.run, resp, self.temp_dir, f"on_text_{text_ctr}")
+        self.jsonf(resp, self.temp_dir, f"on_text_{text_ctr}")
 
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
         """Run when agent ends running."""
@@ -272,7 +258,7 @@ class SageMakerCallbackHandler(BaseCallbackHandler):
         )
         resp.update(self.metrics)
 
-        jsonf(self.run, resp, self.temp_dir, f"agent_finish_{agent_ends}")
+        self.jsonf(resp, self.temp_dir, f"agent_finish_{agent_ends}")
 
     def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
         """Run on agent action."""
@@ -291,8 +277,13 @@ class SageMakerCallbackHandler(BaseCallbackHandler):
             }
         )
         resp.update(self.metrics)
-        jsonf(self.run, resp, self.temp_dir, f"agent_action_{tool_starts}")
-
+        self.jsonf(resp, self.temp_dir, f"agent_action_{tool_starts}")      
+              
+    def jsonf(self, data: Dict[str, Any], data_dir: str, filename: str, is_output: Optional[bool] = True) -> None:
+        """To log the input data as json file artifact."""
+        file_path = os.path.join(data_dir, f"{filename}.json")
+        save_json(data, file_path)
+        self.run.log_file(file_path, name=filename, is_output=is_output)
         
     def flush_tracker(self) -> None:
         """Reset the steps and delete the temporary local directory."""
