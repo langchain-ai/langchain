@@ -10,7 +10,7 @@ from langchain.document_loaders.parsers.audio import OpenAIWhisperParser
 
 
 class OpenAIWhisperLoader(BaseLoader):
-    """Loads audio file transcription via OpenAIWhisper"""
+    """Loads audio file transcription using OpenAI Whisper"""
 
     def __init__(self, file_path: str, api_key: Optional[str] = None):
         """Initialize with file path."""
