@@ -80,7 +80,7 @@ class ContentFormatterBase:
     """The MIME type of the input data passed to the endpoint"""
 
     accepts: Optional[str] = "application/json"
-    """The MIME type of the response data returned form the endpoint"""
+    """The MIME type of the response data returned from the endpoint"""
 
     @staticmethod
     def escape_special_characters(prompt: str) -> str:
@@ -130,7 +130,7 @@ class GPT2ContentFormatter(ContentFormatterBase):
         return json.loads(output)[0]["0"]
 
 
-class OSSContentFormatter(ContentFormatterBase):
+class OSSContentFormatter(GPT2ContentFormatter):
     """Deprecated: Kept for backwards compatibility
 
     Content handler for LLMs from the OSS catalog."""
@@ -138,18 +138,12 @@ class OSSContentFormatter(ContentFormatterBase):
     content_formatter: Any = None
 
     def __init__(self) -> None:
-        self.content_formatter = GPT2ContentFormatter()
-
-    def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
+        super().__init__()
         warnings.warn(
             """`OSSContentFormatter` will be deprecated in the future. 
                       Please use `GPT2ContentFormatter` instead.  
                       """
         )
-        return self.content_formatter.format_request_payload(prompt, model_kwargs)
-
-    def format_response_payload(self, output: bytes) -> str:
-        return self.content_formatter.format_response_payload(output)
 
 
 class HFContentFormatter(ContentFormatterBase):
