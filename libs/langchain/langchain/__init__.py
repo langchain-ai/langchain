@@ -11,9 +11,7 @@ from langchain.chains import (
     LLMChain,
     LLMCheckerChain,
     LLMMathChain,
-    PALChain,
     QAWithSourcesChain,
-    SQLDatabaseChain,
     VectorDBQA,
     VectorDBQAWithSourcesChain,
 )
@@ -106,7 +104,6 @@ __all__ = [
     "SagemakerEndpoint",
     "HuggingFacePipeline",
     "SQLDatabase",
-    "SQLDatabaseChain",
     "PowerBIDataset",
     "FAISS",
     "MRKLChain",
@@ -116,7 +113,6 @@ __all__ = [
     "ConversationChain",
     "VectorDBQAWithSourcesChain",
     "QAWithSourcesChain",
-    "PALChain",
     "LlamaCpp",
     "HuggingFaceTextGenInference",
 ]

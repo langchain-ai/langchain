@@ -190,12 +190,9 @@ class FewShotChatMessagePromptTemplate(
 
         .. code-block:: python
 
-            from langchain.schema import SystemMessage
             from langchain.prompts import (
                 FewShotChatMessagePromptTemplate,
-                HumanMessagePromptTemplate,
-                SystemMessagePromptTemplate,
-                AIMessagePromptTemplate
+                ChatPromptTemplate
             )
 
             examples = [
@@ -203,24 +200,23 @@ class FewShotChatMessagePromptTemplate(
                 {"input": "2+3", "output": "5"},
             ]
 
+            example_prompt = ChatPromptTemplate.from_messages(
+                [('human', '{input}'), ('ai', '{output}')]
+            )
+
             few_shot_prompt = FewShotChatMessagePromptTemplate(
                 examples=examples,
                 # This is a prompt template used to format each individual example.
-                example_prompt=(
-                    HumanMessagePromptTemplate.from_template("{input}")
-                    + AIMessagePromptTemplate.from_template("{output}")
-                ),
+                example_prompt=example_prompt,
             )
 
-
-            final_prompt = (
-                SystemMessagePromptTemplate.from_template(
-                    "You are a helpful AI Assistant"
-                )
-                + few_shot_prompt
-                + HumanMessagePromptTemplate.from_template("{input}")
+            final_prompt = ChatPromptTemplate.from_messages(
+                [
+                    ('system', 'You are a helpful AI Assistant'),
+                    few_shot_prompt,
+                    ('human', '{input}'),
+                ]
             )
-
             final_prompt.format(input="What is 4+4?")
 
         Prompt template with dynamically selected examples:

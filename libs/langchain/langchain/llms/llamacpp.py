@@ -100,6 +100,12 @@ class LlamaCpp(LLM):
     use_mmap: Optional[bool] = True
     """Whether to keep the model loaded in RAM"""
 
+    rope_freq_scale: float = 1.0
+    """Scale factor for rope sampling."""
+
+    rope_freq_base: float = 10000.0
+    """Base frequency for rope sampling."""
+
     streaming: bool = True
     """Whether to stream the results, token by token."""
 
@@ -111,6 +117,8 @@ class LlamaCpp(LLM):
         """Validate that llama-cpp-python library is installed."""
         model_path = values["model_path"]
         model_param_names = [
+            "rope_freq_scale",
+            "rope_freq_base",
             "lora_path",
             "lora_base",
             "n_ctx",
