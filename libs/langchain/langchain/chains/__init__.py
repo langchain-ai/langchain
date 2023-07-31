@@ -34,6 +34,7 @@ from langchain.chains.graph_qa.cypher import GraphCypherQAChain
 from langchain.chains.graph_qa.hugegraph import HugeGraphQAChain
 from langchain.chains.graph_qa.kuzu import KuzuQAChain
 from langchain.chains.graph_qa.nebulagraph import NebulaGraphQAChain
+from langchain.chains.graph_qa.neptune_cypher import NeptuneOpenCypherQAChain
 from langchain.chains.graph_qa.sparql import GraphSparqlQAChain
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain.chains.llm import LLMChain
@@ -55,7 +56,6 @@ from langchain.chains.openai_functions import (
     create_tagging_chain,
     create_tagging_chain_pydantic,
 )
-from langchain.chains.pal.base import PALChain
 from langchain.chains.qa_generation.base import QAGenerationChain
 from langchain.chains.qa_with_sources.base import QAWithSourcesChain
 from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
@@ -69,10 +69,6 @@ from langchain.chains.router import (
     RouterChain,
 )
 from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
-from langchain.chains.sql_database.base import (
-    SQLDatabaseChain,
-    SQLDatabaseSequentialChain,
-)
 from langchain.chains.sql_database.query import create_sql_query_chain
 from langchain.chains.transform import TransformChain
 
@@ -106,9 +102,9 @@ __all__ = [
     "MultiRouteChain",
     "NatBotChain",
     "NebulaGraphQAChain",
+    "NeptuneOpenCypherQAChain",
     "OpenAIModerationChain",
     "OpenAPIEndpointChain",
-    "PALChain",
     "QAGenerationChain",
     "QAWithSourcesChain",
     "ReduceDocumentsChain",
@@ -116,8 +112,6 @@ __all__ = [
     "RetrievalQA",
     "RetrievalQAWithSourcesChain",
     "RouterChain",
-    "SQLDatabaseChain",
-    "SQLDatabaseSequentialChain",
     "SequentialChain",
     "SimpleSequentialChain",
     "StuffDocumentsChain",

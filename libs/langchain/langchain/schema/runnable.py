@@ -714,6 +714,9 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
     def lc_serializable(self) -> bool:
         return True
 
+    def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
+        return self.__class__(bound=self.bound, kwargs={**self.kwargs, **kwargs})
+
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
         return self.bound.invoke(input, config, **self.kwargs)
 
