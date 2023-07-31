@@ -21,7 +21,7 @@ class ArxivAPIWrapper(BaseModel):
     It limits the Document content by doc_content_chars_max.
     Set doc_content_chars_max=None if you don't want to limit the content size.
 
-    Parameters:
+    Args:
         top_k_results: number of the top-scored document used for the arxiv tool
         ARXIV_MAX_QUERY_LENGTH: the cut limit on the query used for the arxiv tool.
         load_max_docs: a limit to the number of loaded documents
@@ -30,8 +30,8 @@ class ArxivAPIWrapper(BaseModel):
             meta info (see https://lukasschwab.me/arxiv.py/index.html#Result),
             if False: the `metadata` contains only the published date, title,
             authors and summary.
-        doc_content_chars_max (optional): an optional cut limit for
-            the length of a document's content
+        doc_content_chars_max: an optional cut limit for the length of a document's
+            content
 
     Example:
         .. code-block:: python
@@ -77,17 +77,17 @@ class ArxivAPIWrapper(BaseModel):
 
     def run(self, query: str) -> str:
         """
-        Performs an arxiv search and returns article metadata. Wrapper for
+        Performs an arxiv search and A single string
+        with the publish date, title, authors, and summary
+        for each article separated by two newlines.
+
+        If an error occurs or no documents found, error text
+        is returned instead. Wrapper for
         https://lukasschwab.me/arxiv.py/index.html#Search
 
-        Parameters:
+        Args:
             query: a plaintext search query
-        Returns:
-            A single string with the publish date, title, authors,
-            and summary for each article separated by two newlines.
-            If an error occured or no documents found, error text
-            is returned instead.
-        """
+        """  # noqa: E501
         try:
             results = self.arxiv_search(  # type: ignore
                 query[: self.ARXIV_MAX_QUERY_LENGTH], max_results=self.top_k_results
@@ -116,11 +116,9 @@ class ArxivAPIWrapper(BaseModel):
         Performs an arxiv search, downloads the top k results as PDFs, loads
         them as Documents, and returns them in a List.
 
-        Parameters:
+        Args:
             query: a plaintext search query
-        Returns:
-            A List of Documents with metadata
-        """
+        """  # noqa: E501
         try:
             import fitz
         except ImportError:
