@@ -338,7 +338,6 @@ class Redis(VectorStore):
         base_query = (
             f'{hybrid_fields}=>[KNN {k} @{self.vector_key} $vector AS vector_score]'
         )
-        print(base_query)
         return_fields = [*self.metadata_keys, self.content_key, "vector_score", "id"]
         return (
             Query(base_query)
