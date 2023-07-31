@@ -319,8 +319,8 @@ class Redis(VectorStore):
             an empty list is returned.
 
         """
-        docs_and_scores = self.similarity_search_with_score(query, k=k,filter=filter)
-        return [doc for doc, score in docs_and_scores if score < score_threshold]
+        docs_and_scores = self.similarity_search_with_score(query, k=k,filter=filter,score_threshold)
+        return [doc for doc, _ in docs_and_scores]
 
     def _prepare_query(self, k: int,filter: List = None) -> Query:
         try:
@@ -331,13 +331,14 @@ class Redis(VectorStore):
                 "Please install it with `pip install redis`."
             )
         # Prepare the Query
-        hybrid_fields = '*'
+        hybrid_fields = f'(@{self.vector_key}:[VECTOR_RANGE $score_threshold $vector])'
         if filter:
             filter_cond_list = self.add_filter(filter)
-            hybrid_fields = '(@'+" @".join(filter_cond_list)+')'
+            hybrid_fields = f'(@{self.vector_key}:[VECTOR_RANGE $score_threshold $vector] @'+" @".join(filter_cond_list)+')'
         base_query = (
             f'{hybrid_fields}=>[KNN {k} @{self.vector_key} $vector AS vector_score]'
         )
+        print(base_query)
         return_fields = [*self.metadata_keys, self.content_key, "vector_score", "id"]
         return (
             Query(base_query)
@@ -348,7 +349,7 @@ class Redis(VectorStore):
         )
 
     def similarity_search_with_score(
-        self, query: str, k: int = 4, filter: List = None
+        self, query: str, k: int = 4, filter: List = None,score_threshold: float = 0.2
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
@@ -368,7 +369,8 @@ class Redis(VectorStore):
         params_dict: Mapping[str, str] = {
             "vector": np.array(embedding)  # type: ignore
             .astype(dtype=np.float32)
-            .tobytes()
+            .tobytes(),
+            "score_threshold": score_threshold
         }
 
         # Perform vector search
