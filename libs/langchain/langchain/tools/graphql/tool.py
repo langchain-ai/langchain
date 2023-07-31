@@ -60,8 +60,5 @@ class BaseGraphQLTool(BaseTool):
         tool_input: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
-        try:
-            result = self.graphql_wrapper.run(tool_input)
-            return json.dumps(result, indent=2)
-        except Exception as e:
-            return "Bad request: " + str(e)
+        result = self.graphql_wrapper.run(tool_input)
+        return json.dumps(result, indent=2)

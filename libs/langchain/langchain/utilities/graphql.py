@@ -84,9 +84,12 @@ class GraphQLAPIWrapper(BaseModel):
 
     def run(self, query: str) -> str:
         """Run a GraphQL query and get the results."""
-        result = self._execute_query(query)
-        return json.dumps(result, indent=2)
-
+        try:
+            result = self._execute_query(query)
+            return json.dumps(result, indent=2)
+        except Exception as e:
+            return "Bad request: " + str(e)
+        
     def _execute_query(self, query: str) -> Dict[str, Any]:
         """Execute a GraphQL query and return the results."""
         document_node = self.gql_function(query)
