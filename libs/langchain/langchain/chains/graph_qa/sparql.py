@@ -90,7 +90,7 @@ class GraphSparqlQAChain(Chain):
                 "I am sorry, but this prompt seems to fit none of the currently "
                 "supported SPARQL query types, i.e., SELECT and UPDATE."
             )
-        elif intent.find("SELECT") < intent.find("UPDATE"):
+        elif intent.find("SELECT") != -1:
             sparql_generation_chain = self.sparql_generation_select_chain
             intent = "SELECT"
         else:
