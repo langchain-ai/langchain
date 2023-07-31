@@ -768,7 +768,9 @@ class RouterInput(TypedDict):
     input: Any
 
 
-class RouterRunnable(Serializable, Runnable[RouterInput, Output]):
+class RouterRunnable(
+    Serializable, Generic[Input, Output], Runnable[RouterInput, Output]
+):
     runnables: Mapping[str, Runnable[Input, Output]]
 
     def __init__(self, runnables: Mapping[str, Runnable[Input, Output]]) -> None:
@@ -789,7 +791,7 @@ class RouterRunnable(Serializable, Runnable[RouterInput, Output]):
             Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other]]],
             Mapping[str, Any],
         ],
-    ) -> RunnableSequence[Input, Other]:
+    ) -> RunnableSequence[RouterInput, Other]:
         return RunnableSequence(first=self, last=_coerce_to_runnable(other))
 
     def __ror__(

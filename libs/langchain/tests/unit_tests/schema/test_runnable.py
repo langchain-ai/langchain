@@ -576,7 +576,7 @@ def test_seq_prompt_dict(mocker: MockerFixture, snapshot: SnapshotAssertion) -> 
 @pytest.mark.asyncio
 @freeze_time("2023-01-01")
 async def test_router_runnable(
-    mocker: MockerFixture, snapshot: SnapshotAssertion, fixed_uuids: None
+    mocker: MockerFixture, snapshot: SnapshotAssertion
 ) -> None:
     chain1 = ChatPromptTemplate.from_template(
         "You are a math genius. Answer the question: {question}"
