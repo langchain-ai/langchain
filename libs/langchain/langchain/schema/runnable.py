@@ -768,6 +768,17 @@ class RouterRunnable(Runnable[RouterInput, Output]):
     def __init__(self, runnables: Dict[str, Runnable[Input, Output]]):
         self.runnables = runnables
 
+    def __ror__(
+        self,
+        other: Union[
+            Runnable[Other, Any],
+            Callable[[Any], Other],
+            Mapping[str, Union[Runnable[Other, Any], Callable[[Other], Any]]],
+            Mapping[str, Any],
+        ],
+    ) -> RunnableSequence[Other, Output]:
+        return RunnableSequence(first=_coerce_to_runnable(other), last=self)
+
     def invoke(
         self, input: RouterInput, config: Optional[RunnableConfig] = None
     ) -> Output:

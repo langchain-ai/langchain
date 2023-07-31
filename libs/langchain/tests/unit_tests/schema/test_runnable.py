@@ -559,7 +559,7 @@ def test_router_runnable(
         "You are an english major. Answer the question: {question}"
     ) | FakeListLLM(responses=["2"])
     router = RouterRunnable({"math": chain1, "english": chain2})
-    chain = {
+    chain: Runnable = {
         "key": lambda x: x["key"],
         "input": {"question": lambda x: x["question"]},
     } | router
@@ -568,10 +568,10 @@ def test_router_runnable(
     result = chain.invoke({"key": "math", "question": "2 + 2"})
     assert result == "4"
 
-    result = chain.batch(
+    result2 = chain.batch(
         [{"key": "math", "question": "2 + 2"}, {"key": "english", "question": "2 + 2"}]
     )
-    assert result == ["4", "2"]
+    assert result2 == ["4", "2"]
 
     # Test invoke
     router_spy = mocker.spy(router.__class__, "invoke")
