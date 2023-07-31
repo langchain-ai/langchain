@@ -65,11 +65,3 @@ class BaseGraphQLTool(BaseTool):
             return json.dumps(result, indent=2)
         except Exception as e:
             return "Bad request: " + str(e)
-
-    async def _arun(
-        self,
-        tool_input: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the Graphql tool asynchronously."""
-        raise NotImplementedError("GraphQLAPIWrapper does not support async")
