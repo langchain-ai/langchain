@@ -1,9 +1,6 @@
 import json
 from typing import Any, Callable, Dict, Optional
 from pydantic import BaseModel, Extra, root_validator
-from gql import Client
-
-
 
 class GraphQLAPIWrapper(BaseModel):
     """Wrapper around GraphQL API.
@@ -45,6 +42,7 @@ class GraphQLAPIWrapper(BaseModel):
 
     def get_gql_client(self, graphql_endpoint: str, headers: Optional[Dict[str, str]] = None) -> Client:
         try:
+            from gql import Client, gql
             from gql.transport.requests import RequestsHTTPTransport
         except ImportError as e:
             raise ImportError(
