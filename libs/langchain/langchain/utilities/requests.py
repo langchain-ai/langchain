@@ -58,12 +58,12 @@ class Requests(BaseModel):
         if not self.aiosession:
             async with aiohttp.ClientSession() as session:
                 async with session.request(
-                    method, url, headers=self.headers, auth=self.auth, **kwargs
+                    method, url, headers=self.headers, **kwargs
                 ) as response:
                     yield response
         else:
             async with self.aiosession.request(
-                method, url, headers=self.headers, auth=self.auth, **kwargs
+                method, url, headers=self.headers, **kwargs
             ) as response:
                 yield response
 
