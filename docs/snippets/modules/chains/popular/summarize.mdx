@@ -184,6 +184,7 @@ You can also use prompt with multi input. In this example, we will use a MapRedu
 ```python
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
+from langchain.chains import ReduceDocumentsChain
 
 map_template_string = """Give the following python code information, generate a description that explains what the code does and also mention the time complexity.
 Code:
