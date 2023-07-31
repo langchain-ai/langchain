@@ -8,8 +8,23 @@ import pytest
 from langchain.evaluation.comparison.eval_chain import (
     LabeledPairwiseStringEvalChain,
     PairwiseStringEvalChain,
+    resolve_pairwise_criteria,
 )
+from langchain.evaluation.criteria.eval_chain import Criteria
 from tests.unit_tests.llms.fake_llm import FakeLLM
+
+
+@pytest.mark.parametrize("criterion", list(Criteria))
+def test_resolve_criteria_enum(criterion: Criteria) -> None:
+    val = resolve_pairwise_criteria(criterion)
+    assert isinstance(val, dict)
+    assert next(iter(val)) == criterion.value
+
+
+def test_resolve_criteria_list_enum() -> None:
+    val = resolve_pairwise_criteria(list(Criteria))
+    assert isinstance(val, dict)
+    assert set(val.keys()) == set(c.value for c in list(Criteria))
 
 
 def test_pairwise_string_comparison_chain() -> None:
