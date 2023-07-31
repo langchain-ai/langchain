@@ -20,6 +20,7 @@ from typing import (
 )
 
 import numpy as np
+import numbers
 from pydantic import root_validator
 
 from langchain.callbacks.manager import (
@@ -138,7 +139,7 @@ class Redis(VectorStore):
         index_name: str,
         embedding_function: Callable,
         content_key: str = "content",
-        metadata_keys: List[str] = ["metadata"],
+        metadata_keys: dict = {"metadata":"Text"},
         vector_key: str = "content_vector",
         relevance_score_fn: Optional[Callable[[float], float]] = None,
         distance_metric: REDIS_DISTANCE_METRICS = "COSINE",
@@ -180,8 +181,17 @@ class Redis(VectorStore):
             return _default_relevance_score
 
     def _create_index(self, dim: int = 1536) -> None:
+
         try:
-            from redis.commands.search.field import TextField, VectorField
+            from redis.commands.search.field import TextField, NumericField, TagField, GeoField, VectorField
+            field_dict = {
+                'Text':TextField,
+                'Numeric':NumericField,
+                'Tag':TagField,
+                'Geo':GeoField,
+                'Vector':VectorField
+            }
+            
             from redis.commands.search.indexDefinition import IndexDefinition, IndexType
         except ImportError:
             raise ValueError(
@@ -191,7 +201,7 @@ class Redis(VectorStore):
 
         # Check if index exists
         if not _check_index_exists(self.client, self.index_name):
-            metadata_textfields = [TextField(name=metadata_key) for metadata_key in self.metadata_keys]
+            metadata_textfields = [field_dict[v](name=k) for k,v in self.metadata_keys.items()]
             # Define schema
             schema = (
                 TextField(name=self.content_key),
@@ -270,7 +280,7 @@ class Redis(VectorStore):
         return ids
 
     def similarity_search(
-        self, query: str, k: int = 4,filter: Optional[dict] = None, **kwargs: Any
+        self, query: str, k: int = 4,filter: List = None, **kwargs: Any
     ) -> List[Document]:
         """
         Returns the most similar indexed documents to the query text.
@@ -286,7 +296,7 @@ class Redis(VectorStore):
         return [doc for doc, _ in docs_and_scores]
 
     def similarity_search_limit_score(
-        self, query: str, k: int = 4, score_threshold: float = 0.2,filter: Optional[dict] = None, **kwargs: Any
+        self, query: str, k: int = 4, score_threshold: float = 0.2,filter: List = None, **kwargs: Any
     ) -> List[Document]:
         """
         Returns the most similar indexed documents to the query text within the
@@ -312,7 +322,7 @@ class Redis(VectorStore):
         docs_and_scores = self.similarity_search_with_score(query, k=k,filter=filter)
         return [doc for doc, score in docs_and_scores if score < score_threshold]
 
-    def _prepare_query(self, k: int,filter: Optional[dict] = None) -> Query:
+    def _prepare_query(self, k: int,filter: List = None) -> Query:
         try:
             from redis.commands.search.query import Query
         except ImportError:
@@ -323,11 +333,12 @@ class Redis(VectorStore):
         # Prepare the Query
         hybrid_fields = '*'
         if filter:
-            filter_cond_list = [k+":"+v for k,v in filter.items()]
-            hybrid_fields = '(@'+",@".join(filter_cond_list)+')'
+            filter_cond_list = self.add_filter(filter)
+            hybrid_fields = '(@'+" @".join(filter_cond_list)+')'
         base_query = (
-            f"{hybrid_fields}=>[KNN {k} @{self.vector_key} $vector AS vector_score]"
+            f'{hybrid_fields}=>[KNN {k} @{self.vector_key} $vector AS vector_score]'
         )
+        print(base_query)
         return_fields = [*self.metadata_keys, self.content_key, "vector_score", "id"]
         return (
             Query(base_query)
@@ -338,7 +349,7 @@ class Redis(VectorStore):
         )
 
     def similarity_search_with_score(
-        self, query: str, k: int = 4, filter: Optional[dict] = None
+        self, query: str, k: int = 4, filter: List = None
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
@@ -381,7 +392,7 @@ class Redis(VectorStore):
         metadatas: Optional[List[dict]] = None,
         index_name: Optional[str] = None,
         content_key: str = "content",
-        metadata_keys: List[str] = ["metadata"],
+        metadata_keys: dict = {"metadata":"Text"},
         vector_key: str = "content_vector",
         distance_metric: REDIS_DISTANCE_METRICS = "COSINE",
         **kwargs: Any,
@@ -446,7 +457,7 @@ class Redis(VectorStore):
         metadatas: Optional[List[dict]] = None,
         index_name: Optional[str] = None,
         content_key: str = "content",
-        metadata_keys: List[str] = ["metadata"],
+        metadata_keys: dict = {"metadata":"Text"},
         vector_key: str = "content_vector",
         **kwargs: Any,
     ) -> Redis:
@@ -572,7 +583,7 @@ class Redis(VectorStore):
         embedding: Embeddings,
         index_name: str,
         content_key: str = "content",
-        metadata_keys: List[str] = ["metadata"],
+        metadata_keys: dict = {"metadata":"Text"},
         vector_key: str = "content_vector",
         **kwargs: Any,
     ) -> Redis:
@@ -614,6 +625,38 @@ class Redis(VectorStore):
         tags = kwargs.pop("tags", None) or []
         tags.extend(self._get_retriever_tags())
         return RedisVectorStoreRetriever(vectorstore=self, **kwargs, tags=tags)
+
+    def add_filter(self,filter: List):
+        filter_list=[]
+        for filter_map in filter:
+            key = filter_map['meta_key']
+            value = filter_map['meta_val']
+            if 'union' in filter_map:
+                union = filter_map['union']
+            else:
+                union = True # Default to union.
+            if self.metadata_keys[key]=='Text':
+                if type(value)==str: # Supports "val*"
+                    filter_list.append(f'{key}:{value}')
+            elif self.metadata_keys[key]=='Numeric':
+                if isinstance(value, numbers.Real): # [10 10] for equals condition
+                    filter_list.append(f'{key}:[{value} {value}]')
+                elif isinstance(value,list): #[10 20] => Between 10 and 20 (including both)
+                    filter_list.append(f'{key}:[{" ".join(map(str,value))}]')
+                elif isinstance(value,str):#[(10 20] => Between 10 and 20 (including 20, but excluding 10)
+                    filter_list.append(f'{key}:{value}')
+            elif self.metadata_keys[key]=='Tag':
+                if isinstance(value,list):
+                    if union: # @my_tags:{sample_tag|value}
+                        concatenated_tag_value = '{'+'|'.join(value)+'}'
+                        filter_list.append(key+':'+concatenated_tag_value)
+                    else: #Intersction when only both tags exists @my_tags:sample_tag and @my_tags:value
+                        for val in value:
+                            filter_list.append(key+':{'+val+'}')
+                elif isinstance(value,str):
+                    concatenated_tag_value = '{'+value+'}'
+                    filter_list.append(key+':'+concatenated_tag_value)
+        return filter_list
 
 
 class RedisVectorStoreRetriever(VectorStoreRetriever):
