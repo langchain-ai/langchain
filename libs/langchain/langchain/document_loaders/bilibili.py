@@ -57,7 +57,7 @@ class BiliBiliLoader(BaseLoader):
         sub = sync(v.get_subtitle(video_info["cid"]))
 
         # Get subtitle url
-        sub_list = sub['subtitles']
+        sub_list = sub["subtitles"]
         if sub_list:
             sub_url = sub_list[0]["subtitle_url"]
             if not sub_url.startswith("http"):
