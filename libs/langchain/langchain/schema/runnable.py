@@ -108,6 +108,10 @@ class Runnable(Generic[Input, Output], ABC):
     ) -> List[Output]:
         configs = self._get_config_list(config, len(inputs))
 
+        # If there's only one input, don't bother with the executor
+        if len(inputs) == 1:
+            return [self.invoke(inputs[0], configs[0])]
+
         with ThreadPoolExecutor(max_workers=max_concurrency) as executor:
             return list(executor.map(self.invoke, inputs, configs))
 
@@ -757,6 +761,140 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
     ) -> AsyncIterator[Output]:
         async for item in self.bound.astream(input, config, **self.kwargs):
             yield item
+
+
+class RouterInput(TypedDict):
+    key: str
+    input: Any
+
+
+class RouterRunnable(
+    Serializable, Generic[Input, Output], Runnable[RouterInput, Output]
+):
+    runnables: Mapping[str, Runnable[Input, Output]]
+
+    def __init__(self, runnables: Mapping[str, Runnable[Input, Output]]) -> None:
+        super().__init__(runnables=runnables)
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    @property
+    def lc_serializable(self) -> bool:
+        return True
+
+    def __or__(
+        self,
+        other: Union[
+            Runnable[Any, Other],
+            Callable[[Any], Other],
+            Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other]]],
+            Mapping[str, Any],
+        ],
+    ) -> RunnableSequence[RouterInput, Other]:
+        return RunnableSequence(first=self, last=_coerce_to_runnable(other))
+
+    def __ror__(
+        self,
+        other: Union[
+            Runnable[Other, Any],
+            Callable[[Any], Other],
+            Mapping[str, Union[Runnable[Other, Any], Callable[[Other], Any]]],
+            Mapping[str, Any],
+        ],
+    ) -> RunnableSequence[Other, Output]:
+        return RunnableSequence(first=_coerce_to_runnable(other), last=self)
+
+    def invoke(
+        self, input: RouterInput, config: Optional[RunnableConfig] = None
+    ) -> Output:
+        key = input["key"]
+        actual_input = input["input"]
+        if key not in self.runnables:
+            raise ValueError(f"No runnable associated with key '{key}'")
+
+        runnable = self.runnables[key]
+        return runnable.invoke(actual_input, config)
+
+    async def ainvoke(
+        self, input: RouterInput, config: Optional[RunnableConfig] = None
+    ) -> Output:
+        key = input["key"]
+        actual_input = input["input"]
+        if key not in self.runnables:
+            raise ValueError(f"No runnable associated with key '{key}'")
+
+        runnable = self.runnables[key]
+        return await runnable.ainvoke(actual_input, config)
+
+    def batch(
+        self,
+        inputs: List[RouterInput],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        max_concurrency: Optional[int] = None,
+    ) -> List[Output]:
+        keys = [input["key"] for input in inputs]
+        actual_inputs = [input["input"] for input in inputs]
+        if any(key not in self.runnables for key in keys):
+            raise ValueError("One or more keys do not have a corresponding runnable")
+
+        runnables = [self.runnables[key] for key in keys]
+        configs = self._get_config_list(config, len(inputs))
+        with ThreadPoolExecutor(max_workers=max_concurrency) as executor:
+            return list(
+                executor.map(
+                    lambda runnable, input, config: runnable.invoke(input, config),
+                    runnables,
+                    actual_inputs,
+                    configs,
+                )
+            )
+
+    async def abatch(
+        self,
+        inputs: List[RouterInput],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        max_concurrency: Optional[int] = None,
+    ) -> List[Output]:
+        keys = [input["key"] for input in inputs]
+        actual_inputs = [input["input"] for input in inputs]
+        if any(key not in self.runnables for key in keys):
+            raise ValueError("One or more keys do not have a corresponding runnable")
+
+        runnables = [self.runnables[key] for key in keys]
+        configs = self._get_config_list(config, len(inputs))
+        return await _gather_with_concurrency(
+            max_concurrency,
+            *(
+                runnable.ainvoke(input, config)
+                for runnable, input, config in zip(runnables, actual_inputs, configs)
+            ),
+        )
+
+    def stream(
+        self, input: RouterInput, config: Optional[RunnableConfig] = None
+    ) -> Iterator[Output]:
+        key = input["key"]
+        actual_input = input["input"]
+        if key not in self.runnables:
+            raise ValueError(f"No runnable associated with key '{key}'")
+
+        runnable = self.runnables[key]
+        yield from runnable.stream(actual_input, config)
+
+    async def astream(
+        self, input: RouterInput, config: Optional[RunnableConfig] = None
+    ) -> AsyncIterator[Output]:
+        key = input["key"]
+        actual_input = input["input"]
+        if key not in self.runnables:
+            raise ValueError(f"No runnable associated with key '{key}'")
+
+        runnable = self.runnables[key]
+        async for output in runnable.astream(actual_input, config):
+            yield output
 
 
 def _patch_config(
