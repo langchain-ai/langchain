@@ -46,6 +46,14 @@ class Replicate(LLM):
 
         extra = Extra.forbid
 
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"replicate_api_token": "REPLICATE_API_TOKEN"}
+
+    @property
+    def lc_serializable(self) -> bool:
+        return True
+
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
