@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
 from pydantic import Field
 
@@ -9,7 +9,10 @@ from langchain.load.serializable import Serializable
 
 
 def get_buffer_string(
-    messages: Sequence[BaseMessage], human_prefix: str = "Human", ai_prefix: str = "AI"
+    messages: Sequence[BaseMessage],
+    human_prefix: str = "Human",
+    ai_prefix: str = "AI",
+    system_message_format_key: Optional[str] = None,
 ) -> str:
     """Convert sequence of Messages to strings and concatenate them into one string.
 
@@ -17,6 +20,8 @@ def get_buffer_string(
         messages: Messages to be converted to strings.
         human_prefix: The prefix to prepend to contents of HumanMessages.
         ai_prefix: THe prefix to prepend to contents of AIMessages.
+        system_message_key: The key to format the system message in order to add
+        history into it (not to append one message after another).
 
     Returns:
         A single string concatenation of all input messages.
@@ -33,6 +38,23 @@ def get_buffer_string(
             get_buffer_string(messages)
             # -> "Human: Hi, how are you?\nAI: Good, how are you?"
     """
+    if system_message_format_key:
+        system_message = messages[0]
+        if not isinstance(system_message, SystemMessage):
+            raise ValueError(
+                "Since system_message_format_key is not None, expected "
+                "the first message to be a SystemMessage, got "
+                f"{type(system_message)}."
+            )
+        history = get_buffer_string(
+            messages[1:],
+            human_prefix=human_prefix,
+            ai_prefix=ai_prefix,
+            system_message_format_key=None,
+        )
+        format_params = {system_message_format_key: history}
+        return system_message.content.format(**format_params)
+
     string_messages = []
     for m in messages:
         if isinstance(m, HumanMessage):
