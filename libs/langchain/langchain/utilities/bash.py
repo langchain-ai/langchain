@@ -57,7 +57,7 @@ class BashProcess:
         self.process = None
         if persistent:
             self.prompt = str(uuid4())
-            self.process = self._initialize_persistent_process(self.prompt)
+            self.process = self._initialize_persistent_process(self, self.prompt)
 
     @staticmethod
     def _lazy_import_pexpect() -> pexpect:
@@ -77,7 +77,7 @@ class BashProcess:
         return pexpect
 
     @staticmethod
-    def _initialize_persistent_process(self, prompt: str) -> pexpect.spawn:
+    def _initialize_persistent_process(self: BashProcess, prompt: str) -> pexpect.spawn:
         # Start bash in a clean environment
         # Doesn't work on windows
         """
