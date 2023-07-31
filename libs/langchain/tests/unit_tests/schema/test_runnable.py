@@ -23,6 +23,7 @@ from langchain.schema.document import Document
 from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
 from langchain.schema.retriever import BaseRetriever
 from langchain.schema.runnable import (
+    RouterRunnable,
     Runnable,
     RunnableConfig,
     RunnableLambda,
@@ -544,6 +545,45 @@ def test_seq_prompt_dict(
             HumanMessage(content="What is your name?"),
         ]
     )
+    assert tracer.runs == snapshot
+
+
+@freeze_time("2023-01-01")
+def test_router_runnable(
+    mocker: MockerFixture, snapshot: SnapshotAssertion, fixed_uuids: None
+) -> None:
+    chain1 = ChatPromptTemplate.from_template(
+        "You are a math genius. Answer the question: {question}"
+    ) | FakeListLLM(responses=["4"])
+    chain2 = ChatPromptTemplate.from_template(
+        "You are an english major. Answer the question: {question}"
+    ) | FakeListLLM(responses=["2"])
+    router = RouterRunnable({"math": chain1, "english": chain2})
+    chain = {
+        "key": lambda x: x["key"],
+        "input": {"question": lambda x: x["question"]},
+    } | router
+    assert dumps(chain, pretty=True) == snapshot
+
+    result = chain.invoke({"key": "math", "question": "2 + 2"})
+    assert result == "4"
+
+    result = chain.batch(
+        [{"key": "math", "question": "2 + 2"}, {"key": "english", "question": "2 + 2"}]
+    )
+    assert result == ["4", "2"]
+
+    # Test invoke
+    router_spy = mocker.spy(router.__class__, "invoke")
+    tracer = FakeTracer()
+    assert (
+        chain.invoke({"key": "math", "question": "2 + 2"}, dict(callbacks=[tracer]))
+        == "4"
+    )
+    assert router_spy.call_args.args[1] == {
+        "key": "math",
+        "input": {"question": "2 + 2"},
+    }
     assert tracer.runs == snapshot
 
 
