@@ -9,7 +9,7 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.sql_database.prompt import DECIDER_PROMPT, PROMPT, SQL_PROMPTS
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import BasePromptTemplate
+from langchain.schema import BaseMemory, BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.sql_database.prompt import QUERY_CHECKER
 from langchain.utilities.sql_database import SQLDatabase
@@ -193,11 +193,12 @@ class SQLDatabaseChain(Chain):
         cls,
         llm: BaseLanguageModel,
         db: SQLDatabase,
+        memory: Optional[BaseMemory] = None,
         prompt: Optional[BasePromptTemplate] = None,
         **kwargs: Any,
     ) -> SQLDatabaseChain:
         prompt = prompt or SQL_PROMPTS.get(db.dialect, PROMPT)
-        llm_chain = LLMChain(llm=llm, prompt=prompt)
+        llm_chain = LLMChain(llm=llm, prompt=prompt, memory=memory)
         return cls(llm_chain=llm_chain, database=db, **kwargs)
 
 
@@ -222,17 +223,21 @@ class SQLDatabaseSequentialChain(Chain):
         cls,
         llm: BaseLanguageModel,
         database: SQLDatabase,
+        query_memory: Optional[BaseMemory] = None,
         query_prompt: BasePromptTemplate = PROMPT,
         decider_prompt: BasePromptTemplate = DECIDER_PROMPT,
         **kwargs: Any,
     ) -> SQLDatabaseSequentialChain:
         """Load the necessary chains."""
         sql_chain = SQLDatabaseChain.from_llm(
-            llm, database, prompt=query_prompt, **kwargs
+            llm, database, memory=query_memory, prompt=query_prompt, **kwargs
         )
         decider_chain = LLMChain(
-            llm=llm, prompt=decider_prompt, output_key="table_names"
+            llm=llm,
+            prompt=decider_prompt,
+            output_key="table_names",
         )
+
         return cls(sql_chain=sql_chain, decider_chain=decider_chain, **kwargs)
 
     @property
@@ -263,7 +268,7 @@ class SQLDatabaseSequentialChain(Chain):
         _table_names = self.sql_chain.database.get_usable_table_names()
         table_names = ", ".join(_table_names)
         llm_inputs = {
-            "query": inputs[self.input_key],
+            self.input_key: inputs[self.input_key],
             "table_names": table_names,
         }
         _lowercased_table_names = [name.lower() for name in _table_names]
