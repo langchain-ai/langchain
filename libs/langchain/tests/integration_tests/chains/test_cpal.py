@@ -7,17 +7,15 @@ from unittest import mock
 
 import pydantic
 import pytest
-
-from langchain import OpenAI
-from langchain.experimental.cpal.base import (
+from langchain_experimental.cpal.base import (
     CausalChain,
     CPALChain,
     InterventionChain,
     NarrativeChain,
     QueryChain,
 )
-from langchain.experimental.cpal.constants import Constant
-from langchain.experimental.cpal.models import (
+from langchain_experimental.cpal.constants import Constant
+from langchain_experimental.cpal.models import (
     CausalModel,
     EntityModel,
     EntitySettingModel,
@@ -25,18 +23,20 @@ from langchain.experimental.cpal.models import (
     NarrativeModel,
     QueryModel,
 )
-from langchain.experimental.cpal.templates.univariate.causal import (
+from langchain_experimental.cpal.templates.univariate.causal import (
     template as causal_template,
 )
-from langchain.experimental.cpal.templates.univariate.intervention import (
+from langchain_experimental.cpal.templates.univariate.intervention import (
     template as intervention_template,
 )
-from langchain.experimental.cpal.templates.univariate.narrative import (
+from langchain_experimental.cpal.templates.univariate.narrative import (
     template as narrative_template,
 )
-from langchain.experimental.cpal.templates.univariate.query import (
+from langchain_experimental.cpal.templates.univariate.query import (
     template as query_template,
 )
+
+from langchain import OpenAI
 from langchain.output_parsers import PydanticOutputParser
 from langchain.prompts.prompt import PromptTemplate
 from tests.unit_tests.llms.fake_llm import FakeLLM
@@ -274,7 +274,7 @@ class TestUnitCPALChain_MathWordProblems(unittest.TestCase):
         patch required since `networkx` package is not part of unit test environment
         """
         with mock.patch(
-            "langchain.experimental.cpal.models.NetworkxEntityGraph"
+            "langchain_experimental.cpal.models.NetworkxEntityGraph"
         ) as mock_networkx:
             graph_instance = mock_networkx.return_value
             graph_instance.get_topological_sort.return_value = [

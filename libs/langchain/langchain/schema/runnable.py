@@ -72,6 +72,7 @@ class Runnable(Generic[Input, Output], ABC):
         self,
         other: Union[
             Runnable[Any, Other],
+            Callable[[Any], Other],
             Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other]]],
         ],
     ) -> RunnableSequence[Input, Other]:
@@ -81,6 +82,7 @@ class Runnable(Generic[Input, Output], ABC):
         self,
         other: Union[
             Runnable[Other, Any],
+            Callable[[Any], Other],
             Mapping[str, Union[Runnable[Other, Any], Callable[[Other], Any]]],
         ],
     ) -> RunnableSequence[Other, Output]:
@@ -201,6 +203,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         self,
         other: Union[
             Runnable[Any, Other],
+            Callable[[Any], Other],
             Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other]]],
         ],
     ) -> RunnableSequence[Input, Other]:
@@ -221,6 +224,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         self,
         other: Union[
             Runnable[Other, Any],
+            Callable[[Any], Other],
             Mapping[str, Union[Runnable[Other, Any], Callable[[Other], Any]]],
         ],
     ) -> RunnableSequence[Other, Output]:
@@ -709,6 +713,9 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
     @property
     def lc_serializable(self) -> bool:
         return True
+
+    def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
+        return self.__class__(bound=self.bound, kwargs={**self.kwargs, **kwargs})
 
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
         return self.bound.invoke(input, config, **self.kwargs)

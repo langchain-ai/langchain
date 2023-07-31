@@ -280,25 +280,3 @@
   }
   '''
 # ---
-# name: test_serialize_prompt
-  '''
-  {
-    "lc": 1,
-    "type": "constructor",
-    "id": [
-      "langchain",
-      "prompts",
-      "prompt",
-      "PromptTemplate"
-    ],
-    "kwargs": {
-      "input_variables": [
-        "name"
-      ],
-      "template": "hello {name}!",
-      "template_format": "f-string",
-      "partial_variables": {}
-    }
-  }
-  '''
-# ---
