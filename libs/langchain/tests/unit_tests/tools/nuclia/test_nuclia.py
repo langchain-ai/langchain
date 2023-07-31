@@ -1,12 +1,15 @@
 import base64
 import json
 import os
+from pathlib import Path
 from typing import Any
 from unittest import mock
 
 import pytest
 
 from langchain.tools.nuclia.tool import NucliaUnderstandingAPI
+
+README_PATH = Path(__file__).parents[4] / "README.md"
 
 
 class FakeUploadResponse:
@@ -74,7 +77,7 @@ def test_nuclia_tool() -> None:
                     {
                         "action": "push",
                         "id": "1",
-                        "path": "/Users/ebr/dev/nuclia/docs/README.md",
+                        "path": str(README_PATH),
                         "text": None,
                     }
                 )
@@ -100,7 +103,7 @@ async def test_async_call() -> None:
                         {
                             "action": "push",
                             "id": "1",
-                            "path": "/Users/ebr/dev/nuclia/docs/README.md",
+                            "path": str(README_PATH),
                             "text": None,
                         }
                     )
