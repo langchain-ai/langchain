@@ -47,6 +47,8 @@ class ConvoOutputParser(AgentOutputParser):
         except Exception as e:
             # If any other exception is raised during parsing, also raise an
             # OutputParserException
+            if '"action": "Final Answer"' in text:
+                return AgentFinish({"output": text}, text)
             raise OutputParserException(f"Could not parse LLM output: {text}") from e
 
     @property
