@@ -224,7 +224,6 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
                 output if isinstance(output, dict) else {"output": output}
             )
             return output
-        # invoke all steps in sequence
         for runnable in self.fallbacks:
             try:
                 output = runnable.invoke(input, config)
