@@ -292,6 +292,139 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
                 return output
         raise first_error
 
+    def batch(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        max_concurrency: Optional[int] = None,
+    ) -> List[Output]:
+        from langchain.callbacks.manager import CallbackManager
+
+        # setup callbacks
+        configs = self._get_config_list(config, len(inputs))
+        callback_managers = [
+            CallbackManager.configure(
+                inheritable_callbacks=config.get("callbacks"),
+                local_callbacks=None,
+                verbose=False,
+                inheritable_tags=config.get("tags"),
+                local_tags=None,
+                inheritable_metadata=config.get("metadata"),
+                local_metadata=None,
+            )
+            for config in configs
+        ]
+        # start the root runs, one per input
+        run_managers = [
+            cm.on_chain_start(
+                dumpd(self), input if isinstance(input, dict) else {"input": input}
+            )
+            for cm, input in zip(callback_managers, inputs)
+        ]
+
+        try:
+            outputs = self.runnable.batch(
+                inputs, config, max_concurrency=max_concurrency
+            )
+        except self.exceptions_to_handle as e:
+            for rm in run_managers:
+                rm.on_chain_error(e)
+            first_error = e
+        else:
+            for rm, output in zip(run_managers, outputs):
+                rm.on_chain_end(
+                    output if isinstance(output, dict) else {"output": output}
+                )
+            return outputs
+        for runnable in self.fallbacks:
+            try:
+                outputs = runnable.batch(
+                    inputs, config, max_concurrency=max_concurrency
+                )
+            except self.exceptions_to_handle as e:
+                for rm in run_managers:
+                    rm.on_chain_error(e)
+            else:
+                for rm, output in zip(run_managers, outputs):
+                    rm.on_chain_end(
+                        output if isinstance(output, dict) else {"output": output}
+                    )
+            return outputs
+        raise first_error
+
+    async def abatch(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        max_concurrency: Optional[int] = None,
+    ) -> List[Output]:
+        from langchain.callbacks.manager import (
+            AsyncCallbackManager,
+            AsyncCallbackManagerForChainRun,
+        )
+
+        # setup callbacks
+        configs = self._get_config_list(config, len(inputs))
+        callback_managers = [
+            AsyncCallbackManager.configure(
+                inheritable_callbacks=config.get("callbacks"),
+                local_callbacks=None,
+                verbose=False,
+                inheritable_tags=config.get("tags"),
+                local_tags=None,
+                inheritable_metadata=config.get("metadata"),
+                local_metadata=None,
+            )
+            for config in configs
+        ]
+        # start the root runs, one per input
+        run_managers: List[AsyncCallbackManagerForChainRun] = await asyncio.gather(
+            *(
+                cm.on_chain_start(
+                    dumpd(self), input if isinstance(input, dict) else {"input": input}
+                )
+                for cm, input in zip(callback_managers, inputs)
+            )
+        )
+
+        try:
+            outputs = await self.runnable.abatch(
+                inputs, config, max_concurrency=max_concurrency
+            )
+        except self.exceptions_to_handle as e:
+            await asyncio.gather(*(rm.on_chain_error(e) for rm in run_managers))
+            first_error = e
+        else:
+            await asyncio.gather(
+                *(
+                    rm.on_chain_end(
+                        output if isinstance(output, dict) else {"output": output}
+                    )
+                    for rm, output in zip(run_managers, outputs)
+                )
+            )
+            return outputs
+        for runnable in self.fallbacks:
+            try:
+                outputs = await runnable.abatch(
+                    inputs, config, max_concurrency=max_concurrency
+                )
+            except self.exceptions_to_handle as e:
+                await asyncio.gather(*(rm.on_chain_error(e) for rm in run_managers))
+            else:
+                await asyncio.gather(
+                    *(
+                        rm.on_chain_end(
+                            output if isinstance(output, dict) else {"output": output}
+                        )
+                        for rm, output in zip(run_managers, outputs)
+                    )
+                )
+                return outputs
+        raise first_error
+
 
 class RunnableSequence(Serializable, Runnable[Input, Output]):
     first: Runnable[Input, Any]
