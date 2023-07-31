@@ -1,10 +1,7 @@
 import json
 from typing import Any, Optional
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
+from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
 from langchain.utilities.graphql import GraphQLAPIWrapper
 

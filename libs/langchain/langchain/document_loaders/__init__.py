@@ -38,6 +38,7 @@ from langchain.document_loaders.diffbot import DiffbotLoader
 from langchain.document_loaders.directory import DirectoryLoader
 from langchain.document_loaders.discord import DiscordChatLoader
 from langchain.document_loaders.docugami import DocugamiLoader
+from langchain.document_loaders.dropbox import DropboxLoader
 from langchain.document_loaders.duckdb_loader import DuckDBLoader
 from langchain.document_loaders.email import (
     OutlookMessageLoader,
@@ -45,6 +46,7 @@ from langchain.document_loaders.email import (
 )
 from langchain.document_loaders.embaas import EmbaasBlobLoader, EmbaasLoader
 from langchain.document_loaders.epub import UnstructuredEPubLoader
+from langchain.document_loaders.etherscan import EtherscanLoader
 from langchain.document_loaders.evernote import EverNoteLoader
 from langchain.document_loaders.excel import UnstructuredExcelLoader
 from langchain.document_loaders.facebook_chat import FacebookChatLoader
@@ -193,9 +195,11 @@ __all__ = [
     "DiscordChatLoader",
     "DocugamiLoader",
     "Docx2txtLoader",
+    "DropboxLoader",
     "DuckDBLoader",
     "EmbaasBlobLoader",
     "EmbaasLoader",
+    "EtherscanLoader",
     "EverNoteLoader",
     "FacebookChatLoader",
     "FaunaLoader",

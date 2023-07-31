@@ -39,6 +39,7 @@ from langchain.agents.react.base import ReActChain, ReActTextWorldAgent
 from langchain.agents.self_ask_with_search.base import SelfAskWithSearchChain
 from langchain.agents.structured_chat.base import StructuredChatAgent
 from langchain.agents.tools import Tool, tool
+from langchain.agents.xml.base import XMLAgent
 
 __all__ = [
     "Agent",
@@ -78,4 +79,5 @@ __all__ = [
     "load_tools",
     "tool",
     "create_xorbits_agent",
+    "XMLAgent",
 ]

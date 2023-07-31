@@ -11,7 +11,7 @@ from langchain.vectorstores.base import VectorStoreRetriever
 
 
 class VectorStoreRetrieverMemory(BaseMemory):
-    """Class for a VectorStore-backed memory object."""
+    """VectorStoreRetriever-backed memory."""
 
     retriever: VectorStoreRetriever = Field(exclude=True)
     """VectorStoreRetriever object to connect to."""

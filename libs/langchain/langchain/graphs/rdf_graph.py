@@ -32,7 +32,14 @@ cls_query_rdfs = prefixes["rdfs"] + (
     """}"""
 )
 
-cls_query_owl = cls_query_rdfs
+cls_query_owl = prefixes["rdfs"] + (
+    """SELECT DISTINCT ?cls ?com\n"""
+    """WHERE { \n"""
+    """    ?instance a/rdfs:subClassOf* ?cls . \n"""
+    """    FILTER (isIRI(?cls)) . \n"""
+    """    OPTIONAL { ?cls rdfs:comment ?com } \n"""
+    """}"""
+)
 
 rel_query_rdf = prefixes["rdfs"] + (
     """SELECT DISTINCT ?rel ?com\n"""
@@ -261,8 +268,8 @@ class RdfGraph:
             self.schema = _rdf_s_schema(clss, rels)
         elif self.standard == "owl":
             clss = self.query(cls_query_owl)
-            ops = self.query(cls_query_owl)
-            dps = self.query(cls_query_owl)
+            ops = self.query(op_query_owl)
+            dps = self.query(dp_query_owl)
             self.schema = (
                 f"In the following, each IRI is followed by the local name and "
                 f"optionally its description in parentheses. \n"

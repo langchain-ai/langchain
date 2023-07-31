@@ -10,6 +10,8 @@ from langchain.utils import get_from_dict_or_env
 
 
 class DataForSeoAPIWrapper(BaseModel):
+    """Wrapper around the DataForSeo API."""
+
     class Config:
         """Configuration for this pydantic object."""
 
@@ -25,13 +27,21 @@ class DataForSeoAPIWrapper(BaseModel):
             "se_type": "organic",
         }
     )
+    """Default parameters to use for the DataForSEO SERP API."""
     params: dict = Field(default={})
+    """Additional parameters to pass to the DataForSEO SERP API."""
     api_login: Optional[str] = None
+    """The API login to use for the DataForSEO SERP API."""
     api_password: Optional[str] = None
+    """The API password to use for the DataForSEO SERP API."""
     json_result_types: Optional[list] = None
+    """The JSON result types."""
     json_result_fields: Optional[list] = None
+    """The JSON result fields."""
     top_count: Optional[int] = None
+    """The number of top results to return."""
     aiosession: Optional[aiohttp.ClientSession] = None
+    """The aiohttp session to use for the DataForSEO SERP API."""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
