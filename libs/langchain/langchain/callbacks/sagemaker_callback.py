@@ -1,26 +1,15 @@
 import json
-import shutil
 import os
+import shutil
 import tempfile
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Union
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.utils import (
-    BaseMetadataCallbackHandler,
     flatten_dict,
 )
 from langchain.schema import AgentAction, AgentFinish, LLMResult
-
-
-def import_sagemaker() -> None:
-    try:
-        import sagemaker
-    except ImportError:
-        raise ImportError(
-            "To use the sagemaker experiment callback, you need to have the `sagemaker` python "
-            "package installed. Please install it with `pip install sagemaker>=2.162.0`"
-        )
 
 
 def save_json(data: dict, file_path: str) -> None:
@@ -34,27 +23,18 @@ def save_json(data: dict, file_path: str) -> None:
         json.dump(data, outfile)
 
 
-
 class SageMakerCallbackHandler(BaseCallbackHandler):
     """Callback Handler that logs prompt artifacts and metrics to SageMaker Experiments.
 
     Parameters:
-        run (sagemaker.experiments.run.Run): SageMaker Run object where the experiment is logged.
+        run (sagemaker.experiments.run.Run): Run object where the experiment is logged.
     """
 
-    def __init__(self, **kwargs: Any) -> None:
-        """Initialize callback handler. Run object must be passed with `run` as key."""
+    def __init__(self, run: Any) -> None:
+        """Initialize callback handler."""
         super().__init__()
-        import_sagemaker()
 
-        try:
-            # sagemaker.experiments.run.Run object created outside the Callback handler
-            self.run = kwargs["run"]
-        except ValueError:
-            raise ValueError(
-                "SageMaker experiment Run object with `run=Run` as a positional argument is not found. "
-                "Pass `Run` object when creating the Callback Handler."
-            )
+        self.run = run
 
         self.metrics = {
             "step": 0,
@@ -74,7 +54,6 @@ class SageMakerCallbackHandler(BaseCallbackHandler):
 
         # Create a temporary directory
         self.temp_dir = tempfile.mkdtemp()
-        
 
     def _reset(self) -> None:
         for k, v in self.metrics.items():
@@ -281,14 +260,20 @@ class SageMakerCallbackHandler(BaseCallbackHandler):
             }
         )
         resp.update(self.metrics)
-        self.jsonf(resp, self.temp_dir, f"agent_action_{tool_starts}")      
-              
-    def jsonf(self, data: Dict[str, Any], data_dir: str, filename: str, is_output: Optional[bool] = True) -> None:
+        self.jsonf(resp, self.temp_dir, f"agent_action_{tool_starts}")
+
+    def jsonf(
+        self,
+        data: Dict[str, Any],
+        data_dir: str,
+        filename: str,
+        is_output: Optional[bool] = True,
+    ) -> None:
         """To log the input data as json file artifact."""
         file_path = os.path.join(data_dir, f"{filename}.json")
         save_json(data, file_path)
         self.run.log_file(file_path, name=filename, is_output=is_output)
-        
+
     def flush_tracker(self) -> None:
         """Reset the steps and delete the temporary local directory."""
         self._reset()
