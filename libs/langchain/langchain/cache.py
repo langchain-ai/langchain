@@ -1,24 +1,4 @@
-"""
-.. warning::
-  Beta Feature!
-
-**Cache** provides an optional caching layer for LLMs.
-
-Cache is useful for two reasons:
-
-- It can save you money by reducing the number of API calls you make to the LLM
-  provider if you're often requesting the same completion multiple times.
-- It can speed up your application by reducing the number of API calls you make
-  to the LLM provider.
-
-Cache directly competes with Memory. See documentation for Pros and Cons.
-
-**Class hierarchy:**
-
-.. code-block::
-
-    BaseCache --> <name>Cache  # Examples: InMemoryCache, RedisCache, GPTCache
-"""
+"""Beta Feature: base interface for cache."""
 from __future__ import annotations
 
 import hashlib
@@ -33,6 +13,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    List,
     Optional,
     Sequence,
     Tuple,
@@ -55,7 +36,7 @@ except ImportError:
 from langchain.embeddings.base import Embeddings
 from langchain.load.dump import dumps
 from langchain.load.load import loads
-from langchain.schema import ChatGeneration, Generation
+from langchain.schema import AIMessage, ChatGeneration, Generation
 from langchain.vectorstores.redis import Redis as RedisVectorstore
 
 logger = logging.getLogger(__file__)
@@ -470,21 +451,54 @@ class GPTCache(BaseCache):
             _gptcache = self._new_gptcache(llm_string)
         return _gptcache
 
-    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+    def lookup(self, prompt: str, llm_string: str) -> Optional[List[ChatGeneration]]:
         """Look up the cache data.
-        First, retrieve the corresponding cache object using the `llm_string` parameter,
-        and then retrieve the data from the cache based on the `prompt`.
+
+        Args:
+            prompt (str): The prompt to search for.
+            llm_string (str): The language model string.
+
+        Returns:
+            Optional[List[ChatGeneration]]: \
+                List of ChatGeneration instances if found, else None.
         """
-        from gptcache.adapter.api import get
+        try:
+            from gptcache.adapter.api import get
+        except ImportError:
+            raise ImportError(
+                "Could not import gptcache python package. "
+                "Please install it with `pip install gptcache`."
+            )
+        gpt_cache = self.gptcache_dict.get(llm_string)
 
-        _gptcache = self._get_gptcache(llm_string)
+        if not gpt_cache:
+            return None
 
-        res = get(prompt, cache_obj=_gptcache)
-        if res:
-            return [
-                Generation(**generation_dict) for generation_dict in json.loads(res)
-            ]
-        return None
+        response = get(prompt, cache_obj=gpt_cache)
+
+        if not response:
+            return None
+
+        response_data = loads(response)
+
+        print(response_data)
+
+        generations = [
+            ChatGeneration(
+                text=item.get("text"),
+                generation_info=item.get("generation_info"),
+                message=AIMessage(
+                    content=item.get("message", {}).get("content", item.get("text")),
+                    additional_kwargs=item.get("message", {}).get(
+                        "additional_kwargs", {}
+                    ),
+                    example=item.get("message", {}).get("example", False),
+                ),
+            )
+            for item in response_data
+        ]
+
+        return generations
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache.
