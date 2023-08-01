@@ -14,7 +14,7 @@ class StreamlitChatMessageHistory(BaseChatMessageHistory):
         key: The key to use in Streamlit session state for storing messages.
     """
 
-    def __init__(self, key: str = "messages"):
+    def __init__(self, key: str = "langchain_messages"):
         import streamlit as st
 
         if key not in st.session_state:
