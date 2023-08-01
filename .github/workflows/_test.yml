@@ -1,0 +1,61 @@
+name: test
+
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        required: true
+        type: string
+        description: "From which folder this pipeline executes"
+      test_type:
+        type: string
+        description: "Test types to run"
+        default: '["core", "extended"]'
+
+env:
+  POETRY_VERSION: "1.4.2"
+
+jobs:
+  build:
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+        test_type: ${{ fromJSON(inputs.test_type) }}
+    name: Python ${{ matrix.python-version }} ${{ matrix.test_type }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: "./.github/actions/poetry_setup"
+        with:
+          python-version: ${{ matrix.python-version }}
+          working-directory: ${{ inputs.working-directory }}
+          poetry-version: "1.4.2"
+          cache-key: ${{ matrix.test_type }}
+          install-command: |
+              if [ "${{ matrix.test_type }}" == "core" ]; then
+                echo "Running core tests, installing dependencies with poetry..."
+                poetry install
+              else
+                echo "Running extended tests, installing dependencies with poetry..."
+                poetry install -E extended_testing
+              fi
+      - name: Install langchain editable
+        if: ${{ inputs.working-directory != 'langchain' }}
+        run: |
+          pip install -e ../langchain
+      - name: Run ${{matrix.test_type}} tests
+        run: |
+          if [ "${{ matrix.test_type }}" == "core" ]; then
+            make test
+          else
+            make extended_tests
+          fi
+        shell: bash

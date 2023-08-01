@@ -200,22 +200,37 @@ Question: {question}
 Answer:
 """
 
+# Prompt to use in map and reduce stages 
 MAP_PROMPT = PromptTemplate(input_variables=["code"], template=map_template_string)
 REDUCE_PROMPT = PromptTemplate(input_variables=["code_description", "question"], template=reduce_template_string)
 
+# LLM to use in map and reduce stages 
 llm = OpenAI()
-
 map_llm_chain = LLMChain(llm=llm, prompt=MAP_PROMPT)
 reduce_llm_chain = LLMChain(llm=llm, prompt=REDUCE_PROMPT)
 
-generative_result_reduce_chain = StuffDocumentsChain(
+# Takes a list of documents and combines them into a single string
+combine_documents_chain = StuffDocumentsChain(
     llm_chain=reduce_llm_chain,
     document_variable_name="code_description",
 )
 
+# Combines and iteravely reduces the mapped documents 
+reduce_documents_chain = ReduceDocumentsChain(
+        # This is final chain that is called.
+        combine_documents_chain=combine_documents_chain,
+        # If documents exceed context for `combine_documents_chain`
+        collapse_documents_chain=combine_documents_chain,
+        # The maximum number of tokens to group documents into
+        token_max=3000)
+
+# Combining documents by mapping a chain over them, then combining results with reduce chain
 combine_documents = MapReduceDocumentsChain(
+    # Map chain
     llm_chain=map_llm_chain,
-    combine_document_chain=generative_result_reduce_chain,
+     # Reduce chain
+    reduce_documents_chain=reduce_documents_chain,
+    # The variable name in the llm_chain to put the documents in
     document_variable_name="code",
 )
 
