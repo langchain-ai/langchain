@@ -106,7 +106,7 @@ def test_sql_harmful_keywords():
         harmful_keywords=harmful_keywords,
     )
 
-    command = 'DROP DATABASE IF EXISTS "user"'
+    command = 'DROP TABLE IF EXISTS "user"'
     with pytest.raises(PermissionError) as records:
         db.run(command)
 
