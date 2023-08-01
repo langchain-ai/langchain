@@ -3,28 +3,44 @@
 
 .. currentmodule:: {{ module }}
 
+{% if '_value2member_map_' in  all_attributes %}
+    {% set classType = "enum" %}
+{% else %}
+    {% set classType = "default" %}
+{% endif %}
+
 .. autoclass:: {{ objname }}
 
-   {% block methods %}
-   {% if methods %}
-   .. rubric:: {{ _('Methods') }}
+   {% if classType == "enum" %}
+       {% if attributes %}
+       .. rubric:: {{ _('Attributes') }}
+       {% endif %}
+   {% else %}
+       {% if attributes %}
+       .. rubric:: {{ _('Attributes') }}
+       {% endif %}
 
-   .. autosummary::
-   {% for item in methods %}
-      ~{{ name }}.{{ item }}
-   {%- endfor %}
-   {% endif %}
-   {% endblock %}
+       {% block methods %}
+       {% if methods %}
+       .. rubric:: {{ _('Methods') }}
 
-   {% block attributes %}
-   {% if attributes %}
-   .. rubric:: {{ _('Attributes') }}
+       .. autosummary::
+       {% for item in methods %}
+          ~{{ name }}.{{ item }}
+       {%- endfor %}
+       {% endif %}
+       {% endblock %}
 
-   .. autosummary::
-   {% for item in attributes %}
-      ~{{ name }}.{{ item }}
-   {%- endfor %}
-   {% endif %}
-   {% endblock %}
+       {% block attributes %}
+       {% if attributes %}
+       .. rubric:: {{ _('Attributes') }}
+
+       .. autosummary::
+       {% for item in attributes %}
+          ~{{ name }}.{{ item }}
+       {%- endfor %}
+       {% endif %}
+       {% endblock %}
+    {% endif %}
 
 .. example_links:: {{ objname }}
