@@ -618,12 +618,14 @@ class Qdrant(VectorStore):
     async def _asearch_with_score_by_vector(
         self,
         embedding: List[float],
+        *,
         k: int = 4,
         filter: Optional[MetadataFilter] = None,
         search_params: Optional[common_types.SearchParams] = None,
         offset: int = 0,
         score_threshold: Optional[float] = None,
         consistency: Optional[common_types.ReadConsistency] = None,
+        with_vectors: bool = False,
         **kwargs: Any,
     ) -> Any:
         """Return results most similar to embedding vector."""
@@ -655,7 +657,7 @@ class Qdrant(VectorStore):
                 limit=k,
                 offset=offset,
                 with_payload=grpc.WithPayloadSelector(enable=True),
-                with_vectors=grpc.WithVectorsSelector(enable=False),
+                with_vectors=grpc.WithVectorsSelector(enable=with_vectors),
                 score_threshold=score_threshold,
                 read_consistency=consistency,
                 **kwargs,
@@ -1107,6 +1109,7 @@ class Qdrant(VectorStore):
             search_params=search_params,
             score_threshold=score_threshold,
             consistency=consistency,
+            with_vectors=True,
             **kwargs,
         )
         results = [
