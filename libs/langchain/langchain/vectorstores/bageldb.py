@@ -1,4 +1,4 @@
-"""Wrapper around bageldb embeddings platform."""
+"""Wrapper around bagel embeddings platform."""
 from __future__ import annotations
 
 import logging
@@ -24,9 +24,9 @@ from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
-    import bageldb
-    import bageldb.config
-    from bageldb.api.types import ID, OneOrMany, Where, WhereDocument
+    import bagel
+    import bagel.config
+    from bagel.api.types import ID, OneOrMany, Where, WhereDocument
 
 logger = logging.getLogger()
 DEFAULT_K = 4  # Number of Documents to return.
@@ -38,7 +38,7 @@ def _results_to_docs(results: Any) -> List[Document]:
 
 def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
     return [
-        # TODO: bageldb can do batch querying,
+        # TODO: bagel can do batch querying,
         # we shouldn't hard code to the 1st result
         (Document(page_content=result[0], metadata=result[1] or {}), result[2])
         for result in zip(
@@ -50,9 +50,9 @@ def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
 
 
 class Bagel(VectorStore):
-    """Wrapper around bageldb embeddings platform.
+    """Wrapper around bagel embeddings platform.
 
-    To use, you should have the ``bageldb`` python package installed.
+    To use, you should have the ``bagel`` python package installed.
 
     Example:
         .. code-block:: python
@@ -71,19 +71,19 @@ class Bagel(VectorStore):
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         embedding_function: Optional[Embeddings] = None,
         persist_directory: Optional[str] = None,
-        client_settings: Optional[bageldb.config.Settings] = None,
+        client_settings: Optional[bagel.config.Settings] = None,
         collection_metadata: Optional[Dict] = None,
-        client: Optional[bageldb.Client] = None,
+        client: Optional[bagel.Client] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
     ) -> None:
         """Initialize with bagel client."""
         try:
-            import bageldb
-            import bageldb.config
+            import bagel
+            import bagel.config
         except ImportError:
             raise ValueError(
-                "Could not import bageldb python package. "
-                "Please install it with `pip install bageldb`."
+                "Could not import bagel python package. "
+                "Please install it with `pip install bagel`."
             )
 
         if client is not None:
@@ -94,19 +94,19 @@ class Bagel(VectorStore):
             if client_settings:
                 _client_settings = client_settings
             elif persist_directory:
-                # Maintain backwards compatibility with bageldb < 0.4.0
-                major, minor, _ = bageldb.__version__.split(".")
+                # Maintain backwards compatibility with bagel < 0.4.0
+                major, minor, _ = bagel.__version__.split(".")
                 if int(major) == 0 and int(minor) < 4:
-                    _client_settings = bageldb.config.Settings(
+                    _client_settings = bagel.config.Settings(
                         bagel_db_impl="duckdb+parquet",
                     )
                 else:
-                    _client_settings = bageldb.config.Settings(is_persistent=True)
+                    _client_settings = bagel.config.Settings(is_persistent=True)
                 _client_settings.persist_directory = persist_directory
             else:
-                _client_settings = bageldb.config.Settings()
+                _client_settings = bagel.config.Settings()
             self._client_settings = _client_settings
-            self._client = bageldb.Client(_client_settings)
+            self._client = bagel.Client(_client_settings)
             self._persist_directory = (
                 _client_settings.persist_directory or persist_directory
             )
@@ -136,11 +136,11 @@ class Bagel(VectorStore):
     ) -> List[Document]:
         """Query the Bagel collection."""
         try:
-            import bageldb  # noqa: F401
+            import bagel  # noqa: F401
         except ImportError:
             raise ValueError(
-                "Could not import bageldb python package. "
-                "Please install it with `pip install bageldb`."
+                "Could not import bagel python package. "
+                "Please install it with `pip install bagel`."
             )
         return self._collection.query(
             query_texts=query_texts,
@@ -482,10 +482,10 @@ class Bagel(VectorStore):
                 "You must specify a persist_directory on"
                 "creation to persist the collection."
             )
-        import bageldb
+        import bagel
 
-        # Maintain backwards compatibility with bageldb < 0.4.0
-        major, minor, _ = bageldb.__version__.split(".")
+        # Maintain backwards compatibility with bagel < 0.4.0
+        major, minor, _ = bagel.__version__.split(".")
         if int(major) == 0 and int(minor) < 4:
             self._client.persist()
 
@@ -520,8 +520,8 @@ class Bagel(VectorStore):
         ids: Optional[List[str]] = None,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         persist_directory: Optional[str] = None,
-        client_settings: Optional[bageldb.config.Settings] = None,
-        client: Optional[bageldb.Client] = None,
+        client_settings: Optional[bagel.config.Settings] = None,
+        client: Optional[bagel.Client] = None,
         collection_metadata: Optional[Dict] = None,
         **kwargs: Any,
     ) -> Bagel:
@@ -537,7 +537,7 @@ class Bagel(VectorStore):
             embedding (Optional[Embeddings]): Embedding function. Defaults to None.
             metadatas (Optional[List[dict]]): List of metadatas. Defaults to None.
             ids (Optional[List[str]]): List of document IDs. Defaults to None.
-            client_settings (Optional[bageldb.config.Settings]): bagel client settings
+            client_settings (Optional[bagel.config.Settings]): bagel client settings
             collection_metadata (Optional[Dict]): Collection configurations.
                                                   Defaults to None.
 
@@ -564,8 +564,8 @@ class Bagel(VectorStore):
         ids: Optional[List[str]] = None,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         persist_directory: Optional[str] = None,
-        client_settings: Optional[bageldb.config.Settings] = None,
-        client: Optional[bageldb.Client] = None,  # Add this line
+        client_settings: Optional[bagel.config.Settings] = None,
+        client: Optional[bagel.Client] = None,  # Add this line
         collection_metadata: Optional[Dict] = None,
         **kwargs: Any,
     ) -> Bagel:
@@ -580,7 +580,7 @@ class Bagel(VectorStore):
             ids (Optional[List[str]]): List of document IDs. Defaults to None.
             documents (List[Document]): List of documents to add to the vectorstore.
             embedding (Optional[Embeddings]): Embedding function. Defaults to None.
-            client_settings (Optional[bageldb.config.Settings]): bagel client settings
+            client_settings (Optional[bagel.config.Settings]): bagel client settings
             collection_metadata (Optional[Dict]): Collection configurations.
                                                   Defaults to None.
 
