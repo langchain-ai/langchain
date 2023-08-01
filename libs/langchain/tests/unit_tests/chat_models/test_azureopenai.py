@@ -13,10 +13,10 @@ os.environ["OPENAI_API_VERSION"] = "2023-05-01"
 
 @pytest.mark.requires("openai")
 @pytest.mark.parametrize(
-    "expected_model_name", ["gpt-4", "gpt-4-32k", "gpt-35-turbo", "gpt-35-turbo-16k"]
+    "model_name", ["gpt-4", "gpt-4-32k", "gpt-35-turbo", "gpt-35-turbo-16k"]
 )
 def test_model_name_set_on_chat_result_when_present_in_response(
-    expected_model_name: str,
+    model_name: str,
 ) -> None:
     sample_response_text = f"""
     {{
@@ -45,7 +45,7 @@ def test_model_name_set_on_chat_result_when_present_in_response(
     mock_response = cast(Mapping[str, Any], sample_response)
     mock_chat = AzureChatOpenAI()
     chat_result = mock_chat._create_chat_result(mock_response)  
-    assert chat_result.llm_output["model_name"] == expected_model_name
+    assert chat_result.llm_output["model_name"] == model_name
 
 def test_model_name_has_correct_version() -> None:
     sample_response_text = f"""
