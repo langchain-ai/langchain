@@ -1,5 +1,5 @@
 from operator import itemgetter
-from typing import Any, Callable, List, TypedDict, Union
+from typing import Any, Callable, List, Mapping, TypedDict, Union
 from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
 from langchain.schema.output import ChatGeneration
 from langchain.schema.runnable import RouterRunnable, Runnable, RunnableBinding
@@ -16,23 +16,27 @@ class OpenAIFunction(TypedDict):
     """The parameters to the function."""
 
 
-class OpenAIRunnableFunction(OpenAIFunction):
-    """A function to call on the OpenAI API."""
-
-    runnable: Union[Runnable[dict, Any], Callable[[dict], Any]]
-    """The runnable to call."""
-
-
 class OpenAIFunctionsRouter(RunnableBinding[ChatGeneration, Any]):
     """A runnable that routes to the selected function."""
 
     functions: List[OpenAIFunction]
 
-    def __init__(self, functions: List[OpenAIFunction]):
-        functions = [func.copy() for func in functions]
+    def __init__(
+        self,
+        functions: List[OpenAIFunction],
+        runnables: Mapping[
+            str,
+            Union[
+                Runnable[dict, Any],
+                Callable[[dict], Any],
+            ],
+        ],
+    ):
+        assert len(functions) == len(runnables)
+        assert all(func["name"] in runnables for func in functions)
         router = (
             JsonOutputFunctionsParser(args_only=False)
             | {"key": itemgetter("name"), "input": itemgetter("arguments")}
-            | RouterRunnable({func["name"]: func.pop("runnable") for func in functions})
+            | RouterRunnable(runnables)
         )
         super().__init__(bound=router, kwargs={}, functions=functions)

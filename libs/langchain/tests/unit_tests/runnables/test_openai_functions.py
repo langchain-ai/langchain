@@ -48,9 +48,8 @@ def test_openai_functions_router(
     accept = mocker.Mock(side_effect=lambda kw: f'Accepted draft: {kw["draft"]}!')
 
     router = OpenAIFunctionsRouter(
-        [
+        functions=[
             {
-                "runnable": revise,
                 "name": "revise",
                 "description": "Sends the draft for revision.",
                 "parameters": {
@@ -64,7 +63,6 @@ def test_openai_functions_router(
                 },
             },
             {
-                "runnable": accept,
                 "name": "accept",
                 "description": "Accepts the draft.",
                 "parameters": {
@@ -77,7 +75,8 @@ def test_openai_functions_router(
                     },
                 },
             },
-        ]
+        ],
+        runnables={"revise": revise, "accept": accept},
     )
 
     model = FakeChatOpenAI()
