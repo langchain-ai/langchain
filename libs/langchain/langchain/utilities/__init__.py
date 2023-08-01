@@ -1,4 +1,8 @@
-"""Generic integrations with third-part systems and packages."""
+"""**Utilities** are the integrations with third-part systems and packages.
+
+Other LangChain classes use **Utilities** to interact with third-part systems
+and packages.
+"""
 from langchain.utilities.arxiv import ArxivAPIWrapper
 from langchain.utilities.awslambda import LambdaWrapper
 from langchain.utilities.bash import BashProcess
