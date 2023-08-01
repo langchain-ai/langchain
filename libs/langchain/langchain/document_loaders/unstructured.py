@@ -97,7 +97,7 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
                 if "links" in metadata:
                     for i in range(0, len(metadata["links"])):
                         metadata[f"link_text_{i}"] = metadata["links"][i]["text"]
-                        metadata[f"link_text_{i}"] = metadata["links"][i]["url"]
+                        metadata[f"link_url_{i}"] = metadata["links"][i]["url"]
                     del metadata["links"]
                 docs.append(Document(page_content=str(element), metadata=metadata))
         elif self.mode == "paged":
