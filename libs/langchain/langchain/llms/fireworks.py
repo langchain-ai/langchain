@@ -167,7 +167,7 @@ class FireworksChat(BaseLLM):
     """Wrapper around Fireworks Chat large language models.
     To use, you should have the ``fireworksai`` python package installed, and the
     environment variable ``FIREWORKS_API_KEY`` set with your API key.
-    Any parameters that are valid to be passed to the fireworks.create 
+    Any parameters that are valid to be passed to the fireworks.create
     call can be passed in, even if not explicitly saved on this class.
     Example:
         .. code-block:: python
@@ -262,7 +262,7 @@ class Fireworks(BaseFireworks):
     """Wrapper around Fireworks large language models.
     To use, you should have the ``fireworks`` python package installed, and the
     environment variable ``FIREWORKS_API_KEY`` set with your API key.
-    Any parameters that are valid to be passed to the fireworks.create 
+    Any parameters that are valid to be passed to the fireworks.create
     call can be passed in, even if not explicitly saved on this class.
     Example:
         .. code-block:: python
