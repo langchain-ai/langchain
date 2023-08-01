@@ -3951,6 +3951,10 @@
     {
       "source": "/docs/modules/chains/additional/tagging",
       "destination": "/docs/use_cases/tagging"
+    },
+    {
+      "source": "docs/integrations/providers/agent_with_wandb_tracing",
+      "destination": "docs/integrations/providers/wandb_tracing"
     }
   ]
 }
