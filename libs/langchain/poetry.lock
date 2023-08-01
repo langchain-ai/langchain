@@ -9806,7 +9806,7 @@ test = ["asv", "gmpy2", "mpmath", "pytest", "pytest-cov", "pytest-xdist", "sciki
 name = "segment-analytics-python"
 version = "2.2.3"
 description = "The hassle-free way to integrate analytics into any python application."
-optional = false
+optional = true
 python-versions = ">=3.6.0"
 files = [
     {file = "segment-analytics-python-2.2.3.tar.gz", hash = "sha256:0df5908e3df74b4482f33392fdd450df4c8351bf54974376fbe6bf33b0700865"},
@@ -12729,4 +12729,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "97163250ef7b78b6b134461e1941cfcaa6daf3fca30c2bb58785f360b387386c"
+content-hash = "679467fac682cf0e1f2a86a7727d0059a3a30f1f07ed9702982e297c4ff46d8b"
