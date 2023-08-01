@@ -121,7 +121,7 @@ def _get_prompt_and_tools(
 
         pd.set_option("display.max_columns", None)
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "pandas package not found, please install with `pip install pandas`"
         )
 
@@ -232,7 +232,7 @@ def _get_functions_prompt_and_tools(
 
         pd.set_option("display.max_columns", None)
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "pandas package not found, please install with `pip install pandas`"
         )
     if input_variables is not None:

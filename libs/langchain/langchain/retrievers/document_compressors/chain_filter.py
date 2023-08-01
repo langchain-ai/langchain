@@ -59,7 +59,7 @@ class LLMChainFilter(BaseDocumentCompressor):
         callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
         """Filter down documents."""
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @classmethod
     def from_llm(

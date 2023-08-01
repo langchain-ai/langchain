@@ -76,4 +76,4 @@ class EmbeddingsFilter(BaseDocumentCompressor):
         callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
         """Filter down documents."""
-        raise NotImplementedError
+        raise NotImplementedError()

@@ -27,7 +27,7 @@ class TencentCOSDirectoryLoader(BaseLoader):
         try:
             from qcloud_cos import CosS3Client
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import cos-python-sdk-v5 python package. "
                 "Please install it with `pip install cos-python-sdk-v5`."
             )
