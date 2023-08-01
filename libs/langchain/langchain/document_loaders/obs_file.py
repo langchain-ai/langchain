@@ -8,6 +8,7 @@ from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
 
+
 class OBSFileLoader(BaseLoader):
     """Loader for Huawei OBS file."""
 

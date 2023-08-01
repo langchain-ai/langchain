@@ -9,7 +9,7 @@ from langchain.document_loaders.obs_file import OBSFileLoader
 class OBSDirectoryLoader(BaseLoader):
     """Loading logic for loading documents from Huawei OBS."""
 
-    def __init__(self, bucket: str, endpoint: str, config: dict=None, prefix: str = ""):
+    def __init__(self, bucket: str, endpoint: str, config: dict = None, prefix: str = ""):
         """Initialize the OBSDirectoryLoader with the specified settings.
 
         Args:
@@ -68,4 +68,3 @@ class OBSDirectoryLoader(BaseLoader):
                 else:
                     break
         return docs
-
