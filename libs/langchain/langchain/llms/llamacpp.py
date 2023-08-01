@@ -41,6 +41,9 @@ class LlamaCpp(LLM):
     """Number of parts to split the model into.
     If -1, the number of parts is automatically determined."""
 
+    n_gqa: Optional[int] = None
+    """Grouped query attention. Must be 8 for Llama 2 70B"""
+
     seed: int = Field(-1, alias="seed")
     """Seed. If -1, a random seed is used."""
 
@@ -123,6 +126,7 @@ class LlamaCpp(LLM):
             "lora_base",
             "n_ctx",
             "n_parts",
+            "n_gqa",
             "seed",
             "f16_kv",
             "logits_all",
