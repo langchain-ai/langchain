@@ -214,7 +214,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         if isinstance(other, RunnableSequence):
             return RunnableSequence(
                 first=self.first,
-                middle=self.middle + [self.last] + other.middle,
+                middle=self.middle + [self.last] + [other.first] + other.middle,
                 last=other.last,
             )
         else:
@@ -235,7 +235,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         if isinstance(other, RunnableSequence):
             return RunnableSequence(
                 first=other.first,
-                middle=other.middle + [other.last] + self.middle,
+                middle=other.middle + [other.last] + [self.first] + self.middle,
                 last=self.last,
             )
         else:
