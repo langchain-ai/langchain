@@ -194,9 +194,10 @@ class Runnable(Generic[Input, Output], ABC):
 
     def with_fallbacks(
         self,
-        fallbacks: Sequence[Runnable],
+        fallbacks: Sequence[Runnable[Input, Output]],
+        *,
         exceptions_to_handle: Tuple[Type[BaseException]] = (Exception,),
-    ) -> RunnableWithFallbacks:
+    ) -> RunnableWithFallbacks[Input, Output]:
         return RunnableWithFallbacks(
             runnable=self,
             fallbacks=fallbacks,
@@ -208,6 +209,9 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
     runnable: Runnable[Input, Output]
     fallbacks: Sequence[Runnable[Input, Output]]
     exceptions_to_handle: Tuple[Type[BaseException]] = (Exception,)
+
+    class Config:
+        arbitrary_types_allowed = True
 
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
         from langchain.callbacks.manager import CallbackManager

@@ -754,3 +754,18 @@ def test_bind_bind() -> None:
             stop=["Observation:"], hello="world"
         )
     ) == dumpd(llm.bind(stop=["Observation:"], one="two", hello="world"))
+
+
+@pytest.mark.asyncio
+async def test_runnable_with_fallbacks() -> None:
+    error_llm = FakeListLLM(responses=["foo"], i=1)
+    pass_llm = FakeListLLM(responses=["bar"])
+
+    llm_with_fallback = error_llm.with_fallbacks([pass_llm])
+
+    assert llm_with_fallback.invoke("hello") == "bar"
+    assert llm_with_fallback.batch(["hi", "hey", "bye"]) == ["bar"] * 3
+    assert list(llm_with_fallback.stream("hello")) == ["bar"]
+    assert await llm_with_fallback.ainvoke("hello") == "bar"
+    assert await llm_with_fallback.abatch(["hi", "hey", "bye"]) == ["bar"] * 3
+    assert list(await llm_with_fallback.ainvoke("hello")) == list("bar")
