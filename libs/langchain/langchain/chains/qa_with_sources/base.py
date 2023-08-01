@@ -146,7 +146,8 @@ class BaseQAWithSourcesChain(Chain, ABC):
             input_documents=docs, callbacks=_run_manager.get_child(), **inputs
         )
         if re.search(r"SOURCES:\s", answer):
-            answer, sources = re.split(r"SOURCES:\s", answer)
+            answer, sources = re.split(r"SOURCES:\s|QUESTION:\s", answer)[:2]
+            sources = re.split(r"\n", sources.lstrip())[0]
         else:
             sources = ""
         result: Dict[str, Any] = {
@@ -183,7 +184,8 @@ class BaseQAWithSourcesChain(Chain, ABC):
             input_documents=docs, callbacks=_run_manager.get_child(), **inputs
         )
         if re.search(r"SOURCES:\s", answer):
-            answer, sources = re.split(r"SOURCES:\s", answer)
+            answer, sources = re.split(r"SOURCES:\s|QUESTION:\s", answer)[:2]
+            sources = re.split(r"\n", sources.lstrip())[0]
         else:
             sources = ""
         result: Dict[str, Any] = {
