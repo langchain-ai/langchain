@@ -119,7 +119,6 @@ class SQLDatabase:
         # Harmful keywords to not execute on database
         self.harmful_keywords = harmful_keywords if harmful_keywords else []
 
-
     @classmethod
     def from_uri(
         cls, database_uri: str, engine_args: Optional[dict] = None, **kwargs: Any
@@ -395,7 +394,9 @@ class SQLDatabase:
             if not self.detect_harmful_actions(command):
                 cursor = connection.execute(text(command))
             else:
-                raise PermissionError(f"Harmful actions in the SQL '{command}'\n Commands '{self.harmful_keywords}' are forbidden.")
+                raise PermissionError(
+                    f"Harmful actions in the SQL '{command}'\n Commands '{self.harmful_keywords}' are forbidden."
+                )
             if cursor.returns_rows:
                 if fetch == "all":
                     result = cursor.fetchall()
