@@ -1,3 +1,20 @@
+"""**Document Transformers** are classes to transform Documents.
+
+**Document Transformers** usually used to transform a lot of Documents in a single run.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    BaseDocumentTransformer --> <name>  # Examples: DoctranQATransformer, DoctranTextTranslator
+
+**Main helpers:**
+
+.. code-block::
+
+    Document
+"""  # noqa: E501
+
 from langchain.document_transformers.doctran_text_extract import (
     DoctranPropertyExtractor,
 )
@@ -10,6 +27,7 @@ from langchain.document_transformers.embeddings_redundant_filter import (
 )
 from langchain.document_transformers.html2text import Html2TextTransformer
 from langchain.document_transformers.long_context_reorder import LongContextReorder
+from langchain.document_transformers.openai_functions import OpenAIMetadataTagger
 
 __all__ = [
     "DoctranQATransformer",
@@ -22,5 +40,3 @@ __all__ = [
     "OpenAIMetadataTagger",
     "Html2TextTransformer",
 ]
-
-from langchain.document_transformers.openai_functions import OpenAIMetadataTagger

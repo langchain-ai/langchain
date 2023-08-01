@@ -90,4 +90,4 @@ class CohereRerank(BaseDocumentCompressor):
         query: str,
         callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
-        raise NotImplementedError
+        raise NotImplementedError()

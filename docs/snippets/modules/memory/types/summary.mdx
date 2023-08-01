@@ -60,7 +60,7 @@ memory.predict_new_summary(messages, previous_summary)
 
 </CodeOutputBlock>
 
-## Initializing with messages
+## Initializing with messages/existing summary
 
 If you have messages outside this class, you can easily initialize the class with ChatMessageHistory. During loading, a summary will be calculated.
 
@@ -73,7 +73,11 @@ history.add_ai_message("hi there!")
 
 
 ```python
-memory = ConversationSummaryMemory.from_messages(llm=OpenAI(temperature=0), chat_memory=history, return_messages=True)
+memory = ConversationSummaryMemory.from_messages(
+    llm=OpenAI(temperature=0),
+    chat_memory=history,
+    return_messages=True
+)
 ```
 
 
@@ -88,6 +92,17 @@ memory.buffer
 ```
 
 </CodeOutputBlock>
+
+Optionally you can speed up initialization using a previously generated summary, and avoid regenerating the summary by just initializing directly.
+
+```python
+memory = ConversationSummaryMemory(
+    llm=OpenAI(temperature=0),
+    buffer="The human asks what the AI thinks of artificial intelligence. The AI thinks artificial intelligence is a force for good because it will help humans reach their full potential.",
+    chat_memory=history,
+    return_messages=True
+)
+```
 
 ## Using in a chain
 Let's walk through an example of using this in a chain, again setting `verbose=True` so we can see the prompt.
