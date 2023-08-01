@@ -1,0 +1,173 @@
+Let's take a look at how to use ConversationBufferMemory in chains.
+ConversationBufferMemory is an extremely simple form of memory that just keeps a list of chat messages in a buffer
+and passes those into the prompt template.
+
+```python
+from langchain.memory import ConversationBufferMemory
+
+memory = ConversationBufferMemory()
+memory.chat_memory.add_user_message("hi!")
+memory.chat_memory.add_ai_message("whats up?")
+```
+
+When using memory in a chain, there are a few key concepts to understand.
+Note that here we cover general concepts that are useful for most types of memory.
+Each individual memory type may very well have its own parameters and concepts that are necessary to understand.
+
+### What variables get returned from memory
+Before going into the chain, various variables are read from memory.
+This have specific names which need to align with the variables the chain expects.
+You can see what these variables are by calling `memory.load_memory_variables({})`.
+Note that the empty dictionary that we pass in is just a placeholder for real variables.
+If the memory type you are using is dependent upon the input variables, you may need to pass some in.
+
+```python
+memory.load_memory_variables({})
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    {'history': "Human: hi!\nAI: whats up?"}
+```
+
+</CodeOutputBlock>
+
+In this case, you can see that `load_memory_variables` returns a single key, `history`.
+This means that your chain (and likely your prompt) should expect and input named `history`.
+You can usually control this variable through parameters on the memory class.
+For example, if you want the memory variables to be returned in the key `chat_history` you can do:
+
+```python
+memory = ConversationBufferMemory(memory_key="chat_history")
+memory.chat_memory.add_user_message("hi!")
+memory.chat_memory.add_ai_message("whats up?")
+```
+<CodeOutputBlock lang="python">
+
+```
+    {'chat_history': "Human: hi!\nAI: whats up?"}
+```
+
+</CodeOutputBlock>
+
+The parameter name to control these keys may vary per memory type, but it's important to understand that (1) this is controllable, (2) how to control it.
+
+### Whether memory is a string or a list of messages
+
+One of the most common types of memory involves returning a list of chat messages.
+These can either be returned as a single string, all concatenated together (useful when they will be passed in LLMs)
+or a list of ChatMessages (useful when passed into ChatModels).
+
+By default, they are returned as a single string.
+In order to return as a list of messages, you can set `return_messages=True`
+
+```python
+memory = ConversationBufferMemory(return_messages=True)
+memory.chat_memory.add_user_message("hi!")
+memory.chat_memory.add_ai_message("whats up?")
+```
+<CodeOutputBlock lang="python">
+
+```
+    {'history': [HumanMessage(content='hi!', additional_kwargs={}, example=False),
+  AIMessage(content='whats up?', additional_kwargs={}, example=False)]}
+```
+
+</CodeOutputBlock>
+
+### What keys are saved to memory
+
+Often times chains take in or return multiple input/output keys.
+In these cases, how can we know which keys we want to save to the chat message history?
+This is generally controllable by `input_key` and `output_key` parameters on the memory types.
+These default to None - and if there is only one input/output key it is known to just use that.
+However, if there are multiple input/output keys then you MUST specify the name of which one to use
+
+### End to end example
+
+Finally, let's take a look at using this in a chain.
+We'll use an LLMChain, and show working with both an LLM and a ChatModel.
+
+#### Using an LLM
+
+
+```python
+from langchain.llms import OpenAI
+from langchain.prompts import PromptTemplate
+from langchain.chains import LLMChain
+from langchain.memory import ConversationBufferMemory
+
+
+llm = OpenAI(temperature=0)
+# Notice that "chat_history" is present in the prompt template
+template = """You are a nice chatbot having a conversation with a human.
+
+Previous conversation:
+{chat_history}
+
+New human question: {question}
+Response:"""
+prompt = PromptTemplate.from_template(template)
+# Notice that we need to align the `memory_key`
+memory = ConversationBufferMemory(memory_key="chat_history")
+conversation = LLMChain(
+    llm=llm,
+    prompt=prompt,
+    verbose=True,
+    memory=memory
+)
+```
+
+
+```python
+# Notice that we just pass in the `question` variables - `chat_history` gets populated by memory
+conversation({"question": "hi"})
+```
+
+
+#### Using a ChatModel
+
+
+```python
+from langchain.chat_models import ChatOpenAI
+from langchain.prompts import (
+    ChatPromptTemplate,
+    MessagesPlaceholder,
+    SystemMessagePromptTemplate,
+    HumanMessagePromptTemplate,
+)
+from langchain.chains import LLMChain
+from langchain.memory import ConversationBufferMemory
+
+
+llm = ChatOpenAI()
+prompt = ChatPromptTemplate(
+    messages=[
+        SystemMessagePromptTemplate.from_template(
+            "You are a nice chatbot having a conversation with a human."
+        ),
+        # The `variable_name` here is what must align with memory
+        MessagesPlaceholder(variable_name="chat_history"),
+        HumanMessagePromptTemplate.from_template("{question}")
+    ]
+)
+# Notice that we `return_messages=True` to fit into the MessagesPlaceholder
+# Notice that `"chat_history"` aligns with the MessagesPlaceholder name.
+memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+conversation = LLMChain(
+    llm=llm,
+    prompt=prompt,
+    verbose=True,
+    memory=memory
+)
+```
+
+
+```python
+# Notice that we just pass in the `question` variables - `chat_history` gets populated by memory
+conversation({"question": "hi"})
+```
+
+
+

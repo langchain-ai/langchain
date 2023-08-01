@@ -1,0 +1,31 @@
+---
+sidebar_position: 3
+---
+# Vector stores
+
+:::info
+Head to [Integrations](/docs/integrations/vectorstores/) for documentation on built-in integrations with 3rd-party vector stores.
+:::
+
+One of the most common ways to store and search over unstructured data is to embed it and store the resulting embedding
+vectors, and then at query time to embed the unstructured query and retrieve the embedding vectors that are
+'most similar' to the embedded query. A vector store takes care of storing embedded data and performing vector search
+for you.
+
+![vector store diagram](/img/vector_stores.jpg)
+
+## Get started
+
+This walkthrough showcases basic functionality related to VectorStores. A key part of working with vector stores is creating the vector to put in them, which is usually created via embeddings. Therefore, it is recommended that you familiarize yourself with the [text embedding model](/docs/modules/data_connection/text_embedding/) interfaces before diving into this.
+
+import GetStarted from "@snippets/modules/data_connection/vectorstores/get_started.mdx"
+
+<GetStarted/>
+
+## Asynchronous operations
+
+Vector stores are usually run as a separate service that requires some IO operations, and therefore they might be called asynchronously. That gives performance benefits as you don't waste time waiting for responses from external services. That might also be important if you work with an asynchronous framework, such as [FastAPI](https://fastapi.tiangolo.com/).
+
+import AsyncVectorStore from "@snippets/modules/data_connection/vectorstores/async.mdx"
+
+<AsyncVectorStore/>
