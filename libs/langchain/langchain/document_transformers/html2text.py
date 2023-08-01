@@ -20,7 +20,7 @@ class Html2TextTransformer(BaseDocumentTransformer):
         try:
             import html2text
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 """html2text package not found, please 
                 install it with `pip install html2text`"""
             )

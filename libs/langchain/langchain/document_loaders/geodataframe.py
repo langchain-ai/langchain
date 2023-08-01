@@ -20,7 +20,7 @@ class GeoDataFrameLoader(BaseLoader):
         try:
             import geopandas as gpd
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "geopandas package not found, please install it with "
                 "`pip install geopandas`"
             )
