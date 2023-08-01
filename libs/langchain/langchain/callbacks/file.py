@@ -13,9 +13,12 @@ class FileCallbackHandler(BaseCallbackHandler):
         self, filename: str, mode: str = "a", color: Optional[str] = None
     ) -> None:
         """Initialize callback handler."""
-        self.file = cast(TextIO, open(filename, mode))
+        try:
+            self.file = cast(TextIO, open(filename, mode))
+        except OSError as e:
+            raise FileOpenError(filename, mode, str(e))
         self.color = color
-
+        
     def __del__(self) -> None:
         """Destructor to cleanup when done."""
         self.file.close()
