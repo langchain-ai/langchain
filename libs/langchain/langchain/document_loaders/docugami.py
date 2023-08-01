@@ -145,8 +145,8 @@ class DocugamiLoader(BaseLoader, BaseModel):
             """Create a Document from a node and text."""
             metadata = {
                 XPATH_KEY: _xpath_for_chunk(node),
-                DOCUMENT_ID_KEY: document["id"],
-                DOCUMENT_SOURCE_KEY: document["name"],
+                DOCUMENT_ID_KEY: document[DOCUMENT_ID_KEY],
+                DOCUMENT_SOURCE_KEY: document[DOCUMENT_SOURCE_KEY],
                 STRUCTURE_KEY: node.attrib.get("structure", ""),
                 TAG_KEY: re.sub(r"\{.*\}", "", node.tag),
             }
