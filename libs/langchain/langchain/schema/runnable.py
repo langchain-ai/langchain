@@ -15,6 +15,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Tuple,
     Type,
     TypedDict,
     TypeVar,
@@ -194,10 +195,7 @@ class Runnable(Generic[Input, Output], ABC):
     def with_fallbacks(
         self,
         fallbacks: Sequence[Runnable],
-        exceptions_to_handle: Sequence[Type[BaseException]] = (
-            KeyboardInterrupt,
-            Exception,
-        ),
+        exceptions_to_handle: Tuple[Type[BaseException]] = (Exception,),
     ) -> RunnableWithFallbacks:
         return RunnableWithFallbacks(
             runnable=self,
@@ -209,7 +207,7 @@ class Runnable(Generic[Input, Output], ABC):
 class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
     runnable: Runnable[Input, Output]
     fallbacks: Sequence[Runnable[Input, Output]]
-    exceptions_to_handle: Sequence[Type[BaseException]] = (KeyboardInterrupt, Exception)
+    exceptions_to_handle: Tuple[Type[BaseException]] = (Exception,)
 
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
         from langchain.callbacks.manager import CallbackManager
