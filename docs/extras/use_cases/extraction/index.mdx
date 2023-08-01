@@ -14,20 +14,33 @@ Examples of this include:
 - Extracting multiple rows to insert into a database from a long document
 - Extracting the correct API parameters from a user query
 
-## Overview
+![extraction-figure](/img/extraction.png)
 
-In LangChain we provide a few useful abstractions that help you leverage OpenAI [function calling](https://openai.com/blog/function-calling-and-other-api-updates) (`-0613` models) and which go a long way to avoid model hallucination. This is in general the best go-to to extract structured data from text using langchain. However there's other two options that you should also consider:
+## Quickstart
 
-1. This work is extremely related to [output parsing](docs/modules/model_io/output_parsers/). Output parsers are responsible for instructing the LLM to respond in a specific format. We suggest using output parsers when either you are not using OpenAI models or you want to have very close control over the parsing (e.g. checking that the output is a date in a specific datetime format).
-2. While the conventional extraction chain is good enough for basic structuring of response data,
-   when doing extraction you often want to extract more complicated or nested structures.
-   For a deep dive on extraction, we recommend checking out [`kor`](https://eyurtsev.github.io/kor/),
-   a library that uses the existing LangChain chain and OutputParser abstractions
-   but deep dives on allowing extraction of more complicated schemas.
+Getting structured output from LLM generation is hard. For example, suppose you need the model output formatted as JSON or in some other specified schema. Two primary approaches have emerged for this:
+
+- Functions
+
+  OpenAI [functions](https://openai.com/blog/function-calling-and-other-api-updates) can be used to extract entities from unstructured text. They give us control over which are the entities we wish to extract, what data type each should be etc. This is the recommended way to achieve high accuracy when extracting structured data from text.
+
+- Parsing
+
+  [Output parsers](docs/modules/model_io/output_parsers/) are responsible for instructing the LLM to respond in a specific format. We suggest using output parsers when you are either not using OpenAI models (which support functions) or you want to have very close control over the parsing (e.g. checking that the output is a date in a specific datetime format).
+
+![extraction-options](/img/extraction_options.png)
+
+While the conventional extraction chain is good enough for basic structuring of response data,
+when doing extraction you often want to extract more complicated or nested structures.
+For a deep dive on extraction, we recommend checking out [`kor`](https://eyurtsev.github.io/kor/),
+a library that uses the existing LangChain chain and OutputParser abstractions
+but deep dives on allowing extraction of more complicated schemas.
 
 All this said, let's see how easy it is to quickly and accurately extract structured data with LangChain.
 
-## Example #1: using a JSON schema
+## Functions
+
+### Example #1: JSON Schema
 
 ```python
 from langchain.chat_models import ChatOpenAI
@@ -36,7 +49,7 @@ from langchain.prompts import ChatPromptTemplate
 ```
 
 ```python
-llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-0613")
+llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo")
 ```
 
 To extract entities, we need to create a schema where we specify all the properties we want to find and the type we expect each of them to have.
@@ -73,7 +86,7 @@ chain.run(inp)
     [{'name': 'Alex', 'height': 5, 'hair_color': 'blonde'},
      {'name': 'Claudia', 'height': 6, 'hair_color': 'brunette'}]
 
-## Example #2: using a Pydantic schema
+### Example #2: using a Pydantic schema
 
 We can also use a Pydantic schema instead of a json schema. For this we will use the `create_extraction_chain_pydantic` function.
 
@@ -114,6 +127,73 @@ chain.run(inp)
     [Properties(person_name='Alex', person_height=5, person_hair_color='blonde', dog_breed='labrador', dog_name='Frosty'),
      Properties(person_name='Claudia', person_height=6, person_hair_color='brunette', dog_breed=None, dog_name=None)]
 
-## Going deeper
+### Going deeper
 
-As we have seen, by leveraging OpenAI `-0613` models we can extract structured data from unstructured documents with minimal hallucination. For more detail on how to use these chains and different tips and tricks you can use, please check out the [docs](docs/extras/modules/chains/additional/extraction.ipynb) for the extraction chain.
+As we have seen, by leveraging OpenAI models we can extract structured data from unstructured documents with minimal hallucination. For more detail on how to use these chains and different tips and tricks you can use, please check out the [docs](docs/extras/modules/chains/additional/extraction.ipynb) for the extraction chain.
+
+## Parsing
+
+### Example: JSON Schema
+
+As an example of parsing, let's see how a simple parser that type checks the output using Pydantic.
+
+```python
+from langchain.prompts import (
+    PromptTemplate,
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+)
+from langchain.llms import OpenAI
+from langchain.chat_models import ChatOpenAI
+
+from langchain.output_parsers import PydanticOutputParser
+from pydantic import BaseModel, Field, validator
+from typing import List
+```
+
+We will use a parser to make sure that the output contains a question and a punchline. If we define this in the Pydantic schema, it will be specified under 'format instructions' in the model's prompt. We will then parse the output to make sure it respects the desired schema.
+
+```python
+# Define model
+model = OpenAI(model_name='text-davinci-003', temperature=0)
+
+# Define your desired data structure.
+class Joke(BaseModel):
+    setup: str = Field(description="question to set up a joke")
+    punchline: str = Field(description="answer to resolve the joke")
+
+    # You can add custom validation logic easily with Pydantic.
+    @validator("setup")
+    def question_ends_with_question_mark(cls, field):
+        if field[-1] != "?":
+            raise ValueError("Badly formed question!")
+        return field
+
+
+# And a query intented to prompt a language model to populate the data structure.
+joke_query = "Tell me a joke."
+
+# Set up a parser + inject instructions into the prompt template.
+parser = PydanticOutputParser(pydantic_object=Joke)
+
+
+prompt = PromptTemplate(
+    template="Answer the user query.\n{format_instructions}\n{query}\n",
+    input_variables=["query"],
+    partial_variables={"format_instructions": parser.get_format_instructions()},
+)
+
+_input = prompt.format_prompt(query=joke_query)
+
+output = model(_input.to_string())
+
+parser.parse(output)
+```
+
+    Joke(setup='Why did the chicken cross the road?', punchline='To get to the other side!')
+
+As we can see, we get an output of the `Joke` class, which respects our originally desired schema: 'setup' and 'punchline'.
+
+### Going deeper
+
+To see more examples of different types of parsers, please check out the parsers [docs](docs/extras/modules/model_io/output_parsers).
