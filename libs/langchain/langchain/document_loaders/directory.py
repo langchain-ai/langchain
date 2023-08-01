@@ -121,7 +121,11 @@ class DirectoryLoader(BaseLoader):
                 if self.silent_errors:
                     logger.warning(e)
                 else:
-                    raise e
+                    raise ImportError(
+                        "To log the progress of DirectoryLoader "
+                        "you need to install tqdm, "
+                        "`pip install tqdm`"
+                    )
 
         if self.use_multithreading:
             with concurrent.futures.ThreadPoolExecutor(

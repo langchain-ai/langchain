@@ -13,8 +13,8 @@ class CodeSegmenter(ABC):
 
     @abstractmethod
     def simplify_code(self) -> str:
-        raise NotImplementedError  # pragma: no cover
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def extract_functions_classes(self) -> List[str]:
-        raise NotImplementedError  # pragma: no cover
+        raise NotImplementedError()  # pragma: no cover

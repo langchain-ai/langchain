@@ -21,14 +21,14 @@ class OpenAIWhisperParser(BaseBlobParser):
         try:
             import openai
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "openai package not found, please install it with "
                 "`pip install openai`"
             )
         try:
             from pydub import AudioSegment
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "pydub package not found, please install it with " "`pip install pydub`"
             )
 
