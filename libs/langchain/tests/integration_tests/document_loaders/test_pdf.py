@@ -1,7 +1,9 @@
 from pathlib import Path
+
 import pytest
 
 from langchain.document_loaders import (
+    AmazonTextractPDFLoader,
     MathpixPDFLoader,
     PDFMinerLoader,
     PDFMinerPDFasHTMLLoader,
@@ -9,7 +11,6 @@ from langchain.document_loaders import (
     PyPDFium2Loader,
     PyPDFLoader,
     UnstructuredPDFLoader,
-    AmazonTextractPDFLoader
 )
 
 
@@ -139,25 +140,32 @@ def test_mathpix_loader() -> None:
     assert len(docs) == 1
     print(docs[0].page_content)
 
+
 @pytest.mark.skip()
 def test_amazontextract_loader() -> None:
-    file_path = "https://amazon-textract-public-content.s3.us-east-2.amazonaws.com/langchain/alejandro_rosalez_sample_1.jpg"
-    loader = AmazonTextractPDFLoader(str(file_path))
+    http_file_path = (
+        "https://amazon-textract-public-content.s3.us-east-2.amazonaws.com"
+        "/langchain/alejandro_rosalez_sample_1.jpg"
+    )
+    loader = AmazonTextractPDFLoader(http_file_path)
     docs = loader.load()
 
     assert len(docs) == 1
 
-    file_path = Path(__file__).parent.parent / "examples/hello.pdf"
-    loader = AmazonTextractPDFLoader(str(file_path))
+    local_file_path: Path = Path(__file__).parent.parent / "examples/hello.pdf"
+    loader = AmazonTextractPDFLoader(str(local_file_path))
     docs = loader.load()
 
     assert len(docs) == 1
 
     import boto3
-    textract_client = boto3.client('textract', region_name='us-east-2')
 
-    file_path = "s3://amazon-textract-public-content/langchain/layout-parser-paper.pdf"
-    loader = AmazonTextractPDFLoader(str(file_path), client=textract_client)
+    textract_client = boto3.client("textract", region_name="us-east-2")
+
+    s3_file_path = (
+        "s3://amazon-textract-public-content/langchain/layout-parser-paper.pdf"
+    )
+    loader = AmazonTextractPDFLoader(s3_file_path, client=textract_client)
 
     docs = loader.load()
     assert len(docs) == 16

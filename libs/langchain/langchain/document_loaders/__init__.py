@@ -327,5 +327,5 @@ __all__ = [
     "YoutubeAudioLoader",
     "YoutubeLoader",
     "ConcurrentLoader",
-    "AmazonTextractPDFLoader"
+    "AmazonTextractPDFLoader",
 ]

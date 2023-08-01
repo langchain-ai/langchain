@@ -76,7 +76,7 @@ class BasePDFLoader(BaseLoader, ABC):
         if not os.path.isfile(self.file_path) and self._is_valid_url(self.file_path):
             self.temp_dir = tempfile.TemporaryDirectory()
             _, suffix = os.path.splitext(self.file_path)
-            temp_pdf = Path(self.temp_dir.name) / f"tmp{suffix}"
+            temp_pdf = os.path.join(self.temp_dir.name, f"tmp{suffix}")
             if self._is_s3_url(self.file_path):
                 BasePDFLoader._load_s3_file(file_path=file_path, temp_pdf=temp_pdf)
                 self.web_path = self.file_path
@@ -109,18 +109,18 @@ class BasePDFLoader(BaseLoader, ABC):
         return bool(parsed.netloc) and bool(parsed.scheme)
 
     @staticmethod
-    def _is_s3_url(url: str)->bool:
+    def _is_s3_url(url: str) -> bool:
         """check if the url is S3"""
         try:
             result = urlparse(url)
-            if result.scheme == 's3' and result.netloc:
+            if result.scheme == "s3" and result.netloc:
                 return True
             return False
         except ValueError:
             return False
 
     @staticmethod
-    def _load_s3_file(file_path, temp_pdf):
+    def _load_s3_file(file_path: str, temp_pdf: str) -> None:
         try:
             import boto3
         except ImportError:
@@ -130,7 +130,7 @@ class BasePDFLoader(BaseLoader, ABC):
             )
         result = urlparse(file_path)
         bucket = result.netloc
-        prefix = result.path.lstrip('/')
+        prefix = result.path.lstrip("/")
         s3 = boto3.client("s3")
         s3.download_file(bucket, prefix, temp_pdf)
 
@@ -146,6 +146,7 @@ class OnlinePDFLoader(BasePDFLoader):
         """Load documents."""
         loader = UnstructuredPDFLoader(str(self.file_path))
         return loader.load()
+
 
 class PyPDFLoader(BasePDFLoader):
     """Loads a PDF with pypdf and chunks at character level.
@@ -478,24 +479,32 @@ class PDFPlumberLoader(BasePDFLoader):
 class AmazonTextractPDFLoader(BasePDFLoader):
     """Loads a PDF from local file system or HTTP or S3 endpoints
     and passes down to the AmazonTextractPDFParser to generate Documents
-        boto3_textract_client can be passed, for example when configuration is done in code and not through environment or when Textract should be called in a different region
+    boto3_textract_client can be passed, for example when configuration
+    is done in code and not through environment or when Textract should be called
+    in a different region
 
     """
+
     try:
         import textractcaller as tc
     except ImportError:
         raise ModuleNotFoundError(
-            "Could not import amazon-textract-caller python package. "
-            "Please install it with `pip install amazon-textract-caller` or add to your requirements.txt."
+            "Could not import amazon-textract-caller python package. \
+            Please install it with `pip install amazon-textract-caller` \
+            or add to your requirements.txt."
         )
 
-    def __init__(self, file_path: str, textract_features:List[tc.Textract_Features]=list(),
-                 client=None,
-                 credentials_profile_name=None,
-                 region_name=None,
-                 endpoint_url=None) -> None:
+    def __init__(
+        self,
+        file_path: str,
+        textract_features: List[tc.Textract_Features] = list(),
+        client: Any = None,
+        credentials_profile_name: str = "",
+        region_name: str = "",
+        endpoint_url: str = "",
+    ) -> None:
         super().__init__(file_path)
-        if not client:
+        if credentials_profile_name or region_name or endpoint_url:
             try:
                 import boto3
 
@@ -524,7 +533,9 @@ class AmazonTextractPDFLoader(BasePDFLoader):
                     "Please check that credentials in the specified "
                     "profile name are valid."
                 ) from e
-        self.parser = AmazonTextractPDFParser(textract_features=textract_features, client=client)
+        self.parser = AmazonTextractPDFParser(
+            textract_features=textract_features, client=client
+        )
 
     def load(self) -> List[Document]:
         """Load given path as pages."""
@@ -542,24 +553,29 @@ class AmazonTextractPDFLoader(BasePDFLoader):
             if self.web_path and self._is_s3_url(self.web_path):
                 blob = Blob(data=None, mimetype=blob.mimetype, path=self.web_path)
             else:
-                raise ValueError(f"the file {blob.path} is a multi-page document, but not stored on S3. Textract requires multi-page documents to be on S3.")
+                raise ValueError(
+                    f"the file {blob.path} is a multi-page document, \
+                    but not stored on S3. \
+                    Textract requires multi-page documents to be on S3."
+                )
         yield from self.parser.parse(blob)
 
     @staticmethod
     def _get_number_of_pages(blob: Blob) -> int:
         import pypdf
         from PIL import Image, ImageSequence
-        if blob.mimetype == 'application/pdf':
+
+        if blob.mimetype == "application/pdf":
             with blob.as_bytes_io() as input_pdf_file:
                 pdf_reader = pypdf.PdfReader(input_pdf_file)
                 return len(pdf_reader.pages)
-        elif blob.mimetype == 'image/tiff':
+        elif blob.mimetype == "image/tiff":
             num_pages = 0
             img = Image.open(blob.as_bytes())
             for _, _ in enumerate(ImageSequence.Iterator(img)):
                 num_pages += 1
             return num_pages
-        elif blob.mimetype in ['image/png', 'image/jpeg']:
+        elif blob.mimetype in ["image/png", "image/jpeg"]:
             return 1
         else:
             raise ValueError(f"unsupported mime type: {blob.mimetype}")
