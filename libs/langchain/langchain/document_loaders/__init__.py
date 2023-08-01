@@ -98,6 +98,8 @@ from langchain.document_loaders.modern_treasury import ModernTreasuryLoader
 from langchain.document_loaders.notebook import NotebookLoader
 from langchain.document_loaders.notion import NotionDirectoryLoader
 from langchain.document_loaders.notiondb import NotionDBLoader
+from langchain.document_loaders.obs_directory import OBSDirectoryLoader
+from langchain.document_loaders.obs_file import OBSFileLoader
 from langchain.document_loaders.obsidian import ObsidianLoader
 from langchain.document_loaders.odt import UnstructuredODTLoader
 from langchain.document_loaders.onedrive import OneDriveLoader
@@ -251,6 +253,8 @@ __all__ = [
     "NotebookLoader",
     "NotionDBLoader",
     "NotionDirectoryLoader",
+    "OBSDirectoryLoader",
+    "OBSFileLoader",
     "ObsidianLoader",
     "OneDriveFileLoader",
     "OneDriveLoader",
