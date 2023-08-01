@@ -12,7 +12,7 @@ from langchain.schema.messages import BaseMessage, messages_from_dict, messages_
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from google.cloud.firestore import DocumentReference
+    from google.cloud.firestore import DocumentReference, Client
 
 
 class FirestoreChatMessageHistory(BaseChatMessageHistory):
@@ -23,6 +23,7 @@ class FirestoreChatMessageHistory(BaseChatMessageHistory):
         collection_name: str,
         session_id: str,
         user_id: str,
+        firestore_client: Client,
     ):
         """
         Initialize a new instance of the FirestoreChatMessageHistory class.
@@ -45,23 +46,25 @@ class FirestoreChatMessageHistory(BaseChatMessageHistory):
 
         Use this function to make sure your database is ready.
         """
-        try:
-            import firebase_admin
-            from firebase_admin import firestore
-        except ImportError:
-            raise ImportError(
-                "Could not import firebase-admin python package. "
-                "Please install it with `pip install firebase-admin`."
-            )
+        if not self.firestore_client:
+            try:
+                import firebase_admin
+                from firebase_admin import firestore
+            except ImportError:
+                raise ImportError(
+                    "Could not import firebase-admin python package. "
+                    "Please install it with `pip install firebase-admin`."
+                )
 
-        # For multiple instances, only initialize the app once.
-        try:
-            firebase_admin.get_app()
-        except ValueError as e:
-            logger.debug("Initializing Firebase app: %s", e)
-            firebase_admin.initialize_app()
+            # For multiple instances, only initialize the app once.
+            try:
+                firebase_admin.get_app()
+            except ValueError as e:
+                logger.debug("Initializing Firebase app: %s", e)
+                firebase_admin.initialize_app()
 
-        self.firestore_client = firestore.client()
+            self.firestore_client = firestore.client()
+
         self._document = self.firestore_client.collection(
             self.collection_name
         ).document(self.session_id)
