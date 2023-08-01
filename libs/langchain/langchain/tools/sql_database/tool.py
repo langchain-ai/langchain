@@ -4,6 +4,8 @@ from langchain_community.tools.sql_database.tool import (
     ListSQLDatabaseTool,
     QuerySQLCheckerTool,
     QuerySQLDataBaseTool,
+    ColumnCardinalitySQLDataBaseTool,
+    DistinctValuesSQLDataBaseTool
 )
 
 __all__ = [
@@ -12,4 +14,6 @@ __all__ = [
     "InfoSQLDatabaseTool",
     "ListSQLDatabaseTool",
     "QuerySQLCheckerTool",
+    "ColumnCardinalitySQLDataBaseTool",
+    "DistinctValuesSQLDataBaseTool"
 ]

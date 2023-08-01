@@ -76,6 +76,46 @@ class InfoSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
             [t.strip() for t in table_names.split(",")]
         )
 
+class ColumnCardinalitySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
+    """Tool for getting the cardinality (distinct count) of a column on a table in a database."""
+
+    name = "sql_db_column_cardinality"
+    description = """
+    Input to this tool is a string in the format: TABLE_NAME.COLUMN_NAME, output is the cardinality (distinct count) for the column.
+    
+    Example Input: "TABLE_NAME.COLUMN_NAME"
+    """
+
+    def _run(
+        self,
+        tool_input: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
+        """Execute the query, return the results or an error message."""
+        query = f"SELECT COUNT(DISTINCT {tool_input}) as {tool_input.split('.')[1]} FROM {tool_input.split('.')[0]}"
+        return self.db.run_no_throw(query)
+
+class DistinctValuesSQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
+    """Tool for getting the distinct values of a column on a table in a database."""
+
+    name = "sql_db_distinct_values"
+    description = """
+    Input to this tool is a string in the format: TABLE_NAME.COLUMN_NAME, output is the maximum of 50 distinct values for the column.
+    
+    Example Input: "TABLE_NAME.COLUMN_NAME"
+    """
+
+    def _run(
+        self,
+        tool_input: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
+        """Execute the query, return the results or an error message."""
+        query = f"SELECT DISTINCT {tool_input} as {tool_input.split('.')[1]} FROM {tool_input.split('.')[0]} LIMIT :limit"
+        params = {"limit": 50}
+        compiled_query = self.db.compile(query, params)
+        return self.db.run_no_throw(compiled_query)
+
 
 class ListSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
     """Tool for getting tables names."""

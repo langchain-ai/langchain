@@ -11,6 +11,8 @@ from langchain_community.tools.sql_database.tool import (
     ListSQLDatabaseTool,
     QuerySQLCheckerTool,
     QuerySQLDataBaseTool,
+    ColumnCardinalitySQLDataBaseTool,
+    DistinctValuesSQLDataBaseTool
 )
 from langchain_community.utilities.sql_database import SQLDatabase
 
@@ -63,11 +65,28 @@ class SQLDatabaseToolkit(BaseToolkit):
         query_sql_checker_tool = QuerySQLCheckerTool(
             db=self.db, llm=self.llm, description=query_sql_checker_tool_description
         )
+        column_cardinality_sql_database_tool_description = (
+            "Input to this tool is a table name and a column name in the format: "
+            "TABLE_NAME.COLUMN_NAME, output is the cardinality (distinct count) "
+            "of the column on the table."
+        )
+        column_cardinality_sql_database_tool = ColumnCardinalitySQLDataBaseTool(
+            db=self.db, description=column_cardinality_sql_database_tool_description
+        )
+        distinct_values_sql_database_tool_description = (
+            "Input to this tool is a table name and a column name in the format: "
+            "TABLE_NAME.COLUMN_NAME, output is the distinct values of the column on the table."
+        )
+        distinct_values_sql_database_tool = DistinctValuesSQLDataBaseTool(
+            db=self.db, description=distinct_values_sql_database_tool_description
+        )
         return [
             query_sql_database_tool,
             info_sql_database_tool,
             list_sql_database_tool,
             query_sql_checker_tool,
+            column_cardinality_sql_database_tool,
+            distinct_values_sql_database_tool,
         ]
 
     def get_context(self) -> dict:
