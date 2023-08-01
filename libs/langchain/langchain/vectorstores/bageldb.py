@@ -38,7 +38,7 @@ def _results_to_docs(results: Any) -> List[Document]:
 
 def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
     return [
-        # TODO: Chroma can do batch querying,
+        # TODO: bageldb can do batch querying,
         # we shouldn't hard code to the 1st result
         (Document(page_content=result[0], metadata=result[1] or {}), result[2])
         for result in zip(
@@ -49,7 +49,7 @@ def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
     ]
 
 
-class Chroma(VectorStore):
+class Bagel(VectorStore):
     """Wrapper around bageldb embeddings platform.
 
     To use, you should have the ``bageldb`` python package installed.
@@ -57,11 +57,11 @@ class Chroma(VectorStore):
     Example:
         .. code-block:: python
 
-                from langchain.vectorstores import Chroma
+                from langchain.vectorstores import Bagel
                 from langchain.embeddings.openai import OpenAIEmbeddings
 
                 embeddings = OpenAIEmbeddings()
-                vectorstore = Chroma("langchain_store", embeddings)
+                vectorstore = Bagel("langchain_store", embeddings)
     """
 
     _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain"
@@ -76,7 +76,7 @@ class Chroma(VectorStore):
         client: Optional[bageldb.Client] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
     ) -> None:
-        """Initialize with Chroma client."""
+        """Initialize with bagel client."""
         try:
             import bageldb
             import bageldb.config
@@ -98,7 +98,7 @@ class Chroma(VectorStore):
                 major, minor, _ = bageldb.__version__.split(".")
                 if int(major) == 0 and int(minor) < 4:
                     _client_settings = bageldb.config.Settings(
-                        chroma_db_impl="duckdb+parquet",
+                        bagel_db_impl="duckdb+parquet",
                     )
                 else:
                     _client_settings = bageldb.config.Settings(is_persistent=True)
@@ -134,7 +134,7 @@ class Chroma(VectorStore):
         where: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
-        """Query the chroma collection."""
+        """Query the Bagel collection."""
         try:
             import bageldb  # noqa: F401
         except ImportError:
@@ -226,7 +226,7 @@ class Chroma(VectorStore):
         filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
-        """Run similarity search with Chroma.
+        """Run similarity search with Bagel.
 
         Args:
             query (str): Query text to search for.
@@ -291,7 +291,7 @@ class Chroma(VectorStore):
         filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        """Run similarity search with Chroma with distance.
+        """Run similarity search with bagel with distance.
 
         Args:
             query (str): Query text to search for.
@@ -344,7 +344,7 @@ class Chroma(VectorStore):
             raise ValueError(
                 "No supported normalization function"
                 f" for distance metric of type: {distance}."
-                "Consider providing relevance_score_fn to Chroma constructor."
+                "Consider providing relevance_score_fn to Bagel constructor."
             )
 
     def max_marginal_relevance_search_by_vector(
@@ -513,7 +513,7 @@ class Chroma(VectorStore):
 
     @classmethod
     def from_texts(
-        cls: Type[Chroma],
+        cls: Type[Bagel],
         texts: List[str],
         embedding: Optional[Embeddings] = None,
         metadatas: Optional[List[dict]] = None,
@@ -524,8 +524,8 @@ class Chroma(VectorStore):
         client: Optional[bageldb.Client] = None,
         collection_metadata: Optional[Dict] = None,
         **kwargs: Any,
-    ) -> Chroma:
-        """Create a Chroma vectorstore from a raw documents.
+    ) -> Bagel:
+        """Create a bagel vectorstore from a raw documents.
 
         If a persist_directory is specified, the collection will be persisted there.
         Otherwise, the data will be ephemeral in-memory.
@@ -537,14 +537,14 @@ class Chroma(VectorStore):
             embedding (Optional[Embeddings]): Embedding function. Defaults to None.
             metadatas (Optional[List[dict]]): List of metadatas. Defaults to None.
             ids (Optional[List[str]]): List of document IDs. Defaults to None.
-            client_settings (Optional[bageldb.config.Settings]): Chroma client settings
+            client_settings (Optional[bageldb.config.Settings]): bagel client settings
             collection_metadata (Optional[Dict]): Collection configurations.
                                                   Defaults to None.
 
         Returns:
-            Chroma: Chroma vectorstore.
+            Bagel: Bagel vectorstore.
         """
-        chroma_collection = cls(
+        bagel_collection = cls(
             collection_name=collection_name,
             embedding_function=embedding,
             persist_directory=persist_directory,
@@ -553,12 +553,12 @@ class Chroma(VectorStore):
             collection_metadata=collection_metadata,
             **kwargs,
         )
-        chroma_collection.add_texts(texts=texts, metadatas=metadatas, ids=ids)
-        return chroma_collection
+        bagel_collection.add_texts(texts=texts, metadatas=metadatas, ids=ids)
+        return bagel_collection
 
     @classmethod
     def from_documents(
-        cls: Type[Chroma],
+        cls: Type[Bagel],
         documents: List[Document],
         embedding: Optional[Embeddings] = None,
         ids: Optional[List[str]] = None,
@@ -568,8 +568,8 @@ class Chroma(VectorStore):
         client: Optional[bageldb.Client] = None,  # Add this line
         collection_metadata: Optional[Dict] = None,
         **kwargs: Any,
-    ) -> Chroma:
-        """Create a Chroma vectorstore from a list of documents.
+    ) -> Bagel:
+        """Create a Bagel vectorstore from a list of documents.
 
         If a persist_directory is specified, the collection will be persisted there.
         Otherwise, the data will be ephemeral in-memory.
@@ -580,12 +580,12 @@ class Chroma(VectorStore):
             ids (Optional[List[str]]): List of document IDs. Defaults to None.
             documents (List[Document]): List of documents to add to the vectorstore.
             embedding (Optional[Embeddings]): Embedding function. Defaults to None.
-            client_settings (Optional[bageldb.config.Settings]): Chroma client settings
+            client_settings (Optional[bageldb.config.Settings]): bagel client settings
             collection_metadata (Optional[Dict]): Collection configurations.
                                                   Defaults to None.
 
         Returns:
-            Chroma: Chroma vectorstore.
+            Bagel: Bagel vectorstore.
         """
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
