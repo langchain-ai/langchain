@@ -70,7 +70,6 @@ class CombinedMemory(BaseMemory):
 
         return memory_data
 
-
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this session for every memory."""
         # Save context for all sub-memories
