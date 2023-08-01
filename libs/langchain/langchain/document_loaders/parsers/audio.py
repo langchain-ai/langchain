@@ -81,9 +81,8 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
     NOTE: By default uses the gpu if available, if you want to use cpu,
     please set device = "cpu"
     """
-    
-    def __init__(self, device = "0", lang_model = None):
-        
+
+    def __init__(self, device: str = "0", lang_model: str = None):
         try:
             from transformers import pipeline
         except ImportError:
@@ -95,26 +94,25 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
             import torch
         except ImportError:
             raise ValueError(
-                "torch package not found, please install it with " 
-                "`pip install torch`"
+                "torch package not found, please install it with " "`pip install torch`"
             )
-        
+
         # set device, cpu by default check if there is a GPU available
         if device == "cpu":
             self.device = "cpu"
             if lang_model is not None:
                 self.lang_model = lang_model
-                print("WARNING! Model override. Using model: ",
-                      self.lang_model)
+                print("WARNING! Model override. Using model: ", self.lang_model)
             else:
                 # unless overrided, use the small base model on cpu
-                self.lang_model = "openai/whisper-base" 
+                self.lang_model = "openai/whisper-base"
         else:
             if torch.cuda.is_available():
-                self.device = "cuda:0" 
+                self.device = "cuda:0"
                 # check GPU memory and select automatically the model
-                mem = torch.cuda.get_device_properties(
-                    self.device).total_memory/(1024**2)
+                mem = torch.cuda.get_device_properties(self.device).total_memory / (
+                    1024**2
+                )
                 if mem < 5000:
                     rec_model = "openai/whisper-base"
                 elif mem < 7000:
@@ -123,7 +121,7 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
                     rec_model = "openai/whisper-medium"
                 else:
                     rec_model = "openai/whisper-large"
-                
+
                 # check if model is overrided
                 if lang_model is not None:
                     self.lang_model = lang_model
@@ -132,11 +130,9 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
                     self.lang_model = rec_model
             else:
                 "cpu"
-        
+
         print("Using the following model: ", self.lang_model)
-            
-            
-        
+
         # load model for inference
         self.pipe = pipeline(
             "automatic-speech-recognition",
@@ -150,33 +146,31 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
 
         import io
 
-
         try:
             from pydub import AudioSegment
         except ImportError:
             raise ValueError(
-                "pydub package not found, please install it with " 
-                "`pip install pydub`"
+                "pydub package not found, please install it with " "`pip install pydub`"
             )
 
         try:
             import librosa
         except ImportError:
             raise ValueError(
-                "librosa package not found, please install it with " 
+                "librosa package not found, please install it with "
                 "`pip install librosa`"
             )
 
         # Audio file from disk
         audio = AudioSegment.from_file(blob.path)
-        
+
         file_obj = io.BytesIO(audio.export(format="mp3").read())
 
         # Transcribe
         print(f"Transcribing part {blob.path}!")
 
-        y,sr = librosa.load(file_obj, sr=16000)
-        
+        y, sr = librosa.load(file_obj, sr=16000)
+
         prediction = self.pipe(y.copy(), batch_size=8)["text"]
 
         yield Document(
