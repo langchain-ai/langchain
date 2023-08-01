@@ -406,6 +406,20 @@ class SQLDatabase:
                 return result
         return []
 
+    def detect_harmful_actions(self, input_string):
+        # List of harmful keywords
+        harmful_keywords = [keyword.lower() for keyword in self.harmful_keywords]
+
+        # Convert the input string to lowercase for case-insensitive matching
+        input_lower = input_string.lower()
+
+        # Check if any harmful keyword is present in the input string
+        for keyword in harmful_keywords:
+            if keyword in input_lower:
+                return True
+
+        return False
+
     def run(self, command: str, fetch: str = "all") -> str:
         """Execute a SQL command and return a string representing the results.
 
