@@ -36,10 +36,7 @@ from typing import Optional
 
 import requests
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
+from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
 
 
@@ -62,10 +59,3 @@ class IFTTTWebhook(BaseTool):
         body = {"this": tool_input}
         response = requests.post(self.url, data=body)
         return response.text
-
-    async def _arun(
-        self,
-        tool_input: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        raise NotImplementedError("Not implemented.")
