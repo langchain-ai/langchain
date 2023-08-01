@@ -26,7 +26,7 @@ Then you will have a local cloned repo where you can contribute and then create 
 
 If you already have VS Code and Docker installed, you can use the button above to get started. This will cause VS Code to automatically install the Dev Containers extension if needed, clone the source code into a container volume, and spin up a dev container for use.
 
-Alternatively You can also follow these steps to open this repo in a container using the VS Code Dev Containers extension:
+Alternatively you can also follow these steps to open this repo in a container using the VS Code Dev Containers extension:
 
 1. If this is your first time using a development container, please ensure your system meets the pre-reqs (i.e. have Docker installed) in the [getting started steps](https://aka.ms/vscode-remote/containers/getting-started).
 
