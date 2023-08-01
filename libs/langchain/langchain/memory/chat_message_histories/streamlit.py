@@ -15,7 +15,12 @@ class StreamlitChatMessageHistory(BaseChatMessageHistory):
     """
 
     def __init__(self, key: str = "langchain_messages"):
-        import streamlit as st
+        try:
+            import streamlit as st
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import streamlit, please run `pip install streamlit`."
+            ) from e
 
         if key not in st.session_state:
             st.session_state[key] = []
