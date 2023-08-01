@@ -1,10 +1,11 @@
 """Test OpenAI Chat API wrapper."""
 import json
-from typing import Any
+from typing import Any, Mapping, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
 
+import pytest
 from langchain.chat_models.openai import (
     ChatOpenAI,
     _convert_dict_to_message,
@@ -115,3 +116,36 @@ async def test_openai_apredict(mock_completion: dict) -> None:
         res = llm.predict("bar")
         assert res == "Bar Baz"
     assert completed
+
+    SAMPLE_RESPONSE_JSON = """
+{
+    "id": "chatcmpl-3wtqc79443759b8yn9",
+    "object": "chat.completion",
+    "created": 1690898686,
+    "model": "gpt-3.5-turbo-0613",
+    "choices": [
+        {
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": "As an AI, I don't have feelings, but I'm functioning well and ready to assist you with any questions you may have. How can I help you today?"
+            },
+            "finish_reason": "stop"
+        }
+    ],
+    "usage": {
+        "prompt_tokens": 13,
+        "completion_tokens": 34,
+        "total_tokens": 47
+    }
+}
+"""
+
+@pytest.mark.requires("openai")
+def test_chat_result_has_llm_type() -> None:
+    sample_response = json.loads(SAMPLE_RESPONSE_JSON)
+    mock_response = cast(Mapping[str, Any], sample_response)
+    mock_chat = ChatOpenAI()
+    chat_result = mock_chat._create_chat_result(mock_response)
+    assert "llm_type" in chat_result.llm_output
+    assert chat_result.llm_output["llm_type"] == "openai-chat"

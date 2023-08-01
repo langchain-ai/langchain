@@ -423,7 +423,7 @@ class ChatOpenAI(BaseChatModel):
             )
             generations.append(gen)
         token_usage = response.get("usage", {})
-        llm_output = {"token_usage": token_usage, "model_name": self.model_name}
+        llm_output = {"token_usage": token_usage, "model_name": self.model_name, "llm_type": self._llm_type}
         return ChatResult(generations=generations, llm_output=llm_output)
 
     async def _astream(
