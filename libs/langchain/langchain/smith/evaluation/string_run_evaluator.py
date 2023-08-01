@@ -5,7 +5,7 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
 from langsmith import EvaluationResult, RunEvaluator
-from langsmith.schemas import DataType, Example, Run, RunTypeEnum
+from langsmith.schemas import DataType, Example, Run
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -327,7 +327,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
     def from_run_and_data_type(
         cls,
         evaluator: StringEvaluator,
-        run_type: RunTypeEnum,
+        run_type: str,
         data_type: DataType,
         input_key: Optional[str] = None,
         prediction_key: Optional[str] = None,
@@ -343,7 +343,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
 
         Args:
             evaluator (StringEvaluator): The string evaluator to use.
-            run_type (RunTypeEnum): The type of run being evaluated.
+            run_type (str): The type of run being evaluated.
                 Supported types are LLM and Chain.
             data_type (DataType): The type of dataset used in the run.
             input_key (str, optional): The key used to map the input from the run.
@@ -361,9 +361,9 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         """  # noqa: E501
 
         # Configure how run inputs/predictions are passed to the evaluator
-        if run_type == RunTypeEnum.llm:
+        if run_type == "llm":
             run_mapper: StringRunMapper = LLMStringRunMapper()
-        elif run_type == RunTypeEnum.chain:
+        elif run_type == "chain":
             run_mapper = ChainStringRunMapper(
                 input_key=input_key, prediction_key=prediction_key
             )
