@@ -1,42 +1,33 @@
 """Wrapper around Fireworks APIs"""
-from typing import Any, Dict, List, Mapping, Optional
-
-import requests
-from pydantic import Extra, root_validator
-
-from pydantic import Field, root_validator
-from langchain.llms.base import BaseLLM, create_base_retry_decorator, LLM
-from langchain.schema import Generation, LLMResult
-from langchain.utils import get_from_dict_or_env
-import logging
 import json
-import sys
-import warnings
+import logging
 from typing import (
-    AbstractSet,
     Any,
-    Callable,
-    Collection,
     Dict,
-    Generator,
     List,
-    Literal,
-    Mapping,
     Optional,
     Set,
     Tuple,
     Union,
 )
+
+import requests
+from pydantic import Field, root_validator
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-import requests
+from langchain.llms.base import BaseLLM
+from langchain.schema import Generation, LLMResult
+from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
+
 class BaseFireworks(BaseLLM):
     """Wrapper around Fireworks large language models."""
+
     model_id: str = Field("fireworks-llama-v2-7b-chat", alias="model")
     """Model name to use."""
     temperature: float = 0.7
@@ -47,7 +38,7 @@ class BaseFireworks(BaseLLM):
     the models maximal context size."""
     top_p: float = 1
     """Total probability mass of tokens to consider at each step."""
-    fireworks_api_key: Optional[str] = None 
+    fireworks_api_key: Optional[str] = None
     """Api key to use fireworks API"""
     batch_size: int = 20
     """Batch size to use when passing multiple documents to generate."""
@@ -60,17 +51,18 @@ class BaseFireworks(BaseLLM):
     def lc_secrets(self) -> Dict[str, str]:
         return {"fireworks_api_key": "FIREWORKS_API_KEY"}
 
-    @property 
+    @property
     def lc_serializable(self) -> bool:
         return True
 
     def __new__(cls, **data: Any) -> Any:
         """Initialize the Fireworks object."""
-        model_id = data.get("model_id", "")
+        data.get("model_id", "")
         return super().__new__(cls)
 
     class Config:
         """Configuration for this pydantic object."""
+
         allow_population_by_field_name = True
 
     @root_validator()
@@ -84,7 +76,7 @@ class BaseFireworks(BaseLLM):
     def _generate(
         self,
         prompts: List[str],
-        stop: Optional[List[str]] = None, 
+        stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
@@ -102,7 +94,7 @@ class BaseFireworks(BaseLLM):
         token_usage: Dict[str, int] = {}
         _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
         for _prompts in sub_prompts:
-            response = completion_with_retry(self, prompt=prompts, **params)  
+            response = completion_with_retry(self, prompt=prompts, **params)
             choices.extend(response)
             update_token_usage(_keys, response, token_usage)
 
@@ -170,17 +162,19 @@ class BaseFireworks(BaseLLM):
         """Return type of llm."""
         return "fireworks"
 
+
 class FireworksChat(BaseLLM):
     """Wrapper around Fireworks Chat large language models.
     To use, you should have the ``fireworksai`` python package installed, and the
     environment variable ``FIREWORKS_API_KEY`` set with your API key.
-    Any parameters that are valid to be passed to the fireworks.create call can be passed
-    in, even if not explicitly saved on this class.
+    Any parameters that are valid to be passed to the fireworks.create 
+    call can be passed in, even if not explicitly saved on this class.
     Example:
         .. code-block:: python
             from langchain.llms import FireworksChat
             fireworkschat = FireworksChat(model_id=""fireworks-llama-v2-13b-chat"")
     """
+
     model_id: str = "fireworks-llama-v2-7b-chat"
     """Model name to use."""
     temperature: float = 0.7
@@ -191,7 +185,7 @@ class FireworksChat(BaseLLM):
     the models maximal context size."""
     top_p: float = 1
     """Total probability mass of tokens to consider at each step."""
-    fireworks_api_key: Optional[str] = None 
+    fireworks_api_key: Optional[str] = None
     max_retries: int = 6
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
     """Timeout for requests to Fireworks completion API. Default is 600 seconds."""
@@ -236,9 +230,7 @@ class FireworksChat(BaseLLM):
             "model_id": self.model_id,
         }
         return LLMResult(
-            generations=[
-                [Generation(text=full_response[0])]
-            ],
+            generations=[[Generation(text=full_response[0])]],
             llm_output=llm_output,
         )
 
@@ -251,16 +243,12 @@ class FireworksChat(BaseLLM):
     ) -> LLMResult:
         messages, params = self._get_chat_params(prompts, stop)
         params = {**params, **kwargs}
-        full_response = await acompletion_with_retry(
-            self, messages=messages, **params
-        )
+        full_response = await acompletion_with_retry(self, messages=messages, **params)
         llm_output = {
             "model_id": self.model_id,
         }
         return LLMResult(
-            generations=[
-                [Generation(text=full_response[0])]
-            ],
+            generations=[[Generation(text=full_response[0])]],
             llm_output=llm_output,
         )
 
@@ -269,17 +257,19 @@ class FireworksChat(BaseLLM):
         """Return type of llm."""
         return "fireworks-chat"
 
+
 class Fireworks(BaseFireworks):
     """Wrapper around Fireworks large language models.
     To use, you should have the ``fireworks`` python package installed, and the
     environment variable ``FIREWORKS_API_KEY`` set with your API key.
-    Any parameters that are valid to be passed to the fireworks.create call can be passed
-    in, even if not explicitly saved on this class.
+    Any parameters that are valid to be passed to the fireworks.create 
+    call can be passed in, even if not explicitly saved on this class.
     Example:
         .. code-block:: python
             from langchain.llms import fireworks
             llm = Fireworks(model_id="fireworks-llama-v2-13b")
     """
+
 
 def update_token_usage(
     keys: Set[str], response: Dict[str, Any], token_usage: Dict[str, Any]
@@ -292,7 +282,15 @@ def update_token_usage(
         else:
             token_usage[_key] += response["usage"][_key]
 
-def execute(prompt: str, model: str, api_key: Optional[str], max_tokens:int = 256, temperature:float = 0.0, top_p:float = 1.0) -> Any:
+
+def execute(
+    prompt: str,
+    model: str,
+    api_key: Optional[str],
+    max_tokens: int = 256,
+    temperature: float = 0.0,
+    top_p: float = 1.0,
+) -> Any:
     """Execute LLM query"""
     requestUrl = "https://api.fireworks.ai/inference/v1/completions"
     requestBody = {
@@ -305,28 +303,46 @@ def execute(prompt: str, model: str, api_key: Optional[str], max_tokens:int = 25
     requestHeaders = {
         "Authorization": f"Bearer {api_key}",
         "Accept": "application/json",
-        "Content-Type": "application/json",  
+        "Content-Type": "application/json",
     }
     response = requests.post(requestUrl, headers=requestHeaders, json=requestBody)
     return response.text
 
-def completion_with_retry(llm: Union[BaseFireworks, FireworksChat], **kwargs: Any) -> Any:
+
+def completion_with_retry(
+    llm: Union[BaseFireworks, FireworksChat], **kwargs: Any
+) -> Any:
     """Use tenacity to retry the completion call."""
     if "prompt" not in kwargs.keys():
         answers = []
-        for i in range(len(kwargs['messages'])):
-            result = kwargs['messages'][i]['content']
-            result = execute(result, kwargs['model'], llm.fireworks_api_key, llm.max_tokens, llm.temperature, llm.top_p)
-            curr_string = json.loads(result)['choices'][0]['text']
+        for i in range(len(kwargs["messages"])):
+            result = kwargs["messages"][i]["content"]
+            result = execute(
+                result,
+                kwargs["model"],
+                llm.fireworks_api_key,
+                llm.max_tokens,
+                llm.temperature,
+                llm.top_p,
+            )
+            curr_string = json.loads(result)["choices"][0]["text"]
             answers.append(curr_string)
     else:
         answers = []
-        for i in range(len(kwargs['prompt'])):
-            result = kwargs['prompt'][i]
-            result = execute(result, kwargs['model'], llm.fireworks_api_key, llm.max_tokens, llm.temperature, llm.top_p)
-            curr_string = json.loads(result)['choices'][0]['text']
+        for i in range(len(kwargs["prompt"])):
+            result = kwargs["prompt"][i]
+            result = execute(
+                result,
+                kwargs["model"],
+                llm.fireworks_api_key,
+                llm.max_tokens,
+                llm.temperature,
+                llm.top_p,
+            )
+            curr_string = json.loads(result)["choices"][0]["text"]
             answers.append(curr_string)
     return answers
+
 
 async def acompletion_with_retry(
     llm: Union[BaseFireworks, FireworksChat], **kwargs: Any
@@ -334,16 +350,28 @@ async def acompletion_with_retry(
     """Use tenacity to retry the async completion call."""
     if "prompt" not in kwargs.keys():
         answers = []
-        for i in range(len(kwargs['messages'])):
-            result = kwargs['messages'][i]['content']
-            result = execute(result, kwargs['model'], llm.fireworks_api_key, llm.max_tokens, llm.temperature)
-            curr_string = json.loads(result)['choices'][0]['text']
+        for i in range(len(kwargs["messages"])):
+            result = kwargs["messages"][i]["content"]
+            result = execute(
+                result,
+                kwargs["model"],
+                llm.fireworks_api_key,
+                llm.max_tokens,
+                llm.temperature,
+            )
+            curr_string = json.loads(result)["choices"][0]["text"]
             answers.append(curr_string)
     else:
         answers = []
-        for i in range(len(kwargs['prompt'])):
-            result = kwargs['prompt'][i]
-            result = execute(result, kwargs['model'], llm.fireworks_api_key, llm.max_tokens, llm.temperature)
-            curr_string = json.loads(result)['choices'][0]['text']
+        for i in range(len(kwargs["prompt"])):
+            result = kwargs["prompt"][i]
+            result = execute(
+                result,
+                kwargs["model"],
+                llm.fireworks_api_key,
+                llm.max_tokens,
+                llm.temperature,
+            )
+            curr_string = json.loads(result)["choices"][0]["text"]
             answers.append(curr_string)
     return answers
