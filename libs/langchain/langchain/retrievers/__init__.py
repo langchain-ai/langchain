@@ -8,8 +8,7 @@ the backbone of a retriever, but there are other types of retrievers as well.
 
 .. code-block::
 
-    BaseRetriever
-        ...Retriever(BaseRetriever)
+    BaseRetriever --> <name>Retriever  # Examples: ArxivRetriever, MergerRetriever
 
 **Main helpers:**
 

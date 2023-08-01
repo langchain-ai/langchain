@@ -5,10 +5,8 @@
 
 .. code-block::
 
-    TextSplitter(BaseDocumentTransformer, ABC)
-        ...TextSplitter(TextSplitter)
-        RecursiveCharacterTextSplitter(TextSplitter)
-            ...TextSplitter(RecursiveCharacterTextSplitter)
+    BaseDocumentTransformer --> TextSplitter --> <name>TextSplitter  # Example: CharacterTextSplitter
+                                                 RecursiveCharacterTextSplitter -->  <name>TextSplitter
 
 Note: **MarkdownHeaderTextSplitter** does not derive from TextSplitter.
 
@@ -19,7 +17,7 @@ Note: **MarkdownHeaderTextSplitter** does not derive from TextSplitter.
 
     Document, Tokenizer, Language, LineType, HeaderType
 
-"""
+"""  # noqa: E501
 
 from __future__ import annotations
 

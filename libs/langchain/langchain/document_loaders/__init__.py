@@ -6,14 +6,13 @@
 
 .. code-block::
 
-    BaseLoader
-        ...Loader(BaseLoader)
+    BaseLoader --> <name>Loader  # Examples: TextLoader, UnstructuredFileLoader
 
 **Main helpers:**
 
 .. code-block::
 
-    Document, ...TextSplitter
+    Document, <name>TextSplitter
 """
 
 from langchain.document_loaders.acreom import AcreomLoader

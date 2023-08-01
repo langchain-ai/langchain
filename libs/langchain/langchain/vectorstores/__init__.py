@@ -8,18 +8,16 @@ and retrieve the data that are 'most similar' to the embedded query.
 
 .. code-block::
 
-    VectorStore
-        ...(VectorStore)
+    VectorStore --> <name>  # Examples: Annoy, FAISS, Milvus
 
-    VectorStoreRetriever(BaseRetriever)
-        ...Retriever(VectorStoreRetriever)
+    BaseRetriever --> VectorStoreRetriever --> <name>Retriever  # Example: VespaRetriever
 
 **Main helpers:**
 
 .. code-block::
 
     Embeddings, Document
-"""
+"""  # noqa: E501
 from langchain.vectorstores.alibabacloud_opensearch import (
     AlibabaCloudOpenSearch,
     AlibabaCloudOpenSearchSettings,

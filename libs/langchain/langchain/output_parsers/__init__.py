@@ -4,16 +4,14 @@
 
 .. code-block::
 
-    BaseLLMOutputParser
-        BaseOutputParser(BaseLLMOutputParser, ABC, Generic[T])
-            ...OutputParser(BaseOutputParser) or ...OutputParser(BaseOutputParser[Any])
+    BaseLLMOutputParser --> BaseOutputParser --> <name>OutputParser  # ListOutputParser, PydanticOutputParser
 
 **Main helpers:**
 
 .. code-block::
 
     Serializable, Generation, PromptValue
-"""
+"""  # noqa: E501
 from langchain.output_parsers.boolean import BooleanOutputParser
 from langchain.output_parsers.combining import CombiningOutputParser
 from langchain.output_parsers.datetime import DatetimeOutputParser

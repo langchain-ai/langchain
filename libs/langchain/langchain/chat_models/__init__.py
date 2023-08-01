@@ -8,15 +8,14 @@ an interface where "chat messages" are the inputs and outputs.
 
 .. code-block::
 
-    BaseChatModel(BaseLanguageModel, ABC)
-        ...ChatModel(BaseChatModel); ...(BaseChatModel)
+    BaseLanguageModel --> BaseChatModel --> <name>  # Examples: ChatOpenAI, ChatGooglePalm
 
 **Main helpers:**
 
 .. code-block::
 
     AIMessage, BaseMessage, HumanMessage
-"""
+"""  # noqa: E501
 
 from langchain.chat_models.anthropic import ChatAnthropic
 from langchain.chat_models.azure_openai import AzureChatOpenAI

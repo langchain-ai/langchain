@@ -6,8 +6,7 @@ The **Docstore** is a simplified version of the Document Loader.
 
 .. code-block::
 
-    Docstore
-        ...(Docstore)
+    Docstore --> <name> # Examples: InMemoryDocstore, Wikipedia
 
 **Main helpers:**
 

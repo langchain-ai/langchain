@@ -4,8 +4,7 @@
 
 .. code-block::
 
-    BaseCallbackHandler
-        ...CallbackHandler(BaseCallbackHandler)
+    BaseCallbackHandler --> <name>CallbackHandler  # Example: AimCallbackHandler
 """
 
 from langchain.callbacks.aim_callback import AimCallbackHandler

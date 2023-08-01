@@ -4,15 +4,13 @@
 
 .. code-block::
 
-    BaseMemory
-        BaseChatMemory(BaseMemory, ABC)
-            ...Memory(BaseChatMemory)
+    BaseMemory --> BaseChatMemory --> <name>Memory  # Examples: ZepMemory, MotorheadMemory
 
 **Main helpers:**
 
 .. code-block::
 
-        BaseChatMessageHistory
+    BaseChatMessageHistory
 
 **Chat Message History** stores the chat message history in different stores.
 
@@ -20,15 +18,14 @@
 
 .. code-block::
 
-    BaseChatMessageHistory
-        ...ChatMessageHistory(BaseChatMessageHistory)
+    BaseChatMessageHistory --> <name>ChatMessageHistory  # Example: ZepChatMessageHistory
 
 **Main helpers:**
 
 .. code-block::
 
-        AIMessage, BaseMessage, HumanMessage
-"""
+    AIMessage, BaseMessage, HumanMessage
+"""  # noqa: E501
 from langchain.memory.buffer import (
     ConversationBufferMemory,
     ConversationStringBufferMemory,

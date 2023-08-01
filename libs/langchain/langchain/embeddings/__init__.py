@@ -7,8 +7,7 @@ from different APIs and services.
 
 .. code-block::
 
-    Embeddings
-        ...Embeddings(Embeddings)
+    Embeddings --> <name>Embeddings  # Examples: OpenAIEmbeddings, HuggingFaceEmbeddings
 """
 
 

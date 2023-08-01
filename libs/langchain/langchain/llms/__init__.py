@@ -6,10 +6,7 @@ access to the large language model (**LLM**) APIs and services.
 
 .. code-block::
 
-    BaseLanguageModel
-        BaseLLM(BaseLanguageModel, ABC)
-            LLM(BaseLLM)
-                ...(LLM)
+    BaseLanguageModel --> BaseLLM --> LLM --> <name>  # Examples: AI21, HuggingFaceHub, OpenAI
 
 **Main helpers:**
 
@@ -19,7 +16,7 @@ access to the large language model (**LLM**) APIs and services.
     CallbackManagerForLLMRun, AsyncCallbackManagerForLLMRun,
     CallbackManager, AsyncCallbackManager,
     AIMessage, BaseMessage
-"""
+"""  # noqa: E501
 from typing import Dict, Type
 
 from langchain.llms.ai21 import AI21

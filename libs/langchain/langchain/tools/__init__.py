@@ -7,9 +7,8 @@ tool for the job.
 
 .. code-block::
 
-    ToolMetaclass
-        BaseTool(ABC, metaclass=ToolMetaclass)
-            ...Tool(BaseTool) or ...(BaseTool)
+    ToolMetaclass --> BaseTool --> <name>Tool  # Examples: AIPluginTool, BaseGraphQLTool
+                                   <name>      # Examples: BraveSearch, HumanInputRun
 
 **Main helpers:**
 

@@ -11,11 +11,15 @@ Agents select and use **Tools** and **Toolkits** for actions.
 
 .. code-block::
 
-    BaseSingleActionAgent, BaseMultiActionAgent
-        Agent(BaseSingleActionAgent)
-            ...Agent(Agent)
-      ...ActionAgent(BaseSingleActionAgent OR BaseMultiActionAgent)
+    BaseSingleActionAgent --> LLMSingleActionAgent
+                              OpenAIFunctionsAgent
+                              XMLAgent
+                              Agent --> <name>Agent  # Examples: ZeroShotAgent, ChatAgent
+                                        
 
+    BaseMultiActionAgent  --> OpenAIMultiFunctionsAgent
+    
+    
 **Main helpers:**
 
 .. code-block::

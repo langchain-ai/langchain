@@ -8,22 +8,25 @@ from multiple components. Prompt classes and functions make constructing
 
 .. code-block::
 
-    BasePromptTemplate
-        StringPromptTemplate(BasePromptTemplate, ABC)
-            PromptTemplate(StringPromptTemplate), ...(StringPromptTemplate)
-        BaseChatPromptTemplate(BasePromptTemplate, ABC)
-            ...Prompt(BaseChatPromptTemplate)
-        PipelinePromptTemplate(BasePromptTemplate)
+    BasePromptTemplate --> PipelinePromptTemplate
+                           StringPromptTemplate --> PromptTemplate
+                                                    FewShotPromptTemplate
+                                                    FewShotPromptWithTemplates
+                           BaseChatPromptTemplate --> AutoGPTPrompt
+                                                      ChatPromptTemplate --> AgentScratchPadChatPromptTemplate
 
-    BaseMessagePromptTemplate(Serializable, ABC)
-        BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC)
-            ChatMessagePromptTemplate, HumanMessagePromptTemplate,
-            AIMessagePromptTemplate, SystemMessagePromptTemplate
 
-    PromptValue
-        StringPromptValue(PromptValue), ChatPromptValue(PromptValue)
 
-"""
+    BaseMessagePromptTemplate --> MessagesPlaceholder
+                                  BaseStringMessagePromptTemplate --> ChatMessagePromptTemplate
+                                                                      HumanMessagePromptTemplate
+                                                                      AIMessagePromptTemplate
+                                                                      SystemMessagePromptTemplate
+
+    PromptValue --> StringPromptValue
+                    ChatPromptValue
+
+"""  # noqa: E501
 from langchain.prompts.base import StringPromptTemplate
 from langchain.prompts.chat import (
     AIMessagePromptTemplate,

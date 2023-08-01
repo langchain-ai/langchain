@@ -17,8 +17,7 @@ Cache directly competes with Memory. See documentation for Pros and Cons.
 
 .. code-block::
 
-    BaseCache
-        ...Cache(BaseCache)
+    BaseCache --> <name>Cache  # Examples: InMemoryCache, RedisCache, GPTCache
 """
 from __future__ import annotations
 

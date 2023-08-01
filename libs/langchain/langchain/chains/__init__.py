@@ -14,8 +14,7 @@ The Chain interface makes it easy to create apps that are:
 
 .. code-block::
 
-    Chain
-        ...Chain(Chain)
+    Chain --> <name>Chain  # Examples: LLMChain, MapReduceChain, RouterChain
 """
 
 from langchain.chains.api.base import APIChain
