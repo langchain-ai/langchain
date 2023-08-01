@@ -2,7 +2,7 @@
 
 import os
 import tempfile
-from typing import Iterator, List
+from typing import Any, List, Optional
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -12,7 +12,14 @@ from langchain.document_loaders.unstructured import UnstructuredFileLoader
 class OBSFileLoader(BaseLoader):
     """Loader for Huawei OBS file."""
 
-    def __init__(self, bucket: str, key: str, client=None, endpoint: str = "", config: dict = None):
+    def __init__(
+        self,
+        bucket: str,
+        key: str,
+        client: Any = None,
+        endpoint: str = "",
+        config: Optional[dict] = None,
+    ) -> None:
         """Initialize the OBSFileLoader with the specified settings.
 
         Args:
@@ -56,7 +63,7 @@ class OBSFileLoader(BaseLoader):
             ```
             obs_loader = OBSFileLoader("your-bucket-name", "your-object-key", endpoint="your-endpoint-url")
             ```
-        """
+        """  # noqa: E501
         try:
             from obs import ObsClient
         except ImportError:
@@ -70,10 +77,14 @@ class OBSFileLoader(BaseLoader):
             if not config:
                 config = dict()
             if config.get("get_token_from_ecs"):
-                client = ObsClient(server=endpoint, security_provider_policy='ECS')
+                client = ObsClient(server=endpoint, security_provider_policy="ECS")
             else:
-                client = ObsClient(access_key_id=config.get("ak"), secret_access_key=config.get("sk"),
-                                   security_token=config.get("token"), server=endpoint)
+                client = ObsClient(
+                    access_key_id=config.get("ak"),
+                    secret_access_key=config.get("sk"),
+                    security_token=config.get("token"),
+                    server=endpoint,
+                )
         if not isinstance(client, ObsClient):
             raise TypeError("Client must be ObsClient type")
         self.client = client
@@ -81,9 +92,6 @@ class OBSFileLoader(BaseLoader):
         self.key = key
 
     def load(self) -> List[Document]:
-        return list(self.lazy_load())
-
-    def lazy_load(self) -> Iterator[Document]:
         """Load documents."""
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = f"{temp_dir}/{self.bucket}/{self.key}"
@@ -93,5 +101,4 @@ class OBSFileLoader(BaseLoader):
                 bucketName=self.bucket, objectKey=self.key, downloadFile=file_path
             )
             loader = UnstructuredFileLoader(file_path)
-            # UnstructuredFileLoader not implement lazy_load yet
-            return iter(loader.load())
+            return loader.load()

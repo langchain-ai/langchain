@@ -1,5 +1,5 @@
 # coding:utf-8
-from typing import List
+from typing import List, Optional
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -9,7 +9,13 @@ from langchain.document_loaders.obs_file import OBSFileLoader
 class OBSDirectoryLoader(BaseLoader):
     """Loading logic for loading documents from Huawei OBS."""
 
-    def __init__(self, bucket: str, endpoint: str, config: dict = None, prefix: str = ""):
+    def __init__(
+        self,
+        bucket: str,
+        endpoint: str,
+        config: Optional[dict] = None,
+        prefix: str = "",
+    ):
         """Initialize the OBSDirectoryLoader with the specified settings.
 
         Args:
@@ -33,7 +39,7 @@ class OBSDirectoryLoader(BaseLoader):
             }
             ```
             directory_loader = OBSDirectoryLoader("your-bucket-name", "your-end-endpoint", config, "your-prefix")
-        """
+        """  # noqa: E501
         try:
             from obs import ObsClient
         except ImportError:
@@ -44,10 +50,14 @@ class OBSDirectoryLoader(BaseLoader):
         if not config:
             config = dict()
         if config.get("get_token_from_ecs"):
-            self.client = ObsClient(server=endpoint, security_provider_policy='ECS')
+            self.client = ObsClient(server=endpoint, security_provider_policy="ECS")
         else:
-            self.client = ObsClient(access_key_id=config.get("ak"), secret_access_key=config.get("sk"),
-                                    security_token=config.get("token"), server=endpoint)
+            self.client = ObsClient(
+                access_key_id=config.get("ak"),
+                secret_access_key=config.get("sk"),
+                security_token=config.get("token"),
+                server=endpoint,
+            )
 
         self.bucket = bucket
         self.prefix = prefix
@@ -58,7 +68,9 @@ class OBSDirectoryLoader(BaseLoader):
         mark = None
         docs = []
         while True:
-            resp = self.client.listObjects(self.bucket, prefix=self.prefix, marker=mark, max_keys=max_num)
+            resp = self.client.listObjects(
+                self.bucket, prefix=self.prefix, marker=mark, max_keys=max_num
+            )
             if resp.status < 300:
                 for content in resp.body.contents:
                     loader = OBSFileLoader(self.bucket, content.key, client=self.client)
