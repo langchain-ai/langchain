@@ -1339,8 +1339,17 @@ class RouterRunnable(
 
     runnables: Mapping[str, Runnable[Input, Output]]
 
-    def __init__(self, runnables: Mapping[str, Runnable[Input, Output]]) -> None:
-        super().__init__(runnables=runnables)
+    def __init__(
+        self,
+        runnables: Mapping[
+            str, Union[Runnable[Input, Output], Callable[[Input], Output]]
+        ],
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(
+            runnables={key: _coerce_to_runnable(r) for key, r in runnables.items()},
+            **kwargs,
+        )
 
     class Config:
         arbitrary_types_allowed = True
