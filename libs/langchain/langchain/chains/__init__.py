@@ -1,16 +1,21 @@
-"""Chains are easily reusable components which can be linked together.
+"""**Chains** are easily reusable components linked together.
 
-    Chains should be used to encode a sequence of calls to components like
-    models, document retrievers, other chains, etc., and provide a simple interface
-    to this sequence.
+Chains encode a sequence of calls to components like models, document retrievers,
+other Chains, etc., and provide a simple interface to this sequence.
 
-    The Chain interface makes it easy to create apps that are:
-        - Stateful: add Memory to any Chain to give it state,
-        - Observable: pass Callbacks to a Chain to execute additional functionality,
-            like logging, outside the main sequence of component calls,
-        - Composable: the Chain API is flexible enough that it is easy to combine
-            Chains with other components, including other Chains.
-    """
+The Chain interface makes it easy to create apps that are:
+
+    - **Stateful:** add Memory to any Chain to give it state,
+    - **Observable:** pass Callbacks to a Chain to execute additional functionality,
+      like logging, outside the main sequence of component calls,
+    - **Composable:** combine Chains with other components, including other Chains.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    Chain --> <name>Chain  # Examples: LLMChain, MapReduceChain, RouterChain
+"""
 
 from langchain.chains.api.base import APIChain
 from langchain.chains.api.openapi.chain import OpenAPIEndpointChain
