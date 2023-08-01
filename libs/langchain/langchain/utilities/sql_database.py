@@ -391,11 +391,11 @@ class SQLDatabase:
                 else:  # postgresql and compatible dialects
                     connection.exec_driver_sql(f"SET search_path TO {self._schema}")
 
-            if not self.detect_harmful_actions(command):
+            if not self.detect_harmful_keywords(command):
                 cursor = connection.execute(text(command))
             else:
                 raise PermissionError(
-                    f"Harmful actions in the SQL '{command}'\n Commands '{self.harmful_keywords}' are forbidden."
+                    f"Harmful keywords in the SQL '{command}'\n Commands '{self.harmful_keywords}' are forbidden."
                 )
             if cursor.returns_rows:
                 if fetch == "all":
@@ -407,7 +407,7 @@ class SQLDatabase:
                 return result
         return []
 
-    def detect_harmful_actions(self, input_string):
+    def detect_harmful_keywords(self, input_string):
         # List of harmful keywords
         harmful_keywords = [keyword.lower() for keyword in self.harmful_keywords]
 

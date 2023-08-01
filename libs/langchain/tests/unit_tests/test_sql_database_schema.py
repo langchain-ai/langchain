@@ -112,5 +112,5 @@ def test_sql_harmful_keywords():
 
     assert (
         records.value.args[0]
-        == f"""Harmful actions in the SQL '{command}'\n Commands '{harmful_keywords}' are forbidden."""
+        == f"""Harmful keywords in the SQL '{command}'\n Commands '{harmful_keywords}' are forbidden."""
     )
