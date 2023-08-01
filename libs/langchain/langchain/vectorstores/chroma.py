@@ -95,7 +95,8 @@ class Chroma(VectorStore):
                 # If client_settings is provided with persist_directory specified,
                 # then it is "in-memory and persisting to disk" mode.
                 client_settings.persist_directory = (
-                    persist_directory or client_settings.persist_directory)
+                    persist_directory or client_settings.persist_directory
+                )
                 if client_settings.persist_directory is not None:
                     # Maintain backwards compatibility with chromadb < 0.4.0
                     major, minor, _ = chromadb.__version__.split(".")
