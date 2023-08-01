@@ -21,14 +21,14 @@ class OpenAIWhisperParser(BaseBlobParser):
         try:
             import openai
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "openai package not found, please install it with "
                 "`pip install openai`"
             )
         try:
             from pydub import AudioSegment
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "pydub package not found, please install it with " "`pip install pydub`"
             )
 
@@ -77,23 +77,23 @@ class OpenAIWhisperParser(BaseBlobParser):
 
 class OpenAIWhisperParserLocal(BaseBlobParser):
     """Transcribe and parse audio files.
-    Audio transcription is with OpenAI Whisper model locally from transforers
+    Audio transcription is with OpenAI Whisper model locally from transformers
     NOTE: By default uses the gpu if available, if you want to use cpu,
     please set device = "cpu"
     """
 
-    def __init__(self, device: str = "0", lang_model: str = None):
+    def __init__(self, device: str = "0", lang_model: Optional[str] = None):
         try:
             from transformers import pipeline
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "transformers package not found, please install it with "
                 "`pip install transformers`"
             )
         try:
             import torch
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "torch package not found, please install it with " "`pip install torch`"
             )
 
@@ -104,7 +104,7 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
                 self.lang_model = lang_model
                 print("WARNING! Model override. Using model: ", self.lang_model)
             else:
-                # unless overrided, use the small base model on cpu
+                # unless overridden, use the small base model on cpu
                 self.lang_model = "openai/whisper-base"
         else:
             if torch.cuda.is_available():
@@ -122,7 +122,7 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
                 else:
                     rec_model = "openai/whisper-large"
 
-                # check if model is overrided
+                # check if model is overridden
                 if lang_model is not None:
                     self.lang_model = lang_model
                     print("WARNING! Model override. Might not fit in your GPU")
