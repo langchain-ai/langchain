@@ -18,9 +18,13 @@ class SegmentAPIWrapper(BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain.utilities.segment import SegmentAPIWrapper segment = SegmentAPIWrapper(write_key="xxx")
-            segment.run('Reported', 'user_id', dict(question='Who is the president of the United States?',
-            answer='Robert Downy Jr', correct=False))
+            from langchain.utilities.segment import SegmentAPIWrapper
+            segment = SegmentAPIWrapper(write_key="xxx")
+            properties = dict(
+                question='Who is the president of the United States?',
+                answer='Robert Downy Jr', correct=False
+            )
+            segment.run('Reported', 'user_id', properties)
     """
 
     client: Any  #: :meta private:
