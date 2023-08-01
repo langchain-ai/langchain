@@ -231,30 +231,25 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
         run_manager = callback_manager.on_chain_start(
             dumpd(self), input if isinstance(input, dict) else {"input": input}
         )
-
-        try:
-            output = self.runnable.invoke(
-                input,
-                _patch_config(config, run_manager.get_child()),
-            )
-            run_manager.on_chain_end(
-                output if isinstance(output, dict) else {"output": output}
-            )
-            return output
-        except self.exceptions_to_handle as e:
-            first_error = e
-        for runnable in self.fallbacks:
+        runnables = [self.runnable] + list(self.fallbacks)
+        first_error: BaseException = None  # type: ignore[assignment]
+        for runnable in runnables:
             try:
                 output = runnable.invoke(
                     input,
                     _patch_config(config, run_manager.get_child()),
                 )
+            except self.exceptions_to_handle as e:
+                if first_error is None:
+                    first_error = e
+            except BaseException as e:
+                run_manager.on_chain_error(e)
+                raise e
+            else:
                 run_manager.on_chain_end(
                     output if isinstance(output, dict) else {"output": output}
                 )
                 return output
-            except self.exceptions_to_handle as _:
-                pass
         run_manager.on_chain_error(first_error)
         raise first_error
 
@@ -279,26 +274,26 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
             dumpd(self), input if isinstance(input, dict) else {"input": input}
         )
 
-        try:
-            output = await self.runnable.ainvoke(input, config)
-        except self.exceptions_to_handle as e:
-            await run_manager.on_chain_error(e)
-            first_error = e
-        else:
-            await run_manager.on_chain_end(
-                output if isinstance(output, dict) else {"output": output}
-            )
-            return output
-        for runnable in self.fallbacks:
+        runnables = [self.runnable] + list(self.fallbacks)
+        first_error: BaseException = None  # type: ignore[assignment]
+        for runnable in runnables:
             try:
-                output = await runnable.ainvoke(input, config)
+                output = await runnable.ainvoke(
+                    input,
+                    _patch_config(config, run_manager.get_child()),
+                )
             except self.exceptions_to_handle as e:
+                if first_error is None:
+                    first_error = e
+            except BaseException as e:
                 await run_manager.on_chain_error(e)
+                raise e
             else:
                 await run_manager.on_chain_end(
                     output if isinstance(output, dict) else {"output": output}
                 )
                 return output
+        await run_manager.on_chain_error(first_error)
         raise first_error
 
     def batch(
@@ -332,34 +327,34 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
             for cm, input in zip(callback_managers, inputs)
         ]
 
-        try:
-            outputs = self.runnable.batch(
-                inputs, config, max_concurrency=max_concurrency
-            )
-        except self.exceptions_to_handle as e:
-            for rm in run_managers:
-                rm.on_chain_error(e)
-            first_error = e
-        else:
-            for rm, output in zip(run_managers, outputs):
-                rm.on_chain_end(
-                    output if isinstance(output, dict) else {"output": output}
-                )
-            return outputs
-        for runnable in self.fallbacks:
+        runnables = [self.runnable] + list(self.fallbacks)
+        first_error: BaseException = None  # type: ignore[assignment]
+        for runnable in runnables:
             try:
                 outputs = runnable.batch(
-                    inputs, config, max_concurrency=max_concurrency
+                    inputs,
+                    [
+                        # each step a child run of the corresponding root run
+                        _patch_config(config, rm.get_child())
+                        for rm, config in zip(run_managers, configs)
+                    ],
+                    max_concurrency=max_concurrency,
                 )
             except self.exceptions_to_handle as e:
+                if first_error is None:
+                    first_error = e
+            except BaseException as e:
                 for rm in run_managers:
                     rm.on_chain_error(e)
+                raise e
             else:
                 for rm, output in zip(run_managers, outputs):
                     rm.on_chain_end(
                         output if isinstance(output, dict) else {"output": output}
                     )
-            return outputs
+                return outputs
+        for rm in run_managers:
+            rm.on_chain_error(first_error)
         raise first_error
 
     async def abatch(
