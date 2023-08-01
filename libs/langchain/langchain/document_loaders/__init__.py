@@ -28,6 +28,7 @@ from langchain.document_loaders.brave_search import BraveSearchLoader
 from langchain.document_loaders.browserless import BrowserlessLoader
 from langchain.document_loaders.chatgpt import ChatGPTLoader
 from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
+from langchain.document_loaders.concurrent import ConcurrentLoader
 from langchain.document_loaders.confluence import ConfluenceLoader
 from langchain.document_loaders.conllu import CoNLLULoader
 from langchain.document_loaders.csv_loader import CSVLoader, UnstructuredCSVLoader
@@ -305,4 +306,5 @@ __all__ = [
     "XorbitsLoader",
     "YoutubeAudioLoader",
     "YoutubeLoader",
+    "ConcurrentLoader",
 ]
