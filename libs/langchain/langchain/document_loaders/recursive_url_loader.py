@@ -84,7 +84,16 @@ class RecursiveUrlLoader(BaseLoader):
             if link.startswith("#"):
                 continue
             # Some may be css, js, images files
-            invalid_ext = [".css", ".js", ".ico", ".png", ".jpg", ".jpeg", ".gif", ".svg"]
+            invalid_ext = [
+                ".css",
+                ".js",
+                ".ico",
+                ".png",
+                ".jpg",
+                ".jpeg",
+                ".gif",
+                ".svg",
+            ]
             if any([link.endswith(ext) for ext in invalid_ext]):
                 continue
             # Some may be absolute links like https://to/path
