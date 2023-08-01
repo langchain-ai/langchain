@@ -30,6 +30,7 @@ from langchain.vectorstores.azuresearch import AzureSearch
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.cassandra import Cassandra
 from langchain.vectorstores.chroma import Chroma
+from langchain.vectorstores.bageldb import Bagel
 from langchain.vectorstores.clarifai import Clarifai
 from langchain.vectorstores.clickhouse import Clickhouse, ClickhouseSettings
 from langchain.vectorstores.deeplake import DeepLake
@@ -74,6 +75,7 @@ __all__ = [
     "AtlasDB",
     "AwaDB",
     "AzureSearch",
+    "Bagel",
     "Cassandra",
     "Chroma",
     "Clickhouse",
