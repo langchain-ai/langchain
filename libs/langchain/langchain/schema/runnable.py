@@ -393,29 +393,23 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
             )
         )
 
-        try:
-            outputs = await self.runnable.abatch(
-                inputs, config, max_concurrency=max_concurrency
-            )
-        except self.exceptions_to_handle as e:
-            await asyncio.gather(*(rm.on_chain_error(e) for rm in run_managers))
-            first_error = e
-        else:
-            await asyncio.gather(
-                *(
-                    rm.on_chain_end(
-                        output if isinstance(output, dict) else {"output": output}
-                    )
-                    for rm, output in zip(run_managers, outputs)
-                )
-            )
-            return outputs
-        for runnable in self.fallbacks:
+        runnables = [self.runnable] + list(self.fallbacks)
+        first_error: BaseException = None  # type: ignore
+        for runnable in runnables:
             try:
                 outputs = await runnable.abatch(
-                    inputs, config, max_concurrency=max_concurrency
+                    inputs,
+                    [
+                        # each step a child run of the corresponding root run
+                        _patch_config(config, rm.get_child())
+                        for rm, config in zip(run_managers, configs)
+                    ],
+                    max_concurrency=max_concurrency,
                 )
             except self.exceptions_to_handle as e:
+                if first_error is None:
+                    first_error = e
+            except BaseException as e:
                 await asyncio.gather(*(rm.on_chain_error(e) for rm in run_managers))
             else:
                 await asyncio.gather(
@@ -427,6 +421,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
                     )
                 )
                 return outputs
+        await asyncio.gather(*(rm.on_chain_error(first_error) for rm in run_managers))
         raise first_error
 
 
