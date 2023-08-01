@@ -1,0 +1,62 @@
+---
+sidebar_position: 3
+---
+# Memory
+
+Most LLM applications have a conversational interface. An essential component of a conversation is being able to refer to information introduced earlier in the conversation.
+At bare minimum, a conversational system should be able to access some window of past messages directly.
+A more complex system will need to have a world model that it is constantly updating, which allows it to do things like maintain information about entities and their relationships.
+
+We call this ability to store information about past interactions "memory".
+LangChain provides a lot of utilities for adding memory to a system.
+These utilities can be used by themselves or incorporated seamlessly into a chain.
+
+A memory system needs to support two basic actions: reading and writing.
+Recall that every chain defines some core execution logic that expects certain inputs.
+Some of these inputs come directly from the user, but some of these inputs can come from memory.
+A chain will interact with its memory system twice in a given run.
+1. AFTER receiving the initial user inputs but BEFORE executing the core logic, a chain will READ from its memory system and augment the user inputs.
+2. AFTER executing the core logic but BEFORE returning the answer, a chain will WRITE the inputs and outputs of the current run to memory, so that they can be referred to in future runs.
+
+![memory-diagram](/img/memory_diagram.png)
+
+
+## Building memory into a system
+The two core design decisions in any memory system are:
+- How state is stored
+- How state is queried
+
+### Storing: List of chat messages
+Underlying any memory is a history of all chat interactions.
+Even if these are not all used directly, they need to be stored in some form.
+One of the key parts of the LangChain memory module is a series of integrations for storing these chat messages,
+from in-memory lists to persistent databases.
+
+- [Chat message storage](/docs/modules/memory/chat_messages/): How to work with Chat Messages, and the various integrations offered
+
+### Querying: Data structures and algorithms on top of chat messages
+Keeping a list of chat messages is fairly straight-forward.
+What is less straight-forward are the data structures and algorithms built on top of chat messages that serve a view of those messages that is most useful.
+
+A very simply memory system might just return the most recent messages each run. A slightly more complex memory system might return a succinct summary of the past K messages.
+An even more sophisticated system might extract entities from stored messages and only return information about entities referenced in the current run.
+
+Each application can have different requirements for how memory is queried. The memory module should make it easy to both get started with simple memory systems and write your own custom systems if needed.
+
+- [Memory types](/docs/modules/memory/types/): The various data structures and algorithms that make up the memory types LangChain supports
+
+## Get started
+
+Let's take a look at what Memory actually looks like in LangChain.
+Here we'll cover the basics of interacting with an arbitrary memory class.
+
+import GetStarted from "@snippets/modules/memory/get_started.mdx"
+
+<GetStarted/>
+
+## Next steps
+
+And that's it for getting started!
+Please see the other sections for walkthroughs of more advanced topics,
+like custom memory, multiple memories, and more.
+
