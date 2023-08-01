@@ -6,7 +6,7 @@ import re
 import warnings
 from typing import Any, Dict, List, Optional
 
-import numexpr
+from sympy import sympify
 from pydantic import Extra, root_validator
 
 from langchain.callbacks.manager import (
@@ -21,7 +21,7 @@ from langchain.schema.language_model import BaseLanguageModel
 
 
 class LLMMathChain(Chain):
-    """Chain that interprets a prompt and executes python code to do math.
+    """Chain that interprets a prompt and uses the sympy python package to do math.
 
     Example:
         .. code-block:: python
@@ -75,14 +75,7 @@ class LLMMathChain(Chain):
 
     def _evaluate_expression(self, expression: str) -> str:
         try:
-            local_dict = {"pi": math.pi, "e": math.e}
-            output = str(
-                numexpr.evaluate(
-                    expression.strip(),
-                    global_dict={},  # restrict access to globals
-                    local_dict=local_dict,  # add common mathematical functions
-                )
-            )
+            output = str(sympify(expression.strip()))
         except Exception as e:
             raise ValueError(
                 f'LLMMathChain._evaluate("{expression}") raised error: {e}.'
