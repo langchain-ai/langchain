@@ -41,12 +41,14 @@ class BaseGenerationOutputParser(
                 ),
                 input,
                 config,
+                run_type="parser",
             )
         else:
             return self._call_with_config(
                 lambda inner_input: self.parse_result([Generation(text=inner_input)]),
                 input,
                 config,
+                run_type="parser",
             )
 
 
@@ -87,12 +89,14 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
                 ),
                 input,
                 config,
+                run_type="parser",
             )
         else:
             return self._call_with_config(
                 lambda inner_input: self.parse_result([Generation(text=inner_input)]),
                 input,
                 config,
+                run_type="parser",
             )
 
     def parse_result(self, result: List[Generation]) -> T:

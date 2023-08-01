@@ -1,4 +1,22 @@
-"""Access to the large language model APIs and services."""
+"""
+**LLM** classes provide
+access to the large language model (**LLM**) APIs and services.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    BaseLanguageModel --> BaseLLM --> LLM --> <name>  # Examples: AI21, HuggingFaceHub, OpenAI
+
+**Main helpers:**
+
+.. code-block::
+
+    LLMResult, PromptValue,
+    CallbackManagerForLLMRun, AsyncCallbackManagerForLLMRun,
+    CallbackManager, AsyncCallbackManager,
+    AIMessage, BaseMessage
+"""  # noqa: E501
 from typing import Dict, Type
 
 from langchain.llms.ai21 import AI21
