@@ -91,3 +91,26 @@ def test_sql_database_run() -> None:
     output = db.run(command)
     expected_output = "[('Harrison',)]"
     assert output == expected_output
+
+
+def test_sql_harmful_keywords():
+    """Test that given keywords by the user will stop the execution of the SQL command and raise an error."""
+    engine = create_engine("duckdb:///:memory:")
+    metadata_obj.create_all(engine)
+
+    harmful_keywords = ["drop"]
+    db = SQLDatabase(
+        engine,
+        schema="schema_a",
+        metadata=metadata_obj,
+        harmful_keywords=harmful_keywords,
+    )
+
+    command = 'DROP DATABASE IF EXISTS "user"'
+    with pytest.raises(PermissionError) as records:
+        db.run(command)
+
+    assert (
+        records.value.args[0]
+        == f"""Harmful actions in the SQL '{command}'\n Commands '{harmful_keywords}' are forbidden."""
+    )
