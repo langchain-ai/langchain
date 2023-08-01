@@ -233,25 +233,29 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
         )
 
         try:
-            output = self.runnable.invoke(input, config)
-        except self.exceptions_to_handle as e:
-            run_manager.on_chain_error(e)
-            first_error = e
-        else:
+            output = self.runnable.invoke(
+                input,
+                _patch_config(config, run_manager.get_child()),
+            )
             run_manager.on_chain_end(
                 output if isinstance(output, dict) else {"output": output}
             )
             return output
+        except self.exceptions_to_handle as e:
+            first_error = e
         for runnable in self.fallbacks:
             try:
-                output = runnable.invoke(input, config)
-            except self.exceptions_to_handle as e:
-                run_manager.on_chain_error(e)
-            else:
+                output = runnable.invoke(
+                    input,
+                    _patch_config(config, run_manager.get_child()),
+                )
                 run_manager.on_chain_end(
                     output if isinstance(output, dict) else {"output": output}
                 )
                 return output
+            except self.exceptions_to_handle as _:
+                pass
+        run_manager.on_chain_error(first_error)
         raise first_error
 
     async def ainvoke(
