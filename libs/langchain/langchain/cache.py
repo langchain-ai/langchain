@@ -457,9 +457,8 @@ class GPTCache(BaseCache):
         """
         from gptcache.adapter.api import get
 
-        _gptcache = self.gptcache_dict.get(llm_string, None)
-        if _gptcache is None:
-            return None
+        _gptcache = self._get_gptcache(llm_string)
+
         res = get(prompt, cache_obj=_gptcache)
         if res:
             return [
