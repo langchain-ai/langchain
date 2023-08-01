@@ -13,9 +13,6 @@ from langchain.callbacks.utils import (
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
-from sagemaker.experiments.run import Run
-
-
 def import_sagemaker() -> None:
     try:
         import sagemaker
@@ -45,12 +42,19 @@ class SageMakerCallbackHandler(BaseCallbackHandler):
         run (sagemaker.experiments.run.Run): SageMaker Run object where the experiment is logged.
     """
 
-    def __init__(self, run: Run) -> None:
-        """Initialize callback handler."""
+    def __init__(self, **kwargs: Any) -> None:
+        """Initialize callback handler. Run object must be passed with `run` as key."""
         super().__init__()
         import_sagemaker()
 
-        self.run = run
+        try:
+            # sagemaker.experiments.run.Run object created outside the Callback handler
+            self.run = kwargs["run"]
+        except ValueError:
+            raise ValueError(
+                "SageMaker experiment Run object with `run=Run` as a positional argument is not found. "
+                "Pass `Run` object when creating the Callback Handler."
+            )
 
         self.metrics = {
             "step": 0,
