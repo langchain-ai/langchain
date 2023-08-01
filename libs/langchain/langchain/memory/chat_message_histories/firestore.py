@@ -23,7 +23,7 @@ class FirestoreChatMessageHistory(BaseChatMessageHistory):
         collection_name: str,
         session_id: str,
         user_id: str,
-        firestore_client: Client,
+        firestore_client: Optional[Client] = None,
     ):
         """
         Initialize a new instance of the FirestoreChatMessageHistory class.
