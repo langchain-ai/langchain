@@ -37,7 +37,10 @@ class BasePromptTemplate(Serializable, Runnable[Dict, PromptValue], ABC):
 
     def invoke(self, input: Dict, config: RunnableConfig | None = None) -> PromptValue:
         return self._call_with_config(
-            lambda inner_input: self.format_prompt(**inner_input), input, config
+            lambda inner_input: self.format_prompt(**inner_input),
+            input,
+            config,
+            run_type="prompt",
         )
 
     @abstractmethod

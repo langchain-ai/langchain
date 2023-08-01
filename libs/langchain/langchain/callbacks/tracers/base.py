@@ -227,6 +227,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         tags: Optional[List[str]] = None,
         parent_run_id: Optional[UUID] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        run_type: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Start a trace for a chain run."""
@@ -246,7 +247,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             execution_order=execution_order,
             child_execution_order=execution_order,
             child_runs=[],
-            run_type="chain",
+            run_type=run_type or "chain",
             tags=tags or [],
         )
         self._start_trace(chain_run)
@@ -259,7 +260,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         if not run_id:
             raise TracerException("No run_id provided for on_chain_end callback.")
         chain_run = self.run_map.get(str(run_id))
-        if chain_run is None or chain_run.run_type != "chain":
+        if chain_run is None:
             raise TracerException("No chain Run found to be traced")
 
         chain_run.outputs = outputs
@@ -279,7 +280,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         if not run_id:
             raise TracerException("No run_id provided for on_chain_error callback.")
         chain_run = self.run_map.get(str(run_id))
-        if chain_run is None or chain_run.run_type != "chain":
+        if chain_run is None:
             raise TracerException("No chain Run found to be traced")
 
         chain_run.error = repr(error)
