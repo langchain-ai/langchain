@@ -163,6 +163,7 @@ class Runnable(Generic[Input, Output], ABC):
         func: Callable[[Input], Output],
         input: Input,
         config: Optional[RunnableConfig],
+        run_type: Optional[str] = None,
     ) -> Output:
         from langchain.callbacks.manager import CallbackManager
 
@@ -173,7 +174,9 @@ class Runnable(Generic[Input, Output], ABC):
             inheritable_metadata=config.get("metadata"),
         )
         run_manager = callback_manager.on_chain_start(
-            dumpd(self), input if isinstance(input, dict) else {"input": input}
+            dumpd(self),
+            input if isinstance(input, dict) else {"input": input},
+            run_type=run_type,
         )
         try:
             output = func(input)
