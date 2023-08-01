@@ -149,7 +149,6 @@ class OnlinePDFLoader(BasePDFLoader):
         loader = UnstructuredPDFLoader(str(self.file_path))
         return loader.load()
 
-
 class PyPDFLoader(BasePDFLoader):
     """Loads a PDF with pypdf and chunks at character level.
 
