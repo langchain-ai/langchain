@@ -24,6 +24,8 @@ LangChain provides a set of tools for any user to interact with SQL Databases in
 2. `Obtain insights from an SQL database` using the SQL Database Chain for handling both query creation and execution
 3. `Interact with a complex SQL database in a robust way` using the SQL Agent which contains a set of tools which make it more robust and flexible when creating and running queries
 
+![sql_usecase.png](/img/sql_usecase.png)
+
 ## Quickstart
 
 First, get required packages and set environment variables:
@@ -33,14 +35,41 @@ pip install openai
 export OPENAI_API_KEY="..."
 ```
 
-For this use case, we will use an **SQLite connection** with **Chinook database**. Follow [installation steps](https://database.guide/2-sample-databases-sqlite/) and place `Chinhook.db` file in a `notebooks` folder at the root of this repository. Then we can load the database:
+We will use an **SQLite connection** with **Chinook database**. Follow [installation steps](https://database.guide/2-sample-databases-sqlite/) and place `Chinhook.db` file in a `notebooks` folder at the root of this repository. Then we can load the database:
+
+In the following code we can see how to create a `SQLDatabaseChain` which both creates and executes SQL queries:
 
 ```python
 from langchain.utilities import SQLDatabase
+from langchain.llms import OpenAI
+from langchain_experimental.sql import SQLDatabaseChain
+
 
 db = SQLDatabase.from_uri("sqlite:///../../../../notebooks/Chinook.db")
+llm = OpenAI(temperature=0, verbose=True)
+db_chain = SQLDatabaseChain.from_llm(llm, db, verbose=True)
 ```
 
+And we can run it:
+
+```python
+db_chain.run("How many employees are there?")
+```
+
+    > Entering new SQLDatabaseChain chain...
+    How many employees are there?
+    SQLQuery:
+
+    SELECT COUNT(*) FROM "Employee";
+    SQLResult: [(8,)]
+    Answer:There are 8 employees.
+    > Finished chain.
+
+
+    'There are 8 employees.'
+
+Note that this **both creates and executes** the query. In the following sections, we will cover the 3 different use cases mentioned in the
+use case overview.
 
 ### Go deeper
 
