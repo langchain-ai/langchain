@@ -11,7 +11,7 @@ from uuid import UUID
 from langsmith import Client
 
 from langchain.callbacks.tracers.base import BaseTracer
-from langchain.callbacks.tracers.schemas import Run, RunTypeEnum, TracerSession
+from langchain.callbacks.tracers.schemas import Run, TracerSession
 from langchain.env import get_runtime_environment
 from langchain.load.dump import dumpd
 from langchain.schema.messages import BaseMessage
@@ -107,7 +107,7 @@ class LangChainTracer(BaseTracer):
             start_time=start_time,
             execution_order=execution_order,
             child_execution_order=execution_order,
-            run_type=RunTypeEnum.llm,
+            run_type="llm",
             tags=tags,
         )
         self._start_trace(chat_model_run)
