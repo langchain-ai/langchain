@@ -213,6 +213,11 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
     class Config:
         arbitrary_types_allowed = True
 
+    @property
+    def runnables(self) -> Iterator[Runnable[Input, Output]]:
+        yield self.runnable
+        yield from self.fallbacks
+
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
         from langchain.callbacks.manager import CallbackManager
 
@@ -231,9 +236,8 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
         run_manager = callback_manager.on_chain_start(
             dumpd(self), input if isinstance(input, dict) else {"input": input}
         )
-        runnables = [self.runnable] + list(self.fallbacks)
         first_error: BaseException = None  # type: ignore[assignment]
-        for runnable in runnables:
+        for runnable in self.runnables:
             try:
                 output = runnable.invoke(
                     input,
@@ -274,9 +278,8 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
             dumpd(self), input if isinstance(input, dict) else {"input": input}
         )
 
-        runnables = [self.runnable] + list(self.fallbacks)
         first_error: BaseException = None  # type: ignore[assignment]
-        for runnable in runnables:
+        for runnable in self.runnables:
             try:
                 output = await runnable.ainvoke(
                     input,
@@ -327,9 +330,8 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
             for cm, input in zip(callback_managers, inputs)
         ]
 
-        runnables = [self.runnable] + list(self.fallbacks)
         first_error: BaseException = None  # type: ignore[assignment]
-        for runnable in runnables:
+        for runnable in self.runnables:
             try:
                 outputs = runnable.batch(
                     inputs,
@@ -393,9 +395,8 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
             )
         )
 
-        runnables = [self.runnable] + list(self.fallbacks)
         first_error: BaseException = None  # type: ignore
-        for runnable in runnables:
+        for runnable in self.runnables:
             try:
                 outputs = await runnable.abatch(
                     inputs,
