@@ -303,13 +303,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             }  # type: ignore[assignment]  # noqa: E501
         return openai_args
 
-    # please refer to
-    # https://github.com/openai/openai-cookbook/blob/main/examples/Embedding_long_inputs.ipynb
-    def _get_len_safe_embeddings(
-        self, texts: List[str], *, engine: str, chunk_size: Optional[int] = None
-    ) -> List[List[float]]:
-        embeddings: List[List[float]] = [[] for _ in range(len(texts))]
-
+    def _chunk_tokens(self, texts: Sequence[str]) -> Tuple[List[List], List[int]]:
+        """Tokenize and chunk texts to fit in the model's context window."""
         if not self.embedding_ctx_length:
             raise ValueError("embedding_ctx_length must be defined to use _get_len_safe_embeddings.")
 
@@ -344,47 +339,54 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             for j in range(0, len(token), self.embedding_ctx_length):
                 tokens += [token[j : j + self.embedding_ctx_length]]
                 indices += [i]
+        return tokens, indices
 
+    def _batch_embed(self, inputs: Sequence, *, chunk_size: Optional[int] = None) -> List[List[float]]:
         batched_embeddings = []
         _chunk_size = chunk_size or self.chunk_size
-
+        _iter = range(0, len(inputs), _chunk_size)
         if self.show_progress_bar:
             try:
                 import tqdm
-
-                _iter = tqdm.tqdm(range(0, len(tokens), _chunk_size))
+                _iter = tqdm.tqdm(_iter)
             except ImportError:
-                _iter = range(0, len(tokens), _chunk_size)
-        else:
-            _iter = range(0, len(tokens), _chunk_size)
+                pass
 
         for i in _iter:
             response = embed_with_retry(
                 self,
-                input=tokens[i : i + _chunk_size],
+                input=inputs[i : i + _chunk_size],
                 **self._invocation_params,
             )
             batched_embeddings += [r["embedding"] for r in response["data"]]
+        return batched_embeddings
 
+    # please refer to
+    # https://github.com/openai/openai-cookbook/blob/main/examples/Embedding_long_inputs.ipynb
+    def _get_len_safe_embeddings(
+        self, texts: List[str], *, engine: str, chunk_size: Optional[int] = None
+    ) -> List[List[float]]:
+        tokens, indices = self._chunk_tokens(texts)
+        batched_embeddings = self._batch_embed(tokens, chunk_size=chunk_size)
         results: List[List[List[float]]] = [[] for _ in range(len(texts))]
         num_tokens_in_batch: List[List[int]] = [[] for _ in range(len(texts))]
-        for i in range(len(indices)):
-            results[indices[i]].append(batched_embeddings[i])
-            num_tokens_in_batch[indices[i]].append(len(tokens[i]))
+        for idx, tokens_i, batched_emb in zip(indices, tokens, batched_embeddings):
+            results[idx].append(batched_emb)
+            num_tokens_in_batch[idx].append(len(tokens_i))
 
-        for i in range(len(texts)):
-            _result = results[i]
+        embeddings = []
+        empty_average = embed_with_retry(
+            self,
+            input="",
+            **self._invocation_params,
+        )["data"][0]["embedding"]
+        for _result, num_tokens in zip(results, num_tokens_in_batch):
             if len(_result) == 0:
-                average = embed_with_retry(
-                    self,
-                    input="",
-                    **self._invocation_params,
-                )[
-                    "data"
-                ][0]["embedding"]
+                average = empty_average
             else:
-                average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
-            embeddings[i] = (average / np.linalg.norm(average)).tolist()
+                average = np.average(_result, axis=0, weights=num_tokens)
+            normalized = (average / np.linalg.norm(average)).tolist()
+            embeddings.append(normalized)
 
         return embeddings
 
@@ -499,7 +501,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             )["data"][0]["embedding"]
 
     def embed_documents(
-        self, texts: List[str], chunk_size: Optional[int] = 0
+        self, texts: List[str], chunk_size: Optional[int] = None
     ) -> List[List[float]]:
         """Call out to OpenAI's embedding endpoint for embedding search docs.
 
@@ -515,29 +517,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         #       we assume the list may contain texts longer than the maximum context and
         #       use length-safe embedding function.
         if self.embedding_ctx_length:
-            return self._get_len_safe_embeddings(texts, engine=self.deployment)
+            return self._get_len_safe_embeddings(texts, engine=self.deployment, chunk_size=chunk_size)
 
         embeddings: List[List[float]] = [[] for _ in range(len(texts))]
-        batched_embeddings = []
-        _chunk_size = chunk_size or self.chunk_size
-        if self.show_progress_bar:
-            try:
-                import tqdm
-
-                _iter = tqdm.tqdm(range(0, len(texts), _chunk_size))
-            except ImportError:
-                _iter = range(0, len(texts), _chunk_size)
-        else:
-            _iter = range(0, len(texts), _chunk_size)
-
-        for i in _iter:
-            response = embed_with_retry(
-                self,
-                input=texts[i : i + _chunk_size],
-                **self._invocation_params,
-            )
-            batched_embeddings += [r["embedding"] for r in response["data"]]
-
+        batched_embeddings = self._batch_embed(texts, chunk_size=chunk_size)
         for i in range(len(texts)):
             _result = [batched_embeddings[i]]
             if len(_result) == 0:
