@@ -24,7 +24,7 @@ class BS4HTMLParser(BaseBlobParser):
         try:
             import bs4  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "beautifulsoup4 package not found, please install it with "
                 "`pip install beautifulsoup4`"
             )
