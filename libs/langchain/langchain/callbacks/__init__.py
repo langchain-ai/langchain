@@ -27,6 +27,7 @@ from langchain.callbacks.manager import (
 from langchain.callbacks.mlflow_callback import MlflowCallbackHandler
 from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain.callbacks.promptlayer_callback import PromptLayerCallbackHandler
+from langchain.callbacks.sagemaker_callback import SageMakerCallbackHandler
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
@@ -66,4 +67,5 @@ __all__ = [
     "tracing_v2_enabled",
     "wandb_tracing_enabled",
     "FlyteCallbackHandler",
+    "SageMakerCallbackHandler",
 ]

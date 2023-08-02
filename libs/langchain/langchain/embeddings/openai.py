@@ -454,42 +454,6 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
         return embeddings
 
-    def _embedding_func(self, text: str, *, engine: str) -> List[float]:
-        """Call out to OpenAI's embedding endpoint."""
-        # handle large input text
-        if len(text) > self.embedding_ctx_length:
-            return self._get_len_safe_embeddings([text], engine=engine)[0]
-        else:
-            if self.model.endswith("001"):
-                # See: https://github.com/openai/openai-python/issues/418#issuecomment-1525939500
-                # replace newlines, which can negatively affect performance.
-                text = text.replace("\n", " ")
-            return embed_with_retry(
-                self,
-                input=[text],
-                **self._invocation_params,
-            )[
-                "data"
-            ][0]["embedding"]
-
-    async def _aembedding_func(self, text: str, *, engine: str) -> List[float]:
-        """Call out to OpenAI's embedding endpoint."""
-        # handle large input text
-        if len(text) > self.embedding_ctx_length:
-            return (await self._aget_len_safe_embeddings([text], engine=engine))[0]
-        else:
-            if self.model.endswith("001"):
-                # See: https://github.com/openai/openai-python/issues/418#issuecomment-1525939500
-                # replace newlines, which can negatively affect performance.
-                text = text.replace("\n", " ")
-            return (
-                await async_embed_with_retry(
-                    self,
-                    input=[text],
-                    **self._invocation_params,
-                )
-            )["data"][0]["embedding"]
-
     def embed_documents(
         self, texts: List[str], chunk_size: Optional[int] = 0
     ) -> List[List[float]]:
@@ -533,8 +497,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             Embedding for the text.
         """
-        embedding = self._embedding_func(text, engine=self.deployment)
-        return embedding
+        return self.embed_documents([text])[0]
 
     async def aembed_query(self, text: str) -> List[float]:
         """Call out to OpenAI's embedding endpoint async for embedding query text.
@@ -545,5 +508,5 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             Embedding for the text.
         """
-        embedding = await self._aembedding_func(text, engine=self.deployment)
-        return embedding
+        embeddings = await self.aembed_documents([text])
+        return embeddings[0]
