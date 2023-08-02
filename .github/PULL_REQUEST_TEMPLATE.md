@@ -7,6 +7,8 @@ Replace this comment with:
   - Tag maintainer: for a quicker response, tag the relevant maintainer (see below),
   - Twitter handle: we announce bigger features on Twitter. If your PR gets announced and you'd like a mention, we'll gladly shout you out!
 
+Please make sure you're PR is passing linting and testing before submitting. Run `make format`, `make lint` and `make test` to check this locally.
+
 If you're adding a new integration, please include:
   1. a test for the integration, preferably unit tests that do not rely on network access,
   2. an example notebook showing its use.
