@@ -107,7 +107,15 @@ def test_embed_documents_normalized() -> None:
     output = OpenAIEmbeddings().embed_documents(["foo walked to the market"])
     assert np.isclose(np.linalg.norm(output[0]), 1.0)
 
+    without_tokenizing = OpenAIEmbeddings(embedding_ctx_length=None)
+    output = without_tokenizing.embed_documents(["foo walked to the market"])
+    assert np.isclose(np.linalg.norm(output[0]), 1.0)
+
 
 def test_embed_query_normalized() -> None:
     output = OpenAIEmbeddings().embed_query("foo walked to the market")
     assert np.isclose(np.linalg.norm(output), 1.0)
+
+    without_tokenizing = OpenAIEmbeddings(embedding_ctx_length=None)
+    output = without_tokenizing.embed_query("foo walked to the market")
+    assert np.isclose(np.linalg.norm(output[0]), 1.0)
