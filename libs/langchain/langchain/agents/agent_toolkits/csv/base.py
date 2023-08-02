@@ -15,19 +15,17 @@ def create_csv_agent(
     try:
         import pandas as pd
     except ImportError:
-        raise ImportError(
-            "pandas package not found, please install with `pip install pandas`"
-        )
+        raise ImportError("pandas package not found, please install with `pip install pandas`")
 
     _kwargs = pandas_kwargs or {}
     if isinstance(path, str):
         df = pd.read_csv(path, **_kwargs)
     elif isinstance(path, list):
-        df = []
-        for item in path:
-            if not isinstance(item, str):
-                raise ValueError(f"Expected str, got {type(path)}")
-            df.append(pd.read_csv(item, **_kwargs))
+        if not all(isinstance(item, str) for item in path):
+            raise ValueError("Expected all elements in the list to be strings.")
+        dfs = [pd.read_csv(item, **_kwargs) for item in path]
+        df = pd.concat(dfs, ignore_index=True)
     else:
-        raise ValueError(f"Expected str or list, got {type(path)}")
+        raise ValueError("Expected str or list, got {type(path)}")
+        
     return create_pandas_dataframe_agent(llm, df, **kwargs)
