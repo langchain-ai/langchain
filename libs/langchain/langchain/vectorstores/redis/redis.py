@@ -19,10 +19,7 @@ from typing import (
     Union,
 )
 
-import numpy as np
-import numbers
 from pydantic import root_validator
-
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -30,24 +27,26 @@ from langchain.callbacks.manager import (
 )
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
+from langchain.utilities.redis import (
+    array_to_buffer,
+    check_index_exists,
+    check_redis_module_exist,
+    get_client,
+)
 from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
-from langchain.utilities.redis import (
-    check_redis_module_exist,
-    check_index_exists,
-    get_client,
-    array_to_buffer
-)
 from langchain.vectorstores.redis.constants import (
+    REDIS_DISTANCE_METRICS,
     REDIS_REQUIRED_MODULES,
-    REDIS_DISTANCE_METRICS
 )
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from redis.commands.search.query import Query
+
     from langchain.vectorstores.redis.filters import RedisFilter
+
 
 def _redis_key(prefix: str) -> str:
     """Redis key schema for a given prefix."""
@@ -172,9 +171,13 @@ class Redis(VectorStore):
     def _create_index(self, dim: int = 1536) -> None:
         fields = []
         try:
-            from langchain.vectorstores.redis.schema import FlatVectorField, HNSWVectorField
-            from redis.commands.search.indexDefinition import IndexDefinition, IndexType
             from redis.commands.search.field import TextField
+            from redis.commands.search.indexDefinition import IndexDefinition, IndexType
+
+            from langchain.vectorstores.redis.schema import (
+                FlatVectorField,
+                HNSWVectorField,
+            )
 
             # Field for content
             fields.append(TextField(self.content_key))
@@ -426,6 +429,15 @@ class Redis(VectorStore):
     def _prepare_vector_query(
         self, k: int, meta_filter: Optional[RedisFilter] = None
     ) -> "Query":
+        """Prepare query for vector search.
+
+        Args:
+            k: Number of results to return.
+            meta_filter: Optional metadata filter.
+
+        Returns:
+            query: Query object.
+        """
         try:
             from redis.commands.search.query import Query
         except ImportError:

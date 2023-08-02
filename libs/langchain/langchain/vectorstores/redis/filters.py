@@ -1,6 +1,7 @@
-
 from typing import List
+
 from langchain.utilities.redis import TokenEscaper
+
 
 class RedisFilter:
     escaper = TokenEscaper()

@@ -1,29 +1,25 @@
 from __future__ import annotations
 
 import logging
-
 import re
-import numpy as np
-
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    List,
-    Optional,
-    Pattern
-)
+from typing import TYPE_CHECKING, Any, List, Optional, Pattern
 from urllib.parse import urlparse
+
+import numpy as np
 
 if TYPE_CHECKING:
     from redis.client import Redis as RedisType
 
 logger = logging.getLogger(__name__)
 
+
 def array_to_buffer(array: List[float], dtype: Any = np.float32) -> bytes:
     return np.array(array).astype(dtype).tobytes()
 
+
 if TYPE_CHECKING:
     from redis.client import Redis as RedisType
+
 
 class TokenEscaper:
     """

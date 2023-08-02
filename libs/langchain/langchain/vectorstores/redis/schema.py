@@ -1,15 +1,15 @@
-
 from typing import List, Optional, Union
-from typing_extensions import Literal
-from pydantic import BaseModel, Field, validator
 
+from pydantic import BaseModel, Field, validator
 from redis.commands.search.field import (
+    GeoField,
+    NumericField,
+    TagField,
     TextField,
     VectorField,
-    TagField,
-    GeoField,
-    NumericField
 )
+from typing_extensions import Literal
+
 
 class BaseField(BaseModel):
     name: str = Field(...)
