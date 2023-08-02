@@ -85,7 +85,7 @@ def _is_aoss_enabled(http_auth: Any) -> bool:
     """Check if the service is http_auth is set as `aoss`."""
     if (
         http_auth is not None
-        and http_auth.service is not None
+        and hasattr(http_auth, "service")
         and http_auth.service == "aoss"
     ):
         return True
