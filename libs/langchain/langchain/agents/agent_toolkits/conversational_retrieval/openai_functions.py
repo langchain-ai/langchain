@@ -19,7 +19,7 @@ def _get_default_system_message() -> SystemMessage:
         content=(
             "Do your best to answer the questions. "
             "Feel free to use any tools available to look up "
-            "relevant information, only if neccessary"
+            "relevant information, only if necessary"
         )
     )
 
