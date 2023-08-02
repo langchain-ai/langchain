@@ -64,4 +64,4 @@ class EmbeddingStore(BaseModel):
     cmetadata = sqlalchemy.Column(JSON, nullable=True)
 
     # custom_id : any user defined id
-    custom_id = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+    custom_id = sqlalchemy.Column(sqlalchemy.String, nullable=True, unique=True)
