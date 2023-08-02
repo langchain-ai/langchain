@@ -93,7 +93,7 @@ def test_sql_database_run() -> None:
     assert output == expected_output
 
 
-def test_sql_restricted_keywords():
+def test_sql_restricted_keywords() -> None:
     """Test that given keywords by the user will stop the execution of the SQL command and raise an error."""
     engine = create_engine("duckdb:///:memory:")
     metadata_obj.create_all(engine)

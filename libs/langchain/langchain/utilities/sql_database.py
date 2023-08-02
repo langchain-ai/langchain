@@ -50,7 +50,7 @@ class SQLDatabase:
         custom_table_info: Optional[dict] = None,
         view_support: bool = False,
         max_string_length: int = 300,
-        restricted_keywords: Optional[dict] = None,
+        restricted_keywords: Optional[List[str]] = None,
     ):
         """Create engine from database URI."""
         self._engine = engine
@@ -407,7 +407,7 @@ class SQLDatabase:
                 return result
         return []
 
-    def detect_restricted_keywords(self, input_string):
+    def detect_restricted_keywords(self, input_string: str) -> bool:
         # List of restricted keywords
         restricted_keywords = [keyword.lower() for keyword in self.restricted_keywords]
 
