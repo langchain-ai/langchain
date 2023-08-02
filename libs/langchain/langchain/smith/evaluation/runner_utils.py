@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from enum import Enum
 import functools
 import itertools
 import logging
@@ -20,6 +21,7 @@ from typing import (
     Union,
 )
 from urllib.parse import urlparse, urlunparse
+import uuid
 
 from langsmith import Client, RunEvaluator
 from langsmith.schemas import Dataset, DataType, Example
@@ -233,12 +235,12 @@ def _get_project_name(
     """
     if project_name is not None:
         return project_name
-    current_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
     if isinstance(llm_or_chain_factory, BaseLanguageModel):
         model_name = llm_or_chain_factory.__class__.__name__
     else:
         model_name = llm_or_chain_factory().__class__.__name__
-    return f"{current_time}-{model_name}"
+    hex = uuid.uuid4().hex[:8]
+    return f"{hex}-{model_name}"
 
 
 ## Shared Validation Utilities
@@ -345,9 +347,10 @@ def _setup_evaluation(
         else:
             run_type = "chain"
             if data_type in (DataType.chat, DataType.llm):
+                val = data_type.value if isinstance(data_type, Enum) else data_type
                 raise ValueError(
                     "Cannot evaluate a chain on dataset with "
-                    f"data_type={data_type.value}. "
+                    f"data_type={data_type}. "
                     "Please specify a dataset with the default 'kv' data type."
                 )
             chain = llm_or_chain_factory()
@@ -1076,9 +1079,6 @@ def _run_on_examples(
     return results
 
 
-## Public API
-
-
 def _prepare_eval_run(
     client: Client,
     dataset_name: str,
@@ -1102,6 +1102,9 @@ def _prepare_eval_run(
     dataset = client.read_dataset(dataset_name=dataset_name)
     examples = client.list_examples(dataset_id=str(dataset.id))
     return llm_or_chain_factory, project_name, dataset, examples
+
+
+## Public API
 
 
 async def arun_on_dataset(

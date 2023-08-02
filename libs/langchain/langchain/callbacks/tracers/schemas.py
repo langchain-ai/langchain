@@ -6,7 +6,7 @@ import warnings
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from langsmith.schemas import RunBase as BaseRunV2
+from langsmith.schemas import RunBase as Run
 from langsmith.schemas import RunTypeEnum as RunTypeEnumDep
 from pydantic import BaseModel, Field, root_validator
 
@@ -94,28 +94,6 @@ class ToolRun(BaseRun):
     child_llm_runs: List[LLMRun] = Field(default_factory=list)
     child_chain_runs: List[ChainRun] = Field(default_factory=list)
     child_tool_runs: List[ToolRun] = Field(default_factory=list)
-
-
-# Begin V2 API Schemas
-
-
-class Run(BaseRunV2):
-    """Run schema for the V2 API in the Tracer."""
-
-    execution_order: int
-    child_execution_order: int
-    child_runs: List[Run] = Field(default_factory=list)
-    tags: Optional[List[str]] = Field(default_factory=list)
-
-    @root_validator(pre=True)
-    def assign_name(cls, values: dict) -> dict:
-        """Assign name to the run."""
-        if values.get("name") is None:
-            if "name" in values["serialized"]:
-                values["name"] = values["serialized"]["name"]
-            elif "id" in values["serialized"]:
-                values["name"] = values["serialized"]["id"][-1]
-        return values
 
 
 ChainRun.update_forward_refs()

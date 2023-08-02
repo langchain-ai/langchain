@@ -261,9 +261,9 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         return evaluate_strings_inputs
 
     def _prepare_output(self, output: Dict[str, Any]) -> Dict[str, Any]:
-        evaluation_result = EvaluationResult(
-            key=self.name, comment=output.get("reasoning"), **output
-        )
+        if "key" not in output:
+            output["key"] = self.name
+        evaluation_result = EvaluationResult.from_dict(output)
         if RUN_KEY in output:
             # TODO: Not currently surfaced. Update
             evaluation_result.evaluator_info[RUN_KEY] = output[RUN_KEY]
