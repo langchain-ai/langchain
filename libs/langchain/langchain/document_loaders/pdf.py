@@ -78,10 +78,8 @@ class BasePDFLoader(BaseLoader, ABC):
             _, suffix = os.path.splitext(self.file_path)
             temp_pdf = os.path.join(self.temp_dir.name, f"tmp{suffix}")
             if self._is_s3_url(self.file_path):
-                BasePDFLoader._load_s3_file(file_path=file_path, temp_pdf=temp_pdf)
                 self.web_path = self.file_path
-                self.file_path = str(temp_pdf)
-
+                self.file_path = self._download_s3_file(file_path=file_path)
             else:
                 r = requests.get(self.file_path)
 
@@ -119,8 +117,11 @@ class BasePDFLoader(BaseLoader, ABC):
         except ValueError:
             return False
 
-    @staticmethod
-    def _load_s3_file(file_path: str, temp_pdf: str) -> None:
+    def _download_s3_file(self, file_path: str) -> str:
+        self.temp_dir = tempfile.TemporaryDirectory()
+        _, suffix = os.path.splitext(self.file_path)
+        temp_pdf = os.path.join(self.temp_dir.name, f"tmp{suffix}")
+
         try:
             import boto3
         except ImportError:
@@ -133,6 +134,7 @@ class BasePDFLoader(BaseLoader, ABC):
         prefix = result.path.lstrip("/")
         s3 = boto3.client("s3")
         s3.download_file(bucket, prefix, temp_pdf)
+        return temp_pdf
 
     @property
     def source(self) -> str:
@@ -477,12 +479,25 @@ class PDFPlumberLoader(BasePDFLoader):
 
 
 class AmazonTextractPDFLoader(BasePDFLoader):
-    """Loads a PDF from local file system or HTTP or S3 endpoints
-    and passes down to the AmazonTextractPDFParser to generate Documents
-    boto3_textract_client can be passed, for example when configuration
-    is done in code and not through environment or when Textract should be called
-    in a different region
+    """Loads a PDF document from local file system, HTTP or S3.
 
+    To authenticate, the AWS client uses the following methods to
+    automatically load credentials:
+    https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
+
+    If a specific credential profile should be used, you must pass
+    the name of the profile from the ~/.aws/credentials file that is to be used.
+
+    Make sure the credentials / roles used have the required policies to
+    access the Amazon Textract service.
+
+    Example:
+        .. code-block:: python
+            from langchain.document_loaders import AmazonTextractPDFLoader
+            loader = AmazonTextractPDFLoader(
+                file_path="s3://pdfs/myfile.pdf"
+            )
+            document = loader.load()
     """
 
     try:
@@ -562,9 +577,15 @@ class AmazonTextractPDFLoader(BasePDFLoader):
 
     @staticmethod
     def _get_number_of_pages(blob: Blob) -> int:
-        import pypdf
-        from PIL import Image, ImageSequence
+        try:
+            import pypdf
+            from PIL import Image, ImageSequence
 
+        except ImportError:
+            raise ModuleNotFoundError(
+                "Could not import pypdf or Pilloe python package. "
+                "Please install it with `pip install pypdf Pillow`."
+            )
         if blob.mimetype == "application/pdf":
             with blob.as_bytes_io() as input_pdf_file:
                 pdf_reader = pypdf.PdfReader(input_pdf_file)
