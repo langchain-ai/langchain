@@ -981,6 +981,7 @@ class Qdrant(VectorStore):
         wal_config: Optional[common_types.WalConfigDiff] = None,
         quantization_config: Optional[common_types.QuantizationConfig] = None,
         init_from: Optional[common_types.InitFrom] = None,
+        on_disk: Optional[bool] = None,
         force_recreate: bool = False,
         **kwargs: Any,
     ) -> Qdrant:
@@ -1115,6 +1116,7 @@ class Qdrant(VectorStore):
             wal_config,
             quantization_config,
             init_from,
+            on_disk,
             force_recreate,
             **kwargs,
         )
@@ -1155,6 +1157,7 @@ class Qdrant(VectorStore):
         wal_config: Optional[common_types.WalConfigDiff] = None,
         quantization_config: Optional[common_types.QuantizationConfig] = None,
         init_from: Optional[common_types.InitFrom] = None,
+        on_disk: Optional[bool] = None,
         force_recreate: bool = False,
         **kwargs: Any,
     ) -> Qdrant:
@@ -1289,6 +1292,7 @@ class Qdrant(VectorStore):
             wal_config,
             quantization_config,
             init_from,
+            on_disk,
             force_recreate,
             **kwargs,
         )
@@ -1325,6 +1329,7 @@ class Qdrant(VectorStore):
         wal_config: Optional[common_types.WalConfigDiff] = None,
         quantization_config: Optional[common_types.QuantizationConfig] = None,
         init_from: Optional[common_types.InitFrom] = None,
+        on_disk: Optional[bool] = None,
         force_recreate: bool = False,
         **kwargs: Any,
     ) -> Qdrant:
@@ -1425,6 +1430,7 @@ class Qdrant(VectorStore):
             vectors_config = rest.VectorParams(
                 size=vector_size,
                 distance=rest.Distance[distance_func],
+                on_disk=on_disk,
             )
 
             # If vector name was provided, we're going to use the named vectors feature
