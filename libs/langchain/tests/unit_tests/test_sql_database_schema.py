@@ -111,6 +111,6 @@ def test_sql_restricted_keywords() -> None:
         db.run(command)
 
     assert (
-        records.value.args[0]
-        == f"""Restricted keywords in the SQL '{command}'\n Commands '{restricted_keywords}' are forbidden."""
+        records.value.args[0] == f"Restricted keywords in the SQL '{command}' "
+        f"Commands '{restricted_keywords}' are forbidden."
     )

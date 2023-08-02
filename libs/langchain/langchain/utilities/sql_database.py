@@ -395,7 +395,8 @@ class SQLDatabase:
                 cursor = connection.execute(text(command))
             else:
                 raise PermissionError(
-                    f"Restricted keywords in the SQL '{command}'\n Commands '{self.restricted_keywords}' are forbidden."
+                    f"Restricted keywords in the SQL '{command}' "
+                    f"Commands '{self.restricted_keywords}' are forbidden."
                 )
             if cursor.returns_rows:
                 if fetch == "all":
