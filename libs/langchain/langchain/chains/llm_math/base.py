@@ -5,8 +5,8 @@ import re
 import warnings
 from typing import Any, Dict, List, Optional
 
-from sympy import sympify
 from pydantic import Extra, root_validator
+from sympy import sympify
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
