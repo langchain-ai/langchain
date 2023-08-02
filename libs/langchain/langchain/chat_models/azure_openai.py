@@ -45,7 +45,7 @@ class AzureChatOpenAI(ChatOpenAI):
     """
 
     deployment_name: str = ""
-    openai_api_type: str = "azure"
+    openai_api_type: str = ""
     openai_api_base: str = ""
     openai_api_version: str = ""
     openai_api_key: str = ""
