@@ -94,11 +94,6 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
                     metadata.update(element.metadata.to_dict())
                 if hasattr(element, "category"):
                     metadata["category"] = element.category
-                if "links" in metadata:
-                    for i in range(0, len(metadata["links"])):
-                        for key, value in metadata["links"][i].items():
-                            metadata[f"link_{key}_{i}"] = value
-                    del metadata["links"]
                 docs.append(Document(page_content=str(element), metadata=metadata))
         elif self.mode == "paged":
             text_dict: Dict[int, str] = {}

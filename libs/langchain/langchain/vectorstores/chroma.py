@@ -219,6 +219,20 @@ class Chroma(VectorStore):
             )
         return ids
 
+    def _preprocess_metadatas(self, metadatas: Optional[List[dict]] = None) -> None:
+        """Processes the given metadatas by flattening any 'links' entries.
+
+        Args:
+            metadatas (Optional[List[dict]], optional): Optional list of metadatas.
+        """
+        if metadatas:
+            for metadata in metadatas:
+                if "links" in metadata:
+                    for i in range(0, len(metadata["links"])):
+                        for key, value in metadata["links"][i].items():
+                            metadata[f"link_{key}_{i}"] = value
+                    del metadata["links"]
+
     def similarity_search(
         self,
         query: str,
@@ -553,6 +567,7 @@ class Chroma(VectorStore):
             collection_metadata=collection_metadata,
             **kwargs,
         )
+        chroma_collection._preprocess_metadatas(metadatas=metadatas)
         chroma_collection.add_texts(texts=texts, metadatas=metadatas, ids=ids)
         return chroma_collection
 
