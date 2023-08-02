@@ -19,6 +19,7 @@ from langchain.vectorstores.elastic_vector_search import (
     ElasticKnnSearch,
     ElasticVectorSearch,
 )
+from langchain.vectorstores.elasticsearch import ElasticsearchStore
 from langchain.vectorstores.faiss import FAISS
 from langchain.vectorstores.hologres import Hologres
 from langchain.vectorstores.lancedb import LanceDB
@@ -62,6 +63,7 @@ __all__ = [
     "DocArrayInMemorySearch",
     "ElasticVectorSearch",
     "ElasticKnnSearch",
+    "ElasticsearchStore",
     "FAISS",
     "PGEmbedding",
     "Hologres",
