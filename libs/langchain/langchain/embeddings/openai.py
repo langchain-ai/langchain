@@ -425,29 +425,30 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     async def _aget_len_safe_embeddings(
         self, texts: List[str], *, engine: str, chunk_size: Optional[int] = None
     ) -> List[List[float]]:
-        embeddings: List[List[float]] = [[] for _ in range(len(texts))]
         tokens, indices = self._chunk_tokens(texts)
         batched_embeddings = await self._abatch_embed(tokens, chunk_size=chunk_size)
 
         results: List[List[List[float]]] = [[] for _ in range(len(texts))]
         num_tokens_in_batch: List[List[int]] = [[] for _ in range(len(texts))]
-        for i in range(len(indices)):
-            results[indices[i]].append(batched_embeddings[i])
-            num_tokens_in_batch[indices[i]].append(len(tokens[i]))
+        for idx, tokens_i, batched_emb in zip(indices, tokens, batched_embeddings):
+            results[idx].append(batched_emb)
+            num_tokens_in_batch[idx].append(len(tokens_i))
 
-        for i in range(len(texts)):
-            _result = results[i]
+        embeddings = []
+        empty_average = (
+            await async_embed_with_retry(
+                self,
+                input="",
+                **self._invocation_params,
+            )
+        )["data"][0]["embedding"]
+        for _result, num_tokens in zip(results, num_tokens_in_batch):
             if len(_result) == 0:
-                average = (
-                    await async_embed_with_retry(
-                        self,
-                        input="",
-                        **self._invocation_params,
-                    )
-                )["data"][0]["embedding"]
+                average = empty_average
             else:
-                average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
-            embeddings[i] = (average / np.linalg.norm(average)).tolist()
+                average = np.average(_result, axis=0, weights=num_tokens)
+            normalized = (average / np.linalg.norm(average)).tolist()
+            embeddings.append(normalized)
 
         return embeddings
 
