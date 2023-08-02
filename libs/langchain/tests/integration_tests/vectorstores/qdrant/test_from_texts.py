@@ -197,9 +197,10 @@ def test_qdrant_from_texts_raises_error_on_different_distance() -> None:
                 distance_func="Euclid",
             )
 
-        expected_message = (f"configured for COSINE similarity, but "
-                            f"requested EUCLID. Please set `distance_func` "
-                            f"parameter to `COSINE`")
+        expected_message = (
+            "configured for COSINE similarity, but requested EUCLID. Please set "
+            "`distance_func` parameter to `COSINE`"
+        )
         assert expected_message in str(excinfo.value)
 
 

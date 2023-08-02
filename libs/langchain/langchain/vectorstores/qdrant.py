@@ -1090,8 +1090,6 @@ class Qdrant(VectorStore):
         qdrant = cls._construct_instance(
             texts,
             embedding,
-            metadatas,
-            ids,
             location,
             url,
             port,
@@ -1266,8 +1264,6 @@ class Qdrant(VectorStore):
         qdrant = cls._construct_instance(
             texts,
             embedding,
-            metadatas,
-            ids,
             location,
             url,
             port,
@@ -1304,8 +1300,6 @@ class Qdrant(VectorStore):
         cls: Type[Qdrant],
         texts: List[str],
         embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
-        ids: Optional[Sequence[str]] = None,
         location: Optional[str] = None,
         url: Optional[str] = None,
         port: Optional[int] = 6333,
