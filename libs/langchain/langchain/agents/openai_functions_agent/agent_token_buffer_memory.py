@@ -36,12 +36,11 @@ class AgentTokenBufferMemory(BaseChatMemory):
 
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Return history buffer."""
-        buffer: Any = self.buffer
         if self.return_messages:
-            final_buffer: Any = buffer
+            final_buffer: Any = self.buffer
         else:
             final_buffer = get_buffer_string(
-                buffer,
+                self.buffer,
                 human_prefix=self.human_prefix,
                 ai_prefix=self.ai_prefix,
             )
@@ -51,7 +50,7 @@ class AgentTokenBufferMemory(BaseChatMemory):
         """Save context from this conversation to buffer. Pruned."""
         input_str, output_str = self._get_input_output(inputs, outputs)
         self.chat_memory.add_user_message(input_str)
-        steps = _format_intermediate_steps(outputs["intermediate_steps"])
+        steps = _format_intermediate_steps(outputs[self.intermediate_steps_key])
         for msg in steps:
             self.chat_memory.add_message(msg)
         self.chat_memory.add_ai_message(output_str)
@@ -59,7 +58,6 @@ class AgentTokenBufferMemory(BaseChatMemory):
         buffer = self.chat_memory.messages
         curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)
         if curr_buffer_length > self.max_token_limit:
-            pruned_memory = []
             while curr_buffer_length > self.max_token_limit:
-                pruned_memory.append(buffer.pop(0))
+                buffer.pop(0)
                 curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)

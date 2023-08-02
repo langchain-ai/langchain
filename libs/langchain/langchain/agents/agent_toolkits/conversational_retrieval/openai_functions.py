@@ -31,11 +31,13 @@ def create_conversational_retrieval_agent(
     memory_key: str = "chat_history",
     system_message: Optional[SystemMessage] = None,
     verbose: bool = False,
+    max_token_limit: int = 2000,
+    **kwargs
 ) -> AgentExecutor:
     """A convenience method for creating a conversational retrieval agent.
 
     Args:
-        llm: The language model to use, should usually be ChatOpenAI
+        llm: The language model to use, should be ChatOpenAI
         tools: A list of tools the agent has access to
         remember_intermediate_steps: Whether the agent should remember intermediate
             steps or not. Intermediate steps refer to prior action/observation
@@ -47,6 +49,8 @@ def create_conversational_retrieval_agent(
             be used.
         verbose: Whether or not the final AgentExecutor should be verbose or not,
             defaults to False.
+        max_token_limit: The max number of tokens to keep around in memory.
+            Defaults to 2000.
 
     Returns:
         An agent executor initialized appropriately
@@ -55,14 +59,16 @@ def create_conversational_retrieval_agent(
     if not isinstance(llm, ChatOpenAI):
         raise ValueError("Only supported with ChatOpenAI models.")
     if remember_intermediate_steps:
-        memory: BaseMemory = AgentTokenBufferMemory(memory_key=memory_key, llm=llm)
+        memory: BaseMemory = AgentTokenBufferMemory(
+            memory_key=memory_key, llm=llm, max_token_limit=max_token_limit
+        )
     else:
         memory = ConversationTokenBufferMemory(
             memory_key=memory_key,
             return_messages=True,
             output_key="output",
             llm=llm,
-            max_token_limit=12000,
+            max_token_limit=max_token_limit,
         )
 
     _system_message = system_message or _get_default_system_message()
@@ -77,4 +83,5 @@ def create_conversational_retrieval_agent(
         memory=memory,
         verbose=verbose,
         return_intermediate_steps=remember_intermediate_steps,
+        **kwargs
     )
