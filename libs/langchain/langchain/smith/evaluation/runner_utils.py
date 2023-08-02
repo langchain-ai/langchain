@@ -6,7 +6,7 @@ import asyncio
 import functools
 import itertools
 import logging
-from datetime import datetime
+import uuid
 from typing import (
     Any,
     Callable,
@@ -20,7 +20,6 @@ from typing import (
     Union,
 )
 from urllib.parse import urlparse, urlunparse
-import uuid
 
 from langsmith import Client, RunEvaluator
 from langsmith.schemas import Dataset, DataType, Example
