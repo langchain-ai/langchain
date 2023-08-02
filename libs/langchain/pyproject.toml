@@ -127,6 +127,7 @@ geopandas = {version = "^0.13.1", optional = true}
 xinference = {version = "^0.0.6", optional = true}
 python-arango = {version = "^7.5.9", optional = true}
 gitpython = {version = "^3.1.32", optional = true}
+librosa = {version="^0.10.0.post2", optional = true }
 amazon-textract-caller = {version = "<2", optional = true}
 
 [tool.poetry.group.test.dependencies]
@@ -319,6 +320,7 @@ all = [
     "rdflib",
     "amadeus",
     "xinference",
+    "librosa",
     "python-arango",
 ]
 
