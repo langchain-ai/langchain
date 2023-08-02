@@ -77,7 +77,7 @@ def test_on_llm_end_finetuned_model(handler: OpenAICallbackHandler) -> None:
             ("gpt-4-32k-0613", 0.18), # 0,06 per 1k input tokens; 0.12 per 1k output tokens
         ]
     )
-def test_on_llm_end_azure_openai(handler: OpenAICallbackHandler, model_name, expected_cost) -> None:
+def test_on_llm_end_azure_openai(handler: OpenAICallbackHandler, model_name: str, expected_cost: float) -> None:
     response = LLMResult(
         generations=[],
         llm_output={
@@ -93,7 +93,7 @@ def test_on_llm_end_azure_openai(handler: OpenAICallbackHandler, model_name, exp
     assert handler.total_cost == expected_cost
 
 @pytest.mark.parametrize("model_name", ["gpt-35-turbo-16k-0301", "gpt-4-0301", "gpt-4-32k-0301"])
-def test_on_llm_end_no_cost_invalid_model(handler: OpenAICallbackHandler, model_name) -> None:
+def test_on_llm_end_no_cost_invalid_model(handler: OpenAICallbackHandler, model_name: str) -> None:
     response = LLMResult(
         generations=[],
         llm_output={
