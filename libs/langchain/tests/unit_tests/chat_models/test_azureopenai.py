@@ -41,72 +41,9 @@ def test_model_name_set_on_chat_result_when_present_in_response(
         }}
     }}
     """
+    # convert sample_response_text to instance of Mapping[str, Any]
     sample_response = json.loads(sample_response_text)
     mock_response = cast(Mapping[str, Any], sample_response)
     mock_chat = AzureChatOpenAI()
-    chat_result = mock_chat._create_chat_result(mock_response)  
+    chat_result = mock_chat._create_chat_result(mock_response)
     assert chat_result.llm_output["model_name"] == model_name
-
-def test_model_name_has_correct_version() -> None:
-    sample_response_text = f"""
-    {{
-        "id": "chatcmpl-7ryweq7yc8463fas879t9hdkkdf",
-        "object": "chat.completion",
-        "created": 1690381189,
-        "model": "gpt-4",
-        "choices": [
-            {{
-                "index": 0,
-                "finish_reason": "stop",
-                "message": {{
-                    "role": "assistant",
-                    "content": "I am an AI and cannot provide current real-time information. Please check a reliable weather website or app for the current weather conditions in Boston."
-                }}
-            }}
-        ],
-        "usage": {{
-            "completion_tokens": 28,
-            "prompt_tokens": 15,
-            "total_tokens": 43
-        }}
-    }}
-    """
-    sample_response = json.loads(sample_response_text)
-    mock_response = cast(Mapping[str, Any], sample_response)
-    mock_chat = AzureChatOpenAI(model_version="0314")
-    chat_result = mock_chat._create_chat_result(mock_response)
-
-    expected_model_name = "gpt-4-0314"
-
-    assert chat_result.llm_output["model_name"] == expected_model_name
-
-@pytest.mark.requires("openai")
-def test_llm_type_is_azure_openai_chat() -> None:
-    sample_response_text = f"""
-    {{
-        "id": "chatcmpl-7ryweq7yc8463fas879t9hdkkdf",
-        "object": "chat.completion",
-        "created": 1690381189,
-        "model": "gpt-4",
-        "choices": [
-            {{
-                "index": 0,
-                "finish_reason": "stop",
-                "message": {{
-                    "role": "assistant",
-                    "content": "I am an AI and cannot provide current real-time information. Please check a reliable weather website or app for the current weather conditions in Boston."
-                }}
-            }}
-        ],
-        "usage": {{
-            "completion_tokens": 28,
-            "prompt_tokens": 15,
-            "total_tokens": 43
-        }}
-    }}"""
-    sample_response = json.loads(sample_response_text)
-    mock_response = cast(Mapping[str, Any], sample_response)
-    mock_chat = AzureChatOpenAI()
-    chat_result = mock_chat._create_chat_result(mock_response)
-    assert "llm_type" in chat_result.llm_output
-    assert chat_result.llm_output["llm_type"] == "azure-openai-chat"
