@@ -1421,11 +1421,11 @@ class Qdrant(VectorStore):
             if current_distance_func != distance_func:
                 raise QdrantException(
                     f"Existing Qdrant collection is configured for "
-                    f"{current_vector_config.distance} "  # type: ignore[union-attr]
-                    f"similarity. Please set `distance_func` parameter to "
-                    f"`{distance_func}` if you want to reuse it. If you want to "
-                    f"recreate the collection, set `force_recreate` parameter to "
-                    f"`True`."
+                    f"{current_distance_func} similarity, but requested "
+                    f"{distance_func}. Please set `distance_func` parameter to "
+                    f"`{current_distance_func}` if you want to reuse it. "
+                    f"If you want to recreate the collection, set `force_recreate` "
+                    f"parameter to `True`."
                 )
         except (UnexpectedResponse, RpcError, ValueError):
             vectors_config = rest.VectorParams(

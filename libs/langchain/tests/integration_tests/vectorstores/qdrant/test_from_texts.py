@@ -181,21 +181,26 @@ def test_qdrant_from_texts_raises_error_on_different_distance() -> None:
     with tempfile.TemporaryDirectory() as tmpdir:
         vec_store = Qdrant.from_texts(
             ["lorem", "ipsum", "dolor", "sit", "amet"],
-            ConsistentFakeEmbeddings(dimensionality=10),
+            ConsistentFakeEmbeddings(),
             collection_name=collection_name,
             path=str(tmpdir),
             distance_func="Cosine",
         )
         del vec_store
 
-        with pytest.raises(QdrantException):
+        with pytest.raises(QdrantException) as excinfo:
             Qdrant.from_texts(
                 ["foo", "bar"],
-                ConsistentFakeEmbeddings(dimensionality=5),
+                ConsistentFakeEmbeddings(),
                 collection_name=collection_name,
                 path=str(tmpdir),
                 distance_func="Euclid",
             )
+
+        expected_message = (f"configured for COSINE similarity, but "
+                            f"requested EUCLID. Please set `distance_func` "
+                            f"parameter to `COSINE`")
+        assert expected_message in str(excinfo.value)
 
 
 @pytest.mark.parametrize("vector_name", [None, "custom-vector"])
