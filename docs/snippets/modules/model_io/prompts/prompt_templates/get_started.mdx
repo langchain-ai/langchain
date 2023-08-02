@@ -2,7 +2,7 @@ Typically, language models expect the prompt to either be a string or else a lis
 
 ## Prompt template
 
-`PromptTemplate` to create a template for a string prompt.
+Use `PromptTemplate` to create a template for a string prompt.
 
 By default, `PromptTemplate` uses [Python's str.format](https://docs.python.org/3/library/stdtypes.html#str.format)
 syntax for templating; however other templating syntax is available (e.g., `jinja2`).
@@ -100,6 +100,7 @@ template = ChatPromptTemplate.from_messages(
 )
 
 from langchain.chat_models import ChatOpenAI
+
 llm = ChatOpenAI()
 llm(template.format_messages(text='i dont like eating tasty things.'))
 ```
