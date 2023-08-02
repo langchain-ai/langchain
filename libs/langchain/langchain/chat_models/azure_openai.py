@@ -41,12 +41,12 @@ class AzureChatOpenAI(ChatOpenAI):
     Be aware the API version may change.
 
     You can also specify the version of the model using ``model_version`` constructor parameter, as Azure OpenAI doesn't return model version
-    with the response. Default is empty. When you specify the version, it will be appended to the model name in the response. 
+    with the response. Default is empty. When you specify the version, it will be appended to the model name in the response.
     Setting correct version will help you to calculate the cost properly.
     Model version is not validated, so make sure you set it correctly to get the correct cost.
-    
+
     Any parameters that are valid to be passed to the openai.create call can be passed
-    in, even if not explicitly saved on this class.    
+    in, even if not explicitly saved on this class.
     """
 
     deployment_name: str = ""
@@ -153,6 +153,10 @@ class AzureChatOpenAI(ChatOpenAI):
             model = response["model"]
             if self.model_version:
                 model = f"{model}-{self.model_version}"
-            chat_result.llm_output["model_name"] = model
+
+            if chat_result.llm_output is not None and isinstance(
+                chat_result.llm_output, dict
+            ):
+                chat_result.llm_output["model_name"] = model
 
         return chat_result
