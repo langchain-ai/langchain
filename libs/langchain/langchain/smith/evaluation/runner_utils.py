@@ -37,12 +37,13 @@ from langchain.evaluation.schema import EvaluatorType, StringEvaluator
 from langchain.schema import ChatResult, LLMResult
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage, messages_from_dict
+from langchain.schema.runnable import Runnable
 from langchain.smith.evaluation.config import EvalConfig, RunEvalConfig
 from langchain.smith.evaluation.string_run_evaluator import StringRunEvaluatorChain
 
 logger = logging.getLogger(__name__)
 
-MODEL_OR_CHAIN_FACTORY = Union[Callable[[], Chain], BaseLanguageModel]
+MODEL_OR_CHAIN_FACTORY = Union[Callable[[], Union[Chain, Runnable]], BaseLanguageModel]
 
 
 class InputFormatError(Exception):
@@ -237,7 +238,10 @@ def _get_project_name(
     if isinstance(llm_or_chain_factory, BaseLanguageModel):
         model_name = llm_or_chain_factory.__class__.__name__
     else:
-        model_name = llm_or_chain_factory().__class__.__name__
+        try:
+            model_name = llm_or_chain_factory().__class__.__name__
+        except TypeError:
+            model_name = llm_or_chain_factory.__name__
     hex = uuid.uuid4().hex
     return f"{hex}-{model_name}"
 
