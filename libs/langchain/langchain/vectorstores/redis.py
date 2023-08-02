@@ -1,7 +1,7 @@
 """Wrapper around Redis vector database."""
 
 from __future__ import annotations
-
+import re
 import json
 import logging
 import uuid
@@ -17,6 +17,8 @@ from typing import (
     Optional,
     Tuple,
     Type,
+    Pattern,
+    Union
 )
 
 import numpy as np
@@ -30,6 +32,17 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
+
+
+from pydantic import BaseModel, Field, validator
+from redis.commands.search.field import (
+    GeoField,
+    NumericField,
+    TagField,
+    TextField,
+    VectorField,
+)
+from typing_extensions import Literal
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.pydantic_v1 import root_validator
@@ -46,12 +59,34 @@ if TYPE_CHECKING:
 
 # required modules
 REDIS_REQUIRED_MODULES = [
-    {"name": "search", "ver": 20400},
-    {"name": "searchlight", "ver": 20400},
+    {"name": "search", "ver": 20600},
+    {"name": "searchlight", "ver": 20600},
 ]
 
 # distance mmetrics
 REDIS_DISTANCE_METRICS = Literal["COSINE", "IP", "L2"]
+
+class TokenEscaper:
+    """
+    Escape punctuation within an input string.
+    """
+
+    # Characters that RediSearch requires us to escape during queries.
+    # Source: https://redis.io/docs/stack/search/reference/escaping/#the-rules-of-text-field-tokenization
+    DEFAULT_ESCAPED_CHARS = r"[,.<>{}\[\]\\\"\':;!@#$%^&*()\-+=~\/]"
+
+    def __init__(self, escape_chars_re: Optional[Pattern] = None):
+        if escape_chars_re:
+            self.escaped_chars_re = escape_chars_re
+        else:
+            self.escaped_chars_re = re.compile(self.DEFAULT_ESCAPED_CHARS)
+
+    def escape(self, value: str) -> str:
+        def escape_symbol(match):
+            value = match.group(0)
+            return f"\\{value}"
+
+        return self.escaped_chars_re.sub(escape_symbol, value)
 
 
 def _check_redis_module_exist(client: RedisType, required_modules: List[dict]) -> None:
@@ -100,6 +135,234 @@ def _default_relevance_score(val: float) -> float:
     return 1 - val
 
 
+def array_to_buffer(array: List[float], dtype: Any = np.float32) -> bytes:
+    return np.array(array).astype(dtype).tobytes()
+
+
+class BaseField(BaseModel):
+    name: str = Field(...)
+    sortable: Optional[bool] = False
+
+
+class TextFieldSchema(BaseField):
+    weight: Optional[float] = 1
+    no_stem: Optional[bool] = False
+    phonetic_matcher: Optional[str] = None
+    withsuffixtrie: Optional[bool] = False
+
+    def as_field(self):
+        return TextField(
+            self.name,
+            weight=self.weight,
+            no_stem=self.no_stem,
+            phonetic_matcher=self.phonetic_matcher,
+            sortable=self.sortable,
+        )
+
+
+class TagFieldSchema(BaseField):
+    separator: Optional[str] = ","
+    case_sensitive: Optional[bool] = False
+
+    def as_field(self):
+        return TagField(
+            self.name,
+            separator=self.separator,
+            case_sensitive=self.case_sensitive,
+            sortable=self.sortable,
+        )
+
+
+class NumericFieldSchema(BaseField):
+    def as_field(self):
+        return NumericField(self.name, sortable=self.sortable)
+
+
+class GeoFieldSchema(BaseField):
+    def as_field(self):
+        return GeoField(self.name, sortable=self.sortable)
+
+
+class BaseVectorField(BaseModel):
+    name: str = Field(...)
+    dims: int = Field(...)
+    algorithm: object = Field(...)
+    datatype: str = Field(default="FLOAT32")
+    distance_metric: str = Field(default="COSINE")
+    initial_cap: int = Field(default=20000)
+
+    @validator("algorithm", "datatype", "distance_metric")
+    @classmethod
+    def uppercase_strings(cls, v):
+        return v.upper()
+
+    @property
+    def metric(self):
+        return self.distance_metric
+
+class FlatVectorField(BaseVectorField):
+    algorithm: object = Literal["FLAT"]
+    block_size: int = Field(default=1000)
+
+    def as_field(self):
+        return VectorField(
+            self.name,
+            self.algorithm,
+            {
+                "TYPE": self.datatype,
+                "DIM": self.dims,
+                "DISTANCE_METRIC": self.distance_metric,
+                "INITIAL_CAP": self.initial_cap,
+                "BLOCK_SIZE": self.block_size,
+            },
+        )
+
+
+class HNSWVectorField(BaseVectorField):
+    algorithm: object = Literal["HNSW"]
+    m: int = Field(default=16)
+    ef_construction: int = Field(default=200)
+    ef_runtime: int = Field(default=10)
+    epsilon: float = Field(default=0.8)
+
+    def as_field(self):
+        return VectorField(
+            self.name,
+            self.algorithm,
+            {
+                "TYPE": self.datatype,
+                "DIM": self.dims,
+                "DISTANCE_METRIC": self.distance_metric,
+                "INITIAL_CAP": self.initial_cap,
+                "M": self.m,
+                "EF_CONSTRUCTION": self.ef_construction,
+                "EF_RUNTIME": self.ef_runtime,
+                "EPSILON": self.epsilon,
+            },
+        )
+
+class RedisMetadata(BaseModel):
+    tag: Optional[List[TagFieldSchema]] = None
+    text: Optional[List[TextFieldSchema]] = None
+    numeric: Optional[List[NumericFieldSchema]] = None
+    geo: Optional[List[GeoFieldSchema]] = None
+    vector: Optional[List[Union[FlatVectorField, HNSWVectorField]]] = None
+
+    def get_fields(self):
+        redis_fields = []
+        for field_name in self.fields.model_fields.keys():
+            field_group = getattr(self.fields, field_name)
+            if field_group is not None:
+                for field in field_group:
+                    redis_fields.append(field.as_field())
+        return redis_fields
+
+    @property
+    def keys(self):
+        keys = []
+        for field_name in self.fields.model_fields.keys():
+            field_group = getattr(self.fields, field_name)
+            if field_group is not None:
+                for field in field_group:
+                    keys.append(field.name)
+        return keys
+
+class RedisFilter:
+    escaper = TokenEscaper()
+
+    def __init__(self, field):
+        self._field = field
+        self._filters = []
+
+    def __str__(self):
+        base = self.to_string()
+        if self._filters:
+            base += "".join(self._filters)
+        return base
+
+    def __iadd__(self, other) -> "RedisFilter":
+        "intersection '+='"
+        self._filters.append(f" {other.to_string()}")
+        return self
+
+    def __iand__(self, other) -> "RedisFilter":
+        "union '&='"
+        self._filters.append(f" | {other.to_string()}")
+        return self
+
+    def __isub__(self, other) -> "RedisFilter":
+        "subtract '-='"
+        self._filters.append(f" -{other.to_string()}")
+        return self
+
+    def __ixor__(self, other) -> "RedisFilter":
+        "With optional '^='"
+        self._filters.append(f" ~{other.to_string()}")
+        return self
+
+    def to_string(self) -> str:
+        raise NotImplementedError
+
+
+class TagFilter(RedisFilter):
+    def __init__(self, field, tags: List[str]):
+        super().__init__(field)
+        self.tags = tags
+
+    def to_string(self) -> str:
+        """Converts the tag filter to a string.
+
+        Returns:
+            str: The tag filter as a string.
+        """
+        if not isinstance(self.tags, list):
+            self.tags = [self.tags]
+        return (
+            "@"
+            + self._field
+            + ":{"
+            + " | ".join([self.escaper.escape(tag) for tag in self.tags])
+            + "}"
+        )
+
+class NumericFilter(RedisFilter):
+    def __init__(self, field, minval, maxval, min_exclusive=False, max_exclusive=False):
+        """Filter for Numeric fields.
+
+        Args:
+            field (str): The field to filter on.
+            minval (int): The minimum value.
+            maxval (int): The maximum value.
+            min_exclusive (bool, optional): Whether the minimum value is exclusive. Defaults to False.
+            max_exclusive (bool, optional): Whether the maximum value is exclusive. Defaults to False.
+        """
+        self.top = maxval if not max_exclusive else f"({maxval}"
+        self.bottom = minval if not min_exclusive else f"({minval}"
+        super().__init__(field)
+
+    def to_string(self):
+        return "@" + self._field + ":[" + str(self.bottom) + " " + str(self.top) + "]"
+
+
+class TextFilter(RedisFilter):
+    def __init__(self, field, text: str):
+        """Filter for Text fields.
+        Args:
+            field (str): The field to filter on.
+            text (str): The text to filter on.
+        """
+        super().__init__(field)
+        self.text = text
+
+    def to_string(self) -> str:
+        """Converts the filter to a string.
+
+        Returns:
+            str: The filter as a string.
+        """
+        return "@" + self._field + ":" + self.escaper.escape(self.text)
+
+
 class Redis(VectorStore):
     """Wrapper around Redis vector database.
 
@@ -137,21 +400,31 @@ class Redis(VectorStore):
             )
     """
 
+    _default_content_vector_schema = {
+        "name": "content_vector",
+        "dims": 1536,
+        "distance_metric": "cosine",
+        "algorithm": "flat",
+        "datatype": "float32"
+    }
+
     def __init__(
         self,
         redis_url: str,
         index_name: str,
         embedding_function: Callable,
         content_key: str = "content",
-        metadata_keys: dict = {"metadata":"Text"},
         vector_key: str = "content_vector",
+        vector_schema: Optional[Dict] = None,
+        metadata_schema: Optional[Dict] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
-        distance_metric: REDIS_DISTANCE_METRICS = "COSINE",
         **kwargs: Any,
     ):
         """Initialize with necessary components."""
-        self.embedding_function = embedding_function
         self.index_name = index_name
+        self.content_key = content_key
+        self.vector_key = vector_key
+        self.embedding_function = embedding_function
         try:
             redis_client = get_client(redis_url=redis_url, **kwargs)
             # check if redis has redisearch module installed
@@ -160,43 +433,60 @@ class Redis(VectorStore):
             raise ValueError(f"Redis failed to connect: {e}")
 
         self.client = redis_client
-        self.content_key = content_key
-        self.metadata_keys = metadata_keys
-        self.vector_key = vector_key
-        self.distance_metric = distance_metric
         self.relevance_score_fn = relevance_score_fn
+        self._vector_schema = self._default_content_vector_schema
+        if isinstance(vector_schema, dict):
+            self._vector_schema.update(vector_schema)
+        if metadata_schema:
+            self._metadata_schema = RedisMetadata(**metadata_schema)
+            self._metadata_keys = self._metadata_schema.keys
+        else:
+            self._metadata_schema = None
+            self._metadata_keys = []
+
+        self._distance_metric = self._vector_schema["distance_metric"].upper()
+        self._select_relevance_score_fn()
+
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        if self.relevance_score_fn:
+            return self.relevance_score_fn
+
+        metric_map = {
+            "COSINE": self._cosine_relevance_score_fn,
+            "IP": self._max_inner_product_relevance_score_fn,
+            "L2": self._euclidean_relevance_score_fn
+        }
+        if self._distance_metric in metric_map:
+            return metric_map[self._distance_metric]
+        else:
+            return _default_relevance_score
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
         # TODO: Accept embedding object directly
         return None
 
-    def _select_relevance_score_fn(self) -> Callable[[float], float]:
-        if self.relevance_score_fn:
-            return self.relevance_score_fn
-
-        if self.distance_metric == "COSINE":
-            return self._cosine_relevance_score_fn
-        elif self.distance_metric == "IP":
-            return self._max_inner_product_relevance_score_fn
-        elif self.distance_metric == "L2":
-            return self._euclidean_relevance_score_fn
-        else:
-            return _default_relevance_score
-
     def _create_index(self, dim: int = 1536) -> None:
 
+        fields = []
         try:
-            from redis.commands.search.field import TextField, NumericField, TagField, GeoField, VectorField
-            field_dict = {
-                'Text':TextField,
-                'Numeric':NumericField,
-                'Tag':TagField,
-                'Geo':GeoField,
-                'Vector':VectorField
-            }
-            
             from redis.commands.search.indexDefinition import IndexDefinition, IndexType
+
+            # Field for content
+            fields.append(TextField(self.content_key))
+
+            # Field for Content Vector
+            self._vector_schema["dims"] = dim
+            if self._vector_schema["algorithm"].upper() == "FLAT":
+                fields.append(FlatVectorField(**self._vector_schema).as_field())
+            else:
+                fields.append(HNSWVectorField(**self._vector_schema).as_field())
+
+            # Fields for metadata
+            if self._metadata_schema:
+                fields.extend(self._metadata_schema.get_fields())
+
         except ImportError:
             raise ValueError(
                 "Could not import redis python package. "
@@ -205,26 +495,11 @@ class Redis(VectorStore):
 
         # Check if index exists
         if not _check_index_exists(self.client, self.index_name):
-            metadata_textfields = [field_dict[v](name=k) for k,v in self.metadata_keys.items()]
-            # Define schema
-            schema = (
-                TextField(name=self.content_key),
-                *metadata_textfields,
-                VectorField(
-                    self.vector_key,
-                    "FLAT",
-                    {
-                        "TYPE": "FLOAT32",
-                        "DIM": dim,
-                        "DISTANCE_METRIC": self.distance_metric,
-                    },
-                ),
-            )
             prefix = _redis_prefix(self.index_name)
 
             # Create Redis Index
             self.client.ft(self.index_name).create_index(
-                fields=schema,
+                fields=fields,
                 definition=IndexDefinition(prefix=[prefix], index_type=IndexType.HASH),
             )
 
@@ -258,6 +533,14 @@ class Redis(VectorStore):
         # Other vectorstores use ids
         keys_or_ids = kwargs.get("keys", kwargs.get("ids"))
 
+        # type check for metadata
+        if metadatas:
+            if len(metadatas) != len(texts):
+                raise ValueError("Number of metadatas must match number of texts")
+            if not isinstance(metadatas, list) and not isinstance(metadatas[0], dict):
+                raise ValueError("Metadatas must be a list of dicts")
+
+
         # Write data to redis
         pipeline = self.client.pipeline(transaction=False)
         for i, text in enumerate(texts):
@@ -269,7 +552,7 @@ class Redis(VectorStore):
                 key,
                 mapping={
                     self.content_key: text,
-                    self.vector_key: np.array(embedding, dtype=np.float32).tobytes(),
+                    self.vector_key: array_to_buffer(embedding),
                     **metadata
                 },
             )
@@ -283,9 +566,15 @@ class Redis(VectorStore):
         pipeline.execute()
         return ids
 
-    def similarity_search(
-        self, query: str, k: int = 4,filter: List = None, **kwargs: Any
-    ) -> List[Document]:
+    def _similarity_search(
+        self,
+        query: str,
+        k: int = 4,
+        meta_filter: Optional[RedisFilter] = None,
+        score_threshold: Optional[float] = None,
+        return_score: bool = False,
+        **kwargs: Any
+        ) -> Union[List[Document], List[Tuple[Document, float]]]:
         """
         Returns the most similar indexed documents to the query text.
 
@@ -296,11 +585,43 @@ class Redis(VectorStore):
         Returns:
             List[Document]: A list of documents that are most similar to the query text.
         """
-        docs_and_scores = self.similarity_search_with_score(query, k=k,filter=filter)
-        return [doc for doc, _ in docs_and_scores]
+
+        # Creates embedding vector from user query
+        embedding = self.embedding_function(query)
+
+        # Creates Redis query
+        params_dict: Mapping[str, Union[str, bytes]] = {
+            "vector": array_to_buffer(embedding),
+        }
+
+        if score_threshold is None:
+            redis_query = self._prepare_vector_query(k, meta_filter=meta_filter)
+        else:
+            redis_query = self._prepare_range_query(k, meta_filter=meta_filter)
+            params_dict["score_threshold"] = str(score_threshold)
+
+
+        # Perform vector search
+        print(redis_query.query_string())
+        results = self.client.ft(self.index_name).search(redis_query, params_dict)
+        print(results)
+        # Prepare document results
+        docs = []
+        scores = []
+        for result in results.docs:
+            metadata = {k :getattr(result, k) for k in self._metadata_keys}
+            metadata["id"] = result.id
+            doc = Document(page_content=result.content, metadata=metadata)
+            docs.append(doc)
+            if return_score:
+                scores.append(result.score)
+        if return_score:
+            return list(zip(docs, scores))
+        else:
+            return docs
 
     def similarity_search_limit_score(
-        self, query: str, k: int = 4, score_threshold: float = 0.2,filter: List = None, **kwargs: Any
+        self, query: str, k: int = 4, score_threshold: float = 0.2, meta_filter: Optional[List[RedisFilter]] = None, **kwargs: Any
     ) -> List[Document]:
         """
         Returns the most similar indexed documents to the query text within the
@@ -323,10 +644,62 @@ class Redis(VectorStore):
             an empty list is returned.
 
         """
-        docs_and_scores = self.similarity_search_with_score(query, k=k,filter=filter,score_threshold)
-        return [doc for doc, _ in docs_and_scores]
+        docs = self._similarity_search(
+            query,
+            k=k,
+            score_threshold=score_threshold,
+            meta_filter=meta_filter,
+            return_scores=False
+        )
+        return docs
 
-    def _prepare_query(self, k: int,filter: List = None) -> Query:
+    def similarity_search_with_score(
+        self,
+        query: str,
+        k: int = 4,
+        meta_filter: Optional[List[RedisFilter]] = None,
+        **kwargs: Any
+    ) -> List[Tuple[Document, float]]:
+        """Run similarity search with distance."""
+        docs = self._similarity_search(
+            query,
+            k=k,
+            meta_filter=meta_filter,
+            return_scores=True
+        )
+        return docs
+
+    def similarity_search(
+        self,
+        query: str,
+        k: int = 4,
+        meta_filter: Optional[List[RedisFilter]] = None,
+        **kwargs: Any
+    ) -> List[Document]:
+        """Run similarity search."""
+        docs = self._similarity_search(
+            query,
+            k=k,
+            meta_filter=meta_filter,
+            return_scores=False
+        )
+        return docs
+
+    def similarity_search_by_vector(
+        self, embedding: List[float], k: int = 4, **kwargs: Any
+    ) -> List[Document]:
+        """Return docs most similar to embedding vector.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+
+        Returns:
+            List of Documents most similar to the query vector.
+        """
+        raise NotImplementedError
+
+    def _prepare_range_query(self, k: int, meta_filter: Optional[RedisFilter] = None) -> "Query":
         try:
             from redis.commands.search.query import Query
         except ImportError:
@@ -334,60 +707,38 @@ class Redis(VectorStore):
                 "Could not import redis python package. "
                 "Please install it with `pip install redis`."
             )
-        # Prepare the Query
-        hybrid_fields = f'(@{self.vector_key}:[VECTOR_RANGE $score_threshold $vector])'
-        if filter:
-            filter_cond_list = self.add_filter(filter)
-            hybrid_fields = f'(@{self.vector_key}:[VECTOR_RANGE $score_threshold $vector] @'+" @".join(filter_cond_list)+')'
-        base_query = (
-            f'{hybrid_fields}=>[KNN {k} @{self.vector_key} $vector AS vector_score]'
-        )
-        print(base_query)
-        return_fields = [*self.metadata_keys, self.content_key, "vector_score", "id"]
+        base_query = f'@{self.vector_key}:[VECTOR_RANGE $score_threshold $vector]'
+
+        if meta_filter:
+                base_query = "(" + base_query + " " + str(meta_filter) + ")"
+
+        query_string = base_query + '=>{$yield_distance_as: vector_score}'
+        return_fields = [*self._metadata_keys, self.content_key, "vector_score", "id"]
         return (
-            Query(base_query)
+            Query(query_string)
             .return_fields(*return_fields)
             .sort_by("vector_score")
             .paging(0, k)
             .dialect(2)
         )
 
-    def similarity_search_with_score(
-        self, query: str, k: int = 4, filter: List = None,score_threshold: float = 0.2
-    ) -> List[Tuple[Document, float]]:
-        """Return docs most similar to query.
+    def _prepare_vector_query(self, k: int, meta_filter: Optional[RedisFilter] = None) -> "Query":
+        try:
+            from redis.commands.search.query import Query
+        except ImportError:
+            raise ValueError(
+                "Could not import redis python package. "
+                "Please install it with `pip install redis`."
+            )
+        query_prefix = "*"
+        if meta_filter:
+            query_prefix = f"{str(meta_filter)}"
+        base_query = f"({query_prefix})=>[KNN {k} @{self.vector_key} $vector AS vector_score]"
+        return_fields = [*self._metadata_keys, self.content_key, "vector_score", "id"]
+        query = Query(base_query).return_fields(*return_fields).sort_by("vector_score").dialect(2)
+        return query
 
-        Args:
-            query: Text to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
 
-        Returns:
-            List of Documents most similar to the query and score for each
-        """
-        # Creates embedding vector from user query
-        embedding = self.embedding_function(query)
-
-        # Creates Redis query
-        redis_query = self._prepare_query(k,filter)
-
-        params_dict: Mapping[str, str] = {
-            "vector": np.array(embedding)  # type: ignore
-            .astype(dtype=np.float32)
-            .tobytes(),
-            "score_threshold": score_threshold
-        }
-
-        # Perform vector search
-        results = self.client.ft(self.index_name).search(redis_query, params_dict)
-
-        # Prepare document results
-        docs_and_scores: List[Tuple[Document, float]] = []
-        for result in results.docs:
-            metadata = {meta_key:getattr(result,meta_key) for meta_key in self.metadata_keys}
-            metadata["id"] = result.id
-            doc = Document(page_content=result.content, metadata=metadata)
-            docs_and_scores.append((doc, float(result.vector_score)))
-        return docs_and_scores
 
     @classmethod
     def from_texts_return_keys(
@@ -397,9 +748,9 @@ class Redis(VectorStore):
         metadatas: Optional[List[dict]] = None,
         index_name: Optional[str] = None,
         content_key: str = "content",
-        metadata_keys: dict = {"metadata":"Text"},
         vector_key: str = "content_vector",
-        distance_metric: REDIS_DISTANCE_METRICS = "COSINE",
+        vector_schema: Optional[Dict[str, str]] = None,
+        metadata_schema: Optional[Dict[str, List[Dict[str, str]]]] = None,
         **kwargs: Any,
     ) -> Tuple[Redis, List[str]]:
         """Create a Redis vectorstore from raw documents.
@@ -438,9 +789,9 @@ class Redis(VectorStore):
             index_name,
             embedding.embed_query,
             content_key=content_key,
-            metadata_keys=metadata_keys,
             vector_key=vector_key,
-            distance_metric=distance_metric,
+            vector_schema=vector_schema,
+            metadata_schema=metadata_schema,
             **kwargs,
         )
 
@@ -462,8 +813,9 @@ class Redis(VectorStore):
         metadatas: Optional[List[dict]] = None,
         index_name: Optional[str] = None,
         content_key: str = "content",
-        metadata_keys: dict = {"metadata":"Text"},
         vector_key: str = "content_vector",
+        vector_schema: Optional[Dict[str, str]] = None,
+        metadata_schema: Optional[Dict[str, List[Dict[str, str]]]] = None,
         **kwargs: Any,
     ) -> Redis:
         """Create a Redis vectorstore from raw documents.
@@ -492,8 +844,9 @@ class Redis(VectorStore):
             metadatas=metadatas,
             index_name=index_name,
             content_key=content_key,
-            metadata_keys=metadata_keys,
             vector_key=vector_key,
+            vector_schema=vector_schema,
+            metadata_schema=metadata_schema,
             **kwargs,
         )
         return instance
@@ -588,8 +941,8 @@ class Redis(VectorStore):
         embedding: Embeddings,
         index_name: str,
         content_key: str = "content",
-        metadata_keys: dict = {"metadata":"Text"},
         vector_key: str = "content_vector",
+        metadata_schema: Optional[Dict[str, List[Dict[str, str]]]] = None,
         **kwargs: Any,
     ) -> Redis:
         """Connect to an existing Redis index."""
@@ -621,8 +974,8 @@ class Redis(VectorStore):
             index_name,
             embedding.embed_query,
             content_key=content_key,
-            metadata_keys=metadata_keys,
             vector_key=vector_key,
+            metadata_schema=metadata_schema,
             **kwargs,
         )
 
@@ -631,37 +984,7 @@ class Redis(VectorStore):
         tags.extend(self._get_retriever_tags())
         return RedisVectorStoreRetriever(vectorstore=self, **kwargs, tags=tags)
 
-    def add_filter(self,filter: List):
-        filter_list=[]
-        for filter_map in filter:
-            key = filter_map['meta_key']
-            value = filter_map['meta_val']
-            if 'union' in filter_map:
-                union = filter_map['union']
-            else:
-                union = True # Default to union.
-            if self.metadata_keys[key]=='Text':
-                if type(value)==str: # Supports "val*"
-                    filter_list.append(f'{key}:{value}')
-            elif self.metadata_keys[key]=='Numeric':
-                if isinstance(value, numbers.Real): # [10 10] for equals condition
-                    filter_list.append(f'{key}:[{value} {value}]')
-                elif isinstance(value,list): #[10 20] => Between 10 and 20 (including both)
-                    filter_list.append(f'{key}:[{" ".join(map(str,value))}]')
-                elif isinstance(value,str):#[(10 20] => Between 10 and 20 (including 20, but excluding 10)
-                    filter_list.append(f'{key}:{value}')
-            elif self.metadata_keys[key]=='Tag':
-                if isinstance(value,list):
-                    if union: # @my_tags:{sample_tag|value}
-                        concatenated_tag_value = '{'+'|'.join(value)+'}'
-                        filter_list.append(key+':'+concatenated_tag_value)
-                    else: #Intersction when only both tags exists @my_tags:sample_tag and @my_tags:value
-                        for val in value:
-                            filter_list.append(key+':{'+val+'}')
-                elif isinstance(value,str):
-                    concatenated_tag_value = '{'+value+'}'
-                    filter_list.append(key+':'+concatenated_tag_value)
-        return filter_list
+
 
 
 class RedisVectorStoreRetriever(VectorStoreRetriever):
