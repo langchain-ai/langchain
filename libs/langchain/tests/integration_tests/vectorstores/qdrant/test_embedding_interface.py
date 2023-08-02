@@ -1,3 +1,4 @@
+import uuid
 from typing import Callable, Optional
 
 import pytest
@@ -24,7 +25,7 @@ def test_qdrant_embedding_interface(
     from qdrant_client import QdrantClient
 
     client = QdrantClient(":memory:")
-    collection_name = "test"
+    collection_name = uuid.uuid4().hex
 
     Qdrant(
         client,
@@ -48,7 +49,7 @@ def test_qdrant_embedding_interface_raises_value_error(
     from qdrant_client import QdrantClient
 
     client = QdrantClient(":memory:")
-    collection_name = "test"
+    collection_name = uuid.uuid4().hex
 
     with pytest.raises(ValueError):
         Qdrant(
