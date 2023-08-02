@@ -335,6 +335,8 @@ class ChatOpenAI(BaseChatModel):
 
         @retry_decorator
         def _completion_with_retry(**kwargs: Any) -> Any:
+            if kwargs.get("functions") is not None and not kwargs["functions"]:
+                del kwargs["functions"]
             return self.client.create(**kwargs)
 
         return _completion_with_retry(**kwargs)
