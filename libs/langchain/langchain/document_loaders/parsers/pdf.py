@@ -1,5 +1,5 @@
 """Module contains common parsers for PDFs."""
-from typing import Any, Iterator, Mapping, Optional, Union
+from typing import Any, Iterator, List, Mapping, Optional, Union
 
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
@@ -165,7 +165,7 @@ class AmazonTextractPDFParser(BaseBlobParser):
         )
 
     def __init__(
-        self, textract_features: list[tc.Textract_Features] = [], client: Any = None
+        self, textract_features: List[tc.Textract_Features] = [], client: Any = None
     ) -> None:
         """
         :func `Textract_features <tc.Textract_Features>`
