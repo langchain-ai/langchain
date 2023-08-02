@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 from langchain.document_loaders import NewsURLLoader
 
 
-def get_random_news_url():
+def get_random_news_url() -> str:
     response = requests.get("https://news.google.com")
     soup = BeautifulSoup(response.text, "html.parser")
 

@@ -1,6 +1,6 @@
 """Loader that uses unstructured to load HTML files."""
 import logging
-from typing import Any, List
+from typing import Any, Iterator, List
 
 from newspaper import Article
 
@@ -30,12 +30,12 @@ class NewsURLLoader(BaseLoader):
     def __init__(
         self,
         urls: List[str],
-        text_mode=True,
-        nlp=False,
+        text_mode: bool = True,
+        nlp: bool = False,
         continue_on_failure: bool = True,
         show_progress_bar: bool = False,
         **newspaper_kwargs: Any,
-    ):
+    ) -> None:
         """Initialize with file path."""
         try:
             import newspaper  # noqa:F401
@@ -55,7 +55,7 @@ class NewsURLLoader(BaseLoader):
         self.show_progress_bar = show_progress_bar
 
     def load(self) -> List[Document]:
-        docs: List[Document] = list()
+        iter = self.lazy_load()
         if self.show_progress_bar:
             try:
                 from tqdm import tqdm
@@ -65,12 +65,11 @@ class NewsURLLoader(BaseLoader):
                     "Please install with 'pip install tqdm' or set "
                     "show_progress_bar=False."
                 ) from e
+            iter = tqdm(iter)
+        return list(iter)
 
-            urls = tqdm(self.urls)
-        else:
-            urls = self.urls
-
-        for url in urls:
+    def lazy_load(self) -> Iterator[Document]:
+        for url in self.urls:
             try:
                 article = Article(url, **self.newspaper_kwargs)
                 article.download()
@@ -104,6 +103,4 @@ class NewsURLLoader(BaseLoader):
                 metadata["keywords"] = getattr(article, "keywords", [])
                 metadata["summary"] = getattr(article, "summary", "")
 
-            docs.append(Document(page_content=content, metadata=metadata))
-
-        return docs
+            yield Document(page_content=content, metadata=metadata)
