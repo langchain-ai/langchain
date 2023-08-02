@@ -20,6 +20,7 @@ from typing import (
     Union,
 )
 from urllib.parse import urlparse, urlunparse
+import uuid
 
 from langsmith import Client, RunEvaluator
 from langsmith.schemas import Dataset, DataType, Example
@@ -233,12 +234,12 @@ def _get_project_name(
     """
     if project_name is not None:
         return project_name
-    current_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
     if isinstance(llm_or_chain_factory, BaseLanguageModel):
         model_name = llm_or_chain_factory.__class__.__name__
     else:
         model_name = llm_or_chain_factory().__class__.__name__
-    return f"{current_time}-{model_name}"
+    hex = uuid.uuid4().hex
+    return f"{hex}-{model_name}"
 
 
 ## Shared Validation Utilities
