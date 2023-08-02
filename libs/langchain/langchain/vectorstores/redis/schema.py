@@ -124,8 +124,8 @@ class RedisMetadata(BaseModel):
 
     def get_fields(self):
         redis_fields = []
-        for field_name in self.fields.model_fields.keys():
-            field_group = getattr(self.fields, field_name)
+        for field_name in self.__fields__.keys():
+            field_group = getattr(self, field_name)
             if field_group is not None:
                 for field in field_group:
                     redis_fields.append(field.as_field())
@@ -134,8 +134,8 @@ class RedisMetadata(BaseModel):
     @property
     def keys(self):
         keys = []
-        for field_name in self.fields.model_fields.keys():
-            field_group = getattr(self.fields, field_name)
+        for field_name in self.__fields__.keys():
+            field_group = getattr(self, field_name)
             if field_group is not None:
                 for field in field_group:
                     keys.append(field.name)
