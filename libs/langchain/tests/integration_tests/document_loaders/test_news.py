@@ -1,28 +1,31 @@
+import random
+
 import pytest
 import requests
 from bs4 import BeautifulSoup
-import random
 
 from langchain.document_loaders import NewsURLLoader
 
 
 def get_random_news_url():
-    response = requests.get('https://news.google.com')
-    soup = BeautifulSoup(response.text, 'html.parser')
+    response = requests.get("https://news.google.com")
+    soup = BeautifulSoup(response.text, "html.parser")
 
-    article_links = [a['href'] for a in soup.find_all('a', href=True) if '/articles/' in a['href']]
+    article_links = [
+        a["href"] for a in soup.find_all("a", href=True) if "/articles/" in a["href"]
+    ]
     random_article_link = random.choice(article_links)
 
-    return 'https://news.google.com' + random_article_link
+    return "https://news.google.com" + random_article_link
 
 
 def test_news_loader() -> None:
     loader = NewsURLLoader([get_random_news_url()])
     docs = loader.load()
 
-    assert (docs[0] is not None)
-    assert (hasattr(docs[0], 'page_content'))
-    assert (hasattr(docs[0], 'metadata'))
+    assert docs[0] is not None
+    assert hasattr(docs[0], "page_content")
+    assert hasattr(docs[0], "metadata")
 
     metadata = docs[0].metadata
     assert "title" in metadata
@@ -37,9 +40,9 @@ def test_news_loader_with_nlp() -> None:
     loader = NewsURLLoader([get_random_news_url()], nlp=True)
     docs = loader.load()
 
-    assert (docs[0] is not None)
-    assert (hasattr(docs[0], 'page_content'))
-    assert (hasattr(docs[0], 'metadata'))
+    assert docs[0] is not None
+    assert hasattr(docs[0], "page_content")
+    assert hasattr(docs[0], "metadata")
 
     metadata = docs[0].metadata
     assert "title" in metadata

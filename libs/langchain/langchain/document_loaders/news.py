@@ -55,7 +55,6 @@ class NewsURLLoader(BaseLoader):
         self.show_progress_bar = show_progress_bar
 
     def load(self) -> List[Document]:
-
         docs: List[Document] = list()
         if self.show_progress_bar:
             try:
