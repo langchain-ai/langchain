@@ -2,9 +2,10 @@
 import logging
 from typing import Any, List
 
+from newspaper import Article
+
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
-from newspaper import Article
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +30,8 @@ class NewsURLLoader(BaseLoader):
     def __init__(
         self,
         urls: List[str],
-        text_mode = True,
-        nlp = False,
+        text_mode=True,
+        nlp=False,
         continue_on_failure: bool = True,
         show_progress_bar: bool = False,
         **newspaper_kwargs: Any,
@@ -38,6 +39,7 @@ class NewsURLLoader(BaseLoader):
         """Initialize with file path."""
         try:
             import newspaper  # noqa:F401
+
             self.__version = newspaper.__version__
         except ImportError:
             raise ImportError(
@@ -86,13 +88,20 @@ class NewsURLLoader(BaseLoader):
                     raise e
 
             metadata = {
-                "title": article.title if hasattr(article, 'title') else '',
-                "link": article.url if hasattr(article, 'url')
-                    else article.canonical_link if hasattr(article, 'canonical_link') else '',
-                "authors": article.authors if hasattr(article, 'authors') else '',
-                "language": article.meta_lang if hasattr(article, 'meta_lang') else '',
-                "description": article.meta_description if hasattr(article, 'meta_description') else '',
-                "publish_date": article.publish_date if hasattr(article, 'publish_date') else '',
+                "title": article.title if hasattr(article, "title") else "",
+                "link": article.url
+                if hasattr(article, "url")
+                else article.canonical_link
+                if hasattr(article, "canonical_link")
+                else "",
+                "authors": article.authors if hasattr(article, "authors") else "",
+                "language": article.meta_lang if hasattr(article, "meta_lang") else "",
+                "description": article.meta_description
+                if hasattr(article, "meta_description")
+                else "",
+                "publish_date": article.publish_date
+                if hasattr(article, "publish_date")
+                else "",
             }
 
             if self.text_mode:
@@ -101,8 +110,12 @@ class NewsURLLoader(BaseLoader):
                 content = article.html
 
             if self.nlp:
-                metadata["keywords"] = article.keywords if hasattr(article, "keywords") else []
-                metadata["summary"] = article.summary if hasattr(article, "summary") else ''
+                metadata["keywords"] = (
+                    article.keywords if hasattr(article, "keywords") else []
+                )
+                metadata["summary"] = (
+                    article.summary if hasattr(article, "summary") else ""
+                )
 
             docs.append(Document(page_content=content, metadata=metadata))
 
