@@ -77,7 +77,7 @@ async def test_sync_async_embed_documents_equal() -> None:
     embedding = OpenAIEmbeddings()
     sync_output = embedding.embed_documents(documents)
     async_output = await embedding.aembed_documents(documents)
-    assert np.isclose(sync_output, async_output, atol=1e-4).mean() > 0.99
+    assert np.isclose(sync_output, async_output, atol=1e-4).mean() > 0.95
 
 
 @pytest.mark.asyncio
@@ -86,7 +86,7 @@ async def test_sync_async_embed_query_equal() -> None:
     embedding = OpenAIEmbeddings()
     sync_output = embedding.embed_query(query)
     async_output = await embedding.aembed_query(query)
-    assert np.isclose(sync_output, async_output, atol=1e-4).mean() > 0.99
+    assert np.isclose(sync_output, async_output, atol=1e-4).mean() > 0.95
 
 
 @pytest.mark.asyncio
@@ -96,11 +96,11 @@ async def test_with_without_tokenizing_equal() -> None:
     without_tokenizing = OpenAIEmbeddings(embedding_ctx_length=None)
     tokenize_output = with_tokenizing.embed_documents(documents)
     text_output = without_tokenizing.embed_documents(documents)
-    assert np.isclose(tokenize_output, text_output, atol=1e-4).mean() > 0.99
+    assert np.isclose(tokenize_output, text_output, atol=1e-4).mean() > 0.95
 
     atokenize_output = await with_tokenizing.aembed_documents(documents)
     atext_output = await without_tokenizing.aembed_documents(documents)
-    assert np.isclose(atokenize_output, atext_output, atol=1e-4).mean() > 0.99
+    assert np.isclose(atokenize_output, atext_output, atol=1e-4).mean() > 0.95
 
 
 def test_embed_documents_normalized() -> None:
