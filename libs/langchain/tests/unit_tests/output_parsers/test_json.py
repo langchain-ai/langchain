@@ -54,6 +54,12 @@ TICKS_WITH_NEW_LINES_EVERYWHERE = """
 
 """
 
+JSON_WITH_MARKDOWN_CODE_BLOCK = """```json
+{
+    "foo": "```bar```"
+}
+```"""
+
 NO_TICKS = """{
     "foo": "bar"
 }"""
@@ -106,3 +112,8 @@ TEST_CASES = [
 def test_parse_json(json_string: str) -> None:
     parsed = parse_json_markdown(json_string)
     assert parsed == {"foo": "bar"}
+
+
+def test_parse_json_with_code_block() -> None:
+    parsed = parse_json_markdown(JSON_WITH_MARKDOWN_CODE_BLOCK)
+    assert parsed == {"foo": "```bar```"}

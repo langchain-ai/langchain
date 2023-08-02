@@ -34,18 +34,18 @@ class SearchQueries(BaseModel):
 
 DEFAULT_LLAMA_SEARCH_PROMPT = PromptTemplate(
     input_variables=["question"],
-    template="""<<SYS>> \n You are an assistant tasked with improving Google search 
-    results. \n <</SYS>> \n\n [INST] Generate THREE Google search queries that 
-    are similar to this question. The output should be a numbered list of questions 
-    and each should have a question mark at the end: \n\n {question} [/INST]""",
+    template="""<<SYS>> \n You are an assistant tasked with improving Google search \
+results. \n <</SYS>> \n\n [INST] Generate THREE Google search queries that \
+are similar to this question. The output should be a numbered list of questions \
+and each should have a question mark at the end: \n\n {question} [/INST]""",
 )
 
 DEFAULT_SEARCH_PROMPT = PromptTemplate(
     input_variables=["question"],
-    template="""You are an assistant tasked with improving Google search 
-    results. Generate THREE Google search queries that are similar to
-    this question. The output should be a numbered list of questions and each
-    should have a question mark at the end: {question}""",
+    template="""You are an assistant tasked with improving Google search \
+results. Generate THREE Google search queries that are similar to \
+this question. The output should be a numbered list of questions and each \
+should have a question mark at the end: {question}""",
 )
 
 

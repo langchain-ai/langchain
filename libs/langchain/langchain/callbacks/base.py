@@ -243,6 +243,11 @@ class BaseCallbackHandler(
         return False
 
     @property
+    def ignore_retry(self) -> bool:
+        """Whether to ignore retry callbacks."""
+        return False
+
+    @property
     def ignore_chain(self) -> bool:
         """Whether to ignore chain callbacks."""
         return False

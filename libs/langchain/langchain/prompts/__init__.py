@@ -1,4 +1,32 @@
-"""Prompt template classes."""
+"""**Prompt** is the input to the model.
+
+Prompt is often constructed
+from multiple components. Prompt classes and functions make constructing
+ and working with prompts easy.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    BasePromptTemplate --> PipelinePromptTemplate
+                           StringPromptTemplate --> PromptTemplate
+                                                    FewShotPromptTemplate
+                                                    FewShotPromptWithTemplates
+                           BaseChatPromptTemplate --> AutoGPTPrompt
+                                                      ChatPromptTemplate --> AgentScratchPadChatPromptTemplate
+
+
+
+    BaseMessagePromptTemplate --> MessagesPlaceholder
+                                  BaseStringMessagePromptTemplate --> ChatMessagePromptTemplate
+                                                                      HumanMessagePromptTemplate
+                                                                      AIMessagePromptTemplate
+                                                                      SystemMessagePromptTemplate
+
+    PromptValue --> StringPromptValue
+                    ChatPromptValue
+
+"""  # noqa: E501
 from langchain.prompts.base import StringPromptTemplate
 from langchain.prompts.chat import (
     AIMessagePromptTemplate,
@@ -15,7 +43,10 @@ from langchain.prompts.example_selector import (
     NGramOverlapExampleSelector,
     SemanticSimilarityExampleSelector,
 )
-from langchain.prompts.few_shot import FewShotPromptTemplate
+from langchain.prompts.few_shot import (
+    FewShotChatMessagePromptTemplate,
+    FewShotPromptTemplate,
+)
 from langchain.prompts.few_shot_with_templates import FewShotPromptWithTemplates
 from langchain.prompts.loading import load_prompt
 from langchain.prompts.pipeline import PipelinePromptTemplate
@@ -42,4 +73,5 @@ __all__ = [
     "StringPromptTemplate",
     "SystemMessagePromptTemplate",
     "load_prompt",
+    "FewShotChatMessagePromptTemplate",
 ]
