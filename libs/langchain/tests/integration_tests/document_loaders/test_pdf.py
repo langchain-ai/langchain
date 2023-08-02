@@ -1,5 +1,4 @@
 from pathlib import Path
-import pytest
 
 import pytest
 
@@ -12,7 +11,6 @@ from langchain.document_loaders import (
     PyPDFium2Loader,
     PyPDFLoader,
     UnstructuredPDFLoader,
-    AmazonTextractPDFLoader
 )
 
 
