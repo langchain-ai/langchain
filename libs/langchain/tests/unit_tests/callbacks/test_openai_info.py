@@ -69,12 +69,12 @@ def test_on_llm_end_finetuned_model(handler: OpenAICallbackHandler) -> None:
             ("gpt-35-turbo-0613", 0.0035), # 0.0015 per 1k input tokens; 0.002 per 1k output tokens
             ("gpt-35-turbo-16k-0613", 0.007), # 0.003 per 1k input tokens; 0.004 per 1k output tokens
             ("gpt-35-turbo-16k", 0.007), # 0.003 per 1k input tokens; 0.004 per 1k output tokens
-            ("gpt-4", 0.009), # 0,003 per 1k input tokens; 0.006 per 1k output tokens
-            ("gpt-4-0314", 0.009), # 0,003 per 1k input tokens; 0.006 per 1k output tokens
-            ("gpt-4-0613", 0.009), # 0,003 per 1k input tokens; 0.006 per 1k output tokens
-            ("gpt-4-32k", 0.126), # 0,006 per 1k input tokens; 0.12 per 1k output tokens
-            ("gpt-4-32k-0314", 0.126), # 0,006 per 1k input tokens; 0.12 per 1k output tokens
-            ("gpt-4-32k-0613", 0.126), # 0,006 per 1k input tokens; 0.12 per 1k output tokens
+            ("gpt-4", 0.09), # 0,003 per 1k input tokens; 0.006 per 1k output tokens
+            ("gpt-4-0314", 0.09), # 0,03 per 1k input tokens; 0.06 per 1k output tokens
+            ("gpt-4-0613", 0.09), # 0,03 per 1k input tokens; 0.06 per 1k output tokens
+            ("gpt-4-32k", 0.18), # 0,06 per 1k input tokens; 0.12 per 1k output tokens
+            ("gpt-4-32k-0314", 0.18), # 0,06 per 1k input tokens; 0.12 per 1k output tokens
+            ("gpt-4-32k-0613", 0.18), # 0,06 per 1k input tokens; 0.12 per 1k output tokens
         ]
     )
 def test_on_llm_end_azure_openai(handler: OpenAICallbackHandler, model_name, expected_cost) -> None:
