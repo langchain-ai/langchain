@@ -6,6 +6,8 @@ from pydantic import Field
 
 
 class AutoGPTMemory(BaseChatMemory):
+    """Memory for AutoGPT."""
+
     retriever: VectorStoreRetriever = Field(exclude=True)
     """VectorStoreRetriever object to connect to."""
 
