@@ -38,6 +38,7 @@ from langchain.agents.agent_toolkits.vectorstore.toolkit import (
 )
 from langchain.agents.agent_toolkits.xorbits.base import create_xorbits_agent
 from langchain.agents.agent_toolkits.zapier.toolkit import ZapierToolkit
+from langchain.agents.agent_toolkits.conversational_retrieval import create_conversational_retrieval_agent, create_retriever_tool
 
 __all__ = [
     "AmadeusToolkit",
@@ -71,4 +72,6 @@ __all__ = [
     "create_vectorstore_agent",
     "create_vectorstore_router_agent",
     "create_xorbits_agent",
+    "create_conversational_retrieval_agent",
+    "create_retriever_tool",
 ]
