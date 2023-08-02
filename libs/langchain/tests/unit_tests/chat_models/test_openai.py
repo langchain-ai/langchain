@@ -31,6 +31,7 @@ def test_function_message_dict_to_function_message() -> None:
     assert result.name == name
     assert result.content == content
 
+
 def test__convert_dict_to_message_human() -> None:
     message = {"role": "user", "content": "foo"}
     result = _convert_dict_to_message(message)

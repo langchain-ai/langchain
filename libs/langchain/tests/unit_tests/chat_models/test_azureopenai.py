@@ -46,4 +46,7 @@ def test_model_name_set_on_chat_result_when_present_in_response(
     mock_response = cast(Mapping[str, Any], sample_response)
     mock_chat = AzureChatOpenAI()
     chat_result = mock_chat._create_chat_result(mock_response)
-    assert chat_result.llm_output["model_name"] == model_name
+    assert (
+        chat_result.llm_output is not None
+        and chat_result.llm_output["model_name"] == model_name
+    )
