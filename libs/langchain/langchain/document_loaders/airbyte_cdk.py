@@ -18,7 +18,7 @@ class AirbyteCDKLoader(BaseLoader, BaseEmbeddedIntegration):
         self._state = state
 
     def _handle_record(self, record: AirbyteRecordMessage, id: Optional[str]) -> Document:
-        return Document(page_content="", extra_info=record.data)
+        return Document(page_content="", metadata=record.data)
 
     def load(self) -> List[Document]:
         return list(self._load_data(stream_name=self._stream_name, state=self._state))
