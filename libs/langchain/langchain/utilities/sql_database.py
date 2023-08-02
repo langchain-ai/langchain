@@ -50,7 +50,7 @@ class SQLDatabase:
         custom_table_info: Optional[dict] = None,
         view_support: bool = False,
         max_string_length: int = 300,
-        harmful_keywords: Optional[dict] = None,
+        restricted_keywords: Optional[dict] = None,
     ):
         """Create engine from database URI."""
         self._engine = engine
@@ -116,8 +116,8 @@ class SQLDatabase:
             schema=self._schema,
         )
 
-        # Harmful keywords to not execute on database
-        self.harmful_keywords = harmful_keywords if harmful_keywords else []
+        # Restricted keywords to not execute on database
+        self.restricted_keywords = restricted_keywords if restricted_keywords else []
 
     @classmethod
     def from_uri(
@@ -391,11 +391,11 @@ class SQLDatabase:
                 else:  # postgresql and compatible dialects
                     connection.exec_driver_sql(f"SET search_path TO {self._schema}")
 
-            if not self.detect_harmful_keywords(command):
+            if not self.detect_restricted_keywords(command):
                 cursor = connection.execute(text(command))
             else:
                 raise PermissionError(
-                    f"Harmful keywords in the SQL '{command}'\n Commands '{self.harmful_keywords}' are forbidden."
+                    f"Restricted keywords in the SQL '{command}'\n Commands '{self.restricted_keywords}' are forbidden."
                 )
             if cursor.returns_rows:
                 if fetch == "all":
@@ -407,15 +407,15 @@ class SQLDatabase:
                 return result
         return []
 
-    def detect_harmful_keywords(self, input_string):
-        # List of harmful keywords
-        harmful_keywords = [keyword.lower() for keyword in self.harmful_keywords]
+    def detect_restricted_keywords(self, input_string):
+        # List of restricted keywords
+        restricted_keywords = [keyword.lower() for keyword in self.restricted_keywords]
 
         # Convert the input string to lowercase for case-insensitive matching
         input_lower = input_string.lower()
 
-        # Check if any harmful keyword is present in the input string
-        for keyword in harmful_keywords:
+        # Check if any restricted keyword is present in the input string
+        for keyword in restricted_keywords:
             if keyword in input_lower:
                 return True
 
