@@ -226,8 +226,8 @@ async def test_qdrant_from_texts_recreates_collection_on_force_recreate(
     assert 2 == client.count(collection_name).count
     vector_params = client.get_collection(collection_name).config.params.vectors
     if vector_name is not None:
-        vector_params = vector_params[vector_name]
-    assert 5 == vector_params.size
+        vector_params = vector_params[vector_name]  # type: ignore[index]
+    assert 5 == vector_params.size  # type: ignore[union-attr]
 
 
 @pytest.mark.asyncio
