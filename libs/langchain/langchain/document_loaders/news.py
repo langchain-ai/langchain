@@ -88,20 +88,12 @@ class NewsURLLoader(BaseLoader):
                     raise e
 
             metadata = {
-                "title": article.title if hasattr(article, "title") else "",
-                "link": article.url
-                if hasattr(article, "url")
-                else article.canonical_link
-                if hasattr(article, "canonical_link")
-                else "",
-                "authors": article.authors if hasattr(article, "authors") else "",
-                "language": article.meta_lang if hasattr(article, "meta_lang") else "",
-                "description": article.meta_description
-                if hasattr(article, "meta_description")
-                else "",
-                "publish_date": article.publish_date
-                if hasattr(article, "publish_date")
-                else "",
+                "title": getattr(article, "title", ""),
+                "link": getattr(article, "url", getattr(article, "canonical_link", "")),
+                "authors": getattr(article, "authors", []),
+                "language": getattr(article, "meta_lang", ""),
+                "description": getattr(article, "meta_description", ""),
+                "publish_date": getattr(article, "publish_date", ""),
             }
 
             if self.text_mode:
@@ -110,12 +102,8 @@ class NewsURLLoader(BaseLoader):
                 content = article.html
 
             if self.nlp:
-                metadata["keywords"] = (
-                    article.keywords if hasattr(article, "keywords") else []
-                )
-                metadata["summary"] = (
-                    article.summary if hasattr(article, "summary") else ""
-                )
+                metadata["keywords"] = getattr(article, "keywords", [])
+                metadata["summary"] = getattr(article, "summary", "")
 
             docs.append(Document(page_content=content, metadata=metadata))
 
