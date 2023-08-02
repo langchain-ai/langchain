@@ -14,17 +14,17 @@ from langchain.callbacks.manager import (
     Callbacks,
 )
 from langchain.chains.base import Chain
-from langchain.input import get_colored_text
 from langchain.load.dump import dumpd
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
     BaseLLMOutputParser,
     BasePromptTemplate,
     LLMResult,
-    NoOpOutputParser,
     PromptValue,
+    StrOutputParser,
 )
 from langchain.schema.language_model import BaseLanguageModel
+from langchain.utils.input import get_colored_text
 
 
 class LLMChain(Chain):
@@ -50,7 +50,7 @@ class LLMChain(Chain):
     llm: BaseLanguageModel
     """Language model to call."""
     output_key: str = "text"  #: :meta private:
-    output_parser: BaseLLMOutputParser = Field(default_factory=NoOpOutputParser)
+    output_parser: BaseLLMOutputParser = Field(default_factory=StrOutputParser)
     """Output parser to use.
     Defaults to one that takes the most likely string but does not change it 
     otherwise."""

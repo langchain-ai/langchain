@@ -7,7 +7,7 @@ from langchain.memory.chat_message_histories import ZepChatMessageHistory
 
 
 class ZepMemory(ConversationBufferMemory):
-    """Persist your chain history to the Zep Long-term Memory Server
+    """Persist your chain history to the Zep Memory Server.
 
     The number of messages returned by Zep and when the Zep server summarizes chat
     histories is configurable. See the Zep documentation for more details.

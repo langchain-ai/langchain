@@ -9,7 +9,6 @@ from langchain.agents.agent_toolkits.json.base import create_json_agent
 from langchain.agents.agent_toolkits.json.toolkit import JsonToolkit
 from langchain.agents.agent_toolkits.openapi.prompt import DESCRIPTION
 from langchain.agents.tools import Tool
-from langchain.requests import TextRequestsWrapper
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool
 from langchain.tools.json.tool import JsonSpec
@@ -20,6 +19,7 @@ from langchain.tools.requests.tool import (
     RequestsPostTool,
     RequestsPutTool,
 )
+from langchain.utilities.requests import TextRequestsWrapper
 
 
 class RequestsToolkit(BaseToolkit):

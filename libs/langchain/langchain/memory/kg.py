@@ -17,7 +17,7 @@ from langchain.schema.messages import BaseMessage, SystemMessage, get_buffer_str
 
 
 class ConversationKGMemory(BaseChatMemory):
-    """Knowledge graph memory for storing conversation memory.
+    """Knowledge graph conversation memory.
 
     Integrates with external knowledge graph to store and retrieve
     information about knowledge triples in the conversation.

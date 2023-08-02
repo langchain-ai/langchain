@@ -25,7 +25,6 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.input import get_color_mapping
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
@@ -39,6 +38,7 @@ from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage
 from langchain.tools.base import BaseTool
 from langchain.utilities.asyncio import asyncio_timeout
+from langchain.utils.input import get_color_mapping
 
 logger = logging.getLogger(__name__)
 

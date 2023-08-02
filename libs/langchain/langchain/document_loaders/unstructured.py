@@ -34,7 +34,7 @@ def validate_unstructured_version(min_unstructured_version: str) -> None:
 
 
 class UnstructuredBaseLoader(BaseLoader, ABC):
-    """Loader that uses unstructured to load files."""
+    """Loader that uses Unstructured to load files."""
 
     def __init__(
         self,
@@ -130,7 +130,9 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
 
 
 class UnstructuredFileLoader(UnstructuredBaseLoader):
-    """UnstructuredFileLoader uses unstructured to load files. The file loader uses the
+    """Loader that uses Unstructured to load files.
+
+    The file loader uses the
     unstructured partition function and will automatically detect the file
     type. You can run the loader in one of two modes: "single" and "elements".
     If you use "single" mode, the document will be returned as a single
@@ -209,7 +211,8 @@ def get_elements_from_api(
 
 
 class UnstructuredAPIFileLoader(UnstructuredFileLoader):
-    """UnstructuredAPIFileLoader uses the Unstructured API to load files.
+    """Loader that uses the Unstructured API to load files.
+
     By default, the loader makes a call to the hosted Unstructured API.
     If you are running the unstructured API locally, you can change the
     API rule by passing in the url parameter when you initialize the loader.
@@ -272,7 +275,9 @@ class UnstructuredAPIFileLoader(UnstructuredFileLoader):
 
 
 class UnstructuredFileIOLoader(UnstructuredBaseLoader):
-    """UnstructuredFileIOLoader uses unstructured to load files. The file loader
+    """Loader that uses Unstructured to load files.
+
+    The file loader
     uses the unstructured partition function and will automatically detect the file
     type. You can run the loader in one of two modes: "single" and "elements".
     If you use "single" mode, the document will be returned as a single
@@ -317,7 +322,8 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
 
 
 class UnstructuredAPIFileIOLoader(UnstructuredFileIOLoader):
-    """UnstructuredAPIFileIOLoader uses the Unstructured API to load files.
+    """Loader that uses the Unstructured API to load files.
+
     By default, the loader makes a call to the hosted Unstructured API.
     If you are running the unstructured API locally, you can change the
     API rule by passing in the url parameter when you initialize the loader.

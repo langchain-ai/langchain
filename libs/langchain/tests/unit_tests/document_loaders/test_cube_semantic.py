@@ -1,86 +1,61 @@
-from typing import List
-from unittest import TestCase
-from unittest.mock import MagicMock, patch
+import unittest
+from unittest.mock import MagicMock, Mock, patch
 
-import requests
-
-from langchain.docstore.document import Document
 from langchain.document_loaders import CubeSemanticLoader
 
+MODULE_PATH = "langchain.document_loaders.cube_semantic.CubeSemanticLoader"
 
-class TestCubeSemanticLoader(TestCase):
-    @patch.object(requests, "get")
-    def test_load_success(self, mock_get: MagicMock) -> None:
-        # Arrange
-        cube_api_url: str = "https://example.com/cube_api"
-        cube_api_token: str = "abc123"
-        mock_response: MagicMock = MagicMock()
+
+class TestCubeSemanticLoader(unittest.TestCase):
+    def setUp(self) -> None:
+        self.loader = CubeSemanticLoader(
+            cube_api_url="http://example.com", cube_api_token="test_token"
+        )
+
+    @patch("requests.request")
+    def test_get_dimension_values(self, mock_request: MagicMock) -> None:
+        mock_response = Mock()
         mock_response.status_code = 200
-        mock_response_json: dict = {
+        mock_response.json.return_value = {"data": [{"test_dimension": "value1"}]}
+        mock_request.return_value = mock_response
+
+        values = self.loader._get_dimension_values("test_dimension")
+        self.assertEqual(values, ["value1"])
+
+    @patch("requests.get")
+    @patch(f"{MODULE_PATH}._get_dimension_values")
+    def test_load(
+        self, mock_get_dimension_values: MagicMock, mock_get: MagicMock
+    ) -> None:
+        # Mocking the response
+        mock_response = Mock()
+        mock_response.raise_for_status.return_value = None
+        mock_response.json.return_value = {
             "cubes": [
                 {
+                    "name": "test_cube",
                     "type": "view",
-                    "name": "cube1",
-                    "measures": [{"type": "sum", "name": "sales", "title": "Sales"}],
+                    "measures": [],
                     "dimensions": [
                         {
+                            "name": "test_dimension",
                             "type": "string",
-                            "name": "product_name",
-                            "title": "Product Name",
+                            "title": "Test Title",
+                            "description": "Test Description",
                         }
                     ],
                 }
             ]
         }
-        mock_response.json.return_value = mock_response_json
         mock_get.return_value = mock_response
 
-        expected_docs: List[Document] = [
-            Document(
-                page_content=(
-                    "table name: cube1, "
-                    "column name: sales, "
-                    "column data type: sum, "
-                    "column title: Sales, "
-                    "column description: None"
-                ),
-                metadata={
-                    "table_name": "cube1",
-                    "column_name": "sales",
-                    "column_data_type": "sum",
-                    "column_title": "Sales",
-                    "column_description": "None",
-                },
-            ),
-            Document(
-                page_content=(
-                    "table name: cube1, "
-                    "column name: product_name, "
-                    "column data type: string, "
-                    "column title: Product Name, "
-                    "column description: None"
-                ),
-                metadata={
-                    "table_name": "cube1",
-                    "column_name": "product_name",
-                    "column_data_type": "string",
-                    "column_title": "Product Name",
-                    "column_description": "None",
-                },
-            ),
-        ]
+        mock_get_dimension_values.return_value = ["value1", "value2"]
 
-        loader: CubeSemanticLoader = CubeSemanticLoader(cube_api_url, cube_api_token)
+        documents = self.loader.load()
+        self.assertEqual(len(documents), 1)
+        self.assertEqual(documents[0].page_content, "Test Title, Test Description")
+        self.assertEqual(documents[0].metadata["column_values"], ["value1", "value2"])
 
-        # Act
-        result: List[Document] = loader.load()
 
-        # Assert
-        self.assertEqual(result, expected_docs)
-        mock_get.assert_called_once_with(
-            cube_api_url,
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": cube_api_token,
-            },
-        )
+if __name__ == "__main__":
+    unittest.main()

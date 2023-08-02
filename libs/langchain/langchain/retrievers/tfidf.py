@@ -2,10 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Iterable, List, Optional
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
+from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document
 
 
@@ -79,8 +76,3 @@ class TFIDFRetriever(BaseRetriever):
         )  # Op -- (n_docs,1) -- Cosine Sim with each doc
         return_docs = [self.docs[i] for i in results.argsort()[-self.k :][::-1]]
         return return_docs
-
-    async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        raise NotImplementedError

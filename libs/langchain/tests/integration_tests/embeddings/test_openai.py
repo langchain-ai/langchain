@@ -101,3 +101,13 @@ async def test_with_without_tokenizing_equal() -> None:
     atokenize_output = await with_tokenizing.aembed_documents(documents)
     atext_output = await without_tokenizing.aembed_documents(documents)
     assert np.isclose(atokenize_output, atext_output, atol=1e-4).sum() > 0.99
+
+
+def test_embed_documents_normalized() -> None:
+    output = OpenAIEmbeddings().embed_documents(["foo walked to the market"])
+    assert np.isclose(np.linalg.norm(output[0]), 1.0)
+
+
+def test_embed_query_normalized() -> None:
+    output = OpenAIEmbeddings().embed_query("foo walked to the market")
+    assert np.isclose(np.linalg.norm(output), 1.0)
