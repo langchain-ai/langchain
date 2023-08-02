@@ -202,7 +202,7 @@ class RedisCache(BaseCache):
     def __init__(self, redis_: Any):
         """Initialize by passing in Redis instance."""
         try:
-            from redis import Redis
+            from redis import Redis  # type: ignore
         except ImportError:
             raise ValueError(
                 "Could not import redis python package. "
@@ -474,14 +474,23 @@ class GPTCache(BaseCache):
         if not gpt_cache:
             return None
 
+        if isinstance(prompt, str) and prompt.startswith("["):
+            try:
+                prompt = json.loads(prompt)
+            except json.JSONDecodeError:
+                raise ValueError(
+                    "Prompt must be a valid JSON string or a list of JSON strings."
+                )
+
+        if isinstance(prompt, list):
+            prompt = prompt[0].get("kwargs", {}).get("content", "")
+
         response = get(prompt, cache_obj=gpt_cache)
 
         if not response:
             return None
 
         response_data = loads(response)
-
-        print(response_data)
 
         generations = [
             ChatGeneration(
@@ -516,6 +525,7 @@ class GPTCache(BaseCache):
         _gptcache = self._get_gptcache(llm_string)
         handled_data = json.dumps([generation.dict() for generation in return_val])
         put(prompt, handled_data, cache_obj=_gptcache)
+
         return None
 
     def clear(self, **kwargs: Any) -> None:
