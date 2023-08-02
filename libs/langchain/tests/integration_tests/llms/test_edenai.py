@@ -10,6 +10,7 @@ You'll then need to set EDENAI_API_KEY environment variable to your api key.
 """
 from langchain.llms import EdenAI
 
+
 def test_edenai_call() -> None:
     """Test simple call to edenai."""
     llm = EdenAI(provider="openai", params={"temperature": 0.2, "max_tokens": 250})
@@ -20,12 +21,12 @@ def test_edenai_call() -> None:
     assert llm.subfeature == "generation"
     assert isinstance(output, str)
 
+
 async def test_edenai_acall() -> None:
     """Test simple call to edenai."""
     llm = EdenAI(provider="openai", params={"temperature": 0.2, "max_tokens": 250})
-    output= await llm.agenerate("Say foo:")
+    output = await llm.agenerate("Say foo:")
     assert llm._llm_type == "edenai"
     assert llm.feature == "text"
     assert llm.subfeature == "generation"
-    assert isinstance(output,str)
-
+    assert isinstance(output, str)

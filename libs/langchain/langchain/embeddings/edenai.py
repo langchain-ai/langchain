@@ -3,8 +3,8 @@ from typing import Any, Dict, List, Mapping, Optional
 from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.embeddings.base import Embeddings
-from langchain.utils import get_from_dict_or_env
 from langchain.requests import Requests
+from langchain.utils import get_from_dict_or_env
 
 
 class EdenAiEmbeddings(BaseModel, Embeddings):
@@ -12,10 +12,10 @@ class EdenAiEmbeddings(BaseModel, Embeddings):
     environment variable ``EDENAI_API_KEY`` set with your API key, or pass
     it as a named parameter.
     """
-    
+
     edenai_api_key: Optional[str] = Field(None, description="EdenAI API Token")
-    
-    provider: Optional[str]= "openai" 
+
+    provider: Optional[str] = "openai"
     """embedding provider to use (eg: openai,google etc.)"""
 
     class Config:
@@ -31,23 +31,17 @@ class EdenAiEmbeddings(BaseModel, Embeddings):
         )
         return values
 
-        
-    def _generate_embeddings(
-        self, texts: List[str]
-    ) -> List[List[float]]:
+    def _generate_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Compute embeddings using EdenAi api."""
         url = "https://api.edenai.run/v2/text/embeddings"
 
         headers = {
             "accept": "application/json",
             "content-type": "application/json",
-            "authorization": f"Bearer {self.edenai_api_key}"
+            "authorization": f"Bearer {self.edenai_api_key}",
         }
 
-        payload = {
-            "texts": texts,
-            "providers": self.provider
-        }
+        payload = {"texts": texts, "providers": self.provider}
         request = Requests(headers=headers)
         response = request.post(url=url, data=payload)
         if response.status_code >= 500:
@@ -60,15 +54,14 @@ class EdenAiEmbeddings(BaseModel, Embeddings):
                 f"{response.status_code}: {response.text}"
             )
 
-        temp=response.json()
+        temp = response.json()
 
         embeddings = []
         for embed_item in temp[self.provider]["items"]:
-
-            embedding=embed_item["embedding"]
+            embedding = embed_item["embedding"]
 
             embeddings.append(embedding)
-        
+
         return embeddings
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
