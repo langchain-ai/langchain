@@ -1,10 +1,7 @@
-import uuid
-from typing import Dict
+from typing import Any, Dict
 
-import pytest
 from pytest_mock import MockerFixture
 
-from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.retrievers import RemoteLangChainRetriever
 from langchain.schema import Document
 
@@ -18,10 +15,10 @@ class MockResponse:
         return self.json_data
 
 
-def mocked_requests_post() -> MockResponse:
+def mocked_requests_post(*args: Any, **kwargs: Any) -> MockResponse:
     return MockResponse(
         json_data={
-            "message": [
+            "response": [
                 {
                     "page_content": "I like apples",
                     "metadata": {
@@ -40,8 +37,7 @@ def mocked_requests_post() -> MockResponse:
     )
 
 
-@pytest.fixture
-def test_RemoteLangChainRetriever__get_relevant_documents(
+def test_RemoteLangChainRetriever_get_relevant_documents(
     mocker: MockerFixture,
 ) -> None:
     mocker.patch("requests.post", side_effect=mocked_requests_post)
@@ -49,14 +45,7 @@ def test_RemoteLangChainRetriever__get_relevant_documents(
     remote_langchain_retriever = RemoteLangChainRetriever(
         url="http://localhost:8000",
     )
-    response = remote_langchain_retriever._get_relevant_documents(
-        query="I like apples",
-        run_manager=CallbackManagerForRetrieverRun(
-            run_id=uuid.uuid4(),
-            handlers=[],
-            inheritable_handlers=[],
-        ),
-    )
+    response = remote_langchain_retriever.get_relevant_documents("I like apples")
     want = [
         Document(page_content="I like apples", metadata={"test": 0}),
         Document(page_content="I like pineapples", metadata={"test": 1}),
