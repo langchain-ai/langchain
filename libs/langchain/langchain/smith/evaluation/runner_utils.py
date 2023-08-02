@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import asyncio
-from enum import Enum
 import functools
 import itertools
 import logging
 from datetime import datetime
+from enum import Enum
 from typing import (
     Any,
     Callable,
