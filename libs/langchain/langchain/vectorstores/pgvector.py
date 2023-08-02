@@ -17,7 +17,7 @@ from typing import (
 )
 
 import sqlalchemy
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, insert
 from sqlalchemy.orm import Session, declarative_base
 
 from langchain.docstore.document import Document
@@ -184,6 +184,7 @@ class PGVector(VectorStore):
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         connection_string: Optional[str] = None,
         pre_delete_collection: bool = False,
+        upsert: bool = False,
         **kwargs: Any,
     ) -> PGVector:
         if ids is None:
@@ -204,7 +205,8 @@ class PGVector(VectorStore):
         )
 
         store.add_embeddings(
-            texts=texts, embeddings=embeddings, metadatas=metadatas, ids=ids, **kwargs
+            texts=texts, embeddings=embeddings, metadatas=metadatas, ids=ids, upsert=upsert,
+            **kwargs
         )
 
         return store
@@ -215,6 +217,7 @@ class PGVector(VectorStore):
         embeddings: List[List[float]],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
+        upsert: bool = False,
         **kwargs: Any,
     ) -> List[str]:
         """Add embeddings to the vectorstore.
@@ -223,6 +226,8 @@ class PGVector(VectorStore):
             texts: Iterable of strings to add to the vectorstore.
             embeddings: List of list of embedding vectors.
             metadatas: List of metadatas associated with the texts.
+            upsert: When set to true, it updates the rows with metadata and embedding for given ids.
+                    When false, it only appends.
             kwargs: vectorstore specific parameters
         """
         if ids is None:
@@ -235,15 +240,39 @@ class PGVector(VectorStore):
             collection = self.get_collection(session)
             if not collection:
                 raise ValueError("Collection not found")
-            for text, metadata, embedding, id in zip(texts, metadatas, embeddings, ids):
-                embedding_store = self.EmbeddingStore(
-                    embedding=embedding,
-                    document=text,
-                    cmetadata=metadata,
-                    custom_id=id,
-                    collection_id=collection.uuid,
-                )
-                session.add(embedding_store)
+
+            if not upsert:
+                for text, metadata, embedding, id in zip(texts, metadatas, embeddings, ids):
+                    embedding_store = self.EmbeddingStore(
+                        embedding=embedding,
+                        document=text,
+                        cmetadata=metadata,
+                        custom_id=id,
+                        collection_id=collection.uuid,
+                    )
+                    session.add(embedding_store)
+            else:
+                data_to_upsert = []
+                for text, metadata, embedding, id in zip(texts, metadatas, embeddings, ids):
+                    data_to_upsert.append({
+                        'collection_id': collection.uuid,
+                        'embedding': embedding,
+                        'document': text,
+                        'cmetadata': metadata,
+                        'custom_id': id,
+                    })
+
+                    # Use on_conflict_do_upsert for bulk upsert
+                    stmt = insert(self.EmbeddingStore).values(data_to_upsert)
+                    stmt = stmt.on_conflict_do_update(
+                        index_elements=['custom_id'],
+                        set_={
+                            'embedding': stmt.excluded.embedding,
+                            'document': stmt.excluded.document,
+                            'cmetadata': stmt.excluded.cmetadata
+                        }
+                    )
+                    session.execute(stmt)
             session.commit()
 
         return ids
@@ -253,6 +282,7 @@ class PGVector(VectorStore):
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
+        upsert: bool = False,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -267,7 +297,7 @@ class PGVector(VectorStore):
         """
         embeddings = self.embedding_function.embed_documents(list(texts))
         return self.add_embeddings(
-            texts=texts, embeddings=embeddings, metadatas=metadatas, ids=ids, **kwargs
+            texts=texts, embeddings=embeddings, metadatas=metadatas, ids=ids, upsert=upsert, **kwargs
         )
 
     def similarity_search(
@@ -424,6 +454,7 @@ class PGVector(VectorStore):
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
+        upsert: bool = False,
         **kwargs: Any,
     ) -> PGVector:
         """
@@ -443,6 +474,7 @@ class PGVector(VectorStore):
             collection_name=collection_name,
             distance_strategy=distance_strategy,
             pre_delete_collection=pre_delete_collection,
+            upsert=upsert,
             **kwargs,
         )
 
@@ -456,6 +488,7 @@ class PGVector(VectorStore):
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
+        upsert: bool = False,
         **kwargs: Any,
     ) -> PGVector:
         """Construct PGVector wrapper from raw documents and pre-
@@ -488,6 +521,7 @@ class PGVector(VectorStore):
             collection_name=collection_name,
             distance_strategy=distance_strategy,
             pre_delete_collection=pre_delete_collection,
+            upsert=upsert,
             **kwargs,
         )
 
@@ -544,6 +578,7 @@ class PGVector(VectorStore):
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
+        upsert: bool = False,
         **kwargs: Any,
     ) -> PGVector:
         """
@@ -567,6 +602,7 @@ class PGVector(VectorStore):
             metadatas=metadatas,
             ids=ids,
             collection_name=collection_name,
+            upsert=upsert,
             **kwargs,
         )
 
