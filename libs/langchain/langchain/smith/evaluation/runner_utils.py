@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import inspect
 import itertools
 import logging
 import uuid
@@ -19,6 +20,7 @@ from typing import (
     Sequence,
     Tuple,
     Union,
+    cast,
 )
 from urllib.parse import urlparse, urlunparse
 
@@ -37,7 +39,7 @@ from langchain.evaluation.schema import EvaluatorType, StringEvaluator
 from langchain.schema import ChatResult, LLMResult
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage, messages_from_dict
-from langchain.schema.runnable import Runnable, RunnableConfig
+from langchain.schema.runnable import Runnable, RunnableConfig, RunnableLambda
 from langchain.smith.evaluation.config import EvalConfig, RunEvalConfig
 from langchain.smith.evaluation.string_run_evaluator import StringRunEvaluatorChain
 
@@ -106,11 +108,29 @@ def _wrap_in_chain_factory(
         return lambda: chain
     elif isinstance(llm_or_chain_factory, BaseLanguageModel):
         return llm_or_chain_factory
+    elif isinstance(llm_or_chain_factory, Runnable):
+        # Memory may exist here, but it's not elegant to check all those cases.
+        # Hopefully it's simple..
+        return lambda: llm_or_chain_factory
     elif callable(llm_or_chain_factory):
-        _model = llm_or_chain_factory()
+        try:
+            _model = llm_or_chain_factory()
+        except TypeError:
+            # It's an arbitrary function, wrap it in a RunnableLambda
+            user_func = cast(Callable, llm_or_chain_factory)
+            sig = inspect.signature(user_func)
+            logger.info(f"Wrapping function {sig} as RunnableLambda.")
+            wrapped = RunnableLambda(user_func)
+            return lambda: wrapped
         if isinstance(_model, BaseLanguageModel):
+            # It's not uncommon to do an LLM constructor instead of raw LLM,
+            # so we'll unpack it for the user.
             return _model
-        return llm_or_chain_factory
+        elif not isinstance(_model, Runnable):
+            # This is unlikely to happen - a constructor for a model function
+            return lambda: RunnableLambda(llm_or_chain_factory)
+        else:
+            return llm_or_chain_factory
     return llm_or_chain_factory
 
 
@@ -241,7 +261,7 @@ def _get_project_name(
         try:
             model_name = llm_or_chain_factory().__class__.__name__
         except TypeError:
-            model_name = llm_or_chain_factory.__name__
+            model_name = llm_or_chain_factory.__class__.__name__
     hex = uuid.uuid4().hex
     return f"{hex}-{model_name}"
 
@@ -331,6 +351,8 @@ def _validate_example_inputs(
         if isinstance(chain, Chain):
             # Otherwise it's a runnable
             _validate_example_inputs_for_chain(first_example, chain, input_mapper)
+        elif isinstance(chain, Runnable):
+            logger.debug(f"Skipping input validation for {chain}")
     return examples
 
 
@@ -349,6 +371,9 @@ def _setup_evaluation(
         if isinstance(llm_or_chain_factory, BaseLanguageModel):
             run_inputs, run_outputs = None, None
             run_type = "llm"
+        elif isinstance(llm_or_chain_factory, Runnable):
+            run_inputs, run_outputs = None, None
+            run_type = "chain"  # TODO
         else:
             run_type = "chain"
             if data_type in (DataType.chat, DataType.llm):
