@@ -15,11 +15,12 @@ class ModelScopeEmbeddings(BaseModel, Embeddings):
 
             from langchain.embeddings import ModelScopeEmbeddings
             model_id = "damo/nlp_corom_sentence-embedding_english-base"
-            embed = ModelScopeEmbeddings(model_id=model_id)
+            embed = ModelScopeEmbeddings(model_id=model_id, model_revision="v1.0.0")
     """
 
     embed: Any
     model_id: str = "damo/nlp_corom_sentence-embedding_english-base"
+    model_revision: str = "v1.0.0"
     """Model name to use."""
 
     def __init__(self, **kwargs: Any):
@@ -29,7 +30,7 @@ class ModelScopeEmbeddings(BaseModel, Embeddings):
             from modelscope.pipelines import pipeline
             from modelscope.utils.constant import Tasks
 
-            self.embed = pipeline(Tasks.sentence_embedding, model=self.model_id)
+            self.embed = pipeline(Tasks.sentence_embedding, model=self.model_id, model_revision=self.model_revision)
 
         except ImportError as e:
             raise ImportError(
