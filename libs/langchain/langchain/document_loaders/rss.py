@@ -106,6 +106,10 @@ class RSSFeedLoader(BaseLoader):
         for url in self._get_urls:
             try:
                 feed = feedparser.parse(url)
+                if getattr(feed, "bozo", False):
+                    raise ValueError(
+                        f"Error fetching {url}, exception: {feed.bozo_exception}"
+                    )
             except Exception as e:
                 if self.continue_on_failure:
                     logger.error(f"Error fetching {url}, exception: {e}")
