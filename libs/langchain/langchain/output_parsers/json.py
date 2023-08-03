@@ -8,7 +8,7 @@ from typing import Any, List
 from langchain.schema import BaseOutputParser, OutputParserException
 
 
-def replace_new_line(match: re.Match[str]) -> str:
+def _replace_new_line(match: re.Match[str]) -> str:
     value = match.group(2)
     value = re.sub(r"\n", r"\\n", value)
     value = re.sub(r"\r", r"\\r", value)
@@ -18,13 +18,19 @@ def replace_new_line(match: re.Match[str]) -> str:
     return match.group(1) + value + match.group(3)
 
 
-def custom_parser(multiline_string: str) -> str:
+def _custom_parser(multiline_string: str) -> str:
+    """
+    The LLM response for `action_input` may be a multiline
+    string containing unescaped newlines, tabs or quotes. This function
+    replaces those characters with their escaped counterparts.
+    (newlines in JSON must be double-escaped: `\\n`)
+    """
     if isinstance(multiline_string, (bytes, bytearray)):
         multiline_string = multiline_string.decode()
 
     multiline_string = re.sub(
         r'("action_input"\:\s*")(.*)(")',
-        replace_new_line,
+        _replace_new_line,
         multiline_string,
         flags=re.DOTALL,
     )
@@ -56,7 +62,7 @@ def parse_json_markdown(json_string: str) -> dict:
     json_str = json_str.strip()
 
     # handle newlines and other special characters inside the returned value
-    json_str = custom_parser(json_str)
+    json_str = _custom_parser(json_str)
 
     # Parse the JSON string into a Python dictionary
     parsed = json.loads(json_str)
