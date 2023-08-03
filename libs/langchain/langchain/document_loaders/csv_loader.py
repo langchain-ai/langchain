@@ -31,22 +31,22 @@ class CSVLoader(BaseLoader):
     """
 
     def __init__(
-        self,
-        file_path: str,
-        source_column: Optional[str] = None,
-        csv_args: Optional[Dict] = None,
-        encoding: Optional[str] = None,
+            self,
+            file_path: str,
+            source_column: Optional[str] = None,
+            csv_args: Optional[Dict] = None,
+            encoding: Optional[str] = None,
     ):
         """
 
-        Args:
-            file_path: The path to the CSV file.
-            source_column: The name of the column in the CSV file to use as the source.
-              Optional. Defaults to None.
-            csv_args: A dictionary of arguments to pass to the csv.DictReader.
-              Optional. Defaults to None.
-            encoding: The encoding of the CSV file. Optional. Defaults to None.
-        """
+                Args:
+                    file_path: The path to the CSV file.
+                    source_column: The name of the column in the CSV file to use as the source.
+                      Optional. Defaults to None.
+                    csv_args: A dictionary of arguments to pass to the csv.DictReader.
+                      Optional. Defaults to None.
+                    encoding: The encoding of the CSV file. Optional. Defaults to None.
+                """
         self.file_path = file_path
         self.source_column = source_column
         self.encoding = encoding
@@ -54,25 +54,27 @@ class CSVLoader(BaseLoader):
 
     def load(self) -> List[Document]:
         """Load data into document objects."""
-
         docs = []
-        with open(self.file_path, newline="", encoding=self.encoding) as csvfile:
-            csv_reader = csv.DictReader(csvfile, **self.csv_args)  # type: ignore
-            for i, row in enumerate(csv_reader):
-                content = "\n".join(f"{k.strip()}: {v.strip()}" for k, v in row.items())
-                try:
-                    source = (
-                        row[self.source_column]
-                        if self.source_column is not None
-                        else self.file_path
-                    )
-                except KeyError:
-                    raise ValueError(
-                        f"Source column '{self.source_column}' not found in CSV file."
-                    )
-                metadata = {"source": source, "row": i}
-                doc = Document(page_content=content, metadata=metadata)
-                docs.append(doc)
+
+        with open(self.file_path, 'r', encoding=self.encoding) as f:
+            csv_data = f.read().replace('\0', '')  # replace NULL bytes with an empty string
+
+        csv_reader = csv.DictReader(csv_data.splitlines(), **self.csv_args)  # type: ignore
+        for i, row in enumerate(csv_reader):
+            content = "\n".join(f"{k.strip()}: {v.strip()}" for k, v in row.items())
+            try:
+                source = (
+                    row[self.source_column]
+                    if self.source_column is not None
+                    else self.file_path
+                )
+            except KeyError:
+                raise ValueError(
+                    f"Source column '{self.source_column}' not found in CSV file."
+                )
+            metadata = {"source": source, "row": i}
+            doc = Document(page_content=content, metadata=metadata)
+            docs.append(doc)
 
         return docs
 
@@ -95,7 +97,7 @@ class UnstructuredCSVLoader(UnstructuredFileLoader):
     """
 
     def __init__(
-        self, file_path: str, mode: str = "single", **unstructured_kwargs: Any
+            self, file_path: str, mode: str = "single", **unstructured_kwargs: Any
     ):
         """
 
