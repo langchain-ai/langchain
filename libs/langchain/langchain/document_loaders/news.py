@@ -2,8 +2,6 @@
 import logging
 from typing import Any, Iterator, List
 
-from newspaper import Article
-
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
@@ -69,6 +67,13 @@ class NewsURLLoader(BaseLoader):
         return list(iter)
 
     def lazy_load(self) -> Iterator[Document]:
+        try:
+            from newspaper import Article
+        except ImportError as e:
+            raise ImportError(
+                "Cannot import newspaper, please install with `pip install newspaper3k`"
+            ) from e
+
         for url in self.urls:
             try:
                 article = Article(url, **self.newspaper_kwargs)
