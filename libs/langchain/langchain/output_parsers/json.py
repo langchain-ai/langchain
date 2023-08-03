@@ -8,6 +8,33 @@ from typing import Any, List
 from langchain.schema import BaseOutputParser, OutputParserException
 
 
+def replace_new_line(matched_string):
+    if matched_string:
+        value = matched_string.group(2)
+        value = re.sub(r"\n", r"\\n", value)
+        value = re.sub(r"\r", r"\\r", value)
+        value = re.sub(r"\t", r"\\t", value)
+        value = re.sub('"', r"\"", value)
+
+        return matched_string.group(1) + value + matched_string.group(3)
+    else:
+        return matched_string
+
+
+def custom_parser(multiline_string):
+    if isinstance(multiline_string, (bytes, bytearray)):
+        multiline_string = multiline_string.decode()
+
+    multiline_string = re.sub(
+        r'("action_input"\:\s*")(.*)(")',
+        replace_new_line,
+        multiline_string,
+        flags=re.DOTALL,
+    )
+
+    return multiline_string
+
+
 def parse_json_markdown(json_string: str) -> dict:
     """
     Parse a JSON string from a Markdown string.
@@ -30,6 +57,9 @@ def parse_json_markdown(json_string: str) -> dict:
 
     # Strip whitespace and newlines from the start and end
     json_str = json_str.strip()
+
+    # handle newlines and other special characters that might be inside the returned value
+    json_str = custom_parser(json_str)
 
     # Parse the JSON string into a Python dictionary
     parsed = json.loads(json_str)
