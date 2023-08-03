@@ -141,31 +141,34 @@ def test_mathpix_loader() -> None:
     print(docs[0].page_content)
 
 
-@pytest.mark.skip()
-def test_amazontextract_loader() -> None:
-    http_file_path = (
-        "https://amazon-textract-public-content.s3.us-east-2.amazonaws.com"
-        "/langchain/alejandro_rosalez_sample_1.jpg"
-    )
-    loader = AmazonTextractPDFLoader(http_file_path)
+@pytest.mark.parametrize(
+    "file_path, docs_length, create_client",
+    [
+        (
+            (
+                "https://amazon-textract-public-content.s3.us-east-2.amazonaws.com"
+                "/langchain/alejandro_rosalez_sample_1.jpg"
+            ),
+            1,
+            False,
+        ),
+        (str(Path(__file__).parent.parent / "examples/hello.pdf"), 1, False),
+        (
+            "s3://amazon-textract-public-content/langchain/layout-parser-paper.pdf",
+            16,
+            True,
+        ),
+    ],
+)
+@pytest.mark.skip(reason="Needs AWS credentials to run")
+def test_amazontextract_loader(file_path: str, docs_length: int, create_client: bool) -> None:
+    if create_client:
+        import boto3
+
+        textract_client = boto3.client("textract", region_name="us-east-2")
+        loader = AmazonTextractPDFLoader(file_path, client=textract_client)
+    else:
+        loader = AmazonTextractPDFLoader(file_path)
     docs = loader.load()
 
-    assert len(docs) == 1
-
-    local_file_path: Path = Path(__file__).parent.parent / "examples/hello.pdf"
-    loader = AmazonTextractPDFLoader(str(local_file_path))
-    docs = loader.load()
-
-    assert len(docs) == 1
-
-    import boto3
-
-    textract_client = boto3.client("textract", region_name="us-east-2")
-
-    s3_file_path = (
-        "s3://amazon-textract-public-content/langchain/layout-parser-paper.pdf"
-    )
-    loader = AmazonTextractPDFLoader(s3_file_path, client=textract_client)
-
-    docs = loader.load()
-    assert len(docs) == 16
+    assert len(docs) == docs_length

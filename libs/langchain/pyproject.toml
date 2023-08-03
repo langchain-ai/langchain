@@ -330,6 +330,7 @@ all = [
 # Please use new-line on formatting to make it easier to add new packages without
 # merge-conflicts
 extended_testing = [
+ "amazon-textract-caller",
  "beautifulsoup4",
  "bibtexparser",
  "cassio",

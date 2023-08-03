@@ -1,4 +1,5 @@
 """Module contains common parsers for PDFs."""
+from enum import Enum
 from typing import Any, Iterator, List, Mapping, Optional, Union
 
 from langchain.document_loaders.base import BaseBlobParser
@@ -156,22 +157,32 @@ class AmazonTextractPDFParser(BaseBlobParser):
     For parsing multi-page PDFs, they have to reside on S3.
     """
 
-    try:
-        import textractcaller as tc
-    except ImportError:
-        raise ModuleNotFoundError(
-            "Could not import amazon-textract-caller python package. "
-            "Please install it with `pip install amazon-textract-caller`."
-        )
-
     def __init__(
-        self, textract_features: List[tc.Textract_Features] = [], client: Any = None
+        self,
+        textract_features: List[Enum] = [],
+        client: Any = None,
     ) -> None:
-        """
-        :func `Textract_features <tc.Textract_Features>`
+        """Initialize the parser.
+
+        Args:
+            textract_features: Features to be used for extraction,
+                               should be an enum of type  `Textract_Features`
+                               see `amazon-textract-caller` package
+            client: boto3 textract client
         """
         self.textract_features = textract_features
-        self.boto3_textract_client = client
+        if not client:
+            try:
+                import boto3
+
+                self.boto3_textract_client = boto3.client("textract")
+            except ImportError:
+                raise ModuleNotFoundError(
+                    "Could not import boto3 python package. "
+                    "Please install it with `pip install boto3`."
+                )
+        else:
+            self.boto3_textract_client = client
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Iterates over the Blob pages and returns an Iterator with a Document
