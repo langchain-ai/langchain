@@ -112,7 +112,7 @@ class PromptTemplate(StringPromptTemplate):
 
                 prompt.format(variable1="foo")
         """
-        kwargs = self._merge_partial_and_user_variables(**kwargs)
+        kwargs = self._prepare_variables(**kwargs)
         return DEFAULT_FORMATTER_MAPPING[self.template_format](self.template, **kwargs)
 
     @root_validator()

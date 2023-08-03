@@ -134,7 +134,7 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
 
             prompt.format(variable1="foo")
         """
-        kwargs = self._merge_partial_and_user_variables(**kwargs)
+        kwargs = self._prepare_variables(**kwargs)
         # Get the examples to use.
         examples = self._get_examples(**kwargs)
         examples = [

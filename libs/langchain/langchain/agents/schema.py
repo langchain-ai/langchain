@@ -22,7 +22,7 @@ class AgentScratchPadChatPromptTemplate(ChatPromptTemplate):
             f"you return as final answer):\n{thoughts}"
         )
 
-    def _merge_partial_and_user_variables(self, **kwargs: Any) -> Dict[str, Any]:
+    def _prepare_variables(self, **kwargs: Any) -> Dict[str, Any]:
         intermediate_steps = kwargs.pop("intermediate_steps")
         kwargs["agent_scratchpad"] = self._construct_agent_scratchpad(
             intermediate_steps

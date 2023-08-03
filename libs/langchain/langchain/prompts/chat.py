@@ -533,7 +533,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
         Returns:
             list of formatted messages
         """
-        kwargs = self._merge_partial_and_user_variables(**kwargs)
+        kwargs = self._prepare_variables(**kwargs)
         result = []
         for message_template in self.messages:
             if isinstance(message_template, BaseMessage):

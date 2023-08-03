@@ -1,9 +1,12 @@
 from __future__ import annotations
+from functools import partial
+import inspect
 
 import json
 from abc import ABC, abstractmethod
+from operator import attrgetter
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Mapping, Optional, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, TypeAlias, Union
 
 import yaml
 from pydantic import Field, root_validator
@@ -15,9 +18,65 @@ from langchain.schema.prompt import PromptValue
 from langchain.schema.runnable import Runnable, RunnableConfig
 
 
+PROMPT_DEFAULT_FORMATTERS = {
+    Document: attrgetter("page_content"),
+    list: lambda l, f: [f(e) for e in l],
+    dict: lambda d, f: {k: f(v) for k, v in d.items()},
+}
+
+
+BoundFormatValueCallable: TypeAlias = Callable[[Any], Any]
+
+FormatterType: TypeAlias = Union[
+    Callable[[Any], Any], Callable[[Any, BoundFormatValueCallable], Any]
+]
+
+FormattersType: TypeAlias = Mapping[type, FormatterType]
+
+
+def _apply_formatter(
+    formatters: FormattersType, formatter: FormatterType, value: Any
+) -> Any:
+    try:
+        arity = len(inspect.signature(formatter).parameters)
+    except ValueError:
+        arity = 1
+    if arity == 1:
+        return formatter(value)
+    elif arity == 2:
+        return formatter(value, partial(_format_value, formatters))
+    else:
+        raise ValueError(
+            f"Formatter {formatter} has too many arguments ({arity}), "
+            "expected 1 or 2."
+        )
+
+
+def _format_value(formatters: FormattersType, value: Any) -> Any:
+    value_type = type(value)
+    # First check for exact type match
+    if value_type in formatters:
+        return _apply_formatter(formatters, formatters[value_type], value)
+    # Then check for subclass match
+    for type_, formatter in formatters.items():
+        if isinstance(value, type_):
+            return _apply_formatter(formatters, formatter, value)
+    return value
+
+
 class BasePromptTemplate(Serializable, Runnable[Dict, PromptValue], ABC):
     """Base class for all prompt templates, returning a prompt."""
 
+    formatters: FormattersType = PROMPT_DEFAULT_FORMATTERS
+    """A mapping of types to functions that format them into a string.
+    The functions should take a single argument, the value to format, and
+    return a string. If the function takes two arguments, the second argument
+    will be a function that can be used to format values within the value
+    being formatted, eg. the elements of a list.
+    
+    By default, the following types are supported:
+    - `Document`: the `page_content` attribute of the document will be used.
+    - `list`: the list will be joined with newlines."""
     input_variables: List[str]
     """A list of the names of the variables the prompt template expects."""
     output_parser: Optional[BaseOutputParser] = None
@@ -79,13 +138,14 @@ class BasePromptTemplate(Serializable, Runnable[Dict, PromptValue], ABC):
         prompt_dict["partial_variables"] = {**self.partial_variables, **kwargs}
         return type(self)(**prompt_dict)
 
-    def _merge_partial_and_user_variables(self, **kwargs: Any) -> Dict[str, Any]:
+    def _prepare_variables(self, **kwargs: Any) -> Dict[str, Any]:
         # Get partial params:
         partial_kwargs = {
             k: v if isinstance(v, str) else v()
             for k, v in self.partial_variables.items()
         }
-        return {**partial_kwargs, **kwargs}
+        all_variables = {**partial_kwargs, **kwargs}
+        return {k: _format_value(self.formatters, v) for k, v in all_variables.items()}
 
     @abstractmethod
     def format(self, **kwargs: Any) -> str:
@@ -112,6 +172,7 @@ class BasePromptTemplate(Serializable, Runnable[Dict, PromptValue], ABC):
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of prompt."""
         prompt_dict = super().dict(**kwargs)
+        del prompt_dict["formatters"]
         prompt_dict["_type"] = self._prompt_type
         return prompt_dict
 

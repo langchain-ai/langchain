@@ -1,4 +1,5 @@
 """Test functionality related to prompts."""
+from langchain.schema.document import Document
 import pytest
 
 from langchain.prompts.prompt import PromptTemplate
@@ -120,6 +121,23 @@ def test_partial_init_string() -> None:
     assert prompt.input_variables == []
     result = prompt.format()
     assert result == "This is a 1 test."
+
+
+def test_default_formatters() -> None:
+    """Test prompt can be initialized with partial variables."""
+    template = "This is a {foo} test."
+    prompt = PromptTemplate.from_template(template)
+    assert prompt.template == template
+    assert prompt.input_variables == ["foo"]
+
+    foo = [Document(page_content="Hello there", metadata={"some": "key"})]
+    assert prompt.format(foo=foo) == "This is a ['Hello there'] test."
+
+    prompt_no_formatters = PromptTemplate.from_template(template, formatters={})
+    assert (
+        prompt_no_formatters.format(foo=foo)
+        == "This is a [Document(page_content='Hello there', metadata={'some': 'key'})] test."
+    )
 
 
 def test_partial_init_func() -> None:
