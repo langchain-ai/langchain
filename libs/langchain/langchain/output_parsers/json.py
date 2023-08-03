@@ -8,20 +8,17 @@ from typing import Any, List
 from langchain.schema import BaseOutputParser, OutputParserException
 
 
-def replace_new_line(matched_string):
-    if matched_string:
-        value = matched_string.group(2)
-        value = re.sub(r"\n", r"\\n", value)
-        value = re.sub(r"\r", r"\\r", value)
-        value = re.sub(r"\t", r"\\t", value)
-        value = re.sub('"', r"\"", value)
+def replace_new_line(match: re.Match[str]) -> str:
+    value = match.group(2)
+    value = re.sub(r"\n", r"\\n", value)
+    value = re.sub(r"\r", r"\\r", value)
+    value = re.sub(r"\t", r"\\t", value)
+    value = re.sub('"', r"\"", value)
 
-        return matched_string.group(1) + value + matched_string.group(3)
-    else:
-        return matched_string
+    return match.group(1) + value + match.group(3)
 
 
-def custom_parser(multiline_string):
+def custom_parser(multiline_string: str) -> str:
     if isinstance(multiline_string, (bytes, bytearray)):
         multiline_string = multiline_string.decode()
 
@@ -58,7 +55,7 @@ def parse_json_markdown(json_string: str) -> dict:
     # Strip whitespace and newlines from the start and end
     json_str = json_str.strip()
 
-    # handle newlines and other special characters that might be inside the returned value
+    # handle newlines and other special characters inside the returned value
     json_str = custom_parser(json_str)
 
     # Parse the JSON string into a Python dictionary
