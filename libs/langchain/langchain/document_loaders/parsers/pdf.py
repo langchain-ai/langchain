@@ -87,7 +87,7 @@ class PyPDFium2Parser(BaseBlobParser):
         try:
             import pypdfium2  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "pypdfium2 package not found, please install it with"
                 " `pip install pypdfium2`"
             )

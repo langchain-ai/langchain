@@ -83,7 +83,7 @@ def _filter_cluster_embeddings(
     try:
         from sklearn.cluster import KMeans
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "sklearn package not found, please install it with "
             "`pip install scikit-learn`"
         )

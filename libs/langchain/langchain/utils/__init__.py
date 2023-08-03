@@ -1,7 +1,7 @@
 """
-Utility functions for langchain.
+**Utility functions** for LangChain.
 
-These functions do not depend on any other langchain modules.
+These functions do not depend on any other LangChain module.
 """
 
 from langchain.utils.env import get_from_dict_or_env, get_from_env
