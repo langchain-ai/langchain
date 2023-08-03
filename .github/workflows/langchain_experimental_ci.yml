@@ -1,0 +1,29 @@
+---
+name: libs/langchain-experimental CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    paths:
+      - '.github/workflows/_lint.yml'
+      - '.github/workflows/_test.yml'
+      - '.github/workflows/langchain_experimental_ci.yml'
+      - 'libs/langchain/**'
+      - 'libs/experimental/**'
+  workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
+
+jobs:
+  lint:
+    uses:
+      ./.github/workflows/_lint.yml
+    with:
+      working-directory: libs/experimental
+    secrets: inherit
+  test:
+    uses:
+      ./.github/workflows/_test.yml
+    with:
+      working-directory: libs/experimental
+      test_type: '["core"]'
+    secrets: inherit
