@@ -128,6 +128,7 @@ from langchain.document_loaders.recursive_url_loader import RecursiveUrlLoader
 from langchain.document_loaders.reddit import RedditPostsLoader
 from langchain.document_loaders.roam import RoamLoader
 from langchain.document_loaders.rocksetdb import RocksetLoader
+from langchain.document_loaders.rss import RSSFeedLoader
 from langchain.document_loaders.rst import UnstructuredRSTLoader
 from langchain.document_loaders.rtf import UnstructuredRTFLoader
 from langchain.document_loaders.s3_directory import S3DirectoryLoader
@@ -280,6 +281,7 @@ __all__ = [
     "RedditPostsLoader",
     "RoamLoader",
     "RocksetLoader",
+    "RSSFeedLoader",
     "S3DirectoryLoader",
     "S3FileLoader",
     "SRTLoader",

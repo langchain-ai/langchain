@@ -128,6 +128,8 @@ xinference = {version = "^0.0.6", optional = true}
 python-arango = {version = "^7.5.9", optional = true}
 gitpython = {version = "^3.1.32", optional = true}
 librosa = {version="^0.10.0.post2", optional = true }
+feedparser = {version = "^6.0.10", optional = true}
+newspaper3k = {version = "^0.2.8", optional = true}
 
 [tool.poetry.group.test.dependencies]
 # The only dependencies that should be added are
@@ -363,6 +365,8 @@ extended_testing = [
  "jinja2",
  "xinference",
  "gitpython",
+ "newspaper3k",
+ "feedparser",
 ]
 
 [tool.ruff]
