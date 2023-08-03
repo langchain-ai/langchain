@@ -2,14 +2,25 @@
 from __future__ import annotations
 
 import datetime
+import warnings
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from langsmith.schemas import RunBase as BaseRunV2
-from langsmith.schemas import RunTypeEnum
+from langsmith.schemas import RunTypeEnum as RunTypeEnumDep
 from pydantic import BaseModel, Field, root_validator
 
 from langchain.schema import LLMResult
+
+
+def RunTypeEnum() -> RunTypeEnumDep:
+    """RunTypeEnum."""
+    warnings.warn(
+        "RunTypeEnum is deprecated. Please directly use a string instead"
+        " (e.g. 'llm', 'chain', 'tool').",
+        DeprecationWarning,
+    )
+    return RunTypeEnumDep
 
 
 class TracerSessionV1Base(BaseModel):
@@ -31,7 +42,7 @@ class TracerSessionV1(TracerSessionV1Base):
 
 
 class TracerSessionBase(TracerSessionV1Base):
-    """A creation class for TracerSession."""
+    """Base class for TracerSession."""
 
     tenant_id: UUID
 

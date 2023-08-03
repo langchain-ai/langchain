@@ -26,3 +26,5 @@
    {%- endfor %}
    {% endif %}
    {% endblock %}
+
+.. example_links:: {{ objname }}

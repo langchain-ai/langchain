@@ -5,10 +5,7 @@ from typing import Any, Iterable, List, Optional
 
 import numpy as np
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
+from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseRetriever, Document
 
@@ -113,8 +110,3 @@ class SVMRetriever(BaseRetriever):
             ):
                 top_k_results.append(Document(page_content=self.texts[row - 1]))
         return top_k_results
-
-    async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        raise NotImplementedError

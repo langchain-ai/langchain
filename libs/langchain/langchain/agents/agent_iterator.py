@@ -38,6 +38,8 @@ logger = logging.getLogger(__name__)
 
 
 class BaseAgentExecutorIterator(ABC):
+    """Base class for AgentExecutorIterator."""
+
     @abstractmethod
     def build_callback_manager(self) -> None:
         pass
@@ -57,6 +59,8 @@ def rebuild_callback_manager_on_set(
 
 
 class AgentExecutorIterator(BaseAgentExecutorIterator):
+    """Iterator for AgentExecutor."""
+
     def __init__(
         self,
         agent_executor: AgentExecutor,

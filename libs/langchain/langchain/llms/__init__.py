@@ -1,4 +1,22 @@
-"""Access to the large language model APIs and services."""
+"""
+**LLM** classes provide
+access to the large language model (**LLM**) APIs and services.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    BaseLanguageModel --> BaseLLM --> LLM --> <name>  # Examples: AI21, HuggingFaceHub, OpenAI
+
+**Main helpers:**
+
+.. code-block::
+
+    LLMResult, PromptValue,
+    CallbackManagerForLLMRun, AsyncCallbackManagerForLLMRun,
+    CallbackManager, AsyncCallbackManager,
+    AIMessage, BaseMessage
+"""  # noqa: E501
 from typing import Dict, Type
 
 from langchain.llms.ai21 import AI21
@@ -21,6 +39,7 @@ from langchain.llms.ctransformers import CTransformers
 from langchain.llms.databricks import Databricks
 from langchain.llms.deepinfra import DeepInfra
 from langchain.llms.fake import FakeListLLM
+from langchain.llms.fireworks import Fireworks, FireworksChat
 from langchain.llms.forefrontai import ForefrontAI
 from langchain.llms.google_palm import GooglePalm
 from langchain.llms.gooseai import GooseAI
@@ -33,6 +52,7 @@ from langchain.llms.human import HumanInputLLM
 from langchain.llms.koboldai import KoboldApiLLM
 from langchain.llms.llamacpp import LlamaCpp
 from langchain.llms.manifest import ManifestWrapper
+from langchain.llms.minimax import Minimax
 from langchain.llms.mlflow_ai_gateway import MlflowAIGateway
 from langchain.llms.modal import Modal
 from langchain.llms.mosaicml import MosaicML
@@ -56,6 +76,7 @@ from langchain.llms.textgen import TextGen
 from langchain.llms.tongyi import Tongyi
 from langchain.llms.vertexai import VertexAI
 from langchain.llms.writer import Writer
+from langchain.llms.xinference import Xinference
 
 __all__ = [
     "AI21",
@@ -78,6 +99,8 @@ __all__ = [
     "Databricks",
     "DeepInfra",
     "FakeListLLM",
+    "Fireworks",
+    "FireworksChat",
     "ForefrontAI",
     "GPT4All",
     "GooglePalm",
@@ -91,6 +114,7 @@ __all__ = [
     "LlamaCpp",
     "TextGen",
     "ManifestWrapper",
+    "Minimax",
     "MlflowAIGateway",
     "Modal",
     "MosaicML",
@@ -115,6 +139,7 @@ __all__ = [
     "VertexAI",
     "Writer",
     "OctoAIEndpoint",
+    "Xinference",
 ]
 
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
@@ -150,6 +175,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "koboldai": KoboldApiLLM,
     "llamacpp": LlamaCpp,
     "textgen": TextGen,
+    "minimax": Minimax,
     "mlflow-ai-gateway": MlflowAIGateway,
     "modal": Modal,
     "mosaic": MosaicML,
@@ -170,4 +196,5 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "openllm": OpenLLM,
     "openllm_client": OpenLLM,
     "writer": Writer,
+    "xinference": Xinference,
 }

@@ -1,4 +1,19 @@
-"""All different types of document loaders."""
+"""**Document Loaders**  are classes to load Documents.
+
+**Document Loaders** are usually used to load a lot of Documents in a single run.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    BaseLoader --> <name>Loader  # Examples: TextLoader, UnstructuredFileLoader
+
+**Main helpers:**
+
+.. code-block::
+
+    Document, <name>TextSplitter
+"""
 
 from langchain.document_loaders.acreom import AcreomLoader
 from langchain.document_loaders.airbyte_json import AirbyteJSONLoader
@@ -28,6 +43,7 @@ from langchain.document_loaders.brave_search import BraveSearchLoader
 from langchain.document_loaders.browserless import BrowserlessLoader
 from langchain.document_loaders.chatgpt import ChatGPTLoader
 from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
+from langchain.document_loaders.concurrent import ConcurrentLoader
 from langchain.document_loaders.confluence import ConfluenceLoader
 from langchain.document_loaders.conllu import CoNLLULoader
 from langchain.document_loaders.csv_loader import CSVLoader, UnstructuredCSVLoader
@@ -38,6 +54,7 @@ from langchain.document_loaders.diffbot import DiffbotLoader
 from langchain.document_loaders.directory import DirectoryLoader
 from langchain.document_loaders.discord import DiscordChatLoader
 from langchain.document_loaders.docugami import DocugamiLoader
+from langchain.document_loaders.dropbox import DropboxLoader
 from langchain.document_loaders.duckdb_loader import DuckDBLoader
 from langchain.document_loaders.email import (
     OutlookMessageLoader,
@@ -78,9 +95,12 @@ from langchain.document_loaders.mediawikidump import MWDumpLoader
 from langchain.document_loaders.merge import MergedDataLoader
 from langchain.document_loaders.mhtml import MHTMLLoader
 from langchain.document_loaders.modern_treasury import ModernTreasuryLoader
+from langchain.document_loaders.news import NewsURLLoader
 from langchain.document_loaders.notebook import NotebookLoader
 from langchain.document_loaders.notion import NotionDirectoryLoader
 from langchain.document_loaders.notiondb import NotionDBLoader
+from langchain.document_loaders.obs_directory import OBSDirectoryLoader
+from langchain.document_loaders.obs_file import OBSFileLoader
 from langchain.document_loaders.obsidian import ObsidianLoader
 from langchain.document_loaders.odt import UnstructuredODTLoader
 from langchain.document_loaders.onedrive import OneDriveLoader
@@ -194,6 +214,7 @@ __all__ = [
     "DiscordChatLoader",
     "DocugamiLoader",
     "Docx2txtLoader",
+    "DropboxLoader",
     "DuckDBLoader",
     "EmbaasBlobLoader",
     "EmbaasLoader",
@@ -230,9 +251,12 @@ __all__ = [
     "MergedDataLoader",
     "MHTMLLoader",
     "ModernTreasuryLoader",
+    "NewsURLLoader",
     "NotebookLoader",
     "NotionDBLoader",
     "NotionDirectoryLoader",
+    "OBSDirectoryLoader",
+    "OBSFileLoader",
     "ObsidianLoader",
     "OneDriveFileLoader",
     "OneDriveLoader",
@@ -303,4 +327,5 @@ __all__ = [
     "XorbitsLoader",
     "YoutubeAudioLoader",
     "YoutubeLoader",
+    "ConcurrentLoader",
 ]

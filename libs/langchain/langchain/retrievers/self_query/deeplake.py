@@ -26,6 +26,7 @@ OPERATOR_TO_TQL = {
 
 
 def can_cast_to_float(string: str) -> bool:
+    """Check if a string can be cast to a float."""
     try:
         float(string)
         return True

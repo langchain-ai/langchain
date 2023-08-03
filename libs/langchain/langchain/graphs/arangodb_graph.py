@@ -136,7 +136,7 @@ def get_arangodb_client(
     username: Optional[str] = None,
     password: Optional[str] = None,
 ) -> Any:
-    """Convenience method that gets Arango DB from credentials.
+    """Get the Arango DB client from credentials.
 
     Args:
         url: Arango DB url. Can be passed in as named arg or set as environment

@@ -20,6 +20,7 @@ INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 
 
 def extract_cypher(text: str) -> str:
+    """Extract Cypher code from text using Regex."""
     # The pattern to find Cypher code enclosed in triple backticks
     pattern = r"```(.*?)```"
 

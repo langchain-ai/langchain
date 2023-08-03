@@ -13,13 +13,20 @@ from langchain.evaluation.schema import StringEvaluator
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
-def test_resolve_criteria() -> None:
+def test_resolve_criteria_str() -> None:
     # type: ignore
     assert CriteriaEvalChain.resolve_criteria("helpfulness") == {
         "helpfulness": _SUPPORTED_CRITERIA[Criteria.HELPFULNESS]
     }
     assert CriteriaEvalChain.resolve_criteria("correctness") == {
         "correctness": _SUPPORTED_CRITERIA[Criteria.CORRECTNESS]
+    }
+
+
+@pytest.mark.parametrize("criterion", list(Criteria))
+def test_resolve_criteria_enum(criterion: Criteria) -> None:
+    assert CriteriaEvalChain.resolve_criteria(criterion) == {
+        criterion.value: _SUPPORTED_CRITERIA[criterion]
     }
 
 
