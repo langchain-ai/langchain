@@ -262,12 +262,12 @@ def main() -> None:
     lc_doc = ".. _api_reference:\n\n" + _construct_doc("langchain", lc_members)
     with open(WRITE_FILE, "w") as f:
         f.write(lc_doc)
-    # exp_members = load_members(EXP_DIR)
-    # exp_doc = ".. _experimental_api_reference:\n\n" + construct_doc(
-    #     "langchain_experimental", exp_members
-    # )
-    # with open(EXP_WRITE_FILE, "w") as f:
-    #     f.write(exp_doc)
+    exp_members = _load_package_modules(EXP_DIR)
+    exp_doc = ".. _experimental_api_reference:\n\n" + _construct_doc(
+        "langchain_experimental", exp_members
+    )
+    with open(EXP_WRITE_FILE, "w") as f:
+        f.write(exp_doc)
 
 
 if __name__ == "__main__":
