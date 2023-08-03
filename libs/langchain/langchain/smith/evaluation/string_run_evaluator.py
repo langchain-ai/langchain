@@ -126,9 +126,12 @@ class ChainStringRunMapper(StringRunMapper):
     """Extract items to evaluate from the run object from a chain."""
 
     input_key: Optional[str] = None
-    """The key from the model Run's inputs to use as the eval input."""
+    """The key from the model Run's inputs to use as the eval input.
+    If not provided, will use the only input key or raise an error if there are multiple.
+    """
     prediction_key: Optional[str] = None
-    """The key from the model Run's outputs to use as the eval prediction."""
+    """The key from the model Run's outputs to use as the eval prediction.
+    If not provided, will use the only output key or raise an error if there are multiple."""
 
     def _get_key(self, source: Dict, key: Optional[str], which: str) -> str:
         if key is not None:
