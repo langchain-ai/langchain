@@ -45,7 +45,14 @@ from langchain.smith.evaluation.string_run_evaluator import StringRunEvaluatorCh
 
 logger = logging.getLogger(__name__)
 
-MODEL_OR_CHAIN_FACTORY = Union[Callable[[], Union[Chain, Runnable]], BaseLanguageModel]
+MODEL_OR_CHAIN_FACTORY = Union[
+    Callable[[], Union[Chain, Runnable]],
+    BaseLanguageModel,
+    Callable[[dict], Any],
+    Runnable,
+    Chain,
+]
+MCF = Union[Callable[[], Union[Chain, Runnable]], BaseLanguageModel]
 
 
 class InputFormatError(Exception):
@@ -69,9 +76,9 @@ def _get_eval_project_url(api_url: str, project_id: str) -> str:
 
 
 def _wrap_in_chain_factory(
-    llm_or_chain_factory: Union[Chain, MODEL_OR_CHAIN_FACTORY],
+    llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
     dataset_name: str = "<my_dataset>",
-) -> MODEL_OR_CHAIN_FACTORY:
+) -> MCF:
     """Forgive the user if they pass in a chain without memory instead of a chain
     factory. It's a common mistake. Raise a more helpful error message as well."""
     if isinstance(llm_or_chain_factory, Chain):
@@ -110,27 +117,29 @@ def _wrap_in_chain_factory(
         return llm_or_chain_factory
     elif isinstance(llm_or_chain_factory, Runnable):
         # Memory may exist here, but it's not elegant to check all those cases.
-        # Hopefully it's simple..
-        return lambda: llm_or_chain_factory
+        lcf = llm_or_chain_factory
+        return lambda: lcf
     elif callable(llm_or_chain_factory):
         try:
-            _model = llm_or_chain_factory()
+            _model = llm_or_chain_factory()  # type: ignore[call-arg]
         except TypeError:
             # It's an arbitrary function, wrap it in a RunnableLambda
-            user_func = cast(Callable, llm_or_chain_factory)
+            user_func = cast(Callable, constructor)
             sig = inspect.signature(user_func)
             logger.info(f"Wrapping function {sig} as RunnableLambda.")
             wrapped = RunnableLambda(user_func)
             return lambda: wrapped
+        constructor = cast(Callable, llm_or_chain_factory)
         if isinstance(_model, BaseLanguageModel):
             # It's not uncommon to do an LLM constructor instead of raw LLM,
             # so we'll unpack it for the user.
             return _model
         elif not isinstance(_model, Runnable):
             # This is unlikely to happen - a constructor for a model function
-            return lambda: RunnableLambda(llm_or_chain_factory)
+            return lambda: RunnableLambda(constructor)
         else:
-            return llm_or_chain_factory
+            # Typical correct case
+            return constructor  # noqa
     return llm_or_chain_factory
 
 
@@ -241,7 +250,7 @@ def _get_messages(inputs: Dict[str, Any]) -> List[BaseMessage]:
 
 def _get_project_name(
     project_name: Optional[str],
-    llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
+    llm_or_chain_factory: MCF,
 ) -> str:
     """
     Get the project name.
@@ -336,7 +345,7 @@ def _validate_example_inputs_for_chain(
 
 def _validate_example_inputs(
     examples: Iterator[Example],
-    llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
+    llm_or_chain_factory: MCF,
     input_mapper: Optional[Callable[[Dict], Any]],
 ) -> Iterator[Example]:
     """Validate that the example inputs are valid for the model."""
@@ -357,7 +366,7 @@ def _validate_example_inputs(
 
 
 def _setup_evaluation(
-    llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
+    llm_or_chain_factory: MCF,
     examples: Iterator[Example],
     evaluation: Optional[RunEvalConfig],
     data_type: DataType,
@@ -634,7 +643,7 @@ async def _arun_chain(
 
 async def _arun_llm_or_chain(
     example: Example,
-    llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
+    llm_or_chain_factory: MCF,
     n_repetitions: int,
     *,
     tags: Optional[List[str]] = None,
@@ -833,12 +842,12 @@ async def _arun_on_examples(
     Returns:
         A dictionary mapping example ids to the model outputs.
     """
-    llm_or_chain_factory = _wrap_in_chain_factory(llm_or_chain_factory)
-    project_name = _get_project_name(project_name, llm_or_chain_factory)
+    wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory)
+    project_name = _get_project_name(project_name, wrapped_model)
     run_evaluators, examples = _setup_evaluation(
-        llm_or_chain_factory, examples, evaluation, data_type
+        wrapped_model, examples, evaluation, data_type
     )
-    examples = _validate_example_inputs(examples, llm_or_chain_factory, input_mapper)
+    examples = _validate_example_inputs(examples, wrapped_model, input_mapper)
     results: Dict[str, List[Any]] = {}
 
     async def process_example(
@@ -847,7 +856,7 @@ async def _arun_on_examples(
         """Process a single example."""
         result = await _arun_llm_or_chain(
             example,
-            llm_or_chain_factory,
+            wrapped_model,
             num_repetitions,
             tags=tags,
             callbacks=callbacks,
@@ -957,7 +966,7 @@ def _run_chain(
 
 def _run_llm_or_chain(
     example: Example,
-    llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
+    llm_or_chain_factory: MCF,
     n_repetitions: int,
     *,
     tags: Optional[List[str]] = None,
@@ -1108,7 +1117,7 @@ def _prepare_eval_run(
     dataset_name: str,
     llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
     project_name: Optional[str],
-) -> Tuple[MODEL_OR_CHAIN_FACTORY, str, Dataset, Iterator[Example]]:
+) -> Tuple[MCF, str, Dataset, Iterator[Example]]:
     llm_or_chain_factory = _wrap_in_chain_factory(llm_or_chain_factory, dataset_name)
     project_name = _get_project_name(project_name, llm_or_chain_factory)
     try:

@@ -461,7 +461,7 @@ async def test_arb_func_on_kv_singleio_dataset(
     )
 
     def my_func(x: dict) -> str:
-        return runnable.invoke(x)
+        return runnable.invoke(x).content
 
     eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
     await arun_on_dataset(
