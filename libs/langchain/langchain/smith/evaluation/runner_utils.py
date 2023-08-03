@@ -124,7 +124,7 @@ def _wrap_in_chain_factory(
             _model = llm_or_chain_factory()  # type: ignore[call-arg]
         except TypeError:
             # It's an arbitrary function, wrap it in a RunnableLambda
-            user_func = cast(Callable, constructor)
+            user_func = cast(Callable, llm_or_chain_factory)
             sig = inspect.signature(user_func)
             logger.info(f"Wrapping function {sig} as RunnableLambda.")
             wrapped = RunnableLambda(user_func)
