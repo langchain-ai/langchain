@@ -38,7 +38,6 @@ class CSVLoader(BaseLoader):
             encoding: Optional[str] = None,
     ):
         """
-
                 Args:
                     file_path: The path to the CSV file.
                     source_column: The name of the column in the CSV file to use as the source.
@@ -55,28 +54,37 @@ class CSVLoader(BaseLoader):
     def load(self) -> List[Document]:
         """Load data into document objects."""
         docs = []
+        try:
+            with open(self.file_path, newline="", encoding=self.encoding) as csvfile:
+                csv_reader = csv.DictReader(csvfile, **self.csv_args)  # type: ignore
+                for i, row in enumerate(csv_reader):
+                    content = "\n".join(f"{k.strip()}: {v.strip()}" for k, v in row.items())
+                    source = self._get_source(row)
+                    metadata = {"source": source, "row": i}
+                    doc = Document(page_content=content, metadata=metadata)
+                    docs.append(doc)
+        except csv.Error as e:
+            if "line contains NUL" in str(e):
+                with open(self.file_path, 'r', encoding=self.encoding) as f:
+                    csv_data = f.read().replace('\0', '')  # replace NULL bytes with an empty string
 
-        with open(self.file_path, 'r', encoding=self.encoding) as f:
-            csv_data = f.read().replace('\0', '')  # replace NULL bytes with an empty string
-
-        csv_reader = csv.DictReader(csv_data.splitlines(), **self.csv_args)  # type: ignore
-        for i, row in enumerate(csv_reader):
-            content = "\n".join(f"{k.strip()}: {v.strip()}" for k, v in row.items())
-            try:
-                source = (
-                    row[self.source_column]
-                    if self.source_column is not None
-                    else self.file_path
-                )
-            except KeyError:
-                raise ValueError(
-                    f"Source column '{self.source_column}' not found in CSV file."
-                )
-            metadata = {"source": source, "row": i}
-            doc = Document(page_content=content, metadata=metadata)
-            docs.append(doc)
-
+                csv_reader = csv.DictReader(csv_data.splitlines(), **self.csv_args)  # type: ignore
+                for i, row in enumerate(csv_reader):
+                    content = "\n".join(f"{k.strip()}: {v.strip()}" for k, v in row.items())
+                    source = self._get_source(row)
+                    metadata = {"source": source, "row": i}
+                    doc = Document(page_content=content, metadata=metadata)
+                    docs.append(doc)
+            else:
+                raise e
         return docs
+
+    def _get_source(self, row: Dict[str, str]) -> str:
+        """Helper method to get the source from a row."""
+        try:
+            return row[self.source_column] if self.source_column is not None else self.file_path
+        except KeyError:
+            raise ValueError(f"Source column '{self.source_column}' not found in CSV file.")
 
 
 class UnstructuredCSVLoader(UnstructuredFileLoader):
