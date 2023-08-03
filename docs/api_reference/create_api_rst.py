@@ -222,6 +222,9 @@ Classes
 """
 
             for class_ in classes:
+                if not class_['is_public']:
+                    continue
+                    
                 if class_["kind"] == "TypedDict":
                     template = "typeddict.rst"
                 elif class_["kind"] == "enum":
@@ -239,7 +242,7 @@ Classes
 """
 
         if functions:
-            _functions = [f["qualified_name"] for f in functions]
+            _functions = [f["qualified_name"] for f in functions if f["is_public"]]
             fstring = "\n    ".join(sorted(_functions))
             full_doc += f"""\
 Functions
