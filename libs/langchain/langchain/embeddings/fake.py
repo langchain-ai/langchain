@@ -1,8 +1,8 @@
+import hashlib
 from typing import List
 
 import numpy as np
 from pydantic import BaseModel
-import hashlib
 
 from langchain.embeddings.base import Embeddings
 
