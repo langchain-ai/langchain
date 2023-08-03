@@ -52,11 +52,16 @@ class RSSFeedLoader(BaseLoader):
         **newsloader_kwargs: Any,
     ) -> None:
         """Initialize with urls or OPML."""
-        if (urls is None) == (opml is None):  # This is True if both are None or neither is None
-            raise ValueError('Provide either the urls or the opml argument, but not both.')
+        if (urls is None) == (
+            opml is None
+        ):  # This is True if both are None or neither is None
+            raise ValueError(
+                "Provide either the urls or the opml argument, but not both."
+            )
 
         try:
             import feedparser  # noqa:F401
+
             self.__version = feedparser.__version__
         except ImportError:
             raise ImportError(
@@ -85,8 +90,9 @@ class RSSFeedLoader(BaseLoader):
         return list(iter)
 
     def lazy_load(self) -> Iterator[Document]:
-        from langchain.document_loaders import NewsURLLoader
         import feedparser
+
+        from langchain.document_loaders import NewsURLLoader
 
         if not self.urls and self.opml:
             try:
@@ -108,7 +114,7 @@ class RSSFeedLoader(BaseLoader):
                         urls=[entry.link],
                         **self.newsloader_kwargs,
                     ).load()[0]
-                    article.metadata['feed'] = url
+                    article.metadata["feed"] = url
                     yield article
             except Exception as e:
                 if self.continue_on_failure:

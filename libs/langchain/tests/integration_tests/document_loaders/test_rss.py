@@ -60,5 +60,6 @@ def test_continue_on_failure_false() -> None:
     with pytest.raises(Exception):
         loader.load()
 
+
 if __name__ == "__main__":
     test_rss_loader_with_opml()
