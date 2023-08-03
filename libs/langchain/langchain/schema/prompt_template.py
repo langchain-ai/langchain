@@ -1,12 +1,12 @@
 from __future__ import annotations
-from functools import partial
-import inspect
 
+import inspect
 import json
 from abc import ABC, abstractmethod
+from functools import partial
 from operator import attrgetter
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Mapping, Optional, TypeAlias, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, TypeAlias, Union, cast
 
 import yaml
 from pydantic import Field, root_validator
@@ -17,14 +17,6 @@ from langchain.schema.output_parser import BaseOutputParser
 from langchain.schema.prompt import PromptValue
 from langchain.schema.runnable import Runnable, RunnableConfig
 
-
-PROMPT_DEFAULT_FORMATTERS = {
-    Document: attrgetter("page_content"),
-    list: lambda l, f: [f(e) for e in l],
-    dict: lambda d, f: {k: f(v) for k, v in d.items()},
-}
-
-
 BoundFormatValueCallable: TypeAlias = Callable[[Any], Any]
 
 FormatterType: TypeAlias = Union[
@@ -32,6 +24,12 @@ FormatterType: TypeAlias = Union[
 ]
 
 FormattersType: TypeAlias = Mapping[type, FormatterType]
+
+PROMPT_DEFAULT_FORMATTERS: FormattersType = {
+    Document: attrgetter("page_content"),
+    list: lambda list_value, format: [format(e) for e in list_value],
+    dict: lambda dict_value, format: {k: format(v) for k, v in dict_value.items()},
+}
 
 
 def _apply_formatter(
@@ -42,9 +40,11 @@ def _apply_formatter(
     except ValueError:
         arity = 1
     if arity == 1:
-        return formatter(value)
+        return cast(Callable[[Any], Any], formatter)(value)
     elif arity == 2:
-        return formatter(value, partial(_format_value, formatters))
+        return cast(Callable[[Any, BoundFormatValueCallable], Any], formatter)(
+            value, partial(_format_value, formatters)
+        )
     else:
         raise ValueError(
             f"Formatter {formatter} has too many arguments ({arity}), "

@@ -1,8 +1,8 @@
 """Test functionality related to prompts."""
-from langchain.schema.document import Document
 import pytest
 
 from langchain.prompts.prompt import PromptTemplate
+from langchain.schema.document import Document
 
 
 def test_prompt_valid() -> None:
@@ -136,7 +136,7 @@ def test_default_formatters() -> None:
     prompt_no_formatters = PromptTemplate.from_template(template, formatters={})
     assert (
         prompt_no_formatters.format(foo=foo)
-        == "This is a [Document(page_content='Hello there', metadata={'some': 'key'})] test."
+        == "This is a [Document(page_content='Hello there', metadata={'some': 'key'})] test."  # noqa: E501
     )
 
 
