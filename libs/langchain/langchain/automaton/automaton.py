@@ -9,12 +9,12 @@ from typing import (
     Sequence,
     Callable,
     Any,
-    Union,
     Optional,
     Dict,
     Mapping,
 )
 
+from langchain.automaton.history import History
 from langchain.base_language import BaseLanguageModel
 from langchain.prompts import Prompt, BasePromptTemplate
 
@@ -40,6 +40,16 @@ class AbstractState(abc.ABC):
     @abc.abstractmethod
     def execute(self) -> Transition:
         """Execute the state"""
+
+
+@dataclasses.dataclass(frozen=True)
+class RunnableState(abc.ABC):
+    # runnable: Runnable
+    inputs: Mapping[str, Any]
+
+    def execute(self) -> Transition:
+        """Execute the state"""
+        return self.runnable.execute(**self.inputs)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -80,6 +90,16 @@ class Transition:
     """A transition from one state to another."""
 
 
+from typing import TypedDict
+
+
+class StateTransition(TypedDict):
+    """A transition from one state to another."""
+
+    type_: str
+    payload: Dict[str, Any]
+
+
 @dataclasses.dataclass(frozen=True)
 class PayloadTransition(Transition):
     """A transition from one state to another."""
@@ -94,65 +114,6 @@ class LLMTransition(Transition):
 
     llm_output: str
     tool_invocation_request: ToolInvocationRequest
-
-
-@dataclasses.dataclass(frozen=True)
-class History:
-    records: Sequence[Union[Transition, AbstractState]] = tuple()
-
-    def append(self, record: Union[Transition, AbstractState]) -> History:
-        """Append a record to the history."""
-        return dataclasses.replace(self, records=list(self.records) + [record])
-
-    def __repr__(self):
-        num_transitions = self.get_num_transitions()
-        num_states = self.get_num_states()
-        return "History with {} transitions and {} states".format(
-            num_transitions, num_states
-        )
-
-    def __getitem__(self, item):
-        return self.records[item]
-
-    def __len__(self):
-        return len(self.records)
-
-    def get_num_transitions(self):
-        return sum(1 for record in self.records if isinstance(record, Transition))
-
-    def get_num_states(self):
-        return sum(1 for record in self.records if isinstance(record, AbstractState))
-
-    def get_transitions(self) -> Sequence[Transition]:
-        return [record for record in self.records if isinstance(record, Transition)]
-
-
-class Executor:
-    def __init__(self, automaton: Automaton, debug: bool = False) -> None:
-        """Initialize the executor."""
-        self.automaton = automaton
-        self.debug = debug
-
-    def execute(self, inputs: Any) -> EndState:
-        """Execute the query."""
-        state = self.automaton.get_start_state(inputs)
-        history = History()
-        i = 0
-        while True:
-            history = history.append(state)
-            transition = state.execute()
-            if self.debug:
-                if isinstance(transition, LLMTransition):
-                    print("AI:", transition.llm_output)
-            history = history.append(transition)
-            next_state = self.automaton.get_next_state(state, transition, history)
-            state = next_state
-            i += 1
-            if self.automaton.is_end_state(state):
-                return state
-
-            if i > 100:
-                return EndState(history=history)
 
 
 @dataclasses.dataclass(frozen=True)
