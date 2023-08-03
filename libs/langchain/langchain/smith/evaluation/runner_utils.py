@@ -258,10 +258,7 @@ def _get_project_name(
     if isinstance(llm_or_chain_factory, BaseLanguageModel):
         model_name = llm_or_chain_factory.__class__.__name__
     else:
-        try:
-            model_name = llm_or_chain_factory().__class__.__name__
-        except TypeError:
-            model_name = llm_or_chain_factory.__class__.__name__
+        model_name = llm_or_chain_factory().__class__.__name__
     hex = uuid.uuid4().hex
     return f"{hex}-{model_name}"
 
@@ -371,9 +368,6 @@ def _setup_evaluation(
         if isinstance(llm_or_chain_factory, BaseLanguageModel):
             run_inputs, run_outputs = None, None
             run_type = "llm"
-        elif isinstance(llm_or_chain_factory, Runnable):
-            run_inputs, run_outputs = None, None
-            run_type = "chain"  # TODO
         else:
             run_type = "chain"
             if data_type in (DataType.chat, DataType.llm):
