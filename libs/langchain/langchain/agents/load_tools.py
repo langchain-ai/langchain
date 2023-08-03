@@ -58,6 +58,10 @@ from langchain.utilities.wikipedia import WikipediaAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
 from langchain.utilities.dataforseo_api_search import DataForSeoAPIWrapper
+from langchain.tools.google_drive.tool import (
+    GoogleDriveSearchTool,
+    GoogleDriveAPIWrapper,
+)
 
 
 def _get_python_repl() -> BaseTool:
@@ -181,6 +185,10 @@ def _get_wolfram_alpha(**kwargs: Any) -> BaseTool:
     return WolframAlphaQueryRun(api_wrapper=WolframAlphaAPIWrapper(**kwargs))
 
 
+def _get_google_drive_search(**kwargs: Any) -> BaseTool:
+    return GoogleDriveSearchTool(api_wrapper=GoogleDriveAPIWrapper(**kwargs))
+
+
 def _get_google_search(**kwargs: Any) -> BaseTool:
     return GoogleSearchRun(api_wrapper=GoogleSearchAPIWrapper(**kwargs))
 
@@ -296,6 +304,15 @@ _EXTRA_LLM_TOOLS: Dict[
 
 _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[str]]] = {
     "wolfram-alpha": (_get_wolfram_alpha, ["wolfram_alpha_appid"]),
+    "google-drive-search": (
+        _get_google_drive_search,
+        [
+            "gdrive_api_file",
+            "folder_id",
+            "mime_type",
+            "template",
+        ],
+    ),
     "google-search": (_get_google_search, ["google_api_key", "google_cse_id"]),
     "google-search-results-json": (
         _get_google_search_results_json,

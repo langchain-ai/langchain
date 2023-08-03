@@ -320,7 +320,7 @@ def _init_templates() -> Dict[str, PromptTemplate]:
     from langchain.prompts.prompt import PromptTemplate as MyPromptTemplate
 
     return {
-        "gdrive-all-in-folders": MyPromptTemplate(
+        "gdrive-all-in-folder": MyPromptTemplate(
             input_variables=["folder_id"],
             template=" '{folder_id}' in parents and trashed=false",
         ),
@@ -332,13 +332,13 @@ def _init_templates() -> Dict[str, PromptTemplate]:
             input_variables=["query"],
             template="name contains '{query}' and trashed=false",
         ),
-        "gdrive-by-name-in-folders": MyPromptTemplate(
+        "gdrive-by-name-in-folder": MyPromptTemplate(
             input_variables=["query", "folder_id"],
             template="name contains '{query}' "
             "and '{folder_id}' in parents "
             "and trashed=false",
         ),
-        "gdrive-query-in-folders": MyPromptTemplate(
+        "gdrive-query-in-folder": MyPromptTemplate(
             input_variables=["query", "folder_id"],
             template="fullText contains '{query}' "
             "and '{folder_id}' in parents "
@@ -348,7 +348,7 @@ def _init_templates() -> Dict[str, PromptTemplate]:
             input_variables=["mime_type"],
             template="mimeType = '{mime_type}' and trashed=false",
         ),
-        "gdrive-mime-type-in-folders": MyPromptTemplate(
+        "gdrive-mime-type-in-folder": MyPromptTemplate(
             input_variables=["mime_type", "folder_id"],
             template="mimeType = '{mime_type}' "
             "and '{folder_id}' in parents "
@@ -360,7 +360,7 @@ def _init_templates() -> Dict[str, PromptTemplate]:
             "and mime_type = '{mime_type}') "
             "and trashed=false",
         ),
-        "gdrive-query-with-mime-type-and-folders": MyPromptTemplate(
+        "gdrive-query-with-mime-type-and-folder": MyPromptTemplate(
             input_variables=["query", "mime_type", "folder_id"],
             template="((fullText contains '{query}') and mime_type = '{mime_type}')"
             "and '{folder_id}' in parents "
@@ -424,22 +424,22 @@ class GoogleDriveUtilities(Serializable, BaseModel):
     Some pre-formated request are proposed (use {query}, {folder_id}
     and/or {mime_type}):
     - "gdrive-all-in-folder":                   Return all compatible files from a
-                                                `folder_id`
+                                                 `folder_id`
     - "gdrive-query":                           Search `query` in all drives
     - "gdrive-by-name":                         Search file with name `query`)
-    - "gdrive-by-name-in-folders":              Search file with name `query`)
-                                                in `folder_id`
-    - "gdrive-query-in-folders":                Search `query` in `folder_id`
-                                                (and sub-folders in `recursive=true`)
+    - "gdrive-by-name-in-folder":               Search file with name `query`)
+                                                 in `folder_id`
+    - "gdrive-query-in-folder":                 Search `query` in `folder_id`
+                                                 (and sub-folders in `recursive=true`)
     - "gdrive-mime-type":                       Search a specific `mime_type`
     - "gdrive-mime-type-in-folder":             Search a specific `mime_type` in
-                                                `folder_id`
+                                                 `folder_id`
     - "gdrive-query-with-mime-type":            Search `query` with a specific
-                                                `mime_type`
+                                                 `mime_type`
     - "gdrive-query-with-mime-type-and-folder": Search `query` with a specific
-                                                `mime_type` and in `folder_id`
+                                                 `mime_type` and in `folder_id`
 
-    If you ask to use only the `description` of each files (mode='snippets'):
+    If you ask to use only the `description` of each file (mode='snippets'):
     - If a link has a description, use it
     - Else, use the description of the target_id file
     - If the description is empty, ignore the file
@@ -507,15 +507,15 @@ class GoogleDriveUtilities(Serializable, BaseModel):
     template: Union[
         PromptTemplate,
         Literal[
-            "gdrive-all-in-folders",
+            "gdrive-all-in-folder",
             "gdrive-query",
             "gdrive-by-name",
-            "gdrive-by-name-in-folders",
-            "gdrive-query-in-folders",
+            "gdrive-by-name-in-folder",
+            "gdrive-query-in-folder",
             "gdrive-mime-type",
-            "gdrive-mime-type-in-folders",
+            "gdrive-mime-type-in-folder",
             "gdrive-query-with-mime-type",
-            "gdrive-query-with-mime-type-and-folders",
+            "gdrive-query-with-mime-type-and-folder",
         ],
         None,
     ] = None
@@ -1611,13 +1611,29 @@ class GoogleDriveAPIWrapper(GoogleDriveUtilities):
     num_results: int = 10
     """ Number of results """
 
+    template: Union[
+        PromptTemplate,
+        Literal[
+            "gdrive-all-in-folder",
+            "gdrive-query",
+            "gdrive-by-name",
+            "gdrive-by-name-in-folder",
+            "gdrive-query-in-folder",
+            "gdrive-mime-type",
+            "gdrive-mime-type-in-folder",
+            "gdrive-query-with-mime-type",
+            "gdrive-query-with-mime-type-and-folder",
+        ],
+        None,
+    ] = "gdrive-query"
+
     @root_validator(pre=True)
     def validate_template(cls, v: Dict[str, Any]) -> Dict[str, Any]:
         folder_id = v.get("folder_id")
 
         if "template" not in v:
             if folder_id:
-                template = get_template("gdrive-by-name-in-folders")
+                template = get_template("gdrive-by-name-in-folder")
             else:
                 template = get_template("gdrive-by-name")
             v["template"] = template

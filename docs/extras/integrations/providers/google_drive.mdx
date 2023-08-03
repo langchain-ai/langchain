@@ -2,7 +2,7 @@
 
 >[Google Drive](https://en.wikipedia.org/wiki/Google_Drive) is a file storage and synchronization service developed by Google.
 
-Currently, only `Google Docs` are supported.
+All Google Drive API is supported, with integration with Google Doc, Google Sheet and Google Slide.
 
 ## Installation and Setup
 
@@ -20,3 +20,22 @@ See a [usage example and authorizing instructions](/docs/integrations/document_l
 ```python
 from langchain.document_loaders import GoogleDriveLoader
 ```
+
+## Retriever
+
+See a [usage example and authorizing instructions](/docs/modules/data_connection/retrievers/integrations/google_drive.html).
+
+```python
+from langchain.retrievers import GoogleDriveRetriever
+```
+
+## Tools
+
+See a [usage example and authorizing instructions](/docs/modules/agents/tools/integrations/google_drive.html).
+
+```python
+from langchain.tools import GoogleDriveSearchTool
+from langchain.utilities import GoogleDriveAPIWrapper
+```
+
+

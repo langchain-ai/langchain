@@ -1,16 +1,15 @@
-from typing import Any, Dict, List, Literal
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic.class_validators import root_validator
 from pydantic.config import Extra
 
-from typing import Optional
+from langchain.callbacks.manager import Callbacks
 from langchain.schema import BaseRetriever, Document
 
 from ..utilities.google_drive import (
     GoogleDriveUtilities,
     get_template,
 )
-from langchain.callbacks.manager import Callbacks
 
 
 class GoogleDriveRetriever(GoogleDriveUtilities, BaseRetriever):
@@ -38,7 +37,7 @@ class GoogleDriveRetriever(GoogleDriveUtilities, BaseRetriever):
 
         if not v.get("template"):
             if folder_id:
-                template = get_template("gdrive-query-in-folders")
+                template = get_template("gdrive-query-in-folder")
             else:
                 template = get_template("gdrive-query")
             v["template"] = template

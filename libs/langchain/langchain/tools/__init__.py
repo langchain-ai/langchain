@@ -60,6 +60,7 @@ from langchain.tools.gmail import (
     GmailSearch,
     GmailSendMessage,
 )
+from langchain.tools.google_drive.tool import GoogleDriveSearchTool
 from langchain.tools.google_places.tool import GooglePlacesTool
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
 from langchain.tools.google_serper.tool import GoogleSerperResults, GoogleSerperRun
@@ -176,6 +177,7 @@ __all__ = [
     "GmailGetThread",
     "GmailSearch",
     "GmailSendMessage",
+    "GoogleDriveSearchTool",
     "GooglePlacesTool",
     "GoogleSearchResults",
     "GoogleSearchRun",
