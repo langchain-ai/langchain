@@ -1700,6 +1700,21 @@ dnspython = ">=2.0"
 requests = ">=2.20"
 
 [[package]]
+name = "listparser"
+version = "0.19"
+description = "Parse OPML subscription lists"
+optional = false
+python-versions = ">=3.7,<4.0"
+files = [
+    {file = "listparser-0.19-py3-none-any.whl", hash = "sha256:c3857a9e5e5342207a556ba72e5c030782971fbe587e7afc2a75b2d7c0fa5a5c"},
+    {file = "listparser-0.19.tar.gz", hash = "sha256:5aa23ae017a22e36c50ca5259a690328dd524527977d8c094ae0857887002805"},
+]
+
+[package.extras]
+http = ["requests (>=2.25.1,<3.0.0)"]
+lxml = ["lxml (>=4.6.2,<5.0.0)"]
+
+[[package]]
 name = "livereload"
 version = "2.6.3"
 description = "Python LiveReload is an awesome tool for web developers"
@@ -3829,4 +3844,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "eeeb245db6de8d353cbfc59842821a31f6759344834b116df27f3b517ef55d32"
+content-hash = "3f88946adfb143858d95f13127b87f6f91da22e233017e931a7a59b5c584713c"
