@@ -44,7 +44,7 @@ def test_service_account_key(google_workspace: MagicMock) -> None:
         / "utilities"
         / "examples"
         / "gdrive_service.json",
-        template="gdrive-all-in-folders",
+        template="gdrive-all-in-folder",
     )
     assert (
         loader.gdrive_api_file
@@ -60,7 +60,7 @@ def test_service_account_key(google_workspace: MagicMock) -> None:
 #     import os
 #     mocker.patch.dict(os.environ,{},clear=True)
 #     loader = GoogleDriveLoader(
-#         template="gdrive-all-in-folders",
+#         template="gdrive-all-in-folder",
 #     )
 #     assert loader.gdrive_api_file == Path.home() / ".credentials" / "keys.json"
 
@@ -72,7 +72,7 @@ def test_credentials_path(mocker: MockerFixture, google_workspace: MagicMock) ->
         / "utilities"
         / "examples"
         / "gdrive_credentials.json",
-        template="gdrive-all-in-folders",
+        template="gdrive-all-in-folder",
     )
     assert (
         loader.gdrive_api_file

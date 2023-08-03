@@ -96,7 +96,7 @@ class GoogleDriveLoader(BaseLoader, GoogleDriveUtilities):
 
         if not v.get("template"):
             if folder_id:
-                template = get_template("gdrive-all-in-folders")
+                template = get_template("gdrive-all-in-folder")
             elif "document_ids" in v or "file_ids" in v:
                 template = OriginalPromptTemplate(input_variables=[], template="")
             else:

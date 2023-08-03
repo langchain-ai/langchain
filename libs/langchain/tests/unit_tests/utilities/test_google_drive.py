@@ -420,7 +420,7 @@ def test_load_returns_list_of_google_documents_single(
 ) -> None:
     utilities = GoogleDriveUtilities(
         api_file=Path(__file__).parent / "examples" / "gdrive_credentials.json",
-        template="gdrive-all-in-folders",
+        template="gdrive-all-in-folder",
         folder_id=mime_application_folder,
         gsheet_mode="single",
         gslide_mode="single",
@@ -438,7 +438,7 @@ def test_load_with_gslide_mode_single(mocker: MockerFixture) -> None:
     )
     utilities = GoogleDriveUtilities(
         api_file=Path(__file__).parent / "examples" / "gdrive_credentials.json",
-        template="gdrive-all-in-folders",
+        template="gdrive-all-in-folder",
         folder_id=mime_application_folder,
         gslide_mode="single",
     )
@@ -455,7 +455,7 @@ def test_load_with_gslide_mode_slide(mocker: MockerFixture) -> None:
     )
     utilities = GoogleDriveUtilities(
         api_file=Path(__file__).parent / "examples" / "gdrive_credentials.json",
-        template="gdrive-all-in-folders",
+        template="gdrive-all-in-folder",
         folder_id=mime_application_folder,
         gslide_mode="slide",
     )
@@ -472,7 +472,7 @@ def test_load_with_gslide_mode_elements(mocker: MockerFixture) -> None:
     )
     utilities = GoogleDriveUtilities(
         api_file=Path(__file__).parent / "examples" / "gdrive_credentials.json",
-        template="gdrive-all-in-folders",
+        template="gdrive-all-in-folder",
         folder_id=mime_application_folder,
         gslide_mode="elements",
     )
@@ -489,7 +489,7 @@ def test_load_with_gsheet_mode_elements(mocker: MockerFixture) -> None:
     )
     utilities = GoogleDriveUtilities(
         api_file=Path(__file__).parent / "examples" / "gdrive_credentials.json",
-        template="gdrive-all-in-folders",
+        template="gdrive-all-in-folder",
         folder_id=mime_application_folder,
         gsheet_mode="elements",
     )
@@ -506,7 +506,7 @@ def test_load_with_gsheet_mode_single(mocker: MockerFixture) -> None:
     )
     utilities = GoogleDriveUtilities(
         api_file=Path(__file__).parent / "examples" / "gdrive_credentials.json",
-        template="gdrive-all-in-folders",
+        template="gdrive-all-in-folder",
         folder_id=mime_application_folder,
         gsheet_mode="single",
     )
@@ -520,7 +520,7 @@ def test_load_with_gsheet_mode_single(mocker: MockerFixture) -> None:
 def test_load_with_num_results_1(google_workspace: MagicMock) -> None:
     utilities = GoogleDriveUtilities(
         api_file=Path(__file__).parent / "examples" / "gdrive_credentials.json",
-        template="gdrive-all-in-folders",
+        template="gdrive-all-in-folder",
         folder_id=mime_application_folder,
         num_results=1,
     )
@@ -534,7 +534,7 @@ def test_load_with_num_results_1(google_workspace: MagicMock) -> None:
 def test_load_with_mode_snippets(google_workspace: MagicMock) -> None:
     utilities = GoogleDriveUtilities(
         api_file=Path(__file__).parent / "examples" / "gdrive_credentials.json",
-        template="gdrive-all-in-folders",
+        template="gdrive-all-in-folder",
         folder_id=mime_application_folder,
         mode="snippets",
     )
@@ -552,7 +552,7 @@ def test_load_with_mode_snippets(google_workspace: MagicMock) -> None:
 def test_load_with_mode_documents(google_workspace: MagicMock) -> None:
     utilities = GoogleDriveUtilities(
         api_file=Path(__file__).parent / "examples" / "gdrive_credentials.json",
-        template="gdrive-all-in-folders",
+        template="gdrive-all-in-folder",
         folder_id=mime_application_folder,
         mode="documents",
         gsheet_mode="single",
@@ -567,7 +567,7 @@ def test_load_with_mode_documents(google_workspace: MagicMock) -> None:
 def test_link_field(google_workspace: MagicMock) -> None:
     utilities = GoogleDriveUtilities(
         api_file=Path(__file__).parent / "examples" / "gdrive_credentials.json",
-        template="gdrive-all-in-folders",
+        template="gdrive-all-in-folder",
         folder_id=mime_application_folder,
         mode="documents",
         gsheet_mode="single",
@@ -582,7 +582,7 @@ def test_link_field(google_workspace: MagicMock) -> None:
 
     utilities = GoogleDriveUtilities(
         api_file=Path(__file__).parent / "examples" / "gdrive_credentials.json",
-        template="gdrive-all-in-folders",
+        template="gdrive-all-in-folder",
         folder_id=mime_application_folder,
         mode="documents",
         gsheet_mode="single",
@@ -618,7 +618,7 @@ def test_load_document_with_no_link_in_file(mocker: MockerFixture) -> None:
     )
     utilities = GoogleDriveUtilities(
         api_file=Path(__file__).parent / "examples" / "gdrive_credentials.json",
-        template="gdrive-all-in-folders",
+        template="gdrive-all-in-folder",
         folder_id=mime_application_folder,
         mode="documents",
         gsheet_mode="single",
@@ -634,7 +634,7 @@ def test_load_document_with_no_link_in_file(mocker: MockerFixture) -> None:
     )
     utilities = GoogleDriveUtilities(
         api_file=Path(__file__).parent / "examples" / "gdrive_credentials.json",
-        template="gdrive-all-in-folders",
+        template="gdrive-all-in-folder",
         folder_id=mime_application_folder,
         mode="documents",
         gsheet_mode="single",
@@ -673,7 +673,7 @@ def test_load_with_template_query_with_mime_type_and_folders(
         query="toto",
         folder_id=mime_application_folder,
         mime_type="application/vnd.google-apps.document",
-        template="gdrive-query-with-mime-type-and-folders",
+        template="gdrive-query-with-mime-type-and-folder",
         gslide_mode="single",
         gsheet_mode="single",
     )
@@ -706,7 +706,7 @@ def test_load_with_default_conv_mapping(mocker: MockerFixture) -> None:
     utilities = GoogleDriveUtilities(
         api_file=Path(__file__).parent / "examples" / "gdrive_credentials.json",
         folder_id=mime_application_folder,
-        template="gdrive-all-in-folders",
+        template="gdrive-all-in-folder",
     )
     docs = list(utilities.lazy_get_relevant_documents())
     assert isinstance(docs, list)
@@ -733,7 +733,7 @@ def test_load_with_conv_mapping(mocker: MockerFixture) -> None:
         api_file=Path(__file__).parent / "examples" / "gdrive_credentials.json",
         folder_id=mime_application_folder,
         conv_mapping=my_mime_types_mapping,
-        template="gdrive-all-in-folders",
+        template="gdrive-all-in-folder",
     )
     docs = list(utilities.lazy_get_relevant_documents())
     print(docs)
@@ -774,7 +774,7 @@ def test_load_with_recursive_shortcut_and_page_token(mocker: MockerFixture) -> N
         api_file=Path(__file__).parent / "examples" / "gdrive_credentials.json",
         folder_id=mime_application_folder,
         recursive=True,
-        template="gdrive-all-in-folders",
+        template="gdrive-all-in-folder",
         gslide_mode="single",
         gsheet_mode="single",
     )
@@ -797,7 +797,7 @@ def test_load_follow_shortcut_false(mocker: MockerFixture) -> None:
     )
     utilities = GoogleDriveUtilities(
         api_file=Path(__file__).parent / "examples" / "gdrive_credentials.json",
-        template="gdrive-all-in-folders",
+        template="gdrive-all-in-folder",
         folder_id=mime_application_folder,
         follow_shortcut=False,
     )
@@ -821,7 +821,7 @@ def test_load_follow_shortcut_true(mocker: MockerFixture) -> None:
     )
     utilities = GoogleDriveUtilities(
         api_file=Path(__file__).parent / "examples" / "gdrive_credentials.json",
-        template="gdrive-all-in-folders",
+        template="gdrive-all-in-folder",
         folder_id=mime_application_folder,
         follow_shortcut=True,
     )
@@ -836,7 +836,7 @@ def test_load_files_customs_google_api(google_workspace: MagicMock) -> None:
     utilities = GoogleDriveUtilities(
         api_file=Path(__file__).parent / "examples" / "gdrive_credentials.json",
         folder_id=mime_application_folder,
-        template="gdrive-all-in-folders",
+        template="gdrive-all-in-folder",
         corpora="user",
         driveId="1",
         fields="id",
@@ -873,7 +873,7 @@ def test_load_filter(google_workspace: MagicMock) -> None:
         api_file=Path(__file__).parent / "examples" / "gdrive_credentials.json",
         folder_id=mime_application_folder,
         filter=lambda self, file: False,
-        template="gdrive-all-in-folders",
+        template="gdrive-all-in-folder",
     )
     docs = utilities.load_file_from_id(file_id="1")
     assert isinstance(docs, list)
@@ -885,7 +885,7 @@ def test_load_document_from_id(google_workspace: MagicMock) -> None:
     utilities = GoogleDriveUtilities(
         api_file=Path(__file__).parent / "examples" / "gdrive_credentials.json",
         folder_id=mime_application_folder,
-        template="gdrive-all-in-folders",
+        template="gdrive-all-in-folder",
     )
     docs = utilities.load_document_from_id(file_id="1")
     assert isinstance(docs, list)
@@ -896,7 +896,7 @@ def test_load_document_from_bad_id(google_workspace: MagicMock) -> None:
     utilities = GoogleDriveUtilities(
         api_file=Path(__file__).parent / "examples" / "gdrive_credentials.json",
         folder_id=mime_application_folder,
-        template="gdrive-all-in-folders",
+        template="gdrive-all-in-folder",
     )
     docs = utilities.load_document_from_id(file_id="-1")
     assert not docs
@@ -907,7 +907,7 @@ def test_load_slides_from_id(google_workspace: MagicMock) -> None:
     utilities = GoogleDriveUtilities(
         api_file=Path(__file__).parent / "examples" / "gdrive_credentials.json",
         folder_id=mime_application_folder,
-        template="gdrive-all-in-folders",
+        template="gdrive-all-in-folder",
     )
     docs = utilities.load_slides_from_id(file_id="2")
     assert isinstance(docs, list)
@@ -918,7 +918,7 @@ def test_load_slides_from_bad_id(google_workspace: MagicMock) -> None:
     utilities = GoogleDriveUtilities(
         api_file=Path(__file__).parent / "examples" / "gdrive_credentials.json",
         folder_id=mime_application_folder,
-        template="gdrive-all-in-folders",
+        template="gdrive-all-in-folder",
     )
     docs = utilities.load_slides_from_id(file_id="-1")
     assert isinstance(docs, list)
@@ -929,7 +929,7 @@ def test_load_sheets_from_id(google_workspace: MagicMock) -> None:
     utilities = GoogleDriveUtilities(
         api_file=Path(__file__).parent / "examples" / "gdrive_credentials.json",
         folder_id=mime_application_folder,
-        template="gdrive-all-in-folders",
+        template="gdrive-all-in-folder",
     )
     docs = utilities.load_sheets_from_id(file_id="3")
     assert isinstance(docs, list)
@@ -940,7 +940,7 @@ def test_load_sheets_from_bad_id(google_workspace: MagicMock) -> None:
     utilities = GoogleDriveUtilities(
         api_file=Path(__file__).parent / "examples" / "gdrive_credentials.json",
         folder_id=mime_application_folder,
-        template="gdrive-all-in-folders",
+        template="gdrive-all-in-folder",
     )
     docs = utilities.load_sheets_from_id(file_id="-1")
     assert isinstance(docs, list)
@@ -951,7 +951,7 @@ def test_load_file_from_id(google_workspace: MagicMock) -> None:
     utilities = GoogleDriveUtilities(
         api_file=Path(__file__).parent / "examples" / "gdrive_credentials.json",
         folder_id=mime_application_folder,
-        template="gdrive-all-in-folders",
+        template="gdrive-all-in-folder",
     )
     docs = utilities.load_file_from_id(file_id="1")
     assert isinstance(docs, list)
@@ -962,7 +962,7 @@ def test_load_file_from_bad_id(google_workspace: MagicMock) -> None:
     utilities = GoogleDriveUtilities(
         api_file=Path(__file__).parent / "examples" / "gdrive_credentials.json",
         folder_id=mime_application_folder,
-        template="gdrive-all-in-folders",
+        template="gdrive-all-in-folder",
     )
     docs = utilities.load_file_from_id(file_id="-1")
     assert isinstance(docs, list)
@@ -1090,8 +1090,8 @@ def test_no_query(google_workspace: MagicMock) -> None:
 # def test_load_mime() -> None:
 #     utilities = GoogleDriveUtilities(
 #         folder_id='18A21b37hPISOQtStQ_irQLYS3hlVEsBH',
-#         template="gdrive-all-in-folders",
-#         # template="gdrive-mime-type-in-folders", mime_type="image/png",
+#         template="gdrive-all-in-folder",
+#         # template="gdrive-mime-type-in-folder", mime_type="image/png",
 #         recursive=True,
 #     )
 #     docs = list(utilities.lazy_get_relevant_documents())
