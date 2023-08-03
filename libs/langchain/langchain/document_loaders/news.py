@@ -11,18 +11,31 @@ logger = logging.getLogger(__name__)
 class NewsURLLoader(BaseLoader):
     """Loader that uses newspaper to load news articles from URLs.
 
-    Examples
-    --------
-    from langchain.document_loaders import NewsURLLoader
+    Args:
+        urls: URLs to load. Each is loaded into its own document.
+        text_mode: If True, extract text from URL and use that for page content.
+            Otherwise, extract raw HTML.
+        nlp: If True, perform NLP on the extracted contents, like providing a summary
+            and extracting keywords.
+        continue_on_failure: If True, continue loading documents even if
+            loading fails for a particular URL.
+        show_progress_bar: If True, use tqdm to show a loading progress bar. Requires
+            tqdm to be installed, ``pip install tqdm``.
+        **newspaper_kwargs: Any additional named arguments to pass to
+            newspaper.Article().
 
-    loader = NewsURLLoader(
-        urls=["<url-1>", "<url-2>"],
-    )
-    docs = loader.load()
+    Example:
+        .. code-block:: python
 
-    References
-    ----------
-    https://newspaper.readthedocs.io/en/latest/
+            from langchain.document_loaders import NewsURLLoader
+
+            loader = NewsURLLoader(
+                urls=["<url-1>", "<url-2>"],
+            )
+            docs = loader.load()
+
+    Newspaper reference:
+        https://newspaper.readthedocs.io/en/latest/
     """
 
     def __init__(
