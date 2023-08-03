@@ -26,10 +26,10 @@ class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
         message = generation.message
         try:
             func_call = message.additional_kwargs["function_call"]
-        except ValueError as exc:
-            raise OutputParserException(f"Could not parse function call: {exc}")
         except KeyError as key:
-            raise OutputParserException(f"Could not find the following key in additional_kwargs: {key}")
+            raise OutputParserException(
+                f"Could not find the following key in additional_kwargs: {key}"
+            )
 
         if self.args_only:
             return func_call["arguments"]
