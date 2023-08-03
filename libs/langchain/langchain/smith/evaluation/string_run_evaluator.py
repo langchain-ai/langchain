@@ -145,11 +145,9 @@ class ChainStringRunMapper(StringRunMapper):
         """Maps the Run to a dictionary."""
         if not run.outputs:
             raise ValueError(f"Run {run.id} has no outputs to evaluate.")
-        if run.run_type != "chain":
-            raise ValueError("Chain RunMapper only supports Chain runs.")
-        if self.input_key not in run.inputs:
+        if self.input_key is not None and self.input_key not in run.inputs:
             raise ValueError(f"Run {run.id} does not have input key {self.input_key}.")
-        elif self.prediction_key not in run.outputs:
+        elif self.prediction_key is not None and self.prediction_key not in run.outputs:
             raise ValueError(
                 f"Run {run.id} does not have prediction key {self.prediction_key}."
             )
