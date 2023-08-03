@@ -161,7 +161,9 @@ def test_mathpix_loader() -> None:
     ],
 )
 @pytest.mark.skip(reason="Needs AWS credentials to run")
-def test_amazontextract_loader(file_path: str, docs_length: int, create_client: bool) -> None:
+def test_amazontextract_loader(
+    file_path: str, docs_length: int, create_client: bool
+) -> None:
     if create_client:
         import boto3
 

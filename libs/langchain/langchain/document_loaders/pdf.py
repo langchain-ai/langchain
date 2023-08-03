@@ -5,6 +5,7 @@ import os
 import tempfile
 import time
 from abc import ABC
+from enum import Enum
 from io import StringIO
 from pathlib import Path
 from typing import Any, Iterator, List, Mapping, Optional, Union
@@ -500,25 +501,38 @@ class AmazonTextractPDFLoader(BasePDFLoader):
             document = loader.load()
     """
 
-    try:
-        import textractcaller as tc
-    except ImportError:
-        raise ModuleNotFoundError(
-            "Could not import amazon-textract-caller python package. \
-            Please install it with `pip install amazon-textract-caller` \
-            or add to your requirements.txt."
-        )
-
     def __init__(
         self,
         file_path: str,
-        textract_features: List[tc.Textract_Features] = list(),
+        textract_features: List[Enum] = list(),
         client: Any = None,
         credentials_profile_name: str = "",
         region_name: str = "",
         endpoint_url: str = "",
     ) -> None:
+        """Initialize the loader.
+
+        Args:
+            file_path: file, url or s3 path for input file
+            textract_features: Features to be used for extraction,
+                               should be an enum of type  `Textract_Features`
+                               see `amazon-textract-caller` package
+            client: boto3 textract client (Optional)
+            credentials_profile_name: AWS profile name, if not default (Optional)
+            region_name: AWS region, eg us-east-1 (Optional)
+            endpoint_url: endpoint url for the textract service (Optional)
+
+        """
         super().__init__(file_path)
+
+        try:
+            import textractcaller as tc  # noqa: F401
+        except ImportError:
+            raise ModuleNotFoundError(
+                "Could not import amazon-textract-caller python package. "
+                "Please install it with `pip install amazon-textract-caller`."
+            )
+
         if credentials_profile_name or region_name or endpoint_url:
             try:
                 import boto3
