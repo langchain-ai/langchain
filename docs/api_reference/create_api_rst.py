@@ -192,7 +192,6 @@ def _construct_doc(pkg: str, members_by_namespace: Dict[str, ModuleMembers]) -> 
 
 """
     namespaces = sorted(members_by_namespace)
-    namespaces = ["evaluation", "load"]
 
     for module in namespaces:
         _members = members_by_namespace[module]
