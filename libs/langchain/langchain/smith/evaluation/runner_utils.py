@@ -994,8 +994,8 @@ def _run_llm_or_chain(
             outputs.append(output)
         except Exception as e:
             logger.warning(
-                f"{chain_or_llm} failed for example {example.id} with inputs: {example.inputs}."
-                f" Error: {e}",
+                f"{chain_or_llm} failed for example {example.id} with inputs:"
+                f" {example.inputs}.\nError: {e}",
             )
             outputs.append({"Error": str(e)})
     if callbacks and previous_example_ids:
