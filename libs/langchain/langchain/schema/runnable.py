@@ -236,7 +236,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
         run_manager = callback_manager.on_chain_start(
             dumpd(self), input if isinstance(input, dict) else {"input": input}
         )
-        first_error: BaseException = None  # type: ignore[assignment]
+        first_error = None
         for runnable in self.runnables:
             try:
                 output = runnable.invoke(
@@ -254,6 +254,8 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
                     output if isinstance(output, dict) else {"output": output}
                 )
                 return output
+        if first_error is None:
+            raise ValueError("No error stored at end of fallbacks.")
         run_manager.on_chain_error(first_error)
         raise first_error
 
@@ -278,7 +280,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
             dumpd(self), input if isinstance(input, dict) else {"input": input}
         )
 
-        first_error: BaseException = None  # type: ignore[assignment]
+        first_error = None
         for runnable in self.runnables:
             try:
                 output = await runnable.ainvoke(
@@ -296,6 +298,8 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
                     output if isinstance(output, dict) else {"output": output}
                 )
                 return output
+        if first_error is None:
+            raise ValueError("No error stored at end of fallbacks.")
         await run_manager.on_chain_error(first_error)
         raise first_error
 
@@ -330,7 +334,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
             for cm, input in zip(callback_managers, inputs)
         ]
 
-        first_error: BaseException = None  # type: ignore[assignment]
+        first_error = None
         for runnable in self.runnables:
             try:
                 outputs = runnable.batch(
@@ -355,6 +359,8 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
                         output if isinstance(output, dict) else {"output": output}
                     )
                 return outputs
+        if first_error is None:
+            raise ValueError("No error stored at end of fallbacks.")
         for rm in run_managers:
             rm.on_chain_error(first_error)
         raise first_error
@@ -395,7 +401,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
             )
         )
 
-        first_error: BaseException = None  # type: ignore
+        first_error = None
         for runnable in self.runnables:
             try:
                 outputs = await runnable.abatch(
@@ -422,6 +428,8 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
                     )
                 )
                 return outputs
+        if first_error is None:
+            raise ValueError("No error stored at end of fallbacks.")
         await asyncio.gather(*(rm.on_chain_error(first_error) for rm in run_managers))
         raise first_error
 
