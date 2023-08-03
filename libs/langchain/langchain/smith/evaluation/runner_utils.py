@@ -600,16 +600,16 @@ async def _arun_chain(
     input_mapper: Optional[Callable[[Dict], Any]] = None,
 ) -> Union[dict, str]:
     """Run a chain asynchronously on inputs."""
-    runnable_config = RunnableConfig(tags=tags or [], callbacks=callbacks)
-    if input_mapper is not None:
-        inputs_ = input_mapper(inputs)
-        output: Union[dict, str] = await chain.ainvoke(
-            inputs_,
-            config=runnable_config,
-        )
+    inputs_ = inputs if input_mapper is None else input_mapper(inputs)
+    if isinstance(chain, Chain):
+        if isinstance(inputs_, dict) and len(inputs_) == 1:
+            val = next(iter(inputs_.values()))
+            output = await chain.acall(val, callbacks=callbacks, tags=tags)
+        else:
+            output = await chain.acall(inputs_, callbacks=callbacks, tags=tags)
     else:
-        inputs_ = next(iter(inputs.values())) if len(inputs) == 1 else inputs
-        output = await chain.acall(inputs_, callbacks=callbacks, tags=tags)
+        runnable_config = RunnableConfig(tags=tags or [], callbacks=callbacks)
+        output = await chain.ainvoke(inputs_, config=runnable_config)
     return output
 
 
@@ -923,16 +923,16 @@ def _run_chain(
     input_mapper: Optional[Callable[[Dict], Any]] = None,
 ) -> Union[Dict, str]:
     """Run a chain on inputs."""
-    runnable_config = RunnableConfig(tags=tags or [], callbacks=callbacks)
-    if input_mapper is not None:
-        inputs_ = input_mapper(inputs)
-        output: Union[dict, str] = chain.invoke(
-            inputs_,
-            config=runnable_config,
-        )
+    inputs_ = inputs if input_mapper is None else input_mapper(inputs)
+    if isinstance(chain, Chain):
+        if isinstance(inputs_, dict) and len(inputs_) == 1:
+            val = next(iter(inputs_.values()))
+            output = chain(val, callbacks=callbacks, tags=tags)
+        else:
+            output = chain(inputs_, callbacks=callbacks, tags=tags)
     else:
-        inputs_ = next(iter(inputs.values())) if len(inputs) == 1 else inputs
-        output = chain(inputs_, callbacks=callbacks, tags=tags)
+        runnable_config = RunnableConfig(tags=tags or [], callbacks=callbacks)
+        output = chain.invoke(inputs_, config=runnable_config)
     return output
 
 
@@ -994,7 +994,8 @@ def _run_llm_or_chain(
             outputs.append(output)
         except Exception as e:
             logger.warning(
-                f"{chain_or_llm} failed for example {example.id}. Error: {e}"
+                f"{chain_or_llm} failed for example {example.id} with inputs: {example.inputs}."
+                f" Error: {e}",
             )
             outputs.append({"Error": str(e)})
     if callbacks and previous_example_ids:
