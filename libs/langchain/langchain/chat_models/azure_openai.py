@@ -148,7 +148,8 @@ class AzureChatOpenAI(ChatOpenAI):
         for res in response["choices"]:
             if res.get("finish_reason", None) == "content_filter":
                 raise ValueError(
-                    f"Azure has not provided the response due to a content filter being triggered"
+                    "Azure has not provided the response due to a content filter "
+                    "being triggered"
                 )
         chat_result = super()._create_chat_result(response)
 

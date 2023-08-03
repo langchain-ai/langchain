@@ -30,7 +30,7 @@ def test_model_name_set_on_chat_result_when_present_in_response(
                 "finish_reason": "stop",
                 "message": {{
                     "role": "assistant",
-                    "content": "I am an AI and cannot provide current real-time information. Please check a reliable weather website or app for the current weather conditions in Boston."
+                    "content": "I'm and AI assistant that can help you."
                 }}
             }}
         ],
