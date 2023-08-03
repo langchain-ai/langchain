@@ -43,7 +43,7 @@ class GraphQLAPIWrapper(BaseModel):
         values["gql_function"] = gql
         return values
 
-    def get_gql_client(self, graphql_endpoint: str, headers: Optional[Dict[str, str]] = None) -> Client:
+    def get_gql_client(self, graphql_endpoint: Optional[str] = None, headers: Optional[Dict[str, str]] = None) -> Client:
         """Initialize the client using the graphql endpoint and headers passed"""
         transport = RequestsHTTPTransport(
             url=graphql_endpoint if graphql_endpoint is not None else self.graphql_endpoint,
@@ -51,7 +51,7 @@ class GraphQLAPIWrapper(BaseModel):
         )
         return Client(transport=transport, fetch_schema_from_transport=True)
 
-    def run(self, query: str, query_variables: Optional[Dict[str, Any]] = None, graphql_endpoint: str = None, headers: Optional[Dict[str, str]] = None) -> str:
+    def run(self, query: str, query_variables: Optional[Dict[str, Any]] = None, graphql_endpoint: Optional[str] = None, headers: Optional[Dict[str, str]] = None) -> str:
         client = None
         """Initialize gql client if graphql endpoint and/or headers are passed"""
         if graphql_endpoint is not None or headers is not None:
@@ -60,7 +60,7 @@ class GraphQLAPIWrapper(BaseModel):
         result = self._execute_query(query, query_variables, client)
         return json.dumps(result, indent=2)
 
-    def _execute_query(self, query: str, query_variables: Optional[Dict[str, Any]] = None, client: Client = None) -> Dict[str, Any]:
+    def _execute_query(self, query: str, query_variables: Optional[Dict[str, Any]] = None, client: Optional[Client] = None) -> Dict[str, Any]:
         """Execute a GraphQL query and return the results."""
         document_node = self.gql_function(query)
         """If a custom client is passed, execute the query using the custom client else the default one"""

@@ -40,7 +40,7 @@ MOCK_RESPONSE4 = {
 MOCK_STR_RESPONSE4 = json.dumps(MOCK_RESPONSE4["data"], indent=2)
 
 class _MockGraphQLAPIWrapper(GraphQLAPIWrapper):
-    def run(self, query: str, query_variables: Optional[Dict[str, Any]] = None, graphql_endpoint: str = None,
+    def run(self, query: str, query_variables: Optional[Dict[str, Any]] = None, graphql_endpoint: Optional[str] = None,
             headers: Optional[Dict[str, str]] = None) -> str:
         if query_variables is not None and query_variables["name"] is "Alice":
             return MOCK_STR_RESPONSE3

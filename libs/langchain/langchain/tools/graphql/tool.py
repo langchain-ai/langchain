@@ -35,7 +35,7 @@ class BaseGraphQLTool(BaseTool):
             self,
             query: str,
             query_variables: Optional[Dict[str, Any]] = None,
-            graphql_endpoint: str = None,
+            graphql_endpoint: Optional[str] = None,
             headers: Optional[Dict[str, str]] = None,
             run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
