@@ -38,7 +38,7 @@ class TestPinecone:
     def setup_class(cls) -> None:
         reset_pinecone()
 
-        cls.index = pinecone.Index(index_name)
+        cls.index = pinecone.Index(index_name, pool_threads=2)
 
         if index_name in pinecone.list_indexes():
             index_stats = cls.index.describe_index_stats()
@@ -227,3 +227,19 @@ class TestPinecone:
         assert all(
             (1 >= score or np.isclose(score, 1)) and score >= 0 for _, score in output
         )
+
+    @pytest.mark.vcr()
+    @pytest.mark.asyncio
+    async def test_aadd_texts(self, embedding_openai: OpenAIEmbeddings) -> None:
+        vectorstore = Pinecone.from_existing_index(
+            index_name=index_name,
+            embedding=embedding_openai,
+            namespace=namespace_name,
+        )
+
+        texts = ["foo", "bar", "baz"] * 11
+        ids = await vectorstore.aadd_texts(texts)
+
+        assert len(ids) == len(texts)
+        index_stats = self.index.describe_index_stats()
+        assert index_stats["namespaces"][namespace_name]["vector_count"] == len(texts)

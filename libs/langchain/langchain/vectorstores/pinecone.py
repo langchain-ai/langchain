@@ -1,6 +1,7 @@
 """Wrapper around Pinecone vector database."""
 from __future__ import annotations
 
+import asyncio
 import logging
 import uuid
 from typing import Any, Callable, Iterable, List, Optional, Tuple
@@ -86,7 +87,6 @@ class Pinecone(VectorStore):
 
         Returns:
             List of ids from adding the texts into the vectorstore.
-
         """
         if namespace is None:
             namespace = self._namespace
@@ -102,6 +102,55 @@ class Pinecone(VectorStore):
         self._index.upsert(
             vectors=docs, namespace=namespace, batch_size=batch_size, **kwargs
         )
+        return ids
+
+    async def aadd_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        namespace: Optional[str] = None,
+        batch_size: int = 32,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Run more texts through the embeddings and add to the vectorstore.
+
+        Args:
+            texts: Iterable of strings to add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of ids to associate with the texts.
+            namespace: Optional pinecone namespace to add the texts to.
+            batch_size: Number of vectors to include in each parallel upsert request.
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+        """
+        if namespace is None:
+            namespace = self._namespace
+
+        docs = []
+        ids = ids or [str(uuid.uuid4()) for _ in texts]
+        for i, text in enumerate(texts):
+            embedding = self._embedding_function(text)
+            metadata = metadatas[i] if metadatas else {}
+            metadata[self._text_key] = text
+            docs.append((ids[i], embedding, metadata))
+
+        async_results = [
+            self._index.upsert(
+                vectors=docs[i : i + batch_size],
+                namespace=namespace,
+                async_req=True,
+                **kwargs,
+            )
+            for i in range(0, len(docs), batch_size)
+        ]
+
+        # Wait for and retrieve responses (this raises in case of error)
+        loop = asyncio.get_event_loop()
+        coros = [loop.run_in_executor(None, result.get) for result in async_results]
+        await asyncio.gather(*coros)
+
         return ids
 
     def similarity_search_with_score(
