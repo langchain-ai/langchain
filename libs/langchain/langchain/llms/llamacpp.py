@@ -67,6 +67,9 @@ class LlamaCpp(LLM):
     n_gpu_layers: Optional[int] = Field(None, alias="n_gpu_layers")
     """Number of layers to be loaded into gpu memory. Default None."""
 
+    tensor_split: Optional[List[float]] = Field(None, alias="tensor_split")
+    """Split tensors across multiple GPUs by a list of proportions. Default None."""
+
     suffix: Optional[str] = Field(None)
     """A suffix to append to the generated text. If None, no suffix is appended."""
 
@@ -136,8 +139,10 @@ class LlamaCpp(LLM):
         ]
         model_params = {k: values[k] for k in model_param_names}
         # For backwards compatibility, only include if non-null.
-        if values["n_gpu_layers"] is not None:
-            model_params["n_gpu_layers"] = values["n_gpu_layers"]
+        keys = ["n_gpu_layers", "tensor_split"]
+        for key in keys:
+            if values[key] is not None:
+                model_params[key] = values[key]
 
         try:
             from llama_cpp import Llama
