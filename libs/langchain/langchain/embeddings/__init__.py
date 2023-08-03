@@ -24,6 +24,7 @@ from langchain.embeddings.clarifai import ClarifaiEmbeddings
 from langchain.embeddings.cohere import CohereEmbeddings
 from langchain.embeddings.dashscope import DashScopeEmbeddings
 from langchain.embeddings.deepinfra import DeepInfraEmbeddings
+from langchain.embeddings.edenai import EdenAiEmbeddings
 from langchain.embeddings.elasticsearch import ElasticsearchEmbeddings
 from langchain.embeddings.embaas import EmbaasEmbeddings
 from langchain.embeddings.fake import FakeEmbeddings
@@ -85,6 +86,7 @@ __all__ = [
     "VertexAIEmbeddings",
     "BedrockEmbeddings",
     "DeepInfraEmbeddings",
+    "EdenAiEmbeddings",
     "DashScopeEmbeddings",
     "EmbaasEmbeddings",
     "OctoAIEmbeddings",
