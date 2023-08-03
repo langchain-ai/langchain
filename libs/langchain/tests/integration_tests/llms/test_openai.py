@@ -1,7 +1,6 @@
 """Test OpenAI API wrapper."""
 from pathlib import Path
-from typing import Any, Generator
-from unittest.mock import MagicMock, patch
+from typing import Generator
 
 import pytest
 
@@ -11,7 +10,6 @@ from langchain.llms.loading import load_llm
 from langchain.llms.openai import OpenAI, OpenAIChat
 from langchain.schema import LLMResult
 from tests.unit_tests.callbacks.fake_callback_handler import (
-    FakeAsyncCallbackHandler,
     FakeCallbackHandler,
 )
 
