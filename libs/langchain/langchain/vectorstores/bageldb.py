@@ -20,9 +20,13 @@ from langchain.utils import xor_args
 
 import bagel
 import bagel.config
-from bagel.api.types import ID, Where
+# from bagel.api.types import ID, OneOrMany
 
 DEFAULT_K = 5
+
+
+def _results_to_docs(results: Any) -> List[Document]:
+    return [doc for doc, _ in _results_to_docs_and_scores(results)]
 
 
 def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
@@ -41,9 +45,9 @@ class Bagel(VectorStore):
 
     def __init__(
         self,
-        collection_name: str = _LANGCHAIN_DEFAULT_CLUSTER_NAME,
+        cluster_name: str = _LANGCHAIN_DEFAULT_CLUSTER_NAME,
         client_settings: Optional[bagel.config.Settings] = None,
-        collection_metadata: Optional[Dict] = None,
+        cluster_metadata: Optional[Dict] = None,
         client: Optional[bagel.Client] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
     ) -> None:
@@ -54,7 +58,6 @@ class Bagel(VectorStore):
         else:
             if client_settings:
                 _client_settings = client_settings
-
             else:
                 _client_settings = bagel.config.Settings(
                         bagel_api_impl="rest",
@@ -64,8 +67,8 @@ class Bagel(VectorStore):
             self._client = bagel.Client(_client_settings)
 
         self._cluster = self._client.get_or_create_cluster(
-            name=collection_name,
-            metadata=collection_metadata,
+            name=cluster_name,
+            metadata=cluster_metadata,
         )
         self.override_relevance_score_fn = relevance_score_fn
 
@@ -74,7 +77,7 @@ class Bagel(VectorStore):
         return None
 
     @xor_args(("query_texts", "query_embeddings"))
-    def __query_collection(
+    def __query_cluster(
         self,
         query_texts: Optional[List[str]] = None,
         query_embeddings: Optional[List[List[float]]] = None,
@@ -94,6 +97,7 @@ class Bagel(VectorStore):
     def add_texts(
         self,
         texts: Iterable[str],
+        embeddings: Optional[List[float]] = None,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
@@ -102,7 +106,6 @@ class Bagel(VectorStore):
         if ids is None:
             ids = [str(uuid.uuid1()) for _ in texts]
 
-        embeddings = None
         texts = list(texts)
 
         if metadatas:
@@ -154,11 +157,11 @@ class Bagel(VectorStore):
         self,
         query: str,
         k: int = DEFAULT_K,
-        filter: Optional[Dict[str, str]] = None,
+        where: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         docs_and_scores = self.similarity_search_with_score(
-            query, k, filter=filter
+            query, k, where=where
         )
         return [doc for doc, _ in docs_and_scores]
 
@@ -166,11 +169,11 @@ class Bagel(VectorStore):
         self,
         query: str,
         k: int = DEFAULT_K,
-        filter: Optional[Dict[str, str]] = None,
+        where: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        results = self.__query_collection(
-            query_texts=[query], n_results=k, where=filter
+        results = self.__query_cluster(
+            query_texts=[query], n_results=k, where=where
         )
         return _results_to_docs_and_scores(results)
 
@@ -178,14 +181,76 @@ class Bagel(VectorStore):
     def from_texts(
         cls: Type[Bagel],
         texts: List[str],
-        embedding: Optional[Embeddings] = None,
+        cluster_name: str = _LANGCHAIN_DEFAULT_CLUSTER_NAME,
+        client_settings: Optional[bagel.config.Settings] = None,
+        cluster_metadata: Optional[Dict] = None,
+        embeddings: Optional[List[float]] = None,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
-        collection_name: str = _LANGCHAIN_DEFAULT_CLUSTER_NAME,
-        persist_directory: Optional[str] = None,
-        client_settings: Optional[bagel.config.Settings] = None,
         client: Optional[bagel.Client] = None,
-        collection_metadata: Optional[Dict] = None,
         **kwargs: Any,
     ) -> Bagel:
-        pass
+        bagel_cluster = cls(
+            cluster_name=cluster_name,
+            client_settings=client_settings,
+            client=client,
+            cluster_metadata=cluster_metadata,
+            **kwargs,
+        )
+        bagel_cluster.add_texts(
+            texts=texts, embeddings=embeddings,
+            metadatas=metadatas, ids=ids
+        )
+        return bagel_cluster
+
+    def delete_cluster(self) -> None:
+        """Delete the collection."""
+        self._client.delete_cluster(self._cluster.name)
+
+    def similarity_search_by_vector_with_relevance_scores(
+        self,
+        embedding: List[float],
+        k: int = DEFAULT_K,
+        where: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        results = self.__query_cluster(
+            query_embeddings=embedding, n_results=k, where=where
+        )
+        return _results_to_docs_and_scores(results)
+
+    def similarity_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = DEFAULT_K,
+        where: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        results = self.__query_cluster(
+            query_embeddings=embedding, n_results=k, where=where
+        )
+        return _results_to_docs(results)
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        if self.override_relevance_score_fn:
+            return self.override_relevance_score_fn
+
+        distance = "l2"
+        distance_key = "hnsw:space"
+        metadata = self._cluster.metadata
+
+        if metadata and distance_key in metadata:
+            distance = metadata[distance_key]
+
+        if distance == "cosine":
+            return self._cosine_relevance_score_fn
+        elif distance == "l2":
+            return self._euclidean_relevance_score_fn
+        elif distance == "ip":
+            return self._max_inner_product_relevance_score_fn
+        else:
+            raise ValueError(
+                "No supported normalization function"
+                f" for distance metric of type: {distance}."
+                "Consider providing relevance_score_fn to Chroma constructor."
+            )
