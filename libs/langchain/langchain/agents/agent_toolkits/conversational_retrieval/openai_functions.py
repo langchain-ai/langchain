@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.openai_functions_agent.agent_token_buffer_memory import (
@@ -32,7 +32,7 @@ def create_conversational_retrieval_agent(
     system_message: Optional[SystemMessage] = None,
     verbose: bool = False,
     max_token_limit: int = 2000,
-    **kwargs
+    **kwargs: Any
 ) -> AgentExecutor:
     """A convenience method for creating a conversational retrieval agent.
 
