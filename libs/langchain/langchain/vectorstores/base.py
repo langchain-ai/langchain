@@ -280,7 +280,9 @@ class VectorStore(ABC):
         # This is a temporary workaround to make the similarity search
         # asynchronous. The proper solution is to make the similarity search
         # asynchronous in the vector store implementations.
-        func = partial(self.similarity_search_with_relevance_scores, query, k, **kwargs)
+        func = partial(
+            self.similarity_search_with_relevance_scores, query, k=k, **kwargs
+        )
         return await asyncio.get_event_loop().run_in_executor(None, func)
 
     async def asimilarity_search(
@@ -291,7 +293,7 @@ class VectorStore(ABC):
         # This is a temporary workaround to make the similarity search
         # asynchronous. The proper solution is to make the similarity search
         # asynchronous in the vector store implementations.
-        func = partial(self.similarity_search, query, k, **kwargs)
+        func = partial(self.similarity_search, query, k=k, **kwargs)
         return await asyncio.get_event_loop().run_in_executor(None, func)
 
     def similarity_search_by_vector(
@@ -316,7 +318,7 @@ class VectorStore(ABC):
         # This is a temporary workaround to make the similarity search
         # asynchronous. The proper solution is to make the similarity search
         # asynchronous in the vector store implementations.
-        func = partial(self.similarity_search_by_vector, embedding, k, **kwargs)
+        func = partial(self.similarity_search_by_vector, embedding, k=k, **kwargs)
         return await asyncio.get_event_loop().run_in_executor(None, func)
 
     def max_marginal_relevance_search(
@@ -359,7 +361,12 @@ class VectorStore(ABC):
         # asynchronous. The proper solution is to make the similarity search
         # asynchronous in the vector store implementations.
         func = partial(
-            self.max_marginal_relevance_search, query, k, fetch_k, lambda_mult, **kwargs
+            self.max_marginal_relevance_search,
+            query,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            **kwargs,
         )
         return await asyncio.get_event_loop().run_in_executor(None, func)
 
@@ -446,7 +453,7 @@ class VectorStore(ABC):
         """Return VectorStore initialized from texts and embeddings."""
         raise NotImplementedError
 
-    def __get_retriever_tags(self) -> List[str]:
+    def _get_retriever_tags(self) -> List[str]:
         """Get tags for retriever."""
         tags = [self.__class__.__name__]
         if self.embeddings:
@@ -455,7 +462,7 @@ class VectorStore(ABC):
 
     def as_retriever(self, **kwargs: Any) -> VectorStoreRetriever:
         tags = kwargs.pop("tags", None) or []
-        tags.extend(self.__get_retriever_tags())
+        tags.extend(self._get_retriever_tags())
         return VectorStoreRetriever(vectorstore=self, **kwargs, tags=tags)
 
 

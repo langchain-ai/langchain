@@ -1,4 +1,16 @@
-"""Wrappers around embedding modules."""
+"""**Embedding models**  are wrappers around embedding models
+from different APIs and services.
+
+**Embedding models** can be LLMs or not.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    Embeddings --> <name>Embeddings  # Examples: OpenAIEmbeddings, HuggingFaceEmbeddings
+"""
+
+
 import logging
 from typing import Any
 
@@ -6,6 +18,7 @@ from langchain.embeddings.aleph_alpha import (
     AlephAlphaAsymmetricSemanticEmbedding,
     AlephAlphaSymmetricSemanticEmbedding,
 )
+from langchain.embeddings.awa import AwaEmbeddings
 from langchain.embeddings.bedrock import BedrockEmbeddings
 from langchain.embeddings.clarifai import ClarifaiEmbeddings
 from langchain.embeddings.cohere import CohereEmbeddings
@@ -41,6 +54,7 @@ from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddi
 from langchain.embeddings.spacy_embeddings import SpacyEmbeddings
 from langchain.embeddings.tensorflow_hub import TensorflowHubEmbeddings
 from langchain.embeddings.vertexai import VertexAIEmbeddings
+from langchain.embeddings.xinference import XinferenceEmbeddings
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +91,9 @@ __all__ = [
     "SpacyEmbeddings",
     "NLPCloudEmbeddings",
     "GPT4AllEmbeddings",
+    "XinferenceEmbeddings",
     "LocalAIEmbeddings",
+    "AwaEmbeddings",
 ]
 
 

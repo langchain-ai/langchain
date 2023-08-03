@@ -480,7 +480,7 @@ class APIOperation(BaseModel):
             description = spec.paths[path].description or spec.paths[path].summary
         return cls(
             operation_id=operation_id,
-            description=description,
+            description=description or "",
             base_url=spec.base_url,
             path=path,
             method=method,

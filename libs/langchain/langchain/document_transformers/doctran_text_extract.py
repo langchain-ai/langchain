@@ -5,7 +5,7 @@ from langchain.utils import get_from_env
 
 
 class DoctranPropertyExtractor(BaseDocumentTransformer):
-    """Extracts properties from text documents using doctran.
+    """Extract properties from text documents using doctran.
 
     Arguments:
         properties: A list of the properties to extract.

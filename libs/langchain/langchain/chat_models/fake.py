@@ -25,7 +25,10 @@ class FakeListChatModel(SimpleChatModel):
     ) -> str:
         """First try to lookup in queries, else return 'foo' or 'bar'."""
         response = self.responses[self.i]
-        self.i += 1
+        if self.i < len(self.responses) - 1:
+            self.i += 1
+        else:
+            self.i = 0
         return response
 
     @property
