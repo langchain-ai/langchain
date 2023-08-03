@@ -1,5 +1,4 @@
 """Wrapper around EdenAI's Generation API."""
-import asyncio
 import logging
 from typing import Any, Dict, List, Literal, Optional
 
@@ -130,7 +129,7 @@ class EdenAI(LLM):
         payload = {
             **self.params,
             "providers": self.provider,
-            "num_images": 1,  # always limit to 1 the number of image generated (ignored for text)
+            "num_images": 1,  # always limit to 1 (ignored for text)
             "text": prompt,
             **kwargs,
         }
@@ -189,7 +188,7 @@ class EdenAI(LLM):
         payload = {
             **self.params,
             "providers": self.provider,
-            "num_images": 1,  # always limit to 1 the number of image generated (ignored for text)
+            "num_images": 1,  # always limit to 1 (ignored for text)
             "text": prompt,
             **kwargs,
         }
@@ -209,9 +208,9 @@ class EdenAI(LLM):
                         f"{response.status}: {response.text}"
                     )
 
-                response = await response.json()
+                response_json = await response.json()
 
-                output = self._format_output(response)
+                output = self._format_output(response_json)
                 if stops is not None:
                     output = enforce_stop_tokens(output, stops)
 
