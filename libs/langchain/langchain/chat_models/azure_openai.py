@@ -71,9 +71,7 @@ class AzureChatOpenAI(ChatOpenAI):
             "OPENAI_API_VERSION",
         )
         values["openai_api_type"] = get_from_dict_or_env(
-            values,
-            "openai_api_type",
-            "OPENAI_API_TYPE",
+            values, "openai_api_type", "OPENAI_API_TYPE", default="azure"
         )
         values["openai_organization"] = get_from_dict_or_env(
             values,
