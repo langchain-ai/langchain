@@ -6,7 +6,8 @@ import asyncio
 import functools
 import itertools
 import logging
-from datetime import datetime
+import uuid
+from enum import Enum
 from typing import (
     Any,
     Callable,
@@ -233,12 +234,12 @@ def _get_project_name(
     """
     if project_name is not None:
         return project_name
-    current_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
     if isinstance(llm_or_chain_factory, BaseLanguageModel):
         model_name = llm_or_chain_factory.__class__.__name__
     else:
         model_name = llm_or_chain_factory().__class__.__name__
-    return f"{current_time}-{model_name}"
+    hex = uuid.uuid4().hex
+    return f"{hex}-{model_name}"
 
 
 ## Shared Validation Utilities
@@ -345,9 +346,10 @@ def _setup_evaluation(
         else:
             run_type = "chain"
             if data_type in (DataType.chat, DataType.llm):
+                val = data_type.value if isinstance(data_type, Enum) else data_type
                 raise ValueError(
                     "Cannot evaluate a chain on dataset with "
-                    f"data_type={data_type.value}. "
+                    f"data_type={val}. "
                     "Please specify a dataset with the default 'kv' data type."
                 )
             chain = llm_or_chain_factory()
@@ -602,11 +604,8 @@ async def _arun_chain(
             inputs_, callbacks=callbacks, tags=tags
         )
     else:
-        if len(inputs) == 1:
-            inputs_ = next(iter(inputs.values()))
-            output = await chain.arun(inputs_, callbacks=callbacks, tags=tags)
-        else:
-            output = await chain.acall(inputs, callbacks=callbacks, tags=tags)
+        inputs_ = next(iter(inputs.values())) if len(inputs) == 1 else inputs
+        output = await chain.acall(inputs_, callbacks=callbacks, tags=tags)
     return output
 
 
@@ -924,11 +923,8 @@ def _run_chain(
         inputs_ = input_mapper(inputs)
         output: Union[dict, str] = chain(inputs_, callbacks=callbacks, tags=tags)
     else:
-        if len(inputs) == 1:
-            inputs_ = next(iter(inputs.values()))
-            output = chain.run(inputs_, callbacks=callbacks, tags=tags)
-        else:
-            output = chain(inputs, callbacks=callbacks, tags=tags)
+        inputs_ = next(iter(inputs.values())) if len(inputs) == 1 else inputs
+        output = chain(inputs_, callbacks=callbacks, tags=tags)
     return output
 
 

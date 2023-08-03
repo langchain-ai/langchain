@@ -85,7 +85,7 @@ def _is_aoss_enabled(http_auth: Any) -> bool:
     """Check if the service is http_auth is set as `aoss`."""
     if (
         http_auth is not None
-        and http_auth.service is not None
+        and hasattr(http_auth, "service")
         and http_auth.service == "aoss"
     ):
         return True
@@ -336,13 +336,13 @@ class OpenSearchVectorSearch(VectorStore):
         opensearch_url: str,
         index_name: str,
         embedding_function: Embeddings,
-        is_aoss: bool,
         **kwargs: Any,
     ):
         """Initialize with necessary components."""
         self.embedding_function = embedding_function
         self.index_name = index_name
-        self.is_aoss = is_aoss
+        http_auth = _get_kwargs_value(kwargs, "http_auth", None)
+        self.is_aoss = _is_aoss_enabled(http_auth=http_auth)
         self.client = _get_opensearch_client(opensearch_url, **kwargs)
 
     @property
@@ -781,4 +781,4 @@ class OpenSearchVectorSearch(VectorStore):
             max_chunk_bytes=max_chunk_bytes,
             is_aoss=is_aoss,
         )
-        return cls(opensearch_url, index_name, embedding, is_aoss, **kwargs)
+        return cls(opensearch_url, index_name, embedding, **kwargs)
