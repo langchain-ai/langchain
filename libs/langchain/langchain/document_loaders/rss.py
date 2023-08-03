@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class RSSFeedLoader(BaseLoader):
-    """Loader that uses newspaper to load news articles from URLs.
+    """Loader that uses newspaper to load news articles from RSS feeds.
 
     Args:
         urls: URLs for RSS feeds to load. Each articles in the feed is loaded into its own document.
