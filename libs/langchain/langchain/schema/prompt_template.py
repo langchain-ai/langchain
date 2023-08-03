@@ -76,7 +76,8 @@ class BasePromptTemplate(Serializable, Runnable[Dict, PromptValue], ABC):
     
     By default, the following types are supported:
     - `Document`: the `page_content` attribute of the document will be used.
-    - `list`: the list will be joined with newlines."""
+    - `list`: each element of the list will be formatted.
+    - `dict`: each value of the dict will be formatted."""
     input_variables: List[str]
     """A list of the names of the variables the prompt template expects."""
     output_parser: Optional[BaseOutputParser] = None
