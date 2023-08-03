@@ -674,12 +674,12 @@ class FAISS(VectorStore):
             embeddings.embed_query, index, docstore, index_to_docstore_id, **kwargs
         )
 
-    def serializer(self) -> bytes:
+    def serialize_to_bytes(self) -> bytes:
         """Serialize FAISS index, docstore, and index_to_docstore_id to bytes."""
         return pickle.dumps((self.index, self.docstore, self.index_to_docstore_id))
 
     @classmethod
-    def deserializer(
+    def deserialize_from_bytes(
         cls,
         serialized: bytes,
         embeddings: Embeddings,
