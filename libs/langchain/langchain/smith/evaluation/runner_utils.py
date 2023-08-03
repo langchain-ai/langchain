@@ -37,7 +37,7 @@ from langchain.evaluation.schema import EvaluatorType, StringEvaluator
 from langchain.schema import ChatResult, LLMResult
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage, messages_from_dict
-from langchain.schema.runnable import Runnable
+from langchain.schema.runnable import Runnable, RunnableConfig
 from langchain.smith.evaluation.config import EvalConfig, RunEvalConfig
 from langchain.smith.evaluation.string_run_evaluator import StringRunEvaluatorChain
 
@@ -328,7 +328,9 @@ def _validate_example_inputs(
         _validate_example_inputs_for_language_model(first_example, input_mapper)
     else:
         chain = llm_or_chain_factory()
-        _validate_example_inputs_for_chain(first_example, chain, input_mapper)
+        if isinstance(chain, Chain):
+            # Otherwise it's a runnable
+            _validate_example_inputs_for_chain(first_example, chain, input_mapper)
     return examples
 
 
@@ -357,8 +359,8 @@ def _setup_evaluation(
                     "Please specify a dataset with the default 'kv' data type."
                 )
             chain = llm_or_chain_factory()
-            run_inputs = chain.input_keys
-            run_outputs = chain.output_keys
+            run_inputs = chain.input_keys if isinstance(chain, Chain) else None
+            run_outputs = chain.output_keys if isinstance(chain, Chain) else None
         run_evaluators = _load_run_evaluators(
             evaluation,
             run_type,
@@ -376,17 +378,15 @@ def _setup_evaluation(
 def _determine_input_key(
     config: RunEvalConfig,
     run_inputs: Optional[List[str]],
-    run_type: str,
 ) -> Optional[str]:
+    input_key = None
     if config.input_key:
         input_key = config.input_key
         if run_inputs and input_key not in run_inputs:
             raise ValueError(f"Input key {input_key} not in run inputs {run_inputs}")
-    elif run_type == "llm":
-        input_key = None
     elif run_inputs and len(run_inputs) == 1:
         input_key = run_inputs[0]
-    else:
+    elif run_inputs is not None and len(run_inputs) > 1:
         raise ValueError(
             f"Must specify input key for model with multiple inputs: {run_inputs}"
         )
@@ -397,19 +397,17 @@ def _determine_input_key(
 def _determine_prediction_key(
     config: RunEvalConfig,
     run_outputs: Optional[List[str]],
-    run_type: str,
 ) -> Optional[str]:
+    prediction_key = None
     if config.prediction_key:
         prediction_key = config.prediction_key
         if run_outputs and prediction_key not in run_outputs:
             raise ValueError(
                 f"Prediction key {prediction_key} not in run outputs {run_outputs}"
             )
-    elif run_type == "llm":
-        prediction_key = None
     elif run_outputs and len(run_outputs) == 1:
         prediction_key = run_outputs[0]
-    else:
+    elif run_outputs is not None and len(run_outputs) > 1:
         raise ValueError(
             f"Must specify prediction key for model"
             f" with multiple outputs: {run_outputs}"
@@ -495,8 +493,8 @@ def _load_run_evaluators(
     """
     eval_llm = config.eval_llm or ChatOpenAI(model="gpt-4", temperature=0.0)
     run_evaluators = []
-    input_key = _determine_input_key(config, run_inputs, run_type)
-    prediction_key = _determine_prediction_key(config, run_outputs, run_type)
+    input_key = _determine_input_key(config, run_inputs)
+    prediction_key = _determine_prediction_key(config, run_outputs)
     reference_key = _determine_reference_key(config, example_outputs)
     for eval_config in config.evaluators:
         run_evaluator = _construct_run_evaluator(
@@ -594,7 +592,7 @@ async def _arun_llm(
 
 
 async def _arun_chain(
-    chain: Chain,
+    chain: Union[Chain, Runnable],
     inputs: Dict[str, Any],
     callbacks: Callbacks,
     *,
@@ -602,10 +600,12 @@ async def _arun_chain(
     input_mapper: Optional[Callable[[Dict], Any]] = None,
 ) -> Union[dict, str]:
     """Run a chain asynchronously on inputs."""
+    runnable_config = RunnableConfig(tags=tags or [], callbacks=callbacks)
     if input_mapper is not None:
         inputs_ = input_mapper(inputs)
-        output: Union[dict, str] = await chain.acall(
-            inputs_, callbacks=callbacks, tags=tags
+        output: Union[dict, str] = await chain.ainvoke(
+            inputs_,
+            config=runnable_config,
         )
     else:
         inputs_ = next(iter(inputs.values())) if len(inputs) == 1 else inputs
@@ -915,7 +915,7 @@ def _run_llm(
 
 
 def _run_chain(
-    chain: Chain,
+    chain: Union[Chain, Runnable],
     inputs: Dict[str, Any],
     callbacks: Callbacks,
     *,
@@ -923,9 +923,13 @@ def _run_chain(
     input_mapper: Optional[Callable[[Dict], Any]] = None,
 ) -> Union[Dict, str]:
     """Run a chain on inputs."""
+    runnable_config = RunnableConfig(tags=tags or [], callbacks=callbacks)
     if input_mapper is not None:
         inputs_ = input_mapper(inputs)
-        output: Union[dict, str] = chain(inputs_, callbacks=callbacks, tags=tags)
+        output: Union[dict, str] = chain.invoke(
+            inputs_,
+            config=runnable_config,
+        )
     else:
         inputs_ = next(iter(inputs.values())) if len(inputs) == 1 else inputs
         output = chain(inputs_, callbacks=callbacks, tags=tags)
