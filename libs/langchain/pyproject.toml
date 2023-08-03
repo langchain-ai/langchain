@@ -363,6 +363,8 @@ extended_testing = [
  "jinja2",
  "xinference",
  "gitpython",
+ "feedparser",
+ "newspaper3k",
 ]
 
 [tool.ruff]

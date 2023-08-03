@@ -1,9 +1,10 @@
 """Loader that uses unstructured to load HTML files."""
 import logging
-from typing import Any, Iterator, List
+from typing import Any, Iterator, List, Optional, Sequence
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.document_loaders.news import NewsURLLoader
 
 logger = logging.getLogger(__name__)
 
@@ -41,12 +42,12 @@ class RSSFeedLoader(BaseLoader):
 
     Finally, newspaper is used to process each article:
     https://newspaper.readthedocs.io/en/latest/
-    """
+    """  # noqa: E501
 
     def __init__(
         self,
-        urls: List[str] = None,
-        opml: str = None,
+        urls: Optional[Sequence[str]] = None,
+        opml: Optional[str] = None,
         continue_on_failure: bool = True,
         show_progress_bar: bool = False,
         **newsloader_kwargs: Any,
@@ -58,17 +59,6 @@ class RSSFeedLoader(BaseLoader):
             raise ValueError(
                 "Provide either the urls or the opml argument, but not both."
             )
-
-        try:
-            import feedparser  # noqa:F401
-
-            self.__version = feedparser.__version__
-        except ImportError:
-            raise ImportError(
-                "feedparser package not found, please install it with "
-                "`pip install feedparser`"
-            )
-
         self.urls = urls
         self.opml = opml
         self.continue_on_failure = continue_on_failure
@@ -89,36 +79,51 @@ class RSSFeedLoader(BaseLoader):
             iter = tqdm(iter)
         return list(iter)
 
+    @property
+    def _get_urls(self) -> Sequence[str]:
+        if self.urls:
+            return self.urls
+        try:
+            import listparser
+        except ImportError as e:
+            raise ImportError(
+                "Package listparser must be installed if the opml arg is used. "
+                "Please install with 'pip install listparser' or use the "
+                "urls arg instead."
+            ) from e
+        rss = listparser.parse(self.opml)
+        return [feed.url for feed in rss.feeds]
+
     def lazy_load(self) -> Iterator[Document]:
-        import feedparser
+        try:
+            import feedparser  # noqa:F401
+        except ImportError:
+            raise ImportError(
+                "feedparser package not found, please install it with "
+                "`pip install feedparser`"
+            )
 
-        from langchain.document_loaders import NewsURLLoader
-
-        if not self.urls and self.opml:
-            try:
-                import listparser
-            except ImportError as e:
-                raise ImportError(
-                    "Package listparser must be installed if the opml arg is used. "
-                    "Please install with 'pip install listparser' or use the "
-                    "urls arg instead."
-                ) from e
-            rss = listparser.parse(self.opml)
-            self.urls = [feed.url for feed in rss.feeds]
-
-        for url in self.urls:
+        for url in self._get_urls:
             try:
                 feed = feedparser.parse(url)
-                for i, entry in enumerate(feed.entries):
-                    article = NewsURLLoader(
+            except Exception as e:
+                if self.continue_on_failure:
+                    logger.error(f"Error fetching {url}, exception: {e}")
+                    continue
+                else:
+                    raise e
+            try:
+                for entry in feed.entries:
+                    loader = NewsURLLoader(
                         urls=[entry.link],
                         **self.newsloader_kwargs,
-                    ).load()[0]
+                    )
+                    article = loader.load()[0]
                     article.metadata["feed"] = url
                     yield article
             except Exception as e:
                 if self.continue_on_failure:
-                    logger.error(f"Error fetching or processing {url}, exception: {e}")
+                    logger.error(f"Error processing entry {entry.link}, exception: {e}")
                     continue
                 else:
                     raise e
