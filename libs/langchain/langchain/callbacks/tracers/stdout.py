@@ -37,7 +37,7 @@ def elapsed(run: Any) -> str:
     elapsed_time = run.end_time - run.start_time
     milliseconds = elapsed_time.total_seconds() * 1000
     if milliseconds < 1000:
-        return f"{milliseconds}ms"
+        return f"{milliseconds:.0f}ms"
     return f"{(milliseconds / 1000):.2f}s"
 
 
@@ -80,7 +80,9 @@ class FunctionCallbackHandler(BaseTracer):
         crumbs = self.get_breadcrumbs(run)
         self.function_callback(
             f"{get_colored_text('[chain/start]', color='green')} "
-            + get_bolded_text(f"[{crumbs}] Entering Chain run with input:\n")
+            + get_bolded_text(
+                f"[{crumbs}] Entering {run.run_type.capitalize()} run with input:\n"
+            )
             + f"{try_json_stringify(run.inputs, '[inputs]')}"
         )
 
@@ -89,7 +91,7 @@ class FunctionCallbackHandler(BaseTracer):
         self.function_callback(
             f"{get_colored_text('[chain/end]', color='blue')} "
             + get_bolded_text(
-                f"[{crumbs}] [{elapsed(run)}] Exiting Chain run with output:\n"
+                f"[{crumbs}] [{elapsed(run)}] Exiting {run.run_type.capitalize()} run with output:\n"
             )
             + f"{try_json_stringify(run.outputs, '[outputs]')}"
         )
@@ -99,7 +101,7 @@ class FunctionCallbackHandler(BaseTracer):
         self.function_callback(
             f"{get_colored_text('[chain/error]', color='red')} "
             + get_bolded_text(
-                f"[{crumbs}] [{elapsed(run)}] Chain run errored with error:\n"
+                f"[{crumbs}] [{elapsed(run)}] {run.run_type.capitalize()} run errored with error:\n"
             )
             + f"{try_json_stringify(run.error, '[error]')}"
         )
