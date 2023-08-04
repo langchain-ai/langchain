@@ -289,6 +289,23 @@ def test_faiss_similarity_search_with_relevance_scores() -> None:
     assert score == 1.0
 
 
+def test_faiss_similarity_search_with_relevance_scores_with_threshold() -> None:
+    """Test the similarity search with normalized similarities with score threshold."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = FAISS.from_texts(
+        texts,
+        FakeEmbeddings(),
+        relevance_score_fn=lambda score: 1.0 - score / math.sqrt(2),
+    )
+    outputs = docsearch.similarity_search_with_relevance_scores(
+        "foo", k=2, score_threshold=0.5
+    )
+    assert len(outputs) == 1
+    output, score = outputs[0]
+    assert output == Document(page_content="foo")
+    assert score == 1.0
+
+
 def test_faiss_invalid_normalize_fn() -> None:
     """Test the similarity search with normalized similarities."""
     texts = ["foo", "bar", "baz"]

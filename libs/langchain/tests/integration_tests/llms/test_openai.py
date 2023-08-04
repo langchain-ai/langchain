@@ -1,5 +1,4 @@
 """Test OpenAI API wrapper."""
-
 from pathlib import Path
 from typing import Generator
 
@@ -10,7 +9,9 @@ from langchain.chat_models.openai import ChatOpenAI
 from langchain.llms.loading import load_llm
 from langchain.llms.openai import OpenAI, OpenAIChat
 from langchain.schema import LLMResult
-from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
+from tests.unit_tests.callbacks.fake_callback_handler import (
+    FakeCallbackHandler,
+)
 
 
 def test_openai_call() -> None:
@@ -93,7 +94,64 @@ def test_openai_streaming() -> None:
     assert isinstance(generator, Generator)
 
     for token in generator:
-        assert isinstance(token["choices"][0]["text"], str)
+        assert isinstance(token, str)
+
+
+@pytest.mark.asyncio
+async def test_openai_astream() -> None:
+    """Test streaming tokens from OpenAI."""
+    llm = OpenAI(max_tokens=10)
+
+    async for token in llm.astream("I'm Pickle Rick"):
+        assert isinstance(token, str)
+
+
+@pytest.mark.asyncio
+async def test_openai_abatch() -> None:
+    """Test streaming tokens from OpenAI."""
+    llm = OpenAI(max_tokens=10)
+
+    result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
+    for token in result:
+        assert isinstance(token, str)
+
+
+@pytest.mark.asyncio
+async def test_openai_abatch_tags() -> None:
+    """Test streaming tokens from OpenAI."""
+    llm = OpenAI(max_tokens=10)
+
+    result = await llm.abatch(
+        ["I'm Pickle Rick", "I'm not Pickle Rick"], config={"tags": ["foo"]}
+    )
+    for token in result:
+        assert isinstance(token, str)
+
+
+def test_openai_batch() -> None:
+    """Test streaming tokens from OpenAI."""
+    llm = OpenAI(max_tokens=10)
+
+    result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
+    for token in result:
+        assert isinstance(token, str)
+
+
+@pytest.mark.asyncio
+async def test_openai_ainvoke() -> None:
+    """Test streaming tokens from OpenAI."""
+    llm = OpenAI(max_tokens=10)
+
+    result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
+    assert isinstance(result, str)
+
+
+def test_openai_invoke() -> None:
+    """Test streaming tokens from OpenAI."""
+    llm = OpenAI(max_tokens=10)
+
+    result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
+    assert isinstance(result, str)
 
 
 def test_openai_multiple_prompts() -> None:
@@ -103,13 +161,6 @@ def test_openai_multiple_prompts() -> None:
     assert isinstance(output, LLMResult)
     assert isinstance(output.generations, list)
     assert len(output.generations) == 2
-
-
-def test_openai_streaming_error() -> None:
-    """Test error handling in stream."""
-    llm = OpenAI(best_of=2)
-    with pytest.raises(ValueError):
-        llm.stream("I'm Pickle Rick")
 
 
 def test_openai_streaming_best_of_error() -> None:
@@ -284,3 +335,17 @@ def test_chat_openai_get_num_tokens(model: str) -> None:
     """Test get_tokens."""
     llm = ChatOpenAI(model=model)
     assert llm.get_num_tokens("表情符号是\n🦜🔗") == _EXPECTED_NUM_TOKENS[model]
+
+
+@pytest.fixture
+def mock_completion() -> dict:
+    return {
+        "id": "cmpl-3evkmQda5Hu7fcZavknQda3SQ",
+        "object": "text_completion",
+        "created": 1689989000,
+        "model": "text-davinci-003",
+        "choices": [
+            {"text": "Bar Baz", "index": 0, "logprobs": None, "finish_reason": "length"}
+        ],
+        "usage": {"prompt_tokens": 1, "completion_tokens": 2, "total_tokens": 3},
+    }

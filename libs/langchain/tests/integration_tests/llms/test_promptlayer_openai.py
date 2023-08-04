@@ -67,10 +67,3 @@ def test_promptlayer_openai_streaming() -> None:
 
     for token in generator:
         assert isinstance(token["choices"][0]["text"], str)
-
-
-def test_promptlayer_openai_streaming_error() -> None:
-    """Test error handling in stream."""
-    llm = PromptLayerOpenAI(best_of=2)
-    with pytest.raises(ValueError):
-        llm.stream("I'm Pickle Rick")

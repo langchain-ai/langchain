@@ -12,9 +12,9 @@ from langchain.callbacks.manager import (
 from langchain.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.requests import TextRequestsWrapper
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
+from langchain.utilities.requests import TextRequestsWrapper
 
 
 class APIChain(Chain):

@@ -5,10 +5,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import root_validator
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
+from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.azure_cognitive_services.utils import detect_file_src_type
 from langchain.tools.base import BaseTool
 from langchain.utils import get_from_dict_or_env
@@ -142,11 +139,3 @@ class AzureCogsFormRecognizerTool(BaseTool):
             return self._format_document_analysis_result(document_analysis_result)
         except Exception as e:
             raise RuntimeError(f"Error while running AzureCogsFormRecognizerTool: {e}")
-
-    async def _arun(
-        self,
-        query: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the tool asynchronously."""
-        raise NotImplementedError("AzureCogsFormRecognizerTool does not support async")

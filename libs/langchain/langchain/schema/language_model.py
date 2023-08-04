@@ -1,12 +1,22 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Set
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    TypeVar,
+    Union,
+)
 
 from langchain.load.serializable import Serializable
 from langchain.schema.messages import BaseMessage, get_buffer_string
 from langchain.schema.output import LLMResult
 from langchain.schema.prompt import PromptValue
+from langchain.schema.runnable import Runnable
 from langchain.utils import get_pydantic_field_names
 
 if TYPE_CHECKING:
@@ -32,7 +42,13 @@ def _get_token_ids_default_method(text: str) -> List[int]:
     return tokenizer.encode(text)
 
 
-class BaseLanguageModel(Serializable, ABC):
+LanguageModelInput = Union[PromptValue, str, List[BaseMessage]]
+LanguageModelOutput = TypeVar("LanguageModelOutput")
+
+
+class BaseLanguageModel(
+    Serializable, Runnable[LanguageModelInput, LanguageModelOutput], ABC
+):
     """Abstract base class for interfacing with language models.
 
     All language model wrappers inherit from BaseLanguageModel.
