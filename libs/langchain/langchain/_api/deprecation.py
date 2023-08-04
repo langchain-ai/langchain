@@ -14,7 +14,7 @@ import contextlib
 import functools
 import inspect
 import warnings
-from typing import Callable, Generator, Optional, TypeVar, Any
+from typing import Any, Callable, Generator, Optional, TypeVar
 
 
 class LangChainDeprecationWarning(DeprecationWarning):
@@ -22,7 +22,7 @@ class LangChainDeprecationWarning(DeprecationWarning):
 
 
 def _warn_deprecated(
-    since,
+    since: str,
     *,
     message="",
     name="",
@@ -172,24 +172,25 @@ def deprecated(
     """
 
     def deprecate(
-        obj,
+        obj: Any,
         *,
-        message=message,
-        name=name,
-        alternative=alternative,
-        pending=pending,
-        obj_type=obj_type,
-        addendum=addendum,
+        _obj_type: Optional[str] = obj_type,
+        _name: Optional[str] = name,
+        _message: Optional[str] = message,
+        _alternative: str = alternative,
+        _pending: str = pending,
+        _addendum: str = addendum,
     ):
         """Implementation of the decorator returned by `deprecated`."""
         if isinstance(obj, type):
-            if obj_type is None:
-                obj_type = "class"
+            if _obj_type is None:
+                _obj_type = "class"
             func = obj.__init__
-            name = name or obj.__name__
+            _name = _name or obj.__name__
             old_doc = obj.__doc__
 
-            def finalize(wrapper, new_doc):
+            def finalize(wrapper, new_doc) -> type:  # type: ignore
+                """Finalize the deprecation of a class."""
                 try:
                     obj.__doc__ = new_doc
                 except AttributeError:  # Can't set on some extension objects.
@@ -198,44 +199,46 @@ def deprecated(
                 return obj
 
         elif isinstance(obj, property):
-            if obj_type is None:
-                obj_type = "attribute"
+            if _obj_type is None:
+                _obj_type = "attribute"
             func = None
-            name = name or obj.fget.__name__
+            _name = _name or obj.fget.__name__
             old_doc = obj.__doc__
 
             class _deprecated_property(type(obj)):
-                def __get__(self, instance, owner=None):
+                """A deprecated property."""
+
+                def __get__(self, instance, owner=None):  # type: ignore
                     if instance is not None or owner is not None:
                         emit_warning()
                     return super().__get__(instance, owner)
 
-                def __set__(self, instance, value):
+                def __set__(self, instance, value):  # type: ignore
                     if instance is not None:
                         emit_warning()
                     return super().__set__(instance, value)
 
-                def __delete__(self, instance):
+                def __delete__(self, instance):  # type: ignore
                     if instance is not None:
                         emit_warning()
                     return super().__delete__(instance)
 
-                def __set_name__(self, owner, set_name):
-                    nonlocal name
+                def __set_name__(self, owner, set_name):  # type: ignore
+                    nonlocal  name
                     if name == "<lambda>":
                         name = set_name
 
-            def finalize(_, new_doc):
+            def finalize(_, new_doc: str):  # type: ignore
                 """Finalize the property."""
                 return _deprecated_property(
                     fget=obj.fget, fset=obj.fset, fdel=obj.fdel, doc=new_doc
                 )
 
         else:
-            if obj_type is None:
-                obj_type = "function"
+            if _obj_type is None:
+                _obj_type = "function"
             func = obj
-            name = name or obj.__name__
+            _name = _name or obj.__name__
             old_doc = func.__doc__
 
             def finalize(wrapper, new_doc):
@@ -248,12 +251,12 @@ def deprecated(
             """Emit the warning."""
             _warn_deprecated(
                 since,
-                message=message,
-                name=name,
-                alternative=alternative,
-                pending=pending,
-                obj_type=obj_type,
-                addendum=addendum,
+                message=_message,
+                name=_name,
+                alternative=_alternative,
+                pending=_pending,
+                obj_type=_obj_type,
+                addendum=_addendum,
                 removal=removal,
             )
 

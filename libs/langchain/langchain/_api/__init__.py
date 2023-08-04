@@ -19,5 +19,6 @@ from .deprecation import (
 __all__ = [
     "deprecated",
     "_warn_deprecated",
-    "LangChainDeprecationWarning", "suppress_langchain_deprecation_warning",
+    "LangChainDeprecationWarning",
+    "suppress_langchain_deprecation_warning",
 ]

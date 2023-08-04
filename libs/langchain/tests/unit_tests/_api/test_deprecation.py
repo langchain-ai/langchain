@@ -47,7 +47,7 @@ from langchain._api.deprecation import _warn_deprecated, deprecated
                 "addendum": "Please migrate your code.",
                 "removal": "2.5.0",
             },
-            "SomeFunction was deprecated in LangChain 1.5.0 and will be "
+            "`SomeFunction` was deprecated in LangChain 1.5.0 and will be "
             "removed in 2.5.0 Please migrate your code.",
         ),
     ],
