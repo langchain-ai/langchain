@@ -297,6 +297,8 @@ class AmazonKendraRetriever(BaseRetriever):
 
         client: boto3 client for Kendra
 
+        jwt_token: JWT (JSON Web) Token 
+
     Example:
         .. code-block:: python
 
@@ -313,6 +315,7 @@ class AmazonKendraRetriever(BaseRetriever):
     attribute_filter: Optional[Dict] = None
     page_content_formatter: Callable[[ResultItem], str] = combined_text
     client: Any
+    jwt_token: str = None
 
     @validator("top_k")
     def validate_top_k(cls, value: int) -> int:
@@ -361,7 +364,9 @@ class AmazonKendraRetriever(BaseRetriever):
         }
         if self.attribute_filter is not None:
             kendra_kwargs["AttributeFilter"] = self.attribute_filter
-
+        if self.jwt_token is not None: 
+            kendra_kwargs['UserContext'] = {"Token": self.jwt_token}
+            
         response = self.client.retrieve(**kendra_kwargs)
         r_result = RetrieveResult.parse_obj(response)
         if r_result.ResultItems:
