@@ -183,6 +183,7 @@ def test_amazontextract_loader(
 
     assert len(docs) == docs_length
 
+@pytest.mark.skip(reason="Requires AWS credentials to run")
 def test_amazontextract_loader_failures() -> None:
     # 2-page PDF local file system
     two_page_pdf = str(Path(__file__).parent.parent / "examples/multi-page-forms-sample-2-page.pdf")
