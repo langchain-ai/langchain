@@ -14,7 +14,7 @@ def _dependable_praw_import() -> praw:
     try:
         import praw
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "praw package not found, please install it with `pip install praw`"
         )
     return praw

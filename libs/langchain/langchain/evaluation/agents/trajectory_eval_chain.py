@@ -40,7 +40,7 @@ class TrajectoryEval(TypedDict):
     """A named tuple containing the score and reasoning for a trajectory."""
 
     score: float
-    """The score for the trajectory, normalized from 0 to 1.s"""
+    """The score for the trajectory, normalized from 0 to 1."""
     reasoning: str
     """The reasoning for the score."""
 

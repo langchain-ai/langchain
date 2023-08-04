@@ -19,6 +19,7 @@ _EXPECTED = [
     "SelfAskWithSearchChain",
     "StructuredChatAgent",
     "Tool",
+    "XMLAgent",
     "ZeroShotAgent",
     "create_csv_agent",
     "create_json_agent",

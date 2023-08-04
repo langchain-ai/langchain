@@ -19,7 +19,7 @@ def parse_json_markdown(json_string: str) -> dict:
         The parsed JSON object as a Python dictionary.
     """
     # Try to find JSON string within triple backticks
-    match = re.search(r"```(json)?(.*?)```", json_string, re.DOTALL)
+    match = re.search(r"```(json)?(.*)```", json_string, re.DOTALL)
 
     # If no match found, assume the entire string is a JSON string
     if match is None:

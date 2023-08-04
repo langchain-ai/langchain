@@ -178,6 +178,7 @@ class RecursiveUrlLoader(BaseLoader):
             # Check all unvisited links
             if link not in visited:
                 visited.add(link)
+
                 try:
                     response = requests.get(link)
                     text = response.text
@@ -192,7 +193,6 @@ class RecursiveUrlLoader(BaseLoader):
                 # If the link is a directory (w/ children) then visit it
                 if link.endswith("/"):
                     yield from self._get_child_links_recursive(link, visited, depth + 1)
-
         return []
 
     async def _async_get_child_links_recursive(
