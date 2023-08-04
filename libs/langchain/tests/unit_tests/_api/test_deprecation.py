@@ -13,15 +13,13 @@ from langchain._api.deprecation import _warn_deprecated, deprecated
         (
             {
                 "since": "1.0.0",
-                "message": "",
                 "name": "OldClass",
                 "alternative": "NewClass",
-                "pending": False,
+                "pending": True,
                 "obj_type": "class",
-                "addendum": "",
-                "removal": "",
             },
-            "OldClass was deprecated in LangChain 1.0.0. Use NewClass instead.",
+            "The class `OldClass` will be deprecated in a future version. Use NewClass "
+            "instead.",
         ),
         (
             {
@@ -147,7 +145,10 @@ def test_deprecated_classmethod() -> None:
             "The function `deprecated_classmethod` was deprecated in "
             "LangChain 2.0.0 and will be removed in 3.0.0"
         )
-        assert ClassWithDeprecatedMethods.deprecated_classmethod.__doc__ == "[*Deprecated*]  original doc"
+        assert (
+            ClassWithDeprecatedMethods.deprecated_classmethod.__doc__
+            == "[*Deprecated*]  original doc"
+        )
 
 
 def test_deprecated_staticmethod() -> None:
