@@ -297,7 +297,7 @@ class AmazonKendraRetriever(BaseRetriever):
 
         client: boto3 client for Kendra
 
-        jwt_token: JWT (JSON Web) Token 
+        jwt_token: JSON Web Token (JWT)
 
     Example:
         .. code-block:: python
