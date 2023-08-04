@@ -325,6 +325,14 @@
       "destination": "/docs/integrations/providers/diffbot"
     },
     {
+      "source": "/en/latest/integrations/dingo.html",
+      "destination": "/docs/integrations/providers/dingo"
+    },
+    {
+      "source": "/docs/integrations/dingo",
+      "destination": "/docs/integrations/providers/dingo"
+    },
+    {
       "source": "/en/latest/integrations/discord.html",
       "destination": "/docs/integrations/providers/discord"
     },
@@ -2775,6 +2783,14 @@
     {
       "source": "/docs/modules/data_connection/vectorstores/integrations/deeplake",
       "destination": "/docs/integrations/vectorstores/deeplake"
+    },
+    {
+      "source": "/en/latest/modules/indexes/vectorstores/examples/dingo.html",
+      "destination": "/docs/integrations/vectorstores/dingo"
+    },
+    {
+      "source": "/docs/modules/data_connection/vectorstores/integrations/dingo",
+      "destination": "/docs/integrations/vectorstores/dingo"
     },
     {
       "source": "/en/latest/modules/indexes/vectorstores/examples/docarray_hnsw.html",
