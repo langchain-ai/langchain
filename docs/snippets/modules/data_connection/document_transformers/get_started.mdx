@@ -45,3 +45,13 @@ print(texts[1])
 ```
 
 </CodeOutputBlock>
+
+
+## Other transformations:
+### Filter redundant docs, translate docs, extract metadata, and more
+
+We can do perform a number of transformations on docs which are not simply splitting the text. With the
+`EmbeddingsRedundantFilter` we can identify similar documents and filter out redundancies. With integrations like
+[doctran](https://github.com/psychic-api/doctran/tree/main) we can do things like translate documents from one language
+to another, extract desired properties and add them to metadata, and convert conversational dialogue into a Q/A format
+set of documents.
