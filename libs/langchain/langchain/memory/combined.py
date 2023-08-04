@@ -8,7 +8,7 @@ from langchain.schema import BaseMemory
 
 
 class CombinedMemory(BaseMemory):
-    """Class for combining multiple memories' data together."""
+    """Combining multiple memories' data together."""
 
     memories: List[BaseMemory]
     """For tracking all the memories that should be accessed."""
@@ -61,10 +61,12 @@ class CombinedMemory(BaseMemory):
         # Collect vars from all sub-memories
         for memory in self.memories:
             data = memory.load_memory_variables(inputs)
-            memory_data = {
-                **memory_data,
-                **data,
-            }
+            for key, value in data.items():
+                if key in memory_data:
+                    raise ValueError(
+                        f"The variable {key} is repeated in the CombinedMemory."
+                    )
+                memory_data[key] = value
 
         return memory_data
 

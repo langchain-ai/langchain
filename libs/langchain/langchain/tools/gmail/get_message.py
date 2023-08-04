@@ -4,10 +4,7 @@ from typing import Dict, Optional, Type
 
 from pydantic import BaseModel, Field
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
+from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.gmail.base import GmailBaseTool
 from langchain.tools.gmail.utils import clean_email_body
 
@@ -62,11 +59,3 @@ class GmailGetMessage(GmailBaseTool):
             "subject": subject,
             "sender": sender,
         }
-
-    async def _arun(
-        self,
-        message_id: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> Dict:
-        """Run the tool."""
-        raise NotImplementedError

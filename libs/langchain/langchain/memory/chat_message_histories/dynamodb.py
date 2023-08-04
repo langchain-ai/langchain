@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 class DynamoDBChatMessageHistory(BaseChatMessageHistory):
     """Chat message history that stores history in AWS DynamoDB.
+
     This class expects that a DynamoDB table with name `table_name`
     and a partition Key of `SessionId` is present.
 

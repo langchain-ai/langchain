@@ -8,7 +8,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForChainRun,
 )
 from langchain.chains.base import Chain
-from langchain.input import get_color_mapping
+from langchain.utils.input import get_color_mapping
 
 
 class SequentialChain(Chain):

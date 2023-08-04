@@ -17,7 +17,7 @@ def import_jsonformer() -> jsonformer:
     try:
         import jsonformer
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "Could not import jsonformer python package. "
             "Please install it with `pip install jsonformer`."
         )
@@ -25,6 +25,11 @@ def import_jsonformer() -> jsonformer:
 
 
 class JsonFormer(HuggingFacePipeline):
+    """Jsonformer wrapped LLM using HuggingFace Pipeline API.
+
+    This pipeline is experimental and not yet stable.
+    """
+
     json_schema: dict = Field(..., description="The JSON Schema to complete.")
     max_new_tokens: int = Field(
         default=200, description="Maximum number of new tokens to generate."

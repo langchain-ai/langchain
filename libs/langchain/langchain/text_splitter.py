@@ -1,4 +1,24 @@
-"""Functionality for splitting text."""
+"""**Text Splitters** are classes for splitting text.
+
+
+**Class hierarchy:**
+
+.. code-block::
+
+    BaseDocumentTransformer --> TextSplitter --> <name>TextSplitter  # Example: CharacterTextSplitter
+                                                 RecursiveCharacterTextSplitter -->  <name>TextSplitter
+
+Note: **MarkdownHeaderTextSplitter** does not derive from TextSplitter.
+
+
+**Main helpers:**
+
+.. code-block::
+
+    Document, Tokenizer, Language, LineType, HeaderType
+
+"""  # noqa: E501
+
 from __future__ import annotations
 
 import copy
@@ -259,7 +279,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
 
 
 class CharacterTextSplitter(TextSplitter):
-    """Implementation of splitting text that looks at characters."""
+    """Splitting text that looks at characters."""
 
     def __init__(self, separator: str = "\n\n", **kwargs: Any) -> None:
         """Create a new TextSplitter."""
@@ -290,7 +310,7 @@ class HeaderType(TypedDict):
 
 
 class MarkdownHeaderTextSplitter:
-    """Implementation of splitting markdown files based on specified headers."""
+    """Splitting markdown files based on specified headers."""
 
     def __init__(
         self, headers_to_split_on: List[Tuple[str, str]], return_each_line: bool = False
@@ -443,7 +463,7 @@ class Tokenizer:
 
 
 def split_text_on_tokens(*, text: str, tokenizer: Tokenizer) -> List[str]:
-    """Split incoming text and return chunks."""
+    """Split incoming text and return chunks using tokenizer."""
     splits: List[str] = []
     input_ids = tokenizer.encode(text)
     start_idx = 0
@@ -458,7 +478,7 @@ def split_text_on_tokens(*, text: str, tokenizer: Tokenizer) -> List[str]:
 
 
 class TokenTextSplitter(TextSplitter):
-    """Implementation of splitting text that looks at tokens."""
+    """Splitting text to tokens using model tokenizer."""
 
     def __init__(
         self,
@@ -506,7 +526,7 @@ class TokenTextSplitter(TextSplitter):
 
 
 class SentenceTransformersTokenTextSplitter(TextSplitter):
-    """Implementation of splitting text that looks at tokens."""
+    """Splitting text to tokens using sentence model tokenizer."""
 
     def __init__(
         self,
@@ -599,7 +619,7 @@ class Language(str, Enum):
 
 
 class RecursiveCharacterTextSplitter(TextSplitter):
-    """Implementation of splitting text that looks at characters.
+    """Splitting text by recursively look at characters.
 
     Recursively tries to split by different characters to find one
     that works.
@@ -1004,7 +1024,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
 
 
 class NLTKTextSplitter(TextSplitter):
-    """Implementation of splitting text that looks at sentences using NLTK."""
+    """Splitting text using NLTK package."""
 
     def __init__(self, separator: str = "\n\n", **kwargs: Any) -> None:
         """Initialize the NLTK splitter."""
@@ -1027,7 +1047,7 @@ class NLTKTextSplitter(TextSplitter):
 
 
 class SpacyTextSplitter(TextSplitter):
-    """Implementation of splitting text that looks at sentences using Spacy.
+    """Splitting text using Spacy package.
 
 
     Per default, Spacy's `en_core_web_sm` model is used. For a faster, but

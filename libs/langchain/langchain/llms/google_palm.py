@@ -12,10 +12,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms import BaseLLM
 from langchain.schema import Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
@@ -160,15 +157,6 @@ class GooglePalm(BaseLLM, BaseModel):
             generations.append(prompt_generations)
 
         return LLMResult(generations=generations)
-
-    async def _agenerate(
-        self,
-        prompts: List[str],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> LLMResult:
-        raise NotImplementedError()
 
     @property
     def _llm_type(self) -> str:

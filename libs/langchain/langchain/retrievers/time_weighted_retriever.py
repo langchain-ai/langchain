@@ -4,10 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import Field
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
+from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document
 from langchain.vectorstores.base import VectorStore
 
@@ -108,12 +105,6 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
             buffered_doc.metadata["last_accessed_at"] = current_time
             result.append(buffered_doc)
         return result
-
-    async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        """Return documents that are relevant to the query."""
-        raise NotImplementedError
 
     def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
         """Add documents to vectorstore."""

@@ -36,6 +36,7 @@ def _ensure_cache_exists(cache_client: momento.CacheClient, cache_name: str) -> 
 
 class MomentoChatMessageHistory(BaseChatMessageHistory):
     """Chat message history cache that uses Momento as a backend.
+
     See https://gomomento.com/"""
 
     def __init__(

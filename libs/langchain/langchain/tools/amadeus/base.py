@@ -13,4 +13,6 @@ if TYPE_CHECKING:
 
 
 class AmadeusBaseTool(BaseTool):
+    """Base Tool for Amadeus."""
+
     client: Client = Field(default_factory=authenticate)

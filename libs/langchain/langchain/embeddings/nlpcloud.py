@@ -20,12 +20,16 @@ class NLPCloudEmbeddings(BaseModel, Embeddings):
     """
 
     model_name: str  # Define model_name as a class attribute
+    gpu: bool  # Define gpu as a class attribute
     client: Any  #: :meta private:
 
     def __init__(
-        self, model_name: str = "paraphrase-multilingual-mpnet-base-v2", **kwargs: Any
+        self,
+        model_name: str = "paraphrase-multilingual-mpnet-base-v2",
+        gpu: bool = False,
+        **kwargs: Any
     ) -> None:
-        super().__init__(model_name=model_name, **kwargs)
+        super().__init__(model_name=model_name, gpu=gpu, **kwargs)
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -37,7 +41,7 @@ class NLPCloudEmbeddings(BaseModel, Embeddings):
             import nlpcloud
 
             values["client"] = nlpcloud.Client(
-                values["model_name"], nlpcloud_api_key, gpu=False, lang="en"
+                values["model_name"], nlpcloud_api_key, gpu=values["gpu"], lang="en"
             )
         except ImportError:
             raise ImportError(

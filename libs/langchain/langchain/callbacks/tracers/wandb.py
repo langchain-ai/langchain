@@ -15,7 +15,7 @@ from typing import (
 )
 
 from langchain.callbacks.tracers.base import BaseTracer
-from langchain.callbacks.tracers.schemas import Run, RunTypeEnum
+from langchain.callbacks.tracers.schemas import Run
 
 if TYPE_CHECKING:
     from wandb import Settings as WBSettings
@@ -154,11 +154,11 @@ class RunProcessor:
         :param run: The LangChain Run to convert.
         :return: The converted W&B Trace Span.
         """
-        if run.run_type == RunTypeEnum.llm:
+        if run.run_type == "llm":
             return self._convert_llm_run_to_wb_span(run)
-        elif run.run_type == RunTypeEnum.chain:
+        elif run.run_type == "chain":
             return self._convert_chain_run_to_wb_span(run)
-        elif run.run_type == RunTypeEnum.tool:
+        elif run.run_type == "tool":
             return self._convert_tool_run_to_wb_span(run)
         else:
             return self._convert_run_to_wb_span(run)
