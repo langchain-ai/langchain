@@ -13,12 +13,11 @@ from .deprecation import (
     LangChainDeprecationWarning,
     _warn_deprecated,
     deprecated,
-    supress_langchain_deprecation_warning,
+    suppress_langchain_deprecation_warning,
 )
 
 __all__ = [
     "deprecated",
     "_warn_deprecated",
-    "LangChainDeprecationWarning",
-    "supress_langchain_deprecation_warning",
+    "LangChainDeprecationWarning", "suppress_langchain_deprecation_warning",
 ]
