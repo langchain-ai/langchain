@@ -21,7 +21,9 @@ from langchain.vectorstores import DeepLake
 
 def test_fireworks_call() -> None:
     """Test valid call to fireworks."""
-    llm = Fireworks(model_id="accounts/fireworks/models/fireworks-llama-v2-13b-chat", max_tokens=900)
+    llm = Fireworks(
+        model_id="accounts/fireworks/models/fireworks-llama-v2-13b-chat", max_tokens=900
+    )
     output = llm("What is the weather in NYC")
     assert isinstance(output, str)
 
