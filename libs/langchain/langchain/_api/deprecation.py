@@ -244,7 +244,9 @@ def deprecated(
             _name = _name or obj.__name__  # type: ignore
             old_doc = wrapped.__doc__
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # type: ignore
+            def finalize(  # type: ignore
+                wrapper: Callable[..., Any], new_doc: str
+            ) -> T:
                 """Wrap the wrapped function using the wrapper and update the docstring.
 
                 Args:
