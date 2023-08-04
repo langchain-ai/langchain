@@ -363,6 +363,9 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
             other, (BaseMessagePromptTemplate, BaseMessage, BaseChatPromptTemplate)
         ):
             return ChatPromptTemplate(messages=self.messages + [other])
+        elif isinstance(other, (list, tuple)):
+            _other = ChatPromptTemplate.from_messages(other)
+            return ChatPromptTemplate(messages=self.messages + _other.messages)
         elif isinstance(other, str):
             prompt = HumanMessagePromptTemplate.from_template(other)
             return ChatPromptTemplate(messages=self.messages + [prompt])
