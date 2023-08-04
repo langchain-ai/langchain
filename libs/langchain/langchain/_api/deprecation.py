@@ -14,7 +14,7 @@ import contextlib
 import functools
 import inspect
 import warnings
-from typing import Type, Any, Callable, Generator, TypeVar
+from typing import Any, Callable, Generator, Type, TypeVar
 
 
 class LangChainDeprecationWarning(DeprecationWarning):
@@ -68,7 +68,8 @@ def _warn_deprecated(
         if not removal:
             removal = f"in {removal}" if removal else "within ?? minor releases"
             raise NotImplementedError(
-                f"Need to determine which default deprecation schedule to use. {removal}"
+                f"Need to determine which default deprecation schedule to use. "
+                f"{removal}"
             )
         else:
             removal = f"in {removal}"
@@ -195,7 +196,9 @@ def deprecated(
                     obj.__doc__ = new_doc
                 except AttributeError:  # Can't set on some extension objects.
                     pass
-                obj.__init__ = functools.wraps(obj.__init__)(wrapper)  # type: ignore[misc]
+                obj.__init__ = functools.wraps(obj.__init__)(  # type: ignore[misc]
+                    wrapper
+                )
                 return obj
 
         elif isinstance(obj, property):
@@ -238,10 +241,10 @@ def deprecated(
             if _obj_type is None:
                 _obj_type = "function"
             wrapped = obj
-            _name = _name or obj.__name__
+            _name = _name or obj.__name__  # type: ignore
             old_doc = wrapped.__doc__
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T: # type: ignore
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # type: ignore
                 """Wrap the wrapped function using the wrapper and update the docstring.
 
                 Args:
@@ -284,7 +287,7 @@ def deprecated(
         old_doc = inspect.cleandoc(old_doc or "").strip("\n")
 
         if not old_doc:
-            new_doc = f"[*Deprecated*]"
+            new_doc = "[*Deprecated*]"
         else:
             new_doc = f"[*Deprecated*]  {old_doc}"
 
