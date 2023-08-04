@@ -265,17 +265,11 @@ def _default_script_query(
 
 
 def __get_painless_scripting_source(
-    space_type: str, query_vector: List[float], vector_field: str = "vector_field"
+    space_type: str, vector_field: str = "vector_field"
 ) -> str:
     """For Painless Scripting, it returns the script source based on space type."""
     source_value = (
-        "(1.0 + "
-        + space_type
-        + "("
-        + str(query_vector)
-        + ", doc['"
-        + vector_field
-        + "']))"
+        "(1.0 + " + space_type + "(params.query_value, doc['" + vector_field + "']))"
     )
     if space_type == "cosineSimilarity":
         return source_value
@@ -295,9 +289,7 @@ def _default_painless_scripting_query(
     if not pre_filter:
         pre_filter = MATCH_ALL_QUERY
 
-    source = __get_painless_scripting_source(
-        space_type, query_vector, vector_field=vector_field
-    )
+    source = __get_painless_scripting_source(space_type, vector_field=vector_field)
     return {
         "size": k,
         "query": {
