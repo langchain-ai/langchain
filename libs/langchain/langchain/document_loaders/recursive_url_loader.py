@@ -1,5 +1,5 @@
 from typing import Iterator, List, Optional, Set
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin, urlparse, urldefrag
 
 import requests
 
@@ -14,16 +14,20 @@ class RecursiveUrlLoader(BaseLoader):
         self,
         url: str,
         exclude_dirs: Optional[str] = None,
+        crawl_siblings: bool = False,
     ) -> None:
         """Initialize with URL to crawl and any subdirectories to exclude.
 
         Args:
             url: The URL to crawl.
             exclude_dirs: A list of subdirectories to exclude.
+            crawl_siblings: Whether to crawl to sibling directories.
+                Useful if the main index page is in a subdirectory.
         """
 
         self.url = url
         self.exclude_dirs = exclude_dirs
+        self.crawl_siblings = crawl_siblings
 
     def get_child_links_recursive(
         self, url: str, visited: Optional[Set[str]] = None
@@ -69,16 +73,29 @@ class RecursiveUrlLoader(BaseLoader):
         response = requests.get(url)
         soup = BeautifulSoup(response.text, "html.parser")
         all_links = [link.get("href") for link in soup.find_all("a")]
-
-        # Extract only the links that are children of the current URL
-        child_links = list(
-            {
-                link
-                for link in all_links
-                if link and link.startswith(current_path) and link != current_path
-            }
-        )
-
+        child_links = set()
+        current_root = parent_url if self.crawl_siblings else current_path
+        for link in all_links:
+            link, _ = urldefrag(link)
+            if link:
+                parsed_link = urlparse(link)
+                # Relative Links
+                if not parsed_link.scheme and not parsed_link.netloc:
+                    if parsed_link.path.startswith("/"):
+                        if link.startswith(current_root):
+                            child_links.add(link)
+                    else:
+                        joined_path = urljoin(current_path, link)
+                        if joined_path.startswith(current_root):
+                            child_links.add(joined_path)
+                # Absolute Links
+                elif (
+                    parsed_link.netloc == parsed_url.netloc
+                    and link != current_path
+                    and link.startswith(current_root)
+                ):
+                    child_links.add(link)
+        # import pdb; pdb.set_trace()
         # Get absolute path for all root relative links listed
         absolute_paths = [urljoin(base_url, link) for link in child_links]
 
