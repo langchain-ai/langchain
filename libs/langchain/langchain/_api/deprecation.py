@@ -279,7 +279,7 @@ def deprecated(
 
 @contextlib.contextmanager
 def suppress_langchain_deprecation_warning() -> Generator[None, None, None]:
-    """Context manager to supress LangChainDeprecationWarning."""
+    """Context manager to suppress LangChainDeprecationWarning."""
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", LangChainDeprecationWarning)
         yield
