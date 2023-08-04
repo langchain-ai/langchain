@@ -67,29 +67,29 @@ class Reviver:
 
 
 def loads(text: str, *, secrets_map: Optional[Dict[str, str]] = None) -> Any:
-    """Load a JSON object from a string.
+    """Revive a LangChain class from a JSON string.
+    Equivalent to `load(json.loads(text))`.
 
     Args:
         text: The string to load.
         secrets_map: A map of secrets to load.
 
     Returns:
-
+        Revived LangChain objects.
     """
     return json.loads(text, object_hook=Reviver(secrets_map))
 
 
 def load(obj: Any, *, secrets_map: Optional[Dict[str, str]] = None) -> Any:
-    """Load an object from a JSON-compatible object
-
-    This is equivalent to `loads(json.dumps(obj)` but avoids json serialization.
+    """Revive a LangChain class from a JSON object. Use this if you already
+    have a parsed JSON object, eg. from `json.load` or `orjson.loads`.
 
     Args:
-        obj: The string to load.
+        obj: The object to load.
         secrets_map: A map of secrets to load.
 
     Returns:
-        Deserialized objects
+        Revived LangChain objects.
     """
     reviver = Reviver(secrets_map)
 
