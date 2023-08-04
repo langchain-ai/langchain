@@ -13,8 +13,8 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import StringEvaluator
-from langchain.load.dump import dumps
-from langchain.load.load import loads
+from langchain.load.dump import dumpd
+from langchain.load.load import load
 from langchain.load.serializable import Serializable
 from langchain.schema import RUN_KEY, messages_from_dict
 from langchain.schema.messages import BaseMessage, get_buffer_string
@@ -25,7 +25,7 @@ def _get_messages_from_run_dict(messages: List[dict]) -> List[BaseMessage]:
         return []
     first_message = messages[0]
     if "lc" in first_message:
-        return [loads(dumps(message)) for message in messages]
+        return [load(dumpd(message)) for message in messages]
     else:
         return messages_from_dict(messages)
 
