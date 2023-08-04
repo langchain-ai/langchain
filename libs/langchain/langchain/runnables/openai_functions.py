@@ -7,7 +7,7 @@ from langchain.schema.runnable import RouterRunnable, Runnable, RunnableBinding
 
 
 class OpenAIFunction(TypedDict):
-    """A function to call on the OpenAI API."""
+    """A function description for ChatOpenAI"""
 
     name: str
     """The name of the function."""
