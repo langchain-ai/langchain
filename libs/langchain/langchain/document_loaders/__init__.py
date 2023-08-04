@@ -108,6 +108,7 @@ from langchain.document_loaders.onedrive_file import OneDriveFileLoader
 from langchain.document_loaders.open_city_data import OpenCityDataLoader
 from langchain.document_loaders.org_mode import UnstructuredOrgModeLoader
 from langchain.document_loaders.pdf import (
+    AmazonTextractPDFLoader,
     MathpixPDFLoader,
     OnlinePDFLoader,
     PDFMinerLoader,
@@ -330,4 +331,5 @@ __all__ = [
     "YoutubeAudioLoader",
     "YoutubeLoader",
     "ConcurrentLoader",
+    "AmazonTextractPDFLoader",
 ]
