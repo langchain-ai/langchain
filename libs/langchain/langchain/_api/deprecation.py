@@ -14,7 +14,7 @@ import contextlib
 import functools
 import inspect
 import warnings
-from typing import Any, Callable, Generator, Optional, TypeVar
+from typing import Type, Any, Callable, Generator, TypeVar
 
 
 class LangChainDeprecationWarning(DeprecationWarning):
@@ -103,7 +103,7 @@ def _warn_deprecated(
 # PUBLIC API
 
 
-T = TypeVar("T")
+T = TypeVar("T", Type, Callable)
 
 
 def deprecated(
@@ -113,7 +113,7 @@ def deprecated(
     name: str = "",
     alternative: str = "",
     pending: bool = False,
-    obj_type: Optional[str] = None,
+    obj_type: str = "",
     addendum: str = "",
     removal: str = "",
 ) -> Callable[[T], T]:
@@ -172,40 +172,40 @@ def deprecated(
     """
 
     def deprecate(
-        obj: Any,
+        obj: T,
         *,
-        _obj_type: Optional[str] = obj_type,
-        _name: Optional[str] = name,
-        _message: Optional[str] = message,
+        _obj_type: str = obj_type,
+        _name: str = name,
+        _message: str = message,
         _alternative: str = alternative,
         _pending: bool = pending,
         _addendum: str = addendum,
-    ):
+    ) -> T:
         """Implementation of the decorator returned by `deprecated`."""
         if isinstance(obj, type):
-            if _obj_type is None:
+            if not _obj_type:
                 _obj_type = "class"
-            func = obj.__init__
+            wrapped = obj.__init__  # type: ignore
             _name = _name or obj.__name__
             old_doc = obj.__doc__
 
-            def finalize(wrapper: Any, new_doc: str) -> type:  # type: ignore
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
                 """Finalize the deprecation of a class."""
                 try:
                     obj.__doc__ = new_doc
                 except AttributeError:  # Can't set on some extension objects.
                     pass
-                obj.__init__ = functools.wraps(obj.__init__)(wrapper)
+                obj.__init__ = functools.wraps(obj.__init__)(wrapper)  # type: ignore[misc]
                 return obj
 
         elif isinstance(obj, property):
             if _obj_type is None:
                 _obj_type = "attribute"
-            func = None
+            wrapped = None
             _name = _name or obj.fget.__name__
             old_doc = obj.__doc__
 
-            class _deprecated_property(type(obj)):
+            class _deprecated_property(type(obj)):  # type: ignore
                 """A deprecated property."""
 
                 def __get__(self, instance, owner=None):  # type: ignore
@@ -228,7 +228,7 @@ def deprecated(
                     if _name == "<lambda>":
                         _name = set_name
 
-            def finalize(_, new_doc: str):  # type: ignore
+            def finalize(_: Any, new_doc: str) -> Any:  # type: ignore
                 """Finalize the property."""
                 return _deprecated_property(
                     fget=obj.fget, fset=obj.fset, fdel=obj.fdel, doc=new_doc
@@ -237,13 +237,21 @@ def deprecated(
         else:
             if _obj_type is None:
                 _obj_type = "function"
-            func = obj
+            wrapped = obj
             _name = _name or obj.__name__
-            old_doc = func.__doc__
+            old_doc = wrapped.__doc__
 
-            def finalize(wrapper, new_doc):
-                """Finalize the function."""
-                wrapper = functools.wraps(func)(wrapper)
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T: # type: ignore
+                """Wrap the wrapped function using the wrapper and update the docstring.
+
+                Args:
+                    wrapper: The wrapper function.
+                    new_doc: The new docstring.
+
+                Returns:
+                    The wrapped function.
+                """
+                wrapper = functools.wraps(wrapped)(wrapper)
                 wrapper.__doc__ = new_doc
                 return wrapper
 
@@ -260,10 +268,18 @@ def deprecated(
                 removal=removal,
             )
 
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
-            """Wrap the function."""
+        def warning_emitting_wrapper(*args: Any, **kwargs: Any) -> Any:
+            """Wrapper for the original wrapped callable that emits a warning.
+
+            Args:
+                *args: The positional arguments to the function.
+                **kwargs: The keyword arguments to the function.
+
+            Returns:
+                The return value of the function being wrapped.
+            """
             emit_warning()
-            return func(*args, **kwargs)
+            return wrapped(*args, **kwargs)
 
         old_doc = inspect.cleandoc(old_doc or "").strip("\n")
 
@@ -272,7 +288,7 @@ def deprecated(
         else:
             new_doc = f"[*Deprecated*]  {old_doc}"
 
-        return finalize(wrapper, new_doc)
+        return finalize(warning_emitting_wrapper, new_doc)
 
     return deprecate
 
