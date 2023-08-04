@@ -19,7 +19,7 @@ def load_members(dir: Path) -> dict:
             members[top_level] = {"classes": [], "functions": []}
         with open(py, "r") as f:
             for line in f.readlines():
-                cls = re.findall(r"^class ([^_].*)\(", line)
+                cls = re.findall(r"^class ([^_].*)[\(\:]", line)
                 members[top_level]["classes"].extend([module + "." + c for c in cls])
                 func = re.findall(r"^def ([^_].*)\(", line)
                 afunc = re.findall(r"^async def ([^_].*)\(", line)
