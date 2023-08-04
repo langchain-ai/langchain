@@ -30,7 +30,7 @@ def test_model_name_set_on_chat_result_when_present_in_response(
                 "finish_reason": "stop",
                 "message": {{
                     "role": "assistant",
-                    "content": "I'm and AI assistant that can help you."
+                    "content": "I'm an AI assistant that can help you."
                 }}
             }}
         ],

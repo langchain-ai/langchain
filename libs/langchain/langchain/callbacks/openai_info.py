@@ -32,8 +32,8 @@ MODEL_COST_PER_1K_TOKENS = {
     "gpt-3.5-turbo-16k-completion": 0.004,
     "gpt-3.5-turbo-16k-0613-completion": 0.004,
     # Azure GPT-35 input
-    "gpt-35-turbo": 0.002,  # Azure OpenAI version of ChatGPT
-    "gpt-35-turbo-0301": 0.002,  # Azure OpenAI version of ChatGPT
+    "gpt-35-turbo": 0.0015,  # Azure OpenAI version of ChatGPT
+    "gpt-35-turbo-0301": 0.0015,  # Azure OpenAI version of ChatGPT
     "gpt-35-turbo-0613": 0.0015,
     "gpt-35-turbo-16k": 0.003,
     "gpt-35-turbo-16k-0613": 0.003,
