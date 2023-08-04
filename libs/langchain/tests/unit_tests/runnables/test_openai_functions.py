@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, Optional
 
 from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
@@ -19,8 +19,8 @@ class FakeChatOpenAI(BaseChatModel):
     def _generate(
         self,
         messages: List[BaseMessage],
-        stop: List[str] | None = None,
-        run_manager: CallbackManagerForLLMRun | None = None,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
         return ChatResult(
