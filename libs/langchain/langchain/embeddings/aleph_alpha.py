@@ -18,7 +18,9 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
         .. code-block:: python
             from aleph_alpha import AlephAlphaAsymmetricSemanticEmbedding
 
-            embeddings = AlephAlphaAsymmetricSemanticEmbedding(normalize=True, compress_to_size=128)
+            embeddings = AlephAlphaAsymmetricSemanticEmbedding(
+                normalize=True, compress_to_size=128
+            )
 
             document = "This is a content of the document"
             query = "What is the content of the document?"
@@ -49,25 +51,35 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
     aleph_alpha_api_key: Optional[str] = None
     """API key for Aleph Alpha API."""
     host: str = "https://api.aleph-alpha.com"
-    """The hostname of the API host. The default one is "https://api.aleph-alpha.com")"""
+    """The hostname of the API host. 
+    The default one is "https://api.aleph-alpha.com")"""
     hosting: Optional[str] = None
     """Determines in which datacenters the request may be processed.
-       You can either set the parameter to "aleph-alpha" or omit it (defaulting to None).
-       Not setting this value, or setting it to None, gives us maximal flexibility in processing your request in our
-       own datacenters and on servers hosted with other providers. Choose this option for maximal availability.
-       Setting it to "aleph-alpha" allows us to only process the request in our own datacenters.
-       Choose this option for maximal data privacy."""
+    You can either set the parameter to "aleph-alpha" or omit it (defaulting to None).
+    Not setting this value, or setting it to None, gives us maximal flexibility 
+    in processing your request in our
+    own datacenters and on servers hosted with other providers. 
+    Choose this option for maximal availability.
+    Setting it to "aleph-alpha" allows us to only process the request 
+    in our own datacenters.
+    Choose this option for maximal data privacy."""
     request_timeout_seconds: int = 305
-    """Client timeout that will be set for HTTP requests in the `requests` library's API calls.
-        Server will close all requests after 300 seconds with an internal server error."""
+    """Client timeout that will be set for HTTP requests in the 
+    `requests` library's API calls.
+    Server will close all requests after 300 seconds with an internal server error."""
     total_retries: int = 8
-    """The number of retries made in case requests fail with certain retryable status codes. If the last
-        retry fails a corresponding exception is raised. Note, that between retries an exponential backoff
-        is applied, starting with 0.5 s after the first retry and doubling for each retry made. So with the
-        default setting of 8 retries a total wait time of 63.5 s is added between the retries."""
+    """The number of retries made in case requests fail with certain retryable 
+    status codes. If the last
+    retry fails a corresponding exception is raised. Note, that between retries 
+    an exponential backoff
+    is applied, starting with 0.5 s after the first retry and doubling for each 
+    retry made. So with the
+    default setting of 8 retries a total wait time of 63.5 s is added between 
+    the retries."""
     nice: bool = False
-    """Setting this to True, will signal to the API that you intend to be nice to other users
-        by de-prioritizing your request below concurrent ones."""
+    """Setting this to True, will signal to the API that you intend to be 
+    nice to other users
+    by de-prioritizing your request below concurrent ones."""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -181,7 +193,9 @@ class AlephAlphaSymmetricSemanticEmbedding(AlephAlphaAsymmetricSemanticEmbedding
 
             from aleph_alpha import AlephAlphaSymmetricSemanticEmbedding
 
-            embeddings = AlephAlphaAsymmetricSemanticEmbedding(normalize=True, compress_to_size=128)
+            embeddings = AlephAlphaAsymmetricSemanticEmbedding(
+                normalize=True, compress_to_size=128
+            )
             text = "This is a test text"
 
             doc_result = embeddings.embed_documents([text])
