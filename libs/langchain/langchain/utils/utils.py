@@ -2,8 +2,9 @@
 import contextlib
 import datetime
 import importlib
+import warnings
 from importlib.metadata import version
-from typing import Any, Callable, Optional, Set, Tuple
+from typing import Any, Callable, Dict, Optional, Set, Tuple
 
 from packaging.version import parse
 from requests import HTTPError, Response
@@ -122,7 +123,7 @@ def check_package_version(
         )
 
 
-def get_pydantic_field_names(pydantic_cls: Any) -> Set:
+def get_pydantic_field_names(pydantic_cls: Any) -> Set[str]:
     """Get field names, including aliases, for a pydantic class.
 
     Args:
@@ -133,3 +134,30 @@ def get_pydantic_field_names(pydantic_cls: Any) -> Set:
         if field.has_alias:
             all_required_field_names.add(field.alias)
     return all_required_field_names
+
+
+def build_extra_kwargs(
+    extra_kwargs: Dict[str, Any],
+    values: Dict[str, Any],
+    all_required_field_names: Set[str],
+) -> Dict[str, Any]:
+    """"""
+    for field_name in list(values):
+        if field_name in extra_kwargs:
+            raise ValueError(f"Found {field_name} supplied twice.")
+        if field_name not in all_required_field_names:
+            warnings.warn(
+                f"""WARNING! {field_name} is not default parameter.
+                {field_name} was transferred to model_kwargs.
+                Please confirm that {field_name} is what you intended."""
+            )
+            extra_kwargs[field_name] = values.pop(field_name)
+
+    invalid_model_kwargs = all_required_field_names.intersection(extra_kwargs.keys())
+    if invalid_model_kwargs:
+        raise ValueError(
+            f"Parameters {invalid_model_kwargs} should be specified explicitly. "
+            f"Instead they were passed in as part of `model_kwargs` parameter."
+        )
+
+    return extra_kwargs
