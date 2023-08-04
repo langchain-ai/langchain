@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class ZepChatMessageHistory(BaseChatMessageHistory):
-    """A ChatMessageHistory implementation that uses Zep as a backend.
+    """Chat message history that uses Zep as a backend.
 
     Recommended usage::
 
@@ -61,7 +61,7 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
         try:
             from zep_python import ZepClient
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import zep-python package. "
                 "Please install it with `pip install zep-python`."
             )

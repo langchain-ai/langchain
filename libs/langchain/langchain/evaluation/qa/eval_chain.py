@@ -1,4 +1,4 @@
-"""LLM Chain specifically for evaluating question answering."""
+"""LLM Chains for evaluating question answering."""
 from __future__ import annotations
 
 import re
@@ -50,7 +50,7 @@ def _parse_string_eval_output(text: str) -> dict:
 
 
 class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
-    """LLM Chain specifically for evaluating question answering."""
+    """LLM Chain for evaluating question answering."""
 
     output_key: str = "results"  #: :meta private:
 
@@ -184,7 +184,7 @@ class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
 
 
 class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
-    """LLM Chain specifically for evaluating QA w/o GT based on context"""
+    """LLM Chain for evaluating QA w/o GT based on context"""
 
     @property
     def requires_reference(self) -> bool:
@@ -308,7 +308,7 @@ class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
 
 
 class CotQAEvalChain(ContextQAEvalChain):
-    """LLM Chain specifically for evaluating QA using chain of thought reasoning."""
+    """LLM Chain for evaluating QA using chain of thought reasoning."""
 
     @property
     def evaluation_name(self) -> str:

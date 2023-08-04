@@ -5,7 +5,7 @@ from langchain.utils import get_from_env
 
 
 class DoctranTextTranslator(BaseDocumentTransformer):
-    """Translates text documents using doctran.
+    """Translate text documents using doctran.
 
     Arguments:
         openai_api_key: OpenAI API key. Can also be specified via environment variable

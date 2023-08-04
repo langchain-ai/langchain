@@ -12,9 +12,10 @@ from langchain.load.serializable import Serializable
 from langchain.schema.document import Document
 from langchain.schema.output_parser import BaseOutputParser
 from langchain.schema.prompt import PromptValue
+from langchain.schema.runnable import Runnable, RunnableConfig
 
 
-class BasePromptTemplate(Serializable, ABC):
+class BasePromptTemplate(Serializable, Runnable[Dict, PromptValue], ABC):
     """Base class for all prompt templates, returning a prompt."""
 
     input_variables: List[str]
@@ -33,6 +34,14 @@ class BasePromptTemplate(Serializable, ABC):
         """Configuration for this pydantic object."""
 
         arbitrary_types_allowed = True
+
+    def invoke(self, input: Dict, config: RunnableConfig | None = None) -> PromptValue:
+        return self._call_with_config(
+            lambda inner_input: self.format_prompt(**inner_input),
+            input,
+            config,
+            run_type="prompt",
+        )
 
     @abstractmethod
     def format_prompt(self, **kwargs: Any) -> PromptValue:

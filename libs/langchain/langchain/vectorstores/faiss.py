@@ -40,7 +40,7 @@ def dependable_faiss_import(no_avx2: Optional[bool] = None) -> Any:
     except ImportError:
         raise ImportError(
             "Could not import faiss python package. "
-            "Please install it with `pip install faiss` "
+            "Please install it with `pip install faiss-gpu` (for CUDA supported GPU) "
             "or `pip install faiss-cpu` (depending on Python version)."
         )
     return faiss
@@ -370,7 +370,12 @@ class FAISS(VectorStore):
                 doc = self.docstore.search(_id)
                 if not isinstance(doc, Document):
                     raise ValueError(f"Could not find document for id {_id}, got {doc}")
-                if all(doc.metadata.get(key) == value for key, value in filter.items()):
+                if all(
+                    doc.metadata.get(key) in value
+                    if isinstance(value, list)
+                    else doc.metadata.get(key) == value
+                    for key, value in filter.items()
+                ):
                     filtered_indices.append(i)
             indices = np.array([filtered_indices])
         # -1 happens when not enough docs are returned.

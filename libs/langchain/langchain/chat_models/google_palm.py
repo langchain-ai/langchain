@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 from pydantic import BaseModel, root_validator
 from tenacity import (
@@ -39,8 +39,6 @@ logger = logging.getLogger(__name__)
 
 class ChatGooglePalmError(Exception):
     """Error raised when there is an issue with the Google PaLM API."""
-
-    pass
 
 
 def _truncate_at_stop_tokens(
@@ -323,7 +321,7 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
         return _response_to_result(response, stop)
 
     @property
-    def _identifying_params(self) -> Mapping[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
         return {
             "model_name": self.model_name,

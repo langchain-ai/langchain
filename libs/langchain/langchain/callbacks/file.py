@@ -2,8 +2,8 @@
 from typing import Any, Dict, Optional, TextIO, cast
 
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.input import print_text
 from langchain.schema import AgentAction, AgentFinish
+from langchain.utils.input import print_text
 
 
 class FileCallbackHandler(BaseCallbackHandler):

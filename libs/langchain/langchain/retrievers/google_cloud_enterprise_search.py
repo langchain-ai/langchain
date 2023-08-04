@@ -5,10 +5,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 
 from pydantic import Extra, Field, root_validator
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
+from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document
 from langchain.utils import get_from_dict_or_env
 
@@ -21,7 +18,8 @@ if TYPE_CHECKING:
 
 
 class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
-    """Wrapper around Google Cloud Enterprise Search Service API.
+    """Retriever for the Google Cloud Enterprise Search Service API.
+
     For the detailed explanation of the Enterprise Search concepts
     and configuration parameters refer to the product documentation.
 
@@ -57,6 +55,16 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
     1 - Disabled query expansion. Only the exact search query is used, even if 
         SearchResponse.total_size is zero.
     2 - Automatic query expansion built by the Search API.
+    """
+    spell_correction_mode: int = Field(default=2, ge=0, le=2)
+    """Specification to determine under which conditions query expansion should occur.
+    0 - Unspecified spell correction mode. In this case, server behavior defaults 
+        to auto.
+    1 - Suggestion only. Search API will try to find a spell suggestion if there is any
+        and put in the `SearchResponse.corrected_query`.
+        The spell suggestion will not be used as the search query.
+    2 - Automatic spell correction built by the Search API.
+        Search will be based on the corrected query if found.
     """
     credentials: Any = None
     """The default custom credentials (google.auth.credentials.Credentials) to use
@@ -108,34 +116,23 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
         self, results: Sequence[SearchResult]
     ) -> List[Document]:
         """Converts a sequence of search results to a list of LangChain documents."""
-        from google.protobuf.json_format import MessageToDict
+        documents: List[Document] = []
 
-        documents = []
         for result in results:
-            document_dict = MessageToDict(result.document._pb)
-            derived_struct_data = document_dict.get("derivedStructData", None)
-            if derived_struct_data:
-                doc_metadata = document_dict.get("structData", {})
-                chunk_type = (
-                    "extractive_answers"
-                    if self.get_extractive_answers
-                    else "extractive_segments"
+            derived_struct_data = result.document.derived_struct_data
+            doc_metadata = result.document.struct_data
+            doc_metadata.source = derived_struct_data.link or ""
+            doc_metadata.id = result.document.id
+
+            for chunk in (
+                derived_struct_data.extractive_answers
+                or derived_struct_data.extractive_segments
+            ):
+                if hasattr(chunk, "page_number"):
+                    doc_metadata.source += f":{chunk.page_number}"
+                documents.append(
+                    Document(page_content=chunk.content, metadata=doc_metadata)
                 )
-                for chunk in derived_struct_data.get(chunk_type, []):
-                    if chunk_type == "extractive_answers":
-                        doc_metadata["source"] = (
-                            f"{derived_struct_data.get('link', '')}"
-                            f":{chunk.get('pageNumber', '')}"
-                        )
-                    else:
-                        doc_metadata[
-                            "source"
-                        ] = f"{derived_struct_data.get('link', '')}"
-                    doc_metadata["id"] = document_dict["id"]
-                    document = Document(
-                        page_content=chunk.get("content", ""), metadata=doc_metadata
-                    )
-                    documents.append(document)
 
         return documents
 
@@ -145,6 +142,10 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
 
         query_expansion_spec = SearchRequest.QueryExpansionSpec(
             condition=self.query_expansion_condition,
+        )
+
+        spell_correction_spec = SearchRequest.SpellCorrectionSpec(
+            mode=self.spell_correction_mode
         )
 
         if self.get_extractive_answers:
@@ -164,16 +165,15 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
             extractive_content_spec=extractive_content_spec,
         )
 
-        request = SearchRequest(
+        return SearchRequest(
             query=query,
             filter=self.filter,
             serving_config=self._serving_config,
             page_size=self.max_documents,
             content_search_spec=content_search_spec,
             query_expansion_spec=query_expansion_spec,
+            spell_correction_spec=spell_correction_spec,
         )
-
-        return request
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
@@ -184,8 +184,3 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
         documents = self._convert_search_response(response.results)
 
         return documents
-
-    async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        raise NotImplementedError
