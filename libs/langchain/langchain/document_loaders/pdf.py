@@ -561,11 +561,7 @@ class AmazonTextractPDFLoader(BasePDFLoader):
             blob = Blob(path=self.web_path)
         else:
             blob = Blob.from_path(self.file_path)
-            if (
-                self.web_path
-                and self._is_s3_url(self.web_path)
-                and AmazonTextractPDFLoader._get_number_of_pages(blob) > 1
-            ):
+            if AmazonTextractPDFLoader._get_number_of_pages(blob) > 1:
                 raise ValueError(
                     f"the file {blob.path} is a multi-page document, \
                     but not stored on S3. \
