@@ -240,11 +240,7 @@ def __get_painless_scripting_source(
 ) -> str:
     """For Painless Scripting, it returns the script source based on space type."""
     source_value = (
-        "(1.0 + "
-        + space_type
-        + "(params.query_value, doc['"
-        + vector_field
-        + "']))"
+        "(1.0 + " + space_type + "(params.query_value, doc['" + vector_field + "']))"
     )
     if space_type == "cosineSimilarity":
         return source_value
