@@ -290,6 +290,13 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
         """Whether to ignore agent callbacks."""
         return self.ignore_agent_
 
+    async def on_retry(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
+        self.on_retry_common()
+
     async def on_llm_start(
         self,
         *args: Any,

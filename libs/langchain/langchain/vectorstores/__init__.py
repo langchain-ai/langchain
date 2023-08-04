@@ -1,4 +1,23 @@
-"""Wrappers on top of vector stores."""
+"""**Vector store** stores embedded data and performs vector search.
+
+One of the most common ways to store and search over unstructured data is to
+embed it and store the resulting embedding vectors, and then query the store
+and retrieve the data that are 'most similar' to the embedded query.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    VectorStore --> <name>  # Examples: Annoy, FAISS, Milvus
+
+    BaseRetriever --> VectorStoreRetriever --> <name>Retriever  # Example: VespaRetriever
+
+**Main helpers:**
+
+.. code-block::
+
+    Embeddings, Document
+"""  # noqa: E501
 from langchain.vectorstores.alibabacloud_opensearch import (
     AlibabaCloudOpenSearch,
     AlibabaCloudOpenSearchSettings,
@@ -35,6 +54,7 @@ from langchain.vectorstores.pinecone import Pinecone
 from langchain.vectorstores.qdrant import Qdrant
 from langchain.vectorstores.redis import Redis
 from langchain.vectorstores.rocksetdb import Rockset
+from langchain.vectorstores.scann import ScaNN
 from langchain.vectorstores.singlestoredb import SingleStoreDB
 from langchain.vectorstores.sklearn import SKLearnVectorStore
 from langchain.vectorstores.starrocks import StarRocks
@@ -87,6 +107,7 @@ __all__ = [
     "Qdrant",
     "Redis",
     "Rockset",
+    "ScaNN",
     "SKLearnVectorStore",
     "SingleStoreDB",
     "StarRocks",

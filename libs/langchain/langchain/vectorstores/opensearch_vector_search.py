@@ -85,7 +85,7 @@ def _is_aoss_enabled(http_auth: Any) -> bool:
     """Check if the service is http_auth is set as `aoss`."""
     if (
         http_auth is not None
-        and http_auth.service is not None
+        and hasattr(http_auth, "service")
         and http_auth.service == "aoss"
     ):
         return True
@@ -235,6 +235,7 @@ def _approximate_search_query_with_efficient_filter(
 
 def _default_script_query(
     query_vector: List[float],
+    k: int = 4,
     space_type: str = "l2",
     pre_filter: Optional[Dict] = None,
     vector_field: str = "vector_field",
@@ -245,6 +246,7 @@ def _default_script_query(
         pre_filter = MATCH_ALL_QUERY
 
     return {
+        "size": k,
         "query": {
             "script_score": {
                 "query": pre_filter,
@@ -258,22 +260,16 @@ def _default_script_query(
                     },
                 },
             }
-        }
+        },
     }
 
 
 def __get_painless_scripting_source(
-    space_type: str, query_vector: List[float], vector_field: str = "vector_field"
+    space_type: str, vector_field: str = "vector_field"
 ) -> str:
     """For Painless Scripting, it returns the script source based on space type."""
     source_value = (
-        "(1.0 + "
-        + space_type
-        + "("
-        + str(query_vector)
-        + ", doc['"
-        + vector_field
-        + "']))"
+        "(1.0 + " + space_type + "(params.query_value, doc['" + vector_field + "']))"
     )
     if space_type == "cosineSimilarity":
         return source_value
@@ -283,6 +279,7 @@ def __get_painless_scripting_source(
 
 def _default_painless_scripting_query(
     query_vector: List[float],
+    k: int = 4,
     space_type: str = "l2Squared",
     pre_filter: Optional[Dict] = None,
     vector_field: str = "vector_field",
@@ -292,8 +289,9 @@ def _default_painless_scripting_query(
     if not pre_filter:
         pre_filter = MATCH_ALL_QUERY
 
-    source = __get_painless_scripting_source(space_type, query_vector)
+    source = __get_painless_scripting_source(space_type, vector_field=vector_field)
     return {
+        "size": k,
         "query": {
             "script_score": {
                 "query": pre_filter,
@@ -305,7 +303,7 @@ def _default_painless_scripting_query(
                     },
                 },
             }
-        }
+        },
     }
 
 
@@ -336,13 +334,13 @@ class OpenSearchVectorSearch(VectorStore):
         opensearch_url: str,
         index_name: str,
         embedding_function: Embeddings,
-        is_aoss: bool,
         **kwargs: Any,
     ):
         """Initialize with necessary components."""
         self.embedding_function = embedding_function
         self.index_name = index_name
-        self.is_aoss = is_aoss
+        http_auth = _get_kwargs_value(kwargs, "http_auth", None)
+        self.is_aoss = _is_aoss_enabled(http_auth=http_auth)
         self.client = _get_opensearch_client(opensearch_url, **kwargs)
 
     @property
@@ -593,20 +591,20 @@ class OpenSearchVectorSearch(VectorStore):
             space_type = _get_kwargs_value(kwargs, "space_type", "l2")
             pre_filter = _get_kwargs_value(kwargs, "pre_filter", MATCH_ALL_QUERY)
             search_query = _default_script_query(
-                embedding, space_type, pre_filter, vector_field
+                embedding, k, space_type, pre_filter, vector_field
             )
         elif search_type == PAINLESS_SCRIPTING_SEARCH:
             space_type = _get_kwargs_value(kwargs, "space_type", "l2Squared")
             pre_filter = _get_kwargs_value(kwargs, "pre_filter", MATCH_ALL_QUERY)
             search_query = _default_painless_scripting_query(
-                embedding, space_type, pre_filter, vector_field
+                embedding, k, space_type, pre_filter, vector_field
             )
         else:
             raise ValueError("Invalid `search_type` provided as an argument")
 
         response = self.client.search(index=self.index_name, body=search_query)
 
-        return [hit for hit in response["hits"]["hits"][:k]]
+        return [hit for hit in response["hits"]["hits"]]
 
     def max_marginal_relevance_search(
         self,
@@ -781,4 +779,4 @@ class OpenSearchVectorSearch(VectorStore):
             max_chunk_bytes=max_chunk_bytes,
             is_aoss=is_aoss,
         )
-        return cls(opensearch_url, index_name, embedding, is_aoss, **kwargs)
+        return cls(opensearch_url, index_name, embedding, **kwargs)

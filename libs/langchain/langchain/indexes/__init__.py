@@ -1,4 +1,4 @@
-"""All index utils."""
+"""**Index** utilities."""
 from langchain.indexes.graph import GraphIndexCreator
 from langchain.indexes.vectorstore import VectorstoreIndexCreator
 
