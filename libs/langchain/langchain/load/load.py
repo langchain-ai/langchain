@@ -55,7 +55,7 @@ class Reviver:
                 raise ValueError(f"Invalid namespace: {value}")
 
             # The root namespace "langchain" is not a valid identifier.
-            if len(namespace) == 1:
+            if len(namespace) == 1 and namespace[0] == "langchain":
                 raise ValueError(f"Invalid namespace: {value}")
 
             mod = importlib.import_module(".".join(namespace))
