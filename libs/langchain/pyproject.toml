@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.251"
+version = "0.0.252"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -130,6 +130,7 @@ gitpython = {version = "^3.1.32", optional = true}
 librosa = {version="^0.10.0.post2", optional = true }
 feedparser = {version = "^6.0.10", optional = true}
 newspaper3k = {version = "^0.2.8", optional = true}
+amazon-textract-caller = {version = "<2", optional = true}
 
 [tool.poetry.group.test.dependencies]
 # The only dependencies that should be added are
@@ -329,6 +330,7 @@ all = [
 # Please use new-line on formatting to make it easier to add new packages without
 # merge-conflicts
 extended_testing = [
+ "amazon-textract-caller",
  "beautifulsoup4",
  "bibtexparser",
  "cassio",
