@@ -95,10 +95,8 @@ class RecursiveUrlLoader(BaseLoader):
                     and link.startswith(current_root)
                 ):
                     child_links.add(link)
-        # import pdb; pdb.set_trace()
         # Get absolute path for all root relative links listed
         absolute_paths = [urljoin(base_url, link) for link in child_links]
-
         # Store the visited links and recursively visit the children
         for link in absolute_paths:
             # Check all unvisited links
