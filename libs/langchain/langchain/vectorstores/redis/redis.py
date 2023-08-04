@@ -160,7 +160,9 @@ class Redis(VectorStore):
             self._vector_schema.update(vector_schema)
 
         # set metadata schema if provided by user
-        self._metadata_schema = RedisMetadata(**metadata_schema if metadata_schema else {})
+        self._metadata_schema = RedisMetadata(
+            **metadata_schema if metadata_schema else {}
+        )
 
         # set vector distance metric and scoring function
         self._distance_metric = str(self._vector_schema["distance_metric"]).upper()
@@ -209,9 +211,9 @@ class Redis(VectorStore):
             self._vector_schema["name"] = self.vector_key
 
             if str(self._vector_schema["algorithm"]).upper() == "FLAT":
-                fields.append(FlatVectorField(**self._vector_schema).as_field()) # type: ignore
+                fields.append(FlatVectorField(**self._vector_schema).as_field())  # type: ignore
             else:
-                fields.append(HNSWVectorField(**self._vector_schema).as_field()) # type: ignore
+                fields.append(HNSWVectorField(**self._vector_schema).as_field())  # type: ignore
 
             # Fields for metadata
             if not self._metadata_schema.is_empty:
@@ -265,7 +267,7 @@ class Redis(VectorStore):
 
         # type check for metadata
         if metadatas:
-            if isinstance(metadatas, list) and len(metadatas) != len(texts): # type: ignore
+            if isinstance(metadatas, list) and len(metadatas) != len(texts):  # type: ignore
                 raise ValueError("Number of metadatas must match number of texts")
             if not isinstance(metadatas, list) and not isinstance(metadatas[0], dict):
                 raise ValueError("Metadatas must be a list of dicts")
@@ -331,7 +333,7 @@ class Redis(VectorStore):
 
         # Perform vector search
         # ignore type because redis-py is wrong about bytes
-        results = self.client.ft(self.index_name).search(redis_query, params_dict) # type: ignore
+        results = self.client.ft(self.index_name).search(redis_query, params_dict)  # type: ignore
 
         # Prepare document results
         docs = []
@@ -386,7 +388,7 @@ class Redis(VectorStore):
             filter=filter,
             return_scores=False,
         )
-        return docs # type: ignore
+        return docs  # type: ignore
 
     def similarity_search_with_score(
         self,
@@ -397,7 +399,7 @@ class Redis(VectorStore):
     ) -> List[Tuple[Document, float]]:
         """Run similarity search with distance."""
         docs = self._similarity_search(query, k=k, filter=filter, return_scores=True)
-        return docs # type: ignore
+        return docs  # type: ignore
 
     def similarity_search(
         self,
@@ -408,7 +410,7 @@ class Redis(VectorStore):
     ) -> List[Document]:
         """Run similarity search."""
         docs = self._similarity_search(query, k=k, filter=filter, return_scores=False)
-        return docs # type: ignore
+        return docs  # type: ignore
 
     def _prepare_range_query(
         self, k: int, filter: Optional[RedisFilter] = None
@@ -426,7 +428,12 @@ class Redis(VectorStore):
             base_query = "(" + base_query + " " + str(filter) + ")"
 
         query_string = base_query + "=>{$yield_distance_as: vector_score}"
-        return_fields = [*self._metadata_schema.keys, self.content_key, "vector_score", "id"]
+        return_fields = [
+            *self._metadata_schema.keys,
+            self.content_key,
+            "vector_score",
+            "id",
+        ]
         return (
             Query(query_string)
             .return_fields(*return_fields)
@@ -460,7 +467,12 @@ class Redis(VectorStore):
         base_query = (
             f"({query_prefix})=>[KNN {k} @{self.vector_key} $vector AS vector_score]"
         )
-        return_fields = [*self._metadata_schema.keys, self.content_key, "vector_score", "id"]
+        return_fields = [
+            *self._metadata_schema.keys,
+            self.content_key,
+            "vector_score",
+            "id",
+        ]
         query = (
             Query(base_query)
             .return_fields(*return_fields)

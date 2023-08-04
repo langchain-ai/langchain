@@ -1,5 +1,4 @@
-from typing import List, Optional, Union, TYPE_CHECKING
-from typing_extensions import Literal
+from typing import TYPE_CHECKING, List, Optional, Union
 
 from pydantic import BaseModel, Field, validator
 from redis.commands.search.field import (
@@ -7,11 +6,12 @@ from redis.commands.search.field import (
     NumericField,
     TagField,
     TextField,
-    VectorField
+    VectorField,
 )
+from typing_extensions import Literal
+
 if TYPE_CHECKING:
     from redis.commands.search.field import Field as RedisField
-
 
 
 class BaseField(BaseModel):
@@ -127,13 +127,10 @@ class RedisMetadata(BaseModel):
 
     @property
     def is_empty(self) -> bool:
-        return all(field is None for field in [
-            self.tag,
-            self.text,
-            self.numeric,
-            self.geo,
-            self.vector
-        ])
+        return all(
+            field is None
+            for field in [self.tag, self.text, self.numeric, self.geo, self.vector]
+        )
 
     def get_fields(self) -> List["RedisField"]:
         redis_fields: List["RedisField"] = []
