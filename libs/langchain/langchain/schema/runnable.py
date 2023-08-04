@@ -137,6 +137,33 @@ class Runnable(Generic[Input, Output], ABC):
     ) -> AsyncIterator[Output]:
         yield await self.ainvoke(input, config)
 
+    def transform(
+        self, input: Iterator[Input], config: Optional[RunnableConfig] = None
+    ) -> Iterator[Output]:
+        final: Union[Output, None] = None
+
+        for chunk in input:
+            if final is None:
+                final = chunk
+            else:
+                final += chunk  # type: ignore[operator]
+
+        yield from self.stream(final, config)
+
+    async def atransform(
+        self, input: AsyncIterator[Input], config: Optional[RunnableConfig] = None
+    ) -> AsyncIterator[Output]:
+        final: Union[Output, None] = None
+
+        async for chunk in input:
+            if final is None:
+                final = chunk
+            else:
+                final += chunk
+
+        async for output in self.astream(final, config):
+            yield output
+
     def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
         """
         Bind arguments to a Runnable, returning a new Runnable.
@@ -765,6 +792,17 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
         async for item in self.bound.astream(input, config, **self.kwargs):
             yield item
 
+    def transform(
+        self, input: Iterator[Input], config: Optional[RunnableConfig] = None
+    ) -> Iterator[Output]:
+        yield from self.bound.transform(input, config, **self.kwargs)
+
+    async def atransform(
+        self, input: AsyncIterator[Input], config: Optional[RunnableConfig] = None
+    ) -> AsyncIterator[Output]:
+        async for item in self.bound.atransform(input, config, **self.kwargs):
+            yield item
+
 
 class RouterInput(TypedDict):
     key: str
@@ -897,6 +935,29 @@ class RouterRunnable(
 
         runnable = self.runnables[key]
         async for output in runnable.astream(actual_input, config):
+            yield output
+
+    def transform(
+        self, input: Iterator[RouterInput], config: Optional[RunnableConfig] = None
+    ) -> Iterator[Output]:
+        key = input["key"]
+        actual_input = input["input"]
+        if key not in self.runnables:
+            raise ValueError(f"No runnable associated with key '{key}'")
+
+        runnable = self.runnables[key]
+        yield from runnable.transform(actual_input, config)
+
+    async def atransform(
+        self, input: Iterator[RouterInput], config: Optional[RunnableConfig] = None
+    ) -> AsyncIterator[Output]:
+        key = input["key"]
+        actual_input = input["input"]
+        if key not in self.runnables:
+            raise ValueError(f"No runnable associated with key '{key}'")
+
+        runnable = self.runnables[key]
+        async for output in runnable.atransform(actual_input, config):
             yield output
 
 
