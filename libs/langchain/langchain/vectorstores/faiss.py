@@ -674,6 +674,23 @@ class FAISS(VectorStore):
             embeddings.embed_query, index, docstore, index_to_docstore_id, **kwargs
         )
 
+    def serialize_to_bytes(self) -> bytes:
+        """Serialize FAISS index, docstore, and index_to_docstore_id to bytes."""
+        return pickle.dumps((self.index, self.docstore, self.index_to_docstore_id))
+
+    @classmethod
+    def deserialize_from_bytes(
+        cls,
+        serialized: bytes,
+        embeddings: Embeddings,
+        **kwargs: Any,
+    ) -> FAISS:
+        """Deserialize FAISS index, docstore, and index_to_docstore_id from bytes."""
+        index, docstore, index_to_docstore_id = pickle.loads(serialized)
+        return cls(
+            embeddings.embed_query, index, docstore, index_to_docstore_id, **kwargs
+        )
+
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """
         The 'correct' relevance function
@@ -710,7 +727,6 @@ class FAISS(VectorStore):
         """Return docs and their similarity scores on a scale from 0 to 1."""
         # Pop score threshold so that only relevancy scores, not raw scores, are
         # filtered.
-        score_threshold = kwargs.pop("score_threshold", None)
         relevance_score_fn = self._select_relevance_score_fn()
         if relevance_score_fn is None:
             raise ValueError(
@@ -727,10 +743,4 @@ class FAISS(VectorStore):
         docs_and_rel_scores = [
             (doc, relevance_score_fn(score)) for doc, score in docs_and_scores
         ]
-        if score_threshold is not None:
-            docs_and_rel_scores = [
-                (doc, similarity)
-                for doc, similarity in docs_and_rel_scores
-                if similarity >= score_threshold
-            ]
         return docs_and_rel_scores

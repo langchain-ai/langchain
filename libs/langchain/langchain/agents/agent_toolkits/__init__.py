@@ -3,6 +3,12 @@ from langchain.agents.agent_toolkits.amadeus.toolkit import AmadeusToolkit
 from langchain.agents.agent_toolkits.azure_cognitive_services import (
     AzureCognitiveServicesToolkit,
 )
+from langchain.agents.agent_toolkits.conversational_retrieval.openai_functions import (
+    create_conversational_retrieval_agent,
+)
+from langchain.agents.agent_toolkits.conversational_retrieval.tool import (
+    create_retriever_tool,
+)
 from langchain.agents.agent_toolkits.csv.base import create_csv_agent
 from langchain.agents.agent_toolkits.file_management.toolkit import (
     FileManagementToolkit,
@@ -59,16 +65,18 @@ __all__ = [
     "ZapierToolkit",
     "create_csv_agent",
     "create_json_agent",
+    "create_multion_agent",
     "create_openapi_agent",
     "create_pandas_dataframe_agent",
     "create_pbi_agent",
     "create_pbi_chat_agent",
     "create_python_agent",
-    "create_multion_agent",
+    "create_retriever_tool",
     "create_spark_dataframe_agent",
     "create_spark_sql_agent",
     "create_sql_agent",
     "create_vectorstore_agent",
     "create_vectorstore_router_agent",
     "create_xorbits_agent",
+    "create_conversational_retrieval_agent",
 ]
