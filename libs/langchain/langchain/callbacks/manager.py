@@ -730,7 +730,7 @@ class CallbackManagerForChainRun(ParentRunManager, ChainManagerMixin):
 
     def on_chain_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         **kwargs: Any,
     ) -> None:
         """Run when chain errors.
@@ -812,7 +812,7 @@ class AsyncCallbackManagerForChainRun(AsyncParentRunManager, ChainManagerMixin):
 
     async def on_chain_error(
         self,
-        error: Union[Exception, KeyboardInterrupt],
+        error: BaseException,
         **kwargs: Any,
     ) -> None:
         """Run when chain errors.
