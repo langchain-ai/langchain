@@ -133,7 +133,11 @@ class WebBaseLoader(BaseLoader):
         self, url: str, semaphore: asyncio.Semaphore
     ) -> str:
         async with semaphore:
-            return await self._fetch(url)
+            try:
+                return await self._fetch(url)
+            except Exception as e:
+                logger.warning(f"Error fetching {url}: {e}")
+                return ""
 
     async def fetch_all(self, urls: List[str]) -> Any:
         """Fetch all urls concurrently with rate limiting."""
