@@ -1,5 +1,5 @@
 from typing import Iterator, List, Optional, Set
-from urllib.parse import urljoin, urlparse, urldefrag
+from urllib.parse import urldefrag, urljoin, urlparse
 
 import requests
 
