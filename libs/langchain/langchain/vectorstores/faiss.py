@@ -496,6 +496,7 @@ class FAISS(VectorStore):
 
         # Remove items from docstore.
         self.docstore.delete(ids)
+        return True
 
     def merge_from(self, target: FAISS) -> None:
         """Merge another FAISS object with the current one.
