@@ -233,7 +233,7 @@ def _default_script_query(
                     },
                 },
             }
-        }
+        },
     }
 
 
@@ -268,7 +268,9 @@ def _default_painless_scripting_query(
     if not pre_filter:
         pre_filter = MATCH_ALL_QUERY
 
-    source = __get_painless_scripting_source(space_type, query_vector, vector_field)
+    source = __get_painless_scripting_source(
+        space_type, query_vector, vector_field=vector_field
+    )
     return {
         "size": k,
         "query": {
@@ -282,7 +284,7 @@ def _default_painless_scripting_query(
                     },
                 },
             }
-        }
+        },
     }
 
 
@@ -540,7 +542,7 @@ class OpenSearchVectorSearch(VectorStore):
 
         response = self.client.search(index=self.index_name, body=search_query)
 
-        return [hit for hit in response["hits"]["hits"][:k]]
+        return [hit for hit in response["hits"]["hits"]]
 
     def max_marginal_relevance_search(
         self,
