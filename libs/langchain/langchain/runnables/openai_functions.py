@@ -1,5 +1,6 @@
 from operator import itemgetter
-from typing import Any, Callable, List, Mapping, TypedDict, Union
+from typing import Any, Callable, List, Mapping, Union
+from typing_extensions import TypedDict
 
 from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
 from langchain.schema.output import ChatGeneration
