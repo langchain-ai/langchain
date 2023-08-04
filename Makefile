@@ -31,7 +31,6 @@ api_docs_clean:
 api_docs_linkcheck:
 	poetry run linkchecker docs/api_reference/_build/html/index.html
 
-
 spell_check:
 	poetry run codespell --toml pyproject.toml
 

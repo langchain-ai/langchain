@@ -9,6 +9,7 @@ on:
       - master
     paths:
       - 'libs/langchain/pyproject.toml'
+  workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
 
 jobs:
   release:

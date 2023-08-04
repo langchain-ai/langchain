@@ -4,14 +4,14 @@ from typing import Any, Dict, List, Type, Union
 from pydantic import BaseModel, root_validator
 
 from langchain.schema import (
-    BaseLLMOutputParser,
     ChatGeneration,
     Generation,
     OutputParserException,
 )
+from langchain.schema.output_parser import BaseGenerationOutputParser
 
 
-class OutputFunctionsParser(BaseLLMOutputParser[Any]):
+class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
     """Parse an output that is one of sets of values."""
 
     args_only: bool = True

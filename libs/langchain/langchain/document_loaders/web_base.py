@@ -30,9 +30,9 @@ def _build_metadata(soup: Any, url: str) -> dict:
     if title := soup.find("title"):
         metadata["title"] = title.get_text()
     if description := soup.find("meta", attrs={"name": "description"}):
-        metadata["description"] = description.get("content", None)
+        metadata["description"] = description.get("content", "No description found.")
     if html := soup.find("html"):
-        metadata["language"] = html.get("lang", None)
+        metadata["language"] = html.get("lang", "No language found.")
     return metadata
 
 
@@ -76,7 +76,7 @@ class WebBaseLoader(BaseLoader):
         try:
             import bs4  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "bs4 package not found, please install it with " "`pip install bs4`"
             )
 

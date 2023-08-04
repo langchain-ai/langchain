@@ -6,7 +6,7 @@ from langchain.schema.messages import BaseMessage, get_buffer_string
 
 
 class ConversationTokenBufferMemory(BaseChatMemory):
-    """Buffer for storing conversation memory."""
+    """Conversation chat memory with token limit."""
 
     human_prefix: str = "Human"
     ai_prefix: str = "AI"

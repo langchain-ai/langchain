@@ -3,6 +3,7 @@ from langchain.agents import __all__ as agents_all
 _EXPECTED = [
     "Agent",
     "AgentExecutor",
+    "AgentExecutorIterator",
     "AgentOutputParser",
     "AgentType",
     "BaseMultiActionAgent",
@@ -18,6 +19,7 @@ _EXPECTED = [
     "SelfAskWithSearchChain",
     "StructuredChatAgent",
     "Tool",
+    "XMLAgent",
     "ZeroShotAgent",
     "create_csv_agent",
     "create_json_agent",

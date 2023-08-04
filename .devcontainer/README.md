@@ -15,7 +15,11 @@ You may use the button above, or follow these steps to open this repo in a Codes
 For more info, check out the [GitHub documentation](https://docs.github.com/en/free-pro-team@latest/github/developing-online-with-codespaces/creating-a-codespace#creating-a-codespace).
   
 ## VS Code Dev Containers
-[![Open in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/hwchase17/langchain)
+[![Open in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/langchain-ai/langchain)
+
+Note: If you click this link you will open the main repo and not your local cloned repo, you can use this link and replace with your username and cloned repo name: 
+https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/<yourusername>/<yourclonedreponame>
+
 
 If you already have VS Code and Docker installed, you can use the button above to get started. This will cause VS Code to automatically install the Dev Containers extension if needed, clone the source code into a container volume, and spin up a dev container for use.
 
@@ -25,7 +29,7 @@ You can also follow these steps to open this repo in a container using the VS Co
 
 2. Open a locally cloned copy of the code:
 
-   - Clone this repository to your local filesystem.
+   - Fork and Clone this repository to your local filesystem.
    - Press <kbd>F1</kbd> and select the **Dev Containers: Open Folder in Container...** command.
    - Select the cloned copy of this folder, wait for the container to start, and try things out!
 

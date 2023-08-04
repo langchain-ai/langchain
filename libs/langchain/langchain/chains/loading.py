@@ -19,11 +19,9 @@ from langchain.chains.llm_bash.base import LLMBashChain
 from langchain.chains.llm_checker.base import LLMCheckerChain
 from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.llm_requests import LLMRequestsChain
-from langchain.chains.pal.base import PALChain
 from langchain.chains.qa_with_sources.base import QAWithSourcesChain
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
 from langchain.chains.retrieval_qa.base import RetrievalQA, VectorDBQA
-from langchain.chains.sql_database.base import SQLDatabaseChain
 from langchain.llms.loading import load_llm, load_llm_from_config
 from langchain.prompts.loading import (
     _load_output_parser,
@@ -266,34 +264,17 @@ def _load_map_rerank_documents_chain(
     return MapRerankDocumentsChain(llm_chain=llm_chain, **config)
 
 
-def _load_pal_chain(config: dict, **kwargs: Any) -> PALChain:
-    llm_chain = None
+def _load_pal_chain(config: dict, **kwargs: Any) -> Any:
+    from langchain_experimental.pal_chain import PALChain
+
     if "llm_chain" in config:
         llm_chain_config = config.pop("llm_chain")
         llm_chain = load_chain_from_config(llm_chain_config)
     elif "llm_chain_path" in config:
         llm_chain = load_chain(config.pop("llm_chain_path"))
-    # llm attribute is deprecated in favor of llm_chain, here to support old configs
-    elif "llm" in config:
-        llm_config = config.pop("llm")
-        llm = load_llm_from_config(llm_config)
-    # llm_path attribute is deprecated in favor of llm_chain_path,
-    # its to support old configs
-    elif "llm_path" in config:
-        llm = load_llm(config.pop("llm_path"))
     else:
         raise ValueError("One of `llm_chain` or `llm_chain_path` must be present.")
-    if "prompt" in config:
-        prompt_config = config.pop("prompt")
-        prompt = load_prompt_from_config(prompt_config)
-    elif "prompt_path" in config:
-        prompt = load_prompt(config.pop("prompt_path"))
-    else:
-        raise ValueError("One of `prompt` or `prompt_path` must be present.")
-    if llm_chain:
-        return PALChain(llm_chain=llm_chain, prompt=prompt, **config)
-    else:
-        return PALChain(llm=llm, prompt=prompt, **config)
+    return PALChain(llm_chain=llm_chain, **config)
 
 
 def _load_refine_documents_chain(config: dict, **kwargs: Any) -> RefineDocumentsChain:
@@ -342,7 +323,7 @@ def _load_qa_with_sources_chain(config: dict, **kwargs: Any) -> QAWithSourcesCha
     return QAWithSourcesChain(combine_documents_chain=combine_documents_chain, **config)
 
 
-def _load_sql_database_chain(config: dict, **kwargs: Any) -> SQLDatabaseChain:
+def _load_sql_database_chain(config: dict, **kwargs: Any) -> Any:
     if "database" in kwargs:
         database = kwargs.pop("database")
     else:
@@ -359,6 +340,8 @@ def _load_sql_database_chain(config: dict, **kwargs: Any) -> SQLDatabaseChain:
         prompt = load_prompt_from_config(prompt_config)
     else:
         prompt = None
+    from langchain_experimental.sql import SQLDatabaseChain
+
     return SQLDatabaseChain.from_llm(llm, database, prompt=prompt, **config)
 
 

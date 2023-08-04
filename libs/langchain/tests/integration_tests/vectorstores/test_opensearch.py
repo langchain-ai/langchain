@@ -1,6 +1,8 @@
 """Test OpenSearch functionality."""
 
+import boto3
 import pytest
+from opensearchpy import AWSV4SignerAuth
 
 from langchain.docstore.document import Document
 from langchain.vectorstores.opensearch_vector_search import (
@@ -213,3 +215,95 @@ def test_opensearch_with_custom_field_name_appx_false() -> None:
     )
     output = docsearch.similarity_search("add", k=1)
     assert output == [Document(page_content="add")]
+
+
+def test_opensearch_serverless_with_scripting_search_indexing_throws_error() -> None:
+    """Test to validate indexing using Serverless without Approximate Search."""
+    region = "test-region"
+    service = "aoss"
+    credentials = boto3.Session().get_credentials()
+    auth = AWSV4SignerAuth(credentials, region, service)
+    with pytest.raises(ValueError):
+        OpenSearchVectorSearch.from_texts(
+            texts,
+            FakeEmbeddings(),
+            opensearch_url=DEFAULT_OPENSEARCH_URL,
+            is_appx_search=False,
+            http_auth=auth,
+        )
+
+
+def test_opensearch_serverless_with_lucene_engine_throws_error() -> None:
+    """Test to validate indexing using lucene engine with Serverless."""
+    region = "test-region"
+    service = "aoss"
+    credentials = boto3.Session().get_credentials()
+    auth = AWSV4SignerAuth(credentials, region, service)
+    with pytest.raises(ValueError):
+        OpenSearchVectorSearch.from_texts(
+            texts,
+            FakeEmbeddings(),
+            opensearch_url=DEFAULT_OPENSEARCH_URL,
+            engine="lucene",
+            http_auth=auth,
+        )
+
+
+def test_appx_search_with_efficient_and_bool_filter_throws_error() -> None:
+    """Test Approximate Search with Efficient and Bool Filter throws Error."""
+    efficient_filter_val = {"bool": {"must": [{"term": {"text": "baz"}}]}}
+    boolean_filter_val = {"bool": {"must": [{"term": {"text": "bar"}}]}}
+    docsearch = OpenSearchVectorSearch.from_texts(
+        texts, FakeEmbeddings(), opensearch_url=DEFAULT_OPENSEARCH_URL, engine="lucene"
+    )
+    with pytest.raises(ValueError):
+        docsearch.similarity_search(
+            "foo",
+            k=3,
+            efficient_filter=efficient_filter_val,
+            boolean_filter=boolean_filter_val,
+        )
+
+
+def test_appx_search_with_efficient_and_lucene_filter_throws_error() -> None:
+    """Test Approximate Search with Efficient and Lucene Filter throws Error."""
+    efficient_filter_val = {"bool": {"must": [{"term": {"text": "baz"}}]}}
+    lucene_filter_val = {"bool": {"must": [{"term": {"text": "bar"}}]}}
+    docsearch = OpenSearchVectorSearch.from_texts(
+        texts, FakeEmbeddings(), opensearch_url=DEFAULT_OPENSEARCH_URL, engine="lucene"
+    )
+    with pytest.raises(ValueError):
+        docsearch.similarity_search(
+            "foo",
+            k=3,
+            efficient_filter=efficient_filter_val,
+            lucene_filter=lucene_filter_val,
+        )
+
+
+def test_appx_search_with_boolean_and_lucene_filter_throws_error() -> None:
+    """Test Approximate Search with Boolean and Lucene Filter throws Error."""
+    boolean_filter_val = {"bool": {"must": [{"term": {"text": "baz"}}]}}
+    lucene_filter_val = {"bool": {"must": [{"term": {"text": "bar"}}]}}
+    docsearch = OpenSearchVectorSearch.from_texts(
+        texts, FakeEmbeddings(), opensearch_url=DEFAULT_OPENSEARCH_URL, engine="lucene"
+    )
+    with pytest.raises(ValueError):
+        docsearch.similarity_search(
+            "foo",
+            k=3,
+            boolean_filter=boolean_filter_val,
+            lucene_filter=lucene_filter_val,
+        )
+
+
+def test_appx_search_with_faiss_efficient_filter() -> None:
+    """Test Approximate Search with Faiss Efficient Filter."""
+    efficient_filter_val = {"bool": {"must": [{"term": {"text": "bar"}}]}}
+    docsearch = OpenSearchVectorSearch.from_texts(
+        texts, FakeEmbeddings(), opensearch_url=DEFAULT_OPENSEARCH_URL, engine="faiss"
+    )
+    output = docsearch.similarity_search(
+        "foo", k=3, efficient_filter=efficient_filter_val
+    )
+    assert output == [Document(page_content="bar")]

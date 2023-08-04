@@ -9,6 +9,8 @@ from langchain.schema import BaseChatMessageHistory, BaseMemory
 
 
 class BaseChatMemory(BaseMemory, ABC):
+    """Abstract base class for chat memory."""
+
     chat_memory: BaseChatMessageHistory = Field(default_factory=ChatMessageHistory)
     output_key: Optional[str] = None
     input_key: Optional[str] = None

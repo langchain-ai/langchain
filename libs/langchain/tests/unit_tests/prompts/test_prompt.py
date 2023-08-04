@@ -147,6 +147,7 @@ def test_partial() -> None:
     assert result == "This is a foo test."
 
 
+@pytest.mark.requires("jinja2")
 def test_prompt_from_jinja2_template() -> None:
     """Test prompts can be constructed from a jinja2 template."""
     # Empty input variable.
@@ -160,6 +161,10 @@ Will it get confused{ }?
     )
     assert prompt == expected_prompt
 
+
+@pytest.mark.requires("jinja2")
+def test_prompt_from_jinja2_template_multiple_inputs() -> None:
+    """Test with multiple input variables."""
     # Multiple input variables.
     template = """\
 Hello world
@@ -185,7 +190,10 @@ You just set bar boolean variable to true
 
     assert prompt == expected_prompt
 
-    # Multiple input variables with repeats.
+
+@pytest.mark.requires("jinja2")
+def test_prompt_from_jinja2_template_multiple_inputs_with_repeats() -> None:
+    """Test with multiple input variables and repeats."""
     template = """\
 Hello world
 
@@ -214,6 +222,7 @@ Your variable again: {{ foo }}
     assert prompt == expected_prompt
 
 
+@pytest.mark.requires("jinja2")
 def test_prompt_jinja2_missing_input_variables() -> None:
     """Test error is raised when input variables are not provided."""
     template = "This is a {{ foo }} test."
@@ -224,6 +233,7 @@ def test_prompt_jinja2_missing_input_variables() -> None:
         )
 
 
+@pytest.mark.requires("jinja2")
 def test_prompt_jinja2_extra_input_variables() -> None:
     """Test error is raised when there are too many input variables."""
     template = "This is a {{ foo }} test."
@@ -234,6 +244,7 @@ def test_prompt_jinja2_extra_input_variables() -> None:
         )
 
 
+@pytest.mark.requires("jinja2")
 def test_prompt_jinja2_wrong_input_variables() -> None:
     """Test error is raised when name of input variable is wrong."""
     template = "This is a {{ foo }} test."
