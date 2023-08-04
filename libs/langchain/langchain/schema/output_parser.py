@@ -1,7 +1,17 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, List, Optional, TypeVar, Union
+from typing import (
+    Any,
+    AsyncIterator,
+    Dict,
+    Generic,
+    Iterator,
+    List,
+    Optional,
+    TypeVar,
+    Union,
+)
 
 from langchain.load.serializable import Serializable
 from langchain.schema.messages import BaseMessage
@@ -161,8 +171,47 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
         return output_parser_dict
 
 
-class StrOutputParser(BaseOutputParser[str]):
-    """OutputParser that parses LLMResult into the top likely string.."""
+class BaseTransformOutputParser(BaseOutputParser[T]):
+    """Base class for an output parser that can handle streaming input."""
+
+    def _transform(self, input: Iterator[str | BaseMessage]) -> Iterator[T]:
+        for chunk in input:
+            if isinstance(chunk, BaseMessage):
+                yield self.parse_result([ChatGeneration(message=chunk)])
+            else:
+                yield self.parse_result([Generation(text=chunk)])
+
+    async def _atransform(
+        self, input: AsyncIterator[str | BaseMessage]
+    ) -> AsyncIterator[T]:
+        async for chunk in input:
+            if isinstance(chunk, BaseMessage):
+                yield self.parse_result([ChatGeneration(message=chunk)])
+            else:
+                yield self.parse_result([Generation(text=chunk)])
+
+    def transform(
+        self,
+        input: Iterator[str | BaseMessage],
+        config: Optional[RunnableConfig] = None,
+    ) -> Iterator[T]:
+        yield from self._stream_with_config(
+            self._transform(input), config, run_type="parser"
+        )
+
+    async def atransform(
+        self,
+        input: AsyncIterator[str | BaseMessage],
+        config: Optional[RunnableConfig] = None,
+    ) -> AsyncIterator[T]:
+        async for chunk in self._astream_with_config(
+            self._atransform(input), config, run_type="parser"
+        ):
+            yield chunk
+
+
+class StrOutputParser(BaseTransformOutputParser[str]):
+    """OutputParser that parses LLMResult into the top likely string."""
 
     @property
     def lc_serializable(self) -> bool:

@@ -140,29 +140,30 @@ class Runnable(Generic[Input, Output], ABC):
     def transform(
         self, input: Iterator[Input], config: Optional[RunnableConfig] = None
     ) -> Iterator[Output]:
-        final: Union[Output, None] = None
+        final: Union[Input, None] = None
 
         for chunk in input:
             if final is None:
                 final = chunk
             else:
                 final += chunk  # type: ignore[operator]
-
-        yield from self.stream(final, config)
+        if final:
+            yield from self.stream(final, config)
 
     async def atransform(
         self, input: AsyncIterator[Input], config: Optional[RunnableConfig] = None
     ) -> AsyncIterator[Output]:
-        final: Union[Output, None] = None
+        final: Union[Input, None] = None
 
         async for chunk in input:
             if final is None:
                 final = chunk
             else:
-                final += chunk
+                final += chunk  # type: ignore[operator]
 
-        async for output in self.astream(final, config):
-            yield output
+        if final:
+            async for output in self.astream(final, config):
+                yield output
 
     def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
         """
@@ -215,6 +216,92 @@ class Runnable(Generic[Input, Output], ABC):
                 output if isinstance(output, dict) else {"output": output}
             )
             return output
+
+    def _stream_with_config(
+        self,
+        input: Iterator[Output],
+        config: Optional[RunnableConfig],
+        run_type: Optional[str] = None,
+    ) -> Iterator[Output]:
+        from langchain.callbacks.manager import CallbackManager
+
+        config = config or {}
+        callback_manager = CallbackManager.configure(
+            inheritable_callbacks=config.get("callbacks"),
+            inheritable_tags=config.get("tags"),
+            inheritable_metadata=config.get("metadata"),
+        )
+        # TODO: Concatenate and pass streamed input value
+        run_manager = callback_manager.on_chain_start(
+            dumpd(self),
+            {"input": "<streamed value>"},
+            run_type=run_type,
+        )
+        final: Union[Output, None] = None
+        final_supported = True
+        try:
+            for chunk in input:
+                yield chunk
+                if final_supported:
+                    if final is None:
+                        final = chunk
+                    else:
+                        try:
+                            final += chunk  # type: ignore[operator]
+                        except TypeError:
+                            final = None
+                            final_supported = False
+                            pass
+        except Exception as e:
+            run_manager.on_chain_error(e)
+            raise
+        else:
+            run_manager.on_chain_end(
+                final if isinstance(final, dict) else {"output": final}
+            )
+
+    async def _astream_with_config(
+        self,
+        input: AsyncIterator[Output],
+        config: Optional[RunnableConfig],
+        run_type: Optional[str] = None,
+    ) -> AsyncIterator[Output]:
+        from langchain.callbacks.manager import AsyncCallbackManager
+
+        config = config or {}
+        callback_manager = AsyncCallbackManager.configure(
+            inheritable_callbacks=config.get("callbacks"),
+            inheritable_tags=config.get("tags"),
+            inheritable_metadata=config.get("metadata"),
+        )
+        # TODO: Concatenate and pass streamed input value
+        run_manager = await callback_manager.on_chain_start(
+            dumpd(self),
+            {"input": "<streamed value>"},
+            run_type=run_type,
+        )
+        final: Union[Output, None] = None
+        final_supported = True
+        try:
+            async for chunk in input:
+                yield chunk
+                if final_supported:
+                    if final is None:
+                        final = chunk
+                    else:
+                        try:
+                            final += chunk  # type: ignore[operator]
+                        except TypeError:
+                            final = None
+                            final_supported = False
+                            pass
+        except Exception as e:
+            await run_manager.on_chain_error(e)
+            raise
+        else:
+            await run_manager.on_chain_end(
+                final if isinstance(final, dict) else {"output": final}
+            )
 
 
 class RunnableSequence(Serializable, Runnable[Input, Output]):
@@ -489,9 +576,18 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             dumpd(self), input if isinstance(input, dict) else {"input": input}
         )
 
+        steps = [self.first] + self.middle + [self.last]
+        streaming_start_index = 0
+
+        for i in range(len(steps) - 1, 0, -1):
+            if type(steps[i].transform) != Runnable.transform:
+                streaming_start_index = i
+            else:
+                break
+
         # invoke the first steps
         try:
-            for step in [self.first] + self.middle:
+            for step in steps[0:streaming_start_index]:
                 input = step.invoke(
                     input,
                     # mark each step as a child run
@@ -505,11 +601,14 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         final: Union[Output, None] = None
         final_supported = True
         try:
-            for output in self.last.stream(
-                input,
-                # mark the last step as a child run
-                _patch_config(config, run_manager.get_child()),
-            ):
+            final_pipeline = steps[streaming_start_index].stream(
+                input, _patch_config(config, run_manager.get_child())
+            )
+            for step in steps[streaming_start_index + 1 :]:
+                final_pipeline = step.transform(
+                    final_pipeline, _patch_config(config, run_manager.get_child())
+                )
+            for output in final_pipeline:
                 yield output
                 # Accumulate output if possible, otherwise disable accumulation
                 if final_supported:
@@ -552,9 +651,18 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             dumpd(self), input if isinstance(input, dict) else {"input": input}
         )
 
+        steps = [self.first] + self.middle + [self.last]
+        streaming_start_index = len(steps) - 1
+
+        for i in range(len(steps) - 1, 0, -1):
+            if type(steps[i].transform) != Runnable.transform:
+                streaming_start_index = i
+            else:
+                break
+
         # invoke the first steps
         try:
-            for step in [self.first] + self.middle:
+            for step in steps[0:streaming_start_index]:
                 input = await step.ainvoke(
                     input,
                     # mark each step as a child run
@@ -568,11 +676,14 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         final: Union[Output, None] = None
         final_supported = True
         try:
-            async for output in self.last.astream(
-                input,
-                # mark the last step as a child run
-                _patch_config(config, run_manager.get_child()),
-            ):
+            final_pipeline = steps[streaming_start_index].astream(
+                input, _patch_config(config, run_manager.get_child())
+            )
+            for step in steps[streaming_start_index + 1 :]:
+                final_pipeline = step.atransform(
+                    final_pipeline, _patch_config(config, run_manager.get_child())
+                )
+            async for output in final_pipeline:
                 yield output
                 # Accumulate output if possible, otherwise disable accumulation
                 if final_supported:
@@ -935,29 +1046,6 @@ class RouterRunnable(
 
         runnable = self.runnables[key]
         async for output in runnable.astream(actual_input, config):
-            yield output
-
-    def transform(
-        self, input: Iterator[RouterInput], config: Optional[RunnableConfig] = None
-    ) -> Iterator[Output]:
-        key = input["key"]
-        actual_input = input["input"]
-        if key not in self.runnables:
-            raise ValueError(f"No runnable associated with key '{key}'")
-
-        runnable = self.runnables[key]
-        yield from runnable.transform(actual_input, config)
-
-    async def atransform(
-        self, input: Iterator[RouterInput], config: Optional[RunnableConfig] = None
-    ) -> AsyncIterator[Output]:
-        key = input["key"]
-        actual_input = input["input"]
-        if key not in self.runnables:
-            raise ValueError(f"No runnable associated with key '{key}'")
-
-        runnable = self.runnables[key]
-        async for output in runnable.atransform(actual_input, config):
             yield output
 
 

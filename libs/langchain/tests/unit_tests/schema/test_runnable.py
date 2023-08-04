@@ -10,7 +10,7 @@ from langchain.callbacks.manager import Callbacks
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import Run
 from langchain.chat_models.fake import FakeListChatModel
-from langchain.llms.fake import FakeListLLM
+from langchain.llms.fake import FakeListLLM, FakeStreamingListLLM
 from langchain.load.dump import dumpd, dumps
 from langchain.output_parsers.list import CommaSeparatedListOutputParser
 from langchain.prompts.chat import (
@@ -21,6 +21,7 @@ from langchain.prompts.chat import (
 )
 from langchain.schema.document import Document
 from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
+from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.retriever import BaseRetriever
 from langchain.schema.runnable import (
     RouterRunnable,
@@ -754,3 +755,42 @@ def test_bind_bind() -> None:
             stop=["Observation:"], hello="world"
         )
     ) == dumpd(llm.bind(stop=["Observation:"], one="two", hello="world"))
+
+
+def test_deep_stream() -> None:
+    prompt = (
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
+    )
+    llm = FakeStreamingListLLM(responses=["foo-lish"])
+
+    chain = prompt | llm | StrOutputParser()
+
+    stream = chain.stream({"question": "What up"})
+
+    chunks = []
+    for chunk in stream:
+        chunks.append(chunk)
+
+    assert len(chunks) == len("foo-lish")
+    assert "".join(chunks) == "foo-lish"
+
+
+@pytest.mark.asyncio
+async def test_deep_astream() -> None:
+    prompt = (
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
+    )
+    llm = FakeStreamingListLLM(responses=["foo-lish"])
+
+    chain = prompt | llm | StrOutputParser()
+
+    stream = chain.astream({"question": "What up"})
+
+    chunks = []
+    async for chunk in stream:
+        chunks.append(chunk)
+
+    assert len(chunks) == len("foo-lish")
+    assert "".join(chunks) == "foo-lish"
