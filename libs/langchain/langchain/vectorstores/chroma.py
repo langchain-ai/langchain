@@ -129,11 +129,12 @@ class Chroma(VectorStore):
                 self._persist_directory = persist_directory
             else:
                 _client_settings = chromadb.config.Settings(is_persistent=True)
+                # we dont set self._persist_directory because .persist is automatic in ChromaDB >= 0.4.0
 
             _client_settings.persist_directory = persist_directory
             self._client = chromadb.Client(_client_settings)
 
-        # if user provides client_settings, use it
+        # if user provides client_settings, use it - this should be a rare case
         if client_settings:
             if pre04Chroma and client_settings.persist_directory is not None and client_settings.chroma_db_impl is None:
                 raise Exception("When using persist_directory with ChromaDB < 0.4.0, set chroma_db_impl='duckdb+parquet' in client_settings")
