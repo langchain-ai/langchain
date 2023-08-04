@@ -42,7 +42,7 @@ def test_extra_parameters(
 ) -> None:
     patch_google_workspace(mocker, [{"nextPageToken": None, "files": [_text_text]}])
     retriever = GoogleDriveRetriever(
-        template="gdrive-mime-type-in-folders",
+        template="gdrive-mime-type-in-folder",
         folder_id="root",
         mime_type="application/vnd.google-apps.document",  # Only Google Docs
         num_results=2,
