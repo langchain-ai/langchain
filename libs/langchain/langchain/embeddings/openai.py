@@ -341,7 +341,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 tokens.append(token[j : j + self.embedding_ctx_length])
                 indices.append(i)
 
-        batched_embeddings = []
+        batched_embeddings: List[List[float]] = []
         _chunk_size = chunk_size or self.chunk_size
 
         if self.show_progress_bar:
@@ -422,7 +422,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 tokens.append(token[j : j + self.embedding_ctx_length])
                 indices.append(i)
 
-        batched_embeddings = []
+        batched_embeddings: List[List[float]] = []
         _chunk_size = chunk_size or self.chunk_size
         for i in range(0, len(tokens), _chunk_size):
             response = await async_embed_with_retry(
