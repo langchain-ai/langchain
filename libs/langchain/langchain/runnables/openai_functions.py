@@ -25,7 +25,6 @@ class OpenAIFunctionsRouter(RunnableBinding[ChatGeneration, Any]):
 
     def __init__(
         self,
-        functions: List[OpenAIFunction],
         runnables: Mapping[
             str,
             Union[
@@ -33,6 +32,7 @@ class OpenAIFunctionsRouter(RunnableBinding[ChatGeneration, Any]):
                 Callable[[dict], Any],
             ],
         ],
+        functions: List[OpenAIFunction],
     ):
         assert len(functions) == len(runnables)
         assert all(func["name"] in runnables for func in functions)
