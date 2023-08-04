@@ -202,10 +202,11 @@ class WebResearchRetriever(BaseRetriever):
             html2text = Html2TextTransformer()
             logger.info("Indexing new urls...")
             docs = loader.load()
-            docs = list(html2text.transform_documents(docs))
-            docs = self.text_splitter.split_documents(docs)
-            self.vectorstore.add_documents(docs)
-            self.url_database.extend(new_urls)
+            if len(docs) > 0:
+                docs = list(html2text.transform_documents(docs))
+                docs = self.text_splitter.split_documents(docs)
+                self.vectorstore.add_documents(docs)
+                self.url_database.extend(new_urls)
 
         # Search for relevant splits
         # TODO: make this async

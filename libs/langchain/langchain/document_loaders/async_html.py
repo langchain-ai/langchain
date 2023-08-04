@@ -2,6 +2,7 @@ import asyncio
 import logging
 import warnings
 from typing import Any, Dict, Iterator, List, Optional, Union
+from aiohttp import ServerDisconnectedError
 
 import aiohttp
 import requests
@@ -129,10 +130,19 @@ class AsyncHtmlLoader(BaseLoader):
     def load(self) -> List[Document]:
         """Load text from the url(s) in web_path."""
 
-        results = asyncio.run(self.fetch_all(self.web_paths))
+        results = asyncio.run(self.get_web_path_from_urls(self.web_paths))
         docs = []
         for i, text in enumerate(results):
             metadata = {"source": self.web_paths[i]}
             docs.append(Document(page_content=text, metadata=metadata))
 
         return docs
+
+    async def get_web_path_from_urls(self, urls: List[str]) -> List[str]:
+        """Load the HTML from the urls."""
+        try:
+            results = await self.fetch_all(self.web_paths)
+        except ServerDisconnectedError as e:
+            logger.error(f"Server disconnected when trying to access URLs: {e}")
+            results = []
+        return results
