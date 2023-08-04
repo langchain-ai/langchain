@@ -5,10 +5,9 @@ import os
 import tempfile
 import time
 from abc import ABC
-from enum import Enum
 from io import StringIO
 from pathlib import Path
-from typing import Any, Iterator, List, Mapping, Optional, Union
+from typing import Any, Iterator, List, Mapping, Optional, Sequence, Union
 from urllib.parse import urlparse
 
 import requests
@@ -80,7 +79,6 @@ class BasePDFLoader(BaseLoader, ABC):
             temp_pdf = os.path.join(self.temp_dir.name, f"tmp{suffix}")
             if self._is_s3_url(self.file_path):
                 self.web_path = self.file_path
-                self.file_path = self._download_s3_file(file_path=file_path)
             else:
                 r = requests.get(self.file_path)
 
@@ -117,25 +115,6 @@ class BasePDFLoader(BaseLoader, ABC):
             return False
         except ValueError:
             return False
-
-    def _download_s3_file(self, file_path: str) -> str:
-        self.temp_dir = tempfile.TemporaryDirectory()
-        _, suffix = os.path.splitext(self.file_path)
-        temp_pdf = os.path.join(self.temp_dir.name, f"tmp{suffix}")
-
-        try:
-            import boto3
-        except ImportError:
-            raise ImportError(
-                "Could not import `boto3` python package. "
-                "Please install it with `pip install boto3`."
-            )
-        result = urlparse(file_path)
-        bucket = result.netloc
-        prefix = result.path.lstrip("/")
-        s3 = boto3.client("s3")
-        s3.download_file(bucket, prefix, temp_pdf)
-        return temp_pdf
 
     @property
     def source(self) -> str:
@@ -504,19 +483,19 @@ class AmazonTextractPDFLoader(BasePDFLoader):
     def __init__(
         self,
         file_path: str,
-        textract_features: List[Enum] = list(),
-        client: Any = None,
-        credentials_profile_name: str = "",
-        region_name: str = "",
-        endpoint_url: str = "",
+        textract_features: Optional[Sequence[int]] = None,
+        client: Optional[Any] = None,
+        credentials_profile_name: Optional[str] = None,
+        region_name: Optional[str] = None,
+        endpoint_url: Optional[str] = None,
     ) -> None:
         """Initialize the loader.
 
         Args:
-            file_path: file, url or s3 path for input file
-            textract_features: Features to be used for extraction,
-                               should be an enum of type  `Textract_Features`
-                               see `amazon-textract-caller` package
+            file_path: A file, url or s3 path for input file
+            textract_features: Features to be used for extraction, each feature
+                               should be passed as an int that conforms to the enum
+                               `Textract_Features`, see `amazon-textract-caller` pkg
             client: boto3 textract client (Optional)
             credentials_profile_name: AWS profile name, if not default (Optional)
             region_name: AWS region, eg us-east-1 (Optional)
@@ -577,16 +556,22 @@ class AmazonTextractPDFLoader(BasePDFLoader):
         # the self.file_path is local, but the blob has to include
         # the S3 location if the file originated from S3 for multi-page documents
         # raises ValueError when multi-page and not on S3"""
-        blob = Blob.from_path(self.file_path)
-        if AmazonTextractPDFLoader._get_number_of_pages(blob) > 1:
-            if self.web_path and self._is_s3_url(self.web_path):
-                blob = Blob(data=None, mimetype=blob.mimetype, path=self.web_path)
-            else:
+
+        if self.web_path and self._is_s3_url(self.web_path):
+            blob = Blob(path=self.web_path)
+        else:
+            blob = Blob.from_path(self.file_path)
+            if (
+                self.web_path
+                and self._is_s3_url(self.web_path)
+                and AmazonTextractPDFLoader._get_number_of_pages(blob) > 1
+            ):
                 raise ValueError(
                     f"the file {blob.path} is a multi-page document, \
                     but not stored on S3. \
                     Textract requires multi-page documents to be on S3."
                 )
+
         yield from self.parser.parse(blob)
 
     @staticmethod

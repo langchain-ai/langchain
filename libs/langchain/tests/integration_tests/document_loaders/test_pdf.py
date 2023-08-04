@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Sequence, Union
 
 import pytest
 
@@ -142,35 +143,42 @@ def test_mathpix_loader() -> None:
 
 
 @pytest.mark.parametrize(
-    "file_path, docs_length, create_client",
+    "file_path, features, docs_length, create_client",
     [
         (
             (
                 "https://amazon-textract-public-content.s3.us-east-2.amazonaws.com"
                 "/langchain/alejandro_rosalez_sample_1.jpg"
             ),
+            [1, 2],
             1,
             False,
         ),
-        (str(Path(__file__).parent.parent / "examples/hello.pdf"), 1, False),
+        (str(Path(__file__).parent.parent / "examples/hello.pdf"), [1], 1, False),
         (
             "s3://amazon-textract-public-content/langchain/layout-parser-paper.pdf",
+            None,
             16,
             True,
         ),
     ],
 )
-@pytest.mark.skip(reason="Needs AWS credentials to run")
+@pytest.mark.skip(reason="Requires AWS credentials to run")
 def test_amazontextract_loader(
-    file_path: str, docs_length: int, create_client: bool
+    file_path: str,
+    features: Union[Sequence[int], None],
+    docs_length: int,
+    create_client: bool,
 ) -> None:
     if create_client:
         import boto3
 
         textract_client = boto3.client("textract", region_name="us-east-2")
-        loader = AmazonTextractPDFLoader(file_path, client=textract_client)
+        loader = AmazonTextractPDFLoader(
+            file_path, textract_features=features, client=textract_client
+        )
     else:
-        loader = AmazonTextractPDFLoader(file_path)
+        loader = AmazonTextractPDFLoader(file_path, textract_features=features)
     docs = loader.load()
 
     assert len(docs) == docs_length
