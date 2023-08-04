@@ -98,7 +98,8 @@
             "name"
           ],
           "template": "hello {name}!",
-          "template_format": "f-string"
+          "template_format": "f-string",
+          "partial_variables": {}
         }
       }
     }
@@ -176,7 +177,8 @@
                       "name"
                     ],
                     "template": "hello {name}!",
-                    "template_format": "f-string"
+                    "template_format": "f-string",
+                    "partial_variables": {}
                   }
                 }
               }
@@ -245,7 +247,8 @@
             "name"
           ],
           "template": "hello {name}!",
-          "template_format": "f-string"
+          "template_format": "f-string",
+          "partial_variables": {}
         }
       }
     }

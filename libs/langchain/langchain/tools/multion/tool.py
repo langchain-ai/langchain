@@ -3,10 +3,7 @@ from typing import Any, Optional
 
 from pydantic import Field
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
+from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
 from langchain.utilities.multion import MultionClientAPIWrapper
 
@@ -38,13 +35,3 @@ class MultionClientTool(BaseTool):
     ) -> str:
         """Use the tool."""
         return self.api_wrapper.run(task, url, tabId)
-
-    async def _arun(
-        self,
-        task: str,
-        url: str,
-        tabId: Optional[Any] = None,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the tool asynchronously."""
-        raise NotImplementedError("Multion Client does not support async yet")

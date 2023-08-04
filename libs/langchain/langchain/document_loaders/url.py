@@ -49,7 +49,7 @@ class UnstructuredURLLoader(BaseLoader):
 
             self.__version = __unstructured_version__
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "unstructured package not found, please install it with "
                 "`pip install unstructured`"
             )

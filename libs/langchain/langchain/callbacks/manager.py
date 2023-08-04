@@ -478,6 +478,22 @@ class RunManager(BaseRunManager):
             **kwargs,
         )
 
+    def on_retry(
+        self,
+        retry_state: RetryCallState,
+        **kwargs: Any,
+    ) -> None:
+        _handle_event(
+            self.handlers,
+            "on_retry",
+            "ignore_retry",
+            retry_state,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            **kwargs,
+        )
+
 
 class ParentRunManager(RunManager):
     """Sync Parent Run Manager."""
@@ -528,6 +544,22 @@ class AsyncRunManager(BaseRunManager):
             **kwargs,
         )
 
+    async def on_retry(
+        self,
+        retry_state: RetryCallState,
+        **kwargs: Any,
+    ) -> None:
+        await _ahandle_event(
+            self.handlers,
+            "on_retry",
+            "ignore_retry",
+            retry_state,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            **kwargs,
+        )
+
 
 class AsyncParentRunManager(AsyncRunManager):
     """Async Parent Run Manager."""
@@ -569,22 +601,6 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
             "on_llm_new_token",
             "ignore_llm",
             token=token,
-            run_id=self.run_id,
-            parent_run_id=self.parent_run_id,
-            tags=self.tags,
-            **kwargs,
-        )
-
-    def on_retry(
-        self,
-        retry_state: RetryCallState,
-        **kwargs: Any,
-    ) -> None:
-        _handle_event(
-            self.handlers,
-            "on_retry",
-            "ignore_retry",
-            retry_state,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
             tags=self.tags,
@@ -692,22 +708,6 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
             "on_llm_new_token",
             "ignore_llm",
             token,
-            run_id=self.run_id,
-            parent_run_id=self.parent_run_id,
-            tags=self.tags,
-            **kwargs,
-        )
-
-    async def on_retry(
-        self,
-        retry_state: RetryCallState,
-        **kwargs: Any,
-    ) -> None:
-        await _ahandle_event(
-            self.handlers,
-            "on_retry",
-            "ignore_retry",
-            retry_state,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
             tags=self.tags,

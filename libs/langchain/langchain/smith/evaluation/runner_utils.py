@@ -6,7 +6,8 @@ import asyncio
 import functools
 import itertools
 import logging
-from datetime import datetime
+import uuid
+from enum import Enum
 from typing import (
     Any,
     Callable,
@@ -22,7 +23,7 @@ from typing import (
 from urllib.parse import urlparse, urlunparse
 
 from langsmith import Client, RunEvaluator
-from langsmith.schemas import Dataset, DataType, Example, RunTypeEnum
+from langsmith.schemas import Dataset, DataType, Example
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.manager import Callbacks
@@ -233,12 +234,12 @@ def _get_project_name(
     """
     if project_name is not None:
         return project_name
-    current_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
     if isinstance(llm_or_chain_factory, BaseLanguageModel):
         model_name = llm_or_chain_factory.__class__.__name__
     else:
         model_name = llm_or_chain_factory().__class__.__name__
-    return f"{current_time}-{model_name}"
+    hex = uuid.uuid4().hex
+    return f"{hex}-{model_name}"
 
 
 ## Shared Validation Utilities
@@ -341,13 +342,14 @@ def _setup_evaluation(
         first_example, examples = _first_example(examples)
         if isinstance(llm_or_chain_factory, BaseLanguageModel):
             run_inputs, run_outputs = None, None
-            run_type = RunTypeEnum.llm
+            run_type = "llm"
         else:
-            run_type = RunTypeEnum.chain
+            run_type = "chain"
             if data_type in (DataType.chat, DataType.llm):
+                val = data_type.value if isinstance(data_type, Enum) else data_type
                 raise ValueError(
                     "Cannot evaluate a chain on dataset with "
-                    f"data_type={data_type.value}. "
+                    f"data_type={val}. "
                     "Please specify a dataset with the default 'kv' data type."
                 )
             chain = llm_or_chain_factory()
@@ -370,13 +372,13 @@ def _setup_evaluation(
 def _determine_input_key(
     config: RunEvalConfig,
     run_inputs: Optional[List[str]],
-    run_type: RunTypeEnum,
+    run_type: str,
 ) -> Optional[str]:
     if config.input_key:
         input_key = config.input_key
         if run_inputs and input_key not in run_inputs:
             raise ValueError(f"Input key {input_key} not in run inputs {run_inputs}")
-    elif run_type == RunTypeEnum.llm:
+    elif run_type == "llm":
         input_key = None
     elif run_inputs and len(run_inputs) == 1:
         input_key = run_inputs[0]
@@ -391,7 +393,7 @@ def _determine_input_key(
 def _determine_prediction_key(
     config: RunEvalConfig,
     run_outputs: Optional[List[str]],
-    run_type: RunTypeEnum,
+    run_type: str,
 ) -> Optional[str]:
     if config.prediction_key:
         prediction_key = config.prediction_key
@@ -399,7 +401,7 @@ def _determine_prediction_key(
             raise ValueError(
                 f"Prediction key {prediction_key} not in run outputs {run_outputs}"
             )
-    elif run_type == RunTypeEnum.llm:
+    elif run_type == "llm":
         prediction_key = None
     elif run_outputs and len(run_outputs) == 1:
         prediction_key = run_outputs[0]
@@ -432,7 +434,7 @@ def _determine_reference_key(
 def _construct_run_evaluator(
     eval_config: Union[EvaluatorType, EvalConfig],
     eval_llm: BaseLanguageModel,
-    run_type: RunTypeEnum,
+    run_type: str,
     data_type: DataType,
     example_outputs: Optional[List[str]],
     reference_key: Optional[str],
@@ -472,7 +474,7 @@ def _construct_run_evaluator(
 
 def _load_run_evaluators(
     config: RunEvalConfig,
-    run_type: RunTypeEnum,
+    run_type: str,
     data_type: DataType,
     example_outputs: Optional[List[str]],
     run_inputs: Optional[List[str]],
@@ -602,11 +604,8 @@ async def _arun_chain(
             inputs_, callbacks=callbacks, tags=tags
         )
     else:
-        if len(inputs) == 1:
-            inputs_ = next(iter(inputs.values()))
-            output = await chain.arun(inputs_, callbacks=callbacks, tags=tags)
-        else:
-            output = await chain.acall(inputs, callbacks=callbacks, tags=tags)
+        inputs_ = next(iter(inputs.values())) if len(inputs) == 1 else inputs
+        output = await chain.acall(inputs_, callbacks=callbacks, tags=tags)
     return output
 
 
@@ -924,11 +923,8 @@ def _run_chain(
         inputs_ = input_mapper(inputs)
         output: Union[dict, str] = chain(inputs_, callbacks=callbacks, tags=tags)
     else:
-        if len(inputs) == 1:
-            inputs_ = next(iter(inputs.values()))
-            output = chain.run(inputs_, callbacks=callbacks, tags=tags)
-        else:
-            output = chain(inputs, callbacks=callbacks, tags=tags)
+        inputs_ = next(iter(inputs.values())) if len(inputs) == 1 else inputs
+        output = chain(inputs_, callbacks=callbacks, tags=tags)
     return output
 
 

@@ -35,9 +35,21 @@ class BaseGenerationOutputParser(
         self, input: str | BaseMessage, config: RunnableConfig | None = None
     ) -> T:
         if isinstance(input, BaseMessage):
-            return self.parse_result([ChatGeneration(message=input)])
+            return self._call_with_config(
+                lambda inner_input: self.parse_result(
+                    [ChatGeneration(message=inner_input)]
+                ),
+                input,
+                config,
+                run_type="parser",
+            )
         else:
-            return self.parse_result([Generation(text=input)])
+            return self._call_with_config(
+                lambda inner_input: self.parse_result([Generation(text=inner_input)]),
+                input,
+                config,
+                run_type="parser",
+            )
 
 
 class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]):
@@ -71,9 +83,21 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
         self, input: str | BaseMessage, config: RunnableConfig | None = None
     ) -> T:
         if isinstance(input, BaseMessage):
-            return self.parse_result([ChatGeneration(message=input)])
+            return self._call_with_config(
+                lambda inner_input: self.parse_result(
+                    [ChatGeneration(message=inner_input)]
+                ),
+                input,
+                config,
+                run_type="parser",
+            )
         else:
-            return self.parse_result([Generation(text=input)])
+            return self._call_with_config(
+                lambda inner_input: self.parse_result([Generation(text=inner_input)]),
+                input,
+                config,
+                run_type="parser",
+            )
 
     def parse_result(self, result: List[Generation]) -> T:
         """Parse a list of candidate model Generations into a specific format.
@@ -137,8 +161,8 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
         return output_parser_dict
 
 
-class NoOpOutputParser(BaseOutputParser[str]):
-    """'No operation' OutputParser that returns the text as is."""
+class StrOutputParser(BaseOutputParser[str]):
+    """OutputParser that parses LLMResult into the top likely string.."""
 
     @property
     def lc_serializable(self) -> bool:
@@ -153,6 +177,10 @@ class NoOpOutputParser(BaseOutputParser[str]):
     def parse(self, text: str) -> str:
         """Returns the input text with no changes."""
         return text
+
+
+# TODO: Deprecate
+NoOpOutputParser = StrOutputParser
 
 
 class OutputParserException(ValueError):
