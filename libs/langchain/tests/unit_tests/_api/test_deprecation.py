@@ -147,7 +147,7 @@ def test_deprecated_classmethod() -> None:
             "The function `deprecated_classmethod` was deprecated in "
             "LangChain 2.0.0 and will be removed in 3.0.0"
         )
-        assert ClassWithDeprecatedMethods.__doc__ == "[*Deprecated*]  original doc"
+        assert ClassWithDeprecatedMethods.deprecated_classmethod.__doc__ == "[*Deprecated*]  original doc"
 
 
 def test_deprecated_staticmethod() -> None:

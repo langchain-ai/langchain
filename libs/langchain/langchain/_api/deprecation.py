@@ -24,13 +24,13 @@ class LangChainDeprecationWarning(DeprecationWarning):
 def _warn_deprecated(
     since: str,
     *,
-    message="",
-    name="",
-    alternative="",
+    message: str = "",
+    name: str = "",
+    alternative: str = "",
     pending: bool = False,
-    obj_type="",
-    addendum="",
-    removal="",
+    obj_type: str = "",
+    addendum: str = "",
+    removal: str = "",
 ) -> None:
     """Display a standardized deprecation.
 
@@ -178,7 +178,7 @@ def deprecated(
         _name: Optional[str] = name,
         _message: Optional[str] = message,
         _alternative: str = alternative,
-        _pending: str = pending,
+        _pending: bool = pending,
         _addendum: str = addendum,
     ):
         """Implementation of the decorator returned by `deprecated`."""
@@ -189,7 +189,7 @@ def deprecated(
             _name = _name or obj.__name__
             old_doc = obj.__doc__
 
-            def finalize(wrapper, new_doc) -> type:  # type: ignore
+            def finalize(wrapper: Any, new_doc: str) -> type:  # type: ignore
                 """Finalize the deprecation of a class."""
                 try:
                     obj.__doc__ = new_doc
@@ -224,9 +224,9 @@ def deprecated(
                     return super().__delete__(instance)
 
                 def __set_name__(self, owner, set_name):  # type: ignore
-                    nonlocal  name
-                    if name == "<lambda>":
-                        name = set_name
+                    nonlocal _name
+                    if _name == "<lambda>":
+                        _name = set_name
 
             def finalize(_, new_doc: str):  # type: ignore
                 """Finalize the property."""
