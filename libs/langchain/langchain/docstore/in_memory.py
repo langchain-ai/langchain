@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Union
 from langchain.docstore.base import AddableMixin, Docstore
 from langchain.docstore.document import Document
 
+
 class InMemoryDocstore(Docstore, AddableMixin):
     """Simple in memory docstore in the form of a dict."""
 
@@ -25,13 +26,13 @@ class InMemoryDocstore(Docstore, AddableMixin):
             raise ValueError(f"Tried to add ids that already exist: {overlapping}")
         self._dict = {**self._dict, **texts}
 
-    def delete(self, IDs: List) -> None:
-        """ Deleting IDs from in memory dictionary."""
-        overlapping = set(IDs).intersection(self._dict)
+    def delete(self, ids: List) -> None:
+        """Deleting IDs from in memory dictionary."""
+        overlapping = set(ids).intersection(self._dict)
         if not overlapping:
-            raise ValueError(f"Tried to delete ids that does not  exist: {IDs}")
-        for id in IDs:
-            self._dict.pop(id)
+            raise ValueError(f"Tried to delete ids that does not  exist: {ids}")
+        for _id in ids:
+            self._dict.pop(_id)
 
     def search(self, search: str) -> Union[str, Document]:
         """Search via direct lookup.
