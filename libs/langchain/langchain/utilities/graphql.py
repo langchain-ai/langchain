@@ -17,7 +17,7 @@ class GraphQLAPIWrapper(BaseModel):
     gql_function: Callable[[str], Any]  #: :meta private:
     custom_transport_auth: Any  #: :meta private:
     gql_schema: str
-    auto_fetch_schema: bool
+    auto_fetch_schema: bool = False
 
     class Config:
         """Configuration for this pydantic object."""
