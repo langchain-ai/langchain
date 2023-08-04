@@ -202,7 +202,7 @@ def deprecated(
                 return obj
 
         elif isinstance(obj, property):
-            if _obj_type is None:
+            if not _obj_type:
                 _obj_type = "attribute"
             wrapped = None
             _name = _name or obj.fget.__name__
@@ -238,7 +238,7 @@ def deprecated(
                 )
 
         else:
-            if _obj_type is None:
+            if not _obj_type:
                 _obj_type = "function"
             wrapped = obj
             _name = _name or obj.__name__  # type: ignore
