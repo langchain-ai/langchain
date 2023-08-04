@@ -7,18 +7,14 @@ from urllib.parse import urlparse
 
 import numpy as np
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from redis.client import Redis as RedisType
-
-logger = logging.getLogger(__name__)
 
 
 def array_to_buffer(array: List[float], dtype: Any = np.float32) -> bytes:
     return np.array(array).astype(dtype).tobytes()
-
-
-if TYPE_CHECKING:
-    from redis.client import Redis as RedisType
 
 
 class TokenEscaper:
@@ -37,7 +33,7 @@ class TokenEscaper:
             self.escaped_chars_re = re.compile(self.DEFAULT_ESCAPED_CHARS)
 
     def escape(self, value: str) -> str:
-        def escape_symbol(match):
+        def escape_symbol(match: re.Match) -> str:
             value = match.group(0)
             return f"\\{value}"
 
@@ -63,17 +59,6 @@ def check_redis_module_exist(client: RedisType, required_modules: List[dict]) ->
     )
     logger.error(error_message)
     raise ValueError(error_message)
-
-
-def check_index_exists(client: RedisType, index_name: str) -> bool:
-    """Check if Redis index exists."""
-    try:
-        client.ft(index_name).info()
-    except:  # noqa: E722
-        logger.info("Index does not exist")
-        return False
-    logger.info("Index already exists")
-    return True
 
 
 def get_client(redis_url: str, **kwargs: Any) -> RedisType:

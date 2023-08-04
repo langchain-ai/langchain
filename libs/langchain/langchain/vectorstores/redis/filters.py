@@ -6,32 +6,32 @@ from langchain.utilities.redis import TokenEscaper
 class RedisFilter:
     escaper = TokenEscaper()
 
-    def __init__(self, field):
+    def __init__(self, field: str):
         self._field = field
-        self._filters = []
+        self._filters: List[str] = []
 
-    def __str__(self):
+    def __str__(self) -> str:
         base = self.to_string()
         if self._filters:
             base += "".join(self._filters)
         return base
 
-    def __iadd__(self, other) -> "RedisFilter":
+    def __iadd__(self, other: "RedisFilter") -> "RedisFilter":
         "intersection '+='"
         self._filters.append(f" {other.to_string()}")
         return self
 
-    def __iand__(self, other) -> "RedisFilter":
+    def __iand__(self, other: "RedisFilter") -> "RedisFilter":
         "union '&='"
         self._filters.append(f" | {other.to_string()}")
         return self
 
-    def __isub__(self, other) -> "RedisFilter":
+    def __isub__(self, other: "RedisFilter") -> "RedisFilter":
         "subtract '-='"
         self._filters.append(f" -{other.to_string()}")
         return self
 
-    def __ixor__(self, other) -> "RedisFilter":
+    def __ixor__(self, other: "RedisFilter") -> "RedisFilter":
         "With optional '^='"
         self._filters.append(f" ~{other.to_string()}")
         return self
@@ -40,8 +40,8 @@ class RedisFilter:
         raise NotImplementedError
 
 
-class TagFilter(RedisFilter):
-    def __init__(self, field, tags: List[str]):
+class RedisTagFilter(RedisFilter):
+    def __init__(self, field: str, tags: List[str]):
         super().__init__(field)
         self.tags = tags
 
@@ -62,8 +62,15 @@ class TagFilter(RedisFilter):
         )
 
 
-class NumericFilter(RedisFilter):
-    def __init__(self, field, minval, maxval, min_exclusive=False, max_exclusive=False):
+class RedisNumericFilter(RedisFilter):
+    def __init__(
+        self,
+        field: str,
+        minval: int,
+        maxval: int,
+        min_exclusive: bool = False,
+        max_exclusive: bool = False,
+    ):
         """Filter for Numeric fields.
 
         Args:
@@ -77,12 +84,12 @@ class NumericFilter(RedisFilter):
         self.bottom = minval if not min_exclusive else f"({minval}"
         super().__init__(field)
 
-    def to_string(self):
+    def to_string(self) -> str:
         return "@" + self._field + ":[" + str(self.bottom) + " " + str(self.top) + "]"
 
 
-class TextFilter(RedisFilter):
-    def __init__(self, field, text: str):
+class RedisTextFilter(RedisFilter):
+    def __init__(self, field: str, text: str):
         """Filter for Text fields.
         Args:
             field (str): The field to filter on.

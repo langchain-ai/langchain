@@ -1,4 +1,5 @@
-from typing import List, Optional, Union
+from typing import List, Optional, Union, TYPE_CHECKING
+from typing_extensions import Literal
 
 from pydantic import BaseModel, Field, validator
 from redis.commands.search.field import (
@@ -6,9 +7,11 @@ from redis.commands.search.field import (
     NumericField,
     TagField,
     TextField,
-    VectorField,
+    VectorField
 )
-from typing_extensions import Literal
+if TYPE_CHECKING:
+    from redis.commands.search.field import Field as RedisField
+
 
 
 class BaseField(BaseModel):
@@ -22,7 +25,7 @@ class TextFieldSchema(BaseField):
     phonetic_matcher: Optional[str] = None
     withsuffixtrie: Optional[bool] = False
 
-    def as_field(self):
+    def as_field(self) -> TextField:
         return TextField(
             self.name,
             weight=self.weight,
@@ -36,7 +39,7 @@ class TagFieldSchema(BaseField):
     separator: Optional[str] = ","
     case_sensitive: Optional[bool] = False
 
-    def as_field(self):
+    def as_field(self) -> TagField:
         return TagField(
             self.name,
             separator=self.separator,
@@ -46,12 +49,12 @@ class TagFieldSchema(BaseField):
 
 
 class NumericFieldSchema(BaseField):
-    def as_field(self):
+    def as_field(self) -> NumericField:
         return NumericField(self.name, sortable=self.sortable)
 
 
 class GeoFieldSchema(BaseField):
-    def as_field(self):
+    def as_field(self) -> GeoField:
         return GeoField(self.name, sortable=self.sortable)
 
 
@@ -65,11 +68,11 @@ class BaseVectorField(BaseModel):
 
     @validator("algorithm", "datatype", "distance_metric")
     @classmethod
-    def uppercase_strings(cls, v):
+    def uppercase_strings(cls, v: str) -> str:
         return v.upper()
 
     @property
-    def metric(self):
+    def metric(self) -> str:
         return self.distance_metric
 
 
@@ -77,7 +80,7 @@ class FlatVectorField(BaseVectorField):
     algorithm: object = Literal["FLAT"]
     block_size: int = Field(default=1000)
 
-    def as_field(self):
+    def as_field(self) -> VectorField:
         return VectorField(
             self.name,
             self.algorithm,
@@ -98,7 +101,7 @@ class HNSWVectorField(BaseVectorField):
     ef_runtime: int = Field(default=10)
     epsilon: float = Field(default=0.8)
 
-    def as_field(self):
+    def as_field(self) -> VectorField:
         return VectorField(
             self.name,
             self.algorithm,
@@ -122,8 +125,21 @@ class RedisMetadata(BaseModel):
     geo: Optional[List[GeoFieldSchema]] = None
     vector: Optional[List[Union[FlatVectorField, HNSWVectorField]]] = None
 
-    def get_fields(self):
-        redis_fields = []
+    @property
+    def is_empty(self) -> bool:
+        return all(field is None for field in [
+            self.tag,
+            self.text,
+            self.numeric,
+            self.geo,
+            self.vector
+        ])
+
+    def get_fields(self) -> List["RedisField"]:
+        redis_fields: List["RedisField"] = []
+        if self.is_empty:
+            return redis_fields
+
         for field_name in self.__fields__.keys():
             field_group = getattr(self, field_name)
             if field_group is not None:
@@ -132,8 +148,11 @@ class RedisMetadata(BaseModel):
         return redis_fields
 
     @property
-    def keys(self):
-        keys = []
+    def keys(self) -> List[str]:
+        keys: List[str] = []
+        if self.is_empty:
+            return keys
+
         for field_name in self.__fields__.keys():
             field_group = getattr(self, field_name)
             if field_group is not None:

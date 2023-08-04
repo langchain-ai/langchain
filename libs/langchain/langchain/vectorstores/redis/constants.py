@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Dict, List, Union, Any
 
 # required modules
 REDIS_REQUIRED_MODULES = [
@@ -7,4 +7,4 @@ REDIS_REQUIRED_MODULES = [
 ]
 
 # distance metrics
-REDIS_DISTANCE_METRICS = Literal["COSINE", "IP", "L2"]
+REDIS_DISTANCE_METRICS: List[str] = ["COSINE", "IP", "L2"]
