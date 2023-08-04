@@ -53,7 +53,7 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
             prompt = PromptTemplate.from_template(
                 "Summarize this content: {context}"
             )
-            llm_chain = LLMChain(llm=llm, prompt=prompt)
+            initial_llm_chain = LLMChain(llm=llm, prompt=prompt)
             initial_response_name = "prev_response"
             # The prompt here should take as an input variable the
             # `document_variable_name` as well as `initial_response_name`
@@ -61,7 +61,7 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
                 "Here's your first summary: {prev_response}. "
                 "Now add to it based on the following context: {context}"
             )
-            llm_chain_refine = LLMChain(llm=llm, prompt=prompt_refine)
+            refine_llm_chain = LLMChain(llm=llm, prompt=prompt_refine)
             chain = RefineDocumentsChain(
                 initial_llm_chain=initial_llm_chain,
                 refine_llm_chain=refine_llm_chain,
