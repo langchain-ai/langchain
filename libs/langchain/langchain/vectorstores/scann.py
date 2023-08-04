@@ -1,11 +1,9 @@
-"""Wrapper around FAISS vector database."""
+"""Wrapper around ScaNN vector database."""
 from __future__ import annotations
 
 import operator
-import os
 import pickle
 import uuid
-import warnings
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
@@ -16,81 +14,65 @@ from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
-from langchain.vectorstores.utils import DistanceStrategy, maximal_marginal_relevance
+from langchain.vectorstores.utils import DistanceStrategy
 
 
-def dependable_faiss_import(no_avx2: Optional[bool] = None) -> Any:
+def normalize(x: np.ndarray) -> np.ndarray:
+    x /= np.clip(np.linalg.norm(x, axis=-1, keepdims=True), 1e-12, None)
+    return x
+
+
+def dependable_scann_import() -> Any:
     """
-    Import faiss if available, otherwise raise error.
-    If FAISS_NO_AVX2 environment variable is set, it will be considered
-    to load FAISS with no AVX2 optimization.
-
-    Args:
-        no_avx2: Load FAISS strictly with no AVX2 optimization
-            so that the vectorstore is portable and compatible with other devices.
+    Import scann if available, otherwise raise error.
     """
-    if no_avx2 is None and "FAISS_NO_AVX2" in os.environ:
-        no_avx2 = bool(os.getenv("FAISS_NO_AVX2"))
-
     try:
-        if no_avx2:
-            from faiss import swigfaiss as faiss
-        else:
-            import faiss
+        import scann
     except ImportError:
         raise ImportError(
-            "Could not import faiss python package. "
-            "Please install it with `pip install faiss-gpu` (for CUDA supported GPU) "
-            "or `pip install faiss-cpu` (depending on Python version)."
+            "Could not import scann python package. "
+            "Please install it with `pip install scann` "
         )
-    return faiss
+    return scann
 
 
-class FAISS(VectorStore):
-    """Wrapper around FAISS vector database.
+class ScaNN(VectorStore):
+    """Wrapper around ScaNN vector database.
 
-    To use, you should have the ``faiss`` python package installed.
+    To use, you should have the ``scann`` python package installed.
 
     Example:
         .. code-block:: python
 
-            from langchain import FAISS
-            faiss = FAISS(embedding_function, index, docstore, index_to_docstore_id)
+            from langchain.embeddings import HuggingFaceEmbeddings
+            from langchain.vectorstores import ScaNN
 
+            db = ScaNN.from_texts(
+                ['foo', 'bar', 'barz', 'qux'],
+                HuggingFaceEmbeddings())
+            db.similarity_search('foo?', k=1)
     """
 
     def __init__(
         self,
-        embedding_function: Callable,
+        embedding: Embeddings,
         index: Any,
         docstore: Docstore,
         index_to_docstore_id: Dict[int, str],
         relevance_score_fn: Optional[Callable[[float], float]] = None,
         normalize_L2: bool = False,
         distance_strategy: DistanceStrategy = DistanceStrategy.EUCLIDEAN_DISTANCE,
+        scann_config: Optional[str] = None,
     ):
         """Initialize with necessary components."""
-        self.embedding_function = embedding_function
+        self.embedding = embedding
         self.index = index
         self.docstore = docstore
         self.index_to_docstore_id = index_to_docstore_id
         self.distance_strategy = distance_strategy
         self.override_relevance_score_fn = relevance_score_fn
         self._normalize_L2 = normalize_L2
-        if (
-            self.distance_strategy != DistanceStrategy.EUCLIDEAN_DISTANCE
-            and self._normalize_L2
-        ):
-            warnings.warn(
-                "Normalizing L2 is not applicable for metric type: {strategy}".format(
-                    strategy=self.distance_strategy
-                )
-            )
-
-    @property
-    def embeddings(self) -> Optional[Embeddings]:
-        # TODO: Accept embeddings object directly
-        return None
+        self._scann_config = scann_config
 
     def __add(
         self,
@@ -105,26 +87,7 @@ class FAISS(VectorStore):
                 "If trying to add texts, the underlying docstore should support "
                 f"adding items, which {self.docstore} does not"
             )
-        documents = []
-        for i, text in enumerate(texts):
-            metadata = metadatas[i] if metadatas else {}
-            documents.append(Document(page_content=text, metadata=metadata))
-        if ids is None:
-            ids = [str(uuid.uuid4()) for _ in texts]
-        # Add to the index, the index_to_id mapping, and the docstore.
-        starting_len = len(self.index_to_docstore_id)
-        faiss = dependable_faiss_import()
-        vector = np.array(embeddings, dtype=np.float32)
-        if self._normalize_L2:
-            faiss.normalize_L2(vector)
-        self.index.add(vector)
-        # Get list of index, id, and docs.
-        full_info = [(starting_len + i, ids[i], doc) for i, doc in enumerate(documents)]
-        # Add information to docstore and index.
-        self.docstore.add({_id: doc for _, _id, doc in full_info})
-        index_to_id = {index: _id for index, _id, _ in full_info}
-        self.index_to_docstore_id.update(index_to_id)
-        return [_id for _, _id, _ in full_info]
+        raise NotImplementedError("Updates are not available in ScaNN, yet.")
 
     def add_texts(
         self,
@@ -143,13 +106,8 @@ class FAISS(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        if not isinstance(self.docstore, AddableMixin):
-            raise ValueError(
-                "If trying to add texts, the underlying docstore should support "
-                f"adding items, which {self.docstore} does not"
-            )
         # Embed and create the documents.
-        embeddings = [self.embedding_function(text) for text in texts]
+        embeddings = self.embedding.embed_documents(list(texts))
         return self.__add(texts, embeddings, metadatas=metadatas, ids=ids, **kwargs)
 
     def add_embeddings(
@@ -180,6 +138,20 @@ class FAISS(VectorStore):
 
         return self.__add(texts, embeddings, metadatas=metadatas, ids=ids, **kwargs)
 
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+        """Delete by vector ID or other criteria.
+
+        Args:
+            ids: List of ids to delete.
+            **kwargs: Other keyword arguments that subclasses might use.
+
+        Returns:
+            Optional[bool]: True if deletion is successful,
+            False otherwise, None if not implemented.
+        """
+
+        raise NotImplementedError("Deletions are not available in ScaNN, yet.")
+
     def similarity_search_with_score_by_vector(
         self,
         embedding: List[float],
@@ -204,11 +176,12 @@ class FAISS(VectorStore):
             List of documents most similar to the query text and L2 distance
             in float for each. Lower score represents more similarity.
         """
-        faiss = dependable_faiss_import()
         vector = np.array([embedding], dtype=np.float32)
         if self._normalize_L2:
-            faiss.normalize_L2(vector)
-        scores, indices = self.index.search(vector, k if filter is None else fetch_k)
+            vector = normalize(vector)
+        indices, scores = self.index.search_batched(
+            vector, k if filter is None else fetch_k
+        )
         docs = []
         for j, i in enumerate(indices[0]):
             if i == -1:
@@ -264,7 +237,7 @@ class FAISS(VectorStore):
             List of documents most similar to the query text with
             L2 distance in float. Lower score represents more similarity.
         """
-        embedding = self.embedding_function(query)
+        embedding = self.embedding.embed_query(query)
         docs = self.similarity_search_with_score_by_vector(
             embedding,
             k,
@@ -328,178 +301,6 @@ class FAISS(VectorStore):
         )
         return [doc for doc, _ in docs_and_scores]
 
-    def max_marginal_relevance_search_with_score_by_vector(
-        self,
-        embedding: List[float],
-        *,
-        k: int = 4,
-        fetch_k: int = 20,
-        lambda_mult: float = 0.5,
-        filter: Optional[Dict[str, Any]] = None,
-    ) -> List[Tuple[Document, float]]:
-        """Return docs and their similarity scores selected using the maximal marginal
-            relevance.
-
-        Maximal marginal relevance optimizes for similarity to query AND diversity
-        among selected documents.
-
-        Args:
-            embedding: Embedding to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
-            fetch_k: Number of Documents to fetch before filtering to
-                     pass to MMR algorithm.
-            lambda_mult: Number between 0 and 1 that determines the degree
-                        of diversity among the results with 0 corresponding
-                        to maximum diversity and 1 to minimum diversity.
-                        Defaults to 0.5.
-        Returns:
-            List of Documents and similarity scores selected by maximal marginal
-                relevance and score for each.
-        """
-        scores, indices = self.index.search(
-            np.array([embedding], dtype=np.float32),
-            fetch_k if filter is None else fetch_k * 2,
-        )
-        if filter is not None:
-            filtered_indices = []
-            for i in indices[0]:
-                if i == -1:
-                    # This happens when not enough docs are returned.
-                    continue
-                _id = self.index_to_docstore_id[i]
-                doc = self.docstore.search(_id)
-                if not isinstance(doc, Document):
-                    raise ValueError(f"Could not find document for id {_id}, got {doc}")
-                if all(
-                    doc.metadata.get(key) in value
-                    if isinstance(value, list)
-                    else doc.metadata.get(key) == value
-                    for key, value in filter.items()
-                ):
-                    filtered_indices.append(i)
-            indices = np.array([filtered_indices])
-        # -1 happens when not enough docs are returned.
-        embeddings = [self.index.reconstruct(int(i)) for i in indices[0] if i != -1]
-        mmr_selected = maximal_marginal_relevance(
-            np.array([embedding], dtype=np.float32),
-            embeddings,
-            k=k,
-            lambda_mult=lambda_mult,
-        )
-        selected_indices = [indices[0][i] for i in mmr_selected]
-        selected_scores = [scores[0][i] for i in mmr_selected]
-        docs_and_scores = []
-        for i, score in zip(selected_indices, selected_scores):
-            if i == -1:
-                # This happens when not enough docs are returned.
-                continue
-            _id = self.index_to_docstore_id[i]
-            doc = self.docstore.search(_id)
-            if not isinstance(doc, Document):
-                raise ValueError(f"Could not find document for id {_id}, got {doc}")
-            docs_and_scores.append((doc, score))
-        return docs_and_scores
-
-    def max_marginal_relevance_search_by_vector(
-        self,
-        embedding: List[float],
-        k: int = 4,
-        fetch_k: int = 20,
-        lambda_mult: float = 0.5,
-        filter: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> List[Document]:
-        """Return docs selected using the maximal marginal relevance.
-
-        Maximal marginal relevance optimizes for similarity to query AND diversity
-        among selected documents.
-
-        Args:
-            embedding: Embedding to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
-            fetch_k: Number of Documents to fetch before filtering to
-                     pass to MMR algorithm.
-            lambda_mult: Number between 0 and 1 that determines the degree
-                        of diversity among the results with 0 corresponding
-                        to maximum diversity and 1 to minimum diversity.
-                        Defaults to 0.5.
-        Returns:
-            List of Documents selected by maximal marginal relevance.
-        """
-        docs_and_scores = self.max_marginal_relevance_search_with_score_by_vector(
-            embedding, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult, filter=filter
-        )
-        return [doc for doc, _ in docs_and_scores]
-
-    def max_marginal_relevance_search(
-        self,
-        query: str,
-        k: int = 4,
-        fetch_k: int = 20,
-        lambda_mult: float = 0.5,
-        filter: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> List[Document]:
-        """Return docs selected using the maximal marginal relevance.
-
-        Maximal marginal relevance optimizes for similarity to query AND diversity
-        among selected documents.
-
-        Args:
-            query: Text to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
-            fetch_k: Number of Documents to fetch before filtering (if needed) to
-                     pass to MMR algorithm.
-            lambda_mult: Number between 0 and 1 that determines the degree
-                        of diversity among the results with 0 corresponding
-                        to maximum diversity and 1 to minimum diversity.
-                        Defaults to 0.5.
-        Returns:
-            List of Documents selected by maximal marginal relevance.
-        """
-        embedding = self.embedding_function(query)
-        docs = self.max_marginal_relevance_search_by_vector(
-            embedding,
-            k=k,
-            fetch_k=fetch_k,
-            lambda_mult=lambda_mult,
-            filter=filter,
-            **kwargs,
-        )
-        return docs
-
-    def merge_from(self, target: FAISS) -> None:
-        """Merge another FAISS object with the current one.
-
-        Add the target FAISS to the current one.
-
-        Args:
-            target: FAISS object you wish to merge into the current one
-
-        Returns:
-            None.
-        """
-        if not isinstance(self.docstore, AddableMixin):
-            raise ValueError("Cannot merge with this type of docstore")
-        # Numerical index for target docs are incremental on existing ones
-        starting_len = len(self.index_to_docstore_id)
-
-        # Merge two IndexFlatL2
-        self.index.merge_from(target.index)
-
-        # Get id and docs from target FAISS object
-        full_info = []
-        for i, target_id in target.index_to_docstore_id.items():
-            doc = target.docstore.search(target_id)
-            if not isinstance(doc, Document):
-                raise ValueError("Document should be returned")
-            full_info.append((starting_len + i, target_id, doc))
-
-        # Add information to docstore and index_to_docstore_id.
-        self.docstore.add({_id: doc for _, _id, doc in full_info})
-        index_to_id = {index: _id for index, _id, _ in full_info}
-        self.index_to_docstore_id.update(index_to_id)
-
     @classmethod
     def __from(
         cls,
@@ -510,20 +311,32 @@ class FAISS(VectorStore):
         ids: Optional[List[str]] = None,
         normalize_L2: bool = False,
         **kwargs: Any,
-    ) -> FAISS:
-        faiss = dependable_faiss_import()
+    ) -> ScaNN:
+        scann = dependable_scann_import()
         distance_strategy = kwargs.get(
             "distance_strategy", DistanceStrategy.EUCLIDEAN_DISTANCE
         )
-        if distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
-            index = faiss.IndexFlatIP(len(embeddings[0]))
-        else:
-            # Default to L2, currently other metric types not initialized.
-            index = faiss.IndexFlatL2(len(embeddings[0]))
+        scann_config = kwargs.get("scann_config", None)
+
         vector = np.array(embeddings, dtype=np.float32)
-        if normalize_L2 and distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
-            faiss.normalize_L2(vector)
-        index.add(vector)
+        if normalize_L2:
+            vector = normalize(vector)
+        if scann_config is not None:
+            index = scann.scann_ops_pybind.create_searcher(vector, scann_config)
+        else:
+            if distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
+                index = (
+                    scann.scann_ops_pybind.builder(vector, 1, "dot_product")
+                    .score_brute_force()
+                    .build()
+                )
+            else:
+                # Default to L2, currently other metric types not initialized.
+                index = (
+                    scann.scann_ops_pybind.builder(vector, 1, "squared_l2")
+                    .score_brute_force()
+                    .build()
+                )
         documents = []
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
@@ -540,7 +353,7 @@ class FAISS(VectorStore):
 
         docstore = InMemoryDocstore(dict(zip(index_to_id.values(), documents)))
         return cls(
-            embedding.embed_query,
+            embedding,
             index,
             docstore,
             index_to_id,
@@ -556,23 +369,23 @@ class FAISS(VectorStore):
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
-    ) -> FAISS:
-        """Construct FAISS wrapper from raw documents.
+    ) -> ScaNN:
+        """Construct ScaNN wrapper from raw documents.
 
         This is a user friendly interface that:
             1. Embeds documents.
             2. Creates an in memory docstore
-            3. Initializes the FAISS database
+            3. Initializes the ScaNN database
 
         This is intended to be a quick way to get started.
 
         Example:
             .. code-block:: python
 
-                from langchain import FAISS
+                from langchain import ScaNN
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
-                faiss = FAISS.from_texts(texts, embeddings)
+                scann = ScaNN.from_texts(texts, embeddings)
         """
         embeddings = embedding.embed_documents(texts)
         return cls.__from(
@@ -592,25 +405,25 @@ class FAISS(VectorStore):
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
-    ) -> FAISS:
-        """Construct FAISS wrapper from raw documents.
+    ) -> ScaNN:
+        """Construct ScaNN wrapper from raw documents.
 
         This is a user friendly interface that:
             1. Embeds documents.
             2. Creates an in memory docstore
-            3. Initializes the FAISS database
+            3. Initializes the ScaNN database
 
         This is intended to be a quick way to get started.
 
         Example:
             .. code-block:: python
 
-                from langchain import FAISS
+                from langchain import ScaNN
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)
                 text_embedding_pairs = list(zip(texts, text_embeddings))
-                faiss = FAISS.from_embeddings(text_embedding_pairs, embeddings)
+                scann = ScaNN.from_embeddings(text_embedding_pairs, embeddings)
         """
         texts = [t[0] for t in text_embeddings]
         embeddings = [t[1] for t in text_embeddings]
@@ -624,21 +437,18 @@ class FAISS(VectorStore):
         )
 
     def save_local(self, folder_path: str, index_name: str = "index") -> None:
-        """Save FAISS index, docstore, and index_to_docstore_id to disk.
+        """Save ScaNN index, docstore, and index_to_docstore_id to disk.
 
         Args:
             folder_path: folder path to save index, docstore,
                 and index_to_docstore_id to.
-            index_name: for saving with a specific index file name
         """
         path = Path(folder_path)
-        path.mkdir(exist_ok=True, parents=True)
+        scann_path = path / "{index_name}.scann".format(index_name=index_name)
+        scann_path.mkdir(exist_ok=True, parents=True)
 
         # save index separately since it is not picklable
-        faiss = dependable_faiss_import()
-        faiss.write_index(
-            self.index, str(path / "{index_name}.faiss".format(index_name=index_name))
-        )
+        self.index.serialize(str(scann_path))
 
         # save docstore and index_to_docstore_id
         with open(path / "{index_name}.pkl".format(index_name=index_name), "wb") as f:
@@ -648,11 +458,11 @@ class FAISS(VectorStore):
     def load_local(
         cls,
         folder_path: str,
-        embeddings: Embeddings,
+        embedding: Embeddings,
         index_name: str = "index",
         **kwargs: Any,
-    ) -> FAISS:
-        """Load FAISS index, docstore, and index_to_docstore_id from disk.
+    ) -> ScaNN:
+        """Load ScaNN index, docstore, and index_to_docstore_id from disk.
 
         Args:
             folder_path: folder path to load index, docstore,
@@ -661,35 +471,16 @@ class FAISS(VectorStore):
             index_name: for saving with a specific index file name
         """
         path = Path(folder_path)
+        scann_path = path / "{index_name}.scann".format(index_name=index_name)
+        scann_path.mkdir(exist_ok=True, parents=True)
         # load index separately since it is not picklable
-        faiss = dependable_faiss_import()
-        index = faiss.read_index(
-            str(path / "{index_name}.faiss".format(index_name=index_name))
-        )
+        scann = dependable_scann_import()
+        index = scann.scann_ops_pybind.load_searcher(str(scann_path))
 
         # load docstore and index_to_docstore_id
         with open(path / "{index_name}.pkl".format(index_name=index_name), "rb") as f:
             docstore, index_to_docstore_id = pickle.load(f)
-        return cls(
-            embeddings.embed_query, index, docstore, index_to_docstore_id, **kwargs
-        )
-
-    def serialize_to_bytes(self) -> bytes:
-        """Serialize FAISS index, docstore, and index_to_docstore_id to bytes."""
-        return pickle.dumps((self.index, self.docstore, self.index_to_docstore_id))
-
-    @classmethod
-    def deserialize_from_bytes(
-        cls,
-        serialized: bytes,
-        embeddings: Embeddings,
-        **kwargs: Any,
-    ) -> FAISS:
-        """Deserialize FAISS index, docstore, and index_to_docstore_id from bytes."""
-        index, docstore, index_to_docstore_id = pickle.loads(serialized)
-        return cls(
-            embeddings.embed_query, index, docstore, index_to_docstore_id, **kwargs
-        )
+        return cls(embedding, index, docstore, index_to_docstore_id, **kwargs)
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """
@@ -727,11 +518,12 @@ class FAISS(VectorStore):
         """Return docs and their similarity scores on a scale from 0 to 1."""
         # Pop score threshold so that only relevancy scores, not raw scores, are
         # filtered.
+        score_threshold = kwargs.pop("score_threshold", None)
         relevance_score_fn = self._select_relevance_score_fn()
         if relevance_score_fn is None:
             raise ValueError(
                 "normalize_score_fn must be provided to"
-                " FAISS constructor to normalize scores"
+                " ScaNN constructor to normalize scores"
             )
         docs_and_scores = self.similarity_search_with_score(
             query,
@@ -743,4 +535,10 @@ class FAISS(VectorStore):
         docs_and_rel_scores = [
             (doc, relevance_score_fn(score)) for doc, score in docs_and_scores
         ]
+        if score_threshold is not None:
+            docs_and_rel_scores = [
+                (doc, similarity)
+                for doc, similarity in docs_and_rel_scores
+                if similarity >= score_threshold
+            ]
         return docs_and_rel_scores
