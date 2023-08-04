@@ -176,7 +176,7 @@ def test_run_llm_or_chain_with_input_mapper() -> None:
     mock_chain = TransformChain(
         input_variables=["the right input"],
         output_variables=["output"],
-        transform_cb=run_val,
+        transform=run_val,
     )
 
     def input_mapper(inputs: dict) -> dict:

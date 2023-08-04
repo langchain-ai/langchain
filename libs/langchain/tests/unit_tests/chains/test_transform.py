@@ -20,7 +20,7 @@ def test_transform_chain() -> None:
     transform_chain = TransformChain(
         input_variables=["first_name", "last_name"],
         output_variables=["greeting"],
-        transform_cb=dummy_transform,
+        transform=dummy_transform,
     )
     input_dict = {"first_name": "Leroy", "last_name": "Jenkins"}
     response = transform_chain(input_dict)
@@ -33,7 +33,7 @@ def test_transform_chain_bad_inputs() -> None:
     transform_chain = TransformChain(
         input_variables=["first_name", "last_name"],
         output_variables=["greeting"],
-        transform_cb=dummy_transform,
+        transform=dummy_transform,
     )
     input_dict = {"name": "Leroy", "last_name": "Jenkins"}
     with pytest.raises(ValueError):
