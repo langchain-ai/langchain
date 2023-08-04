@@ -79,7 +79,7 @@ class ChatAnyscale(ChatOpenAI):
             values,
             "anyscale_api_base",
             "ANYSCALE_API_BASE",
-            default="https://api.endpoints.anyscale.com",
+            default=DEFAULT_API_BASE,
         )
         values["openai_proxy"] = get_from_dict_or_env(
             values,
