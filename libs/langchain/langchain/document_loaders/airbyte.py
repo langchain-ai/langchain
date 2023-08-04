@@ -60,7 +60,7 @@ class AirbyteHubspotLoader(AirbyteCDKLoader):
         state: Optional[Any] = None,
     ) -> None:
         source_class = guard_import(
-            "source_hubspot", "airbyte-source-hubspot"
+            "source_hubspot", pip_name="airbyte-source-hubspot"
         ).SourceHubspot
         super().__init__(
             config=config,
@@ -80,7 +80,7 @@ class AirbyteStripeLoader(AirbyteCDKLoader):
         state: Optional[Any] = None,
     ) -> None:
         source_class = guard_import(
-            "source_stripe", "airbyte-source-stripe"
+            "source_stripe", pip_name="airbyte-source-stripe"
         ).SourceStripe
         super().__init__(
             config=config,
@@ -100,7 +100,7 @@ class AirbyteTypeformLoader(AirbyteCDKLoader):
         state: Optional[Any] = None,
     ) -> None:
         source_class = guard_import(
-            "source_typeform", "airbyte-source-typeform"
+            "source_typeform", pip_name="airbyte-source-typeform"
         ).SourceTypeform
         super().__init__(
             config=config,
@@ -120,7 +120,7 @@ class AirbyteZendeskSupportLoader(AirbyteCDKLoader):
         state: Optional[Any] = None,
     ) -> None:
         source_class = guard_import(
-            "source_zendesk_support", "airbyte-source-zendesk-support"
+            "source_zendesk_support", pip_name="airbyte-source-zendesk-support"
         ).SourceZendeskSupport
         super().__init__(
             config=config,
@@ -140,7 +140,7 @@ class AirbyteShopifyLoader(AirbyteCDKLoader):
         state: Optional[Any] = None,
     ) -> None:
         source_class = guard_import(
-            "source_shopify", "airbyte-source-shopify"
+            "source_shopify", pip_name="airbyte-source-shopify"
         ).SourceShopify
         super().__init__(
             config=config,
@@ -160,8 +160,28 @@ class AirbyteSalesforceLoader(AirbyteCDKLoader):
         state: Optional[Any] = None,
     ) -> None:
         source_class = guard_import(
-            "source_salesforce", "airbyte-source-salesforce"
+            "source_salesforce", pip_name="airbyte-source-salesforce"
         ).SourceSalesforce
+        super().__init__(
+            config=config,
+            source_class=source_class,
+            stream_name=stream_name,
+            record_handler=record_handler,
+            state=state,
+        )
+
+
+class AirbyteGongLoader(AirbyteCDKLoader):
+    def __init__(
+        self,
+        config: Mapping[str, Any],
+        stream_name: str,
+        record_handler: Optional[RecordHandler] = None,
+        state: Optional[Any] = None,
+    ) -> None:
+        source_class = guard_import(
+            "source_gong", pip_name="airbyte-source-gong"
+        ).SourceGong
         super().__init__(
             config=config,
             source_class=source_class,
