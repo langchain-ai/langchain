@@ -9,6 +9,7 @@ from typing import Iterator, List
 
 logger = logging.getLogger(__name__)
 
+
 class AsyncChromiumLoader(BaseLoader):
     """Scrape HTML using a Headless instance of Chromium."""
 
@@ -27,7 +28,7 @@ class AsyncChromiumLoader(BaseLoader):
             try:
                 page = await browser.new_page()
                 await page.goto(url)
-                results = await page.content() # Simply get the HTML content
+                results = await page.content()  # Simply get the HTML content
                 logger.info("Content scraped")
             except Exception as e:
                 results = f"Error: {e}"
