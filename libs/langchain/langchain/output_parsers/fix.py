@@ -52,7 +52,20 @@ class OutputFixingParser(BaseOutputParser[T]):
             parsed_completion = self.parser.parse(new_completion)
 
         return parsed_completion
+    
+    async def aparse(self, completion: str) -> T:
+        try:
+            parsed_completion = self.parser.parse(completion)
+        except OutputParserException as e:
+            new_completion = await self.retry_chain.arun(
+                instructions=self.parser.get_format_instructions(),
+                completion=completion,
+                error=repr(e),
+            )
+            parsed_completion = self.parser.parse(new_completion)
 
+        return parsed_completion
+    
     def get_format_instructions(self) -> str:
         return self.parser.get_format_instructions()
 
