@@ -25,8 +25,8 @@ class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
             )
         message = generation.message
         try:
-            func_call = message.additional_kwargs["function_call"]
-        except ValueError as exc:
+            func_call = message.additional_kwargs["function_call"].copy()
+        except KeyError as exc:
             raise OutputParserException(f"Could not parse function call: {exc}")
 
         if self.args_only:
@@ -38,11 +38,16 @@ class JsonOutputFunctionsParser(OutputFunctionsParser):
     """Parse an output as the Json object."""
 
     def parse_result(self, result: List[Generation]) -> Any:
-        func = super().parse_result(result)
+        function_call_info = super().parse_result(result)
         if self.args_only:
-            return json.loads(func)
-        func["arguments"] = json.loads(func["arguments"])
-        return func
+            try:
+                return json.loads(function_call_info)
+            except (json.JSONDecodeError, TypeError) as exc:
+                raise OutputParserException(
+                    f"Could not parse function call data: {exc}"
+                )
+        function_call_info["arguments"] = json.loads(function_call_info["arguments"])
+        return function_call_info
 
 
 class JsonKeyOutputFunctionsParser(JsonOutputFunctionsParser):
