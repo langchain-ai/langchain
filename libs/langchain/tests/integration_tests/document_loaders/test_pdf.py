@@ -150,11 +150,11 @@ def test_mathpix_loader() -> None:
                 "https://amazon-textract-public-content.s3.us-east-2.amazonaws.com"
                 "/langchain/alejandro_rosalez_sample_1.jpg"
             ),
-            [1, 2],
+            ["FORMS", "TABLES"],
             1,
             False,
         ),
-        (str(Path(__file__).parent.parent / "examples/hello.pdf"), [1], 1, False),
+        (str(Path(__file__).parent.parent / "examples/hello.pdf"), ["FORMS"], 1, False),
         (
             "s3://amazon-textract-public-content/langchain/layout-parser-paper.pdf",
             None,
@@ -166,7 +166,7 @@ def test_mathpix_loader() -> None:
 @pytest.mark.skip(reason="Requires AWS credentials to run")
 def test_amazontextract_loader(
     file_path: str,
-    features: Union[Sequence[int], None],
+    features: Union[Sequence[str], None],
     docs_length: int,
     create_client: bool,
 ) -> None:
@@ -182,3 +182,11 @@ def test_amazontextract_loader(
     docs = loader.load()
 
     assert len(docs) == docs_length
+
+def test_amazontextract_loader_failures() -> None:
+    # 2-page PDF local file system
+    two_page_pdf = str(Path(__file__).parent.parent / "examples/multi-page-forms-sample-2-page.pdf")
+    loader = AmazonTextractPDFLoader(two_page_pdf)
+    with pytest.raises(ValueError):
+        loader.load()
+

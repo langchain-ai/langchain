@@ -483,7 +483,7 @@ class AmazonTextractPDFLoader(BasePDFLoader):
     def __init__(
         self,
         file_path: str,
-        textract_features: Optional[Sequence[int]] = None,
+        textract_features: Optional[Sequence[str]] = None,
         client: Optional[Any] = None,
         credentials_profile_name: Optional[str] = None,
         region_name: Optional[str] = None,
@@ -494,7 +494,7 @@ class AmazonTextractPDFLoader(BasePDFLoader):
         Args:
             file_path: A file, url or s3 path for input file
             textract_features: Features to be used for extraction, each feature
-                               should be passed as an int that conforms to the enum
+                               should be passed as a str that conforms to the enum
                                `Textract_Features`, see `amazon-textract-caller` pkg
             client: boto3 textract client (Optional)
             credentials_profile_name: AWS profile name, if not default (Optional)
@@ -511,6 +511,10 @@ class AmazonTextractPDFLoader(BasePDFLoader):
                 "Could not import amazon-textract-caller python package. "
                 "Please install it with `pip install amazon-textract-caller`."
             )
+        if textract_features:
+            features = [tc.Textract_Features[x] for x in textract_features]
+        else:
+            features = []
 
         if credentials_profile_name or region_name or endpoint_url:
             try:
@@ -542,7 +546,7 @@ class AmazonTextractPDFLoader(BasePDFLoader):
                     "profile name are valid."
                 ) from e
         self.parser = AmazonTextractPDFParser(
-            textract_features=textract_features, client=client
+            textract_features=features, client=client
         )
 
     def load(self) -> List[Document]:
