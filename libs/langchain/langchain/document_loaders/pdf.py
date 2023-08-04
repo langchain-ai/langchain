@@ -545,9 +545,7 @@ class AmazonTextractPDFLoader(BasePDFLoader):
                     "Please check that credentials in the specified "
                     "profile name are valid."
                 ) from e
-        self.parser = AmazonTextractPDFParser(
-            textract_features=features, client=client
-        )
+        self.parser = AmazonTextractPDFParser(textract_features=features, client=client)
 
     def load(self) -> List[Document]:
         """Load given path as pages."""
