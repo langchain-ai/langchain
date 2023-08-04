@@ -5,7 +5,7 @@ import pytest
 from langchain.output_parsers.openai_functions import (
     JsonOutputFunctionsParser,
 )
-from langchain.schema import ChatGeneration, BaseMessage, OutputParserException
+from langchain.schema import BaseMessage, ChatGeneration, OutputParserException
 from langchain.schema.messages import AIMessage, HumanMessage
 
 
