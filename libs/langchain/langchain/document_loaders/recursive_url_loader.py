@@ -1,5 +1,5 @@
 from typing import Iterator, List, Optional, Set
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin, urldefrag
 
 import requests
 
@@ -44,18 +44,6 @@ class RecursiveUrlLoader(BaseLoader):
                 "The BeautifulSoup package is required for the RecursiveUrlLoader."
             )
 
-        # Construct the base and parent URLs
-        parsed_url = urlparse(url)
-        base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
-        parent_url = "/".join(parsed_url.path.split("/")[:-1])
-        current_path = parsed_url.path
-
-        # Add a trailing slash if not present
-        if not base_url.endswith("/"):
-            base_url += "/"
-        if not parent_url.endswith("/"):
-            parent_url += "/"
-
         # Exclude the root and parent from a list
         visited = set() if visited is None else visited
 
@@ -65,34 +53,27 @@ class RecursiveUrlLoader(BaseLoader):
         ):
             return visited
 
+        yield from WebBaseLoader(web_path=url).load()
+        visited.add(url)
+
         # Get all links that are relative to the root of the website
         response = requests.get(url)
         soup = BeautifulSoup(response.text, "html.parser")
-        all_links = [link.get("href") for link in soup.find_all("a")]
-
-        # Extract only the links that are children of the current URL
-        child_links = list(
-            {
-                link
-                for link in all_links
-                if link and link.startswith(current_path) and link != current_path
-            }
-        )
-
-        # Get absolute path for all root relative links listed
-        absolute_paths = [urljoin(base_url, link) for link in child_links]
+        all_links = [urljoin(url, link.get("href")) for link in soup.find_all("a")]
+        # Filter children url of current url
+        child_links = [link for link in set(all_links) if link.startswith(url)]
+        # Remove framents to avoid repititions
+        defraged_child_links = [urldefrag(link).url for link in child_links]
 
         # Store the visited links and recursively visit the children
-        for link in absolute_paths:
+        for link in set(defraged_child_links):
             # Check all unvisited links
             if link not in visited:
                 visited.add(link)
-                loaded_link = WebBaseLoader(link).load()
-                if isinstance(loaded_link, list):
-                    yield from loaded_link
-                else:
-                    yield loaded_link
-                yield from self.get_child_links_recursive(link, visited)
+                yield from WebBaseLoader(link).load()
+                # If the link is a directory (w/ children) then visit it
+                if link.endswith("/"):
+                    yield from self.get_child_links_recursive(link, visited)
 
         return visited
 
