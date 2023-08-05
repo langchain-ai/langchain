@@ -3,17 +3,17 @@ from __future__ import annotations
 
 import logging
 import sys
-from enum import Enum
 from typing import TYPE_CHECKING
 
+from pydantic import Field, root_validator
+
 from langchain.chat_models.openai import (
+    ChatOpenAI,
     _convert_message_to_dict,
     _import_tiktoken,
-    ChatOpenAI,
 )
 from langchain.schema.messages import BaseMessage
 from langchain.utils import get_from_dict_or_env
-from pydantic import Field, root_validator
 
 if TYPE_CHECKING:
     import tiktoken
@@ -21,15 +21,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class AnyscaleChatModel(str, Enum):
-    llama7b = "meta-llama/Llama-2-7b-chat-hf"
-    llama13b = "meta-llama/Llama-2-13b-chat-hf"
-    llama70b = "meta-llama/Llama-2-70b-chat-hf"
-
-
-DEFAULT_MODEL = AnyscaleChatModel.llama7b
-
 DEFAULT_API_BASE = "https://api.endpoints.anyscale.com/v1"
+DEFAULT_MODEL = "meta-llama/Llama-2-7b-chat-hf"
 
 
 class ChatAnyscale(ChatOpenAI):
@@ -59,16 +52,17 @@ class ChatAnyscale(ChatOpenAI):
 
     anyscale_api_key: str | None = None
     """AnyScale Endpoints API keys."""
-    model_name: AnyscaleChatModel = Field(default=DEFAULT_MODEL, alias="model")
+    model_name: str = Field(default=DEFAULT_MODEL, alias="model")
     """Model name to use."""
     anyscale_api_base: str = Field(default=DEFAULT_API_BASE)
     """Base URL path for API requests,
     leave blank if not using a proxy or service emulator."""
     # to support explicit proxy for Anyscale
     anyscale_proxy: str | None = None
+    available_models: set[str] | None = None
 
     @root_validator()
-    def validate_environment(cls, values: dict) -> dict:
+    def validate_environment_override(cls, values: dict) -> dict:
         """Validate that api key and python package exists in environment."""
         values["openai_api_key"] = get_from_dict_or_env(
             values,
@@ -79,7 +73,7 @@ class ChatAnyscale(ChatOpenAI):
             values,
             "anyscale_api_base",
             "ANYSCALE_API_BASE",
-            default=DEFAULT_API_BASE,
+            default="https://api.endpoints.anyscale.com",
         )
         values["openai_proxy"] = get_from_dict_or_env(
             values,
@@ -107,6 +101,18 @@ class ChatAnyscale(ChatOpenAI):
             raise ValueError("n must be at least 1.")
         if values["n"] > 1 and values["streaming"]:
             raise ValueError("n must be 1 when streaming.")
+
+        model_name = values["model_name"]
+        available_models: set[str] = {
+            model["id"] for model in openai.Model.list()["data"]
+        }
+        if model_name not in available_models:
+            raise ValueError(
+                f"Model name {model_name} not found in available models: "
+                f"{available_models}.",
+            )
+        values["available_models"] = available_models
+
         return values
 
     def _get_encoding_model(self) -> tuple[str, tiktoken.Encoding]:
