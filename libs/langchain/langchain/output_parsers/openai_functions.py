@@ -1,3 +1,4 @@
+import copy
 import json
 from typing import Any, Dict, List, Type, Union
 
@@ -25,7 +26,7 @@ class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
             )
         message = generation.message
         try:
-            func_call = message.additional_kwargs["function_call"].copy()
+            func_call = copy.deepcopy(message.additional_kwargs["function_call"])
         except KeyError as exc:
             raise OutputParserException(f"Could not parse function call: {exc}")
 
