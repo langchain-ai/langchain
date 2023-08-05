@@ -78,7 +78,7 @@ class RetryOutputParser(BaseOutputParser[T]):
             parsed_completion = self.parser.parse(new_completion)
 
         return parsed_completion
-    
+
     async def aparse_with_prompt(self, completion: str, prompt_value: PromptValue) -> T:
         """Parse the output of an LLM call using a wrapped parser.
 
@@ -155,7 +155,7 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
             parsed_completion = self.parser.parse(new_completion)
 
         return parsed_completion
-    
+
     async def aparse_with_prompt(self, completion: str, prompt_value: PromptValue) -> T:
         try:
             parsed_completion = self.parser.parse(completion)
