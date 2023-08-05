@@ -316,6 +316,16 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
         """Format kwargs into a list of messages."""
 
 
+MessageLike = Union[
+    BaseMessagePromptTemplate,
+    BaseChatPromptTemplate,
+    BaseMessage,
+    Tuple[str, str],
+    Tuple[Type, str],
+    str,
+]
+
+
 class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
     """A prompt template for chat models.
 
@@ -457,16 +467,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
     @classmethod
     def from_messages(
         cls,
-        messages: Sequence[
-            Union[
-                BaseMessagePromptTemplate,
-                BaseChatPromptTemplate,
-                BaseMessage,
-                Tuple[str, str],
-                Tuple[Type, str],
-                str,
-            ]
-        ],
+        messages: Sequence[MessageLike],
     ) -> ChatPromptTemplate:
         """Create a chat prompt template from a variety of message formats.
 
@@ -592,6 +593,18 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
         prompt_dict["partial_variables"] = {**self.partial_variables, **kwargs}
         return type(self)(**prompt_dict)
 
+    def append(self, message: MessageLike) -> None:
+        """Append message to the end of the chat template.
+
+        Args:
+            message: representation of a message to append.
+        """
+        self.messages.append(_convert_to_message(message))
+
+    def extend(self, messages: Sequence[MessageLike]) -> None:
+        """Extend the chat template with a sequence of messages."""
+        self.messages.extend([_convert_to_message(message) for message in messages])
+
     @property
     def _prompt_type(self) -> str:
         """Name of prompt type."""
@@ -635,14 +648,7 @@ def _create_template_from_message_type(
 
 
 def _convert_to_message(
-    message: Union[
-        BaseMessagePromptTemplate,
-        BaseChatPromptTemplate,
-        BaseMessage,
-        Tuple[str, str],
-        Tuple[Type, str],
-        str,
-    ]
+    message: MessageLike
 ) -> Union[BaseMessage, BaseMessagePromptTemplate, BaseChatPromptTemplate]:
     """Instantiate a message from a variety of message formats.
 

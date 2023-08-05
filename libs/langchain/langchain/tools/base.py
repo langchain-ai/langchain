@@ -685,7 +685,7 @@ def tool(
     return_direct: bool = False,
     args_schema: Optional[Type[BaseModel]] = None,
     infer_schema: bool = True,
-) -> Callable:
+) -> Callable[[Callable], BaseTool]:
     """Make tools out of functions, can be used with or without arguments.
 
     Args:
