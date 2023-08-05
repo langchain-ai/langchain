@@ -4,6 +4,8 @@ import os
 from typing import Generator
 from urllib.request import urlretrieve
 
+import pytest
+
 from langchain.llms import LlamaCpp
 
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
@@ -68,3 +70,19 @@ def test_llamacpp_streaming_callback() -> None:
     )
     llm("Q: Can you count to 10? A:'1, ")
     assert callback_handler.llm_streams <= MAX_TOKENS + OFF_BY_ONE
+
+
+def test_llamacpp_model_kwargs() -> None:
+    llm = LlamaCpp(model_path=get_model(), model_kwargs={"n_gqa": None})
+    assert llm.model_kwargs == {"n_gqa": None}
+
+
+def test_llamacpp_invalid_model_kwargs() -> None:
+    with pytest.raises(ValueError):
+        LlamaCpp(model_path=get_model(), model_kwargs={"n_ctx": 1024})
+
+
+def test_llamacpp_incorrect_field() -> None:
+    with pytest.warns(match="not default parameter"):
+        llm = LlamaCpp(model_path=get_model(), n_gqa=None)
+    llm.model_kwargs == {"n_gqa": None}
