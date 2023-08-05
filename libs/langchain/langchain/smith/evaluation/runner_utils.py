@@ -785,14 +785,12 @@ async def _callbacks_initializer(
                 project_name=project_name, client=client, use_threading=False
             )
         )
-    evaluator_project_name = f"{project_name}-evaluators" if project_name else None
     if run_evaluators:
         callback = EvaluatorCallbackHandler(
             client=client,
             evaluators=run_evaluators,
             # We already have concurrency, don't want to overload the machine
             max_workers=1,
-            project_name=evaluator_project_name,
         )
         callbacks.append(callback)
         evaluation_handler_collector.append(callback)
@@ -1081,7 +1079,6 @@ def _run_on_examples(
     tracer = LangChainTracer(
         project_name=project_name, client=client, use_threading=False
     )
-    evaluator_project_name = f"{project_name}-evaluators"
     run_evaluators, examples = _setup_evaluation(
         llm_or_chain_factory, examples, evaluation, data_type
     )
@@ -1089,7 +1086,6 @@ def _run_on_examples(
     evalution_handler = EvaluatorCallbackHandler(
         evaluators=run_evaluators or [],
         client=client,
-        project_name=evaluator_project_name,
     )
     callbacks: List[BaseCallbackHandler] = [tracer, evalution_handler]
     for i, example in enumerate(examples):
