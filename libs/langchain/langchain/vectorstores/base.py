@@ -463,6 +463,12 @@ class VectorStore(ABC):
     def as_retriever(self, **kwargs: Any) -> VectorStoreRetriever:
         tags = kwargs.pop("tags", None) or []
         tags.extend(self._get_retriever_tags())
+        
+        if 'filter' in kwargs:
+            search_kwargs = kwargs.get('search_kwargs')
+            search_kwargs['filter'] = kwargs['filter']
+            kwargs.pop('filter')
+
         return VectorStoreRetriever(vectorstore=self, **kwargs, tags=tags)
 
 
