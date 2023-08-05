@@ -5,6 +5,7 @@ import logging
 import sys
 from typing import TYPE_CHECKING
 
+import requests
 from pydantic import Field, root_validator
 
 from langchain.chat_models.openai import (
@@ -61,7 +62,7 @@ class ChatAnyscale(ChatOpenAI):
     anyscale_proxy: str | None = None
     available_models: set[str] | None = None
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment_override(cls, values: dict) -> dict:
         """Validate that api key and python package exists in environment."""
         values["openai_api_key"] = get_from_dict_or_env(
@@ -97,14 +98,30 @@ class ChatAnyscale(ChatOpenAI):
                 "due to an old version of the openai package. Try upgrading it "
                 "with `pip install --upgrade openai`.",
             ) from exc
-        if values["n"] < 1:
-            raise ValueError("n must be at least 1.")
-        if values["n"] > 1 and values["streaming"]:
-            raise ValueError("n must be 1 when streaming.")
+        # if values["n"] < 1:
+        #     raise ValueError("n must be at least 1.")
+        # if values["n"] > 1 and values["streaming"]:
+        #     raise ValueError("n must be 1 when streaming.")
+        if "model_name" not in values.keys():
+            values["model_name"] = DEFAULT_MODEL
 
         model_name = values["model_name"]
+
+        models_url = f"{DEFAULT_API_BASE}/models"
+        models_response = requests.get(
+            models_url,
+            headers={
+                "Authorization": f"Bearer {values['openai_api_key']}",
+            },
+        )
+
+        if models_response.status_code != 200:
+            raise ValueError(
+                f"Error getting models from {models_url}: "
+                f"{models_response.status_code}",
+            )
         available_models: set[str] = {
-            model["id"] for model in openai.Model.list()["data"]
+            model["id"] for model in models_response.json()["data"]
         }
         if model_name not in available_models:
             raise ValueError(
