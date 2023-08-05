@@ -81,7 +81,7 @@ class Neo4jGraph:
                 data = session.run(query, params)
                 return [r.data() for r in data]
             except CypherSyntaxError as e:
-                raise ValueError("Generated Cypher Statement is not valid\n" f"{e}")
+                raise ValueError(f"Generated Cypher Statement is not valid\n{e}")
 
     def refresh_schema(self) -> None:
         """

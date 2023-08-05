@@ -69,3 +69,13 @@ def test_openai_embedding_with_empty_string() -> None:
     ][0]["embedding"]
     assert np.allclose(output[0], expected_output)
     assert len(output[1]) == 1536
+
+
+def test_embed_documents_normalized() -> None:
+    output = OpenAIEmbeddings().embed_documents(["foo walked to the market"])
+    assert np.isclose(np.linalg.norm(output[0]), 1.0)
+
+
+def test_embed_query_normalized() -> None:
+    output = OpenAIEmbeddings().embed_query("foo walked to the market")
+    assert np.isclose(np.linalg.norm(output), 1.0)
