@@ -29,7 +29,10 @@ class TestXata:
     ) -> None:
         """Test end to end constructions and search without metadata."""
         texts = ["foo", "bar", "baz"]
-        docsearch = XataVectorStore.from_texts(texts, embedding_openai, xata)
+        docsearch = XataVectorStore.from_texts(
+            texts=texts, 
+            embedding=embedding_openai,
+            client=xata)
 
         output = docsearch.similarity_search("foo", k=1)
         assert output == [Document(page_content="foo")]

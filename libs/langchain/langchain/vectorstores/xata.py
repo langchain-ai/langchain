@@ -55,7 +55,7 @@ class XataVectorStore(VectorStore):
         documents: List[Document],
         ids: List[str],
     ) -> List[str]:
-        return self._add_vectors(self._client, self.table_name, vectors, documents, ids)
+        return self._add_vectors(self._client, self._table_name, vectors, documents, ids)
     
     def add_texts(
         self,
@@ -103,11 +103,8 @@ class XataVectorStore(VectorStore):
 
             r = client.records().bulk_insert(table_name, {"records": chunk})
             if r.status_code != 200:
-                raise Exception(f"Error adding vectors to Xata: {r.status_code} {r.text}")
-            response = r.json()
-            records = response["records"]
-            ids = [record["id"] for record in records]
-            id_list.extend(ids)
+                raise Exception(f"Error adding vectors to Xata: {r.status_code} {r}")
+            id_list.extend(r["recordIDs"])
         return id_list
     
     @staticmethod
@@ -187,17 +184,16 @@ class XataVectorStore(VectorStore):
             List[Tuple[Document, float]]: List of documents most similar to the query
                 text with distance in float.
         """
-        embedding = self.embedding.embed_query(query)
-        r = self.client.search_and_filter().vector_search(self.table_name, payload={
+        embedding = self._embedding.embed_query(query)
+        r = self._client.search_and_filter().vector_search(self._table_name, payload={
             "queryVector": embedding,
             "column": "embedding",
             "size": k,
-            "filter": filter,
+            # "filter": filter,  # XXX: add filter support
         })
         if r.status_code != 200:
-            raise Exception(f"Error running similarity search: {r.status_code} {r.text}")
-        response = r.json()
-        hits = response["records"]
+            raise Exception(f"Error running similarity search: {r.status_code} {r}")
+        hits = r["records"]
         docs_and_scores = [
             (
                 Document(
