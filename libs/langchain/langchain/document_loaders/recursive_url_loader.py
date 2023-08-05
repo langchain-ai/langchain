@@ -1,3 +1,4 @@
+import asyncio
 import re
 from typing import Callable, Iterator, List, Optional, Set, Union
 from urllib.parse import urljoin, urlparse
@@ -7,24 +8,6 @@ import requests
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
-try:
-    import aiohttp
-except ImportError:
-    print("The aiohttp package is required for the RecursiveUrlLoader.")
-    print("Please install it with `pip install aiohttp`.")
-
-try:
-    import asyncio
-except ImportError:
-    print("The asyncio package is required for the RecursiveUrlLoader.")
-    print("Please install it with `pip install asyncio`.")
-
-try:
-    from bs4 import BeautifulSoup
-except ImportError:
-    print("The bs4 package is required for the RecursiveUrlLoader.")
-    print("Please install it with `pip install bs4`.")
-
 
 class RecursiveUrlLoader(BaseLoader):
     """Loads all child links from a given url."""
@@ -32,12 +15,12 @@ class RecursiveUrlLoader(BaseLoader):
     def __init__(
         self,
         url: str,
+        max_depth: Optional[int] = None,
+        use_async: Optional[bool] = None,
+        extractor: Optional[Callable[[str], str]] = None,
         exclude_dirs: Optional[str] = None,
-        use_async: bool = False,
-        extractor: Callable[[str], str] = lambda x: x,
-        max_depth: int = 2,
-        timeout: int = 10,
-        prevent_outside: bool = True,
+        timeout: Optional[int] = None,
+        prevent_outside: Optional[bool] = None,
     ) -> None:
         """Initialize with URL to crawl and any subdirectories to exclude.
         Args:
@@ -54,11 +37,11 @@ class RecursiveUrlLoader(BaseLoader):
 
         self.url = url
         self.exclude_dirs = exclude_dirs
-        self.use_async = use_async
-        self.extractor = extractor
-        self.max_depth = max_depth
-        self.timeout = timeout
-        self.prevent_outside = prevent_outside
+        self.use_async = use_async if use_async is not None else False
+        self.extractor = extractor if extractor is not None else lambda x: x
+        self.max_depth = max_depth if max_depth is not None else 2
+        self.timeout = timeout if timeout is not None else 10
+        self.prevent_outside = prevent_outside if prevent_outside is not None else True
 
     def _get_sub_links(self, raw_html: str, base_url: str) -> List[str]:
         """This function extracts all the links from the raw html,
@@ -74,27 +57,22 @@ class RecursiveUrlLoader(BaseLoader):
         # Get all links that are relative to the root of the website
         all_links = re.findall(r"href=[\"\'](.*?)[\"\']", raw_html)
         absolute_paths = []
+        invalid_prefixes = ("javascript:", "mailto:", "#")
+        invalid_suffixes = (
+            ".css",
+            ".js",
+            ".ico",
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".gif",
+            ".svg",
+        )
         # Process the links
         for link in all_links:
-            # Some patterns are on blacklist
-            # like javascript: or mailto:
-            if link.startswith("javascript:") or link.startswith("mailto:"):
-                continue
-            # Or #, which is a link to the same page
-            if link.startswith("#"):
-                continue
-            # Some may be css, js, images files
-            invalid_ext = [
-                ".css",
-                ".js",
-                ".ico",
-                ".png",
-                ".jpg",
-                ".jpeg",
-                ".gif",
-                ".svg",
-            ]
-            if any([link.endswith(ext) for ext in invalid_ext]):
+            # Ignore blacklisted patterns
+            # like javascript: or mailto:, files of svg, ico, css, js
+            if link.startswith(invalid_prefixes) or link.endswith(invalid_suffixes):
                 continue
             # Some may be absolute links like https://to/path
             if link.startswith("http"):
@@ -113,15 +91,16 @@ class RecursiveUrlLoader(BaseLoader):
             if link.startswith("//"):
                 absolute_paths.append(f"{urlparse(base_url).scheme}:{link}")
                 continue
-        # Remove duplicates, also do a filter to prevent outside links
+        # Remove duplicates, also do another filter to prevent outside links, just in case
         absolute_paths = list(
             set(
-                filter(
-                    lambda x: not self.prevent_outside
-                    or x.startswith(base_url)
-                    and (x != base_url),
-                    absolute_paths,
-                )
+                [
+                    path
+                    for path in absolute_paths
+                    if not self.prevent_outside
+                    or path.startswith(base_url)
+                    and path != base_url
+                ]
             )
         )
 
@@ -129,6 +108,11 @@ class RecursiveUrlLoader(BaseLoader):
 
     def _gen_metadata(self, raw_html: str, url: str) -> dict:
         """Build metadata from BeautifulSoup output."""
+        try:
+            from bs4 import BeautifulSoup
+        except ImportError:
+            print("The bs4 package is required for the RecursiveUrlLoader.")
+            print("Please install it with `pip install bs4`.")
         metadata = {"source": url}
         soup = BeautifulSoup(raw_html, "html.parser")
         if title := soup.find("title"):
@@ -205,7 +189,11 @@ class RecursiveUrlLoader(BaseLoader):
             visited: A set of visited URLs.
             depth: To reach the current url, how many pages have been visited.
         """
-
+        try:
+            import aiohttp
+        except ImportError:
+            print("The aiohttp package is required for the RecursiveUrlLoader.")
+            print("Please install it with `pip install aiohttp`.")
         if depth > self.max_depth:
             return []
 
@@ -224,7 +212,7 @@ class RecursiveUrlLoader(BaseLoader):
         # Disable SSL verification because websites may have invalid SSL certificates,
         # but won't cause any security issues for us.
         async with aiohttp.ClientSession(
-            connector=aiohttp.TCPConnector(verify_ssl=False),
+            connector=aiohttp.TCPConnector(ssl=False),
             timeout=aiohttp.ClientTimeout(self.timeout),
         ) as session:
             # Some url may be invalid, so catch the exception
@@ -247,7 +235,7 @@ class RecursiveUrlLoader(BaseLoader):
             async def worker(link: str) -> Union[Document, None]:
                 try:
                     async with aiohttp.ClientSession(
-                        connector=aiohttp.TCPConnector(verify_ssl=False),
+                        connector=aiohttp.TCPConnector(ssl=False),
                         timeout=aiohttp.ClientTimeout(self.timeout),
                     ) as session:
                         response = await session.get(link)
