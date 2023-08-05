@@ -141,6 +141,10 @@ class WebBaseLoader(BaseLoader):
                 if self.continue_on_failure:
                     logger.warning(f"Error fetching {url}: {e}")
                     return ""
+                logger.exception(
+                    f"Error fetching {url} and aborting, use continue_on_failure=True "
+                    " to continue loading urls after encountering an error."
+                )
                 raise e
 
     async def fetch_all(self, urls: List[str]) -> Any:
