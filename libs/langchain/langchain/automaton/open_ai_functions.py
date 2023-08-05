@@ -49,14 +49,26 @@ class OpenAIFunctionsRouter(RunnableBinding[ChatGeneration, Any]):
         super().__init__(bound=router, kwargs={}, functions=functions)
 
 
+class FunctionCallRequest(TypedDict):
+    name: str
+    """The name of the function."""
+    arguments: dict
+    """The arguments to the function."""
+
+
+class FunctionCall(TypedDict):
+    request: FunctionCallRequest
+    """The function call request."""
+    result: Any
+    """The result of the function call"""
+
+
 class ActingResult(TypedDict):
     """The result of an action."""
 
     message: BaseMessage
     """The message that was passed to the action."""
-    data: Any
-    """The result of the action."""
-    name: str | None
+    function_call: Optional[FunctionCall]
 
 
 def create_action_taking_llm(
@@ -85,15 +97,24 @@ def create_action_taking_llm(
             and "function_call" in message.additional_kwargs
         ):
             return {
-                "name": message.additional_kwargs["function_call"]["name"],
-                "data": invoke_from_function.invoke(message),
                 "message": message,
+                "function_call": {
+                    "request": {
+                        "name": message.additional_kwargs["function_call"]["name"],
+                        "arguments": {"fixme": "fixme"},
+                    },
+                    "result": invoke_from_function.invoke(  # TODO: fixme using invoke
+                        message.additional_kwargs["function_call"]
+                    ),
+                    # Check this works.
+                    # "result": message.additional_kwargs["function_call"]
+                    #           | invoke_from_function,
+                },
             }
         else:
             return {
-                "name": None,
                 "message": message,
-                "data": None,
+                "function_call": None,
             }
 
     invoke_from_function = OpenAIFunctionsRouter(

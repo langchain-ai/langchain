@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import abc
+import dataclasses
 import enum
 import json
-from typing import Any, List, Sequence, Mapping, TypedDict, TypeVar, Generic, Iterator
+from typing import Any, List, Sequence, Mapping, TypedDict, TypeVar, Iterator, Tuple
 
 from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
@@ -30,10 +31,9 @@ from langchain.tools.base import tool as tool_maker, BaseTool
 
 
 class FakeChatOpenAI(BaseChatModel):
-    def __init__(self, messages: Sequence[BaseMessage], **kwargs: Any) -> None:
-        """Initialize the model."""
-        self.response_iter = iter(messages)
-        super().__init__(**kwargs)
+    """A fake chat model that returns a pre-defined response."""
+
+    message_iter: Iterator[BaseMessage]
 
     @property
     def _llm_type(self) -> str:
@@ -48,7 +48,7 @@ class FakeChatOpenAI(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         """Generate a response to the given messages."""
-        message = next(self.response_iter)
+        message = next(self.message_iter)
         return ChatResult(generations=[ChatGeneration(message=message)])
 
 
@@ -99,17 +99,19 @@ def test_openai_functions_router(
     )
 
     model = FakeChatOpenAI(
-        messages=[
-            AIMessage(
-                content="",
-                additional_kwargs={
-                    "function_call": {
-                        "name": "accept",
-                        "arguments": '{\n  "draft": "turtles"\n}',
-                    }
-                },
-            )
-        ]
+        message_iter=iter(
+            [
+                AIMessage(
+                    content="",
+                    additional_kwargs={
+                        "function_call": {
+                            "name": "accept",
+                            "arguments": '{\n  "draft": "turtles"\n}',
+                        }
+                    },
+                )
+            ]
+        )
     )
 
     chain = model.bind(functions=router.functions) | router
@@ -167,95 +169,181 @@ def print_message(message: BaseMessage) -> None:
 T = TypeVar("T")
 
 
-class State(Generic[T]):
+from typing import Mapping
+
+
+class ExecutedState(TypedDict):
+    """The response of an action taking LLM."""
+
+    id_: str  # the ID of the state that was just executed
+    data: Mapping[str, Any]
+
+
+@dataclasses.dataclass
+class State:
     """A state in the automaton."""
 
     @abc.abstractmethod
-    def execute(self) -> T:
+    def execute(self) -> ExecutedState:
         """Execute the state."""
 
 
-class Automaton(Generic[T]):
-    @abc.abstractmethod
-    def get_start_state(self, *args, **kwargs) -> State[T]:
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def get_next_state(self, *args, **kwargs) -> State[T]:
-        raise NotImplementedError()
-
-
-class ActionTakingResponse(TypedDict):
-    """The response of an action taking LLM."""
-
-    message: BaseMessage
-
-
+@dataclasses.dataclass
 class LLMProgramState(State):
     llm: BaseLanguageModel
     tools: Sequence[BaseTool]
     messages: Sequence[BaseMessage]
 
-    def execute(self) -> T:
+    def execute(self) -> ExecutedState:
         """Execute LLM program."""
-        action_taking_llm = create_action_taking_llm(self.llm, self.tools)
+        action_taking_llm = create_action_taking_llm(self.llm, tools=self.tools)
         result = action_taking_llm.invoke(self.messages)
-        return {
-            "llm": self.llm,
-            "tools": self.tools,
-        }
+        return {"id_": "llm_program", "data": result}
 
 
+@dataclasses.dataclass
 class UserInputState(State):
-    def execute(self) -> T:
+    def execute(self) -> ExecutedState:
         """Execute user input state."""
         user_input = input("Enter your input: ")
         return {
-            "type_": "user_input",
+            "id_": "user_input",
+            "data": {
+                "message": HumanMessage(content=user_input),
+            },
         }
 
 
+class Automaton:
+    @abc.abstractmethod
+    def get_start_state(self, *args: Any, **kwargs: Any) -> State:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def get_next_state(self, executed_state: ExecutedState) -> State:
+        raise NotImplementedError()
+
+
+class ChatAutomaton(Automaton):
+    def __init__(
+        self,
+        llm: BaseLanguageModel,
+        tools: Sequence[BaseTool],
+        prompt: ChatPromptTemplate,
+    ) -> None:
+        """Initialize the chat automaton."""
+        self.llm = llm
+        self.tools = tools
+        # TODO: Fix mutability of chat template, potentially add factory method
+        self.chat_template = ChatPromptTemplate.from_messages(prompt.format_messages())
+
+    def get_start_state(self, *args: Any, **kwargs: Any) -> State:
+        """Get the start state."""
+        return LLMProgramState(
+            llm=self.llm,
+            tools=self.tools,
+            messages=self.chat_template.format_messages(),
+        )
+
+    def get_next_state(self, executed_state: ExecutedState) -> State:
+        """Get the next state."""
+        previous_state_id = executed_state["id_"]
+        data = executed_state["data"]
+        self.chat_template.append(data["message"])
+
+        if previous_state_id == "user_input":
+            return LLMProgramState(
+                llm=self.llm,
+                tools=self.tools,
+                messages=self.chat_template.format_messages(),
+            )
+        elif previous_state_id == "llm_program":
+            message_type = _infer_message_type(data["message"])
+            if message_type == MessageType.USER:
+                raise AssertionError(
+                    "LLM program should not return user input message."
+                )
+            elif message_type == MessageType.FUNCTION:
+                raise AssertionError(
+                    "User input state should not return function message."
+                )
+            elif message_type in MessageType.AI:
+                return UserInputState()
+            elif message_type == MessageType.AI_INVOKE:
+                # Here we need to add a function message
+                # and then return the user input state.
+                assert data["function_call"]
+
+                function_message = FunctionMessage(
+                    content=data["function_call"]["result"],
+                )
+
+                # Function message requires custom addition
+                # Logic may need to be refactored
+                self.chat_template.append(function_message)
+
+                return LLMProgramState(
+                    llm=self.llm,
+                    tools=self.tools,
+                    messages=self.chat_template.format_messages(),
+                )
+
+        else:
+            raise ValueError(f"Unknown state ID: {previous_state_id}")
+
+
+# Need to make into runnable
+# This is a for looping runnable... :)
 class Executor:
-    def __init__(self, automaton: Automaton) -> None:
+    def __init__(self, automaton: Automaton, max_iterations: int) -> None:
         """Initialize the executor."""
         self.automaton = automaton
+        self.max_iterations = max_iterations
 
-    def run(self) -> None:
-        """Run the automaton."""
+    def run(self) -> Tuple[State, List[ExecutedState]]:
+        """Run the automaton.
+
+        Returns:
+            The final state and result of executed states.
+        """
         state = self.automaton.get_start_state()
+        executed_states = []
 
-        for _ in range(10):
-            new_state = state.execute()
+        for _ in range(self.max_iterations):
+            raise ValueError(state)
+            executed_state = state.execute()
+            raise ValueError(executed_state)
+            executed_states.append(executed_state)
+            state = self.automaton.get_next_state(executed_state)
 
-        result = state.execute()
-        new_state = state.execute()
-
-
-@tool_maker
-def get_time() -> str:
-    """Get time."""
-    return "9 PM"
+        return state, executed_states
 
 
-@tool_maker
-def get_location() -> str:
-    """Get location."""
-    return "the park"
-
-
-def run_automaton() -> None:
+def test_automaton() -> None:
     """Run the automaton."""
+
+    @tool_maker
+    def get_time() -> str:
+        """Get time."""
+        return "9 PM"
+
+    @tool_maker
+    def get_location() -> str:
+        """Get location."""
+        return "the park"
+
     tools = [get_time, get_location]
     llm = FakeChatOpenAI(
-        messages=[
-            _construct_func_invocation_message(get_time, {}),
-            AIMessage(
-                content="The time is 9 PM.",
-            ),
-        ]
+        message_iter=iter(
+            [
+                _construct_func_invocation_message(get_time, {}),
+                AIMessage(
+                    content="The time is 9 PM.",
+                ),
+            ]
+        )
     )
-    chain = create_action_taking_llm(llm, tools=tools)
-    template = ChatPromptTemplate.from_messages(
+    prompt = ChatPromptTemplate.from_messages(
         [
             (
                 "system",
@@ -266,67 +354,8 @@ def run_automaton() -> None:
         ]
     )
 
-    last_response = {
-        "data": None,
-        "name": None,
-        "last_message": template.format_messages()[-1],
-    }
-
-    for _ in range(1):
-        last_message = template.format_messages()[-1]
-        message_type = _infer_message_type(last_message)
-
-        if message_type.AI_INVOKE:
-            pass
-        elif message_type.AI:
-            # Then transition to user
-            pass
-        elif message_type.USER:
-            # (Ready for human input?)
-            # Determine if human turn
-            content = input("User:")
-            if content == "q":  # Quit
-                break
-            template.append(("human", content))
-            # then transition to AI
-            pass
-        elif message_type.SYSTEM:
-            # then transition to AI or User
-            pass
-        elif message_type.FUNCTION:
-            # then transition to AI
-            pass
-
-        if last_response and last_response["name"] == "bye":
-            print("AGI: byebye silly human")
-            break
-
-        # Very hacky routing layer
-        if isinstance(last_message, SystemMessage) or (
-            (last_message, AIMessage) and not last_message.additional_kwargs
-        ):  # (Ready for human input?)
-            # Determine if human turn
-            content = input("User:")
-            if content == "q":  # Quit
-                break
-            template = template + [("human", content)]
-        else:  # Determine if need to insert function invocation information
-            if (
-                last_response and last_response["name"]
-            ):  # Last response was a tool invocation, need to append a Function message
-                template.append(
-                    FunctionMessage(
-                        content=last_response["data"], name=last_response["name"]
-                    )
-                )
-                print_message(template.messages[-1])
-
-        messages = template.format_messages()  # Would love to get rid of this
-
-        last_response = chain.invoke(messages)
-        template.append(last_response["message"])
-
-
-def test_automaton() -> None:
-    """Test the automaton by running a simple chat model."""
-    run_automaton()
+    # TODO(FIX MUTABILITY)
+    chat_automaton = ChatAutomaton(llm=llm, tools=tools, prompt=prompt)
+    executor = Executor(chat_automaton, max_iterations=1)
+    executed_states = executor.run()
+    assert executed_states == []
