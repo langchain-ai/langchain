@@ -981,6 +981,7 @@ class Qdrant(VectorStore):
         wal_config: Optional[common_types.WalConfigDiff] = None,
         quantization_config: Optional[common_types.QuantizationConfig] = None,
         init_from: Optional[common_types.InitFrom] = None,
+        on_disk: Optional[bool] = None,
         force_recreate: bool = False,
         **kwargs: Any,
     ) -> Qdrant:
@@ -1090,8 +1091,6 @@ class Qdrant(VectorStore):
         qdrant = cls._construct_instance(
             texts,
             embedding,
-            metadatas,
-            ids,
             location,
             url,
             port,
@@ -1117,6 +1116,7 @@ class Qdrant(VectorStore):
             wal_config,
             quantization_config,
             init_from,
+            on_disk,
             force_recreate,
             **kwargs,
         )
@@ -1157,6 +1157,7 @@ class Qdrant(VectorStore):
         wal_config: Optional[common_types.WalConfigDiff] = None,
         quantization_config: Optional[common_types.QuantizationConfig] = None,
         init_from: Optional[common_types.InitFrom] = None,
+        on_disk: Optional[bool] = None,
         force_recreate: bool = False,
         **kwargs: Any,
     ) -> Qdrant:
@@ -1266,8 +1267,6 @@ class Qdrant(VectorStore):
         qdrant = cls._construct_instance(
             texts,
             embedding,
-            metadatas,
-            ids,
             location,
             url,
             port,
@@ -1293,6 +1292,7 @@ class Qdrant(VectorStore):
             wal_config,
             quantization_config,
             init_from,
+            on_disk,
             force_recreate,
             **kwargs,
         )
@@ -1304,8 +1304,6 @@ class Qdrant(VectorStore):
         cls: Type[Qdrant],
         texts: List[str],
         embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
-        ids: Optional[Sequence[str]] = None,
         location: Optional[str] = None,
         url: Optional[str] = None,
         port: Optional[int] = 6333,
@@ -1331,6 +1329,7 @@ class Qdrant(VectorStore):
         wal_config: Optional[common_types.WalConfigDiff] = None,
         quantization_config: Optional[common_types.QuantizationConfig] = None,
         init_from: Optional[common_types.InitFrom] = None,
+        on_disk: Optional[bool] = None,
         force_recreate: bool = False,
         **kwargs: Any,
     ) -> Qdrant:
@@ -1421,16 +1420,17 @@ class Qdrant(VectorStore):
             if current_distance_func != distance_func:
                 raise QdrantException(
                     f"Existing Qdrant collection is configured for "
-                    f"{current_vector_config.distance} "  # type: ignore[union-attr]
-                    f"similarity. Please set `distance_func` parameter to "
-                    f"`{distance_func}` if you want to reuse it. If you want to "
-                    f"recreate the collection, set `force_recreate` parameter to "
-                    f"`True`."
+                    f"{current_distance_func} similarity, but requested "
+                    f"{distance_func}. Please set `distance_func` parameter to "
+                    f"`{current_distance_func}` if you want to reuse it. "
+                    f"If you want to recreate the collection, set `force_recreate` "
+                    f"parameter to `True`."
                 )
         except (UnexpectedResponse, RpcError, ValueError):
             vectors_config = rest.VectorParams(
                 size=vector_size,
                 distance=rest.Distance[distance_func],
+                on_disk=on_disk,
             )
 
             # If vector name was provided, we're going to use the named vectors feature

@@ -92,6 +92,17 @@ class Chroma(VectorStore):
             self._persist_directory = persist_directory
         else:
             if client_settings:
+                # If client_settings is provided with persist_directory specified,
+                # then it is "in-memory and persisting to disk" mode.
+                client_settings.persist_directory = (
+                    persist_directory or client_settings.persist_directory
+                )
+                if client_settings.persist_directory is not None:
+                    # Maintain backwards compatibility with chromadb < 0.4.0
+                    major, minor, _ = chromadb.__version__.split(".")
+                    if int(major) == 0 and int(minor) < 4:
+                        client_settings.chroma_db_impl = "duckdb+parquet"
+
                 _client_settings = client_settings
             elif persist_directory:
                 # Maintain backwards compatibility with chromadb < 0.4.0
