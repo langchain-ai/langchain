@@ -461,6 +461,16 @@ class VectorStore(ABC):
         return tags
 
     def as_retriever(self, **kwargs: Any) -> VectorStoreRetriever:
+        """Return VectorStoreRetriever initialized from this VectorStore.
+        
+        Args:
+            search_type (Optional[str]): Defines the type of search that the Retriever should perform. Defaults to "similarity". Other options are "mmr" and "similarity_score_threshold".
+            search_kwargs (Optional[Dict]): Keyword arguments to pass to the search function. 
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None. Does nothing if the Vectorstore doesn't support metadata filters.
+
+        Returns:
+            VectorStoreRetriever: Retriever class for VectorStore.   
+        """
         tags = kwargs.pop("tags", None) or []
         tags.extend(self._get_retriever_tags())
         
