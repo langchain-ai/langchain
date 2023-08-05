@@ -62,6 +62,7 @@ class WebBaseLoader(BaseLoader):
         header_template: Optional[dict] = None,
         verify_ssl: Optional[bool] = True,
         proxies: Optional[dict] = None,
+        continue_on_failure: Optional[bool] = False,
     ):
         """Initialize with webpage path."""
 
@@ -96,6 +97,7 @@ class WebBaseLoader(BaseLoader):
         self.session = requests.Session()
         self.session.headers = dict(headers)
         self.session.verify = verify_ssl
+        self.continue_on_failure = continue_on_failure
 
         if proxies:
             self.session.proxies.update(proxies)
@@ -136,8 +138,10 @@ class WebBaseLoader(BaseLoader):
             try:
                 return await self._fetch(url)
             except Exception as e:
-                logger.warning(f"Error fetching {url}: {e}")
-                return ""
+                if self.continue_on_failure:
+                    logger.warning(f"Error fetching {url}: {e}")
+                    return ""
+                raise e
 
     async def fetch_all(self, urls: List[str]) -> Any:
         """Fetch all urls concurrently with rate limiting."""
