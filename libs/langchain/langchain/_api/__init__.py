@@ -11,14 +11,12 @@ This module is only relevant for LangChain developers, not for users.
 
 from .deprecation import (
     LangChainDeprecationWarning,
-    _warn_deprecated,
     deprecated,
     suppress_langchain_deprecation_warning,
 )
 
 __all__ = [
     "deprecated",
-    "_warn_deprecated",
     "LangChainDeprecationWarning",
     "suppress_langchain_deprecation_warning",
 ]
