@@ -14,6 +14,7 @@ class RecursiveUrlLoader(BaseLoader):
         self,
         url: str,
         exclude_dirs: Optional[str] = None,
+        max_depth: int = -1
     ) -> None:
         """Initialize with URL to crawl and any subdirectories to exclude.
 
@@ -24,9 +25,10 @@ class RecursiveUrlLoader(BaseLoader):
 
         self.url = url
         self.exclude_dirs = exclude_dirs
+        self.max_depth = max_depth
 
     def get_child_links_recursive(
-        self, url: str, visited: Optional[Set[str]] = None
+        self, url: str, depth: int, visited: Optional[Set[str]] = None
     ) -> Iterator[Document]:
         """Recursively get all child links starting with the path of the input URL.
 
@@ -46,6 +48,9 @@ class RecursiveUrlLoader(BaseLoader):
 
         # Exclude the root and parent from a list
         visited = set() if visited is None else visited
+
+        if self.max_depth > 0 and depth <= self.max_depth:
+            return None
 
         # Exclude the links that start with any of the excluded directories
         if self.exclude_dirs and any(
@@ -73,13 +78,13 @@ class RecursiveUrlLoader(BaseLoader):
                 yield from WebBaseLoader(link).load()
                 # If the link is a directory (w/ children) then visit it
                 if link.endswith("/"):
-                    yield from self.get_child_links_recursive(link, visited)
+                    yield from self.get_child_links_recursive(link, depth+1, visited)
 
         return visited
 
     def lazy_load(self) -> Iterator[Document]:
         """Lazy load web pages."""
-        return self.get_child_links_recursive(self.url)
+        return self.get_child_links_recursive(self.url, depth=0)
 
     def load(self) -> List[Document]:
         """Load web pages."""
