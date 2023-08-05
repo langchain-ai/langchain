@@ -139,11 +139,11 @@ class WebBaseLoader(BaseLoader):
                 return await self._fetch(url)
             except Exception as e:
                 if self.continue_on_failure:
-                    logger.warning(f"Error fetching {url}: {e}")
+                    logger.warning(f"Error fetching {url}, skipping due to continue_on_failure=True")
                     return ""
                 logger.exception(
                     f"Error fetching {url} and aborting, use continue_on_failure=True "
-                    " to continue loading urls after encountering an error."
+                    "to continue loading urls after encountering an error."
                 )
                 raise e
 
