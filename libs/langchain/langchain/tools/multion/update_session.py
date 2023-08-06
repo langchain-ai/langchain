@@ -5,7 +5,6 @@ from pydantic import BaseModel, Field
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.multion.base import MultionBaseTool
 
-
 if TYPE_CHECKING:
     # This is for linting and IDE typehints
     import multion
