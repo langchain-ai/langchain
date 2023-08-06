@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Optional, Type
+from typing import TYPE_CHECKING, Optional, Type
 
 from pydantic import BaseModel, Field
 
@@ -41,7 +41,6 @@ class MultionUpdateSession(MultionBaseTool):
     Multion Browser Window with provided fields. \
         Note:TabId is got from one of the previous Browser window creation."""
     args_schema: Type[UpdateSessionSchema] = UpdateSessionSchema
-    tabId: Any = None
 
     def _run(
         self,
