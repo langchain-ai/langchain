@@ -30,6 +30,7 @@ def _load_rapidfuzz() -> Any:
     except ImportError:
         raise ImportError(
             "Please install the rapidfuzz library to use the FuzzyMatchStringEvaluator."
+            "Please install it with `pip install rapidfuzz`."
         )
     return rapidfuzz.distance
 
