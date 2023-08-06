@@ -1,10 +1,20 @@
 from typing import TYPE_CHECKING, Any, Optional, Type
 
-import multion
 from pydantic import BaseModel, Field
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.multion.base import MultionBaseTool
+
+
+if TYPE_CHECKING:
+    # This is for linting and IDE typehints
+    import multion
+else:
+    try:
+        # We do this so pydantic can resolve the types when instantiating
+        import multion
+    except ImportError:
+        pass
 
 
 class UpdateSessionSchema(BaseModel):
