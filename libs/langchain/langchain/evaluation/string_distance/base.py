@@ -117,7 +117,7 @@ class _RapidFuzzChainMixin(Chain):
         """
         from rapidfuzz import distance as rf_distance
 
-        module_map = {
+        module_map: Dict[str, Any] = {
             StringDistance.DAMERAU_LEVENSHTEIN: rf_distance.DamerauLevenshtein,
             StringDistance.LEVENSHTEIN: rf_distance.Levenshtein,
             StringDistance.JARO: rf_distance.Jaro,
