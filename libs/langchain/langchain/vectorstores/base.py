@@ -464,8 +464,8 @@ class VectorStore(ABC):
         """Return VectorStoreRetriever initialized from this VectorStore.
         
         Args:
-            search_type (Optional[str]): Defines the type of search that the Retriever should perform. Defaults to "similarity". Other options are "mmr" and "similarity_score_threshold".
-            search_kwargs (Optional[Dict]): Keyword arguments to pass to the search function. Depending on the search type, these arguments will be passed to the `similarity_search`, `similarity_search_with_relevance_scores`, or `max_marginal_relevance_search` method.
+            search_type (Optional[str]): Defines the type of search that the Retriever should perform. Can be "similarity" (default), "mmr", or "similarity_score_threshold".
+            search_kwargs (Optional[Dict]): Keyword arguments to pass to the search function.
                 k: Amount of documents to return (Default: 4)
                 score_threshold: Minimum relevance threshold for similarity_score_threshold 
                 fetch_k: Amount of documents to pass to MMR algorithm (Default: 20)
