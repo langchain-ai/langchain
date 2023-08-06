@@ -465,19 +465,13 @@ class VectorStore(ABC):
         
         Args:
             search_type (Optional[str]): Defines the type of search that the Retriever should perform. Defaults to "similarity". Other options are "mmr" and "similarity_score_threshold".
-            search_kwargs (Optional[Dict]): Keyword arguments to pass to the search function. 
-            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None. Does nothing if the Vectorstore doesn't support metadata filters.
+            search_kwargs (Optional[Dict]): Keyword arguments to pass to the search function. Depending on the search type, these arguments will be passed to the `similarity_search`, `similarity_search_with_relevance_scores`, or `max_marginal_relevance_search` method.
 
         Returns:
             VectorStoreRetriever: Retriever class for VectorStore.   
         """
         tags = kwargs.pop("tags", None) or []
         tags.extend(self._get_retriever_tags())
-        
-        if 'filter' in kwargs:
-            search_kwargs = kwargs.get('search_kwargs', {})
-            search_kwargs['filter'] = kwargs.pop('filter', None)
-            kwargs['search_kwargs'] = search_kwargs
 
         return VectorStoreRetriever(vectorstore=self, **kwargs, tags=tags)
 
