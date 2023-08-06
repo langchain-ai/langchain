@@ -42,12 +42,16 @@ class StringDistance(str, Enum):
         LEVENSHTEIN: The Levenshtein distance.
         JARO: The Jaro distance.
         JARO_WINKLER: The Jaro-Winkler distance.
+        HAMMING: The Hamming distance.
+        INDEL: The Indel distance.
     """
 
     DAMERAU_LEVENSHTEIN = "damerau_levenshtein"
     LEVENSHTEIN = "levenshtein"
     JARO = "jaro"
     JARO_WINKLER = "jaro_winkler"
+    HAMMING = "hamming"
+    INDEL = "indel"
 
 
 class _RapidFuzzChainMixin(Chain):
@@ -120,6 +124,10 @@ class _RapidFuzzChainMixin(Chain):
             return rf_distance.Jaro.distance
         elif distance == StringDistance.JARO_WINKLER:
             return rf_distance.JaroWinkler.distance
+        elif distance == StringDistance.HAMMING:
+            return rf_distance.Hamming.distance
+        elif distance == StringDistance.INDEL:
+            return rf_distance.Indel.distance
         else:
             raise ValueError(f"Invalid distance metric: {distance}")
 
@@ -145,11 +153,14 @@ class _RapidFuzzChainMixin(Chain):
             float: The distance between the two strings.
         """
         score = self.metric(a, b)
-        if self.normalize_score and self.distance in (
-            StringDistance.DAMERAU_LEVENSHTEIN,
-            StringDistance.LEVENSHTEIN,
-        ):
-            score = score / max(len(a), len(b))
+        if self.normalize_score:
+            if self.distance in (
+                StringDistance.DAMERAU_LEVENSHTEIN,
+                StringDistance.LEVENSHTEIN,
+            ):
+                score = score / max(len(a), len(b))
+            elif self.distance in (StringDistance.HAMMING, StringDistance.INDEL):
+                score = score / (len(a) + len(b))
         return score
 
 
