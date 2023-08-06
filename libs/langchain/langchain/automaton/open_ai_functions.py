@@ -10,6 +10,7 @@ from langchain.schema.output import ChatGeneration
 from langchain.schema.runnable import RouterRunnable, Runnable, RunnableBinding
 from langchain.tools.base import BaseTool
 from langchain.tools.convert_to_openai import format_tool_to_openai_function
+import json
 
 
 class OpenAIFunction(TypedDict):
@@ -49,17 +50,12 @@ class OpenAIFunctionsRouter(RunnableBinding[ChatGeneration, Any]):
         super().__init__(bound=router, kwargs={}, functions=functions)
 
 
-class FunctionCallRequest(TypedDict):
+class FunctionCall(TypedDict):
     name: str
     """The name of the function."""
     arguments: dict
     """The arguments to the function."""
-
-
-class FunctionCall(TypedDict):
-    request: FunctionCallRequest
-    """The function call request."""
-    result: Any
+    result: Any  # Need to denote not invoked yet as well
     """The result of the function call"""
 
 
@@ -99,12 +95,12 @@ def create_action_taking_llm(
             return {
                 "message": message,
                 "function_call": {
-                    "request": {
-                        "name": message.additional_kwargs["function_call"]["name"],
-                        "arguments": {"fixme": "fixme"},
-                    },
+                    "name": message.additional_kwargs["function_call"]["name"],
+                    "arguments": json.loads(
+                        message.additional_kwargs["function_call"]["arguments"]
+                    ),
                     "result": invoke_from_function.invoke(  # TODO: fixme using invoke
-                        message.additional_kwargs["function_call"]
+                        message
                     ),
                     # Check this works.
                     # "result": message.additional_kwargs["function_call"]

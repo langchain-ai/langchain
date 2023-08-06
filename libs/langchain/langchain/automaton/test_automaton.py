@@ -267,7 +267,7 @@ class ChatAutomaton(Automaton):
                 raise AssertionError(
                     "User input state should not return function message."
                 )
-            elif message_type in MessageType.AI:
+            elif message_type == MessageType.AI:
                 return UserInputState()
             elif message_type == MessageType.AI_INVOKE:
                 # Here we need to add a function message
@@ -275,6 +275,7 @@ class ChatAutomaton(Automaton):
                 assert data["function_call"]
 
                 function_message = FunctionMessage(
+                    name=data["function_call"]["name"],
                     content=data["function_call"]["result"],
                 )
 
@@ -310,9 +311,7 @@ class Executor:
         executed_states = []
 
         for _ in range(self.max_iterations):
-            raise ValueError(state)
             executed_state = state.execute()
-            raise ValueError(executed_state)
             executed_states.append(executed_state)
             state = self.automaton.get_next_state(executed_state)
 
@@ -357,5 +356,23 @@ def test_automaton() -> None:
     # TODO(FIX MUTABILITY)
     chat_automaton = ChatAutomaton(llm=llm, tools=tools, prompt=prompt)
     executor = Executor(chat_automaton, max_iterations=1)
-    executed_states = executor.run()
-    assert executed_states == []
+    state, executed_states = executor.run()
+    assert executed_states == [
+        {
+            "data": {
+                "function_call": {
+                    "arguments": {},
+                    "name": "get_time",
+                    "result": "9 PM",
+                },
+                "message": AIMessage(
+                    content="",
+                    additional_kwargs={
+                        "function_call": {"name": "get_time", "arguments": "{}"}
+                    },
+                    example=False,
+                ),
+            },
+            "id_": "llm_program",
+        }
+    ]
