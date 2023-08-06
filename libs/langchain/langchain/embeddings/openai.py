@@ -295,7 +295,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         if self.openai_api_type in ("azure", "azure_ad", "azuread"):
             openai_args["engine"] = self.deployment
         if self.openai_proxy:
-            import openai
+            try:
+                import openai
+            except ImportError:
+                raise ImportError(
+                    "Could not import openai python package. "
+                    "Please install it with `pip install openai`."
+                )
 
             openai.proxy = {
                 "http": self.openai_proxy,
@@ -339,14 +345,14 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 disallowed_special=self.disallowed_special,
             )
             for j in range(0, len(token), self.embedding_ctx_length):
-                tokens += [token[j : j + self.embedding_ctx_length]]
-                indices += [i]
+                tokens.append(token[j : j + self.embedding_ctx_length])
+                indices.append(i)
         return tokens, indices
 
     def _batch_embed(
         self, inputs: Sequence, *, chunk_size: Optional[int] = None
     ) -> List[List[float]]:
-        batched_embeddings = []
+        batched_embeddings: List[List[float]] = []
         _chunk_size = chunk_size or self.chunk_size
         _iter = range(0, len(inputs), _chunk_size)
         if self.show_progress_bar:
@@ -363,13 +369,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 input=inputs[i : i + _chunk_size],
                 **self._invocation_params,
             )
-            batched_embeddings += [r["embedding"] for r in response["data"]]
+            batched_embeddings.extend(r["embedding"] for r in response["data"])
         return batched_embeddings
 
     async def _abatch_embed(
         self, inputs: Sequence, *, chunk_size: Optional[int] = None
     ) -> List[List[float]]:
-        batched_embeddings = []
+        batched_embeddings: List[List[float]] = []
         _chunk_size = chunk_size or self.chunk_size
         _iter = range(0, len(inputs), _chunk_size)
         if self.show_progress_bar:
@@ -386,7 +392,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 input=inputs[i : i + _chunk_size],
                 **self._invocation_params,
             )
-            batched_embeddings += [r["embedding"] for r in response["data"]]
+            batched_embeddings.extend(r["embedding"] for r in response["data"])
         return batched_embeddings
 
     # please refer to

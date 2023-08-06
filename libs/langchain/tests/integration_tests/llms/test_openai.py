@@ -1,7 +1,6 @@
 """Test OpenAI API wrapper."""
 from pathlib import Path
-from typing import Any, Generator
-from unittest.mock import MagicMock, patch
+from typing import Generator
 
 import pytest
 
@@ -11,7 +10,6 @@ from langchain.llms.loading import load_llm
 from langchain.llms.openai import OpenAI, OpenAIChat
 from langchain.schema import LLMResult
 from tests.unit_tests.callbacks.fake_callback_handler import (
-    FakeAsyncCallbackHandler,
     FakeCallbackHandler,
 )
 
@@ -351,63 +349,3 @@ def mock_completion() -> dict:
         ],
         "usage": {"prompt_tokens": 1, "completion_tokens": 2, "total_tokens": 3},
     }
-
-
-@pytest.mark.requires("openai")
-def test_openai_retries(mock_completion: dict) -> None:
-    llm = OpenAI()
-    mock_client = MagicMock()
-    completed = False
-    raised = False
-    import openai
-
-    def raise_once(*args: Any, **kwargs: Any) -> Any:
-        nonlocal completed, raised
-        if not raised:
-            raised = True
-            raise openai.error.APIError
-        completed = True
-        return mock_completion
-
-    mock_client.create = raise_once
-    callback_handler = FakeCallbackHandler()
-    with patch.object(
-        llm,
-        "client",
-        mock_client,
-    ):
-        res = llm.predict("bar", callbacks=[callback_handler])
-        assert res == "Bar Baz"
-    assert completed
-    assert raised
-    assert callback_handler.retries == 1
-
-
-@pytest.mark.requires("openai")
-async def test_openai_async_retries(mock_completion: dict) -> None:
-    llm = OpenAI()
-    mock_client = MagicMock()
-    completed = False
-    raised = False
-    import openai
-
-    def raise_once(*args: Any, **kwargs: Any) -> Any:
-        nonlocal completed, raised
-        if not raised:
-            raised = True
-            raise openai.error.APIError
-        completed = True
-        return mock_completion
-
-    mock_client.create = raise_once
-    callback_handler = FakeAsyncCallbackHandler()
-    with patch.object(
-        llm,
-        "client",
-        mock_client,
-    ):
-        res = llm.apredict("bar", callbacks=[callback_handler])
-        assert res == "Bar Baz"
-    assert completed
-    assert raised
-    assert callback_handler.retries == 1

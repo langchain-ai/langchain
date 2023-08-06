@@ -24,9 +24,10 @@ from langchain.embeddings.clarifai import ClarifaiEmbeddings
 from langchain.embeddings.cohere import CohereEmbeddings
 from langchain.embeddings.dashscope import DashScopeEmbeddings
 from langchain.embeddings.deepinfra import DeepInfraEmbeddings
+from langchain.embeddings.edenai import EdenAiEmbeddings
 from langchain.embeddings.elasticsearch import ElasticsearchEmbeddings
 from langchain.embeddings.embaas import EmbaasEmbeddings
-from langchain.embeddings.fake import FakeEmbeddings
+from langchain.embeddings.fake import DeterministicFakeEmbedding, FakeEmbeddings
 from langchain.embeddings.google_palm import GooglePalmEmbeddings
 from langchain.embeddings.gpt4all import GPT4AllEmbeddings
 from langchain.embeddings.huggingface import (
@@ -77,6 +78,7 @@ __all__ = [
     "SelfHostedHuggingFaceEmbeddings",
     "SelfHostedHuggingFaceInstructEmbeddings",
     "FakeEmbeddings",
+    "DeterministicFakeEmbedding",
     "AlephAlphaAsymmetricSemanticEmbedding",
     "AlephAlphaSymmetricSemanticEmbedding",
     "SentenceTransformerEmbeddings",
@@ -85,6 +87,7 @@ __all__ = [
     "VertexAIEmbeddings",
     "BedrockEmbeddings",
     "DeepInfraEmbeddings",
+    "EdenAiEmbeddings",
     "DashScopeEmbeddings",
     "EmbaasEmbeddings",
     "OctoAIEmbeddings",

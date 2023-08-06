@@ -54,12 +54,14 @@ class BiliBiliLoader(BaseLoader):
 
         video_info = sync(v.get_info())
         video_info.update({"url": url})
+        sub = sync(v.get_subtitle(video_info["cid"]))
 
         # Get subtitle url
-        subtitle = video_info.pop("subtitle")
-        sub_list = subtitle["list"]
+        sub_list = sub["subtitles"]
         if sub_list:
             sub_url = sub_list[0]["subtitle_url"]
+            if not sub_url.startswith("http"):
+                sub_url = "https:" + sub_url
             result = requests.get(sub_url)
             raw_sub_titles = json.loads(result.content)["body"]
             raw_transcript = " ".join([c["content"] for c in raw_sub_titles])
