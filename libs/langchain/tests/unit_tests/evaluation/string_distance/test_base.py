@@ -30,8 +30,13 @@ async def test_zero_distance_async(distance: StringDistance) -> None:
 
 @pytest.mark.requires("rapidfuzz")
 @pytest.mark.parametrize("distance", list(StringDistance))
-def test_zero_distance_pairwise(distance: StringDistance) -> None:
-    eval_chain = PairwiseStringDistanceEvalChain(distance=distance)
+@pytest.mark.parametrize("normalize_score", [True, False])
+def test_zero_distance_pairwise(
+    distance: StringDistance, normalize_score: bool
+) -> None:
+    eval_chain = PairwiseStringDistanceEvalChain(
+        distance=distance, normalize_score=normalize_score
+    )
     string = "三人行则必有我师"
     result = eval_chain.evaluate_string_pairs(prediction=string, prediction_b=string)
     assert "score" in result
@@ -53,13 +58,18 @@ async def test_zero_distance_pairwise_async(distance: StringDistance) -> None:
 
 @pytest.mark.requires("rapidfuzz")
 @pytest.mark.parametrize("distance", list(StringDistance))
-def test_non_zero_distance(distance: StringDistance) -> None:
-    eval_chain = StringDistanceEvalChain(distance=distance)
+@pytest.mark.parametrize("normalize_score", [True, False])
+def test_non_zero_distance(distance: StringDistance, normalize_score: bool) -> None:
+    eval_chain = StringDistanceEvalChain(
+        distance=distance, normalize_score=normalize_score
+    )
     prediction = "I like to eat apples."
     reference = "I like apples."
     result = eval_chain.evaluate_strings(prediction=prediction, reference=reference)
     assert "score" in result
-    assert 0 < result["score"] < 1.0
+    assert 0 < result["score"]
+    if normalize_score:
+        assert result["score"] < 1.0
 
 
 @pytest.mark.asyncio
