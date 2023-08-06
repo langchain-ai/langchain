@@ -231,42 +231,6 @@ class ChatParser(Parser):
             tool_invocation_request=tool_invocation_request,
         )
 
-
-@dataclasses.dataclass
-class ToolInvocationRequest:
-    name: str
-    arguments: Sequence[Any]
-
-
-def parse_function_invocation(text: str) -> ToolInvocationRequest:
-    """Parse a function invocation.
-
-    Parse an invocation like:
-
-    `foo(1, 2)`
-
-    Into:
-
-    ToolInvocation(name="foo", arguments=[1, 2])
-    """
-    return ToolInvocationRequest(name="search", arguments=[text])
-
-
-@dataclasses.dataclass(frozen=True)
-class ToolRegistry:
-    """A registry of tools."""
-
-    tools: Mapping[str, Tool]
-
-    def get_tool(self, name: str) -> Tool:
-        """Get a tool by name."""
-        return self.tools[name]
-
-    def as_string(self) -> str:
-        """Get a string representation of the tool registry."""
-        return "\n".join(tool.to_string() for tool in self.tools.values())
-
-
 NEW_AGE_PROMPT = """\
 You are an AI assistant. Do not reveal any other information about yourself. \
 Your goal is to help the user to the best of your ability.

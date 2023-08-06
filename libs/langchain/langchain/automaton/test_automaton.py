@@ -4,7 +4,17 @@ import abc
 import dataclasses
 import enum
 import json
-from typing import Any, List, Sequence, Mapping, TypedDict, TypeVar, Iterator, Tuple
+from typing import (
+    Any,
+    List,
+    Sequence,
+    Mapping,
+    TypedDict,
+    TypeVar,
+    Iterator,
+    Tuple,
+    Callable,
+)
 
 from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
@@ -169,7 +179,7 @@ def print_message(message: BaseMessage) -> None:
 T = TypeVar("T")
 
 
-from typing import Mapping
+from typing import Mapping, Protocol
 
 
 class ExecutedState(TypedDict):
@@ -179,19 +189,21 @@ class ExecutedState(TypedDict):
     data: Mapping[str, Any]
 
 
-@dataclasses.dataclass
-class State:
-    """A state in the automaton."""
+class State(Protocol):
+    """Automaton state protocol."""
 
-    @abc.abstractmethod
     def execute(self) -> ExecutedState:
-        """Execute the state."""
+        ...
 
 
 @dataclasses.dataclass
 class LLMProgram(State):
+    """A state that executes an LLM program."""
+
     llm: BaseLanguageModel
     tools: Sequence[BaseTool]
+    # This should either be swapped with memory or else with prompt value?
+    # Likely prompt value since we're not taking in any input
     messages: Sequence[BaseMessage]  # Swap with prompt value
 
     def execute(self) -> ExecutedState:
@@ -203,6 +215,11 @@ class LLMProgram(State):
 
 @dataclasses.dataclass
 class UserInputState(State):
+    """A state that prompts the user for input from stdin.
+
+    This is primarily useful for interactive development.
+    """
+
     def execute(self) -> ExecutedState:
         """Execute user input state."""
         user_input = input("Enter your input: ")
@@ -212,6 +229,12 @@ class UserInputState(State):
                 "message": HumanMessage(content=user_input),
             },
         }
+
+
+@dataclasses.dataclass
+class FunctionInvocation(State):
+    llm: BaseLanguageModel
+    tools: Sequence[BaseTool]
 
 
 class Automaton:
@@ -230,12 +253,14 @@ class ChatAutomaton(Automaton):
         llm: BaseLanguageModel,
         tools: Sequence[BaseTool],
         prompt: ChatPromptTemplate,
+        on_next_state: Callable[[State], None],
     ) -> None:
         """Initialize the chat automaton."""
         self.llm = llm
         self.tools = tools
         # TODO: Fix mutability of chat template, potentially add factory method
         self.chat_template = ChatPromptTemplate.from_messages(prompt.format_messages())
+        self.on_next_state = on_next_state
 
     def get_start_state(self, *args: Any, **kwargs: Any) -> State:
         """Get the start state."""
@@ -247,6 +272,7 @@ class ChatAutomaton(Automaton):
 
     def get_next_state(self, executed_state: ExecutedState) -> State:
         """Get the next state."""
+        self.on_next_state(executed_state)
         previous_state_id = executed_state["id"]
         data = executed_state["data"]
         self.chat_template.append(data["message"])
@@ -255,17 +281,14 @@ class ChatAutomaton(Automaton):
             return LLMProgram(
                 llm=self.llm,
                 tools=self.tools,
+                # Could add memory here
                 messages=self.chat_template.format_messages(),
             )
         elif previous_state_id == "llm_program":
             message_type = _infer_message_type(data["message"])
-            if message_type == MessageType.USER:
+            if message_type in {MessageType.USER, MessageType.FUNCTION}:
                 raise AssertionError(
-                    "LLM program should not return user input message."
-                )
-            elif message_type == MessageType.FUNCTION:
-                raise AssertionError(
-                    "User input state should not return function message."
+                    "LLM program should not return user or function messages."
                 )
             elif message_type == MessageType.AI:
                 return UserInputState()
@@ -290,6 +313,20 @@ class ChatAutomaton(Automaton):
                 )
         else:
             raise ValueError(f"Unknown state ID: {previous_state_id}")
+
+
+# This is transition matrix syntax
+# transition_matrix = {
+#     ("user_input", "*"): LLMProgram,
+#     ("llm_program", MessageType.AI): UserInputState,
+#     ("llm_program", MessageType.AI_SELF): LLMProgram,
+#     (
+#         "llm_program",
+#         MessageType.AI_INVOKE,
+#     ): FuncInvocationState,  # But must add function message
+#     ("func_invocation", MessageType.FUNCTION): LLMProgram,
+# }
+#
 
 
 # Need to make into runnable
