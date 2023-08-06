@@ -132,7 +132,7 @@ You can also modify the search by passing specific search arguments through the 
 - `k` defines how many documents are returned; defaults to 4.
 - `score_threshold` allows you to set a minimum relevance for documents returned by the retriever, if you are using the "similarity_score_threshold" search type.
 - `fetch_k` determines the amount of documents to pass to the MMR algorithm; defaults to 20. 
-- `lambda_mult` controls the diversity of results returned by the MMR algoritm, with 1 being minimum diversity and 0 being maximum. Defaults to 0.5.
+- `lambda_mult` controls the diversity of results returned by the MMR algorithm, with 1 being minimum diversity and 0 being maximum. Defaults to 0.5.
 - `filter` allows you to define a filter on what documents should be retrieved, based on the documents' metadata. This has no effect if the Vectorstore doesn't store any metadata.
 
 Some examples for how these parameters can be used:
