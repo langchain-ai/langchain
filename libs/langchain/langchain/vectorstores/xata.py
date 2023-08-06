@@ -1,26 +1,18 @@
 """Wrapper around Xata as a vector database."""
 
 from __future__ import annotations
+
 import time
 from itertools import repeat
-from typing import (
-    TYPE_CHECKING, 
-    List,
-    Dict,
-    Any,
-    Iterable,
-    Optional,
-    Type,
-    Tuple
-)
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
 
-
 if TYPE_CHECKING:
     from xata.client import XataClient
+
 
 class XataVectorStore(VectorStore):
     """VectorStore for a Xata database. Assumes you have a Xata database
@@ -28,12 +20,13 @@ class XataVectorStore(VectorStore):
     https://integrations.langchain.com/vectorstores?integration_name=XataVectorStore
 
     """
+
     def __init__(
-            self,
-            api_key: str,
-            db_url: str,
-            embedding: Embeddings,
-            table_name: str,
+        self,
+        api_key: str,
+        db_url: str,
+        embedding: Embeddings,
+        table_name: str,
     ) -> None:
         """Initialize with Xata client."""
         try:
@@ -43,16 +36,14 @@ class XataVectorStore(VectorStore):
                 "Could not import xata python package. "
                 "Please install it with `pip install xata`."
             )
-        self._client = XataClient(
-            api_key=api_key, 
-            db_url=db_url)
+        self._client = XataClient(api_key=api_key, db_url=db_url)
         self._embedding: Embeddings = embedding
         self._table_name = table_name or "vectors"
 
     @property
     def embeddings(self) -> Embeddings:
         return self._embedding
-    
+
     def add_vectors(
         self,
         vectors: List[List[float]],
@@ -60,7 +51,7 @@ class XataVectorStore(VectorStore):
         ids: List[str],
     ) -> List[str]:
         return self._add_vectors(vectors, documents, ids)
-    
+
     def add_texts(
         self,
         texts: Iterable[str],
@@ -73,7 +64,7 @@ class XataVectorStore(VectorStore):
 
         vectors = self._embedding.embed_documents(list(texts))
         return self.add_vectors(vectors, docs, ids)
-    
+
     def _add_vectors(
         self,
         vectors: List[List[float]],
@@ -84,11 +75,10 @@ class XataVectorStore(VectorStore):
 
         rows: List[Dict[str, Any]] = []
         for idx, embedding in enumerate(vectors):
-                
             row = {
-                    "content": documents[idx].page_content,
-                    "embedding": embedding,
-                }
+                "content": documents[idx].page_content,
+                "embedding": embedding,
+            }
             if ids:
                 row["id"] = ids[idx]
             for key, val in documents[idx].metadata.items():
@@ -101,14 +91,14 @@ class XataVectorStore(VectorStore):
         chunk_size = 1000
         id_list: List[str] = []
         for i in range(0, len(rows), chunk_size):
-            chunk = rows[i:i+chunk_size]
+            chunk = rows[i : i + chunk_size]
 
             r = self._client.records().bulk_insert(self._table_name, {"records": chunk})
             if r.status_code != 200:
                 raise Exception(f"Error adding vectors to Xata: {r.status_code} {r}")
             id_list.extend(r["recordIDs"])
         return id_list
-    
+
     @staticmethod
     def _texts_to_documents(
         texts: Iterable[str],
@@ -152,10 +142,10 @@ class XataVectorStore(VectorStore):
             embedding=embedding,
             table_name=table_name,
         )
-    
+
         vector_db._add_vectors(embeddings, docs, ids)
         return vector_db
-    
+
     def similarity_search(
         self, query: str, k: int = 4, filter: Optional[dict] = None, **kwargs: Any
     ) -> List[Document]:
@@ -171,13 +161,9 @@ class XataVectorStore(VectorStore):
         docs_and_scores = self.similarity_search_with_score(query, k, filter=filter)
         documents = [d[0] for d in docs_and_scores]
         return documents
-    
+
     def similarity_search_with_score(
-        self,
-        query: str,
-        k: int = 4,
-        filter: Optional[dict] = None,
-        **kwargs: Any
+        self, query: str, k: int = 4, filter: Optional[dict] = None, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Run similarity search with Chroma with distance.
 
@@ -198,7 +184,9 @@ class XataVectorStore(VectorStore):
         }
         if filter:
             payload["filter"] = filter
-        r = self._client.search_and_filter().vector_search(self._table_name, payload=payload)
+        r = self._client.search_and_filter().vector_search(
+            self._table_name, payload=payload
+        )
         if r.status_code != 200:
             raise Exception(f"Error running similarity search: {r.status_code} {r}")
         hits = r["records"]
@@ -213,7 +201,7 @@ class XataVectorStore(VectorStore):
             for hit in hits
         ]
         return docs_and_scores
-    
+
     def _extractMetadata(self, record: dict) -> dict:
         """Extract metadata from a record. Filters out known columns."""
         metadata = {}
@@ -221,9 +209,9 @@ class XataVectorStore(VectorStore):
             if key not in ["id", "content", "embedding", "xata"]:
                 metadata[key] = val
         return metadata
-    
+
     def delete(
-        self, 
+        self,
         ids: Optional[List[str]] = None,
         delete_all: Optional[bool] = None,
         **kwargs: Any,
@@ -240,35 +228,39 @@ class XataVectorStore(VectorStore):
         elif ids is not None:
             chunk_size = 500
             for i in range(0, len(ids), chunk_size):
-                chunk = ids[i:i+chunk_size]
-                operations = [{"delete": {"table": self._table_name, "id": id}} for id in chunk]        
-                self._client.records().transaction(payload={"operations":operations})
+                chunk = ids[i : i + chunk_size]
+                operations = [
+                    {"delete": {"table": self._table_name, "id": id}} for id in chunk
+                ]
+                self._client.records().transaction(payload={"operations": operations})
         else:
             raise ValueError("Either ids or delete_all must be set.")
-    
+
     def _delete_all(self) -> None:
         """Delete all records in the table."""
         while True:
             r = self._client.search_and_filter().query(
-                self._table_name, payload={"columns": ["id"]})
+                self._table_name, payload={"columns": ["id"]}
+            )
             if r.status_code != 200:
                 raise Exception(f"Error running query: {r.status_code} {r}")
             ids = [rec["id"] for rec in r["records"]]
             if len(ids) == 0:
                 break
-            operations = [{"delete": {"table": self._table_name, "id": id}} for id in ids]        
-            self._client.records().transaction(payload={"operations":operations})
+            operations = [
+                {"delete": {"table": self._table_name, "id": id}} for id in ids
+            ]
+            self._client.records().transaction(payload={"operations": operations})
 
-    def wait_for_indexing(self,
-                         timeout: float = 5,
-                         ndocs: int = 1) -> None:
+    def wait_for_indexing(self, timeout: float = 5, ndocs: int = 1) -> None:
         """Wait for the search index to contain a certain number of
-           documents. Useful in tests.
+        documents. Useful in tests.
         """
         start = time.time()
         while True:
             r = self._client.search_and_filter().search_table(
-                self._table_name, payload={"query": "", "page": {"size": 0}})
+                self._table_name, payload={"query": "", "page": {"size": 0}}
+            )
             if r.status_code != 200:
                 raise Exception(f"Error running search: {r.status_code} {r}")
             if r["totalCount"] == ndocs:

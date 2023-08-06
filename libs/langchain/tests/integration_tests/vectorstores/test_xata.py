@@ -10,6 +10,7 @@ from langchain.docstore.document import Document
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores.xata import XataVectorStore
 
+
 class TestXata:
     @classmethod
     def setup_class(cls) -> None:
@@ -24,8 +25,9 @@ class TestXata:
         docsearch = XataVectorStore.from_texts(
             api_key=os.getenv("XATA_API_KEY"),
             db_url=os.getenv("XATA_DB_URL"),
-            texts=texts, 
-            embedding=embedding_openai)
+            texts=texts,
+            embedding=embedding_openai,
+        )
         docsearch.wait_for_indexing(ndocs=3)
 
         output = docsearch.similarity_search("foo", k=1)
@@ -38,17 +40,17 @@ class TestXata:
         """Test end to end construction and search with a metadata filter.
 
         This test requires a column named "a" of type integer to be present
-        in the Xata table. """
+        in the Xata table."""
         texts = ["foo", "foo", "foo"]
         metadatas = [{"a": i} for i in range(len(texts))]
         docsearch = XataVectorStore.from_texts(
             api_key=os.getenv("XATA_API_KEY"),
             db_url=os.getenv("XATA_DB_URL"),
-            texts=texts, 
+            texts=texts,
             embedding=embedding_openai,
-            metadatas=metadatas)
+            metadatas=metadatas,
+        )
         docsearch.wait_for_indexing(ndocs=3)
         output = docsearch.similarity_search("foo", k=1, filter={"a": 1})
         assert output == [Document(page_content="foo", metadata={"a": 1})]
         docsearch.delete(delete_all=True)
-
