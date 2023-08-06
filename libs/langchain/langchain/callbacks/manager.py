@@ -1657,6 +1657,7 @@ def _configure(
     Returns:
         T: The configured callback manager.
     """
+    example_id = UUID(example_id) if isinstance(example_id, str) else example_id
     callback_manager = callback_manager_cls(handlers=[])
     if inheritable_callbacks or local_callbacks:
         if isinstance(inheritable_callbacks, list) or inheritable_callbacks is None:
