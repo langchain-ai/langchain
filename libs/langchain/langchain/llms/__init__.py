@@ -60,6 +60,7 @@ from langchain.llms.mosaicml import MosaicML
 from langchain.llms.nlpcloud import NLPCloud
 from langchain.llms.octoai_endpoint import OctoAIEndpoint
 from langchain.llms.openai import AzureOpenAI, OpenAI, OpenAIChat
+from langchain.llms.ollama import Ollama
 from langchain.llms.openllm import OpenLLM
 from langchain.llms.openlm import OpenLM
 from langchain.llms.petals import Petals
@@ -121,6 +122,7 @@ __all__ = [
     "Modal",
     "MosaicML",
     "NLPCloud",
+    "Ollama",
     "OpenAI",
     "OpenAIChat",
     "OpenLLM",
@@ -183,6 +185,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "modal": Modal,
     "mosaic": MosaicML,
     "nlpcloud": NLPCloud,
+    "ollama": Ollama,
     "openai": OpenAI,
     "openlm": OpenLM,
     "petals": Petals,
