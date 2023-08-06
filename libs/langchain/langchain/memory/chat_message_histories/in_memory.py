@@ -22,3 +22,7 @@ class ChatMessageHistory(BaseChatMessageHistory, BaseModel):
 
     def clear(self) -> None:
         self.messages = []
+
+    def partial_clear(self, delete_ratio: float = 0.5) -> None:
+        """Clear a portion of the history."""
+        self.messages = self.messages[-1 * int(len(self.messages) * delete_ratio) :]

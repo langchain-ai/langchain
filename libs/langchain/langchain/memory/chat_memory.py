@@ -40,3 +40,7 @@ class BaseChatMemory(BaseMemory, ABC):
     def clear(self) -> None:
         """Clear memory contents."""
         self.chat_memory.clear()
+
+    def partial_clear(self, delete_ratio: float = 0.5) -> None:
+        """Clear a portion of the history."""
+        self.chat_memory.partial_clear(delete_ratio=delete_ratio)
