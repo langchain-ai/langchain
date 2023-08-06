@@ -27,5 +27,5 @@ modifications are needed.
 << INPUT >>
 {{input}}
 
-<< OUTPUT >>
+<< OUTPUT (must include ```json at the start of the response) >>
 """
