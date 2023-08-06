@@ -6,6 +6,7 @@ import warnings
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
+from uuid import UUID
 
 import yaml
 from pydantic import Field, root_validator, validator
@@ -206,6 +207,7 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         include_run_info: bool = False,
+        example_id: Optional[UUID] = None,
     ) -> Dict[str, Any]:
         """Execute the chain.
 
@@ -241,6 +243,7 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
             self.tags,
             metadata,
             self.metadata,
+            example_id=example_id,
         )
         new_arg_supported = inspect.signature(self._call).parameters.get("run_manager")
         run_manager = callback_manager.on_chain_start(
@@ -273,6 +276,7 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         include_run_info: bool = False,
+        example_id: Optional[UUID] = None,
     ) -> Dict[str, Any]:
         """Asynchronously execute the chain.
 
@@ -294,6 +298,7 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
             metadata: Optional metadata associated with the chain. Defaults to None
             include_run_info: Whether to include run info in the response. Defaults
                 to False.
+            example_id: Optional UUID of the example being processed. Defaults to None.
 
         Returns:
             A dict of named outputs. Should contain all outputs specified in
@@ -308,6 +313,7 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
             self.tags,
             metadata,
             self.metadata,
+            example_id=example_id,
         )
         new_arg_supported = inspect.signature(self._acall).parameters.get("run_manager")
         run_manager = await callback_manager.on_chain_start(

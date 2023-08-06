@@ -22,6 +22,7 @@ from typing import (
     Union,
     cast,
 )
+from uuid import UUID
 
 from pydantic import Field
 
@@ -61,6 +62,11 @@ class RunnableConfig(TypedDict, total=False):
     """
     Callbacks for this call and any sub-calls (eg. a Chain calling an LLM).
     Tags are passed to all callbacks, metadata is passed to handle*Start callbacks.
+    """
+
+    example_id: Optional[UUID]
+    """
+    Example ID to associate with this call and sub-calls.
     """
 
 
@@ -175,6 +181,7 @@ class Runnable(Generic[Input, Output], ABC):
             inheritable_callbacks=config.get("callbacks"),
             inheritable_tags=config.get("tags"),
             inheritable_metadata=config.get("metadata"),
+            example_id=config.get("example_id"),
         )
         run_manager = callback_manager.on_chain_start(
             dumpd(self),
@@ -231,6 +238,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
             local_tags=None,
             inheritable_metadata=config.get("metadata"),
             local_metadata=None,
+            example_id=config.get("example_id"),
         )
         # start the root run
         run_manager = callback_manager.on_chain_start(
@@ -274,6 +282,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
             local_tags=None,
             inheritable_metadata=config.get("metadata"),
             local_metadata=None,
+            example_id=config.get("example_id"),
         )
         # start the root run
         run_manager = await callback_manager.on_chain_start(
@@ -323,6 +332,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
                 local_tags=None,
                 inheritable_metadata=config.get("metadata"),
                 local_metadata=None,
+                example_id=config.get("example_id"),
             )
             for config in configs
         ]
@@ -388,6 +398,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
                 local_tags=None,
                 inheritable_metadata=config.get("metadata"),
                 local_metadata=None,
+                example_id=config.get("example_id"),
             )
             for config in configs
         ]
@@ -505,6 +516,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             local_tags=None,
             inheritable_metadata=config.get("metadata"),
             local_metadata=None,
+            example_id=config.get("example_id"),
         )
         # start the root run
         run_manager = callback_manager.on_chain_start(
@@ -544,6 +556,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             local_tags=None,
             inheritable_metadata=config.get("metadata"),
             local_metadata=None,
+            example_id=config.get("example_id"),
         )
         # start the root run
         run_manager = await callback_manager.on_chain_start(
@@ -588,6 +601,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                 local_tags=None,
                 inheritable_metadata=config.get("metadata"),
                 local_metadata=None,
+                example_id=config.get("example_id"),
             )
             for config in configs
         ]
@@ -644,6 +658,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                 local_tags=None,
                 inheritable_metadata=config.get("metadata"),
                 local_metadata=None,
+                example_id=config.get("example_id"),
             )
             for config in configs
         ]
@@ -700,6 +715,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             local_tags=None,
             inheritable_metadata=config.get("metadata"),
             local_metadata=None,
+            example_id=config.get("example_id"),
         )
         # start the root run
         run_manager = callback_manager.on_chain_start(
@@ -763,6 +779,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             local_tags=None,
             inheritable_metadata=config.get("metadata"),
             local_metadata=None,
+            example_id=config.get("example_id"),
         )
         # start the root run
         run_manager = await callback_manager.on_chain_start(
@@ -852,6 +869,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
             local_tags=None,
             inheritable_metadata=config.get("metadata"),
             local_metadata=None,
+            example_id=config.get("example_id"),
         )
         # start the root run
         run_manager = callback_manager.on_chain_start(dumpd(self), {"input": input})
@@ -894,6 +912,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
             local_tags=None,
             inheritable_metadata=config.get("metadata"),
             local_metadata=None,
+            example_id=config.get("example_id"),
         )
         # start the root run
         run_manager = await callback_manager.on_chain_start(

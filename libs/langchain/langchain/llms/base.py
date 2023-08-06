@@ -336,6 +336,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 self.tags,
                 config.get("metadata"),
                 self.metadata,
+                example_id=config.get("example_id"),
             )
             (run_manager,) = callback_manager.on_llm_start(
                 dumpd(self), [prompt], invocation_params=params, options=options
@@ -383,6 +384,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 self.tags,
                 config.get("metadata"),
                 self.metadata,
+                example_id=kwargs.get("example_id"),
             )
             (run_manager,) = await callback_manager.on_llm_start(
                 dumpd(self), [prompt], invocation_params=params, options=options
@@ -542,6 +544,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     self.tags,
                     meta,
                     self.metadata,
+                    example_id=kwargs.get("example_id"),
                 )
                 for callback, tag, meta in zip(callbacks, tags_list, metadata_list)
             ]
@@ -556,6 +559,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     self.tags,
                     cast(Dict[str, Any], metadata),
                     self.metadata,
+                    example_id=kwargs.get("example_id"),
                 )
             ] * len(prompts)
 
@@ -691,6 +695,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     self.tags,
                     meta,
                     self.metadata,
+                    example_id=kwargs.get("example_id"),
                 )
                 for callback, tag, meta in zip(callbacks, tags_list, metadata_list)
             ]
@@ -705,6 +710,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     self.tags,
                     cast(Dict[str, Any], metadata),
                     self.metadata,
+                    example_id=kwargs.get("example_id"),
                 )
             ] * len(prompts)
 

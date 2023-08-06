@@ -306,6 +306,7 @@ class BaseTool(BaseModel, Runnable[Union[str, Dict], Any], metaclass=ToolMetacla
             self.tags,
             metadata,
             self.metadata,
+            example_id=kwargs.get("example_id"),
         )
         # TODO: maybe also pass through run_manager is _run supports kwargs
         new_arg_supported = signature(self._run).parameters.get("run_manager")
@@ -379,6 +380,7 @@ class BaseTool(BaseModel, Runnable[Union[str, Dict], Any], metaclass=ToolMetacla
             self.tags,
             metadata,
             self.metadata,
+            example_id=kwargs.get("example_id"),
         )
         new_arg_supported = signature(self._arun).parameters.get("run_manager")
         run_manager = await callback_manager.on_tool_start(

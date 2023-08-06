@@ -158,6 +158,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
                 self.tags,
                 config.get("metadata"),
                 self.metadata,
+                example_id=config.get("example_id"),
             )
             (run_manager,) = callback_manager.on_chat_model_start(
                 dumpd(self), [messages], invocation_params=params, options=options

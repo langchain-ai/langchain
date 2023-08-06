@@ -227,6 +227,7 @@ def trace_as_chain_group(
     cm = CallbackManager.configure(
         inheritable_callbacks=cb,
         inheritable_tags=tags,
+        example_id=example_id,
     )
 
     run_manager = cm.on_chain_start({"name": group_name}, {})
@@ -1273,6 +1274,7 @@ class CallbackManager(BaseCallbackManager):
         local_tags: Optional[List[str]] = None,
         inheritable_metadata: Optional[Dict[str, Any]] = None,
         local_metadata: Optional[Dict[str, Any]] = None,
+        example_id: Optional[Union[str, UUID]] = None,
     ) -> CallbackManager:
         """Configure the callback manager.
 
@@ -1290,6 +1292,7 @@ class CallbackManager(BaseCallbackManager):
                 metadata. Defaults to None.
             local_metadata (Optional[Dict[str, Any]], optional): The local metadata.
                 Defaults to None.
+            example_id (Optional[UUID], optional): The example ID. Defaults to None.
 
         Returns:
             CallbackManager: The configured callback manager.
@@ -1303,6 +1306,7 @@ class CallbackManager(BaseCallbackManager):
             local_tags,
             inheritable_metadata,
             local_metadata,
+            example_id,
         )
 
 
@@ -1565,6 +1569,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         local_tags: Optional[List[str]] = None,
         inheritable_metadata: Optional[Dict[str, Any]] = None,
         local_metadata: Optional[Dict[str, Any]] = None,
+        example_id: Optional[Union[str, UUID]] = None,
     ) -> AsyncCallbackManager:
         """Configure the async callback manager.
 
@@ -1582,6 +1587,7 @@ class AsyncCallbackManager(BaseCallbackManager):
                 metadata. Defaults to None.
             local_metadata (Optional[Dict[str, Any]], optional): The local metadata.
                 Defaults to None.
+            example_id (Optional[UUID], optional): The ID of the example. Defaults to None.
 
         Returns:
             AsyncCallbackManager: The configured async callback manager.
@@ -1595,6 +1601,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             local_tags,
             inheritable_metadata,
             local_metadata,
+            example_id=example_id,
         )
 
 
@@ -1627,6 +1634,7 @@ def _configure(
     local_tags: Optional[List[str]] = None,
     inheritable_metadata: Optional[Dict[str, Any]] = None,
     local_metadata: Optional[Dict[str, Any]] = None,
+    example_id: Optional[Union[str, UUID]] = None,
 ) -> T:
     """Configure the callback manager.
 
@@ -1644,6 +1652,7 @@ def _configure(
             metadata. Defaults to None.
         local_metadata (Optional[Dict[str, Any]], optional): The local metadata.
             Defaults to None.
+        example_id (Optional[UUID], optional): The example ID. Defaults to None.
 
     Returns:
         T: The configured callback manager.
@@ -1744,10 +1753,14 @@ def _configure(
             for handler in callback_manager.handlers
         ):
             if tracer_v2:
+                # Don't mutate existing handlers with the
+                # example ID as we don't define when to unset it.
                 callback_manager.add_handler(tracer_v2, True)
             else:
                 try:
-                    handler = LangChainTracer(project_name=tracer_project)
+                    handler = LangChainTracer(
+                        project_name=tracer_project, example_id=example_id
+                    )
                     callback_manager.add_handler(handler, True)
                 except Exception as e:
                     logger.warning(

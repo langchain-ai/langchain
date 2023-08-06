@@ -174,6 +174,7 @@ class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
             local_tags=self.tags,
             inheritable_metadata=metadata,
             local_metadata=self.metadata,
+            example_id=kwargs.get("example_id"),
         )
         run_manager = callback_manager.on_retriever_start(
             dumpd(self),
@@ -230,6 +231,7 @@ class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
             local_tags=self.tags,
             inheritable_metadata=metadata,
             local_metadata=self.metadata,
+            example_id=kwargs.get("example_id"),
         )
         run_manager = await callback_manager.on_retriever_start(
             dumpd(self),
