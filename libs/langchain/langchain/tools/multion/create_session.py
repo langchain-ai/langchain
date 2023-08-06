@@ -1,12 +1,10 @@
-from typing import Optional, Type
+from typing import TYPE_CHECKING, Optional, Type
 
 import multion
 from pydantic import BaseModel, Field
-from typing import TYPE_CHECKING
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.multion.base import MultionBaseTool
-
 
 if TYPE_CHECKING:
     # This is for linting and IDE typehints
@@ -17,6 +15,7 @@ else:
         import multion
     except ImportError:
         pass
+
 
 class CreateSessionSchema(BaseModel):
     """Input for CreateSessionTool."""
