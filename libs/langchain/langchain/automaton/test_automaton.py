@@ -175,7 +175,7 @@ from typing import Mapping
 class ExecutedState(TypedDict):
     """The response of an action taking LLM."""
 
-    id_: str  # the ID of the state that was just executed
+    id: str  # the ID of the state that was just executed
     data: Mapping[str, Any]
 
 
@@ -189,16 +189,16 @@ class State:
 
 
 @dataclasses.dataclass
-class LLMProgramState(State):
+class LLMProgram(State):
     llm: BaseLanguageModel
     tools: Sequence[BaseTool]
-    messages: Sequence[BaseMessage]
+    messages: Sequence[BaseMessage]  # Swap with prompt value
 
     def execute(self) -> ExecutedState:
         """Execute LLM program."""
         action_taking_llm = create_action_taking_llm(self.llm, tools=self.tools)
         result = action_taking_llm.invoke(self.messages)
-        return {"id_": "llm_program", "data": result}
+        return {"id": "llm_program", "data": result}
 
 
 @dataclasses.dataclass
@@ -207,7 +207,7 @@ class UserInputState(State):
         """Execute user input state."""
         user_input = input("Enter your input: ")
         return {
-            "id_": "user_input",
+            "id": "user_input",
             "data": {
                 "message": HumanMessage(content=user_input),
             },
@@ -239,7 +239,7 @@ class ChatAutomaton(Automaton):
 
     def get_start_state(self, *args: Any, **kwargs: Any) -> State:
         """Get the start state."""
-        return LLMProgramState(
+        return LLMProgram(
             llm=self.llm,
             tools=self.tools,
             messages=self.chat_template.format_messages(),
@@ -247,12 +247,12 @@ class ChatAutomaton(Automaton):
 
     def get_next_state(self, executed_state: ExecutedState) -> State:
         """Get the next state."""
-        previous_state_id = executed_state["id_"]
+        previous_state_id = executed_state["id"]
         data = executed_state["data"]
         self.chat_template.append(data["message"])
 
         if previous_state_id == "user_input":
-            return LLMProgramState(
+            return LLMProgram(
                 llm=self.llm,
                 tools=self.tools,
                 messages=self.chat_template.format_messages(),
@@ -283,12 +283,11 @@ class ChatAutomaton(Automaton):
                 # Logic may need to be refactored
                 self.chat_template.append(function_message)
 
-                return LLMProgramState(
+                return LLMProgram(
                     llm=self.llm,
                     tools=self.tools,
                     messages=self.chat_template.format_messages(),
                 )
-
         else:
             raise ValueError(f"Unknown state ID: {previous_state_id}")
 
@@ -373,6 +372,6 @@ def test_automaton() -> None:
                     example=False,
                 ),
             },
-            "id_": "llm_program",
+            "id": "llm_program",
         }
     ]
