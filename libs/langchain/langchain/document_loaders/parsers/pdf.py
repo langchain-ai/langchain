@@ -183,7 +183,7 @@ class AmazonTextractPDFParser(BaseBlobParser):
             else:
                 self.textract_features = []
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import amazon-textract-caller python package. "
                 "Please install it with `pip install amazon-textract-caller`."
             )
@@ -194,7 +194,7 @@ class AmazonTextractPDFParser(BaseBlobParser):
 
                 self.boto3_textract_client = boto3.client("textract")
             except ImportError:
-                raise ModuleNotFoundError(
+                raise ImportError(
                     "Could not import boto3 python package. "
                     "Please install it with `pip install boto3`."
                 )
