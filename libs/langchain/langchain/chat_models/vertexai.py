@@ -111,7 +111,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
 
                 values["client"] = ChatModel.from_pretrained(values["model_name"])
         except ImportError:
-            raise_vertex_import_error()
+            raise_vertex_import_error(minimum_expected_version="1.28.0")
         return values
 
     def _generate(

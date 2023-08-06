@@ -92,9 +92,7 @@ class RecursiveUrlLoader(BaseLoader):
                     yield from loaded_link
                 else:
                     yield loaded_link
-                # If the link is a directory (w/ children) then visit it
-                if link.endswith("/"):
-                    yield from self.get_child_links_recursive(link, visited)
+                yield from self.get_child_links_recursive(link, visited)
 
         return visited
 
