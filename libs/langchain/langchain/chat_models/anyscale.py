@@ -98,10 +98,7 @@ class ChatAnyscale(ChatOpenAI):
                 "due to an old version of the openai package. Try upgrading it "
                 "with `pip install --upgrade openai`.",
             ) from exc
-        # if values["n"] < 1:
-        #     raise ValueError("n must be at least 1.")
-        # if values["n"] > 1 and values["streaming"]:
-        #     raise ValueError("n must be 1 when streaming.")
+
         if "model_name" not in values.keys():
             values["model_name"] = DEFAULT_MODEL
 
