@@ -30,7 +30,8 @@ class XataVectorStore(VectorStore):
     """
     def __init__(
             self,
-            client: XataClient,
+            api_key: str,
+            db_url: str,
             embedding: Embeddings,
             table_name: str,
     ) -> None:
@@ -42,7 +43,9 @@ class XataVectorStore(VectorStore):
                 "Could not import xata python package. "
                 "Please install it with `pip install xata`."
             )
-        self._client = client
+        self._client = XataClient(
+            api_key=api_key, 
+            db_url=db_url)
         self._embedding: Embeddings = embedding
         self._table_name = table_name or "vectors"
 
@@ -56,7 +59,7 @@ class XataVectorStore(VectorStore):
         documents: List[Document],
         ids: List[str],
     ) -> List[str]:
-        return self._add_vectors(self._client, self._table_name, vectors, documents, ids)
+        return self._add_vectors(vectors, documents, ids)
     
     def add_texts(
         self,
@@ -71,10 +74,8 @@ class XataVectorStore(VectorStore):
         vectors = self._embedding.embed_documents(list(texts))
         return self.add_vectors(vectors, docs, ids)
     
-    @staticmethod
     def _add_vectors(
-        client: XataClient,
-        table_name: str,
+        self,
         vectors: List[List[float]],
         documents: List[Document],
         ids: List[str],
@@ -102,7 +103,7 @@ class XataVectorStore(VectorStore):
         for i in range(0, len(rows), chunk_size):
             chunk = rows[i:i+chunk_size]
 
-            r = client.records().bulk_insert(table_name, {"records": chunk})
+            r = self._client.records().bulk_insert(self._table_name, {"records": chunk})
             if r.status_code != 200:
                 raise Exception(f"Error adding vectors to Xata: {r.status_code} {r}")
             id_list.extend(r["recordIDs"])
@@ -130,26 +131,30 @@ class XataVectorStore(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        client: Optional[XataClient] = None,
+        api_key: Optional[str] = None,
+        db_url: Optional[str] = None,
         table_name: Optional[str] = "vectors",
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> "XataVectorStore":
         """Return VectorStore initialized from texts and embeddings."""
 
-        if not client:
-            raise ValueError("Xata client is required.")
+        if not api_key or not db_url:
+            raise ValueError("Xata api_key and db_url must be set.")
 
         embeddings = embedding.embed_documents(texts)
         ids = None  # Xata will generate them for us
         docs = cls._texts_to_documents(texts, metadatas)
-        cls._add_vectors(client, table_name, embeddings, docs, ids)
 
-        return cls(
-            client=client,
+        vector_db = cls(
+            api_key=api_key,
+            db_url=db_url,
             embedding=embedding,
             table_name=table_name,
         )
+    
+        vector_db._add_vectors(embeddings, docs, ids)
+        return vector_db
     
     def similarity_search(
         self, query: str, k: int = 4, filter: Optional[dict] = None, **kwargs: Any
