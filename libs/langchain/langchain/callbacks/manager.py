@@ -1753,8 +1753,10 @@ def _configure(
             for handler in callback_manager.handlers
         ):
             if tracer_v2:
-                # Don't mutate existing handlers with the
-                # example ID as we don't define when to unset it.
+                if example_id:
+                    # This can get ugly since we don't manage the un-setting
+                    # of the example_id
+                    tracer_v2.example_id = example_id
                 callback_manager.add_handler(tracer_v2, True)
             else:
                 try:
@@ -1769,6 +1771,13 @@ def _configure(
                         " unset the  LANGCHAIN_TRACING_V2 environment variables.",
                         e,
                     )
+        elif tracing_v2_enabled_ and example_id:
+            # This can get ugly since we don't manage the un-setting
+            # of the example_id
+            for handler in callback_manager.handlers:
+                if isinstance(handler, LangChainTracer):
+                    handler.example_id = example_id
+                    break
         if open_ai is not None and not any(
             isinstance(handler, OpenAICallbackHandler)
             for handler in callback_manager.handlers
