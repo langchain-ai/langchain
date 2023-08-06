@@ -2,6 +2,7 @@ from typing import Any, Optional, Type
 
 import multion
 from pydantic import BaseModel, Field
+from typing import TYPE_CHECKING
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.multion.base import MultionBaseTool
