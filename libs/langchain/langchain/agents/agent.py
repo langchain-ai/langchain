@@ -897,7 +897,10 @@ s
             else:
                 tool_run_kwargs = self.agent.tool_run_logging_kwargs()
                 observation = InvalidTool().run(
-                    agent_action.tool,
+                    {
+                        "requested_tool_name": agent_action.tool,
+                        "available_tool_names": list(name_to_tool_map.keys()),
+                    },
                     verbose=self.verbose,
                     color=None,
                     callbacks=run_manager.get_child() if run_manager else None,
@@ -992,7 +995,10 @@ s
             else:
                 tool_run_kwargs = self.agent.tool_run_logging_kwargs()
                 observation = await InvalidTool().arun(
-                    agent_action.tool,
+                    {
+                        "requested_tool_name": agent_action.tool,
+                        "available_tool_names": list(name_to_tool_map.keys()),
+                    },
                     verbose=self.verbose,
                     color=None,
                     callbacks=run_manager.get_child() if run_manager else None,
