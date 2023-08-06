@@ -33,6 +33,28 @@ class TestXata:
             texts=texts, 
             embedding=embedding_openai,
             client=xata)
+        docsearch.wait_for_indexing(ndocs=3)
 
         output = docsearch.similarity_search("foo", k=1)
         assert output == [Document(page_content="foo")]
+        docsearch.delete(delete_all=True)
+
+    def test_similarity_search_with_metadata(
+        self, xata: XataClient, embedding_openai: OpenAIEmbeddings
+    ) -> None:
+        """Test end to end construction and search with a metadata filter.
+
+        This test requires a column named "a" of type integer to be present
+        in the Xata table. """
+        texts = ["foo", "foo", "foo"]
+        metadatas = [{"a": i} for i in range(len(texts))]
+        docsearch = XataVectorStore.from_texts(
+            texts=texts, 
+            embedding=embedding_openai,
+            metadatas=metadatas,
+            client=xata)
+        docsearch.wait_for_indexing(ndocs=3)
+        output = docsearch.similarity_search("foo", k=1, filter={"a": 1})
+        assert output == [Document(page_content="foo", metadata={"a": 1})]
+        docsearch.delete(delete_all=True)
+

@@ -1,6 +1,7 @@
 """Wrapper around Xata as a vector database."""
 
 from __future__ import annotations
+import time
 from itertools import repeat
 from typing import (
     TYPE_CHECKING, 
@@ -185,12 +186,14 @@ class XataVectorStore(VectorStore):
                 text with distance in float.
         """
         embedding = self._embedding.embed_query(query)
-        r = self._client.search_and_filter().vector_search(self._table_name, payload={
+        payload = {
             "queryVector": embedding,
             "column": "embedding",
             "size": k,
-            # "filter": filter,  # XXX: add filter support
-        })
+        }
+        if filter:
+            payload["filter"] = filter
+        r = self._client.search_and_filter().vector_search(self._table_name, payload=payload)
         if r.status_code != 200:
             raise Exception(f"Error running similarity search: {r.status_code} {r}")
         hits = r["records"]
@@ -213,3 +216,58 @@ class XataVectorStore(VectorStore):
             if key not in ["id", "content", "embedding", "xata"]:
                 metadata[key] = val
         return metadata
+    
+    def delete(
+        self, 
+        ids: Optional[List[str]] = None,
+        delete_all: Optional[bool] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Delete by vector IDs.
+
+        Args:
+            ids: List of ids to delete.
+            delete_all: Delete all records in the table.
+        """
+        if delete_all:
+            self._delete_all()
+            self.wait_for_indexing(ndocs=0)
+        elif ids is not None:
+            chunk_size = 500
+            for i in range(0, len(ids), chunk_size):
+                chunk = ids[i:i+chunk_size]
+                operations = [{"delete": {"table": self._table_name, "id": id}} for id in chunk]        
+                self._client.records().transaction(payload={"operations":operations})
+        else:
+            raise ValueError("Either ids or delete_all must be set.")
+    
+    def _delete_all(self) -> None:
+        """Delete all records in the table."""
+        while True:
+            r = self._client.search_and_filter().query(
+                self._table_name, payload={"columns": ["id"]})
+            if r.status_code != 200:
+                raise Exception(f"Error running query: {r.status_code} {r}")
+            ids = [rec["id"] for rec in r["records"]]
+            if len(ids) == 0:
+                break
+            operations = [{"delete": {"table": self._table_name, "id": id}} for id in ids]        
+            self._client.records().transaction(payload={"operations":operations})
+
+    def wait_for_indexing(self,
+                         timeout: float = 5,
+                         ndocs: int = 1) -> None:
+        """Wait for the search index to contain a certain number of
+           documents. Useful in tests.
+        """
+        start = time.time()
+        while True:
+            r = self._client.search_and_filter().search_table(
+                self._table_name, payload={"query": "", "page": {"size": 0}})
+            if r.status_code != 200:
+                raise Exception(f"Error running search: {r.status_code} {r}")
+            if r["totalCount"] == ndocs:
+                break
+            if time.time() - start > timeout:
+                raise Exception("Timed out waiting for indexing to complete.")
+            time.sleep(0.5)
