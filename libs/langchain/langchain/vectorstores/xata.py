@@ -48,7 +48,7 @@ class XataVectorStore(VectorStore):
         self,
         vectors: List[List[float]],
         documents: List[Document],
-        ids: List[str],
+        ids: Optional[List[str]] = None,
     ) -> List[str]:
         return self._add_vectors(vectors, documents, ids)
 
@@ -69,7 +69,7 @@ class XataVectorStore(VectorStore):
         self,
         vectors: List[List[float]],
         documents: List[Document],
-        ids: List[str],
+        ids: Optional[List[str]] = None,
     ) -> List[str]:
         """Add vectors to the Xata database."""
 
@@ -123,7 +123,7 @@ class XataVectorStore(VectorStore):
         metadatas: Optional[List[dict]] = None,
         api_key: Optional[str] = None,
         db_url: Optional[str] = None,
-        table_name: Optional[str] = "vectors",
+        table_name: str = "vectors",
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> "XataVectorStore":
