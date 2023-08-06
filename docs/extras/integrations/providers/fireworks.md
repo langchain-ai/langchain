@@ -19,4 +19,4 @@ llm = Fireworks(model="fireworks-llama-v2-13b-chat", max_tokens=256, temperature
 llm("Name 3 sports.")
 ```
 
-For a more detailed walkthrough, see [here](/docs/extras/modules/model_io/models/llms/integrations/Fireworks.ipynb).
+For a more detailed walkthrough, see [here](/docs/integrations/llms/Fireworks).

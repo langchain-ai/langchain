@@ -6,6 +6,8 @@ from pydantic import Field, root_validator
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.schema.output import GenerationChunk
+from langchain.utils import get_pydantic_field_names
+from langchain.utils.utils import build_extra_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -106,6 +108,9 @@ class LlamaCpp(LLM):
     rope_freq_base: float = 10000.0
     """Base frequency for rope sampling."""
 
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """Any additional parameters to pass to llama_cpp.Llama."""
+
     streaming: bool = True
     """Whether to stream the results, token by token."""
 
@@ -139,6 +144,8 @@ class LlamaCpp(LLM):
         if values["n_gpu_layers"] is not None:
             model_params["n_gpu_layers"] = values["n_gpu_layers"]
 
+        model_params.update(values["model_kwargs"])
+
         try:
             from llama_cpp import Llama
 
@@ -155,6 +162,16 @@ class LlamaCpp(LLM):
                 f"Received error {e}"
             )
 
+        return values
+
+    @root_validator(pre=True)
+    def build_model_kwargs(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Build extra kwargs from additional params that were passed in."""
+        all_required_field_names = get_pydantic_field_names(cls)
+        extra = values.get("model_kwargs", {})
+        values["model_kwargs"] = build_extra_kwargs(
+            extra, values, all_required_field_names
+        )
         return values
 
     @property
