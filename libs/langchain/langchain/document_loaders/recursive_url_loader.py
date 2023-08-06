@@ -91,7 +91,8 @@ class RecursiveUrlLoader(BaseLoader):
             if link.startswith("//"):
                 absolute_paths.append(f"{urlparse(base_url).scheme}:{link}")
                 continue
-        # Remove duplicates, also do another filter to prevent outside links, just in case
+        # Remove duplicates
+        # also do another filter to prevent outside links
         absolute_paths = list(
             set(
                 [
