@@ -149,14 +149,14 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
         try:
             from pydub import AudioSegment
         except ImportError:
-            raise ValueError(
-                "pydub package not found, please install it with " "`pip install pydub`"
+            raise ImportError(
+                "pydub package not found, please install it with `pip install pydub`"
             )
 
         try:
             import librosa
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "librosa package not found, please install it with "
                 "`pip install librosa`"
             )
