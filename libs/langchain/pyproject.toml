@@ -124,7 +124,6 @@ langsmith = "~0.0.11"
 rank-bm25 = {version = "^0.2.2", optional = true}
 amadeus = {version = ">=8.1.0", optional = true}
 geopandas = {version = "^0.13.1", optional = true}
-nucliadb-protos = {version = "^2.17.0.post469", optional = true}
 xinference = {version = "^0.0.6", optional = true}
 python-arango = {version = "^7.5.9", optional = true}
 gitpython = {version = "^3.1.32", optional = true}
@@ -202,7 +201,6 @@ momento = "^1.5.0"
 # Please do not add any dependencies in the test_integration group
 # See instructions above ^^
 pygithub = "^1.59.0"
-nucliadb-protos = "^2.17.0.post469"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.0.249"
@@ -367,7 +365,6 @@ extended_testing = [
  "rank_bm25",
  "geopandas",
  "jinja2",
- "nucliadb-protos",
  "xinference",
  "gitpython",
  "newspaper3k",
