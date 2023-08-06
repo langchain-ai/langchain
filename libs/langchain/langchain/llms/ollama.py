@@ -1,21 +1,23 @@
-from typing import Any, Dict, Iterator, List, Optional
-
 import json
+from typing import Any, Dict, Iterator, List, Mapping, Optional
+
 import requests
 from pydantic import Extra
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
-from langchain.schema.output import GenerationChunk
 from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema.output import GenerationChunk
+
 
 def _stream_response_to_generation_chunk(
-    stream_response: Dict[str, Any],
+    stream_response: str,
 ) -> GenerationChunk:
     """Convert a stream response to a generation chunk."""
     return GenerationChunk(
         text=json.loads(stream_response.strip()).get("response", ""),
     )
+
 
 class _OllamaCommon(BaseLanguageModel):
     base_url: str
@@ -25,68 +27,89 @@ class _OllamaCommon(BaseLanguageModel):
     """Model name to use."""
 
     mirostat: Optional[int]
-    """Enable Mirostat sampling for controlling perplexity. (default: 0, 0 = disabled, 1 = Mirostat, 2 = Mirostat 2.0)"""
+    """Enable Mirostat sampling for controlling perplexity.
+    (default: 0, 0 = disabled, 1 = Mirostat, 2 = Mirostat 2.0)"""
 
     mirostat_eta: Optional[float]
-    """Influences how quickly the algorithm responds to feedback from the generated text. A lower learning rate will result in slower adjustments, while a higher learning rate will make the algorithm more responsive. (Default: 0.1)"""
+    """Influences how quickly the algorithm responds to feedback
+    from the generated text. A lower learning rate will result in
+    slower adjustments, while a higher learning rate will make
+    the algorithm more responsive. (Default: 0.1)"""
 
     mirostat_tau: Optional[float]
-    """Controls the balance between coherence and diversity of the output. A lower value will result in more focused and coherent text. (Default: 5.0)"""
+    """Controls the balance between coherence and diversity
+    of the output. A lower value will result in more focused and
+    coherent text. (Default: 5.0)"""
 
     num_ctx: Optional[int]
-    """Sets the size of the context window used to generate the next token. (Default: 2048)	"""
+    """Sets the size of the context window used to generate the
+    next token. (Default: 2048)	"""
 
     num_gpu: Optional[int]
-    """The number of GPUs to use. On macOS it defaults to 1 to enable metal support, 0 to disable."""
+    """The number of GPUs to use. On macOS it defaults to 1 to
+    enable metal support, 0 to disable."""
 
     num_thread: Optional[int]
-    """Sets the number of threads to use during computation. By default, Ollama will detect this for optimal performance. It is recommended to set this value to the number of physical CPU cores your system has (as opposed to the logical number of cores)."""
+    """Sets the number of threads to use during computation.
+    By default, Ollama will detect this for optimal performance.
+    It is recommended to set this value to the number of physical
+    CPU cores your system has (as opposed to the logical number of cores)."""
 
     repeat_last_n: Optional[int]
-    """Sets how far back for the model to look back to prevent repetition. (Default: 64, 0 = disabled, -1 = num_ctx)"""
+    """Sets how far back for the model to look back to prevent
+    repetition. (Default: 64, 0 = disabled, -1 = num_ctx)"""
 
     repeat_penalty: Optional[float]
-    """Sets how strongly to penalize repetitions. A higher value (e.g., 1.5) will penalize repetitions more strongly, while a lower value (e.g., 0.9) will be more lenient. (Default: 1.1)"""
+    """Sets how strongly to penalize repetitions. A higher value (e.g., 1.5)
+    will penalize repetitions more strongly, while a lower value (e.g., 0.9)
+    will be more lenient. (Default: 1.1)"""
 
     temperature: Optional[float]
-    """The temperature of the model. Increasing the temperature will make the model answer more creatively. (Default: 0.8)"""
+    """The temperature of the model. Increasing the temperature will
+    make the model answer more creatively. (Default: 0.8)"""
 
     stop: Optional[List[str]]
     """Sets the stop tokens to use."""
 
     tfs_z: Optional[float]
-    """Tail free sampling is used to reduce the impact of less probable tokens from the output. A higher value (e.g., 2.0) will reduce the impact more, while a value of 1.0 disables this setting. (default: 1)"""
+    """Tail free sampling is used to reduce the impact of less probable
+    tokens from the output. A higher value (e.g., 2.0) will reduce the
+    impact more, while a value of 1.0 disables this setting. (default: 1)"""
 
     top_k: Optional[int]
-    """Reduces the probability of generating nonsense. A higher value (e.g. 100) will give more diverse answers, while a lower value (e.g. 10) will be more conservative. (Default: 40)"""
+    """Reduces the probability of generating nonsense. A higher value (e.g. 100)
+    will give more diverse answers, while a lower value (e.g. 10)
+    will be more conservative. (Default: 40)"""
 
     top_p: Optional[int]
-    """Works together with top-k. A higher value (e.g., 0.95) will lead to more diverse text, while a lower value (e.g., 0.5) will generate more focused and conservative text. (Default: 0.9)"""
+    """Works together with top-k. A higher value (e.g., 0.95) will lead
+    to more diverse text, while a lower value (e.g., 0.5) will
+    generate more focused and conservative text. (Default: 0.9)"""
 
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling Ollama."""
         return {
-          "model": self.model,
-          "options": {
-            "mirostat": self.mirostat,
-            "mirostat_eta": self.mirostat_eta,
-            "mirostat_tau": self.mirostat_tau,
-            "num_ctx": self.num_ctx,
-            "num_gpu": self.num_gpu,
-            "num_thread": self.num_thread,
-            "repeat_last_n": self.repeat_last_n,
-            "repeat_penalty": self.repeat_penalty,
-            "temperature": self.temperature,
-            "stop": self.stop,
-            "tfs_z": self.tfs_z,
-            "top_k": self.top_k,
-            "top_p": self.top_p
-          }
+            "model": self.model,
+            "options": {
+                "mirostat": self.mirostat,
+                "mirostat_eta": self.mirostat_eta,
+                "mirostat_tau": self.mirostat_tau,
+                "num_ctx": self.num_ctx,
+                "num_gpu": self.num_gpu,
+                "num_thread": self.num_thread,
+                "repeat_last_n": self.repeat_last_n,
+                "repeat_penalty": self.repeat_penalty,
+                "temperature": self.temperature,
+                "stop": self.stop,
+                "tfs_z": self.tfs_z,
+                "top_k": self.top_k,
+                "top_p": self.top_p,
+            },
         }
 
     @property
-    def _identifying_params(self) -> Dict[str, Any]:
+    def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         return {**{"model": self.model}, **self._default_params}
 
@@ -95,7 +118,7 @@ class _OllamaCommon(BaseLanguageModel):
         prompt: str,
         stop: Optional[List[str]] = None,
         **kwargs: Any,
-    ):
+    ) -> Iterator[str]:
         if self.stop is not None and stop is not None:
             raise ValueError("`stop` found in both the input and default params.")
         elif self.stop is not None:
@@ -105,9 +128,9 @@ class _OllamaCommon(BaseLanguageModel):
         params = {**self._default_params, **kwargs}
         response = requests.post(
             url=f"{self.base_url}/api/generate/",
-            headers={"Content-Type": f"application/json"},
+            headers={"Content-Type": "application/json"},
             json={"prompt": prompt, **params},
-            stream=True
+            stream=True,
         )
         response.encoding = "utf-8"
         if response.status_code != 200:
@@ -168,15 +191,19 @@ class Ollama(LLM, _OllamaCommon):
                 chunks.append(json.loads(stream_resp.strip()).get("response", ""))
         return "".join(chunks)
 
-    def _stream(self, prompt: str, stop: Optional[List[str]] = None, run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any) -> Iterator[GenerationChunk]:
-        for stream_resp in self._create_stream(
-            prompt, stop, **kwargs
-        ):
+    def _stream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[GenerationChunk]:
+        for stream_resp in self._create_stream(prompt, stop, **kwargs):
             if stream_resp:
-              chunk = _stream_response_to_generation_chunk(stream_resp)
-              yield chunk
-              if run_manager:
-                  run_manager.on_llm_new_token(
-                      chunk.text,
-                      verbose=self.verbose,
-                  )
+                chunk = _stream_response_to_generation_chunk(stream_resp)
+                yield chunk
+                if run_manager:
+                    run_manager.on_llm_new_token(
+                        chunk.text,
+                        verbose=self.verbose,
+                    )
