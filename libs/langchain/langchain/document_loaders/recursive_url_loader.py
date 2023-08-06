@@ -67,7 +67,7 @@ class RecursiveUrlLoader(BaseLoader):
         all_links = [urljoin(url, link.get("href")) for link in soup.find_all("a")]
         # Filter children url of current url
         child_links = [link for link in set(all_links) if link.startswith(url)]
-        # Remove framents to avoid repititions
+        # Remove fragments to avoid repetitions
         defraged_child_links = [urldefrag(link).url for link in child_links]
 
         # Store the visited links and recursively visit the children
