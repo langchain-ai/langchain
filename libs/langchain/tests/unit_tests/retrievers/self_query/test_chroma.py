@@ -7,14 +7,14 @@ from langchain.chains.query_constructor.ir import (
     Operator,
     StructuredQuery,
 )
-from langchain.retrievers.self_query.deeplake import DeepLakeTranslator
+from langchain.retrievers.self_query.chroma import ChromaTranslator
 
-DEFAULT_TRANSLATOR = DeepLakeTranslator()
+DEFAULT_TRANSLATOR = ChromaTranslator()
 
 
 def test_visit_comparison() -> None:
     comp = Comparison(comparator=Comparator.LT, attribute="foo", value=["1", "2"])
-    expected = "(metadata['foo'] < 1 or metadata['foo'] < 2)"
+    expected = {"foo": {"$lt": ["1", "2"]}}
     actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
     assert expected == actual
 
@@ -28,10 +28,13 @@ def test_visit_operation() -> None:
             Comparison(comparator=Comparator.LT, attribute="abc", value=["1", "2"]),
         ],
     )
-    expected = (
-        "(metadata['foo'] < 2 and metadata['bar'] == 'baz' "
-        "and (metadata['abc'] < 1 or metadata['abc'] < 2))"
-    )
+    expected = {
+        "$and": [
+            {"foo": {"$lt": 2}},
+            {"bar": {"$eq": "baz"}},
+            {"abc": {"$lt": ["1", "2"]}},
+        ]
+    }
     actual = DEFAULT_TRANSLATOR.visit_operation(op)
     assert expected == actual
 
@@ -47,13 +50,13 @@ def test_visit_structured_query() -> None:
     assert expected == actual
 
     comp = Comparison(comparator=Comparator.LT, attribute="foo", value=["1", "2"])
+    expected = (
+        query,
+        {"filter": {"foo": {"$lt": ["1", "2"]}}},
+    )
     structured_query = StructuredQuery(
         query=query,
         filter=comp,
-    )
-    expected = (
-        query,
-        {"tql": "SELECT * WHERE (metadata['foo'] < 1 or metadata['foo'] < 2)"},
     )
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
     assert expected == actual
@@ -73,9 +76,13 @@ def test_visit_structured_query() -> None:
     expected = (
         query,
         {
-            "tql": "SELECT * WHERE "
-            "(metadata['foo'] < 2 and metadata['bar'] == 'baz' and "
-            "(metadata['abc'] < 1 or metadata['abc'] < 2))"
+            "filter": {
+                "$and": [
+                    {"foo": {"$lt": 2}},
+                    {"bar": {"$eq": "baz"}},
+                    {"abc": {"$lt": ["1", "2"]}},
+                ]
+            }
         },
     )
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
