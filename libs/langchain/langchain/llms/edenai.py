@@ -92,11 +92,11 @@ class EdenAI(LLM):
         """Return type of model."""
         return "edenai"
 
-    def _format_output(self, output: dict) -> str:
+    def _format_output(self, output: dict,provider: str) -> str:
         if self.feature == "text":
-            return output[self.provider]["generated_text"]
+            return output[provider]["generated_text"]
         else:
-            return output[self.provider]["items"][0]["image"]
+            return output[provider]["items"][0]["image"]
 
     def _call(
         self,
@@ -123,22 +123,29 @@ class EdenAI(LLM):
             stops = self.stop_sequences
         else:
             stops = stop
-
+                
+        
+        settings=None    
+        model = kwargs.get("model", self.params.get("model"))
         url = f"{self.base_url}/{self.feature}/{self.subfeature}"
         headers = {"Authorization": f"Bearer {self.edenai_api_key}"}
         payload = {
             **self.params,
             "providers": self.provider,
-<<<<<<< HEAD
-            "num_images": 1,  # always limit to 1 the number of image generated (ignored for text)
-=======
             "num_images": 1,  # always limit to 1 (ignored for text)
->>>>>>> ef5bc1fef1869aa9b9277bc8136ca472afc5fc6d
+            "model": model,  # Include the "model" value in payload
             "text": prompt,
             **kwargs,
         }
-        request = Requests(headers=headers)
 
+        if "model" in payload.keys():
+            if payload["model"] is not None:
+                settings = {payload["providers"]:payload["model"]}
+            
+        if settings is not None:
+            payload["settings"] = settings
+
+        request = Requests(headers=headers)
         response = request.post(url=url, data=payload)
 
         if response.status_code >= 500:
@@ -151,7 +158,7 @@ class EdenAI(LLM):
                 f"{response.status_code}: {response.text}"
             )
 
-        output = self._format_output(response.json())
+        output = self._format_output(response.json(),payload["providers"])
 
         if stops is not None:
             output = enforce_stop_tokens(output, stops)
@@ -186,7 +193,6 @@ class EdenAI(LLM):
         else:
             stops = stop
 
-        print("Running the acall")
         url = f"{self.base_url}/{self.feature}/{self.subfeature}"
         headers = {"Authorization": f"Bearer {self.edenai_api_key}"}
         payload = {
@@ -198,7 +204,6 @@ class EdenAI(LLM):
         }
 
         async with ClientSession() as session:
-            print("Requesting")
             async with session.post(url, json=payload, headers=headers) as response:
                 if response.status >= 500:
                     raise Exception(f"EdenAI Server: Error {response.status}")
@@ -214,8 +219,8 @@ class EdenAI(LLM):
 
                 response_json = await response.json()
 
-                output = self._format_output(response_json)
+                output = self._format_output(response_json,self.provider)
                 if stops is not None:
                     output = enforce_stop_tokens(output, stops)
-
+                    
                 return output
