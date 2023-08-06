@@ -127,6 +127,7 @@ geopandas = {version = "^0.13.1", optional = true}
 xinference = {version = "^0.0.6", optional = true}
 python-arango = {version = "^7.5.9", optional = true}
 gitpython = {version = "^3.1.32", optional = true}
+betabageldb = {version = "^0.2.32", python = ">=3.7,<3.11"}
 librosa = {version="^0.10.0.post2", optional = true }
 feedparser = {version = "^6.0.10", optional = true}
 newspaper3k = {version = "^0.2.8", optional = true}
