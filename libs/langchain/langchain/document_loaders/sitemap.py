@@ -49,8 +49,8 @@ class SitemapLoader(WebBaseLoader):
                 remember when setting this method to also copy metadata["loc"]
                 to metadata["source"] if you are using this field
             is_local: whether the sitemap is a local file. Default: False
-            continue_on_failure: whether to continue loading the sitemap if an error 
-                occurs loading a url, emitting a warning instead of raising an exception. 
+            continue_on_failure: whether to continue loading the sitemap if an error
+                occurs loading a url, emitting a warning instead of raising an exception.
                 Setting this to True makes the loader more robust, but also may result
                 in missing data. Default: False
         """

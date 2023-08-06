@@ -59,8 +59,8 @@ class BlackboardLoader(WebBaseLoader):
             load_all_recursively: If True, load all documents recursively.
             basic_auth: Basic auth credentials.
             cookies: Cookies.
-            continue_on_failure: whether to continue loading pages if an error 
-                occurs loading a url, emitting a warning instead of raising an exception. 
+            continue_on_failure: whether to continue loading pages if an error
+                occurs loading a url, emitting a warning instead of raising an exception.
                 Setting this to True makes the loader more robust, but also may result
                 in missing data. Default: False
 
