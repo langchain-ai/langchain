@@ -151,6 +151,8 @@ class Runnable(Generic[Input, Output], ABC):
             if final is None:
                 final = chunk
             else:
+                # Chunks don't have a defined interface, so make a best effort to gather.
+                # This method is unsupported and should throw an error if gathering fails.
                 final += chunk  # type: ignore[operator]
         if final:
             yield from self.stream(final, config)
@@ -164,6 +166,8 @@ class Runnable(Generic[Input, Output], ABC):
             if final is None:
                 final = chunk
             else:
+                # Chunks don't have a defined interface, so make a best effort to gather.
+                # This method is unsupported and should throw an error if gathering fails.
                 final += chunk  # type: ignore[operator]
 
         if final:
@@ -222,10 +226,10 @@ class Runnable(Generic[Input, Output], ABC):
             )
             return output
 
-    def _stream_with_config(
+    def _transform_stream_with_config(
         self,
         input: Iterator[Input],
-        _transform: Callable[[Iterator[Input]], Iterator[Output]],
+        transformer: Callable[[Iterator[Input]], Iterator[Output]],
         config: Optional[RunnableConfig],
         run_type: Optional[str] = None,
     ) -> Iterator[Output]:
@@ -251,7 +255,7 @@ class Runnable(Generic[Input, Output], ABC):
             run_type=run_type,
         )
         try:
-            for chunk in _transform(input_for_transform):
+            for chunk in transformer(input_for_transform):
                 yield chunk
                 if final_output_supported:
                     if final_output is None:
@@ -292,10 +296,10 @@ class Runnable(Generic[Input, Output], ABC):
                 else {"input": final_input},
             )
 
-    async def _astream_with_config(
+    async def _atransform_stream_with_config(
         self,
         input: AsyncIterator[Input],
-        _transform: Callable[[AsyncIterator[Input]], AsyncIterator[Output]],
+        transformer: Callable[[AsyncIterator[Input]], AsyncIterator[Output]],
         config: Optional[RunnableConfig],
         run_type: Optional[str] = None,
     ) -> AsyncIterator[Output]:
@@ -321,7 +325,7 @@ class Runnable(Generic[Input, Output], ABC):
             run_type=run_type,
         )
         try:
-            async for chunk in _transform(input_for_transform):
+            async for chunk in transformer(input_for_transform):
                 yield chunk
                 if final_output_supported:
                     if final_output is None:
