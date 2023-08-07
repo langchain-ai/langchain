@@ -47,6 +47,9 @@ class BaseTracer(BaseCallbackHandler, ABC):
             parent_run = self.run_map[str(run.parent_run_id)]
             if parent_run:
                 self._add_child_run(parent_run, run)
+                parent_run.child_execution_order = max(
+                    parent_run.child_execution_order, run.child_execution_order
+                )
             else:
                 logger.debug(f"Parent run with UUID {run.parent_run_id} not found.")
         self.run_map[str(run.id)] = run

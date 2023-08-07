@@ -196,7 +196,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
         config: Optional[RunnableConfig] = None,
     ) -> Iterator[T]:
         yield from self._stream_with_config(
-            self._transform(input), config, run_type="parser"
+            input, self._transform, config, run_type="parser"
         )
 
     async def atransform(
@@ -205,7 +205,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
         config: Optional[RunnableConfig] = None,
     ) -> AsyncIterator[T]:
         async for chunk in self._astream_with_config(
-            self._atransform(input), config, run_type="parser"
+            input, self._atransform, config, run_type="parser"
         ):
             yield chunk
 

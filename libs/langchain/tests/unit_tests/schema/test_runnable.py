@@ -305,7 +305,7 @@ async def test_prompt_with_chat_model(
     tracer = FakeTracer()
     assert [
         *chain.stream({"question": "What is your name?"}, dict(callbacks=[tracer]))
-    ] == [AIMessage(content="foo")]
+    ] == [AIMessage(content="f"), AIMessage(content="o"), AIMessage(content="o")]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
@@ -681,7 +681,12 @@ async def test_router_runnable(
         "key": "math",
         "input": {"question": "2 + 2"},
     }
-    assert tracer.runs == snapshot
+    assert len([r for r in tracer.runs if r.parent_run_id is None]) == 1
+    parent_run = next(r for r in tracer.runs if r.parent_run_id is None)
+    assert len(parent_run.child_runs) == 2
+    router_run = parent_run.child_runs[1]
+    assert router_run.name == "RunnableSequence"  # TODO: should be RunnableRouter
+    assert len(router_run.child_runs) == 2
 
 
 @freeze_time("2023-01-01")

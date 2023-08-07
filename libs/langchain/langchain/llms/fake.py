@@ -64,7 +64,7 @@ class FakeStreamingListLLM(FakeListLLM):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Iterator[str]:
-        result = self.invoke(input)
+        result = self.invoke(input, config)
         for c in result:
             yield c
 
@@ -76,6 +76,6 @@ class FakeStreamingListLLM(FakeListLLM):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[str]:
-        result = self.invoke(input)
+        result = await self.ainvoke(input, config)
         for c in result:
             yield c

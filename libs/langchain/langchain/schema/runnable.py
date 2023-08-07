@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
+from itertools import tee
 from typing import (
     Any,
     AsyncIterator,
@@ -28,6 +29,7 @@ from pydantic import Field
 from langchain.callbacks.base import BaseCallbackManager, Callbacks
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
+from langchain.utils.aiter import atee
 
 
 async def _gated_coro(semaphore: asyncio.Semaphore, coro: Coroutine) -> Any:
@@ -223,10 +225,19 @@ class Runnable(Generic[Input, Output], ABC):
     def _stream_with_config(
         self,
         input: Iterator[Input],
+        _transform: Callable[[Iterator[Input]], Iterator[Output]],
         config: Optional[RunnableConfig],
         run_type: Optional[str] = None,
     ) -> Iterator[Output]:
         from langchain.callbacks.manager import CallbackManager
+
+        # tee the input so we can iterate over it twice
+        input_for_tracing, input_for_transform = tee(input, 2)
+        # Start the input iterator to ensure the input runnable starts before this one
+        final_input: Union[Input, None] = next(input_for_tracing, None)
+        final_input_supported = True
+        final_output: Union[Output, None] = None
+        final_output_supported = True
 
         config = config or {}
         callback_manager = CallbackManager.configure(
@@ -239,23 +250,9 @@ class Runnable(Generic[Input, Output], ABC):
             {"input": ""},
             run_type=run_type,
         )
-        final_input: Union[Input, None] = None
-        final_input_supported = True
-        final_output: Union[Output, None] = None
-        final_output_supported = True
         try:
-            for chunk in input:
+            for chunk in _transform(input_for_transform):
                 yield chunk
-                if final_input_supported:
-                    if final_input is None:
-                        final_input = chunk
-                    else:
-                        try:
-                            final_input += chunk  # type: ignore[operator]
-                        except TypeError:
-                            final_input = None
-                            final_input_supported = False
-                            pass
                 if final_output_supported:
                     if final_output is None:
                         final_output = chunk
@@ -265,6 +262,17 @@ class Runnable(Generic[Input, Output], ABC):
                         except TypeError:
                             final_output = None
                             final_output_supported = False
+                            pass
+            for ichunk in input_for_tracing:
+                if final_input_supported:
+                    if final_input is None:
+                        final_input = ichunk
+                    else:
+                        try:
+                            final_input += ichunk  # type: ignore[operator]
+                        except TypeError:
+                            final_input = None
+                            final_input_supported = False
                             pass
         except Exception as e:
             run_manager.on_chain_error(
@@ -287,10 +295,19 @@ class Runnable(Generic[Input, Output], ABC):
     async def _astream_with_config(
         self,
         input: AsyncIterator[Input],
+        _transform: Callable[[AsyncIterator[Input]], AsyncIterator[Output]],
         config: Optional[RunnableConfig],
         run_type: Optional[str] = None,
     ) -> AsyncIterator[Output]:
         from langchain.callbacks.manager import AsyncCallbackManager
+
+        # tee the input so we can iterate over it twice
+        input_for_tracing, input_for_transform = atee(input, 2)
+        # Start the input iterator to ensure the input runnable starts before this one
+        final_input: Union[Input, None] = await anext(input_for_tracing, None)
+        final_input_supported = True
+        final_output: Union[Output, None] = None
+        final_output_supported = True
 
         config = config or {}
         callback_manager = AsyncCallbackManager.configure(
@@ -303,23 +320,9 @@ class Runnable(Generic[Input, Output], ABC):
             {"input": ""},
             run_type=run_type,
         )
-        final_input: Union[Input, None] = None
-        final_input_supported = True
-        final_output: Union[Output, None] = None
-        final_output_supported = True
         try:
-            async for chunk in input:
+            async for chunk in _transform(input_for_transform):
                 yield chunk
-                if final_input_supported:
-                    if final_input is None:
-                        final_input = chunk
-                    else:
-                        try:
-                            final_input += chunk  # type: ignore[operator]
-                        except TypeError:
-                            final_input = None
-                            final_input_supported = False
-                            pass
                 if final_output_supported:
                     if final_output is None:
                         final_output = chunk
@@ -329,6 +332,17 @@ class Runnable(Generic[Input, Output], ABC):
                         except TypeError:
                             final_output = None
                             final_output_supported = False
+                            pass
+            async for ichunk in input_for_tracing:
+                if final_input_supported:
+                    if final_input is None:
+                        final_input = ichunk
+                    else:
+                        try:
+                            final_input += ichunk  # type: ignore[operator]
+                        except TypeError:
+                            final_input = None
+                            final_input_supported = False
                             pass
         except Exception as e:
             await run_manager.on_chain_error(
