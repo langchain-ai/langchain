@@ -26,23 +26,15 @@ default_header_template = {
 class AsyncHtmlLoader(BaseLoader):
     """Loads HTML asynchronously."""
 
-    web_paths: List[str]
-
-    requests_per_second: int = 2
-    """Max number of concurrent requests to make."""
-
-    requests_kwargs: Dict[str, Any] = {}
-    """kwargs for requests"""
-
-    raise_for_status: bool = False
-    """Raise an exception if http status code denotes an error."""
-
     def __init__(
         self,
         web_path: Union[str, List[str]],
         header_template: Optional[dict] = None,
         verify_ssl: Optional[bool] = True,
         proxies: Optional[dict] = None,
+        requests_per_second: int = 2,
+        requests_kwargs: Dict[str, Any] = {},
+        raise_for_status: bool = False,
     ):
         """Initialize with webpage path."""
 
@@ -73,6 +65,10 @@ class AsyncHtmlLoader(BaseLoader):
 
         if proxies:
             self.session.proxies.update(proxies)
+
+        self.requests_per_second = requests_per_second
+        self.requests_kwargs = requests_kwargs
+        self.raise_for_status = raise_for_status
 
     async def _fetch(
         self, url: str, retries: int = 3, cooldown: int = 2, backoff: float = 1.5
