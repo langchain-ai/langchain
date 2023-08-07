@@ -131,6 +131,7 @@ librosa = {version="^0.10.0.post2", optional = true }
 feedparser = {version = "^6.0.10", optional = true}
 newspaper3k = {version = "^0.2.8", optional = true}
 amazon-textract-caller = {version = "<2", optional = true}
+xata = {version = "^1.0.0a7", optional = true}
 
 [tool.poetry.group.test.dependencies]
 # The only dependencies that should be added are
@@ -369,6 +370,7 @@ extended_testing = [
  "gitpython",
  "newspaper3k",
  "feedparser",
+ "xata",
 ]
 
 [tool.ruff]
