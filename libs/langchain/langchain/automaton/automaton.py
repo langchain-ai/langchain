@@ -9,6 +9,8 @@ from typing import (
     Protocol,
 )
 
+from langchain.automaton.typedefs import Memory
+
 
 class ExecutedState(TypedDict):
     """The response of an action taking LLM."""
@@ -20,7 +22,7 @@ class ExecutedState(TypedDict):
 class State(Protocol):
     """Automaton state protocol."""
 
-    def execute(self) -> ExecutedState:
+    def execute(self, memory: Memory) -> ExecutedState:
         """Execute the state, returning the result."""
         ...
 

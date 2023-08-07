@@ -14,9 +14,7 @@ from typing import (
 
 from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
-from langchain.automaton.chat_automaton import (
-    ChatAutomaton
-)
+from langchain.automaton.chat_automaton import ChatAutomaton
 from langchain.automaton.typedefs import infer_message_type
 from langchain.automaton.automaton import ExecutedState, State, Automaton
 from langchain.automaton.executor import Executor
@@ -62,6 +60,7 @@ class FakeChatOpenAI(BaseChatModel):
 
 def test_openai_functions_router() -> None:
     """Test the OpenAIFunctionsRouter."""
+
     def revise(notes: str) -> str:
         """Revises the draft."""
         return f"Revised draft: {notes}!"
@@ -139,7 +138,6 @@ def _construct_func_invocation_message(
             }
         },
     )
-
 
 
 def test_automaton() -> None:

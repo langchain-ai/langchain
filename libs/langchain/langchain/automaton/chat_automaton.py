@@ -11,6 +11,7 @@ from langchain.schema import (
 )
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool
+from langchain.automaton.typedefs import PromptGenerator
 
 
 class ChatAutomaton(Automaton):
@@ -18,62 +19,40 @@ class ChatAutomaton(Automaton):
         self,
         llm: BaseLanguageModel,
         tools: Sequence[BaseTool],
-        prompt: ChatPromptTemplate,
+        prompt_generator: PromptGenerator,
     ) -> None:
         """Initialize the chat automaton."""
         self.llm = llm
         self.tools = tools
         # TODO: Fix mutability of chat template, potentially add factory method
-        self.chat_template = ChatPromptTemplate.from_messages(prompt.format_messages())
+        self.prompt_generator = prompt_generator
+        self.program_state = LLMProgram(
+            llm=self.llm,
+            tools=self.tools,
+            prompt_generator=self.prompt_generator,
+        )
 
     def get_start_state(self, *args: Any, **kwargs: Any) -> State:
         """Get the start state."""
-        return LLMProgram(
-            llm=self.llm,
-            tools=self.tools,
-            messages=self.chat_template.format_messages(),
-        )
+        return self.program_state
 
-    def get_next_state(self, executed_state: ExecutedState) -> State:
+    def get_next_state(
+        self, executed_state: ExecutedState  # Add memory for transition functions?
+    ) -> State:
         """Get the next state."""
         previous_state_id = executed_state["id"]
         data = executed_state["data"]
-        self.chat_template.append(data["message"])
 
         if previous_state_id == "user_input":
-            return LLMProgram(
-                llm=self.llm,
-                tools=self.tools,
-                # Could add memory here
-                messages=self.chat_template.format_messages(),
-            )
+            return self.program_state
         elif previous_state_id == "llm_program":
             message_type = infer_message_type(data["message"])
-            if message_type in {MessageType.USER, MessageType.FUNCTION}:
-                raise AssertionError(
-                    "LLM program should not return user or function messages."
-                )
-            elif message_type == MessageType.AI:
+            if message_type == MessageType.AI:
                 return UserInputState()
-            elif message_type == MessageType.AI_INVOKE:
-                # Here we need to add a function message
-                # and then return the user input state.
-                assert data["function_call"]
-
-                function_message = FunctionMessage(
-                    name=data["function_call"]["name"],
-                    content=data["function_call"]["result"],
-                )
-
-                # Function message requires custom addition
-                # Logic may need to be refactored
-                self.chat_template.append(function_message)
-
-                return LLMProgram(
-                    llm=self.llm,
-                    tools=self.tools,
-                    messages=self.chat_template.format_messages(),
-                )
+            elif message_type == MessageType.FUNCTION:
+                return self.program_state
+            else:
+                raise AssertionError(f"Unknown message type: {message_type}")
         else:
             raise ValueError(f"Unknown state ID: {previous_state_id}")
 

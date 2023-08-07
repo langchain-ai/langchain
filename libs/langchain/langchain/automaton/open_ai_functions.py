@@ -72,6 +72,7 @@ def create_action_taking_llm(
     *,
     tools: Sequence[BaseTool] = (),
     stop: Sequence[str] | None = None,
+    invoke_function: bool = True,
 ) -> Runnable:
     """A chain that can create an action.
 
@@ -79,6 +80,7 @@ def create_action_taking_llm(
         llm: The language model to use.
         tools: The tools to use.
         stop: The stop tokens to use.
+        invoke_function: Whether to invoke the function.
 
     Returns:
         a segment of a runnable that take an action.
@@ -92,6 +94,12 @@ def create_action_taking_llm(
             isinstance(message, AIMessage)
             and "function_call" in message.additional_kwargs
         ):
+            if invoke_function:
+                result = invoke_from_function.invoke(  # TODO: fixme using invoke
+                    message
+                )
+            else:
+                result = None
             return {
                 "message": message,
                 "function_call": {
@@ -99,9 +107,7 @@ def create_action_taking_llm(
                     "arguments": json.loads(
                         message.additional_kwargs["function_call"]["arguments"]
                     ),
-                    "result": invoke_from_function.invoke(  # TODO: fixme using invoke
-                        message
-                    ),
+                    "result": result,
                     # Check this works.
                     # "result": message.additional_kwargs["function_call"]
                     #           | invoke_from_function,
