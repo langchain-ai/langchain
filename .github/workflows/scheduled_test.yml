@@ -10,6 +10,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: Scheduled testing
     strategy:
       matrix:
         python-version:
@@ -29,6 +30,8 @@ jobs:
             echo "Running scheduled tests, installing dependencies with poetry..."
             poetry install -E scheduled_testing
       - name: Run tests
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           make scheduled_tests
         shell: bash
