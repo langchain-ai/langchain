@@ -58,8 +58,8 @@ class ArcGISLoader(BaseLoader):
 
     def __init__(
         self,
-        layer: Union[str, "arcgis.features.FeatureLayer"],
-        gis: Optional["arcgis.gis.GIS"] = None,
+        layer: Union[str, arcgis.features.FeatureLayer],
+        gis: Optional[arcgis.gis.GIS] = None,
         where: str = "1=1",
         out_fields: Optional[Union[List[str], str]] = None,
         return_geometry: bool = False,
