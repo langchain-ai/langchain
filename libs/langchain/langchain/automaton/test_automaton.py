@@ -14,13 +14,12 @@ from typing import (
 
 from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
-from langchain.automaton.automaton import (
-    _infer_message_type,
-    ExecutedState,
-    State,
-    Automaton,
-    ChatAutomaton,
+from langchain.automaton.chat_automaton import (
+    ChatAutomaton
 )
+from langchain.automaton.typedefs import infer_message_type
+from langchain.automaton.automaton import ExecutedState, State, Automaton
+from langchain.automaton.executor import Executor
 
 from langchain.automaton.open_ai_functions import (
     OpenAIFunctionsRouter,
@@ -141,19 +140,6 @@ def _construct_func_invocation_message(
         },
     )
 
-
-def print_message(message: BaseMessage) -> None:
-    """Pretty print a message."""
-    print(f"{_infer_message_type(message).name}: {message.content}")
-
-
-T = TypeVar("T")
-
-
-@dataclasses.dataclass
-class FunctionInvocation(State):
-    llm: BaseLanguageModel
-    tools: Sequence[BaseTool]
 
 
 def test_automaton() -> None:
