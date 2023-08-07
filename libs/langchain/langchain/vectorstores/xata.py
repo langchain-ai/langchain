@@ -30,7 +30,7 @@ class XataVectorStore(VectorStore):
     ) -> None:
         """Initialize with Xata client."""
         try:
-            from xata.client import XataClient  # noqa: F401
+            import xata.client  # noqa: F401
         except ImportError:
             raise ValueError(
                 "Could not import xata python package. "
