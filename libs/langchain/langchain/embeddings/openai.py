@@ -295,7 +295,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         if self.openai_api_type in ("azure", "azure_ad", "azuread"):
             openai_args["engine"] = self.deployment
         if self.openai_proxy:
-            import openai
+            try:
+                import openai
+            except ImportError:
+                raise ImportError(
+                    "Could not import openai python package. "
+                    "Please install it with `pip install openai`."
+                )
 
             openai.proxy = {
                 "http": self.openai_proxy,
@@ -338,10 +344,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 disallowed_special=self.disallowed_special,
             )
             for j in range(0, len(token), self.embedding_ctx_length):
-                tokens += [token[j : j + self.embedding_ctx_length]]
-                indices += [i]
+                tokens.append(token[j : j + self.embedding_ctx_length])
+                indices.append(i)
 
-        batched_embeddings = []
+        batched_embeddings: List[List[float]] = []
         _chunk_size = chunk_size or self.chunk_size
 
         if self.show_progress_bar:
@@ -360,7 +366,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 input=tokens[i : i + _chunk_size],
                 **self._invocation_params,
             )
-            batched_embeddings += [r["embedding"] for r in response["data"]]
+            batched_embeddings.extend(r["embedding"] for r in response["data"])
 
         results: List[List[List[float]]] = [[] for _ in range(len(texts))]
         num_tokens_in_batch: List[List[int]] = [[] for _ in range(len(texts))]
@@ -419,10 +425,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 disallowed_special=self.disallowed_special,
             )
             for j in range(0, len(token), self.embedding_ctx_length):
-                tokens += [token[j : j + self.embedding_ctx_length]]
-                indices += [i]
+                tokens.append(token[j : j + self.embedding_ctx_length])
+                indices.append(i)
 
-        batched_embeddings = []
+        batched_embeddings: List[List[float]] = []
         _chunk_size = chunk_size or self.chunk_size
         for i in range(0, len(tokens), _chunk_size):
             response = await async_embed_with_retry(
@@ -430,7 +436,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 input=tokens[i : i + _chunk_size],
                 **self._invocation_params,
             )
-            batched_embeddings += [r["embedding"] for r in response["data"]]
+            batched_embeddings.extend(r["embedding"] for r in response["data"])
 
         results: List[List[List[float]]] = [[] for _ in range(len(texts))]
         num_tokens_in_batch: List[List[int]] = [[] for _ in range(len(texts))]
