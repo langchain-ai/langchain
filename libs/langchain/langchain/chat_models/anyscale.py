@@ -67,7 +67,7 @@ class ChatAnyscale(ChatOpenAI):
 
     @staticmethod
     def get_available_models(
-        anyscale_api_key: str | None = None,
+        anyscale_api_key: Optional[str] = None,
         anyscale_api_base: str = DEFAULT_API_BASE,
     ) -> Set[str]:
         """Get available models from Anyscale API."""
