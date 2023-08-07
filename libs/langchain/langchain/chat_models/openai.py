@@ -404,9 +404,9 @@ class ChatOpenAI(BaseChatModel):
         return self._create_chat_result(response)
 
     def _create_message_dicts(
-        self, messages: List[BaseMessage], stop: Optional[List[str]], **kwargs: Any
+        self, messages: List[BaseMessage], stop: Optional[List[str]]
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-        params = {**self._client_params, **kwargs}
+        params = self._client_params
         if stop is not None:
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
