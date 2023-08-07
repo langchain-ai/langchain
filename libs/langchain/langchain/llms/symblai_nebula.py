@@ -50,7 +50,7 @@ class Nebula(LLM):
     # conversation: Optional[str] = ""
     conversation: str = ""
     return_scores: Optional[str] = "false"
-    max_token: Optional[int] = 2048
+    max_new_tokens: Optional[int] = 2048
     top_k: Optional[float] = 2
     penalty_alpha: Optional[float] = 0.1
 
@@ -105,7 +105,6 @@ class Nebula(LLM):
         """Get the identifying parameters."""
         _model_kwargs = self.model_kwargs or {}
         return {
-            **{"endpoint_url": self.endpoint_url},
             "nebula_service_url": self.nebula_service_url,
             "nebula_service_path": self.nebula_service_path,
             **{"model_kwargs": _model_kwargs},
