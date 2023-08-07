@@ -119,7 +119,7 @@ __all__ = [
     "MlflowAIGateway",
     "Modal",
     "MosaicML",
-    "Nebula"
+    "Nebula",
     "NLPCloud",
     "OpenAI",
     "OpenAIChat",

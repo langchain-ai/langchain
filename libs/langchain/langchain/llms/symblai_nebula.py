@@ -9,10 +9,11 @@ from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
-DEFAULT_SYMBLAI_NEBULA_SERVICE_URL="https://api-nebula.symbl.ai"
-DEFAULT_SYMBLAI_NEBULA_SERVICE_PATH="/v1/model/generate"
+DEFAULT_SYMBLAI_NEBULA_SERVICE_URL = "https://api-nebula.symbl.ai"
+DEFAULT_SYMBLAI_NEBULA_SERVICE_PATH = "/v1/model/generate"
 
 logger = logging.getLogger(__name__)
+
 
 class Nebula(LLM):
     """Nebula Service models.
@@ -56,6 +57,7 @@ class Nebula(LLM):
 
     class Config:
         """Configuration for this pydantic object."""
+
         extra = Extra.forbid
 
     @root_validator()
@@ -81,8 +83,8 @@ class Nebula(LLM):
         if not nebula_service_path.startswith("/"):
             nebula_service_path = "/" + nebula_service_path
 
-        ''' TODO: Future login'''
-        '''
+        """ TODO: Future login"""
+        """
         try:
             nebula_service_endpoint = f"{nebula_service_url}{nebula_service_path}"
             headers = {
@@ -92,12 +94,12 @@ class Nebula(LLM):
             requests.get(nebula_service_endpoint, headers=headers)
         except requests.exceptions.RequestException as e:
             raise ValueError(e)
-        '''
+        """
 
         values["nebula_service_url"] = nebula_service_url
         values["nebula_service_path"] = nebula_service_path
         values["nebula_service_token"] = nebula_service_token
-        
+
         return values
 
     @property
@@ -116,7 +118,6 @@ class Nebula(LLM):
         """Return type of llm."""
         return "nebula"
 
-    ''' TODO: Need to figure out how to pass in prompt and context/text'''
     def _call(
         self,
         prompt: str,
@@ -138,21 +139,17 @@ class Nebula(LLM):
         _model_kwargs = self.model_kwargs or {}
         # params = {**_model_kwargs, **kwargs}
 
-        nebula_service_endpoint = (
-            f"{self.nebula_service_url}{self.nebula_service_path}"
-        )
+        nebula_service_endpoint = f"{self.nebula_service_url}{self.nebula_service_path}"
 
         headers = {
             "Content-Type": "application/json",
             "ApiKey": f"Bearer {self.nebula_service_token}",
-            }
-        
+        }
+
         body = {
             "prompt": {
                 "instruction": prompt,
-                "conversation": {
-                    "text": f"{self.conversation}"
-                }
+                "conversation": {"text": f"{self.conversation}"},
             },
             "return_scores": self.return_scores,
             "max_new_tokens": self.max_new_tokens,
@@ -163,9 +160,7 @@ class Nebula(LLM):
         # payload.update(kwargs)
 
         if len(self.conversation) == 0:
-            raise ValueError(
-                f"Error conversation is empty."
-            )
+            raise ValueError(f"Error conversation is empty.")
 
         logger.debug(f"NEBULA _model_kwargs: {_model_kwargs}")
         logger.debug(f"NEBULA body: {body}")
@@ -174,7 +169,9 @@ class Nebula(LLM):
 
         # call API
         try:
-            response = requests.post(nebula_service_endpoint, headers=headers, json=body)
+            response = requests.post(
+                nebula_service_endpoint, headers=headers, json=body
+            )
         except requests.exceptions.RequestException as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
 
@@ -184,7 +181,7 @@ class Nebula(LLM):
             raise ValueError(
                 f"Error returned by service, status code {response.status_code}"
             )
-        
+
         # langchain/libs/langchain/langchain/llms/chatglm.py
         # try:
         #     parsed_response = response.json()
@@ -205,10 +202,10 @@ class Nebula(LLM):
         #         f"\nResponse: {response.text}"
         #     )
 
-        ''' get the result '''
+        """ get the result """
         text = response.text
 
-        ''' enforce stop '''
+        """ enforce stop """
         if stop is not None:
             # I believe this is required since the stop tokens
             # are not enforced by the model parameters
