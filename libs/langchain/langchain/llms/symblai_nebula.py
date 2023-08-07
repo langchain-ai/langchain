@@ -26,20 +26,26 @@ class Nebula(LLM):
         .. code-block:: python
 
             from langchain.llms import Nebula
-            nebula = Nebula(nebula_service_url="SERVICE_URL",
-                                nebula_service_path="SERVICE_ROUTE",
-                                nebula_service_token="SERVICE_TOKEN")
+
+            nebula = Nebula(
+                nebula_service_url="SERVICE_URL",
+                nebula_service_path="SERVICE_ROUTE",
+                nebula_service_token="SERVICE_TOKEN",
+            )
 
             # Use Ray for distributed processing
             import ray
+
             prompt_list=[]
+
             @ray.remote
             def send_query(llm, prompt):
                 resp = llm(prompt)
                 return resp
+
             futures = [send_query.remote(nebula, prompt) for prompt in prompt_list]
             results = ray.get(futures)
-    """
+    """  # noqa: E501
 
     """Key/value arguments to pass to the model. Reserved for future use"""
     model_kwargs: Optional[dict] = None
@@ -48,7 +54,6 @@ class Nebula(LLM):
     nebula_service_url: Optional[str] = None
     nebula_service_path: Optional[str] = None
     nebula_service_token: Optional[str] = None
-    # conversation: Optional[str] = ""
     conversation: str = ""
     return_scores: Optional[str] = "false"
     max_new_tokens: Optional[int] = 2048
@@ -137,7 +142,6 @@ class Nebula(LLM):
         """
 
         _model_kwargs = self.model_kwargs or {}
-        # params = {**_model_kwargs, **kwargs}
 
         nebula_service_endpoint = f"{self.nebula_service_url}{self.nebula_service_path}"
 
@@ -160,7 +164,7 @@ class Nebula(LLM):
         # payload.update(kwargs)
 
         if len(self.conversation) == 0:
-            raise ValueError(f"Error conversation is empty.")
+            raise ValueError("Error conversation is empty.")
 
         logger.debug(f"NEBULA _model_kwargs: {_model_kwargs}")
         logger.debug(f"NEBULA body: {body}")
@@ -181,26 +185,6 @@ class Nebula(LLM):
             raise ValueError(
                 f"Error returned by service, status code {response.status_code}"
             )
-
-        # langchain/libs/langchain/langchain/llms/chatglm.py
-        # try:
-        #     parsed_response = response.json()
-
-        #     # Check if response content does exists
-        #     if isinstance(parsed_response, dict):
-        #         content_keys = "response"
-        #         if content_keys in parsed_response:
-        #             text = parsed_response[content_keys]
-        #         else:
-        #             raise ValueError(f"No content in response : {parsed_response}")
-        #     else:
-        #         raise ValueError(f"Unexpected response type: {parsed_response}")
-
-        # except requests.exceptions.JSONDecodeError as e:
-        #     raise ValueError(
-        #         f"Error raised during decoding response from inference endpoint: {e}."
-        #         f"\nResponse: {response.text}"
-        #     )
 
         """ get the result """
         text = response.text
