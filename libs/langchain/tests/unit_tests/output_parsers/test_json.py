@@ -60,6 +60,13 @@ JSON_WITH_MARKDOWN_CODE_BLOCK = """```json
 }
 ```"""
 
+JSON_WITH_MARKDOWN_CODE_BLOCK_AND_NEWLINES = """```json
+{
+    "action": "Final Answer",
+    "action_input": "```bar\n<div id="1" class=\"value\">\n\ttext\n</div>```"
+}
+```"""
+
 NO_TICKS = """{
     "foo": "bar"
 }"""
@@ -114,6 +121,13 @@ def test_parse_json(json_string: str) -> None:
     assert parsed == {"foo": "bar"}
 
 
-def test_parse_json_with_code_block() -> None:
+def test_parse_json_with_code_blocks() -> None:
     parsed = parse_json_markdown(JSON_WITH_MARKDOWN_CODE_BLOCK)
     assert parsed == {"foo": "```bar```"}
+
+    parsed = parse_json_markdown(JSON_WITH_MARKDOWN_CODE_BLOCK_AND_NEWLINES)
+
+    assert parsed == {
+        "action": "Final Answer",
+        "action_input": '```bar\n<div id="1" class="value">\n\ttext\n</div>```',
+    }
