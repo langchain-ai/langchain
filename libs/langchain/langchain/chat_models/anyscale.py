@@ -2,19 +2,20 @@
 from __future__ import annotations
 
 import logging
+import os
 import sys
-from typing import TYPE_CHECKING
+from typing import Optional, Set, TYPE_CHECKING
 
 import requests
-from pydantic import Field, root_validator
 
 from langchain.chat_models.openai import (
-    ChatOpenAI,
     _convert_message_to_dict,
     _import_tiktoken,
+    ChatOpenAI,
 )
 from langchain.schema.messages import BaseMessage
 from langchain.utils import get_from_dict_or_env
+from pydantic import Field, root_validator
 
 if TYPE_CHECKING:
     import tiktoken
@@ -31,6 +32,7 @@ class ChatAnyscale(ChatOpenAI):
 
     To use, you should have the ``openai`` python package installed, and the
     environment variable ``ANYSCALE_API_KEY`` set with your API key.
+    Alternatively, you can use the anyscale_api_key keyword argument.
 
     Any parameters that are valid to be passed to the `openai.create` call can be passed
     in, even if not explicitly saved on this class.
@@ -51,16 +53,47 @@ class ChatAnyscale(ChatOpenAI):
     def lc_secrets(self) -> dict[str, str]:
         return {"anyscale_api_key": "ANYSCALE_API_KEY"}
 
-    anyscale_api_key: str | None = None
+    anyscale_api_key: Optional[str] = None
     """AnyScale Endpoints API keys."""
     model_name: str = Field(default=DEFAULT_MODEL, alias="model")
     """Model name to use."""
     anyscale_api_base: str = Field(default=DEFAULT_API_BASE)
     """Base URL path for API requests,
     leave blank if not using a proxy or service emulator."""
-    # to support explicit proxy for Anyscale
-    anyscale_proxy: str | None = None
-    available_models: set[str] | None = None
+    anyscale_proxy: Optional[str] = None
+    """To support explicit proxy for Anyscale."""
+    available_models: Optional[Set[str]] = None
+    """Available models from Anyscale API."""
+
+    @staticmethod
+    def get_available_models(
+        anyscale_api_key: str | None = None,
+        anyscale_api_base: str = DEFAULT_API_BASE,
+    ) -> Set[str]:
+        """Get available models from Anyscale API."""
+        try:
+            anyscale_api_key = anyscale_api_key or os.environ["ANYSCALE_API_KEY"]
+        except KeyError as e:
+            raise ValueError(
+                "Anyscale API key must be passed as keyword argument or "
+                "set in environment variable ANYSCALE_API_KEY.",
+            ) from e
+
+        models_url = f"{anyscale_api_base}/models"
+        models_response = requests.get(
+            models_url,
+            headers={
+                "Authorization": f"Bearer {anyscale_api_key}",
+            },
+        )
+
+        if models_response.status_code != 200:
+            raise ValueError(
+                f"Error getting models from {models_url}: "
+                f"{models_response.status_code}",
+            )
+
+        return {model["id"] for model in models_response.json()["data"]}
 
     @root_validator(pre=True)
     def validate_environment_override(cls, values: dict) -> dict:
@@ -79,7 +112,7 @@ class ChatAnyscale(ChatOpenAI):
         values["openai_proxy"] = get_from_dict_or_env(
             values,
             "anyscale_proxy",
-            "anyscale_proxy",
+            "ANYSCALE_PROXY",
             default="",
         )
         try:
@@ -104,27 +137,17 @@ class ChatAnyscale(ChatOpenAI):
 
         model_name = values["model_name"]
 
-        models_url = f"{DEFAULT_API_BASE}/models"
-        models_response = requests.get(
-            models_url,
-            headers={
-                "Authorization": f"Bearer {values['openai_api_key']}",
-            },
+        available_models = cls.get_available_models(
+            values["openai_api_key"],
+            values["openai_api_base"],
         )
 
-        if models_response.status_code != 200:
-            raise ValueError(
-                f"Error getting models from {models_url}: "
-                f"{models_response.status_code}",
-            )
-        available_models: set[str] = {
-            model["id"] for model in models_response.json()["data"]
-        }
         if model_name not in available_models:
             raise ValueError(
                 f"Model name {model_name} not found in available models: "
                 f"{available_models}.",
             )
+
         values["available_models"] = available_models
 
         return values
