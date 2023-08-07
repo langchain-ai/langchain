@@ -3,7 +3,7 @@ Additionally, we can return the source documents used to answer the question by 
 
 
 ```python
-qa = RetrievalQA.from_chain_type(llm=OpenAI(), chain_type="stuff", retriever=docsearch.as_retriever(), return_source_documents=True)
+qa = RetrievalQA.from_chain_type(llm=OpenAI(), chain_type="stuff", retriever=docsearch.as_retriever(search_type="mmr", search_kwargs={'fetch_k': 30}), return_source_documents=True)
 ```
 
 

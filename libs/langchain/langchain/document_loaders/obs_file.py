@@ -67,7 +67,7 @@ class OBSFileLoader(BaseLoader):
         try:
             from obs import ObsClient
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import esdk-obs-python python package. "
                 "Please install it with `pip install esdk-obs-python`."
             )
