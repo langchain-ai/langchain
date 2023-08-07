@@ -93,7 +93,14 @@ class ArcGISLoader(BaseLoader):
         self.layer_properties = self._get_layer_properties()
 
         self.where = where
-        self.out_fields = ",".join(out_fields) if out_fields else "*"
+
+        if isinstance(out_fields, str):
+            self.out_fields = out_fields
+        elif out_fields is None:
+            self.out_fields = "*"
+        else:
+            self.out_fields = ",".join(out_fields)
+
         self.return_geometry = return_geometry
         self.kwargs = kwargs
 
