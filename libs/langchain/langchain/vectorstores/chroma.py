@@ -153,7 +153,8 @@ class Chroma(VectorStore):
                 and client_settings.chroma_db_impl is None
             ):
                 raise Exception(
-                    "When using persist_directory with ChromaDB < 0.4.0, set chroma_db_impl='duckdb+parquet' in client_settings"
+                    "When using persist_directory with ChromaDB < 0.4.0, set "
+                    "chroma_db_impl='duckdb+parquet' in client_settings"
                 )
             self._client = chromadb.Client(client_settings)
 
@@ -527,7 +528,8 @@ class Chroma(VectorStore):
 
         if int(major) == 0 and int(minor) > 4:
             print(
-                "Chroma 0.4.0 and above automatically persist the collection. You can remove this call."
+                "Chroma 0.4.0 and above automatically persist the collection. You can "
+                "remove this call."
             )
             return
 
