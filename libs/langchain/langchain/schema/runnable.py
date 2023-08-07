@@ -222,7 +222,7 @@ class Runnable(Generic[Input, Output], ABC):
 
     def _stream_with_config(
         self,
-        input: Iterator[Output],
+        input: Iterator[Input],
         config: Optional[RunnableConfig],
         run_type: Optional[str] = None,
     ) -> Iterator[Output]:
@@ -234,38 +234,59 @@ class Runnable(Generic[Input, Output], ABC):
             inheritable_tags=config.get("tags"),
             inheritable_metadata=config.get("metadata"),
         )
-        # TODO: Concatenate and pass streamed input value
         run_manager = callback_manager.on_chain_start(
             dumpd(self),
-            {"input": "<streamed value>"},
+            {"input": ""},
             run_type=run_type,
         )
-        final: Union[Output, None] = None
-        final_supported = True
+        final_input: Union[Input, None] = None
+        final_input_supported = True
+        final_output: Union[Output, None] = None
+        final_output_supported = True
         try:
             for chunk in input:
                 yield chunk
-                if final_supported:
-                    if final is None:
-                        final = chunk
+                if final_input_supported:
+                    if final_input is None:
+                        final_input = chunk
                     else:
                         try:
-                            final += chunk  # type: ignore[operator]
+                            final_input += chunk  # type: ignore[operator]
                         except TypeError:
-                            final = None
-                            final_supported = False
+                            final_input = None
+                            final_input_supported = False
+                            pass
+                if final_output_supported:
+                    if final_output is None:
+                        final_output = chunk
+                    else:
+                        try:
+                            final_output += chunk  # type: ignore[operator]
+                        except TypeError:
+                            final_output = None
+                            final_output_supported = False
                             pass
         except Exception as e:
-            run_manager.on_chain_error(e)
+            run_manager.on_chain_error(
+                e,
+                inputs=final_input
+                if isinstance(final_input, dict)
+                else {"input": final_input},
+            )
             raise
         else:
             run_manager.on_chain_end(
-                final if isinstance(final, dict) else {"output": final}
+                final_output
+                if isinstance(final_output, dict)
+                else {"output": final_output},
+                inputs=final_input
+                if isinstance(final_input, dict)
+                else {"input": final_input},
             )
 
     async def _astream_with_config(
         self,
-        input: AsyncIterator[Output],
+        input: AsyncIterator[Input],
         config: Optional[RunnableConfig],
         run_type: Optional[str] = None,
     ) -> AsyncIterator[Output]:
@@ -277,33 +298,54 @@ class Runnable(Generic[Input, Output], ABC):
             inheritable_tags=config.get("tags"),
             inheritable_metadata=config.get("metadata"),
         )
-        # TODO: Concatenate and pass streamed input value
         run_manager = await callback_manager.on_chain_start(
             dumpd(self),
-            {"input": "<streamed value>"},
+            {"input": ""},
             run_type=run_type,
         )
-        final: Union[Output, None] = None
-        final_supported = True
+        final_input: Union[Input, None] = None
+        final_input_supported = True
+        final_output: Union[Output, None] = None
+        final_output_supported = True
         try:
             async for chunk in input:
                 yield chunk
-                if final_supported:
-                    if final is None:
-                        final = chunk
+                if final_input_supported:
+                    if final_input is None:
+                        final_input = chunk
                     else:
                         try:
-                            final += chunk  # type: ignore[operator]
+                            final_input += chunk  # type: ignore[operator]
                         except TypeError:
-                            final = None
-                            final_supported = False
+                            final_input = None
+                            final_input_supported = False
+                            pass
+                if final_output_supported:
+                    if final_output is None:
+                        final_output = chunk
+                    else:
+                        try:
+                            final_output += chunk  # type: ignore[operator]
+                        except TypeError:
+                            final_output = None
+                            final_output_supported = False
                             pass
         except Exception as e:
-            await run_manager.on_chain_error(e)
+            await run_manager.on_chain_error(
+                e,
+                inputs=final_input
+                if isinstance(final_input, dict)
+                else {"input": final_input},
+            )
             raise
         else:
             await run_manager.on_chain_end(
-                final if isinstance(final, dict) else {"output": final}
+                final_output
+                if isinstance(final_output, dict)
+                else {"output": final_output},
+                inputs=final_input
+                if isinstance(final_input, dict)
+                else {"input": final_input},
             )
 
     def with_fallbacks(
