@@ -17,6 +17,7 @@ from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
     SystemMessage,
+    FunctionMessage,
 )
 from langchain.tools.base import tool as tool_maker
 
@@ -89,18 +90,9 @@ def test_automaton() -> None:
     assert executed_states == [
         {
             "data": {
-                "function_call": {
-                    "arguments": {},
-                    "name": "get_time",
-                    "result": "9 PM",
-                },
-                "message": AIMessage(
-                    content="",
-                    additional_kwargs={
-                        "function_call": {"name": "get_time", "arguments": "{}"}
-                    },
-                    example=False,
-                ),
+                "message": FunctionMessage(
+                    content="9 PM", additional_kwargs={}, name="get_time"
+                )
             },
             "id": "llm_program",
         }
