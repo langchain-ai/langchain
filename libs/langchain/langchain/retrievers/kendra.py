@@ -138,7 +138,7 @@ class ResultItem(BaseModel, ABC, extra=Extra.allow):
     """Abstract class that represents a result item."""
 
     Id: Optional[str]
-    """The ID of the item."""
+    """The ID of the relevant result item."""
     DocumentId: Optional[str]
     """The document ID."""
     DocumentURI: Optional[str]
@@ -156,8 +156,13 @@ class ResultItem(BaseModel, ABC, extra=Extra.allow):
 
     def get_additional_metadata(self) -> dict:
         """Document additional metadata dict.
-        This returns any extra metadata except these values:
-        ['source', 'title', 'excerpt' and 'document_attributes'].
+        This returns any extra metadata except these:
+            * result_id
+            * document_id
+            * source
+            * title
+            * excerpt
+            * document_attributes
         """
         return {}
 
@@ -173,6 +178,8 @@ class ResultItem(BaseModel, ABC, extra=Extra.allow):
         metadata = self.get_additional_metadata()
         metadata.update(
             {
+                "result_id": self.Id,
+                "document_id": self.DocumentId,
                 "source": self.DocumentURI,
                 "title": self.get_title(),
                 "excerpt": self.get_excerpt(),

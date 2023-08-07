@@ -295,7 +295,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         if self.openai_api_type in ("azure", "azure_ad", "azuread"):
             openai_args["engine"] = self.deployment
         if self.openai_proxy:
-            import openai
+            try:
+                import openai
+            except ImportError:
+                raise ImportError(
+                    "Could not import openai python package. "
+                    "Please install it with `pip install openai`."
+                )
 
             openai.proxy = {
                 "http": self.openai_proxy,
