@@ -179,19 +179,19 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
 
 
 class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
-    """HuggingFace sentence_transformers embedding models.
+    """HuggingFace BGE sentence_transformers embedding models.
 
     To use, you should have the ``sentence_transformers`` python package installed.
 
     Example:
         .. code-block:: python
 
-            from langchain.embeddings import HuggingFaceEmbeddings
+            from langchain.embeddings import HuggingFaceBgeEmbeddings
 
             model_name = "BAAI/bge-large-en"
             model_kwargs = {'device': 'cpu'}
             encode_kwargs = {'normalize_embeddings': False}
-            hf = HuggingFaceEmbeddings(
+            hf = HuggingFaceBgeEmbeddings(
                 model_name=model_name,
                 model_kwargs=model_kwargs,
                 encode_kwargs=encode_kwargs
