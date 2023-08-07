@@ -381,9 +381,10 @@ class ChatOpenAI(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if self.streaming:
+        if stream if stream is not None else self.streaming:
             generation: Optional[ChatGenerationChunk] = None
             for chunk in self._stream(
                 messages=messages, stop=stop, run_manager=run_manager, **kwargs
@@ -454,9 +455,10 @@ class ChatOpenAI(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if self.streaming:
+        if stream if stream is not None else self.streaming:
             generation: Optional[ChatGenerationChunk] = None
             async for chunk in self._astream(
                 messages=messages, stop=stop, run_manager=run_manager, **kwargs

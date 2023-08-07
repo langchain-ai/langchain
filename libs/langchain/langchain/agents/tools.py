@@ -1,5 +1,5 @@
 """Interface for tools."""
-from typing import Optional
+from typing import List, Optional
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
@@ -12,23 +12,33 @@ class InvalidTool(BaseTool):
     """Tool that is run when invalid tool name is encountered by agent."""
 
     name = "invalid_tool"
-    """Name of the tool."""
-    description = "Called when tool name is invalid."
-    """Description of the tool."""
+    description = "Called when tool name is invalid. Suggests valid tool names."
 
     def _run(
-        self, tool_name: str, run_manager: Optional[CallbackManagerForToolRun] = None
+        self,
+        requested_tool_name: str,
+        available_tool_names: List[str],
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        return f"{tool_name} is not a valid tool, try another one."
+        available_tool_names_str = ", ".join([tool for tool in available_tool_names])
+        return (
+            f"{requested_tool_name} is not a valid tool, "
+            f"try one of [{available_tool_names_str}]."
+        )
 
     async def _arun(
         self,
-        tool_name: str,
+        requested_tool_name: str,
+        available_tool_names: List[str],
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool asynchronously."""
-        return f"{tool_name} is not a valid tool, try another one."
+        available_tool_names_str = ", ".join([tool for tool in available_tool_names])
+        return (
+            f"{requested_tool_name} is not a valid tool, "
+            f"try one of [{available_tool_names_str}]."
+        )
 
 
 __all__ = ["InvalidTool", "BaseTool", "tool", "Tool"]

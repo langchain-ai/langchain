@@ -65,14 +65,14 @@ class CriteriaResultOutputParser(BaseOutputParser[dict]):
     def _type(self) -> str:
         return "criteria_result"
 
-    def parse(self, text: str) -> Any:
+    def parse(self, text: str) -> Dict[str, Any]:
         """Parse the output text.
 
         Args:
             text (str): The output text to parse.
 
         Returns:
-            Any: The parsed output.
+            Dict: The parsed output.
         """
         parsed = text.strip().rsplit("\n", maxsplit=1)
         if len(parsed) == 1:
