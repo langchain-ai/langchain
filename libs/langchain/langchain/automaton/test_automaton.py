@@ -25,8 +25,9 @@ from langchain.automaton.open_ai_functions import (
 )
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import BaseChatModel
+from langchain.memory.chat_memory import BaseChatMemory
 from langchain.prompts import ChatPromptTemplate
-from langchain.schema import ChatResult
+from langchain.schema import ChatResult, BaseChatMessageHistory, PromptValue
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import (
     AIMessage,
@@ -196,20 +197,36 @@ class State(Protocol):
         ...
 
 
+class Memory(BaseChatMessageHistory):
+    """A memory for the automaton."""
+
+    def add_message(self, message: BaseMessage) -> None:
+        """Add a message to the memory."""
+        self.messages.append(message)
+
+
+PromptGenerator = Callable[[Memory], PromptValue]
+
+
 @dataclasses.dataclass
 class LLMProgram(State):
     """A state that executes an LLM program."""
 
     llm: BaseLanguageModel
     tools: Sequence[BaseTool]
-    # This should either be swapped with memory or else with prompt value?
-    # Likely prompt value since we're not taking in any input
-    messages: Sequence[BaseMessage]  # Swap with prompt value
+    # # This should either be swapped with memory or else with prompt value?
+    # # Likely prompt value since we're not taking in any input
+    # messages: Sequence[BaseMessage]  # Swap with prompt value
+    memory: Memory
+    prompt_generator: PromptGenerator
 
     def execute(self) -> ExecutedState:
         """Execute LLM program."""
         action_taking_llm = create_action_taking_llm(self.llm, tools=self.tools)
-        result = action_taking_llm.invoke(self.messages)
+        prompt_value = self.prompt_generator(self.memory)
+
+        result = action_taking_llm.invoke(prompt_value)
+        self.memory.add_message(result['message'])
         return {"id": "llm_program", "data": result}
 
 
