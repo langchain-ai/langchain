@@ -38,16 +38,24 @@ class LLMProgram(State):
         memory.add_message(message)
 
         if infer_message_type(message) == MessageType.AI_INVOKE:
-            data = result["data"]
+            function_call = result["function_call"]
             function_message = FunctionMessage(
-                name=data["function_call"]["name"],
-                content=data["function_call"]["result"],
+                name=function_call["name"],
+                content=function_call["result"],
             )
             memory.add_message(function_message)
+            routing_message = function_message
+        else:
+            routing_message = message
 
         # What information should the state return in this case.
         # Does it matter, folks can use it or not...
-        return {"id": "llm_program", "data": result}
+        return {
+            "id": "llm_program",
+            "data": {
+                "message": routing_message,  # Last message
+            },
+        }
 
 
 @dataclasses.dataclass
