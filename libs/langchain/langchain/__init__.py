@@ -70,14 +70,6 @@ llm_cache: Optional[BaseCache] = None
 SerpAPIChain = SerpAPIWrapper
 
 
-# By default DeprecationWarning is ignored by Python >= 2.7
-# https://docs.python.org/2/library/warnings.html#warning-categories
-# The line below makes sure that DeprecationWarning is always printed
-# for this package.
-warnings.filterwarnings(
-    "always", category=DeprecationWarning, module="^{}\.".format(re.escape(__name__))
-)
-
 __all__ = [
     "LLMChain",
     "LLMBashChain",
