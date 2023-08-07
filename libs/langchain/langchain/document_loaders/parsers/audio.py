@@ -167,7 +167,7 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
                 self.pipe.model.config.forced_decoder_ids = forced_decoder_ids
             except Exception as exception_text:
                 logger.info(
-                    "Unable to set forced_decoder_ids config parameter for whisper model"
+                    "Unable to set forced_decoder_ids parameter for whisper model"
                     f"Text of exception: {exception_text}"
                     "Therefore whisper model will use default mode for decoder"
                 )
