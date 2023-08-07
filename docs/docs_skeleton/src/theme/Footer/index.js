@@ -9,7 +9,7 @@ export default function FooterWrapper(props) {
   return (
     <>
       <Footer {...props} />
-      <Docsly publicId="public_FpkRFtHG3zlOAQ1PwmZ84zpg4bEt3od1jh6B648GpXJ4JrXvSEH8j5yazVwG07KQ" pathname={pathname} />
+      <Docsly publicId="public_q4K8GfsRTcz0rrnpMqnzJBLQV6cKvUP64viWjtqNoNhyei1hLVQDjK9NUVvqj4vs" pathname={pathname} />
     </>
   );
 }
