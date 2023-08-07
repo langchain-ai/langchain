@@ -100,14 +100,14 @@ class PairwiseStringResultOutputParser(BaseOutputParser[dict]):
         """
         return "pairwise_string_result"
 
-    def parse(self, text: str) -> Any:
+    def parse(self, text: str) -> Dict[str, Any]:
         """Parse the output text.
 
         Args:
             text (str): The output text to parse.
 
         Returns:
-            Any: The parsed output.
+            Dict: The parsed output.
 
         Raises:
             ValueError: If the verdict is invalid.
