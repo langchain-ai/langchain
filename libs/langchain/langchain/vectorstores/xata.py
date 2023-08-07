@@ -258,7 +258,7 @@ class XataVectorStore(VectorStore):
         """
         start = time.time()
         while True:
-            r = self._client.search_and_filter().search_table(
+            r = self._client.data().search_table(
                 self._table_name, payload={"query": "", "page": {"size": 0}}
             )
             if r.status_code != 200:
