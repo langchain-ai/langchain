@@ -72,8 +72,9 @@ class NGramOverlapExampleSelector(BaseExampleSelector, BaseModel):
                 sentence_bleu,
             )
         except ImportError as e:
-            raise ValueError(
-                "Not all the correct dependencies for this ExampleSelect exist"
+            raise ImportError(
+                "Not all the correct dependencies for this ExampleSelect exist."
+                "Please install nltk with `pip install nltk`."
             ) from e
 
         return values
