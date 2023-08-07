@@ -365,8 +365,8 @@ class AmazonKendraRetriever(BaseRetriever):
         }
         if self.attribute_filter is not None:
             kendra_kwargs["AttributeFilter"] = self.attribute_filter
-        if self.user_context is not None: 
-            kendra_kwargs['UserContext'] = self.user_context
+        if self.user_context is not None:
+            kendra_kwargs["UserContext"] = self.user_context
 
         response = self.client.retrieve(**kendra_kwargs)
         r_result = RetrieveResult.parse_obj(response)
