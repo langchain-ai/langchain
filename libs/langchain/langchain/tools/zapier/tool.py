@@ -47,7 +47,7 @@ os.environ["ZAPIER_NLA_API_KEY"] = os.environ.get("ZAPIER_NLA_API_KEY", "")
 
 from langchain.llms import OpenAI
 from langchain.agents import initialize_agent
-from langchain.agents.agent_toolkits import ZapierToolkit
+from langchain.toolkits import ZapierToolkit
 from langchain.utilities.zapier import ZapierNLAWrapper
 
 ## step 0. expose gmail 'find email' and slack 'send channel message' actions
