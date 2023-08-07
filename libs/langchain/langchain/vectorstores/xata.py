@@ -4,14 +4,11 @@ from __future__ import annotations
 
 import time
 from itertools import repeat
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
-
-if TYPE_CHECKING:
-    from xata.client import XataClient  # noqa: F401
 
 
 class XataVectorStore(VectorStore):
