@@ -163,7 +163,7 @@ It can also be convenient to filter the vectorstore by the metadata associated w
 
 
 ```python
-index.query("Summarize the general content of this document.", filter={"source": "../state_of_the_union.txt"})
+index.query("Summarize the general content of this document.", retriever_kwargs={"search_kwargs": {"filter": {"source": "../state_of_the_union.txt"}}})
 ```
 
 <CodeOutputBlock lang="python">
