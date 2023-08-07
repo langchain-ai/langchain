@@ -184,9 +184,7 @@ class XataVectorStore(VectorStore):
         }
         if filter:
             payload["filter"] = filter
-        r = self._client.data().vector_search(
-            self._table_name, payload=payload
-        )
+        r = self._client.data().vector_search(self._table_name, payload=payload)
         if r.status_code != 200:
             raise Exception(f"Error running similarity search: {r.status_code} {r}")
         hits = r["records"]
@@ -239,9 +237,7 @@ class XataVectorStore(VectorStore):
     def _delete_all(self) -> None:
         """Delete all records in the table."""
         while True:
-            r = self._client.data().query(
-                self._table_name, payload={"columns": ["id"]}
-            )
+            r = self._client.data().query(self._table_name, payload={"columns": ["id"]})
             if r.status_code != 200:
                 raise Exception(f"Error running query: {r.status_code} {r}")
             ids = [rec["id"] for rec in r["records"]]
