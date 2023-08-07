@@ -184,7 +184,7 @@ class XataVectorStore(VectorStore):
         }
         if filter:
             payload["filter"] = filter
-        r = self._client.search_and_filter().vector_search(
+        r = self._client.data().vector_search(
             self._table_name, payload=payload
         )
         if r.status_code != 200:
