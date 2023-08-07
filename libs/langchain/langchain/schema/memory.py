@@ -114,7 +114,7 @@ class BaseChatMessageHistory(ABC):
         Args:
             message: A BaseMessage object to store.
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abstractmethod
     def clear(self) -> None:
