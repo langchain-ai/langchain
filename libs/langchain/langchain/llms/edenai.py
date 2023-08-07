@@ -192,16 +192,26 @@ class EdenAI(LLM):
             stops = self.stop_sequences
         else:
             stops = stop
-
+        
+        settings=None    
+        model = kwargs.get("model", self.params.get("model"))
+        
         url = f"{self.base_url}/{self.feature}/{self.subfeature}"
         headers = {"Authorization": f"Bearer {self.edenai_api_key}"}
         payload = {
             **self.params,
             "providers": self.provider,
             "num_images": 1,  # always limit to 1 (ignored for text)
+            "model": model,  # Include the "model" value in payload
             "text": prompt,
             **kwargs,
         }
+        if "model" in payload.keys():
+            if payload["model"] is not None:
+                settings = {payload["providers"]:payload["model"]}
+            
+        if settings is not None:
+            payload["settings"] = settings
 
         async with ClientSession() as session:
             async with session.post(url, json=payload, headers=headers) as response:
@@ -219,8 +229,8 @@ class EdenAI(LLM):
 
                 response_json = await response.json()
 
-                output = self._format_output(response_json,self.provider)
+                output = self._format_output(response_json,payload["providers"])
                 if stops is not None:
                     output = enforce_stop_tokens(output, stops)
-                    
+                
                 return output
