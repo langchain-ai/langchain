@@ -1278,9 +1278,9 @@ async def arun_on_dataset(
     }
 
 
-def _handle_coroutine(coro: asyncio.coroutine) -> Any:
+def _handle_coroutine(coro: Coroutine) -> Any:
     """
-    Handles a coroutine either by creating a task if an event loop is running or by using `asyncio.run`.
+    Handles a coroutine from a sync context.
 
     Args:
         coro (asyncio.coroutine): The coroutine to be handled.
@@ -1435,7 +1435,6 @@ def run_on_dataset(
             project_name=project_name,
             verbose=verbose,
             tags=tags,
-            concurrency_level=concurrency_level,
             evaluation=evaluation,
             input_mapper=input_mapper,
             data_type=dataset.data_type,
