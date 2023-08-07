@@ -7,6 +7,11 @@ from pydantic.error_wrappers import ValidationError
 from langchain.document_loaders.tensorflow_datasets import TensorflowDatasetLoader
 from langchain.schema.document import Document
 
+# adding tensorflow and tensorflow_datasets to pyproject.toml is not working
+# these tests can be tested in isolation only
+tensorflow = pytest.importorskip("tensorflow")
+tensorflow_datasets = pytest.importorskip("tensorflow_datasets")
+
 
 def decode_to_str(item: tf.Tensor) -> str:
     return item.numpy().decode("utf-8")
