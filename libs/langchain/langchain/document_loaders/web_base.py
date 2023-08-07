@@ -76,7 +76,7 @@ class WebBaseLoader(BaseLoader):
         try:
             import bs4  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "bs4 package not found, please install it with " "`pip install bs4`"
             )
 

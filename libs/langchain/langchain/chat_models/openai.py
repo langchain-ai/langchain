@@ -18,23 +18,14 @@ from typing import (
 )
 
 from pydantic import Field, root_validator
-from tenacity import (
-    before_sleep_log,
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_exponential,
-)
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models.base import BaseChatModel
-from langchain.schema import (
-    ChatGeneration,
-    ChatResult,
-)
+from langchain.llms.base import create_base_retry_decorator
+from langchain.schema import ChatGeneration, ChatResult
 from langchain.schema.messages import (
     AIMessage,
     AIMessageChunk,
@@ -70,31 +61,33 @@ def _import_tiktoken() -> Any:
     return tiktoken
 
 
-def _create_retry_decorator(llm: ChatOpenAI) -> Callable[[Any], Any]:
+def _create_retry_decorator(
+    llm: ChatOpenAI,
+    run_manager: Optional[
+        Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
+    ] = None,
+) -> Callable[[Any], Any]:
     import openai
 
-    min_seconds = 1
-    max_seconds = 60
-    # Wait 2^x * 1 second between each retry starting with
-    # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
-    return retry(
-        reraise=True,
-        stop=stop_after_attempt(llm.max_retries),
-        wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
-        retry=(
-            retry_if_exception_type(openai.error.Timeout)
-            | retry_if_exception_type(openai.error.APIError)
-            | retry_if_exception_type(openai.error.APIConnectionError)
-            | retry_if_exception_type(openai.error.RateLimitError)
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)
-        ),
-        before_sleep=before_sleep_log(logger, logging.WARNING),
+    errors = [
+        openai.error.Timeout,
+        openai.error.APIError,
+        openai.error.APIConnectionError,
+        openai.error.RateLimitError,
+        openai.error.ServiceUnavailableError,
+    ]
+    return create_base_retry_decorator(
+        error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
     )
 
 
-async def acompletion_with_retry(llm: ChatOpenAI, **kwargs: Any) -> Any:
+async def acompletion_with_retry(
+    llm: ChatOpenAI,
+    run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+    **kwargs: Any,
+) -> Any:
     """Use tenacity to retry the async completion call."""
-    retry_decorator = _create_retry_decorator(llm)
+    retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
     async def _completion_with_retry(**kwargs: Any) -> Any:
@@ -149,6 +142,18 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         return ChatMessage(content=_dict["content"], role=role)
 
 
+def convert_openai_messages(messages: List[dict]) -> List[BaseMessage]:
+    """Convert dictionaries representing OpenAI messages to LangChain format.
+
+    Args:
+        messages: List of dictionaries representing OpenAI messages
+
+    Returns:
+        List of LangChain BaseMessage objects.
+    """
+    return [_convert_dict_to_message(m) for m in messages]
+
+
 def _convert_message_to_dict(message: BaseMessage) -> dict:
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
@@ -197,7 +202,7 @@ class ChatOpenAI(BaseChatModel):
     def lc_serializable(self) -> bool:
         return True
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model_name: str = Field(default="gpt-3.5-turbo", alias="model")
     """Model name to use."""
     temperature: float = 0.7
@@ -322,9 +327,11 @@ class ChatOpenAI(BaseChatModel):
             **self.model_kwargs,
         }
 
-    def completion_with_retry(self, **kwargs: Any) -> Any:
+    def completion_with_retry(
+        self, run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any
+    ) -> Any:
         """Use tenacity to retry the completion call."""
-        retry_decorator = _create_retry_decorator(self)
+        retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
 
         @retry_decorator
         def _completion_with_retry(**kwargs: Any) -> Any:
@@ -357,7 +364,9 @@ class ChatOpenAI(BaseChatModel):
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class = AIMessageChunk
-        for chunk in self.completion_with_retry(messages=message_dicts, **params):
+        for chunk in self.completion_with_retry(
+            messages=message_dicts, run_manager=run_manager, **params
+        ):
             if len(chunk["choices"]) == 0:
                 continue
             delta = chunk["choices"][0]["delta"]
@@ -388,7 +397,9 @@ class ChatOpenAI(BaseChatModel):
 
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
-        response = self.completion_with_retry(messages=message_dicts, **params)
+        response = self.completion_with_retry(
+            messages=message_dicts, run_manager=run_manager, **params
+        )
         return self._create_chat_result(response)
 
     def _create_message_dicts(
@@ -427,7 +438,7 @@ class ChatOpenAI(BaseChatModel):
 
         default_chunk_class = AIMessageChunk
         async for chunk in await acompletion_with_retry(
-            self, messages=message_dicts, **params
+            self, messages=message_dicts, run_manager=run_manager, **params
         ):
             if len(chunk["choices"]) == 0:
                 continue
@@ -459,7 +470,9 @@ class ChatOpenAI(BaseChatModel):
 
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
-        response = await acompletion_with_retry(self, messages=message_dicts, **params)
+        response = await acompletion_with_retry(
+            self, messages=message_dicts, run_manager=run_manager, **params
+        )
         return self._create_chat_result(response)
 
     @property
@@ -537,12 +550,12 @@ class ChatOpenAI(BaseChatModel):
         if sys.version_info[1] <= 7:
             return super().get_num_tokens_from_messages(messages)
         model, encoding = self._get_encoding_model()
-        if model.startswith("gpt-3.5-turbo"):
+        if model.startswith("gpt-3.5-turbo-0301"):
             # every message follows <im_start>{role/name}\n{content}<im_end>\n
             tokens_per_message = 4
             # if there's a name, the role is omitted
             tokens_per_name = -1
-        elif model.startswith("gpt-4"):
+        elif model.startswith("gpt-3.5-turbo") or model.startswith("gpt-4"):
             tokens_per_message = 3
             tokens_per_name = 1
         else:
@@ -557,7 +570,9 @@ class ChatOpenAI(BaseChatModel):
         for message in messages_dict:
             num_tokens += tokens_per_message
             for key, value in message.items():
-                num_tokens += len(encoding.encode(value))
+                # Cast str(value) in case the message value is not a string
+                # This occurs with function messages
+                num_tokens += len(encoding.encode(str(value)))
                 if key == "name":
                     num_tokens += tokens_per_name
         # every reply is primed with <im_start>assistant

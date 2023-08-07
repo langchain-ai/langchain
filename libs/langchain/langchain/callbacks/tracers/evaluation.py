@@ -71,7 +71,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         client: Optional[Client] = None,
         example_id: Optional[Union[UUID, str]] = None,
         skip_unfinished: bool = True,
-        project_name: Optional[str] = None,
+        project_name: Optional[str] = "evaluators",
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)

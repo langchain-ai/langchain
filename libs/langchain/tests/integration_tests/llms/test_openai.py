@@ -1,5 +1,4 @@
 """Test OpenAI API wrapper."""
-
 from pathlib import Path
 from typing import Generator
 
@@ -10,7 +9,9 @@ from langchain.chat_models.openai import ChatOpenAI
 from langchain.llms.loading import load_llm
 from langchain.llms.openai import OpenAI, OpenAIChat
 from langchain.schema import LLMResult
-from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
+from tests.unit_tests.callbacks.fake_callback_handler import (
+    FakeCallbackHandler,
+)
 
 
 def test_openai_call() -> None:
@@ -334,3 +335,17 @@ def test_chat_openai_get_num_tokens(model: str) -> None:
     """Test get_tokens."""
     llm = ChatOpenAI(model=model)
     assert llm.get_num_tokens("表情符号是\n🦜🔗") == _EXPECTED_NUM_TOKENS[model]
+
+
+@pytest.fixture
+def mock_completion() -> dict:
+    return {
+        "id": "cmpl-3evkmQda5Hu7fcZavknQda3SQ",
+        "object": "text_completion",
+        "created": 1689989000,
+        "model": "text-davinci-003",
+        "choices": [
+            {"text": "Bar Baz", "index": 0, "logprobs": None, "finish_reason": "length"}
+        ],
+        "usage": {"prompt_tokens": 1, "completion_tokens": 2, "total_tokens": 3},
+    }
