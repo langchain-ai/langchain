@@ -67,7 +67,6 @@ llm_cache: Optional[BaseCache] = None
 # For backwards compatibility
 SerpAPIChain = SerpAPIWrapper
 
-
 __all__ = [
     "LLMChain",
     "LLMBashChain",
