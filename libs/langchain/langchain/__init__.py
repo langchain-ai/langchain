@@ -1,7 +1,5 @@
 """Main entrypoint into package."""
 
-import re
-import warnings
 from importlib import metadata
 from typing import Optional
 
