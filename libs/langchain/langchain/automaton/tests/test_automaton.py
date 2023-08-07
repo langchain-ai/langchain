@@ -82,7 +82,7 @@ def test_automaton() -> None:
         ]
     )
     chat_automaton = ChatAutomaton(
-        llm=llm, tools=tools, memory=memory, prompt_generator=prompt_generator
+        llm=llm, tools=tools, prompt_generator=prompt_generator
     )
     executor = Executor(chat_automaton, memory, max_iterations=1)
     state, executed_states = executor.run()
