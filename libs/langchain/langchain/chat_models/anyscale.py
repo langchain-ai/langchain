@@ -7,6 +7,7 @@ import sys
 from typing import Optional, Set, TYPE_CHECKING
 
 import requests
+from pydantic import Field, root_validator
 
 from langchain.chat_models.openai import (
     _convert_message_to_dict,
@@ -15,7 +16,6 @@ from langchain.chat_models.openai import (
 )
 from langchain.schema.messages import BaseMessage
 from langchain.utils import get_from_dict_or_env
-from pydantic import Field, root_validator
 
 if TYPE_CHECKING:
     import tiktoken
