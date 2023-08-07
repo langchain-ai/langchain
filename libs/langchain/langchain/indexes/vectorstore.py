@@ -34,15 +34,13 @@ class VectorStoreIndexWrapper(BaseModel):
         self,
         question: str,
         llm: Optional[BaseLanguageModel] = None,
-        filter: Dict[str, str] = {},
+        retriever_kwargs: Dict[str, Any] = {},
         **kwargs: Any
     ) -> str:
         """Query the vectorstore."""
         llm = llm or OpenAI(temperature=0)
         chain = RetrievalQA.from_chain_type(
-            llm,
-            retriever=self.vectorstore.as_retriever(search_kwargs={"filter": filter}),
-            **kwargs
+            llm, retriever=self.vectorstore.as_retriever(**retriever_kwargs), **kwargs
         )
         return chain.run(question)
 
@@ -50,15 +48,13 @@ class VectorStoreIndexWrapper(BaseModel):
         self,
         question: str,
         llm: Optional[BaseLanguageModel] = None,
-        filter: Dict[str, str] = {},
+        retriever_kwargs: Dict[str, Any] = {},
         **kwargs: Any
     ) -> dict:
         """Query the vectorstore and get back sources."""
         llm = llm or OpenAI(temperature=0)
         chain = RetrievalQAWithSourcesChain.from_chain_type(
-            llm,
-            retriever=self.vectorstore.as_retriever(search_kwargs={"filter": filter}),
-            **kwargs
+            llm, retriever=self.vectorstore.as_retriever(**retriever_kwargs), **kwargs
         )
         return chain({chain.question_key: question})
 
