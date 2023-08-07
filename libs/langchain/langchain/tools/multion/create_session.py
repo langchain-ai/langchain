@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Optional, Type
 from pydantic import BaseModel, Field
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.tools.multion.base import MultionBaseTool
+from langchain.tools.base import BaseTool
 
 if TYPE_CHECKING:
     # This is for linting and IDE typehints
@@ -30,7 +30,7 @@ class CreateSessionSchema(BaseModel):
     )
 
 
-class MultionCreateSession(MultionBaseTool):
+class MultionCreateSession(BaseTool):
     name: str = "create_multion_session"
     description: str = """Use this tool to create a new Multion Browser Window \
         with provided fields.Always the first step to run \

@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Optional, Type
 from pydantic import BaseModel, Field
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.tools.multion.base import MultionBaseTool
+from langchain.tools.base import BaseTool
 
 if TYPE_CHECKING:
     # This is for linting and IDE typehints
@@ -33,7 +33,7 @@ class UpdateSessionSchema(BaseModel):
     )
 
 
-class MultionUpdateSession(MultionBaseTool):
+class MultionUpdateSession(BaseTool):
     name: str = "update_multion_session"
     description: str = """Use this tool to update \
         a existing corresponding \
