@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
 
-from pydantic import Extra
+try:
+    from pydantic.v1 import Extra
+except:
+    from pydantic import Extra
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.router.base import RouterChain

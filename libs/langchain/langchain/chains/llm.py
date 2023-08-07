@@ -4,7 +4,10 @@ from __future__ import annotations
 import warnings
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
-from pydantic import Extra, Field
+try:
+    from pydantic.v1 import Extra, Field
+except:
+    from pydantic import Extra, Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManager,

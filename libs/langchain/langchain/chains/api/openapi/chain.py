@@ -4,7 +4,10 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, List, NamedTuple, Optional, cast
 
-from pydantic import BaseModel, Field
+try:
+    from pydantic.v1 import BaseModel, Field
+except:
+    from pydantic import BaseModel, Field
 from requests import Response
 
 from langchain.callbacks.manager import CallbackManagerForChainRun, Callbacks

@@ -3,7 +3,10 @@ from abc import ABC, abstractmethod
 from inspect import signature
 from typing import List, Optional, Sequence, Union
 
-from pydantic import BaseModel
+try:
+    from pydantic.v1 import BaseModel
+except:
+    from pydantic import BaseModel
 
 from langchain.callbacks.manager import Callbacks
 from langchain.schema import BaseDocumentTransformer, Document

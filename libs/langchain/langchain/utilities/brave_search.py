@@ -2,7 +2,11 @@ import json
 from typing import List
 
 import requests
-from pydantic import BaseModel, Field
+
+try:
+    from pydantic.v1 import BaseModel, Field
+except:
+    from pydantic import BaseModel, Field
 
 from langchain.schema import Document
 

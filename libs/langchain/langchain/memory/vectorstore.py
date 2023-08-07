@@ -2,7 +2,10 @@
 
 from typing import Any, Dict, List, Optional, Sequence, Union
 
-from pydantic import Field
+try:
+    from pydantic.v1 import Field
+except:
+    from pydantic import Field
 
 from langchain.memory.chat_memory import BaseMemory
 from langchain.memory.utils import get_prompt_input_key

@@ -1,7 +1,10 @@
 import json
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import Extra, root_validator
+try:
+    from pydantic.v1 import Extra, root_validator
+except:
+    from pydantic import Extra, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM

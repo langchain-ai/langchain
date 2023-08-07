@@ -1,7 +1,10 @@
 """Util that calls WolframAlpha."""
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+try:
+    from pydantic.v1 import BaseModel, Extra, root_validator
+except:
+    from pydantic import BaseModel, Extra, root_validator
 
 from langchain.utils import get_from_dict_or_env
 

@@ -2,7 +2,10 @@ import re
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Union
 
-from pydantic import BaseModel, Extra, root_validator, validator
+try:
+    from pydantic.v1 import BaseModel, Extra, root_validator, validator
+except:
+    from pydantic import BaseModel, Extra, root_validator, validator
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.docstore.document import Document

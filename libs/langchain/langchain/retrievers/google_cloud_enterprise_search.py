@@ -3,7 +3,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 
-from pydantic import Extra, Field, root_validator
+try:
+    from pydantic.v1 import Extra, Field, root_validator
+except:
+    from pydantic import Extra, Field, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document

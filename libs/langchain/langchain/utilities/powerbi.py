@@ -9,7 +9,11 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 import aiohttp
 import requests
 from aiohttp import ServerTimeoutError
-from pydantic import BaseModel, Field, root_validator, validator
+
+try:
+    from pydantic.v1 import BaseModel, Field, root_validator, validator
+except:
+    from pydantic import BaseModel, Field, root_validator, validator
 from requests.exceptions import Timeout
 
 _LOGGER = logging.getLogger(__name__)

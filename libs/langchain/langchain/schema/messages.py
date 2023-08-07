@@ -3,7 +3,10 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Dict, List, Sequence
 
-from pydantic import Field
+try:
+    from pydantic.v1 import Field
+except:
+    from pydantic import Field
 
 from langchain.load.serializable import Serializable
 

@@ -1,6 +1,9 @@
 from typing import Dict, List
 
-from pydantic import root_validator
+try:
+    from pydantic.v1 import root_validator
+except:
+    from pydantic import root_validator
 
 from langchain.embeddings.base import Embeddings
 from langchain.llms.vertexai import _VertexAICommon

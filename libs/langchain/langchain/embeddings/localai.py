@@ -15,7 +15,10 @@ from typing import (
     Union,
 )
 
-from pydantic import BaseModel, Extra, Field, root_validator
+try:
+    from pydantic.v1 import BaseModel, Extra, Field, root_validator
+except:
+    from pydantic import BaseModel, Extra, Field, root_validator
 from tenacity import (
     AsyncRetrying,
     before_sleep_log,

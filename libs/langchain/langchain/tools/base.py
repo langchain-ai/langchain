@@ -8,15 +8,26 @@ from functools import partial
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
-from pydantic import (
-    BaseModel,
-    Extra,
-    Field,
-    create_model,
-    root_validator,
-    validate_arguments,
-)
-from pydantic.main import ModelMetaclass
+try:
+    from pydantic.v1 import (
+        BaseModel,
+        Extra,
+        Field,
+        create_model,
+        root_validator,
+        validate_arguments,
+    )
+    from pydantic.v1.main import ModelMetaclass
+except:
+    from pydantic import (
+        BaseModel,
+        Extra,
+        Field,
+        create_model,
+        root_validator,
+        validate_arguments,
+    )
+    from pydantic.main import ModelMetaclass
 
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (

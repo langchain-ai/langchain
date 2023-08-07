@@ -1,7 +1,10 @@
 """Toolkit for interacting with Spark SQL."""
 from typing import List
 
-from pydantic import Field
+try:
+    from pydantic.v1 import Field
+except:
+    from pydantic import Field
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.schema.language_model import BaseLanguageModel

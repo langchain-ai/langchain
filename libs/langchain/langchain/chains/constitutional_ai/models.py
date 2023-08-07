@@ -1,5 +1,8 @@
 """Models for the Constitutional AI chain."""
-from pydantic import BaseModel
+try:
+    from pydantic.v1 import BaseModel
+except:
+    from pydantic import BaseModel
 
 
 class ConstitutionalPrinciple(BaseModel):

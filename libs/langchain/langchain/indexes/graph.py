@@ -1,7 +1,10 @@
 """Graph Index Creator."""
 from typing import Optional, Type
 
-from pydantic import BaseModel
+try:
+    from pydantic.v1 import BaseModel
+except:
+    from pydantic import BaseModel
 
 from langchain import BasePromptTemplate
 from langchain.chains.llm import LLMChain

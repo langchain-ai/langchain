@@ -4,7 +4,10 @@ import warnings
 from abc import abstractmethod
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import BaseModel, validator
+try:
+    from pydantic.v1 import BaseModel, validator
+except:
+    from pydantic import BaseModel, validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM

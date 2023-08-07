@@ -3,7 +3,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pydantic import Field
+try:
+    from pydantic.v1 import Field
+except:
+    from pydantic import Field
 
 from langchain.tools.amadeus.utils import authenticate
 from langchain.tools.base import BaseTool

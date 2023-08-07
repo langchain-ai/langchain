@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from typing import Optional, Type
 
-from pydantic import BaseModel, root_validator
+try:
+    from pydantic.v1 import BaseModel, root_validator
+except:
+    from pydantic import BaseModel, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,

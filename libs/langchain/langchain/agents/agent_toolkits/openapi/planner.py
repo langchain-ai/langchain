@@ -5,7 +5,11 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional
 
 import yaml
-from pydantic import Field
+
+try:
+    from pydantic.v1 import Field
+except:
+    from pydantic import Field
 
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_toolkits.openapi.planner_prompt import (

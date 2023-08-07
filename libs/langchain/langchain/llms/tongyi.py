@@ -3,7 +3,10 @@ from __future__ import annotations
 import logging
 from typing import Any, Callable, Dict, List, Optional
 
-from pydantic import Field, root_validator
+try:
+    from pydantic.v1 import Field, root_validator
+except:
+    from pydantic import Field, root_validator
 from requests.exceptions import HTTPError
 from tenacity import (
     before_sleep_log,

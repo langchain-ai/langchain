@@ -7,7 +7,10 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import Extra
+try:
+    from pydantic.v1 import Extra
+except:
+    from pydantic import Extra
 
 from langchain.callbacks.manager import CallbackManagerForChainRun, Callbacks
 from langchain.chains import ReduceDocumentsChain

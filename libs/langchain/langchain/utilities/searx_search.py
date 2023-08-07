@@ -132,7 +132,18 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 import requests
-from pydantic import BaseModel, Extra, Field, PrivateAttr, root_validator, validator
+
+try:
+    from pydantic.v1 import (
+        BaseModel,
+        Extra,
+        Field,
+        PrivateAttr,
+        root_validator,
+        validator,
+    )
+except:
+    from pydantic import BaseModel, Extra, Field, PrivateAttr, root_validator, validator
 
 from langchain.utils import get_from_dict_or_env
 

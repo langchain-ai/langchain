@@ -1,6 +1,9 @@
 from typing import Any, Dict, List, Optional
 
-from pydantic import root_validator
+try:
+    from pydantic.v1 import root_validator
+except:
+    from pydantic import root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import BaseLLM

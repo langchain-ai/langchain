@@ -2,7 +2,10 @@ import importlib.util
 import logging
 from typing import Any, List, Mapping, Optional
 
-from pydantic import Extra
+try:
+    from pydantic.v1 import Extra
+except:
+    from pydantic import Extra
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM

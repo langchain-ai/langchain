@@ -3,7 +3,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, List, Optional, Type, cast
 
-from pydantic import Extra, root_validator
+try:
+    from pydantic.v1 import Extra, root_validator
+except:
+    from pydantic import Extra, root_validator
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.tools.base import BaseTool

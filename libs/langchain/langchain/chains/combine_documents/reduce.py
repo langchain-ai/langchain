@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from typing import Any, Callable, List, Optional, Protocol, Tuple
 
-from pydantic import Extra
+try:
+    from pydantic.v1 import Extra
+except:
+    from pydantic import Extra
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain

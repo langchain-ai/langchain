@@ -3,7 +3,10 @@ from __future__ import annotations
 
 from typing import Any, Callable, List, NamedTuple, Optional, Sequence
 
-from pydantic import Field
+try:
+    from pydantic.v1 import Field
+except:
+    from pydantic import Field
 
 from langchain.agents.agent import Agent, AgentExecutor, AgentOutputParser
 from langchain.agents.agent_types import AgentType

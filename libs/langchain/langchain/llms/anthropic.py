@@ -2,7 +2,10 @@ import re
 import warnings
 from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Mapping, Optional
 
-from pydantic import root_validator
+try:
+    from pydantic.v1 import root_validator
+except:
+    from pydantic import root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,

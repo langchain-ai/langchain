@@ -1,7 +1,10 @@
 import json
 from typing import Any, Dict, List, Optional
 
-from pydantic import validator
+try:
+    from pydantic.v1 import validator
+except:
+    from pydantic import validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import SimpleChatModel

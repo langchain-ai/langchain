@@ -4,7 +4,10 @@ import logging
 import tempfile
 from typing import Any, Dict, Optional
 
-from pydantic import root_validator
+try:
+    from pydantic.v1 import root_validator
+except:
+    from pydantic import root_validator
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool

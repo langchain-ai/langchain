@@ -7,7 +7,10 @@ from abc import abstractmethod
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-from pydantic import Extra, Field, root_validator
+try:
+    from pydantic.v1 import Extra, Field, root_validator
+except:
+    from pydantic import Extra, Field, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,

@@ -3,7 +3,18 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional
 
 import requests
-from pydantic import BaseModel, Extra, Field, PrivateAttr, root_validator, validator
+
+try:
+    from pydantic.v1 import (
+        BaseModel,
+        Extra,
+        Field,
+        PrivateAttr,
+        root_validator,
+        validator,
+    )
+except:
+    from pydantic import BaseModel, Extra, Field, PrivateAttr, root_validator, validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM

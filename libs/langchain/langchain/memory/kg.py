@@ -1,6 +1,9 @@
 from typing import Any, Dict, List, Type, Union
 
-from pydantic import Field
+try:
+    from pydantic.v1 import Field
+except:
+    from pydantic import Field
 
 from langchain.chains.llm import LLMChain
 from langchain.graphs import NetworkxEntityGraph

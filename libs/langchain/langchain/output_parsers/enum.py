@@ -1,7 +1,10 @@
 from enum import Enum
 from typing import Any, Dict, List, Type
 
-from pydantic import root_validator
+try:
+    from pydantic.v1 import root_validator
+except:
+    from pydantic import root_validator
 
 from langchain.schema import BaseOutputParser, OutputParserException
 

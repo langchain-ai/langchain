@@ -6,7 +6,10 @@ import warnings
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
-from pydantic import Extra, Field, root_validator
+try:
+    from pydantic.v1 import Extra, Field, root_validator
+except:
+    from pydantic import Extra, Field, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,

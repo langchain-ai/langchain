@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
-from pydantic import Extra, root_validator
+try:
+    from pydantic.v1 import Extra, root_validator
+except:
+    from pydantic import Extra, root_validator
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain

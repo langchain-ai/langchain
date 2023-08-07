@@ -2,7 +2,10 @@ import base64
 import email
 from typing import Dict, Optional, Type
 
-from pydantic import BaseModel, Field
+try:
+    from pydantic.v1 import BaseModel, Field
+except:
+    from pydantic import BaseModel, Field
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.gmail.base import GmailBaseTool

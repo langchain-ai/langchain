@@ -8,7 +8,10 @@ from hashlib import sha1
 from threading import Thread
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-from pydantic import BaseSettings
+try:
+    from pydantic.v1 import BaseSettings
+except:
+    from pydantic import BaseSettings
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings

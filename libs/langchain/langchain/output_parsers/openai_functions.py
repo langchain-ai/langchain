@@ -2,7 +2,10 @@ import copy
 import json
 from typing import Any, Dict, List, Type, Union
 
-from pydantic import BaseModel, root_validator
+try:
+    from pydantic.v1 import BaseModel, root_validator
+except:
+    from pydantic import BaseModel, root_validator
 
 from langchain.schema import (
     ChatGeneration,

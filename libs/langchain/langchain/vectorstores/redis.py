@@ -20,7 +20,11 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import root_validator
+
+try:
+    from pydantic.v1 import root_validator
+except:
+    from pydantic import root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,

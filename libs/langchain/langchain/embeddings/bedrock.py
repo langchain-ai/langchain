@@ -2,7 +2,10 @@ import json
 import os
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+try:
+    from pydantic.v1 import BaseModel, Extra, root_validator
+except:
+    from pydantic import BaseModel, Extra, root_validator
 
 from langchain.embeddings.base import Embeddings
 

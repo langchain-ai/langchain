@@ -2,7 +2,10 @@
 import logging
 from typing import Any, Dict, List, Mapping
 
-from pydantic import BaseModel, Extra, root_validator
+try:
+    from pydantic.v1 import BaseModel, Extra, root_validator
+except:
+    from pydantic import BaseModel, Extra, root_validator
 
 logger = logging.getLogger(__name__)
 

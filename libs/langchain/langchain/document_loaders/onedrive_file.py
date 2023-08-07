@@ -3,7 +3,10 @@ from __future__ import annotations
 import tempfile
 from typing import TYPE_CHECKING, List
 
-from pydantic import BaseModel, Field
+try:
+    from pydantic.v1 import BaseModel, Field
+except:
+    from pydantic import BaseModel, Field
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader

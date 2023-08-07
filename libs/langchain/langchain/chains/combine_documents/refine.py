@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Tuple
 
-from pydantic import Extra, Field, root_validator
+try:
+    from pydantic.v1 import Extra, Field, root_validator
+except:
+    from pydantic import Extra, Field, root_validator
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (

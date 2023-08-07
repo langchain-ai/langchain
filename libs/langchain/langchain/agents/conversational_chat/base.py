@@ -3,7 +3,10 @@ from __future__ import annotations
 
 from typing import Any, List, Optional, Sequence, Tuple
 
-from pydantic import Field
+try:
+    from pydantic.v1 import Field
+except:
+    from pydantic import Field
 
 from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.conversational_chat.output_parser import ConvoOutputParser

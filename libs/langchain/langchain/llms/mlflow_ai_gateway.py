@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import BaseModel, Extra
+try:
+    from pydantic.v1 import BaseModel, Extra
+except:
+    from pydantic import BaseModel, Extra
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM

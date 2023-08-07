@@ -3,7 +3,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import Field
+try:
+    from pydantic.v1 import Field
+except:
+    from pydantic import Field
 
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.qa.generate_prompt import PROMPT

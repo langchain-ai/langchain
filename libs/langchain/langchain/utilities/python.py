@@ -5,7 +5,10 @@ import sys
 from io import StringIO
 from typing import Dict, Optional
 
-from pydantic import BaseModel, Field
+try:
+    from pydantic.v1 import BaseModel, Field
+except:
+    from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 

@@ -2,7 +2,11 @@ import logging
 from typing import Any, Dict, List, Optional
 
 import requests
-from pydantic import Field
+
+try:
+    from pydantic.v1 import Field
+except:
+    from pydantic import Field
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM

@@ -6,8 +6,14 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union
 from urllib.parse import parse_qs, urlparse
 
-from pydantic import root_validator
-from pydantic.dataclasses import dataclass
+try:
+    from pydantic.v1 import root_validator
+except:
+    from pydantic import root_validator
+try:
+    from pydantic.v1.dataclasses import dataclass
+except:
+    from pydantic.dataclasses import dataclass
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader

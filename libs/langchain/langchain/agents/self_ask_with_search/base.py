@@ -1,7 +1,10 @@
 """Chain that does self-ask with search."""
 from typing import Any, Sequence, Union
 
-from pydantic import Field
+try:
+    from pydantic.v1 import Field
+except:
+    from pydantic import Field
 
 from langchain.agents.agent import Agent, AgentExecutor, AgentOutputParser
 from langchain.agents.agent_types import AgentType

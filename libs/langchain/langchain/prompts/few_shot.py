@@ -3,7 +3,10 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, Extra, Field, root_validator
+try:
+    from pydantic.v1 import BaseModel, Extra, Field, root_validator
+except:
+    from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,

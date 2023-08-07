@@ -8,7 +8,11 @@ from hashlib import md5
 from typing import Any, Iterable, List, Optional, Tuple, Type
 
 import requests
-from pydantic import Field
+
+try:
+    from pydantic.v1 import Field
+except:
+    from pydantic import Field
 
 from langchain.embeddings.base import Embeddings
 from langchain.schema import Document

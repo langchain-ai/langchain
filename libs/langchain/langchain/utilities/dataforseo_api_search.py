@@ -4,7 +4,11 @@ from urllib.parse import quote
 
 import aiohttp
 import requests
-from pydantic import BaseModel, Extra, Field, root_validator
+
+try:
+    from pydantic.v1 import BaseModel, Extra, Field, root_validator
+except:
+    from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.utils import get_from_dict_or_env
 

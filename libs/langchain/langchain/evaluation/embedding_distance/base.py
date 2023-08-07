@@ -3,7 +3,11 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 import numpy as np
-from pydantic import Field, root_validator
+
+try:
+    from pydantic.v1 import Field, root_validator
+except:
+    from pydantic import Field, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,

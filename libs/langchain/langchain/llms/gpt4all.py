@@ -1,7 +1,10 @@
 from functools import partial
 from typing import Any, Dict, List, Mapping, Optional, Set
 
-from pydantic import Extra, Field, root_validator
+try:
+    from pydantic.v1 import Extra, Field, root_validator
+except:
+    from pydantic import Extra, Field, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM

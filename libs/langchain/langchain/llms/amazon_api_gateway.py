@@ -1,7 +1,11 @@
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
-from pydantic import Extra
+
+try:
+    from pydantic.v1 import Extra
+except:
+    from pydantic import Extra
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM

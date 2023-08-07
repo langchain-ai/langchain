@@ -2,7 +2,10 @@
 
 from typing import Any, Dict, List
 
-from pydantic import Field
+try:
+    from pydantic.v1 import Field
+except:
+    from pydantic import Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,

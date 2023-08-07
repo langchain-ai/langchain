@@ -1,7 +1,10 @@
 import logging
 from typing import List
 
-from pydantic import BaseModel, Field
+try:
+    from pydantic.v1 import BaseModel, Field
+except:
+    from pydantic import BaseModel, Field
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.chains.llm import LLMChain

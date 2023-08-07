@@ -5,7 +5,10 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Callable, List, Sequence, Tuple, Type, TypeVar, Union
 
-from pydantic import Field, root_validator
+try:
+    from pydantic.v1 import Field, root_validator
+except:
+    from pydantic import Field, root_validator
 
 from langchain.load.serializable import Serializable
 from langchain.prompts.base import StringPromptTemplate

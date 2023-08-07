@@ -6,7 +6,10 @@ import warnings
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from pydantic import Extra, root_validator
+try:
+    from pydantic.v1 import Extra, root_validator
+except:
+    from pydantic import Extra, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain

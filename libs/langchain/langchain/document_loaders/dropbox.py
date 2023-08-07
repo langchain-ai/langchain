@@ -13,7 +13,10 @@ import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, root_validator
+try:
+    from pydantic.v1 import BaseModel, root_validator
+except:
+    from pydantic import BaseModel, root_validator
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader

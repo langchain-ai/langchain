@@ -1,6 +1,9 @@
 from typing import Any, List, Optional
 
-from pydantic import BaseModel, Extra
+try:
+    from pydantic.v1 import BaseModel, Extra
+except:
+    from pydantic import BaseModel, Extra
 
 from langchain.embeddings.base import Embeddings
 

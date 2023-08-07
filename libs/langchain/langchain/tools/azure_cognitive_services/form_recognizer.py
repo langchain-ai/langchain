@@ -3,7 +3,10 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional
 
-from pydantic import root_validator
+try:
+    from pydantic.v1 import root_validator
+except:
+    from pydantic import root_validator
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.azure_cognitive_services.utils import detect_file_src_type

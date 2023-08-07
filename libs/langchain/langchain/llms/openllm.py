@@ -15,7 +15,10 @@ from typing import (
     overload,
 )
 
-from pydantic import PrivateAttr
+try:
+    from pydantic.v1 import PrivateAttr
+except:
+    from pydantic import PrivateAttr
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,

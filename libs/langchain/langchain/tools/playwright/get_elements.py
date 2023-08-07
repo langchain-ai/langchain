@@ -3,7 +3,10 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, List, Optional, Sequence, Type
 
-from pydantic import BaseModel, Field
+try:
+    from pydantic.v1 import BaseModel, Field
+except:
+    from pydantic import BaseModel, Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,

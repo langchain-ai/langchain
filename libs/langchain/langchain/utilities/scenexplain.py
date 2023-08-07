@@ -8,7 +8,11 @@ You can obtain a key by following the steps below.
 from typing import Dict
 
 import requests
-from pydantic import BaseModel, BaseSettings, Field, root_validator
+
+try:
+    from pydantic.v1 import BaseModel, BaseSettings, Field, root_validator
+except:
+    from pydantic import BaseModel, BaseSettings, Field, root_validator
 
 from langchain.utils import get_from_dict_or_env
 

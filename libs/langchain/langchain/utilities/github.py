@@ -4,7 +4,10 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+try:
+    from pydantic.v1 import BaseModel, Extra, root_validator
+except:
+    from pydantic import BaseModel, Extra, root_validator
 
 from langchain.utils import get_from_dict_or_env
 

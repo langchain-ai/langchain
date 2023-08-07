@@ -8,7 +8,10 @@ from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional, Type, Union
 
-from pydantic import BaseModel, BaseSettings, Field, FilePath, SecretStr
+try:
+    from pydantic.v1 import BaseModel, BaseSettings, Field, FilePath, SecretStr
+except:
+    from pydantic import BaseModel, BaseSettings, Field, FilePath, SecretStr
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader

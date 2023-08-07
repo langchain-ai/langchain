@@ -3,8 +3,15 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 import requests
-from pydantic.class_validators import root_validator
-from pydantic.main import BaseModel
+
+try:
+    from pydantic.v1.class_validators import root_validator
+except:
+    from pydantic.class_validators import root_validator
+try:
+    from pydantic.v1.main import BaseModel
+except:
+    from pydantic.main import BaseModel
 from typing_extensions import Literal
 
 from langchain.utils import get_from_dict_or_env

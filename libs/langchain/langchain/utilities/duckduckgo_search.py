@@ -5,8 +5,14 @@ https://pypi.org/project/duckduckgo-search/
 """
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel, Extra
-from pydantic.class_validators import root_validator
+try:
+    from pydantic.v1 import BaseModel, Extra
+except:
+    from pydantic import BaseModel, Extra
+try:
+    from pydantic.v1.class_validators import root_validator
+except:
+    from pydantic.class_validators import root_validator
 
 
 class DuckDuckGoSearchAPIWrapper(BaseModel):

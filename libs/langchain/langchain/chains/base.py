@@ -8,7 +8,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import yaml
-from pydantic import Field, root_validator, validator
+
+try:
+    from pydantic.v1 import Field, root_validator, validator
+except:
+    from pydantic import Field, root_validator, validator
 
 import langchain
 from langchain.callbacks.base import BaseCallbackManager
