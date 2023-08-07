@@ -3477,6 +3477,10 @@
       "destination": "/docs/modules/model_io/output_parsers/retry"
     },
     {
+      "source": "/en/latest/modules/prompts/example_selectors.html",
+      "destination": "/docs/modules/model_io/prompts/example_selectors"
+    },
+    {
       "source": "/en/latest/modules/prompts/example_selectors/examples/custom_example_selector.html",
       "destination": "/docs/modules/model_io/prompts/example_selectors/custom_example_selector"
     },
@@ -3487,6 +3491,10 @@
     {
       "source": "/en/latest/modules/prompts/example_selectors/examples/ngram_overlap.html",
       "destination": "/docs/modules/model_io/prompts/example_selectors/ngram_overlap"
+    },
+    {
+      "source": "/en/latest/modules/prompts/prompt_templates.html",
+      "destination": "/docs/modules/model_io/prompts/prompt_templates"
     },
     {
       "source": "/en/latest/modules/prompts/prompt_templates/examples/connecting_to_a_feature_store.html",
@@ -3741,6 +3749,10 @@
       "destination": "/docs/guides/evaluation/:path*"
     },
     {
+      "source": "/en/latest/modules/indexes.html",
+      "destination": "/docs/modules/data_connection"
+    },
+    {
       "source": "/en/latest/modules/indexes/:path*",
       "destination": "/docs/modules/data_connection/:path*"
     },
@@ -3939,6 +3951,10 @@
     {
       "source": "/docs/modules/chains/additional/tagging",
       "destination": "/docs/use_cases/tagging"
+    },
+    {
+      "source": "docs/integrations/providers/agent_with_wandb_tracing",
+      "destination": "docs/integrations/providers/wandb_tracing"
     }
   ]
 }

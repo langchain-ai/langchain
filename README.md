@@ -18,8 +18,8 @@
 
 Looking for the JS/TS version? Check out [LangChain.js](https://github.com/hwchase17/langchainjs).
 
-**Production Support:** As you move your LangChains into production, we'd love to offer more comprehensive support.
-Please fill out [this form](https://6w1pwbss0py.typeform.com/to/rrbrdTH2) and we'll set up a dedicated support Slack channel.
+**Production Support:** As you move your LangChains into production, we'd love to offer more hands-on support.
+Fill out [this form](https://airtable.com/appwQzlErAS2qiP0L/shrGtGaVBVAz7NcV2) to share more about what you're building, and our team will get in touch.
 
 ## 🚨Breaking Changes for select chains (SQLDatabase) on 7/28
 

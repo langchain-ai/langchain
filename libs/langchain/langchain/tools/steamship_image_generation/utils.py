@@ -14,7 +14,7 @@ def make_image_public(client: Steamship, block: Block) -> str:
         from steamship.data.workspace import SignedUrl
         from steamship.utils.signed_urls import upload_to_signed_url
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "The make_image_public function requires the steamship"
             " package to be installed. Please install steamship"
             " with `pip install --upgrade steamship`"
