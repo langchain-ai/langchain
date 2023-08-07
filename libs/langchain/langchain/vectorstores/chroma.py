@@ -49,6 +49,37 @@ def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
     ]
 
 
+def _check_client_params(
+    client: Optional[chromadb.Client],
+    client_settings: Optional[chromadb.config.Settings],
+    persist_directory: Optional[str],
+) -> None:
+    """At most one of client, client_settings, persist_directory should be specified."""
+    if sum(x is not None for x in (client, client_settings, persist_directory)) > 1:
+        raise ValueError(
+            """\
+Only one of client, client_settings, or persist_directory should be set.
+
+Chroma >= v0.4.0 syntax:
+client: chromadb.Client, 
+    eg: chromadb.PersistentClient(path="my_dir")
+client_settings: chromadb.config.Settings, eg: 
+    Settings(is_persistent=True, 
+            persist_directory="my_dir")
+persist_directory: str, eg: "my_dir"
+
+Chroma <= v0.3.29 syntax:
+client: chromadb.Client, 
+    eg: chromadb.Client(
+            Settings(chroma_db_impl="duckdb+parquet", persist_directory="my_dir")
+        )
+client_settings: chromadb.config.Settings, 
+    eg: Settings(chroma_db_impl="duckdb+parquet", persist_directory="my_dir")
+persist_directory: str, eg: "my_dir"
+            """
+        )
+
+
 class Chroma(VectorStore):
     """Wrapper around ChromaDB embeddings platform.
 
@@ -81,48 +112,12 @@ class Chroma(VectorStore):
             import chromadb
             import chromadb.config
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import chromadb python package. "
                 "Please install it with `pip install chromadb`."
             )
 
-        # get chromadb version
-        pre04Chroma = False
-        major_version, minor_version, _ = chromadb.__version__.split(".")
-        if int(major_version) == 0 and int(minor_version) < 4:
-            print("Notice: Using ChromaDB <0.4.0. Consider upgrading >= 0.4.0")
-            pre04Chroma = True
-
-        # client, client_settings, and persist_directory
-        # should be mutually exclusive.
-        if (client is not None) + (client_settings is not None) + (
-            persist_directory is not None
-        ) > 1:
-            raise ValueError(
-                """
-                Only one of client, client_settings, or persist_directory 
-                should be set.
-
-                Chroma >= v0.4.0 syntax:
-                    client: chromadb.Client, 
-                        eg: chromadb.PersistentClient(path="my_dir")
-                    client_settings: chromadb.config.Settings, eg: 
-                        Settings(is_persistent=True, 
-                                persist_directory="my_dir")
-                    persist_directory: str, eg: "my_dir"
-            
-                Chroma <= v0.3.29 syntax:
-                    client: chromadb.Client, 
-                        eg: chromadb.Client(
-                            Settings(chroma_db_impl="duckdb+parquet", 
-                            persist_directory="my_dir"))
-                    client_settings: chromadb.config.Settings, 
-                        eg: Settings(chroma_db_impl="duckdb+parquet", 
-                        persist_directory="my_dir")
-                    persist_directory: str, eg: "my_dir"
-                """
-            )
-
+        _check_client_params(client, client_settings, persist_directory)
         # default settings
         _client_settings = chromadb.config.Settings()
 
@@ -130,16 +125,22 @@ class Chroma(VectorStore):
         if client:
             self._client = client
 
+        # get chromadb version
+        major_version, minor_version, _ = chromadb.__version__.split(".")
+        pre_04_chroma = int(major_version) == 0 and int(minor_version) < 4
+        if pre_04_chroma:
+            logger.info("Using ChromaDB <0.4.0. Consider upgrading >= 0.4.0")
+
         # if user provides persist_directory, use it
         if persist_directory:
-            if pre04Chroma:
+            if pre_04_chroma:
                 _client_settings = chromadb.config.Settings(
                     chroma_db_impl="duckdb+parquet",
                 )
                 self._persist_directory = persist_directory
             else:
                 _client_settings = chromadb.config.Settings(is_persistent=True)
-                # we dont set self._persist_directory because
+                # We don't set self._persist_directory because
                 # .persist() is automatic in ChromaDB >= 0.4.0
 
             _client_settings.persist_directory = persist_directory
@@ -148,7 +149,7 @@ class Chroma(VectorStore):
         # if user provides client_settings, use it - this should be a rare case
         if client_settings:
             if (
-                pre04Chroma
+                pre_04_chroma
                 and client_settings.persist_directory is not None
                 and client_settings.chroma_db_impl is None
             ):
@@ -185,7 +186,7 @@ class Chroma(VectorStore):
         try:
             import chromadb  # noqa: F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import chromadb python package. "
                 "Please install it with `pip install chromadb`."
             )
@@ -527,7 +528,7 @@ class Chroma(VectorStore):
         major, minor, _ = chromadb.__version__.split(".")
 
         if int(major) == 0 and int(minor) > 4:
-            print(
+            logger.info(
                 "Chroma 0.4.0 and above automatically persist the collection. You can "
                 "remove this call."
             )
