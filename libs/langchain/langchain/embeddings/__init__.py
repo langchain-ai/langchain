@@ -31,6 +31,7 @@ from langchain.embeddings.fake import DeterministicFakeEmbedding, FakeEmbeddings
 from langchain.embeddings.google_palm import GooglePalmEmbeddings
 from langchain.embeddings.gpt4all import GPT4AllEmbeddings
 from langchain.embeddings.huggingface import (
+    HuggingFaceBgeEmbeddings,
     HuggingFaceEmbeddings,
     HuggingFaceInstructEmbeddings,
 )
@@ -97,6 +98,7 @@ __all__ = [
     "XinferenceEmbeddings",
     "LocalAIEmbeddings",
     "AwaEmbeddings",
+    "HuggingFaceBgeEmbeddings",
 ]
 
 
