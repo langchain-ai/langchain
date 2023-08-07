@@ -62,6 +62,8 @@ class FakeTracer(BaseTracer):
                 if run.parent_run_id
                 else None,
                 "child_runs": [self._copy_run(child) for child in run.child_runs],
+                "execution_order": None,
+                "child_execution_order": None,
             }
         )
 
