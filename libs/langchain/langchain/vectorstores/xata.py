@@ -239,7 +239,7 @@ class XataVectorStore(VectorStore):
     def _delete_all(self) -> None:
         """Delete all records in the table."""
         while True:
-            r = self._client.search_and_filter().query(
+            r = self._client.data().query(
                 self._table_name, payload={"columns": ["id"]}
             )
             if r.status_code != 200:
