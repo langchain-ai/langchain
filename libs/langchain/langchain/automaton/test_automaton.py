@@ -1,35 +1,29 @@
 from __future__ import annotations
 
-import dataclasses
 import json
 from typing import (
     Any,
     List,
-    Sequence,
     Mapping,
-    TypeVar,
     Iterator,
-    Tuple,
+    Sequence,
 )
 
-from pytest_mock import MockerFixture
-from syrupy import SnapshotAssertion
 from langchain.automaton.chat_automaton import ChatAutomaton
-from langchain.automaton.typedefs import infer_message_type
-from langchain.automaton.automaton import ExecutedState, State, Automaton
 from langchain.automaton.executor import Executor
-
 from langchain.automaton.open_ai_functions import (
     OpenAIFunctionsRouter,
 )
+from langchain.automaton.typedefs import Memory, PromptGenerator
+from langchain.schema import PromptValue
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import BaseChatModel
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import ChatResult
-from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
+    SystemMessage,
 )
 from langchain.schema.output import ChatGeneration
 from langchain.schema.runnable import RunnableLambda
@@ -140,6 +134,35 @@ def _construct_func_invocation_message(
     )
 
 
+class EasyPromptValue(PromptValue):
+    messages: List[BaseMessage]
+
+    @classmethod
+    def from_messages(cls, messages: Sequence[BaseMessage]) -> EasyPromptValue:
+        return cls(messages=messages)
+
+    def to_messages(self) -> List[BaseMessage]:
+        return self.messages
+
+    def to_string(self) -> str:
+        return " ".join([message.content for message in self.messages])
+
+
+def prompt_generator(memory: Memory) -> PromptValue:
+    """Generate a prompt."""
+    if not memory.messages:
+        memory.add_message(
+            SystemMessage(
+                content=(
+                    "Hello! I'm a chatbot that can help you write a letter. "
+                    "What would you like to do?"
+                ),
+            )
+        )
+
+    return EasyPromptValue.from_messages(messages=memory.messages)
+
+
 def test_automaton() -> None:
     """Run the automaton."""
 
@@ -164,19 +187,11 @@ def test_automaton() -> None:
             ]
         )
     )
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                "You are a helpful assistant cat. Please use the tools at "
-                "your disposal to help the human. "
-                "You can ask the user to clarify if need be.",
-            ),
-        ]
-    )
 
     # TODO(FIX MUTABILITY)
-    chat_automaton = ChatAutomaton(llm=llm, tools=tools, prompt=prompt)
+    chat_automaton = ChatAutomaton(
+        llm=llm, tools=tools, prompt_generator=prompt_generator
+    )
     executor = Executor(chat_automaton, max_iterations=1)
     state, executed_states = executor.run()
     assert executed_states == [

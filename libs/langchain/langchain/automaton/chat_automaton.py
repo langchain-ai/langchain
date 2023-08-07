@@ -3,15 +3,14 @@ from __future__ import annotations
 from typing import Any, Sequence
 
 from langchain.automaton.automaton import ExecutedState, State, Automaton
-from langchain.automaton.typedefs import MessageType, infer_message_type
-from langchain.automaton.well_known_states import LLMProgram, UserInputState
-from langchain.prompts import ChatPromptTemplate
-from langchain.schema import (
-    FunctionMessage,
+from langchain.automaton.typedefs import (
+    MessageType,
+    infer_message_type,
+    PromptGenerator,
 )
+from langchain.automaton.well_known_states import LLMProgram, UserInputState
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool
-from langchain.automaton.typedefs import PromptGenerator
 
 
 class ChatAutomaton(Automaton):
@@ -22,11 +21,12 @@ class ChatAutomaton(Automaton):
         prompt_generator: PromptGenerator,
     ) -> None:
         """Initialize the chat automaton."""
+        super().__init__()
         self.llm = llm
         self.tools = tools
         # TODO: Fix mutability of chat template, potentially add factory method
         self.prompt_generator = prompt_generator
-        self.program_state = LLMProgram(
+        self.llm_program_state = LLMProgram(
             llm=self.llm,
             tools=self.tools,
             prompt_generator=self.prompt_generator,
@@ -34,7 +34,7 @@ class ChatAutomaton(Automaton):
 
     def get_start_state(self, *args: Any, **kwargs: Any) -> State:
         """Get the start state."""
-        return self.program_state
+        return self.llm_program_state
 
     def get_next_state(
         self, executed_state: ExecutedState  # Add memory for transition functions?
@@ -44,13 +44,13 @@ class ChatAutomaton(Automaton):
         data = executed_state["data"]
 
         if previous_state_id == "user_input":
-            return self.program_state
+            return self.llm_program_state
         elif previous_state_id == "llm_program":
             message_type = infer_message_type(data["message"])
             if message_type == MessageType.AI:
                 return UserInputState()
             elif message_type == MessageType.FUNCTION:
-                return self.program_state
+                return self.llm_program_state
             else:
                 raise AssertionError(f"Unknown message type: {message_type}")
         else:

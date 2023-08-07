@@ -466,8 +466,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
 
     @classmethod
     def from_messages(
-        cls,
-        messages: Sequence[MessageLike],
+        cls, messages: Sequence[MessageLike],
     ) -> ChatPromptTemplate:
         """Create a chat prompt template from a variety of message formats.
 

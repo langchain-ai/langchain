@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import enum
 from typing import Callable
 
@@ -44,9 +45,16 @@ def infer_message_type(message: BaseMessage) -> MessageType:
 class Memory(BaseChatMessageHistory):
     """A memory for the automaton."""
 
+    def __init__(self, messages):
+        self.messages = messages
+
     def add_message(self, message: BaseMessage) -> None:
         """Add a message to the memory."""
         self.messages.append(message)
+
+    def clear(self) -> None:
+        """Clear the memory."""
+        self.messages = []
 
 
 # Interface that takes memory and returns a prompt value
