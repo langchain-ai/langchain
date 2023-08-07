@@ -25,7 +25,7 @@ def test_edenai_call() -> None:
 async def test_edenai_acall() -> None:
     """Test simple call to edenai."""
     llm = EdenAI(provider="openai", params={"temperature": 0.2, "max_tokens": 250})
-    output = await llm.agenerate("Say foo:")
+    output = await llm.agenerate(["Say foo:"])
     assert llm._llm_type == "edenai"
     assert llm.feature == "text"
     assert llm.subfeature == "generation"
