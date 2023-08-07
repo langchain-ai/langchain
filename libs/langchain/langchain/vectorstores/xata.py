@@ -11,7 +11,7 @@ from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
 
 if TYPE_CHECKING:
-    from xata.client import XataClient
+    from xata.client import XataClient  # noqa: F401
 
 
 class XataVectorStore(VectorStore):
@@ -30,7 +30,7 @@ class XataVectorStore(VectorStore):
     ) -> None:
         """Initialize with Xata client."""
         try:
-            import xata.client  # noqa: F401
+            from xata.client import XataClient  # noqa: F401
         except ImportError:
             raise ValueError(
                 "Could not import xata python package. "
