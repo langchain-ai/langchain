@@ -140,7 +140,8 @@ class WebBaseLoader(BaseLoader):
             except Exception as e:
                 if self.continue_on_failure:
                     logger.warning(
-                        f"Error fetching {url}, skipping due to continue_on_failure=True"
+                        f"Error fetching {url}, skipping due to"
+                        f" continue_on_failure=True"
                     )
                     return ""
                 logger.exception(

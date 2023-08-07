@@ -33,9 +33,9 @@ class GitbookLoader(WebBaseLoader):
             content_selector: The CSS selector for the content to load.
                 Defaults to "main".
             continue_on_failure: whether to continue loading the sitemap if an error
-                occurs loading a url, emitting a warning instead of raising an exception.
-                Setting this to True makes the loader more robust, but also may result
-                in missing data. Default: False
+                occurs loading a url, emitting a warning instead of raising an
+                exception. Setting this to True makes the loader more robust, but also
+                may result in missing data. Default: False
         """
         self.base_url = base_url or web_page
         if self.base_url.endswith("/"):
