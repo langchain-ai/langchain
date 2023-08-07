@@ -866,8 +866,8 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         streaming_start_index = 0
 
         for i in range(len(steps) - 1, 0, -1):
-            if type(steps[i].transform) != Runnable.transform:
-                streaming_start_index = i
+            if type(steps[i]).transform != Runnable.transform:
+                streaming_start_index = i - 1
             else:
                 break
 
@@ -883,13 +883,15 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             run_manager.on_chain_error(e)
             raise
 
-        # stream the last step
+        # stream the last steps
         final: Union[Output, None] = None
         final_supported = True
         try:
+            # stream the first of the last steps with non-streaming input
             final_pipeline = steps[streaming_start_index].stream(
                 input, _patch_config(config, run_manager.get_child())
             )
+            # stream the rest of the last steps with streaming input
             for step in steps[streaming_start_index + 1 :]:
                 final_pipeline = step.transform(
                     final_pipeline, _patch_config(config, run_manager.get_child())
@@ -941,8 +943,8 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         streaming_start_index = len(steps) - 1
 
         for i in range(len(steps) - 1, 0, -1):
-            if type(steps[i].transform) != Runnable.transform:
-                streaming_start_index = i
+            if type(steps[i]).transform != Runnable.transform:
+                streaming_start_index = i - 1
             else:
                 break
 
@@ -958,13 +960,15 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             await run_manager.on_chain_error(e)
             raise
 
-        # stream the last step
+        # stream the last steps
         final: Union[Output, None] = None
         final_supported = True
         try:
+            # stream the first of the last steps with non-streaming input
             final_pipeline = steps[streaming_start_index].astream(
                 input, _patch_config(config, run_manager.get_child())
             )
+            # stream the rest of the last steps with streaming input
             for step in steps[streaming_start_index + 1 :]:
                 final_pipeline = step.atransform(
                     final_pipeline, _patch_config(config, run_manager.get_child())
