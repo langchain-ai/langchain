@@ -363,7 +363,6 @@ class AmazonKendraRetriever(BaseRetriever):
             "QueryText": query.strip(),
             "PageSize": self.top_k,
         }
-        print('user context is : ', self.user_context)
         if self.attribute_filter is not None:
             kendra_kwargs["AttributeFilter"] = self.attribute_filter
         if self.user_context is not None: 
