@@ -2,10 +2,10 @@ import asyncio
 import logging
 import warnings
 from typing import Any, Dict, Iterator, List, Optional, Union
-from aiohttp import ServerDisconnectedError
 
 import aiohttp
 import requests
+from aiohttp import ServerDisconnectedError
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
