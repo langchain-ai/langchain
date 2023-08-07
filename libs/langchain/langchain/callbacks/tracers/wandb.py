@@ -14,6 +14,8 @@ from typing import (
     Union,
 )
 
+from google.protobuf.json_format import MessageToJson
+from google.protobuf.message import Message
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import Run
 
@@ -28,11 +30,17 @@ PRINT_WARNINGS = True
 
 
 def _serialize_inputs(run_inputs: dict) -> dict:
-    if "input_documents" in run_inputs:
-        docs = run_inputs["input_documents"]
-        return {f"input_document_{i}": doc.json() for i, doc in enumerate(docs)}
-    else:
-        return run_inputs
+    serialized_inputs = {}
+    for key, value in run_inputs.items():
+        if isinstance(value, Message):
+            serialized_inputs[key] = MessageToJson(value)
+        elif key == "input_documents":
+            serialized_inputs.update(
+                {f"input_document_{i}": doc.json() for i, doc in enumerate(value)}
+            )
+        else:
+            serialized_inputs[key] = value
+    return serialized_inputs
 
 
 class RunProcessor:
