@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Type
+from typing import Any, Dict, List, Optional, Type
 
 from pydantic import BaseModel, Extra, Field
 
@@ -31,22 +31,34 @@ class VectorStoreIndexWrapper(BaseModel):
         arbitrary_types_allowed = True
 
     def query(
-        self, question: str, llm: Optional[BaseLanguageModel] = None, **kwargs: Any
+        self,
+        question: str,
+        llm: Optional[BaseLanguageModel] = None,
+        filter: Dict[str, str] = {},
+        **kwargs: Any
     ) -> str:
         """Query the vectorstore."""
         llm = llm or OpenAI(temperature=0)
         chain = RetrievalQA.from_chain_type(
-            llm, retriever=self.vectorstore.as_retriever(), **kwargs
+            llm,
+            retriever=self.vectorstore.as_retriever(search_kwargs={"filter": filter}),
+            **kwargs
         )
         return chain.run(question)
 
     def query_with_sources(
-        self, question: str, llm: Optional[BaseLanguageModel] = None, **kwargs: Any
+        self,
+        question: str,
+        llm: Optional[BaseLanguageModel] = None,
+        filter: Dict[str, str] = {},
+        **kwargs: Any
     ) -> dict:
         """Query the vectorstore and get back sources."""
         llm = llm or OpenAI(temperature=0)
         chain = RetrievalQAWithSourcesChain.from_chain_type(
-            llm, retriever=self.vectorstore.as_retriever(), **kwargs
+            llm,
+            retriever=self.vectorstore.as_retriever(search_kwargs={"filter": filter}),
+            **kwargs
         )
         return chain({chain.question_key: question})
 
