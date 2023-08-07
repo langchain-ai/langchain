@@ -3,394 +3,210 @@ from __future__ import annotations
 
 import abc
 import dataclasses
+import enum
 from typing import (
-    Generic,
-    TypeVar,
     Sequence,
     Callable,
     Any,
-    Optional,
-    Dict,
     Mapping,
+    TypedDict,
+    Protocol,
 )
 
-from langchain.automaton.history import History
-from langchain.base_language import BaseLanguageModel
-from langchain.prompts import Prompt, BasePromptTemplate
+from langchain.automaton.open_ai_functions import create_action_taking_llm
+from langchain.prompts import ChatPromptTemplate
+from langchain.schema import (
+    BaseMessage,
+    FunctionMessage,
+    AIMessage,
+    SystemMessage,
+    HumanMessage,
+    BaseChatMessageHistory,
+    PromptValue,
+)
+from langchain.schema.language_model import BaseLanguageModel
+from langchain.tools import BaseTool
 
 
-@dataclasses.dataclass(frozen=True)
-class Program:
-    """A processor that takes in a query and outputs a response."""
+class MessageType(enum.Enum):
+    """The type of message."""
 
-    prompt: BasePromptTemplate
-    llm: BaseLanguageModel
-    parser: Callable[[str], Transition]
-    stop: Optional[Sequence[str]] = None
-
-    def execute(self, **kwargs) -> Transition:
-        """Execute the program."""
-        finalized_prompt = self.prompt.format_prompt(**kwargs)
-        llm_output = self.llm.predict(finalized_prompt.to_string(), stop=self.stop)
-        return self.parser(llm_output)
+    SYSTEM = enum.auto()
+    USER = enum.auto()
+    FUNCTION = enum.auto()
+    AI = enum.auto()
+    AI_INVOKE = enum.auto()
 
 
-@dataclasses.dataclass(frozen=True)
-class AbstractState(abc.ABC):
-    @abc.abstractmethod
-    def execute(self) -> Transition:
-        """Execute the state"""
-
-
-@dataclasses.dataclass(frozen=True)
-class RunnableState(abc.ABC):
-    # runnable: Runnable
-    inputs: Mapping[str, Any]
-
-    def execute(self) -> Transition:
-        """Execute the state"""
-        return self.runnable.execute(**self.inputs)
-
-
-@dataclasses.dataclass(frozen=True)
-class LLMState(AbstractState):
-    """A state that uses a language model."""
-
-    program: Program
-    inputs: Mapping[str, Any]
-
-    def execute(self) -> Transition:
-        """Execute the program."""
-        return self.program.execute(**self.inputs)
-
-
-@dataclasses.dataclass(frozen=True)
-class UserInputState(AbstractState):
-    """Collect user input."""
-
-    def execute(self) -> Transition:
-        """Execute the program."""
-        user_input = input("Query: ")
-        return PayloadTransition(type_="user_input", payload={"question": user_input})
-
-
-@dataclasses.dataclass(frozen=True)
-class EndState(AbstractState):
-    """A state that uses a language model."""
-
-    history: History
-
-    def execute(self) -> Transition:
-        """Execute the program."""
-        raise ValueError()
-
-
-@dataclasses.dataclass(frozen=True)
-class Transition:
-    """A transition from one state to another."""
-
-
-from typing import TypedDict
-
-
-class StateTransition(TypedDict):
-    """A transition from one state to another."""
-
-    type_: str
-    payload: Dict[str, Any]
-
-
-@dataclasses.dataclass(frozen=True)
-class PayloadTransition(Transition):
-    """A transition from one state to another."""
-
-    type_: str
-    payload: Dict[str, Any]
-
-
-@dataclasses.dataclass(frozen=True)
-class LLMTransition(Transition):
-    """Any transition out of a program state is a standard transition."""
-
-    llm_output: str
-    tool_invocation_request: ToolInvocationRequest
-
-
-@dataclasses.dataclass(frozen=True)
-class Argument:
-    """An argument to a tool."""
-
-    name: str
-    type_: str
-    description: str
-    default: Optional[str] = None
-    required: bool = False
-
-    def to_string(self) -> str:
-        """Get a string representation.
-
-        As a function invocation."""
-        return f"{self.name}: {self.type_}, // {self.description}"
-
-
-T = TypeVar("T")
-
-
-@dataclasses.dataclass(frozen=True)
-class Tool(Generic[T]):
-    """A tool."""
-
-    name: str
-    description: str
-    arguments: Sequence[Argument]
-    return_type: str
-
-    callable: Callable[..., Any]
-
-    def to_string(self) -> str:
-        """Get a string representation.
-
-        As a function invocation."""
-        code = f"type {self.name} = ( // {self.description}\n"
-
-        space = " " * 2
-
-        for arg in self.arguments:
-            code += f"{space}{arg.to_string()}\n"
-
-        code += f") => {self.return_type};"
-        return code
-
-    def invoke(self, *args, **kwargs) -> T:
-        """Invoke the tool."""
-        return self.callable(*args, **kwargs)
-
-
-class Automaton(abc.ABC):
-    @abc.abstractmethod
-    def get_start_state(self, inputs: Any) -> AbstractState:
-        """Get the start state."""
-
-    @abc.abstractmethod
-    def get_next_state(
-        self, state: AbstractState, transition: Transition, history: History
-    ) -> AbstractState:
-        """Get the next state."""
-
-    @abc.abstractmethod
-    def is_end_state(self, state: AbstractState) -> bool:
-        """is the given state an end state."""
-
-
-class Parser(abc.ABC):
-    @abc.abstractmethod
-    def parse(self, text: str) -> Transition:
-        """Parse"""
-
-
-def _extract_html_tag_content(html: str, tag: str) -> str:
-    """Extract all the content between the <tag>CONTENT</tag>."""
-    # TODO(Replace with actual solution based on bs4)
-    start_tag = f"<{tag}>"
-    end_tag = f"</{tag}>"
-    try:
-        start_index = html.index(start_tag) + len(start_tag)
-        end_index = html.index(end_tag)
-        return html[start_index:end_index]
-    except ValueError:
-        return f'respond("{html}")'
-
-
-def _get_content_between_parenthesis(text: str) -> str:
-    """Get the content between the first pair of parenthesis."""
-    start_index = text.index("(") + 1
-    end_index = text.index(")")
-    return text[start_index:end_index]
-
-
-class ChatParser(Parser):
-    def parse(self, text: str) -> Transition:
-        act = _extract_html_tag_content(text, "act")
-        if act.startswith("search"):
-            name = "search"
-            argument = _get_content_between_parenthesis(act)
-            tool_invocation_request = ToolInvocationRequest(
-                name=name, arguments=[argument]
-            )
-        elif act.startswith("respond"):
-            name = "respond"
-            argument = _get_content_between_parenthesis(act)
-            tool_invocation_request = ToolInvocationRequest(
-                name=name, arguments=[argument]
-            )
+def _infer_message_type(message: BaseMessage) -> MessageType:
+    """Assign message type."""
+    if isinstance(message, FunctionMessage):
+        return MessageType.FUNCTION
+    elif isinstance(message, AIMessage):
+        if message.additional_kwargs:
+            return MessageType.AI_INVOKE
         else:
-            tool_invocation_request = None
-
-        return LLMTransition(
-            llm_output=text.strip(),
-            tool_invocation_request=tool_invocation_request,
-        )
-
-NEW_AGE_PROMPT = """\
-You are an AI assistant. Do not reveal any other information about yourself. \
-Your goal is to help the user to the best of your ability.
-
-You may invoke any of the tools to help achieve your objective.
-
-Do not guess the answer. Rely on the contents of the `Knowledge` as it has been independently
-verified and is known to be correct.
-
-If the question is answerable using the Knowledge, then use the `respond` tool to answer. \
-Otherwise, use other tools to get more knowledge. \
-
-Tools:
-
-{tools}
-
----
-
-Examples:
-
-Question: Who was the first president of the United States?
-Knowledge: ```The first president of the United States was Ella.```
-Thought: The question is answerable using current Knowledge.
-Action: <act>respond("Ella")</act>
-
-Question: What are the colors on the building in front of me?
-Knowledge: ```The user's name is Eugene.```
-Thought: The question is not answerable using current Knowledge or any tools.
-Action: <act>respond("I do not have enough information to answer that question.")</act>
-
-Question: Wehqo Qohwefwqej
-Knowledge: ```The user is standing outside of a red and blue building.```
-Thought: The question does not make sense.
-Action: <act>respond("I am not sure what you mean.")</act>
-
-Question: Hello!
-Knowledge: ``````
-Thought: The user is greeting me.
-Action: <act>respond("Hello! How can I help you?")</act>
-
----
-
-Question: {question}
-Knowledge: ```{knowledge}```
-Thought:\
-"""
-
-TOOL_REGISTRY = ToolRegistry(
-    tools={
-        "search": Tool(
-            name="search",
-            description="Use to search the internet",
-            arguments=[
-                Argument(
-                    name="query",
-                    type_="string",
-                    description="What to search for",
-                )
-            ],
-            return_type="string",
-            callable=lambda query: "search result",
-        ),
-        "respond": Tool(
-            name="respond",
-            description="Response to the user.",
-            arguments=[
-                Argument(
-                    name="response",
-                    type_="string",
-                    description="The response to the user.",
-                )
-            ],
-            return_type="null",
-            callable=lambda query: "responding to user.",
-        ),
-    },
-)
+            return MessageType.AI
+    elif isinstance(message, SystemMessage):
+        return MessageType.SYSTEM
+    elif isinstance(message, HumanMessage):
+        return MessageType.USER
+    else:
+        raise ValueError(f"Unknown message type: {type(message)}")
 
 
-@dataclasses.dataclass(frozen=True)
-class AbstractMemory:
-    """Abstract memory."""
+class ExecutedState(TypedDict):
+    """The response of an action taking LLM."""
+
+    id: str  # the ID of the state that was just executed
+    data: Mapping[str, Any]
 
 
-@dataclasses.dataclass(frozen=True)
-class RunningMemory(AbstractMemory):
-    """Running memory."""
+class State(Protocol):
+    """Automaton state protocol."""
 
-    messages: Sequence[str] = ()
+    def execute(self) -> ExecutedState:
+        ...
 
-    def add_message(self, message: str) -> RunningMemory:
+
+class Memory(BaseChatMessageHistory):
+    """A memory for the automaton."""
+
+    def add_message(self, message: BaseMessage) -> None:
         """Add a message to the memory."""
-        return dataclasses.replace(self, messages=list(self.messages) + [message])
+        self.messages.append(message)
 
-    def to_string(self) -> str:
-        """Get a string representation."""
-        return "\n".join(self.messages)
+
+PromptGenerator = Callable[[Memory], PromptValue]
+
+
+@dataclasses.dataclass
+class LLMProgram(State):
+    """A state that executes an LLM program."""
+
+    llm: BaseLanguageModel
+    tools: Sequence[BaseTool]
+    # # This should either be swapped with memory or else with prompt value?
+    # # Likely prompt value since we're not taking in any input
+    # messages: Sequence[BaseMessage]  # Swap with prompt value
+    memory: Memory
+    prompt_generator: PromptGenerator
+
+    def execute(self) -> ExecutedState:
+        """Execute LLM program."""
+        action_taking_llm = create_action_taking_llm(self.llm, tools=self.tools)
+        prompt_value = self.prompt_generator(self.memory)
+
+        result = action_taking_llm.invoke(prompt_value)
+        self.memory.add_message(result["message"])
+        return {"id": "llm_program", "data": result}
+
+
+@dataclasses.dataclass
+class UserInputState(State):
+    """A state that prompts the user for input from stdin.
+
+    This is primarily useful for interactive development.
+    """
+
+    def execute(self) -> ExecutedState:
+        """Execute user input state."""
+        user_input = input("Enter your input: ")
+        return {
+            "id": "user_input",
+            "data": {
+                "message": HumanMessage(content=user_input),
+            },
+        }
+
+
+class Automaton:
+    @abc.abstractmethod
+    def get_start_state(self, *args: Any, **kwargs: Any) -> State:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def get_next_state(self, executed_state: ExecutedState) -> State:
+        raise NotImplementedError()
 
 
 class ChatAutomaton(Automaton):
-    def __init__(self, llm: BaseLanguageModel, prompt: Prompt) -> None:
+    def __init__(
+        self,
+        llm: BaseLanguageModel,
+        tools: Sequence[BaseTool],
+        prompt: ChatPromptTemplate,
+        on_next_state: Callable[[State], None],
+    ) -> None:
+        """Initialize the chat automaton."""
         self.llm = llm
-        self.tool_registry = TOOL_REGISTRY
-        self.prompt = prompt.partial(tools=self.tool_registry.as_string())
-        self.stop = ["Question:", "Knowledge:", "Thought:"]
-        self.parser = ChatParser()
+        self.tools = tools
+        # TODO: Fix mutability of chat template, potentially add factory method
+        self.chat_template = ChatPromptTemplate.from_messages(prompt.format_messages())
+        self.on_next_state = on_next_state
 
-    def get_start_state(self, inputs: Mapping[str, Any]) -> AbstractState:
+    def get_start_state(self, *args: Any, **kwargs: Any) -> State:
         """Get the start state."""
-        return self.get_user_input_state(inputs=inputs)
-
-    def get_llm_state(self, inputs: Mapping[str, Any]) -> AbstractState:
-        program = Program(
-            prompt=self.prompt, llm=self.llm, parser=self.parser.parse, stop=self.stop
+        return LLMProgram(
+            llm=self.llm,
+            tools=self.tools,
+            messages=self.chat_template.format_messages(),
         )
-        return LLMState(program=program, inputs=inputs)
 
-    def get_user_input_state(self, inputs: Mapping[str, Any]) -> AbstractState:
-        """Get the start state."""
-        return UserInputState()
+    def get_next_state(self, executed_state: ExecutedState) -> State:
+        """Get the next state."""
+        self.on_next_state(executed_state)
+        previous_state_id = executed_state["id"]
+        data = executed_state["data"]
+        self.chat_template.append(data["message"])
 
-    def get_next_state(
-        self, state: AbstractState, transition: Transition, history: History
-    ) -> AbstractState:
-        if history.get_num_states() >= 10:
-            return EndState(history=history)
-        if isinstance(state, UserInputState) and isinstance(
-            transition, PayloadTransition
-        ):
-            transitions = history.get_transitions()
+        if previous_state_id == "user_input":
+            return LLMProgram(
+                llm=self.llm,
+                tools=self.tools,
+                # Could add memory here
+                messages=self.chat_template.format_messages(),
+            )
+        elif previous_state_id == "llm_program":
+            message_type = _infer_message_type(data["message"])
+            if message_type in {MessageType.USER, MessageType.FUNCTION}:
+                raise AssertionError(
+                    "LLM program should not return user or function messages."
+                )
+            elif message_type == MessageType.AI:
+                return UserInputState()
+            elif message_type == MessageType.AI_INVOKE:
+                # Here we need to add a function message
+                # and then return the user input state.
+                assert data["function_call"]
 
-            memory = []
+                function_message = FunctionMessage(
+                    name=data["function_call"]["name"],
+                    content=data["function_call"]["result"],
+                )
 
-            for transition in transitions:
-                if isinstance(transition, LLMTransition):
-                    if transition.tool_invocation_request.name == "respond":
-                        memory.append(f"AI: {transition.llm_output}")
-                elif isinstance(transition, PayloadTransition):
-                    memory.append(f"User: {transition.payload['question']}")
-                else:
-                    raise AssertionError()
+                # Function message requires custom addition
+                # Logic may need to be refactored
+                self.chat_template.append(function_message)
 
-            memory_str = "\n".join(memory)
-
-            inputs = {
-                "question": transition.payload["question"],
-                "knowledge": memory_str,
-            }
-            return self.get_llm_state(inputs=inputs)
+                return LLMProgram(
+                    llm=self.llm,
+                    tools=self.tools,
+                    messages=self.chat_template.format_messages(),
+                )
         else:
-            if isinstance(transition, LLMTransition):
-                tool_invocation = transition.tool_invocation_request
+            raise ValueError(f"Unknown state ID: {previous_state_id}")
 
-                if tool_invocation.name == "respond":
-                    return UserInputState()
-                else:
-                    return self.get_llm_state(inputs=state.inputs)
-            else:
-                raise AssertionError()
 
-    def is_end_state(self, state: AbstractState) -> bool:
-        """is the given state an end state."""
-        return isinstance(state, EndState)
+# This is transition matrix syntax
+# transition_matrix = {
+#     ("user_input", "*"): LLMProgram,
+#     ("llm_program", MessageType.AI): UserInputState,
+#     ("llm_program", MessageType.AI_SELF): LLMProgram,
+#     (
+#         "llm_program",
+#         MessageType.AI_INVOKE,
+#     ): FuncInvocationState,  # But must add function message
+#     ("func_invocation", MessageType.FUNCTION): LLMProgram,
+# }
+#
