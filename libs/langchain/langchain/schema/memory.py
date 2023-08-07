@@ -107,7 +107,7 @@ class BaseChatMessageHistory(ABC):
         """
         self.add_message(AIMessage(content=message))
 
-    # TODO: Make this an abstractmethod.
+    @abstractmethod
     def add_message(self, message: BaseMessage) -> None:
         """Add a Message object to the store.
 
