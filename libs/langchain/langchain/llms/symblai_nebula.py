@@ -160,8 +160,6 @@ class Nebula(LLM):
             "top_k": self.top_k,
             "penalty_alpha": self.penalty_alpha,
         }
-        # payload.update(_model_kwargs)
-        # payload.update(kwargs)
 
         if len(self.conversation) == 0:
             raise ValueError("Error conversation is empty.")
@@ -191,7 +189,7 @@ class Nebula(LLM):
 
         """ enforce stop """
         if stop is not None:
-            # I believe this is required since the stop tokens
+            # This is required since the stop tokens
             # are not enforced by the model parameters
             text = enforce_stop_tokens(text, stop)
 
