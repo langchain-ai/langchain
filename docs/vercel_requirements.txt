@@ -1,1 +1,2 @@
+-e ../libs/langchain
 nbdoc

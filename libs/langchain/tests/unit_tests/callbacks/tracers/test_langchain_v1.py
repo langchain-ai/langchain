@@ -17,7 +17,7 @@ from langchain.callbacks.tracers.langchain_v1 import (
     ToolRun,
     TracerSessionV1,
 )
-from langchain.callbacks.tracers.schemas import Run, RunTypeEnum, TracerSessionV1Base
+from langchain.callbacks.tracers.schemas import Run, TracerSessionV1Base
 from langchain.schema import LLMResult
 from langchain.schema.messages import HumanMessage
 
@@ -589,7 +589,7 @@ def test_convert_run(
         outputs=LLMResult(generations=[[]]).dict(),
         serialized={},
         extra={},
-        run_type=RunTypeEnum.llm,
+        run_type="llm",
     )
     chain_run = Run(
         id="57a08cc4-73d2-4236-8371-549099d07fad",
@@ -603,7 +603,7 @@ def test_convert_run(
         outputs={},
         child_runs=[llm_run],
         extra={},
-        run_type=RunTypeEnum.chain,
+        run_type="chain",
     )
 
     tool_run = Run(
@@ -618,7 +618,7 @@ def test_convert_run(
         serialized={},
         child_runs=[],
         extra={},
-        run_type=RunTypeEnum.tool,
+        run_type="tool",
     )
 
     expected_llm_run = LLMRun(
