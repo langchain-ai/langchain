@@ -21,7 +21,7 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
         session_id: str,
         connection_string: str = DEFAULT_CONNECTION_STRING,
         table_name: str = "message_store",
-        order: str = "desc",
+        descending_time: bool = True,
         limit: int = -1,
     ):
         import psycopg
@@ -30,7 +30,7 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
         try:
             self.connection = psycopg.connect(connection_string)
             self.cursor = self.connection.cursor(row_factory=dict_row)
-            self.order = order
+            self.descending_time = descending_time
             self.limit = limit
         except psycopg.OperationalError as error:
             logger.error(error)
@@ -53,25 +53,15 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
     @property
     def messages_order_by_time(self) -> List[BaseMessage]:  # type: ignore
         """Retrieve the messages from PostgreSQL order by time"""
+        order = "desc" if self.descending_time else "asc"
+        params: List = [self.session_id]
         if self.limit > 0:
-            if self.order == "desc":
-                query = f"SELECT message FROM {self.table_name} WHERE session_id = %s ORDER BY created_at desc limit %s;"
-            else:
-                query = f"SELECT message FROM {self.table_name} WHERE session_id = %s ORDER BY created_at asc limit %s;"
-            self.cursor.execute(
-                query,
-                (
-                    self.session_id,
-                    self.limit,
-                ),
-            )
+            limit = " limit %s"
+            params.append(self.limit)
         else:
-            if self.order == "desc":
-                query = f"SELECT message FROM {self.table_name} WHERE session_id = %s ORDER BY created_at asc;"
-            else:
-                query = f"SELECT message FROM {self.table_name} WHERE session_id = %s ORDER BY created_at asc;"
-            self.cursor.execute(query, (self.session_id,))
-
+            limit = ""
+        query = f"SELECT message FROM {self.table_name} WHERE session_id = %s ORDER BY created_at {order}{limit};"  # noqa: E501
+        self.cursor.execute(query, tuple(params))
         items = [record["message"] for record in self.cursor.fetchall()]
         messages = messages_from_dict(items)
         return messages
@@ -91,9 +81,6 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
         """Append the message to the record in PostgreSQL"""
         from psycopg import sql
 
-        # query = sql.SQL("INSERT INTO {} (session_id, message) VALUES (%s, %s);").format(
-        #     sql.Identifier(self.table_name)
-        # )
         created_at = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         query = sql.SQL(
             "INSERT INTO {} (session_id, message, created_at) VALUES (%s, %s, %s);"

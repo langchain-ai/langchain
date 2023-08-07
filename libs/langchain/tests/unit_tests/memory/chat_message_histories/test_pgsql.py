@@ -20,7 +20,7 @@ def pgsql_histories(request, tmp_path: Path):  # type: ignore
         session_id="123",
         connection_string=con_str,
         table_name="test_table",
-        order="asc",
+        descending_time=False,
         limit=5,
     )
     # Create history for other session
@@ -28,7 +28,7 @@ def pgsql_histories(request, tmp_path: Path):  # type: ignore
         session_id="456",
         connection_string=con_str,
         table_name="test_table",
-        order="asc",
+        descending_time=False,
         limit=5,
     )
 
@@ -65,44 +65,3 @@ def test_messages_order_by_time(
     assert isinstance(messages[1], AIMessage)
     assert messages[0].content == "Hello with time!"
     assert messages[1].content == "Hi there with time!"
-
-
-# def test_multiple_sessions(
-#     sql_histories: Tuple[SQLChatMessageHistory, SQLChatMessageHistory]
-# ) -> None:
-#     sql_history, other_history = sql_histories
-#     sql_history.add_user_message("Hello!")
-#     sql_history.add_ai_message("Hi there!")
-#     sql_history.add_user_message("Whats cracking?")
-#
-#     # Ensure the messages are added correctly in the first session
-#     assert len(sql_history.messages) == 3, "waat"
-#     assert sql_history.messages[0].content == "Hello!"
-#     assert sql_history.messages[1].content == "Hi there!"
-#     assert sql_history.messages[2].content == "Whats cracking?"
-#
-#     # second session
-#     other_history.add_user_message("Hellox")
-#     assert len(other_history.messages) == 1
-#     assert len(sql_history.messages) == 3
-#     assert other_history.messages[0].content == "Hellox"
-#     assert sql_history.messages[0].content == "Hello!"
-#     assert sql_history.messages[1].content == "Hi there!"
-#     assert sql_history.messages[2].content == "Whats cracking?"
-#
-#
-# def test_clear_messages(
-#     sql_histories: Tuple[SQLChatMessageHistory, SQLChatMessageHistory]
-# ) -> None:
-#     sql_history, other_history = sql_histories
-#     sql_history.add_user_message("Hello!")
-#     sql_history.add_ai_message("Hi there!")
-#     assert len(sql_history.messages) == 2
-#     # Now create another history with different session id
-#     other_history.add_user_message("Hellox")
-#     assert len(other_history.messages) == 1
-#     assert len(sql_history.messages) == 2
-#     # Now clear the first history
-#     sql_history.clear()
-#     assert len(sql_history.messages) == 0
-#     assert len(other_history.messages) == 1
