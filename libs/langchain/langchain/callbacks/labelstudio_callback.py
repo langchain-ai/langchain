@@ -1,21 +1,18 @@
 import os
 import warnings
 from datetime import datetime
+from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
-from enum import Enum
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import (
     AgentAction,
     AgentFinish,
-    LLMResult,
-    Generation,
     BaseMessage,
     ChatMessage,
-    HumanMessage,
-    SystemMessage,
-    AIMessage,
+    Generation,
+    LLMResult,
 )
 
 
@@ -93,9 +90,11 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
             import label_studio_sdk as ls
         except ImportError:
             raise ImportError(
-                f"You're using {self.__class__.__name__} in your code, but you don't have the LabelStudio SDK "
+                f"You're using {self.__class__.__name__} in your code,"
+                f" but you don't have the LabelStudio SDK "
                 f"Python package installed or upgraded to the latest version. "
-                f"Please run `pip install -U label-studio-sdk` before using this callback."
+                f"Please run `pip install -U label-studio-sdk`"
+                f" before using this callback."
             )
 
         # Check if Label Studio API key is provided
@@ -104,11 +103,14 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
                 api_key = str(os.getenv("LABEL_STUDIO_API_KEY"))
             else:
                 raise ValueError(
-                    f"You're using {self.__class__.__name__} in your code, Label Studio API key is not provided. "
-                    f"Please provide Label Studio API key: go to the Label Studio instance, navigate to "
+                    f"You're using {self.__class__.__name__} in your code,"
+                    f" Label Studio API key is not provided. "
+                    f"Please provide Label Studio API key: "
+                    f"go to the Label Studio instance, navigate to "
                     f"Account & Settings -> Access Token and copy the key. "
                     f"Use the key as a parameter for the callback: "
-                    f"{self.__class__.__name__}(label_studio_api_key='<your_key_here>', ...) or "
+                    f"{self.__class__.__name__}"
+                    f"(label_studio_api_key='<your_key_here>', ...) or "
                     f"set the environment variable LABEL_STUDIO_API_KEY=<your_key_here>"
                 )
         self.api_key = api_key
@@ -118,9 +120,11 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
                 url = os.getenv("LABEL_STUDIO_URL")
             else:
                 warnings.warn(
-                    f"Label Studio URL is not provided, using default URL: {ls.LABEL_STUDIO_DEFAULT_URL}"
+                    f"Label Studio URL is not provided, "
+                    f"using default URL: {ls.LABEL_STUDIO_DEFAULT_URL}"
                     f"If you want to provide your own URL, use the parameter: "
-                    f"{self.__class__.__name__}(label_studio_url='<your_url_here>', ...) "
+                    f"{self.__class__.__name__}"
+                    f"(label_studio_url='<your_url_here>', ...) "
                     f"or set the environment variable LABEL_STUDIO_URL=<your_url_here>"
                 )
                 url = ls.LABEL_STUDIO_DEFAULT_URL
@@ -142,11 +146,14 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
                 self.ls_project = existing_projects[0]
                 self.project_id = self.ls_project.id
                 warnings.warn(
-                    f'Project ID not provided. Retrieved project "{project_title}" from the Label Studio instance '
-                    f'based on canonical name "{self.project_name}" and the current date (ID={self.ls_project.id}).\n'
+                    f'Project ID not provided. Retrieved project "{project_title}"'
+                    f' from the Label Studio instance '
+                    f'based on canonical name "{self.project_name}" '
+                    f'and the current date (ID={self.ls_project.id}).\n'
                     f"If you want to provide your own project ID, use the parameter: "
                     f"{self.__class__.__name__}(project_id=<your_id_here>, ...) "
-                    f"or set the environment variable LABEL_STUDIO_PROJECT_ID=<your_id_here>"
+                    f"or set the environment variable "
+                    f"LABEL_STUDIO_PROJECT_ID=<your_id_here>"
                 )
             else:
                 self.ls_project = self.ls_client.create_project(
@@ -154,15 +161,19 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
                 )
                 self.project_id = self.ls_project.id
                 warnings.warn(
-                    f'Project ID not provided. Created project "{project_title}" from the Label Studio instance '
-                    f'based on canonical name "{self.project_name}" and the current date (ID={self.ls_project.id}).\n'
+                    f'Project ID not provided. Created project "{project_title}" '
+                    f'from the Label Studio instance '
+                    f'based on canonical name "{self.project_name}" and '
+                    f'the current date (ID={self.ls_project.id}).\n'
                     f"If you want to provide your own project ID, use the parameter: "
                     f"{self.__class__.__name__}(project_id=<your_id_here>, ...) "
-                    f"or set the environment variable LABEL_STUDIO_PROJECT_ID=<your_id_here>"
+                    f"or set the environment variable "
+                    f"LABEL_STUDIO_PROJECT_ID=<your_id_here>"
                 )
         self.parsed_label_config = self.ls_project.parsed_label_config
 
-        # Find the first TextArea tag - we will use the "from_name" and "to_name" from it to create predictions
+        # Find the first TextArea tag
+        # "from_name", "to_name", "value" will be used to create predictions
         self.from_name, self.to_name, self.value = None, None, None
         for tag_name, tag_info in self.parsed_label_config.items():
             if tag_info["type"] == "TextArea":
@@ -172,7 +183,8 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
                 break
         if not self.from_name:
             raise ValueError(
-                f'Label Studio project "{self.project_name}" does not have a TextArea tag. '
+                f'Label Studio project "{self.project_name}" '
+                f'does not have a TextArea tag. '
                 f"Please add a TextArea tag to the project."
             )
 

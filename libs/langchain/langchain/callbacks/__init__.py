@@ -18,6 +18,7 @@ from langchain.callbacks.file import FileCallbackHandler
 from langchain.callbacks.flyte_callback import FlyteCallbackHandler
 from langchain.callbacks.human import HumanApprovalCallbackHandler
 from langchain.callbacks.infino_callback import InfinoCallbackHandler
+from langchain.callbacks.labelstudio_callback import LabelStudioCallbackHandler
 from langchain.callbacks.manager import (
     get_openai_callback,
     tracing_enabled,
@@ -38,7 +39,6 @@ from langchain.callbacks.streamlit import LLMThoughtLabeler, StreamlitCallbackHa
 from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.callbacks.wandb_callback import WandbCallbackHandler
 from langchain.callbacks.whylabs_callback import WhyLabsCallbackHandler
-from langchain.callbacks.labelstudio_callback import LabelStudioCallbackHandler
 
 __all__ = [
     "AimCallbackHandler",
