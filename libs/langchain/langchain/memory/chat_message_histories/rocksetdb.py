@@ -15,7 +15,9 @@ class RocksetChatMessageHistory(BaseChatMessageHistory):
     Example:
         .. code-block:: python
 
-            from langchain.memory.chat_message_histories import RocksetChatMessageHistory
+            from langchain.memory.chat_message_histories import (
+                RocksetChatMessageHistory
+            )
             from rockset import RocksetClient
 
             history = RocksetChatMessageHistory(
@@ -225,7 +227,7 @@ class RocksetChatMessageHistory(BaseChatMessageHistory):
         Args:
             message: A BaseMessage object to store.
         """
-        if self.sync and not "id" in message.additional_kwargs:
+        if self.sync and "id" not in message.additional_kwargs:
             message.additional_kwargs["id"] = self.message_uuid_method()
         self.client.Documents.patch_documents(
             collection=self.collection,
