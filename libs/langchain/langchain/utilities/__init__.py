@@ -21,7 +21,7 @@ from langchain.utilities.metaphor_search import MetaphorSearchAPIWrapper
 from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
 from langchain.utilities.portkey import Portkey
 from langchain.utilities.powerbi import PowerBIDataset
-from langchain.utilities.pupmed import PubMedAPIWrapper
+from langchain.utilities.pubmed import PubMedAPIWrapper
 from langchain.utilities.python import PythonREPL
 from langchain.utilities.requests import Requests, RequestsWrapper, TextRequestsWrapper
 from langchain.utilities.scenexplain import SceneXplainAPIWrapper
