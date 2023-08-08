@@ -49,8 +49,13 @@ class PlaywrightURLLoader(BaseLoader):
         self.remove_selectors = remove_selectors
 
     def sync_evaluate_page(self, page):
-        """Process a page and return the text content.
-        This method can be overridden to apply custom logic.
+        """Process a page and return the text content synchronously.
+
+        Args:
+            page: The page to process.
+
+        Returns:
+            text: The text content of the page.
         """
         for selector in self.remove_selectors or []:
             elements = page.locator(selector).all()
@@ -64,8 +69,13 @@ class PlaywrightURLLoader(BaseLoader):
         return text
 
     async def async_evaluate_page(self, page):
-        """Process a page asynchronously and return the text content.
-        This method can be overridden to apply custom logic.
+        """Process a page and return the text content asynchronously.
+
+        Args:
+            page: The page to process.
+
+        Returns:
+            text: The text content of the page.
         """
         for selector in self.remove_selectors or []:
             elements = await page.locator(selector).all()
