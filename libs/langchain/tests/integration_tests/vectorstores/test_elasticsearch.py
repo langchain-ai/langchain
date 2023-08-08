@@ -8,9 +8,11 @@ import pytest
 from elasticsearch import Elasticsearch
 
 from langchain.docstore.document import Document
-from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores.elasticsearch import ElasticsearchStore
-from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
+from tests.integration_tests.vectorstores.fake_embeddings import (
+    FakeEmbeddings,
+    ConsistentFakeEmbeddings,
+)
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -26,7 +28,7 @@ These tests that require the models to be deployed are skipped by default. Enabl
 """
 
 modelsDeployed = [
-    # "elser",
+    "elser",
     # "sentence-transformers__all-minilm-l6-v2",
 ]
 
@@ -91,6 +93,19 @@ class TestElasticsearch:
         self, elasticsearch_connection: dict, index_name: str
     ) -> None:
         """Test end to end construction and search without metadata."""
+
+        def assert_query(query_body: dict, query: str) -> dict:
+            assert query_body == {
+                "knn": {
+                    "field": "vector",
+                    "filter": [],
+                    "k": 1,
+                    "num_candidates": 50,
+                    "query_vector": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0],
+                }
+            }
+            return query_body
+
         texts = ["foo", "bar", "baz"]
         print(elasticsearch_connection)
         docsearch = ElasticsearchStore.from_texts(
@@ -100,7 +115,7 @@ class TestElasticsearch:
             index_name=index_name,
         )
         docsearch.client.indices.refresh(index=index_name)
-        output = docsearch.similarity_search("foo", k=1)
+        output = docsearch.similarity_search("foo", k=1, custom_query=assert_query)
         assert output == [Document(page_content="foo")]
 
     @pytest.mark.asyncio
@@ -155,8 +170,24 @@ class TestElasticsearch:
             index_name=index_name,
         )
         docsearch.client.indices.refresh(index=index_name)
+
+        def assert_query(query_body: dict, query: str) -> dict:
+            assert query_body == {
+                "knn": {
+                    "field": "vector",
+                    "filter": [{"term": {"metadata.page": "1"}}],
+                    "k": 3,
+                    "num_candidates": 50,
+                    "query_vector": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0],
+                }
+            }
+            return query_body
+
         output = docsearch.similarity_search(
-            query="foo", k=3, filter=[{"term": {"metadata.page": "1"}}]
+            query="foo",
+            k=3,
+            filter=[{"term": {"metadata.page": "1"}}],
+            custom_query=assert_query,
         )
         assert output == [Document(page_content="foo", metadata={"page": 1})]
 
@@ -173,7 +204,35 @@ class TestElasticsearch:
             strategy=ElasticsearchStore.ExactRetrievalStrategy(),
         )
         docsearch.client.indices.refresh(index=index_name)
-        output = docsearch.similarity_search("foo", k=1)
+
+        def assert_query(query_body: dict, query: str) -> dict:
+            assert query_body == {
+                "query": {
+                    "script_score": {
+                        "query": {"bool": {"filter": []}},
+                        "script": {
+                            "source": "cosineSimilarity(params.query_vector, 'vector') + 1.0",
+                            "params": {
+                                "query_vector": [
+                                    1.0,
+                                    1.0,
+                                    1.0,
+                                    1.0,
+                                    1.0,
+                                    1.0,
+                                    1.0,
+                                    1.0,
+                                    1.0,
+                                    0.0,
+                                ]
+                            },
+                        },
+                    }
+                }
+            }
+            return query_body
+
+        output = docsearch.similarity_search("foo", k=1, custom_query=assert_query)
         assert output == [Document(page_content="foo")]
 
     def test_similarity_search_approx_with_hybrid_search(
@@ -189,14 +248,45 @@ class TestElasticsearch:
             strategy=ElasticsearchStore.ApproxRetrievalStrategy(hybrid=True),
         )
         docsearch.client.indices.refresh(index=index_name)
-        output = docsearch.similarity_search("foo", k=1)
+
+        def assert_query(query_body: dict, query: str) -> dict:
+            assert query_body == {
+                "knn": {
+                    "field": "vector",
+                    "filter": [],
+                    "k": 1,
+                    "num_candidates": 50,
+                    "query_vector": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0],
+                },
+                "query": {
+                    "bool": {
+                        "filter": [],
+                        "must": [{"match": {"text": {"query": "foo"}}}],
+                    }
+                },
+                "rank": {"rrf": {}},
+            }
+            return query_body
+
+        output = docsearch.similarity_search("foo", k=1, custom_query=assert_query)
         assert output == [Document(page_content="foo")]
 
     def test_similarity_search_approx_with_custom_query_fn(
         self, elasticsearch_connection: dict, index_name: str
     ) -> None:
+        """test that custom query function is called with the query string and query body"""
+
         def my_custom_query(query_body: dict, query: str) -> dict:
             assert query == "foo"
+            assert query_body == {
+                "knn": {
+                    "field": "vector",
+                    "filter": [],
+                    "k": 1,
+                    "num_candidates": 50,
+                    "query_vector": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0],
+                }
+            }
             return {"query": {"match": {"text": {"query": "bar"}}}}
 
         """Test end to end construction and search with metadata."""
@@ -215,6 +305,7 @@ class TestElasticsearch:
     def test_similarity_search_with_approx_infer_instack(
         self, elasticsearch_connection: dict, index_name: str
     ) -> None:
+        """test end to end with approx retrieval strategy and inference in-stack"""
         docsearch = ElasticsearchStore(
             index_name=index_name,
             strategy=ElasticsearchStore.ApproxRetrievalStrategy(
@@ -225,6 +316,7 @@ class TestElasticsearch:
             **elasticsearch_connection,
         )
 
+        # setting up the pipeline for inference
         docsearch.client.ingest.put_pipeline(
             id="test_pipeline",
             processors=[
@@ -238,6 +330,7 @@ class TestElasticsearch:
             ],
         )
 
+        # creating a new index with the pipeline, not relying on langchain to create the index
         docsearch.client.indices.create(
             index=index_name,
             mappings={
@@ -258,6 +351,7 @@ class TestElasticsearch:
             settings={"index": {"default_pipeline": "pipeline"}},
         )
 
+        # adding documents to the index
         texts = ["foo", "bar", "baz"]
 
         for i, text in enumerate(texts):
@@ -268,9 +362,20 @@ class TestElasticsearch:
             )
 
         docsearch.client.indices.refresh(index=index_name)
-        # print(docsearch.client.search(index=index_name, query={"match_all": {}}))
 
-        output = docsearch.similarity_search("foo", k=1)
+        def assert_query(query_body: dict, query: str) -> dict:
+            assert query_body == {
+                "knn": {
+                    "field": "vector",
+                    "filter": [],
+                    "k": 1,
+                    "num_candidates": 50,
+                    "query_vector": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0],
+                },
+            }
+            return query_body
+
+        output = docsearch.similarity_search("foo", k=1, custom_query=assert_query)
         assert output == [Document(page_content="foo")]
 
         output = docsearch.similarity_search("bar", k=1)
@@ -283,6 +388,7 @@ class TestElasticsearch:
     def test_similarity_search_with_sparse_infer_instack(
         self, elasticsearch_connection: dict, index_name: str
     ) -> None:
+        """test end to end with sparse retrieval strategy and inference in-stack"""
         texts = ["foo", "bar", "baz"]
         docsearch = ElasticsearchStore.from_texts(
             texts,
@@ -316,3 +422,41 @@ class TestElasticsearch:
             embedding=embedded_query, k=1
         )
         assert output == [(Document(page_content="foo", metadata={"page": "0"}), 1.0)]
+
+    def test_elasticsearch_delete_ids(
+        self, elasticsearch_connection: dict, index_name: str
+    ) -> None:
+        """Test delete methods from vector store."""
+        texts = ["foo", "bar", "baz", "gni"]
+        metadatas = [{"page": i} for i in range(len(texts))]
+        docsearch = ElasticsearchStore(
+            embedding=ConsistentFakeEmbeddings(),
+            **elasticsearch_connection,
+            index_name=index_name,
+        )
+
+        ids = docsearch.add_texts(texts, metadatas)
+        print(ids)
+        docsearch.client.indices.refresh(index=index_name)
+        output = docsearch.similarity_search("foo", k=10)
+        assert len(output) == 4
+
+        docsearch.delete(ids[1:3])
+        docsearch.client.indices.refresh(index=index_name)
+        output = docsearch.similarity_search("foo", k=10)
+        assert len(output) == 2
+
+        docsearch.delete(["not-existing"])
+        docsearch.client.indices.refresh(index=index_name)
+        output = docsearch.similarity_search("foo", k=10)
+        assert len(output) == 2
+
+        docsearch.delete([ids[0]])
+        docsearch.client.indices.refresh(index=index_name)
+        output = docsearch.similarity_search("foo", k=10)
+        assert len(output) == 1
+
+        docsearch.delete([ids[3]])
+        docsearch.client.indices.refresh(index=index_name)
+        output = docsearch.similarity_search("gni", k=10)
+        assert len(output) == 0

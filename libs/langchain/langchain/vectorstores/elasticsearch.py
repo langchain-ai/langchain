@@ -5,6 +5,7 @@ from langchain.embeddings.base import Embeddings
 from langchain.docstore.document import Document
 from langchain.vectorstores.utils import DistanceStrategy
 from abc import ABC, abstractmethod
+import uuid
 
 import logging
 
@@ -465,6 +466,26 @@ class ElasticsearchStore(VectorStore):
 
         return docs_and_scores
 
+    def delete(self, ids: List[str]) -> None:
+        body = []
+        for _id in ids:
+            body.extend(
+                [
+                    {"delete": {"_index": self.index_name, "_id": _id}},
+                ]
+            )
+
+        if len(body) > 0:
+            try:
+                self.client.bulk(operations=body)
+                logger.debug(f"Deleted {len(body)} texts from index")
+            except Exception as e:
+                logger.error(f"Error deleting texts: {e}")
+                raise e
+
+        else:
+            logger.debug("No texts to delete from index")
+
     def _create_index_if_not_exists(
         self, index_name: str, dims_length: Optional[int] = None
     ) -> None:
@@ -497,6 +518,7 @@ class ElasticsearchStore(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[Dict[Any, Any]]] = None,
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
         if self.embedding is not None:
@@ -517,13 +539,18 @@ class ElasticsearchStore(VectorStore):
             self._create_index_if_not_exists(index_name=self.index_name)
 
         body = []
+        ids = ids or [str(uuid.uuid4()) for _ in texts]
         for i, (text, vector) in enumerate(zip(texts, embeddings)):
             metadata = metadatas[i] if metadatas else {}
 
             body.extend(
                 [
-                    {"index": {"_index": self.index_name}},
-                    {"text": text, "vector": vector, "metadata": metadata},
+                    {"index": {"_index": self.index_name, "_id": ids[i]}},
+                    {
+                        self.query_field: text,
+                        self.vector_query_field: vector,
+                        "metadata": metadata,
+                    },
                 ]
             )
 
@@ -535,6 +562,8 @@ class ElasticsearchStore(VectorStore):
                 for item in responses["items"]
                 if item["index"]["result"] == "created"
             ]
+
+            logger.debug(f"added texts {ids} to index")
 
             return ids
 
