@@ -619,6 +619,7 @@ class Chroma(VectorStore):
                     "Try filter complex metadata from the document using "
                     "langchain.vectorstore.utils.filter_complex_metadata."
                 )
+                raise ValueError(str(e) + "\n" + msg)
 
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> None:
         """Delete by vector IDs.
