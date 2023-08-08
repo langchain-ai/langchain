@@ -1,6 +1,7 @@
 from typing import Optional
 
 import pytest
+from qdrant_client import models
 
 from langchain.schema import Document
 from langchain.vectorstores import Qdrant
@@ -8,7 +9,6 @@ from langchain.vectorstores.qdrant import MetadataFilter
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
 )
-from qdrant_client import models
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])
