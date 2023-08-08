@@ -314,28 +314,28 @@ def _validate_example_inputs_for_chain(
     """Validate that the example inputs match the chain input keys."""
     if input_mapper:
         first_inputs = input_mapper(first_example.inputs)
+        missing_keys = set(chain.input_keys).difference(first_inputs)
         if not isinstance(first_inputs, dict):
             raise InputFormatError(
                 "When using an input_mapper to prepare dataset example"
                 " inputs for a chain, the mapped value must be a dictionary."
                 f"\nGot: {first_inputs} of type {type(first_inputs)}."
             )
-        if not set(first_inputs.keys()) == set(chain.input_keys):
+        if missing_keys:
             raise InputFormatError(
-                "When using an input_mapper to prepare dataset example inputs"
-                " for a chain mapped value must have keys that match the chain's"
-                " expected input keys."
+                "Missing keys after loading example using input_mapper."
                 f"\nExpected: {chain.input_keys}. Got: {first_inputs.keys()}"
             )
     else:
         first_inputs = first_example.inputs
+        missing_keys = set(chain.input_keys).difference(first_inputs)
         if len(first_inputs) == 1 and len(chain.input_keys) == 1:
             # We can pass this through the run method.
             # Refrain from calling to validate.
             pass
-        elif not set(first_inputs.keys()) == set(chain.input_keys):
+        elif missing_keys:
             raise InputFormatError(
-                "Example inputs do not match chain input keys."
+                "Example inputs missing expected chain input keys."
                 " Please provide an input_mapper to convert the example.inputs"
                 " to a compatible format for the chain you wish to evaluate."
                 f"Expected: {chain.input_keys}. "
