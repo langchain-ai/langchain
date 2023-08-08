@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TypeVar, Generic, Sequence, List, Optional, Tuple, Iterator
+from typing import Generic, Iterator, List, Optional, Sequence, Tuple, TypeVar, Union
 
 K = TypeVar("K")
 V = TypeVar("V")
@@ -37,12 +37,17 @@ class BaseStore(Generic[K, V], ABC):
         """
 
     @abstractmethod
-    def yield_keys(self, *, prefix: Optional[str] = None) -> Iterator[K]:
+    def yield_keys(
+        self, *, prefix: Optional[str] = None
+    ) -> Union[Iterator[K], Iterator[str]]:
         """Get an iterator over keys that match the given prefix.
 
         Args:
             prefix (str): The prefix to match.
 
         Returns:
-            Iterator[K]: An iterator over keys that match the given prefix.
+            Iterator[K | str]: An iterator over keys that match the given prefix.
+
+            This method is allowed to return an iterator over either K or str
+            depending on what makes more sense for the given store.
         """

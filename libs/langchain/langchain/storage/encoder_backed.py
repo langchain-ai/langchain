@@ -1,4 +1,15 @@
-from typing import Any, Callable, Iterator, List, Optional, Sequence, Tuple, TypeVar
+from typing import (
+    Any,
+    Callable,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
+)
+
 from langchain.schema import BaseStore
 
 K = TypeVar("K")
@@ -58,11 +69,6 @@ class EncoderBackedStore(BaseStore[K, V]):
         encoded_keys: List[str] = [self.key_encoder(key) for key in keys]
         values = self.store.mget(encoded_keys)
         return [
-            # None is special since that's what we use to denote a missing value
-            # This convention will lead to an issue when we want to distinguish
-            # between a value missing from cache vs. caching a value that is known
-            # not to exist!! The latter is important to avoid repeated lookups for
-            # non-existent values.
             self.value_deserializer(value) if value is not None else value
             for value in values
         ]
@@ -80,8 +86,10 @@ class EncoderBackedStore(BaseStore[K, V]):
         encoded_keys = [self.key_encoder(key) for key in keys]
         self.store.mdelete(encoded_keys)
 
-    def yield_keys(self, *, prefix: Optional[str] = None) -> Iterator[K]:
+    def yield_keys(
+        self, *, prefix: Optional[str] = None
+    ) -> Union[Iterator[K], Iterator[str]]:
         """Get an iterator over keys that match the given prefix."""
         # For the time being this does not return K, but str
         # it's for debugging purposes. Should fix this.
-        yield from self.store.yield_keys(prefix=prefix)  # type: ignore
+        yield from self.store.yield_keys(prefix=prefix)
