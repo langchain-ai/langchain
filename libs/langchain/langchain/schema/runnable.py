@@ -276,7 +276,6 @@ class Runnable(Generic[Input, Output], ABC):
                         except TypeError:
                             final_input = None
                             final_input_supported = False
-                            pass
         except Exception as e:
             run_manager.on_chain_error(
                 e,
@@ -307,7 +306,7 @@ class Runnable(Generic[Input, Output], ABC):
         # tee the input so we can iterate over it twice
         input_for_tracing, input_for_transform = atee(input, 2)
         # Start the input iterator to ensure the input runnable starts before this one
-        final_input: Union[Input, None] = await anext(input_for_tracing, None)
+        final_input: Optional[Input] = await anext(input_for_tracing, None)
         final_input_supported = True
         final_output: Optional[Output] = None
         final_output_supported = True
@@ -335,7 +334,6 @@ class Runnable(Generic[Input, Output], ABC):
                         except TypeError:
                             final_output = None
                             final_output_supported = False
-                            pass
             async for ichunk in input_for_tracing:
                 if final_input_supported:
                     if final_input is None:
@@ -346,7 +344,6 @@ class Runnable(Generic[Input, Output], ABC):
                         except TypeError:
                             final_input = None
                             final_input_supported = False
-                            pass
         except Exception as e:
             await run_manager.on_chain_error(
                 e,
