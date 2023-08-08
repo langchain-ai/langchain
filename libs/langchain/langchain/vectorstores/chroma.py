@@ -616,7 +616,7 @@ class Chroma(VectorStore):
         except ValueError as e:
             if "Expected metadata value to be a str, int, float or bool" in str(e):
                 msg = (
-                    "Try filter complex metadata from the document using "
+                    "Try filtering complex metadata from the document using "
                     "langchain.vectorstore.utils.filter_complex_metadata."
                 )
                 raise ValueError(str(e) + "\n" + msg)
