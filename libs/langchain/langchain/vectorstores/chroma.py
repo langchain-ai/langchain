@@ -634,7 +634,7 @@ def _filter_list_metadata(metadatas: List[Dict]) -> List[Dict]:
             if isinstance(value, list):
                 if not warned_about_list:
                     logger.warning(
-                        "List metadata detected. Skipping."
+                        "List metadata detected. Skipping. "
                         "Metadata values for Chroma must be str, int, float or bool."
                     )
                     warned_about_list = True
