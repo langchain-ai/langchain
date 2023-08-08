@@ -1,11 +1,10 @@
 """Loads local airbyte json files."""
-from typing import Any, Callable, Iterator, List, Literal, Mapping, Optional
-
-from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
+from typing import Any, Callable, Iterator, List, Mapping, Optional
 
 from libs.langchain.langchain.utils.utils import guard_import
 
+from langchain.docstore.document import Document
+from langchain.document_loaders.base import BaseLoader
 
 RecordHandler = Callable[[Any, Optional[str]], Document]
 
@@ -21,11 +20,11 @@ class AirbyteCDKLoader(BaseLoader):
         record_handler: Optional[RecordHandler] = None,
         state: Optional[Any] = None,
     ) -> None:
+        from airbyte_cdk.models.airbyte_protocol import AirbyteRecordMessage
         from airbyte_cdk.sources.embedded.base_integration import (
             BaseEmbeddedIntegration,
         )
         from airbyte_cdk.sources.embedded.runner import CDKRunner
-        from airbyte_cdk.models.airbyte_protocol import AirbyteRecordMessage
 
         class CDKIntegration(BaseEmbeddedIntegration):
             def _handle_record(
