@@ -3,7 +3,7 @@
 import json
 import re
 import warnings
-from typing import TYPE_CHECKING, Optional, List, Union, Iterator
+from typing import TYPE_CHECKING, Iterator, List, Optional, Union
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
