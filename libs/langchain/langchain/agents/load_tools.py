@@ -196,7 +196,7 @@ def _get_golden_query(**kwargs: Any) -> BaseTool:
     return GoldenQueryRun(api_wrapper=GoldenQueryAPIWrapper(**kwargs))
 
 
-def _get_pupmed(**kwargs: Any) -> BaseTool:
+def _get_pubmed(**kwargs: Any) -> BaseTool:
     return PubmedQueryRun(api_wrapper=PubMedAPIWrapper(**kwargs))
 
 
@@ -313,10 +313,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
         ["top_k_results", "load_max_docs", "load_all_available_meta"],
     ),
     "golden-query": (_get_golden_query, ["golden_api_key"]),
-    "pupmed": (
-        _get_pupmed,
-        ["top_k_results", "load_max_docs", "load_all_available_meta"],
-    ),
+    "pubmed": (_get_pubmed, ["top_k_results"]),
     "human": (_get_human_tool, ["prompt_func", "input_func"]),
     "awslambda": (
         _get_lambda_api,
