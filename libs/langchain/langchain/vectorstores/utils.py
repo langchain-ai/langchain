@@ -59,7 +59,6 @@ def filter_complex_metadata(documents: List[Document]) -> List[Document]:
     support in some vector dbs, including Chroma."""
     updated_documents = []
     for document in documents:
-
         filtered_metadata = {}
         for key, value in document.metadata.items():
             if not isinstance(value, bool) and not isinstance(value, (str, int, float)):
