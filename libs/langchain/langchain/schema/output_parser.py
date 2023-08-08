@@ -153,7 +153,7 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
         Returns:
             Structured output.
         """
-        return self.aparse(result[0].text)
+        return await self.aparse(result[0].text)
 
     async def aparse(self, text: str) -> T:
         """Parse a single string model output into some structure.
