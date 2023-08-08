@@ -8,7 +8,17 @@ from abc import ABC, abstractmethod
 
 import logging
 
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Callable
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Callable,
+    Union,
+)
 
 if TYPE_CHECKING:
     from elasticsearch import Elasticsearch
@@ -20,23 +30,23 @@ class BaseRetrievalStrategy(ABC):
     @abstractmethod
     def query(
         self,
-        query_vector: List[float] | None,
-        query: str | None,
+        query_vector: Union[List[float], None],
+        query: Union[str, None],
         k: int,
         fetch_k: int,
         vector_query_field: str,
         text_field: str,
         filter: List[dict],
-        similarity: DistanceStrategy | None,
+        similarity: Union[DistanceStrategy, None],
     ) -> Dict:
         pass
 
     @abstractmethod
     def index(
         self,
-        dims_length: int | None,
+        dims_length: Union[int, None],
         vector_query_field: str,
-        similarity: DistanceStrategy | None,
+        similarity: Union[DistanceStrategy, None],
     ) -> Dict:
         pass
 
@@ -60,14 +70,14 @@ class ApproxRetrievalStrategy(BaseRetrievalStrategy):
 
     def query(
         self,
-        query_vector: List[float] | None,
-        query: str | None,
+        query_vector: Union[List[float], None],
+        query: Union[str, None],
         k: int,
         fetch_k: int,
         vector_query_field: str,
         text_field: str,
         filter: List[dict],
-        similarity: DistanceStrategy | None,
+        similarity: Union[DistanceStrategy, None],
     ) -> Dict:
         knn = {
             "filter": filter,
@@ -122,7 +132,7 @@ class ApproxRetrievalStrategy(BaseRetrievalStrategy):
         self,
         dims_length: int,
         vector_query_field: str,
-        similarity: DistanceStrategy | None,
+        similarity: Union[DistanceStrategy, None],
     ) -> Dict:
         """Create the mapping for the Elasticsearch index."""
 
@@ -152,14 +162,14 @@ class ApproxRetrievalStrategy(BaseRetrievalStrategy):
 class ExactRetrievalStrategy(BaseRetrievalStrategy):
     def query(
         self,
-        query_vector: List[float] | None,
-        query: str | None,
+        query_vector: Union[List[float], None],
+        query: Union[str, None],
         k: int,
         fetch_k: int,
         vector_query_field: str,
         text_field: str,
-        filter: List[dict] | None,
-        similarity: DistanceStrategy | None,
+        filter: Union[List[dict], None],
+        similarity: Union[DistanceStrategy, None],
     ) -> Dict:
         logger.error(f"similarity {similarity}")
         if similarity is DistanceStrategy.COSINE:
@@ -199,7 +209,7 @@ class ExactRetrievalStrategy(BaseRetrievalStrategy):
         self,
         dims_length: int,
         vector_query_field: str,
-        similarity: DistanceStrategy | None,
+        similarity: Union[DistanceStrategy, None],
     ) -> Dict:
         """Create the mapping for the Elasticsearch index."""
 
@@ -218,14 +228,14 @@ class SparseRetrievalStrategy(BaseRetrievalStrategy):
 
     def query(
         self,
-        query_vector: List[float] | None,
-        query: str | None,
+        query_vector: Union[List[float], None],
+        query: Union[str, None],
         k: int,
         fetch_k: int,
         vector_query_field: str,
         text_field: str,
         filter: List[dict],
-        similarity: DistanceStrategy | None,
+        similarity: Union[DistanceStrategy, None],
     ) -> Dict:
         return {
             "query": {
@@ -273,7 +283,7 @@ class SparseRetrievalStrategy(BaseRetrievalStrategy):
     def index(
         self,
         vector_query_field: str,
-        similarity: DistanceStrategy | None,
+        similarity: Union[DistanceStrategy, None],
         dims_length: Optional[int] = None,
     ) -> Dict:
         return {
@@ -397,7 +407,7 @@ class ElasticsearchStore(VectorStore):
 
     def _search(
         self,
-        query: str | None = None,
+        query: Optional[str] = None,
         k: int = 4,
         query_vector: List[float] | None = None,
         fetch_k: int = 50,
@@ -537,7 +547,7 @@ class ElasticsearchStore(VectorStore):
         cls,
         texts: List[str],
         embedding: Optional[Embeddings] = None,
-        metadatas: Optional[List[Dict[Any, Any]]] = None,
+        metadatas: Optional[List[Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> "ElasticsearchStore":
         index_name = kwargs.get("index_name")
