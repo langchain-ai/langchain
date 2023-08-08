@@ -298,7 +298,7 @@ class AmazonKendraRetriever(BaseRetriever):
         client: boto3 client for Kendra
 
         user_context: Provides information about the user context
-            See: https://docs.aws.amazon.com/kendra/latest/APIReference/API_UserContext.html
+            See: https://docs.aws.amazon.com/kendra/latest/APIReference
 
     Example:
         .. code-block:: python
