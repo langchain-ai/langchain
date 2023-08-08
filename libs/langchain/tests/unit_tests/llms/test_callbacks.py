@@ -3,9 +3,11 @@ from langchain.chat_models.fake import FakeListChatModel
 from langchain.llms.fake import FakeListLLM
 from langchain.schema.messages import HumanMessage
 from tests.unit_tests.callbacks.fake_callback_handler import (
+    ChangePromptCallbackHandler,
     FakeCallbackHandler,
     FakeCallbackHandlerWithChatStart,
 )
+from tests.unit_tests.llms.echo_llm import EchoLLM
 
 
 def test_llm_with_callbacks() -> None:
@@ -48,3 +50,11 @@ def test_chat_model_with_v2_callbacks() -> None:
     assert handler.llm_starts == 0
     assert handler.llm_ends == 1
     assert handler.chat_model_starts == 1
+
+
+def test_callback_change_prompt() -> None:
+    handler = ChangePromptCallbackHandler()
+    handler.prompt_to_assign = "new prompt"
+    llm = EchoLLM(callbacks=[handler], verbose=True)
+    output = llm("foo")
+    assert output == "new prompt"

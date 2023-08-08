@@ -390,3 +390,14 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
 
     def __deepcopy__(self, memo: dict) -> "FakeAsyncCallbackHandler":
         return self
+
+
+class ChangePromptCallbackHandler(BaseCallbackHandler):
+    """Callback handler that changes the prompt."""
+
+    prompt_to_assign = "Tell me a joke?"
+
+    def on_llm_start(
+        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
+    ) -> Any:
+        prompts[0] = self.prompt_to_assign

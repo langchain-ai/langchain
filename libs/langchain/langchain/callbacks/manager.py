@@ -1058,20 +1058,22 @@ class CallbackManager(BaseCallbackManager):
                 prompt as an LLM run.
         """
         managers = []
-        for prompt in prompts:
+        for idx, prompt in enumerate(prompts):
+            prompt_list = [prompt]
             run_id_ = uuid.uuid4()
             _handle_event(
                 self.handlers,
                 "on_llm_start",
                 "ignore_llm",
                 serialized,
-                [prompt],
+                prompt_list,
                 run_id=run_id_,
                 parent_run_id=self.parent_run_id,
                 tags=self.tags,
                 metadata=self.metadata,
                 **kwargs,
             )
+            prompts[idx] = prompt_list[0]
 
             managers.append(
                 CallbackManagerForLLMRun(

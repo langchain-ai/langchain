@@ -577,26 +577,32 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
-            run_managers = [
-                callback_manager.on_llm_start(
-                    dumpd(self), [prompt], invocation_params=params, options=options
+            run_managers = []
+            for idx, callback_manager in enumerate(callback_managers):
+                prompt_list = [prompts[idx]]  # Creating a list to hold the prompt
+                run_manager = callback_manager.on_llm_start(
+                    dumpd(self), prompt_list, invocation_params=params, options=options
                 )[0]
-                for callback_manager, prompt in zip(callback_managers, prompts)
-            ]
+                prompts[idx] = prompt_list[
+                    0
+                ]  # Updating the original prompts list with the modified prompt
+                run_managers.append(run_manager)
             output = self._generate_helper(
                 prompts, stop, run_managers, bool(new_arg_supported), **kwargs
             )
             return output
         if len(missing_prompts) > 0:
-            run_managers = [
-                callback_managers[idx].on_llm_start(
+            run_managers = []
+            for idx in missing_prompt_idxs:
+                prompt_list = [prompts[idx]]
+                run_manager = callback_managers[idx].on_llm_start(
                     dumpd(self),
-                    [prompts[idx]],
+                    prompt_list,
                     invocation_params=params,
                     options=options,
                 )[0]
-                for idx in missing_prompt_idxs
-            ]
+                prompts[idx] = prompt_list[0]
+                run_managers.append(run_manager)
             new_results = self._generate_helper(
                 missing_prompts, stop, run_managers, bool(new_arg_supported), **kwargs
             )
@@ -721,37 +727,49 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         new_arg_supported = inspect.signature(self._agenerate).parameters.get(
             "run_manager"
         )
+
+        async def invoke_on_llm_start(
+            callback_manager: AsyncCallbackManager, prompt: str
+        ) -> Tuple[AsyncCallbackManagerForLLMRun, str]:
+            prompt_list = [prompt]
+            run_manager = await callback_manager.on_llm_start(
+                dumpd(self), prompt_list, invocation_params=params, options=options
+            )
+            return run_manager[0], prompt_list[0]
+
+        async def handle_llm_start(
+            callback_managers: List[AsyncCallbackManager],
+            prompt_indices: List[int],
+            prompts: List[str],
+        ) -> List[AsyncCallbackManagerForLLMRun]:
+            run_managers_and_prompts = await asyncio.gather(
+                *[
+                    invoke_on_llm_start(callback_managers[idx], prompts[idx])
+                    for idx in prompt_indices
+                ]
+            )
+            run_managers = [item[0] for item in run_managers_and_prompts]
+            for i, (_, updated_prompt) in zip(prompt_indices, run_managers_and_prompts):
+                prompts[i] = updated_prompt
+            return run_managers
+
         if langchain.llm_cache is None or disregard_cache:
             if self.cache is not None and self.cache:
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
-            run_managers = await asyncio.gather(
-                *[
-                    callback_manager.on_llm_start(
-                        dumpd(self), [prompt], invocation_params=params, options=options
-                    )
-                    for callback_manager, prompt in zip(callback_managers, prompts)
-                ]
+            run_managers = await handle_llm_start(
+                callback_managers, list(range(len(prompts))), prompts
             )
-            run_managers = [r[0] for r in run_managers]
             output = await self._agenerate_helper(
                 prompts, stop, run_managers, bool(new_arg_supported), **kwargs
             )
             return output
         if len(missing_prompts) > 0:
-            run_managers = await asyncio.gather(
-                *[
-                    callback_managers[idx].on_llm_start(
-                        dumpd(self),
-                        [prompts[idx]],
-                        invocation_params=params,
-                        options=options,
-                    )
-                    for idx in missing_prompt_idxs
-                ]
+            run_managers = await handle_llm_start(
+                callback_managers, missing_prompt_idxs, prompts
             )
-            run_managers = [r[0] for r in run_managers]
+            missing_prompts = [prompts[i] for i in missing_prompt_idxs]
             new_results = await self._agenerate_helper(
                 missing_prompts, stop, run_managers, bool(new_arg_supported), **kwargs
             )
