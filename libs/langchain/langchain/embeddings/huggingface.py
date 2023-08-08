@@ -6,9 +6,16 @@ from langchain.embeddings.base import Embeddings
 
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
 DEFAULT_INSTRUCT_MODEL = "hkunlp/instructor-large"
+DEFAULT_BGE_MODEL = "BAAI/bge-large-en"
 DEFAULT_EMBED_INSTRUCTION = "Represent the document for retrieval: "
 DEFAULT_QUERY_INSTRUCTION = (
     "Represent the question for retrieving supporting documents: "
+)
+DEFAULT_EMBED_BGE_INSTRUCTION = (
+    "Represent this sentence for searching relevant passages: "
+)
+DEFAULT_QUERY_BGE_INSTRUCTION = (
+    "Represent this question for searching relevant passages: "
 )
 
 
@@ -159,6 +166,89 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
 
     def embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a HuggingFace instruct model.
+
+        Args:
+            text: The text to embed.
+
+        Returns:
+            Embeddings for the text.
+        """
+        instruction_pair = [self.query_instruction, text]
+        embedding = self.client.encode([instruction_pair], **self.encode_kwargs)[0]
+        return embedding.tolist()
+
+
+class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
+    """HuggingFace BGE sentence_transformers embedding models.
+
+    To use, you should have the ``sentence_transformers`` python package installed.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.embeddings import HuggingFaceBgeEmbeddings
+
+            model_name = "BAAI/bge-large-en"
+            model_kwargs = {'device': 'cpu'}
+            encode_kwargs = {'normalize_embeddings': False}
+            hf = HuggingFaceBgeEmbeddings(
+                model_name=model_name,
+                model_kwargs=model_kwargs,
+                encode_kwargs=encode_kwargs
+            )
+    """
+
+    client: Any  #: :meta private:
+    model_name: str = DEFAULT_BGE_MODEL
+    """Model name to use."""
+    cache_folder: Optional[str] = None
+    """Path to store models.
+    Can be also set by SENTENCE_TRANSFORMERS_HOME environment variable."""
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """Key word arguments to pass to the model."""
+    encode_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """Key word arguments to pass when calling the `encode` method of the model."""
+    embed_instruction: str = DEFAULT_EMBED_BGE_INSTRUCTION
+    """Instruction to use for embedding documents."""
+    query_instruction: str = DEFAULT_QUERY_BGE_INSTRUCTION
+    """Instruction to use for embedding query."""
+
+    def __init__(self, **kwargs: Any):
+        """Initialize the sentence_transformer."""
+        super().__init__(**kwargs)
+        try:
+            import sentence_transformers
+
+        except ImportError as exc:
+            raise ImportError(
+                "Could not import sentence_transformers python package. "
+                "Please install it with `pip install sentence_transformers`."
+            ) from exc
+
+        self.client = sentence_transformers.SentenceTransformer(
+            self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
+        )
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        """Compute doc embeddings using a HuggingFace transformer model.
+
+        Args:
+            texts: The list of texts to embed.
+
+        Returns:
+            List of embeddings, one for each text.
+        """
+        instruction_pairs = [[self.embed_instruction, text] for text in texts]
+        embeddings = self.client.encode(instruction_pairs, **self.encode_kwargs)
+        return embeddings.tolist()
+
+    def embed_query(self, text: str) -> List[float]:
+        """Compute query embeddings using a HuggingFace transformer model.
 
         Args:
             text: The text to embed.
