@@ -7,7 +7,7 @@ from langchain.storage.exceptions import InvalidKeyException
 
 
 class LocalFileStore(BaseStore[str, bytes]):
-    """AbstractStore interface that works on the local file system.
+    """BaseStore interface that works on the local file system.
 
     Examples:
         Create a LocalFileStore instance and perform operations on it:
@@ -35,7 +35,7 @@ class LocalFileStore(BaseStore[str, bytes]):
     """
 
     def __init__(self, root_path: Union[str, Path]) -> None:
-        """Implement the AbstractStore interface for the local file system.
+        """Implement the BaseStore interface for the local file system.
 
         Args:
             root_path (Union[str, Path]): The root path of the file store. All keys are
