@@ -10,7 +10,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 if TYPE_CHECKING:
-    import arcgis_loader  # type: ignore
+    import arcgis  # type: ignore
 
 
 class ArcGISLoader(BaseLoader):
@@ -56,7 +56,7 @@ class ArcGISLoader(BaseLoader):
             "layer_properties": props,
         }
 
-    def __init__(
+    def __init__(  # type: ignore
         self,
         layer: Union[str, "arcgis.features.FeatureLayer"],  # type: ignore
         gis: Optional["arcgis.gis.GIS"] = None,  # type: ignore
