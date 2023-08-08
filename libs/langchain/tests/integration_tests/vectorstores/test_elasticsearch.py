@@ -20,6 +20,12 @@ logging.basicConfig(level=logging.DEBUG)
 cd tests/integration_tests/vectorstores/docker-compose
 docker-compose -f elasticsearch.yml up
 
+By default runs against local docker instance of Elasticsearch.
+To run against Elastic Cloud, set the following environment variables:
+- ES_CLOUD_ID
+- ES_USERNAME
+- ES_PASSWORD
+
 Some of the tests require the following models to be deployed in the ML Node:
 - elser (can be downloaded and deployed through Kibana and trained models UI)
 - sentence-transformers__all-minilm-l6-v2 (can be deployed through API, loaded via eland)

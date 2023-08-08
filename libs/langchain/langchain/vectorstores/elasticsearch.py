@@ -161,6 +161,7 @@ class ApproxRetrievalStrategy(BaseRetrievalStrategy):
 
 
 class ExactRetrievalStrategy(BaseRetrievalStrategy):
+            
     def query(
         self,
         query_vector: Union[List[float], None],
@@ -303,6 +304,110 @@ class SparseRetrievalStrategy(BaseRetrievalStrategy):
 
 
 class ElasticsearchStore(VectorStore):
+
+    """Wrapper around Elasticsearch search database.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.vectorstores import ElasticsearchStore
+            from langchain.embeddings.openai import OpenAIEmbeddings
+
+            embeddings = OpenAIEmbeddings()
+            vectorstore = ElasticsearchStore(
+                embedding=OpenAIEmbeddings(),
+                index_name="langchain-demo",
+                es_url="http://localhost:9200"
+            )
+
+    Args:
+        index_name: Name of the Elasticsearch index to create.
+        es_url: URL of the Elasticsearch instance to connect to.
+        cloud_id: Cloud ID of the Elasticsearch instance to connect to.
+        es_user: Username to use when connecting to Elasticsearch.
+        es_password: Password to use when connecting to Elasticsearch.
+        es_api_key: API key to use when connecting to Elasticsearch.
+        es_connection: Optional pre-existing Elasticsearch connection.
+        vector_query_field: Optional. Name of the field to store the embedding vectors in.
+        query_field: Optional. Name of the field to store the texts in.
+        strategy: Optional. Retrieval strategy to use when searching the index. Defaults to ApproxRetrievalStrategy. Can be one of ExactRetrievalStrategy, ApproxRetrievalStrategy, or SparseRetrievalStrategy.
+        distance_strategy: Optional. Distance strategy to use when searching the index.
+
+    If you want to use a cloud hosted Elasticsearch instance, you can pass in the
+    cloud_id argument instead of the es_url argument.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.vectorstores import ElasticsearchStore
+            from langchain.embeddings.openai import OpenAIEmbeddings
+
+            vectorstore = ElasticsearchStore(
+                embedding=OpenAIEmbeddings(),
+                index_name="langchain-demo",
+                es_cloud_id="<cloud_id>"
+                es_user="elastic",
+                es_password="<password>"
+            )
+
+    You can also connect to an existing Elasticsearch instance by passing in a
+    pre-existing Elasticsearch connection via the es_connection argument.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.vectorstores import ElasticsearchStore
+            from langchain.embeddings.openai import OpenAIEmbeddings
+
+            from elasticsearch import Elasticsearch
+
+            es_connection = Elasticsearch("http://localhost:9200")
+
+            vectorstore = ElasticsearchStore(
+                embedding=OpenAIEmbeddings(),
+                index_name="langchain-demo",
+                es_connection=es_connection
+            )
+    
+    ElasticsearchStore by default uses the ApproxRetrievalStrategy, which uses the
+    HNSW algorithm to perform approximate nearest neighbor search. This is the
+    fastest and most memory efficient algorithm.
+
+    If you want to use the Brute force / Exact strategy for searching vectors, you
+    can pass in the ExactRetrievalStrategy to the ElasticsearchStore constructor.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.vectorstores import ElasticsearchStore
+            from langchain.embeddings.openai import OpenAIEmbeddings
+
+            vectorstore = ElasticsearchStore(
+                embedding=OpenAIEmbeddings(),
+                index_name="langchain-demo",
+                es_url="http://localhost:9200",
+                strategy=ElasticsearchStore.ExactRetrievalStrategy()
+            )
+
+    Both strategies require that you know the similarity metric you want to use
+    when creating the index. The default is cosine similarity, but you can also
+    use dot product or euclidean distance.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.vectorstores import ElasticsearchStore
+            from langchain.embeddings.openai import OpenAIEmbeddings
+            from langchain.vectorstores.utils import DistanceStrategy
+
+            vectorstore = ElasticsearchStore(
+                embedding=OpenAIEmbeddings(),
+                index_name="langchain-demo",
+                es_url="http://localhost:9200",
+                distance_strategy=DistanceStrategy.DOT_PRODUCT
+            )
+     
+    """
     def __init__(
         self,
         index_name: str,
@@ -384,8 +489,15 @@ class ElasticsearchStore(VectorStore):
     def similarity_search(
         self, query: str, filter: Optional[List[dict]] = None, k: int = 4, **kwargs: Any
     ) -> List[Document]:
-        """
-        Pass through to `_search`, only returning the documents and not the scores.
+        """Return Elasticsearch documents most similar to query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Array of Elasticsearch filter clauses to apply to the query.
+
+        Returns:
+            List of Documents most similar to the query, in descending order of similarity.
         """
 
         results = self._search(query=query, k=k, filter=filter, **kwargs)
@@ -394,7 +506,16 @@ class ElasticsearchStore(VectorStore):
     def similarity_search_with_score(
         self, query: str, k: int = 4, filter: Optional[List[dict]] = None, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
-        """Pass through to `_search including score`"""
+        """Return Elasticsearch documents most similar to query, along with scores.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Array of Elasticsearch filter clauses to apply to the query.
+
+        Returns:
+            List of Documents most similar to the query and score for each
+        """
         return self._search(query=query, k=k, filter=filter, **kwargs)
 
     def similarity_search_by_vector_with_relevance_scores(
@@ -404,6 +525,16 @@ class ElasticsearchStore(VectorStore):
         filter: Optional[List[Dict]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
+        """Return Elasticsearch documents most similar to query, along with scores.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Array of Elasticsearch filter clauses to apply to the query.
+
+        Returns:
+            List of Documents most similar to the embedding and score for each
+        """
         return self._search(query_vector=embedding, k=k, filter=filter, **kwargs)
 
     def _search(
@@ -416,6 +547,20 @@ class ElasticsearchStore(VectorStore):
         filter: Optional[List[dict]] = None,
         custom_query: Optional[Callable[[Dict, str | None], Dict]] = None,
     ) -> List[Tuple[Document, float]]:
+        """Return Elasticsearch documents most similar to query, along with scores.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            query_vector: Embedding to look up documents similar to.
+            fetch_k: Number of candidates to fetch from each shard. Defaults to 50.
+            fields: List of fields to return from Elasticsearch. Defaults to only returning the text field.
+            filter: Array of Elasticsearch filter clauses to apply to the query.
+            custom_query: Function to modify the Elasticsearch query body before it is sent to Elasticsearch.
+
+        Returns:
+            List of Documents most similar to the query and score for each
+        """
         if fields is None:
             fields = []
 
@@ -435,7 +580,7 @@ class ElasticsearchStore(VectorStore):
             vector_query_field=self.vector_query_field,
             text_field=self.query_field,
             filter=filter or [],
-            similarity=self.distance_strategy,
+            similarity=self.distance_strategy
         )
 
         logger.debug(f"Query body: {query_body}")
@@ -467,6 +612,11 @@ class ElasticsearchStore(VectorStore):
         return docs_and_scores
 
     def delete(self, ids: List[str]) -> None:
+        """Delete documents from the Elasticsearch index.
+
+        Args:
+            ids: List of ids of documents to delete.
+        """
         body = []
         for _id in ids:
             body.extend(
@@ -489,6 +639,14 @@ class ElasticsearchStore(VectorStore):
     def _create_index_if_not_exists(
         self, index_name: str, dims_length: Optional[int] = None
     ) -> None:
+        
+        """Create the Elasticsearch index if it doesn't already exist.
+
+        Args:
+            index_name: Name of the Elasticsearch index to create.
+            dims_length: Length of the embedding vectors.
+        """
+
         if self.client.indices.exists(index=index_name):
             logger.debug(f"Index {index_name} already exists. Skipping creation.")
 
@@ -521,6 +679,17 @@ class ElasticsearchStore(VectorStore):
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
+        """Run more texts through the embeddings and add to the vectorstore.
+
+        Args:
+            texts: Iterable of strings to add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of ids to associate with the texts.
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+
+        """
         if self.embedding is not None:
             # If no search_type requires inference, we use the provided
             # embedding function to embed the texts.
@@ -579,6 +748,37 @@ class ElasticsearchStore(VectorStore):
         metadatas: Optional[List[Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> "ElasticsearchStore":
+        """Construct ElasticsearchStore wrapper from raw documents.
+
+        Example:
+            .. code-block:: python
+
+                from langchain.vectorstores import ElasticsearchStore
+                from langchain.embeddings.openai import OpenAIEmbeddings
+
+                pinecone = ElasticsearchStore.from_texts(
+                    texts,
+                    embeddings,
+                    index_name="langchain-demo",
+                    es_url="http://localhost:9200"
+                )
+
+        Args:
+            texts: List of texts to add to the Elasticsearch index.
+            embedding: Embedding function to use to embed the texts.
+            metadatas: Optional list of metadatas associated with the texts.
+            index_name: Name of the Elasticsearch index to create.
+            es_url: URL of the Elasticsearch instance to connect to.
+            cloud_id: Cloud ID of the Elasticsearch instance to connect to.
+            es_user: Username to use when connecting to Elasticsearch.
+            es_password: Password to use when connecting to Elasticsearch.
+            es_api_key: API key to use when connecting to Elasticsearch.
+            es_connection: Optional pre-existing Elasticsearch connection.
+            vector_query_field: Optional. Name of the field to store the embedding vectors in.
+            query_field: Optional. Name of the field to store the texts in.
+        """
+
+
         index_name = kwargs.get("index_name")
 
         if index_name is None:
@@ -589,6 +789,7 @@ class ElasticsearchStore(VectorStore):
         es_url = kwargs.get("es_url")
         es_user = kwargs.get("es_user")
         es_password = kwargs.get("es_password")
+        es_api_key = kwargs.get("es_api_key")
         vector_query_field = kwargs.get("vector_query_field")
         query_field = kwargs.get("query_field")
         strategy = kwargs.get("strategy", ElasticsearchStore.ApproxRetrievalStrategy())
@@ -609,6 +810,7 @@ class ElasticsearchStore(VectorStore):
             es_cloud_id=es_cloud_id,
             es_user=es_user,
             es_password=es_password,
+            es_api_key=es_api_key,
             strategy=strategy,
             **optional_args,
         )
@@ -623,6 +825,7 @@ class ElasticsearchStore(VectorStore):
 
     @staticmethod
     def ExactRetrievalStrategy() -> "ExactRetrievalStrategy":
+        """Used to perform brute force / exact nearest neighbor search via script_score."""
         return ExactRetrievalStrategy()
 
     @staticmethod
@@ -630,10 +833,31 @@ class ElasticsearchStore(VectorStore):
         query_model_id: Optional[str] = None,
         hybrid: Optional[bool] = False,
     ) -> "ApproxRetrievalStrategy":
+        """Used to perform approximate nearest neighbor search using the HNSW algorithm.
+
+        At build index time, this strategy will create a dense vector field in the index and store the embedding vectors in the index.
+
+        At query time, the text will either be embedded using the provided embedding function or the query_model_id will be used to embed the text using the model deployed to Elasticsearch.
+
+        if query_model_id is used, do not provide an embedding function. 
+
+        Args:
+            query_model_id: Optional. ID of the model to use to embed the query text within the stack. Requires embedding model to be deployed to Elasticsearch.
+            hybrid: Optional. If True, will perform a hybrid search using both the knn query and a text query. Defaults to False.
+        """
         return ApproxRetrievalStrategy(query_model_id=query_model_id, hybrid=hybrid)
 
     @staticmethod
     def SparseVectorRetrievalStrategy(
         model_id: Optional[str] = None,
     ) -> "SparseRetrievalStrategy":
+        """Used to perform sparse vector search via text_expansion. Used for when you want to use ELSER model to perform document search.
+
+        At build index time, this strategy will create a pipeline that will embed the text using the ELSER model and store the resulting tokens in the index. 
+        
+        At query time, the text will be embedded using the ELSER model and the resulting tokens will be used to perform a text_expansion query.
+        
+        Args:
+            model_id: Optional. Default is ".elser_model_1". ID of the model to use to embed the query text within the stack. Requires embedding model to be deployed to Elasticsearch. 
+        """
         return SparseRetrievalStrategy(model_id=model_id)
