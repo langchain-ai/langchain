@@ -11,6 +11,7 @@ from langchain.callbacks.manager import Callbacks
 from langchain.chains.api import news_docs, open_meteo_docs, podcast_docs, tmdb_docs
 from langchain.chains.api.base import APIChain
 from langchain.chains.llm_math.base import LLMMathChain
+from langchain.utilities.dalle_image_generator import DallEAPIWrapper
 from langchain.utilities.requests import TextRequestsWrapper
 from langchain.tools.arxiv.tool import ArxivQueryRun
 from langchain.tools.golden_query.tool import GoldenQueryRun
@@ -221,6 +222,14 @@ def _get_serpapi(**kwargs: Any) -> BaseTool:
     )
 
 
+def _get_dalle_image_generator(**kwargs: Any) -> Tool:
+    return Tool(
+        "Dall-E Image Generator",
+        DallEAPIWrapper(**kwargs).run,
+        "A wrapper around OpenAI DALL-E API. Useful for when you need to generate images from a text description. Input should be an image description.",
+    )
+
+
 def _get_twilio(**kwargs: Any) -> BaseTool:
     return Tool(
         name="Text Message",
@@ -305,6 +314,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
         ["serper_api_key", "aiosession"],
     ),
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
+    "dalle-image-generator": (_get_dalle_image_generator, ["openai_api_key"]),
     "twilio": (_get_twilio, ["account_sid", "auth_token", "from_number"]),
     "searx-search": (_get_searx_search, ["searx_host", "engines", "aiosession"]),
     "wikipedia": (_get_wikipedia, ["top_k_results", "lang"]),
