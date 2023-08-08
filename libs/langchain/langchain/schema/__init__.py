@@ -1,6 +1,7 @@
 """**Schemas** are the LangChain Base Classes and Interfaces."""
 from langchain.schema.agent import AgentAction, AgentFinish
 from langchain.schema.document import BaseDocumentTransformer, Document
+from langchain.schema.exceptions import LangChainException
 from langchain.schema.memory import BaseChatMessageHistory, BaseMemory
 from langchain.schema.messages import (
     AIMessage,
@@ -61,6 +62,7 @@ __all__ = [
     "ChatGeneration",
     "Generation",
     "PromptValue",
+    "LangChainException",
     "BaseRetriever",
     "RUN_KEY",
     "Memory",

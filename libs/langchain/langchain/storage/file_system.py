@@ -13,7 +13,7 @@ class LocalFileStore(BaseStore[str, bytes]):
         Create a LocalFileStore instance and perform operations on it:
 
         .. code-block:: python
-        
+
             from langchain.storage import LocalFileStore
 
             # Instantiate the LocalFileStore with the root path

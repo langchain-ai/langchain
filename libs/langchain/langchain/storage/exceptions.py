@@ -1,5 +1,4 @@
-class LangChainException(Exception):
-    """General LangChain exception."""
+from langchain.schema import LangChainException
 
 
 class InvalidKeyException(LangChainException):
