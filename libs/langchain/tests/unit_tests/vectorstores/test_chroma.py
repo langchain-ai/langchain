@@ -1,7 +1,9 @@
+import pytest
+
 from langchain.vectorstores.chroma import _filter_list_metadata
 
 
-def test_filter_list_metadata(caplog) -> None:
+def test_filter_list_metadata(caplog: pytest.LogCaptureFixture) -> None:
     metadata = [
         {"key1": "this is a string!", "key2": ["a", "list", "of", "strings"]},
         {
