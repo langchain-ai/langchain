@@ -266,7 +266,6 @@ class Runnable(Generic[Input, Output], ABC):
                         except TypeError:
                             final_output = None
                             final_output_supported = False
-                            pass
             for ichunk in input_for_tracing:
                 if final_input_supported:
                     if final_input is None:
