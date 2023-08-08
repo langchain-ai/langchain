@@ -5,7 +5,9 @@ To set it up, follow the instructions on https://database.guide/2-sample-databas
 
 
 ```python
-from langchain import OpenAI, SQLDatabase, SQLDatabaseChain
+from langchain.llms import OpenAI
+from langchain.utilities import SQLDatabase
+from langchain_experimental.sql import SQLDatabaseChain
 ```
 
 
@@ -447,6 +449,30 @@ db_chain.run("What are some example tracks by Bach?")
 
 </CodeOutputBlock>
 
+### SQL Views
+
+In some case, the table schema can be hidden behind a JSON or JSONB column. Adding row samples into the prompt might help won't always describe the data perfectly. 
+
+For this reason, a custom SQL views can help.
+
+```sql
+CREATE VIEW accounts_v AS
+    select id, firstname, lastname, email, created_at, updated_at,
+        cast(stats->>'total_post' as int) as total_post,
+        cast(stats->>'total_comments' as int) as total_comments,
+        cast(stats->>'ltv' as int) as ltv
+
+        FROM accounts;
+```
+
+Then limit the tables visible from SQLDatabase to the created view.
+
+```python
+db = SQLDatabase.from_uri(
+    "sqlite:///../../../../notebooks/Chinook.db",
+    include_tables=['accounts_v']) # we include only the view
+```
+
 ## SQLDatabaseSequentialChain
 
 Chain for querying SQL database that is a sequential chain.
@@ -460,7 +486,7 @@ This is useful in cases where the number of tables in the database is large.
 
 
 ```python
-from langchain.chains import SQLDatabaseSequentialChain
+from langchain_experimental.sql import SQLDatabaseSequentialChain
 db = SQLDatabase.from_uri("sqlite:///../../../../notebooks/Chinook.db")
 ```
 
@@ -543,7 +569,8 @@ local_llm = HuggingFacePipeline(pipeline=pipe)
 
 
 ```python
-from langchain import SQLDatabase, SQLDatabaseChain
+from langchain.utilities import SQLDatabase
+from langchain_experimental.sql import SQLDatabaseChain
 
 db = SQLDatabase.from_uri("sqlite:///../../../../notebooks/Chinook.db", include_tables=['Customer'])
 local_chain = SQLDatabaseChain.from_llm(local_llm, db, verbose=True, return_intermediate_steps=True, use_query_checker=True)
