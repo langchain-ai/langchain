@@ -521,6 +521,10 @@ class ElasticsearchStore(VectorStore):
             raise e
 
         return es_client
+    
+    @property
+    def embeddings(self) -> Embeddings:
+        return self.embeddings
 
     def similarity_search(
         self, query: str, filter: Optional[List[dict]] = None, k: int = 4, **kwargs: Any
