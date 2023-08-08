@@ -1,6 +1,6 @@
-import pytest
 from unittest.mock import patch, MagicMock
 
+import pytest
 from langchain.document_loaders import ArcGISLoader
 
 

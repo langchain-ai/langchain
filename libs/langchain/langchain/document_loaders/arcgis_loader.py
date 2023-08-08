@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Optional, List, Union, Iterator
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
-
 if TYPE_CHECKING:
     import arcgis  # type: ignore
 
