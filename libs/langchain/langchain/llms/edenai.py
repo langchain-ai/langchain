@@ -92,7 +92,7 @@ class EdenAI(LLM):
         """Return type of model."""
         return "edenai"
 
-    def _format_output(self, output: dict,provider: str) -> str:
+    def _format_output(self, output: dict, provider: str) -> str:
         if self.feature == "text":
             return output[provider]["generated_text"]
         else:
@@ -123,9 +123,8 @@ class EdenAI(LLM):
             stops = self.stop_sequences
         else:
             stops = stop
-                
-        
-        settings=None    
+
+        settings = None
         model = kwargs.get("model", self.params.get("model"))
         url = f"{self.base_url}/{self.feature}/{self.subfeature}"
         headers = {"Authorization": f"Bearer {self.edenai_api_key}"}
@@ -140,8 +139,8 @@ class EdenAI(LLM):
 
         if "model" in payload.keys():
             if payload["model"] is not None:
-                settings = {payload["providers"]:payload["model"]}
-            
+                settings = {payload["providers"]: payload["model"]}
+
         if settings is not None:
             payload["settings"] = settings
 
@@ -158,7 +157,7 @@ class EdenAI(LLM):
                 f"{response.status_code}: {response.text}"
             )
 
-        output = self._format_output(response.json(),payload["providers"])
+        output = self._format_output(response.json(), payload["providers"])
 
         if stops is not None:
             output = enforce_stop_tokens(output, stops)
@@ -192,10 +191,10 @@ class EdenAI(LLM):
             stops = self.stop_sequences
         else:
             stops = stop
-        
-        settings=None    
+
+        settings = None
         model = kwargs.get("model", self.params.get("model"))
-        
+
         url = f"{self.base_url}/{self.feature}/{self.subfeature}"
         headers = {"Authorization": f"Bearer {self.edenai_api_key}"}
         payload = {
@@ -208,8 +207,8 @@ class EdenAI(LLM):
         }
         if "model" in payload.keys():
             if payload["model"] is not None:
-                settings = {payload["providers"]:payload["model"]}
-            
+                settings = {payload["providers"]: payload["model"]}
+
         if settings is not None:
             payload["settings"] = settings
 
@@ -229,8 +228,8 @@ class EdenAI(LLM):
 
                 response_json = await response.json()
 
-                output = self._format_output(response_json,payload["providers"])
+                output = self._format_output(response_json, payload["providers"])
                 if stops is not None:
                     output = enforce_stop_tokens(output, stops)
-                
+
                 return output
