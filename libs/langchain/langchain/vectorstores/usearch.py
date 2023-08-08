@@ -1,7 +1,7 @@
 """Wrapper around USearch vector database."""
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 
@@ -33,13 +33,13 @@ class USearch(VectorStore):
 
     def __init__(
         self,
-        embedding_function: Callable,
+        embedding: Embeddings,
         index: Any,
         docstore: Docstore,
         ids: List[str],
     ):
         """Initialize with necessary components."""
-        self.embedding_function = embedding_function
+        self.embedding = embedding
         self.index = index
         self.docstore = docstore
         self.ids = ids
@@ -52,10 +52,12 @@ class USearch(VectorStore):
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
+
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
             ids: Optional list of unique IDs.
+
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
@@ -65,7 +67,7 @@ class USearch(VectorStore):
                 f"adding items, which {self.docstore} does not"
             )
 
-        embeddings = [self.embedding_function(text) for text in texts]
+        embeddings = self.embedding.embed_documents(list(texts))
         documents = []
         for i, text in enumerate(texts):
             metadata = metadatas[i] if metadatas else {}
@@ -85,13 +87,15 @@ class USearch(VectorStore):
         k: int = 4,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
+
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+
         Returns:
             List of documents most similar to the query with distance.
         """
-        query_embedding = self.embedding_function(query)
+        query_embedding = self.embedding.embed_query(query)
         matches = self.index.search(np.array(query_embedding), k)
 
         docs_with_scores: List[Tuple[Document, float]] = []
@@ -110,13 +114,15 @@ class USearch(VectorStore):
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to query.
+
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+
         Returns:
             List of Documents most similar to the query.
         """
-        query_embedding = self.embedding_function(query)
+        query_embedding = self.embedding.embed_query(query)
         matches = self.index.search(np.array(query_embedding), k)
 
         docs: List[Document] = []
@@ -128,6 +134,7 @@ class USearch(VectorStore):
 
         return docs
 
+    @classmethod
     def from_texts(
         cls,
         texts: List[str],
@@ -143,10 +150,13 @@ class USearch(VectorStore):
             2. Creates an in memory docstore
             3. Initializes the USearch database
         This is intended to be a quick way to get started.
+
         Example:
             .. code-block:: python
-                from langchain import USearch
+
+                from langchain.vectorstores import USearch
                 from langchain.embeddings import OpenAIEmbeddings
+
                 embeddings = OpenAIEmbeddings()
                 usearch = USearch.from_texts(texts, embeddings)
         """
@@ -163,4 +173,4 @@ class USearch(VectorStore):
         usearch = dependable_usearch_import()
         index = usearch.Index(ndim=len(embeddings[0]), metric=metric)
         index.add(np.array(ids), np.array(embeddings))
-        return cls(embedding.embed_query, index, docstore, ids.tolist())
+        return cls(embedding, index, docstore, ids.tolist())
