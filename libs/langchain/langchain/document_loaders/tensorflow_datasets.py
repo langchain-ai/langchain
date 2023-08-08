@@ -10,9 +10,10 @@ class TensorflowDatasetLoader(BaseLoader):
 
     Args:
         dataset_name: the name of the dataset to load
-        split_name: the name of the split to load. Defaults to "test".
+        split_name: the name of the split to load.
         load_max_docs: a limit to the number of loaded documents. Defaults to 100.
-        sample_to_document_function: a function that converts a dataset sample into a Document
+        sample_to_document_function: a function that converts a dataset sample
+          into a Document
 
     Example:
         .. code-block:: python
@@ -37,7 +38,7 @@ class TensorflowDatasetLoader(BaseLoader):
                     sample_to_document_function=mlqaen_example_to_document,
                 )
 
-    """  # noqa: E501
+    """
 
     def __init__(
         self,
@@ -46,6 +47,15 @@ class TensorflowDatasetLoader(BaseLoader):
         load_max_docs: Optional[int] = 100,
         sample_to_document_function: Optional[Callable[[Dict], Document]] = None,
     ):
+        """Initialize the TensorflowDatasetLoader.
+
+        Args:
+            dataset_name: the name of the dataset to load
+            split_name: the name of the split to load.
+            load_max_docs: a limit to the number of loaded documents. Defaults to 100.
+            sample_to_document_function: a function that converts a dataset sample
+                into a Document.
+        """
         self.dataset_name: str = dataset_name
         self.split_name: str = split_name
         self.load_max_docs = load_max_docs
@@ -63,7 +73,7 @@ class TensorflowDatasetLoader(BaseLoader):
         )
 
     def lazy_load(self) -> Iterator[Document]:
-        return self._tfds_client.lazy_load()
+        yield from self._tfds_client.lazy_load()
 
     def load(self) -> List[Document]:
         return self._tfds_client.load()

@@ -1,16 +1,18 @@
 """Integration tests for the TensorFlow Dataset Loader."""
 
 import pytest
-import tensorflow as tf
 from pydantic.error_wrappers import ValidationError
 
 from langchain.document_loaders.tensorflow_datasets import TensorflowDatasetLoader
 from langchain.schema.document import Document
 
 # adding tensorflow and tensorflow_datasets to pyproject.toml is not working
-# these tests can be tested in isolation only
+# these tests can be run in isolation only
 tensorflow = pytest.importorskip("tensorflow")
 tensorflow_datasets = pytest.importorskip("tensorflow_datasets")
+
+# placed here after checking for tensorflow package installation
+import tensorflow as tf  # noqa: E402
 
 
 def decode_to_str(item: tf.Tensor) -> str:
@@ -46,6 +48,19 @@ def test_load_success(tfds_client: TensorflowDatasetLoader) -> None:
     """Test that returns the correct answer"""
 
     output = tfds_client.load()
+    assert isinstance(output, list)
+    assert len(output) == MAX_DOCS
+
+    assert isinstance(output[0], Document)
+    assert len(output[0].page_content) > 0
+    assert isinstance(output[0].page_content, str)
+    assert isinstance(output[0].metadata, dict)
+
+
+def test_lazy_load_success(tfds_client: TensorflowDatasetLoader) -> None:
+    """Test that returns the correct answer"""
+
+    output = list(tfds_client.lazy_load())
     assert isinstance(output, list)
     assert len(output) == MAX_DOCS
 
