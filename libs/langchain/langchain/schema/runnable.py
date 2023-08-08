@@ -310,7 +310,7 @@ class Runnable(Generic[Input, Output], ABC):
         # Start the input iterator to ensure the input runnable starts before this one
         final_input: Union[Input, None] = await anext(input_for_tracing, None)
         final_input_supported = True
-        final_output: Union[Output, None] = None
+        final_output: Optional[Output] = None
         final_output_supported = True
 
         config = config or {}
