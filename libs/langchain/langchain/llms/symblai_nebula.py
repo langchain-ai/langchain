@@ -56,19 +56,14 @@ class Nebula(LLM):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         nebula_service_url = get_from_dict_or_env(
-            values, "nebula_service_url", "NEBULA_SERVICE_URL"
+            values, "nebula_service_url", "NEBULA_SERVICE_URL", DEFAULT_NEBULA_SERVICE_URL
         )
         nebula_service_path = get_from_dict_or_env(
-            values, "nebula_service_path", "NEBULA_SERVICE_PATH"
+            values, "nebula_service_path", "NEBULA_SERVICE_PATH", DEFAULT_NEBULA_SERVICE_PATH
         )
         nebula_api_key = get_from_dict_or_env(
-            values, "nebula_api_key", "NEBULA_SERVICE_API_KEY"
+            values, "nebula_api_key", "NEBULA_SERVICE_API_KEY", ""
         )
-
-        if len(nebula_service_url) == 0:
-            nebula_service_url = DEFAULT_NEBULA_SERVICE_URL
-        if len(nebula_service_path) == 0:
-            nebula_service_path = DEFAULT_NEBULA_SERVICE_PATH
 
         if nebula_service_url.endswith("/"):
             nebula_service_url = nebula_service_url[:-1]
