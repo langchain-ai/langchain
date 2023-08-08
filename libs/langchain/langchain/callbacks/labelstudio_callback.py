@@ -7,7 +7,7 @@ from enum import Enum
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import (
-    AgentAction, AgentFinish, LLMResult,
+    AgentAction, AgentFinish, LLMResult, Generation,
     BaseMessage, ChatMessage, HumanMessage, SystemMessage, AIMessage
 )
 
@@ -72,12 +72,12 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
 
     def __init__(
         self,
-        api_key: str = None,
+        api_key: Optional[str] = None,
         url: Optional[str] = None,
         project_id: Optional[int] = None,
-        project_name: Optional[str] = DEFAULT_PROJECT_NAME,
+        project_name: str = DEFAULT_PROJECT_NAME,
         project_config: Optional[str] = None,
-        mode: Union[str, LabelStudioMode] = LabelStudioMode.PROMPT,
+        mode: Optional[Union[str, LabelStudioMode]] = LabelStudioMode.PROMPT,
     ):
         super().__init__()
 
@@ -94,7 +94,7 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
         # Check if Label Studio API key is provided
         if not api_key:
             if os.getenv("LABEL_STUDIO_API_KEY"):
-                api_key = os.getenv("LABEL_STUDIO_API_KEY")
+                api_key = str(os.getenv("LABEL_STUDIO_API_KEY"))
             else:
                 raise ValueError(
                     f"You're using {self.__class__.__name__} in your code, Label Studio API key is not provided. "
@@ -126,7 +126,7 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
         self.project_name = project_name
         self.project_config = project_config or get_default_label_configs(mode)
         self.project_id = project_id or os.getenv("LABEL_STUDIO_PROJECT_ID")
-        if project_id is not None:
+        if self.project_id is not None:
             self.ls_project = self.ls_client.get_project(int(self.project_id))
         else:
             project_title = datetime.today().strftime(self.project_name)
@@ -167,7 +167,7 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
                 f'Please add a TextArea tag to the project.'
             )
 
-    def add_prompts_generations(self, run_id: str, generations):
+    def add_prompts_generations(self, run_id: str, generations: List[List[Generation]]) -> None:
         # Create tasks in Label Studio
         tasks = []
         prompts = self.payload[run_id]['prompts']
@@ -204,7 +204,6 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
             'prompts': prompts,
             'kwargs': kwargs
         }
-        print('123123123', self.payload)
 
     def _get_message_role(self, message: BaseMessage) -> str:
         """Get the role of the message."""
