@@ -2,11 +2,11 @@ import re
 from pathlib import Path
 from typing import Iterator, List, Optional, Sequence, Tuple, Union
 
-from langconnect.schema import AbstractStore
-from langconnect.storage.exceptions import InvalidKeyException
+from langchain.schema import BaseStore
+from langchain.storage.exceptions import InvalidKeyException
 
 
-class LocalFileStore(AbstractStore[str, bytes]):
+class LocalFileStore(BaseStore[str, bytes]):
     """AbstractStore interface that works on the local file system.
 
     Examples:

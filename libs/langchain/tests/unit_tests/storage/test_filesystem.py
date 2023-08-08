@@ -2,7 +2,7 @@ import tempfile
 from typing import Generator
 
 import pytest
-from langconnect.storage.file_system import LocalFileStore
+from langchain.storage.file_system import LocalFileStore
 
 
 @pytest.fixture

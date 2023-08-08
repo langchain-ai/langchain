@@ -5,10 +5,10 @@ primarily for unit testing purposes.
 """
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple
 
-from langconnect.schema import AbstractStore
+from langchain.schema import BaseStore
 
 
-class InMemoryStore(AbstractStore[str, Any]):
+class InMemoryStore(BaseStore[str, Any]):
     """In-memory implementation of the AbstractStore using a dictionary.
 
     Examples:
