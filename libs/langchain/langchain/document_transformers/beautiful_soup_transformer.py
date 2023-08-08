@@ -1,4 +1,4 @@
-from typing import Any, Sequence
+from typing import Any, List, Sequence
 
 from bs4 import BeautifulSoup
 
@@ -18,8 +18,8 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
     def transform_documents(
         self,
         documents: Sequence[Document],
-        unwanted_tags: list[str] = ["script", "style"],
-        tags_to_extract: list[str] = ["p", "li", "div", "a"],
+        unwanted_tags: List[str] = ["script", "style"],
+        tags_to_extract: List[str] = ["p", "li", "div", "a"],
         remove_lines: bool = True,
         **kwargs: Any,
     ) -> Sequence[Document]:
@@ -50,7 +50,7 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         return documents
 
     @staticmethod
-    def remove_unwanted_tags(html_content, unwanted_tags):
+    def remove_unwanted_tags(html_content, unwanted_tags) -> str:
         soup = BeautifulSoup(html_content, "html.parser")
         for tag in unwanted_tags:
             for element in soup.find_all(tag):
@@ -58,7 +58,7 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         return str(soup)
 
     @staticmethod
-    def extract_tags(html_content, tags):
+    def extract_tags(html_content, tags) -> str:
         soup = BeautifulSoup(html_content, "html.parser")
         text_parts = []
         for tag in tags:
@@ -75,7 +75,7 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         return " ".join(text_parts)
 
     @staticmethod
-    def remove_unnecessary_lines(content):
+    def remove_unnecessary_lines(content) -> str:
         lines = content.split("\n")
         stripped_lines = [line.strip() for line in lines]
         non_empty_lines = [line for line in stripped_lines if line]
