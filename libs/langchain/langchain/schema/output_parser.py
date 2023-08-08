@@ -66,6 +66,26 @@ class BaseGenerationOutputParser(
                 run_type="parser",
             )
 
+    async def ainvoke(
+        self, input: str | BaseMessage, config: RunnableConfig | None = None
+    ) -> T:
+        if isinstance(input, BaseMessage):
+            return await self._acall_with_config(
+                lambda inner_input: self.aparse_result(
+                    [ChatGeneration(message=inner_input)]
+                ),
+                input,
+                config,
+                run_type="parser",
+            )
+        else:
+            return await self._acall_with_config(
+                lambda inner_input: self.aparse_result([Generation(text=inner_input)]),
+                input,
+                config,
+                run_type="parser",
+            )
+
 
 class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]):
     """Base class to parse the output of an LLM call.
@@ -109,6 +129,26 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
         else:
             return self._call_with_config(
                 lambda inner_input: self.parse_result([Generation(text=inner_input)]),
+                input,
+                config,
+                run_type="parser",
+            )
+
+    async def ainvoke(
+        self, input: str | BaseMessage, config: RunnableConfig | None = None
+    ) -> T:
+        if isinstance(input, BaseMessage):
+            return await self._acall_with_config(
+                lambda inner_input: self.aparse_result(
+                    [ChatGeneration(message=inner_input)]
+                ),
+                input,
+                config,
+                run_type="parser",
+            )
+        else:
+            return await self._acall_with_config(
+                lambda inner_input: self.aparse_result([Generation(text=inner_input)]),
                 input,
                 config,
                 run_type="parser",
