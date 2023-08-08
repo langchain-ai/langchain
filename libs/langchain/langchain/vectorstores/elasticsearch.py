@@ -40,6 +40,22 @@ class BaseRetrievalStrategy(ABC):
         filter: List[dict],
         similarity: Union[DistanceStrategy, None],
     ) -> Dict:
+        """
+        Executes when a search is performed on the store.
+
+        Args:
+            query_vector (Union[List[float], None]): The query vector, or None if not using vector-based query.
+            query (Union[str, None]): The text query, or None if not using text-based query.
+            k (int): The total number of results to retrieve.
+            fetch_k (int): The number of results to fetch initially.
+            vector_query_field (str): The field containing the vector representations in the index.
+            text_field (str): The field containing the text data in the index.
+            filter (List[dict]): List of filter clauses to apply to the query.
+            similarity (Union[DistanceStrategy, None]): The similarity strategy to use, or None if not using one.
+
+        Returns:
+            Dict: The Elasticsearch query body.
+        """
         pass
 
     @abstractmethod
@@ -49,14 +65,39 @@ class BaseRetrievalStrategy(ABC):
         vector_query_field: str,
         similarity: Union[DistanceStrategy, None],
     ) -> Dict:
+        """
+        Executes when the index is created.
+
+        Args:
+            dims_length (Union[int, None]): The length of the embedding vectors, or None if not using vector-based query.
+            vector_query_field (str): The field containing the vector representations in the index.
+            similarity (Union[DistanceStrategy, None]): The similarity strategy to use, or None if not using one.
+
+        Returns:
+            Dict: The Elasticsearch settings and mappings for the strategy.
+        """
         pass
 
     def beforeIndexSetup(
         self, client: "Elasticsearch", text_field: str, vector_query_field: str
     ) -> None:
+        """
+        Executes before the index is created. Used for setting up any required Elasticsearch resources like a pipeline.
+
+        Args:
+            client (Elasticsearch): The Elasticsearch client.
+            text_field (str): The field containing the text data in the index.
+            vector_query_field (str): The field containing the vector representations in the index.
+        """
         pass
 
     def requireInference(self) -> bool:
+        """
+        Returns whether or not the strategy requires inference to be performed on the text before it is added to the index.
+
+        Returns:
+            bool: Whether or not the strategy requires inference to be performed on the text before it is added to the index.
+        """
         return True
 
 
@@ -173,7 +214,6 @@ class ExactRetrievalStrategy(BaseRetrievalStrategy):
         filter: Union[List[dict], None],
         similarity: Union[DistanceStrategy, None],
     ) -> Dict:
-        logger.error(f"similarity {similarity}")
         if similarity is DistanceStrategy.COSINE:
             similarityAlgo = (
                 f"cosineSimilarity(params.query_vector, '{vector_query_field}') + 1.0"
@@ -448,7 +488,7 @@ class ElasticsearchStore(VectorStore):
 
     @staticmethod
     def connect_to_elasticsearch(
-        es_url=None, cloud_id=None, api_key=None, username=None, password=None
+        es_url: Optional[str] = None, cloud_id: Optional[str] = None, api_key: Optional[str] = None, username: Optional[str] = None, password: Optional[str] = None
     ):
         try:
             import elasticsearch
