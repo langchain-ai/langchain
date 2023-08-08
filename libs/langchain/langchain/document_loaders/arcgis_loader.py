@@ -66,7 +66,7 @@ class ArcGISLoader(BaseLoader):
         **kwargs,
     ):
         try:
-            import arcgis_loader
+            import arcgis
         except ImportError as e:
             raise ImportError(
                 "arcgis is required to use the ArcGIS Loader. "

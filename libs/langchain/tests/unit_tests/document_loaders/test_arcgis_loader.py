@@ -7,7 +7,7 @@ from langchain.document_loaders import ArcGISLoader
 @pytest.fixture
 def arcgis_mocks(mock_feature_layer, mock_gis):  # type: ignore
     sys_modules = {
-        "arcgis_loader": MagicMock(),
+        "arcgis": MagicMock(),
         "arcgis.features.FeatureLayer": mock_feature_layer,
         "arcgis.gis.GIS": mock_gis,
     }
