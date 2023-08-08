@@ -39,6 +39,7 @@ class Vectara(VectorStore):
         vectara_customer_id: Optional[str] = None,
         vectara_corpus_id: Optional[str] = None,
         vectara_api_key: Optional[str] = None,
+        vectara_api_timeout: int = 60,
     ):
         """Initialize with Vectara API."""
         self._vectara_customer_id = vectara_customer_id or os.environ.get(
@@ -62,7 +63,7 @@ class Vectara(VectorStore):
         self._session = requests.Session()  # to reuse connections
         adapter = requests.adapters.HTTPAdapter(max_retries=3)
         self._session.mount("http://", adapter)
-        self.vectara_api_timeout = 60
+        self.vectara_api_timeout = vectara_api_timeout
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
