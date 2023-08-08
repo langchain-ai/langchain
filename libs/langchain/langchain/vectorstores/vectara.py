@@ -39,6 +39,7 @@ class Vectara(VectorStore):
         vectara_customer_id: Optional[str] = None,
         vectara_corpus_id: Optional[str] = None,
         vectara_api_key: Optional[str] = None,
+        vectara_api_timeout: int = 60,
     ):
         """Initialize with Vectara API."""
         self._vectara_customer_id = vectara_customer_id or os.environ.get(
@@ -62,6 +63,7 @@ class Vectara(VectorStore):
         self._session = requests.Session()  # to reuse connections
         adapter = requests.adapters.HTTPAdapter(max_retries=3)
         self._session.mount("http://", adapter)
+        self.vectara_api_timeout = vectara_api_timeout
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
@@ -96,6 +98,7 @@ class Vectara(VectorStore):
             data=json.dumps(body),
             verify=True,
             headers=self._get_post_headers(),
+            timeout=self.vectara_api_timeout,
         )
         if response.status_code != 200:
             logger.error(
@@ -116,7 +119,7 @@ class Vectara(VectorStore):
             headers=self._get_post_headers(),
             url="https://api.vectara.io/v1/core/index",
             data=json.dumps(request),
-            timeout=30,
+            timeout=self.vectara_api_timeout,
             verify=True,
         )
 
@@ -168,6 +171,7 @@ class Vectara(VectorStore):
                 files=files,
                 verify=True,
                 headers=headers,
+                timeout=self.vectara_api_timeout,
             )
 
             if response.status_code == 409:
@@ -288,7 +292,7 @@ class Vectara(VectorStore):
             headers=self._get_post_headers(),
             url="https://api.vectara.io/v1/query",
             data=data,
-            timeout=10,
+            timeout=self.vectara_api_timeout,
         )
 
         if response.status_code != 200:

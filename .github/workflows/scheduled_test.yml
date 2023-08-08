@@ -1,0 +1,38 @@
+name: Scheduled tests
+
+on:
+  scheduled:
+    - cron:  '0 13 * * *'
+
+env:
+  POETRY_VERSION: "1.4.2"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: Scheduled testing
+    strategy:
+      matrix:
+        python-version:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+    name: Python ${{ matrix.python-version }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: "./.github/actions/poetry_setup"
+        with:
+          python-version: ${{ matrix.python-version }}
+          poetry-version: "1.4.2"
+          install-command: |
+            echo "Running scheduled tests, installing dependencies with poetry..."
+            poetry install -E scheduled_testing
+      - name: Run tests
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          make scheduled_tests
+        shell: bash
+    secrets: inherit
