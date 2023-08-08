@@ -1,0 +1,108 @@
+### Setup
+
+To start we'll need to install the OpenAI Python package:
+
+```bash
+pip install openai
+```
+
+Accessing the API requires an API key, which you can get by creating an account and heading [here](https://platform.openai.com/account/api-keys). Once we have a key we'll want to set it as an environment variable by running:
+
+```bash
+export OPENAI_API_KEY="..."
+```
+
+If you'd prefer not to set an environment variable you can pass the key in directly via the `openai_api_key` named parameter when initiating the OpenAI LLM class:
+
+```python
+from langchain.llms import OpenAI
+
+llm = OpenAI(openai_api_key="...")
+```
+
+otherwise you can initialize without any params:
+```python
+from langchain.llms import OpenAI
+
+llm = OpenAI()
+```
+
+### `__call__`: string in -> string out
+The simplest way to use an LLM is a callable: pass in a string, get a string completion.
+
+```python
+llm("Tell me a joke")
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    'Why did the chicken cross the road?\n\nTo get to the other side.'
+```
+
+</CodeOutputBlock>
+
+### `generate`: batch calls, richer outputs
+`generate` lets you can call the model with a list of strings, getting back a more complete response than just the text. This complete response can includes things like multiple top responses and other LLM provider-specific information:
+
+```python
+llm_result = llm.generate(["Tell me a joke", "Tell me a poem"]*15)
+```
+
+
+```python
+len(llm_result.generations)
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    30
+```
+
+</CodeOutputBlock>
+
+
+```python
+llm_result.generations[0]
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    [Generation(text='\n\nWhy did the chicken cross the road?\n\nTo get to the other side!'),
+     Generation(text='\n\nWhy did the chicken cross the road?\n\nTo get to the other side.')]
+```
+
+</CodeOutputBlock>
+
+
+```python
+llm_result.generations[-1]
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    [Generation(text="\n\nWhat if love neverspeech\n\nWhat if love never ended\n\nWhat if love was only a feeling\n\nI'll never know this love\n\nIt's not a feeling\n\nBut it's what we have for each other\n\nWe just know that love is something strong\n\nAnd we can't help but be happy\n\nWe just feel what love is for us\n\nAnd we love each other with all our heart\n\nWe just don't know how\n\nHow it will go\n\nBut we know that love is something strong\n\nAnd we'll always have each other\n\nIn our lives."),
+     Generation(text='\n\nOnce upon a time\n\nThere was a love so pure and true\n\nIt lasted for centuries\n\nAnd never became stale or dry\n\nIt was moving and alive\n\nAnd the heart of the love-ick\n\nIs still beating strong and true.')]
+```
+
+</CodeOutputBlock>
+
+You can also access provider specific information that is returned. This information is NOT standardized across providers.
+
+
+```python
+llm_result.llm_output
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    {'token_usage': {'completion_tokens': 3903,
+      'total_tokens': 4023,
+      'prompt_tokens': 120}}
+```
+
+</CodeOutputBlock>

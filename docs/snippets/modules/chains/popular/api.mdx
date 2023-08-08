@@ -1,0 +1,105 @@
+```python
+from langchain.chains.api.prompt import API_RESPONSE_PROMPT
+```
+
+
+```python
+from langchain.chains import APIChain
+from langchain.prompts.prompt import PromptTemplate
+
+
+from langchain.llms import OpenAI
+
+llm = OpenAI(temperature=0)
+```
+
+## OpenMeteo Example
+
+
+```python
+from langchain.chains.api import open_meteo_docs
+chain_new = APIChain.from_llm_and_api_docs(llm, open_meteo_docs.OPEN_METEO_DOCS, verbose=True)
+```
+
+
+```python
+chain_new.run('What is the weather like right now in Munich, Germany in degrees Fahrenheit?')
+```
+
+<CodeOutputBlock lang="python">
+
+```
+
+
+    > Entering new APIChain chain...
+    https://api.open-meteo.com/v1/forecast?latitude=48.1351&longitude=11.5820&temperature_unit=fahrenheit&current_weather=true
+    {"latitude":48.14,"longitude":11.58,"generationtime_ms":0.33104419708251953,"utc_offset_seconds":0,"timezone":"GMT","timezone_abbreviation":"GMT","elevation":521.0,"current_weather":{"temperature":33.4,"windspeed":6.8,"winddirection":198.0,"weathercode":2,"time":"2023-01-16T01:00"}}
+
+    > Finished chain.
+
+
+
+
+
+    ' The current temperature in Munich, Germany is 33.4 degrees Fahrenheit with a windspeed of 6.8 km/h and a wind direction of 198 degrees. The weathercode is 2.'
+```
+
+</CodeOutputBlock>
+
+## TMDB Example
+
+
+```python
+import os
+os.environ['TMDB_BEARER_TOKEN'] = ""
+```
+
+
+```python
+from langchain.chains.api import tmdb_docs
+headers = {"Authorization": f"Bearer {os.environ['TMDB_BEARER_TOKEN']}"}
+chain = APIChain.from_llm_and_api_docs(llm, tmdb_docs.TMDB_DOCS, headers=headers, verbose=True)
+```
+
+
+```python
+chain.run("Search for 'Avatar'")
+```
+
+<CodeOutputBlock lang="python">
+
+```
+
+
+    > Entering new APIChain chain...
+     https://api.themoviedb.org/3/search/movie?query=Avatar&language=en-US
+    {"page":1,"results":[{"adult":false,"backdrop_path":"/o0s4XsEDfDlvit5pDRKjzXR4pp2.jpg","genre_ids":[28,12,14,878],"id":19995,"original_language":"en","original_title":"Avatar","overview":"In the 22nd century, a paraplegic Marine is dispatched to the moon Pandora on a unique mission, but becomes torn between following orders and protecting an alien civilization.","popularity":2041.691,"poster_path":"/jRXYjXNq0Cs2TcJjLkki24MLp7u.jpg","release_date":"2009-12-15","title":"Avatar","video":false,"vote_average":7.6,"vote_count":27777},{"adult":false,"backdrop_path":"/s16H6tpK2utvwDtzZ8Qy4qm5Emw.jpg","genre_ids":[878,12,28],"id":76600,"original_language":"en","original_title":"Avatar: The Way of Water","overview":"Set more than a decade after the events of the first film, learn the story of the Sully family (Jake, Neytiri, and their kids), the trouble that follows them, the lengths they go to keep each other safe, the battles they fight to stay alive, and the tragedies they endure.","popularity":3948.296,"poster_path":"/t6HIqrRAclMCA60NsSmeqe9RmNV.jpg","release_date":"2022-12-14","title":"Avatar: The Way of Water","video":false,"vote_average":7.7,"vote_count":4219},{"adult":false,"backdrop_path":"/uEwGFGtao9YG2JolmdvtHLLVbA9.jpg","genre_ids":[99],"id":111332,"original_language":"en","original_title":"Avatar: Creating the World of Pandora","overview":"The Making-of James Cameron's Avatar. It shows interesting parts of the work on the set.","popularity":541.809,"poster_path":"/sjf3xjuofCtDhZghJRzXlTiEjJe.jpg","release_date":"2010-02-07","title":"Avatar: Creating the World of Pandora","video":false,"vote_average":7.3,"vote_count":35},{"adult":false,"backdrop_path":null,"genre_ids":[99],"id":287003,"original_language":"en","original_title":"Avatar: Scene Deconstruction","overview":"The deconstruction of the Avatar scenes and sets","popularity":394.941,"poster_path":"/uCreCQFReeF0RiIXkQypRYHwikx.jpg","release_date":"2009-12-18","title":"Avatar: Scene Deconstruction","video":false,"vote_average":7.8,"vote_count":12},{"adult":false,"backdrop_path":null,"genre_ids":[28,18,878,12,14],"id":83533,"original_language":"en","original_title":"Avatar 3","overview":"","popularity":172.488,"poster_path":"/4rXqTMlkEaMiJjiG0Z2BX6F6Dkm.jpg","release_date":"2024-12-18","title":"Avatar 3","video":false,"vote_average":0,"vote_count":0},{"adult":false,"backdrop_path":null,"genre_ids":[28,878,12,14],"id":216527,"original_language":"en","original_title":"Avatar 4","overview":"","popularity":162.536,"poster_path":"/qzMYKnT4MG1d0gnhwytr4cKhUvS.jpg","release_date":"2026-12-16","title":"Avatar 4","video":false,"vote_average":0,"vote_count":0},{"adult":false,"backdrop_path":null,"genre_ids":[28,12,14,878],"id":393209,"original_language":"en","original_title":"Avatar 5","overview":"","popularity":124.722,"poster_path":"/rtmmvqkIC5zDMEd638Es2woxbz8.jpg","release_date":"2028-12-20","title":"Avatar 5","video":false,"vote_average":0,"vote_count":0},{"adult":false,"backdrop_path":"/nNceJtrrovG1MUBHMAhId0ws9Gp.jpg","genre_ids":[99],"id":183392,"original_language":"en","original_title":"Capturing Avatar","overview":"Capturing Avatar is a feature length behind-the-scenes documentary about the making of Avatar. It uses footage from the film's development, as well as stock footage from as far back as the production of Titanic in 1995. Also included are numerous interviews with cast, artists, and other crew members. The documentary was released as a bonus feature on the extended collector's edition of Avatar.","popularity":109.842,"poster_path":"/26SMEXJl3978dn2svWBSqHbLl5U.jpg","release_date":"2010-11-16","title":"Capturing Avatar","video":false,"vote_average":7.8,"vote_count":39},{"adult":false,"backdrop_path":"/eoAvHxfbaPOcfiQyjqypWIXWxDr.jpg","genre_ids":[99],"id":1059673,"original_language":"en","original_title":"Avatar: The Deep Dive - A Special Edition of 20/20","overview":"An inside look at one of the most anticipated movie sequels ever with James Cameron and cast.","popularity":629.825,"poster_path":"/rtVeIsmeXnpjNbEKnm9Say58XjV.jpg","release_date":"2022-12-14","title":"Avatar: The Deep Dive - A Special Edition of 20/20","video":false,"vote_average":6.5,"vote_count":5},{"adult":false,"backdrop_path":null,"genre_ids":[99],"id":278698,"original_language":"en","original_title":"Avatar Spirits","overview":"Bryan Konietzko and Michael Dante DiMartino, co-creators of the hit television series, Avatar: The Last Airbender, reflect on the creation of the masterful series.","popularity":51.593,"poster_path":"/oBWVyOdntLJd5bBpE0wkpN6B6vy.jpg","release_date":"2010-06-22","title":"Avatar Spirits","video":false,"vote_average":9,"vote_count":16},{"adult":false,"backdrop_path":"/cACUWJKvRfhXge7NC0xxoQnkQNu.jpg","genre_ids":[10402],"id":993545,"original_language":"fr","original_title":"Avatar - Au Hellfest 2022","overview":"","popularity":21.992,"poster_path":"/fw6cPIsQYKjd1YVQanG2vLc5HGo.jpg","release_date":"2022-06-26","title":"Avatar - Au Hellfest 2022","video":false,"vote_average":8,"vote_count":4},{"adult":false,"backdrop_path":null,"genre_ids":[],"id":931019,"original_language":"en","original_title":"Avatar: Enter The World","overview":"A behind the scenes look at the new James Cameron blockbuster “Avatar”, which stars Aussie Sam Worthington. Hastily produced by Australia’s Nine Network following the film’s release.","popularity":30.903,"poster_path":"/9MHY9pYAgs91Ef7YFGWEbP4WJqC.jpg","release_date":"2009-12-05","title":"Avatar: Enter The World","video":false,"vote_average":2,"vote_count":1},{"adult":false,"backdrop_path":null,"genre_ids":[],"id":287004,"original_language":"en","original_title":"Avatar: Production Materials","overview":"Production material overview of what was used in Avatar","popularity":12.389,"poster_path":null,"release_date":"2009-12-18","title":"Avatar: Production Materials","video":true,"vote_average":6,"vote_count":4},{"adult":false,"backdrop_path":"/x43RWEZg9tYRPgnm43GyIB4tlER.jpg","genre_ids":[],"id":740017,"original_language":"es","original_title":"Avatar: Agni Kai","overview":"","popularity":9.462,"poster_path":"/y9PrKMUTA6NfIe5FE92tdwOQ2sH.jpg","release_date":"2020-01-18","title":"Avatar: Agni Kai","video":false,"vote_average":7,"vote_count":1},{"adult":false,"backdrop_path":"/e8mmDO7fKK93T4lnxl4Z2zjxXZV.jpg","genre_ids":[],"id":668297,"original_language":"en","original_title":"The Last Avatar","overview":"The Last Avatar is a mystical adventure film, a story of a young man who leaves Hollywood to find himself. What he finds is beyond his wildest imagination. Based on ancient prophecy, contemporary truth seeking and the future of humanity, The Last Avatar is a film that takes transformational themes and makes them relevant for audiences of all ages. Filled with love, magic, mystery, conspiracy, psychics, underground cities, secret societies, light bodies and much more, The Last Avatar tells the story of the emergence of Kalki Avatar- the final Avatar of our current Age of Chaos. Kalki is also a metaphor for the innate power and potential that lies within humanity to awaken and create a world of truth, harmony and possibility.","popularity":8.786,"poster_path":"/XWz5SS5g5mrNEZjv3FiGhqCMOQ.jpg","release_date":"2014-12-06","title":"The Last Avatar","video":false,"vote_average":4.5,"vote_count":2},{"adult":false,"backdrop_path":null,"genre_ids":[],"id":424768,"original_language":"en","original_title":"Avatar:[2015] Wacken Open Air","overview":"Started in the summer of 2001 by drummer John Alfredsson and vocalist Christian Rimmi under the name Lost Soul.  The band offers a free mp3 download to a song called \"Bloody Knuckles\" if one subscribes to their newsletter.  In 2005 they appeared on the compilation “Listen to Your Inner Voice” together with 17 other bands released by Inner Voice Records.","popularity":6.634,"poster_path":null,"release_date":"2015-08-01","title":"Avatar:[2015] Wacken Open Air","video":false,"vote_average":8,"vote_count":1},{"adult":false,"backdrop_path":null,"genre_ids":[],"id":812836,"original_language":"en","original_title":"Avatar - Live At Graspop 2018","overview":"Live At Graspop Festival Belgium 2018","popularity":9.855,"poster_path":null,"release_date":"","title":"Avatar - Live At Graspop 2018","video":false,"vote_average":9,"vote_count":1},{"adult":false,"backdrop_path":null,"genre_ids":[10402],"id":874770,"original_language":"en","original_title":"Avatar Ages: Memories","overview":"On the night of memories Avatar performed songs from Thoughts of No Tomorrow, Schlacht and Avatar as voted on by the fans.","popularity":2.66,"poster_path":"/xDNNQ2cnxAv3o7u0nT6JJacQrhp.jpg","release_date":"2021-01-30","title":"Avatar Ages: Memories","video":false,"vote_average":10,"vote_count":1},{"adult":false,"backdrop_path":null,"genre_ids":[10402],"id":874768,"original_language":"en","original_title":"Avatar Ages: Madness","overview":"On the night of madness Avatar performed songs from Black Waltz and Hail The Apocalypse as voted on by the fans.","popularity":2.024,"poster_path":"/wVyTuruUctV3UbdzE5cncnpyNoY.jpg","release_date":"2021-01-23","title":"Avatar Ages: Madness","video":false,"vote_average":8,"vote_count":1},{"adult":false,"backdrop_path":"/dj8g4jrYMfK6tQ26ra3IaqOx5Ho.jpg","genre_ids":[10402],"id":874700,"original_language":"en","original_title":"Avatar Ages: Dreams","overview":"On the night of dreams Avatar performed Hunter Gatherer in its entirety, plus a selection of their most popular songs.  Originally aired January 9th 2021","popularity":1.957,"poster_path":"/4twG59wnuHpGIRR9gYsqZnVysSP.jpg","release_date":"2021-01-09","title":"Avatar Ages: Dreams","video":false,"vote_average":0,"vote_count":0}],"total_pages":3,"total_results":57}
+
+    > Finished chain.
+
+
+
+
+
+    ' This response contains 57 movies related to the search query "Avatar". The first movie in the list is the 2009 movie "Avatar" starring Sam Worthington. Other movies in the list include sequels to Avatar, documentaries, and live performances.'
+```
+
+</CodeOutputBlock>
+
+## Listen API Example
+
+
+```python
+import os
+from langchain.llms import OpenAI
+from langchain.chains.api import podcast_docs
+from langchain.chains import APIChain
+
+# Get api key here: https://www.listennotes.com/api/pricing/
+listen_api_key = 'xxx'
+
+llm = OpenAI(temperature=0)
+headers = {"X-ListenAPI-Key": listen_api_key}
+chain = APIChain.from_llm_and_api_docs(llm, podcast_docs.PODCAST_DOCS, headers=headers, verbose=True)
+chain.run("Search for 'silicon valley bank' podcast episodes, audio length is more than 30 minutes, return only 1 results")
+```
