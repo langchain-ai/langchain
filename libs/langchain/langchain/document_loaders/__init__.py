@@ -95,6 +95,7 @@ from langchain.document_loaders.mediawikidump import MWDumpLoader
 from langchain.document_loaders.merge import MergedDataLoader
 from langchain.document_loaders.mhtml import MHTMLLoader
 from langchain.document_loaders.modern_treasury import ModernTreasuryLoader
+from langchain.document_loaders.news import NewsURLLoader
 from langchain.document_loaders.notebook import NotebookLoader
 from langchain.document_loaders.notion import NotionDirectoryLoader
 from langchain.document_loaders.notiondb import NotionDBLoader
@@ -107,6 +108,7 @@ from langchain.document_loaders.onedrive_file import OneDriveFileLoader
 from langchain.document_loaders.open_city_data import OpenCityDataLoader
 from langchain.document_loaders.org_mode import UnstructuredOrgModeLoader
 from langchain.document_loaders.pdf import (
+    AmazonTextractPDFLoader,
     MathpixPDFLoader,
     OnlinePDFLoader,
     PDFMinerLoader,
@@ -127,6 +129,7 @@ from langchain.document_loaders.recursive_url_loader import RecursiveUrlLoader
 from langchain.document_loaders.reddit import RedditPostsLoader
 from langchain.document_loaders.roam import RoamLoader
 from langchain.document_loaders.rocksetdb import RocksetLoader
+from langchain.document_loaders.rss import RSSFeedLoader
 from langchain.document_loaders.rst import UnstructuredRSTLoader
 from langchain.document_loaders.rtf import UnstructuredRTFLoader
 from langchain.document_loaders.s3_directory import S3DirectoryLoader
@@ -250,6 +253,7 @@ __all__ = [
     "MergedDataLoader",
     "MHTMLLoader",
     "ModernTreasuryLoader",
+    "NewsURLLoader",
     "NotebookLoader",
     "NotionDBLoader",
     "NotionDirectoryLoader",
@@ -278,6 +282,7 @@ __all__ = [
     "RedditPostsLoader",
     "RoamLoader",
     "RocksetLoader",
+    "RSSFeedLoader",
     "S3DirectoryLoader",
     "S3FileLoader",
     "SRTLoader",
@@ -326,4 +331,5 @@ __all__ = [
     "YoutubeAudioLoader",
     "YoutubeLoader",
     "ConcurrentLoader",
+    "AmazonTextractPDFLoader",
 ]

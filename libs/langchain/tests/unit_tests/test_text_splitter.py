@@ -1,4 +1,5 @@
 """Test text splitting functionality."""
+import re
 from typing import List
 
 import pytest
@@ -80,25 +81,43 @@ def test_character_text_splitter_longer_words() -> None:
     assert output == expected_output
 
 
-def test_character_text_splitter_keep_separator_regex() -> None:
+@pytest.mark.parametrize(
+    "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
+)
+def test_character_text_splitter_keep_separator_regex(
+    separator: str, is_separator_regex: bool
+) -> None:
     """Test splitting by characters while keeping the separator
     that is a regex special character.
     """
     text = "foo.bar.baz.123"
     splitter = CharacterTextSplitter(
-        separator=r"\.", chunk_size=1, chunk_overlap=0, keep_separator=True
+        separator=separator,
+        chunk_size=1,
+        chunk_overlap=0,
+        keep_separator=True,
+        is_separator_regex=is_separator_regex,
     )
     output = splitter.split_text(text)
     expected_output = ["foo", ".bar", ".baz", ".123"]
     assert output == expected_output
 
 
-def test_character_text_splitter_discard_separator_regex() -> None:
+@pytest.mark.parametrize(
+    "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
+)
+def test_character_text_splitter_discard_separator_regex(
+    separator: str, is_separator_regex: bool
+) -> None:
     """Test splitting by characters discarding the separator
     that is a regex special character."""
     text = "foo.bar.baz.123"
     splitter = CharacterTextSplitter(
-        separator=r"\.", chunk_size=1, chunk_overlap=0, keep_separator=False
+        separator=separator,
+        chunk_size=1,
+        chunk_overlap=0,
+        keep_separator=False,
+        is_separator_regex=is_separator_regex,
     )
     output = splitter.split_text(text)
     expected_output = ["foo", "bar", "baz", "123"]
@@ -387,6 +406,10 @@ Not a comment
         ".. This is a",
         "comment",
     ]
+    # Special test for special characters
+    code = "harry\n***\nbabylon is"
+    chunks = splitter.split_text(code)
+    assert chunks == ["harry", "***\nbabylon is"]
 
 
 def test_proto_file_splitter() -> None:
@@ -661,6 +684,22 @@ This is a code block
         "block",
         "```",
     ]
+    # Special test for special characters
+    code = "harry\n***\nbabylon is"
+    chunks = splitter.split_text(code)
+    assert chunks == ["harry", "***\nbabylon is"]
+
+
+def test_latex_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.LATEX, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """
+Hi Harrison!
+\\chapter{1}
+"""
+    chunks = splitter.split_text(code)
+    assert chunks == ["Hi Harrison!", "\\chapter{1}"]
 
 
 def test_html_code_splitter() -> None:

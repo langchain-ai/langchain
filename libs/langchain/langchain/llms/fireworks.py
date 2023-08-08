@@ -28,7 +28,9 @@ logger = logging.getLogger(__name__)
 class BaseFireworks(BaseLLM):
     """Wrapper around Fireworks large language models."""
 
-    model_id: str = Field("fireworks-llama-v2-7b-chat", alias="model")
+    model_id: str = Field(
+        "accounts/fireworks/models/fireworks-llama-v2-7b-chat", alias="model"
+    )
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
@@ -175,7 +177,7 @@ class FireworksChat(BaseLLM):
             fireworkschat = FireworksChat(model_id=""fireworks-llama-v2-13b-chat"")
     """
 
-    model_id: str = "fireworks-llama-v2-7b-chat"
+    model_id: str = "accounts/fireworks/models/fireworks-llama-v2-7b-chat"
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""

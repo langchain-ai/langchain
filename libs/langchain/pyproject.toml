@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.250"
+version = "0.0.256"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -15,7 +15,7 @@ python = ">=3.8.1,<4.0"
 pydantic = "^1"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
-PyYAML = ">=5.4.1"
+PyYAML = ">=5.3"
 numpy = "^1"
 azure-core = {version = "^1.26.4", optional=true}
 tqdm = {version = ">=4.48.0", optional = true}
@@ -128,6 +128,10 @@ xinference = {version = "^0.0.6", optional = true}
 python-arango = {version = "^7.5.9", optional = true}
 gitpython = {version = "^3.1.32", optional = true}
 librosa = {version="^0.10.0.post2", optional = true }
+feedparser = {version = "^6.0.10", optional = true}
+newspaper3k = {version = "^0.2.8", optional = true}
+amazon-textract-caller = {version = "<2", optional = true}
+xata = {version = "^1.0.0a7", optional = true}
 
 [tool.poetry.group.test.dependencies]
 # The only dependencies that should be added are
@@ -327,6 +331,7 @@ all = [
 # Please use new-line on formatting to make it easier to add new packages without
 # merge-conflicts
 extended_testing = [
+ "amazon-textract-caller",
  "beautifulsoup4",
  "bibtexparser",
  "cassio",
@@ -363,6 +368,9 @@ extended_testing = [
  "jinja2",
  "xinference",
  "gitpython",
+ "newspaper3k",
+ "feedparser",
+ "xata",
 ]
 
 [tool.ruff]

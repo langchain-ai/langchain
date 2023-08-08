@@ -6,6 +6,7 @@ from freezegun import freeze_time
 from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
 
+from langchain import PromptTemplate
 from langchain.callbacks.manager import Callbacks
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import Run
@@ -30,6 +31,7 @@ from langchain.schema.runnable import (
     RunnableMap,
     RunnablePassthrough,
     RunnableSequence,
+    RunnableWithFallbacks,
 )
 
 
@@ -754,3 +756,48 @@ def test_bind_bind() -> None:
             stop=["Observation:"], hello="world"
         )
     ) == dumpd(llm.bind(stop=["Observation:"], one="two", hello="world"))
+
+
+@pytest.fixture()
+def llm_with_fallbacks() -> RunnableWithFallbacks:
+    error_llm = FakeListLLM(responses=["foo"], i=1)
+    pass_llm = FakeListLLM(responses=["bar"])
+
+    return error_llm.with_fallbacks([pass_llm])
+
+
+@pytest.fixture()
+def llm_with_multi_fallbacks() -> RunnableWithFallbacks:
+    error_llm = FakeListLLM(responses=["foo"], i=1)
+    error_llm_2 = FakeListLLM(responses=["baz"], i=1)
+    pass_llm = FakeListLLM(responses=["bar"])
+
+    return error_llm.with_fallbacks([error_llm_2, pass_llm])
+
+
+@pytest.fixture()
+def llm_chain_with_fallbacks() -> RunnableSequence:
+    error_llm = FakeListLLM(responses=["foo"], i=1)
+    pass_llm = FakeListLLM(responses=["bar"])
+
+    prompt = PromptTemplate.from_template("what did baz say to {buz}")
+    return RunnableMap({"buz": lambda x: x}) | (prompt | error_llm).with_fallbacks(
+        [prompt | pass_llm]
+    )
+
+
+@pytest.mark.parametrize(
+    "runnable",
+    ["llm_with_fallbacks", "llm_with_multi_fallbacks", "llm_chain_with_fallbacks"],
+)
+@pytest.mark.asyncio
+async def test_llm_with_fallbacks(
+    runnable: RunnableWithFallbacks, request: Any
+) -> None:
+    runnable = request.getfixturevalue(runnable)
+    assert runnable.invoke("hello") == "bar"
+    assert runnable.batch(["hi", "hey", "bye"]) == ["bar"] * 3
+    assert list(runnable.stream("hello")) == ["bar"]
+    assert await runnable.ainvoke("hello") == "bar"
+    assert await runnable.abatch(["hi", "hey", "bye"]) == ["bar"] * 3
+    assert list(await runnable.ainvoke("hello")) == list("bar")
