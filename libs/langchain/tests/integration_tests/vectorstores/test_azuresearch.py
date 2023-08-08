@@ -1,7 +1,6 @@
 import os
 import time
 
-import openai
 import pytest
 from dotenv import load_dotenv
 
@@ -10,13 +9,7 @@ from langchain.vectorstores.azuresearch import AzureSearch
 
 load_dotenv()
 
-# Azure OpenAI settings
-openai.api_type = "azure"
-openai.api_base = os.getenv("OPENAI_API_BASE", "")
-openai.api_version = "2023-05-15"
-openai.api_key = os.getenv("OPENAI_API_KEY", "")
-model: str = os.getenv("OPENAI_EMBEDDINGS_ENGINE_DOC", "text-embedding-ada-002")
-
+model = os.getenv("OPENAI_EMBEDDINGS_ENGINE_DOC", "text-embedding-ada-002")
 # Vector store settings
 vector_store_address: str = os.getenv("AZURE_SEARCH_ENDPOINT", "")
 vector_store_password: str = os.getenv("AZURE_SEARCH_ADMIN_KEY", "")

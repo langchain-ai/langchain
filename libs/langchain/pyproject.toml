@@ -375,6 +375,10 @@ extended_testing = [
  "xmltodict",
 ]
 
+scheduled_testing = [
+ "openai",
+]
+
 [tool.ruff]
 select = [
   "E",  # pycodestyle
@@ -413,7 +417,8 @@ addopts = "--strict-markers --strict-config --durations=5 --snapshot-warn-unused
 # Registering custom markers.
 # https://docs.pytest.org/en/7.1.x/example/markers.html#registering-markers
 markers = [
-  "requires: mark tests as requiring a specific library"
+  "requires: mark tests as requiring a specific library",
+  "scheduled: mark tests to run in scheduled testing",
 ]
 
 [tool.codespell]
