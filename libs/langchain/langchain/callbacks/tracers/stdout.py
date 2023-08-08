@@ -111,8 +111,11 @@ class FunctionCallbackHandler(BaseTracer):
             if "prompts" in run.inputs
             else run.inputs
         )
-        if 'functions' in run.extra['invocation_params'] and run.extra['invocation_params']['functions']:
-            inputs['functions'] = run.extra['invocation_params']['functions']
+        if (
+            "functions" in run.extra["invocation_params"]
+            and run.extra["invocation_params"]["functions"]
+        ):
+            inputs["functions"] = run.extra["invocation_params"]["functions"]
         self.function_callback(
             f"{get_colored_text('[llm/start]', color='green')} "
             + get_bolded_text(f"[{crumbs}] Entering LLM run with input:\n")
