@@ -10,7 +10,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 if TYPE_CHECKING:
-    import arcgis  # type: ignore
+    import arcgis_loader  # type: ignore
 
 
 class ArcGISLoader(BaseLoader):
@@ -20,7 +20,7 @@ class ArcGISLoader(BaseLoader):
         """Get the layer properties from the FeatureLayer."""
 
         def extract_text(possibly_html: str) -> str:
-            soup = self.BEAUTIFULSOUP(possibly_html, features="lxml")
+            soup = self.BEAUTIFULSOUP(possibly_html)
             text = soup.text
             return text
 
@@ -58,15 +58,15 @@ class ArcGISLoader(BaseLoader):
 
     def __init__(
         self,
-        layer: Union[str, arcgis.features.FeatureLayer],
-        gis: Optional[arcgis.gis.GIS] = None,
+        layer: Union[str, "arcgis.features.FeatureLayer"],  # type: ignore
+        gis: Optional["arcgis.gis.GIS"] = None,  # type: ignore
         where: str = "1=1",
         out_fields: Optional[Union[List[str], str]] = None,
         return_geometry: bool = False,
         **kwargs,
     ):
         try:
-            import arcgis
+            import arcgis_loader
         except ImportError as e:
             raise ImportError(
                 "arcgis is required to use the ArcGIS Loader. "
