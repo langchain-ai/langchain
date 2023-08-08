@@ -69,5 +69,5 @@ __all__ = [
     "wandb_tracing_enabled",
     "FlyteCallbackHandler",
     "SageMakerCallbackHandler",
-    "LabelStudioCallbackHandler"
+    "LabelStudioCallbackHandler",
 ]
