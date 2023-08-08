@@ -491,18 +491,18 @@ class WandbTracer(BaseTracer):
                 run_args["settings"] = {"silent": True}  # type: ignore
 
             self._wandb.init(**run_args)
-            if self._wandb.run is not None:
-                if should_print_url:
-                    run_url = self._wandb.run.settings.run_url
-                    self._wandb.termlog(
-                        f"Streaming LangChain activity to W&B at {run_url}\n"
-                        "`WandbTracer` is currently in beta.\n"
-                        "Please report any issues to "
-                        "https://github.com/wandb/wandb/issues with the tag "
-                        "`langchain`."
-                    )
+        if self._wandb.run is not None:
+            if should_print_url:
+                run_url = self._wandb.run.settings.run_url
+                self._wandb.termlog(
+                    f"Streaming LangChain activity to W&B at {run_url}\n"
+                    "`WandbTracer` is currently in beta.\n"
+                    "Please report any issues to "
+                    "https://github.com/wandb/wandb/issues with the tag "
+                    "`langchain`."
+                )
 
-                self._wandb.run._label(repo="langchain")
+            self._wandb.run._label(repo="langchain")
 
     def _persist_run(self, run: "Run") -> None:
         """Persist a run."""
