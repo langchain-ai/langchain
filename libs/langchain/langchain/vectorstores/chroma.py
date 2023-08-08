@@ -600,6 +600,7 @@ class Chroma(VectorStore):
         """
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
+        metadatas = _filter_list_metadata(metadatas)
         return cls.from_texts(
             texts=texts,
             embedding=embedding,
@@ -620,3 +621,26 @@ class Chroma(VectorStore):
             ids: List of ids to delete.
         """
         self._collection.delete(ids=ids)
+
+
+def _filter_list_metadata(metadatas: List[Dict]) -> List[Dict]:
+    """Filters out list metadata because it is not supported by ChromaDB."""
+    warned_about_list = False
+    filtered_metadatas = []
+
+    for metadata in metadatas:
+        filtered_metadata = {}
+        for key, value in metadata.items():
+            if isinstance(value, list):
+                if not warned_about_list:
+                    logger.warning(
+                        "List metadata detected. Skipping."
+                        "Metadata values for Chroma must be str, int, float or bool."
+                    )
+                    warned_about_list = True
+                continue
+            else:
+                filtered_metadata[key] = value
+        filtered_metadatas.append(filtered_metadata)
+
+    return filtered_metadatas
