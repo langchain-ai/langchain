@@ -1,35 +1,54 @@
-.PHONY: format lint tests tests_watch integration_tests
+.PHONY: all clean docs_build docs_clean docs_linkcheck api_docs_build api_docs_clean api_docs_linkcheck
 
-coverage:
-	poetry run pytest --cov \
-		--cov-config=.coveragerc \
-		--cov-report xml \
-		--cov-report term-missing:skip-covered
+# Default target executed when no arguments are given to make.
+all: help
+
+
+######################
+# DOCUMENTATION
+######################
+
+clean: docs_clean api_docs_clean
+
 
 docs_build:
-	cd docs && poetry run make html
+	docs/.local_build.sh
 
 docs_clean:
-	cd docs && poetry run make clean
+	rm -r docs/_dist
 
 docs_linkcheck:
-	poetry run linkchecker docs/_build/html/index.html
+	poetry run linkchecker docs/_dist/docs_skeleton/ --ignore-url node_modules
 
-format:
-	poetry run black .
-	poetry run isort .
+api_docs_build:
+	poetry run python docs/api_reference/create_api_rst.py
+	cd docs/api_reference && poetry run make html
 
-lint:
-	poetry run mypy .
-	poetry run black . --check
-	poetry run isort . --check
-	poetry run flake8 .
+api_docs_clean:
+	rm -f docs/api_reference/api_reference.rst
+	cd docs/api_reference && poetry run make clean
 
-tests:
-	poetry run pytest tests/unit_tests
+api_docs_linkcheck:
+	poetry run linkchecker docs/api_reference/_build/html/index.html
 
-tests_watch:
-	poetry run ptw --now . -- tests/unit_tests
+spell_check:
+	poetry run codespell --toml pyproject.toml
 
-integration_tests:
-	poetry run pytest tests/integration_tests
+spell_fix:
+	poetry run codespell --toml pyproject.toml -w
+
+######################
+# HELP
+######################
+
+help:
+	@echo '----'
+	@echo 'clean                        - run docs_clean and api_docs_clean'
+	@echo 'docs_build                   - build the documentation'
+	@echo 'docs_clean                   - clean the documentation build artifacts'
+	@echo 'docs_linkcheck               - run linkchecker on the documentation'
+	@echo 'api_docs_build               - build the API Reference documentation'
+	@echo 'api_docs_clean               - clean the API Reference documentation build artifacts'
+	@echo 'api_docs_linkcheck           - run linkchecker on the API Reference documentation'
+	@echo 'spell_check               	- run codespell on the project'
+	@echo 'spell_fix               		- run codespell on the project and fix the errors'
