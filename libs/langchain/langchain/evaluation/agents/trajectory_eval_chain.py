@@ -5,6 +5,7 @@ the sequence of actions taken and their outcomes. It uses a language model
 chain (LLMChain) to generate the reasoning and scores.
 """
 
+import re
 from typing import (
     Any,
     Dict,
@@ -74,15 +75,14 @@ class TrajectoryOutputParser(BaseOutputParser):
 
         reasoning, score_str = reasoning.strip(), score_str.strip()
 
-        score_str = next(
-            (char for char in score_str if char.isdigit()), "0"
-        )  # Scan for first digit
-
-        if not 1 <= int(score_str) <= 5:
+        # Use regex to extract the score
+        _score = re.search(r"(\d+(\.\d+)?)", score_str)
+        score = int(_score.group(1)) if _score else None
+        if not score or not 1 <= score <= 5:
             raise OutputParserException(
                 f"Score is not a digit in the range 1-5: {text}"
             )
-        normalized_score = (int(score_str) - 1) / 4
+        normalized_score = (score - 1) / 4
         return TrajectoryEval(score=normalized_score, reasoning=reasoning)
 
 
