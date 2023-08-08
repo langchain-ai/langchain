@@ -307,6 +307,9 @@ class AmazonKendraRetriever(BaseRetriever):
 
         client: boto3 client for Kendra
 
+        user_context: Provides information about the user context
+            See: https://docs.aws.amazon.com/kendra/latest/APIReference
+
     Example:
         .. code-block:: python
 
@@ -323,6 +326,7 @@ class AmazonKendraRetriever(BaseRetriever):
     attribute_filter: Optional[Dict] = None
     page_content_formatter: Callable[[ResultItem], str] = combined_text
     client: Any
+    user_context: Optional[Dict] = None
 
     @validator("top_k")
     def validate_top_k(cls, value: int) -> int:
@@ -371,6 +375,8 @@ class AmazonKendraRetriever(BaseRetriever):
         }
         if self.attribute_filter is not None:
             kendra_kwargs["AttributeFilter"] = self.attribute_filter
+        if self.user_context is not None:
+            kendra_kwargs["UserContext"] = self.user_context
 
         response = self.client.retrieve(**kendra_kwargs)
         r_result = RetrieveResult.parse_obj(response)

@@ -31,7 +31,7 @@ class BlackboardLoader(WebBaseLoader):
             )
             documents = loader.load()
 
-    """
+    """  # noqa: E501
 
     base_url: str
     """Base url of the blackboard course."""
@@ -47,6 +47,7 @@ class BlackboardLoader(WebBaseLoader):
         load_all_recursively: bool = True,
         basic_auth: Optional[Tuple[str, str]] = None,
         cookies: Optional[dict] = None,
+        continue_on_failure: Optional[bool] = False,
     ):
         """Initialize with blackboard course url.
 
@@ -58,6 +59,10 @@ class BlackboardLoader(WebBaseLoader):
             load_all_recursively: If True, load all documents recursively.
             basic_auth: Basic auth credentials.
             cookies: Cookies.
+            continue_on_failure: whether to continue loading the sitemap if an error
+                occurs loading a url, emitting a warning instead of raising an
+                exception. Setting this to True makes the loader more robust, but also
+                may result in missing data. Default: False
 
         Raises:
             ValueError: If blackboard course url is invalid.
@@ -80,6 +85,7 @@ class BlackboardLoader(WebBaseLoader):
         cookies.update({"BbRouter": bbrouter})
         self.session.cookies.update(cookies)
         self.load_all_recursively = load_all_recursively
+        self.continue_on_failure = continue_on_failure
         self.check_bs4()
 
     def check_bs4(self) -> None:
