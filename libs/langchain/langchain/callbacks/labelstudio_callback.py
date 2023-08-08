@@ -77,7 +77,7 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
         project_id: Optional[int] = None,
         project_name: str = DEFAULT_PROJECT_NAME,
         project_config: Optional[str] = None,
-        mode: Optional[Union[str, LabelStudioMode]] = LabelStudioMode.PROMPT,
+        mode: Union[str, LabelStudioMode] = LabelStudioMode.PROMPT,
     ):
         super().__init__()
 
