@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Mapping
 
 try:
     from pydantic.v1 import BaseModel, Extra, root_validator
-except:
+except ImportError:
     from pydantic import BaseModel, Extra, root_validator
 
 logger = logging.getLogger(__name__)

@@ -10,7 +10,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 try:
     from pydantic.v1 import BaseSettings
-except:
+except ImportError:
     from pydantic import BaseSettings
 
 from langchain.docstore.document import Document

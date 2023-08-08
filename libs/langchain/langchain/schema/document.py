@@ -5,7 +5,7 @@ from typing import Any, Sequence
 
 try:
     from pydantic.v1 import Field
-except:
+except ImportError:
     from pydantic import Field
 
 from langchain.load.serializable import Serializable

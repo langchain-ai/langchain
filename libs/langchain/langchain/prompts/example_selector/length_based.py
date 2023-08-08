@@ -4,7 +4,7 @@ from typing import Callable, Dict, List
 
 try:
     from pydantic.v1 import BaseModel, validator
-except:
+except ImportError:
     from pydantic import BaseModel, validator
 
 from langchain.prompts.example_selector.base import BaseExampleSelector

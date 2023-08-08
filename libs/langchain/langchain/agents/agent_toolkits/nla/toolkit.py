@@ -4,7 +4,7 @@ from typing import Any, List, Optional, Sequence
 
 try:
     from pydantic.v1 import Field
-except:
+except ImportError:
     from pydantic import Field
 
 from langchain.agents.agent_toolkits.base import BaseToolkit

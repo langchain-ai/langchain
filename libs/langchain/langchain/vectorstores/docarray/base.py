@@ -5,7 +5,7 @@ import numpy as np
 
 try:
     from pydantic.v1 import Field
-except:
+except ImportError:
     from pydantic import Field
 
 from langchain.embeddings.base import Embeddings

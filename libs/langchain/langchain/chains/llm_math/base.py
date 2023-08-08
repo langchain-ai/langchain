@@ -10,7 +10,7 @@ import numexpr
 
 try:
     from pydantic.v1 import Extra, root_validator
-except:
+except ImportError:
     from pydantic import Extra, root_validator
 
 from langchain.callbacks.manager import (

@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional, Tuple
 
 try:
     from pydantic.v1 import Field
-except:
+except ImportError:
     from pydantic import Field
 
 from langchain.memory.chat_message_histories.in_memory import ChatMessageHistory

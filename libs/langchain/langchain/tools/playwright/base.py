@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Optional, Tuple, Type
 
 try:
     from pydantic.v1 import root_validator
-except:
+except ImportError:
     from pydantic import root_validator
 
 from langchain.tools.base import BaseTool

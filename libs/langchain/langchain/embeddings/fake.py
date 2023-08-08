@@ -5,7 +5,7 @@ import numpy as np
 
 try:
     from pydantic.v1 import BaseModel
-except:
+except ImportError:
     from pydantic import BaseModel
 
 from langchain.embeddings.base import Embeddings

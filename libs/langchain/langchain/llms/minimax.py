@@ -13,7 +13,7 @@ import requests
 
 try:
     from pydantic.v1 import BaseModel, Extra, Field, PrivateAttr, root_validator
-except:
+except ImportError:
     from pydantic import BaseModel, Extra, Field, PrivateAttr, root_validator
 
 from langchain.callbacks.manager import (

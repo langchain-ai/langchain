@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Mapping, Optional
 
 try:
     from pydantic.v1 import BaseModel, Extra
-except:
+except ImportError:
     from pydantic import BaseModel, Extra
 
 from langchain.callbacks.manager import (

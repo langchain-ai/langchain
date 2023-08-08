@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Literal, TypedDict, Union, cast
 
 try:
     from pydantic.v1 import BaseModel, PrivateAttr
-except:
+except ImportError:
     from pydantic import BaseModel, PrivateAttr
 
 

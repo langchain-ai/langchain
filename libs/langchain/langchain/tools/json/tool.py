@@ -9,7 +9,7 @@ from typing import Dict, List, Optional, Union
 
 try:
     from pydantic.v1 import BaseModel
-except:
+except ImportError:
     from pydantic import BaseModel
 
 from langchain.callbacks.manager import (

@@ -5,7 +5,7 @@ import requests
 
 try:
     from pydantic.v1 import BaseModel, Field
-except:
+except ImportError:
     from pydantic import BaseModel, Field
 
 from langchain.schema import Document

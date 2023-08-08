@@ -2,7 +2,7 @@ from typing import Iterator, List
 
 try:
     from pydantic.v1 import BaseModel, Field
-except:
+except ImportError:
     from pydantic import BaseModel, Field
 
 from langchain.chains.llm import LLMChain

@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional, Tuple
 
 try:
     from pydantic.v1 import Field, validator
-except:
+except ImportError:
     from pydantic import Field, validator
 
 from langchain.callbacks.manager import (

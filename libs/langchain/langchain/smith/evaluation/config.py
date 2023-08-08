@@ -6,7 +6,7 @@ from langsmith import RunEvaluator
 
 try:
     from pydantic.v1 import BaseModel, Field
-except:
+except ImportError:
     from pydantic import BaseModel, Field
 
 from langchain.embeddings.base import Embeddings

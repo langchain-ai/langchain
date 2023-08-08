@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, List
 
 try:
     from pydantic.v1 import Field
-except:
+except ImportError:
     from pydantic import Field
 
 from langchain.agents.agent_toolkits.base import BaseToolkit

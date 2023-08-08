@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 try:
     from pydantic.v1 import BaseModel, root_validator
-except:
+except ImportError:
     from pydantic import BaseModel, root_validator
 from tenacity import (
     before_sleep_log,

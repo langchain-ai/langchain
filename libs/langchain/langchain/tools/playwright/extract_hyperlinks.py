@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Optional, Type
 
 try:
     from pydantic.v1 import BaseModel, Field, root_validator
-except:
+except ImportError:
     from pydantic import BaseModel, Field, root_validator
 
 from langchain.callbacks.manager import (

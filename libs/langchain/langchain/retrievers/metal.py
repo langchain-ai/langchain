@@ -2,7 +2,7 @@ from typing import Any, List, Optional
 
 try:
     from pydantic.v1 import root_validator
-except:
+except ImportError:
     from pydantic import root_validator
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun

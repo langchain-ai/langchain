@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Type, cast
 
 try:
     from pydantic.v1 import BaseModel, Field, root_validator
-except:
+except ImportError:
     from pydantic import BaseModel, Field, root_validator
 
 from langchain import LLMChain

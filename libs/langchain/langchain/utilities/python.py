@@ -7,7 +7,7 @@ from typing import Dict, Optional
 
 try:
     from pydantic.v1 import BaseModel, Field
-except:
+except ImportError:
     from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)

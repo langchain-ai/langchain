@@ -4,7 +4,7 @@ from typing import Any, List
 
 try:
     from pydantic.v1 import BaseModel
-except:
+except ImportError:
     from pydantic import BaseModel
 
 from langchain.output_parsers.format_instructions import (

@@ -5,7 +5,7 @@ from typing import Any, List, Optional, Sequence, Tuple
 
 try:
     from pydantic.v1 import Field
-except:
+except ImportError:
     from pydantic import Field
 
 from langchain.agents.agent import Agent, AgentOutputParser

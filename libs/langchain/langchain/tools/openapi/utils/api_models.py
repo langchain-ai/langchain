@@ -7,7 +7,7 @@ from openapi_schema_pydantic import MediaType, Parameter, Reference, RequestBody
 
 try:
     from pydantic.v1 import BaseModel, Field
-except:
+except ImportError:
     from pydantic import BaseModel, Field
 
 from langchain.tools.openapi.utils.openapi_utils import HTTPVerb, OpenAPISpec

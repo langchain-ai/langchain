@@ -11,7 +11,7 @@ from langsmith.schemas import RunTypeEnum as RunTypeEnumDep
 
 try:
     from pydantic.v1 import BaseModel, Field, root_validator
-except:
+except ImportError:
     from pydantic import BaseModel, Field, root_validator
 
 from langchain.schema import LLMResult

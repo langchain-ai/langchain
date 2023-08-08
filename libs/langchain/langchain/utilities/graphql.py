@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, Optional
 
 try:
     from pydantic.v1 import BaseModel, Extra, root_validator
-except:
+except ImportError:
     from pydantic import BaseModel, Extra, root_validator
 
 

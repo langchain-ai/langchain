@@ -15,7 +15,7 @@ from typing import Any, Generator, Iterable, Mapping, Optional, Union
 
 try:
     from pydantic.v1 import BaseModel, root_validator
-except:
+except ImportError:
     from pydantic import BaseModel, root_validator
 
 PathLike = Union[str, PurePath]

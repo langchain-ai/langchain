@@ -7,7 +7,7 @@ from typing import Any, List, Optional, Sequence, Union
 
 try:
     from pydantic.v1 import BaseModel
-except:
+except ImportError:
     from pydantic import BaseModel
 
 

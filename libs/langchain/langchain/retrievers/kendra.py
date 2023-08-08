@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Union
 
 try:
     from pydantic.v1 import BaseModel, Extra, root_validator, validator
-except:
+except ImportError:
     from pydantic import BaseModel, Extra, root_validator, validator
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun

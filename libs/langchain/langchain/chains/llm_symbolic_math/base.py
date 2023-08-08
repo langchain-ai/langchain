@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 
 try:
     from pydantic.v1 import Extra
-except:
+except ImportError:
     from pydantic import Extra
 
 from langchain.base_language import BaseLanguageModel

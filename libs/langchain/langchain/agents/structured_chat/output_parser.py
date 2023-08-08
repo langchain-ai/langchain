@@ -7,7 +7,7 @@ from typing import Optional, Union
 
 try:
     from pydantic.v1 import Field
-except:
+except ImportError:
     from pydantic import Field
 
 from langchain.agents.agent import AgentOutputParser

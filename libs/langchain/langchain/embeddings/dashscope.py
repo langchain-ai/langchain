@@ -11,7 +11,7 @@ from typing import (
 
 try:
     from pydantic.v1 import BaseModel, Extra, root_validator
-except:
+except ImportError:
     from pydantic import BaseModel, Extra, root_validator
 from requests.exceptions import HTTPError
 from tenacity import (

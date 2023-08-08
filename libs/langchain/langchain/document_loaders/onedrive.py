@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Type, Union
 
 try:
     from pydantic.v1 import BaseModel, BaseSettings, Field, FilePath, SecretStr
-except:
+except ImportError:
     from pydantic import BaseModel, BaseSettings, Field, FilePath, SecretStr
 
 from langchain.docstore.document import Document

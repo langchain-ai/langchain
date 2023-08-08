@@ -6,7 +6,7 @@ from typing import Any, List, Optional, Sequence
 
 try:
     from pydantic.v1 import Extra
-except:
+except ImportError:
     from pydantic import Extra
 
 from langchain import PromptTemplate

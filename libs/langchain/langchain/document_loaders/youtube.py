@@ -8,11 +8,11 @@ from urllib.parse import parse_qs, urlparse
 
 try:
     from pydantic.v1 import root_validator
-except:
+except ImportError:
     from pydantic import root_validator
 try:
     from pydantic.v1.dataclasses import dataclass
-except:
+except ImportError:
     from pydantic.dataclasses import dataclass
 
 from langchain.docstore.document import Document

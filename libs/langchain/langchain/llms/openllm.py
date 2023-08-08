@@ -17,7 +17,7 @@ from typing import (
 
 try:
     from pydantic.v1 import PrivateAttr
-except:
+except ImportError:
     from pydantic import PrivateAttr
 
 from langchain.callbacks.manager import (

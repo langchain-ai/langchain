@@ -7,11 +7,11 @@ from typing import Dict, List, Optional
 
 try:
     from pydantic.v1 import BaseModel, Extra
-except:
+except ImportError:
     from pydantic import BaseModel, Extra
 try:
     from pydantic.v1.class_validators import root_validator
-except:
+except ImportError:
     from pydantic.class_validators import root_validator
 
 

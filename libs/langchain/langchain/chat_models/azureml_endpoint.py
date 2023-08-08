@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 try:
     from pydantic.v1 import validator
-except:
+except ImportError:
     from pydantic import validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun

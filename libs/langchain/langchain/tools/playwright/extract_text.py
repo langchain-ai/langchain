@@ -4,7 +4,7 @@ from typing import Optional, Type
 
 try:
     from pydantic.v1 import BaseModel, root_validator
-except:
+except ImportError:
     from pydantic import BaseModel, root_validator
 
 from langchain.callbacks.manager import (

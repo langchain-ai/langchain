@@ -3,7 +3,7 @@ from typing import Optional, Type
 
 try:
     from pydantic.v1 import BaseModel
-except:
+except ImportError:
     from pydantic import BaseModel
 
 from langchain import BasePromptTemplate

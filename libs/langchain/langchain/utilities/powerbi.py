@@ -12,7 +12,7 @@ from aiohttp import ServerTimeoutError
 
 try:
     from pydantic.v1 import BaseModel, Field, root_validator, validator
-except:
+except ImportError:
     from pydantic import BaseModel, Field, root_validator, validator
 from requests.exceptions import Timeout
 

@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 
 try:
     from pydantic.v1 import BaseModel, root_validator, validator
-except:
+except ImportError:
     from pydantic import BaseModel, root_validator, validator
 
 from langchain.docstore.document import Document

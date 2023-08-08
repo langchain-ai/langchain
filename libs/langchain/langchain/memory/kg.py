@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Type, Union
 
 try:
     from pydantic.v1 import Field
-except:
+except ImportError:
     from pydantic import Field
 
 from langchain.chains.llm import LLMChain

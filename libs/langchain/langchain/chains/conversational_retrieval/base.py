@@ -9,7 +9,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 try:
     from pydantic.v1 import Extra, Field, root_validator
-except:
+except ImportError:
     from pydantic import Extra, Field, root_validator
 
 from langchain.callbacks.manager import (

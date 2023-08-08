@@ -17,7 +17,7 @@ from typing import (
 
 try:
     from pydantic.v1 import BaseModel, Extra, Field, root_validator
-except:
+except ImportError:
     from pydantic import BaseModel, Extra, Field, root_validator
 from tenacity import (
     AsyncRetrying,

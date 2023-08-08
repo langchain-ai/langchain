@@ -7,7 +7,7 @@ import requests
 
 try:
     from pydantic.v1 import BaseModel, Extra, root_validator
-except:
+except ImportError:
     from pydantic import BaseModel, Extra, root_validator
 from tenacity import (
     before_sleep_log,

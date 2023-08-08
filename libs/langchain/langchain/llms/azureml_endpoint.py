@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Mapping, Optional
 
 try:
     from pydantic.v1 import BaseModel, validator
-except:
+except ImportError:
     from pydantic import BaseModel, validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun

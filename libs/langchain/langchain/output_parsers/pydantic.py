@@ -4,7 +4,7 @@ from typing import Type, TypeVar
 
 try:
     from pydantic.v1 import BaseModel, ValidationError
-except:
+except ImportError:
     from pydantic import BaseModel, ValidationError
 
 from langchain.output_parsers.format_instructions import PYDANTIC_FORMAT_INSTRUCTIONS

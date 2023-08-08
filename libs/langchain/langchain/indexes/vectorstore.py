@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional, Type
 
 try:
     from pydantic.v1 import BaseModel, Extra, Field
-except:
+except ImportError:
     from pydantic import BaseModel, Extra, Field
 
 from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain

@@ -4,7 +4,7 @@ from typing import Optional
 
 try:
     from pydantic.v1.fields import Field
-except:
+except ImportError:
     from pydantic.fields import Field
 
 from langchain.callbacks.manager import (

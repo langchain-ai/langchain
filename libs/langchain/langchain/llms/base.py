@@ -30,7 +30,7 @@ import yaml
 
 try:
     from pydantic.v1 import Field, root_validator, validator
-except:
+except ImportError:
     from pydantic import Field, root_validator, validator
 from tenacity import (
     RetryCallState,

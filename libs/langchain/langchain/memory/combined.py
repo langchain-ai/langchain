@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Set
 
 try:
     from pydantic.v1 import validator
-except:
+except ImportError:
     from pydantic import validator
 
 from langchain.memory.chat_memory import BaseChatMemory

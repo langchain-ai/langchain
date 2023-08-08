@@ -5,7 +5,7 @@ from typing import Any, Dict, Iterable, List, Optional
 
 try:
     from pydantic.v1 import BaseModel, Field
-except:
+except ImportError:
     from pydantic import BaseModel, Field
 
 from langchain.chains.llm import LLMChain

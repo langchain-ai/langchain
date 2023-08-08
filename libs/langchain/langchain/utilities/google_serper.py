@@ -6,11 +6,11 @@ import requests
 
 try:
     from pydantic.v1.class_validators import root_validator
-except:
+except ImportError:
     from pydantic.class_validators import root_validator
 try:
     from pydantic.v1.main import BaseModel
-except:
+except ImportError:
     from pydantic.main import BaseModel
 from typing_extensions import Literal
 

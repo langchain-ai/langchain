@@ -9,7 +9,7 @@ import numpy as np
 
 try:
     from pydantic.v1 import BaseModel, root_validator
-except:
+except ImportError:
     from pydantic import BaseModel, root_validator
 
 from langchain.prompts.example_selector.base import BaseExampleSelector

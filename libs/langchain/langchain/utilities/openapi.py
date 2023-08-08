@@ -23,7 +23,7 @@ from openapi_schema_pydantic import (
 
 try:
     from pydantic.v1 import ValidationError
-except:
+except ImportError:
     from pydantic import ValidationError
 
 logger = logging.getLogger(__name__)

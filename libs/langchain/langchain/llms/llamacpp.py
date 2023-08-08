@@ -3,7 +3,7 @@ from typing import Any, Dict, Iterator, List, Optional
 
 try:
     from pydantic.v1 import Field, root_validator
-except:
+except ImportError:
     from pydantic import Field, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun

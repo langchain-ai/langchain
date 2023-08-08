@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, List
 
 try:
     from pydantic.v1 import BaseModel, Field
-except:
+except ImportError:
     from pydantic import BaseModel, Field
 
 from langchain.docstore.document import Document

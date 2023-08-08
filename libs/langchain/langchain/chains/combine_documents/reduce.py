@@ -6,7 +6,7 @@ from typing import Any, Callable, List, Optional, Protocol, Tuple
 
 try:
     from pydantic.v1 import Extra
-except:
+except ImportError:
     from pydantic import Extra
 
 from langchain.callbacks.manager import Callbacks

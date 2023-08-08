@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional
 
 try:
     from pydantic.v1 import BaseModel, Extra, root_validator
-except:
+except ImportError:
     from pydantic import BaseModel, Extra, root_validator
 
 from langchain.embeddings.base import Embeddings

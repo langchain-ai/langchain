@@ -6,7 +6,7 @@ from typing import Any, Dict, List, NamedTuple, Optional, cast
 
 try:
     from pydantic.v1 import BaseModel, Field
-except:
+except ImportError:
     from pydantic import BaseModel, Field
 from requests import Response
 

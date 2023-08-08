@@ -2,7 +2,7 @@ from typing import Any, List
 
 try:
     from pydantic.v1 import BaseModel, Extra
-except:
+except ImportError:
     from pydantic import BaseModel, Extra
 
 from langchain.embeddings.base import Embeddings

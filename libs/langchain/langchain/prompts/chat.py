@@ -7,7 +7,7 @@ from typing import Any, Callable, List, Sequence, Tuple, Type, TypeVar, Union
 
 try:
     from pydantic.v1 import Field, root_validator
-except:
+except ImportError:
     from pydantic import Field, root_validator
 
 from langchain.load.serializable import Serializable

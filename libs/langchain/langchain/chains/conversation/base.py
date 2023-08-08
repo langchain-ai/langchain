@@ -3,7 +3,7 @@ from typing import Dict, List
 
 try:
     from pydantic.v1 import Extra, Field, root_validator
-except:
+except ImportError:
     from pydantic import Extra, Field, root_validator
 
 from langchain.chains.conversation.prompt import PROMPT

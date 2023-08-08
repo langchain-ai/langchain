@@ -3,7 +3,7 @@ from typing import Optional
 
 try:
     from pydantic.v1 import Extra
-except:
+except ImportError:
     from pydantic import Extra
 
 from langchain.callbacks.manager import (

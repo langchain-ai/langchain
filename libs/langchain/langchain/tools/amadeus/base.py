@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 try:
     from pydantic.v1 import Field
-except:
+except ImportError:
     from pydantic import Field
 
 from langchain.tools.amadeus.utils import authenticate

@@ -6,7 +6,7 @@ import requests
 
 try:
     from pydantic.v1 import BaseModel, root_validator, validator
-except:
+except ImportError:
     from pydantic import BaseModel, root_validator, validator
 from typing_extensions import NotRequired, TypedDict
 

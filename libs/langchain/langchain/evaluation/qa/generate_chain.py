@@ -5,7 +5,7 @@ from typing import Any
 
 try:
     from pydantic.v1 import Field
-except:
+except ImportError:
     from pydantic import Field
 
 from langchain.chains.llm import LLMChain

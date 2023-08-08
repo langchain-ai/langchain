@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Mapping, Optional, Union
 
 try:
     from pydantic.v1 import Extra, Field
-except:
+except ImportError:
     from pydantic import Extra, Field
 
 from langchain.callbacks.manager import Callbacks

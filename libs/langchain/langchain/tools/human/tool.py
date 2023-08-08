@@ -4,7 +4,7 @@ from typing import Callable, Optional
 
 try:
     from pydantic.v1 import Field
-except:
+except ImportError:
     from pydantic import Field
 
 from langchain.callbacks.manager import CallbackManagerForToolRun

@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Tuple
 
 try:
     from pydantic.v1 import Extra, Field, root_validator
-except:
+except ImportError:
     from pydantic import Extra, Field, root_validator
 
 from langchain.callbacks.manager import Callbacks
