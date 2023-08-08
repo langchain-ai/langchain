@@ -204,10 +204,10 @@ embeddings = OpenAIEmbeddings()
 memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 vectordb = Chroma(embedding_function=embeddings, persist_directory=directory)
 qa = ConversationalRetrievalChain.from_llm(ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0.3),
-                    vectordb.as_retriever(),
-                    condense_question_prompt=CUSTOM_QUESTION_PROMPT,
-                    condense_question_llm=ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0.3),
-                    memory=memory)
+    vectordb.as_retriever(),
+    condense_question_prompt=CUSTOM_QUESTION_PROMPT,
+    condense_question_llm=ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0.3),
+    memory=memory)
 ```
 
 ```python
