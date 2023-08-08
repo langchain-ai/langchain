@@ -8,7 +8,7 @@ from langchain.utilities.tensorflow_datasets import TensorflowDatasets
 class TensorflowDatasetLoader(BaseLoader):
     """Loads from TensorFlow Datasets into a list of Documents.
 
-    Args:
+    Attributes:
         dataset_name: the name of the dataset to load
         split_name: the name of the split to load.
         load_max_docs: a limit to the number of loaded documents. Defaults to 100.
@@ -76,4 +76,4 @@ class TensorflowDatasetLoader(BaseLoader):
         yield from self._tfds_client.lazy_load()
 
     def load(self) -> List[Document]:
-        return self._tfds_client.load()
+        return list(self.lazy_load())
