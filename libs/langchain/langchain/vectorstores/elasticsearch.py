@@ -541,11 +541,11 @@ class ElasticsearchStore(VectorStore):
         self,
         query: Optional[str] = None,
         k: int = 4,
-        query_vector: List[float] | None = None,
+        query_vector: Union[List[float], None] = None,
         fetch_k: int = 50,
         fields: Optional[List[str]] = [],
         filter: Optional[List[dict]] = None,
-        custom_query: Optional[Callable[[Dict, str | None], Dict]] = None,
+        custom_query: Optional[Callable[[Dict, Union[str, None]], Dict]] = None,
     ) -> List[Tuple[Document, float]]:
         """Return Elasticsearch documents most similar to query, along with scores.
 
