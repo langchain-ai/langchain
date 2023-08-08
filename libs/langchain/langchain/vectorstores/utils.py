@@ -5,6 +5,7 @@ from typing import List
 
 import numpy as np
 
+from langchain.docstore.document import Document
 from langchain.utils.math import cosine_similarity
 
 
@@ -51,3 +52,21 @@ def maximal_marginal_relevance(
         idxs.append(idx_to_add)
         selected = np.append(selected, [embedding_list[idx_to_add]], axis=0)
     return idxs
+
+
+def filter_complex_metadata(documents: List[Document]) -> List[Document]:
+    """Filters out complex metadata such as lists and dicts that are not
+    support in some vector dbs, including Chroma."""
+    updated_documents = []
+    for document in documents:
+
+        filtered_metadata = {}
+        for key, value in document.metadata.items():
+            if not isinstance(value, bool) and not isinstance(value, (str, int, float)):
+                continue
+            filtered_metadata[key] = value
+
+        document.metadata = filtered_metadata
+        updated_documents.append(document)
+
+    return updated_documents
