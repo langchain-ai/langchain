@@ -600,18 +600,25 @@ class Chroma(VectorStore):
         """
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
-        return cls.from_texts(
-            texts=texts,
-            embedding=embedding,
-            metadatas=metadatas,
-            ids=ids,
-            collection_name=collection_name,
-            persist_directory=persist_directory,
-            client_settings=client_settings,
-            client=client,
-            collection_metadata=collection_metadata,
-            **kwargs,
-        )
+        try:
+            return cls.from_texts(
+                texts=texts,
+                embedding=embedding,
+                metadatas=metadatas,
+                ids=ids,
+                collection_name=collection_name,
+                persist_directory=persist_directory,
+                client_settings=client_settings,
+                client=client,
+                collection_metadata=collection_metadata,
+                **kwargs,
+            )
+        except ValueError as e:
+            if "Expected metadata value to be a str, int, float or bool" in str(e):
+                msg = (
+                    "Try filter complex metadata from the document using "
+                    "langchain.vectorstore.utils.filter_complex_metadata."
+                )
 
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> None:
         """Delete by vector IDs.
