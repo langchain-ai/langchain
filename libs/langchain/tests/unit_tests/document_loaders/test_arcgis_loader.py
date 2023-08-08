@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from langchain.document_loaders import ArcGISLoader
 
 
