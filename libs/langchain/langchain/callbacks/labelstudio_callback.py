@@ -147,9 +147,9 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
                 self.project_id = self.ls_project.id
                 warnings.warn(
                     f'Project ID not provided. Retrieved project "{project_title}"'
-                    f' from the Label Studio instance '
+                    f" from the Label Studio instance "
                     f'based on canonical name "{self.project_name}" '
-                    f'and the current date (ID={self.ls_project.id}).\n'
+                    f"and the current date (ID={self.ls_project.id}).\n"
                     f"If you want to provide your own project ID, use the parameter: "
                     f"{self.__class__.__name__}(project_id=<your_id_here>, ...) "
                     f"or set the environment variable "
@@ -162,9 +162,9 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
                 self.project_id = self.ls_project.id
                 warnings.warn(
                     f'Project ID not provided. Created project "{project_title}" '
-                    f'from the Label Studio instance '
+                    f"from the Label Studio instance "
                     f'based on canonical name "{self.project_name}" and '
-                    f'the current date (ID={self.ls_project.id}).\n'
+                    f"the current date (ID={self.ls_project.id}).\n"
                     f"If you want to provide your own project ID, use the parameter: "
                     f"{self.__class__.__name__}(project_id=<your_id_here>, ...) "
                     f"or set the environment variable "
@@ -184,7 +184,7 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
         if not self.from_name:
             raise ValueError(
                 f'Label Studio project "{self.project_name}" '
-                f'does not have a TextArea tag. '
+                f"does not have a TextArea tag. "
                 f"Please add a TextArea tag to the project."
             )
 
