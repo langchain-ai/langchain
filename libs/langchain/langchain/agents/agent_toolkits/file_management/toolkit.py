@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List, Optional, Type, cast
 
 try:
     from pydantic.v1 import root_validator
@@ -18,7 +18,7 @@ from langchain.tools.file_management.read import ReadFileTool
 from langchain.tools.file_management.write import WriteFileTool
 
 _FILE_TOOLS = {
-    tool_cls.__fields__["name"].default: tool_cls
+    cast(Type[BaseTool], tool_cls).__fields__["name"].default: tool_cls
     for tool_cls in [
         CopyFileTool,
         DeleteFileTool,

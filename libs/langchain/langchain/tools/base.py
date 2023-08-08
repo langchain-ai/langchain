@@ -18,7 +18,7 @@ try:
         validate_arguments,
     )
     from pydantic.v1.main import ModelMetaclass
-except:
+except ImportError:
     from pydantic import (
         BaseModel,
         Extra,

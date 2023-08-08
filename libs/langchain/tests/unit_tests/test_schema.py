@@ -1,9 +1,11 @@
 """Test formatting functionality."""
 
 import unittest
+from typing import List
 
 from langchain.schema.messages import (
     AIMessage,
+    BaseMessage,
     HumanMessage,
     SystemMessage,
     get_buffer_string,
@@ -44,7 +46,7 @@ class TestGetBufferString(unittest.TestCase):
         )
 
     def test_multiple_msg(self) -> None:
-        msgs = [self.human_msg, self.ai_msg, self.sys_msg]
+        msgs: List[BaseMessage] = [self.human_msg, self.ai_msg, self.sys_msg]
         expected_output = "\n".join(
             [
                 f"Human: {self.human_msg.content}",
@@ -66,7 +68,7 @@ class TestMessageDictConversion(unittest.TestCase):
     sys_msg: SystemMessage = SystemMessage(content="sys")
 
     def test_multiple_msg(self) -> None:
-        msgs = [
+        msgs: List[BaseMessage] = [
             self.human_msg,
             self.ai_msg,
             self.sys_msg,

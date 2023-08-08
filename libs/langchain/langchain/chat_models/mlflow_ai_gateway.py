@@ -29,7 +29,7 @@ from langchain.schema.messages import (
 logger = logging.getLogger(__name__)
 
 
-class ChatParams(BaseModel, extra=Extra.allow):
+class ChatParams(BaseModel):
     """Parameters for the MLflow AI Gateway LLM."""
 
     temperature: float = 0.0
@@ -37,6 +37,11 @@ class ChatParams(BaseModel, extra=Extra.allow):
     """The number of candidates to return."""
     stop: Optional[List[str]] = None
     max_tokens: Optional[int] = None
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
 
 
 class ChatMLflowAIGateway(BaseChatModel):

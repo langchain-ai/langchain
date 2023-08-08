@@ -52,7 +52,7 @@ DocumentAttributeValueType = Union[str, int, List[str], None]
 """Possible types of a DocumentAttributeValue. Dates are also represented as str."""
 
 
-class Highlight(BaseModel, extra=Extra.allow):
+class Highlight(BaseModel):
     """
     Represents the information that can be
     used to highlight key words in the excerpt.
@@ -67,8 +67,13 @@ class Highlight(BaseModel, extra=Extra.allow):
     Type: Optional[str]
     """The highlight type: STANDARD or THESAURUS_SYNONYM."""
 
+    class Config:
+        """Configuration for this pydantic object."""
 
-class TextWithHighLights(BaseModel, extra=Extra.allow):
+        extra = Extra.forbid
+
+
+class TextWithHighLights(BaseModel):
     """Text with highlights."""
 
     Text: str
@@ -76,15 +81,25 @@ class TextWithHighLights(BaseModel, extra=Extra.allow):
     Highlights: Optional[Any]
     """The highlights."""
 
+    class Config:
+        """Configuration for this pydantic object."""
 
-class AdditionalResultAttributeValue(BaseModel, extra=Extra.allow):
+        extra = Extra.forbid
+
+
+class AdditionalResultAttributeValue(BaseModel):
     """The value of an additional result attribute."""
 
     TextWithHighlightsValue: TextWithHighLights
     """The text with highlights value."""
 
+    class Config:
+        """Configuration for this pydantic object."""
 
-class AdditionalResultAttribute(BaseModel, extra=Extra.allow):
+        extra = Extra.forbid
+
+
+class AdditionalResultAttribute(BaseModel):
     """An additional result attribute."""
 
     Key: str
@@ -94,11 +109,16 @@ class AdditionalResultAttribute(BaseModel, extra=Extra.allow):
     Value: AdditionalResultAttributeValue
     """The value of the attribute."""
 
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
+
     def get_value_text(self) -> str:
         return self.Value.TextWithHighlightsValue.Text
 
 
-class DocumentAttributeValue(BaseModel, extra=Extra.allow):
+class DocumentAttributeValue(BaseModel):
     """The value of a document attribute."""
 
     DateValue: Optional[str]
@@ -109,6 +129,11 @@ class DocumentAttributeValue(BaseModel, extra=Extra.allow):
     """The string list value."""
     StringValue: Optional[str]
     """The string value."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
 
     @property
     def value(self) -> DocumentAttributeValueType:
@@ -128,7 +153,7 @@ class DocumentAttributeValue(BaseModel, extra=Extra.allow):
         return None
 
 
-class DocumentAttribute(BaseModel, extra=Extra.allow):
+class DocumentAttribute(BaseModel):
     """A document attribute."""
 
     Key: str
@@ -136,8 +161,13 @@ class DocumentAttribute(BaseModel, extra=Extra.allow):
     Value: DocumentAttributeValue
     """The value of the attribute."""
 
+    class Config:
+        """Configuration for this pydantic object."""
 
-class ResultItem(BaseModel, ABC, extra=Extra.allow):
+        extra = Extra.forbid
+
+
+class ResultItem(BaseModel, ABC):
     """Abstract class that represents a result item."""
 
     Id: Optional[str]
@@ -148,6 +178,11 @@ class ResultItem(BaseModel, ABC, extra=Extra.allow):
     """The document URI."""
     DocumentAttributes: Optional[List[DocumentAttribute]] = []
     """The document attributes."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
 
     @abstractmethod
     def get_title(self) -> str:
@@ -257,7 +292,7 @@ class RetrieveResultItem(ResultItem):
         return self.Content or ""
 
 
-class QueryResult(BaseModel, extra=Extra.allow):
+class QueryResult(BaseModel):
     """
     Represents an Amazon Kendra Query API search result, which is composed of:
         * Relevant suggested answers: either a text excerpt or table excerpt.
@@ -268,8 +303,13 @@ class QueryResult(BaseModel, extra=Extra.allow):
     ResultItems: List[QueryResultItem]
     """The result items."""
 
+    class Config:
+        """Configuration for this pydantic object."""
 
-class RetrieveResult(BaseModel, extra=Extra.allow):
+        extra = Extra.forbid
+
+
+class RetrieveResult(BaseModel):
     """
     Represents an Amazon Kendra Retrieve API search result, which is composed of:
         * relevant passages or text excerpts given an input query.
@@ -279,6 +319,11 @@ class RetrieveResult(BaseModel, extra=Extra.allow):
     """The ID of the query."""
     ResultItems: List[RetrieveResultItem]
     """The result items."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
 
 
 class AmazonKendraRetriever(BaseRetriever):

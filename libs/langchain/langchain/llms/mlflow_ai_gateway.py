@@ -11,7 +11,7 @@ from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 
 
-class Params(BaseModel, extra=Extra.allow):
+class Params(BaseModel):
     """Parameters for the MLflow AI Gateway LLM."""
 
     temperature: float = 0.0
@@ -19,6 +19,11 @@ class Params(BaseModel, extra=Extra.allow):
     """The number of candidates to return."""
     stop: Optional[List[str]] = None
     max_tokens: Optional[int] = None
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
 
 
 class MlflowAIGateway(LLM):

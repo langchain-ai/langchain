@@ -10,6 +10,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    cast,
 )
 
 try:
@@ -90,7 +91,7 @@ def _get_python_function_arguments(function: Callable, arg_descriptions: dict) -
         if arg == "return":
             continue
         if isinstance(arg_type, type) and issubclass(arg_type, BaseModel):
-            properties[arg] = arg_type.schema()
+            properties[arg] = cast(Type[BaseModel], arg_type).schema()
         elif arg_type.__name__ in PYTHON_TO_JSON_TYPES:
             properties[arg] = {"type": PYTHON_TO_JSON_TYPES[arg_type.__name__]}
         if arg in arg_descriptions:
@@ -150,7 +151,7 @@ def convert_to_openai_function(
     if isinstance(function, dict):
         return function
     elif isinstance(function, type) and issubclass(function, BaseModel):
-        schema = function.schema()
+        schema = cast(Type[BaseModel], function).schema()
         return {
             "name": schema["title"],
             "description": schema["description"],

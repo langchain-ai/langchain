@@ -13,7 +13,7 @@ try:
         root_validator,
         validator,
     )
-except:
+except ImportError:
     from pydantic import BaseModel, Extra, Field, PrivateAttr, root_validator, validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
