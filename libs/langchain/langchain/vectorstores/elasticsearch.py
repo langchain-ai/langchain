@@ -56,7 +56,6 @@ class BaseRetrievalStrategy(ABC):
         Returns:
             Dict: The Elasticsearch query body.
         """
-        pass
 
     @abstractmethod
     def index(
@@ -76,8 +75,6 @@ class BaseRetrievalStrategy(ABC):
         Returns:
             Dict: The Elasticsearch settings and mappings for the strategy.
         """
-        pass
-
     def beforeIndexSetup(
         self, client: "Elasticsearch", text_field: str, vector_query_field: str
     ) -> None:
@@ -89,7 +86,6 @@ class BaseRetrievalStrategy(ABC):
             text_field (str): The field containing the text data in the index.
             vector_query_field (str): The field containing the vector representations in the index.
         """
-        pass
 
     def requireInference(self) -> bool:
         """
