@@ -3,7 +3,10 @@ from itertools import chain
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
-from pydantic import BaseModel
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
 
 from langchain.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
 from langchain.schema.messages import BaseMessage

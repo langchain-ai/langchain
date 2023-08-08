@@ -6,7 +6,11 @@ from functools import partial
 from typing import Any, List, Optional, Type, Union
 
 import pytest
-from pydantic import BaseModel
+
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
 
 from langchain.agents.tools import Tool, tool
 from langchain.callbacks.manager import (

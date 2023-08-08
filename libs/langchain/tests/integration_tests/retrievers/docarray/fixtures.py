@@ -12,7 +12,11 @@ from docarray.index import (
     WeaviateDocumentIndex,
 )
 from docarray.typing import NdArray
-from pydantic import Field
+
+try:
+    from pydantic.v1 import Field
+except ImportError:
+    from pydantic import Field
 from qdrant_client.http import models as rest
 
 from langchain.embeddings import FakeEmbeddings
