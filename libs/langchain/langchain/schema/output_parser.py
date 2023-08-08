@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, List, Optional, TypeVar, Union
 
@@ -26,6 +27,20 @@ class BaseLLMOutputParser(Serializable, Generic[T], ABC):
         Returns:
             Structured output.
         """
+
+    async def aparse_result(self, result: List[Generation]) -> T:
+        """Parse a list of candidate model Generations into a specific format.
+
+        Args:
+            result: A list of Generations to be parsed. The Generations are assumed
+                to be different candidate outputs for a single model input.
+
+        Returns:
+            Structured output.
+        """
+        return await asyncio.get_running_loop().run_in_executor(
+            None, self.parse_result, result
+        )
 
 
 class BaseGenerationOutputParser(
@@ -124,6 +139,32 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
         Returns:
             Structured output.
         """
+
+    async def aparse_result(self, result: List[Generation]) -> T:
+        """Parse a list of candidate model Generations into a specific format.
+
+        The return value is parsed from only the first Generation in the result, which
+            is assumed to be the highest-likelihood Generation.
+
+        Args:
+            result: A list of Generations to be parsed. The Generations are assumed
+                to be different candidate outputs for a single model input.
+
+        Returns:
+            Structured output.
+        """
+        return self.aparse(result[0].text)
+
+    async def aparse(self, text: str) -> T:
+        """Parse a single string model output into some structure.
+
+        Args:
+            text: String output of a language model.
+
+        Returns:
+            Structured output.
+        """
+        return await asyncio.get_running_loop().run_in_executor(None, self.parse, text)
 
     # TODO: rename 'completion' -> 'text'.
     def parse_with_prompt(self, completion: str, prompt: PromptValue) -> Any:
