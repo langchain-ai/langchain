@@ -23,6 +23,15 @@ class PubMedAPIWrapper(BaseModel):
 
     Parameters:
         top_k_results: number of the top-scored document used for the PubMed tool
+        MAX_QUERY_LENGTH: maximum length of the query.
+          Default is 300 characters.
+        doc_content_chars_max: maximum length of the document content.
+          Content will be truncated if it exceeds this length.
+          Default is 2000 characters.
+        max_retry: maximum number of retries for a request. Default is 5.
+        sleep_time: time to wait between retries.
+          Default is 0.2 seconds.
+        email: email address to be used for the PubMed API.
     """
 
     parse: Any  #: :meta private:
@@ -132,7 +141,7 @@ class PubMedAPIWrapper(BaseModel):
                 break
             except urllib.error.HTTPError as e:
                 if e.code == 429 and retry < self.max_retry:
-                    # Too Many Requests error
+                    # Too Many Requests errors
                     # wait for an exponentially increasing amount of time
                     print(
                         f"Too Many Requests, "
