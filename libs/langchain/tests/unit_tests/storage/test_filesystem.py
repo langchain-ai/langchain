@@ -3,6 +3,7 @@ from typing import Generator
 
 import pytest
 
+from langchain.storage.exceptions import InvalidKeyException
 from langchain.storage.file_system import LocalFileStore
 
 
@@ -40,6 +41,15 @@ def test_mdelete(file_store: LocalFileStore) -> None:
 
     # Assert that the value is None after deletion
     assert values == [None]
+
+
+def test_set_invalid_key(file_store: LocalFileStore) -> None:
+    """Test that an exception is raised when an invalid key is set."""
+    # Set a key-value pair
+    key = "crying-cat/😿"
+    value = b"This is a test value"
+    with pytest.raises(InvalidKeyException):
+        file_store.mset([(key, value)])
 
 
 def test_set_key_and_verify_content(file_store: LocalFileStore) -> None:

@@ -13,6 +13,8 @@ class LocalFileStore(BaseStore[str, bytes]):
         Create a LocalFileStore instance and perform operations on it:
 
         .. code-block:: python
+        
+            from langchain.storage import LocalFileStore
 
             # Instantiate the LocalFileStore with the root path
             file_store = LocalFileStore("/path/to/root")
@@ -37,7 +39,7 @@ class LocalFileStore(BaseStore[str, bytes]):
 
         Args:
             root_path (Union[str, Path]): The root path of the file store. All keys are
-                                          interpreted as paths relative to this root.
+                interpreted as paths relative to this root.
         """
         self.root_path = Path(root_path)
 

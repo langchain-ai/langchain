@@ -1,6 +1,6 @@
 """In memory store that is not thread safe and has no eviction policy.
 
-This is a simple implementation of the AbstractStore using a dictionary that is useful
+This is a simple implementation of the BaseStore using a dictionary that is useful
 primarily for unit testing purposes.
 """
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple
@@ -9,20 +9,26 @@ from langchain.schema import BaseStore
 
 
 class InMemoryStore(BaseStore[str, Any]):
-    """In-memory implementation of the AbstractStore using a dictionary.
+    """In-memory implementation of the BaseStore using a dictionary.
+
+    Attributes:
+        store (Dict[str, Any]): The underlying dictionary that stores
+            the key-value pairs.
 
     Examples:
         ... code-block:: python
 
+            from langchain.storage import InMemoryStore
+
             store = InMemoryStore()
             store.mset([('key1', 'value1'), ('key2', 'value2')])
             store.mget(['key1', 'key2'])
-            ['value1', 'value2']
+            # ['value1', 'value2']
             store.mdelete(['key1'])
             list(store.yield_keys())
-            ['key2']
+            # ['key2']
             list(store.yield_keys(prefix='k'))
-            ['key2']
+            # ['key2']
     """
 
     def __init__(self) -> None:
