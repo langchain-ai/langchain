@@ -188,13 +188,11 @@ from langchain.prompts.prompt import PromptTemplate
 ```
 
 ```python
-custom_template = """Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question.
-    At the end of standalone question add this 'Answer the question in German language.'
-    If you do not know the answer reply with 'I am sorry'
-    Chat History:
-    {chat_history}
-    Follow Up Input: {question}
-    Standalone question:"""
+custom_template = """Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question. At the end of standalone question add this 'Answer the question in German language.' If you do not know the answer reply with 'I am sorry'.
+Chat History:
+{chat_history}
+Follow Up Input: {question}
+Standalone question:"""
 ```
 
 ```python
@@ -203,24 +201,23 @@ CUSTOM_QUESTION_PROMPT = PromptTemplate.from_template(custom_template)
 
 ```python
 embeddings = OpenAIEmbeddings()
+memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 vectordb = Chroma(embedding_function=embeddings, persist_directory=directory)
 qa = ConversationalRetrievalChain.from_llm(ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0.3),
                     vectordb.as_retriever(),
                     condense_question_prompt=CUSTOM_QUESTION_PROMPT,
-                    condense_question_llm=ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0.3))
+                    condense_question_llm=ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0.3),
+                    memory=memory)
 ```
 
 ```python
-chat_history = [('hi', 'hi, how can I help?')]
 query = "What did the president say about Ketanji Brown Jackson"
 result = qa({"question": query})
-
 ```
 
 ```python
-chat_history = chat_history.append((query, result["answer"]))
 query = "Did he mention who she succeeded"
-result = qa({"question": query, "chat_history": chat_history})
+result = qa({"question": query})
 ```
 
 ## Return Source Documents
