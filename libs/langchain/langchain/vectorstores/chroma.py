@@ -620,6 +620,8 @@ class Chroma(VectorStore):
                     "langchain.vectorstore.utils.filter_complex_metadata."
                 )
                 raise ValueError(str(e) + "\n" + msg)
+            else:
+                raise ValueError(str(e))
 
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> None:
         """Delete by vector IDs.
