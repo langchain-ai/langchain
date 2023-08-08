@@ -34,7 +34,7 @@ These tests that require the models to be deployed are skipped by default. Enabl
 """
 
 modelsDeployed = [
-    "elser",
+    #"elser",
     # "sentence-transformers__all-minilm-l6-v2",
 ]
 
