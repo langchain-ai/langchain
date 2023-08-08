@@ -3,10 +3,10 @@ import logging
 import time
 import urllib.error
 import urllib.request
-from typing import Iterator, List
+from typing import Any, Dict, Iterator, List
 
-import xmltodict
 from pydantic import BaseModel
+from pydantic.class_validators import root_validator
 
 from langchain.schema import Document
 
@@ -25,6 +25,8 @@ class PubMedAPIWrapper(BaseModel):
         top_k_results: number of the top-scored document used for the PubMed tool
     """
 
+    parse: Any  #: :meta private:
+
     base_url_esearch = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?"
     base_url_efetch = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?"
     max_retry = 5
@@ -35,6 +37,20 @@ class PubMedAPIWrapper(BaseModel):
     MAX_QUERY_LENGTH = 300
     doc_content_chars_max: int = 2000
     email: str = "your_email@example.com"
+
+    @root_validator()
+    def validate_environment(cls, values: Dict) -> Dict:
+        """Validate that the python package exists in environment."""
+        try:
+            import xmltodict
+
+            values["parse"] = xmltodict.parse
+        except ImportError:
+            raise ImportError(
+                "Could not import xmltodict python package. "
+                "Please install it with `pip install xmltodict`."
+            )
+        return values
 
     def run(self, query: str) -> str:
         """
@@ -129,7 +145,7 @@ class PubMedAPIWrapper(BaseModel):
                     raise e
 
         xml_text = result.read().decode("utf-8")
-        text_dict = xmltodict.parse(xml_text)
+        text_dict = self.parse(xml_text)
         return self._parse_article(uid, text_dict)
 
     def _parse_article(self, uid: str, text_dict: dict) -> dict:
