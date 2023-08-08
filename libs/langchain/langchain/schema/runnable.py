@@ -151,8 +151,8 @@ class Runnable(Generic[Input, Output], ABC):
             if final is None:
                 final = chunk
             else:
-                # Chunks don't have a defined interface, so make a best effort to gather.
-                # This method is unsupported and should throw an error if gathering fails.
+                # Make a best effort to gather, for any type that supports `+`
+                # This method should throw an error if gathering fails.
                 final += chunk  # type: ignore[operator]
         if final:
             yield from self.stream(final, config)
@@ -166,8 +166,8 @@ class Runnable(Generic[Input, Output], ABC):
             if final is None:
                 final = chunk
             else:
-                # Chunks don't have a defined interface, so make a best effort to gather.
-                # This method is unsupported and should throw an error if gathering fails.
+                # Make a best effort to gather, for any type that supports `+`
+                # This method should throw an error if gathering fails.
                 final += chunk  # type: ignore[operator]
 
         if final:
@@ -202,6 +202,8 @@ class Runnable(Generic[Input, Output], ABC):
         config: Optional[RunnableConfig],
         run_type: Optional[str] = None,
     ) -> Output:
+        """Transform an Input value to an Output value, with callbacks.
+        Use this method to implement invoke() in subclasses."""
         from langchain.callbacks.manager import CallbackManager
 
         config = config or {}
@@ -233,6 +235,9 @@ class Runnable(Generic[Input, Output], ABC):
         config: Optional[RunnableConfig],
         run_type: Optional[str] = None,
     ) -> Iterator[Output]:
+        """Transform an Iterator of Input values into an Iterator of Output values,
+        with callbacks.
+        Use this to implement `stream()` or `transform()` in Runnable subclasses."""
         from langchain.callbacks.manager import CallbackManager
 
         # tee the input so we can iterate over it twice
@@ -301,6 +306,9 @@ class Runnable(Generic[Input, Output], ABC):
         config: Optional[RunnableConfig],
         run_type: Optional[str] = None,
     ) -> AsyncIterator[Output]:
+        """Transform an Async Iterator of Input values into an Async Iterator
+        of Output values, with callbacks.
+        Use this to implement `astream()` or `atransform()` in Runnable subclasses."""
         from langchain.callbacks.manager import AsyncCallbackManager
 
         # tee the input so we can iterate over it twice
