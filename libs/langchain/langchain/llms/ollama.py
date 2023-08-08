@@ -191,7 +191,6 @@ class Ollama(LLM, _OllamaCommon):
                 chunks.append(json.loads(stream_resp.strip()).get("response", ""))
                 if run_manager:
                     chunk = json.loads(stream_resp.strip()).get("response", "")
-                    print(chunk)
                     run_manager.on_llm_new_token(
                         chunk,
                         verbose=self.verbose,
