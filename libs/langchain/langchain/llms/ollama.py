@@ -5,7 +5,8 @@ import requests
 from pydantic import Extra
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import LLM
+from langchain.llms.base import BaseLLM
+from langchain.schema import LLMResult
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.output import GenerationChunk
 
@@ -14,8 +15,10 @@ def _stream_response_to_generation_chunk(
     stream_response: str,
 ) -> GenerationChunk:
     """Convert a stream response to a generation chunk."""
+    parsed_response = json.loads(stream_response)
+    generation_info = parsed_response if parsed_response.get("done") is True else None
     return GenerationChunk(
-        text=json.loads(stream_response.strip()).get("response", ""),
+        text=parsed_response.get("response", ""), generation_info=generation_info
     )
 
 
@@ -142,7 +145,7 @@ class _OllamaCommon(BaseLanguageModel):
         return response.iter_lines(decode_unicode=True)
 
 
-class Ollama(LLM, _OllamaCommon):
+class Ollama(BaseLLM, _OllamaCommon):
     """Ollama locally run large language models.
 
     To use, follow the instructions at https://ollama.ai/.
@@ -164,13 +167,13 @@ class Ollama(LLM, _OllamaCommon):
         """Return type of llm."""
         return "ollama-llm"
 
-    def _call(
+    def _generate(
         self,
-        prompt: str,
+        prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> str:
+    ) -> LLMResult:
         """Call out to Ollama's generate endpoint.
 
         Args:
@@ -185,19 +188,25 @@ class Ollama(LLM, _OllamaCommon):
 
                 response = ollama("Tell me a joke.")
         """
-        chunks = []
-        for stream_resp in self._create_stream(prompt, stop, **kwargs):
-            if stream_resp:
-                chunks.append(json.loads(stream_resp.strip()).get("response", ""))
-                if run_manager:
-                    chunk = json.loads(stream_resp.strip()).get("response", "")
-                    print(chunk)
-                    run_manager.on_llm_new_token(
-                        chunk,
-                        verbose=self.verbose,
-                    )
+        # TODO: add caching here.
+        generations = []
+        for prompt in prompts:
+            final_chunk: Optional[GenerationChunk] = None
+            for stream_resp in self._create_stream(prompt, stop, **kwargs):
+                if stream_resp:
+                    chunk = _stream_response_to_generation_chunk(stream_resp)
+                    if final_chunk is None:
+                        final_chunk = chunk
+                    else:
+                        final_chunk += chunk
+                    if run_manager:
+                        run_manager.on_llm_new_token(
+                            chunk.text,
+                            verbose=self.verbose,
+                        )
 
-        return "".join(chunks)
+            generations.append([final_chunk])
+        return LLMResult(generations=generations)
 
     def _stream(
         self,
