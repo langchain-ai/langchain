@@ -69,4 +69,8 @@ class GCSFileLoader(BaseLoader):
             # Download the file to a destination
             blob.download_to_filename(file_path)
             loader = self._loader_func(file_path)
-            return loader.load()
+            docs = loader.load()
+            for doc in docs:
+                if "source" in doc.metadata:
+                    doc.metadata["source"] = f"gs://{self.bucket}/{self.blob}"
+            return docs
