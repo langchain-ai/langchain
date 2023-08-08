@@ -147,6 +147,7 @@ from langchain.document_loaders.telegram import (
 )
 from langchain.document_loaders.tencent_cos_directory import TencentCOSDirectoryLoader
 from langchain.document_loaders.tencent_cos_file import TencentCOSFileLoader
+from langchain.document_loaders.tensorflow_datasets import TensorflowDatasetLoader
 from langchain.document_loaders.text import TextLoader
 from langchain.document_loaders.tomarkdown import ToMarkdownLoader
 from langchain.document_loaders.toml import TomlLoader
@@ -299,6 +300,7 @@ __all__ = [
     "TelegramChatApiLoader",
     "TelegramChatFileLoader",
     "TelegramChatLoader",
+    "TensorflowDatasetLoader",
     "TencentCOSDirectoryLoader",
     "TencentCOSFileLoader",
     "TextLoader",
