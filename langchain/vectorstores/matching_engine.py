@@ -219,6 +219,7 @@ class MatchingEngine(VectorStore):
             deployed_index_id=self._get_index_id(),
             queries=[embedding_query],
             num_neighbors=k,
+            **kwargs
         )
 
         if len(response) == 0:
