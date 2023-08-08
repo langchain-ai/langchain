@@ -241,7 +241,7 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-texts = [t.replace("\n", " ") for t in texts]
+        texts = [t.replace("\n", " ") for t in texts]
         embeddings = self.client.encode(texts, **self.encode_kwargs)
         return embeddings.tolist()
 
