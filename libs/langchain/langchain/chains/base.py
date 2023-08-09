@@ -62,7 +62,14 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
-        return self(input, **(config or {}), **kwargs)
+        config = config or {}
+        return self(
+            input,
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            **kwargs,
+        )
 
     async def ainvoke(
         self,
@@ -76,7 +83,14 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
                 None, partial(self.invoke, input, config, **kwargs)
             )
 
-        return await self.acall(input, **(config or {}), **kwargs)
+        config = config or {}
+        return await self.acall(
+            input,
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            **kwargs,
+        )
 
     memory: Optional[BaseMemory] = None
     """Optional memory object. Defaults to None.

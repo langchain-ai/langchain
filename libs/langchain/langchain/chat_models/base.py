@@ -103,12 +103,18 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> BaseMessageChunk:
+        config = config or {}
         return cast(
             BaseMessageChunk,
             cast(
                 ChatGeneration,
                 self.generate_prompt(
-                    [self._convert_input(input)], stop=stop, **(config or {}), **kwargs
+                    [self._convert_input(input)],
+                    stop=stop,
+                    callbacks=config.get("callbacks"),
+                    tags=config.get("tags"),
+                    metadata=config.get("metadata"),
+                    **kwargs,
                 ).generations[0][0],
             ).message,
         )
@@ -127,8 +133,14 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
                 None, partial(self.invoke, input, config, stop=stop, **kwargs)
             )
 
+        config = config or {}
         llm_result = await self.agenerate_prompt(
-            [self._convert_input(input)], stop=stop, **(config or {}), **kwargs
+            [self._convert_input(input)],
+            stop=stop,
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            **kwargs,
         )
         return cast(
             BaseMessageChunk, cast(ChatGeneration, llm_result.generations[0][0]).message
