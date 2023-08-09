@@ -61,13 +61,13 @@ class CacheBackedEmbeddings(Embeddings):
 
         ..code-block:: python
 
-            from langchain.embeddings import CacheBackedEmbedder, OpenAIEmbeddings
+            from langchain.embeddings import CacheBackedEmbeddings, OpenAIEmbeddings
             from langchain.storage import LocalFileStore
 
             store = LocalFileStore('./my_cache')
 
             underlying_embedder = OpenAIEmbeddings()
-            embedder = CacheBackedEmbedder.from_bytes_store(
+            embedder = CacheBackedEmbeddings.from_bytes_store(
                 underlying_embedder, store, namespace=underlying_embedder.model
             )
 
@@ -80,18 +80,18 @@ class CacheBackedEmbeddings(Embeddings):
 
     def __init__(
         self,
-        underlying_embedder: Embeddings,
+        underlying_embeddings: Embeddings,
         document_embedding_store: BaseStore[str, List[float]],
     ) -> None:
         """Initialize the embedder.
 
         Args:
-            underlying_embedder: The embedder to use for embedding.
+            underlying_embeddings: the embedder to use for computing embeddings.
             document_embedding_store: The store to use for caching document embeddings.
         """
         super().__init__()
         self.document_embedding_store = document_embedding_store
-        self.underlying_embedder = underlying_embedder
+        self.underlying_embeddings = underlying_embeddings
 
     def embed_documents(self, texts: List[str]) -> list[float]:
         """Embed a list of texts.
@@ -115,7 +115,7 @@ class CacheBackedEmbeddings(Embeddings):
         missing_texts = [texts[i] for i in missing_indices]
 
         if missing_texts:
-            missing_vectors = self.underlying_embedder.embed_documents(missing_texts)
+            missing_vectors = self.underlying_embeddings.embed_documents(missing_texts)
             self.document_embedding_store.mset(
                 list(zip(missing_texts, missing_vectors))
             )
@@ -142,12 +142,12 @@ class CacheBackedEmbeddings(Embeddings):
         Returns:
             The embedding for the given text.
         """
-        return self.underlying_embedder.embed_query(text)
+        return self.underlying_embeddings.embed_query(text)
 
     @classmethod
     def from_bytes_store(
         cls,
-        underlying_embedder: Embeddings,
+        underlying_embeddings: Embeddings,
         document_embedding_cache: BaseStore[str, bytes],
         *,
         namespace: str = "",
@@ -155,7 +155,7 @@ class CacheBackedEmbeddings(Embeddings):
         """On-ramp that adds the necessary serialization and encoding to the store.
 
         Args:
-            underlying_embedder: The embedder to use for embedding.
+            underlying_embeddings: The embedder to use for embedding.
             document_embedding_cache: The cache to use for storing document embeddings.
             *,
             namespace: The namespace to use for document cache.
@@ -170,4 +170,4 @@ class CacheBackedEmbeddings(Embeddings):
             _value_serializer,
             _value_deserializer,
         )
-        return cls(underlying_embedder, encoder_backed_store)
+        return cls(underlying_embeddings, encoder_backed_store)
