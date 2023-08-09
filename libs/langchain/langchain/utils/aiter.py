@@ -9,6 +9,8 @@ from typing import (
     Any,
     AsyncGenerator,
     AsyncIterator,
+    Awaitable,
+    Callable,
     Deque,
     Generic,
     Iterator,
@@ -16,6 +18,8 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
+    _T_co,
+    cast,
     overload,
 )
 
@@ -26,7 +30,9 @@ _no_default = object()
 
 # https://github.com/python/cpython/blob/main/Lib/test/test_asyncgen.py#L54
 # before 3.10, the builtin anext() was not available
-def py_anext(iterator, default=_no_default):
+def py_anext(
+    iterator: AsyncIterator[_T_co], default: Union[_T_co, Any] = _no_default
+) -> Awaitable[Union[_T_co, None, Any]]:
     """Pure-Python implementation of anext() for testing purposes.
 
     Closely matches the builtin anext() C implementation.
@@ -36,14 +42,16 @@ def py_anext(iterator, default=_no_default):
     """
 
     try:
-        __anext__ = type(iterator).__anext__
+        __anext__ = cast(
+            Callable[[AsyncIterator[_T_co]], Awaitable[_T_co]], type(iterator).__anext__
+        )
     except AttributeError:
         raise TypeError(f"{iterator!r} is not an async iterator")
 
     if default is _no_default:
         return __anext__(iterator)
 
-    async def anext_impl():
+    async def anext_impl() -> Union[_T_co, Any]:
         try:
             # The C code is way more low-level than this, as it implements
             # all methods of the iterator protocol. In this implementation
