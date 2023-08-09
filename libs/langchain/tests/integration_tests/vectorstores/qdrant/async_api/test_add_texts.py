@@ -2,7 +2,6 @@ import uuid
 from typing import Optional
 
 import pytest
-from qdrant_client.http import models as rest
 
 from langchain.vectorstores import Qdrant
 from tests.integration_tests.vectorstores.fake_embeddings import (
@@ -69,6 +68,7 @@ async def test_qdrant_aadd_texts_stores_ids(
 ) -> None:
     """Test end to end Qdrant.aadd_texts stores provided ids."""
     from qdrant_client import QdrantClient
+    from qdrant_client.http import models as rest
 
     ids = [
         "fa38d572-4c31-4579-aedc-1960d79df6df",
@@ -101,6 +101,7 @@ async def test_qdrant_aadd_texts_stores_embeddings_as_named_vectors(
 ) -> None:
     """Test end to end Qdrant.aadd_texts stores named vectors if name is provided."""
     from qdrant_client import QdrantClient
+    from qdrant_client.http import models as rest
 
     collection_name = uuid.uuid4().hex
 
