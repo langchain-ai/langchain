@@ -1,16 +1,25 @@
 """Tests for the Playwright URL loader"""
+from typing import TYPE_CHECKING
+
 import pytest
 
 from langchain.document_loaders import PlaywrightURLLoader
+from langchain.document_loaders.url_playwright import PlaywrightEvaluator
+
+if TYPE_CHECKING:
+    from playwright.async_api import AsyncBrowser, AsyncPage, AsyncResponse
+    from playwright.sync_api import Browser, Page, Response
 
 
-class TestEvaluator(PageEvaluator):
+class TestEvaluator(PlaywrightEvaluator):
     """A simple evaluator for testing purposes."""
 
-    def evaluate(self, page, browser, response):
+    def evaluate(self, page: "Page", browser: "Browser", response: "Response") -> str:
         return "test"
 
-    async def evaluate_async(self, page, browser, response):
+    async def evaluate_async(
+        self, page: "AsyncPage", browser: "AsyncBrowser", response: "AsyncResponse"
+    ) -> str:
         return "test"
 
 
@@ -56,13 +65,13 @@ def test_playwright_url_loader_with_custom_evaluator() -> None:
     urls = ["https://www.youtube.com/watch?v=dQw4w9WgXcQ"]
     loader = PlaywrightURLLoader(
         urls=urls,
-        page_evaluator=TestEvaluator(),
+        evaluator=TestEvaluator(),
         continue_on_failure=False,
         headless=True,
     )
     docs = loader.load()
     assert len(docs) == 1
-    assert docs[0].page_content == "test-"
+    assert docs[0].page_content == "test"
 
 
 @pytest.mark.asyncio
@@ -71,10 +80,10 @@ async def test_playwright_async_url_loader_with_custom_evaluator() -> None:
     urls = ["https://www.youtube.com/watch?v=dQw4w9WgXcQ"]
     loader = PlaywrightURLLoader(
         urls=urls,
-        page_evaluator=TestEvaluator(),
+        evaluator=TestEvaluator(),
         continue_on_failure=False,
         headless=True,
     )
     docs = await loader.aload()
-    assert len(docs) == 2
+    assert len(docs) == 1
     assert docs[0].page_content == "test"
