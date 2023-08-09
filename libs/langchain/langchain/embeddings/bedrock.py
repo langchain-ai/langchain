@@ -1,3 +1,5 @@
+import asyncio
+from functools import partial
 import json
 import os
 from typing import Any, Dict, List, Optional
@@ -159,3 +161,28 @@ class BedrockEmbeddings(BaseModel, Embeddings):
             Embeddings for the text.
         """
         return self._embedding_func(text)
+    
+    async def aembed_query(self, text: str) -> List[float]:
+        """Asynchronous Compute query embeddings using a Bedrock model.
+        
+        Args:
+            text: The text to embed.
+
+        Returns:
+            Embeddings for the text.
+        """
+
+        return await asyncio.get_running_loop().run_in_executor(
+            None, partial(self.embed_query, text)
+        )
+    
+    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+        """Asynchronous Embed search docs."""
+        
+        results = []
+        for text in texts:
+            result = await self.aembed_query(text)
+            results.append(result)
+
+        return results
+        
