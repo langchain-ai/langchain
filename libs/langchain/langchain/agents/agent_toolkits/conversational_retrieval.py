@@ -15,7 +15,7 @@ from langchain.schema.retriever import BaseRetriever
 from langchain.tools.base import BaseTool, Tool
 
 
-def create_conversational_retrieval_agent(
+def create_agent(
     llm: BaseLanguageModel,
     tools: List[BaseTool],
     remember_intermediate_steps: bool = True,
@@ -106,3 +106,7 @@ def create_retriever_tool(
     return Tool(
         name=name, description=description, func=retriever.get_relevant_documents
     )
+
+
+"""DEPRECATED: Kept for backwards compatibility."""
+create_conversational_retrieval_agent = create_agent
