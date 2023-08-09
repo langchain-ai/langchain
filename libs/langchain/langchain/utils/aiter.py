@@ -21,6 +21,41 @@ from typing import (
 
 T = TypeVar("T")
 
+_no_default = object()
+
+
+# https://github.com/python/cpython/blob/main/Lib/test/test_asyncgen.py#L54
+# before 3.10, the builtin anext() was not available
+def py_anext(iterator, default=_no_default):
+    """Pure-Python implementation of anext() for testing purposes.
+
+    Closely matches the builtin anext() C implementation.
+    Can be used to compare the built-in implementation of the inner
+    coroutines machinery to C-implementation of __anext__() and send()
+    or throw() on the returned generator.
+    """
+
+    try:
+        __anext__ = type(iterator).__anext__
+    except AttributeError:
+        raise TypeError(f"{iterator!r} is not an async iterator")
+
+    if default is _no_default:
+        return __anext__(iterator)
+
+    async def anext_impl():
+        try:
+            # The C code is way more low-level than this, as it implements
+            # all methods of the iterator protocol. In this implementation
+            # we're relying on higher-level coroutine concepts, but that's
+            # exactly what we want -- crosstest pure-Python high-level
+            # implementation and low-level C anext() iterators.
+            return await __anext__(iterator)
+        except StopAsyncIteration:
+            return default
+
+    return anext_impl()
+
 
 async def tee_peer(
     iterator: AsyncIterator[T],
@@ -104,7 +139,7 @@ class Tee(Generic[T]):
         iterable: AsyncIterator[T],
         n: int = 2,
     ):
-        self._iterator = aiter(iterable)
+        self._iterator = iterable.__aiter__()  # before 3.10 aiter() doesn't exist
         self._buffers: List[Deque[T]] = [deque() for _ in range(n)]
         self._children = tuple(
             tee_peer(

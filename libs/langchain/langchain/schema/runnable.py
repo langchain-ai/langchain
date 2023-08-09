@@ -29,7 +29,7 @@ from pydantic import Field
 from langchain.callbacks.base import BaseCallbackManager, Callbacks
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
-from langchain.utils.aiter import atee
+from langchain.utils.aiter import atee, py_anext
 
 
 async def _gated_coro(semaphore: asyncio.Semaphore, coro: Coroutine) -> Any:
@@ -314,7 +314,7 @@ class Runnable(Generic[Input, Output], ABC):
         # tee the input so we can iterate over it twice
         input_for_tracing, input_for_transform = atee(input, 2)
         # Start the input iterator to ensure the input runnable starts before this one
-        final_input: Optional[Input] = await anext(input_for_tracing, None)
+        final_input: Optional[Input] = await py_anext(input_for_tracing, None)
         final_input_supported = True
         final_output: Optional[Output] = None
         final_output_supported = True
