@@ -93,7 +93,7 @@ class CacheBackedEmbeddings(Embeddings):
         self.document_embedding_store = document_embedding_store
         self.underlying_embeddings = underlying_embeddings
 
-    def embed_documents(self, texts: List[str]) -> List[float]:
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed a list of texts.
 
         The method first checks the cache for the embeddings.
@@ -122,7 +122,9 @@ class CacheBackedEmbeddings(Embeddings):
             for index, updated_vector in zip(missing_indices, missing_vectors):
                 vectors[index] = updated_vector
 
-        return cast(List[float], vectors)  # Nones should have been resolved by now
+        return cast(
+            List[List[float]], vectors
+        )  # Nones should have been resolved by now
 
     def embed_query(self, text: str) -> List[float]:
         """Embed query text.
