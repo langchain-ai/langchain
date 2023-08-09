@@ -219,13 +219,12 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> str:
-        return (
-            self.generate_prompt(
-                [self._convert_input(input)], stop=stop, **(config or {}), **kwargs
-            )
-            .generations[0][0]
-            .text
+        _config: Dict[str, Any] = dict(config or {})
+        _config.pop("_locals", None)
+        result = self.generate_prompt(
+            [self._convert_input(input)], stop=stop, **_config, **kwargs
         )
+        return result.generations[0][0].text
 
     async def ainvoke(
         self,
@@ -241,8 +240,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 None, partial(self.invoke, input, config, stop=stop, **kwargs)
             )
 
+        _config: Dict[str, Any] = dict(config or {})
+        _config.pop("_locals", None)
         llm_result = await self.agenerate_prompt(
-            [self._convert_input(input)], stop=stop, **(config or {}), **kwargs
+            [self._convert_input(input)], stop=stop, **_config, **kwargs
         )
         return llm_result.generations[0][0].text
 
