@@ -8,7 +8,8 @@ from langchain.document_loaders.unstructured import (
 
 
 class UnstructuredEPubLoader(UnstructuredFileLoader):
-    """UnstructuredEPubLoader uses unstructured to load EPUB files.
+    """Loader that uses Unstructured to load EPUB files.
+
     You can run the loader in one of two modes: "single" and "elements".
     If you use "single" mode, the document will be returned as a single
     langchain Document object. If you use "elements" mode, the unstructured

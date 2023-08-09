@@ -167,10 +167,9 @@ class AwaDB(VectorStore):
         if self.using_table_name in self.table2embeddings:
             embedding = self.table2embeddings[self.using_table_name].embed_query(query)
         else:
-            from awadb import llm_embedding
+            from awadb import AwaEmbedding
 
-            llm = llm_embedding.LLMEmbedding()
-            embedding = llm.Embedding(query)
+            embedding = AwaEmbedding().Embedding(query)
 
         not_include_fields: Set[str] = {"text_embedding", "_id", "score"}
         return self.similarity_search_by_vector(
@@ -210,10 +209,9 @@ class AwaDB(VectorStore):
         if self.using_table_name in self.table2embeddings:
             embedding = self.table2embeddings[self.using_table_name].embed_query(query)
         else:
-            from awadb import llm_embedding
+            from awadb import AwaEmbedding
 
-            llm = llm_embedding.LLMEmbedding()
-            embedding = llm.Embedding(query)
+            embedding = AwaEmbedding().Embedding(query)
 
         results: List[Tuple[Document, float]] = []
 
@@ -333,10 +331,9 @@ class AwaDB(VectorStore):
         if self.using_table_name in self.table2embeddings:
             embedding = self.table2embeddings[self.using_table_name].embed_query(query)
         else:
-            from awadb import llm_embedding
+            from awadb import AwaEmbedding
 
-            llm = llm_embedding.LLMEmbedding()
-            embedding = llm.Embedding(query)
+            embedding = AwaEmbedding().Embedding(query)
 
         if embedding.__len__() == 0:
             return []

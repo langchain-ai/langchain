@@ -25,3 +25,10 @@ def test_replicate_streaming_call() -> None:
     output = llm("LangChain")
     assert output == "hello LangChain"
     assert callback_handler.llm_streams == 15
+
+
+def test_replicate_stop_sequence() -> None:
+    """Test call to Replicate with a stop sequence."""
+    llm = Replicate(model=TEST_MODEL)
+    output = llm("one two three", stop=["two"])
+    assert output == "hello one "

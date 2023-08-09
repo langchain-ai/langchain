@@ -14,7 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 class AzureChatOpenAI(ChatOpenAI):
-    """Wrapper around Azure OpenAI Chat Completion API. To use this class you
+    """Wrapper around Azure OpenAI Chat Completion API.
+
+    To use this class you
     must have a deployed model on Azure OpenAI. Use `deployment_name` in the
     constructor to refer to the "Model deployment name" in the Azure portal.
 
@@ -43,7 +45,7 @@ class AzureChatOpenAI(ChatOpenAI):
     """
 
     deployment_name: str = ""
-    openai_api_type: str = "azure"
+    openai_api_type: str = ""
     openai_api_base: str = ""
     openai_api_version: str = ""
     openai_api_key: str = ""
@@ -69,9 +71,7 @@ class AzureChatOpenAI(ChatOpenAI):
             "OPENAI_API_VERSION",
         )
         values["openai_api_type"] = get_from_dict_or_env(
-            values,
-            "openai_api_type",
-            "OPENAI_API_TYPE",
+            values, "openai_api_type", "OPENAI_API_TYPE", default="azure"
         )
         values["openai_organization"] = get_from_dict_or_env(
             values,

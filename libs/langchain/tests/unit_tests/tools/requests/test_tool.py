@@ -3,7 +3,6 @@ from typing import Any, Dict
 
 import pytest
 
-from langchain.requests import TextRequestsWrapper
 from langchain.tools.requests.tool import (
     RequestsDeleteTool,
     RequestsGetTool,
@@ -12,6 +11,7 @@ from langchain.tools.requests.tool import (
     RequestsPutTool,
     _parse_input,
 )
+from langchain.utilities.requests import TextRequestsWrapper
 
 
 class _MockTextRequestsWrapper(TextRequestsWrapper):

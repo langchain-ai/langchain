@@ -7,8 +7,10 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Sequence, Union, cast
 from uuid import UUID
 
+from tenacity import RetryCallState
+
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.callbacks.tracers.schemas import Run, RunTypeEnum
+from langchain.callbacks.tracers.schemas import Run
 from langchain.load.dump import dumpd
 from langchain.schema.document import Document
 from langchain.schema.output import ChatGeneration, LLMResult
@@ -108,7 +110,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             start_time=start_time,
             execution_order=execution_order,
             child_execution_order=execution_order,
-            run_type=RunTypeEnum.llm,
+            run_type="llm",
             tags=tags or [],
         )
         self._start_trace(llm_run)
@@ -128,13 +130,48 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
         run_id_ = str(run_id)
         llm_run = self.run_map.get(run_id_)
-        if llm_run is None or llm_run.run_type != RunTypeEnum.llm:
-            raise TracerException("No LLM Run found to be traced")
+        if llm_run is None or llm_run.run_type != "llm":
+            raise TracerException(f"No LLM Run found to be traced for {run_id}")
         llm_run.events.append(
             {
                 "name": "new_token",
                 "time": datetime.utcnow(),
                 "kwargs": {"token": token},
+            },
+        )
+
+    def on_retry(
+        self,
+        retry_state: RetryCallState,
+        *,
+        run_id: UUID,
+        **kwargs: Any,
+    ) -> None:
+        if not run_id:
+            raise TracerException("No run_id provided for on_retry callback.")
+        run_id_ = str(run_id)
+        llm_run = self.run_map.get(run_id_)
+        if llm_run is None:
+            raise TracerException("No Run found to be traced for on_retry")
+        retry_d: Dict[str, Any] = {
+            "slept": retry_state.idle_for,
+            "attempt": retry_state.attempt_number,
+        }
+        if retry_state.outcome is None:
+            retry_d["outcome"] = "N/A"
+        elif retry_state.outcome.failed:
+            retry_d["outcome"] = "failed"
+            exception = retry_state.outcome.exception()
+            retry_d["exception"] = str(exception)
+            retry_d["exception_type"] = exception.__class__.__name__
+        else:
+            retry_d["outcome"] = "success"
+            retry_d["result"] = str(retry_state.outcome.result())
+        llm_run.events.append(
+            {
+                "name": "retry",
+                "time": datetime.utcnow(),
+                "kwargs": retry_d,
             },
         )
 
@@ -145,8 +182,8 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
         run_id_ = str(run_id)
         llm_run = self.run_map.get(run_id_)
-        if llm_run is None or llm_run.run_type != RunTypeEnum.llm:
-            raise TracerException("No LLM Run found to be traced")
+        if llm_run is None or llm_run.run_type != "llm":
+            raise TracerException(f"No LLM Run found to be traced for {run_id}")
         llm_run.outputs = response.dict()
         for i, generations in enumerate(response.generations):
             for j, generation in enumerate(generations):
@@ -173,8 +210,8 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
         run_id_ = str(run_id)
         llm_run = self.run_map.get(run_id_)
-        if llm_run is None or llm_run.run_type != RunTypeEnum.llm:
-            raise TracerException("No LLM Run found to be traced")
+        if llm_run is None or llm_run.run_type != "llm":
+            raise TracerException(f"No LLM Run found to be traced for {run_id}")
         llm_run.error = repr(error)
         llm_run.end_time = datetime.utcnow()
         llm_run.events.append({"name": "error", "time": llm_run.end_time})
@@ -190,6 +227,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         tags: Optional[List[str]] = None,
         parent_run_id: Optional[UUID] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        run_type: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Start a trace for a chain run."""
@@ -209,7 +247,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             execution_order=execution_order,
             child_execution_order=execution_order,
             child_runs=[],
-            run_type=RunTypeEnum.chain,
+            run_type=run_type or "chain",
             tags=tags or [],
         )
         self._start_trace(chain_run)
@@ -222,8 +260,8 @@ class BaseTracer(BaseCallbackHandler, ABC):
         if not run_id:
             raise TracerException("No run_id provided for on_chain_end callback.")
         chain_run = self.run_map.get(str(run_id))
-        if chain_run is None or chain_run.run_type != RunTypeEnum.chain:
-            raise TracerException("No chain Run found to be traced")
+        if chain_run is None:
+            raise TracerException(f"No chain Run found to be traced for {run_id}")
 
         chain_run.outputs = outputs
         chain_run.end_time = datetime.utcnow()
@@ -242,8 +280,8 @@ class BaseTracer(BaseCallbackHandler, ABC):
         if not run_id:
             raise TracerException("No run_id provided for on_chain_error callback.")
         chain_run = self.run_map.get(str(run_id))
-        if chain_run is None or chain_run.run_type != RunTypeEnum.chain:
-            raise TracerException("No chain Run found to be traced")
+        if chain_run is None:
+            raise TracerException(f"No chain Run found to be traced for {run_id}")
 
         chain_run.error = repr(error)
         chain_run.end_time = datetime.utcnow()
@@ -279,7 +317,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             execution_order=execution_order,
             child_execution_order=execution_order,
             child_runs=[],
-            run_type=RunTypeEnum.tool,
+            run_type="tool",
             tags=tags or [],
         )
         self._start_trace(tool_run)
@@ -290,8 +328,8 @@ class BaseTracer(BaseCallbackHandler, ABC):
         if not run_id:
             raise TracerException("No run_id provided for on_tool_end callback.")
         tool_run = self.run_map.get(str(run_id))
-        if tool_run is None or tool_run.run_type != RunTypeEnum.tool:
-            raise TracerException("No tool Run found to be traced")
+        if tool_run is None or tool_run.run_type != "tool":
+            raise TracerException(f"No tool Run found to be traced for {run_id}")
 
         tool_run.outputs = {"output": output}
         tool_run.end_time = datetime.utcnow()
@@ -310,8 +348,8 @@ class BaseTracer(BaseCallbackHandler, ABC):
         if not run_id:
             raise TracerException("No run_id provided for on_tool_error callback.")
         tool_run = self.run_map.get(str(run_id))
-        if tool_run is None or tool_run.run_type != RunTypeEnum.tool:
-            raise TracerException("No tool Run found to be traced")
+        if tool_run is None or tool_run.run_type != "tool":
+            raise TracerException(f"No tool Run found to be traced for {run_id}")
 
         tool_run.error = repr(error)
         tool_run.end_time = datetime.utcnow()
@@ -349,7 +387,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             child_execution_order=execution_order,
             tags=tags,
             child_runs=[],
-            run_type=RunTypeEnum.retriever,
+            run_type="retriever",
         )
         self._start_trace(retrieval_run)
         self._on_retriever_start(retrieval_run)
@@ -365,8 +403,8 @@ class BaseTracer(BaseCallbackHandler, ABC):
         if not run_id:
             raise TracerException("No run_id provided for on_retriever_error callback.")
         retrieval_run = self.run_map.get(str(run_id))
-        if retrieval_run is None or retrieval_run.run_type != RunTypeEnum.retriever:
-            raise TracerException("No retriever Run found to be traced")
+        if retrieval_run is None or retrieval_run.run_type != "retriever":
+            raise TracerException(f"No retriever Run found to be traced for {run_id}")
 
         retrieval_run.error = repr(error)
         retrieval_run.end_time = datetime.utcnow()
@@ -381,8 +419,8 @@ class BaseTracer(BaseCallbackHandler, ABC):
         if not run_id:
             raise TracerException("No run_id provided for on_retriever_end callback.")
         retrieval_run = self.run_map.get(str(run_id))
-        if retrieval_run is None or retrieval_run.run_type != RunTypeEnum.retriever:
-            raise TracerException("No retriever Run found to be traced")
+        if retrieval_run is None or retrieval_run.run_type != "retriever":
+            raise TracerException(f"No retriever Run found to be traced for {run_id}")
         retrieval_run.outputs = {"documents": documents}
         retrieval_run.end_time = datetime.utcnow()
         retrieval_run.events.append({"name": "end", "time": retrieval_run.end_time})

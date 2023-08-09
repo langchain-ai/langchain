@@ -33,11 +33,11 @@ from langchain.chains.llm import LLMChain
 from langchain.llms.openai import OpenAI
 from langchain.memory import ReadOnlySharedMemory
 from langchain.prompts import PromptTemplate
-from langchain.requests import RequestsWrapper
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 from langchain.tools.requests.tool import BaseRequestsTool
+from langchain.utilities.requests import RequestsWrapper
 
 #
 # Requests tools with LLM-instructed extraction of truncated responses.

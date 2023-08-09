@@ -1,6 +1,7 @@
+"""**Schemas** are the LangChain Base Classes and Interfaces."""
 from langchain.schema.agent import AgentAction, AgentFinish
 from langchain.schema.document import BaseDocumentTransformer, Document
-from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema.exceptions import LangChainException
 from langchain.schema.memory import BaseChatMessageHistory, BaseMemory
 from langchain.schema.messages import (
     AIMessage,
@@ -25,18 +26,20 @@ from langchain.schema.output import (
 from langchain.schema.output_parser import (
     BaseLLMOutputParser,
     BaseOutputParser,
-    NoOpOutputParser,
     OutputParserException,
+    StrOutputParser,
 )
 from langchain.schema.prompt import PromptValue
 from langchain.schema.prompt_template import BasePromptTemplate, format_document
 from langchain.schema.retriever import BaseRetriever
+from langchain.schema.storage import BaseStore
 
 RUN_KEY = "__run"
 Memory = BaseMemory
 
 __all__ = [
     "BaseMemory",
+    "BaseStore",
     "BaseChatMessageHistory",
     "AgentFinish",
     "AgentAction",
@@ -59,14 +62,14 @@ __all__ = [
     "ChatGeneration",
     "Generation",
     "PromptValue",
+    "LangChainException",
     "BaseRetriever",
     "RUN_KEY",
     "Memory",
     "OutputParserException",
-    "NoOpOutputParser",
+    "StrOutputParser",
     "BaseOutputParser",
     "BaseLLMOutputParser",
     "BasePromptTemplate",
-    "BaseLanguageModel",
     "format_document",
 ]

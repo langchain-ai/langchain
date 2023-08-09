@@ -1,5 +1,4 @@
 """Load prompts."""
-import importlib
 import json
 import logging
 from pathlib import Path
@@ -10,7 +9,7 @@ import yaml
 from langchain.output_parsers.regex import RegexParser
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import BaseLLMOutputParser, BasePromptTemplate, NoOpOutputParser
+from langchain.schema import BaseLLMOutputParser, BasePromptTemplate, StrOutputParser
 from langchain.utilities.loading import try_load_from_hub
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/prompts/"
@@ -80,7 +79,7 @@ def _load_output_parser(config: dict) -> dict:
         if output_parser_type == "regex_parser":
             output_parser: BaseLLMOutputParser = RegexParser(**_config)
         elif output_parser_type == "default":
-            output_parser = NoOpOutputParser(**_config)
+            output_parser = StrOutputParser(**_config)
         else:
             raise ValueError(f"Unsupported output parser {output_parser_type}")
         config["output_parser"] = output_parser
@@ -140,19 +139,6 @@ def _load_prompt_from_file(file: Union[str, Path]) -> BasePromptTemplate:
     elif file_path.suffix == ".yaml":
         with open(file_path, "r") as f:
             config = yaml.safe_load(f)
-    # TODO: deprecate this
-    elif file_path.suffix == ".py":
-        spec = importlib.util.spec_from_loader(
-            "prompt", loader=None, origin=str(file_path)
-        )
-        if spec is None:
-            raise ValueError("could not load spec")
-        helper = importlib.util.module_from_spec(spec)
-        with open(file_path, "rb") as f:
-            exec(f.read(), helper.__dict__)
-        if not isinstance(helper.PROMPT, BasePromptTemplate):
-            raise ValueError("Did not get object of type BasePromptTemplate.")
-        return helper.PROMPT
     else:
         raise ValueError(f"Got unsupported file type {file_path.suffix}")
     # Load the prompt from the config now.

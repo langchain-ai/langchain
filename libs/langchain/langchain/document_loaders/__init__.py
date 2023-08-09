@@ -1,4 +1,19 @@
-"""All different types of document loaders."""
+"""**Document Loaders**  are classes to load Documents.
+
+**Document Loaders** are usually used to load a lot of Documents in a single run.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    BaseLoader --> <name>Loader  # Examples: TextLoader, UnstructuredFileLoader
+
+**Main helpers:**
+
+.. code-block::
+
+    Document, <name>TextSplitter
+"""
 
 from langchain.document_loaders.acreom import AcreomLoader
 from langchain.document_loaders.airbyte_json import AirbyteJSONLoader
@@ -28,6 +43,7 @@ from langchain.document_loaders.brave_search import BraveSearchLoader
 from langchain.document_loaders.browserless import BrowserlessLoader
 from langchain.document_loaders.chatgpt import ChatGPTLoader
 from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
+from langchain.document_loaders.concurrent import ConcurrentLoader
 from langchain.document_loaders.confluence import ConfluenceLoader
 from langchain.document_loaders.conllu import CoNLLULoader
 from langchain.document_loaders.csv_loader import CSVLoader, UnstructuredCSVLoader
@@ -38,6 +54,7 @@ from langchain.document_loaders.diffbot import DiffbotLoader
 from langchain.document_loaders.directory import DirectoryLoader
 from langchain.document_loaders.discord import DiscordChatLoader
 from langchain.document_loaders.docugami import DocugamiLoader
+from langchain.document_loaders.dropbox import DropboxLoader
 from langchain.document_loaders.duckdb_loader import DuckDBLoader
 from langchain.document_loaders.email import (
     OutlookMessageLoader,
@@ -45,6 +62,7 @@ from langchain.document_loaders.email import (
 )
 from langchain.document_loaders.embaas import EmbaasBlobLoader, EmbaasLoader
 from langchain.document_loaders.epub import UnstructuredEPubLoader
+from langchain.document_loaders.etherscan import EtherscanLoader
 from langchain.document_loaders.evernote import EverNoteLoader
 from langchain.document_loaders.excel import UnstructuredExcelLoader
 from langchain.document_loaders.facebook_chat import FacebookChatLoader
@@ -77,9 +95,12 @@ from langchain.document_loaders.mediawikidump import MWDumpLoader
 from langchain.document_loaders.merge import MergedDataLoader
 from langchain.document_loaders.mhtml import MHTMLLoader
 from langchain.document_loaders.modern_treasury import ModernTreasuryLoader
+from langchain.document_loaders.news import NewsURLLoader
 from langchain.document_loaders.notebook import NotebookLoader
 from langchain.document_loaders.notion import NotionDirectoryLoader
 from langchain.document_loaders.notiondb import NotionDBLoader
+from langchain.document_loaders.obs_directory import OBSDirectoryLoader
+from langchain.document_loaders.obs_file import OBSFileLoader
 from langchain.document_loaders.obsidian import ObsidianLoader
 from langchain.document_loaders.odt import UnstructuredODTLoader
 from langchain.document_loaders.onedrive import OneDriveLoader
@@ -87,6 +108,7 @@ from langchain.document_loaders.onedrive_file import OneDriveFileLoader
 from langchain.document_loaders.open_city_data import OpenCityDataLoader
 from langchain.document_loaders.org_mode import UnstructuredOrgModeLoader
 from langchain.document_loaders.pdf import (
+    AmazonTextractPDFLoader,
     MathpixPDFLoader,
     OnlinePDFLoader,
     PDFMinerLoader,
@@ -100,6 +122,7 @@ from langchain.document_loaders.pdf import (
 )
 from langchain.document_loaders.powerpoint import UnstructuredPowerPointLoader
 from langchain.document_loaders.psychic import PsychicLoader
+from langchain.document_loaders.pubmed import PubMedLoader
 from langchain.document_loaders.pyspark_dataframe import PySparkDataFrameLoader
 from langchain.document_loaders.python import PythonLoader
 from langchain.document_loaders.readthedocs import ReadTheDocsLoader
@@ -107,6 +130,7 @@ from langchain.document_loaders.recursive_url_loader import RecursiveUrlLoader
 from langchain.document_loaders.reddit import RedditPostsLoader
 from langchain.document_loaders.roam import RoamLoader
 from langchain.document_loaders.rocksetdb import RocksetLoader
+from langchain.document_loaders.rss import RSSFeedLoader
 from langchain.document_loaders.rst import UnstructuredRSTLoader
 from langchain.document_loaders.rtf import UnstructuredRTFLoader
 from langchain.document_loaders.s3_directory import S3DirectoryLoader
@@ -123,6 +147,7 @@ from langchain.document_loaders.telegram import (
 )
 from langchain.document_loaders.tencent_cos_directory import TencentCOSDirectoryLoader
 from langchain.document_loaders.tencent_cos_file import TencentCOSFileLoader
+from langchain.document_loaders.tensorflow_datasets import TensorflowDatasetLoader
 from langchain.document_loaders.text import TextLoader
 from langchain.document_loaders.tomarkdown import ToMarkdownLoader
 from langchain.document_loaders.toml import TomlLoader
@@ -161,13 +186,14 @@ PagedPDFSplitter = PyPDFLoader
 TelegramChatLoader = TelegramChatFileLoader
 
 __all__ = [
-    "AcreomLoader",
-    "AsyncHtmlLoader",
     "AZLyricsLoader",
+    "AcreomLoader",
     "AirbyteJSONLoader",
     "AirtableLoader",
+    "AmazonTextractPDFLoader",
     "ApifyDatasetLoader",
     "ArxivLoader",
+    "AsyncHtmlLoader",
     "AzureBlobStorageContainerLoader",
     "AzureBlobStorageFileLoader",
     "BSHTMLLoader",
@@ -184,18 +210,21 @@ __all__ = [
     "ChatGPTLoader",
     "CoNLLULoader",
     "CollegeConfidentialLoader",
+    "ConcurrentLoader",
     "ConfluenceLoader",
     "CubeSemanticLoader",
-    "DatadogLogsLoader",
     "DataFrameLoader",
+    "DatadogLogsLoader",
     "DiffbotLoader",
     "DirectoryLoader",
     "DiscordChatLoader",
     "DocugamiLoader",
     "Docx2txtLoader",
+    "DropboxLoader",
     "DuckDBLoader",
     "EmbaasBlobLoader",
     "EmbaasLoader",
+    "EtherscanLoader",
     "EverNoteLoader",
     "FacebookChatLoader",
     "FaunaLoader",
@@ -221,34 +250,39 @@ __all__ = [
     "JSONLoader",
     "JoplinLoader",
     "LarkSuiteDocLoader",
+    "MHTMLLoader",
     "MWDumpLoader",
     "MastodonTootsLoader",
     "MathpixPDFLoader",
     "MaxComputeLoader",
     "MergedDataLoader",
-    "MHTMLLoader",
     "ModernTreasuryLoader",
+    "NewsURLLoader",
     "NotebookLoader",
     "NotionDBLoader",
     "NotionDirectoryLoader",
+    "OBSDirectoryLoader",
+    "OBSFileLoader",
     "ObsidianLoader",
     "OneDriveFileLoader",
     "OneDriveLoader",
     "OnlinePDFLoader",
-    "OutlookMessageLoader",
     "OpenCityDataLoader",
+    "OutlookMessageLoader",
     "PDFMinerLoader",
     "PDFMinerPDFasHTMLLoader",
     "PDFPlumberLoader",
     "PagedPDFSplitter",
     "PlaywrightURLLoader",
     "PsychicLoader",
+    "PubMedLoader",
     "PyMuPDFLoader",
     "PyPDFDirectoryLoader",
     "PyPDFLoader",
     "PyPDFium2Loader",
     "PySparkDataFrameLoader",
     "PythonLoader",
+    "RSSFeedLoader",
     "ReadTheDocsLoader",
     "RecursiveUrlLoader",
     "RedditPostsLoader",
@@ -263,11 +297,12 @@ __all__ = [
     "SnowflakeLoader",
     "SpreedlyLoader",
     "StripeLoader",
-    "TencentCOSDirectoryLoader",
-    "TencentCOSFileLoader",
     "TelegramChatApiLoader",
     "TelegramChatFileLoader",
     "TelegramChatLoader",
+    "TensorflowDatasetLoader",
+    "TencentCOSDirectoryLoader",
+    "TencentCOSFileLoader",
     "TextLoader",
     "ToMarkdownLoader",
     "TomlLoader",
