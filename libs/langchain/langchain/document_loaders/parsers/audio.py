@@ -115,7 +115,6 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
               Defaults to None.
             forced_decoder_ids: id states for decoder in a multilanguage model.
               Defaults to None.
-
         """
         try:
             from transformers import pipeline

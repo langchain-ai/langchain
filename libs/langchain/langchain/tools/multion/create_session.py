@@ -37,7 +37,6 @@ class MultionCreateSession(BaseTool):
         name: The name of the tool. Default: "create_multion_session"
         description: The description of the tool.
         args_schema: The schema for the tool's arguments.
-
     """
 
     name: str = "create_multion_session"
