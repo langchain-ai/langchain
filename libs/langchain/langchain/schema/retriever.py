@@ -107,9 +107,11 @@ class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
     def invoke(
         self, input: str, config: Optional[RunnableConfig] = None
     ) -> List[Document]:
-        _config: Dict[str, Any] = dict(config or {})
-        _config.pop("_locals", None)
-        return self.get_relevant_documents(input, **_config)
+        config = config or {}
+        config_kwargs: Dict = {
+            k: config.get(k) for k in ("callbacks", "tags", "metadata")
+        }
+        return self.get_relevant_documents(input, **config_kwargs)
 
     async def ainvoke(
         self, input: str, config: Optional[RunnableConfig] = None
@@ -118,9 +120,11 @@ class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
             # If the retriever doesn't implement async, use default implementation
             return await super().ainvoke(input, config)
 
-        _config: Dict[str, Any] = dict(config or {})
-        _config.pop("_locals", None)
-        return await self.aget_relevant_documents(input, **_config)
+        config = config or {}
+        config_kwargs: Dict = {
+            k: config.get(k) for k in ("callbacks", "tags", "metadata")
+        }
+        return await self.aget_relevant_documents(input, **config_kwargs)
 
     @abstractmethod
     def _get_relevant_documents(

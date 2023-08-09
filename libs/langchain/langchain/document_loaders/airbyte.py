@@ -1,10 +1,9 @@
 """Loads local airbyte json files."""
 from typing import Any, Callable, Iterator, List, Mapping, Optional
 
-from libs.langchain.langchain.utils.utils import guard_import
-
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.utils.utils import guard_import
 
 RecordHandler = Callable[[Any, Optional[str]], Document]
 

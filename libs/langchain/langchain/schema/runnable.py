@@ -1229,7 +1229,7 @@ class RunnablePassthrough(Serializable, Runnable[Input, Input]):
 
 class RunnableBinding(Serializable, Runnable[Input, Output]):
     """
-    A runnable that binds a runnable to a set of kwargs.
+    A runnable that delegates calls to another runnable with a set of kwargs.
     """
 
     bound: Runnable[Input, Output]
@@ -1314,8 +1314,15 @@ class RouterRunnable(
 
     runnables: Mapping[str, Runnable[Input, Output]]
 
-    def __init__(self, runnables: Mapping[str, Runnable[Input, Output]]) -> None:
-        super().__init__(runnables=runnables)
+    def __init__(
+        self,
+        runnables: Mapping[
+            str, Union[Runnable[Input, Output], Callable[[Input], Output]]
+        ],
+    ) -> None:
+        super().__init__(
+            runnables={key: _coerce_to_runnable(r) for key, r in runnables.items()}
+        )
 
     class Config:
         arbitrary_types_allowed = True
