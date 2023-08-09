@@ -189,6 +189,7 @@ def create_openai_fn_chain(
     prompt: BasePromptTemplate,
     *,
     output_parser: Optional[BaseLLMOutputParser] = None,
+    llm_chain: Optional[LLMChain] = None,
     **kwargs: Any,
 ) -> LLMChain:
     """Create an LLM chain that uses OpenAI functions.
@@ -259,6 +260,10 @@ def create_openai_fn_chain(
     """  # noqa: E501
     if not functions:
         raise ValueError("Need to pass in at least one function. Received zero.")
+
+    if not llm_chain:
+        llm_chain = LLMChain
+
     openai_functions = [convert_to_openai_function(f) for f in functions]
     fn_names = [oai_fn["name"] for oai_fn in openai_functions]
     output_parser = output_parser or _get_openai_output_parser(functions, fn_names)
@@ -267,15 +272,17 @@ def create_openai_fn_chain(
     }
     if len(openai_functions) == 1:
         llm_kwargs["function_call"] = {"name": openai_functions[0]["name"]}
-    llm_chain = LLMChain(
-        llm=llm,
-        prompt=prompt,
-        output_parser=output_parser,
-        llm_kwargs=llm_kwargs,
-        output_key="function",
+
+    settings = {
+        "llm": llm,
+        "prompt": prompt,
+        "output_parser": output_parser,
+        "llm_kwargs": llm_kwargs,
+        "output_key": "function",
         **kwargs,
-    )
-    return llm_chain
+    }
+
+    return llm_chain(**settings)
 
 
 def create_structured_output_chain(
