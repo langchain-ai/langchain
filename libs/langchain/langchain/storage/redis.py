@@ -1,4 +1,4 @@
-from typing import Any, Iterator, List, Optional, Sequence, Tuple
+from typing import Any, Iterator, List, Optional, Sequence, Tuple, cast
 
 from langchain.schema import BaseStore
 
@@ -81,7 +81,10 @@ class RedisStore(BaseStore[str, bytes]):
 
     def mget(self, keys: Sequence[str]) -> List[Optional[bytes]]:
         """Get the values associated with the given keys."""
-        return self.client.mget([self._get_prefixed_key(key) for key in keys])
+        return cast(
+            List[Optional[bytes]],
+            self.client.mget([self._get_prefixed_key(key) for key in keys]),
+        )
 
     def mset(self, key_value_pairs: Sequence[Tuple[str, bytes]]) -> None:
         """Set the given key-value pairs."""
@@ -102,7 +105,7 @@ class RedisStore(BaseStore[str, bytes]):
             pattern = self._get_prefixed_key(prefix)
         else:
             pattern = self._get_prefixed_key("*")
-        scan_iter = self.client.scan_iter(match=pattern)
+        scan_iter = cast(Iterator[bytes], self.client.scan_iter(match=pattern))
         for key in scan_iter:
             decoded_key = key.decode("utf-8")
             if self.namespace:

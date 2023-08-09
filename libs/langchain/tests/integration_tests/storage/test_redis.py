@@ -13,9 +13,11 @@ if typing.TYPE_CHECKING:
     try:
         from redis import Redis
     except ImportError:
-        Redis = Any
+        # Ignoring mypy here to allow assignment of Any to Redis in the event
+        # that redis is not installed.
+        Redis = Any  # type:ignore
 else:
-    Redis = Any
+    Redis = Any  # type:ignore
 
 
 pytest.importorskip("redis")
@@ -32,7 +34,6 @@ def redis_client() -> Redis:
     # The password should establish the identity of the server being.
     port = 6379
     password = os.environ.get("REDIS_PASSWORD") or str(uuid.uuid4())
-    password = None
     client = redis.Redis(host="localhost", port=port, password=password, db=0)
     try:
         client.ping()
