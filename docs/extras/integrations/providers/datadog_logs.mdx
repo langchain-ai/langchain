@@ -8,7 +8,7 @@
 pip install datadog_api_client
 ```
 
-We must set up the Datadog API key and APP key, and we need to set up the query to extract the desired logs.
+We must set up the `Datadog API key` and `APP key`, and we need to set up the query to extract the desired logs.
 
 ## Document Loader
 
@@ -21,6 +21,7 @@ from langchain.document_loaders import DatadogLogsLoader
 ## Retriever
 
 `DatadogLogsLoader` derives from the `BaseLoaderAsRetriever` class, so it can be used as a Retriever.
+
 See a [usage example](/docs/integrations/retrievers/datadog_logs).
 
 ```python
