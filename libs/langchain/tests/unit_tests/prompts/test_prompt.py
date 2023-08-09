@@ -1,9 +1,8 @@
 """Test functionality related to prompts."""
-from langchain.load.dump import dumps
 import pytest
-
 from syrupy import SnapshotAssertion
 
+from langchain.load.dump import dumps
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema.document import Document
 
