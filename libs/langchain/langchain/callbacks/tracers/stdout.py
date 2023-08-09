@@ -78,30 +78,31 @@ class FunctionCallbackHandler(BaseTracer):
     # logging methods
     def _on_chain_start(self, run: Run) -> None:
         crumbs = self.get_breadcrumbs(run)
+        run_type = run.run_type.capitalize()
         self.function_callback(
             f"{get_colored_text('[chain/start]', color='green')} "
-            + get_bolded_text(
-                f"[{crumbs}] Entering {run.run_type.capitalize()} run with input:\n"
-            )
+            + get_bolded_text(f"[{crumbs}] Entering {run_type} run with input:\n")
             + f"{try_json_stringify(run.inputs, '[inputs]')}"
         )
 
     def _on_chain_end(self, run: Run) -> None:
         crumbs = self.get_breadcrumbs(run)
+        run_type = run.run_type.capitalize()
         self.function_callback(
             f"{get_colored_text('[chain/end]', color='blue')} "
             + get_bolded_text(
-                f"[{crumbs}] [{elapsed(run)}] Exiting {run.run_type.capitalize()} run with output:\n"
+                f"[{crumbs}] [{elapsed(run)}] Exiting {run_type} run with output:\n"
             )
             + f"{try_json_stringify(run.outputs, '[outputs]')}"
         )
 
     def _on_chain_error(self, run: Run) -> None:
         crumbs = self.get_breadcrumbs(run)
+        run_type = run.run_type.capitalize()
         self.function_callback(
             f"{get_colored_text('[chain/error]', color='red')} "
             + get_bolded_text(
-                f"[{crumbs}] [{elapsed(run)}] {run.run_type.capitalize()} run errored with error:\n"
+                f"[{crumbs}] [{elapsed(run)}] {run_type} run errored with error:\n"
             )
             + f"{try_json_stringify(run.error, '[error]')}"
         )
