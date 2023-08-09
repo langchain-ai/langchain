@@ -8,7 +8,6 @@ from langchain.chains import ConversationalRetrievalChain
 
 Load in documents. You can replace this with a loader for whatever type of data you want
 
-
 ```python
 from langchain.document_loaders import TextLoader
 loader = TextLoader("../../state_of_the_union.txt")
@@ -16,7 +15,6 @@ documents = loader.load()
 ```
 
 If you had multiple loaders that you wanted to combine, you do something like:
-
 
 ```python
 # loaders = [....]
@@ -26,7 +24,6 @@ If you had multiple loaders that you wanted to combine, you do something like:
 ```
 
 We now split the documents, create embeddings for them, and put them in a vectorstore. This allows us to do semantic search over them.
-
 
 ```python
 text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
@@ -46,7 +43,6 @@ vectorstore = Chroma.from_documents(documents, embeddings)
 
 We can now create a memory object, which is necessary to track the inputs/outputs and hold a conversation.
 
-
 ```python
 from langchain.memory import ConversationBufferMemory
 memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
@@ -54,17 +50,14 @@ memory = ConversationBufferMemory(memory_key="chat_history", return_messages=Tru
 
 We now initialize the `ConversationalRetrievalChain`
 
-
 ```python
 qa = ConversationalRetrievalChain.from_llm(OpenAI(temperature=0), vectorstore.as_retriever(), memory=memory)
 ```
-
 
 ```python
 query = "What did the president say about Ketanji Brown Jackson"
 result = qa({"question": query})
 ```
-
 
 ```python
 result["answer"]
@@ -78,12 +71,10 @@ result["answer"]
 
 </CodeOutputBlock>
 
-
 ```python
 query = "Did he mention who she succeeded"
 result = qa({"question": query})
 ```
-
 
 ```python
 result['answer']
@@ -101,20 +92,17 @@ result['answer']
 
 In the above example, we used a Memory object to track chat history. We can also just pass it in explicitly. In order to do this, we need to initialize a chain without any memory object.
 
-
 ```python
 qa = ConversationalRetrievalChain.from_llm(OpenAI(temperature=0), vectorstore.as_retriever())
 ```
 
 Here's an example of asking a question with no chat history
 
-
 ```python
 chat_history = []
 query = "What did the president say about Ketanji Brown Jackson"
 result = qa({"question": query, "chat_history": chat_history})
 ```
-
 
 ```python
 result["answer"]
@@ -130,13 +118,11 @@ result["answer"]
 
 Here's an example of asking a question with some chat history
 
-
 ```python
 chat_history = [(query, result["answer"])]
 query = "Did he mention who she succeeded"
 result = qa({"question": query, "chat_history": chat_history})
 ```
-
 
 ```python
 result['answer']
@@ -154,11 +140,9 @@ result['answer']
 
 This chain has two steps. First, it condenses the current question and the chat history into a standalone question. This is necessary to create a standanlone vector to use for retrieval. After that, it does retrieval and then answers the question using retrieval augmented generation with a separate model. Part of the power of the declarative nature of LangChain is that you can easily use a separate language model for each call. This can be useful to use a cheaper and faster model for the simpler task of condensing the question, and then a more expensive model for answering the question. Here is an example of doing so.
 
-
 ```python
 from langchain.chat_models import ChatOpenAI
 ```
-
 
 ```python
 qa = ConversationalRetrievalChain.from_llm(
@@ -168,13 +152,11 @@ qa = ConversationalRetrievalChain.from_llm(
 )
 ```
 
-
 ```python
 chat_history = []
 query = "What did the president say about Ketanji Brown Jackson"
 result = qa({"question": query, "chat_history": chat_history})
 ```
-
 
 ```python
 chat_history = [(query, result["answer"])]
@@ -182,21 +164,77 @@ query = "Did he mention who she succeeded"
 result = qa({"question": query, "chat_history": chat_history})
 ```
 
-## Return Source Documents
-You can also easily return source documents from the ConversationalRetrievalChain. This is useful for when you want to inspect what documents were returned.
+## Using a custom prompt for condensing the question
 
+By default, ConversationalRetrievalQA uses CONDENSE_QUESTION_PROMPT to condense a question. Here is the implementation of this in the docs
+
+```python
+from langchain.prompts.prompt import PromptTemplate
+
+_template = """Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
+
+Chat History:
+{chat_history}
+Follow Up Input: {question}
+Standalone question:"""
+CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template(_template)
+
+```
+
+But instead of this any custom template can be used to further augment information in the question or instruct the LLM to do something. Here is an example
+
+```python
+from langchain.prompts.prompt import PromptTemplate
+```
+
+```python
+custom_template = """Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question. At the end of standalone question add this 'Answer the question in German language.' If you do not know the answer reply with 'I am sorry'.
+Chat History:
+{chat_history}
+Follow Up Input: {question}
+Standalone question:"""
+```
+
+```python
+CUSTOM_QUESTION_PROMPT = PromptTemplate.from_template(custom_template)
+```
+
+```python
+model = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0.3)
+embeddings = OpenAIEmbeddings()
+vectordb = Chroma(embedding_function=embeddings, persist_directory=directory)
+memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+qa = ConversationalRetrievalChain.from_llm(
+    model,
+    vectordb.as_retriever(),
+    condense_question_prompt=CUSTOM_QUESTION_PROMPT,
+    memory=memory
+)
+```
+
+```python
+query = "What did the president say about Ketanji Brown Jackson"
+result = qa({"question": query})
+```
+
+```python
+query = "Did he mention who she succeeded"
+result = qa({"question": query})
+```
+
+## Return Source Documents
+
+You can also easily return source documents from the ConversationalRetrievalChain. This is useful for when you want to inspect what documents were returned.
 
 ```python
 qa = ConversationalRetrievalChain.from_llm(OpenAI(temperature=0), vectorstore.as_retriever(), return_source_documents=True)
 ```
-
 
 ```python
 chat_history = []
 query = "What did the president say about Ketanji Brown Jackson"
 result = qa({"question": query, "chat_history": chat_history})
 ```
-
 
 ```python
 result['source_documents'][0]
@@ -211,13 +249,12 @@ result['source_documents'][0]
 </CodeOutputBlock>
 
 ## ConversationalRetrievalChain with `search_distance`
-If you are using a vector store that supports filtering by search distance, you can add a threshold value parameter.
 
+If you are using a vector store that supports filtering by search distance, you can add a threshold value parameter.
 
 ```python
 vectordbkwargs = {"search_distance": 0.9}
 ```
-
 
 ```python
 qa = ConversationalRetrievalChain.from_llm(OpenAI(temperature=0), vectorstore.as_retriever(), return_source_documents=True)
@@ -227,15 +264,14 @@ result = qa({"question": query, "chat_history": chat_history, "vectordbkwargs": 
 ```
 
 ## ConversationalRetrievalChain with `map_reduce`
-We can also use different types of combine document chains with the ConversationalRetrievalChain chain.
 
+We can also use different types of combine document chains with the ConversationalRetrievalChain chain.
 
 ```python
 from langchain.chains import LLMChain
 from langchain.chains.question_answering import load_qa_chain
 from langchain.chains.conversational_retrieval.prompts import CONDENSE_QUESTION_PROMPT
 ```
-
 
 ```python
 llm = OpenAI(temperature=0)
@@ -249,13 +285,11 @@ chain = ConversationalRetrievalChain(
 )
 ```
 
-
 ```python
 chat_history = []
 query = "What did the president say about Ketanji Brown Jackson"
 result = chain({"question": query, "chat_history": chat_history})
 ```
-
 
 ```python
 result['answer']
@@ -273,11 +307,9 @@ result['answer']
 
 You can also use this chain with the question answering with sources chain.
 
-
 ```python
 from langchain.chains.qa_with_sources import load_qa_with_sources_chain
 ```
-
 
 ```python
 llm = OpenAI(temperature=0)
@@ -291,13 +323,11 @@ chain = ConversationalRetrievalChain(
 )
 ```
 
-
 ```python
 chat_history = []
 query = "What did the president say about Ketanji Brown Jackson"
 result = chain({"question": query, "chat_history": chat_history})
 ```
-
 
 ```python
 result['answer']
@@ -314,7 +344,6 @@ result['answer']
 ## ConversationalRetrievalChain with streaming to `stdout`
 
 Output from the chain will be streamed to `stdout` token by token in this example.
-
 
 ```python
 from langchain.chains.llm import LLMChain
@@ -334,7 +363,6 @@ qa = ConversationalRetrievalChain(
     retriever=vectorstore.as_retriever(), combine_docs_chain=doc_chain, question_generator=question_generator)
 ```
 
-
 ```python
 chat_history = []
 query = "What did the president say about Ketanji Brown Jackson"
@@ -348,7 +376,6 @@ result = qa({"question": query, "chat_history": chat_history})
 ```
 
 </CodeOutputBlock>
-
 
 ```python
 chat_history = [(query, result["answer"])]
@@ -365,8 +392,8 @@ result = qa({"question": query, "chat_history": chat_history})
 </CodeOutputBlock>
 
 ## get_chat_history Function
-You can also specify a `get_chat_history` function, which can be used to format the chat_history string.
 
+You can also specify a `get_chat_history` function, which can be used to format the chat_history string.
 
 ```python
 def get_chat_history(inputs) -> str:
@@ -377,13 +404,11 @@ def get_chat_history(inputs) -> str:
 qa = ConversationalRetrievalChain.from_llm(OpenAI(temperature=0), vectorstore.as_retriever(), get_chat_history=get_chat_history)
 ```
 
-
 ```python
 chat_history = []
 query = "What did the president say about Ketanji Brown Jackson"
 result = qa({"question": query, "chat_history": chat_history})
 ```
-
 
 ```python
 result['answer']

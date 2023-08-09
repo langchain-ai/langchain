@@ -1,4 +1,5 @@
 """Test the loading function for evaluators."""
+from typing import List
 
 import pytest
 
@@ -26,24 +27,31 @@ def test_load_evaluators(evaluator_type: EvaluatorType) -> None:
 
 
 @pytest.mark.parametrize(
-    "evaluator_type",
+    "evaluator_types",
     [
-        EvaluatorType.LABELED_CRITERIA,
-        EvaluatorType.LABELED_PAIRWISE_STRING,
-        EvaluatorType.QA,
-        EvaluatorType.CONTEXT_QA,
-        EvaluatorType.COT_QA,
+        [EvaluatorType.LABELED_CRITERIA],
+        [EvaluatorType.LABELED_PAIRWISE_STRING],
+        [EvaluatorType.QA],
+        [EvaluatorType.CONTEXT_QA],
+        [EvaluatorType.COT_QA],
+        [EvaluatorType.COT_QA, EvaluatorType.LABELED_CRITERIA],
+        [
+            EvaluatorType.COT_QA,
+            EvaluatorType.LABELED_CRITERIA,
+            EvaluatorType.LABELED_PAIRWISE_STRING,
+        ],
     ],
 )
-def test_eval_chain_requires_references(evaluator_type: EvaluatorType) -> None:
+def test_eval_chain_requires_references(evaluator_types: List[EvaluatorType]) -> None:
     """Test loading evaluators."""
     fake_llm = FakeLLM(
         queries={"text": "The meaning of life\nCORRECT"}, sequential_responses=True
     )
-    evaluator = load_evaluators(
-        [evaluator_type],
+    evaluators = load_evaluators(
+        evaluator_types,
         llm=fake_llm,
-    )[0]
-    if not isinstance(evaluator, (StringEvaluator, PairwiseStringEvaluator)):
-        raise ValueError("Evaluator is not a [pairwise]string evaluator")
-    assert evaluator.requires_reference
+    )
+    for evaluator in evaluators:
+        if not isinstance(evaluator, (StringEvaluator, PairwiseStringEvaluator)):
+            raise ValueError("Evaluator is not a [pairwise]string evaluator")
+        assert evaluator.requires_reference

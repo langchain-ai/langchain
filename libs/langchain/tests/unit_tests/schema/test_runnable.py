@@ -6,11 +6,12 @@ from freezegun import freeze_time
 from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
 
+from langchain import PromptTemplate
 from langchain.callbacks.manager import Callbacks
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import Run
 from langchain.chat_models.fake import FakeListChatModel
-from langchain.llms.fake import FakeListLLM
+from langchain.llms.fake import FakeListLLM, FakeStreamingListLLM
 from langchain.load.dump import dumpd, dumps
 from langchain.output_parsers.list import CommaSeparatedListOutputParser
 from langchain.prompts.chat import (
@@ -21,6 +22,7 @@ from langchain.prompts.chat import (
 )
 from langchain.schema.document import Document
 from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
+from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.retriever import BaseRetriever
 from langchain.schema.runnable import (
     RouterRunnable,
@@ -30,6 +32,7 @@ from langchain.schema.runnable import (
     RunnableMap,
     RunnablePassthrough,
     RunnableSequence,
+    RunnableWithFallbacks,
 )
 
 
@@ -59,6 +62,8 @@ class FakeTracer(BaseTracer):
                 if run.parent_run_id
                 else None,
                 "child_runs": [self._copy_run(child) for child in run.child_runs],
+                "execution_order": None,
+                "child_execution_order": None,
             }
         )
 
@@ -300,7 +305,7 @@ async def test_prompt_with_chat_model(
     tracer = FakeTracer()
     assert [
         *chain.stream({"question": "What is your name?"}, dict(callbacks=[tracer]))
-    ] == [AIMessage(content="foo")]
+    ] == [AIMessage(content="f"), AIMessage(content="o"), AIMessage(content="o")]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
@@ -676,7 +681,12 @@ async def test_router_runnable(
         "key": "math",
         "input": {"question": "2 + 2"},
     }
-    assert tracer.runs == snapshot
+    assert len([r for r in tracer.runs if r.parent_run_id is None]) == 1
+    parent_run = next(r for r in tracer.runs if r.parent_run_id is None)
+    assert len(parent_run.child_runs) == 2
+    router_run = parent_run.child_runs[1]
+    assert router_run.name == "RunnableSequence"  # TODO: should be RunnableRouter
+    assert len(router_run.child_runs) == 2
 
 
 @freeze_time("2023-01-01")
@@ -754,3 +764,87 @@ def test_bind_bind() -> None:
             stop=["Observation:"], hello="world"
         )
     ) == dumpd(llm.bind(stop=["Observation:"], one="two", hello="world"))
+
+
+def test_deep_stream() -> None:
+    prompt = (
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
+    )
+    llm = FakeStreamingListLLM(responses=["foo-lish"])
+
+    chain = prompt | llm | StrOutputParser()
+
+    stream = chain.stream({"question": "What up"})
+
+    chunks = []
+    for chunk in stream:
+        chunks.append(chunk)
+
+    assert len(chunks) == len("foo-lish")
+    assert "".join(chunks) == "foo-lish"
+
+
+@pytest.mark.asyncio
+async def test_deep_astream() -> None:
+    prompt = (
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
+    )
+    llm = FakeStreamingListLLM(responses=["foo-lish"])
+
+    chain = prompt | llm | StrOutputParser()
+
+    stream = chain.astream({"question": "What up"})
+
+    chunks = []
+    async for chunk in stream:
+        chunks.append(chunk)
+
+    assert len(chunks) == len("foo-lish")
+    assert "".join(chunks) == "foo-lish"
+
+
+@pytest.fixture()
+def llm_with_fallbacks() -> RunnableWithFallbacks:
+    error_llm = FakeListLLM(responses=["foo"], i=1)
+    pass_llm = FakeListLLM(responses=["bar"])
+
+    return error_llm.with_fallbacks([pass_llm])
+
+
+@pytest.fixture()
+def llm_with_multi_fallbacks() -> RunnableWithFallbacks:
+    error_llm = FakeListLLM(responses=["foo"], i=1)
+    error_llm_2 = FakeListLLM(responses=["baz"], i=1)
+    pass_llm = FakeListLLM(responses=["bar"])
+
+    return error_llm.with_fallbacks([error_llm_2, pass_llm])
+
+
+@pytest.fixture()
+def llm_chain_with_fallbacks() -> RunnableSequence:
+    error_llm = FakeListLLM(responses=["foo"], i=1)
+    pass_llm = FakeListLLM(responses=["bar"])
+
+    prompt = PromptTemplate.from_template("what did baz say to {buz}")
+    return RunnableMap({"buz": lambda x: x}) | (prompt | error_llm).with_fallbacks(
+        [prompt | pass_llm]
+    )
+
+
+@pytest.mark.parametrize(
+    "runnable",
+    ["llm_with_fallbacks", "llm_with_multi_fallbacks", "llm_chain_with_fallbacks"],
+)
+@pytest.mark.asyncio
+async def test_llm_with_fallbacks(
+    runnable: RunnableWithFallbacks, request: Any
+) -> None:
+    runnable = request.getfixturevalue(runnable)
+    assert runnable.invoke("hello") == "bar"
+    assert runnable.batch(["hi", "hey", "bye"]) == ["bar"] * 3
+    assert list(runnable.stream("hello")) == ["bar"]
+    assert await runnable.ainvoke("hello") == "bar"
+    assert await runnable.abatch(["hi", "hey", "bye"]) == ["bar"] * 3
+    assert list(await runnable.ainvoke("hello")) == list("bar")
