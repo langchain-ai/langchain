@@ -1,5 +1,5 @@
 from operator import itemgetter
-from typing import Any, Callable, List, Mapping, Union
+from typing import Any, Callable, List, Mapping, Optional, Union
 
 from typing_extensions import TypedDict
 
