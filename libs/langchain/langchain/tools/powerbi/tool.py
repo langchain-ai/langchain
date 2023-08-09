@@ -84,6 +84,7 @@ class QueryPowerBITool(BaseTool):
                 tables=self.powerbi.get_table_names(),
                 schemas=self.powerbi.get_schemas(),
                 examples=self.examples,
+                callbacks=run_manager.get_child() if run_manager else None,
             )
         except Exception as exc:  # pylint: disable=broad-except
             self.session_cache[tool_input] = f"Error on call to LLM: {exc}"
@@ -136,6 +137,7 @@ class QueryPowerBITool(BaseTool):
                 tables=self.powerbi.get_table_names(),
                 schemas=self.powerbi.get_schemas(),
                 examples=self.examples,
+                callbacks=run_manager.get_child() if run_manager else None,
             )
         except Exception as exc:  # pylint: disable=broad-except
             self.session_cache[tool_input] = f"Error on call to LLM: {exc}"

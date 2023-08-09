@@ -97,6 +97,8 @@ def reduce_openapi_spec(spec: dict, dereference: bool = True) -> ReducedOpenAPIS
             ]
         if "200" in docs["responses"]:
             out["responses"] = docs["responses"]["200"]
+        if docs.get("requestBody"):
+            out["requestBody"] = docs.get("requestBody")
         return out
 
     endpoints = [

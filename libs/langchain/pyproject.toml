@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.241"
+version = "0.0.258"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -15,7 +15,7 @@ python = ">=3.8.1,<4.0"
 pydantic = "^1"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
-PyYAML = ">=5.4.1"
+PyYAML = ">=5.3"
 numpy = "^1"
 azure-core = {version = "^1.26.4", optional=true}
 tqdm = {version = ">=4.48.0", optional = true}
@@ -47,7 +47,7 @@ qdrant-client = {version = "^1.3.1", optional = true, python = ">=3.8.1,<3.12"}
 dataclasses-json = "^0.5.7"
 tensorflow-text = {version = "^2.11.0", optional = true, python = "^3.10, <3.12"}
 tenacity = "^8.1.0"
-cohere = {version = "^3", optional = true}
+cohere = {version = "^4", optional = true}
 openai = {version = "^0", optional = true}
 nlpcloud = {version = "^1", optional = true}
 nomic = {version = "^1.0.43", optional = true}
@@ -110,8 +110,8 @@ tigrisdb = {version = "^1.0.0b6", optional = true}
 nebula3-python = {version = "^3.4.0", optional = true}
 mwparserfromhell = {version = "^0.6.4", optional = true}
 mwxml = {version = "^0.3.3", optional = true}
-awadb = {version = "^0.3.3", optional = true}
-azure-search-documents = {version = "11.4.0a20230509004", source = "azure-sdk-dev", optional = true}
+awadb = {version = "^0.3.9", optional = true}
+azure-search-documents = {version = "11.4.0b6", optional = true}
 esprima = {version = "^4.0.1", optional = true}
 openllm = {version = ">=0.1.19", optional = true}
 streamlit = {version = "^1.18.0", optional = true, python = ">=3.8.1,<3.9.7 || >3.9.7,<4.0"}
@@ -124,6 +124,15 @@ langsmith = "~0.0.11"
 rank-bm25 = {version = "^0.2.2", optional = true}
 amadeus = {version = ">=8.1.0", optional = true}
 geopandas = {version = "^0.13.1", optional = true}
+xinference = {version = "^0.0.6", optional = true}
+python-arango = {version = "^7.5.9", optional = true}
+gitpython = {version = "^3.1.32", optional = true}
+librosa = {version="^0.10.0.post2", optional = true }
+feedparser = {version = "^6.0.10", optional = true}
+newspaper3k = {version = "^0.2.8", optional = true}
+amazon-textract-caller = {version = "<2", optional = true}
+xata = {version = "^1.0.0a7", optional = true}
+xmltodict = {version = "^0.13.0", optional = true}
 
 [tool.poetry.group.test.dependencies]
 # The only dependencies that should be added are
@@ -218,7 +227,7 @@ playwright = "^1.28.0"
 setuptools = "^67.6.1"
 
 [tool.poetry.extras]
-llms = ["anthropic", "clarifai", "cohere", "openai", "openllm", "openlm", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
+llms = ["anthropic", "clarifai", "cohere", "openai", "openllm", "openlm", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers", "xinference"]
 qdrant = ["qdrant-client"]
 openai = ["openai", "tiktoken"]
 text_helpers = ["chardet"]
@@ -314,12 +323,16 @@ all = [
     "octoai-sdk",
     "rdflib",
     "amadeus",
+    "xinference",
+    "librosa",
+    "python-arango",
 ]
 
 # An extra used to be able to add extended testing.
 # Please use new-line on formatting to make it easier to add new packages without
 # merge-conflicts
 extended_testing = [
+ "amazon-textract-caller",
  "beautifulsoup4",
  "bibtexparser",
  "cassio",
@@ -354,12 +367,17 @@ extended_testing = [
  "rank_bm25",
  "geopandas",
  "jinja2",
+ "xinference",
+ "gitpython",
+ "newspaper3k",
+ "feedparser",
+ "xata",
+ "xmltodict",
 ]
 
-[[tool.poetry.source]]
-name = "azure-sdk-dev"
-url = "https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-python/pypi/simple/"
-secondary = true
+scheduled_testing = [
+ "openai",
+]
 
 [tool.ruff]
 select = [
@@ -399,7 +417,8 @@ addopts = "--strict-markers --strict-config --durations=5 --snapshot-warn-unused
 # Registering custom markers.
 # https://docs.pytest.org/en/7.1.x/example/markers.html#registering-markers
 markers = [
-  "requires: mark tests as requiring a specific library"
+  "requires: mark tests as requiring a specific library",
+  "scheduled: mark tests to run in scheduled testing",
 ]
 
 [tool.codespell]

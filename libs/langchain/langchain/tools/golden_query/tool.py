@@ -2,10 +2,7 @@
 
 from typing import Optional
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
+from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
 from langchain.utilities.golden_query import GoldenQueryAPIWrapper
 
@@ -34,11 +31,3 @@ class GoldenQueryRun(BaseTool):
     ) -> str:
         """Use the Golden tool."""
         return self.api_wrapper.run(query)
-
-    async def _arun(
-        self,
-        query: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the Golden tool asynchronously."""
-        raise NotImplementedError("Golden does not support async")

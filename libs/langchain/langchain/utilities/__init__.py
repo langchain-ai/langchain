@@ -1,5 +1,8 @@
-"""General utilities."""
-from langchain.requests import TextRequestsWrapper
+"""**Utilities** are the integrations with third-part systems and packages.
+
+Other LangChain classes use **Utilities** to interact with third-part systems
+and packages.
+"""
 from langchain.utilities.arxiv import ArxivAPIWrapper
 from langchain.utilities.awslambda import LambdaWrapper
 from langchain.utilities.bash import BashProcess
@@ -18,13 +21,15 @@ from langchain.utilities.metaphor_search import MetaphorSearchAPIWrapper
 from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
 from langchain.utilities.portkey import Portkey
 from langchain.utilities.powerbi import PowerBIDataset
-from langchain.utilities.pupmed import PubMedAPIWrapper
+from langchain.utilities.pubmed import PubMedAPIWrapper
 from langchain.utilities.python import PythonREPL
+from langchain.utilities.requests import Requests, RequestsWrapper, TextRequestsWrapper
 from langchain.utilities.scenexplain import SceneXplainAPIWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
 from langchain.utilities.spark_sql import SparkSQL
 from langchain.utilities.sql_database import SQLDatabase
+from langchain.utilities.tensorflow_datasets import TensorflowDatasets
 from langchain.utilities.twilio import TwilioAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
@@ -32,12 +37,12 @@ from langchain.utilities.zapier import ZapierNLAWrapper
 
 __all__ = [
     "ArxivAPIWrapper",
-    "GoldenQueryAPIWrapper",
     "BashProcess",
     "BibtexparserWrapper",
     "BingSearchAPIWrapper",
     "BraveSearchWrapper",
     "DuckDuckGoSearchAPIWrapper",
+    "GoldenQueryAPIWrapper",
     "GooglePlacesAPIWrapper",
     "GoogleSearchAPIWrapper",
     "GoogleSerperAPIWrapper",
@@ -51,11 +56,15 @@ __all__ = [
     "PowerBIDataset",
     "PubMedAPIWrapper",
     "PythonREPL",
+    "Requests",
+    "RequestsWrapper",
+    "SQLDatabase",
     "SceneXplainAPIWrapper",
     "SearxSearchWrapper",
     "SerpAPIWrapper",
     "SparkSQL",
-    "SQLDatabase",
+    "TensorflowDatasets",
+    "TextRequestsWrapper",
     "TextRequestsWrapper",
     "TwilioAPIWrapper",
     "WikipediaAPIWrapper",

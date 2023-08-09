@@ -1,4 +1,24 @@
-"""Beta Feature: base interface for cache."""
+"""
+.. warning::
+  Beta Feature!
+
+**Cache** provides an optional caching layer for LLMs.
+
+Cache is useful for two reasons:
+
+- It can save you money by reducing the number of API calls you make to the LLM
+  provider if you're often requesting the same completion multiple times.
+- It can speed up your application by reducing the number of API calls you make
+  to the LLM provider.
+
+Cache directly competes with Memory. See documentation for Pros and Cons.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    BaseCache --> <name>Cache  # Examples: InMemoryCache, RedisCache, GPTCache
+"""
 from __future__ import annotations
 
 import hashlib
@@ -445,8 +465,10 @@ class GPTCache(BaseCache):
         """Get a cache object.
 
         When the corresponding llm model cache does not exist, it will be created."""
-
-        return self.gptcache_dict.get(llm_string, self._new_gptcache(llm_string))
+        _gptcache = self.gptcache_dict.get(llm_string, None)
+        if not _gptcache:
+            _gptcache = self._new_gptcache(llm_string)
+        return _gptcache
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up the cache data.
@@ -455,9 +477,8 @@ class GPTCache(BaseCache):
         """
         from gptcache.adapter.api import get
 
-        _gptcache = self.gptcache_dict.get(llm_string, None)
-        if _gptcache is None:
-            return None
+        _gptcache = self._get_gptcache(llm_string)
+
         res = get(prompt, cache_obj=_gptcache)
         if res:
             return [

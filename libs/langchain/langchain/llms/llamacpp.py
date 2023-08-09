@@ -1,10 +1,13 @@
 import logging
-from typing import Any, Dict, Generator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 from pydantic import Field, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
+from langchain.schema.output import GenerationChunk
+from langchain.utils import get_pydantic_field_names
+from langchain.utils.utils import build_extra_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -99,6 +102,15 @@ class LlamaCpp(LLM):
     use_mmap: Optional[bool] = True
     """Whether to keep the model loaded in RAM"""
 
+    rope_freq_scale: float = 1.0
+    """Scale factor for rope sampling."""
+
+    rope_freq_base: float = 10000.0
+    """Base frequency for rope sampling."""
+
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """Any additional parameters to pass to llama_cpp.Llama."""
+
     streaming: bool = True
     """Whether to stream the results, token by token."""
 
@@ -110,6 +122,8 @@ class LlamaCpp(LLM):
         """Validate that llama-cpp-python library is installed."""
         model_path = values["model_path"]
         model_param_names = [
+            "rope_freq_scale",
+            "rope_freq_base",
             "lora_path",
             "lora_base",
             "n_ctx",
@@ -130,6 +144,8 @@ class LlamaCpp(LLM):
         if values["n_gpu_layers"] is not None:
             model_params["n_gpu_layers"] = values["n_gpu_layers"]
 
+        model_params.update(values["model_kwargs"])
+
         try:
             from llama_cpp import Llama
 
@@ -146,6 +162,16 @@ class LlamaCpp(LLM):
                 f"Received error {e}"
             )
 
+        return values
+
+    @root_validator(pre=True)
+    def build_model_kwargs(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Build extra kwargs from additional params that were passed in."""
+        all_required_field_names = get_pydantic_field_names(cls)
+        extra = values.get("model_kwargs", {})
+        values["model_kwargs"] = build_extra_kwargs(
+            extra, values, all_required_field_names
+        )
         return values
 
     @property
@@ -226,8 +252,10 @@ class LlamaCpp(LLM):
             # method that yields as they are generated
             # and return the combined strings from the first choices's text:
             combined_text_output = ""
-            for token in self.stream(prompt=prompt, stop=stop, run_manager=run_manager):
-                combined_text_output += token["choices"][0]["text"]
+            for chunk in self._stream(
+                prompt=prompt, stop=stop, run_manager=run_manager, **kwargs
+            ):
+                combined_text_output += chunk.text
             return combined_text_output
         else:
             params = self._get_parameters(stop)
@@ -235,16 +263,14 @@ class LlamaCpp(LLM):
             result = self.client(prompt=prompt, **params)
             return result["choices"][0]["text"]
 
-    def stream(
+    def _stream(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-    ) -> Generator[Dict, None, None]:
+        **kwargs: Any,
+    ) -> Iterator[GenerationChunk]:
         """Yields results objects as they are generated in real time.
-
-        BETA: this is a beta feature while we figure out the right abstraction.
-        Once that happens, this interface could change.
 
         It also calls the callback manager's on_llm_new_token event with
         similar parameters to the OpenAI LLM class method of the same name.
@@ -274,16 +300,19 @@ class LlamaCpp(LLM):
                     print(result["text"], end='', flush=True)
 
         """
-        params = self._get_parameters(stop)
+        params = {**self._get_parameters(stop), **kwargs}
         result = self.client(prompt=prompt, stream=True, **params)
-        for chunk in result:
-            token = chunk["choices"][0]["text"]
-            log_probs = chunk["choices"][0].get("logprobs", None)
+        for part in result:
+            logprobs = part["choices"][0].get("logprobs", None)
+            chunk = GenerationChunk(
+                text=part["choices"][0]["text"],
+                generation_info={"logprobs": logprobs},
+            )
+            yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(
-                    token=token, verbose=self.verbose, log_probs=log_probs
+                    token=chunk.text, verbose=self.verbose, log_probs=logprobs
                 )
-            yield chunk
 
     def get_num_tokens(self, text: str) -> int:
         tokenized_text = self.client.tokenize(text.encode("utf-8"))

@@ -294,7 +294,9 @@ def test_chroma_add_documents_mixed_metadata() -> None:
         Document(page_content="foo"),
         Document(page_content="bar", metadata={"baz": 1}),
     ]
-    db.add_documents(docs)
+    ids = ["0", "1"]
+    actual_ids = db.add_documents(docs, ids=ids)
+    assert actual_ids == ids
     search = db.similarity_search("foo bar")
     assert sorted(search, key=lambda d: d.page_content) == sorted(
         docs, key=lambda d: d.page_content

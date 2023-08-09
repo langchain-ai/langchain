@@ -85,15 +85,17 @@ class GraphSparqlQAChain(Chain):
         _intent = self.sparql_intent_chain.run({"prompt": prompt}, callbacks=callbacks)
         intent = _intent.strip()
 
-        if intent == "SELECT":
-            sparql_generation_chain = self.sparql_generation_select_chain
-        elif intent == "UPDATE":
-            sparql_generation_chain = self.sparql_generation_update_chain
-        else:
+        if "SELECT" not in intent and "UPDATE" not in intent:
             raise ValueError(
                 "I am sorry, but this prompt seems to fit none of the currently "
                 "supported SPARQL query types, i.e., SELECT and UPDATE."
             )
+        elif intent.find("SELECT") < intent.find("UPDATE"):
+            sparql_generation_chain = self.sparql_generation_select_chain
+            intent = "SELECT"
+        else:
+            sparql_generation_chain = self.sparql_generation_update_chain
+            intent = "UPDATE"
 
         _run_manager.on_text("Identified intent:", end="\n", verbose=self.verbose)
         _run_manager.on_text(intent, color="green", end="\n", verbose=self.verbose)
