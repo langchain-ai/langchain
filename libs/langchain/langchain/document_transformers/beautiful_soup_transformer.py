@@ -44,7 +44,7 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         return documents
 
     @staticmethod
-    def remove_unwanted_tags(html_content, unwanted_tags) -> str:
+    def remove_unwanted_tags(html_content: str, unwanted_tags: List[str]) -> str:
         soup = BeautifulSoup(html_content, "html.parser")
         for tag in unwanted_tags:
             for element in soup.find_all(tag):
@@ -52,7 +52,7 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         return str(soup)
 
     @staticmethod
-    def extract_tags(html_content, tags) -> str:
+    def extract_tags(html_content: str, tags: List[str]) -> str:
         soup = BeautifulSoup(html_content, "html.parser")
         text_parts = []
         for tag in tags:
@@ -69,17 +69,19 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         return " ".join(text_parts)
 
     @staticmethod
-    def remove_unnecessary_lines(content) -> str:
+    def remove_unnecessary_lines(content: str) -> str:
         lines = content.split("\n")
         stripped_lines = [line.strip() for line in lines]
         non_empty_lines = [line for line in stripped_lines if line]
         seen = set()
-        deduped_lines = [
-            line for line in non_empty_lines if not (line in seen or seen.add(line))
-        ]
+        deduped_lines = []
+        for line in non_empty_lines:
+            if line not in seen:
+                seen.add(line)
+                deduped_lines.append(line)
         cleaned_content = "".join(deduped_lines)
         return cleaned_content
-    
+
     async def atransform_documents(
         self,
         documents: Sequence[Document],
