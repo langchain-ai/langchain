@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import importlib
-from typing import Any, Sequence, Dict, Iterable, List, Mapping, Union
+from typing import Any, AsyncIterator, Dict, Iterable, List, Mapping, Sequence, Union
 
 from langchain.schema.messages import (
     AIMessage,
@@ -101,7 +101,8 @@ def _convert_message_chunk_to_delta(chunk: BaseMessageChunk, i: int) -> Dict[str
 class ChatCompletion:
     @staticmethod
     def create(
-        messages: Sequence[Dict[str, Any]], *,
+        messages: Sequence[Dict[str, Any]],
+        *,
         provider: str = "ChatOpenAI",
         stream: bool = False,
         **kwargs: Any,
@@ -121,11 +122,12 @@ class ChatCompletion:
 
     @staticmethod
     async def acreate(
-        messages: Sequence[Dict[str, Any]], *,
+        messages: Sequence[Dict[str, Any]],
+        *,
         provider: str = "ChatOpenAI",
         stream: bool = False,
         **kwargs: Any,
-    ) -> Union[dict, Iterable]:
+    ) -> Union[dict, AsyncIterator]:
         models = importlib.import_module("langchain.chat_models")
         model_cls = getattr(models, provider)
         model_config = model_cls(**kwargs)
