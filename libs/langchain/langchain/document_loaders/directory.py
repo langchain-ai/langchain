@@ -60,7 +60,8 @@ class DirectoryLoader(BaseLoader):
             show_progress: Whether to show a progress bar. Defaults to False.
             use_multithreading: Whether to use multithreading. Defaults to False.
             max_concurrency: The maximum number of threads to use. Defaults to 4.
-            sample_size: The maximum number of files you would like to load from the directory.
+            sample_size: The maximum number of files you would like to load from the
+                directory.
             randomize_sample: Suffle the files to get a random sample.
             sample_seed: set the seed of the random shuffle for reporoducibility.
         """
