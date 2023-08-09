@@ -1,10 +1,9 @@
 """Load documents from a directory."""
 import concurrent
 import logging
-from pathlib import Path
 import random
+from pathlib import Path
 from typing import Any, List, Optional, Type, Union
-
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -41,7 +40,8 @@ class DirectoryLoader(BaseLoader):
         show_progress: bool = False,
         use_multithreading: bool = False,
         max_concurrency: int = 4,
-        sample_size: Union[int, None] = None,
+        *,
+        sample_size: int = 0,
         randomize_sample: bool = False,
         sample_seed: Union[int, None] = None,
     ):
@@ -62,6 +62,7 @@ class DirectoryLoader(BaseLoader):
             max_concurrency: The maximum number of threads to use. Defaults to 4.
             sample_size: The maximum number of files you would like to load from the directory.
             randomize_sample: Suffle the files to get a random sample.
+            sample_seed: set the seed of the random shuffle for reporoducibility.
         """
         if loader_kwargs is None:
             loader_kwargs = {}
@@ -116,12 +117,14 @@ class DirectoryLoader(BaseLoader):
 
         docs: List[Document] = []
         items = list(p.rglob(self.glob) if self.recursive else p.glob(self.glob))
-        
+
         if self.sample_size > 0:
             if self.randomize_sample:
-                randomizer = random.Random(self.sample_seed) if self.sample_seed else random
-                randomizer.shuffle(items)
-            items = items[:min(len(items), self.sample_size)]
+                randomizer = (
+                    random.Random(self.sample_seed) if self.sample_seed else random
+                )
+                randomizer.shuffle(items)  # type: ignore
+            items = items[: min(len(items), self.sample_size)]
 
         pbar = None
         if self.show_progress:
