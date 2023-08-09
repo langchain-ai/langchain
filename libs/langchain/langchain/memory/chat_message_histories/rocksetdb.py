@@ -41,15 +41,15 @@ class RocksetChatMessageHistory(BaseChatMessageHistory):
     ADD_TIMEOUT_MS = 5000
     CREATE_TIMEOUT_MS = 20000
 
-    def _wait_until(self, meth: Callable, timeout: int, **meth_params: Any) -> None:
+    def _wait_until(self, method: Callable, timeout: int, **method_params: Any) -> None:
         """Sleeps until meth() evaluates to true. Passes kwargs into
         meth.
         """
         start = datetime.now()
-        while not meth(**meth_params):
+        while not method(**method_params):
             curr = datetime.now()
             if (curr - start).total_seconds() * 1000 > timeout:
-                raise TimeoutError(f"{meth} timed out at {timeout} ms")
+                raise TimeoutError(f"{method} timed out at {timeout} ms")
             sleep(RocksetChatMessageHistory.SLEEP_INTERVAL_MS / 1000)
 
     def _query(self, query: str, **query_params: Any) -> List[Any]:
@@ -191,7 +191,7 @@ class RocksetChatMessageHistory(BaseChatMessageHistory):
         self.client = client
         self.collection = collection
         self.workspace = workspace
-        self.location = f""""{self.workspace}".{self.collection}"""
+        self.location = f'"{self.workspace}"."{self.collection}"'
         self.rockset = rockset
         self.messages_key = messages_key
         self.message_uuid_method = message_uuid_method
