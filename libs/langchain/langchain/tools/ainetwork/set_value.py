@@ -1,8 +1,6 @@
 import json
 from typing import Optional, Type, Union
 
-from ain.errors import BlockchainError
-from ain.types import ValueOnlyTransactionInput
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.ainetwork.base import AINBaseTool
 from pydantic import BaseModel, Field
@@ -26,6 +24,9 @@ class AINSetValue(AINBaseTool):
         value: Union[int, str, float, dict],
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
+        from ain.errors import BlockchainError
+        from ain.types import ValueOnlyTransactionInput
+
         try:
             res = await self.interface.db.ref(path).setValue(
                 transactionInput=ValueOnlyTransactionInput(value=value)
