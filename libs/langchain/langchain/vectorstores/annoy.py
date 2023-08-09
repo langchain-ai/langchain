@@ -77,7 +77,10 @@ class Annoy(VectorStore):
         )
 
     def process_index_results(
-        self, idxs: List[int], dists: List[float]
+        self,
+        idxs: List[int],
+        dists: List[float],
+        filter: Optional[Dict[str, Any]] = None,
     ) -> List[Tuple[Document, float]]:
         """Turns annoy results into a list of documents and scores.
 
@@ -87,17 +90,35 @@ class Annoy(VectorStore):
         Returns:
             List of Documents and scores.
         """
+        _filter = (
+            {
+                key: [value] if not isinstance(value, list) else value
+                for key, value in filter.items()
+            }
+            if filter is not None
+            else None
+        )
+
         docs = []
         for idx, dist in zip(idxs, dists):
             _id = self.index_to_docstore_id[idx]
             doc = self.docstore.search(_id)
             if not isinstance(doc, Document):
                 raise ValueError(f"Could not find document for id {_id}, got {doc}")
-            docs.append((doc, dist))
+            # Append to result docs if there is no filter,
+            # or if the doc metadata matches the filter.
+            if _filter is None or all(
+                doc.metadata.get(key) in value for key, value in _filter.items()
+            ):
+                docs.append((doc, dist))
         return docs
 
     def similarity_search_with_score_by_vector(
-        self, embedding: List[float], k: int = 4, search_k: int = -1
+        self,
+        embedding: List[float],
+        k: int = 4,
+        search_k: int = -1,
+        filter: Optional[Dict[str, Any]] = None,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
@@ -112,10 +133,14 @@ class Annoy(VectorStore):
         idxs, dists = self.index.get_nns_by_vector(
             embedding, k, search_k=search_k, include_distances=True
         )
-        return self.process_index_results(idxs, dists)
+        return self.process_index_results(idxs, dists, filter=filter)
 
     def similarity_search_with_score_by_index(
-        self, docstore_index: int, k: int = 4, search_k: int = -1
+        self,
+        docstore_index: int,
+        k: int = 4,
+        search_k: int = -1,
+        filter: Optional[Dict[str, Any]] = None,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
@@ -130,10 +155,14 @@ class Annoy(VectorStore):
         idxs, dists = self.index.get_nns_by_item(
             docstore_index, k, search_k=search_k, include_distances=True
         )
-        return self.process_index_results(idxs, dists)
+        return self.process_index_results(idxs, dists, filter=filter)
 
     def similarity_search_with_score(
-        self, query: str, k: int = 4, search_k: int = -1
+        self,
+        query: str,
+        k: int = 4,
+        search_k: int = -1,
+        filter: Optional[Dict[str, Any]] = None,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
@@ -147,11 +176,18 @@ class Annoy(VectorStore):
             List of Documents most similar to the query and score for each
         """
         embedding = self.embedding_function(query)
-        docs = self.similarity_search_with_score_by_vector(embedding, k, search_k)
+        docs = self.similarity_search_with_score_by_vector(
+            embedding, k, search_k, filter=filter
+        )
         return docs
 
     def similarity_search_by_vector(
-        self, embedding: List[float], k: int = 4, search_k: int = -1, **kwargs: Any
+        self,
+        embedding: List[float],
+        k: int = 4,
+        search_k: int = -1,
+        filter: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to embedding vector.
 
@@ -165,12 +201,17 @@ class Annoy(VectorStore):
             List of Documents most similar to the embedding.
         """
         docs_and_scores = self.similarity_search_with_score_by_vector(
-            embedding, k, search_k
+            embedding, k, search_k, filter=filter
         )
         return [doc for doc, _ in docs_and_scores]
 
     def similarity_search_by_index(
-        self, docstore_index: int, k: int = 4, search_k: int = -1, **kwargs: Any
+        self,
+        docstore_index: int,
+        k: int = 4,
+        search_k: int = -1,
+        filter: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to docstore_index.
 
@@ -184,12 +225,17 @@ class Annoy(VectorStore):
             List of Documents most similar to the embedding.
         """
         docs_and_scores = self.similarity_search_with_score_by_index(
-            docstore_index, k, search_k
+            docstore_index, k, search_k, filter=filter
         )
         return [doc for doc, _ in docs_and_scores]
 
     def similarity_search(
-        self, query: str, k: int = 4, search_k: int = -1, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        search_k: int = -1,
+        filter: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to query.
 
@@ -202,7 +248,9 @@ class Annoy(VectorStore):
         Returns:
             List of Documents most similar to the query.
         """
-        docs_and_scores = self.similarity_search_with_score(query, k, search_k)
+        docs_and_scores = self.similarity_search_with_score(
+            query, k, search_k, filter=filter
+        )
         return [doc for doc, _ in docs_and_scores]
 
     def max_marginal_relevance_search_by_vector(
