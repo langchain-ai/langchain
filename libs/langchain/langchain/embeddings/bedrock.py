@@ -1,7 +1,7 @@
 import asyncio
-from functools import partial
 import json
 import os
+from functools import partial
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
@@ -161,10 +161,10 @@ class BedrockEmbeddings(BaseModel, Embeddings):
             Embeddings for the text.
         """
         return self._embedding_func(text)
-    
+
     async def aembed_query(self, text: str) -> List[float]:
-        """Asynchronous Compute query embeddings using a Bedrock model.
-        
+        """Asynchronous compute query embeddings using a Bedrock model.
+
         Args:
             text: The text to embed.
 
@@ -175,14 +175,25 @@ class BedrockEmbeddings(BaseModel, Embeddings):
         return await asyncio.get_running_loop().run_in_executor(
             None, partial(self.embed_query, text)
         )
-    
-    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Asynchronous Embed search docs."""
-        
+
+    async def aembed_documents(
+        self, texts: List[str], chunk_size: int = 1
+    ) -> List[List[float]]:
+        """Asynchronous compute doc embeddings using a Bedrock model.
+
+        Args:
+            texts: The list of texts to embed.
+            chunk_size: Bedrock currently only allows single string
+                inputs, so chunk size is always 1. This input is here
+                only for compatibility with the embeddings interface.
+
+        Returns:
+            List of embeddings, one for each text.
+        """
+
         results = []
         for text in texts:
             result = await self.aembed_query(text)
             results.append(result)
 
         return results
-        
