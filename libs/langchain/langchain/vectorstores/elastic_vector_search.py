@@ -19,6 +19,7 @@ from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore
+import warnings
 
 if TYPE_CHECKING:
     from elasticsearch import Elasticsearch
@@ -126,10 +127,6 @@ class ElasticVectorSearch(VectorStore, ABC):
     Raises:
         ValueError: If the elasticsearch python package is not installed.
     """
-
-    @deprecated(
-        reason="Use ElasticsearchStore instead. ElasticVectorSearch will be removed in a future release. See Elasticsearch integration docs on how to upgrade.",
-    )
     def __init__(
         self,
         elasticsearch_url: str,
@@ -139,6 +136,10 @@ class ElasticVectorSearch(VectorStore, ABC):
         ssl_verify: Optional[Dict[str, Any]] = None,
     ):
         """Initialize with necessary components."""
+        warnings.warn(
+            "ElasticVectorSearch will be removed in a future release. ElasticVectorSearch will be removed in a future release. See Elasticsearch integration docs on how to upgrade."
+        )
+
         try:
             import elasticsearch
         except ImportError:
@@ -376,9 +377,6 @@ class ElasticKnnSearch(VectorStore, ABC):
         [(Document(page_content='Hello world!', metadata={}), 0.9)]
     """
 
-    @deprecated(
-        reason="Use ElasticsearchStore instead. ElasticKNNSearch will be removed in a future release. See Elasticsearch integration docs on how to upgrade.",
-    )
     def __init__(
         self,
         index_name: str,
@@ -398,6 +396,9 @@ class ElasticKnnSearch(VectorStore, ABC):
                 "Please install it with `pip install elasticsearch`."
             )
 
+        warnings.warn(
+            "ElasticKnnSearch will be removed in a future release. Use ElasticsearchStore instead. See Elasticsearch integration docs on how to upgrade."
+        )
         self.embedding = embedding
         self.index_name = index_name
         self.query_field = query_field
