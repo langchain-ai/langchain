@@ -1,11 +1,11 @@
 from typing import Iterator, List, Optional
 
 from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
+from langchain.document_loaders.base import BaseLoaderAsRetriever
 from langchain.utilities.brave_search import BraveSearchWrapper
 
 
-class BraveSearchLoader(BaseLoader):
+class BraveSearchLoader(BaseLoaderAsRetriever):
     """Load with `Brave Search` engine."""
 
     def __init__(self, query: str, api_key: str, search_kwargs: Optional[dict] = None):
