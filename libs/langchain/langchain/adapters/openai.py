@@ -136,5 +136,5 @@ class ChatCompletion:
         else:
             return (
                 _convert_message_chunk_to_delta(c, i)
-                for i, c in enumerate(await model_config.astream(converted_messages))
+                for i, c in enumerate(model_config.astream(converted_messages))
             )
