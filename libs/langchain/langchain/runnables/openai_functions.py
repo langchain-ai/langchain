@@ -22,7 +22,7 @@ class OpenAIFunction(TypedDict):
 class OpenAIFunctionsRouter(RunnableBinding[ChatGeneration, Any]):
     """A runnable that routes to the selected function."""
 
-    functions: List[OpenAIFunction]
+    functions: Optional[List[OpenAIFunction]]
 
     def __init__(
         self,
@@ -33,10 +33,11 @@ class OpenAIFunctionsRouter(RunnableBinding[ChatGeneration, Any]):
                 Callable[[dict], Any],
             ],
         ],
-        functions: List[OpenAIFunction],
+        functions: Optional[List[OpenAIFunction]] = None,
     ):
-        assert len(functions) == len(runnables)
-        assert all(func["name"] in runnables for func in functions)
+        if functions is not None:
+            assert len(functions) == len(runnables)
+            assert all(func["name"] in runnables for func in functions)
         router = (
             JsonOutputFunctionsParser(args_only=False)
             | {"key": itemgetter("name"), "input": itemgetter("arguments")}
