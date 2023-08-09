@@ -16,7 +16,7 @@ class BraveSearchLoader(BaseLoaderAsRetriever):
             api_key: The API key to use.
             search_kwargs: The search kwargs to use.
         """
-        self.query = query
+        self.query: str = query
         self.api_key = api_key
         self.search_kwargs = search_kwargs or {}
 
