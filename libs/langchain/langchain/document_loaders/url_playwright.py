@@ -48,7 +48,7 @@ class PlaywrightURLLoader(BaseLoader):
         self.headless = headless
         self.remove_selectors = remove_selectors
 
-    def sync_evaluate(self, page, browser, response):
+    def _sync_evaluate(self, page, browser, response):
         """Process a page and return the text content synchronously.
 
         Args:
@@ -72,7 +72,7 @@ class PlaywrightURLLoader(BaseLoader):
         text = "\n\n".join([str(el) for el in elements])
         return text
 
-    async def async_evaluate(self, page, browser, response):
+    async def _async_evaluate(self, page, browser, response):
         """Process a page and return the text content asynchronously.
 
         Args:
@@ -112,7 +112,7 @@ class PlaywrightURLLoader(BaseLoader):
                 try:
                     page = browser.new_page()
                     response = page.goto(url)
-                    text = self.sync_evaluate(page, browser, response)
+                    text = self._sync_evaluate(page, browser, response)
                     metadata = {"source": url}
                     docs.append(Document(page_content=text, metadata=metadata))
                 except Exception as e:
@@ -142,7 +142,7 @@ class PlaywrightURLLoader(BaseLoader):
                 try:
                     page = await browser.new_page()
                     response = await page.goto(url)
-                    text = await self.async_evaluate(page, browser, response)
+                    text = await self._async_evaluate(page, browser, response)
                     metadata = {"source": url}
                     docs.append(Document(page_content=text, metadata=metadata))
                 except Exception as e:
