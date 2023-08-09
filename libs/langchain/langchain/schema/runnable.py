@@ -1254,7 +1254,7 @@ class RunnablePassthrough(Serializable, Runnable[Input, Input]):
 
 class RunnableBinding(Serializable, Runnable[Input, Output]):
     """
-    A runnable that binds a runnable to a set of kwargs.
+    A runnable that delegates calls to another runnable with a set of kwargs.
     """
 
     bound: Runnable[Input, Output]
