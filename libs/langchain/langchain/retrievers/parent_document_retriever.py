@@ -60,7 +60,7 @@ class ParentDocumentRetriever(BaseRetriever):
     vectorstore: VectorStore
     """The underlying vectorstore to use to store small chunks
     and their embedding vectors"""
-    docstore: BaseStore
+    docstore: BaseStore[str, Document]
     """The storage layer for the parent documents"""
     child_splitter: TextSplitter
     """The text splitter to use to create child documents."""
@@ -81,13 +81,13 @@ class ParentDocumentRetriever(BaseRetriever):
         **kwargs: Any,
     ) -> List[Document]:
         sub_docs = self.vectorstore.similarity_search(query)
+        # We do this to maintain the order of the ids that are returned
         ids = []
         for d in sub_docs:
             if d.metadata[self.id_key] not in ids:
                 ids.append(d.metadata[self.id_key])
         docs = self.docstore.mget(ids)
-        return_docs = cast(List[Document], docs)
-        return return_docs
+        return [d for d in docs if d is not None]
 
     def add_documents(
         self,
