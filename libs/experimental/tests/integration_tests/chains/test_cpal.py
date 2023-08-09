@@ -7,6 +7,10 @@ from unittest import mock
 
 import pydantic
 import pytest
+from langchain import OpenAI
+from langchain.output_parsers import PydanticOutputParser
+from langchain.prompts.prompt import PromptTemplate
+
 from langchain_experimental.cpal.base import (
     CausalChain,
     CPALChain,
@@ -35,10 +39,6 @@ from langchain_experimental.cpal.templates.univariate.narrative import (
 from langchain_experimental.cpal.templates.univariate.query import (
     template as query_template,
 )
-
-from langchain import OpenAI
-from langchain.output_parsers import PydanticOutputParser
-from langchain.prompts.prompt import PromptTemplate
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

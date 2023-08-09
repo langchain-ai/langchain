@@ -124,7 +124,7 @@ def test__validate_example_inputs_for_chain_input_mapper() -> None:
         assert "baz" in inputs
         return {"not foo": "foo", "not baz": "baz"}
 
-    with pytest.raises(InputFormatError, match="keys that match"):
+    with pytest.raises(InputFormatError, match="Missing keys after loading example"):
         _validate_example_inputs_for_chain(mock_, chain, wrong_output_keys)
 
     def input_mapper(inputs: dict) -> dict:
@@ -148,9 +148,7 @@ def test__validate_example_inputs_for_chain_single_input_multi_expect() -> None:
     mock_.inputs = {"foo": "bar"}
     chain = mock.MagicMock()
     chain.input_keys = ["def not foo", "oh here is another"]
-    with pytest.raises(
-        InputFormatError, match="Example inputs do not match chain input keys."
-    ):
+    with pytest.raises(InputFormatError, match="Example inputs missing expected"):
         _validate_example_inputs_for_chain(mock_, chain, None)
 
 

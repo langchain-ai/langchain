@@ -5,7 +5,6 @@ import uuid
 from typing import Generator, List, Union
 
 import pytest
-from elasticsearch import Elasticsearch
 
 from langchain.docstore.document import Document
 from langchain.vectorstores.elasticsearch import ElasticsearchStore
@@ -49,6 +48,7 @@ class TestElasticsearch:
     def elasticsearch_connection(self) -> Union[dict, Generator[dict, None, None]]:
         # Running this integration test with Elastic Cloud
         # Required for in-stack inference testing (ELSER + model_id)
+        from elasticsearch import Elasticsearch
 
         es_url = os.environ.get("ES_URL", "http://localhost:9200")
         cloud_id = os.environ.get("ES_CLOUD_ID")
