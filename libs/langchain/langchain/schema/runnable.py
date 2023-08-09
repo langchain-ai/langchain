@@ -1344,11 +1344,9 @@ class RouterRunnable(
         runnables: Mapping[
             str, Union[Runnable[Input, Output], Callable[[Input], Output]]
         ],
-        **kwargs: Any,
     ) -> None:
         super().__init__(
-            runnables={key: _coerce_to_runnable(r) for key, r in runnables.items()},
-            **kwargs,
+            runnables={key: _coerce_to_runnable(r) for key, r in runnables.items()}
         )
 
     class Config:
