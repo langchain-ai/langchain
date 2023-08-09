@@ -20,7 +20,7 @@ from langchain.embeddings.aleph_alpha import (
 )
 from langchain.embeddings.awa import AwaEmbeddings
 from langchain.embeddings.bedrock import BedrockEmbeddings
-from langchain.embeddings.cache import CacheBackedEmbedder
+from langchain.embeddings.cache import CacheBackedEmbeddings
 from langchain.embeddings.clarifai import ClarifaiEmbeddings
 from langchain.embeddings.cohere import CohereEmbeddings
 from langchain.embeddings.dashscope import DashScopeEmbeddings
@@ -63,7 +63,7 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     "OpenAIEmbeddings",
-    "CacheBackedEmbedder",
+    "CacheBackedEmbeddings",
     "ClarifaiEmbeddings",
     "CohereEmbeddings",
     "ElasticsearchEmbeddings",

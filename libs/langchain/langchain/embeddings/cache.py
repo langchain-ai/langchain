@@ -27,14 +27,14 @@ def _hash_string_to_uuid(input_string: str) -> uuid.UUID:
     return uuid.uuid5(NAMESPACE_UUID, hash_value)
 
 
-def key_encoder(key: str, namespace: str) -> str:
+def _key_encoder(key: str, namespace: str) -> str:
     """Encode a key."""
     return namespace + str(_hash_string_to_uuid(key))
 
 
 def _create_key_encoder(namespace: str) -> Callable[[str], str]:
     """Create an encoder for a key."""
-    return partial(key_encoder, namespace=namespace)
+    return partial(_key_encoder, namespace=namespace)
 
 
 def _value_serializer(value: Sequence[float]) -> bytes:
@@ -47,7 +47,7 @@ def _value_deserializer(serialized_value: bytes) -> List[float]:
     return cast(List[float], json.loads(serialized_value.decode()))
 
 
-class CacheBackedEmbedder(Embeddings):
+class CacheBackedEmbeddings(Embeddings):
     """Interface for caching results from embedding models.
 
     The interface allows works with any store that implements
@@ -90,7 +90,7 @@ class CacheBackedEmbedder(Embeddings):
             document_embedding_store: The store to use for caching document embeddings.
         """
         super().__init__()
-        self.document_embedding_cache = document_embedding_store
+        self.document_embedding_store = document_embedding_store
         self.underlying_embedder = underlying_embedder
 
     def embed_documents(self, texts: List[str]) -> list[float]:
@@ -106,8 +106,7 @@ class CacheBackedEmbedder(Embeddings):
         Returns:
             A list of embeddings for the given texts.
         """
-        # Non efficient implementation
-        vectors: List[Union[List[float], None]] = self.document_embedding_cache.mget(
+        vectors: List[Union[List[float], None]] = self.document_embedding_store.mget(
             texts
         )
         missing_indices: List[int] = [
@@ -117,13 +116,13 @@ class CacheBackedEmbedder(Embeddings):
 
         if missing_texts:
             missing_vectors = self.underlying_embedder.embed_documents(missing_texts)
-            self.document_embedding_cache.mset(
+            self.document_embedding_store.mset(
                 list(zip(missing_texts, missing_vectors))
             )
             for index, updated_vector in zip(missing_indices, missing_vectors):
                 vectors[index] = updated_vector
 
-        return cast(List[float], vectors)  # None should have been resolved by now
+        return cast(List[float], vectors)  # Nones should have been resolved by now
 
     def embed_query(self, text: str) -> List[float]:
         """Embed query text.
@@ -143,7 +142,6 @@ class CacheBackedEmbedder(Embeddings):
         Returns:
             The embedding for the given text.
         """
-        # Query is not cached at the moment.
         return self.underlying_embedder.embed_query(text)
 
     @classmethod
@@ -153,7 +151,7 @@ class CacheBackedEmbedder(Embeddings):
         document_embedding_cache: BaseStore[str, bytes],
         *,
         namespace: str = "",
-    ) -> CacheBackedEmbedder:
+    ) -> CacheBackedEmbeddings:
         """On-ramp that adds the necessary serialization and encoding to the store.
 
         Args:
