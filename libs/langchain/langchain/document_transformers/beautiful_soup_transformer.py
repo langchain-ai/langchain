@@ -1,5 +1,4 @@
 from typing import Any, List, Sequence
-from bs4 import BeautifulSoup
 from langchain.schema import BaseDocumentTransformer, Document
 
 
@@ -13,6 +12,15 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
             docs_transformed = bs4_transformer.transform_documents(docs)
     """
 
+    def __init__(self) -> None:
+        try:
+            from bs4 import BeautifulSoup
+        except ImportError:
+            raise ImportError(
+                "BeautifulSoup4 is required for BeautifulSoupTransformer. "
+                "Please install it with `pip install beautifulsoup4`."
+            )
+
     def transform_documents(
         self,
         documents: Sequence[Document],
@@ -21,14 +29,6 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         remove_lines: bool = True,
         **kwargs: Any,
     ) -> Sequence[Document]:
-        try:
-            import bs4
-        except ImportError:
-            raise ImportError(
-                """bs4 package not found, please 
-                install it with `pip install -q beautifulsoup4`"""
-            )
-
         for doc in documents:
             cleaned_content = doc.page_content
 
@@ -45,6 +45,8 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
 
     @staticmethod
     def remove_unwanted_tags(html_content: str, unwanted_tags: List[str]) -> str:
+        from bs4 import BeautifulSoup
+
         soup = BeautifulSoup(html_content, "html.parser")
         for tag in unwanted_tags:
             for element in soup.find_all(tag):
@@ -53,6 +55,8 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
 
     @staticmethod
     def extract_tags(html_content: str, tags: List[str]) -> str:
+        from bs4 import BeautifulSoup
+
         soup = BeautifulSoup(html_content, "html.parser")
         text_parts = []
         for tag in tags:
@@ -79,7 +83,7 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
             if line not in seen:
                 seen.add(line)
                 deduped_lines.append(line)
-        cleaned_content = "".join(deduped_lines)
+        cleaned_content = " ".join(deduped_lines)
         return cleaned_content
 
     async def atransform_documents(
