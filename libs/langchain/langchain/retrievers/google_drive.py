@@ -1,13 +1,11 @@
-from abc import abstractmethod
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal
 
 from pydantic.class_validators import root_validator
 from pydantic.config import Extra
 
 from langchain.callbacks.manager import (
-    Callbacks,
-    CallbackManagerForRetrieverRun,
     AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
 )
 from langchain.schema import BaseRetriever, Document
 
@@ -29,7 +27,7 @@ class GoogleDriveRetriever(GoogleDriveUtilities, BaseRetriever):
 
     class Config:
         extra = Extra.allow
-        allow_mutation = False
+        allow_mutation = True  # deprecated
         underscore_attrs_are_private = True
 
     mode: Literal[

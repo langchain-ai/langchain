@@ -199,17 +199,17 @@ _application_word = {
 #     "modifiedTime": "2023-01-01T00:00:00.0Z",
 #     "sha256Checksum": "0000",
 # }
-# _application_odt = {
-#     "id": "105",
-#     "name": "vnd.oasis.opendocument.text.odt",
-#     "mimeType": "application/vnd.oasis.opendocument.text",
-#     "owners": [{"displayName": "John Do"}],
-#     "webViewLink": "https://drive.google.com/file/d/105/view?usp=drivesdk",
-#     "webContentLink": "https://drive.google.com/uc?id=105&export=download",
-#     "description": "A OpenOffice word",
-#     "modifiedTime": "2023-01-01T00:00:00.0Z",
-#     "sha256Checksum": "0000",
-# }
+_application_odt = {
+    "id": "105",
+    "name": "vnd.oasis.opendocument.text.odt",
+    "mimeType": "application/vnd.oasis.opendocument.text",
+    "owners": [{"displayName": "John Do"}],
+    "webViewLink": "https://drive.google.com/file/d/105/view?usp=drivesdk",
+    "webContentLink": "https://drive.google.com/uc?id=105&export=download",
+    "description": "A OpenOffice word",
+    "modifiedTime": "2023-01-01T00:00:00.0Z",
+    "sha256Checksum": "0000",
+}
 # _application_odp = {
 #     "id": "109",
 #     "name": "vnd.oasis.opendocument.presentation.odp",
@@ -277,7 +277,7 @@ _all_files = {
     # _application_excel["id"]: _application_excel,
     # _application_powerpoint["id"]: _application_powerpoint,
     # _application_ods["id"]: _application_ods,
-    # _application_odt["id"]: _application_odt,
+    _application_odt["id"]: _application_odt,
     # _application_odp["id"]: _application_odp,
     # _application_rtf["id"]: _application_rtf,
     # _application_pdf["id"]: _application_pdf,

@@ -6,6 +6,7 @@ import os
 import re
 import tempfile
 import traceback
+import warnings
 from collections import OrderedDict
 from functools import partial
 from pathlib import Path
@@ -70,8 +71,6 @@ class BaseLoader(Protocol):
     ) -> Iterator[Document]:
         ...
 
-
-from langchain.schema import Document
 
 FORMAT_INSTRUCTION = (
     "The input should be formatted as a list of entities separated"
@@ -147,7 +146,7 @@ SCOPES: List[str] = [
 
 class _LRUCache:
     # initialising capacity
-    def __init__(self, capacity: int = 30):
+    def __init__(self, capacity: int = 300):
         self._cache: OrderedDict = OrderedDict()
         self._capacity: int = capacity
 
@@ -215,6 +214,8 @@ def default_conv_loader(
         import pypandoc
 
         from langchain.document_loaders import UnstructuredRTFLoader
+
+        pypandoc.ensure_pandoc_installed()
 
         mime_types_mapping.update(
             {
@@ -461,8 +462,9 @@ class GoogleDriveUtilities(Serializable, BaseModel):
     class Config:
         extra = Extra.allow
         underscore_attrs_are_private = True
-        allow_mutation = False
         arbitrary_types_allowed = True
+        allow_mutation = True  # deprecated. Only for back compatibility
+        # validate_assignment = True  # deprecated. Only for back compatibility
 
     @property
     def files(self) -> Any:
@@ -491,6 +493,29 @@ class GoogleDriveUtilities(Serializable, BaseModel):
             raise ValueError(f"Api file '{api_file}' does not exist")
         return api_file
 
+    @root_validator
+    def validate_template(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        template = values.get("template")
+        if isinstance(template, str):
+            template = get_template(template)
+
+        values["template"] = template
+        return values
+
+    @root_validator(pre=True)
+    def validate_file_loader_cls(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        if values.get("file_loader_cls") or values.get("file_loader_kwargs"):
+            warnings.warn(
+                "file_loader_cls and file_loader_kwargs "
+                "are deprecated. Use conv_mapping.",
+                DeprecationWarning,
+            )
+            logger.warning(
+                "file_loader_cls and file_loader_kwargs "
+                "are deprecated. Use conv_mapping."
+            )
+        return values
+
     gdrive_token_path: Optional[Path] = None
     """ Path to save the token.json file. By default, use the directory of 
     `gdrive_api_file."""
@@ -503,38 +528,6 @@ class GoogleDriveUtilities(Serializable, BaseModel):
 
     recursive: bool = False
     """If `true`, search in the `folder_id` and sub folders."""
-
-    template: Union[
-        PromptTemplate,
-        Literal[
-            "gdrive-all-in-folder",
-            "gdrive-query",
-            "gdrive-by-name",
-            "gdrive-by-name-in-folder",
-            "gdrive-query-in-folder",
-            "gdrive-mime-type",
-            "gdrive-mime-type-in-folder",
-            "gdrive-query-with-mime-type",
-            "gdrive-query-with-mime-type-and-folder",
-        ],
-        None,
-    ] = None
-    """
-    A `PromptTemplate` with the syntax compatible with the parameter `q` 
-    of Google API').
-    The variables may be set in the constructor, or during the invocation of 
-    `lazy_get_relevant_documents()`.
-    """
-
-    @root_validator
-    def validate_template(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        template = values.get("template")
-        if isinstance(template, str):
-            template = get_template(template)
-        if not template:
-            raise ValueError("template must be set")
-        values["template"] = template
-        return values
 
     filter: Callable[["GoogleDriveUtilities", Dict], bool] = cast(
         Callable[["GoogleDriveUtilities", Dict], bool], lambda self, file: True
@@ -641,6 +634,33 @@ class GoogleDriveUtilities(Serializable, BaseModel):
     supportsAllDrives: bool = True
     """Whether the requesting application supports both My Drives and
                 shared drives. (Default: true)"""
+
+    file_loader_cls: Optional[Type] = None  # deprecated
+    """Deprecated: The file loader class to use."""
+    file_loader_kwargs: Optional[Dict[str, Any]] = None  # deprecated
+    """Deprecated: The file loader kwargs to use."""
+
+    template: Union[
+        PromptTemplate,
+        Literal[
+            "gdrive-all-in-folder",
+            "gdrive-query",
+            "gdrive-by-name",
+            "gdrive-by-name-in-folder",
+            "gdrive-query-in-folder",
+            "gdrive-mime-type",
+            "gdrive-mime-type-in-folder",
+            "gdrive-query-with-mime-type",
+            "gdrive-query-with-mime-type-and-folder",
+        ],
+        None,
+    ] = None
+    """
+    A `PromptTemplate` with the syntax compatible with the parameter `q` 
+    of Google API').
+    The variables may be set in the constructor, or during the invocation of 
+    `lazy_get_relevant_documents()`.
+    """
 
     # Private fields
     _files = Field(allow_mutation=True)
@@ -811,18 +831,9 @@ class GoogleDriveUtilities(Serializable, BaseModel):
                 )
         return f"https://drive.google.com/file/d/{file['id']}?usp=share_link"
 
-    @root_validator
-    def validate_folder_id_or_document_ids(
-        cls, values: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """Validate that either folder_id or document_ids is set, but not both."""
-        if values.get("folder_id") and values.get("document_ids"):
-            raise ValueError("folder_id or document_ids must be set")
-        return values
-
     def __init__(self, **kwargs):  # type: ignore
         super().__init__(**kwargs)
-
+        self._template = self.template  # Deprecated.
         kwargs = {k: v for k, v in kwargs.items() if k not in self.__fields__}
 
         self._files = None
@@ -863,13 +874,20 @@ class GoogleDriveUtilities(Serializable, BaseModel):
 
     def get_folder_name(self, file_id: str, **kwargs: Any) -> str:
         """Return folder name from file_id. Cache the result."""
-        name = self._folder_name_cache.get(file_id)
-        if name:
-            return name
-        else:
-            name = cast(str, self._get_file_by_id(file_id)["name"])
-            self._folder_name_cache.put(file_id, name)
-            return name
+        from googleapiclient.errors import HttpError
+
+        try:
+            name = self._folder_name_cache.get(file_id)
+            if name:
+                return name
+            else:
+                name = cast(str, self._get_file_by_id(file_id)["name"])
+                self._folder_name_cache.put(file_id, name)
+                return name
+        except HttpError:
+            # Sometime, it's impossible to get the file name of a folder.
+            # It's because a shortcut reference an inacessible file.
+            return "inaccessible-folder"
 
     def _get_file_by_id(self, file_id: str, **kwargs: Any) -> Dict:
         get_kwargs = {**self._kwargs, **kwargs, **{"fields": self.fields}}
@@ -908,17 +926,38 @@ class GoogleDriveUtilities(Serializable, BaseModel):
                         done = False
                         while done is False:
                             status, done = downloader.next_chunk()
+
                     finally:
                         fh.close()
 
-                    if file["mimeType"] in self.conv_mapping:
+                    if self.file_loader_cls:
+                        # Deprecated
+                        request = self.files.get_media(fileId=file["id"])
+                        bfh = io.BytesIO()
+                        downloader = MediaIoBaseDownload(bfh, request)
+                        done = False
+                        while done is False:
+                            status, done = downloader.next_chunk()
+                        bfh.seek(0)
+                        loader = self.file_loader_cls(
+                            file=bfh, **self.file_loader_kwargs
+                        )
+                        for i, document in enumerate(loader.load()):
+                            metadata = self._extract_meta_data(file)
+                            if "source" in metadata:
+                                metadata["source"] = metadata["source"] + f"#_{i}"
+                            document.metadata = metadata
+                            yield document
+                        return
+
+                    if self.file_loader_cls or file["mimeType"] in self.conv_mapping:
                         logger.debug(
                             f"Try to convert '{file['name']}' with type "
                             f"'{file.get('mimeType', 'unknown')}'"
                         )
                         cls = self.conv_mapping[file["mimeType"]]
                         try:
-                            documents = cls(file_path=path).load()
+                            documents = cls(file_path=str(path)).load()
                             for i, document in enumerate(documents):
                                 metadata = self._extract_meta_data(file)
                                 if "source" in metadata:
@@ -1158,10 +1197,12 @@ class GoogleDriveUtilities(Serializable, BaseModel):
         variables = {
             k: v
             for k, v in variables.items()
-            if k in cast(PromptTemplate, self.template).input_variables
+            if k in cast(PromptTemplate, self._template).input_variables
         }
         query_str = (
-            " " + "".join(cast(PromptTemplate, self.template).format(**variables)) + " "
+            " "
+            + "".join(cast(PromptTemplate, self._template).format(**variables))
+            + " "
         )
         list_kwargs = {
             **self._gdrive_kwargs,
@@ -1347,7 +1388,6 @@ class GoogleDriveUtilities(Serializable, BaseModel):
                 except HttpError as x:
                     # Error when manage recursive directory
                     logger.debug(f"*** During recursive search, ignore error {x}")
-                    traceback.print_exc()
 
         except HttpError as e:
             if "Invalid Value" in e.reason:
@@ -1602,7 +1642,6 @@ class GoogleDriveAPIWrapper(GoogleDriveUtilities):
     class Config:
         extra = Extra.allow
         underscore_attrs_are_private = True
-        allow_mutation = False
 
     mode: Literal[
         "snippets", "snippets-markdown", "documents", "documents-markdown"
@@ -1625,7 +1664,7 @@ class GoogleDriveAPIWrapper(GoogleDriveUtilities):
             "gdrive-query-with-mime-type-and-folder",
         ],
         None,
-    ] = "gdrive-query"
+    ] = None
 
     @root_validator(pre=True)
     def validate_template(cls, v: Dict[str, Any]) -> Dict[str, Any]:
