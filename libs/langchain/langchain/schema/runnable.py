@@ -674,6 +674,46 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
         raise first_error
 
 
+class PutLocalVar(Serializable, Runnable[Input, Input]):
+    key: Union[str, Dict[str, str]]
+
+    def __init__(self, key: str, **kwargs: Any) -> None:
+        super().__init__(key=key, **kwargs)
+
+    def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Input:
+        if config is None:
+            raise ValueError(
+                "PutLocalVar should only be used in a RunnableSequence, and should "
+                "therefore always receive a non-null config."
+            )
+        if isinstance(self.key, str):
+            config["_locals"][self.key] = input
+        else:
+            if not isinstance(input, Mapping):
+                raise ValueError
+            for get_key, put_key in self.key.items():
+                config["_locals"][put_key] = input[get_key]
+        return self._call_with_config(lambda x: x, input, config)
+
+
+class GetLocalVar(Serializable, Runnable[str, Any]):
+    key: str
+    passthrough_key: Optional[str] = None
+
+    def __init__(self, key: str, **kwargs: Any) -> None:
+        super().__init__(key=key, **kwargs)
+
+    def invoke(self, input: str, config: Optional[RunnableConfig] = None) -> Any:
+        if config is None:
+            raise ValueError(
+                "PutLocalVar should only be used in a RunnableSequence, and should "
+                "therefore always receive a non-null config."
+            )
+        if self.passthrough_key is not None:
+            return {self.key: config["_locals"][self.key], self.passthrough_key: input}
+        return config["_locals"][self.key]
+
+
 class RunnableSequence(Serializable, Runnable[Input, Output]):
     """
     A sequence of runnables, where the output of each is the input of the next.
@@ -749,11 +789,9 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         try:
             callbacks = run_manager.get_child()
             for step in self.steps:
-                input = step.invoke(
-                    input,
-                    # mark each step as a child run
-                    _patch_config(config, callbacks),
-                )
+                # mark each step as child run
+                step_config = _patch_config(config, callbacks)
+                input = step.invoke(input, step_config)
         # finish the root run
         except (KeyboardInterrupt, Exception) as e:
             run_manager.on_chain_error(e)
@@ -1401,11 +1439,14 @@ class RouterRunnable(
 
 
 def _patch_config(
-    config: RunnableConfig, callback_manager: BaseCallbackManager, _locals: Optional[Dict[str, Any]] = None
+    config: RunnableConfig,
+    callback_manager: BaseCallbackManager,
+    _locals: Optional[Dict[str, Any]] = None,
 ) -> RunnableConfig:
-    config = deepcopy(config)
+    config = config.copy()
     config["callbacks"] = callback_manager
-    config["_locals"] = _locals or {}
+    if _locals is not None:
+        config["_locals"] = _locals
     return config
 
 
