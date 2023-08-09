@@ -560,7 +560,7 @@ Question:
             SystemMessage(content="You are a nice assistant."),
             HumanMessage(
                 content="""Context:
-[Document(page_content='foo', metadata={}), Document(page_content='bar', metadata={})]
+['foo', 'bar']
 
 Question:
 What is your name?"""
