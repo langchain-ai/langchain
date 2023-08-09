@@ -1,4 +1,7 @@
 """Edenai Tools."""
+from langchain.tools.edenai.utils import (
+    EdenaiTool
+)
 from langchain.tools.edenai.explicit_content_detection_image import (
     EdenAiExplicitImage,
 )
@@ -23,7 +26,9 @@ from langchain.tools.edenai.text_to_speech import (
     EdenAiTextToSpeech,
 )
 
+
 __all__ = [
+    "EdenaiaiTool"
     "EdenAiExplicitImage",
     "EdenAiExplicitTextDetection",
     "EdenAiObjectDetectionTool",
