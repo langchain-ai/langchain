@@ -1,9 +1,18 @@
 from __future__ import annotations
 
-from typing import List, Any, Mapping, Dict, Union
-
-from langchain.schema.messages import HumanMessage, AIMessage, FunctionMessage, BaseMessageChunk, SystemMessage, BaseMessage, ChatMessage, HumanMessageChunk, ChatMessageChunk, SystemMessageChunk, FunctionMessageChunk, AIMessageChunk
 import importlib
+from typing import Any, AsyncIterator, Dict, Iterable, List, Mapping, Union
+
+from langchain.schema.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    BaseMessageChunk,
+    ChatMessage,
+    FunctionMessage,
+    HumanMessage,
+    SystemMessage,
+)
 
 
 def convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
@@ -28,6 +37,7 @@ def convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
 
 
 def convert_message_to_dict(message: BaseMessage) -> dict:
+    message_dict: Dict[str, Any]
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
     elif isinstance(message, HumanMessage):
@@ -36,6 +46,9 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {"role": "assistant", "content": message.content}
         if "function_call" in message.additional_kwargs:
             message_dict["function_call"] = message.additional_kwargs["function_call"]
+            # If function call only, content is None not empty string
+            if message_dict["content"] == "":
+                message_dict["content"] = None
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
     elif isinstance(message, FunctionMessage):
@@ -63,68 +76,65 @@ def convert_openai_messages(messages: List[dict]) -> List[BaseMessage]:
     return [convert_dict_to_message(m) for m in messages]
 
 
-def _convert_message_chunk_to_delta(
-        chunk: BaseMessageChunk
-) -> Dict[str, Union[str, Any]]:
-    _dict = {}
-
-    # Determine role based on chunk type
-    if isinstance(chunk, HumanMessageChunk):
-        _dict["role"] = "user"
-        _dict["content"] = chunk.content
-    elif isinstance(chunk, AIMessageChunk):
-        _dict["role"] = "assistant"
-        _dict["content"] = chunk.content
-        if hasattr(chunk, "function_call"):
-            _dict["function_call"] = chunk.function_call
-    elif isinstance(chunk, SystemMessageChunk):
-        _dict["role"] = "system"
-        _dict["content"] = chunk.content
-    elif isinstance(chunk, FunctionMessageChunk):
-        _dict["role"] = "function"
-        _dict["content"] = chunk.content
-        _dict["name"] = chunk.name
-    elif isinstance(chunk, ChatMessageChunk):
-        _dict["role"] = chunk.role
-        _dict["content"] = chunk.content
+def _convert_message_chunk_to_delta(chunk: BaseMessageChunk, i: int) -> Dict[str, Any]:
+    _dict: Dict[str, Any] = {}
+    if isinstance(chunk, AIMessageChunk):
+        if i == 0:
+            # Only shows up in the first chunk
+            _dict["role"] = "assistant"
+        if "function_call" in chunk.additional_kwargs:
+            _dict["function_call"] = chunk.additional_kwargs["function_call"]
+            # If the first chunk is a function call, the content is not empty string,
+            # not missing, but None.
+            if i == 0:
+                _dict["content"] = None
+        else:
+            _dict["content"] = chunk.content
     else:
-        _dict["content"] = chunk.content
+        raise ValueError(f"Got unexpected streaming chunk type: {type(chunk)}")
+    # This only happens at the end of streams, and OpenAI returns as empty dict
+    if _dict == {"content": ""}:
+        _dict = {}
+    return {"choices": [{"delta": _dict}]}
 
-    return _dict
 
 class ChatCompletion:
-
     @staticmethod
-    def create(messages: List[dict], provider: str = "ChatOpenAI", stream:bool = False, **kwargs: Any,):
+    def create(
+        messages: List[dict],
+        provider: str = "ChatOpenAI",
+        stream: bool = False,
+        **kwargs: Any,
+    ) -> Union[dict, Iterable]:
         models = importlib.import_module("langchain.chat_models")
         model_cls = getattr(models, provider)
         model_config = model_cls(**kwargs)
-        messages = convert_openai_messages(messages)
+        converted_messages = convert_openai_messages(messages)
         if not stream:
-            result = model_config.invoke(messages)
-            return {
-                "choices": [
-                    {"message": convert_message_to_dict(result)}
-                ]
-            }
+            result = model_config.invoke(converted_messages)
+            return {"choices": [{"message": convert_message_to_dict(result)}]}
         else:
-            i = 0
-            for c in model_config.stream(messages):
-
-            return
+            return (
+                _convert_message_chunk_to_delta(c, i)
+                for i, c in enumerate(model_config.stream(converted_messages))
+            )
 
     @staticmethod
-    async def acreate(messages: List[dict], provider: str = "ChatOpenAI", stream:bool = False, **kwargs: Any,):
+    async def acreate(
+        messages: List[dict],
+        provider: str = "ChatOpenAI",
+        stream: bool = False,
+        **kwargs: Any,
+    ) -> Union[dict, Iterable]:
         models = importlib.import_module("langchain.chat_models")
         model_cls = getattr(models, provider)
         model_config = model_cls(**kwargs)
-        messages = convert_openai_messages(messages)
+        converted_messages = convert_openai_messages(messages)
         if not stream:
-            result = await model_config.ainvoke(messages)
-            return {
-                "choices": [
-                    {"message": convert_message_to_dict(result)}
-                ]
-            }
+            result = await model_config.ainvoke(converted_messages)
+            return {"choices": [{"message": convert_message_to_dict(result)}]}
         else:
-            return model_config.astream(messages)
+            return (
+                _convert_message_chunk_to_delta(c, i)
+                for i, c in enumerate(await model_config.astream(converted_messages))
+            )

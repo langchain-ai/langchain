@@ -5,10 +5,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from langchain.adapters.openai import convert_dict_to_message
 from langchain.chat_models.openai import (
     ChatOpenAI,
 )
-from langchain.adapters.openai import convert_dict_to_message
 from langchain.schema.messages import (
     AIMessage,
     FunctionMessage,
