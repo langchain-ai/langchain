@@ -1,6 +1,7 @@
 """Loader that uses Playwright to load a page, then uses unstructured to load the html.
 """
 import logging
+from abc import ABC, abstractmethod
 from typing import List, Optional
 
 from langchain.docstore.document import Document
@@ -9,8 +10,88 @@ from langchain.document_loaders.base import BaseLoader
 logger = logging.getLogger(__name__)
 
 
+class PlaywrightEvaluator(ABC):
+    """Abstract base class for all evaluators.
+
+    Each evaluator should take a page, a browser instance, and a response
+    object, process the page as necessary, and return the resulting text.
+    """
+
+    @abstractmethod
+    def evaluate(self, page, browser, response):
+        """Synchronously process the page and return the resulting text.
+
+        Args:
+            page: The page to process.
+            browser: The browser instance.
+            response: The response from page.goto().
+
+        Returns:
+            text: The text content of the page.
+        """
+        pass
+
+    @abstractmethod
+    async def evaluate_async(self, page, browser, response):
+        """Asynchronously process the page and return the resulting text.
+
+        Args:
+            page: The page to process.
+            browser: The browser instance.
+            response: The response from page.goto().
+
+        Returns:
+            text: The text content of the page.
+        """
+        pass
+
+
+class UnstructuredHtmlEvaluator(PlaywrightEvaluator):
+    """Evaluates the page HTML content using the `unstructured` library."""
+
+    def __init__(self, remove_selectors: Optional[List[str]] = None):
+        """Initialize UnstructuredHtmlEvaluator and check if `unstructured` package is installed."""
+        try:
+            import unstructured  # noqa:F401
+        except ImportError:
+            raise ImportError(
+                "unstructured package not found, please install it with "
+                "`pip install unstructured`"
+            )
+
+        self.remove_selectors = remove_selectors
+
+    def evaluate(self, page, browser, response):
+        """Synchronously process the HTML content of the page and return a text string."""
+        from unstructured.partition.html import partition_html
+
+        for selector in self.remove_selectors or []:
+            elements = page.locator(selector).all()
+            for element in elements:
+                if element.is_visible():
+                    element.evaluate("element => element.remove()")
+
+        page_source = page.content()
+        elements = partition_html(text=page_source)
+        return "\n\n".join([str(el) for el in elements])
+
+    async def evaluate_async(self, page, browser, response):
+        """Asynchronously process the HTML content of the page and return a text string."""
+        from unstructured.partition.html import partition_html
+
+        for selector in self.remove_selectors or []:
+            elements = await page.locator(selector).all()
+            for element in elements:
+                if await element.is_visible():
+                    await element.evaluate("element => element.remove()")
+
+        page_source = await page.content()
+        elements = partition_html(text=page_source)
+        return "\n\n".join([str(el) for el in elements])
+
+
 class PlaywrightURLLoader(BaseLoader):
-    """Loader that uses Playwright and to load a page and unstructured to load the html.
+    """Loader that uses Playwright and PlaywrightEvaluator to load the html.
     This is useful for loading pages that require javascript to render.
 
     Attributes:
@@ -25,8 +106,9 @@ class PlaywrightURLLoader(BaseLoader):
         continue_on_failure: bool = True,
         headless: bool = True,
         remove_selectors: Optional[List[str]] = None,
+        evaluator: Optional[PlaywrightEvaluator] = None,
     ):
-        """Load a list of URLs using Playwright and unstructured."""
+        """Load a list of URLs using Playwright."""
         try:
             import playwright  # noqa:F401
         except ImportError:
@@ -35,66 +117,17 @@ class PlaywrightURLLoader(BaseLoader):
                 "`pip install playwright`"
             )
 
-        try:
-            import unstructured  # noqa:F401
-        except ImportError:
-            raise ImportError(
-                "unstructured package not found, please install it with "
-                "`pip install unstructured`"
-            )
-
         self.urls = urls
         self.continue_on_failure = continue_on_failure
         self.headless = headless
-        self.remove_selectors = remove_selectors
 
-    def _sync_evaluate(self, page, browser, response):
-        """Process a page and return the text content synchronously.
+        if remove_selectors and evaluator:
+            raise ValueError(
+                "`remove_selectors` and `evaluator` cannot be both not None"
+            )
 
-        Args:
-            page: The page to process.
-            browser: The browser instance.
-            response: The response from page.goto().
-
-        Returns:
-            text: The text content of the page.
-        """
-        from unstructured.partition.html import partition_html
-
-        for selector in self.remove_selectors or []:
-            elements = page.locator(selector).all()
-            for element in elements:
-                if element.is_visible():
-                    element.evaluate("element => element.remove()")
-
-        page_source = page.content()
-        elements = partition_html(text=page_source)
-        text = "\n\n".join([str(el) for el in elements])
-        return text
-
-    async def _async_evaluate(self, page, browser, response):
-        """Process a page and return the text content asynchronously.
-
-        Args:
-            page: The page to process.
-            browser: The browser instance.
-            response: The response from page.goto().
-
-        Returns:
-            text: The text content of the page.
-        """
-        from unstructured.partition.html import partition_html
-
-        for selector in self.remove_selectors or []:
-            elements = await page.locator(selector).all()
-            for element in elements:
-                if await element.is_visible():
-                    await element.evaluate("element => element.remove()")
-
-        page_source = await page.content()
-        elements = partition_html(text=page_source)
-        text = "\n\n".join([str(el) for el in elements])
-        return text
+        # Use the provided evaluator, if any, otherwise, use the default UnstructuredHtmlEvaluator.
+        self.evaluator = evaluator or UnstructuredHtmlEvaluator(remove_selectors)
 
     def load(self) -> List[Document]:
         """Load the specified URLs using Playwright and create Document instances.
@@ -112,7 +145,7 @@ class PlaywrightURLLoader(BaseLoader):
                 try:
                     page = browser.new_page()
                     response = page.goto(url)
-                    text = self._sync_evaluate(page, browser, response)
+                    text = self.evaluator.evaluate(page, browser, response)
                     metadata = {"source": url}
                     docs.append(Document(page_content=text, metadata=metadata))
                 except Exception as e:
@@ -142,7 +175,7 @@ class PlaywrightURLLoader(BaseLoader):
                 try:
                     page = await browser.new_page()
                     response = await page.goto(url)
-                    text = await self._async_evaluate(page, browser, response)
+                    text = await self.evaluator.evaluate_async(page, browser, response)
                     metadata = {"source": url}
                     docs.append(Document(page_content=text, metadata=metadata))
                 except Exception as e:
