@@ -1,9 +1,11 @@
 """Base interface that all chains should implement."""
+import asyncio
 import inspect
 import json
 import logging
 import warnings
 from abc import ABC, abstractmethod
+from functools import partial
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
@@ -55,18 +57,26 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
     """
 
     def invoke(
-        self, input: Dict[str, Any], config: Optional[RunnableConfig] = None
+        self,
+        input: Dict[str, Any],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> Dict[str, Any]:
-        return self(input, **(config or {}))
+        return self(input, **(config or {}), **kwargs)
 
     async def ainvoke(
-        self, input: Dict[str, Any], config: Optional[RunnableConfig] = None
+        self,
+        input: Dict[str, Any],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> Dict[str, Any]:
         if type(self)._acall == Chain._acall:
             # If the chain does not implement async, fall back to default implementation
-            return await super().ainvoke(input, config)
+            return await asyncio.get_running_loop().run_in_executor(
+                None, partial(self.invoke, input, config, **kwargs)
+            )
 
-        return await self.acall(input, **(config or {}))
+        return await self.acall(input, **(config or {}), **kwargs)
 
     memory: Optional[BaseMemory] = None
     """Optional memory object. Defaults to None.
