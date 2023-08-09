@@ -2,10 +2,10 @@ from datetime import datetime, timedelta
 from typing import List, Optional
 
 from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
+from langchain.document_loaders.base import BaseLoaderAsRetriever
 
 
-class DatadogLogsLoader(BaseLoader):
+class DatadogLogsLoader(BaseLoaderAsRetriever):
     """Load `Datadog` logs.
 
     Logs are written into the `page_content` and into the `metadata`.
@@ -23,21 +23,22 @@ class DatadogLogsLoader(BaseLoader):
         """Initialize Datadog document loader.
 
         Requirements:
-            - Must have datadog_api_client installed. Install with `pip install datadog_api_client`.
+            - Must have datadog_api_client installed.
+              Install with `pip install datadog_api_client`.
 
         Args:
             query: The query to run in Datadog.
             api_key: The Datadog API key.
             app_key: The Datadog APP key.
             from_time: Optional. The start of the time range to query.
-                Supports date math and regular timestamps (milliseconds) like '1688732708951'
-                Defaults to 20 minutes ago.
+                Supports date math and regular timestamps (milliseconds)
+                like '1688732708951'. Defaults to 20 minutes ago.
             to_time: Optional. The end of the time range to query.
-                Supports date math and regular timestamps (milliseconds) like '1688732708951'
-                Defaults to now.
+                Supports date math and regular timestamps (milliseconds)
+                like '1688732708951'. Defaults to now.
             limit: The maximum number of logs to return.
                 Defaults to 100.
-        """  # noqa: E501
+        """
         try:
             from datadog_api_client import Configuration
         except ImportError as ex:
