@@ -64,7 +64,7 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
     return message_dict
 
 
-def convert_openai_messages(messages: List[dict]) -> List[BaseMessage]:
+def convert_openai_messages(messages: Sequence[Dict[str, Any]]) -> List[BaseMessage]:
     """Convert dictionaries representing OpenAI messages to LangChain format.
 
     Args:
