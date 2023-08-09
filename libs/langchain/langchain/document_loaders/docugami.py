@@ -19,6 +19,7 @@ TABLE_NAME = "{http://www.w3.org/1999/xhtml}table"
 XPATH_KEY = "xpath"
 DOCUMENT_ID_KEY = "id"
 DOCUMENT_SOURCE_KEY = "source"
+DOCUMENT_NAME_KEY = "name"
 STRUCTURE_KEY = "structure"
 TAG_KEY = "tag"
 PROJECTS_KEY = "projects"
@@ -146,7 +147,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
             metadata = {
                 XPATH_KEY: _xpath_for_chunk(node),
                 DOCUMENT_ID_KEY: document[DOCUMENT_ID_KEY],
-                DOCUMENT_SOURCE_KEY: document[DOCUMENT_SOURCE_KEY],
+                DOCUMENT_SOURCE_KEY: document[DOCUMENT_NAME_KEY],
                 STRUCTURE_KEY: node.attrib.get("structure", ""),
                 TAG_KEY: re.sub(r"\{.*\}", "", node.tag),
             }
@@ -349,7 +350,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
                     chunks += self._parse_dgml(
                         {
                             DOCUMENT_ID_KEY: path.name,
-                            DOCUMENT_SOURCE_KEY: path.name,
+                            DOCUMENT_NAME_KEY: path.name,
                         },
                         file.read(),
                     )
