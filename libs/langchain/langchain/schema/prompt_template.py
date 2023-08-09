@@ -68,7 +68,7 @@ def _format_value(formatters: FormattersType, value: Any) -> Any:
 class BasePromptTemplate(Serializable, Runnable[Dict, PromptValue], ABC):
     """Base class for all prompt templates, returning a prompt."""
 
-    formatters: FormattersType = PROMPT_DEFAULT_FORMATTERS
+    formatters: Optional[FormattersType] = None
     """A mapping of types to functions that format them into a string.
     The functions should take a single argument, the value to format, and
     return a string. If the function takes two arguments, the second argument
@@ -147,7 +147,12 @@ class BasePromptTemplate(Serializable, Runnable[Dict, PromptValue], ABC):
             for k, v in self.partial_variables.items()
         }
         all_variables = {**partial_kwargs, **kwargs}
-        return {k: _format_value(self.formatters, v) for k, v in all_variables.items()}
+        formatters = (
+            self.formatters
+            if self.formatters is not None
+            else PROMPT_DEFAULT_FORMATTERS
+        )
+        return {k: _format_value(formatters, v) for k, v in all_variables.items()}
 
     @abstractmethod
     def format(self, **kwargs: Any) -> str:
@@ -174,7 +179,6 @@ class BasePromptTemplate(Serializable, Runnable[Dict, PromptValue], ABC):
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of prompt."""
         prompt_dict = super().dict(**kwargs)
-        del prompt_dict["formatters"]
         prompt_dict["_type"] = self._prompt_type
         return prompt_dict
 

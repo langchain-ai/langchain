@@ -15,10 +15,16 @@ def default(obj: Any) -> Any:
 
 def dumps(obj: Any, *, pretty: bool = False) -> str:
     """Return a json string representation of an object."""
-    if pretty:
-        return json.dumps(obj, default=default, indent=2)
-    else:
-        return json.dumps(obj, default=default)
+    try:
+        if pretty:
+            return json.dumps(obj, default=default, indent=2)
+        else:
+            return json.dumps(obj, default=default)
+    except TypeError:
+        if pretty:
+            return json.dumps(to_json_not_implemented(obj), indent=2)
+        else:
+            return json.dumps(to_json_not_implemented(obj))
 
 
 def dumpd(obj: Any) -> Dict[str, Any]:

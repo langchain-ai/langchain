@@ -1,5 +1,8 @@
 """Test functionality related to prompts."""
+from langchain.load.dump import dumps
 import pytest
+
+from syrupy import SnapshotAssertion
 
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema.document import Document
@@ -123,7 +126,7 @@ def test_partial_init_string() -> None:
     assert result == "This is a 1 test."
 
 
-def test_default_formatters() -> None:
+def test_default_formatters(snapshot: SnapshotAssertion) -> None:
     """Test prompt can be initialized with partial variables."""
     template = "This is a {foo} test."
     prompt = PromptTemplate.from_template(template)
@@ -132,12 +135,23 @@ def test_default_formatters() -> None:
 
     foo = [Document(page_content="Hello there", metadata={"some": "key"})]
     assert prompt.format(foo=foo) == "This is a ['Hello there'] test."
+    assert dumps(prompt, pretty=True) == snapshot
 
     prompt_no_formatters = PromptTemplate.from_template(template, formatters={})
     assert (
         prompt_no_formatters.format(foo=foo)
         == "This is a [Document(page_content='Hello there', metadata={'some': 'key'})] test."  # noqa: E501
     )
+    assert dumps(prompt_no_formatters, pretty=True) == snapshot
+
+    prompt_custom_formatters = PromptTemplate.from_template(
+        template, formatters={Document: lambda x: x.metadata}
+    )
+    assert (
+        prompt_custom_formatters.format(foo=foo[0])
+        == "This is a {'some': 'key'} test."  # noqa: E501
+    )
+    assert dumps(prompt_custom_formatters, pretty=True) == snapshot
 
 
 def test_partial_init_func() -> None:
