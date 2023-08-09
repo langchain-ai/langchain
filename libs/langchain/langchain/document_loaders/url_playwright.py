@@ -48,15 +48,19 @@ class PlaywrightURLLoader(BaseLoader):
         self.headless = headless
         self.remove_selectors = remove_selectors
 
-    def sync_evaluate_page(self, page):
+    def sync_evaluate(self, page, browser, response):
         """Process a page and return the text content synchronously.
 
         Args:
             page: The page to process.
+            browser: The browser instance.
+            response: The response from page.goto().
 
         Returns:
             text: The text content of the page.
         """
+        from unstructured.partition.html import partition_html
+
         for selector in self.remove_selectors or []:
             elements = page.locator(selector).all()
             for element in elements:
@@ -68,15 +72,19 @@ class PlaywrightURLLoader(BaseLoader):
         text = "\n\n".join([str(el) for el in elements])
         return text
 
-    async def async_evaluate_page(self, page):
+    async def async_evaluate(self, page, browser, response):
         """Process a page and return the text content asynchronously.
 
         Args:
             page: The page to process.
+            browser: The browser instance.
+            response: The response from page.goto().
 
         Returns:
             text: The text content of the page.
         """
+        from unstructured.partition.html import partition_html
+
         for selector in self.remove_selectors or []:
             elements = await page.locator(selector).all()
             for element in elements:
@@ -95,7 +103,6 @@ class PlaywrightURLLoader(BaseLoader):
             List[Document]: A list of Document instances with loaded content.
         """
         from playwright.sync_api import sync_playwright
-        from unstructured.partition.html import partition_html
 
         docs: List[Document] = list()
 
@@ -104,8 +111,8 @@ class PlaywrightURLLoader(BaseLoader):
             for url in self.urls:
                 try:
                     page = browser.new_page()
-                    page.goto(url)
-                    text = self.sync_evaluate_page(page)
+                    response = page.goto(url)
+                    text = self.sync_evaluate(page, browser, response)
                     metadata = {"source": url}
                     docs.append(Document(page_content=text, metadata=metadata))
                 except Exception as e:
@@ -126,7 +133,6 @@ class PlaywrightURLLoader(BaseLoader):
             List[Document]: A list of Document instances with loaded content.
         """
         from playwright.async_api import async_playwright
-        from unstructured.partition.html import partition_html
 
         docs: List[Document] = list()
 
@@ -135,8 +141,8 @@ class PlaywrightURLLoader(BaseLoader):
             for url in self.urls:
                 try:
                     page = await browser.new_page()
-                    await page.goto(url)
-                    text = await self.async_evaluate_page(page)
+                    response = await page.goto(url)
+                    text = await self.async_evaluate(page, browser, response)
                     metadata = {"source": url}
                     docs.append(Document(page_content=text, metadata=metadata))
                 except Exception as e:
