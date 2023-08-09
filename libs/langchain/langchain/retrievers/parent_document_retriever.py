@@ -1,5 +1,5 @@
 import uuid
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.base import Callbacks
 from langchain.schema.document import Document
