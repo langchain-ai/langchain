@@ -59,6 +59,9 @@ test_watch:
 integration_tests:
 	poetry run pytest tests/integration_tests
 
+scheduled_tests:
+	poetry run pytest -m scheduled tests/integration_tests
+
 docker_tests:
 	docker build -t my-langchain-image:test .
 	docker run --rm my-langchain-image:test
