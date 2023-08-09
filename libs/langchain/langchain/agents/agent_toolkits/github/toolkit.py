@@ -6,6 +6,7 @@ from langchain.tools import BaseTool
 from langchain.tools.github.prompt import (
     COMMENT_ON_ISSUE_PROMPT,
     CREATE_FILE_PROMPT,
+    CREATE_PULL_REQUEST_PROMPT,
     DELETE_FILE_PROMPT,
     GET_ISSUE_PROMPT,
     GET_ISSUES_PROMPT,
@@ -40,6 +41,11 @@ class GitHubToolkit(BaseToolkit):
                 "mode": "comment_on_issue",
                 "name": "Comment on Issue",
                 "description": COMMENT_ON_ISSUE_PROMPT,
+            },
+            {
+                "mode": "create_pull_request",
+                "name": "Create Pull Request",
+                "description": CREATE_PULL_REQUEST_PROMPT,
             },
             {
                 "mode": "create_file",

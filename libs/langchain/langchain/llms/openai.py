@@ -30,6 +30,7 @@ from langchain.llms.base import BaseLLM, create_base_retry_decorator
 from langchain.schema import Generation, LLMResult
 from langchain.schema.output import GenerationChunk
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain.utils.utils import build_extra_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +81,12 @@ def _streaming_response_template() -> Dict[str, Any]:
     }
 
 
-def _create_retry_decorator(llm: Union[BaseOpenAI, OpenAIChat]) -> Callable[[Any], Any]:
+def _create_retry_decorator(
+    llm: Union[BaseOpenAI, OpenAIChat],
+    run_manager: Optional[
+        Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
+    ] = None,
+) -> Callable[[Any], Any]:
     import openai
 
     errors = [
@@ -90,12 +96,18 @@ def _create_retry_decorator(llm: Union[BaseOpenAI, OpenAIChat]) -> Callable[[Any
         openai.error.RateLimitError,
         openai.error.ServiceUnavailableError,
     ]
-    return create_base_retry_decorator(error_types=errors, max_retries=llm.max_retries)
+    return create_base_retry_decorator(
+        error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
+    )
 
 
-def completion_with_retry(llm: Union[BaseOpenAI, OpenAIChat], **kwargs: Any) -> Any:
+def completion_with_retry(
+    llm: Union[BaseOpenAI, OpenAIChat],
+    run_manager: Optional[CallbackManagerForLLMRun] = None,
+    **kwargs: Any,
+) -> Any:
     """Use tenacity to retry the completion call."""
-    retry_decorator = _create_retry_decorator(llm)
+    retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
     def _completion_with_retry(**kwargs: Any) -> Any:
@@ -105,10 +117,12 @@ def completion_with_retry(llm: Union[BaseOpenAI, OpenAIChat], **kwargs: Any) -> 
 
 
 async def acompletion_with_retry(
-    llm: Union[BaseOpenAI, OpenAIChat], **kwargs: Any
+    llm: Union[BaseOpenAI, OpenAIChat],
+    run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+    **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the async completion call."""
-    retry_decorator = _create_retry_decorator(llm)
+    retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
     async def _completion_with_retry(**kwargs: Any) -> Any:
@@ -202,25 +216,9 @@ class BaseOpenAI(BaseLLM):
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
-        for field_name in list(values):
-            if field_name in extra:
-                raise ValueError(f"Found {field_name} supplied twice.")
-            if field_name not in all_required_field_names:
-                warnings.warn(
-                    f"""WARNING! {field_name} is not default parameter.
-                    {field_name} was transferred to model_kwargs.
-                    Please confirm that {field_name} is what you intended."""
-                )
-                extra[field_name] = values.pop(field_name)
-
-        invalid_model_kwargs = all_required_field_names.intersection(extra.keys())
-        if invalid_model_kwargs:
-            raise ValueError(
-                f"Parameters {invalid_model_kwargs} should be specified explicitly. "
-                f"Instead they were passed in as part of `model_kwargs` parameter."
-            )
-
-        values["model_kwargs"] = extra
+        values["model_kwargs"] = build_extra_kwargs(
+            extra, values, all_required_field_names
+        )
         return values
 
     @root_validator()
@@ -291,8 +289,10 @@ class BaseOpenAI(BaseLLM):
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
         params = {**self._invocation_params, **kwargs, "stream": True}
-        self.get_sub_prompts(params, [prompt], stop)  # this mutate params
-        for stream_resp in completion_with_retry(self, prompt=prompt, **params):
+        self.get_sub_prompts(params, [prompt], stop)  # this mutates params
+        for stream_resp in completion_with_retry(
+            self, prompt=prompt, run_manager=run_manager, **params
+        ):
             chunk = _stream_response_to_generation_chunk(stream_resp)
             yield chunk
             if run_manager:
@@ -314,7 +314,7 @@ class BaseOpenAI(BaseLLM):
         params = {**self._invocation_params, **kwargs, "stream": True}
         self.get_sub_prompts(params, [prompt], stop)  # this mutate params
         async for stream_resp in await acompletion_with_retry(
-            self, prompt=prompt, **params
+            self, prompt=prompt, run_manager=run_manager, **params
         ):
             chunk = _stream_response_to_generation_chunk(stream_resp)
             yield chunk
@@ -381,7 +381,9 @@ class BaseOpenAI(BaseLLM):
                     }
                 )
             else:
-                response = completion_with_retry(self, prompt=_prompts, **params)
+                response = completion_with_retry(
+                    self, prompt=_prompts, run_manager=run_manager, **params
+                )
                 choices.extend(response["choices"])
                 update_token_usage(_keys, response, token_usage)
         return self.create_llm_result(choices, prompts, token_usage)
@@ -428,7 +430,9 @@ class BaseOpenAI(BaseLLM):
                     }
                 )
             else:
-                response = await acompletion_with_retry(self, prompt=_prompts, **params)
+                response = await acompletion_with_retry(
+                    self, prompt=_prompts, run_manager=run_manager, **params
+                )
                 choices.extend(response["choices"])
                 update_token_usage(_keys, response, token_usage)
         return self.create_llm_result(choices, prompts, token_usage)
@@ -818,7 +822,9 @@ class OpenAIChat(BaseLLM):
     ) -> Iterator[GenerationChunk]:
         messages, params = self._get_chat_params([prompt], stop)
         params = {**params, **kwargs, "stream": True}
-        for stream_resp in completion_with_retry(self, messages=messages, **params):
+        for stream_resp in completion_with_retry(
+            self, messages=messages, run_manager=run_manager, **params
+        ):
             token = stream_resp["choices"][0]["delta"].get("content", "")
             yield GenerationChunk(text=token)
             if run_manager:
@@ -834,7 +840,7 @@ class OpenAIChat(BaseLLM):
         messages, params = self._get_chat_params([prompt], stop)
         params = {**params, **kwargs, "stream": True}
         async for stream_resp in await acompletion_with_retry(
-            self, messages=messages, **params
+            self, messages=messages, run_manager=run_manager, **params
         ):
             token = stream_resp["choices"][0]["delta"].get("content", "")
             yield GenerationChunk(text=token)
@@ -860,7 +866,9 @@ class OpenAIChat(BaseLLM):
 
         messages, params = self._get_chat_params(prompts, stop)
         params = {**params, **kwargs}
-        full_response = completion_with_retry(self, messages=messages, **params)
+        full_response = completion_with_retry(
+            self, messages=messages, run_manager=run_manager, **params
+        )
         llm_output = {
             "token_usage": full_response["usage"],
             "model_name": self.model_name,
@@ -891,7 +899,9 @@ class OpenAIChat(BaseLLM):
 
         messages, params = self._get_chat_params(prompts, stop)
         params = {**params, **kwargs}
-        full_response = await acompletion_with_retry(self, messages=messages, **params)
+        full_response = await acompletion_with_retry(
+            self, messages=messages, run_manager=run_manager, **params
+        )
         llm_output = {
             "token_usage": full_response["usage"],
             "model_name": self.model_name,

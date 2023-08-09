@@ -1,7 +1,6 @@
 """Test Marqo functionality."""
 from typing import Dict
 
-import marqo
 import pytest
 
 from langchain.docstore.document import Document
@@ -14,6 +13,8 @@ INDEX_NAME = "langchain-integration-tests"
 
 @pytest.fixture
 def client() -> Marqo:
+    import marqo
+
     # fixture for marqo client to be used throughout testing, resets the index
     client = marqo.Client(url=DEFAULT_MARQO_URL, api_key=DEFAULT_MARQO_API_KEY)
     try:
@@ -128,6 +129,8 @@ def test_marqo_weighted_query(client: Marqo) -> None:
 
 
 def test_marqo_multimodal() -> None:
+    import marqo
+
     client = marqo.Client(url=DEFAULT_MARQO_URL, api_key=DEFAULT_MARQO_API_KEY)
     try:
         client.index(INDEX_NAME).delete()

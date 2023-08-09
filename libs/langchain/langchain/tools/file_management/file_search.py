@@ -4,10 +4,7 @@ from typing import Optional, Type
 
 from pydantic import BaseModel, Field
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
+from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
 from langchain.tools.file_management.utils import (
     INVALID_PATH_TEMPLATE,
@@ -62,11 +59,4 @@ class FileSearchTool(BaseFileToolMixin, BaseTool):
         except Exception as e:
             return "Error: " + str(e)
 
-    async def _arun(
-        self,
-        dir_path: str,
-        pattern: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        # TODO: Add aiofiles method
-        raise NotImplementedError
+    # TODO: Add aiofiles method

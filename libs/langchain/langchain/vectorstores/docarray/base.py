@@ -20,7 +20,7 @@ def _check_docarray_import() -> None:
 
         da_version = docarray.__version__.split(".")
         if int(da_version[0]) == 0 and int(da_version[1]) <= 31:
-            raise ValueError(
+            raise ImportError(
                 f"To use the DocArrayHnswSearch VectorStore the docarray "
                 f"version >=0.32.0 is expected, received: {docarray.__version__}."
                 f"To upgrade, please run: `pip install -U docarray`."
@@ -135,7 +135,7 @@ class DocArrayIndex(VectorStore, ABC):
 
         0 is dissimilar, 1 is most similar.
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def similarity_search_by_vector(
         self, embedding: List[float], k: int = 4, **kwargs: Any

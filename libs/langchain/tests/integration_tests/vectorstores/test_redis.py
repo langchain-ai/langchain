@@ -124,3 +124,38 @@ def test_ip(texts: List[str]) -> None:
     _, score = output[1]
     assert score == IP_SCORE
     assert drop(docsearch.index_name)
+
+
+def test_similarity_search_limit_score(texts: List[str]) -> None:
+    """Test similarity search limit score."""
+    docsearch = Redis.from_texts(
+        texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL, distance_metric="COSINE"
+    )
+    output = docsearch.similarity_search_limit_score("far", k=2, score_threshold=0.1)
+    assert len(output) == 1
+    _, score = output[0]
+    assert score == COSINE_SCORE
+    assert drop(docsearch.index_name)
+
+
+def test_similarity_search_with_score_with_limit_score(texts: List[str]) -> None:
+    """Test similarity search with score with limit score."""
+    docsearch = Redis.from_texts(
+        texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL, distance_metric="COSINE"
+    )
+    output = docsearch.similarity_search_with_relevance_scores(
+        "far", k=2, score_threshold=0.1
+    )
+    assert len(output) == 1
+    _, score = output[0]
+    assert score == COSINE_SCORE
+    assert drop(docsearch.index_name)
+
+
+def test_delete(texts: List[str]) -> None:
+    """Test deleting a new document"""
+    docsearch = Redis.from_texts(texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL)
+    ids = docsearch.add_texts(["foo"])
+    got = docsearch.delete(ids=ids)
+    assert got
+    assert drop(docsearch.index_name)

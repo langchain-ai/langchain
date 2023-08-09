@@ -1,4 +1,23 @@
-"""Wrappers on top of vector stores."""
+"""**Vector store** stores embedded data and performs vector search.
+
+One of the most common ways to store and search over unstructured data is to
+embed it and store the resulting embedding vectors, and then query the store
+and retrieve the data that are 'most similar' to the embedded query.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    VectorStore --> <name>  # Examples: Annoy, FAISS, Milvus
+
+    BaseRetriever --> VectorStoreRetriever --> <name>Retriever  # Example: VespaRetriever
+
+**Main helpers:**
+
+.. code-block::
+
+    Embeddings, Document
+"""  # noqa: E501
 from langchain.vectorstores.alibabacloud_opensearch import (
     AlibabaCloudOpenSearch,
     AlibabaCloudOpenSearchSettings,
@@ -24,6 +43,7 @@ from langchain.vectorstores.hologres import Hologres
 from langchain.vectorstores.lancedb import LanceDB
 from langchain.vectorstores.marqo import Marqo
 from langchain.vectorstores.matching_engine import MatchingEngine
+from langchain.vectorstores.meilisearch import Meilisearch
 from langchain.vectorstores.milvus import Milvus
 from langchain.vectorstores.mongodb_atlas import MongoDBAtlasVectorSearch
 from langchain.vectorstores.myscale import MyScale, MyScaleSettings
@@ -34,6 +54,7 @@ from langchain.vectorstores.pinecone import Pinecone
 from langchain.vectorstores.qdrant import Qdrant
 from langchain.vectorstores.redis import Redis
 from langchain.vectorstores.rocksetdb import Rockset
+from langchain.vectorstores.scann import ScaNN
 from langchain.vectorstores.singlestoredb import SingleStoreDB
 from langchain.vectorstores.sklearn import SKLearnVectorStore
 from langchain.vectorstores.starrocks import StarRocks
@@ -41,6 +62,7 @@ from langchain.vectorstores.supabase import SupabaseVectorStore
 from langchain.vectorstores.tair import Tair
 from langchain.vectorstores.tigris import Tigris
 from langchain.vectorstores.typesense import Typesense
+from langchain.vectorstores.usearch import USearch
 from langchain.vectorstores.vectara import Vectara
 from langchain.vectorstores.weaviate import Weaviate
 from langchain.vectorstores.zilliz import Zilliz
@@ -68,6 +90,7 @@ __all__ = [
     "LanceDB",
     "MatchingEngine",
     "Marqo",
+    "Meilisearch",
     "Milvus",
     "Zilliz",
     "SingleStoreDB",
@@ -85,6 +108,7 @@ __all__ = [
     "Qdrant",
     "Redis",
     "Rockset",
+    "ScaNN",
     "SKLearnVectorStore",
     "SingleStoreDB",
     "StarRocks",
@@ -97,4 +121,5 @@ __all__ = [
     "Weaviate",
     "Zilliz",
     "PGVector",
+    "USearch",
 ]
