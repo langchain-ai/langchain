@@ -19,6 +19,20 @@ class ConversationBufferWindowMemory(BaseChatMemory):
         return self.chat_memory.messages
 
     @property
+    def buffer_as_str(self) -> str:
+        """Exposes the buffer as a string in case return_messages is True."""
+        return get_buffer_string(
+            self.chat_memory.messages,
+            human_prefix=self.human_prefix,
+            ai_prefix=self.ai_prefix,
+        )
+
+    @property
+    def buffer_as_messages(self) -> List[Any]:
+        """Exposes the buffer as a list of messages in case return_messages is False."""
+        return self.chat_memory.messages
+
+    @property
     def memory_variables(self) -> List[str]:
         """Will always return list of memory variables.
 
