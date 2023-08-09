@@ -13,6 +13,12 @@ from pydantic import Field
 
 if TYPE_CHECKING:
     from ain.ain import Ain
+else:
+    try:
+        # We do this so pydantic can resolve the types when instantiating
+        from ain.ain import Ain
+    except ImportError:
+        pass
 
 
 class AINetworkToolkit(BaseToolkit):
@@ -24,7 +30,7 @@ class AINetworkToolkit(BaseToolkit):
         """Pydantic config."""
 
         validate_all = True
-        arbitrary_types_allowed = False
+        arbitrary_types_allowed = True
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""

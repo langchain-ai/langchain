@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def authenticate() -> Union[Ain, None]:
+def authenticate() -> Union["Ain", None]:
     """Authenticate using the AIN Blockchain"""
 
     # Try importing ain-py related modules
