@@ -100,6 +100,14 @@ Score: 10"""
             """Judgment: Given the good reasoning in the final answer
 but otherwise poor performance, we give the model a score of 2.
 
+Score: 0.1"""
+        )
+
+    with pytest.raises(OutputParserException):
+        trajectory_output_parser.parse(
+            """Judgment: Given the good reasoning in the final answer
+but otherwise poor performance, we give the model a score of 2.
+
 Score: One"""
         )
 

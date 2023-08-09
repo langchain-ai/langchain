@@ -75,9 +75,12 @@ class TrajectoryOutputParser(BaseOutputParser):
 
         reasoning, score_str = reasoning.strip(), score_str.strip()
 
-        # Use regex to extract the score
+        # Use regex to extract the score.
+        # This will get the number in the string, even if it is a float or more than 10.
+        # E.g. "Score: 1" will return 1, "Score: 3.5" will return 3.5, and
+        # "Score: 10" will return 10.
         _score = re.search(r"(\d+(\.\d+)?)", score_str)
-        score = int(_score.group(1)) if _score else None
+        score = int(float(_score.group(1))) if _score else None
         if not score or not 1 <= score <= 5:
             raise OutputParserException(
                 f"Score is not a digit in the range 1-5: {text}"
