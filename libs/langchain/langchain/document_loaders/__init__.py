@@ -187,12 +187,9 @@ PagedPDFSplitter = PyPDFLoader
 TelegramChatLoader = TelegramChatFileLoader
 
 __all__ = [
-<<<<<<< HEAD
     "AcreomLoader",
     "AsyncHtmlLoader",
     "AsyncChromiumLoader",
-=======
->>>>>>> master
     "AZLyricsLoader",
     "AcreomLoader",
     "AirbyteJSONLoader",

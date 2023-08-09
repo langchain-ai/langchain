@@ -1,7 +1,5 @@
 from typing import Any, List, Sequence
-
 from bs4 import BeautifulSoup
-
 from langchain.schema import BaseDocumentTransformer, Document
 
 
@@ -23,7 +21,6 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         remove_lines: bool = True,
         **kwargs: Any,
     ) -> Sequence[Document]:
-
         try:
             import bs4
         except ImportError:
@@ -35,15 +32,12 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         for doc in documents:
             cleaned_content = doc.page_content
 
-            cleaned_content = self.remove_unwanted_tags(
-                cleaned_content, unwanted_tags)
+            cleaned_content = self.remove_unwanted_tags(cleaned_content, unwanted_tags)
 
-            cleaned_content = self.extract_tags(
-                cleaned_content, tags_to_extract)
+            cleaned_content = self.extract_tags(cleaned_content, tags_to_extract)
 
             if remove_lines:
-                cleaned_content = self.remove_unnecessary_lines(
-                    cleaned_content)
+                cleaned_content = self.remove_unnecessary_lines(cleaned_content)
 
             doc.page_content = cleaned_content
 
@@ -85,3 +79,10 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         ]
         cleaned_content = "".join(deduped_lines)
         return cleaned_content
+    
+    async def atransform_documents(
+        self,
+        documents: Sequence[Document],
+        **kwargs: Any,
+    ) -> Sequence[Document]:
+        raise NotImplementedError
