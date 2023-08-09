@@ -127,6 +127,9 @@ class ElasticVectorSearch(VectorStore, ABC):
         ValueError: If the elasticsearch python package is not installed.
     """
 
+    @deprecated(
+        reason="Use ElasticsearchStore instead. ElasticVectorSearch will be removed in a future release. See Elasticsearch integration docs on how to upgrade.",
+    )
     def __init__(
         self,
         elasticsearch_url: str,
@@ -373,6 +376,9 @@ class ElasticKnnSearch(VectorStore, ABC):
         [(Document(page_content='Hello world!', metadata={}), 0.9)]
     """
 
+    @deprecated(
+        reason="Use ElasticsearchStore instead. ElasticKNNSearch will be removed in a future release. See Elasticsearch integration docs on how to upgrade.",
+    )
     def __init__(
         self,
         index_name: str,
