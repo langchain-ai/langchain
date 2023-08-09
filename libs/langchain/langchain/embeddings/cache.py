@@ -93,7 +93,7 @@ class CacheBackedEmbeddings(Embeddings):
         self.document_embedding_store = document_embedding_store
         self.underlying_embeddings = underlying_embeddings
 
-    def embed_documents(self, texts: List[str]) -> list[float]:
+    def embed_documents(self, texts: List[str]) -> List[float]:
         """Embed a list of texts.
 
         The method first checks the cache for the embeddings.
