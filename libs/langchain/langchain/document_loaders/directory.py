@@ -2,7 +2,9 @@
 import concurrent
 import logging
 from pathlib import Path
+import random
 from typing import Any, List, Optional, Type, Union
+
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -39,6 +41,9 @@ class DirectoryLoader(BaseLoader):
         show_progress: bool = False,
         use_multithreading: bool = False,
         max_concurrency: int = 4,
+        sample_size: Union[int, None] = None,
+        randomize_sample: bool = False,
+        sample_seed: Union[int, None] = None,
     ):
         """Initialize with a path to directory and how to glob over it.
 
@@ -55,6 +60,8 @@ class DirectoryLoader(BaseLoader):
             show_progress: Whether to show a progress bar. Defaults to False.
             use_multithreading: Whether to use multithreading. Defaults to False.
             max_concurrency: The maximum number of threads to use. Defaults to 4.
+            sample_size: The maximum number of files you would like to load from the directory.
+            randomize_sample: Suffle the files to get a random sample.
         """
         if loader_kwargs is None:
             loader_kwargs = {}
@@ -68,6 +75,9 @@ class DirectoryLoader(BaseLoader):
         self.show_progress = show_progress
         self.use_multithreading = use_multithreading
         self.max_concurrency = max_concurrency
+        self.sample_size = sample_size
+        self.randomize_sample = randomize_sample
+        self.sample_seed = sample_seed
 
     def load_file(
         self, item: Path, path: Path, docs: List[Document], pbar: Optional[Any]
@@ -106,6 +116,12 @@ class DirectoryLoader(BaseLoader):
 
         docs: List[Document] = []
         items = list(p.rglob(self.glob) if self.recursive else p.glob(self.glob))
+        
+        if self.sample_size > 0:
+            if self.randomize_sample:
+                randomizer = random.Random(self.sample_seed) if self.sample_seed else random
+                randomizer.shuffle(items)
+            items = items[:min(len(items), self.sample_size)]
 
         pbar = None
         if self.show_progress:
