@@ -1,5 +1,5 @@
 """Fake ChatModel for testing purposes."""
-from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
+from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -38,8 +38,8 @@ class FakeListChatModel(SimpleChatModel):
     def _stream(
         self,
         messages: List[BaseMessage],
-        stop: List[str] | None = None,
-        run_manager: CallbackManagerForLLMRun | None = None,
+        stop: Union[List[str], None] = None,
+        run_manager: Union[CallbackManagerForLLMRun, None] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         response = self.responses[self.i]
@@ -53,8 +53,8 @@ class FakeListChatModel(SimpleChatModel):
     async def _astream(
         self,
         messages: List[BaseMessage],
-        stop: List[str] | None = None,
-        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        stop: Union[List[str], None] = None,
+        run_manager: Union[AsyncCallbackManagerForLLMRun, None] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         response = self.responses[self.i]

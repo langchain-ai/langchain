@@ -42,7 +42,7 @@ class BaseGenerationOutputParser(
     BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
 ):
     def invoke(
-        self, input: str | BaseMessage, config: RunnableConfig | None = None
+        self, input: Union[str, BaseMessage], config: Optional[RunnableConfig] = None
     ) -> T:
         if isinstance(input, BaseMessage):
             return self._call_with_config(
@@ -90,7 +90,7 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
     """  # noqa: E501
 
     def invoke(
-        self, input: str | BaseMessage, config: RunnableConfig | None = None
+        self, input: Union[str, BaseMessage], config: Optional[RunnableConfig] = None
     ) -> T:
         if isinstance(input, BaseMessage):
             return self._call_with_config(
@@ -174,7 +174,7 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
 class BaseTransformOutputParser(BaseOutputParser[T]):
     """Base class for an output parser that can handle streaming input."""
 
-    def _transform(self, input: Iterator[str | BaseMessage]) -> Iterator[T]:
+    def _transform(self, input: Iterator[Union[str, BaseMessage]]) -> Iterator[T]:
         for chunk in input:
             if isinstance(chunk, BaseMessage):
                 yield self.parse_result([ChatGeneration(message=chunk)])
@@ -182,7 +182,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
                 yield self.parse_result([Generation(text=chunk)])
 
     async def _atransform(
-        self, input: AsyncIterator[str | BaseMessage]
+        self, input: AsyncIterator[Union[str, BaseMessage]]
     ) -> AsyncIterator[T]:
         async for chunk in input:
             if isinstance(chunk, BaseMessage):
@@ -192,7 +192,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
 
     def transform(
         self,
-        input: Iterator[str | BaseMessage],
+        input: Iterator[Union[str, BaseMessage]],
         config: Optional[RunnableConfig] = None,
     ) -> Iterator[T]:
         yield from self._transform_stream_with_config(
@@ -201,7 +201,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
 
     async def atransform(
         self,
-        input: AsyncIterator[str | BaseMessage],
+        input: AsyncIterator[Union[str, BaseMessage]],
         config: Optional[RunnableConfig] = None,
     ) -> AsyncIterator[T]:
         async for chunk in self._atransform_stream_with_config(
