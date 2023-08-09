@@ -141,7 +141,13 @@ def build_extra_kwargs(
     values: Dict[str, Any],
     all_required_field_names: Set[str],
 ) -> Dict[str, Any]:
-    """"""
+    """Build extra kwargs from values and extra_kwargs.
+
+    Args:
+        extra_kwargs: Extra kwargs passed in by user.
+        values: Values passed in by user.
+        all_required_field_names: All required field names for the pydantic class.
+    """
     for field_name in list(values):
         if field_name in extra_kwargs:
             raise ValueError(f"Found {field_name} supplied twice.")

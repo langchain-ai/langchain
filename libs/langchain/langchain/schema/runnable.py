@@ -48,6 +48,8 @@ async def _gather_with_concurrency(n: Union[int, None], *coros: Coroutine) -> li
 
 
 class RunnableConfig(TypedDict, total=False):
+    """Configuration for a Runnable."""
+
     tags: List[str]
     """
     Tags for this call and any sub-calls (eg. a Chain calling an LLM).
@@ -74,6 +76,9 @@ Other = TypeVar("Other")
 
 
 class Runnable(Generic[Input, Output], ABC):
+    """A Runnable is a unit of work that can be invoked, batched, streamed, or
+    transformed."""
+
     def __or__(
         self,
         other: Union[
@@ -1325,6 +1330,13 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
 
 
 class RouterInput(TypedDict):
+    """A Router input.
+
+    Attributes:
+        key: The key to route on.
+        input: The input to pass to the selected runnable.
+    """
+
     key: str
     input: Any
 
