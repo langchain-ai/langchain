@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import (
     Any,
     AsyncIterator,
+    Awaitable,
     Callable,
     Coroutine,
     Dict,
@@ -188,6 +189,37 @@ class Runnable(Generic[Input, Output], ABC):
             raise
         else:
             run_manager.on_chain_end(
+                output if isinstance(output, dict) else {"output": output}
+            )
+            return output
+
+    async def _acall_with_config(
+        self,
+        func: Callable[[Input], Awaitable[Output]],
+        input: Input,
+        config: Optional[RunnableConfig],
+        run_type: Optional[str] = None,
+    ) -> Output:
+        from langchain.callbacks.manager import AsyncCallbackManager
+
+        config = config or {}
+        callback_manager = AsyncCallbackManager.configure(
+            inheritable_callbacks=config.get("callbacks"),
+            inheritable_tags=config.get("tags"),
+            inheritable_metadata=config.get("metadata"),
+        )
+        run_manager = await callback_manager.on_chain_start(
+            dumpd(self),
+            input if isinstance(input, dict) else {"input": input},
+            run_type=run_type,
+        )
+        try:
+            output = await func(input)
+        except Exception as e:
+            await run_manager.on_chain_error(e)
+            raise
+        else:
+            await run_manager.on_chain_end(
                 output if isinstance(output, dict) else {"output": output}
             )
             return output
