@@ -80,8 +80,12 @@ class TrajectoryOutputParser(BaseOutputParser):
         # E.g. "Score: 1" will return 1, "Score: 3.5" will return 3.5, and
         # "Score: 10" will return 10.
         _score = re.search(r"(\d+(\.\d+)?)", score_str)
-        score = int(float(_score.group(1))) if _score else None
-        if not score or not 1 <= score <= 5:
+        if _score is None or "." in _score.group(1):
+            raise OutputParserException(
+                f"Score is not an integer digit in the range 1-5: {text}"
+            )
+        score = int(_score.group(1))
+        if not 1 <= score <= 5:
             raise OutputParserException(
                 f"Score is not a digit in the range 1-5: {text}"
             )
