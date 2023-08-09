@@ -8,6 +8,8 @@ from langchain.schema.output import Generation, LLMResult
 
 
 class VLLM(BaseLLM):
+    """VLLM language model."""
+
     model: str = ""
     """The name or path of a HuggingFace Transformers model."""
 
