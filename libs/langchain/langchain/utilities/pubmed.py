@@ -3,9 +3,10 @@ import logging
 import time
 import urllib.error
 import urllib.request
-from typing import List
+from typing import Any, Dict, Iterator, List
 
 from pydantic import BaseModel
+from pydantic.class_validators import root_validator
 
 from langchain.schema import Document
 
@@ -22,12 +23,18 @@ class PubMedAPIWrapper(BaseModel):
 
     Parameters:
         top_k_results: number of the top-scored document used for the PubMed tool
-        load_max_docs: a limit to the number of loaded documents
-        load_all_available_meta:
-          if True: the `metadata` of the loaded Documents gets all available meta info
-            (see https://www.ncbi.nlm.nih.gov/books/NBK25499/#chapter4.ESearch)
-          if False: the `metadata` gets only the most informative fields.
+        MAX_QUERY_LENGTH: maximum length of the query.
+          Default is 300 characters.
+        doc_content_chars_max: maximum length of the document content.
+          Content will be truncated if it exceeds this length.
+          Default is 2000 characters.
+        max_retry: maximum number of retries for a request. Default is 5.
+        sleep_time: time to wait between retries.
+          Default is 0.2 seconds.
+        email: email address to be used for the PubMed API.
     """
+
+    parse: Any  #: :meta private:
 
     base_url_esearch = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?"
     base_url_efetch = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?"
@@ -36,11 +43,23 @@ class PubMedAPIWrapper(BaseModel):
 
     # Default values for the parameters
     top_k_results: int = 3
-    load_max_docs: int = 25
-    ARXIV_MAX_QUERY_LENGTH = 300
+    MAX_QUERY_LENGTH = 300
     doc_content_chars_max: int = 2000
-    load_all_available_meta: bool = False
     email: str = "your_email@example.com"
+
+    @root_validator()
+    def validate_environment(cls, values: Dict) -> Dict:
+        """Validate that the python package exists in environment."""
+        try:
+            import xmltodict
+
+            values["parse"] = xmltodict.parse
+        except ImportError:
+            raise ImportError(
+                "Could not import xmltodict python package. "
+                "Please install it with `pip install xmltodict`."
+            )
+        return values
 
     def run(self, query: str) -> str:
         """
@@ -52,9 +71,11 @@ class PubMedAPIWrapper(BaseModel):
         try:
             # Retrieve the top-k results for the query
             docs = [
-                f"Published: {result['pub_date']}\nTitle: {result['title']}\n"
-                f"Summary: {result['summary']}"
-                for result in self.load(query[: self.ARXIV_MAX_QUERY_LENGTH])
+                f"Published: {result['Published']}\n"
+                f"Title: {result['Title']}\n"
+                f"Copyright Information: {result['Copyright Information']}\n"
+                f"Summary::\n{result['Summary']}"
+                for result in self.load(query[: self.MAX_QUERY_LENGTH])
             ]
 
             # Join the results and limit the character count
@@ -66,10 +87,10 @@ class PubMedAPIWrapper(BaseModel):
         except Exception as ex:
             return f"PubMed exception: {ex}"
 
-    def load(self, query: str) -> List[dict]:
+    def lazy_load(self, query: str) -> Iterator[dict]:
         """
         Search PubMed for documents matching the query.
-        Return a list of dictionaries containing the document metadata.
+        Return an iterator of dictionaries containing the document metadata.
         """
 
         url = (
@@ -82,22 +103,27 @@ class PubMedAPIWrapper(BaseModel):
         text = result.read().decode("utf-8")
         json_text = json.loads(text)
 
-        articles = []
         webenv = json_text["esearchresult"]["webenv"]
         for uid in json_text["esearchresult"]["idlist"]:
-            article = self.retrieve_article(uid, webenv)
-            articles.append(article)
+            yield self.retrieve_article(uid, webenv)
 
-        # Convert the list of articles to a JSON string
-        return articles
+    def load(self, query: str) -> List[dict]:
+        """
+        Search PubMed for documents matching the query.
+        Return a list of dictionaries containing the document metadata.
+        """
+        return list(self.lazy_load(query))
 
-    def _transform_doc(self, doc: dict) -> Document:
-        summary = doc.pop("summary")
+    def _dict2document(self, doc: dict) -> Document:
+        summary = doc.pop("Summary")
         return Document(page_content=summary, metadata=doc)
 
+    def lazy_load_docs(self, query: str) -> Iterator[Document]:
+        for d in self.lazy_load(query=query):
+            yield self._dict2document(d)
+
     def load_docs(self, query: str) -> List[Document]:
-        document_dicts = self.load(query=query)
-        return [self._transform_doc(d) for d in document_dicts]
+        return list(self.lazy_load_docs(query=query))
 
     def retrieve_article(self, uid: str, webenv: str) -> dict:
         url = (
@@ -115,7 +141,7 @@ class PubMedAPIWrapper(BaseModel):
                 break
             except urllib.error.HTTPError as e:
                 if e.code == 429 and retry < self.max_retry:
-                    # Too Many Requests error
+                    # Too Many Requests errors
                     # wait for an exponentially increasing amount of time
                     print(
                         f"Too Many Requests, "
@@ -128,39 +154,31 @@ class PubMedAPIWrapper(BaseModel):
                     raise e
 
         xml_text = result.read().decode("utf-8")
+        text_dict = self.parse(xml_text)
+        return self._parse_article(uid, text_dict)
 
-        # Get title
-        title = ""
-        if "<ArticleTitle>" in xml_text and "</ArticleTitle>" in xml_text:
-            start_tag = "<ArticleTitle>"
-            end_tag = "</ArticleTitle>"
-            title = xml_text[
-                xml_text.index(start_tag) + len(start_tag) : xml_text.index(end_tag)
+    def _parse_article(self, uid: str, text_dict: dict) -> dict:
+        ar = text_dict["PubmedArticleSet"]["PubmedArticle"]["MedlineCitation"][
+            "Article"
+        ]
+        summary = "\n".join(
+            [
+                f"{txt['@Label']}: {txt['#text']}"
+                for txt in ar.get("Abstract", {}).get("AbstractText", [])
+                if "#text" in txt and "@Label" in txt
             ]
+        )
+        a_d = ar.get("ArticleDate", {})
+        pub_date = "-".join(
+            [a_d.get("Year", ""), a_d.get("Month", ""), a_d.get("Day", "")]
+        )
 
-        # Get abstract
-        abstract = ""
-        if "<AbstractText>" in xml_text and "</AbstractText>" in xml_text:
-            start_tag = "<AbstractText>"
-            end_tag = "</AbstractText>"
-            abstract = xml_text[
-                xml_text.index(start_tag) + len(start_tag) : xml_text.index(end_tag)
-            ]
-
-        # Get publication date
-        pub_date = ""
-        if "<PubDate>" in xml_text and "</PubDate>" in xml_text:
-            start_tag = "<PubDate>"
-            end_tag = "</PubDate>"
-            pub_date = xml_text[
-                xml_text.index(start_tag) + len(start_tag) : xml_text.index(end_tag)
-            ]
-
-        # Return article as dictionary
-        article = {
+        return {
             "uid": uid,
-            "title": title,
-            "summary": abstract,
-            "pub_date": pub_date,
+            "Title": ar.get("ArticleTitle", ""),
+            "Published": pub_date,
+            "Copyright Information": ar.get("Abstract", {}).get(
+                "CopyrightInformation", ""
+            ),
+            "Summary": summary,
         }
-        return article

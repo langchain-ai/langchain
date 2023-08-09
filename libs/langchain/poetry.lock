@@ -2440,6 +2440,21 @@ wrapt = ">=1.10,<2"
 dev = ["PyTest", "PyTest-Cov", "bump2version (<1)", "sphinx (<2)", "tox"]
 
 [[package]]
+name = "deprecation"
+version = "2.1.0"
+description = "A library to handle automated deprecations"
+category = "main"
+optional = true
+python-versions = "*"
+files = [
+    {file = "deprecation-2.1.0-py2.py3-none-any.whl", hash = "sha256:a10811591210e1fb0e768a8c25517cabeabcba6f0bf96564f8ff45189f90b14a"},
+    {file = "deprecation-2.1.0.tar.gz", hash = "sha256:72b3bde64e5d778694b0cf68178aed03d15e15477116add3fb773e581f9518ff"},
+]
+
+[package.dependencies]
+packaging = "*"
+
+[[package]]
 name = "dill"
 version = "0.3.6"
 description = "serialize all of python"
@@ -3812,7 +3827,7 @@ name = "grpcio-tools"
 version = "1.47.5"
 description = "Protobuf code generator for gRPC"
 category = "main"
-optional = false
+optional = true
 python-versions = ">=3.6"
 files = [
     {file = "grpcio-tools-1.47.5.tar.gz", hash = "sha256:62ced60566a4cbcf35c57e887e2e68b4f108b3474ef3ec0022d38cd579345f92"},
@@ -6348,7 +6363,7 @@ files = [
 name = "mypy-protobuf"
 version = "3.3.0"
 description = "Generate mypy stub files from protobuf specs"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -6695,23 +6710,6 @@ jupyter-server = ">=1.8,<3"
 
 [package.extras]
 test = ["pytest", "pytest-console-scripts", "pytest-jupyter", "pytest-tornasync"]
-
-[[package]]
-name = "nucliadb-protos"
-version = "2.20.2.post523"
-description = "protos for nucliadb"
-category = "main"
-optional = false
-python-versions = "*"
-files = [
-    {file = "nucliadb_protos-2.20.2.post523-py3-none-any.whl", hash = "sha256:23afc2fd600818b4f27fbd2ae17863cb390e5cfb4f54da47fcfffe17bf7cf979"},
-]
-
-[package.dependencies]
-grpcio = ">=1.44.0"
-grpcio-tools = ">=1.44.0"
-mypy-protobuf = ">=3.2.0"
-protobuf = "*"
 
 [[package]]
 name = "numba"
@@ -12212,7 +12210,7 @@ files = [
 name = "types-protobuf"
 version = "4.23.0.1"
 description = "Typing stubs for protobuf"
-category = "main"
+category = "dev"
 optional = false
 python-versions = "*"
 files = [
@@ -13087,6 +13085,24 @@ files = [
 ]
 
 [[package]]
+name = "xata"
+version = "1.0.0a7"
+description = "Python client for Xata.io"
+category = "main"
+optional = true
+python-versions = ">=3.8,<4.0"
+files = [
+    {file = "xata-1.0.0a7-py3-none-any.whl", hash = "sha256:1427e97bccddfd5fa8fba56ba993b2d78f1dc074e729d06ccc79c48d07bd023a"},
+    {file = "xata-1.0.0a7.tar.gz", hash = "sha256:32769ddc22cc091bf133e66b91662185047fff05aa431e7c760b55cd0ddef6c3"},
+]
+
+[package.dependencies]
+deprecation = ">=2.1.0,<3.0.0"
+orjson = ">=3.8.1,<4.0.0"
+python-dotenv = ">=0.21,<2.0"
+requests = ">=2.28.1,<3.0.0"
+
+[[package]]
 name = "xinference"
 version = "0.0.6"
 description = "Model Serving Made Easy"
@@ -13592,14 +13608,15 @@ clarifai = ["clarifai"]
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["amazon-textract-caller", "atlassian-python-api", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "esprima", "feedparser", "geopandas", "gitpython", "gql", "html2text", "jinja2", "jq", "lxml", "mwparserfromhell", "mwxml", "newspaper3k", "nucliadb-protos", "openai", "openai", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "requests-toolbelt", "scikit-learn", "streamlit", "sympy", "telethon", "tqdm", "xinference", "zep-python"]
+extended-testing = ["amazon-textract-caller", "atlassian-python-api", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "esprima", "feedparser", "geopandas", "gitpython", "gql", "html2text", "jinja2", "jq", "lxml", "mwparserfromhell", "mwxml", "newspaper3k", "openai", "openai", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "requests-toolbelt", "scikit-learn", "streamlit", "sympy", "telethon", "tqdm", "xata", "xinference", "xmltodict", "zep-python"]
 javascript = ["esprima"]
 llms = ["anthropic", "clarifai", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "openllm", "openlm", "torch", "transformers", "xinference"]
 openai = ["openai", "tiktoken"]
 qdrant = ["qdrant-client"]
+scheduled-testing = ["openai"]
 text-helpers = ["chardet"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "4b4da20485a13da3b7ef22aad38e5a38086d22d8ca0163db79c2276f10b94e4b"
+content-hash = "a8bc3bc0555543de183b659147b47d4b686843bb80a2be94ef5c319af3cb1ed0"

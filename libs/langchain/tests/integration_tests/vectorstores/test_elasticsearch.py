@@ -5,7 +5,6 @@ import uuid
 from typing import Generator, List, Union
 
 import pytest
-from elasticsearch import Elasticsearch
 
 from langchain.docstore.document import Document
 from langchain.embeddings import OpenAIEmbeddings
@@ -29,6 +28,8 @@ class TestElasticsearch:
     @pytest.fixture(scope="class", autouse=True)
     def elasticsearch_url(self) -> Union[str, Generator[str, None, None]]:
         """Return the elasticsearch url."""
+        from elasticsearch import Elasticsearch
+
         url = "http://localhost:9200"
         yield url
         es = Elasticsearch(hosts=url)
@@ -108,6 +109,7 @@ class TestElasticsearch:
     ) -> None:
         """This test checks the construction of a custom
         ElasticSearch index using the 'from_documents'."""
+        from elasticsearch import Elasticsearch
 
         index_name = f"custom_index_{uuid.uuid4().hex}"
         elastic_vector_search = ElasticVectorSearch.from_documents(
@@ -134,6 +136,7 @@ class TestElasticsearch:
     ) -> None:
         """This test checks the construction of a custom
         ElasticSearch index using the 'add_documents'."""
+        from elasticsearch import Elasticsearch
 
         index_name = f"custom_index_{uuid.uuid4().hex}"
         elastic_vector_search = ElasticVectorSearch(
