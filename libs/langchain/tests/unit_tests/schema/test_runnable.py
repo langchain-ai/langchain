@@ -839,7 +839,7 @@ def llm_chain_with_fallbacks() -> RunnableSequence:
 )
 @pytest.mark.asyncio
 async def test_llm_with_fallbacks(
-    runnable: RunnableWithFallbacks, request: Any
+    runnable: RunnableWithFallbacks, request: Any, snapshot: SnapshotAssertion
 ) -> None:
     runnable = request.getfixturevalue(runnable)
     assert runnable.invoke("hello") == "bar"
@@ -848,3 +848,4 @@ async def test_llm_with_fallbacks(
     assert await runnable.ainvoke("hello") == "bar"
     assert await runnable.abatch(["hi", "hey", "bye"]) == ["bar"] * 3
     assert list(await runnable.ainvoke("hello")) == list("bar")
+    assert dumps(runnable, pretty=True) == snapshot
