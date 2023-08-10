@@ -16,6 +16,7 @@ if TYPE_CHECKING:
         SearchServiceClient,
     )
 
+
 class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
     """Retriever for the Google Cloud Enterprise Search Service API.
 
@@ -82,6 +83,7 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
 
     class Config:
         """Configuration for this pydantic object."""
+
         extra = Extra.forbid
         arbitrary_types_allowed = True
         underscore_attrs_are_private = True
@@ -171,23 +173,20 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
         from google.protobuf.json_format import MessageToDict
 
         documents: List[Document] = []
-        
+
         for result in results:
             document_dict = MessageToDict(
                 result.document._pb, preserving_proto_field_name=True
             )
 
-
             documents.append(
-                Document(page_content=str(document_dict.get("struct_data", {})), 
-                    metadata={
-                      "id": document_dict["id"],
-                      "name": document_dict["name"]
-                    }
+                Document(
+                    page_content=str(document_dict.get("struct_data", {})),
+                    metadata={"id": document_dict["id"], "name": document_dict["name"]},
                 )
-            )       
+            )
 
-        return documents 
+        return documents
 
     def _create_search_request(self, query: str) -> SearchRequest:
         """Prepares a SearchRequest object."""
@@ -200,7 +199,6 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
         spell_correction_spec = SearchRequest.SpellCorrectionSpec(
             mode=self.spell_correction_mode
         )
-
 
         if self.engine_data_type == 0:
             if self.get_extractive_answers:
@@ -221,8 +219,10 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
         elif self.engine_data_type == 1:
             content_search_spec = None
         else:
-            # TODO: Add extra data type handling for type website 
-            raise ValueError(f"engine_data_type accepted values are 0 or 1. {self.engine_data_type} given")
+            # TODO: Add extra data type handling for type website
+            raise ValueError(
+                f"engine_data_type accepted values are 0 or 1. {self.engine_data_type} given"
+            )
 
         return SearchRequest(
             query=query,
@@ -245,14 +245,18 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
         try:
             response = self._client.search(search_request)
         except InvalidArgument as e:
-            raise type(e)(e.message + ' This might be due to engine_data_type not set correctly.' )
+            raise type(e)(
+                e.message + " This might be due to engine_data_type not set correctly."
+            )
 
         if self.engine_data_type == 0:
             documents = self._convert_unstructured_search_response(response.results)
         elif self.engine_data_type == 1:
             documents = self._convert_structured_search_response(response.results)
         else:
-            # TODO: Add extra data type handling for type website 
-            raise ValueError(f"engine_data_type accepted values are 0 or 1. {self.engine_data_type} given")
+            # TODO: Add extra data type handling for type website
+            raise ValueError(
+                f"engine_data_type accepted values are 0 or 1. {self.engine_data_type} given"
+            )
 
         return documents
