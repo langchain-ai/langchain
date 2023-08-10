@@ -1,4 +1,5 @@
 from typing import Any, List, Sequence
+
 from langchain.schema import BaseDocumentTransformer, Document
 
 
@@ -13,8 +14,14 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
     """
 
     def __init__(self) -> None:
+        """
+        Initialize the transformer.
+
+        This checks if the BeautifulSoup4 package is installed.
+        If not, it raises an ImportError.
+        """
         try:
-            from bs4 import BeautifulSoup
+            import bs4  # noqa:F401
         except ImportError:
             raise ImportError(
                 "BeautifulSoup4 is required for BeautifulSoupTransformer. "
@@ -29,6 +36,19 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         remove_lines: bool = True,
         **kwargs: Any,
     ) -> Sequence[Document]:
+        """
+        Transform a list of Document objects by cleaning their HTML content.
+
+        Args:
+            documents: A sequence of Document objects containing HTML content.
+            unwanted_tags: A list of tags to be removed from the HTML.
+            tags_to_extract: A list of tags whose content will be extracted.
+            remove_lines: If set to True, unnecessary lines will be
+            removed from the HTML content.
+
+        Returns:
+            A sequence of Document objects with transformed content.
+        """
         for doc in documents:
             cleaned_content = doc.page_content
 
@@ -45,6 +65,16 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
 
     @staticmethod
     def remove_unwanted_tags(html_content: str, unwanted_tags: List[str]) -> str:
+        """
+        Remove unwanted tags from a given HTML content.
+
+        Args:
+            html_content: The original HTML content string.
+            unwanted_tags: A list of tags to be removed from the HTML.
+
+        Returns:
+            A cleaned HTML string with unwanted tags removed.
+        """
         from bs4 import BeautifulSoup
 
         soup = BeautifulSoup(html_content, "html.parser")
@@ -55,6 +85,16 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
 
     @staticmethod
     def extract_tags(html_content: str, tags: List[str]) -> str:
+        """
+        Extract specific tags from a given HTML content.
+
+        Args:
+            html_content: The original HTML content string.
+            tags: A list of tags to be extracted from the HTML.
+
+        Returns:
+            A string combining the content of the extracted tags.
+        """
         from bs4 import BeautifulSoup
 
         soup = BeautifulSoup(html_content, "html.parser")
@@ -74,6 +114,15 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
 
     @staticmethod
     def remove_unnecessary_lines(content: str) -> str:
+        """
+        Clean up the content by removing unnecessary lines.
+
+        Args:
+            content: A string, which may contain unnecessary lines or spaces.
+
+        Returns:
+            A cleaned string with unnecessary lines removed.
+        """
         lines = content.split("\n")
         stripped_lines = [line.strip() for line in lines]
         non_empty_lines = [line for line in stripped_lines if line]
