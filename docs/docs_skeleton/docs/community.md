@@ -39,7 +39,7 @@ One of our favorite things about working in AI is how much enthusiasm there is f
 
 If you’re working on something you’re proud of, and think the LangChain community would benefit from knowing about it, we want to help you show it off.
 
-- **Post about your work and mention us:** we love hanging out on Twitter to see what people in the space are talking about and working on. If you tag @langchainai, we’ll almost certainly see it and can show you some love.
+- **Post about your work and mention us:** we love hanging out on Twitter to see what people in the space are talking about and working on. If you tag [@langchainai](https://twitter.com/LangChainAI), we’ll almost certainly see it and can show you some love.
 - **Publish something on our blog:** if you’re writing about your experience building with LangChain, we’d love to post (or crosspost) it on our blog! E-mail hello@langchain.dev with a draft of your post! Or even an idea for something you want to write about.
 - **Get your product onto our [integrations hub](https://integrations.langchain.com/):** Many developers take advantage of our seamless integrations with other products, and come to our integrations hub to find out who those are. If you want to get your product up there, tell us about it (and how it works with LangChain) at hello@langchain.dev.
 
