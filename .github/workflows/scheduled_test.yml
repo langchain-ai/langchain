@@ -30,9 +30,10 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           poetry-version: "1.4.2"
+          working-directory: libs/langchain
           install-command: |
             echo "Running scheduled tests, installing dependencies with poetry..."
-            poetry install -E scheduled_testing
+            poetry install --with=test_integration
       - name: Run tests
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
