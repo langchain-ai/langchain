@@ -377,6 +377,11 @@ extended_testing = [
  "xata",
  "xmltodict",
  "betabageldb",
+ "anthropic",
+]
+
+scheduled_testing = [
+ "openai",
 ]
 
 [tool.ruff]

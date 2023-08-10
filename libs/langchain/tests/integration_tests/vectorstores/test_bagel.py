@@ -167,21 +167,3 @@ def test_bagel_update_document() -> None:
     docsearch.update_document(document_id=document_id, document=updated_doc)
     output = docsearch.similarity_search(updated_content, k=1)
     assert output == [Document(page_content=updated_content, metadata={"page": "0"})]
-
-
-def main() -> None:
-    """Bagel intigaration test"""
-    test_similarity_search()
-    test_bagel()
-    test_with_metadatas()
-    test_with_metadatas_with_scores()
-    test_with_metadatas_with_scores_using_vector()
-    test_search_filter()
-    test_search_filter_with_scores()
-    test_with_include_parameter()
-    test_bagel_update_document()
-    test_with_metadatas_with_scores_using_vector_embe()
-
-
-if __name__ == "__main__":
-    main()
