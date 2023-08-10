@@ -67,7 +67,7 @@ def create_vectorstore_router_agent(
 
     Args:
         llm (BaseLanguageModel): LLM that will be used by the agent
-        toolkit (VectorStoreRouterToolkit): Set of tools for the agent which can routing capabilty with multiple vector stores 
+        toolkit (VectorStoreRouterToolkit): Set of tools for the agent which have routing capabilty with multiple vector stores 
         callback_manager (Optional[BaseCallbackManager], optional): Object to handle the callback [ Defaults to None. ]
         prefix (str, optional): The prefix prompt for the router agent. If not provided uses default ROUTER_PREFIX.
         verbose (bool, optional): If you want to see the content of the scratchpad. [ Defaults to False ]
