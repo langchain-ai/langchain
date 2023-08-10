@@ -665,6 +665,7 @@ class StructuredTool(BaseTool):
         Examples:
 
             .. code-block:: python
+
                 def add(a: int, b: int) -> int:
                     \"\"\"Add two numbers\"\"\"
                     return a + b
