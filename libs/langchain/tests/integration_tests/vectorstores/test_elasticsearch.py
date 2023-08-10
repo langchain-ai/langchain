@@ -3,12 +3,12 @@ import logging
 import os
 import uuid
 from typing import Generator, List, Union
-from langchain.vectorstores.utils import DistanceStrategy
 
 import pytest
 
 from langchain.docstore.document import Document
 from langchain.vectorstores.elasticsearch import ElasticsearchStore
+from langchain.vectorstores.utils import DistanceStrategy
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
     FakeEmbeddings,

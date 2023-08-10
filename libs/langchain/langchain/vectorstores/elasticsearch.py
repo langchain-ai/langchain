@@ -10,10 +10,10 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Mapping,
     Optional,
     Tuple,
     Union,
-    Mapping,
 )
 
 from langchain.docstore.document import Document
@@ -765,14 +765,16 @@ class ElasticsearchStore(VectorStore):
             for i, (text, vector) in enumerate(zip(texts, embeddings)):
                 metadata = metadatas[i] if metadatas else {}
 
-                requests.append({
-                    "_op_type": "index",
-                    "_index": self.index_name,
-                    self.query_field: text,
-                    self.vector_query_field: vector,
-                    "metadata": metadata,
-                    "_id": ids[i],
-                })
+                requests.append(
+                    {
+                        "_op_type": "index",
+                        "_index": self.index_name,
+                        self.query_field: text,
+                        self.vector_query_field: vector,
+                        "metadata": metadata,
+                        "_id": ids[i],
+                    }
+                )
 
         else:
             # the search_type doesn't require inference, so we don't need to
@@ -782,13 +784,15 @@ class ElasticsearchStore(VectorStore):
             for i, text in enumerate(texts):
                 metadata = metadatas[i] if metadatas else {}
 
-                requests.append({
-                    "_op_type": "index",
-                    "_index": self.index_name,
-                    self.query_field: text,
-                    "metadata": metadata,
-                    "_id": ids[i],
-                })
+                requests.append(
+                    {
+                        "_op_type": "index",
+                        "_index": self.index_name,
+                        self.query_field: text,
+                        "metadata": metadata,
+                        "_id": ids[i],
+                    }
+                )
 
         if len(requests) > 0:
             try:
