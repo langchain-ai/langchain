@@ -350,6 +350,7 @@ extended_testing = [
  "xata",
  "xmltodict",
  "anthropic",
+ "faiss-cpu",
 ]
 
 [tool.ruff]
