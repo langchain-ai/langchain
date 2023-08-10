@@ -14,7 +14,7 @@ class GoogleSearchAPIWrapper(BaseModel):
     programmatically-searching-google-in-python-using-custom-search
 
     TODO: DOCS for using it
-    1. Install google-api-python-client
+    1. Install requests
     - If you don't already have a Google account, sign up.
     - If you have never created a Google APIs Console project,
     read the Managing Projects page and create a project in the Google API Console.
@@ -45,7 +45,7 @@ class GoogleSearchAPIWrapper(BaseModel):
     .com
     """
 
-    search_engine: Any  #: :meta private:
+    base_url = "https://www.googleapis.com/customsearch/v1"
     google_api_key: Optional[str] = None
     google_cse_id: Optional[str] = None
     k: int = 10
@@ -57,34 +57,37 @@ class GoogleSearchAPIWrapper(BaseModel):
         extra = Extra.forbid
 
     def _google_search_results(self, search_term: str, **kwargs: Any) -> List[dict]:
-        cse = self.search_engine.cse()
+        params = {
+            "q": search_term,
+            "cx": self.google_cse_id,
+            "key": self.google_api_key,
+            **kwargs
+        }
+
         if self.siterestrict:
-            cse = cse.siterestrict()
-        res = cse.list(q=search_term, cx=self.google_cse_id, **kwargs).execute()
-        return res.get("items", [])
+            params["siterestrict"] = True
+
+        import requests
+        res = requests.get(self.base_url, params=params)
+        return res.json().get("items", [])
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key and python package exists in environment."""
-        google_api_key = get_from_dict_or_env(
-            values, "google_api_key", "GOOGLE_API_KEY"
-        )
+        """Validate that api key and CSE ID exists in environment."""
+        google_api_key = get_from_dict_or_env(values, "google_api_key", "GOOGLE_API_KEY")
         values["google_api_key"] = google_api_key
 
         google_cse_id = get_from_dict_or_env(values, "google_cse_id", "GOOGLE_CSE_ID")
         values["google_cse_id"] = google_cse_id
 
         try:
-            from googleapiclient.discovery import build
+            import requests
 
         except ImportError:
             raise ImportError(
-                "google-api-python-client is not installed. "
-                "Please install it with `pip install google-api-python-client`"
+                "requests is not installed. "
+                "Please install it with `pip install requests`"
             )
-
-        service = build("customsearch", "v1", developerKey=google_api_key)
-        values["search_engine"] = service
 
         return values
 
