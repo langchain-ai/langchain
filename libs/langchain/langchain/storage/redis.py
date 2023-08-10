@@ -1,9 +1,7 @@
-from typing import TYPE_CHECKING, Iterator, List, Optional, Sequence, Tuple, cast
+from typing import Iterator, List, Optional, Sequence, Tuple, cast, Any
 
 from langchain.schema import BaseStore
-
-if TYPE_CHECKING:
-    from redis import Redis
+from langchain.utilities.redis import get_client
 
 
 class RedisStore(BaseStore[str, bytes]):
@@ -16,7 +14,7 @@ class RedisStore(BaseStore[str, bytes]):
 
             # Instantiate the RedisStore with a Redis connection
             from langchain.storage import RedisStore
-            from langchain.vectorstores.redis import get_client
+            from langchain.utilities.redis import get_client
 
             client = get_client('redis://localhost:6379')
             redis_store = RedisStore(client)
@@ -38,15 +36,21 @@ class RedisStore(BaseStore[str, bytes]):
 
     def __init__(
         self,
-        client: Redis,
         *,
+        client: Any = None,
+        redis_url: Optional[str] = None,
+        client_kwargs: Optional[dict] = None,
         ttl: Optional[int] = None,
         namespace: Optional[str] = None,
     ) -> None:
         """Initialize the RedisStore with a Redis connection.
 
+        Must provide either a Redis client or a redis_url with optional client_kwargs.
+
         Args:
             client: A Redis connection instance
+            redis_url: redis url
+            client_kwargs: Keyword arguments to pass to the Redis client
             ttl: time to expire keys in seconds if provided,
                  if None keys will never expire
             namespace: if provided, all keys will be prefixed with this namespace
@@ -59,12 +63,26 @@ class RedisStore(BaseStore[str, bytes]):
                 "pip install redis"
             ) from e
 
-        if not isinstance(client, Redis):
-            raise TypeError(
-                f"Expected Redis client, got {type(client).__name__} instead."
+        if client and redis_url or client and client_kwargs:
+            raise ValueError(
+                "Either a Redis client or a redis_url with optional client_kwargs "
+                "must be provided, but not both."
             )
 
-        self.client = client
+        if client:
+            if not isinstance(client, Redis):
+                raise TypeError(
+                    f"Expected Redis client, got {type(client).__name__} instead."
+                )
+            _client = client
+        else:
+            if not redis_url:
+                raise ValueError(
+                    "Either a Redis client or a redis_url must be provided."
+                )
+            _client = get_client(redis_url, **(client_kwargs or {}))
+
+        self.client = _client
 
         if not isinstance(ttl, int) and ttl is not None:
             raise TypeError(f"Expected int or None, got {type(ttl)} instead.")
