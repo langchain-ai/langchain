@@ -1,9 +1,6 @@
 import logging
 import os
 
-import rockset
-import rockset.models
-
 from langchain.docstore.document import Document
 from langchain.vectorstores.rocksetdb import Rockset
 from tests.integration_tests.vectorstores.fake_embeddings import (
@@ -44,6 +41,9 @@ class TestRockset:
 
     @classmethod
     def setup_class(cls) -> None:
+        import rockset
+        import rockset.models
+
         assert os.environ.get("ROCKSET_API_KEY") is not None
         assert os.environ.get("ROCKSET_REGION") is not None
 
