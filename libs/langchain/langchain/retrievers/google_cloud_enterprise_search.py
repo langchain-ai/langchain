@@ -220,8 +220,8 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
             content_search_spec = None
         else:
             # TODO: Add extra data type handling for type website
-            raise ValueError(
-                f"engine_data_type accepted values are 0 or 1. Value {self.engine_data_type} was given"
+            raise NotImplementedError(
+                f"Only engine data type 0 or 1 are supported currently. Got {self.engine_data_type}"
             )
 
         return SearchRequest(
@@ -255,8 +255,8 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
             documents = self._convert_structured_search_response(response.results)
         else:
             # TODO: Add extra data type handling for type website
-            raise NotImplementedError(f"Only engine data type 0 or 1 are supported currently. Got {self.engine_data_type}")
-                f"engine_data_type accepted values are 0 or 1. Value {self.engine_data_type} was given"
+            raise NotImplementedError(
+                f"Only engine data type 0 or 1 are supported currently. Got {self.engine_data_type}"
             )
 
         return documents
