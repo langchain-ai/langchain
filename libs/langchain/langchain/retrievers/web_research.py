@@ -179,12 +179,12 @@ class WebResearchRetriever(BaseRetriever):
         logger.info(f"Questions for Google Search: {questions}")
 
         # Get urls
-        logger.info("Searching for relevat urls ...")
+        logger.info("Searching for relevant urls...")
         urls_to_look = []
         for query in questions:
             # Google search
             search_results = self.search_tool(query, self.num_search_results)
-            logger.info("Searching for relevat urls ...")
+            logger.info("Searching for relevant urls...")
             logger.info(f"Search results: {search_results}")
             for res in search_results:
                 if res.get("link", None):
