@@ -489,11 +489,18 @@ class FAISS(VectorStore):
 
         index_to_delete = [_reversed_index[i] for i in ids]
 
-        # Removing ids from index.
+        # Removing ids from index.        
         self.index.remove_ids(np.array(index_to_delete, dtype=np.int64))
         for _id in index_to_delete:
             del self.index_to_docstore_id[_id]
 
+        # Modify the keys of 'index_to_docstore_id' to consecutive numbers
+        index_to_docstore_id_items = sorted(self.index_to_docstore_id.items())
+        for i in range(len(index_to_docstore_id_items)):
+            index_to_docstore_id_items[i] = (i, index_to_docstore_id_items[i][1])
+            self.index_to_docstore_id.clear()
+            self.index_to_docstore_id.update(index_to_docstore_id_items)
+            
         # Remove items from docstore.
         self.docstore.delete(ids)
         return True
