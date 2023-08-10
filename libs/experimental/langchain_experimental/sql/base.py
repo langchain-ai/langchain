@@ -119,6 +119,8 @@ class SQLDatabaseChain(Chain):
                 callbacks=_run_manager.get_child(),
                 **llm_inputs,
             ).strip()
+            import re
+            sql_cmd = re.sub(r';$', '', sql_cmd)
             if self.return_sql:
                 return {self.output_key: sql_cmd}
             if not self.use_query_checker:
