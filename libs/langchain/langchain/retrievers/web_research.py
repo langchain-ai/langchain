@@ -187,7 +187,8 @@ class WebResearchRetriever(BaseRetriever):
             logger.info("Searching for relevat urls ...")
             logger.info(f"Search results: {search_results}")
             for res in search_results:
-                urls_to_look.append(res["link"])
+                if res.get("link", None):
+                    urls_to_look.append(res["link"])
 
         # Relevant urls
         urls = set(urls_to_look)
