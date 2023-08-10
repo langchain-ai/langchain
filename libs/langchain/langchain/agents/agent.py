@@ -475,7 +475,8 @@ class Agent(BaseSingleActionAgent):
         """
         full_inputs = self.get_full_inputs(intermediate_steps, **kwargs)
         full_output = await self.llm_chain.apredict(callbacks=callbacks, **full_inputs)
-        return self.output_parser.parse(full_output)
+        agent_output = await self.output_parser.aparse(full_output)
+        return agent_output
 
     def get_full_inputs(
         self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any

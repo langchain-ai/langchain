@@ -557,6 +557,14 @@
       "destination": "/docs/integrations/providers/llamacpp"
     },
     {
+      "source": "/en/latest/integrations/log10.html",
+      "destination": "/docs/integrations/providers/log10"
+    },
+    {
+      "source": "/docs/integrations/log10",
+      "destination": "/docs/integrations/providers/log10"
+    },
+    {
       "source": "/en/latest/integrations/mediawikidump.html",
       "destination": "/docs/integrations/providers/mediawikidump"
     },
