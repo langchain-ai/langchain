@@ -258,6 +258,14 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """Save the prompts in memory when an LLM starts."""
+        if self.input_type != "Text":
+            raise ValueError(
+                f'\nLabel Studio project "{self.project_name}" '
+                f"has an input type <{self.input_type}>. "
+                f'To make it work with the mode="chat", '
+                f"the input type should be <Text>.\n"
+                f"Read more here https://labelstud.io/tags/text"
+            )
         run_id = str(kwargs["run_id"])
         self.payload[run_id] = {"prompts": prompts, "kwargs": kwargs}
 
