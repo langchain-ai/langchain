@@ -68,6 +68,13 @@ class Pinecone(VectorStore):
         self._namespace = namespace
         self.distance_strategy = distance_strategy
 
+    @property
+    def embeddings(self) -> Optional[Embeddings]:
+        """Access the query embedding object if available."""
+        if isinstance(self._embedding, Embeddings):
+            return self._embedding
+        return None
+
     def _embed_documents(self, texts: Iterable[str]) -> List[List[float]]:
         """Embed search docs."""
         if isinstance(self._embedding, Embeddings):
