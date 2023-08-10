@@ -130,17 +130,11 @@ class BedrockEmbeddings(BaseModel, Embeddings):
         except Exception as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
 
-    def embed_documents(
-        self, texts: List[str], chunk_size: int = 1
-    ) -> List[List[float]]:
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a Bedrock model.
 
         Args:
-            texts: The list of texts to embed.
-            chunk_size: Bedrock currently only allows single string
-                inputs, so chunk size is always 1. This input is here
-                only for compatibility with the embeddings interface.
-
+            texts: The list of texts to embed
 
         Returns:
             List of embeddings, one for each text.
@@ -176,24 +170,16 @@ class BedrockEmbeddings(BaseModel, Embeddings):
             None, partial(self.embed_query, text)
         )
 
-    async def aembed_documents(
-        self, texts: List[str], chunk_size: int = 1
-    ) -> List[List[float]]:
+    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
         """Asynchronous compute doc embeddings using a Bedrock model.
 
         Args:
-            texts: The list of texts to embed.
-            chunk_size: Bedrock currently only allows single string
-                inputs, so chunk size is always 1. This input is here
-                only for compatibility with the embeddings interface.
+            texts: The list of texts to embed
 
         Returns:
             List of embeddings, one for each text.
         """
 
-        results = []
-        for text in texts:
-            result = await self.aembed_query(text)
-            results.append(result)
+        result = await asyncio.gather(*[self.aembed_query(text) for text in texts])
 
-        return results
+        return list(result)
