@@ -22,7 +22,19 @@ def create_vectorstore_agent(
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
-    """Construct a vectorstore agent from an LLM and tools."""
+    """Used to construct a vectorstore agent from an LLM and tools
+
+    Args:
+        llm (BaseLanguageModel): LLM that will be used by the agent
+        toolkit (VectorStoreToolkit): Set of tools for the agent 
+        callback_manager (Optional[BaseCallbackManager], optional): Object to handle the callback [ Defaults to None. ]
+        prefix (str, optional): The prefix prompt for the agent. If not provided uses default PREFIX.
+        verbose (bool, optional): If you want to see the content of the scratchpad. [ Defaults to False ]
+        agent_executor_kwargs (Optional[Dict[str, Any]], optional): If there is any other parameter you want to send to the agent. [ Defaults to None ]
+
+    Returns:
+        AgentExecutor: Returns a callable AgentExecutor object. Either you can call it or use run method with the query to get the response
+    """
     tools = toolkit.get_tools()
     prompt = ZeroShotAgent.create_prompt(tools, prefix=prefix)
     llm_chain = LLMChain(
@@ -50,7 +62,20 @@ def create_vectorstore_router_agent(
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
-    """Construct a vectorstore router agent from an LLM and tools."""
+    """Used to construct a vectorstore router agent from an LLM and tools
+    This can be used specifically if you have multiple tools that access different vector stores.
+
+    Args:
+        llm (BaseLanguageModel): LLM that will be used by the agent
+        toolkit (VectorStoreRouterToolkit): Set of tools for the agent which can routing capabilty with multiple vector stores 
+        callback_manager (Optional[BaseCallbackManager], optional): Object to handle the callback [ Defaults to None. ]
+        prefix (str, optional): The prefix prompt for the router agent. If not provided uses default ROUTER_PREFIX.
+        verbose (bool, optional): If you want to see the content of the scratchpad. [ Defaults to False ]
+        agent_executor_kwargs (Optional[Dict[str, Any]], optional): If there is any other parameter you want to send to the agent. [ Defaults to None ]
+
+    Returns:
+        AgentExecutor: Returns a callable AgentExecutor object. Either you can call it or use run method with the query to get the response.
+    """
     tools = toolkit.get_tools()
     prompt = ZeroShotAgent.create_prompt(tools, prefix=prefix)
     llm_chain = LLMChain(
