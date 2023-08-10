@@ -10,6 +10,9 @@ env:
 
 jobs:
   build:
+    defaults:
+      run:
+        working-directory: libs/langchain
     runs-on: ubuntu-latest
     environment: Scheduled testing
     strategy:
