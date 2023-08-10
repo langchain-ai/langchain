@@ -216,10 +216,25 @@ class SQLiteCache(SQLAlchemyCache):
 class RedisCache(BaseCache):
     """Cache that uses Redis as a backend."""
 
-    # TODO - implement a TTL policy in Redis
+    def __init__(self, redis_: Any, ttl: int = 0):
+        """
+        Initialize an instance of RedisCache.
 
-    def __init__(self, redis_: Any):
-        """Initialize by passing in Redis instance."""
+        This method initializes an object with Redis caching capabilities.
+        It takes a `redis_` parameter, which should be an instance of a Redis
+        client class, allowing the object to interact with a Redis
+        server for caching purposes.
+
+        Parameters:
+            redis_ (Any): An instance of a Redis client class
+                (e.g., redis.Redis) used for caching.
+                This allows the object to communicate with a
+                Redis server for caching operations.
+            ttl (int, optional): Time-to-live (TTL) for cached items in seconds.
+                If provided, it sets
+                the default time duration for how long cached items will remain valid.
+                Defaults to 0, indicating no automatic expiration.
+        """
         try:
             from redis import Redis
         except ImportError:
@@ -230,6 +245,7 @@ class RedisCache(BaseCache):
         if not isinstance(redis_, Redis):
             raise ValueError("Please pass in Redis object.")
         self.redis = redis_
+        self.ttl = ttl
 
     def _key(self, prompt: str, llm_string: str) -> str:
         """Compute key from prompt and llm_string"""
@@ -267,6 +283,8 @@ class RedisCache(BaseCache):
                 str(idx): generation.text for idx, generation in enumerate(return_val)
             },
         )
+        if self.ttl > 0:
+            self.redis.expire(key, self.ttl)
 
     def clear(self, **kwargs: Any) -> None:
         """Clear cache. If `asynchronous` is True, flush asynchronously."""

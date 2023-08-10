@@ -11,6 +11,18 @@ from tests.unit_tests.llms.fake_llm import FakeLLM
 REDIS_TEST_URL = "redis://localhost:6379"
 
 
+def test_redis_cache_ttl() -> None:
+    import time
+
+    import redis
+
+    langchain.llm_cache = RedisCache(redis_=redis.Redis.from_url(REDIS_TEST_URL), ttl=1)
+    langchain.llm_cache.update("foo", "bar", [Generation(text="fizz")])
+    key = langchain.llm_cache._key("foo", "bar")
+    time.sleep(1.1)
+    assert langchain.llm_cache.redis.hgetall(key) == {}
+
+
 def test_redis_cache() -> None:
     import redis
 
