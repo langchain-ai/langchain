@@ -1,6 +1,7 @@
 name: Scheduled tests
 
 on:
+  workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
   schedule:
     - cron:  '0 13 * * *'
 
@@ -35,4 +36,3 @@ jobs:
         run: |
           make scheduled_tests
         shell: bash
-    secrets: inherit
