@@ -72,7 +72,30 @@ def get_default_label_configs(
 
 
 class LabelStudioCallbackHandler(BaseCallbackHandler):
-    """Callback Handler that streams data to Label Studio project"""
+    """Label Studio callback handler.
+    Provides the ability to send predictions to Label Studio
+    for human evaluation, feedback and annotation.
+
+    Parameters:
+        api_key: Label Studio API key
+        url: Label Studio URL
+        project_id: Label Studio project ID
+        project_name: Label Studio project name
+        project_config: Label Studio project config (XML)
+        mode: Label Studio mode ("prompt" or "chat")
+
+    Examples:
+        >>> from langchain.llms import OpenAI
+        >>> from langchain.callbacks import LabelStudioCallbackHandler
+        >>> handler = LabelStudioCallbackHandler(
+        ...             api_key='<your_key_here>',
+        ...             url='http://localhost:8080',
+        ...             project_name='LangChain-%Y-%m-%d',
+        ...             mode='prompt'
+        ... )
+        >>> llm = OpenAI(callbacks=[handler])
+        >>> llm.predict('Tell me a story about a dog.')
+    """
 
     DEFAULT_PROJECT_NAME = "LangChain-%Y-%m-%d"
 
@@ -152,31 +175,11 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
             if existing_projects:
                 self.ls_project = existing_projects[0]
                 self.project_id = self.ls_project.id
-                warnings.warn(
-                    f'Project ID not provided. Retrieved project "{project_title}"'
-                    f" from the Label Studio instance "
-                    f'based on canonical name "{self.project_name}" '
-                    f"and the current date (ID={self.ls_project.id}).\n"
-                    f"If you want to provide your own project ID, use the parameter: "
-                    f"{self.__class__.__name__}(project_id=<your_id_here>, ...) "
-                    f"or set the environment variable "
-                    f"LABEL_STUDIO_PROJECT_ID=<your_id_here>"
-                )
             else:
                 self.ls_project = self.ls_client.create_project(
                     title=project_title, label_config=self.project_config
                 )
                 self.project_id = self.ls_project.id
-                warnings.warn(
-                    f'Project ID not provided. Created project "{project_title}" '
-                    f"from the Label Studio instance "
-                    f'based on canonical name "{self.project_name}" and '
-                    f"the current date (ID={self.ls_project.id}).\n"
-                    f"If you want to provide your own project ID, use the parameter: "
-                    f"{self.__class__.__name__}(project_id=<your_id_here>, ...) "
-                    f"or set the environment variable "
-                    f"LABEL_STUDIO_PROJECT_ID=<your_id_here>"
-                )
         self.parsed_label_config = self.ls_project.parsed_label_config
 
         # Find the first TextArea tag
