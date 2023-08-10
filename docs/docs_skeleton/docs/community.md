@@ -22,7 +22,7 @@ LangChain is the product of over 5,000+ contributions by 1,500+ contributors, an
     - **First time contributor?** [Try on of these PRs with the “good first issue” tag](https://github.com/langchain-ai/langchain/contribute).
 - **Become an expert:** our experts help the community by answering product questions in Discord. If that’s a role you’d like to play, we’d be so grateful! (And we have some special experts-only goodies/perks we can tell you more about). Send us an email to introduce yourself at hello@langchain.dev and we’ll take it from there!
 - **Integrate with LangChain:** if your product integrates with LangChain–or aspires to–we want to help make sure the experience is as smooth as possible for you and end users. Send us an email at hello@langchain.dev and tell us what you’re working on.
-    - **Become an Integration Maintainer:** Partner with our team to ensure your integration stays up to date and talk directly with users (and answer their inquiries) in our Discord. Introduce yourself via hello@langchain.dev if you’d like to explore this role.
+    - **Become an Integration Maintainer:** Partner with our team to ensure your integration stays up to date and talk directly with users (and answer their inquiries) in our Discord. Introduce yourself at hello@langchain.dev if you’d like to explore this role.
 
 
 # 🌍 Meetups, Events, and Hackathons
