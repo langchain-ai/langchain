@@ -312,7 +312,13 @@ class ChatOpenAI(BaseChatModel):
             default_chunk_class = chunk.__class__
             yield ChatGenerationChunk(message=chunk)
             if run_manager:
-                run_manager.on_llm_new_token(chunk.content)
+                chunk_content = chunk.additional_kwargs.get("function_call", None)
+                token = (
+                    chunk_content["arguments"]
+                    if chunk_content is not None
+                    else chunk.content
+                )
+                run_manager.on_llm_new_token(token)
 
     def _generate(
         self,
@@ -392,7 +398,13 @@ class ChatOpenAI(BaseChatModel):
             default_chunk_class = chunk.__class__
             yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
             if run_manager:
-                await run_manager.on_llm_new_token(chunk.content)
+                chunk_content = chunk.additional_kwargs.get("function_call", None)
+                token = (
+                    chunk_content["arguments"]
+                    if chunk_content is not None
+                    else chunk.content
+                )
+                await run_manager.on_llm_new_token(token)
 
     async def _agenerate(
         self,
