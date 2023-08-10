@@ -238,6 +238,8 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Get documents relevant for a query."""
+        from google.api_core.exceptions import InvalidArgument
+
         search_request = self._create_search_request(query)
 
         try:
