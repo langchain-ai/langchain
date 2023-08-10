@@ -56,6 +56,8 @@ class BaseLLMOutputParser(Serializable, Generic[T], ABC):
 class BaseGenerationOutputParser(
     BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
 ):
+    """Base class to parse the output of an LLM call."""
+
     def invoke(
         self, input: Union[str, BaseMessage], config: Optional[RunnableConfig] = None
     ) -> T:
