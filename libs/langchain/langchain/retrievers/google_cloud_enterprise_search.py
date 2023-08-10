@@ -9,6 +9,7 @@ from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document
 from langchain.utils import get_from_dict_or_env
 
+from google.api_core.exceptions import InvalidArgument
 if TYPE_CHECKING:
     from google.cloud.discoveryengine_v1beta import (
         SearchRequest,
@@ -218,8 +219,7 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
         elif self.engine_data_type == 1:
             content_search_spec = None
         
-        
-        return SearchRequest(
+        response = SearchRequest(
             query=query,
             filter=self.filter,
             serving_config=self._serving_config,
@@ -229,12 +229,20 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
             spell_correction_spec=spell_correction_spec,
         )
 
+        
+        return response
+
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Get documents relevant for a query."""
         search_request = self._create_search_request(query)
-        response = self._client.search(search_request)
+
+        try:
+            response = self._client.search(search_request)
+        except InvalidArgument as e:
+            raise type(e)(e.message + ' This might be due to engine_data_type not set correctly.' )
+
         if self.engine_data_type == 0:
             documents = self._convert_unstructured_search_response(response.results)
         elif self.engine_data_type == 1:
