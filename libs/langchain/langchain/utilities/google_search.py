@@ -61,20 +61,23 @@ class GoogleSearchAPIWrapper(BaseModel):
             "q": search_term,
             "cx": self.google_cse_id,
             "key": self.google_api_key,
-            **kwargs
+            **kwargs,
         }
 
         if self.siterestrict:
             params["siterestrict"] = True
 
         import requests
+
         res = requests.get(self.base_url, params=params)
         return res.json().get("items", [])
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and CSE ID exists in environment."""
-        google_api_key = get_from_dict_or_env(values, "google_api_key", "GOOGLE_API_KEY")
+        google_api_key = get_from_dict_or_env(
+            values, "google_api_key", "GOOGLE_API_KEY"
+        )
         values["google_api_key"] = google_api_key
 
         google_cse_id = get_from_dict_or_env(values, "google_cse_id", "GOOGLE_CSE_ID")
