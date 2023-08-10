@@ -1,6 +1,7 @@
 import os
 import warnings
 from typing import Any, Dict, List, Optional, Union
+from packaging.version import parse
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
@@ -208,11 +209,12 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                 ]
             )
 
-        # Push the records to Argilla
-        self.dataset.push_to_argilla()
-
         # Pop current run from `self.runs`
         self.prompts.pop(str(kwargs["run_id"]))
+
+        if parse(self.ARGILLA_VERSION) < parse("1.14.0"):
+            # Push the records to Argilla
+            self.dataset.push_to_argilla()
 
     def on_llm_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
@@ -281,14 +283,15 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                     ]
                 )
 
-        # Push the records to Argilla
-        self.dataset.push_to_argilla()
-
         # Pop current run from `self.runs`
         if str(kwargs["parent_run_id"]) in self.prompts:
             self.prompts.pop(str(kwargs["parent_run_id"]))
         if str(kwargs["run_id"]) in self.prompts:
             self.prompts.pop(str(kwargs["run_id"]))
+
+        if parse(self.ARGILLA_VERSION) < parse("1.14.0"):
+            # Push the records to Argilla
+            self.dataset.push_to_argilla()
 
     def on_chain_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
