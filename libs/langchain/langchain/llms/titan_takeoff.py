@@ -26,7 +26,7 @@ class TitanTakeoff(LLM):
     sampling_temperature: float = 1.0
     """Sample with randomness. Bigger temperatures are associated with more randomness and 'creativity'. Default = 1.0."""
 
-    repetition_penalty: int = 1
+    repetition_penalty: float = 1.0
     """Penalise the generation of tokens that have been generated before. Set to > 1 to penalize. Default = 1 (no penalty).)"""
 
     no_repeat_ngram_size: int = 0
@@ -38,30 +38,27 @@ class TitanTakeoff(LLM):
     @property
     def _default_params(self) -> Mapping[str, Any]:
         """Get the default parameters for calling Titan Takeoff Server."""
-        params = {}
-        if self.generate_max_length:
-            params["generate_max_length"] = self.generate_max_length
-        if self.sampling_topk:
-            params["sampling_topk"] = self.sampling_topk
-        if self.sampling_topp:
-            params["sampling_topp"] = self.sampling_topp
-        if self.sampling_temperature:
-            params["sampling_temperature"] = self.sampling_temperature
-        if self.repetition_penalty:
-            params["repetition_penalty"] = self.repetition_penalty
-        if self.no_repeat_ngram_size:
-            params["no_repeat_ngram_size"] = self.no_repeat_ngram_size
+        params = {
+            "generate_max_length": self.generate_max_length,
+            "sampling_topk": self.sampling_topk,
+            "sampling_topp": self.sampling_topp,
+            "sampling_temperature": self.sampling_temperature,
+            "repetition_penalty": self.repetition_penalty,
+            "no_repeat_ngram_size": self.no_repeat_ngram_size,
+        }
         return params
 
     @property
     def _llm_type(self) -> str:
+        """Return type of llm."""
         return "titan_takeoff"
 
     def _call(
         self,
         prompt: str,
-        stop: Optional[List[str]],
+        stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call out to Titan Takeoff generate endpoint.
 
@@ -111,8 +108,9 @@ class TitanTakeoff(LLM):
     def _stream(
         self,
         prompt: str,
-        stop: Optional[List[str]],
+        stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
         """Call out to Titan Takeoff stream endpoint.
 
