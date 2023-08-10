@@ -45,7 +45,7 @@ class GoogleSearchAPIWrapper(BaseModel):
     .com
     """
 
-    base_url = "https://www.googleapis.com/customsearch/v1"
+    base_url: str = "https://www.googleapis.com/customsearch/v1"
     google_api_key: Optional[str] = None
     google_cse_id: Optional[str] = None
     k: int = 10
