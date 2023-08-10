@@ -2,6 +2,7 @@ import re
 from typing import Any, Iterator, List, Mapping, Optional
 
 import requests
+from requests.exceptions import ConnectionError
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -78,32 +79,34 @@ class TitanTakeoff(LLM):
                 response = model(prompt)
 
         """
-        if self.streaming:
-            text_output = ""
-            for chunk in self._stream(
-                prompt=prompt,
-                stop=stop,
-                run_manager=run_manager,
-            ):
-                text_output += chunk.text
-            return text_output
+        try:
+            if self.streaming:
+                text_output = ""
+                for chunk in self._stream(
+                    prompt=prompt,
+                    stop=stop,
+                    run_manager=run_manager,
+                ):
+                    text_output += chunk.text
+                return text_output
 
-        url = f"http://localhost:{self.port}/generate"
-        params = {"text": prompt, **self._default_params}
+            url = f"http://localhost:{self.port}/generate"
+            params = {"text": prompt, **self._default_params}
 
-        response = requests.post(url, json=params)
-        response.encoding = "utf-8"
-        text = ""
+            response = requests.post(url, json=params)
+            response.raise_for_status()
+            response.encoding = "utf-8"
+            text = ""
 
-        if "message" in response.json():
-            text = response.json()["message"]
-        else:
-            raise ValueError("Something went wrong.")
-        if stop is None:
-            text = enforce_stop_tokens(text, [re.escape("<|endoftext|>")])
-        else:
-            text = enforce_stop_tokens(text, stop)
-        return text
+            if "message" in response.json():
+                text = response.json()["message"]
+            else:
+                raise ValueError("Something went wrong.")
+            if stop is not None:
+                text = enforce_stop_tokens(text, stop)
+            return text
+        except ConnectionError:
+            raise ConnectionError("Could not connect to Titan Takeoff server. Please make sure that the server is running.")
 
     def _stream(
         self,
