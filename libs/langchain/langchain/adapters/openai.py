@@ -1,7 +1,19 @@
 from __future__ import annotations
 
 import importlib
-from typing import Any, AsyncIterator, Dict, Iterable, List, Mapping, Sequence, Union
+from typing import (
+    Any,
+    AsyncIterator,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Sequence,
+    Union,
+    overload,
+)
+
+from typing_extensions import Literal
 
 from langchain.schema.messages import (
     AIMessage,
@@ -13,6 +25,16 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
+
+
+async def aenumerate(
+    iterable: AsyncIterator[Any], start: int = 0
+) -> AsyncIterator[tuple[int, Any]]:
+    """Async version of enumerate."""
+    i = start
+    async for x in iterable:
+        yield i, x
+        i += 1
 
 
 def convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
@@ -99,6 +121,28 @@ def _convert_message_chunk_to_delta(chunk: BaseMessageChunk, i: int) -> Dict[str
 
 
 class ChatCompletion:
+    @overload
+    @staticmethod
+    def create(
+        messages: Sequence[Dict[str, Any]],
+        *,
+        provider: str = "ChatOpenAI",
+        stream: Literal[False] = False,
+        **kwargs: Any,
+    ) -> dict:
+        ...
+
+    @overload
+    @staticmethod
+    def create(
+        messages: Sequence[Dict[str, Any]],
+        *,
+        provider: str = "ChatOpenAI",
+        stream: Literal[True],
+        **kwargs: Any,
+    ) -> Iterable:
+        ...
+
     @staticmethod
     def create(
         messages: Sequence[Dict[str, Any]],
@@ -120,6 +164,28 @@ class ChatCompletion:
                 for i, c in enumerate(model_config.stream(converted_messages))
             )
 
+    @overload
+    @staticmethod
+    async def acreate(
+        messages: Sequence[Dict[str, Any]],
+        *,
+        provider: str = "ChatOpenAI",
+        stream: Literal[False] = False,
+        **kwargs: Any,
+    ) -> dict:
+        ...
+
+    @overload
+    @staticmethod
+    async def acreate(
+        messages: Sequence[Dict[str, Any]],
+        *,
+        provider: str = "ChatOpenAI",
+        stream: Literal[True],
+        **kwargs: Any,
+    ) -> AsyncIterator:
+        ...
+
     @staticmethod
     async def acreate(
         messages: Sequence[Dict[str, Any]],
@@ -138,5 +204,5 @@ class ChatCompletion:
         else:
             return (
                 _convert_message_chunk_to_delta(c, i)
-                for i, c in enumerate(model_config.astream(converted_messages))
+                async for i, c in aenumerate(model_config.astream(converted_messages))
             )

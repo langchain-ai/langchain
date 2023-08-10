@@ -46,7 +46,7 @@ async def _test_astream(**kwargs: Any) -> None:
 
     lc_result = []
     async for c in await lcopenai.ChatCompletion.acreate(**kwargs):
-        lc_result.append(await c["choices"][0]["delta"])
+        lc_result.append(c["choices"][0]["delta"])
     assert result == lc_result
 
 
