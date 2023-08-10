@@ -37,7 +37,7 @@ def elapsed(run: Any) -> str:
     elapsed_time = run.end_time - run.start_time
     milliseconds = elapsed_time.total_seconds() * 1000
     if milliseconds < 1000:
-        return f"{milliseconds}ms"
+        return f"{milliseconds:.0f}ms"
     return f"{(milliseconds / 1000):.2f}s"
 
 
@@ -78,28 +78,31 @@ class FunctionCallbackHandler(BaseTracer):
     # logging methods
     def _on_chain_start(self, run: Run) -> None:
         crumbs = self.get_breadcrumbs(run)
+        run_type = run.run_type.capitalize()
         self.function_callback(
             f"{get_colored_text('[chain/start]', color='green')} "
-            + get_bolded_text(f"[{crumbs}] Entering Chain run with input:\n")
+            + get_bolded_text(f"[{crumbs}] Entering {run_type} run with input:\n")
             + f"{try_json_stringify(run.inputs, '[inputs]')}"
         )
 
     def _on_chain_end(self, run: Run) -> None:
         crumbs = self.get_breadcrumbs(run)
+        run_type = run.run_type.capitalize()
         self.function_callback(
             f"{get_colored_text('[chain/end]', color='blue')} "
             + get_bolded_text(
-                f"[{crumbs}] [{elapsed(run)}] Exiting Chain run with output:\n"
+                f"[{crumbs}] [{elapsed(run)}] Exiting {run_type} run with output:\n"
             )
             + f"{try_json_stringify(run.outputs, '[outputs]')}"
         )
 
     def _on_chain_error(self, run: Run) -> None:
         crumbs = self.get_breadcrumbs(run)
+        run_type = run.run_type.capitalize()
         self.function_callback(
             f"{get_colored_text('[chain/error]', color='red')} "
             + get_bolded_text(
-                f"[{crumbs}] [{elapsed(run)}] Chain run errored with error:\n"
+                f"[{crumbs}] [{elapsed(run)}] {run_type} run errored with error:\n"
             )
             + f"{try_json_stringify(run.error, '[error]')}"
         )
