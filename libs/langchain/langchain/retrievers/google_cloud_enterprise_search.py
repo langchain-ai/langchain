@@ -9,7 +9,6 @@ from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document
 from langchain.utils import get_from_dict_or_env
 
-from google.api_core.exceptions import InvalidArgument
 if TYPE_CHECKING:
     from google.cloud.discoveryengine_v1beta import (
         SearchRequest,
@@ -71,6 +70,7 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
     when making API calls. If not provided, credentials will be ascertained from
     the environment."""
 
+    # TODO: Add extra data type handling for type website
     engine_data_type: int = Field(default=0, ge=0, le=1)
     """ Defines the enterprise search data type
     0 - Unstructured data 
@@ -82,7 +82,6 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
 
     class Config:
         """Configuration for this pydantic object."""
-
         extra = Extra.forbid
         arbitrary_types_allowed = True
         underscore_attrs_are_private = True
@@ -96,6 +95,14 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
             raise ImportError(
                 "google.cloud.discoveryengine is not installed. "
                 "Please install it with pip install google-cloud-discoveryengine"
+            ) from exc
+
+        try:
+            from google.api_core.exceptions import InvalidArgument
+        except ImportError as exc:
+            raise ImportError(
+                "google.api_core.exceptions is not installed. "
+                "Please install it with pip install google-api-core"
             ) from exc
 
         values["project_id"] = get_from_dict_or_env(values, "project_id", "PROJECT_ID")
@@ -125,7 +132,7 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
         from google.protobuf.json_format import MessageToDict
 
         documents: List[Document] = []
-        
+
         for result in results:
             document_dict = MessageToDict(
                 result.document._pb, preserving_proto_field_name=True
@@ -170,14 +177,10 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
                 result.document._pb, preserving_proto_field_name=True
             )
 
-            content = ""
-            for k,v in document_dict.get("struct_data", {}).items():
-                content = ""
-
 
             documents.append(
-                Document(
-                    page_content=str(document_dict.get("struct_data", {})), metadata={
+                Document(page_content=str(document_dict.get("struct_data", {})), 
+                    metadata={
                       "id": document_dict["id"],
                       "name": document_dict["name"]
                     }
@@ -217,8 +220,11 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
             )
         elif self.engine_data_type == 1:
             content_search_spec = None
-        
-        response = SearchRequest(
+        else:
+            # TODO: Add extra data type handling for type website 
+            raise ValueError(f"engine_data_type accepted values are 0 or 1. {self.engine_data_type} given")
+
+        return SearchRequest(
             query=query,
             filter=self.filter,
             serving_config=self._serving_config,
@@ -227,9 +233,6 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
             query_expansion_spec=query_expansion_spec,
             spell_correction_spec=spell_correction_spec,
         )
-
-        
-        return response
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
@@ -247,6 +250,7 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
         elif self.engine_data_type == 1:
             documents = self._convert_structured_search_response(response.results)
         else:
-            documents = []
+            # TODO: Add extra data type handling for type website 
+            raise ValueError(f"engine_data_type accepted values are 0 or 1. {self.engine_data_type} given")
 
         return documents
