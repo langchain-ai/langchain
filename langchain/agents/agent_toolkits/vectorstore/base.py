@@ -31,10 +31,11 @@ def create_vectorstore_agent(
         prefix (str, optional): The prefix prompt for the agent. If not provided uses default PREFIX.
         verbose (bool, optional): If you want to see the content of the scratchpad. [ Defaults to False ]
         agent_executor_kwargs (Optional[Dict[str, Any]], optional): If there is any other parameter you want to send to the agent. [ Defaults to None ]
+        **kwargs: Additional named parameters to pass to the ZeroShotAgent.
 
     Returns:
         AgentExecutor: Returns a callable AgentExecutor object. Either you can call it or use run method with the query to get the response
-    """
+    """  # noqa: E501
     tools = toolkit.get_tools()
     prompt = ZeroShotAgent.create_prompt(tools, prefix=prefix)
     llm_chain = LLMChain(
@@ -72,10 +73,11 @@ def create_vectorstore_router_agent(
         prefix (str, optional): The prefix prompt for the router agent. If not provided uses default ROUTER_PREFIX.
         verbose (bool, optional): If you want to see the content of the scratchpad. [ Defaults to False ]
         agent_executor_kwargs (Optional[Dict[str, Any]], optional): If there is any other parameter you want to send to the agent. [ Defaults to None ]
+        **kwargs: Additional named parameters to pass to the ZeroShotAgent.
 
     Returns:
         AgentExecutor: Returns a callable AgentExecutor object. Either you can call it or use run method with the query to get the response.
-    """
+    """  # noqa: E501
     tools = toolkit.get_tools()
     prompt = ZeroShotAgent.create_prompt(tools, prefix=prefix)
     llm_chain = LLMChain(
