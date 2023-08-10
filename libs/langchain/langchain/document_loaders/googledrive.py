@@ -169,6 +169,8 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
                 .execute()
             )
             values = result.get("values", [])
+            if not values:
+                continue  # empty sheet
 
             header = values[0]
             for i, row in enumerate(values[1:], start=1):
