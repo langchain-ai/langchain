@@ -121,7 +121,6 @@ class TestElasticsearch:
             **elasticsearch_connection,
             index_name=index_name,
         )
-        docsearch.client.indices.refresh(index=index_name)
         output = docsearch.similarity_search("foo", k=1, custom_query=assert_query)
         assert output == [Document(page_content="foo")]
 
@@ -138,7 +137,6 @@ class TestElasticsearch:
             **elasticsearch_connection,
             index_name=index_name,
         )
-        docsearch.client.indices.refresh(index=index_name)
         output = await docsearch.asimilarity_search("foo", k=1)
         assert output == [Document(page_content="foo")]
 
@@ -155,7 +153,6 @@ class TestElasticsearch:
             **elasticsearch_connection,
             index_name=index_name,
         )
-        docsearch.client.indices.refresh(index=index_name)
 
         output = docsearch.similarity_search("foo", k=1)
         assert output == [Document(page_content="foo", metadata={"page": 0})]
@@ -176,7 +173,6 @@ class TestElasticsearch:
             **elasticsearch_connection,
             index_name=index_name,
         )
-        docsearch.client.indices.refresh(index=index_name)
 
         def assert_query(query_body: dict, query: str) -> dict:
             assert query_body == {
@@ -210,7 +206,6 @@ class TestElasticsearch:
             index_name=index_name,
             strategy=ElasticsearchStore.ExactRetrievalStrategy(),
         )
-        docsearch.client.indices.refresh(index=index_name)
 
         def assert_query(query_body: dict, query: str) -> dict:
             assert query_body == {
@@ -256,7 +251,6 @@ class TestElasticsearch:
             metadatas=metadatas,
             strategy=ElasticsearchStore.ExactRetrievalStrategy(),
         )
-        docsearch.client.indices.refresh(index=index_name)
 
         def assert_query(query_body: dict, query: str) -> dict:
             assert query_body == {
@@ -306,7 +300,6 @@ class TestElasticsearch:
             strategy=ElasticsearchStore.ExactRetrievalStrategy(),
             distance_strategy=DistanceStrategy.DOT_PRODUCT,
         )
-        docsearch.client.indices.refresh(index=index_name)
 
         def assert_query(query_body: dict, query: str) -> dict:
             assert query_body == {
@@ -353,7 +346,6 @@ class TestElasticsearch:
             index_name=index_name,
             strategy=ElasticsearchStore.ApproxRetrievalStrategy(hybrid=True),
         )
-        docsearch.client.indices.refresh(index=index_name)
 
         def assert_query(query_body: dict, query: str) -> dict:
             assert query_body == {
@@ -400,7 +392,6 @@ class TestElasticsearch:
         docsearch = ElasticsearchStore.from_texts(
             texts, FakeEmbeddings(), **elasticsearch_connection, index_name=index_name
         )
-        docsearch.client.indices.refresh(index=index_name)
         output = docsearch.similarity_search("foo", k=1, custom_query=my_custom_query)
         assert output == [Document(page_content="bar")]
 
@@ -467,8 +458,6 @@ class TestElasticsearch:
                 document={"text_field": text, "metadata": {}},
             )
 
-        docsearch.client.indices.refresh(index=index_name)
-
         def assert_query(query_body: dict, query: str) -> dict:
             assert query_body == {
                 "knn": {
@@ -507,7 +496,6 @@ class TestElasticsearch:
             index_name=index_name,
             strategy=ElasticsearchStore.SparseVectorRetrievalStrategy(),
         )
-        docsearch.client.indices.refresh(index=index_name)
         output = docsearch.similarity_search("foo", k=1)
         assert output == [Document(page_content="foo")]
 
@@ -526,7 +514,6 @@ class TestElasticsearch:
             metadatas=metadatas,
             **elasticsearch_connection,
         )
-        docsearch.client.indices.refresh(index=index_name)
 
         embedded_query = embeddings.embed_query("foo")
         output = docsearch.similarity_search_by_vector_with_relevance_scores(
@@ -547,27 +534,21 @@ class TestElasticsearch:
         )
 
         ids = docsearch.add_texts(texts, metadatas)
-        print(ids)
-        docsearch.client.indices.refresh(index=index_name)
         output = docsearch.similarity_search("foo", k=10)
         assert len(output) == 4
 
         docsearch.delete(ids[1:3])
-        docsearch.client.indices.refresh(index=index_name)
         output = docsearch.similarity_search("foo", k=10)
         assert len(output) == 2
 
         docsearch.delete(["not-existing"])
-        docsearch.client.indices.refresh(index=index_name)
         output = docsearch.similarity_search("foo", k=10)
         assert len(output) == 2
 
         docsearch.delete([ids[0]])
-        docsearch.client.indices.refresh(index=index_name)
         output = docsearch.similarity_search("foo", k=10)
         assert len(output) == 1
 
         docsearch.delete([ids[3]])
-        docsearch.client.indices.refresh(index=index_name)
         output = docsearch.similarity_search("gni", k=10)
         assert len(output) == 0

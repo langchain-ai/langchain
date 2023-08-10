@@ -99,7 +99,6 @@ class TestElasticsearch:
 
         search_result = elastic_vector_search.similarity_search("sharks")
 
-        print(search_result)
         assert len(search_result) != 0
 
     @pytest.mark.vcr(ignore_localhost=True)
@@ -124,7 +123,6 @@ class TestElasticsearch:
         assert index_name in index_names
 
         search_result = elastic_vector_search.similarity_search("sharks")
-        print(search_result)
 
         assert len(search_result) != 0
 
@@ -151,7 +149,6 @@ class TestElasticsearch:
         assert index_name in index_names
 
         search_result = elastic_vector_search.similarity_search("sharks")
-        print(search_result)
 
         assert len(search_result) != 0
 

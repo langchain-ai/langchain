@@ -24,7 +24,7 @@ from langchain.vectorstores.utils import DistanceStrategy
 if TYPE_CHECKING:
     from elasticsearch import Elasticsearch
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 class BaseRetrievalStrategy(ABC):
@@ -33,6 +33,7 @@ class BaseRetrievalStrategy(ABC):
         self,
         query_vector: Union[List[float], None],
         query: Union[str, None],
+        *,
         k: int,
         fetch_k: int,
         vector_query_field: str,
@@ -76,7 +77,7 @@ class BaseRetrievalStrategy(ABC):
             Dict: The Elasticsearch settings and mappings for the strategy.
         """
 
-    def beforeIndexSetup(
+    def before_index_setup(
         self, client: "Elasticsearch", text_field: str, vector_query_field: str
     ) -> None:
         """
@@ -88,7 +89,7 @@ class BaseRetrievalStrategy(ABC):
             vector_query_field (str): The field containing the vector representations in the index.
         """
 
-    def requireInference(self) -> bool:
+    def require_inference(self) -> bool:
         """
         Returns whether or not the strategy requires inference to be performed on the text before it is added to the index.
 
@@ -292,16 +293,16 @@ class SparseRetrievalStrategy(BaseRetrievalStrategy):
             }
         }
 
-    def _getPipelineName(self) -> str:
+    def _get_pipeline_name(self) -> str:
         return f"{self.model_id}_sparse_embedding"
 
-    def beforeIndexSetup(
+    def before_index_setup(
         self, client: "Elasticsearch", text_field: str, vector_query_field: str
     ) -> None:
         # If model_id is provided, create a pipeline for the model
         if self.model_id:
             client.ingest.put_pipeline(
-                id=self._getPipelineName(),
+                id=self._get_pipeline_name(),
                 description="Embedding pipeline for langchain vectorstore",
                 processors=[
                     {
@@ -331,10 +332,10 @@ class SparseRetrievalStrategy(BaseRetrievalStrategy):
                     }
                 }
             },
-            "settings": {"default_pipeline": self._getPipelineName()},
+            "settings": {"default_pipeline": self._get_pipeline_name()},
         }
 
-    def requireInference(self) -> bool:
+    def require_inference(self) -> bool:
         return False
 
 
@@ -659,11 +660,12 @@ class ElasticsearchStore(VectorStore):
 
         return docs_and_scores
 
-    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+    def delete(self, ids: Optional[List[str]] = None, refresh_indices: Optional[bool] = True, **kwargs: Any) -> Optional[bool]:
         """Delete documents from the Elasticsearch index.
 
         Args:
             ids: List of ids of documents to delete.
+            refresh_indices: Whether to refresh the index after deleting documents. Defaults to True.
         """
         body: List[Mapping[str, Any]] = []
 
@@ -677,6 +679,11 @@ class ElasticsearchStore(VectorStore):
             try:
                 self.client.bulk(operations=body)
                 logger.debug(f"Deleted {len(body)} texts from index")
+
+                if refresh_indices:
+                    self.client.indices.refresh(index=self.index_name)
+                    logger.debug("Refreshed index")
+
                 return True
             except Exception as e:
                 logger.error(f"Error deleting texts: {e}")
@@ -700,12 +707,12 @@ class ElasticsearchStore(VectorStore):
             logger.debug(f"Index {index_name} already exists. Skipping creation.")
 
         else:
-            if dims_length is None and self.strategy.requireInference():
+            if dims_length is None and self.strategy.require_inference():
                 raise ValueError(
                     "Cannot create index without specifying dims_length when the index doesn't already exist. We infer dims_length from the first embedding. Check that you have provided an embedding function."
                 )
 
-            self.strategy.beforeIndexSetup(
+            self.strategy.before_index_setup(
                 client=self.client,
                 text_field=self.query_field,
                 vector_query_field=self.vector_query_field,
@@ -735,10 +742,10 @@ class ElasticsearchStore(VectorStore):
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
             ids: Optional list of ids to associate with the texts.
+            refresh_indices: Whether to refresh the Elasticsearch indices after adding the texts.
 
         Returns:
             List of ids from adding the texts into the vectorstore.
-
         """
         try:
             from elasticsearch.helpers import bulk
