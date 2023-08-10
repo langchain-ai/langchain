@@ -149,7 +149,7 @@ class TestElasticsearch:
         metadatas = [{"page": i} for i in range(len(texts))]
         docsearch = ElasticsearchStore.from_texts(
             texts,
-            FakeEmbeddings(),
+            ConsistentFakeEmbeddings(),
             metadatas=metadatas,
             **elasticsearch_connection,
             index_name=index_name,
@@ -158,8 +158,8 @@ class TestElasticsearch:
         output = docsearch.similarity_search("foo", k=1)
         assert output == [Document(page_content="foo", metadata={"page": 0})]
 
-        # output = docsearch.similarity_search("bar", k=1)
-        # assert output == [Document(page_content="bar", metadata={"page": 1})]
+        output = docsearch.similarity_search("bar", k=1)
+        assert output == [Document(page_content="bar", metadata={"page": 1})]
 
     def test_similarity_search_with_filter(
         self, elasticsearch_connection: dict, index_name: str
