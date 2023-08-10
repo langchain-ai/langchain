@@ -1,9 +1,10 @@
 import json
 from typing import Optional, Type
 
+from pydantic import BaseModel, Field
+
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.ainetwork.base import AINBaseTool
-from pydantic import BaseModel, Field
 
 
 class SetFunctionSchema(BaseModel):
@@ -22,7 +23,6 @@ class AINSetFunction(AINBaseTool):
         value: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
-        from ain.errors import BlockchainError
         from ain.types import ValueOnlyTransactionInput
 
         try:
@@ -30,5 +30,5 @@ class AINSetFunction(AINBaseTool):
                 transactionInput=ValueOnlyTransactionInput(value=value)
             )
             return json.dumps(res, ensure_ascii=False)
-        except BlockchainError as e:
-            return f"Error: {e.message}"
+        except Exception as e:
+            return f"{type(e).__name__}: {str(e)}"

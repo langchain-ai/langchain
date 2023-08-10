@@ -3,11 +3,13 @@ from __future__ import annotations
 
 import asyncio
 import threading
+from enum import Enum
 from typing import TYPE_CHECKING
+
+from pydantic import Field
 
 from langchain.tools.ainetwork.utils import authenticate
 from langchain.tools.base import BaseTool
-from pydantic import Field
 
 if TYPE_CHECKING:
     from ain.ain import Ain
@@ -17,6 +19,11 @@ else:
         from ain.ain import Ain
     except ImportError:
         pass
+
+
+class OperationType(str, Enum):
+    SET = "SET"
+    GET = "GET"
 
 
 class AINBaseTool(BaseTool):
@@ -36,7 +43,9 @@ class AINBaseTool(BaseTool):
                 new_loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(new_loop)
                 try:
-                    result_container.append(new_loop.run_until_complete(self._arun(*args, **kwargs)))
+                    result_container.append(
+                        new_loop.run_until_complete(self._arun(*args, **kwargs))
+                    )
                 finally:
                     new_loop.close()
 

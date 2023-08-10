@@ -2,14 +2,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, List
 
+from pydantic import Field
+
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.tools import BaseTool
-from langchain.tools.ainetwork.get_value import AINGetValue
+from langchain.tools.ainetwork.rule import AINRuleOps
 from langchain.tools.ainetwork.set_function import AINSetFunction
-from langchain.tools.ainetwork.set_value import AINSetValue
 from langchain.tools.ainetwork.transfer import AINTransfer
 from langchain.tools.ainetwork.utils import authenticate
-from pydantic import Field
+from langchain.tools.ainetwork.value import AINValueOps
 
 if TYPE_CHECKING:
     from ain.ain import Ain
@@ -35,8 +36,8 @@ class AINetworkToolkit(BaseToolkit):
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
         return [
-            AINSetValue(interface=self.interface),
-            AINGetValue(interface=self.interface),
+            AINValueOps(interface=self.interface),
+            AINRuleOps(interface=self.interface),
             AINSetFunction(interface=self.interface),
             AINTransfer(interface=self.interface),
         ]

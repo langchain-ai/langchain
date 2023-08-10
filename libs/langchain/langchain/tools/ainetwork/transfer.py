@@ -1,9 +1,10 @@
 import json
 from typing import Optional, Type
 
+from pydantic import BaseModel, Field
+
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.ainetwork.base import AINBaseTool
-from pydantic import BaseModel, Field
 
 
 class TransferSchema(BaseModel):
@@ -22,5 +23,10 @@ class AINTransfer(AINBaseTool):
         amount: int,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
-        res = await self.interface.wallet.transfer(transferAddress, amount, nonce=-1)
-        return json.dumps(res, ensure_ascii=False)
+        try:
+            res = await self.interface.wallet.transfer(
+                transferAddress, amount, nonce=-1
+            )
+            return json.dumps(res, ensure_ascii=False)
+        except Exception as e:
+            return f"{type(e).__name__}: {str(e)}"

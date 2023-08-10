@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 def authenticate() -> Union["Ain", None]:
     """Authenticate using the AIN Blockchain"""
 
-    # Try importing ain-py related modules
     try:
         from ain.ain import Ain
     except ImportError as e:
@@ -21,7 +20,6 @@ def authenticate() -> Union["Ain", None]:
         )
         return None
 
-    # Get PRIVATE_KEY from environment variables
     if (
         "AIN_BLOCKCHAIN_PROVIDER_URL" in os.environ
         and "AIN_BLOCKCHAIN_ACCOUNT_PRIVATE_KEY" in os.environ
@@ -34,7 +32,6 @@ def authenticate() -> Union["Ain", None]:
         )
         return None
 
-    # Initialize the AIN Account with the given private key
     try:
         ain = Ain(provider_url)
         ain.wallet.addAndSetDefaultAccount(private_key)
