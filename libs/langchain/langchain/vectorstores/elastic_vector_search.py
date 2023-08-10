@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import uuid
+import warnings
 from abc import ABC
 from typing import (
     TYPE_CHECKING,
@@ -19,7 +20,6 @@ from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore
-import warnings
 
 if TYPE_CHECKING:
     from elasticsearch import Elasticsearch
@@ -127,6 +127,7 @@ class ElasticVectorSearch(VectorStore, ABC):
     Raises:
         ValueError: If the elasticsearch python package is not installed.
     """
+
     def __init__(
         self,
         elasticsearch_url: str,

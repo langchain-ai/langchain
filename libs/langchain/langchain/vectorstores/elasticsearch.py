@@ -1,25 +1,25 @@
 """Wrapper around Elasticsearch vector database."""
 
-from langchain.vectorstores.base import VectorStore
-from langchain.embeddings.base import Embeddings
-from langchain.docstore.document import Document
-from langchain.vectorstores.utils import DistanceStrategy
-from abc import ABC, abstractmethod
-import uuid
-
 import logging
-
+import uuid
+from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     Iterable,
     List,
     Optional,
     Tuple,
-    Callable,
     Union,
+    Mapping,
 )
+
+from langchain.docstore.document import Document
+from langchain.embeddings.base import Embeddings
+from langchain.vectorstores.base import VectorStore
+from langchain.vectorstores.utils import DistanceStrategy
 
 if TYPE_CHECKING:
     from elasticsearch import Elasticsearch
@@ -169,7 +169,7 @@ class ApproxRetrievalStrategy(BaseRetrievalStrategy):
 
     def index(
         self,
-        dims_length: int,
+        dims_length: Union[int, None],
         vector_query_field: str,
         similarity: Union[DistanceStrategy, None],
     ) -> Dict:
@@ -226,9 +226,8 @@ class ExactRetrievalStrategy(BaseRetrievalStrategy):
         else:
             raise ValueError(f"Similarity {similarity} not supported.")
 
-        if filter is None:
-            queryBool = {"match_all": {}}
-        else:
+        queryBool: Dict = {"match_all": {}}
+        if filter:
             queryBool = {"bool": {"filter": filter}}
 
         return {
@@ -245,7 +244,7 @@ class ExactRetrievalStrategy(BaseRetrievalStrategy):
 
     def index(
         self,
-        dims_length: int,
+        dims_length: Union[int, None],
         vector_query_field: str,
         similarity: Union[DistanceStrategy, None],
     ) -> Dict:
@@ -297,7 +296,7 @@ class SparseRetrievalStrategy(BaseRetrievalStrategy):
         return f"{self.model_id}_sparse_embedding"
 
     def beforeIndexSetup(
-        self, client: "Elasticsearch", vector_query_field: str, text_field: str
+        self, client: "Elasticsearch", text_field: str, vector_query_field: str
     ) -> None:
         # If model_id is provided, create a pipeline for the model
         if self.model_id:
@@ -320,9 +319,9 @@ class SparseRetrievalStrategy(BaseRetrievalStrategy):
 
     def index(
         self,
+        dims_length: Union[int, None],
         vector_query_field: str,
         similarity: Union[DistanceStrategy, None],
-        dims_length: Optional[int] = None,
     ) -> Dict:
         return {
             "mappings": {
@@ -490,7 +489,7 @@ class ElasticsearchStore(VectorStore):
         api_key: Optional[str] = None,
         username: Optional[str] = None,
         password: Optional[str] = None,
-    ):
+    ) -> "Elasticsearch":
         try:
             import elasticsearch
         except ImportError:
@@ -504,7 +503,7 @@ class ElasticsearchStore(VectorStore):
                 "Both es_url and cloud_id are defined. Please provide only one."
             )
 
-        connection_params = {}
+        connection_params: Dict[str, Any] = {}
 
         if es_url:
             connection_params["hosts"] = [es_url]
@@ -532,7 +531,11 @@ class ElasticsearchStore(VectorStore):
         return self.embeddings
 
     def similarity_search(
-        self, query: str, filter: Optional[List[dict]] = None, k: int = 4, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[List[dict]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return Elasticsearch documents most similar to query.
 
@@ -656,30 +659,32 @@ class ElasticsearchStore(VectorStore):
 
         return docs_and_scores
 
-    def delete(self, ids: List[str]) -> None:
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
         """Delete documents from the Elasticsearch index.
 
         Args:
             ids: List of ids of documents to delete.
         """
-        body = []
+        body: List[Mapping[str, Any]] = []
+
+        if ids is None:
+            raise ValueError("ids must be provided.")
+
         for _id in ids:
-            body.extend(
-                [
-                    {"delete": {"_index": self.index_name, "_id": _id}},
-                ]
-            )
+            body.append({"delete": {"_index": self.index_name, "_id": _id}})
 
         if len(body) > 0:
             try:
                 self.client.bulk(operations=body)
                 logger.debug(f"Deleted {len(body)} texts from index")
+                return True
             except Exception as e:
                 logger.error(f"Error deleting texts: {e}")
                 raise e
 
         else:
             logger.debug("No texts to delete from index")
+            return False
 
     def _create_index_if_not_exists(
         self, index_name: str, dims_length: Optional[int] = None
@@ -721,6 +726,7 @@ class ElasticsearchStore(VectorStore):
         texts: Iterable[str],
         metadatas: Optional[List[Dict[Any, Any]]] = None,
         ids: Optional[List[str]] = None,
+        refresh_indices: bool = True,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -734,6 +740,18 @@ class ElasticsearchStore(VectorStore):
             List of ids from adding the texts into the vectorstore.
 
         """
+        try:
+            from elasticsearch.helpers import bulk
+        except ImportError:
+            raise ImportError(
+                "Could not import elasticsearch python package. "
+                "Please install it with `pip install elasticsearch`."
+            )
+
+        embeddings = []
+        ids = ids or [str(uuid.uuid4()) for _ in texts]
+        requests = []
+
         if self.embedding is not None:
             # If no search_type requires inference, we use the provided
             # embedding function to embed the texts.
@@ -744,40 +762,40 @@ class ElasticsearchStore(VectorStore):
                 index_name=self.index_name, dims_length=dims_length
             )
 
+            for i, (text, vector) in enumerate(zip(texts, embeddings)):
+                metadata = metadatas[i] if metadatas else {}
+
+                requests.append({
+                    "_op_type": "index",
+                    "_index": self.index_name,
+                    self.query_field: text,
+                    self.vector_query_field: vector,
+                    "metadata": metadata,
+                    "_id": ids[i],
+                })
+
         else:
             # the search_type doesn't require inference, so we don't need to
             # embed the texts.
-            embeddings = [None for _ in range(len(list(texts)))]
-
             self._create_index_if_not_exists(index_name=self.index_name)
 
-        body = []
-        ids = ids or [str(uuid.uuid4()) for _ in texts]
-        for i, (text, vector) in enumerate(zip(texts, embeddings)):
-            metadata = metadatas[i] if metadatas else {}
+            for i, text in enumerate(texts):
+                metadata = metadatas[i] if metadatas else {}
 
-            body.extend(
-                [
-                    {"index": {"_index": self.index_name, "_id": ids[i]}},
-                    {
-                        self.query_field: text,
-                        self.vector_query_field: vector,
-                        "metadata": metadata,
-                    },
-                ]
-            )
+                requests.append({
+                    "_op_type": "index",
+                    "_index": self.index_name,
+                    self.query_field: text,
+                    "metadata": metadata,
+                    "_id": ids[i],
+                })
 
-        if len(body) > 0:
+        if len(requests) > 0:
             try:
-                responses = self.client.bulk(operations=body)
+                bulk(self.client, requests)
 
-                ids = [
-                    item["index"]["_id"]
-                    for item in responses["items"]
-                    if "index" in item
-                    and "result" in item["index"]
-                    and item["index"]["result"] == "created"
-                ]
+                if refresh_indices:
+                    self.client.indices.refresh(index=self.index_name)
 
                 logger.debug(f"added texts {ids} to index")
                 return ids
@@ -853,6 +871,7 @@ class ElasticsearchStore(VectorStore):
         es_api_key = kwargs.get("es_api_key")
         vector_query_field = kwargs.get("vector_query_field")
         query_field = kwargs.get("query_field")
+        distance_strategy = kwargs.get("distance_strategy", DistanceStrategy.COSINE)
         strategy = kwargs.get("strategy", ElasticsearchStore.ApproxRetrievalStrategy())
 
         optional_args = {}
@@ -873,6 +892,7 @@ class ElasticsearchStore(VectorStore):
             es_password=es_password,
             es_api_key=es_api_key,
             strategy=strategy,
+            distance_strategy=distance_strategy,
             **optional_args,
         )
 

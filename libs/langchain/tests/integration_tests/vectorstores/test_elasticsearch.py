@@ -3,14 +3,15 @@ import logging
 import os
 import uuid
 from typing import Generator, List, Union
+from langchain.vectorstores.utils import DistanceStrategy
 
 import pytest
 
 from langchain.docstore.document import Document
 from langchain.vectorstores.elasticsearch import ElasticsearchStore
 from tests.integration_tests.vectorstores.fake_embeddings import (
-    FakeEmbeddings,
     ConsistentFakeEmbeddings,
+    FakeEmbeddings,
 )
 
 logging.basicConfig(level=logging.DEBUG)
@@ -32,8 +33,8 @@ Some of the tests require the following models to be deployed in the ML Node:
 These tests that require the models to be deployed are skipped by default. Enable them by adding the model name to the modelsDeployed list below.
 """
 
-modelsDeployed = [
-    #"elser",
+modelsDeployed: List[str] = [
+    # "elser",
     # "sentence-transformers__all-minilm-l6-v2",
 ]
 
@@ -215,9 +216,108 @@ class TestElasticsearch:
             assert query_body == {
                 "query": {
                     "script_score": {
-                        "query": {"bool": {"filter": []}},
+                        "query": {"match_all": {}},
                         "script": {
                             "source": "cosineSimilarity(params.query_vector, 'vector') + 1.0",
+                            "params": {
+                                "query_vector": [
+                                    1.0,
+                                    1.0,
+                                    1.0,
+                                    1.0,
+                                    1.0,
+                                    1.0,
+                                    1.0,
+                                    1.0,
+                                    1.0,
+                                    0.0,
+                                ]
+                            },
+                        },
+                    }
+                }
+            }
+            return query_body
+
+        output = docsearch.similarity_search("foo", k=1, custom_query=assert_query)
+        assert output == [Document(page_content="foo")]
+
+    def test_similarity_search_exact_search_with_filter(
+        self, elasticsearch_connection: dict, index_name: str
+    ) -> None:
+        """Test end to end construction and search with metadata."""
+        texts = ["foo", "bar", "baz"]
+        metadatas = [{"page": i} for i in range(len(texts))]
+        docsearch = ElasticsearchStore.from_texts(
+            texts,
+            FakeEmbeddings(),
+            **elasticsearch_connection,
+            index_name=index_name,
+            metadatas=metadatas,
+            strategy=ElasticsearchStore.ExactRetrievalStrategy(),
+        )
+        docsearch.client.indices.refresh(index=index_name)
+
+        def assert_query(query_body: dict, query: str) -> dict:
+            assert query_body == {
+                "query": {
+                    "script_score": {
+                        "query": {"bool": {"filter": [{"term": {"metadata.page": 0}}]}},
+                        "script": {
+                            "source": "cosineSimilarity(params.query_vector, 'vector') + 1.0",
+                            "params": {
+                                "query_vector": [
+                                    1.0,
+                                    1.0,
+                                    1.0,
+                                    1.0,
+                                    1.0,
+                                    1.0,
+                                    1.0,
+                                    1.0,
+                                    1.0,
+                                    0.0,
+                                ]
+                            },
+                        },
+                    }
+                }
+            }
+            return query_body
+
+        output = docsearch.similarity_search(
+            "foo",
+            k=1,
+            custom_query=assert_query,
+            filter=[{"term": {"metadata.page": 0}}],
+        )
+        assert output == [Document(page_content="foo", metadata={"page": 0})]
+
+    def test_similarity_search_exact_search_distance_dot_product(
+        self, elasticsearch_connection: dict, index_name: str
+    ) -> None:
+        """Test end to end construction and search with metadata."""
+        texts = ["foo", "bar", "baz"]
+        docsearch = ElasticsearchStore.from_texts(
+            texts,
+            FakeEmbeddings(),
+            **elasticsearch_connection,
+            index_name=index_name,
+            strategy=ElasticsearchStore.ExactRetrievalStrategy(),
+            distance_strategy=DistanceStrategy.DOT_PRODUCT,
+        )
+        docsearch.client.indices.refresh(index=index_name)
+
+        def assert_query(query_body: dict, query: str) -> dict:
+            assert query_body == {
+                "query": {
+                    "script_score": {
+                        "query": {"match_all": {}},
+                        "script": {
+                            "source": """
+            double value = dotProduct(params.query_vector, 'vector');
+            return sigmoid(1, Math.E, -value); 
+            """,
                             "params": {
                                 "query_vector": [
                                     1.0,
@@ -372,12 +472,17 @@ class TestElasticsearch:
         def assert_query(query_body: dict, query: str) -> dict:
             assert query_body == {
                 "knn": {
-                    "field": "vector",
                     "filter": [],
+                    "field": "vector_query_field.predicted_value",
                     "k": 1,
                     "num_candidates": 50,
-                    "query_vector": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0],
-                },
+                    "query_vector_builder": {
+                        "text_embedding": {
+                            "model_id": "sentence-transformers__all-minilm-l6-v2",
+                            "model_text": "foo",
+                        }
+                    },
+                }
             }
             return query_body
 
