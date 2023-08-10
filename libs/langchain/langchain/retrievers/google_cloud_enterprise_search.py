@@ -95,7 +95,7 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
             from google.cloud import discoveryengine_v1beta  # noqa: F401
         except ImportError as exc:
             raise ImportError(
-                "google.cloud.discoveryengine is not installed. "
+                "google.cloud.discoveryengine is not installed."
                 "Please install it with pip install google-cloud-discoveryengine"
             ) from exc
 
