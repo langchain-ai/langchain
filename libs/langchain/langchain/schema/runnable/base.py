@@ -438,6 +438,14 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
         arbitrary_types_allowed = True
 
     @property
+    def lc_serializable(self) -> bool:
+        return True
+
+    @property
+    def lc_namespace(self) -> List[str]:
+        return self.__class__.__module__.split(".")[:-1]
+
+    @property
     def runnables(self) -> Iterator[Runnable[Input, Output]]:
         yield self.runnable
         yield from self.fallbacks
@@ -674,6 +682,10 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
     @property
     def lc_serializable(self) -> bool:
         return True
+
+    @property
+    def lc_namespace(self) -> List[str]:
+        return self.__class__.__module__.split(".")[:-1]
 
     class Config:
         arbitrary_types_allowed = True
@@ -1093,6 +1105,10 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
     def lc_serializable(self) -> bool:
         return True
 
+    @property
+    def lc_namespace(self) -> List[str]:
+        return self.__class__.__module__.split(".")[:-1]
+
     class Config:
         arbitrary_types_allowed = True
 
@@ -1222,6 +1238,10 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
     @property
     def lc_serializable(self) -> bool:
         return True
+
+    @property
+    def lc_namespace(self) -> List[str]:
+        return self.__class__.__module__.split(".")[:-1]
 
     def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
         return self.__class__(bound=self.bound, kwargs={**self.kwargs, **kwargs})
