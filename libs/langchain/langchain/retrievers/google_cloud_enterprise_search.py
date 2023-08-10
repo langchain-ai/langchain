@@ -221,7 +221,7 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
         else:
             # TODO: Add extra data type handling for type website
             raise ValueError(
-                f"engine_data_type accepted values are 0 or 1. {self.engine_data_type} given"
+                f"engine_data_type accepted values are 0 or 1. Value {self.engine_data_type} was given"
             )
 
         return SearchRequest(
@@ -256,7 +256,7 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
         else:
             # TODO: Add extra data type handling for type website
             raise ValueError(
-                f"engine_data_type accepted values are 0 or 1. {self.engine_data_type} given"
+                f"engine_data_type accepted values are 0 or 1. Value {self.engine_data_type} was given"
             )
 
         return documents
