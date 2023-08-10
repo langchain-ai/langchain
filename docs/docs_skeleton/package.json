@@ -23,7 +23,7 @@
     "@docusaurus/preset-classic": "2.4.0",
     "@docusaurus/remark-plugin-npm2yarn": "^2.4.0",
     "@mdx-js/react": "^1.6.22",
-    "@mendable/search": "^0.0.137",
+    "@mendable/search": "^0.0.150",
     "clsx": "^1.2.1",
     "json-loader": "^0.5.7",
     "process": "^0.11.10",
