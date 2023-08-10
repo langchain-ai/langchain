@@ -11,7 +11,11 @@ from langchain.callbacks.manager import (
 from langchain.llms.base import LLM
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.output import GenerationChunk
-from langchain.utils import check_package_version, get_from_dict_or_env, get_pydantic_field_names
+from langchain.utils import (
+    check_package_version,
+    get_from_dict_or_env,
+    get_pydantic_field_names,
+)
 from langchain.utils.utils import build_extra_kwargs
 
 
@@ -48,6 +52,15 @@ class _AnthropicCommon(BaseLanguageModel):
     count_tokens: Optional[Callable[[str], int]] = None
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
+    @root_validator(pre=True)
+    def build_extra(cls, values: Dict) -> Dict:
+        extra = values.get("model_kwargs", {})
+        all_required_field_names = get_pydantic_field_names(cls)
+        values["model_kwargs"] = build_extra_kwargs(
+            extra, values, all_required_field_names
+        )
+        return values
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
@@ -80,11 +93,6 @@ class _AnthropicCommon(BaseLanguageModel):
             values["AI_PROMPT"] = anthropic.AI_PROMPT
             values["count_tokens"] = values["client"].count_tokens
 
-            extra = values.get("model_kwargs", {})
-            all_required_field_names = get_pydantic_field_names(cls)
-            values["model_kwargs"] = build_extra_kwargs(
-                extra, values, all_required_field_names
-            )
         except ImportError:
             raise ImportError(
                 "Could not import anthropic python package. "
