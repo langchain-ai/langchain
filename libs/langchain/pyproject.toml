@@ -376,10 +376,6 @@ extended_testing = [
  "anthropic",
 ]
 
-scheduled_testing = [
- "openai",
-]
-
 [tool.ruff]
 select = [
   "E",  # pycodestyle

@@ -13613,10 +13613,9 @@ javascript = ["esprima"]
 llms = ["anthropic", "clarifai", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "openllm", "openlm", "torch", "transformers", "xinference"]
 openai = ["openai", "tiktoken"]
 qdrant = ["qdrant-client"]
-scheduled-testing = ["openai"]
 text-helpers = ["chardet"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "a8fd5dbcab821e39c502724e13a2f85b718f3e06c7c3f98062de01a44cf1ff6e"
+content-hash = "2604f6480e0439aff2cd8538103e819d519dbbdf39890445432e43315146954e"
