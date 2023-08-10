@@ -103,7 +103,9 @@ class TitanTakeoff(LLM):
                 text = enforce_stop_tokens(text, stop)
             return text
         except ConnectionError:
-            raise ConnectionError("Could not connect to Titan Takeoff server. Please make sure that the server is running.")
+            raise ConnectionError(
+                "Could not connect to Titan Takeoff server. Please make sure that the server is running."
+            )
 
     def _stream(
         self,
