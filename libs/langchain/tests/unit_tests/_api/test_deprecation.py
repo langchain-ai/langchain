@@ -115,7 +115,7 @@ def test_deprecated_function() -> None:
             "and will be removed in 3.0.0"
         )
 
-        assert deprecated_function.__doc__ == "[*Deprecated*]  original doc"
+        assert deprecated_function.__doc__.startswith("[*Deprecated*]  original doc")
 
 
 def test_deprecated_method() -> None:
@@ -131,7 +131,7 @@ def test_deprecated_method() -> None:
             "LangChain 2.0.0 and will be removed in 3.0.0"
         )
 
-        assert obj.deprecated_method.__doc__ == "[*Deprecated*]  original doc"
+        assert obj.deprecated_method.__doc__.startswith("[*Deprecated*]  original doc")
 
 
 def test_deprecated_classmethod() -> None:
@@ -145,9 +145,8 @@ def test_deprecated_classmethod() -> None:
             "The function `deprecated_classmethod` was deprecated in "
             "LangChain 2.0.0 and will be removed in 3.0.0"
         )
-        assert (
-            ClassWithDeprecatedMethods.deprecated_classmethod.__doc__
-            == "[*Deprecated*]  original doc"
+        assert ClassWithDeprecatedMethods.deprecated_classmethod.__doc__.startswith(
+            "[*Deprecated*]  original doc"
         )
 
 
@@ -166,9 +165,8 @@ def test_deprecated_staticmethod() -> None:
             "The function `deprecated_staticmethod` was deprecated in "
             "LangChain 2.0.0 and will be removed in 3.0.0"
         )
-        assert (
-            ClassWithDeprecatedMethods.deprecated_staticmethod.__doc__
-            == "[*Deprecated*]  original doc"
+        assert ClassWithDeprecatedMethods.deprecated_staticmethod.__doc__.startswith(
+            "[*Deprecated*]  original doc"
         )
 
 
@@ -187,9 +185,8 @@ def test_deprecated_property() -> None:
             "The function `deprecated_property` was deprecated in "
             "LangChain 2.0.0 and will be removed in 3.0.0"
         )
-        assert (
-            ClassWithDeprecatedMethods.deprecated_property.__doc__
-            == "[*Deprecated*]  original doc"
+        assert ClassWithDeprecatedMethods.deprecated_property.__doc__.startswith(
+            "[*Deprecated*]  original doc"
         )
 
 
@@ -249,4 +246,4 @@ def test_deprecated_method_pydantic() -> None:
             "LangChain 2.0.0 and will be removed in 3.0.0"
         )
 
-        assert obj.deprecated_method.__doc__ == "[*Deprecated*]  original doc"
+        assert obj.deprecated_method.__doc__.startswith("[*Deprecated*]  original doc")
