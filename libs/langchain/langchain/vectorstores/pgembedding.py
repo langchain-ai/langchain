@@ -87,6 +87,8 @@ class EmbeddingStore(BaseModel):
 
 
 class QueryResult:
+    """QueryResult is a result from a query."""
+
     EmbeddingStore: EmbeddingStore
     distance: float
 
