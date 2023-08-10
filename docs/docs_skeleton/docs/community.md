@@ -1,4 +1,4 @@
-# Community
+# Community Navigator
 
 Hi! Thanks for being here. We’re lucky to have a community of so many passionate developers building with LangChain. This space moves so fast and we have a lot to teach and learn from each other. Community members contribute code, host meetups, write blog posts, amplify each other’s work, become each other's customers and collaborators, and so much more. 
 
