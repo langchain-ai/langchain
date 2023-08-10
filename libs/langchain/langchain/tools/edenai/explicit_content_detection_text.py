@@ -8,7 +8,7 @@ from langchain.utils import get_from_dict_or_env
 from langchain.tools.edenai import EdenaiTool
 logger = logging.getLogger(__name__)
   
-class EdenAiExplicitTextDetection(BaseTool, EdenaiTool):  
+class EdenAiExplicitTextDetection(EdenaiTool):  
     edenai_api_key : Optional[str] = None  
 
     name="edenai_explicit_content_detection_text"
