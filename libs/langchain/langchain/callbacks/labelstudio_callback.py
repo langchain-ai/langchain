@@ -2,7 +2,7 @@ import os
 import warnings
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import UUID
 
 from langchain.callbacks.base import BaseCallbackHandler
@@ -21,7 +21,9 @@ class LabelStudioMode(Enum):
     CHAT = "chat"
 
 
-def get_default_label_configs(mode: Union[str, LabelStudioMode]) -> str:
+def get_default_label_configs(
+    mode: Union[str, LabelStudioMode]
+) -> Tuple[str, LabelStudioMode]:
     _default_label_configs = {
         LabelStudioMode.PROMPT.value: """
 <View>
@@ -179,12 +181,18 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
 
         # Find the first TextArea tag
         # "from_name", "to_name", "value" will be used to create predictions
-        self.from_name, self.to_name, self.value = None, None, None
+        self.from_name, self.to_name, self.value, self.input_type = (
+            None,
+            None,
+            None,
+            None,
+        )
         for tag_name, tag_info in self.parsed_label_config.items():
             if tag_info["type"] == "TextArea":
                 self.from_name = tag_name
                 self.to_name = tag_info["to_name"][0]
                 self.value = tag_info["inputs"][0]["value"]
+                self.input_type = tag_info["inputs"][0]["type"]
                 break
         if not self.from_name:
             error_message = (
@@ -272,6 +280,15 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> Any:
         """Save the prompts in memory when an LLM starts."""
+        if self.input_type != "Paragraphs":
+            raise ValueError(
+                f'\nLabel Studio project "{self.project_name}" '
+                f"has an input type <{self.input_type}>. "
+                f'To make it work with the mode="chat", '
+                f"the input type should be <Paragraphs>.\n"
+                f"Read more here https://labelstud.io/tags/paragraphs"
+            )
+
         prompts = []
         for message_list in messages:
             dialog = []
