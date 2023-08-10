@@ -1,6 +1,9 @@
-from typing import Any, Iterator, List, Optional, Sequence, Tuple, cast
+from typing import TYPE_CHECKING, Iterator, List, Optional, Sequence, Tuple, cast
 
 from langchain.schema import BaseStore
+
+if TYPE_CHECKING:
+    from redis import Redis
 
 
 class RedisStore(BaseStore[str, bytes]):
@@ -34,7 +37,11 @@ class RedisStore(BaseStore[str, bytes]):
     """
 
     def __init__(
-        self, client: Any, *, ttl: Optional[int] = None, namespace: Optional[str] = None
+        self,
+        client: Redis,
+        *,
+        ttl: Optional[int] = None,
+        namespace: Optional[str] = None,
     ) -> None:
         """Initialize the RedisStore with a Redis connection.
 
@@ -64,7 +71,6 @@ class RedisStore(BaseStore[str, bytes]):
 
         self.ttl = ttl
         self.namespace = namespace
-        self.namespace_delimiter = "/"
 
     def _get_prefixed_key(self, key: str) -> str:
         """Get the key with the namespace prefix.
@@ -75,8 +81,9 @@ class RedisStore(BaseStore[str, bytes]):
         Returns:
             str: The key with the namespace prefix.
         """
+        delimiter = "/"
         if self.namespace:
-            return f"{self.namespace}{self.namespace_delimiter}{key}"
+            return f"{self.namespace}{delimiter}{key}"
         return key
 
     def mget(self, keys: Sequence[str]) -> List[Optional[bytes]]:
