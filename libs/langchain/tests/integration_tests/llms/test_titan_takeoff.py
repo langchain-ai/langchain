@@ -1,9 +1,9 @@
 """Test Titan Takeoff wrapper."""
 
-from typing import Any, List, Optional
-from langchain.llms.titan_takeoff import TitanTakeoff
-import requests
+
 import responses
+
+from langchain.llms.titan_takeoff import TitanTakeoff
 
 
 @responses.activate

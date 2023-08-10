@@ -1,4 +1,3 @@
-import re
 from typing import Any, Iterator, List, Mapping, Optional
 
 import requests
@@ -21,13 +20,19 @@ class TitanTakeoff(LLM):
     """Sample predictions from the top K most probable candidates. Default = 1."""
 
     sampling_topp: float = 1.0
-    """Sample from predictions whose cumulative probability exceeds this value. Default = 1.0."""
+    """Sample from predictions whose cumulative probability exceeds this value.
+    Default = 1.0.
+    """
 
     sampling_temperature: float = 1.0
-    """Sample with randomness. Bigger temperatures are associated with more randomness and 'creativity'. Default = 1.0."""
+    """Sample with randomness. Bigger temperatures are associated with 
+    more randomness and 'creativity'. Default = 1.0.
+    """
 
     repetition_penalty: float = 1.0
-    """Penalise the generation of tokens that have been generated before. Set to > 1 to penalize. Default = 1 (no penalty).)"""
+    """Penalise the generation of tokens that have been generated before. 
+    Set to > 1 to penalize. Default = 1 (no penalty).
+    """
 
     no_repeat_ngram_size: int = 0
     """Prevent repetitions of ngrams of this size. Default = 0 (turned off)."""
@@ -104,7 +109,8 @@ class TitanTakeoff(LLM):
             return text
         except ConnectionError:
             raise ConnectionError(
-                "Could not connect to Titan Takeoff server. Please make sure that the server is running."
+                "Could not connect to Titan Takeoff server. \
+                Please make sure that the server is running."
             )
 
     def _stream(
