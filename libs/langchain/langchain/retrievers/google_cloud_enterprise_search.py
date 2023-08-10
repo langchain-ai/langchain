@@ -175,13 +175,12 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
                 content = ""
 
 
-            doc_metadata=dict(
-                id= document_dict["id"], 
-                name = document_dict["name"])
-
             documents.append(
                 Document(
-                    page_content=str(document_dict.get("struct_data", {})), metadata=doc_metadata
+                    page_content=str(document_dict.get("struct_data", {})), metadata={
+                      "id": document_dict["id"],
+                      "name": document_dict["name"]
+                    }
                 )
             )       
 
