@@ -6,11 +6,11 @@ from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
 from langchain.utils import get_from_dict_or_env
 import requests
-from langchain.tools.edenai.utils import EdenaiTool
+from langchain.tools.edenai.edenai_base_tool import EdenaiTool
 logger = logging.getLogger(__name__)
   
 
-class EdenAiTextToSpeech(BaseTool,EdenaiTool):
+class EdenAiTextToSpeech(EdenaiTool):
     """Tool that queries the Eden AI Text to speech API.
     for api reference check edenai documentation: https://docs.edenai.co/reference/audio_text_to_speech_create.
     

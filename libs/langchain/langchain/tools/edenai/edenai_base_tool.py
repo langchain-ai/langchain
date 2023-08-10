@@ -5,8 +5,9 @@ from pydantic import root_validator
 from langchain.utils import get_from_dict_or_env
 import requests
 logger = logging.getLogger(__name__)
+from langchain.tools.base import BaseTool
 
-class EdenaiTool():
+class EdenaiTool(BaseTool):
     
     feature: str
     subfeature: str
