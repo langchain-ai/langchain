@@ -491,8 +491,10 @@ class FAISS(VectorStore):
 
         # Removing ids from index.
         self.index.remove_ids(np.array(index_to_delete, dtype=np.int64))
+        # Reconstruct index_to_docstore_id because FAISS shift the index after removing
         for _id in index_to_delete:
             del self.index_to_docstore_id[_id]
+        self.index_to_docstore_id = dict(enumerate(self.index_to_docstore_id.values()))
 
         # Remove items from docstore.
         self.docstore.delete(ids)
