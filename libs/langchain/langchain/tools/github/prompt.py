@@ -42,7 +42,7 @@ test contents
 """
 
 READ_FILE_PROMPT = """
-This tool is a wrapper for the GitHub API, useful when you need to read the contents of a file in a GitHub repository. Simply pass in the full file path of the file you would like to read. **IMPORTANT**: the path must not start with a slash
+This tool is a wrapper for the GitHub API, useful when you need to read the contents of a regular file in the repo (unless it's in a pull request). DO NOT use this to read pull requests (PRs). To view files in pull requests, use the list_pull_request_files function. Simply pass in the full file path of the file you would like to read. **IMPORTANT**: the path must not start with a slash
 """
 
 UPDATE_FILE_PROMPT = """
@@ -68,3 +68,35 @@ new contents
 DELETE_FILE_PROMPT = """
 This tool is a wrapper for the GitHub API, useful when you need to delete a file in a GitHub repository. Simply pass in the full file path of the file you would like to delete. **IMPORTANT**: the path must not start with a slash
 """
+
+GET_PR_PROMPT = """
+This tool will fetch the title, body, comment thread and commit history of a specific Pull Request (PR). **VERY IMPORTANT**: You must specify the PR number as an integer.
+"""
+
+LIST_PRS_PROMPT = """
+This tool will fetch a list of the repository's Pull Requests (PRs). It will return the title, and PR number of 5 PRs. It takes no input.
+"""
+
+LIST_PULL_REQUEST_FILES="""
+This will fetch the full text of all files in a pull request (PR), useful for when you want to understand the code in a PR or contribute to it. This is only for reading files in a PR, not regular files. **VERY IMPORTANT**: You must specify the PR number as an integer.
+"""
+
+# TODOS
+GET_PR_DETAILS_PROMPT = """
+Fetch file tree (or CTAGS) of the entire commit.
+"""
+
+# TODOs:
+# https://docs.github.com/en/rest/search/search?apiVersion=2022-11-28#search-issues-and-pull-requests
+# get_reviews(), get_review_requests(), get_labels(), add_to_labels([labels])
+# if I'm requested, do a review. Can't request bots, use Labels instead. 
+
+# get_files
+
+# for comments use get_issue_comments (even for PRs)
+
+# create_review_request
+
+# search issues and pull requests
+
+# search code. 

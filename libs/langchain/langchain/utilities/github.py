@@ -2,14 +2,17 @@
 from __future__ import annotations
 
 import json
+import random
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, root_validator
-
+import requests
+import tiktoken
 from langchain.utils import get_from_dict_or_env
+from pydantic import BaseModel, Extra, root_validator
 
 if TYPE_CHECKING:
     from github.Issue import Issue
+    from github.PullRequest import PullRequest
 
 
 class GitHubAPIWrapper(BaseModel):
@@ -94,6 +97,25 @@ class GitHubAPIWrapper(BaseModel):
             number = issue.number
             parsed.append({"title": title, "number": number})
         return parsed
+    
+    def parse_pull_requests(self, pull_requests: List[PullRequest]) -> List[dict]:
+        """
+        Extracts title and number from each Issue and puts them in a dictionary
+        Parameters:
+            issues(List[Issue]): A list of Github Issue objects
+        Returns:
+            List[dict]: A dictionary of issue titles and numbers
+        """
+        parsed = []
+        for pr in pull_requests:
+            title = pr.title
+            number = pr.number
+            commits = pr.commits
+            parsed.append({"title": title, "number": number, "commits": str(commits)})
+        
+        print("❤️❤️❤️❤️❤️❤️ PARSED PRS:")
+        print(parsed)
+        return parsed
 
     def get_issues(self) -> str:
         """
@@ -112,6 +134,27 @@ class GitHubAPIWrapper(BaseModel):
             return parsed_issues_str
         else:
             return "No open issues available"
+    
+    def list_open_pull_requests(self) -> str:
+        """
+        Fetches all open PRs from the repo
+
+        Returns:
+            str: A plaintext report containing the number of PRs
+            and each PR's title and number.
+        """
+        # issues = self.github_repo_instance.get_issues(state="open")
+        print("⭐️⭐️⭐️⭐️⭐️⭐️ IN LIST OPEN PRS")
+        pull_requests = self.github_repo_instance.get_pulls(state="open")
+        print(f"⭐️PRS: {pull_requests}")
+        if pull_requests.totalCount > 0:
+            parsed_prs = self.parse_pull_requests(pull_requests)
+            parsed_prs_str = (
+                "Found " + str(len(parsed_prs)) + " pull requests:\n" + str(parsed_prs)
+            )
+            return parsed_prs_str
+        else:
+            return "No open pull requests available"
 
     def get_issue(self, issue_number: int) -> Dict[str, Any]:
         """
@@ -137,6 +180,133 @@ class GitHubAPIWrapper(BaseModel):
             "title": issue.title,
             "body": issue.body,
             "comments": str(comments),
+        }
+    
+    def list_pull_request_files(self, pr_number: int) -> Dict[str, Any]:
+        """Fetches the full text of all files in a PR. Truncates after first 3k tokens. 
+        # TODO: Enhancement to summarize files with ctags if they're getting long.
+
+        Args:
+            pr_number(int): The number of the pull request on Github
+
+        Returns:
+            dict: A dictionary containing the issue's title,
+            body, and comments as a string
+        """
+        MAX_TOKENS_FOR_FILES = 3_000
+        pr_files = []
+        pr = self.github_repo_instance.get_pull(number=int(pr_number))
+        total_tokens = 0
+        page=0
+        # print(f"Top of get files from PR")
+        
+        while True: # (total_tokens + tiktoken()) < MAX_TOKENS_FOR_FILES:
+            files_page = pr.get_files().get_page(page)
+            if len(files_page) == 0:
+                break
+            for file in files_page:
+                try:
+                    file_metadata_response = requests.get(file.contents_url)
+                    if file_metadata_response.status_code == 200:
+                        download_url = json.loads(file_metadata_response.text)['download_url']
+                        # file_content = response.text
+                        # print(file_content)
+                    else:
+                        print("Failed to download file, skipping")
+                        continue
+                    
+                    file_content_response = requests.get(download_url)
+                    if file_content_response.status_code == 200:
+                        # Save the content as a UTF-8 string
+                        file_content = file_content_response.text
+                        print("File content", file_content)
+                    else:
+                        print(f"failed downlading file content (Error {file_content_response.status_code}). Skipping")
+                        continue
+                    
+                    file_tokens = len(tiktoken.get_encoding("cl100k_base").encode(file_content + file.filename + "file_name file_contents"))
+                    print(f"Getting file contents from Github: {file_content}")
+                    if (total_tokens + file_tokens) < MAX_TOKENS_FOR_FILES:
+                        pr_files.append({"filename": file.filename, "contents": file_content,"additions": file.additions,"deletions": file.deletions})
+                        total_tokens += file_tokens
+                except Exception as e:
+                    print(f"Error when reading files from a PR on github. {e}")
+                    # pr_files.append({"file_name": f"Error reading file: {e}" ,"file_contents": "None"})
+            page += 1
+        return pr_files
+    
+    # def list_pull_request_files(self, pr_number: int):
+    #     """Fetches the full text of all files in a PR. Truncates after first 3k tokens. 
+    #     # TODO: Enhancement to summarize files with ctags if they're getting long.
+
+    #     Args:
+    #         pr_number(int): The number of the pull request on Github
+
+    #     Returns:
+    #         dict: A dictionary containing the issue's title,
+    #         body, and comments as a string
+    #     """
+    #     MAX_TOKENS_FOR_FILES = 3_000
+    #     pr_files = []
+    #     pr = self.github_repo_instance.get_pull(number=int(pr_number))
+    #     total_tokens = 0
+    #     page=0
+    #     print(f"Top of get files from PR")
+        
+    #     while True: # (total_tokens + tiktoken()) < MAX_TOKENS_FOR_FILES:
+    #         files_page = pr.get_files().get_page(page)
+    #         if len(files_page) == 0:
+    #             break
+    #         for file in files_page:
+    #             try:
+    #                 file_contents = self.github_repo_instance.get_contents(file.contents_url)
+    #                 file_tokens = len(tiktoken.get_encoding("cl100k_base").encode(file_contents + file.filename + "file_name file_contents"))
+    #                 print(f"Getting file contents from Github: {file_contents}")
+    #                 if (total_tokens + file_tokens) < MAX_TOKENS_FOR_FILES:
+    #                     pr_files.append({"file_name": file.filename ,"file_contents": file_contents})
+    #                     total_tokens += file_tokens
+    #             except Exception as e:
+    #                 print(f"Error when reading files from a PR on github. {e}")
+    #                 pr_files.append({"file_name": f"Error reading file: {e}" ,"file_contents": "None"})
+    #         page += 1
+    #     return pr_files
+
+    def get_pull_request(self, pull_number: int) -> Dict[str, Any]:
+        """
+        Fetches a specific pull request and its first 10 comments
+        Parameters:
+            pr_number(int): The number for the github pull
+        Returns:
+            dict: A dictionary containing the pull's title,
+            body, and comments as a string
+        """
+        pull = self.github_repo_instance.get_pull(number=int(pull_number))
+        page = 0
+        comments: List[dict] = []
+        while len(comments) <= 10:
+            # For normal conversation comments use get_issue_comments (even on PRs)
+            comments_page = pull.get_issue_comments().get_page(page)
+            if len(comments_page) == 0:
+                break
+            for comment in comments_page:
+                comments.append({"body": comment.body, "user": comment.user.login})
+            page += 1
+        
+        page = 0
+        commits: List[dict] = []
+        while len(commits) <= 10:
+            comments_page = pull.get_commits().get_page(page)
+            if len(comments_page) == 0:
+                break
+            for commit in comments_page:
+                commits.append({"message": commit.commit.message, "sha": commit.commit.sha})
+            page += 1
+
+        return {
+            "title": pull.title,
+            "body": pull.body,
+            "comments": str(comments),
+            "commits": str(commits),
         }
 
     def create_pull_request(self, pr_query: str) -> str:
@@ -200,15 +370,37 @@ class GitHubAPIWrapper(BaseModel):
         """
         file_path = file_query.split("\n")[0]
         file_contents = file_query[len(file_path) + 2 :]
+
+
+
+        self.list_pull_request_files()
+
         try:
-            exists = self.github_repo_instance.get_contents(file_path)
+            try: 
+                exists = self.github_repo_instance.get_contents(file_path)
+            except Exception as e:
+                exists = None
             if exists is None:
-                self.github_repo_instance.create_file(
-                    path=file_path,
-                    message="Create " + file_path,
-                    content=file_contents,
-                    branch=self.github_branch,
-                )
+                try: 
+                    self.github_repo_instance.create_file(
+                        path=file_path,
+                        message="Create " + file_path,
+                        content=file_contents,
+                        branch=self.github_branch,
+                    )
+                except Exception as e:
+                    if str(e).contains("sha") and str(e).contains("wasn't supplied"):
+                        # file already exists, it's trying to update it.
+                        # TODO: Find a way to get this file's Sha, hard to tell if it's part of a PR or not.
+                        # HACK HACK HACK
+                        self.github_repo_instance.create_file(
+                            path=file_path+"-"+random.randint(0, 10),
+                            message="Create " + file_path,
+                            content=file_contents,
+                            branch=self.github_branch,
+                        )
+                # if is_working_on_a_pr, add a sha. 
+                self.github_repo_instance.get_pr('')
                 return "Created file " + file_path
             else:
                 return f"File already exists at {file_path}. Use update_file instead"
@@ -313,5 +505,11 @@ class GitHubAPIWrapper(BaseModel):
             return self.update_file(query)
         elif mode == "delete_file":
             return self.delete_file(query)
+        elif mode == "list_open_pull_requests":
+            return self.list_open_pull_requests()
+        elif mode == "get_pull_request":
+            return self.get_pull_request(query)
+        elif mode == "list_pull_request_files":
+            return self.list_pull_request_files(query)
         else:
             raise ValueError("Invalid mode" + mode)

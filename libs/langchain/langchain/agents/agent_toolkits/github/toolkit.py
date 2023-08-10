@@ -3,16 +3,15 @@ from typing import Dict, List
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.tools import BaseTool
-from langchain.tools.github.prompt import (
-    COMMENT_ON_ISSUE_PROMPT,
-    CREATE_FILE_PROMPT,
-    CREATE_PULL_REQUEST_PROMPT,
-    DELETE_FILE_PROMPT,
-    GET_ISSUE_PROMPT,
-    GET_ISSUES_PROMPT,
-    READ_FILE_PROMPT,
-    UPDATE_FILE_PROMPT,
-)
+from langchain.tools.github.prompt import (COMMENT_ON_ISSUE_PROMPT,
+                                           CREATE_FILE_PROMPT,
+                                           CREATE_PULL_REQUEST_PROMPT,
+                                           DELETE_FILE_PROMPT,
+                                           GET_ISSUE_PROMPT, GET_ISSUES_PROMPT,
+                                           GET_PR_PROMPT, LIST_PRS_PROMPT,
+                                           LIST_PULL_REQUEST_FILES,
+                                           READ_FILE_PROMPT,
+                                           UPDATE_FILE_PROMPT)
 from langchain.tools.github.tool import GitHubAction
 from langchain.utilities.github import GitHubAPIWrapper
 
@@ -43,9 +42,24 @@ class GitHubToolkit(BaseToolkit):
                 "description": COMMENT_ON_ISSUE_PROMPT,
             },
             {
+                "mode": "list_open_pull_requests",
+                "name": "List open pull requests (PRs)",
+                "description": LIST_PRS_PROMPT,
+            },
+            {
+                "mode": "get_pull_request",
+                "name": "Get Pull Request (PR)",
+                "description": GET_PR_PROMPT,
+            },
+            {
                 "mode": "create_pull_request",
                 "name": "Create Pull Request",
                 "description": CREATE_PULL_REQUEST_PROMPT,
+            },
+            {
+                "mode": "list_pull_request_files",
+                "name": "List Pull Requests' Files",
+                "description": LIST_PULL_REQUEST_FILES,
             },
             {
                 "mode": "create_file",

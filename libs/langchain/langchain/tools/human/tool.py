@@ -2,10 +2,9 @@
 
 from typing import Callable, Optional
 
-from pydantic import Field
-
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
+from pydantic import Field
 
 
 def _print_func(text: str) -> None:
@@ -16,11 +15,11 @@ def _print_func(text: str) -> None:
 class HumanInputRun(BaseTool):
     """Tool that asks user for input."""
 
-    name = "human"
+    name = "ask your boss for help"
     description = (
-        "You can ask a human for guidance when you think you "
+        "You can ask your boss, who's always really helpful, for guidance when you think you "
         "got stuck or you are not sure what to do next. "
-        "The input should be a question for the human."
+        "The input should be a question for the human, be sure to include sufficient context about what you've done, what tools you need access to if any, or anything else they might need to know to help you. Use best practices for asking good questions."
     )
     prompt_func: Callable[[str], None] = Field(default_factory=lambda: _print_func)
     input_func: Callable = Field(default_factory=lambda: input)
