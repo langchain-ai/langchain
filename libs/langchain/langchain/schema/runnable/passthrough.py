@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import AsyncIterator, Iterator, List, Optional
 
 from langchain.load.serializable import Serializable
-from langchain.schema.runnable.base import Input, Runnable, RunnableConfig
+from langchain.schema.runnable.base import Input, Runnable
 from langchain.schema.runnable.config import RunnableConfig
 
 
