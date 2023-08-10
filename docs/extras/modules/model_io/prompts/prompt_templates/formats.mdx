@@ -1,16 +1,29 @@
-# Template formats
+# Template Formats
 
-By default, `PromptTemplate` will treat the provided template as a Python f-string. You can specify other template format through `template_format` argument:
+`PromptTemplate` by default uses Python f-string as its template format. However, it can also use other formats like `jinja2`, specified through the `template_format` argument.
+
+To use the `jinja2` template:
 
 ```python
-# Make sure jinja2 is installed before running this
+from langchain.prompts import PromptTemplate
 
 jinja2_template = "Tell me a {{ adjective }} joke about {{ content }}"
-prompt_template = PromptTemplate.from_template(template=jinja2_template, template_format="jinja2")
+prompt = PromptTemplate.from_template(jinja2_template, template_format="jinja2")
 
-prompt_template.format(adjective="funny", content="chickens")
-# -> Tell me a funny joke about chickens.
+prompt.format(adjective="funny", content="chickens")
+# Output: Tell me a funny joke about chickens.
 ```
 
-Currently, `PromptTemplate` only supports `jinja2` and `f-string` templating format. If there is any other templating format that you would like to use, feel free to open an issue in the [Github](https://github.com/hwchase17/langchain/issues) page.
+To use the Python f-string template:
 
+```python
+from langchain.prompts import PromptTemplate
+
+fstring_template = """Tell me a {adjective} joke about {content}"""
+prompt = PromptTemplate.from_template(fstring_template)
+
+prompt.format(adjective="funny", content="chickens")
+# Output: Tell me a funny joke about chickens.
+```
+
+Currently, only `jinja2` and `f-string` are supported. For other formats, kindly raise an issue on the [Github page](https://github.com/hwchase17/langchain/issues).
