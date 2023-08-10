@@ -373,6 +373,7 @@ extended_testing = [
  "feedparser",
  "xata",
  "xmltodict",
+ "anthropic",
 ]
 
 scheduled_testing = [
