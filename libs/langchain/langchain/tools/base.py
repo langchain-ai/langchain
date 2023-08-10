@@ -663,7 +663,8 @@ class StructuredTool(BaseTool):
             The tool
 
         Examples:
-            ... code-block:: python
+            
+            .. code-block:: python
                 def add(a: int, b: int) -> int:
                     \"\"\"Add two numbers\"\"\"
                     return a + b
