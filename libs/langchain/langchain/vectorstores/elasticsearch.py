@@ -660,7 +660,12 @@ class ElasticsearchStore(VectorStore):
 
         return docs_and_scores
 
-    def delete(self, ids: Optional[List[str]] = None, refresh_indices: Optional[bool] = True, **kwargs: Any) -> Optional[bool]:
+    def delete(
+        self,
+        ids: Optional[List[str]] = None,
+        refresh_indices: Optional[bool] = True,
+        **kwargs: Any,
+    ) -> Optional[bool]:
         """Delete documents from the Elasticsearch index.
 
         Args:
