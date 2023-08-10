@@ -45,14 +45,15 @@ class BaseRetrievalStrategy(ABC):
         Executes when a search is performed on the store.
 
         Args:
-            query_vector (Union[List[float], None]): The query vector, or None if not using vector-based query.
-            query (Union[str, None]): The text query, or None if not using text-based query.
-            k (int): The total number of results to retrieve.
-            fetch_k (int): The number of results to fetch initially.
-            vector_query_field (str): The field containing the vector representations in the index.
-            text_field (str): The field containing the text data in the index.
-            filter (List[dict]): List of filter clauses to apply to the query.
-            similarity (Union[DistanceStrategy, None]): The similarity strategy to use, or None if not using one.
+            query_vector: The query vector, 
+                          or None if not using vector-based query.
+            query: The text query, or None if not using text-based query.
+            k: The total number of results to retrieve.
+            fetch_k: The number of results to fetch initially.
+            vector_query_field: The field containing the vector representations in the index.
+            text_field: The field containing the text data in the index.
+            filter: List of filter clauses to apply to the query.
+            similarity: The similarity strategy to use, or None if not using one.
 
         Returns:
             Dict: The Elasticsearch query body.
@@ -69,9 +70,10 @@ class BaseRetrievalStrategy(ABC):
         Executes when the index is created.
 
         Args:
-            dims_length (Union[int, None]): The length of the embedding vectors, or None if not using vector-based query.
-            vector_query_field (str): The field containing the vector representations in the index.
-            similarity (Union[DistanceStrategy, None]): The similarity strategy to use, or None if not using one.
+            dims_length: Numeric length of the embedding vectors, 
+                        or None if not using vector-based query.
+            vector_query_field: The field containing the vector representations in the index.
+            similarity: The similarity strategy to use, or None if not using one.
 
         Returns:
             Dict: The Elasticsearch settings and mappings for the strategy.
@@ -81,20 +83,23 @@ class BaseRetrievalStrategy(ABC):
         self, client: "Elasticsearch", text_field: str, vector_query_field: str
     ) -> None:
         """
-        Executes before the index is created. Used for setting up any required Elasticsearch resources like a pipeline.
+        Executes before the index is created. Used for setting up
+        any required Elasticsearch resources like a pipeline.
 
         Args:
-            client (Elasticsearch): The Elasticsearch client.
-            text_field (str): The field containing the text data in the index.
-            vector_query_field (str): The field containing the vector representations in the index.
+            client: The Elasticsearch client.
+            text_field: The field containing the text data in the index.
+            vector_query_field: The field containing the vector representations in the index.
         """
 
     def require_inference(self) -> bool:
         """
-        Returns whether or not the strategy requires inference to be performed on the text before it is added to the index.
+        Returns whether or not the strategy requires inference
+        to be performed on the text before it is added to the index.
 
         Returns:
-            bool: Whether or not the strategy requires inference to be performed on the text before it is added to the index.
+            bool: Whether or not the strategy requires inference
+            to be performed on the text before it is added to the index.
         """
         return True
 
@@ -366,7 +371,10 @@ class ElasticsearchStore(VectorStore):
         es_connection: Optional pre-existing Elasticsearch connection.
         vector_query_field: Optional. Name of the field to store the embedding vectors in.
         query_field: Optional. Name of the field to store the texts in.
-        strategy: Optional. Retrieval strategy to use when searching the index. Defaults to ApproxRetrievalStrategy. Can be one of ExactRetrievalStrategy, ApproxRetrievalStrategy, or SparseRetrievalStrategy.
+        strategy: Optional. Retrieval strategy to use when searching the index. 
+                 Defaults to ApproxRetrievalStrategy. Can be one of 
+                 ExactRetrievalStrategy, ApproxRetrievalStrategy, 
+                 or SparseRetrievalStrategy.
         distance_strategy: Optional. Distance strategy to use when searching the index.
 
     If you want to use a cloud hosted Elasticsearch instance, you can pass in the
@@ -602,10 +610,13 @@ class ElasticsearchStore(VectorStore):
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             query_vector: Embedding to look up documents similar to.
-            fetch_k: Number of candidates to fetch from each shard. Defaults to 50.
-            fields: List of fields to return from Elasticsearch. Defaults to only returning the text field.
+            fetch_k: Number of candidates to fetch from each shard. 
+                    Defaults to 50.
+            fields: List of fields to return from Elasticsearch. 
+                    Defaults to only returning the text field.
             filter: Array of Elasticsearch filter clauses to apply to the query.
-            custom_query: Function to modify the Elasticsearch query body before it is sent to Elasticsearch.
+            custom_query: Function to modify the Elasticsearch 
+                         query body before it is sent to Elasticsearch.
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -747,7 +758,8 @@ class ElasticsearchStore(VectorStore):
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
             ids: Optional list of ids to associate with the texts.
-            refresh_indices: Whether to refresh the Elasticsearch indices after adding the texts.
+            refresh_indices: Whether to refresh the Elasticsearch indices 
+                            after adding the texts.
 
         Returns:
             List of ids from adding the texts into the vectorstore.
@@ -929,7 +941,7 @@ class ElasticsearchStore(VectorStore):
 
                 db = ElasticsearchStore.from_documents(
                     texts,
-                    embeddings, // Optional if using a strategy that doesn't require inference
+                    embeddings,
                     index_name="langchain-demo",
                     es_url="http://localhost:9200"
                 )
@@ -937,6 +949,8 @@ class ElasticsearchStore(VectorStore):
         Args:
             texts: List of texts to add to the Elasticsearch index.
             embedding: Embedding function to use to embed the texts.
+                      Do not provide if using a strategy 
+                      that doesn't require inference.
             metadatas: Optional list of metadatas associated with the texts.
             index_name: Name of the Elasticsearch index to create.
             es_url: URL of the Elasticsearch instance to connect to.
@@ -967,17 +981,27 @@ class ElasticsearchStore(VectorStore):
         query_model_id: Optional[str] = None,
         hybrid: Optional[bool] = False,
     ) -> "ApproxRetrievalStrategy":
-        """Used to perform approximate nearest neighbor search using the HNSW algorithm.
+        """Used to perform approximate nearest neighbor search 
+        using the HNSW algorithm.
 
-        At build index time, this strategy will create a dense vector field in the index and store the embedding vectors in the index.
+        At build index time, this strategy will create a 
+        dense vector field in the index and store the 
+        embedding vectors in the index.
 
-        At query time, the text will either be embedded using the provided embedding function or the query_model_id will be used to embed the text using the model deployed to Elasticsearch.
+        At query time, the text will either be embedded using the 
+        provided embedding function or the query_model_id 
+        will be used to embed the text using the model 
+        deployed to Elasticsearch.
 
         if query_model_id is used, do not provide an embedding function.
 
         Args:
-            query_model_id: Optional. ID of the model to use to embed the query text within the stack. Requires embedding model to be deployed to Elasticsearch.
-            hybrid: Optional. If True, will perform a hybrid search using both the knn query and a text query. Defaults to False.
+            query_model_id: Optional. ID of the model to use to 
+                            embed the query text within the stack. Requires 
+                            embedding model to be deployed to Elasticsearch.
+            hybrid: Optional. If True, will perform a hybrid search 
+                    using both the knn query and a text query. 
+                    Defaults to False.
         """
         return ApproxRetrievalStrategy(query_model_id=query_model_id, hybrid=hybrid)
 
@@ -985,13 +1009,19 @@ class ElasticsearchStore(VectorStore):
     def SparseVectorRetrievalStrategy(
         model_id: Optional[str] = None,
     ) -> "SparseRetrievalStrategy":
-        """Used to perform sparse vector search via text_expansion. Used for when you want to use ELSER model to perform document search.
+        """Used to perform sparse vector search via text_expansion. 
+        Used for when you want to use ELSER model to perform document search.
 
-        At build index time, this strategy will create a pipeline that will embed the text using the ELSER model and store the resulting tokens in the index.
+        At build index time, this strategy will create a pipeline that 
+        will embed the text using the ELSER model and store the resulting tokens in the index.
 
-        At query time, the text will be embedded using the ELSER model and the resulting tokens will be used to perform a text_expansion query.
+        At query time, the text will be embedded using the ELSER 
+        model and the resulting tokens will be used to perform a text_expansion query.
 
         Args:
-            model_id: Optional. Default is ".elser_model_1". ID of the model to use to embed the query text within the stack. Requires embedding model to be deployed to Elasticsearch.
+            model_id: Optional. Default is ".elser_model_1". 
+                    ID of the model to use to embed the query text 
+                    within the stack. Requires embedding model to be 
+                    deployed to Elasticsearch.
         """
         return SparseRetrievalStrategy(model_id=model_id)
