@@ -279,8 +279,11 @@ class Runnable(Generic[Input, Output], ABC):
             run_manager.on_chain_error(e)
             raise
         else:
+            output_for_tracer = dumpd(output)
             run_manager.on_chain_end(
-                output if isinstance(output, dict) else {"output": output}
+                output_for_tracer
+                if isinstance(output_for_tracer, dict)
+                else {"output": output_for_tracer}
             )
             return output
 
@@ -312,8 +315,11 @@ class Runnable(Generic[Input, Output], ABC):
             await run_manager.on_chain_error(e)
             raise
         else:
+            output_for_tracer = dumpd(output)
             await run_manager.on_chain_end(
-                output if isinstance(output, dict) else {"output": output}
+                output_for_tracer
+                if isinstance(output_for_tracer, dict)
+                else {"output": output_for_tracer}
             )
             return output
 
