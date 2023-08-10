@@ -2,7 +2,7 @@
 import os
 import tempfile
 from pathlib import Path
-from typing import Generator, Sequence
+from typing import Generator
 
 import pytest
 
