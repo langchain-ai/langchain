@@ -18,6 +18,7 @@ from langchain.vectorstores.utils import DistanceStrategy
 
 
 def normalize(x: np.ndarray) -> np.ndarray:
+    """Normalize vectors to unit length."""
     x /= np.clip(np.linalg.norm(x, axis=-1, keepdims=True), 1e-12, None)
     return x
 

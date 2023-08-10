@@ -111,7 +111,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
 
                 values["client"] = ChatModel.from_pretrained(values["model_name"])
         except ImportError:
-            raise_vertex_import_error(minimum_expected_version="1.28.0")
+            raise_vertex_import_error(minimum_expected_version="1.29.0")
         return values
 
     def _generate(
@@ -155,7 +155,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
                 context=context, message_history=history.history, **params
             )
         else:
-            chat = self.client.start_chat(**params)
+            chat = self.client.start_chat(message_history=history.history, **params)
         response = chat.send_message(question.content)
         text = self._enforce_stop_words(response.text, stop)
         return ChatResult(generations=[ChatGeneration(message=AIMessage(content=text))])

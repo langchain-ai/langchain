@@ -28,6 +28,15 @@ logger = logging.getLogger(__name__)
 
 
 class NUASchema(BaseModel):
+    """Input for Nuclia Understanding API.
+
+    Attributes:
+        action: Action to perform. Either `push` or `pull`.
+        id: ID of the file to push or pull.
+        path: Path to the file to push (needed only for `push` action).
+        text: Text content to process (needed only for `push` action).
+    """
+
     action: str = Field(
         ...,
         description="Action to perform. Either `push` or `pull`.",
