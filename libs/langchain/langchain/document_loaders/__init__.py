@@ -16,6 +16,16 @@
 """
 
 from langchain.document_loaders.acreom import AcreomLoader
+from langchain.document_loaders.airbyte import (
+    AirbyteCDKLoader,
+    AirbyteGongLoader,
+    AirbyteHubspotLoader,
+    AirbyteSalesforceLoader,
+    AirbyteShopifyLoader,
+    AirbyteStripeLoader,
+    AirbyteTypeformLoader,
+    AirbyteZendeskSupportLoader,
+)
 from langchain.document_loaders.airbyte_json import AirbyteJSONLoader
 from langchain.document_loaders.airtable import AirtableLoader
 from langchain.document_loaders.apify_dataset import ApifyDatasetLoader
@@ -188,7 +198,15 @@ TelegramChatLoader = TelegramChatFileLoader
 __all__ = [
     "AZLyricsLoader",
     "AcreomLoader",
+    "AirbyteCDKLoader",
+    "AirbyteGongLoader",
     "AirbyteJSONLoader",
+    "AirbyteHubspotLoader",
+    "AirbyteSalesforceLoader",
+    "AirbyteShopifyLoader",
+    "AirbyteStripeLoader",
+    "AirbyteTypeformLoader",
+    "AirbyteZendeskSupportLoader",
     "AirtableLoader",
     "AmazonTextractPDFLoader",
     "ApifyDatasetLoader",
