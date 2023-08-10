@@ -16,7 +16,6 @@ if TYPE_CHECKING:
         SearchServiceClient,
     )
 
-
 class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
     """Retriever for the Google Cloud Enterprise Search Service API.
 
@@ -71,6 +70,12 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
     when making API calls. If not provided, credentials will be ascertained from
     the environment."""
 
+    engine_data_type: int = Field(default=0, ge=0, le=1)
+    """ Defines the enterprise search data type
+    0 - Unstructured data 
+    1 - Structured data
+    """
+
     _client: SearchServiceClient
     _serving_config: str
 
@@ -112,14 +117,14 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
             serving_config=self.serving_config_id,
         )
 
-    def _convert_search_response(
+    def _convert_unstructured_search_response(
         self, results: Sequence[SearchResult]
     ) -> List[Document]:
         """Converts a sequence of search results to a list of LangChain documents."""
         from google.protobuf.json_format import MessageToDict
 
         documents: List[Document] = []
-
+        
         for result in results:
             document_dict = MessageToDict(
                 result.document._pb, preserving_proto_field_name=True
@@ -151,6 +156,36 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
 
         return documents
 
+    def _convert_structured_search_response(
+        self, results: Sequence[SearchResult]
+    ) -> List[Document]:
+        """Converts a sequence of search results to a list of LangChain documents."""
+        from google.protobuf.json_format import MessageToDict
+
+        documents: List[Document] = []
+        
+        for result in results:
+            document_dict = MessageToDict(
+                result.document._pb, preserving_proto_field_name=True
+            )
+
+            content = ""
+            for k,v in document_dict.get("struct_data", {}).items():
+                content = ""
+
+
+            doc_metadata=dict(
+                id= document_dict["id"], 
+                name = document_dict["name"])
+
+            documents.append(
+                Document(
+                    page_content=str(document_dict.get("struct_data", {})), metadata=doc_metadata
+                )
+            )       
+
+        return documents 
+
     def _create_search_request(self, query: str) -> SearchRequest:
         """Prepares a SearchRequest object."""
         from google.cloud.discoveryengine_v1beta import SearchRequest
@@ -163,23 +198,27 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
             mode=self.spell_correction_mode
         )
 
-        if self.get_extractive_answers:
-            extractive_content_spec = (
-                SearchRequest.ContentSearchSpec.ExtractiveContentSpec(
-                    max_extractive_answer_count=self.max_extractive_answer_count,
-                )
-            )
-        else:
-            extractive_content_spec = (
-                SearchRequest.ContentSearchSpec.ExtractiveContentSpec(
-                    max_extractive_segment_count=self.max_extractive_segment_count,
-                )
-            )
 
-        content_search_spec = SearchRequest.ContentSearchSpec(
-            extractive_content_spec=extractive_content_spec,
-        )
-
+        if self.engine_data_type == 0:
+            if self.get_extractive_answers:
+                extractive_content_spec = (
+                    SearchRequest.ContentSearchSpec.ExtractiveContentSpec(
+                        max_extractive_answer_count=self.max_extractive_answer_count,
+                    )
+                )
+            else:
+                extractive_content_spec = (
+                    SearchRequest.ContentSearchSpec.ExtractiveContentSpec(
+                        max_extractive_segment_count=self.max_extractive_segment_count,
+                    )
+                )
+            content_search_spec = SearchRequest.ContentSearchSpec(
+                extractive_content_spec=extractive_content_spec
+            )
+        elif self.engine_data_type == 1:
+            content_search_spec = None
+        
+        
         return SearchRequest(
             query=query,
             filter=self.filter,
@@ -196,6 +235,11 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
         """Get documents relevant for a query."""
         search_request = self._create_search_request(query)
         response = self._client.search(search_request)
-        documents = self._convert_search_response(response.results)
+        if self.engine_data_type == 0:
+            documents = self._convert_unstructured_search_response(response.results)
+        elif self.engine_data_type == 1:
+            documents = self._convert_structured_search_response(response.results)
+        else:
+            documents = []
 
         return documents
