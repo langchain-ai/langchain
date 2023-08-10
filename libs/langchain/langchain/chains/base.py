@@ -577,7 +577,7 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
             A dictionary representation of the chain.
 
         Example:
-            ..code-block:: python
+            .. code-block:: python
 
                 chain.dict(exclude_unset=True)
                 # -> {"_type": "foo", "verbose": False, ...}
