@@ -2,23 +2,13 @@
 import os
 import typing
 import uuid
-from typing import Any
 
 import pytest
-import redis
 
 from langchain.storage.redis import RedisStore
 
 if typing.TYPE_CHECKING:
-    try:
-        from redis import Redis
-    except ImportError:
-        # Ignoring mypy here to allow assignment of Any to Redis in the event
-        # that redis is not installed.
-        Redis = Any  # type:ignore
-else:
-    Redis = Any  # type:ignore
-
+    from redis import Redis
 
 pytest.importorskip("redis")
 
@@ -26,6 +16,8 @@ pytest.importorskip("redis")
 @pytest.fixture
 def redis_client() -> Redis:
     """Yield redis client."""
+    import redis
+
     # Using standard port, but protecting against accidental data loss
     # by requiring a password.
     # This fixture flushes the database!
