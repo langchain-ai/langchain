@@ -30,6 +30,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           poetry-version: "1.4.2"
+          working-directory: libs/langchain
           install-command: |
             echo "Running scheduled tests, installing dependencies with poetry..."
             poetry install -E scheduled_testing
