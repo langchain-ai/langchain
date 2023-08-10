@@ -12,6 +12,7 @@ from langchain.memory.chat_message_histories.momento import MomentoChatMessageHi
 from langchain.memory.chat_message_histories.mongodb import MongoDBChatMessageHistory
 from langchain.memory.chat_message_histories.postgres import PostgresChatMessageHistory
 from langchain.memory.chat_message_histories.redis import RedisChatMessageHistory
+from langchain.memory.chat_message_histories.rocksetdb import RocksetChatMessageHistory
 from langchain.memory.chat_message_histories.sql import SQLChatMessageHistory
 from langchain.memory.chat_message_histories.streamlit import (
     StreamlitChatMessageHistory,
@@ -29,6 +30,7 @@ __all__ = [
     "MongoDBChatMessageHistory",
     "PostgresChatMessageHistory",
     "RedisChatMessageHistory",
+    "RocksetChatMessageHistory",
     "SQLChatMessageHistory",
     "StreamlitChatMessageHistory",
     "ZepChatMessageHistory",

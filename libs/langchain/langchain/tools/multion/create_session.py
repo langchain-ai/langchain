@@ -31,6 +31,14 @@ class CreateSessionSchema(BaseModel):
 
 
 class MultionCreateSession(BaseTool):
+    """Tool that creates a new Multion Browser Window with provided fields.
+
+    Attributes:
+        name: The name of the tool. Default: "create_multion_session"
+        description: The description of the tool.
+        args_schema: The schema for the tool's arguments.
+    """
+
     name: str = "create_multion_session"
     description: str = """Use this tool to create a new Multion Browser Window \
         with provided fields.Always the first step to run \
