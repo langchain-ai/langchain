@@ -21,7 +21,7 @@ class ArxivAPIWrapper(BaseModel):
     It limits the Document content by doc_content_chars_max.
     Set doc_content_chars_max=None if you don't want to limit the content size.
 
-    Args:
+    Attributes:
         top_k_results: number of the top-scored document used for the arxiv tool
         ARXIV_MAX_QUERY_LENGTH: the cut limit on the query used for the arxiv tool.
         load_max_docs: a limit to the number of loaded documents

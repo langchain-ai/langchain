@@ -1,7 +1,18 @@
 from __future__ import annotations
 
+import asyncio
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, List, Optional, TypeVar, Union
+from typing import (
+    Any,
+    AsyncIterator,
+    Dict,
+    Generic,
+    Iterator,
+    List,
+    Optional,
+    TypeVar,
+    Union,
+)
 
 from langchain.load.serializable import Serializable
 from langchain.schema.messages import BaseMessage
@@ -27,12 +38,28 @@ class BaseLLMOutputParser(Serializable, Generic[T], ABC):
             Structured output.
         """
 
+    async def aparse_result(self, result: List[Generation]) -> T:
+        """Parse a list of candidate model Generations into a specific format.
+
+        Args:
+            result: A list of Generations to be parsed. The Generations are assumed
+                to be different candidate outputs for a single model input.
+
+        Returns:
+            Structured output.
+        """
+        return await asyncio.get_running_loop().run_in_executor(
+            None, self.parse_result, result
+        )
+
 
 class BaseGenerationOutputParser(
     BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
 ):
+    """Base class to parse the output of an LLM call."""
+
     def invoke(
-        self, input: str | BaseMessage, config: RunnableConfig | None = None
+        self, input: Union[str, BaseMessage], config: Optional[RunnableConfig] = None
     ) -> T:
         if isinstance(input, BaseMessage):
             return self._call_with_config(
@@ -46,6 +73,26 @@ class BaseGenerationOutputParser(
         else:
             return self._call_with_config(
                 lambda inner_input: self.parse_result([Generation(text=inner_input)]),
+                input,
+                config,
+                run_type="parser",
+            )
+
+    async def ainvoke(
+        self, input: str | BaseMessage, config: RunnableConfig | None = None
+    ) -> T:
+        if isinstance(input, BaseMessage):
+            return await self._acall_with_config(
+                lambda inner_input: self.aparse_result(
+                    [ChatGeneration(message=inner_input)]
+                ),
+                input,
+                config,
+                run_type="parser",
+            )
+        else:
+            return await self._acall_with_config(
+                lambda inner_input: self.aparse_result([Generation(text=inner_input)]),
                 input,
                 config,
                 run_type="parser",
@@ -80,7 +127,7 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
     """  # noqa: E501
 
     def invoke(
-        self, input: str | BaseMessage, config: RunnableConfig | None = None
+        self, input: Union[str, BaseMessage], config: Optional[RunnableConfig] = None
     ) -> T:
         if isinstance(input, BaseMessage):
             return self._call_with_config(
@@ -94,6 +141,26 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
         else:
             return self._call_with_config(
                 lambda inner_input: self.parse_result([Generation(text=inner_input)]),
+                input,
+                config,
+                run_type="parser",
+            )
+
+    async def ainvoke(
+        self, input: str | BaseMessage, config: RunnableConfig | None = None
+    ) -> T:
+        if isinstance(input, BaseMessage):
+            return await self._acall_with_config(
+                lambda inner_input: self.aparse_result(
+                    [ChatGeneration(message=inner_input)]
+                ),
+                input,
+                config,
+                run_type="parser",
+            )
+        else:
+            return await self._acall_with_config(
+                lambda inner_input: self.aparse_result([Generation(text=inner_input)]),
                 input,
                 config,
                 run_type="parser",
@@ -124,6 +191,32 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
         Returns:
             Structured output.
         """
+
+    async def aparse_result(self, result: List[Generation]) -> T:
+        """Parse a list of candidate model Generations into a specific format.
+
+        The return value is parsed from only the first Generation in the result, which
+            is assumed to be the highest-likelihood Generation.
+
+        Args:
+            result: A list of Generations to be parsed. The Generations are assumed
+                to be different candidate outputs for a single model input.
+
+        Returns:
+            Structured output.
+        """
+        return await self.aparse(result[0].text)
+
+    async def aparse(self, text: str) -> T:
+        """Parse a single string model output into some structure.
+
+        Args:
+            text: String output of a language model.
+
+        Returns:
+            Structured output.
+        """
+        return await asyncio.get_running_loop().run_in_executor(None, self.parse, text)
 
     # TODO: rename 'completion' -> 'text'.
     def parse_with_prompt(self, completion: str, prompt: PromptValue) -> Any:
@@ -161,8 +254,47 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
         return output_parser_dict
 
 
-class StrOutputParser(BaseOutputParser[str]):
-    """OutputParser that parses LLMResult into the top likely string.."""
+class BaseTransformOutputParser(BaseOutputParser[T]):
+    """Base class for an output parser that can handle streaming input."""
+
+    def _transform(self, input: Iterator[Union[str, BaseMessage]]) -> Iterator[T]:
+        for chunk in input:
+            if isinstance(chunk, BaseMessage):
+                yield self.parse_result([ChatGeneration(message=chunk)])
+            else:
+                yield self.parse_result([Generation(text=chunk)])
+
+    async def _atransform(
+        self, input: AsyncIterator[Union[str, BaseMessage]]
+    ) -> AsyncIterator[T]:
+        async for chunk in input:
+            if isinstance(chunk, BaseMessage):
+                yield self.parse_result([ChatGeneration(message=chunk)])
+            else:
+                yield self.parse_result([Generation(text=chunk)])
+
+    def transform(
+        self,
+        input: Iterator[Union[str, BaseMessage]],
+        config: Optional[RunnableConfig] = None,
+    ) -> Iterator[T]:
+        yield from self._transform_stream_with_config(
+            input, self._transform, config, run_type="parser"
+        )
+
+    async def atransform(
+        self,
+        input: AsyncIterator[Union[str, BaseMessage]],
+        config: Optional[RunnableConfig] = None,
+    ) -> AsyncIterator[T]:
+        async for chunk in self._atransform_stream_with_config(
+            input, self._atransform, config, run_type="parser"
+        ):
+            yield chunk
+
+
+class StrOutputParser(BaseTransformOutputParser[str]):
+    """OutputParser that parses LLMResult into the top likely string."""
 
     @property
     def lc_serializable(self) -> bool:

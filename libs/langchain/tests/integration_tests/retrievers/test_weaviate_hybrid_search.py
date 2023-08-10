@@ -6,7 +6,6 @@ from typing import Generator, Union
 from uuid import uuid4
 
 import pytest
-from weaviate import Client
 
 from langchain.docstore.document import Document
 from langchain.retrievers.weaviate_hybrid_search import WeaviateHybridSearchRetriever
@@ -28,6 +27,8 @@ class TestWeaviateHybridSearchRetriever:
     @pytest.fixture(scope="class", autouse=True)
     def weaviate_url(self) -> Union[str, Generator[str, None, None]]:
         """Return the weaviate url."""
+        from weaviate import Client
+
         url = "http://localhost:8080"
         yield url
 
@@ -38,6 +39,8 @@ class TestWeaviateHybridSearchRetriever:
     @pytest.mark.vcr(ignore_localhost=True)
     def test_get_relevant_documents(self, weaviate_url: str) -> None:
         """Test end to end construction and MRR search."""
+        from weaviate import Client
+
         texts = ["foo", "bar", "baz"]
         metadatas = [{"page": i} for i in range(len(texts))]
 
@@ -64,6 +67,8 @@ class TestWeaviateHybridSearchRetriever:
     @pytest.mark.vcr(ignore_localhost=True)
     def test_get_relevant_documents_with_score(self, weaviate_url: str) -> None:
         """Test end to end construction and MRR search."""
+        from weaviate import Client
+
         texts = ["foo", "bar", "baz"]
         metadatas = [{"page": i} for i in range(len(texts))]
 
@@ -87,6 +92,8 @@ class TestWeaviateHybridSearchRetriever:
     @pytest.mark.vcr(ignore_localhost=True)
     def test_get_relevant_documents_with_filter(self, weaviate_url: str) -> None:
         """Test end to end construction and MRR search."""
+        from weaviate import Client
+
         texts = ["foo", "bar", "baz"]
         metadatas = [{"page": i} for i in range(len(texts))]
 
@@ -113,6 +120,8 @@ class TestWeaviateHybridSearchRetriever:
     @pytest.mark.vcr(ignore_localhost=True)
     def test_get_relevant_documents_with_uuids(self, weaviate_url: str) -> None:
         """Test end to end construction and MRR search."""
+        from weaviate import Client
+
         texts = ["foo", "bar", "baz"]
         metadatas = [{"page": i} for i in range(len(texts))]
         # Weaviate replaces the object if the UUID already exists
