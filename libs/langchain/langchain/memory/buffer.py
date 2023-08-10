@@ -17,14 +17,7 @@ class ConversationBufferMemory(BaseChatMemory):
     @property
     def buffer(self) -> Any:
         """String buffer of memory."""
-        if self.return_messages:
-            return self.chat_memory.messages
-        else:
-            return get_buffer_string(
-                self.chat_memory.messages,
-                human_prefix=self.human_prefix,
-                ai_prefix=self.ai_prefix,
-            )
+        return self.buffer_as_messages if self.return_messages else self.buffer_as_str
 
     @property
     def buffer_as_str(self) -> str:
