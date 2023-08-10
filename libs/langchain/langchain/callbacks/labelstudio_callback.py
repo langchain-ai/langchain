@@ -66,7 +66,7 @@ def get_default_label_configs(mode: Union[str, LabelStudioMode]) -> str:
     if isinstance(mode, str):
         mode = LabelStudioMode(mode)
 
-    return _default_label_configs[mode.value]
+    return _default_label_configs[mode.value], mode
 
 
 class LabelStudioCallbackHandler(BaseCallbackHandler):
@@ -135,7 +135,12 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
 
         self.ls_client = ls.Client(url=self.url, api_key=self.api_key)
         self.project_name = project_name
-        self.project_config = project_config or get_default_label_configs(mode)
+        if project_config:
+            self.project_config = project_config
+            self.mode = None
+        else:
+            self.project_config, self.mode = get_default_label_configs(mode)
+
         self.project_id = project_id or os.getenv("LABEL_STUDIO_PROJECT_ID")
         if self.project_id is not None:
             self.ls_project = self.ls_client.get_project(int(self.project_id))
@@ -182,11 +187,26 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
                 self.value = tag_info["inputs"][0]["value"]
                 break
         if not self.from_name:
-            raise ValueError(
+            error_message = (
                 f'Label Studio project "{self.project_name}" '
                 f"does not have a TextArea tag. "
                 f"Please add a TextArea tag to the project."
             )
+            if self.mode == LabelStudioMode.PROMPT:
+                error_message += (
+                    f"\nHINT: go to project Settings -> "
+                    f"Labeling Interface -> Browse Templates"
+                    f' and select "Generative AI -> '
+                    f'Supervised Language Model Fine-tuning" template.'
+                )
+            else:
+                error_message += (
+                    f"\nHINT: go to project Settings -> "
+                    f"Labeling Interface -> Browse Templates"
+                    f" and check available templates under "
+                    f'"Generative AI" section.'
+                )
+            raise ValueError(error_message)
 
     def add_prompts_generations(
         self, run_id: str, generations: List[List[Generation]]
