@@ -4,7 +4,7 @@ from uuid import UUID
 import pytest
 from freezegun import freeze_time
 from pytest_mock import MockerFixture
-from syrupy import SnapshotAssertion, snapshot
+from syrupy import SnapshotAssertion
 
 from langchain import PromptTemplate
 from langchain.callbacks.manager import Callbacks
