@@ -32,8 +32,8 @@ class JSONLoader(BaseLoader):
             jq_schema (str): The jq schema to use to extract the data or text from
                 the JSON.
             content_key (str): The key to use to extract the content from the JSON if
-                the jq_schema results to a list of objects (dict). This have to be matched
-                jq schema.
+                the jq_schema results to a list of objects (dict). This have to be
+                matched jq schema.
             metadata_func (Callable[Dict, Dict]): A function that takes in the JSON
                 object extracted by the jq_schema and the default metadata and returns
                 a dict of the updated metadata.
