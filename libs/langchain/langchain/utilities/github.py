@@ -235,42 +235,6 @@ class GitHubAPIWrapper(BaseModel):
             page += 1
         return pr_files
     
-    # def list_pull_request_files(self, pr_number: int):
-    #     """Fetches the full text of all files in a PR. Truncates after first 3k tokens. 
-    #     # TODO: Enhancement to summarize files with ctags if they're getting long.
-
-    #     Args:
-    #         pr_number(int): The number of the pull request on Github
-
-    #     Returns:
-    #         dict: A dictionary containing the issue's title,
-    #         body, and comments as a string
-    #     """
-    #     MAX_TOKENS_FOR_FILES = 3_000
-    #     pr_files = []
-    #     pr = self.github_repo_instance.get_pull(number=int(pr_number))
-    #     total_tokens = 0
-    #     page=0
-    #     print(f"Top of get files from PR")
-        
-    #     while True: # (total_tokens + tiktoken()) < MAX_TOKENS_FOR_FILES:
-    #         files_page = pr.get_files().get_page(page)
-    #         if len(files_page) == 0:
-    #             break
-    #         for file in files_page:
-    #             try:
-    #                 file_contents = self.github_repo_instance.get_contents(file.contents_url)
-    #                 file_tokens = len(tiktoken.get_encoding("cl100k_base").encode(file_contents + file.filename + "file_name file_contents"))
-    #                 print(f"Getting file contents from Github: {file_contents}")
-    #                 if (total_tokens + file_tokens) < MAX_TOKENS_FOR_FILES:
-    #                     pr_files.append({"file_name": file.filename ,"file_contents": file_contents})
-    #                     total_tokens += file_tokens
-    #             except Exception as e:
-    #                 print(f"Error when reading files from a PR on github. {e}")
-    #                 pr_files.append({"file_name": f"Error reading file: {e}" ,"file_contents": "None"})
-    #         page += 1
-    #     return pr_files
-
     def get_pull_request(self, pull_number: int) -> Dict[str, Any]:
         """
         Fetches a specific pull request and its first 10 comments
