@@ -205,17 +205,17 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
             )
             if self.mode == LabelStudioMode.PROMPT:
                 error_message += (
-                    f"\nHINT: go to project Settings -> "
-                    f"Labeling Interface -> Browse Templates"
-                    f' and select "Generative AI -> '
-                    f'Supervised Language Model Fine-tuning" template.'
+                    "\nHINT: go to project Settings -> "
+                    "Labeling Interface -> Browse Templates"
+                    ' and select "Generative AI -> '
+                    'Supervised Language Model Fine-tuning" template.'
                 )
             else:
                 error_message += (
-                    f"\nHINT: go to project Settings -> "
-                    f"Labeling Interface -> Browse Templates"
-                    f" and check available templates under "
-                    f'"Generative AI" section.'
+                    "\nHINT: go to project Settings -> "
+                    "Labeling Interface -> Browse Templates"
+                    " and check available templates under "
+                    '"Generative AI" section.'
                 )
             raise ValueError(error_message)
 
