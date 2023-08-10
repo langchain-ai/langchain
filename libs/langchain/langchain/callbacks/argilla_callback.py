@@ -1,6 +1,7 @@
 import os
 import warnings
 from typing import Any, Dict, List, Optional, Union
+
 from packaging.version import parse
 
 from langchain.callbacks.base import BaseCallbackHandler
@@ -51,6 +52,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
         ... ])
         "Argilla, no doubt about it."
     """
+
     REPO_URL = "https://github.com/argilla-io/argilla"
     ISSUES_URL = f"{REPO_URL}/issues"
     BLOG_URL = "https://docs.argilla.io/en/latest/guides/llms/practical_guides/use_argilla_callback_in_langchain.html"  # noqa: E501
@@ -93,13 +95,14 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
         # Import Argilla (not via `import_argilla` to keep hints in IDEs)
         try:
             import argilla as rg  # noqa: F401
+
             self.ARGILLA_VERSION = rg.__version__
         except ImportError:
             raise ImportError(
                 "To use the Argilla callback manager you need to have the `argilla` "
                 "Python package installed. Please install it with `pip install argilla`"
             )
-        
+
         # Check whether the Argilla version is compatible
         if parse(self.ARGILLA_VERSION) < parse("1.8.0"):
             raise ImportError(
@@ -146,7 +149,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                 warnings.warn(
                     f"You have Argilla {self.ARGILLA_VERSION}, but Argilla 1.14.0 or"
                     " higher is recommended.",
-                    UserWarning
+                    UserWarning,
                 )
                 extra_args = {"with_records": False}
             self.dataset = rg.FeedbackDataset.from_argilla(
