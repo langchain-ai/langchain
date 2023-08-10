@@ -56,6 +56,8 @@ class FakeListLLM(LLM):
 
 
 class FakeStreamingListLLM(FakeListLLM):
+    """Fake streaming list LLM for testing purposes."""
+
     def stream(
         self,
         input: LanguageModelInput,
