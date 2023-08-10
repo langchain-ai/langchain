@@ -51,6 +51,5 @@ Here’s where our team hangs out, talks shop, spotlights cool work, and shares 
 - **[Twitter](https://twitter.com/LangChainAI):** we post about what we’re working on and what cool things we’re seeing in the space. If you tag @langchainai in your post, we’ll almost certainly see it, and can snow you some love!
 - **[Discord](https://discord.gg/6adMQxSpJS):** connect with with >30k developers who are building with LangChain
 - **[GitHub](https://github.com/langchain-ai/langchain):** open pull requests, contribute to a discussion, and/or contribute
-- **Subscribe to our blog:** we post/crosspost, about exciting developments in LangChain, LangSmith, and the broader AI ecosystem.
 - **Subscribe to our bi-weekly Release Notes:** a twice/month email roundup of the coolest things going on in our orbit
 - **(for teams building in production)** **Slack:** if you’re building an application in production at your company, we’d love to get into a Slack channel together. Fill out [this form](https://airtable.com/appwQzlErAS2qiP0L/shrGtGaVBVAz7NcV2) and we’ll get in touch about setting one up.
