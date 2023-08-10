@@ -205,12 +205,22 @@ class Chroma(VectorStore):
                     [embeddings[idx] for idx in non_empty_ids] if embeddings else None
                 )
                 ids_with_metadata = [ids[idx] for idx in non_empty_ids]
-                self._collection.upsert(
-                    metadatas=metadatas,
-                    embeddings=embeddings_with_metadatas,
-                    documents=texts_with_metadatas,
-                    ids=ids_with_metadata,
-                )
+                try:
+                    self._collection.upsert(
+                        metadatas=metadatas,
+                        embeddings=embeddings_with_metadatas,
+                        documents=texts_with_metadatas,
+                        ids=ids_with_metadata,
+                    )
+                except ValueError as e:
+                    if "Expected metadata value to be" in str(e):
+                        msg = (
+                            "Try filtering complex metadata from the document using "
+                            "langchain.vectorstore.utils.filter_complex_metadata."
+                        )
+                        raise ValueError(e.args[0] + "\n\n" + msg)
+                    else:
+                        raise e
             if empty_ids:
                 texts_without_metadatas = [texts[j] for j in empty_ids]
                 embeddings_without_metadatas = (
@@ -600,28 +610,18 @@ class Chroma(VectorStore):
         """
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
-        try:
-            return cls.from_texts(
-                texts=texts,
-                embedding=embedding,
-                metadatas=metadatas,
-                ids=ids,
-                collection_name=collection_name,
-                persist_directory=persist_directory,
-                client_settings=client_settings,
-                client=client,
-                collection_metadata=collection_metadata,
-                **kwargs,
-            )
-        except ValueError as e:
-            if "Expected metadata value to be a str, int, float or bool" in str(e):
-                msg = (
-                    "Try filtering complex metadata from the document using "
-                    "langchain.vectorstore.utils.filter_complex_metadata."
-                )
-                raise ValueError(str(e) + "\n" + msg)
-            else:
-                raise ValueError(str(e))
+        return cls.from_texts(
+            texts=texts,
+            embedding=embedding,
+            metadatas=metadatas,
+            ids=ids,
+            collection_name=collection_name,
+            persist_directory=persist_directory,
+            client_settings=client_settings,
+            client=client,
+            collection_metadata=collection_metadata,
+            **kwargs,
+        )
 
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> None:
         """Delete by vector IDs.

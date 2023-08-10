@@ -1,7 +1,7 @@
 """Utility functions for working with vectors and vectorstores."""
 
 from enum import Enum
-from typing import List
+from typing import List, Tuple, Type
 
 import numpy as np
 
@@ -54,14 +54,15 @@ def maximal_marginal_relevance(
     return idxs
 
 
-def filter_complex_metadata(documents: List[Document]) -> List[Document]:
-    """Filters out complex metadata such as lists and dicts that are not
-    support in some vector dbs, including Chroma."""
+def filter_complex_metadata(
+    documents: List[Document], *, allowed_types: Tuple[Type, ...] = (str, int, float)
+) -> List[Document]:
+    """Filter out metadata types that are not supported for a vector store."""
     updated_documents = []
     for document in documents:
         filtered_metadata = {}
         for key, value in document.metadata.items():
-            if not isinstance(value, bool) and not isinstance(value, (str, int, float)):
+            if not isinstance(value, allowed_types):
                 continue
             filtered_metadata[key] = value
 
