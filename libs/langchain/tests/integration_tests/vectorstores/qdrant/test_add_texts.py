@@ -2,7 +2,6 @@ import uuid
 from typing import Optional
 
 import pytest
-from qdrant_client.http import models as rest
 
 from langchain.schema import Document
 from langchain.vectorstores import Qdrant
@@ -81,6 +80,7 @@ def test_qdrant_add_texts_stores_duplicated_texts(vector_name: Optional[str]) ->
 def test_qdrant_add_texts_stores_ids(batch_size: int) -> None:
     """Test end to end Qdrant.add_texts stores provided ids."""
     from qdrant_client import QdrantClient
+    from qdrant_client.http import models as rest
 
     ids = [
         "fa38d572-4c31-4579-aedc-1960d79df6df",
@@ -107,6 +107,7 @@ def test_qdrant_add_texts_stores_ids(batch_size: int) -> None:
 def test_qdrant_add_texts_stores_embeddings_as_named_vectors(vector_name: str) -> None:
     """Test end to end Qdrant.add_texts stores named vectors if name is provided."""
     from qdrant_client import QdrantClient
+    from qdrant_client.http import models as rest
 
     collection_name = uuid.uuid4().hex
 

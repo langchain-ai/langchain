@@ -1,10 +1,12 @@
-from typing import Any, List, Mapping, Optional
+from typing import Any, AsyncIterator, Iterator, List, Mapping, Optional
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import LLM
+from langchain.schema.language_model import LanguageModelInput
+from langchain.schema.runnable import RunnableConfig
 
 
 class FakeListLLM(LLM):
@@ -51,3 +53,31 @@ class FakeListLLM(LLM):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         return {"responses": self.responses}
+
+
+class FakeStreamingListLLM(FakeListLLM):
+    """Fake streaming list LLM for testing purposes."""
+
+    def stream(
+        self,
+        input: LanguageModelInput,
+        config: Optional[RunnableConfig] = None,
+        *,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> Iterator[str]:
+        result = self.invoke(input, config)
+        for c in result:
+            yield c
+
+    async def astream(
+        self,
+        input: LanguageModelInput,
+        config: Optional[RunnableConfig] = None,
+        *,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[str]:
+        result = await self.ainvoke(input, config)
+        for c in result:
+            yield c

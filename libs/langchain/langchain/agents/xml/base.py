@@ -10,6 +10,8 @@ from langchain.tools.base import BaseTool
 
 
 class XMLAgentOutputParser(AgentOutputParser):
+    """Output parser for XMLAgent."""
+
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         if "</tool>" in text:
             tool, tool_input = text.split("</tool>")
