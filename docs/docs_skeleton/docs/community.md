@@ -25,10 +25,6 @@ LangChain is the product of over 5,000+ contributions by 1,500+ contributors, an
 - **Integrate with LangChain:** if your product integrates with LangChain–or aspires to–we want to help make sure the experience is as smooth as possible for you and end users. Send us an email at hello@langchain.dev and tell us what you’re working on.
     - **Become an Integration Maintainer:** Partner with our team to ensure your integration stays up to date and talk directly with users (and answer their inquiries) in our Discord. Introduce yourself via hello@langchain.dev if you’d like to explore this role.
 
-# 🙏🏼Thank You
-
-- **To Our Top Contributors:** like Figma’s ****[meet our advocates](https://friends.figma.com/become-a-community-advocate/) page
-- **To All Contributors:** like Browser Co’s [credits page](https://arc.net/credits)
 
 # 🌍 Meetups, Events, and Hackathons
 
