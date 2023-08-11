@@ -181,13 +181,6 @@ wrapt = "^1.15.0"
 openai = "^0.27.4"
 python-dotenv = "^1.0.0"
 cassio = "^0.0.7"
-arxiv = "^1.4"
-mastodon-py = "^1.8.1"
-momento = "^1.5.0"
-# Please do not add any dependencies in the test_integration group
-# See instructions above ^^
-pygithub = "^1.59.0"
-betabageldb = "^0.2.32"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.0.249"

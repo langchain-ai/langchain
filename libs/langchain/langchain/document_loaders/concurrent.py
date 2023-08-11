@@ -16,9 +16,7 @@ DEFAULT = Literal["default"]
 
 
 class ConcurrentLoader(GenericLoader):
-    """
-    A generic document loader that loads and parses documents concurrently.
-    """
+    """Load and pars Documents concurrently."""
 
     def __init__(
         self, blob_loader: BlobLoader, blob_parser: BaseBlobParser, num_workers: int = 4

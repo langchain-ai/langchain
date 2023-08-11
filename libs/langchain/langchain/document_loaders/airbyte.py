@@ -1,4 +1,3 @@
-"""Loads local airbyte json files."""
 from typing import Any, Callable, Iterator, List, Mapping, Optional
 
 from langchain.docstore.document import Document
@@ -9,7 +8,7 @@ RecordHandler = Callable[[Any, Optional[str]], Document]
 
 
 class AirbyteCDKLoader(BaseLoader):
-    """Loads records using an Airbyte source connector implemented using the CDK."""
+    """Load with an `Airbyte` source connector implemented using the `CDK`."""
 
     def __init__(
         self,
