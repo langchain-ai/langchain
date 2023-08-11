@@ -1,56 +1,16 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from langchain.memory import ConversationBufferMemory
+from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.chat_message_histories import ZepChatMessageHistory
+from langchain.memory.utils import get_prompt_input_key
 
 
-class ZepMemory(ConversationBufferMemory):
-    """Persist your chain history to the Zep Memory Server.
-
-    The number of messages returned by Zep and when the Zep server summarizes chat
-    histories is configurable. See the Zep documentation for more details.
-
-    Documentation: https://docs.getzep.com
-
-    Example:
-        .. code-block:: python
-
-        memory = ZepMemory(
-                    session_id=session_id,  # Identifies your user or a user's session
-                    url=ZEP_API_URL,        # Your Zep server's URL
-                    api_key=<your_api_key>, # Optional
-                    memory_key="history",   # Ensure this matches the key used in
-                                            # chain's prompt template
-                    return_messages=True,   # Does your prompt template expect a string
-                                            # or a list of Messages?
-                )
-        chain = LLMChain(memory=memory,...) # Configure your chain to use the ZepMemory
-                                              instance
-
-
-    Note:
-        To persist metadata alongside your chat history, your will need to create a
-    custom Chain class that overrides the `prep_outputs` method to include the metadata
-    in the call to `self.memory.save_context`.
-
-
-    About Zep
-    =========
-    Zep provides long-term conversation storage for LLM apps. The server stores,
-    summarizes, embeds, indexes, and enriches conversational AI chat
-    histories, and exposes them via simple, low-latency APIs.
-
-    For server installation instructions and more, see:
-    https://docs.getzep.com/deployment/quickstart/
-
-    For more information on the zep-python package, see:
-    https://github.com/getzep/zep-python
-
-    """
-
+class _ZepMemory(BaseChatMemory):
     chat_memory: ZepChatMessageHistory
+    memory_key: str = "history"  #: :meta private:
 
     def __init__(
         self,
@@ -101,6 +61,77 @@ class ZepMemory(ConversationBufferMemory):
             ai_prefix=ai_prefix,
             memory_key=memory_key,
         )
+
+    @property
+    def memory_variables(self) -> List[str]:
+        """Will always return list of memory variables.
+
+        :meta private:
+        """
+        return [self.memory_key]
+
+
+class ZepSearchMemory(_ZepMemory):
+    top_k: int = 4
+
+    def _get_prompt_input_key(self, inputs: Dict[str, Any]) -> str:
+        """Get the input key for the prompt."""
+        if self.input_key is None:
+            return get_prompt_input_key(inputs, self.memory_variables)
+        return self.input_key
+
+    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+        """Return history buffer."""
+        input_key = self._get_prompt_input_key(inputs)
+        query = inputs[input_key]
+        results = self.chat_memory.search(query, limit=self.top_k)
+        result = "\n".join([r.message.pop("content") for r in results])
+        return {self.memory_key: result}
+
+
+class ZepBufferMemory(_ZepMemory, ConversationBufferMemory):
+    """Persist your chain history to the Zep Memory Server.
+
+    The number of messages returned by Zep and when the Zep server summarizes chat
+    histories is configurable. See the Zep documentation for more details.
+
+    Documentation: https://docs.getzep.com
+
+    Example:
+        .. code-block:: python
+
+        memory = ZepMemory(
+                    session_id=session_id,  # Identifies your user or a user's session
+                    url=ZEP_API_URL,        # Your Zep server's URL
+                    api_key=<your_api_key>, # Optional
+                    memory_key="history",   # Ensure this matches the key used in
+                                            # chain's prompt template
+                    return_messages=True,   # Does your prompt template expect a string
+                                            # or a list of Messages?
+                )
+        chain = LLMChain(memory=memory,...) # Configure your chain to use the ZepMemory
+                                              instance
+
+
+    Note:
+        To persist metadata alongside your chat history, your will need to create a
+    custom Chain class that overrides the `prep_outputs` method to include the metadata
+    in the call to `self.memory.save_context`.
+
+
+    About Zep
+    =========
+    Zep provides long-term conversation storage for LLM apps. The server stores,
+    summarizes, embeds, indexes, and enriches conversational AI chat
+    histories, and exposes them via simple, low-latency APIs.
+
+    For server installation instructions and more, see:
+    https://docs.getzep.com/deployment/quickstart/
+
+    For more information on the zep-python package, see:
+    https://github.com/getzep/zep-python
+
+    """
 
     def save_context(
         self,
