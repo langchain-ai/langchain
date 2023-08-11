@@ -27,7 +27,8 @@ To run against Elastic Cloud, set the following environment variables:
 
 Some of the tests require the following models to be deployed in the ML Node:
 - elser (can be downloaded and deployed through Kibana and trained models UI)
-- sentence-transformers__all-minilm-l6-v2 (can be deployed through API, loaded via eland)
+- sentence-transformers__all-minilm-l6-v2 (can be deployed 
+  through API, loaded via eland)
 
 These tests that require the models to be deployed are skipped by default. 
 Enable them by adding the model name to the modelsDeployed list below.
@@ -88,7 +89,7 @@ class TestElasticsearch:
                     print(f"Deleted pipeline: {pipeline_id}")
                 except Exception as e:
                     print(f"Pipeline error: {e}")
-        except Exception as e:
+        except Exception:
             pass
 
     @pytest.fixture(scope="function")
@@ -213,7 +214,8 @@ class TestElasticsearch:
                     "script_score": {
                         "query": {"match_all": {}},
                         "script": {
-                            "source": "cosineSimilarity(params.query_vector, 'vector') + 1.0",
+                            "source": 
+                                "cosineSimilarity(params.query_vector, 'vector') + 1.0",
                             "params": {
                                 "query_vector": [
                                     1.0,
@@ -258,7 +260,8 @@ class TestElasticsearch:
                     "script_score": {
                         "query": {"bool": {"filter": [{"term": {"metadata.page": 0}}]}},
                         "script": {
-                            "source": "cosineSimilarity(params.query_vector, 'vector') + 1.0",
+                            "source": 
+                                "cosineSimilarity(params.query_vector, 'vector') + 1.0",
                             "params": {
                                 "query_vector": [
                                     1.0,
@@ -341,7 +344,7 @@ class TestElasticsearch:
 
         with pytest.raises(KeyError):
             texts = ["foo", "bar", "baz"]
-            docsearch = ElasticsearchStore.from_texts(
+            ElasticsearchStore.from_texts(
                 texts,
                 FakeEmbeddings(),
                 **elasticsearch_connection,
@@ -388,7 +391,8 @@ class TestElasticsearch:
     def test_similarity_search_approx_with_custom_query_fn(
         self, elasticsearch_connection: dict, index_name: str
     ) -> None:
-        """test that custom query function is called with the query string and query body"""
+        """test that custom query function is called 
+        with the query string and query body"""
 
         def my_custom_query(query_body: dict, query: str) -> dict:
             assert query == "foo"
@@ -443,7 +447,8 @@ class TestElasticsearch:
             ],
         )
 
-        # creating a new index with the pipeline, not relying on langchain to create the index
+        # creating a new index with the pipeline, 
+        # not relying on langchain to create the index
         docsearch.client.indices.create(
             index=index_name,
             mappings={

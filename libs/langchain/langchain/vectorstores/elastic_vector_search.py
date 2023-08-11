@@ -138,7 +138,9 @@ class ElasticVectorSearch(VectorStore, ABC):
     ):
         """Initialize with necessary components."""
         warnings.warn(
-            "ElasticVectorSearch will be removed in a future release. ElasticVectorSearch will be removed in a future release. See Elasticsearch integration docs on how to upgrade."
+            "ElasticVectorSearch will be removed in a future release."
+            "ElasticVectorSearch will be removed in a future release. See"
+            "Elasticsearch integration docs on how to upgrade."
         )
 
         try:
@@ -398,7 +400,9 @@ class ElasticKnnSearch(VectorStore, ABC):
             )
 
         warnings.warn(
-            "ElasticKnnSearch will be removed in a future release. Use ElasticsearchStore instead. See Elasticsearch integration docs on how to upgrade."
+            "ElasticKnnSearch will be removed in a future release."
+            "Use ElasticsearchStore instead. See Elasticsearch "
+            "integration docs on how to upgrade."
         )
         self.embedding = embedding
         self.index_name = index_name
