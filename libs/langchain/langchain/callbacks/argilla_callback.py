@@ -65,7 +65,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
         api_url: Optional[str] = None,
         api_key: Optional[str] = None,
     ) -> None:
-        f"""Initializes the `ArgillaCallbackHandler`.
+        """Initializes the `ArgillaCallbackHandler`.
 
         Args:
             dataset_name: name of the `FeedbackDataset` in Argilla. Note that it must
