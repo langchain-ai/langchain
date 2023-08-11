@@ -1,1 +1,0 @@
-"""Bing Search API toolkit."""
