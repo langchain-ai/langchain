@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import logging
 from typing import (
-    TYPE_CHECKING,
     Any,
     AsyncIterator,
     Callable,
@@ -17,13 +16,6 @@ from typing import (
 )
 
 from pydantic import BaseModel, Field, root_validator
-from tenacity import (
-    before_sleep_log,
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_exponential,
-)
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -50,18 +42,11 @@ from langchain.schema.messages import (
 from langchain.schema.output import ChatGenerationChunk
 from langchain.utils import get_from_dict_or_env
 
-if TYPE_CHECKING:
-    import litellm
-
 logger = logging.getLogger(__name__)
 
 
 class ChatLiteLLMException(Exception):
     """Error raised when there is an issue with the LiteLLM I/O Library"""
-
-
-class AIMessageChunk(AIMessage, BaseMessageChunk):
-    pass
 
 
 def _truncate_at_stop_tokens(
@@ -222,12 +207,12 @@ class ChatLiteLLM(BaseChatModel, BaseModel):
     client: Any  #: :meta private:
     model_name: str = "gpt-3.5-turbo"
     """Model name to use."""
-    openai_api_key: str = None
-    azure_api_key: str = None
-    anthropic_api_key: str = None
-    replicate_api_key: str = None
-    cohere_api_key: str = None
-    openrouter_api_key: str = None
+    openai_api_key: Optional[str] = None
+    azure_api_key: Optional[str] = None
+    anthropic_api_key: Optional[str] = None
+    replicate_api_key: Optional[str] = None
+    cohere_api_key: Optional[str] = None
+    openrouter_api_key: Optional[str] = None
     streaming: bool = False
     api_base: Optional[str] = None
     organization: Optional[str] = None
@@ -288,21 +273,6 @@ class ChatLiteLLM(BaseChatModel, BaseModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate api key, python package exists, temperature, top_p, and top_k."""
-        openai_api_key = get_from_dict_or_env(
-            values, "openai_api_key", "OPENAI_API_KEY", default=""
-        )
-        azure_api_key = get_from_dict_or_env(
-            values, "azure_api_key", "AZURE_API_KEY", default=""
-        )
-        anthropic_api_key = get_from_dict_or_env(
-            values, "anthropic_api_key", "ANTHROPIC_API_KEY", default=""
-        )
-        replicate_api_key = get_from_dict_or_env(
-            values, "replicate_api_key", "REPLICATE_API_KEY", default=""
-        )
-        openrouter_api_key = get_from_dict_or_env(
-            values, "openrouter_api_key", "OPENROUTER_API_KEY", default=""
-        )
         try:
             import litellm
         except ImportError:
@@ -311,6 +281,21 @@ class ChatLiteLLM(BaseChatModel, BaseModel):
                 "Please install it with `pip install google-generativeai`"
             )
 
+        values["openai_api_key"] = get_from_dict_or_env(
+            values, "openai_api_key", "OPENAI_API_KEY", default=""
+        )
+        values["azure_api_key"] = get_from_dict_or_env(
+            values, "azure_api_key", "AZURE_API_KEY", default=""
+        )
+        values["anthropic_api_key"] = get_from_dict_or_env(
+            values, "anthropic_api_key", "ANTHROPIC_API_KEY", default=""
+        )
+        values["replicate_api_key"] = get_from_dict_or_env(
+            values, "replicate_api_key", "REPLICATE_API_KEY", default=""
+        )
+        values["openrouter_api_key"] = get_from_dict_or_env(
+            values, "openrouter_api_key", "OPENROUTER_API_KEY", default=""
+        )
         values["client"] = litellm
 
         if values["temperature"] is not None and not 0 <= values["temperature"] <= 1:
@@ -462,12 +447,3 @@ class ChatLiteLLM(BaseChatModel, BaseModel):
     @property
     def _llm_type(self) -> str:
         return "litellm-chat"
-
-
-def main():
-    # main code goes here.
-    print("Hello, from main function!")
-
-
-if __name__ == "__main__":
-    main()
