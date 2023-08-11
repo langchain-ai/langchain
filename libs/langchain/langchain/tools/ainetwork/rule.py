@@ -40,12 +40,12 @@ Covers the write rules for the AINetwork Blockchain database. The SET type speci
 
 ## SET Example
 - type: SET
-- path: /transfer/$from/$to/$key
-- eval: auth.addr===$from&&!getValue('transfer/'+$from+'/'+$to+'/'+$key)
+- path: /apps/langchain_project_1/$from/$to/$img
+- eval: auth.addr===$from&&!getValue('/apps/image_db/'+$img)
 
 ## GET Example
 - type: GET
-- path: /transfer/$from/$to/$key
+- path: /apps/langchain_project_1
 """
     args_schema: Type[BaseModel] = RuleSchema
 

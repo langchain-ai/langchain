@@ -11,8 +11,8 @@ from langchain.tools.ainetwork.base import AINBaseTool, OperationType
 class RuleSchema(BaseModel):
     type: OperationType = Field(...)
     path: str = Field(..., description="Blockchain reference path")
-    address: Optional[str] = Field(
-        "*", description="Address with 40-digit hexadecimal or '*'"
+    address: Optional[Union[str, list[str]]] = Field(
+        None, description="A single address or a list of addresses"
     )
     write_owner: Optional[bool] = Field(False, description="Edit ownership permission")
     write_rule: Optional[bool] = Field(False, description="Edit path rules permission")
@@ -35,6 +35,7 @@ Rules for ownership in AINetwork Blockchain database.
 ## Address Rules
 - 0x[0-9a-fA-F]{40}: 40-digit hexadecimal public address
 - *: Allows all address
+- Defaults to the current session's public address
 
 ## Permission Types
 - write_owner: Edit ownership of the path
@@ -61,7 +62,7 @@ Rules for ownership in AINetwork Blockchain database.
         self,
         type: OperationType,
         path: str,
-        address: Optional[str] = None,
+        address: Optional[Union[str, list[str]]] = None,
         write_owner: Optional[bool] = None,
         write_rule: Optional[bool] = None,
         write_function: Optional[bool] = None,
@@ -72,6 +73,10 @@ Rules for ownership in AINetwork Blockchain database.
 
         try:
             if type is OperationType.SET:
+                if address is None:
+                    address = self.interface.wallet.defaultAccount.address
+                if isinstance(address, str):
+                    address_list = [address]
                 res = await self.interface.db.ref(path).setOwner(
                     transactionInput=ValueOnlyTransactionInput(
                         value={
@@ -83,6 +88,7 @@ Rules for ownership in AINetwork Blockchain database.
                                         "write_function": write_function,
                                         "branch_owner": branch_owner,
                                     }
+                                    for address in address_list
                                 }
                             }
                         }
