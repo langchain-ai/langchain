@@ -71,7 +71,42 @@ def test_filter_list_metadata() -> None:
             page_content="",
             metadata={
                 "key1": "this is another string!",
-                "key2": ["another", "list", "of", "strings"],
+                "key2": {"foo"},
+            },
+        ),
+        Document(
+            page_content="",
+            metadata={
+                "key1": "this is another string!",
+                "key2": {"foo": "bar"},
+            },
+        ),
+        Document(
+            page_content="",
+            metadata={
+                "key1": "this is another string!",
+                "key2": True,
+            },
+        ),
+        Document(
+            page_content="",
+            metadata={
+                "key1": "this is another string!",
+                "key2": 1,
+            },
+        ),
+        Document(
+            page_content="",
+            metadata={
+                "key1": "this is another string!",
+                "key2": 1.0,
+            },
+        ),
+        Document(
+            page_content="",
+            metadata={
+                "key1": "this is another string!",
+                "key2": "foo",
             },
         ),
     ]
@@ -82,4 +117,9 @@ def test_filter_list_metadata() -> None:
     assert filtered_metadata == [
         {"key1": "this is a string!"},
         {"key1": "this is another string!"},
+        {"key1": "this is another string!"},
+        {"key1": "this is another string!", "key2": True},
+        {"key1": "this is another string!", "key2": 1},
+        {"key1": "this is another string!", "key2": 1.0},
+        {"key1": "this is another string!", "key2": "foo"},
     ]
