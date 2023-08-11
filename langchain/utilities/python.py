@@ -1,8 +1,12 @@
+from __future__ import annotations
+
 from typing import Dict, Optional
 
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import Field
-from wasm_exec import WasmExecutor
+
+if TYPE_CHECKING:
+    from wasm_exec import WasmExecutor
 
 
 class BaseModel(PydanticBaseModel):
@@ -11,6 +15,8 @@ class BaseModel(PydanticBaseModel):
 
 
 def _get_wasm_executor() -> WasmExecutor:
+    from wasm_exec import WasmExecutor
+
     return WasmExecutor()
 
 
