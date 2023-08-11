@@ -12,19 +12,15 @@ class RuleSchema(BaseModel):
     type: OperationType = Field(...)
     path: str = Field(..., description="Blockchain reference path")
     address: Optional[str] = Field(
-        "*", description="eval string to determine permission"
+        "*", description="Address type; either 40-digit hex or '*'"
     )
-    write_owner: Optional[bool] = Field(
-        False, description="eval string to determine permission"
-    )
-    write_rule: Optional[bool] = Field(
-        False, description="eval string to determine permission"
-    )
+    write_owner: Optional[bool] = Field(False, description="Edit ownership permission")
+    write_rule: Optional[bool] = Field(False, description="Edit path rules permission")
     write_function: Optional[bool] = Field(
-        False, description="eval string to determine permission"
+        False, description="Set function permission for path"
     )
     branch_owner: Optional[bool] = Field(
-        False, description="eval string to determine permission"
+        False, description="Inherits ownership for sub-paths"
     )
 
 
@@ -37,7 +33,7 @@ Rules for ownership in AINetwork Blockchain database.
 - Valid characters: `[a-zA-Z_0-9]`
 
 ## Address Rules
-- 0x[0-9a-fA-F]{64}: 64-digit hexadecimal public address
+- 0x[0-9a-fA-F]{40}: 40-digit hexadecimal public address
 - *: Allows all address
 
 ## Permission Types
@@ -48,7 +44,7 @@ Rules for ownership in AINetwork Blockchain database.
 
 ## SET Example
 - type: SET
-- path: /apps/afan
+- path: /apps/langchain
 - address: *
 - write_owner: True
 - write_rule: True
@@ -57,7 +53,7 @@ Rules for ownership in AINetwork Blockchain database.
 
 ## GET Example
 - type: GET
-- path: /apps/afan
+- path: /apps/langchain
 """
     args_schema: Type[BaseModel] = RuleSchema
 
