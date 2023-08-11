@@ -61,11 +61,11 @@ Rules for ownership in AINetwork Blockchain database.
         self,
         type: OperationType,
         path: str,
-        address: Optional[str],
-        write_owner: Optional[bool],
-        write_rule: Optional[bool],
-        write_function: Optional[bool],
-        branch_owner: Optional[bool],
+        address: Optional[str] = None,
+        write_owner: Optional[bool] = None,
+        write_rule: Optional[bool] = None,
+        write_function: Optional[bool] = None,
+        branch_owner: Optional[bool] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         from ain.types import ValueOnlyTransactionInput
