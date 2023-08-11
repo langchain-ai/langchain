@@ -143,20 +143,17 @@ answered NO PASSWORD NEEDED - Please check Sentinel configuration"
     return sentinel_client.master_for(service_name)
 
 
-def _check_for_cluster(redis_client: RedisType):
+def _check_for_cluster(redis_client: RedisType) -> bool:
     import redis
 
     try:
         cluster_info = redis_client.info("cluster")
-        if cluster_info["cluster_enabled"] == 1:
-            return True
-        else:
-            return False
+        return cluster_info["cluster_enabled"] == 1
     except redis.exceptions.RedisError:
         return False
 
 
 def _redis_cluster_client(redis_url: str, **kwargs: Any) -> RedisType:
-    from redis.cluster import RedisCluster as Redis
+    from redis.cluster import RedisCluster
 
-    return Redis.from_url(redis_url, **kwargs)
+    return RedisCluster.from_url(redis_url, **kwargs)
