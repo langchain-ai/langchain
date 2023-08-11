@@ -29,6 +29,7 @@ from langchain.document_loaders.airbyte import (
 from langchain.document_loaders.airbyte_json import AirbyteJSONLoader
 from langchain.document_loaders.airtable import AirtableLoader
 from langchain.document_loaders.apify_dataset import ApifyDatasetLoader
+from langchain.document_loaders.arcgis_loader import ArcGISLoader
 from langchain.document_loaders.arxiv import ArxivLoader
 from langchain.document_loaders.async_html import AsyncHtmlLoader
 from langchain.document_loaders.azlyrics import AZLyricsLoader
@@ -214,6 +215,7 @@ __all__ = [
     "AirtableLoader",
     "AmazonTextractPDFLoader",
     "ApifyDatasetLoader",
+    "ArcGISLoader",
     "ArxivLoader",
     "AsyncHtmlLoader",
     "AzureBlobStorageContainerLoader",
