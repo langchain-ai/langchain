@@ -60,8 +60,14 @@ class GitHubAPIWrapper(BaseModel):
                 "Please install it with `pip install PyGithub`"
             )
 
-        with open(github_app_private_key, "r") as f:
-            private_key = f.read()
+        try:
+            with open(github_app_private_key, "r") as f:
+                private_key = f.read()
+        except FileNotFoundError as e:
+            if type(github_app_private_key) == str:
+                private_key == github_app_private_key
+            else:
+                raise FileNotFoundError(f"Github App private key cannot be found in filesystem, and is not a string. Found: {github_app_private_key}")
 
         auth = Auth.AppAuth(
             github_app_id,
