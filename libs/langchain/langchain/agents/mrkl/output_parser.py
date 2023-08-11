@@ -31,7 +31,7 @@ class MRKLOutputParser(AgentOutputParser):
         obs_match = re.search(r"\nObservation\s *\d *\s*:", text, re.DOTALL)
         if obs_match and action_match:
             # the agent has hallucinated an observation, truncate it
-            text = text[:obs_match.span()[0]]
+            text = text[: obs_match.span()[0]]
             # must restart action match for correct next parsing of Action Input
             action_match = re.search(regex, text, re.DOTALL)
 
@@ -42,10 +42,10 @@ class MRKLOutputParser(AgentOutputParser):
                 regex = r"\nQuestion\s *\d *\s*:"
                 question_match = re.search(regex, text, re.DOTALL)
                 if question_match:
-                    new_text = text[:question_match.span()[0]]
+                    new_text = text[: question_match.span()[0]]
                     return AgentFinish(
-                        {"output": new_text.split(
-                            FINAL_ANSWER_ACTION)[-1].strip()}, new_text
+                        {"output": new_text.split(FINAL_ANSWER_ACTION)[-1].strip()},
+                        new_text,
                     )
                 raise OutputParserException(
                     f"{FINAL_ANSWER_AND_PARSABLE_ACTION_ERROR_MESSAGE}: {text}"
