@@ -2,17 +2,6 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
-from langchain.schema.output import ChatGenerationChunk
-from langchain.llms.base import create_base_retry_decorator
-from pydantic import BaseModel, Field, root_validator
-from tenacity import (
-    before_sleep_log,
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_exponential,
-)
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -26,27 +15,39 @@ from typing import (
     Tuple,
     Union,
 )
+
+from pydantic import BaseModel, Field, root_validator
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models.base import BaseChatModel
+from langchain.llms.base import create_base_retry_decorator
 from langchain.schema import (
     ChatGeneration,
     ChatResult,
 )
 from langchain.schema.messages import (
     AIMessage,
-    BaseMessage,
-    ChatMessage,
-    HumanMessage,
-    SystemMessage,
     AIMessageChunk,
+    BaseMessage,
     BaseMessageChunk,
+    ChatMessage,
     ChatMessageChunk,
+    HumanMessage,
     HumanMessageChunk,
+    SystemMessage,
     SystemMessageChunk,
 )
+from langchain.schema.output import ChatGenerationChunk
 from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
@@ -58,8 +59,10 @@ logger = logging.getLogger(__name__)
 class ChatLiteLLMException(Exception):
     """Error raised when there is an issue with the LiteLLM I/O Library"""
 
+
 class AIMessageChunk(AIMessage, BaseMessageChunk):
     pass
+
 
 def _truncate_at_stop_tokens(
     text: str,
@@ -87,12 +90,17 @@ class FunctionMessage(BaseMessage):
         """Type of the message, used for serialization."""
         return "function"
 
+
 class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
     pass
 
-def _create_retry_decorator(llm: ChatLiteLLM, run_manager: Optional[
+
+def _create_retry_decorator(
+    llm: ChatLiteLLM,
+    run_manager: Optional[
         Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
-    ] = None,) -> Callable[[Any], Any]:
+    ] = None,
+) -> Callable[[Any], Any]:
     """Returns a tenacity retry decorator, preconfigured to handle PaLM exceptions"""
     import openai
 
@@ -106,6 +114,7 @@ def _create_retry_decorator(llm: ChatLiteLLM, run_manager: Optional[
     return create_base_retry_decorator(
         error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
     )
+
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     role = _dict["role"]
@@ -126,7 +135,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         return FunctionMessage(content=_dict["content"], name=_dict["name"])
     else:
         return ChatMessage(content=_dict["content"], role=role)
-    
+
+
 async def acompletion_with_retry(
     llm: ChatLiteLLM,
     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
@@ -141,6 +151,7 @@ async def acompletion_with_retry(
         return await llm.client.acreate(**kwargs)
 
     return await _completion_with_retry(**kwargs)
+
 
 def _convert_delta_to_message_chunk(
     _dict: Mapping[str, Any], default_class: type[BaseMessageChunk]
@@ -165,6 +176,7 @@ def _convert_delta_to_message_chunk(
     else:
         return default_class(content=content)
 
+
 def _convert_message_to_dict(message: BaseMessage) -> dict:
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
@@ -188,6 +200,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict["name"] = message.additional_kwargs["name"]
     return message_dict
 
+
 class ChatLiteLLM(BaseChatModel, BaseModel):
     """Wrapper around the LiteLLM Model I/O library.
 
@@ -209,11 +222,11 @@ class ChatLiteLLM(BaseChatModel, BaseModel):
     client: Any  #: :meta private:
     model_name: str = "gpt-3.5-turbo"
     """Model name to use."""
-    openai_api_key: str = None 
-    azure_api_key: str = None 
-    anthropic_api_key: str = None 
-    replicate_api_key: str = None 
-    cohere_api_key: str = None 
+    openai_api_key: str = None
+    azure_api_key: str = None
+    anthropic_api_key: str = None
+    replicate_api_key: str = None
+    cohere_api_key: str = None
     openrouter_api_key: str = None
     streaming: bool = False
     api_base: Optional[str] = None
@@ -248,7 +261,7 @@ class ChatLiteLLM(BaseChatModel, BaseModel):
             "temperature": self.temperature,
             **self.model_kwargs,
         }
-    
+
     @property
     def _client_params(self) -> Dict[str, Any]:
         """Get the parameters used for the openai client."""
@@ -256,10 +269,10 @@ class ChatLiteLLM(BaseChatModel, BaseModel):
         self.client.organization = self.organization
         creds: Dict[str, Any] = {
             "model": self.model_name,
-            "force_timeout": self.request_timeout
+            "force_timeout": self.request_timeout,
         }
         return {**self._default_params, **creds}
-    
+
     def completion_with_retry(
         self, run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any
     ) -> Any:
@@ -271,7 +284,7 @@ class ChatLiteLLM(BaseChatModel, BaseModel):
             return self.client.completion(**kwargs)
 
         return _completion_with_retry(**kwargs)
-    
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate api key, python package exists, temperature, top_p, and top_k."""
@@ -330,7 +343,7 @@ class ChatLiteLLM(BaseChatModel, BaseModel):
                     generation += chunk
             assert generation is not None
             return ChatResult(generations=[generation])
-        
+
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         response = self.completion_with_retry(
@@ -351,7 +364,6 @@ class ChatLiteLLM(BaseChatModel, BaseModel):
         llm_output = {"token_usage": token_usage, "model_name": self.model_name}
         return ChatResult(generations=generations, llm_output=llm_output)
 
-
     def _create_message_dicts(
         self, messages: List[BaseMessage], stop: Optional[List[str]]
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
@@ -362,7 +374,7 @@ class ChatLiteLLM(BaseChatModel, BaseModel):
             params["stop"] = stop
         message_dicts = [_convert_message_to_dict(m) for m in messages]
         return message_dicts, params
-        
+
     def _stream(
         self,
         messages: List[BaseMessage],
@@ -409,7 +421,6 @@ class ChatLiteLLM(BaseChatModel, BaseModel):
             if run_manager:
                 await run_manager.on_llm_new_token(chunk.content)
 
-
     async def _agenerate(
         self,
         messages: List[BaseMessage],
@@ -436,7 +447,7 @@ class ChatLiteLLM(BaseChatModel, BaseModel):
             self, messages=message_dicts, run_manager=run_manager, **params
         )
         return self._create_chat_result(response)
-    
+
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
@@ -452,10 +463,11 @@ class ChatLiteLLM(BaseChatModel, BaseModel):
     def _llm_type(self) -> str:
         return "litellm-chat"
 
+
 def main():
     # main code goes here.
-    print('Hello, from main function!')
+    print("Hello, from main function!")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

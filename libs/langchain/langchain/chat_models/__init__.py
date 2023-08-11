@@ -41,5 +41,5 @@ __all__ = [
     "JinaChat",
     "HumanInputChatModel",
     "ChatAnyscale",
-    "ChatLiteLLM"
+    "ChatLiteLLM",
 ]

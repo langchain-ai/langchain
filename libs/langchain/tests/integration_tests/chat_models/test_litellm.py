@@ -1,8 +1,8 @@
 """Test Anthropic API wrapper."""
+import asyncio
 from typing import List
 
 import pytest
-import asyncio
 
 from langchain.callbacks.manager import (
     AsyncCallbackManager,
@@ -11,7 +11,6 @@ from langchain.callbacks.manager import (
     CallbackManagerForChainRun,
     Callbacks,
 )
-
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.chat_models.litellm import ChatLiteLLM
 from langchain.schema import (
@@ -24,11 +23,14 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 def test_litellm_call() -> None:
     """Test valid call to litellm."""
-    chat = ChatLiteLLM(model="test", )
+    chat = ChatLiteLLM(
+        model="test",
+    )
     message = HumanMessage(content="Hello")
     response = chat([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
+
 
 def test_litellm_generate() -> None:
     """Test generate method of anthropic."""
