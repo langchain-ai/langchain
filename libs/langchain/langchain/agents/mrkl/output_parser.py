@@ -24,13 +24,29 @@ class MRKLOutputParser(AgentOutputParser):
         return FORMAT_INSTRUCTIONS
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
-        includes_answer = FINAL_ANSWER_ACTION in text
         regex = (
             r"Action\s*\d*\s*:[\s]*(.*?)[\s]*Action\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)"
         )
         action_match = re.search(regex, text, re.DOTALL)
+        obs_match = re.search(r"\nObservation\s *\d *\s*:", text, re.DOTALL)
+        if obs_match and action_match:
+            # the agent has hallucinated an observation, truncate it
+            text = text[:obs_match.span()[0]]
+            # must restart action match for correct next parsing of Action Input
+            action_match = re.search(regex, text, re.DOTALL)
+
+        includes_answer = FINAL_ANSWER_ACTION in text
         if action_match:
             if includes_answer:
+                # check if the agent has hallucinated a next question after the final answer
+                regex = r"\nQuestion\s *\d *\s*:"
+                question_match = re.search(regex, text, re.DOTALL)
+                if question_match:
+                    new_text = text[:question_match.span()[0]]
+                    return AgentFinish(
+                        {"output": new_text.split(
+                            FINAL_ANSWER_ACTION)[-1].strip()}, new_text
+                    )
                 raise OutputParserException(
                     f"{FINAL_ANSWER_AND_PARSABLE_ACTION_ERROR_MESSAGE}: {text}"
                 )
