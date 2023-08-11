@@ -103,12 +103,14 @@ def test_vectara_from_files() -> None:
     )
     print(output[0].page_content)
     assert output[0].page_content == (
-        "Note the use of “hybrid” in 3) above is different from that used sometimes in the literature, "
-        "which for example refers to the hybrid systems for speech recognition feeding the output probabilities of a neural network into an HMM "
-        "(Bengio et al., 1991; Bourlard and Morgan, 1993; Morgan, 2012). "
-        "By the commonly adopted machine learning tradition (e.g., Chapter 28 in Murphy, 2012; Deng and Li, 2013), "
-        "it may be natural to just classify deep learning techniques into deep discriminative models (e.g., DNNs) "
-        "and deep probabilistic generative models (e.g., DBN, Deep Boltzmann Machine (DBM)). "
-        "This classification scheme, however, misses a key insight gained in deep learning research about how generative "
-        "models can greatly improve the training of DNNs and other deep discriminative models via better regularization."
+        """\
+Note the use of “hybrid” in 3) above is different from that used sometimes in the literature, \
+which for example refers to the hybrid systems for speech recognition feeding the output probabilities of a neural network into an HMM \
+(Bengio et al., 1991; Bourlard and Morgan, 1993; Morgan, 2012). \
+By the commonly adopted machine learning tradition (e.g., Chapter 28 in Murphy, 2012; Deng and Li, 2013), \
+it may be natural to just classify deep learning techniques into deep discriminative models (e.g., DNNs) \
+and deep probabilistic generative models (e.g., DBN, Deep Boltzmann Machine (DBM)). \
+This classification scheme, however, misses a key insight gained in deep learning research about how generative \
+models can greatly improve the training of DNNs and other deep discriminative models via better regularization.\
+"""  # noqa: E501
     )
