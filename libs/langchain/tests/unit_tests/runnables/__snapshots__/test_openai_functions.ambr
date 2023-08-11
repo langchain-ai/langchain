@@ -1,0 +1,31 @@
+# serializer version: 1
+# name: test_openai_functions_router
+  list([
+    dict({
+      'description': 'Sends the draft for revision.',
+      'name': 'revise',
+      'parameters': dict({
+        'properties': dict({
+          'notes': dict({
+            'description': "The editor's notes to guide the revision.",
+            'type': 'string',
+          }),
+        }),
+        'type': 'object',
+      }),
+    }),
+    dict({
+      'description': 'Accepts the draft.',
+      'name': 'accept',
+      'parameters': dict({
+        'properties': dict({
+          'draft': dict({
+            'description': 'The draft to accept.',
+            'type': 'string',
+          }),
+        }),
+        'type': 'object',
+      }),
+    }),
+  ])
+# ---
