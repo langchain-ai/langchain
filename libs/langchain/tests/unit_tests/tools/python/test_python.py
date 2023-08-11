@@ -11,6 +11,7 @@ from langchain.tools.python.tool import (
 )
 
 
+@pytest.mark.requires("wasm_exec")
 def test_python_repl_tool_single_input() -> None:
     """Test that the python REPL tool works with a single input."""
     tool = PythonREPLTool()
@@ -18,6 +19,7 @@ def test_python_repl_tool_single_input() -> None:
     assert int(tool.run("print(1 + 1)").strip()) == 2
 
 
+@pytest.mark.requires("wasm_exec")
 def test_python_repl_print() -> None:
     program = """
     print("The dot product is {:d}.".format(32))
@@ -26,6 +28,7 @@ def test_python_repl_print() -> None:
     assert tool.run(program) == "The dot product is 32."
 
 
+@pytest.mark.requires("wasm_exec")
 @pytest.mark.skipif(
     sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
 )
@@ -36,6 +39,7 @@ def test_python_ast_repl_tool_single_input() -> None:
     assert tool.run("1 + 1") == 2
 
 
+@pytest.mark.requires("wasm_exec")
 @pytest.mark.skipif(
     sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
 )
@@ -64,6 +68,7 @@ int(dot_product)
     assert tool.run(program) == 32
 
 
+@pytest.mark.requires("wasm_exec")
 @pytest.mark.skipif(
     sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
 )
@@ -78,6 +83,7 @@ else:
     assert tool.run(program) == "racecar is a palindrome\n"
 
 
+@pytest.mark.requires("wasm_exec")
 @pytest.mark.skipif(
     sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
 )
@@ -87,6 +93,7 @@ def test_repl_print_python_backticks() -> None:
     assert tool.run(program) == "`python` is a great language.\n"
 
 
+@pytest.mark.requires("wasm_exec")
 @pytest.mark.skipif(
     sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
 )
@@ -105,6 +112,7 @@ df['Gender']
     assert tool.run(program) in expected_outputs
 
 
+@pytest.mark.requires("wasm_exec")
 @pytest.mark.skipif(
     sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
 )
@@ -114,6 +122,7 @@ def test_python_ast_repl_one_line_print() -> None:
     assert tool.run(program) == "The square of 3 is 9.00\n"
 
 
+@pytest.mark.requires("wasm_exec")
 @pytest.mark.skipif(
     sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
 )
@@ -124,6 +133,7 @@ def test_python_ast_repl_one_line_return() -> None:
     assert tool.run(program) == 55
 
 
+@pytest.mark.requires("wasm_exec")
 @pytest.mark.skipif(
     sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
 )
