@@ -1,0 +1,85 @@
+import builtins
+import json
+from enum import Enum
+from typing import Optional, Type, Union
+
+from pydantic import BaseModel, Field
+
+from langchain.callbacks.manager import CallbackManagerForToolRun
+from langchain.tools.ainetwork.base import AINBaseTool, OperationType
+
+
+class AppOperationType(str, Enum):
+    SET_ADMIN = "SET_ADMIN"
+
+
+class AppSchema(BaseModel):
+    type: AppOperationType = Field(...)
+    appName: str = Field(..., description="Blockchain reference path")
+    address: Optional[Union[str, list[str]]] = Field(
+        None, description="A single address or a list of addresses"
+    )
+
+
+class AINAppOps(AINBaseTool):
+    name: str = "AINappOps"
+    description: str = """
+Create an app in the AINetwork Blockchain database by creating the /apps/<appName> path
+
+## appName Specific Rules
+- Valid characters: `[a-zA-Z_0-9]`
+
+## address Specific Rules
+- 0x[0-9a-fA-F]{40}
+- Defaults to the current session's public address
+- Multiple addresses can be specified if needed
+
+## SET_ADMIN Example 1
+- type: SET_ADMIN
+- appName: ain_project
+
+### Result:
+1. Path /apps/ain_project created.
+2. Current session's public address registered as admin.
+
+## SET_ADMIN Example 2
+- type: SET_ADMIN
+- appName: test_project
+- address: [<address1>, <address2>]
+
+### Result:
+1. Path /apps/test_project created.
+2. <address1> and <address2> registered as admin.
+
+"""
+    args_schema: Type[BaseModel] = AppSchema
+
+    async def _arun(
+        self,
+        type: AppOperationType,
+        appName: str,
+        address: Optional[str] = None,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
+        from ain.types import ValueOnlyTransactionInput
+        from ain.utils import getTimestamp
+
+        try:
+            if type is AppOperationType.SET_ADMIN:
+                if address is None:
+                    address = self.interface.wallet.defaultAccount.address
+                if isinstance(address, str):
+                    address_list = [address]
+
+                res = await self.interface.db.ref(
+                    f"/manage_app/{appName}/create/{getTimestamp()}"
+                ).setValue(
+                    transactionInput=ValueOnlyTransactionInput(
+                        value={"admin": {address: True for address in address_list}}
+                    )
+                )
+            else:
+                raise ValueError(f"Unsupported 'type': {type}.")
+            return json.dumps(res, ensure_ascii=False)
+        except Exception as e:
+            return f"{builtins.type(e).__name__}: {str(e)}"

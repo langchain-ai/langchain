@@ -6,6 +6,7 @@ from pydantic import Field
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.tools import BaseTool
+from langchain.tools.ainetwork.app import AINAppOps
 from langchain.tools.ainetwork.owner import AINOwnerOps
 from langchain.tools.ainetwork.rule import AINRuleOps
 from langchain.tools.ainetwork.set_function import AINSetFunction
@@ -37,6 +38,7 @@ class AINetworkToolkit(BaseToolkit):
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
         return [
+            AINAppOps(interface=self.interface),
             AINOwnerOps(interface=self.interface),
             AINRuleOps(interface=self.interface),
             AINSetFunction(interface=self.interface),

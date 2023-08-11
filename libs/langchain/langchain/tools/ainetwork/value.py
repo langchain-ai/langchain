@@ -1,3 +1,4 @@
+import builtins
 import json
 from typing import Optional, Type, Union
 
@@ -16,7 +17,7 @@ class ValueSchema(BaseModel):
 
 
 class AINValueOps(AINBaseTool):
-    name: str = "AINvalueops"
+    name: str = "AINvalueOps"
     description: str = "On the AIN blockchain, use the SET operation to set a value at a given path. If you choose the GET operation, you can retrieve a value from that path. In this case, the value parameter is ignored."
     args_schema: Type[BaseModel] = ValueSchema
 
@@ -43,4 +44,4 @@ class AINValueOps(AINBaseTool):
                 raise ValueError(f"Unsupported 'type': {type}.")
             return json.dumps(res, ensure_ascii=False)
         except Exception as e:
-            return f"{type(e).__name__}: {str(e)}"
+            return f"{builtins.type(e).__name__}: {str(e)}"

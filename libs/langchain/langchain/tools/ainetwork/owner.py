@@ -12,7 +12,7 @@ class RuleSchema(BaseModel):
     type: OperationType = Field(...)
     path: str = Field(..., description="Blockchain reference path")
     address: Optional[str] = Field(
-        "*", description="Address type; either 40-digit hex or '*'"
+        "*", description="Address with 40-digit hexadecimal or '*'"
     )
     write_owner: Optional[bool] = Field(False, description="Edit ownership permission")
     write_rule: Optional[bool] = Field(False, description="Edit path rules permission")
