@@ -1,1 +1,0 @@
-"""OpenWeatherMap API toolkit."""
