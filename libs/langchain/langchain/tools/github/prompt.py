@@ -42,7 +42,7 @@ test contents
 """
 
 READ_FILE_PROMPT = """
-This tool is a wrapper for the GitHub API, useful when you need to read the contents of a regular file in the repo (unless it's in a pull request). DO NOT use this to read pull requests (PRs). To view files in pull requests, use the list_pull_request_files function. Simply pass in the full file path of the file you would like to read. **IMPORTANT**: the path must not start with a slash
+This tool is a wrapper for the GitHub API, useful when you need to read the contents of a file. Simply pass in the full file path of the file you would like to read. **IMPORTANT**: the path must not start with a slash
 """
 
 UPDATE_FILE_PROMPT = """
@@ -78,7 +78,7 @@ This tool will fetch a list of the repository's Pull Requests (PRs). It will ret
 """
 
 LIST_PULL_REQUEST_FILES="""
-This will fetch the full text of all files in a pull request (PR), useful for when you want to understand the code in a PR or contribute to it. This is only for reading files in a PR, not regular files. **VERY IMPORTANT**: You must specify the PR number as an integer.
+This will fetch the full text of all files in a pull request (PR), useful for when you want to understand the code in a PR or contribute to it. This is only for reading files in a PR, not regular files. **VERY IMPORTANT**: You must specify the PR number as an integer input parameter.
 """
 
 # TODOS

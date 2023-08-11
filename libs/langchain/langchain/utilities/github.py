@@ -209,23 +209,21 @@ class GitHubAPIWrapper(BaseModel):
                     file_metadata_response = requests.get(file.contents_url)
                     if file_metadata_response.status_code == 200:
                         download_url = json.loads(file_metadata_response.text)['download_url']
-                        # file_content = response.text
-                        # print(file_content)
                     else:
-                        print("Failed to download file, skipping")
+                        print(f"❌❌ Failed to download file: {file.contents_url}, skipping")
                         continue
                     
                     file_content_response = requests.get(download_url)
                     if file_content_response.status_code == 200:
                         # Save the content as a UTF-8 string
                         file_content = file_content_response.text
-                        print("File content", file_content)
+                        # print("File content", file_content)
                     else:
-                        print(f"failed downlading file content (Error {file_content_response.status_code}). Skipping")
+                        print(f"failed downloading file content (Error {file_content_response.status_code}). Skipping")
                         continue
                     
                     file_tokens = len(tiktoken.get_encoding("cl100k_base").encode(file_content + file.filename + "file_name file_contents"))
-                    print(f"Getting file contents from Github: {file_content}")
+                    # print(f"Getting file contents from Github: {file_content}")
                     if (total_tokens + file_tokens) < MAX_TOKENS_FOR_FILES:
                         pr_files.append({"filename": file.filename, "contents": file_content,"additions": file.additions,"deletions": file.deletions})
                         total_tokens += file_tokens
@@ -235,7 +233,7 @@ class GitHubAPIWrapper(BaseModel):
             page += 1
         return pr_files
     
-    def get_pull_request(self, pull_number: int) -> Dict[str, Any]:
+    def get_pull_request(self, pr_number: int) -> Dict[str, Any]:
         """
         Fetches a specific pull request and its first 10 comments
         Parameters:
@@ -244,7 +242,7 @@ class GitHubAPIWrapper(BaseModel):
             dict: A dictionary containing the pull's title,
             body, and comments as a string
         """
-        pull = self.github_repo_instance.get_pull(number=int(pull_number))
+        pull = self.github_repo_instance.get_pull(number=pr_number)
         page = 0
         comments: List[dict] = []
         while len(comments) <= 10:
@@ -268,6 +266,7 @@ class GitHubAPIWrapper(BaseModel):
 
         return {
             "title": pull.title,
+            "number": pr_number,
             "body": pull.body,
             "comments": str(comments),
             "commits": str(commits),
@@ -335,52 +334,35 @@ class GitHubAPIWrapper(BaseModel):
         file_path = file_query.split("\n")[0]
         file_contents = file_query[len(file_path) + 2 :]
 
-
-
-        self.list_pull_request_files()
-
         try:
             try: 
-                exists = self.github_repo_instance.get_contents(file_path)
+                self.github_repo_instance.get_contents(file_path)
             except Exception as e:
-                exists = None
-            if exists is None:
-                try: 
-                    self.github_repo_instance.create_file(
-                        path=file_path,
-                        message="Create " + file_path,
-                        content=file_contents,
-                        branch=self.github_branch,
-                    )
-                except Exception as e:
-                    if str(e).contains("sha") and str(e).contains("wasn't supplied"):
-                        # file already exists, it's trying to update it.
-                        # TODO: Find a way to get this file's Sha, hard to tell if it's part of a PR or not.
-                        # HACK HACK HACK
-                        self.github_repo_instance.create_file(
-                            path=file_path+"-"+random.randint(0, 10),
-                            message="Create " + file_path,
-                            content=file_contents,
-                            branch=self.github_branch,
-                        )
-                # if is_working_on_a_pr, add a sha. 
-                self.github_repo_instance.get_pr('')
-                return "Created file " + file_path
-            else:
-                return f"File already exists at {file_path}. Use update_file instead"
+                return f"File already exists at {file_path} (on branch {self.github_branch}). Use update_file instead."
+            self.github_repo_instance.create_file(
+                path=file_path,
+                message="Create " + file_path,
+                content=file_contents,
+                branch=self.github_branch,
+            )
+            return "Created file " + file_path
         except Exception as e:
             return "Unable to make file due to error:\n" + str(e)
 
     def read_file(self, file_path: str) -> str:
         """
-        Reads a file from the github repo
+        Read a file from this agent's branch, defined by self.github_branch, which supports PR branches.
         Parameters:
             file_path(str): the file path
         Returns:
-            str: The file decoded as a string
+            str: The file decoded as a string, or an error message if not found
         """
-        file = self.github_repo_instance.get_contents(file_path)
-        return file.decoded_content.decode("utf-8")
+        try:
+            file = self.github_repo_instance.get_contents(file_path, ref=self.github_branch)
+            return file.decoded_content.decode("utf-8")
+        except Exception as e:
+            return f"File not found at {file_path} in branch {self.github_branch}. Error: {str(e)}"
+
 
     def update_file(self, file_query: str) -> str:
         """
@@ -426,7 +408,7 @@ class GitHubAPIWrapper(BaseModel):
                 message="Update " + file_path,
                 content=updated_file_content,
                 branch=self.github_branch,
-                sha=self.github_repo_instance.get_contents(file_path).sha,
+                sha=self.github_repo_instance.get_contents(file_path, ref=self.github_branch).sha, 
             )
             return "Updated file " + file_path
         except Exception as e:
@@ -441,12 +423,11 @@ class GitHubAPIWrapper(BaseModel):
             str: Success or failure message
         """
         try:
-            file = self.github_repo_instance.get_contents(file_path)
             self.github_repo_instance.delete_file(
                 path=file_path,
                 message="Delete " + file_path,
                 branch=self.github_branch,
-                sha=file.sha,
+                sha=self.github_repo_instance.get_contents(file_path, ref=self.github_branch).sha,
             )
             return "Deleted file " + file_path
         except Exception as e:
@@ -472,8 +453,8 @@ class GitHubAPIWrapper(BaseModel):
         elif mode == "list_open_pull_requests":
             return self.list_open_pull_requests()
         elif mode == "get_pull_request":
-            return self.get_pull_request(query)
+            return self.get_pull_request(int(query))
         elif mode == "list_pull_request_files":
-            return self.list_pull_request_files(query)
+            return self.list_pull_request_files(int(query))
         else:
             raise ValueError("Invalid mode" + mode)
