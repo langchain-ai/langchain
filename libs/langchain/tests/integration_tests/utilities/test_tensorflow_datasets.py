@@ -1,16 +1,16 @@
 """Integration tests for the TensorFlow Dataset client."""
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import pytest
-import tensorflow as tf
 from pydantic.error_wrappers import ValidationError
 
 from langchain.schema.document import Document
 from langchain.utilities.tensorflow_datasets import TensorflowDatasets
 
-# adding tensorflow and tensorflow_datasets to pyproject.toml is not working
-# these tests can be tested in isolation only
-tensorflow = pytest.importorskip("tensorflow")
-tensorflow_datasets = pytest.importorskip("tensorflow_datasets")
+if TYPE_CHECKING:
+    import tensorflow as tf  # noqa: E402
 
 
 def decode_to_str(item: tf.Tensor) -> str:
