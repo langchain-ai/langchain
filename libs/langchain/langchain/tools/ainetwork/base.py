@@ -46,13 +46,18 @@ class AINBaseTool(BaseTool):
                     result_container.append(
                         new_loop.run_until_complete(self._arun(*args, **kwargs))
                     )
+                except Exception as e:
+                    result_container.append(e)
                 finally:
                     new_loop.close()
 
             thread = threading.Thread(target=thread_target)
             thread.start()
             thread.join()
-            return result_container[0]
+            result = result_container[0]
+            if isinstance(result, Exception):
+                raise result
+            return result
 
         else:
             result = loop.run_until_complete(self._arun(*args, **kwargs))
