@@ -84,7 +84,7 @@ class GoogleSearchAPIWrapper(BaseModel):
         values["google_cse_id"] = google_cse_id
 
         try:
-            import requests
+            import requests  # noqa: F401
 
         except ImportError:
             raise ImportError(
