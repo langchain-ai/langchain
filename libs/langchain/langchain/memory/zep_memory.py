@@ -70,6 +70,27 @@ class _ZepMemory(BaseChatMemory):
         """
         return [self.memory_key]
 
+    def save_context(
+        self,
+        inputs: Dict[str, Any],
+        outputs: Dict[str, str],
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Save context from this conversation to buffer.
+
+        Args:
+            inputs (Dict[str, Any]): The inputs to the chain.
+            outputs (Dict[str, str]): The outputs from the chain.
+            metadata (Optional[Dict[str, Any]], optional): Any metadata to save with
+                                                           the context. Defaults to None
+
+        Returns:
+            None
+        """
+        input_str, output_str = self._get_input_output(inputs, outputs)
+        self.chat_memory.add_user_message(input_str, metadata=metadata)
+        self.chat_memory.add_ai_message(output_str, metadata=metadata)
+
 
 class ZepSearchMemory(_ZepMemory):
     top_k: int = 4
@@ -132,24 +153,3 @@ class ZepBufferMemory(_ZepMemory, ConversationBufferMemory):
     https://github.com/getzep/zep-python
 
     """
-
-    def save_context(
-        self,
-        inputs: Dict[str, Any],
-        outputs: Dict[str, str],
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> None:
-        """Save context from this conversation to buffer.
-
-        Args:
-            inputs (Dict[str, Any]): The inputs to the chain.
-            outputs (Dict[str, str]): The outputs from the chain.
-            metadata (Optional[Dict[str, Any]], optional): Any metadata to save with
-                                                           the context. Defaults to None
-
-        Returns:
-            None
-        """
-        input_str, output_str = self._get_input_output(inputs, outputs)
-        self.chat_memory.add_user_message(input_str, metadata=metadata)
-        self.chat_memory.add_ai_message(output_str, metadata=metadata)
