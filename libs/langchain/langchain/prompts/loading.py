@@ -6,7 +6,6 @@ from typing import Union
 
 import yaml
 
-from langchain.output_parsers.regex import RegexParser
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseLLMOutputParser, BasePromptTemplate, StrOutputParser
@@ -77,6 +76,9 @@ def _load_output_parser(config: dict) -> dict:
         _config = config.pop("output_parser")
         output_parser_type = _config.pop("_type")
         if output_parser_type == "regex_parser":
+            # Import here to avoid circular dependencies
+            from langchain.output_parsers.regex import RegexParser
+
             output_parser: BaseLLMOutputParser = RegexParser(**_config)
         elif output_parser_type == "default":
             output_parser = StrOutputParser(**_config)
