@@ -11,6 +11,8 @@ PROJECT_ID - set to your Google Cloud project ID
 SEARCH_ENGINE_ID - the ID of the search engine to use for the test
 """
 
+import pytest
+
 from langchain.retrievers.google_cloud_enterprise_search import (
     GoogleCloudEnterpriseSearchRetriever,
 )

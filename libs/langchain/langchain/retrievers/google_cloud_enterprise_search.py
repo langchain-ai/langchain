@@ -100,7 +100,7 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
             ) from exc
 
         try:
-            from google.api_core.exceptions import InvalidArgument
+            from google.api_core.exceptions import InvalidArgument  # noqa: F401
         except ImportError as exc:
             raise ImportError(
                 "google.api_core.exceptions is not installed. "
@@ -221,7 +221,8 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
         else:
             # TODO: Add extra data type handling for type website
             raise NotImplementedError(
-                f"Only engine data type 0 or 1 are supported currently. Got {self.engine_data_type}"
+                "Only engine data type 0 or 1 are supported currently."
+                + f" Got {self.engine_data_type}"
             )
 
         return SearchRequest(
@@ -256,7 +257,8 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
         else:
             # TODO: Add extra data type handling for type website
             raise NotImplementedError(
-                f"Only engine data type 0 or 1 are supported currently. Got {self.engine_data_type}"
+                "Only engine data type 0 or 1 are supported currently."
+                + f" Got {self.engine_data_type}"
             )
 
         return documents
