@@ -11,7 +11,7 @@ class ValueSchema(BaseModel):
     type: OperationType = Field(...)
     path: str = Field(..., description="Blockchain reference path")
     value: Optional[Union[int, str, float, dict]] = Field(
-        ..., description="Value to be set at the path"
+        None, description="Value to be set at the path"
     )
 
 
@@ -22,8 +22,9 @@ class AINValueOps(AINBaseTool):
 
     async def _arun(
         self,
+        type: OperationType,
         path: str,
-        value: Optional[Union[int, str, float, dict]],
+        value: Optional[Union[int, str, float, dict]] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         from ain.types import ValueOnlyTransactionInput
