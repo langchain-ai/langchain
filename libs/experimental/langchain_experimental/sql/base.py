@@ -14,6 +14,7 @@ from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.sql_database.prompt import QUERY_CHECKER
 from langchain.utilities.sql_database import SQLDatabase
 from pydantic import Extra, Field, root_validator
+import re
 
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 
@@ -119,7 +120,6 @@ class SQLDatabaseChain(Chain):
                 callbacks=_run_manager.get_child(),
                 **llm_inputs,
             ).strip()
-            import re
             sql_cmd = re.sub(r';$', '', sql_cmd)
             if self.return_sql:
                 return {self.output_key: sql_cmd}
