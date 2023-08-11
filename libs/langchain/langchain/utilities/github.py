@@ -432,6 +432,57 @@ class GitHubAPIWrapper(BaseModel):
             return "Deleted file " + file_path
         except Exception as e:
             return "Unable to delete file due to error:\n" + str(e)
+    
+    def search_issues_and_prs(self, query: str) -> str:
+        """
+        Searches issues and pull requests in the repository.
+        
+        Parameters:
+            query(str): The search query
+        
+        Returns:
+            str: A string containing the first 5 issues and pull requests
+        """
+        search_result = self.github.search_issues(query, repo=self.github_repository)
+        results = []
+        for issue in search_result[:5]:
+            results.append(f"Title: {issue.title}, Number: {issue.number}, State: {issue.state}")
+        
+        return "\n".join(results)
+
+    def search_code(self, query: str) -> str:
+        """
+        Searches code in the repository.
+        
+        Parameters:
+            query(str): The search query
+        
+        Returns:
+            str: A string containing the first 5 code results
+        """
+        search_result = self.github.search_code(query, repo=self.github_repository)
+        results = []
+        for code in search_result[:5]:
+            # TODO: return the full code, not just the URL to it
+            results.append(f"Path: {code.path}, URL: {code.html_url}")
+        
+        return "\n".join(results)
+
+    def create_review_request(self, pull_request_number: int, reviewer_username: str) -> str:
+        """
+        Creates a review request on an open pull request.
+        
+        Parameters:
+            pull_request_number(int): The number of the pull request
+            reviewer_username(str): The username of the person who is being requested
+        
+        Returns:
+            str: A message confirming the creation of the review request
+        """
+        pull_request = self.github_repo_instance.get_pull(number=pull_request_number)
+        pull_request.create_review_request(reviewers=[reviewer_username])
+        
+        return f"Review request created for user {reviewer_username} on PR #{pull_request_number}"
 
     def run(self, mode: str, query: str) -> str:
         if mode == "get_issues":
