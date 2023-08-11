@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from pydantic import root_validator
 
@@ -8,13 +8,20 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import BaseRetriever, Document
+from langchain.schema import Document
+from langchain.vectorstores.base import VectorStoreRetriever, VectorStore
+
+NOT_IMPLEMENTED_ERROR_STR = (
+    "ZepRetriever does not support adding documents to the "
+    "Zep Memory Store. Please use the ZepMemory class for chat history storage. "
+    "Alternatively, use the ZepVectorStore for document and vector search."
+)
 
 if TYPE_CHECKING:
     from zep_python import MemorySearchResult
 
 
-class ZepRetriever(BaseRetriever):
+class ZepRetriever(VectorStoreRetriever):
     """Retriever for the Zep long-term memory store.
 
     Search your user's long-term chat history with Zep.
@@ -22,7 +29,7 @@ class ZepRetriever(BaseRetriever):
     Note: You will need to provide the user's `session_id` to use this retriever.
 
     More on Zep:
-    Zep provides long-term conversation storage for LLM apps. The server stores,
+    Zep provides long-term conversation storage for LLM apps. The service stores,
     summarizes, embeds, indexes, and enriches conversational AI chat
     histories, and exposes them via simple, low-latency APIs.
 
@@ -36,6 +43,8 @@ class ZepRetriever(BaseRetriever):
     """Zep session ID."""
     top_k: Optional[int]
     """Number of documents to return."""
+
+    vectorstore: Union[VectorStore | None] = None
 
     @root_validator(pre=True)
     def create_client(cls, values: dict) -> dict:
@@ -77,7 +86,7 @@ class ZepRetriever(BaseRetriever):
             text=query, metadata=metadata
         )
 
-        results: List[MemorySearchResult] = self.zep_client.search_memory(
+        results: List[MemorySearchResult] = self.zep_client.memory.search_memory(
             self.session_id, payload, limit=self.top_k
         )
 
@@ -96,8 +105,18 @@ class ZepRetriever(BaseRetriever):
             text=query, metadata=metadata
         )
 
-        results: List[MemorySearchResult] = await self.zep_client.asearch_memory(
+        results: List[MemorySearchResult] = await self.zep_client.memory.asearch_memory(
             self.session_id, payload, limit=self.top_k
         )
 
         return self._search_result_to_doc(results)
+
+    def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
+        """Add documents to vectorstore. Not implemented."""
+        raise NotImplementedError(NOT_IMPLEMENTED_ERROR_STR)
+
+    async def aadd_documents(
+        self, documents: List[Document], **kwargs: Any
+    ) -> List[str]:
+        """Add documents to vectorstore. Not implemented."""
+        raise NotImplementedError(NOT_IMPLEMENTED_ERROR_STR)
