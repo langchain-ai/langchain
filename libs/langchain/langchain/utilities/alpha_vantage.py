@@ -1,5 +1,5 @@
 """Util that calls AlphaVantage for Currency Exchange Rate."""
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
 from pydantic import Extra, root_validator
@@ -27,31 +27,24 @@ class AlphaVantageAPIWrapper(BaseModel):
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
-        alphavantage_api_key = get_from_dict_or_env(
+        values["alphavantage_api_key"] = get_from_dict_or_env(
             values, "alphavantage_api_key", "ALPHAVANTAGE_API_KEY"
         )
-        values["alphavantage_api_key"] = alphavantage_api_key
-
         return values
 
     def _get_exchange_rate(
         self, from_currency: str, to_currency: str
     ) -> Dict[str, Any]:
         """Make a request to the AlphaVantage API to get the exchange rate."""
-        base_url = "https://www.alphavantage.co/query/"
-        function = "CURRENCY_EXCHANGE_RATE"
-        apikey = self.alphavantage_api_key
-
         response = requests.get(
-            base_url,
+            "https://www.alphavantage.co/query/",
             params={
-                "function": function,
+                "function": "CURRENCY_EXCHANGE_RATE",
                 "from_currency": from_currency,
                 "to_currency": to_currency,
-                "apikey": apikey,
+                "apikey": self.alphavantage_api_key,
             },
         )
-
         response.raise_for_status()
         data = response.json()
 
@@ -60,11 +53,13 @@ class AlphaVantageAPIWrapper(BaseModel):
 
         return data
 
+    @property
+    def standard_currencies(self) -> List[str]:
+        return ["USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD"]
+
     def run(self, from_currency: str, to_currency: str) -> str:
         """Get the current exchange rate for a specified currency pair."""
-        standard_currencies = ["USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD"]
-
-        if to_currency not in standard_currencies:
+        if to_currency not in self.standard_currencies:
             from_currency, to_currency = to_currency, from_currency
 
         data = self._get_exchange_rate(from_currency, to_currency)
