@@ -143,12 +143,13 @@ class Pinecone(VectorStore):
             List of Documents most similar to the query and score for each
         """
         return self.similarity_search_by_vector_with_score(
-            self._embed_query(query), k, filter, namespace
+            self._embed_query(query), k=k, filter=filter, namespace=namespace
         )
 
     def similarity_search_by_vector_with_score(
         self,
         embedding: List[float],
+        *,
         k: int = 4,
         filter: Optional[dict] = None,
         namespace: Optional[str] = None,
