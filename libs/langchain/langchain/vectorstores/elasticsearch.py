@@ -14,6 +14,7 @@ from typing import (
     Optional,
     Tuple,
     Union,
+    Literal,
 )
 
 from langchain.docstore.document import Document
@@ -259,7 +260,7 @@ class ExactRetrievalStrategy(BaseRetrievalStrategy):
         return {
             "mappings": {
                 "properties": {
-                    vector_query_field: {"type": "dense_vector", "dims": dims_length},
+                    vector_query_field: {"type": "dense_vector", "dims": dims_length, "index": False},
                 }
             }
         }
@@ -376,6 +377,8 @@ class ElasticsearchStore(VectorStore):
                  ExactRetrievalStrategy, ApproxRetrievalStrategy,
                  or SparseRetrievalStrategy.
         distance_strategy: Optional. Distance strategy to use when searching the index.
+                            Defaults to COSINE. Can be one of COSINE, EUCLIDEAN_DISTANCE,
+                            or DOT_PRODUCT.
 
     If you want to use a cloud hosted Elasticsearch instance, you can pass in the
     cloud_id argument instead of the es_url argument.
@@ -448,7 +451,7 @@ class ElasticsearchStore(VectorStore):
                 embedding=OpenAIEmbeddings(),
                 index_name="langchain-demo",
                 es_url="http://localhost:9200",
-                distance_strategy=DistanceStrategy.DOT_PRODUCT
+                distance_strategy="DOT_PRODUCT"
             )
 
     """
@@ -456,6 +459,7 @@ class ElasticsearchStore(VectorStore):
     def __init__(
         self,
         index_name: str,
+        *,
         embedding: Optional[Embeddings] = None,
         es_connection: Optional["Elasticsearch"] = None,
         es_url: Optional[str] = None,
@@ -465,14 +469,14 @@ class ElasticsearchStore(VectorStore):
         es_password: Optional[str] = None,
         vector_query_field: str = "vector",
         query_field: str = "text",
-        distance_strategy: Optional[DistanceStrategy] = DistanceStrategy.COSINE,
+        distance_strategy: Optional[Literal[DistanceStrategy.COSINE, DistanceStrategy.DOT_PRODUCT, DistanceStrategy.EUCLIDEAN_DISTANCE]] = None,
         strategy: BaseRetrievalStrategy = ApproxRetrievalStrategy(),
     ):
         self.embedding = embedding
         self.index_name = index_name
         self.query_field = query_field
         self.vector_query_field = vector_query_field
-        self.distance_strategy = distance_strategy
+        self.distance_strategy = DistanceStrategy.COSINE if distance_strategy is None else DistanceStrategy[distance_strategy]
         self.strategy = strategy
 
         if es_connection is not None:
@@ -493,6 +497,7 @@ class ElasticsearchStore(VectorStore):
 
     @staticmethod
     def connect_to_elasticsearch(
+        *,
         es_url: Optional[str] = None,
         cloud_id: Optional[str] = None,
         api_key: Optional[str] = None,
@@ -600,7 +605,7 @@ class ElasticsearchStore(VectorStore):
         k: int = 4,
         query_vector: Union[List[float], None] = None,
         fetch_k: int = 50,
-        fields: Optional[List[str]] = [],
+        fields: Optional[List[str]] = None,
         filter: Optional[List[dict]] = None,
         custom_query: Optional[Callable[[Dict, Union[str, None]], Dict]] = None,
     ) -> List[Tuple[Document, float]]:
@@ -622,12 +627,10 @@ class ElasticsearchStore(VectorStore):
             List of Documents most similar to the query and score for each
         """
         if fields is None:
-            fields = []
+            fields = ["metadata"]
 
         if self.query_field not in fields:
             fields.append(self.query_field)
-
-        fields.append("metadata")
 
         if self.embedding and query is not None:
             query_vector = self.embedding.embed_query(query)
@@ -750,6 +753,7 @@ class ElasticsearchStore(VectorStore):
         metadatas: Optional[List[Dict[Any, Any]]] = None,
         ids: Optional[List[str]] = None,
         refresh_indices: bool = True,
+        create_index_if_not_exists: bool = True,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -760,6 +764,8 @@ class ElasticsearchStore(VectorStore):
             ids: Optional list of ids to associate with the texts.
             refresh_indices: Whether to refresh the Elasticsearch indices
                             after adding the texts.
+            create_index_if_not_exists: Whether to create the Elasticsearch
+                                        index if it doesn't already exist.
 
         Returns:
             List of ids from adding the texts into the vectorstore.
@@ -782,9 +788,10 @@ class ElasticsearchStore(VectorStore):
             embeddings = self.embedding.embed_documents(list(texts))
             dims_length = len(embeddings[0])
 
-            self._create_index_if_not_exists(
-                index_name=self.index_name, dims_length=dims_length
-            )
+            if create_index_if_not_exists:
+                self._create_index_if_not_exists(
+                    index_name=self.index_name, dims_length=dims_length
+                )
 
             for i, (text, vector) in enumerate(zip(texts, embeddings)):
                 metadata = metadatas[i] if metadatas else {}
@@ -803,7 +810,8 @@ class ElasticsearchStore(VectorStore):
         else:
             # the search_type doesn't require inference, so we don't need to
             # embed the texts.
-            self._create_index_if_not_exists(index_name=self.index_name)
+            if create_index_if_not_exists:
+                self._create_index_if_not_exists(index_name=self.index_name)
 
             for i, text in enumerate(texts):
                 metadata = metadatas[i] if metadatas else {}
@@ -820,7 +828,8 @@ class ElasticsearchStore(VectorStore):
 
         if len(requests) > 0:
             try:
-                bulk(self.client, requests)
+                success, failed = bulk(self.client, requests, stats_only=True)
+                logger.debug(f"Added {success} and failed to add {failed} texts to index")
 
                 if refresh_indices:
                     self.client.indices.refresh(index=self.index_name)
@@ -871,6 +880,8 @@ class ElasticsearchStore(VectorStore):
             es_connection: Optional pre-existing Elasticsearch connection.
             vector_query_field: Optional. Name of the field to store the embedding vectors in.
             query_field: Optional. Name of the field to store the texts in.
+            distance_strategy: Optional. Name of the distance strategy to use. Defaults to "COSINE". 
+                                can be one of "COSINE", "EUCLIDEAN_DISTANCE", "DOT_PRODUCT".
         """
 
         elasticsearchStore = ElasticsearchStore._create_cls_from_kwargs(
@@ -899,7 +910,7 @@ class ElasticsearchStore(VectorStore):
         es_api_key = kwargs.get("es_api_key")
         vector_query_field = kwargs.get("vector_query_field")
         query_field = kwargs.get("query_field")
-        distance_strategy = kwargs.get("distance_strategy", DistanceStrategy.COSINE)
+        distance_strategy = kwargs.get("distance_strategy")
         strategy = kwargs.get("strategy", ElasticsearchStore.ApproxRetrievalStrategy())
 
         optional_args = {}

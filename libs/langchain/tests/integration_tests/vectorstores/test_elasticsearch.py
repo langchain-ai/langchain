@@ -8,7 +8,6 @@ import pytest
 
 from langchain.docstore.document import Document
 from langchain.vectorstores.elasticsearch import ElasticsearchStore
-from langchain.vectorstores.utils import DistanceStrategy
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
     FakeEmbeddings,
@@ -299,7 +298,7 @@ class TestElasticsearch:
             **elasticsearch_connection,
             index_name=index_name,
             strategy=ElasticsearchStore.ExactRetrievalStrategy(),
-            distance_strategy=DistanceStrategy.DOT_PRODUCT,
+            distance_strategy="DOT_PRODUCT"
         )
 
         def assert_query(query_body: dict, query: str) -> dict:
@@ -334,6 +333,22 @@ class TestElasticsearch:
 
         output = docsearch.similarity_search("foo", k=1, custom_query=assert_query)
         assert output == [Document(page_content="foo")]
+
+    def test_similarity_search_exact_search_unknown_distance_strategy(
+        self, elasticsearch_connection: dict, index_name: str
+    ) -> None:
+        """Test end to end construction and search with unknown distance strategy."""
+
+        with pytest.raises(KeyError):
+            texts = ["foo", "bar", "baz"]
+            docsearch = ElasticsearchStore.from_texts(
+                texts,
+                FakeEmbeddings(),
+                **elasticsearch_connection,
+                index_name=index_name,
+                strategy=ElasticsearchStore.ExactRetrievalStrategy(),
+                distance_strategy="NOT_A_STRATEGY"
+            )
 
     def test_similarity_search_approx_with_hybrid_search(
         self, elasticsearch_connection: dict, index_name: str
