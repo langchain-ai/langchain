@@ -12,7 +12,7 @@ from typing import (
     Union,
 )
 
-from pydantic import BaseModel
+from pydantic_v1 import BaseModel
 
 from langchain.base_language import BaseLanguageModel
 from langchain.chains import LLMChain
@@ -87,7 +87,9 @@ def _get_python_function_arguments(function: Callable, arg_descriptions: dict) -
         if arg == "return":
             continue
         if isinstance(arg_type, type) and issubclass(arg_type, BaseModel):
-            properties[arg] = arg_type.schema()
+            # Mypy error:
+            # "type" has no attribute "schema"
+            properties[arg] = arg_type.schema()  # type: ignore[attr-defined]
         elif arg_type.__name__ in PYTHON_TO_JSON_TYPES:
             properties[arg] = {"type": PYTHON_TO_JSON_TYPES[arg_type.__name__]}
         if arg in arg_descriptions:
@@ -147,7 +149,9 @@ def convert_to_openai_function(
     if isinstance(function, dict):
         return function
     elif isinstance(function, type) and issubclass(function, BaseModel):
-        schema = function.schema()
+        # Mypy error:
+        # "type" has no attribute "schema"
+        schema = function.schema()  # type: ignore[attr-defined]
         return {
             "name": schema["title"],
             "description": schema["description"],
@@ -224,7 +228,7 @@ def create_openai_fn_chain(
                 from langchain.chat_models import ChatOpenAI
                 from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 
-                from pydantic import BaseModel, Field
+                from pydantic_v1 import BaseModel, Field
 
 
                 class RecordPerson(BaseModel):
@@ -310,7 +314,7 @@ def create_structured_output_chain(
                 from langchain.chat_models import ChatOpenAI
                 from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 
-                from pydantic import BaseModel, Field
+                from pydantic_v1 import BaseModel, Field
 
                 class Dog(BaseModel):
                     \"\"\"Identifying information about a dog.\"\"\"

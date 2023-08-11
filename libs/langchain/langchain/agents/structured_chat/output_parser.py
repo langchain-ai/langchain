@@ -5,7 +5,7 @@ import logging
 import re
 from typing import Optional, Union
 
-from pydantic import Field
+from pydantic_v1 import Field
 
 from langchain.agents.agent import AgentOutputParser
 from langchain.agents.structured_chat.prompt import FORMAT_INSTRUCTIONS

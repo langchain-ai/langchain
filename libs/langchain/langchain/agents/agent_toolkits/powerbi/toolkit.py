@@ -1,7 +1,7 @@
 """Toolkit for interacting with a Power BI dataset."""
 from typing import List, Optional, Union
 
-from pydantic import Field
+from pydantic_v1 import Field
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.callbacks.base import BaseCallbackManager

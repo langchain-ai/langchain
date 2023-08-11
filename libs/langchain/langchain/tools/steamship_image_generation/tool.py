@@ -16,7 +16,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import TYPE_CHECKING, Dict, Optional
 
-from pydantic import root_validator
+from pydantic_v1 import root_validator
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools import BaseTool

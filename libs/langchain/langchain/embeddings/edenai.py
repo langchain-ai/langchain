@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic_v1 import BaseModel, Extra, Field, root_validator
 
 from langchain.embeddings.base import Embeddings
 from langchain.requests import Requests

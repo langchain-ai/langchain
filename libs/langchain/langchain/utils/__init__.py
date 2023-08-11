@@ -3,6 +3,7 @@
 
 These functions do not depend on any other LangChain module.
 """
+import importlib
 
 from langchain.utils.env import get_from_dict_or_env, get_from_env
 from langchain.utils.formatting import StrictFormatter, formatter

@@ -5,7 +5,7 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
-from pydantic import Field
+from pydantic_v1 import Field
 
 from langchain.callbacks.manager import (
     CallbackManagerForChainRun,

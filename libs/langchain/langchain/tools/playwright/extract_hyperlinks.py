@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any, Optional, Type
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic_v1 import BaseModel, Field, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
