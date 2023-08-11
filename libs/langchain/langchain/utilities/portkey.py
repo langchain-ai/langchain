@@ -4,6 +4,13 @@ from typing import Dict, Optional
 
 
 class Portkey:
+    """Portkey configuration.
+
+    Attributes:
+        base: The base URL for the Portkey API.
+          Default: "https://api.portkey.ai/v1/proxy"
+    """
+
     base = "https://api.portkey.ai/v1/proxy"
 
     @staticmethod
