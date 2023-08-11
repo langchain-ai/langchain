@@ -6,7 +6,8 @@ from typing import Any, Dict, Optional
 from pydantic import BaseModel, Field
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.chains import RetrievalQA, RetrievalQAWithSourcesChain
+from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
+from langchain.chains.retrieval_qa.base import RetrievalQA
 from langchain.llms.openai import OpenAI
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
