@@ -216,7 +216,7 @@ class SQLiteCache(SQLAlchemyCache):
 class RedisCache(BaseCache):
     """Cache that uses Redis as a backend."""
 
-    def __init__(self, redis_: Any, ttl: int = 0):
+    def __init__(self, redis_: Any, *, ttl: Optional[int] = None):
         """
         Initialize an instance of RedisCache.
 
@@ -231,9 +231,9 @@ class RedisCache(BaseCache):
                 This allows the object to communicate with a
                 Redis server for caching operations.
             ttl (int, optional): Time-to-live (TTL) for cached items in seconds.
-                If provided, it sets
-                the default time duration for how long cached items will remain valid.
-                Defaults to 0, indicating no automatic expiration.
+                If provided, it sets the time duration for how long cached
+                items will remain valid. If not provided, cached items will not
+                have an automatic expiration.
         """
         try:
             from redis import Redis
@@ -277,14 +277,19 @@ class RedisCache(BaseCache):
                 return
         # Write to a Redis HASH
         key = self._key(prompt, llm_string)
-        self.redis.hset(
-            key,
-            mapping={
-                str(idx): generation.text for idx, generation in enumerate(return_val)
-            },
-        )
-        if self.ttl > 0:
-            self.redis.expire(key, self.ttl)
+
+        with self.redis.pipeline() as pipe:
+            pipe.hset(
+                key,
+                mapping={
+                    str(idx): generation.text
+                    for idx, generation in enumerate(return_val)
+                },
+            )
+            if self.ttl is not None:
+                pipe.expire(key, self.ttl)
+
+            pipe.execute()
 
     def clear(self, **kwargs: Any) -> None:
         """Clear cache. If `asynchronous` is True, flush asynchronously."""
