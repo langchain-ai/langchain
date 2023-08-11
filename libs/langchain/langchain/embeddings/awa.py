@@ -6,6 +6,14 @@ from langchain.embeddings.base import Embeddings
 
 
 class AwaEmbeddings(BaseModel, Embeddings):
+    """Embedding documents and queries with Awa DB.
+
+    Attributes:
+        client: The AwaEmbedding client.
+        model: The name of the model used for embedding.
+         Default is "all-mpnet-base-v2".
+    """
+
     client: Any  #: :meta private:
     model: str = "all-mpnet-base-v2"
 

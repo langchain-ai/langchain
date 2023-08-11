@@ -1,4 +1,3 @@
-"""Loads email files."""
 import os
 from typing import Any, List
 
@@ -11,7 +10,9 @@ from langchain.document_loaders.unstructured import (
 
 
 class UnstructuredEmailLoader(UnstructuredFileLoader):
-    """Loader that uses unstructured to load email files. Works with both
+    """Load email files with `unstructured`.
+
+    Works with both
     .eml and .msg files. You can process attachments in addition to the
     e-mail message itself by passing process_attachments=True into the
     constructor for the loader. By default, attachments will be processed

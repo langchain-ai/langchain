@@ -1,7 +1,7 @@
 """Loader that uses unstructured to load files."""
 import collections
 from abc import ABC, abstractmethod
-from typing import IO, Any, Callable, Dict, List, Sequence, Union
+from typing import IO, Any, Callable, Dict, List, Optional, Sequence, Union
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -39,7 +39,7 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
     def __init__(
         self,
         mode: str = "single",
-        post_processors: List[Callable] = [],
+        post_processors: Optional[List[Callable]] = None,
         **unstructured_kwargs: Any,
     ):
         """Initialize with file path."""
@@ -62,7 +62,7 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
                 unstructured_kwargs.pop("strategy")
 
         self.unstructured_kwargs = unstructured_kwargs
-        self.post_processors = post_processors
+        self.post_processors = post_processors or []
 
     @abstractmethod
     def _get_elements(self) -> List:

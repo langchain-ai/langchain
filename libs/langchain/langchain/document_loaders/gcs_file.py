@@ -1,4 +1,3 @@
-"""Load documents from a GCS file."""
 import os
 import tempfile
 from typing import Callable, List, Optional
@@ -9,7 +8,7 @@ from langchain.document_loaders.unstructured import UnstructuredFileLoader
 
 
 class GCSFileLoader(BaseLoader):
-    """Load Documents from a GCS file."""
+    """Load from GCS file."""
 
     def __init__(
         self,

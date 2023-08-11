@@ -16,7 +16,17 @@ _LANGCHAIN_DEFAULT_TABLE_NAME = "langchain_pg_embedding"
 
 
 class HologresWrapper:
+    """Wrapper around Hologres service."""
+
     def __init__(self, connection_string: str, ndims: int, table_name: str) -> None:
+        """Initialize the wrapper.
+
+        Args:
+            connection_string: Hologres connection string.
+            ndims: Number of dimensions of the embedding output.
+            table_name: Name of the table to store embeddings and data.
+        """
+
         import psycopg2
 
         self.table_name = table_name
