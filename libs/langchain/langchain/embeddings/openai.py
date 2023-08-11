@@ -231,9 +231,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["openai_api_key"] = get_from_dict_or_env(
-            values, "openai_api_key", "OPENAI_API_KEY"
-        )
+        values["openai_api_key"] = get_from_dict_or_env(values, "openai_api_key", "OPENAI_API_KEY")
         values["openai_api_base"] = get_from_dict_or_env(
             values,
             "openai_api_base",
@@ -273,10 +271,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
             values["client"] = openai.Embedding
         except ImportError:
-            raise ImportError(
-                "Could not import openai python package. "
-                "Please install it with `pip install openai`."
-            )
+            raise ImportError("Could not import openai python package. " "Please install it with `pip install openai`.")
         return values
 
     @property
@@ -299,8 +294,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 import openai
             except ImportError:
                 raise ImportError(
-                    "Could not import openai python package. "
-                    "Please install it with `pip install openai`."
+                    "Could not import openai python package. " "Please install it with `pip install openai`."
                 )
 
             openai.proxy = {
@@ -381,9 +375,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     self,
                     input="",
                     **self._invocation_params,
-                )[
-                    "data"
-                ][0]["embedding"]
+                )["data"][
+                    0
+                ]["embedding"]
             else:
                 average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
             embeddings[i] = (average / np.linalg.norm(average)).tolist()
@@ -453,16 +447,16 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                         input="",
                         **self._invocation_params,
                     )
-                )["data"][0]["embedding"]
+                )["data"][
+                    0
+                ]["embedding"]
             else:
                 average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
             embeddings[i] = (average / np.linalg.norm(average)).tolist()
 
         return embeddings
 
-    def embed_documents(
-        self, texts: List[str], chunk_size: Optional[int] = 0
-    ) -> List[List[float]]:
+    def embed_documents(self, texts: List[str], **kwargs) -> List[List[float]]:
         """Call out to OpenAI's embedding endpoint for embedding search docs.
 
         Args:
@@ -475,11 +469,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         """
         # NOTE: to keep things simple, we assume the list may contain texts longer
         #       than the maximum context and use length-safe embedding function.
-        return self._get_len_safe_embeddings(texts, engine=self.deployment)
+        return self._get_len_safe_embeddings(texts, engine=self.deployment, **kwargs)
 
-    async def aembed_documents(
-        self, texts: List[str], chunk_size: Optional[int] = 0
-    ) -> List[List[float]]:
+    async def aembed_documents(self, texts: List[str], **kwargs) -> List[List[float]]:
         """Call out to OpenAI's embedding endpoint async for embedding search docs.
 
         Args:
@@ -492,7 +484,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         """
         # NOTE: to keep things simple, we assume the list may contain texts longer
         #       than the maximum context and use length-safe embedding function.
-        return await self._aget_len_safe_embeddings(texts, engine=self.deployment)
+        return await self._aget_len_safe_embeddings(texts, engine=self.deployment, **kwargs)
 
     def embed_query(self, text: str) -> List[float]:
         """Call out to OpenAI's embedding endpoint for embedding query text.
