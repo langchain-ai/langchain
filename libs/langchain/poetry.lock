@@ -12368,6 +12368,40 @@ files = [
 colorama = {version = ">=0.4.6", markers = "sys_platform == \"win32\" and python_version >= \"3.7\""}
 
 [[package]]
+name = "wasm-exec"
+version = "0.1.7"
+description = "WASM-powered, sandboxed version of `exec()` for running dynamic code."
+category = "main"
+optional = true
+python-versions = ">=3.8,<4.0"
+files = [
+    {file = "wasm_exec-0.1.7-py3-none-any.whl", hash = "sha256:64fba9f54b09e01f2947f190b661d0a97211d8df99f6115da05c023776b8475d"},
+    {file = "wasm_exec-0.1.7.tar.gz", hash = "sha256:7ef1b1aa7f6c30667e7c6174f18c700d26f4e72c2b54c51c9dfc4ea843bbae82"},
+]
+
+[package.dependencies]
+wasmtime = ">=9.0.0,<10.0.0"
+
+[[package]]
+name = "wasmtime"
+version = "9.0.0"
+description = "A WebAssembly runtime powered by Wasmtime"
+category = "main"
+optional = true
+python-versions = ">=3.6"
+files = [
+    {file = "wasmtime-9.0.0-py3-none-any.whl", hash = "sha256:08f74faa950b6180ec149164b84f463854d6423260cb5b4725b05746aaa92f6e"},
+    {file = "wasmtime-9.0.0-py3-none-macosx_10_13_x86_64.whl", hash = "sha256:6dad1b1ccfb93b8f3f75679104941dfa9cba17214068964d638b66eee8f93a73"},
+    {file = "wasmtime-9.0.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:51c3ce94d46febcae8797ac1bc90be3d5c2dce48186284ea2735ad431bea2587"},
+    {file = "wasmtime-9.0.0-py3-none-manylinux1_x86_64.whl", hash = "sha256:5e0a64b2ef708c107e418c7741c8be0de0cc152efc1d51264e77fcf4f977cef0"},
+    {file = "wasmtime-9.0.0-py3-none-manylinux2014_aarch64.whl", hash = "sha256:e798ff868ea21a250d5382e54c15866720e8d9ff0b0d2b8728fe1f2f5b9469b6"},
+    {file = "wasmtime-9.0.0-py3-none-win_amd64.whl", hash = "sha256:2f81805c9bda88792363eaf7104270989c5b1e17ccec398b56dfb5f91d2e84f2"},
+]
+
+[package.extras]
+testing = ["coverage", "flake8 (==4.0.1)", "pycparser", "pytest", "pytest-flake8", "pytest-mypy"]
+
+[[package]]
 name = "watchdog"
 version = "3.0.0"
 description = "Filesystem events monitoring"
@@ -13422,7 +13456,7 @@ clarifai = ["clarifai"]
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["amazon-textract-caller", "anthropic", "atlassian-python-api", "beautifulsoup4", "betabageldb", "bibtexparser", "cassio", "chardet", "esprima", "feedparser", "geopandas", "gitpython", "gql", "html2text", "jinja2", "jq", "lxml", "mwparserfromhell", "mwxml", "newspaper3k", "openai", "openai", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "requests-toolbelt", "scikit-learn", "streamlit", "sympy", "telethon", "tqdm", "xata", "xinference", "xmltodict", "zep-python"]
+extended-testing = ["amazon-textract-caller", "anthropic", "atlassian-python-api", "beautifulsoup4", "betabageldb", "bibtexparser", "cassio", "chardet", "esprima", "feedparser", "geopandas", "gitpython", "gql", "html2text", "jinja2", "jq", "lxml", "mwparserfromhell", "mwxml", "newspaper3k", "openai", "openai", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "requests-toolbelt", "scikit-learn", "streamlit", "sympy", "telethon", "tqdm", "wasm-exec", "xata", "xinference", "xmltodict", "zep-python"]
 javascript = ["esprima"]
 llms = ["anthropic", "clarifai", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "openllm", "openlm", "torch", "transformers", "xinference"]
 openai = ["openai", "tiktoken"]
@@ -13432,4 +13466,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "b519c9ac1e3bfe6ff4d10bab2005d3571e9303561863a313a218e8534af56033"
+content-hash = "1931c554963b988feb4afa106599888f57492808acfcb3c0cdcd45e982d84118"

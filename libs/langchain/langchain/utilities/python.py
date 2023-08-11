@@ -20,7 +20,12 @@ def warn_once() -> None:
 
 
 def _get_wasm_executor() -> WasmExecutor:
-    from wasm_exec import WasmExecutor
+    try:
+        from wasm_exec import WasmExecutor
+    except ImportError as e:
+        raise ImportError(
+            "Unable to import wasm_exec, please install with `pip install wasm_exec`."
+        ) from e
 
     return WasmExecutor()
 

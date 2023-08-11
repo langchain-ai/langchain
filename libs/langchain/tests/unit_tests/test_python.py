@@ -34,6 +34,7 @@ multiply(a, b)
 """
 
 
+@pytest.mark.requires("wasm_exec")
 def test_python_repl() -> None:
     """Test functionality when globals/locals are not provided."""
     repl = PythonREPL()
@@ -43,6 +44,7 @@ def test_python_repl() -> None:
     assert repl.locals is not None
 
 
+@pytest.mark.requires("wasm_exec")
 def test_python_repl_no_previous_variables() -> None:
     """Test that it does not have access to variables created outside the scope."""
     foo = 3  # noqa: F841
@@ -52,6 +54,7 @@ def test_python_repl_no_previous_variables() -> None:
     assert output == expected
 
 
+@pytest.mark.requires("wasm_exec")
 def test_python_repl_pass_in_locals() -> None:
     """Test functionality when passing in locals."""
     _locals = {"foo": 4}
@@ -61,6 +64,7 @@ def test_python_repl_pass_in_locals() -> None:
     assert output == str(8)
 
 
+@pytest.mark.requires("wasm_exec")
 def test_functionality() -> None:
     """Test correct functionality."""
     chain = PythonREPL()
@@ -69,6 +73,7 @@ def test_functionality() -> None:
     assert output == "2"
 
 
+@pytest.mark.requires("wasm_exec")
 def test_functionality_multiline() -> None:
     """Test correct functionality for ChatGPT multiline commands."""
     chain = PythonREPL()
@@ -77,6 +82,7 @@ def test_functionality_multiline() -> None:
     assert output == "30"
 
 
+@pytest.mark.requires("wasm_exec")
 def test_python_ast_repl_multiline() -> None:
     """Test correct functionality for ChatGPT multiline commands."""
     if sys.version_info < (3, 9):
@@ -86,6 +92,7 @@ def test_python_ast_repl_multiline() -> None:
     assert output == 30
 
 
+@pytest.mark.requires("wasm_exec")
 def test_python_ast_repl_multi_statement() -> None:
     """Test correct functionality for ChatGPT multi statement commands."""
     if sys.version_info < (3, 9):
@@ -95,6 +102,7 @@ def test_python_ast_repl_multi_statement() -> None:
     assert output == 30
 
 
+@pytest.mark.requires("wasm_exec")
 def test_function() -> None:
     """Test correct functionality."""
     chain = PythonREPL()
