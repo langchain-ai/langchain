@@ -17,14 +17,21 @@ class ConversationTokenBufferMemory(BaseChatMemory):
     @property
     def buffer(self) -> Any:
         """String buffer of memory."""
-        if self.return_messages:
-            return self.chat_memory.messages
-        else:
-            return get_buffer_string(
-                self.chat_memory.messages,
-                human_prefix=self.human_prefix,
-                ai_prefix=self.ai_prefix,
-            )
+        return self.buffer_as_messages if self.return_messages else self.buffer_as_str
+
+    @property
+    def buffer_as_str(self) -> str:
+        """Exposes the buffer as a string in case return_messages is True."""
+        return get_buffer_string(
+            self.chat_memory.messages,
+            human_prefix=self.human_prefix,
+            ai_prefix=self.ai_prefix,
+        )
+
+    @property
+    def buffer_as_messages(self) -> List[BaseMessage]:
+        """Exposes the buffer as a list of messages in case return_messages is False."""
+        return self.chat_memory.messages
 
     @property
     def memory_variables(self) -> List[str]:
@@ -36,16 +43,7 @@ class ConversationTokenBufferMemory(BaseChatMemory):
 
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Return history buffer."""
-        buffer: Any = self.buffer
-        if self.return_messages:
-            final_buffer: Any = buffer
-        else:
-            final_buffer = get_buffer_string(
-                buffer,
-                human_prefix=self.human_prefix,
-                ai_prefix=self.ai_prefix,
-            )
-        return {self.memory_key: final_buffer}
+        return {self.memory_key: self.buffer}
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer. Pruned."""
