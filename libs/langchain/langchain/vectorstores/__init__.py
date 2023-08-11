@@ -27,6 +27,7 @@ from langchain.vectorstores.annoy import Annoy
 from langchain.vectorstores.atlas import AtlasDB
 from langchain.vectorstores.awadb import AwaDB
 from langchain.vectorstores.azuresearch import AzureSearch
+from langchain.vectorstores.bageldb import Bagel
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.cassandra import Cassandra
 from langchain.vectorstores.chroma import Chroma
@@ -76,6 +77,7 @@ __all__ = [
     "AtlasDB",
     "AwaDB",
     "AzureSearch",
+    "Bagel",
     "Cassandra",
     "Chroma",
     "Clickhouse",
