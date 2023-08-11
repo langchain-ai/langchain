@@ -79,3 +79,24 @@ def test_embed_documents_normalized() -> None:
 def test_embed_query_normalized() -> None:
     output = OpenAIEmbeddings().embed_query("foo walked to the market")
     assert np.isclose(np.linalg.norm(output), 1.0)
+
+
+def test_azure_openai_embeddings():
+    from openai import error
+
+    os.environ["OPENAI_API_TYPE"] = "azure"
+    os.environ["OPENAI_API_BASE"] = "https://your-endpoint.openai.azure.com/"
+    os.environ["OPENAI_API_KEY"] = "your AzureOpenAI key"
+    os.environ["OPENAI_API_VERSION"] = "2023-03-15-preview"
+
+    embeddings = OpenAIEmbeddings(deployment="your-embeddings-deployment-name")
+    text = "This is a test document."
+
+    try:
+        query_result = embeddings.embed_query(text)
+    except error.InvalidRequestError as e:
+        if "Must provide an 'engine' or 'deployment_id' parameter" in str(e):
+            assert False, "deployment was provided to OpenAIEmbeddings by openai.Embeddings didn't get it."
+    except Exception as e:
+        # Expected to fail because endpoint doesn't exist.
+        pass
