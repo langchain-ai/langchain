@@ -15,6 +15,7 @@ def test_dashvector_from_texts() -> None:
         ids=ids,
     )
 
+    # the vector insert operation is async by design, we wait here a bit for the insertion to complete.
     sleep(0.5)
     output = dashvector.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
@@ -29,6 +30,7 @@ def test_dashvector_with_text_with_metadatas() -> None:
         ids=ids,
     )
 
+    # the vector insert operation is async by design, we wait here a bit for the insertion to complete.
     sleep(0.5)
     output = dashvector.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo", metadata={"meta": 0})]
@@ -43,6 +45,7 @@ def test_dashvector_search_with_filter() -> None:
         ids=ids,
     )
 
+    # the vector insert operation is async by design, we wait here a bit for the insertion to complete.
     sleep(0.5)
     output = dashvector.similarity_search("foo", filter="meta=2")
     assert output == [Document(page_content="baz", metadata={"meta": 2})]
@@ -55,6 +58,7 @@ def test_dashvector_search_with_scores() -> None:
         ids=ids,
     )
 
+    # the vector insert operation is async by design, we wait here a bit for the insertion to complete.
     sleep(0.5)
     output = dashvector.similarity_search_with_relevance_scores("foo")
     docs, scores = zip(*output)

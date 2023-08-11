@@ -2,7 +2,7 @@
 
 > [DashVector](https://help.aliyun.com/document_detail/2510225.html) is a scalable and fully-managed vector-database service for building various machine learning applications.  
 
-This page covers how to use the DashVector ecosystem within LangChain.
+This document demonstrates to leverage DashVector within the LangChain ecosystem. In particular, it shows how to install DashVector, and how to use it as a VectorStore plugin in LangChain.
 It is broken into two parts: installation and setup, and then references to specific DashVector wrappers.
 
 ## Installation and Setup
@@ -13,12 +13,12 @@ pip install dashvector
 
 ## VectorStore
 
-There exists a wrapper around DashVector collections, allowing you to use it as a vectorstore,
-whether for semantic search or example selection.
+A DashVector Collection is wrapped as a familiar VectorStore for native usage within LangChain, 
+which allows it to be readily used for various cenarios, such as semantic search or example selection.
 
-To import this vectorstore:
+You may import the vectorstore by:
 ```python
 from langchain.vectorstores import DashVector
 ```
 
-For a more detailed walkthrough of the DashVector wrapper, see [this notebook](/docs/integrations/vectorstores/dashvector.html)
+For a detailed walkthrough of the DashVector wrapper, please refer to [this notebook](/docs/integrations/vectorstores/dashvector.html)
