@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 
 class BigQueryLoader(BaseLoader):
-    """Loads a query result from BigQuery into a list of documents.
+    """Load from the Google Cloud Platform `BigQuery`.
 
     Each document represents one row of the result. The `page_content_columns`
     are written into the `page_content` of the document. The `metadata_columns`
