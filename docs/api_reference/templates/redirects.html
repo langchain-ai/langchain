@@ -1,0 +1,15 @@
+{% set redirect = pathto(redirects[pagename]) %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Refresh" content="0; url={{ redirect }}" />
+    <meta name="Description" content="scikit-learn: machine learning in Python">
+    <link rel="canonical" href="{{ redirect }}" />
+    <title>scikit-learn: machine learning in Python</title>
+  </head>
+  <body>
+    <p>You will be automatically redirected to the <a href="{{ redirect }}">new location of this page</a>.</p>
+  </body>
+</html>
