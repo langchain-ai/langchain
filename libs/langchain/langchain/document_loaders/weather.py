@@ -10,7 +10,7 @@ from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
 
 
 class WeatherDataLoader(BaseLoader):
-    """Weather Reader.
+    """Load weather data with `Open Weather Map` API.
 
     Reads the forecast & current weather of any location using OpenWeatherMap's free
     API. Checkout 'https://openweathermap.org/appid' for more on how to generate a free

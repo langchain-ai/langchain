@@ -60,7 +60,7 @@ class _SupportedFileTypes(BaseModel):
 
 
 class OneDriveLoader(BaseLoader, BaseModel):
-    """Loads data from OneDrive."""
+    """Load from `Microsoft OneDrive`."""
 
     settings: _OneDriveSettings = Field(default_factory=_OneDriveSettings)
     """ The settings for the OneDrive API client."""
