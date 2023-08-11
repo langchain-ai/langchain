@@ -41,7 +41,13 @@ class EdenAI(LLM):
     """Subfeature of above feature, use generation by default"""
 
     provider: str
-    """Geneerative provider to use (eg: openai,stabilityai,cohere,google etc.)"""
+    """Generative provider to use (eg: openai,stabilityai,cohere,google etc.)"""
+
+    model: Optional[str] = None
+    """
+    model name for above provider (eg: 'text-davinci-003' for openai)
+    available models are shown on https://docs.edenai.co/ under 'available providers'
+    """
 
     params: Dict[str, Any]
     """
@@ -92,11 +98,11 @@ class EdenAI(LLM):
         """Return type of model."""
         return "edenai"
 
-    def _format_output(self, output: dict, provider: str) -> str:
+    def _format_output(self, output: dict) -> str:
         if self.feature == "text":
-            return output[provider]["generated_text"]
+            return output[self.provider]["generated_text"]
         else:
-            return output[provider]["items"][0]["image"]
+            return output[self.provider]["items"][0]["image"]
 
     def _call(
         self,
@@ -124,25 +130,17 @@ class EdenAI(LLM):
         else:
             stops = stop
 
-        settings = None
-        model = kwargs.get("model", self.params.get("model"))
         url = f"{self.base_url}/{self.feature}/{self.subfeature}"
         headers = {"Authorization": f"Bearer {self.edenai_api_key}"}
         payload = {
             **self.params,
             "providers": self.provider,
             "num_images": 1,  # always limit to 1 (ignored for text)
-            "model": model,  # Include the "model" value in payload
             "text": prompt,
-            **kwargs,
         }
 
-        if "model" in payload.keys():
-            if payload["model"] is not None:
-                settings = {payload["providers"]: payload["model"]}
-
-        if settings is not None:
-            payload["settings"] = settings
+        if self.model is not None:
+            payload["settings"] = {self.provider: self.model}
 
         request = Requests(headers=headers)
         response = request.post(url=url, data=payload)
@@ -157,7 +155,7 @@ class EdenAI(LLM):
                 f"{response.status_code}: {response.text}"
             )
 
-        output = self._format_output(response.json(), payload["providers"])
+        output = self._format_output(response.json())
 
         if stops is not None:
             output = enforce_stop_tokens(output, stops)
@@ -192,25 +190,17 @@ class EdenAI(LLM):
         else:
             stops = stop
 
-        settings = None
-        model = kwargs.get("model", self.params.get("model"))
-
         url = f"{self.base_url}/{self.feature}/{self.subfeature}"
         headers = {"Authorization": f"Bearer {self.edenai_api_key}"}
         payload = {
             **self.params,
             "providers": self.provider,
             "num_images": 1,  # always limit to 1 (ignored for text)
-            "model": model,  # Include the "model" value in payload
             "text": prompt,
-            **kwargs,
         }
-        if "model" in payload.keys():
-            if payload["model"] is not None:
-                settings = {payload["providers"]: payload["model"]}
 
-        if settings is not None:
-            payload["settings"] = settings
+        if self.model is not None:
+            payload["settings"] = {self.provider: self.model}
 
         async with ClientSession() as session:
             async with session.post(url, json=payload, headers=headers) as response:
@@ -228,7 +218,7 @@ class EdenAI(LLM):
 
                 response_json = await response.json()
 
-                output = self._format_output(response_json, payload["providers"])
+                output = self._format_output(response_json)
                 if stops is not None:
                     output = enforce_stop_tokens(output, stops)
 
