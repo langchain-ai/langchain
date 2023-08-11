@@ -130,7 +130,7 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
 
 
 class UnstructuredFileLoader(UnstructuredBaseLoader):
-    """Loader that uses Unstructured to load files.
+    """Load files using `Unstructured`.
 
     The file loader uses the
     unstructured partition function and will automatically detect the file
@@ -211,7 +211,7 @@ def get_elements_from_api(
 
 
 class UnstructuredAPIFileLoader(UnstructuredFileLoader):
-    """Loader that uses the Unstructured API to load files.
+    """Load files using `Unstructured` API.
 
     By default, the loader makes a call to the hosted Unstructured API.
     If you are running the unstructured API locally, you can change the
@@ -275,7 +275,7 @@ class UnstructuredAPIFileLoader(UnstructuredFileLoader):
 
 
 class UnstructuredFileIOLoader(UnstructuredBaseLoader):
-    """Loader that uses Unstructured to load files.
+    """Load files using `Unstructured`.
 
     The file loader
     uses the unstructured partition function and will automatically detect the file
@@ -322,7 +322,7 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
 
 
 class UnstructuredAPIFileIOLoader(UnstructuredFileIOLoader):
-    """Loader that uses the Unstructured API to load files.
+    """Load files using `Unstructured` API.
 
     By default, the loader makes a call to the hosted Unstructured API.
     If you are running the unstructured API locally, you can change the

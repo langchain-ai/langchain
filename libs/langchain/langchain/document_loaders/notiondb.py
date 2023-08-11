@@ -1,5 +1,3 @@
-"""Notion DB loader for langchain"""
-
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -14,7 +12,7 @@ BLOCK_URL = NOTION_BASE_URL + "/blocks/{block_id}/children"
 
 
 class NotionDBLoader(BaseLoader):
-    """Notion DB Loader.
+    """Load from `Notion DB`.
 
     Reads content from pages within a Notion Database.
     Args:

@@ -7,7 +7,7 @@ from langchain.document_loaders.obs_file import OBSFileLoader
 
 
 class OBSDirectoryLoader(BaseLoader):
-    """Loading logic for loading documents from Huawei OBS."""
+    """Load from `Huawei OBS directory`."""
 
     def __init__(
         self,
