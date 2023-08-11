@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from pydantic import root_validator
 
@@ -8,20 +8,13 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import Document
-from langchain.vectorstores.base import VectorStoreRetriever, VectorStore
-
-NOT_IMPLEMENTED_ERROR_STR = (
-    "ZepRetriever does not support adding documents to the "
-    "Zep Memory Store. Please use the ZepMemory class for chat history storage. "
-    "Alternatively, use the ZepVectorStore for document and vector search."
-)
+from langchain.schema import BaseRetriever, Document
 
 if TYPE_CHECKING:
     from zep_python import MemorySearchResult
 
 
-class ZepRetriever(VectorStoreRetriever):
+class ZepRetriever(BaseRetriever):
     """Retriever for the Zep long-term memory store.
 
     Search your user's long-term chat history with Zep.
@@ -29,7 +22,7 @@ class ZepRetriever(VectorStoreRetriever):
     Note: You will need to provide the user's `session_id` to use this retriever.
 
     More on Zep:
-    Zep provides long-term conversation storage for LLM apps. The service stores,
+    Zep provides long-term conversation storage for LLM apps. The server stores,
     summarizes, embeds, indexes, and enriches conversational AI chat
     histories, and exposes them via simple, low-latency APIs.
 
@@ -43,8 +36,6 @@ class ZepRetriever(VectorStoreRetriever):
     """Zep session ID."""
     top_k: Optional[int]
     """Number of documents to return."""
-
-    vectorstore: Union[VectorStore | None] = None
 
     @root_validator(pre=True)
     def create_client(cls, values: dict) -> dict:
@@ -110,23 +101,3 @@ class ZepRetriever(VectorStoreRetriever):
         )
 
         return self._search_result_to_doc(results)
-
-    def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
-        """Add documents to vectorstore.
-
-        The ZepRetriever is intended to be paired with the ZepMemory class for
-        chat history storage. As such, it does not support adding documents to
-        the Zep Memory Store Alternatively, use the ZepVectorStore for document
-        and vector search."""
-        return []
-
-    async def aadd_documents(
-        self, documents: List[Document], **kwargs: Any
-    ) -> List[str]:
-        """Add documents to vectorstore.
-
-        The ZepRetriever is intended to be paired with the ZepMemory class for
-        chat history storage. As such, it does not support adding documents to
-        the Zep Memory Store Alternatively, use the ZepVectorStore for document
-        and vector search."""
-        return []

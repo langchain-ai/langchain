@@ -177,7 +177,9 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
             text=query, metadata=metadata
         )
 
-        return self.zep_client.memory.search_memory(self.session_id, payload, limit=limit)
+        return self.zep_client.memory.search_memory(
+            self.session_id, payload, limit=limit
+        )
 
     def clear(self) -> None:
         """Clear session memory from Zep. Note that Zep is long-term storage for memory

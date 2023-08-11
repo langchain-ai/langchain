@@ -14,7 +14,9 @@ if TYPE_CHECKING:
 @pytest.mark.requires("zep_python")
 def zep_chat(mocker: MockerFixture) -> ZepChatMessageHistory:
     mock_zep_client: ZepClient = mocker.patch("zep_python.ZepClient", autospec=True)
-    mock_zep_client.memory = mocker.patch("zep_python.memory.client.MemoryClient", autospec=True)
+    mock_zep_client.memory = mocker.patch(
+        "zep_python.memory.client.MemoryClient", autospec=True
+    )
     zep_chat: ZepChatMessageHistory = ZepChatMessageHistory(
         "test_session", "http://localhost:8000"
     )
