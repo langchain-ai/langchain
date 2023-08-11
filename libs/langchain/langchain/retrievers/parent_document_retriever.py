@@ -30,31 +30,32 @@ class ParentDocumentRetriever(BaseRetriever):
     chunk.
 
     Examples:
-        ... code-block:: python
 
-        # Imports
-        from langchain.vectorstores import Chroma
-        from langchain.embeddings import OpenAIEmbeddings
-        from langchain.text_splitter import RecursiveCharacterTextSplitter
-        from langchain.storage import InMemoryStore
+        .. code-block:: python
 
-        # This text splitter is used to create the parent documents
-        parent_splitter = RecursiveCharacterTextSplitter(chunk_size=2000)
-        # This text splitter is used to create the child documents
-        # It should create documents smaller than the parent
-        child_splitter = RecursiveCharacterTextSplitter(chunk_size=400)
-        # The vectorstore to use to index the child chunks
-        vectorstore = Chroma(embedding_function=OpenAIEmbeddings())
-        # The storage layer for the parent documents
-        store = InMemoryStore()
+            # Imports
+            from langchain.vectorstores import Chroma
+            from langchain.embeddings import OpenAIEmbeddings
+            from langchain.text_splitter import RecursiveCharacterTextSplitter
+            from langchain.storage import InMemoryStore
 
-        # Initialize the retriever
-        retriever = ParentDocumentRetriever(
-            vectorstore=vectorstore,
-            docstore=store,
-            child_splitter=child_splitter,
-            parent_splitter=parent_splitter,
-        )
+            # This text splitter is used to create the parent documents
+            parent_splitter = RecursiveCharacterTextSplitter(chunk_size=2000)
+            # This text splitter is used to create the child documents
+            # It should create documents smaller than the parent
+            child_splitter = RecursiveCharacterTextSplitter(chunk_size=400)
+            # The vectorstore to use to index the child chunks
+            vectorstore = Chroma(embedding_function=OpenAIEmbeddings())
+            # The storage layer for the parent documents
+            store = InMemoryStore()
+
+            # Initialize the retriever
+            retriever = ParentDocumentRetriever(
+                vectorstore=vectorstore,
+                docstore=store,
+                child_splitter=child_splitter,
+                parent_splitter=parent_splitter,
+            )
     """
 
     vectorstore: VectorStore
