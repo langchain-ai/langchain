@@ -19,7 +19,7 @@ class DocusaurusLoader(BaseLoader):
     def __init__(
         self,
         url: str,
-        custom_html_tags: Optional[List[str]] = ["main article"],
+        custom_html_tags: List[str] = ["main article"],
         **kwargs: Optional[Any],
     ):
         """
@@ -27,13 +27,16 @@ class DocusaurusLoader(BaseLoader):
         Args:
             url: The base URL of the Docusaurus website.
             custom_html_tags: Optional custom html tag to retrieve the content from pages.
+            kwargs: Additional args to extend SitemapLoader
+                (i.e. filter_urls, blocksize, blocknum, meta_function, is_local, continue_on_failure)
         """
         self.url = url
         self.custom_html_tags = custom_html_tags
+        self.kwargs = kwargs
 
     def load(self) -> List[Document]:
         """Load documents."""
-        loader = SitemapLoader(f"{self.url}/sitemap.xml", parsing_function=self._parsing_function)
+        loader = SitemapLoader(f"{self.url}/sitemap.xml", parsing_function=self._parsing_function, **self.kwargs)
         return loader.load()
 
     def _parsing_function(self, content: BeautifulSoup) -> str:
