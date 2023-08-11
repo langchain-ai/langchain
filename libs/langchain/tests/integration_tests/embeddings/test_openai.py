@@ -1,4 +1,6 @@
 """Test openai embeddings."""
+import os
+
 import numpy as np
 import openai
 import pytest
@@ -81,7 +83,7 @@ def test_embed_query_normalized() -> None:
     assert np.isclose(np.linalg.norm(output), 1.0)
 
 
-def test_azure_openai_embeddings():
+def test_azure_openai_embeddings() -> None:
     from openai import error
 
     os.environ["OPENAI_API_TYPE"] = "azure"
