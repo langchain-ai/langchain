@@ -298,7 +298,7 @@ class TestElasticsearch:
             **elasticsearch_connection,
             index_name=index_name,
             strategy=ElasticsearchStore.ExactRetrievalStrategy(),
-            distance_strategy="DOT_PRODUCT"
+            distance_strategy="DOT_PRODUCT",
         )
 
         def assert_query(query_body: dict, query: str) -> dict:
@@ -347,7 +347,7 @@ class TestElasticsearch:
                 **elasticsearch_connection,
                 index_name=index_name,
                 strategy=ElasticsearchStore.ExactRetrievalStrategy(),
-                distance_strategy="NOT_A_STRATEGY"
+                distance_strategy="NOT_A_STRATEGY",
             )
 
     def test_similarity_search_approx_with_hybrid_search(

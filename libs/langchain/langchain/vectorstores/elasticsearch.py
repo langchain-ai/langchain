@@ -10,11 +10,11 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Literal,
     Mapping,
     Optional,
     Tuple,
     Union,
-    Literal,
 )
 
 from langchain.docstore.document import Document
@@ -260,7 +260,11 @@ class ExactRetrievalStrategy(BaseRetrievalStrategy):
         return {
             "mappings": {
                 "properties": {
-                    vector_query_field: {"type": "dense_vector", "dims": dims_length, "index": False},
+                    vector_query_field: {
+                        "type": "dense_vector",
+                        "dims": dims_length,
+                        "index": False,
+                    },
                 }
             }
         }
@@ -469,14 +473,24 @@ class ElasticsearchStore(VectorStore):
         es_password: Optional[str] = None,
         vector_query_field: str = "vector",
         query_field: str = "text",
-        distance_strategy: Optional[Literal[DistanceStrategy.COSINE, DistanceStrategy.DOT_PRODUCT, DistanceStrategy.EUCLIDEAN_DISTANCE]] = None,
+        distance_strategy: Optional[
+            Literal[
+                DistanceStrategy.COSINE,
+                DistanceStrategy.DOT_PRODUCT,
+                DistanceStrategy.EUCLIDEAN_DISTANCE,
+            ]
+        ] = None,
         strategy: BaseRetrievalStrategy = ApproxRetrievalStrategy(),
     ):
         self.embedding = embedding
         self.index_name = index_name
         self.query_field = query_field
         self.vector_query_field = vector_query_field
-        self.distance_strategy = DistanceStrategy.COSINE if distance_strategy is None else DistanceStrategy[distance_strategy]
+        self.distance_strategy = (
+            DistanceStrategy.COSINE
+            if distance_strategy is None
+            else DistanceStrategy[distance_strategy]
+        )
         self.strategy = strategy
 
         if es_connection is not None:
@@ -829,7 +843,9 @@ class ElasticsearchStore(VectorStore):
         if len(requests) > 0:
             try:
                 success, failed = bulk(self.client, requests, stats_only=True)
-                logger.debug(f"Added {success} and failed to add {failed} texts to index")
+                logger.debug(
+                    f"Added {success} and failed to add {failed} texts to index"
+                )
 
                 if refresh_indices:
                     self.client.indices.refresh(index=self.index_name)
@@ -880,7 +896,7 @@ class ElasticsearchStore(VectorStore):
             es_connection: Optional pre-existing Elasticsearch connection.
             vector_query_field: Optional. Name of the field to store the embedding vectors in.
             query_field: Optional. Name of the field to store the texts in.
-            distance_strategy: Optional. Name of the distance strategy to use. Defaults to "COSINE". 
+            distance_strategy: Optional. Name of the distance strategy to use. Defaults to "COSINE".
                                 can be one of "COSINE", "EUCLIDEAN_DISTANCE", "DOT_PRODUCT".
         """
 
