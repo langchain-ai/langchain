@@ -1,4 +1,3 @@
-"""Loads Telegram chat json dump."""
 from __future__ import annotations
 
 import asyncio
@@ -24,7 +23,7 @@ def concatenate_rows(row: dict) -> str:
 
 
 class TelegramChatFileLoader(BaseLoader):
-    """Loads Telegram chat json directory dump."""
+    """Load from `Telegram chat` dump."""
 
     def __init__(self, path: str):
         """Initialize with a path."""
