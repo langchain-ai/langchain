@@ -112,4 +112,3 @@ def test_vectara_from_files() -> None:
         "This classification scheme, however, misses a key insight gained in deep learning research about how generative "
         "models can greatly improve the training of DNNs and other deep discriminative models via better regularization."
     )
-
