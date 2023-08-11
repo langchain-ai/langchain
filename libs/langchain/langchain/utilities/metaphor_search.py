@@ -163,10 +163,10 @@ class MetaphorSearchAPIWrapper(BaseModel):
         for result in raw_search_results:
             cleaned_results.append(
                 {
-                    "title": result["title"],
-                    "url": result["url"],
-                    "author": result["author"],
-                    "published_date": result["publishedDate"],
+                    "title": result.get("title", "Unknown Title"),
+                    "url": result.get("url", "Unknown URL"),
+                    "author": result.get("author", "Unknown Author"),
+                    "published_date": result.get("publishedDate", "Unknown Date"),
                 }
             )
         return cleaned_results

@@ -79,8 +79,10 @@ class OpenAIWhisperParser(BaseBlobParser):
 
 
 class OpenAIWhisperParserLocal(BaseBlobParser):
-    """Transcribe and parse audio files.
-    Audio transcription with OpenAI Whisper model locally from transformers
+    """Transcribe and parse audio files with OpenAI Whisper model.
+
+    Audio transcription with OpenAI Whisper model locally from transformers.
+
     Parameters:
     device - device to use
         NOTE: By default uses the gpu if available,
@@ -105,6 +107,15 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
         lang_model: Optional[str] = None,
         forced_decoder_ids: Optional[Tuple[Dict]] = None,
     ):
+        """Initialize the parser.
+
+        Args:
+            device: device to use.
+            lang_model: whisper model to use, for example "openai/whisper-medium".
+              Defaults to None.
+            forced_decoder_ids: id states for decoder in a multilanguage model.
+              Defaults to None.
+        """
         try:
             from transformers import pipeline
         except ImportError:

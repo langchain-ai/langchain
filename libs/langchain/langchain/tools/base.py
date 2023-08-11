@@ -203,7 +203,13 @@ class BaseTool(BaseModel, Runnable[Union[str, Dict], Any], metaclass=ToolMetacla
         **kwargs: Any,
     ) -> Any:
         config = config or {}
-        return self.run(input, **config, **kwargs)
+        return self.run(
+            input,
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            **kwargs,
+        )
 
     async def ainvoke(
         self,
@@ -216,7 +222,13 @@ class BaseTool(BaseModel, Runnable[Union[str, Dict], Any], metaclass=ToolMetacla
             return super().ainvoke(input, config, **kwargs)
 
         config = config or {}
-        return await self.arun(input, **config, **kwargs)
+        return await self.arun(
+            input,
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            **kwargs,
+        )
 
     # --- Tool ---
 
@@ -651,7 +663,9 @@ class StructuredTool(BaseTool):
             The tool
 
         Examples:
-            ... code-block:: python
+
+            .. code-block:: python
+
                 def add(a: int, b: int) -> int:
                     \"\"\"Add two numbers\"\"\"
                     return a + b
