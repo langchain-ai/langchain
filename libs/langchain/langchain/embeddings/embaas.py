@@ -17,7 +17,7 @@ EMBAAS_API_URL = "https://api.embaas.io/v1/embeddings/"
 
 
 class EmbaasEmbeddingsPayload(TypedDict):
-    """Payload for the embaas embeddings API."""
+    """Payload for the Embaas embeddings API."""
 
     model: str
     texts: List[str]

@@ -32,6 +32,8 @@ class Generation(Serializable):
 
 
 class GenerationChunk(Generation):
+    """A Generation chunk, which can be concatenated with other Generation chunks."""
+
     def __add__(self, other: GenerationChunk) -> GenerationChunk:
         if isinstance(other, GenerationChunk):
             generation_info = (
@@ -65,6 +67,13 @@ class ChatGeneration(Generation):
 
 
 class ChatGenerationChunk(ChatGeneration):
+    """A ChatGeneration chunk, which can be concatenated with other
+      ChatGeneration chunks.
+
+    Attributes:
+        message: The message chunk output by the chat model.
+    """
+
     message: BaseMessageChunk
 
     def __add__(self, other: ChatGenerationChunk) -> ChatGenerationChunk:

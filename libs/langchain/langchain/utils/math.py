@@ -20,7 +20,9 @@ def cosine_similarity(X: Matrix, Y: Matrix) -> np.ndarray:
 
     X_norm = np.linalg.norm(X, axis=1)
     Y_norm = np.linalg.norm(Y, axis=1)
-    similarity = np.dot(X, Y.T) / np.outer(X_norm, Y_norm)
+    # Ignore divide by zero errors run time warnings as those are handled below.
+    with np.errstate(divide="ignore", invalid="ignore"):
+        similarity = np.dot(X, Y.T) / np.outer(X_norm, Y_norm)
     similarity[np.isnan(similarity) | np.isinf(similarity)] = 0.0
     return similarity
 

@@ -10,6 +10,7 @@ try:
 except ImportError:
     from pydantic import Field, root_validator
 
+from langchain._api import deprecated
 from langchain.load.serializable import Serializable
 from langchain.prompts.base import StringPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
@@ -422,6 +423,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
         return cls.from_messages([message])
 
     @classmethod
+    @deprecated("0.0.260", alternative="from_messages classmethod.", pending=True)
     def from_role_strings(
         cls, string_messages: List[Tuple[str, str]]
     ) -> ChatPromptTemplate:
@@ -441,6 +443,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
         )
 
     @classmethod
+    @deprecated("0.0.260", alternative="from_messages classmethod.", pending=True)
     def from_strings(
         cls, string_messages: List[Tuple[Type[BaseMessagePromptTemplate], str]]
     ) -> ChatPromptTemplate:
