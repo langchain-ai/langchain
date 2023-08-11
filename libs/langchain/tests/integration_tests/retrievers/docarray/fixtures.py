@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any, Dict, Generator, Tuple
 import numpy as np
 import pytest
 
-
 if TYPE_CHECKING:
     from docarray.index import (
         ElasticDocIndex,

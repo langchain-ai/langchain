@@ -3,9 +3,9 @@ import warnings
 from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Mapping, Optional
 
 try:
-    from pydantic.v1 import root_validator
+    from pydantic.v1 import Field, root_validator
 except ImportError:
-    from pydantic import root_validator
+    from pydantic import Field, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
