@@ -1,68 +1,31 @@
 """Document Loader for ArcGIS FeatureLayers."""
+from __future__ import annotations
 
 import json
 import re
 import warnings
-from typing import TYPE_CHECKING, Iterator, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Iterator, List, Optional, Union
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 if TYPE_CHECKING:
-    import arcgis  # type: ignore
+    import arcgis
+
+_NOT_PROVIDED = "(Not Provided)"
 
 
 class ArcGISLoader(BaseLoader):
     """Load records from an ArcGIS FeatureLayer."""
 
-    def _get_layer_properties(self) -> dict:
-        """Get the layer properties from the FeatureLayer."""
-
-        def extract_text(possibly_html: str) -> str:
-            soup = self.BEAUTIFULSOUP(possibly_html)
-            text = soup.text
-            return text
-
-        layer_number_pattern = re.compile(r"/\d+$")
-        not_provided = "(Not Provided)"
-        props = self.layer.properties
-
-        try:
-            if self.BEAUTIFULSOUP:
-                lyr_desc = extract_text(props["description"]) or not_provided
-            else:
-                lyr_desc = props["description"] or not_provided
-        except KeyError:
-            lyr_desc = not_provided
-        try:
-            item_id = props["serviceItemId"]
-            item = self.gis.content.get(item_id) or arcgis.features.FeatureLayer(
-                re.sub(layer_number_pattern, "", self.url),
-            )
-            try:
-                raw_desc = item.description
-            except AttributeError:
-                raw_desc = item.properties.description
-            if self.BEAUTIFULSOUP:
-                item_desc = extract_text(raw_desc) or not_provided
-            else:
-                item_desc = raw_desc or not_provided
-        except KeyError:
-            item_desc = not_provided
-        return {
-            "layer_description": lyr_desc,
-            "item_description": item_desc,
-            "layer_properties": props,
-        }
-
-    def __init__(  # type: ignore
+    def __init__(
         self,
-        layer: Union[str, "arcgis.features.FeatureLayer"],  # type: ignore
-        gis: Optional["arcgis.gis.GIS"] = None,  # type: ignore
+        layer: Union[str, arcgis.features.FeatureLayer],
+        gis: Optional[arcgis.gis.GIS] = None,
         where: str = "1=1",
         out_fields: Optional[Union[List[str], str]] = None,
         return_geometry: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ):
         try:
             import arcgis
@@ -102,6 +65,42 @@ class ArcGISLoader(BaseLoader):
 
         self.return_geometry = return_geometry
         self.kwargs = kwargs
+
+    def _get_layer_properties(self) -> dict:
+        """Get the layer properties from the FeatureLayer."""
+
+        layer_number_pattern = re.compile(r"/\d+$")
+        props = self.layer.properties
+
+        try:
+            if self.BEAUTIFULSOUP:
+                lyr_desc = self.BEAUTIFULSOUP(props["description"]).text
+            else:
+                lyr_desc = props["description"]
+            lyr_desc = lyr_desc or _NOT_PROVIDED
+        except KeyError:
+            lyr_desc = _NOT_PROVIDED
+        try:
+            item_id = props["serviceItemId"]
+            item = self.gis.content.get(item_id) or arcgis.features.FeatureLayer(
+                re.sub(layer_number_pattern, "", self.url),
+            )
+            try:
+                raw_desc = item.description
+            except AttributeError:
+                raw_desc = item.properties.description
+            if self.BEAUTIFULSOUP:
+                item_desc = self.BEAUTIFULSOUP(raw_desc).text
+            else:
+                item_desc = raw_desc
+            item_desc = item_desc or _NOT_PROVIDED
+        except KeyError:
+            item_desc = _NOT_PROVIDED
+        return {
+            "layer_description": lyr_desc,
+            "item_description": item_desc,
+            "layer_properties": props,
+        }
 
     def lazy_load(self) -> Iterator[Document]:
         """Lazy load records from FeatureLayer."""
