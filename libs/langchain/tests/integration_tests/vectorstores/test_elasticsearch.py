@@ -209,13 +209,12 @@ class TestElasticsearch:
         )
 
         def assert_query(query_body: dict, query: str) -> dict:
-            assert query_body == {
+            expected_query = {
                 "query": {
                     "script_score": {
                         "query": {"match_all": {}},
                         "script": {
-                            "source": 
-                                "cosineSimilarity(params.query_vector, 'vector') + 1.0",
+                            "source": "cosineSimilarity(params.query_vector, 'vector') + 1.0",
                             "params": {
                                 "query_vector": [
                                     1.0,
@@ -234,6 +233,7 @@ class TestElasticsearch:
                     }
                 }
             }
+            assert query_body == expected_query
             return query_body
 
         output = docsearch.similarity_search("foo", k=1, custom_query=assert_query)
@@ -255,13 +255,13 @@ class TestElasticsearch:
         )
 
         def assert_query(query_body: dict, query: str) -> dict:
-            assert query_body == {
+
+            expected_query = {
                 "query": {
                     "script_score": {
                         "query": {"bool": {"filter": [{"term": {"metadata.page": 0}}]}},
                         "script": {
-                            "source": 
-                                "cosineSimilarity(params.query_vector, 'vector') + 1.0",
+                            "source": "cosineSimilarity(params.query_vector, 'vector') + 1.0",
                             "params": {
                                 "query_vector": [
                                     1.0,
@@ -280,6 +280,7 @@ class TestElasticsearch:
                     }
                 }
             }
+            assert query_body == expected_query
             return query_body
 
         output = docsearch.similarity_search(
@@ -391,7 +392,7 @@ class TestElasticsearch:
     def test_similarity_search_approx_with_custom_query_fn(
         self, elasticsearch_connection: dict, index_name: str
     ) -> None:
-        """test that custom query function is called 
+        """test that custom query function is called
         with the query string and query body"""
 
         def my_custom_query(query_body: dict, query: str) -> dict:
@@ -447,7 +448,7 @@ class TestElasticsearch:
             ],
         )
 
-        # creating a new index with the pipeline, 
+        # creating a new index with the pipeline,
         # not relying on langchain to create the index
         docsearch.client.indices.create(
             index=index_name,
