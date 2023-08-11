@@ -34,6 +34,7 @@ from langchain.vectorstores.chroma import Chroma
 from langchain.vectorstores.clarifai import Clarifai
 from langchain.vectorstores.clickhouse import Clickhouse, ClickhouseSettings
 from langchain.vectorstores.deeplake import DeepLake
+from langchain.vectorstores.dingo import Dingo
 from langchain.vectorstores.docarray import DocArrayHnswSearch, DocArrayInMemorySearch
 from langchain.vectorstores.elastic_vector_search import (
     ElasticKnnSearch,
@@ -82,6 +83,7 @@ __all__ = [
     "Clickhouse",
     "ClickhouseSettings",
     "DeepLake",
+    "Dingo",
     "DocArrayHnswSearch",
     "DocArrayInMemorySearch",
     "ElasticVectorSearch",
