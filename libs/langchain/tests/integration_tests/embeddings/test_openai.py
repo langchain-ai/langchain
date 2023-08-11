@@ -96,7 +96,9 @@ def test_azure_openai_embeddings():
         query_result = embeddings.embed_query(text)
     except error.InvalidRequestError as e:
         if "Must provide an 'engine' or 'deployment_id' parameter" in str(e):
-            assert False, "deployment was provided to OpenAIEmbeddings by openai.Embeddings didn't get it."
+            assert (
+                False
+            ), "deployment was provided to OpenAIEmbeddings by openai.Embeddings didn't get it."
     except Exception as e:
         # Expected to fail because endpoint doesn't exist.
         pass
