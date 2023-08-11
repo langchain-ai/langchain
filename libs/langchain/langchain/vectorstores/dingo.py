@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import Any, Callable, Iterable, List, Optional, Tuple
+from typing import Any, Iterable, List, Optional, Tuple
 
 import numpy as np
 
@@ -25,18 +25,19 @@ class Dingo(VectorStore):
 
             from langchain.vectorstores import Dingo
             from langchain.embeddings.openai import OpenAIEmbeddings
-            import dingodb
+
+            embeddings = OpenAIEmbeddings()
+            dingo = Dingo(embeddings, "text")
     """
 
     def __init__(
         self,
-        embedding_function: Callable,
+        embedding: Embeddings,
         text_key: str,
+        *,
         client: Any = None,
         index_name: Optional[str] = None,
-        index_params: Optional[dict] = None,
-        search_params: Optional[dict] = None,
-        host: List[str] = ["172.20.31.10:13000"],
+        host: Optional[List[str]] = None,
         user: str = "root",
         password: str = "123123",
         self_id: bool = False,
@@ -45,10 +46,12 @@ class Dingo(VectorStore):
         try:
             import dingodb
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import dingo python package. "
                 "Please install it with `pip install dingodb."
             )
+
+        host = host if host is not None else ["172.20.31.10:13000"]
 
         # collection
         if client is not None:
@@ -70,7 +73,11 @@ class Dingo(VectorStore):
                 dingo_client.create_index(index_name, 1024)
 
         self._index_name = index_name
-        self._embedding_function = embedding_function
+        self._embedding = embedding
+
+    @property
+    def embeddings(self) -> Optional[Embeddings]:
+        return self._embedding
 
     def add_texts(
         self,
@@ -96,13 +103,12 @@ class Dingo(VectorStore):
         # Embed and create the documents
         ids = ids or [str(uuid.uuid1().int)[:13] for _ in texts]
         metadatas_list = []
-        embeds = []
+        texts = list(texts)
+        embeds = self._embedding.embed_documents(texts)
         for i, text in enumerate(texts):
-            emb = self._embedding_function(text)
             metadata = metadatas[i] if metadatas else {}
             metadata[self._text_key] = text
             metadatas_list.append(metadata)
-            embeds.append(emb)
         # upsert to Dingo
         for i in range(0, len(list(texts)), batch_size):
             j = i + batch_size
@@ -154,7 +160,7 @@ class Dingo(VectorStore):
             List of Documents most similar to the query and score for each
         """
         docs = []
-        query_obj = self._embedding_function(query)
+        query_obj = self._embedding.embed_query(query)
         results = self._client.vector_search(
             self._index_name, xq=query_obj, top_k=k, search_params=search_params
         )
@@ -241,7 +247,7 @@ class Dingo(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        embedding = self._embedding_function(query)
+        embedding = self._embedding.embed_query(query)
         return self.max_marginal_relevance_search_by_vector(
             embedding, k, fetch_k, lambda_mult, search_params
         )
@@ -287,7 +293,7 @@ class Dingo(VectorStore):
         try:
             import dingodb
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import dingo python package. "
                 "Please install it with `pip install dingodb`."
             )
@@ -312,13 +318,12 @@ class Dingo(VectorStore):
 
         ids = ids or [str(uuid.uuid1().int)[:13] for _ in texts]
         metadatas_list = []
-        embeds = []
+        texts = list(texts)
+        embeds = embedding.embed_documents(texts)
         for i, text in enumerate(texts):
-            emb = embedding.embed_query(text)
             metadata = metadatas[i] if metadatas else {}
             metadata[text_key] = text
             metadatas_list.append(metadata)
-            embeds.append(emb)
 
         # upsert to Dingo
         for i in range(0, len(list(texts)), batch_size):
@@ -326,7 +331,7 @@ class Dingo(VectorStore):
             dingo_client.vector_add(
                 index_name, metadatas_list[i:j], embeds[i:j], ids[i:j]
             )
-        return cls(embedding.embed_query, text_key, dingo_client, index_name)
+        return cls(embedding, text_key, client=dingo_client, index_name=index_name)
 
     def delete(
         self,
