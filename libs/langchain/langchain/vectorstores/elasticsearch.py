@@ -700,22 +700,26 @@ class ElasticsearchStore(VectorStore):
             ids: List of ids of documents to delete.
             refresh_indices: Whether to refresh the index after deleting documents. Defaults to True.
         """
-        body: List[Mapping[str, Any]] = []
+        try:
+            from elasticsearch.helpers import bulk
+        except ImportError:
+            raise ImportError(
+                "Could not import elasticsearch python package. "
+                "Please install it with `pip install elasticsearch`."
+            )
+
+        body = []
 
         if ids is None:
             raise ValueError("ids must be provided.")
 
         for _id in ids:
-            body.append({"delete": {"_index": self.index_name, "_id": _id}})
+            body.append({"_op_type": "delete", "_index": self.index_name, "_id": _id})
 
         if len(body) > 0:
             try:
-                self.client.bulk(operations=body)
+                bulk(self.client, body, refresh=refresh_indices, ignore_status=404)
                 logger.debug(f"Deleted {len(body)} texts from index")
-
-                if refresh_indices:
-                    self.client.indices.refresh(index=self.index_name)
-                    logger.debug("Refreshed index")
 
                 return True
             except Exception as e:
@@ -842,13 +846,12 @@ class ElasticsearchStore(VectorStore):
 
         if len(requests) > 0:
             try:
-                success, failed = bulk(self.client, requests, stats_only=True)
+                success, failed = bulk(
+                    self.client, requests, stats_only=True, refresh=refresh_indices
+                )
                 logger.debug(
                     f"Added {success} and failed to add {failed} texts to index"
                 )
-
-                if refresh_indices:
-                    self.client.indices.refresh(index=self.index_name)
 
                 logger.debug(f"added texts {ids} to index")
                 return ids
