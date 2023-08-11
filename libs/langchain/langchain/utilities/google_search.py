@@ -65,7 +65,7 @@ class GoogleSearchAPIWrapper(BaseModel):
         }
 
         if self.siterestrict:
-            params["siterestrict"] = True
+            params["siterestrict"] = "true"
 
         import requests
 
