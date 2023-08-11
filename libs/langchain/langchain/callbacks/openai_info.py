@@ -31,8 +31,19 @@ MODEL_COST_PER_1K_TOKENS = {
     "gpt-3.5-turbo-0613-completion": 0.002,
     "gpt-3.5-turbo-16k-completion": 0.004,
     "gpt-3.5-turbo-16k-0613-completion": 0.004,
+    # Azure GPT-35 input
+    "gpt-35-turbo": 0.0015,  # Azure OpenAI version of ChatGPT
+    "gpt-35-turbo-0301": 0.0015,  # Azure OpenAI version of ChatGPT
+    "gpt-35-turbo-0613": 0.0015,
+    "gpt-35-turbo-16k": 0.003,
+    "gpt-35-turbo-16k-0613": 0.003,
+    # Azure GPT-35 output
+    "gpt-35-turbo-completion": 0.002,  # Azure OpenAI version of ChatGPT
+    "gpt-35-turbo-0301-completion": 0.002,  # Azure OpenAI version of ChatGPT
+    "gpt-35-turbo-0613-completion": 0.002,
+    "gpt-35-turbo-16k-completion": 0.004,
+    "gpt-35-turbo-16k-0613-completion": 0.004,
     # Others
-    "gpt-35-turbo": 0.002,  # Azure OpenAI version of ChatGPT
     "text-ada-001": 0.0004,
     "ada": 0.0004,
     "text-babbage-001": 0.0005,
@@ -69,7 +80,9 @@ def standardize_model_name(
     if "ft-" in model_name:
         return model_name.split(":")[0] + "-finetuned"
     elif is_completion and (
-        model_name.startswith("gpt-4") or model_name.startswith("gpt-3.5")
+        model_name.startswith("gpt-4")
+        or model_name.startswith("gpt-3.5")
+        or model_name.startswith("gpt-35")
     ):
         return model_name + "-completion"
     else:
