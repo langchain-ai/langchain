@@ -1,0 +1,89 @@
+Langchain supports async operation on vector stores. All the methods might be called using their async counterparts, with the prefix `a`, meaning `async`.
+
+`Qdrant` is a vector store, which supports all the async operations, thus it will be used in this walkthrough.
+
+```bash
+pip install qdrant-client
+```
+
+```python
+from langchain.vectorstores import Qdrant
+```
+
+### Create a vector store asynchronously
+
+```python
+db = await Qdrant.afrom_documents(documents, embeddings, "http://localhost:6333")
+```
+
+### Similarity search
+
+```python
+query = "What did the president say about Ketanji Brown Jackson"
+docs = await db.asimilarity_search(query)
+print(docs[0].page_content)
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    Tonight. I call on the Senate to: Pass the Freedom to Vote Act. Pass the John Lewis Voting Rights Act. And while you’re at it, pass the Disclose Act so Americans can know who is funding our elections.
+
+    Tonight, I’d like to honor someone who has dedicated his life to serve this country: Justice Stephen Breyer—an Army veteran, Constitutional scholar, and retiring Justice of the United States Supreme Court. Justice Breyer, thank you for your service.
+
+    One of the most serious constitutional responsibilities a President has is nominating someone to serve on the United States Supreme Court.
+
+    And I did that 4 days ago, when I nominated Circuit Court of Appeals Judge Ketanji Brown Jackson. One of our nation’s top legal minds, who will continue Justice Breyer’s legacy of excellence.
+```
+
+</CodeOutputBlock>
+
+### Similarity search by vector
+
+```python
+embedding_vector = embeddings.embed_query(query)
+docs = await db.asimilarity_search_by_vector(embedding_vector)
+```
+
+## Maximum marginal relevance search (MMR)
+
+Maximal marginal relevance optimizes for similarity to query AND diversity among selected documents. It is also supported in async API.
+
+```python
+query = "What did the president say about Ketanji Brown Jackson"
+found_docs = await qdrant.amax_marginal_relevance_search(query, k=2, fetch_k=10)
+for i, doc in enumerate(found_docs):
+    print(f"{i + 1}.", doc.page_content, "\n")
+```
+
+<CodeOutputBlock lang="python">
+
+```
+1. Tonight. I call on the Senate to: Pass the Freedom to Vote Act. Pass the John Lewis Voting Rights Act. And while you’re at it, pass the Disclose Act so Americans can know who is funding our elections.
+
+Tonight, I’d like to honor someone who has dedicated his life to serve this country: Justice Stephen Breyer—an Army veteran, Constitutional scholar, and retiring Justice of the United States Supreme Court. Justice Breyer, thank you for your service.
+
+One of the most serious constitutional responsibilities a President has is nominating someone to serve on the United States Supreme Court.
+
+And I did that 4 days ago, when I nominated Circuit Court of Appeals Judge Ketanji Brown Jackson. One of our nation’s top legal minds, who will continue Justice Breyer’s legacy of excellence.
+
+2. We can’t change how divided we’ve been. But we can change how we move forward—on COVID-19 and other issues we must face together.
+
+I recently visited the New York City Police Department days after the funerals of Officer Wilbert Mora and his partner, Officer Jason Rivera.
+
+They were responding to a 9-1-1 call when a man shot and killed them with a stolen gun.
+
+Officer Mora was 27 years old.
+
+Officer Rivera was 22.
+
+Both Dominican Americans who’d grown up on the same streets they later chose to patrol as police officers.
+
+I spoke with their families and told them that we are forever in debt for their sacrifice, and we will carry on their mission to restore the trust and safety every community deserves.
+
+I’ve worked on these issues a long time.
+
+I know what works: Investing in crime preventionand community police officers who’ll walk the beat, who’ll know the neighborhood, and who can restore trust and safety.
+```
+
+</CodeOutputBlock>

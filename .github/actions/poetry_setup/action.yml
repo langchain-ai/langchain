@@ -52,11 +52,13 @@ runs:
 
     - name: Check Poetry File
       shell: bash
+      working-directory: ${{ inputs.working-directory }}
       run: |
         poetry check
 
     - name: Check lock file
       shell: bash
+      working-directory: ${{ inputs.working-directory }}
       run: |
         poetry lock --check
 
