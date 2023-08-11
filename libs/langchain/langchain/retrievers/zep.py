@@ -112,11 +112,21 @@ class ZepRetriever(VectorStoreRetriever):
         return self._search_result_to_doc(results)
 
     def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
-        """Add documents to vectorstore. Not implemented."""
-        raise NotImplementedError(NOT_IMPLEMENTED_ERROR_STR)
+        """Add documents to vectorstore.
+
+        The ZepRetriever is intended to be paired with the ZepMemory class for
+        chat history storage. As such, it does not support adding documents to
+        the Zep Memory Store Alternatively, use the ZepVectorStore for document
+        and vector search."""
+        return []
 
     async def aadd_documents(
         self, documents: List[Document], **kwargs: Any
     ) -> List[str]:
-        """Add documents to vectorstore. Not implemented."""
-        raise NotImplementedError(NOT_IMPLEMENTED_ERROR_STR)
+        """Add documents to vectorstore.
+
+        The ZepRetriever is intended to be paired with the ZepMemory class for
+        chat history storage. As such, it does not support adding documents to
+        the Zep Memory Store Alternatively, use the ZepVectorStore for document
+        and vector search."""
+        return []
