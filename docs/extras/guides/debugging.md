@@ -12,7 +12,7 @@ Platforms with tracing capabilities like [LangSmith](/docs/guides/langsmith/) an
 
 For anyone building production-grade LLM applications, we highly recommend using a platform like this.
 
-![LangSmith run](/img/run_details.png)
+![LangSmith run](../../docs_skeleton/static/img/run_details.png)
 
 ## `langchain.debug` and `langchain.verbose`
 
