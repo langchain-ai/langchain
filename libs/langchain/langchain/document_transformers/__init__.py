@@ -15,6 +15,9 @@
     Document
 """  # noqa: E501
 
+from langchain.document_transformers.beautiful_soup_transformer import (
+    BeautifulSoupTransformer,
+)
 from langchain.document_transformers.doctran_text_extract import (
     DoctranPropertyExtractor,
 )
@@ -27,9 +30,11 @@ from langchain.document_transformers.embeddings_redundant_filter import (
 )
 from langchain.document_transformers.html2text import Html2TextTransformer
 from langchain.document_transformers.long_context_reorder import LongContextReorder
+from langchain.document_transformers.nuclia_text_transform import NucliaTextTransformer
 from langchain.document_transformers.openai_functions import OpenAIMetadataTagger
 
 __all__ = [
+    "BeautifulSoupTransformer",
     "DoctranQATransformer",
     "DoctranTextTranslator",
     "DoctranPropertyExtractor",
@@ -37,6 +42,7 @@ __all__ = [
     "EmbeddingsRedundantFilter",
     "get_stateful_documents",
     "LongContextReorder",
+    "NucliaTextTransformer",
     "OpenAIMetadataTagger",
     "Html2TextTransformer",
 ]

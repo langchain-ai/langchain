@@ -7,7 +7,7 @@ from langchain.document_loaders.obs_file import OBSFileLoader
 
 
 class OBSDirectoryLoader(BaseLoader):
-    """Loading logic for loading documents from Huawei OBS."""
+    """Load from `Huawei OBS directory`."""
 
     def __init__(
         self,
@@ -43,7 +43,7 @@ class OBSDirectoryLoader(BaseLoader):
         try:
             from obs import ObsClient
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import esdk-obs-python python package. "
                 "Please install it with `pip install esdk-obs-python`."
             )

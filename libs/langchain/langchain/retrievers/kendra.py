@@ -138,7 +138,7 @@ class ResultItem(BaseModel, ABC, extra=Extra.allow):
     """Abstract class that represents a result item."""
 
     Id: Optional[str]
-    """The ID of the item."""
+    """The ID of the relevant result item."""
     DocumentId: Optional[str]
     """The document ID."""
     DocumentURI: Optional[str]
@@ -156,8 +156,13 @@ class ResultItem(BaseModel, ABC, extra=Extra.allow):
 
     def get_additional_metadata(self) -> dict:
         """Document additional metadata dict.
-        This returns any extra metadata except these values:
-        ['source', 'title', 'excerpt' and 'document_attributes'].
+        This returns any extra metadata except these:
+            * result_id
+            * document_id
+            * source
+            * title
+            * excerpt
+            * document_attributes
         """
         return {}
 
@@ -173,6 +178,8 @@ class ResultItem(BaseModel, ABC, extra=Extra.allow):
         metadata = self.get_additional_metadata()
         metadata.update(
             {
+                "result_id": self.Id,
+                "document_id": self.DocumentId,
                 "source": self.DocumentURI,
                 "title": self.get_title(),
                 "excerpt": self.get_excerpt(),
@@ -297,6 +304,9 @@ class AmazonKendraRetriever(BaseRetriever):
 
         client: boto3 client for Kendra
 
+        user_context: Provides information about the user context
+            See: https://docs.aws.amazon.com/kendra/latest/APIReference
+
     Example:
         .. code-block:: python
 
@@ -313,6 +323,7 @@ class AmazonKendraRetriever(BaseRetriever):
     attribute_filter: Optional[Dict] = None
     page_content_formatter: Callable[[ResultItem], str] = combined_text
     client: Any
+    user_context: Optional[Dict] = None
 
     @validator("top_k")
     def validate_top_k(cls, value: int) -> int:
@@ -361,6 +372,8 @@ class AmazonKendraRetriever(BaseRetriever):
         }
         if self.attribute_filter is not None:
             kendra_kwargs["AttributeFilter"] = self.attribute_filter
+        if self.user_context is not None:
+            kendra_kwargs["UserContext"] = self.user_context
 
         response = self.client.retrieve(**kendra_kwargs)
         r_result = RetrieveResult.parse_obj(response)

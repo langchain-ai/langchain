@@ -43,13 +43,16 @@ class PromptLayerChatOpenAI(ChatOpenAI):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stream: Optional[bool] = None,
         **kwargs: Any
     ) -> ChatResult:
         """Call ChatOpenAI generate and then call PromptLayer API to log the request."""
         from promptlayer.utils import get_api_key, promptlayer_api_request
 
         request_start_time = datetime.datetime.now().timestamp()
-        generated_responses = super()._generate(messages, stop, run_manager, **kwargs)
+        generated_responses = super()._generate(
+            messages, stop, run_manager, stream=stream, **kwargs
+        )
         request_end_time = datetime.datetime.now().timestamp()
         message_dicts, params = super()._create_message_dicts(messages, stop)
         for i, generation in enumerate(generated_responses.generations):
@@ -82,13 +85,16 @@ class PromptLayerChatOpenAI(ChatOpenAI):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stream: Optional[bool] = None,
         **kwargs: Any
     ) -> ChatResult:
         """Call ChatOpenAI agenerate and then call PromptLayer to log."""
         from promptlayer.utils import get_api_key, promptlayer_api_request_async
 
         request_start_time = datetime.datetime.now().timestamp()
-        generated_responses = await super()._agenerate(messages, stop, run_manager)
+        generated_responses = await super()._agenerate(
+            messages, stop, run_manager, stream=stream, **kwargs
+        )
         request_end_time = datetime.datetime.now().timestamp()
         message_dicts, params = super()._create_message_dicts(messages, stop)
         for i, generation in enumerate(generated_responses.generations):
