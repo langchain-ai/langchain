@@ -3696,7 +3696,7 @@ setuptools = "*"
 name = "h11"
 version = "0.14.0"
 description = "A pure-Python, bring-your-own-I/O implementation of HTTP/1.1"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "h11-0.14.0-py3-none-any.whl", hash = "sha256:e3fe4ac4b851c468cc8363d500db52c2ead036020723024a109d37346efaa761"},
@@ -3794,7 +3794,7 @@ files = [
 name = "httpcore"
 version = "0.17.2"
 description = "A minimal low-level HTTP client."
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "httpcore-0.17.2-py3-none-any.whl", hash = "sha256:5581b9c12379c4288fe70f43c710d16060c10080617001e6b22a3b6dbcbefd36"},
@@ -3882,7 +3882,7 @@ test = ["Cython (>=0.29.24,<0.30.0)"]
 name = "httpx"
 version = "0.24.1"
 description = "The next generation HTTP client."
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "httpx-0.24.1-py3-none-any.whl", hash = "sha256:06781eb9ac53cde990577af654bd990a4949de37a28bdb4a230d434f3a30b9bd"},
@@ -12686,7 +12686,7 @@ multidict = ">=4.0"
 name = "zep-python"
 version = "1.0.1"
 description = "Zep stores, manages, enriches, indexes, and searches long-term memory for conversational AI applications. This is the Python client for the Zep service."
-optional = false
+optional = true
 python-versions = ">=3.8.1,<4"
 files = [
     {file = "zep_python-1.0.1-py3-none-any.whl", hash = "sha256:36074f017302c40a3d5dbebe6407080fdddea805951b96aab764faf1499c1ab5"},
@@ -12787,4 +12787,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "8ece5b0f0deffffe86f47b03697c7e82cc14f7af6c4e8db56b8578c4df796864"
+content-hash = "5d4eb230136d0199d537eb5709a601f0958ee0dc1450892e70901fff7db47578"
