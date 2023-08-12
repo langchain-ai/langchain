@@ -264,6 +264,53 @@ class SKLearnVectorStore(VectorStore):
         scores = [1 / math.exp(dist) for dist in dists]
         return list(zip(list(docs), scores))
 
+    def max_marginal_relevance_search_by_vector_with_score(
+        self,
+        embedding: List[float],
+        k: int = DEFAULT_K,
+        fetch_k: int = DEFAULT_FETCH_K,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs selected using the maximal marginal relevance.
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        Returns:
+            List of Documents and similarity scores selected by maximal marginal
+                relevance and score for each.
+        """
+        indices_dists = self._similarity_index_search_with_score(
+            embedding, k=fetch_k, **kwargs
+        )
+        indices, scores = zip(*indices_dists)
+        result_embeddings = self._embeddings_np[indices,]
+        mmr_selected = maximal_marginal_relevance(
+            self._np.array(embedding, dtype=self._np.float32),
+            result_embeddings,
+            k=k,
+            lambda_mult=lambda_mult,
+        )
+        mmr_indices = [indices[i] for i in mmr_selected]
+        mmr_scores = [scores[i] for i in mmr_selected]
+        return [
+            (
+                Document(
+                    page_content=self._texts[idx],
+                    metadata={"id": self._ids[idx], **self._metadatas[idx]},
+                ),
+                score,
+            )
+            for idx, score in zip(mmr_indices, mmr_scores)
+        ]
+
     def max_marginal_relevance_search_by_vector(
         self,
         embedding: List[float],
@@ -286,25 +333,10 @@ class SKLearnVectorStore(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        indices_dists = self._similarity_index_search_with_score(
-            embedding, k=fetch_k, **kwargs
+        docs_with_scores = self.max_marginal_relevance_search_by_vector_with_score(
+            embedding, k, fetch_k, lambda_mul=lambda_mult
         )
-        indices, _ = zip(*indices_dists)
-        result_embeddings = self._embeddings_np[indices,]
-        mmr_selected = maximal_marginal_relevance(
-            self._np.array(embedding, dtype=self._np.float32),
-            result_embeddings,
-            k=k,
-            lambda_mult=lambda_mult,
-        )
-        mmr_indices = [indices[i] for i in mmr_selected]
-        return [
-            Document(
-                page_content=self._texts[idx],
-                metadata={"id": self._ids[idx], **self._metadatas[idx]},
-            )
-            for idx in mmr_indices
-        ]
+        return [doc for doc, _ in docs_with_scores]
 
     def max_marginal_relevance_search(
         self,
@@ -334,10 +366,10 @@ class SKLearnVectorStore(VectorStore):
             )
 
         embedding = self._embedding_function.embed_query(query)
-        docs = self.max_marginal_relevance_search_by_vector(
+        docs_with_scores = self.max_marginal_relevance_search_by_vector_with_score(
             embedding, k, fetch_k, lambda_mul=lambda_mult
         )
-        return docs
+        return [doc for doc, _ in docs_with_scores]
 
     @classmethod
     def from_texts(

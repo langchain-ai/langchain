@@ -1,5 +1,6 @@
 """Test SKLearnVectorStore functionality."""
 from pathlib import Path
+from typing import Literal
 
 import pytest
 
@@ -15,6 +16,25 @@ def test_sklearn() -> None:
     output = docsearch.similarity_search("foo", k=1)
     assert len(output) == 1
     assert output[0].page_content == "foo"
+
+
+@pytest.mark.parametrize(
+    "metrics",
+    [
+        "cosine",
+        "minkowski",
+        "euclidean",
+    ],
+)
+@pytest.mark.requires("numpy", "sklearn")
+def test_sklearn_similarity_search_with_score(metrics: str) -> None:
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = SKLearnVectorStore.from_texts(texts, FakeEmbeddings(), metrics=metrics)
+    output = docsearch.similarity_search_with_score("foo", k=2)
+    assert len(output) == 2
+    assert output[0][0].page_content == "foo"
+    assert output[0][1] < output[1][1]
 
 
 @pytest.mark.requires("numpy", "sklearn")
@@ -49,16 +69,27 @@ def test_sklearn_with_metadatas_with_scores() -> None:
     assert score == 1
 
 
+@pytest.mark.parametrize(
+    "serializer",
+    [
+        "json",
+        "bson",
+        "parquet",
+    ],
+)
 @pytest.mark.requires("numpy", "sklearn")
-def test_sklearn_with_persistence(tmpdir: Path) -> None:
+def test_sklearn_with_persistence(
+    tmpdir: Path,
+    serializer: Literal["json", "bson", "parquet"],
+) -> None:
     """Test end to end construction and search, with persistence."""
-    persist_path = tmpdir / "foo.parquet"
+    persist_path = tmpdir / f"foo.{serializer}"
     texts = ["foo", "bar", "baz"]
     docsearch = SKLearnVectorStore.from_texts(
         texts,
         FakeEmbeddings(),
         persist_path=str(persist_path),
-        serializer="json",
+        serializer=serializer,
     )
 
     output = docsearch.similarity_search("foo", k=1)
@@ -69,11 +100,26 @@ def test_sklearn_with_persistence(tmpdir: Path) -> None:
 
     # Get a new VectorStore from the persisted directory
     docsearch = SKLearnVectorStore(
-        FakeEmbeddings(), persist_path=str(persist_path), serializer="json"
+        FakeEmbeddings(), persist_path=str(persist_path), serializer=serializer
     )
     output = docsearch.similarity_search("foo", k=1)
     assert len(output) == 1
     assert output[0].page_content == "foo"
+
+
+@pytest.mark.requires("numpy", "sklearn")
+def test_sklearn_mmr_with_score() -> None:
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    embeddings = FakeEmbeddings()
+    docsearch = SKLearnVectorStore.from_texts(texts, embeddings)
+    embedded_query = embeddings.embed_query("foo")
+    output = docsearch.max_marginal_relevance_search_by_vector_with_score(
+        embedded_query, k=2, fetch_k=3
+    )
+    assert len(output) == 2
+    assert output[0][0].page_content == "foo"
+    assert output[0][1] < output[1][1]
 
 
 @pytest.mark.requires("numpy", "sklearn")
