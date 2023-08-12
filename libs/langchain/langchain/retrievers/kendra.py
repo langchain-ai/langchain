@@ -77,7 +77,9 @@ class TextWithHighLights(BaseModel, extra=Extra.allow):  # type: ignore[call-arg
 
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
-class AdditionalResultAttributeValue(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
+class AdditionalResultAttributeValue(  # type: ignore[call-arg]
+    BaseModel, extra=Extra.allow
+):
     """The value of an additional result attribute."""
 
     TextWithHighlightsValue: TextWithHighLights

@@ -1,4 +1,4 @@
-# noqa: E402 Module level import not at top of file
+# ruff: noqa: E402
 """Main entrypoint into package."""
 import importlib
 import sys
