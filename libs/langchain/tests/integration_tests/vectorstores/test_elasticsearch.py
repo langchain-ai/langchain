@@ -213,7 +213,7 @@ class TestElasticsearch:
                 "script_score": {
                     "query": {"match_all": {}},
                     "script": {
-                        "source": "cosineSimilarity(params.query_vector, 'vector') + 1.0", # noqa: E501
+                        "source": "cosineSimilarity(params.query_vector, 'vector') + 1.0",  # noqa: E501
                         "params": {
                             "query_vector": [
                                 1.0,
@@ -256,13 +256,12 @@ class TestElasticsearch:
         )
 
         def assert_query(query_body: dict, query: str) -> dict:
-
             expected_query = {
                 "query": {
                     "script_score": {
                         "query": {"bool": {"filter": [{"term": {"metadata.page": 0}}]}},
                         "script": {
-                            "source": "cosineSimilarity(params.query_vector, 'vector') + 1.0", # noqa: E501
+                            "source": "cosineSimilarity(params.query_vector, 'vector') + 1.0",  # noqa: E501
                             "params": {
                                 "query_vector": [
                                     1.0,
