@@ -13,7 +13,7 @@ from langchain.document_loaders.unstructured import UnstructuredFileLoader
 
 
 class Docx2txtLoader(BaseLoader, ABC):
-    """Loads a DOCX with docx2txt and chunks at character level.
+    """Load `DOCX` file using `docx2txt` and chunks at character level.
 
     Defaults to check for local file, but if the file is a web path, it will download it
     to a temporary file, and use that, then clean up the temporary file after completion
@@ -65,7 +65,8 @@ class Docx2txtLoader(BaseLoader, ABC):
 
 
 class UnstructuredWordDocumentLoader(UnstructuredFileLoader):
-    """Loader that uses unstructured to load word documents.
+    """Load `Microsof Word` file using `Unstructured`.
+
     Works with both .docx and .doc files.
     You can run the loader in one of two modes: "single" and "elements".
     If you use "single" mode, the document will be returned as a single

@@ -70,7 +70,7 @@ def remove_newlines(x: Any) -> Any:
 
 
 class NotebookLoader(BaseLoader):
-    """Loads .ipynb notebook files."""
+    """Load `Jupyter notebook` (.ipynb) files."""
 
     def __init__(
         self,
@@ -80,7 +80,7 @@ class NotebookLoader(BaseLoader):
         remove_newline: bool = False,
         traceback: bool = False,
     ):
-        """Initialize with path.
+        """Initialize with a path.
 
         Args:
             path: The path to load the notebook from.

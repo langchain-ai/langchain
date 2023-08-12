@@ -1,4 +1,3 @@
-"""Load from Dataframe object"""
 from typing import Any, Iterator, List
 
 from langchain.docstore.document import Document
@@ -6,7 +5,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class GeoDataFrameLoader(BaseLoader):
-    """Load geopandas Dataframe."""
+    """Load `geopandas` Dataframe."""
 
     def __init__(self, data_frame: Any, page_content_column: str = "geometry"):
         """Initialize with geopandas Dataframe.
