@@ -59,7 +59,7 @@ class CacheBackedEmbeddings(Embeddings):
 
     Examples:
 
-        ..code-block:: python
+        .. code-block: python
 
             from langchain.embeddings import CacheBackedEmbeddings, OpenAIEmbeddings
             from langchain.storage import LocalFileStore

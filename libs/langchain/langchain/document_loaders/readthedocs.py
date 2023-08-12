@@ -1,4 +1,3 @@
-"""Loads ReadTheDocs documentation directory dump."""
 from pathlib import Path
 from typing import Any, List, Optional, Tuple, Union
 
@@ -7,7 +6,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class ReadTheDocsLoader(BaseLoader):
-    """Loads ReadTheDocs documentation directory dump."""
+    """Load `ReadTheDocs` documentation directory."""
 
     def __init__(
         self,

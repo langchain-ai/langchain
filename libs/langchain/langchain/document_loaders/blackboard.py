@@ -1,4 +1,3 @@
-"""Loads all documents from a blackboard course."""
 import contextlib
 import re
 from pathlib import Path
@@ -12,7 +11,7 @@ from langchain.document_loaders.web_base import WebBaseLoader
 
 
 class BlackboardLoader(WebBaseLoader):
-    """Loads all documents from a Blackboard course.
+    """Load a `Blackboard` course.
 
     This loader is not compatible with all Blackboard courses. It is only
     compatible with courses that use the new Blackboard interface.
