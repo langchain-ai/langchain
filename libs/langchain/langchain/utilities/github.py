@@ -23,7 +23,7 @@ class GitHubAPIWrapper(BaseModel):
     github_repository: Optional[str] = None
     github_app_id: Optional[str] = None
     github_app_private_key: Optional[str] = None
-    github_branch: Optional[str] = None
+    activate_branch: Optional[str] = None
     github_base_branch: Optional[str] = None
 
     class Config:
@@ -44,8 +44,8 @@ class GitHubAPIWrapper(BaseModel):
             values, "github_app_private_key", "GITHUB_APP_PRIVATE_KEY"
         )
 
-        github_branch = get_from_dict_or_env(
-            values, "github_branch", "GITHUB_BRANCH", default="master"
+        activate_branch = get_from_dict_or_env(
+            values, "activate_branch", "GITHUB_BRANCH", default="master"
         )
         github_base_branch = get_from_dict_or_env(
             values, "github_base_branch", "GITHUB_BASE_BRANCH", default="master"
@@ -82,7 +82,7 @@ class GitHubAPIWrapper(BaseModel):
         values["github_repository"] = github_repository
         values["github_app_id"] = github_app_id
         values["github_app_private_key"] = github_app_private_key
-        values["github_branch"] = github_branch
+        values["activate_branch"] = activate_branch
         values["github_base_branch"] = github_base_branch
 
         return values
@@ -184,6 +184,31 @@ class GitHubAPIWrapper(BaseModel):
         except Exception as e:
             return str(e)
     
+    def set_active_branch(self, branch_name: str) -> str:
+        # todo: check if branch exists first? Return error if not?
+        curr_branches = [branch.name for branch in self.github_repo_instance.get_branches()]
+        if branch_name is curr_branches:
+            self.activate_branch = branch_name
+        else: 
+            return f"Error {branch_name} does not exist in repo with current branches: {str(curr_branches)}"
+
+    def list_branches_in_repo(self) -> str:
+        """
+        Fetches a list of all branches in the repository.
+
+        Returns:
+            str: A plaintext report containing the names of the branches.
+        """
+        try:
+            branches = [branch.name for branch in self.github_repo_instance.get_branches()]
+            if branches:
+                branches_str = "\n".join(branches)
+                return f"Found {len(branches)} branches in the repository:\n{branches_str}"
+            else:
+                return "No branches found in the repository"
+        except Exception as e:
+            return str(e)
+
     def list_files_in_bot_branch(self) -> str:
         """
         Fetches all files in the main branch of the repo.
@@ -193,7 +218,7 @@ class GitHubAPIWrapper(BaseModel):
         """
         files = []
         try:
-            contents = self.github_repo_instance.get_contents("", ref=self.github_branch)
+            contents = self.github_repo_instance.get_contents("", ref=self.activate_branch)
             for content in contents:
                 if content.type == "dir":
                     files.extend(self.get_files_from_directory(content.path))
@@ -219,7 +244,7 @@ class GitHubAPIWrapper(BaseModel):
             List[dict]: List of files with their paths and names.
         """
         files = []
-        contents = self.github_repo_instance.get_contents(directory_path, ref=self.github_branch)
+        contents = self.github_repo_instance.get_contents(directory_path, ref=self.activate_branch)
         for content in contents:
             if content.type == "dir":
                 files.extend(self.get_files_from_directory(content.path))
@@ -355,7 +380,7 @@ class GitHubAPIWrapper(BaseModel):
         Returns:
             str: A success or failure message
         """
-        if self.github_base_branch == self.github_branch:
+        if self.github_base_branch == self.activate_branch:
             return """Cannot make a pull request because 
             commits are already in the master branch"""
         else:
@@ -365,7 +390,7 @@ class GitHubAPIWrapper(BaseModel):
                 pr = self.github_repo_instance.create_pull(
                     title=title,
                     body=body,
-                    head=self.github_branch,
+                    head=self.activate_branch,
                     base=self.github_base_branch,
                 )
                 return f"Successfully created PR number {pr.number}"
@@ -408,9 +433,9 @@ class GitHubAPIWrapper(BaseModel):
 
         try:
             try: 
-                file = self.github_repo_instance.get_contents(file_path, ref=self.github_branch)
+                file = self.github_repo_instance.get_contents(file_path, ref=self.activate_branch)
                 if file:
-                    return f"File already exists at `{file_path}` on branch `{self.github_branch}`. You must use `update_file` to modify it."
+                    return f"File already exists at `{file_path}` on branch `{self.activate_branch}`. You must use `update_file` to modify it."
             except Exception as e:
                 # expected behavior, file shouldn't exist yet
                 # print(f"ERROR in `create_file` when getting contents of file {file_path}. Error: {e}")
@@ -420,7 +445,7 @@ class GitHubAPIWrapper(BaseModel):
                 path=file_path,
                 message="Create " + file_path,
                 content=file_contents,
-                branch=self.github_branch,
+                branch=self.activate_branch,
             )
             return "Created file " + file_path
         except Exception as e:
@@ -428,17 +453,17 @@ class GitHubAPIWrapper(BaseModel):
 
     def read_file(self, file_path: str) -> str:
         """
-        Read a file from this agent's branch, defined by self.github_branch, which supports PR branches.
+        Read a file from this agent's branch, defined by self.activate_branch, which supports PR branches.
         Parameters:
             file_path(str): the file path
         Returns:
             str: The file decoded as a string, or an error message if not found
         """
         try:
-            file = self.github_repo_instance.get_contents(file_path, ref=self.github_branch)
+            file = self.github_repo_instance.get_contents(file_path, ref=self.activate_branch)
             return file.decoded_content.decode("utf-8")
         except Exception as e:
-            return f"File not found `{file_path}` on branch `{self.github_branch}`. Error: {str(e)}"
+            return f"File not found `{file_path}` on branch `{self.activate_branch}`. Error: {str(e)}"
 
 
     def update_file(self, file_query: str) -> str:
@@ -484,8 +509,8 @@ class GitHubAPIWrapper(BaseModel):
                 path=file_path,
                 message="Update " + file_path,
                 content=updated_file_content,
-                branch=self.github_branch,
-                sha=self.github_repo_instance.get_contents(file_path, ref=self.github_branch).sha, 
+                branch=self.activate_branch,
+                sha=self.github_repo_instance.get_contents(file_path, ref=self.activate_branch).sha, 
             )
             return "Updated file " + file_path
         except Exception as e:
@@ -503,8 +528,8 @@ class GitHubAPIWrapper(BaseModel):
             self.github_repo_instance.delete_file(
                 path=file_path,
                 message="Delete " + file_path,
-                branch=self.github_branch,
-                sha=self.github_repo_instance.get_contents(file_path, ref=self.github_branch).sha,
+                branch=self.activate_branch,
+                sha=self.github_repo_instance.get_contents(file_path, ref=self.activate_branch).sha,
             )
             return "Deleted file " + file_path
         except Exception as e:
