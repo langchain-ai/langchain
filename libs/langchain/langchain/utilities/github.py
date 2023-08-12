@@ -61,14 +61,17 @@ class GitHubAPIWrapper(BaseModel):
             )
 
         try:
+            print("About to try opening file")
             with open(github_app_private_key, "r") as f:
                 private_key = f.read()
-        except (FileNotFoundError, OSError) as e:
-            if e.errno == 63:
+        # except (FileNotFoundError, OSError) as e:
+        except Exception as e:
+            print("In error block")
+            # if e.errno == 63:
                 # 63 == filename too long, as when the full key is passed in
-                private_key == github_app_private_key
-            else:
-                raise FileNotFoundError(f"Github App private key cannot be found in filesystem, and is not a string. Found: {github_app_private_key}. Error: {e}")
+            private_key = github_app_private_key
+            # else:
+                # raise FileNotFoundError(f"Github App private key cannot be found in filesystem, and is not a string. Found: {github_app_private_key}. Error: {e}")
 
         auth = Auth.AppAuth(
             github_app_id,
@@ -343,7 +346,7 @@ class GitHubAPIWrapper(BaseModel):
 
         try:
             try: 
-                self.github_repo_instance.get_contents(file_path)
+                self.github_repo_instance.get_contents(file_path, ref=self.github_branch)
             except Exception as e:
                 return f"File already exists at {file_path} (on branch {self.github_branch}). Use update_file instead."
             self.github_repo_instance.create_file(
