@@ -11,7 +11,7 @@ from langchain.utils import get_from_dict_or_env
 
 
 class BaseGitHubLoader(BaseLoader, BaseModel, ABC):
-    """Load issues of a GitHub repository."""
+    """Load `GitHub` repository Issues."""
 
     repo: str
     """Name of repository"""

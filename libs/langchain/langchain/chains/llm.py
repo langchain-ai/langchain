@@ -127,6 +127,8 @@ class LLMChain(Chain):
     ) -> Tuple[List[PromptValue], Optional[List[str]]]:
         """Prepare prompts from inputs."""
         stop = None
+        if len(input_list) == 0:
+            return [], stop
         if "stop" in input_list[0]:
             stop = input_list[0]["stop"]
         prompts = []
@@ -151,6 +153,8 @@ class LLMChain(Chain):
     ) -> Tuple[List[PromptValue], Optional[List[str]]]:
         """Prepare prompts from inputs."""
         stop = None
+        if len(input_list) == 0:
+            return [], stop
         if "stop" in input_list[0]:
             stop = input_list[0]["stop"]
         prompts = []

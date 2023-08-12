@@ -145,7 +145,7 @@ class BabyAGI(Chain, BaseModel):
                 self.print_task_result(result)
 
                 # Step 3: Store the result in Pinecone
-                result_id = f"result_{task['task_id']}"
+                result_id = f"result_{task['task_id']}_{num_iters}"
                 self.vectorstore.add_texts(
                     texts=[result],
                     metadatas=[{"task": task["task_name"]}],

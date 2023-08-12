@@ -19,12 +19,14 @@ logger = logging.getLogger(__name__)
 class StructuredChatOutputParser(AgentOutputParser):
     """Output parser for the structured chat agent."""
 
+    pattern = re.compile(r"```(?:json)?\n(.*?)```", re.DOTALL)
+
     def get_format_instructions(self) -> str:
         return FORMAT_INSTRUCTIONS
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         try:
-            action_match = re.search(r"```(.*?)```?", text, re.DOTALL)
+            action_match = self.pattern.search(text)
             if action_match is not None:
                 response = json.loads(action_match.group(1).strip(), strict=False)
                 if isinstance(response, list):

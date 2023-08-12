@@ -52,7 +52,7 @@ class EmbaasDocumentExtractionPayload(EmbaasDocumentExtractionParameters):
 
 
 class BaseEmbaasLoader(BaseModel):
-    """Base class for embedding a model into an Embaas document extraction API."""
+    """Base loader for embedding a model into an `Embaas` document extraction API."""
 
     embaas_api_key: Optional[str] = None
     """The API key for the embaas document extraction API."""
@@ -72,7 +72,7 @@ class BaseEmbaasLoader(BaseModel):
 
 
 class EmbaasBlobLoader(BaseEmbaasLoader, BaseBlobParser):
-    """Embaas's document byte loader.
+    """Load `Embaas` blob.
 
     To use, you should have the
     environment variable ``EMBAAS_API_KEY`` set with your API key, or pass
@@ -178,7 +178,7 @@ class EmbaasBlobLoader(BaseEmbaasLoader, BaseBlobParser):
 
 
 class EmbaasLoader(BaseEmbaasLoader, BaseLoader):
-    """Embaas's document loader.
+    """Load from `Embaas`.
 
     To use, you should have the
     environment variable ``EMBAAS_API_KEY`` set with your API key, or pass

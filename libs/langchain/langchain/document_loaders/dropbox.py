@@ -1,5 +1,3 @@
-"""Loads data from Dropbox."""
-
 # Prerequisites:
 # 1. Create a Dropbox app.
 # 2. Give the app these scope permissions: `files.metadata.read`
@@ -20,7 +18,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class DropboxLoader(BaseLoader, BaseModel):
-    """Loads files from Dropbox.
+    """Load files from `Dropbox`.
 
     In addition to common files such as text and PDF files, it also supports
     *Dropbox Paper* files.

@@ -1,5 +1,3 @@
-"""Loads data from Google Drive."""
-
 # Prerequisites:
 # 1. Create a Google Cloud project
 # 2. Enable the Google Drive API:
@@ -22,7 +20,7 @@ SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 
 
 class GoogleDriveLoader(BaseLoader, BaseModel):
-    """Loads Google Docs from Google Drive."""
+    """Load Google Docs from `Google Drive`."""
 
     service_account_key: Path = Path.home() / ".credentials" / "keys.json"
     """Path to the service account key file."""
