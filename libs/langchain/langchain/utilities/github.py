@@ -412,7 +412,9 @@ class GitHubAPIWrapper(BaseModel):
                 if file:
                     return f"File already exists at `{file_path}` on branch `{self.github_branch}`. You must use `update_file` to modify it."
             except Exception as e:
-                print(f"ERROR in `create_file` when getting contents of file {file_path}. Error: {e}")
+                # expected behavior, file shouldn't exist yet
+                # print(f"ERROR in `create_file` when getting contents of file {file_path}. Error: {e}")
+                pass
             
             self.github_repo_instance.create_file(
                 path=file_path,
