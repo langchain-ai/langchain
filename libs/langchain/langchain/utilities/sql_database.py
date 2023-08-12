@@ -50,6 +50,7 @@ class SQLDatabase:
         custom_table_info: Optional[dict] = None,
         view_support: bool = False,
         max_string_length: int = 300,
+        query_tag: Optional = "gen_ai_query",
     ):
         """Create engine from database URI."""
         self._engine = engine
@@ -114,6 +115,7 @@ class SQLDatabase:
             only=list(self._usable_tables),
             schema=self._schema,
         )
+        self._query_tag = query_tag
 
     @classmethod
     def from_uri(
@@ -386,6 +388,12 @@ class SQLDatabase:
                     pass
                 else:  # postgresql and compatible dialects
                     connection.exec_driver_sql(f"SET search_path TO {self._schema}")
+            if self.dialect == "snowflake":
+                # Sets the query tag so that we can track which
+                # queries are being triggered by the SQL agent
+                connection.exec_driver_sql(
+                    f"ALTER SESSION SET QUERY_TAG = '{self._query_tag}'"
+                )
             cursor = connection.execute(text(command))
             if cursor.returns_rows:
                 if fetch == "all":
