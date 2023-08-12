@@ -50,7 +50,7 @@ class GitHubToolkit(BaseToolkit):
             },
             {
                 "mode": "get_pull_request",
-                "name": "Get Pull Request (PR)",
+                "name": "Get Pull Request (fetch by PR number)",
                 "description": GET_PR_PROMPT,
             },
             {

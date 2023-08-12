@@ -70,7 +70,7 @@ This tool is a wrapper for the GitHub API, useful when you need to delete a file
 """
 
 GET_PR_PROMPT = """
-This tool will fetch the title, body, comment thread and commit history of a specific Pull Request (PR). **VERY IMPORTANT**: You must specify the PR number as an integer.
+This tool will fetch the title, body, comment thread and commit history of a specific Pull Request (by PR number). **VERY IMPORTANT**: You must specify the PR number as an integer.
 """
 
 LIST_PRS_PROMPT = """
