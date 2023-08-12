@@ -348,7 +348,7 @@ class GitHubAPIWrapper(BaseModel):
             try: 
                 self.github_repo_instance.get_contents(file_path, ref=self.github_branch)
             except Exception as e:
-                return f"File already exists at {file_path} (on branch {self.github_branch}). Use update_file instead."
+                return f"File already exists `{file_path}` on branch `{self.github_branch}`. You must use `update_file` to modify it."
             self.github_repo_instance.create_file(
                 path=file_path,
                 message="Create " + file_path,
@@ -371,7 +371,7 @@ class GitHubAPIWrapper(BaseModel):
             file = self.github_repo_instance.get_contents(file_path, ref=self.github_branch)
             return file.decoded_content.decode("utf-8")
         except Exception as e:
-            return f"File not found at {file_path} in branch {self.github_branch}. Error: {str(e)}"
+            return f"File not found `{file_path}` on branch `{self.github_branch}`. Error: {str(e)}"
 
 
     def update_file(self, file_query: str) -> str:
