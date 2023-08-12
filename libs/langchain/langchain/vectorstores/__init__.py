@@ -67,6 +67,7 @@ from langchain.vectorstores.typesense import Typesense
 from langchain.vectorstores.usearch import USearch
 from langchain.vectorstores.vectara import Vectara
 from langchain.vectorstores.weaviate import Weaviate
+from langchain.vectorstores.zep import ZepVectorStore
 from langchain.vectorstores.zilliz import Zilliz
 
 __all__ = [
@@ -123,6 +124,7 @@ __all__ = [
     "Vectara",
     "VectorStore",
     "Weaviate",
+    "ZepVectorStore",
     "Zilliz",
     "PGVector",
     "USearch",
