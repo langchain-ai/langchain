@@ -1,5 +1,5 @@
 """Edenai Tools."""
-from langchain.tools.edenai.utils import (
+from langchain.tools.edenai.edenai_base_tool import (
     EdenaiTool
 )
 from langchain.tools.edenai.explicit_content_detection_image import (
