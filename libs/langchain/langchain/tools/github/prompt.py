@@ -78,7 +78,7 @@ This tool will fetch a list of the repository's Pull Requests (PRs). It will ret
 """
 
 LIST_PULL_REQUEST_FILES="""
-This will fetch the full text of all files in a pull request (PR), useful for when you want to understand the code in a PR or contribute to it. This is only for reading files in a PR, not regular files. **VERY IMPORTANT**: You must specify the PR number as an integer input parameter.
+This will fetch the full text of all files in a pull request (PR) given the PR number as an input, useful for when you want to understand the code in a PR or contribute to it. This is only for reading files in a PR, not regular files. **VERY IMPORTANT**: You must specify the PR number as an integer input parameter.
 """
 
 # TODOS
@@ -90,8 +90,8 @@ OVERVIEW_EXISTING_FILES_IN_MAIN = """
 This tool will provide an overview of all existing files in the main branch of the repository. It will list the file names, their respective paths, and a brief summary of their contents. This can be useful for understanding the structure and content of the repository, especially when navigating through large codebases. No input parameters are required.
 """
 
-OVERVIEW_EXISTING_FILES_IN_PR = """
-This tool will provide an overview of all files in the current pull request (PR) branch. This is great for getting a high level overview of the structure of the PR's code. No input parameters are required.
+OVERVIEW_EXISTING_FILES_BOT_BRANCH = """
+This tool will provide an overview of all files in your current working branch where you should implement changes. This is great for getting a high level overview of the structure of your code. No input parameters are required.
 """
 
 # TODOs:

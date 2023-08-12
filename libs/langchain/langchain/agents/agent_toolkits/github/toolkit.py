@@ -10,8 +10,8 @@ from langchain.tools.github.prompt import (COMMENT_ON_ISSUE_PROMPT,
                                            GET_ISSUE_PROMPT, GET_ISSUES_PROMPT,
                                            GET_PR_PROMPT, LIST_PRS_PROMPT,
                                            LIST_PULL_REQUEST_FILES,
+                                           OVERVIEW_EXISTING_FILES_BOT_BRANCH,
                                            OVERVIEW_EXISTING_FILES_IN_MAIN,
-                                           OVERVIEW_EXISTING_FILES_IN_PR,
                                            READ_FILE_PROMPT,
                                            UPDATE_FILE_PROMPT)
 from langchain.tools.github.tool import GitHubAction
@@ -85,13 +85,13 @@ class GitHubToolkit(BaseToolkit):
             },
             {
                 "mode": "list_files_in_main_branch",
-                "name": "Overview of Existing Files in Main",
+                "name": "Overview of existing files in Main branch",
                 "description": OVERVIEW_EXISTING_FILES_IN_MAIN,
             },
             {
                 "mode": "list_files_in_bot_branch",
-                "name": "Overview of Files in Current PR",
-                "description": OVERVIEW_EXISTING_FILES_IN_PR,
+                "name": "Overview of files in your current working branch",
+                "description": OVERVIEW_EXISTING_FILES_BOT_BRANCH,
             },
         ]
         tools = [
