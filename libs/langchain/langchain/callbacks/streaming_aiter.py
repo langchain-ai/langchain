@@ -76,7 +76,7 @@ class ChunkAsyncIteratorCallbackHandler(AsyncIteratorCallbackHandler):
     """Callback handler that returns an async iterator."""
     def __init__(self, chunk_size=10) -> None:
         super().__init__()
-        self.chunk = []
+        self.chunk :List[str] = []
         self.chunk_size = chunk_size
     async def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         if token is not None and token != "":
