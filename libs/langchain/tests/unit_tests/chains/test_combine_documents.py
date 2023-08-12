@@ -9,8 +9,10 @@ from langchain.chains.combine_documents.reduce import (
     _collapse_docs,
     _split_list_of_docs,
 )
+from langchain.chains.qa_with_sources import load_qa_with_sources_chain
 from langchain.docstore.document import Document
 from langchain.schema import format_document
+from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
 def _fake_docs_len_func(docs: List[Document]) -> int:
@@ -19,6 +21,11 @@ def _fake_docs_len_func(docs: List[Document]) -> int:
 
 def _fake_combine_docs_func(docs: List[Document], **kwargs: Any) -> str:
     return "".join([d.page_content for d in docs])
+
+
+def test_multiple_input_keys() -> None:
+    chain = load_qa_with_sources_chain(FakeLLM(), chain_type="stuff")
+    assert chain.input_keys == ["input_documents", "question"]
 
 
 def test__split_list_long_single_doc() -> None:

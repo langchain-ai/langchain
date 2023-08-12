@@ -75,6 +75,7 @@ module.exports = {
       slug: "additional_resources",
       },
     },
+    'community'
   ],
   integrations: [
     {

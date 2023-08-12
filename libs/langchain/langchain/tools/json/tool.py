@@ -20,7 +20,7 @@ def _parse_input(text: str) -> List[Union[str, int]]:
     """Parse input of the form data["key1"][0]["key2"] into a list of keys."""
     _res = re.findall(r"\[.*?]", text)
     # strip the brackets and quotes, convert to int if possible
-    res = [i[1:-1].replace('"', "") for i in _res]
+    res = [i[1:-1].replace('"', "").replace("'", "") for i in _res]
     res = [int(i) if i.isdigit() else i for i in res]
     return res
 

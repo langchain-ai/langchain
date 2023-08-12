@@ -24,7 +24,7 @@ from langchain.schema.language_model import BaseLanguageModel
 
 
 def load_dataset(uri: str) -> List[Dict]:
-    """Load a dataset from the `LangChainDatasets HuggingFace org <https://huggingface.co/LangChainDatasets>`_.
+    """Load a dataset from the `LangChainDatasets on HuggingFace <https://huggingface.co/LangChainDatasets>`_.
 
     Args:
         uri: The uri of the dataset to load.

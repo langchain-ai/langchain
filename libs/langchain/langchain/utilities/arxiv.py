@@ -128,6 +128,8 @@ class ArxivAPIWrapper(BaseModel):
             )
 
         try:
+            # Remove the ":" and "-" from the query, as they can cause search problems
+            query = query.replace(":", "").replace("-", "")
             results = self.arxiv_search(  # type: ignore
                 query[: self.ARXIV_MAX_QUERY_LENGTH], max_results=self.load_max_docs
             ).results()
@@ -141,7 +143,7 @@ class ArxivAPIWrapper(BaseModel):
                 doc_file_name: str = result.download_pdf()
                 with fitz.open(doc_file_name) as doc_file:
                     text: str = "".join(page.get_text() for page in doc_file)
-            except FileNotFoundError as f_ex:
+            except (FileNotFoundError, fitz.fitz.FileDataError) as f_ex:
                 logger.debug(f_ex)
                 continue
             if self.load_all_available_meta:
