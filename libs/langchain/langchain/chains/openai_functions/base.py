@@ -75,7 +75,9 @@ def _parse_python_function_docstring(function: Callable) -> Tuple[str, dict]:
     return description, arg_descriptions
 
 
-def _get_python_function_arguments(function: Callable, arg_descriptions: dict) -> dict:
+def _get_python_function_arguments(
+    function: Callable, arg_descriptions: dict
+) -> dict:
     """Get JsonSchema describing a Python functions arguments.
 
     Assumes all function arguments are of primitive types (int, float, str, bool) or
@@ -101,7 +103,9 @@ def _get_python_function_required_args(function: Callable) -> List[str]:
     """Get the required arguments for a Python function."""
     spec = inspect.getfullargspec(function)
     required = spec.args[: -len(spec.defaults)] if spec.defaults else spec.args
-    required += [k for k in spec.kwonlyargs if k not in (spec.kwonlydefaults or {})]
+    required += [
+        k for k in spec.kwonlyargs if k not in (spec.kwonlydefaults or {})
+    ]
 
     is_class = type(function) is type
     if is_class and required[0] == "self":
@@ -124,7 +128,9 @@ def convert_python_function_to_openai_function(
         "description": description,
         "parameters": {
             "type": "object",
-            "properties": _get_python_function_arguments(function, arg_descriptions),
+            "properties": _get_python_function_arguments(
+                function, arg_descriptions
+            ),
             "required": _get_python_function_required_args(function),
         },
     }
@@ -179,7 +185,9 @@ def _get_openai_output_parser(
             pydantic_schema=pydantic_schema
         )
     else:
-        output_parser = JsonOutputFunctionsParser(args_only=len(functions) <= 1)
+        output_parser = JsonOutputFunctionsParser(
+            args_only=len(functions) <= 1
+        )
     return output_parser
 
 
@@ -188,6 +196,7 @@ def create_openai_fn_chain(
     llm: BaseLanguageModel,
     prompt: BasePromptTemplate,
     *,
+    output_key: Optional[str] = None,
     output_parser: Optional[BaseLLMOutputParser] = None,
     **kwargs: Any,
 ) -> LLMChain:
@@ -258,10 +267,14 @@ def create_openai_fn_chain(
                 # -> RecordDog(name="Harry", color="brown", fav_food="chicken")
     """  # noqa: E501
     if not functions:
-        raise ValueError("Need to pass in at least one function. Received zero.")
+        raise ValueError(
+            "Need to pass in at least one function. Received zero."
+        )
     openai_functions = [convert_to_openai_function(f) for f in functions]
     fn_names = [oai_fn["name"] for oai_fn in openai_functions]
-    output_parser = output_parser or _get_openai_output_parser(functions, fn_names)
+    output_parser = output_parser or _get_openai_output_parser(
+        functions, fn_names
+    )
     llm_kwargs: Dict[str, Any] = {
         "functions": openai_functions,
     }
@@ -272,7 +285,7 @@ def create_openai_fn_chain(
         prompt=prompt,
         output_parser=output_parser,
         llm_kwargs=llm_kwargs,
-        output_key="function",
+        output_key=output_key if output_key is not None else "function",
         **kwargs,
     )
     return llm_chain
