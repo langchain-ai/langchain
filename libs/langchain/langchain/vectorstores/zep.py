@@ -685,6 +685,32 @@ class ZepVectorStore(VectorStore):
             metadatas=metadatas,
         )
 
+    @classmethod
+    def from_documents(  # type: ignore
+        cls: Type["ZepVectorStore"],
+        documents: List[Document],
+        embedding: Optional[Embeddings] = None,
+        *,
+        collection_name: str,
+        api_url: str,
+        api_key: Optional[str] = None,
+        config: Optional[CollectionConfig] = None,
+        **kwargs: Any,
+    ) -> "ZepVectorStore":
+        """Return VectorStore initialized from documents and embeddings."""
+        texts = [d.page_content for d in documents]
+        metadatas = [d.metadata for d in documents]
+        return cls.from_texts(
+            texts=texts,
+            embedding=embedding,
+            metadatas=metadatas,
+            collection_name=collection_name,
+            api_url=api_url,
+            api_key=api_key,
+            config=config,
+            **kwargs,
+        )
+
     @property
     def embeddings(self) -> Optional[Embeddings]:
         return self._embedding
