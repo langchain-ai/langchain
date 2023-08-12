@@ -91,7 +91,11 @@ def create_base_retry_decorator(
             if isinstance(run_manager, AsyncCallbackManagerForLLMRun):
                 coro = run_manager.on_retry(retry_state)
                 try:
-                    asyncio.run(coro)
+                    loop = asyncio.get_event_loop()
+                    if loop.is_running():
+                        loop.create_task(coro)
+                    else:
+                        asyncio.run(coro)
                 except Exception as e:
                     _log_error_once(f"Error in on_retry: {e}")
             else:
@@ -215,9 +219,15 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> str:
+        config = config or {}
         return (
             self.generate_prompt(
-                [self._convert_input(input)], stop=stop, **(config or {}), **kwargs
+                [self._convert_input(input)],
+                stop=stop,
+                callbacks=config.get("callbacks"),
+                tags=config.get("tags"),
+                metadata=config.get("metadata"),
+                **kwargs,
             )
             .generations[0][0]
             .text
@@ -237,8 +247,14 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 None, partial(self.invoke, input, config, stop=stop, **kwargs)
             )
 
+        config = config or {}
         llm_result = await self.agenerate_prompt(
-            [self._convert_input(input)], stop=stop, **(config or {}), **kwargs
+            [self._convert_input(input)],
+            stop=stop,
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            **kwargs,
         )
         return llm_result.generations[0][0].text
 

@@ -8,7 +8,7 @@ from langchain.document_loaders.unstructured import UnstructuredFileLoader
 
 
 class AzureBlobStorageFileLoader(BaseLoader):
-    """Loading Documents from Azure Blob Storage."""
+    """Load from `Azure Blob Storage` files."""
 
     def __init__(self, conn_str: str, container: str, blob_name: str):
         """Initialize with connection string, container and blob name."""

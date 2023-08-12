@@ -20,6 +20,7 @@ from langchain.schema.messages import (
     BaseMessage,
     HumanMessage,
     SystemMessage,
+    get_buffer_string,
 )
 
 
@@ -281,6 +282,42 @@ def test_convert_to_message(
     assert _convert_to_message(args) == expected
 
 
+def test_chat_prompt_template_indexing() -> None:
+    message1 = SystemMessage(content="foo")
+    message2 = HumanMessage(content="bar")
+    message3 = HumanMessage(content="baz")
+    template = ChatPromptTemplate.from_messages([message1, message2, message3])
+    assert template[0] == message1
+    assert template[1] == message2
+
+    # Slice starting from index 1
+    slice_template = template[1:]
+    assert slice_template[0] == message2
+    assert len(slice_template) == 2
+
+
+def test_chat_prompt_template_append_and_extend() -> None:
+    """Test append and extend methods of ChatPromptTemplate."""
+    message1 = SystemMessage(content="foo")
+    message2 = HumanMessage(content="bar")
+    message3 = HumanMessage(content="baz")
+    template = ChatPromptTemplate.from_messages([message1])
+    template.append(message2)
+    template.append(message3)
+    assert len(template) == 3
+    template.extend([message2, message3])
+    assert len(template) == 5
+    assert template.messages == [
+        message1,
+        message2,
+        message3,
+        message2,
+        message3,
+    ]
+    template.append(("system", "hello!"))
+    assert template[-1] == SystemMessagePromptTemplate.from_template("hello!")
+
+
 def test_convert_to_message_is_strict() -> None:
     """Verify that _convert_to_message is strict."""
     with pytest.raises(ValueError):
@@ -288,3 +325,27 @@ def test_convert_to_message_is_strict() -> None:
         # this test is here to ensure that functionality to interpret `meow`
         # as a role is NOT added.
         _convert_to_message(("meow", "question"))
+
+
+def test_chat_message_partial() -> None:
+    template = ChatPromptTemplate.from_messages(
+        [
+            ("system", "You are an AI assistant named {name}."),
+            ("human", "Hi I'm {user}"),
+            ("ai", "Hi there, {user}, I'm {name}."),
+            ("human", "{input}"),
+        ]
+    )
+    template2 = template.partial(user="Lucy", name="R2D2")
+    with pytest.raises(KeyError):
+        template.format_messages(input="hello")
+
+    res = template2.format_messages(input="hello")
+    expected = [
+        SystemMessage(content="You are an AI assistant named R2D2."),
+        HumanMessage(content="Hi I'm Lucy"),
+        AIMessage(content="Hi there, Lucy, I'm R2D2."),
+        HumanMessage(content="hello"),
+    ]
+    assert res == expected
+    assert template2.format(input="hello") == get_buffer_string(expected)

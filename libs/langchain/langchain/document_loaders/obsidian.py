@@ -1,4 +1,3 @@
-"""Loads Obsidian directory dump."""
 import re
 from pathlib import Path
 from typing import List
@@ -8,7 +7,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class ObsidianLoader(BaseLoader):
-    """Loads Obsidian files from disk."""
+    """Load `Obsidian` files from directory."""
 
     FRONT_MATTER_REGEX = re.compile(r"^---\n(.*?)\n---\n", re.MULTILINE | re.DOTALL)
 

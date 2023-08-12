@@ -159,6 +159,22 @@ index.vectorstore.as_retriever()
 
 </CodeOutputBlock>
 
+It can also be convenient to filter the vectorstore by the metadata associated with documents, particularly when your vectorstore has multiple sources.  This can be done using the `query` method like so:
+
+
+```python
+index.query("Summarize the general content of this document.", retriever_kwargs={"search_kwargs": {"filter": {"source": "../state_of_the_union.txt"}}})
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    " The document is a speech given by President Trump to the nation on the occasion of his 245th birthday. The speech highlights the importance of American values and the challenges facing the country, including the ongoing conflict in Ukraine, the ongoing trade war with China, and the ongoing conflict in Syria. The speech also discusses the importance of investing in emerging technologies and American manufacturing, and calls on Congress to pass the Bipartisan Innovation Act and other important legislation."
+```
+
+</CodeOutputBlock>
+
+
 ## Walkthrough
 
 Okay, so what's actually going on? How is this index getting created?

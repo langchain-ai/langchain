@@ -1,4 +1,22 @@
-"""Access to the large language model APIs and services."""
+"""
+**LLM** classes provide
+access to the large language model (**LLM**) APIs and services.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    BaseLanguageModel --> BaseLLM --> LLM --> <name>  # Examples: AI21, HuggingFaceHub, OpenAI
+
+**Main helpers:**
+
+.. code-block::
+
+    LLMResult, PromptValue,
+    CallbackManagerForLLMRun, AsyncCallbackManagerForLLMRun,
+    CallbackManager, AsyncCallbackManager,
+    AIMessage, BaseMessage
+"""  # noqa: E501
 from typing import Dict, Type
 
 from langchain.llms.ai21 import AI21
@@ -20,7 +38,9 @@ from langchain.llms.cohere import Cohere
 from langchain.llms.ctransformers import CTransformers
 from langchain.llms.databricks import Databricks
 from langchain.llms.deepinfra import DeepInfra
+from langchain.llms.edenai import EdenAI
 from langchain.llms.fake import FakeListLLM
+from langchain.llms.fireworks import Fireworks, FireworksChat
 from langchain.llms.forefrontai import ForefrontAI
 from langchain.llms.google_palm import GooglePalm
 from langchain.llms.gooseai import GooseAI
@@ -39,6 +59,7 @@ from langchain.llms.modal import Modal
 from langchain.llms.mosaicml import MosaicML
 from langchain.llms.nlpcloud import NLPCloud
 from langchain.llms.octoai_endpoint import OctoAIEndpoint
+from langchain.llms.ollama import Ollama
 from langchain.llms.openai import AzureOpenAI, OpenAI, OpenAIChat
 from langchain.llms.openllm import OpenLLM
 from langchain.llms.openlm import OpenLM
@@ -53,9 +74,12 @@ from langchain.llms.sagemaker_endpoint import SagemakerEndpoint
 from langchain.llms.self_hosted import SelfHostedPipeline
 from langchain.llms.self_hosted_hugging_face import SelfHostedHuggingFaceLLM
 from langchain.llms.stochasticai import StochasticAI
+from langchain.llms.symblai_nebula import Nebula
 from langchain.llms.textgen import TextGen
+from langchain.llms.titan_takeoff import TitanTakeoff
 from langchain.llms.tongyi import Tongyi
 from langchain.llms.vertexai import VertexAI
+from langchain.llms.vllm import VLLM
 from langchain.llms.writer import Writer
 from langchain.llms.xinference import Xinference
 
@@ -79,7 +103,10 @@ __all__ = [
     "Cohere",
     "Databricks",
     "DeepInfra",
+    "EdenAI",
     "FakeListLLM",
+    "Fireworks",
+    "FireworksChat",
     "ForefrontAI",
     "GPT4All",
     "GooglePalm",
@@ -97,7 +124,9 @@ __all__ = [
     "MlflowAIGateway",
     "Modal",
     "MosaicML",
+    "Nebula",
     "NLPCloud",
+    "Ollama",
     "OpenAI",
     "OpenAIChat",
     "OpenLLM",
@@ -114,8 +143,10 @@ __all__ = [
     "SelfHostedHuggingFaceLLM",
     "SelfHostedPipeline",
     "StochasticAI",
+    "TitanTakeoff",
     "Tongyi",
     "VertexAI",
+    "VLLM",
     "Writer",
     "OctoAIEndpoint",
     "Xinference",
@@ -141,6 +172,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "ctransformers": CTransformers,
     "databricks": Databricks,
     "deepinfra": DeepInfra,
+    "edenai": EdenAI,
     "fake-list": FakeListLLM,
     "forefrontai": ForefrontAI,
     "google_palm": GooglePalm,
@@ -158,7 +190,9 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "mlflow-ai-gateway": MlflowAIGateway,
     "modal": Modal,
     "mosaic": MosaicML,
+    "nebula": Nebula,
     "nlpcloud": NLPCloud,
+    "ollama": Ollama,
     "openai": OpenAI,
     "openlm": OpenLM,
     "petals": Petals,
@@ -171,9 +205,11 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "self_hosted_hugging_face": SelfHostedHuggingFaceLLM,
     "stochasticai": StochasticAI,
     "tongyi": Tongyi,
+    "titan_takeoff": TitanTakeoff,
     "vertexai": VertexAI,
     "openllm": OpenLLM,
     "openllm_client": OpenLLM,
+    "vllm": VLLM,
     "writer": Writer,
     "xinference": Xinference,
 }

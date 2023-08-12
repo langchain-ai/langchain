@@ -19,6 +19,7 @@ from typing import (
 
 from pydantic import Field, root_validator
 
+from langchain.adapters.openai import convert_dict_to_message, convert_message_to_dict
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -27,17 +28,12 @@ from langchain.chat_models.base import BaseChatModel
 from langchain.llms.base import create_base_retry_decorator
 from langchain.schema import ChatGeneration, ChatResult
 from langchain.schema.messages import (
-    AIMessage,
     AIMessageChunk,
     BaseMessage,
     BaseMessageChunk,
-    ChatMessage,
     ChatMessageChunk,
-    FunctionMessage,
     FunctionMessageChunk,
-    HumanMessage,
     HumanMessageChunk,
-    SystemMessage,
     SystemMessageChunk,
 )
 from langchain.schema.output import ChatGenerationChunk
@@ -119,51 +115,6 @@ def _convert_delta_to_message_chunk(
         return ChatMessageChunk(content=content, role=role)
     else:
         return default_class(content=content)
-
-
-def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
-    role = _dict["role"]
-    if role == "user":
-        return HumanMessage(content=_dict["content"])
-    elif role == "assistant":
-        # Fix for azure
-        # Also OpenAI returns None for tool invocations
-        content = _dict.get("content", "") or ""
-        if _dict.get("function_call"):
-            additional_kwargs = {"function_call": dict(_dict["function_call"])}
-        else:
-            additional_kwargs = {}
-        return AIMessage(content=content, additional_kwargs=additional_kwargs)
-    elif role == "system":
-        return SystemMessage(content=_dict["content"])
-    elif role == "function":
-        return FunctionMessage(content=_dict["content"], name=_dict["name"])
-    else:
-        return ChatMessage(content=_dict["content"], role=role)
-
-
-def _convert_message_to_dict(message: BaseMessage) -> dict:
-    if isinstance(message, ChatMessage):
-        message_dict = {"role": message.role, "content": message.content}
-    elif isinstance(message, HumanMessage):
-        message_dict = {"role": "user", "content": message.content}
-    elif isinstance(message, AIMessage):
-        message_dict = {"role": "assistant", "content": message.content}
-        if "function_call" in message.additional_kwargs:
-            message_dict["function_call"] = message.additional_kwargs["function_call"]
-    elif isinstance(message, SystemMessage):
-        message_dict = {"role": "system", "content": message.content}
-    elif isinstance(message, FunctionMessage):
-        message_dict = {
-            "role": "function",
-            "content": message.content,
-            "name": message.name,
-        }
-    else:
-        raise ValueError(f"Got unknown type {message}")
-    if "name" in message.additional_kwargs:
-        message_dict["name"] = message.additional_kwargs["name"]
-    return message_dict
 
 
 class ChatOpenAI(BaseChatModel):
@@ -369,9 +320,10 @@ class ChatOpenAI(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if self.streaming:
+        if stream if stream is not None else self.streaming:
             generation: Optional[ChatGenerationChunk] = None
             for chunk in self._stream(
                 messages=messages, stop=stop, run_manager=run_manager, **kwargs
@@ -398,13 +350,13 @@ class ChatOpenAI(BaseChatModel):
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
-        message_dicts = [_convert_message_to_dict(m) for m in messages]
+        message_dicts = [convert_message_to_dict(m) for m in messages]
         return message_dicts, params
 
     def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
         generations = []
         for res in response["choices"]:
-            message = _convert_dict_to_message(res["message"])
+            message = convert_dict_to_message(res["message"])
             gen = ChatGeneration(
                 message=message,
                 generation_info=dict(finish_reason=res.get("finish_reason")),
@@ -442,9 +394,10 @@ class ChatOpenAI(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if self.streaming:
+        if stream if stream is not None else self.streaming:
             generation: Optional[ChatGenerationChunk] = None
             async for chunk in self._astream(
                 messages=messages, stop=stop, run_manager=run_manager, **kwargs
@@ -538,12 +491,12 @@ class ChatOpenAI(BaseChatModel):
         if sys.version_info[1] <= 7:
             return super().get_num_tokens_from_messages(messages)
         model, encoding = self._get_encoding_model()
-        if model.startswith("gpt-3.5-turbo"):
+        if model.startswith("gpt-3.5-turbo-0301"):
             # every message follows <im_start>{role/name}\n{content}<im_end>\n
             tokens_per_message = 4
             # if there's a name, the role is omitted
             tokens_per_name = -1
-        elif model.startswith("gpt-4"):
+        elif model.startswith("gpt-3.5-turbo") or model.startswith("gpt-4"):
             tokens_per_message = 3
             tokens_per_name = 1
         else:
@@ -554,11 +507,13 @@ class ChatOpenAI(BaseChatModel):
                 "information on how messages are converted to tokens."
             )
         num_tokens = 0
-        messages_dict = [_convert_message_to_dict(m) for m in messages]
+        messages_dict = [convert_message_to_dict(m) for m in messages]
         for message in messages_dict:
             num_tokens += tokens_per_message
             for key, value in message.items():
-                num_tokens += len(encoding.encode(value))
+                # Cast str(value) in case the message value is not a string
+                # This occurs with function messages
+                num_tokens += len(encoding.encode(str(value)))
                 if key == "name":
                     num_tokens += tokens_per_name
         # every reply is primed with <im_start>assistant
