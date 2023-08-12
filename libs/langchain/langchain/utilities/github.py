@@ -159,7 +159,75 @@ class GitHubAPIWrapper(BaseModel):
             return parsed_prs_str
         else:
             return "No open pull requests available"
+    
+    def list_files_in_main_branch(self) -> str:
+        """
+        Fetches all files in the main branch of the repo.
 
+        Returns:
+            str: A plaintext report containing the paths and names of the files.
+        """
+        files = []
+        try:
+            contents = self.github_repo_instance.get_contents("", ref=self.github_base_branch)
+            for content in contents:
+                if content.type == "dir":
+                    files.extend(self.get_files_from_directory(content.path))
+                else:
+                    files.append({"path": content.path, "name": content.name})
+
+            if files:
+                files_str = "\n".join([f"Path: {file['path']}, Name: {file['name']}" for file in files])
+                return f"Found {len(files)} files in the main branch:\n{files_str}"
+            else:
+                return "No files found in the main branch"
+        except Exception as e:
+            return str(e)
+    
+    def list_files_in_bot_branch(self) -> str:
+        """
+        Fetches all files in the main branch of the repo.
+
+        Returns:
+            str: A plaintext report containing the paths and names of the files.
+        """
+        files = []
+        try:
+            contents = self.github_repo_instance.get_contents("", ref=self.github_branch)
+            for content in contents:
+                if content.type == "dir":
+                    files.extend(self.get_files_from_directory(content.path))
+                else:
+                    files.append({"path": content.path, "name": content.name})
+
+            if files:
+                files_str = "\n".join([f"Path: {file['path']}, Name: {file['name']}" for file in files])
+                return f"Found {len(files)} files in the main branch:\n{files_str}"
+            else:
+                return "No files found in the main branch"
+        except Exception as e:
+            return str(e)
+
+    def get_files_from_directory(self, directory_path: str) -> List[dict]:
+        """
+        Recursively fetches files from a directory in the repo.
+
+        Parameters:
+            directory_path (str): Path to the directory
+
+        Returns:
+            List[dict]: List of files with their paths and names.
+        """
+        files = []
+        contents = self.github_repo_instance.get_contents(directory_path, ref=self.github_branch)
+        for content in contents:
+            if content.type == "dir":
+                files.extend(self.get_files_from_directory(content.path))
+            else:
+                files.append({"path": content.path, "name": content.name})
+        return files    
+    
+    
     def get_issue(self, issue_number: int) -> Dict[str, Any]:
         """
         Fetches a specific issue and its first 10 comments
@@ -514,5 +582,9 @@ class GitHubAPIWrapper(BaseModel):
             return self.get_pull_request(int(query))
         elif mode == "list_pull_request_files":
             return self.list_pull_request_files(int(query))
+        elif mode == "list_files_in_main_branch":
+            return self.list_files_in_main_branch()
+        elif mode == "list_files_in_bot_branch":
+            return self.list_files_in_bot_branch()
         else:
             raise ValueError("Invalid mode" + mode)

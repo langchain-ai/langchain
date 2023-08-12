@@ -86,6 +86,14 @@ GET_PR_DETAILS_PROMPT = """
 Fetch file tree (or CTAGS) of the entire commit.
 """
 
+OVERVIEW_EXISTING_FILES_IN_MAIN = """
+This tool will provide an overview of all existing files in the main branch of the repository. It will list the file names, their respective paths, and a brief summary of their contents. This can be useful for understanding the structure and content of the repository, especially when navigating through large codebases. No input parameters are required.
+"""
+
+OVERVIEW_EXISTING_FILES_IN_PR = """
+This tool will provide an overview of all files in the current pull request (PR) branch. This is great for getting a high level overview of the structure of the PR's code. No input parameters are required.
+"""
+
 # TODOs:
 # https://docs.github.com/en/rest/search/search?apiVersion=2022-11-28#search-issues-and-pull-requests
 # get_reviews(), get_review_requests(), get_labels(), add_to_labels([labels])
