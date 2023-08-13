@@ -517,19 +517,30 @@ class Chroma(VectorStore):
             document_id (str): ID of the document to update.
             document (Document): Document to update.
         """
-        text = document.page_content
-        metadata = document.metadata
+        return self.update_document_batch([document_id], [document])
+
+    def update_document_batch(
+        self, document_ids: List[str], documents: List[Document]
+    ) -> None:
+        """Update a document in the collection.
+
+        Args:
+            document_ids (List[str]): List of ids of the document to update.
+            documents (List[Document]): List of documents to update.
+        """
+        text = [document.page_content for document in documents]
+        metadata = [document.metadata for document in documents]
         if self._embedding_function is None:
             raise ValueError(
                 "For update, you must specify an embedding function on creation."
             )
-        embeddings = self._embedding_function.embed_documents([text])
+        embeddings = self._embedding_function.embed_documents(text)
 
         self._collection.update(
-            ids=[document_id],
+            ids=document_ids,
             embeddings=embeddings,
-            documents=[text],
-            metadatas=[metadata],
+            documents=text,
+            metadatas=metadata,
         )
 
     @classmethod
