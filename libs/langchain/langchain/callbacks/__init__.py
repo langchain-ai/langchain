@@ -35,6 +35,9 @@ from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.callbacks.streaming_stdout_final_only import (
     FinalStreamingStdOutCallbackHandler,
 )
+from langchain.callbacks.streaming_last_response_callback import (
+    StreamingLastResponseCallbackHandler,
+)
 from langchain.callbacks.streamlit import LLMThoughtLabeler, StreamlitCallbackHandler
 from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.callbacks.wandb_callback import WandbCallbackHandler
@@ -58,6 +61,7 @@ __all__ = [
     "AsyncIteratorCallbackHandler",
     "StreamingStdOutCallbackHandler",
     "FinalStreamingStdOutCallbackHandler",
+    "StreamingLastResponseCallbackHandler"
     "LLMThoughtLabeler",
     "LangChainTracer",
     "StreamlitCallbackHandler",
