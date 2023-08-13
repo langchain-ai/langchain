@@ -247,6 +247,7 @@ class StreamingLastResponseCallbackHandler(BaseCallbackHandler):
         """
         super().on_agent_finish(finish, **kwargs)
         self._flush_detection_queue()
+        self.is_streaming_answer = False
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """
