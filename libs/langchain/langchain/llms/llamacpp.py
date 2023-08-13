@@ -262,6 +262,24 @@ class LlamaCpp(LLM):
             result = self.client(prompt=prompt, **params)
             return result["choices"][0]["text"]
 
+    async def _acall(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
+        if self.streaming:
+            combined_text_output = ""
+            async for chunk in self._astream(prompt, stop, run_manager, **kwargs):
+                combined_text_output += chunk.text
+            return combined_text_output
+        else:
+            params = self._get_parameters(stop)
+            params = {**params, **kwargs}
+            result = self.client(prompt=prompt, **params)
+            return result["choices"][0]["text"]
+
     def _stream(
         self,
         prompt: str,
@@ -310,6 +328,27 @@ class LlamaCpp(LLM):
             yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(
+                    token=chunk.text, verbose=self.verbose, log_probs=logprobs
+                )
+
+    async def _astream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[GenerationChunk]:
+        params = {**self._get_parameters(stop), **kwargs}
+        result = self.client(prompt=prompt, stream=True, **params)
+        for part in result:
+            logprobs = part["choices"][0].get("logprobs", None)
+            chunk = GenerationChunk(
+                text=part["choices"][0]["text"],
+                generation_info={"logprobs": logprobs},
+            )
+            yield chunk
+            if run_manager:
+                await run_manager.on_llm_new_token(
                     token=chunk.text, verbose=self.verbose, log_probs=logprobs
                 )
 
