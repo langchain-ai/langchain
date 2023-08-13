@@ -16,7 +16,7 @@ CHUNK_SIZE = 1024 * 1024 * 5
 
 
 class OneDriveFileLoader(BaseLoader, BaseModel):
-    """Loads a file from OneDrive."""
+    """Load a file from `Microsoft OneDrive`."""
 
     file: File = Field(...)
     """The file to load."""

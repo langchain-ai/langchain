@@ -1,4 +1,3 @@
-"""Loading logic for loading documents from an AWS S3 directory."""
 from typing import List
 
 from langchain.docstore.document import Document
@@ -7,7 +6,7 @@ from langchain.document_loaders.s3_file import S3FileLoader
 
 
 class S3DirectoryLoader(BaseLoader):
-    """Loading logic for loading documents from an AWS S3."""
+    """Load from `Amazon AWS S3` directory."""
 
     def __init__(self, bucket: str, prefix: str = ""):
         """Initialize with bucket and key name.

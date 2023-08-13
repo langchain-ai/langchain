@@ -25,3 +25,18 @@ class TestSVMRetriever:
             documents=input_docs, embeddings=FakeEmbeddings(size=100)
         )
         assert len(svm_retriever.texts) == 3
+
+    @pytest.mark.requires("sklearn")
+    def test_metadata_persists(self) -> None:
+        input_docs = [
+            Document(page_content="I have a pen.", metadata={"foo": "bar"}),
+            Document(page_content="How about you?", metadata={"foo": "baz"}),
+            Document(page_content="I have a bag.", metadata={"foo": "qux"}),
+        ]
+        svm_retriever = SVMRetriever.from_documents(
+            documents=input_docs, embeddings=FakeEmbeddings(size=100)
+        )
+        query = "Have anything?"
+        output_docs = svm_retriever.get_relevant_documents(query=query)
+        for doc in output_docs:
+            assert "foo" in doc.metadata
