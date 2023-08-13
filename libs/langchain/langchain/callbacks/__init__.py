@@ -61,7 +61,7 @@ __all__ = [
     "AsyncIteratorCallbackHandler",
     "StreamingStdOutCallbackHandler",
     "FinalStreamingStdOutCallbackHandler",
-    "StreamingLastResponseCallbackHandler"
+    "StreamingLastResponseCallbackHandler",
     "LLMThoughtLabeler",
     "LangChainTracer",
     "StreamlitCallbackHandler",

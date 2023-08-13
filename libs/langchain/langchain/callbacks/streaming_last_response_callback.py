@@ -417,12 +417,16 @@ class StreamingLastResponseCallbackHandler(BaseCallbackHandler):
                 if _answer_prefix_phrase is not None:
                     # remove all answer prefix tokens from detection queue
                     if not self.output_stream_prefix:
-                        for _ in range(self._get_length_in_tokens(_answer_prefix_phrase)):
+                        for _ in range(
+                            self._get_length_in_tokens(_answer_prefix_phrase)
+                        ):
                             while self.detection_queue.queue[0] == "":
                                 self.detection_queue.get()
                             self.detection_queue.get()
                     else:
-                        for _ in range(self._get_length_in_tokens(_answer_prefix_phrase)):
+                        for _ in range(
+                            self._get_length_in_tokens(_answer_prefix_phrase)
+                        ):
                             self._callback(self.detection_queue.get())
                 else:
                     self.detection_queue.get()
