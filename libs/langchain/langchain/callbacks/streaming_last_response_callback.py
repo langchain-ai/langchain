@@ -270,8 +270,11 @@ class StreamingLastResponseCallbackHandler(BaseCallbackHandler):
         elif self.detection_queue.qsize() > self.detection_queue_size:
             # if the answer is not reached, the detection queue will be checked.
             _answer_prefix_phrase = self._check_if_answer_reached()
+            # remove all answer prefix tokens from the detection queue
             if _answer_prefix_phrase is not None:
-                # remove all answer prefix tokens from the detection queue
+                # In `text-davinci-003` model, token counting is mismatched because OpenAI return "\nFinal Answer:" as a single token during streaming.
+                # Therefore, we need to remove the last two tokens from the detection queue to match the token counting.
+                # for _ in range(self._get_length_in_tokens(_answer_prefix_phrase) + (0 if "Final Answer" in _answer_prefix_phrase else -2)):
                 for _ in range(self._get_length_in_tokens(_answer_prefix_phrase)):
                     _token = self.detection_queue.get()
                     if self.output_stream_prefix:
