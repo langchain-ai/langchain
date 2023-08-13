@@ -5,7 +5,7 @@ from pydantic import root_validator
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
 from langchain.utils import get_from_dict_or_env
-from langchain.tools.edenai import EdenaiTool
+from langchain.tools.edenai.edenai_base_tool import EdenaiTool
 logger = logging.getLogger(__name__)
   
 class EdenAiExplicitTextDetection(EdenaiTool):  
