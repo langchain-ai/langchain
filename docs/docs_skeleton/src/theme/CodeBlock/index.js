@@ -23,7 +23,7 @@ function Imports({ imports }) {
         {imports.map(({ imported, source, docs }) => (
           <li key={imported}>
             <a href={docs}>
-              <span>{imported}{"."}{source}</span>
+              <span>{imported}</span>
             </a>
           </li>
         ))}
