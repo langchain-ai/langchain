@@ -19,7 +19,7 @@ def test_sklearn() -> None:
 
 
 @pytest.mark.parametrize(
-    "metrics",
+    "metric",
     [
         "cosine",
         "minkowski",
@@ -27,10 +27,10 @@ def test_sklearn() -> None:
     ],
 )
 @pytest.mark.requires("numpy", "sklearn")
-def test_sklearn_similarity_search_with_score(metrics: str) -> None:
+def test_sklearn_similarity_search_with_score(metric: str) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
-    docsearch = SKLearnVectorStore.from_texts(texts, FakeEmbeddings(), metrics=metrics)
+    docsearch = SKLearnVectorStore.from_texts(texts, FakeEmbeddings(), metric=metric)
     output = docsearch.similarity_search_with_score("foo", k=2)
     assert len(output) == 2
     assert output[0][0].page_content == "foo"
@@ -77,7 +77,9 @@ def test_sklearn_with_metadatas_with_scores() -> None:
         "parquet",
     ],
 )
-@pytest.mark.requires("numpy", "sklearn")
+@pytest.mark.requires(
+    "numpy", "sklearn", "pandas", "pyarrow", "pyarrow.parquet", "bson"
+)
 def test_sklearn_with_persistence(
     tmpdir: Path,
     serializer: Literal["json", "bson", "parquet"],
