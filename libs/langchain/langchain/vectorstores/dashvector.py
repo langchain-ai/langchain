@@ -111,11 +111,12 @@ class DashVector(VectorStore):
             List of ids from adding the texts into the vectorstore.
         """
         ids = ids or [str(uuid.uuid4().hex) for _ in texts]
-        for i in range(0, len(list(texts)), batch_size):
+        text_list = list(texts)
+        for i in range(0, len(text_list), batch_size):
             # batch end
-            end = min(i + batch_size, len(list(texts)))
+            end = min(i + batch_size, len(text_list))
 
-            batch_texts = texts[i:end]
+            batch_texts = text_list[i:end]
             batch_ids = ids[i:end]
             batch_embeddings = self._embedding.embed_documents(list(batch_texts))
 
@@ -161,7 +162,8 @@ class DashVector(VectorStore):
         Args:
             query: Text to search documents similar to.
             k: Number of documents to return. Default to 4.
-            filter: Doc fields filter conditions that meet the SQL where clause specification.
+            filter: Doc fields filter conditions that meet the SQL where clause
+                    specification.
 
         Returns:
             List of Documents most similar to the query text.
@@ -184,7 +186,8 @@ class DashVector(VectorStore):
         Args:
             query: input text
             k: Number of Documents to return. Defaults to 4.
-            filter: Doc fields filter conditions that meet the SQL where clause specification.
+            filter: Doc fields filter conditions that meet the SQL where clause
+                    specification.
 
         Returns:
             List of Tuples of (doc, similarity_score)
@@ -199,7 +202,7 @@ class DashVector(VectorStore):
         self,
         embedding: List[float],
         k: int = 4,
-        filter: Optional[dict] = None,
+        filter: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to embedding vector.
@@ -207,7 +210,8 @@ class DashVector(VectorStore):
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter: Doc fields filter conditions that meet the SQL where clause specification.
+            filter: Doc fields filter conditions that meet the SQL where clause
+                    specification.
 
         Returns:
             List of Documents most similar to the query vector.
@@ -239,7 +243,8 @@ class DashVector(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
-            filter: Doc fields filter conditions that meet the SQL where clause specification.
+            filter: Doc fields filter conditions that meet the SQL where clause
+                    specification.
 
         Returns:
             List of Documents selected by maximal marginal relevance.
@@ -271,7 +276,8 @@ class DashVector(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
-            filter: Doc fields filter conditions that meet the SQL where clause specification.
+            filter: Doc fields filter conditions that meet the SQL where clause
+                    specification.
 
         Returns:
             List of Documents selected by maximal marginal relevance.
@@ -330,7 +336,6 @@ class DashVector(VectorStore):
         """
         try:
             import dashvector
-            from dashvector import Client
         except ImportError:
             raise ValueError(
                 "Could not import dashvector python package. "
@@ -341,7 +346,7 @@ class DashVector(VectorStore):
             "dashvector_api_key", "DASHVECTOR_API_KEY"
         )
 
-        dashvector_client = Client(api_key=dashvector_api_key)
+        dashvector_client = dashvector.Client(api_key=dashvector_api_key)
         dashvector_client.delete(collection_name)
         collection = dashvector_client.get(collection_name)
         if not collection:
