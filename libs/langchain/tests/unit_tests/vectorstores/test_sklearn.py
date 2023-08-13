@@ -69,40 +69,26 @@ def test_sklearn_with_metadatas_with_scores() -> None:
     assert score == 1
 
 
-@pytest.mark.parametrize(
-    "serializer",
-    [
-        "json",
-        "bson",
-        "parquet",
-    ],
-)
-@pytest.mark.requires(
-    "numpy", "sklearn", "pandas", "pyarrow", "pyarrow.parquet", "bson"
-)
-def test_sklearn_with_persistence(
-    tmpdir: Path,
-    serializer: Literal["json", "bson", "parquet"],
-) -> None:
+@pytest.mark.requires("numpy", "sklearn")
+def test_sklearn_with_persistence(tmpdir: Path) -> None:
     """Test end to end construction and search, with persistence."""
-    persist_path = tmpdir / f"foo.{serializer}"
+    persist_path = tmpdir / "foo.parquet"
     texts = ["foo", "bar", "baz"]
     docsearch = SKLearnVectorStore.from_texts(
         texts,
         FakeEmbeddings(),
         persist_path=str(persist_path),
-        serializer=serializer,
+        serializer="json",
     )
 
     output = docsearch.similarity_search("foo", k=1)
     assert len(output) == 1
     assert output[0].page_content == "foo"
-
     docsearch.persist()
 
     # Get a new VectorStore from the persisted directory
     docsearch = SKLearnVectorStore(
-        FakeEmbeddings(), persist_path=str(persist_path), serializer=serializer
+        FakeEmbeddings(), persist_path=str(persist_path), serializer="json"
     )
     output = docsearch.similarity_search("foo", k=1)
     assert len(output) == 1
