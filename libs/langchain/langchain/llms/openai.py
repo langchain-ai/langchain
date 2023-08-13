@@ -143,8 +143,8 @@ class BaseOpenAI(BaseLLM):
     def lc_serializable(self) -> bool:
         return True
 
-    client: Any  #: :meta private:
-    model_name: str = Field("text-davinci-003", alias="model")
+    client: Any = None  #: :meta private:
+    model_name: str = Field(default="text-davinci-003", alias="model")
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
