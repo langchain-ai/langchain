@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -36,7 +36,7 @@ DEFAULT_QUERY_PROMPT = PromptTemplate(
     input_variables=["question"],
     template="""You are an AI language model assistant. Your task is 
     to generate 3 different versions of the given user 
-    question to retrieve relevant documents from a vector  database. 
+    question to retrieve relevant documents from a vector database. 
     By generating multiple perspectives on the user question, 
     your goal is to help the user overcome some of the limitations 
     of distance-based similarity search. Provide these alternative 
@@ -99,7 +99,9 @@ class MultiQueryRetriever(BaseRetriever):
         return unique_documents
 
     def generate_queries(
-        self, question: str, run_manager: CallbackManagerForRetrieverRun
+        self,
+        question: str,
+        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
     ) -> List[str]:
         """Generate queries based upon user input.
 
@@ -110,7 +112,8 @@ class MultiQueryRetriever(BaseRetriever):
             List of LLM generated queries that are similar to the user input
         """
         response = self.llm_chain(
-            {"question": question}, callbacks=run_manager.get_child()
+            {"question": question},
+            callbacks=run_manager.get_child() if run_manager else None,
         )
         lines = getattr(response["text"], self.parser_key, [])
         if self.verbose:
@@ -118,7 +121,9 @@ class MultiQueryRetriever(BaseRetriever):
         return lines
 
     def retrieve_documents(
-        self, queries: List[str], run_manager: CallbackManagerForRetrieverRun
+        self,
+        queries: List[str],
+        run_manager: Optional[CallbackManagerForRetrieverRun] = None,
     ) -> List[Document]:
         """Run all LLM generated queries.
 
@@ -131,7 +136,7 @@ class MultiQueryRetriever(BaseRetriever):
         documents = []
         for query in queries:
             docs = self.retriever.get_relevant_documents(
-                query, callbacks=run_manager.get_child()
+                query, callbacks=run_manager.get_child() if run_manager else None
             )
             documents.extend(docs)
         return documents
