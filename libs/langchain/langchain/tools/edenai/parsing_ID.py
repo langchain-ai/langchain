@@ -1,6 +1,6 @@
 from __future__ import annotations
 import logging
-from typing import Dict, Optional
+from typing import Dict, Optional,Any
 from pydantic import root_validator
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
@@ -37,7 +37,7 @@ class EdenAiParsingIDTool(BaseTool):
     
     provider: str
     """ provider to use (amazon,base64,microsoft,mindee,klippa )"""
-    params : Optional[Dict[str,any]] = None
+    params : Optional[Dict[str,Any]] = None
 
     
     
