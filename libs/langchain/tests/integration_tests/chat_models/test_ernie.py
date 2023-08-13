@@ -1,6 +1,6 @@
-
 from langchain.chat_models.ernie import ErnieChat
-from libs.langchain.langchain.schema.messages import BaseMessage, HumanMessage
+from langchain.schema.messages import BaseMessage, HumanMessage
+
 
 def test_chat_ernie() -> None:
     """Test ErnieChat."""

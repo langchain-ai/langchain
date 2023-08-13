@@ -21,39 +21,6 @@ from langchain.utils import get_from_dict_or_env
 logger = logging.getLogger(__name__)
 
 
-def _get_access_token(client_id: str, client_secret: str) -> str:
-    base_url: str = "https://aip.baidubce.com/oauth/2.0/token"
-    resp = requests.post(
-        base_url,
-        headers={"Content-Type": "application/json", "Accept": "application/json"},
-        params={
-            "grant_type": "client_credentials",
-            "client_id": client_id,
-            "client_secret": client_secret,
-        },
-    )
-    return str(resp.json().get("access_token"))
-
-
-def _chat(model: str, access_token: str, json: object) -> dict:
-    base_url = "https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat"
-    if model == "ERNIE-Bot-turbo":
-        url = f"{base_url}/eb-instant"
-    elif model == "ERNIE-Bot":
-        url = f"{base_url}/completions"
-    else:
-        raise ValueError(f"Got unknown model_name {model}")
-    resp = requests.post(
-        url,
-        headers={
-            "Content-Type": "application/json",
-        },
-        params={"access_token": access_token},
-        json=json,
-    )
-    return resp.json()
-
-
 def _convert_message_to_dict(message: BaseMessage) -> dict:
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
@@ -75,9 +42,10 @@ class ErnieChat(BaseChatModel):
     and will be regenerated after expiration
     """
 
-    client_id: str
-    client_secret: str
-    access_token: str = ""
+    client_id: Optional[str] = None
+    client_secret: Optional[str] = None
+    access_token: Optional[str] = None
+
     model_name: str = "ERNIE-Bot-turbo"
 
     streaming: Optional[bool] = False
@@ -101,10 +69,41 @@ class ErnieChat(BaseChatModel):
         )
         return values
 
+    def _chat(self, payload: object) -> dict:
+        base_url = "https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat"
+        if self.model_name == "ERNIE-Bot-turbo":
+            url = f"{base_url}/eb-instant"
+        elif self.model_name == "ERNIE-Bot":
+            url = f"{base_url}/completions"
+        else:
+            raise ValueError(f"Got unknown model_name {self.model_name}")
+        resp = requests.post(
+            url,
+            headers={
+                "Content-Type": "application/json",
+            },
+            params={"access_token": self.access_token},
+            json=payload,
+        )
+        return resp.json()
+
     def _refresh_access_token_with_lock(self) -> None:
         with self._lock:
             logger.debug("Refreshing access token")
-            self.access_token = _get_access_token(self.client_id, self.client_secret)
+            base_url: str = "https://aip.baidubce.com/oauth/2.0/token"
+            resp = requests.post(
+                base_url,
+                headers={
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                },
+                params={
+                    "grant_type": "client_credentials",
+                    "client_id": self.client_id,
+                    "client_secret": self.client_secret,
+                },
+            )
+            self.access_token = str(resp.json().get("access_token"))
 
     def _generate(
         self,
@@ -124,13 +123,13 @@ class ErnieChat(BaseChatModel):
             "temperature": self.temperature,
             "penalty_score": self.penalty_score,
         }
-        resp = _chat(self.model_name, self.access_token, payload)
+        resp = self._chat(payload)
         if resp.get("error_code"):
             if resp.get("error_code") == 111:
                 self._refresh_access_token_with_lock()
-                resp = _chat(self.model_name, self.access_token, payload)
+                resp = self._chat(payload)
             else:
-                raise ValueError(f"Error from Ernie: {resp}")
+                raise ValueError(f"Error from ErnieChat api response: {resp}")
         return self._create_chat_result(resp)
 
     def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
@@ -143,4 +142,4 @@ class ErnieChat(BaseChatModel):
 
     @property
     def _llm_type(self) -> str:
-        return "ernie"
+        return "ernie-chat"
