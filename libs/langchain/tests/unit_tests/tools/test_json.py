@@ -1,7 +1,7 @@
 """Test functionality of JSON tools."""
 from pathlib import Path
 
-from langchain.tools.json.tool import JsonSpec
+from langchain.tools.json.tool import JsonGetValueTool, JsonListKeysTool, JsonSpec
 
 
 def test_json_spec_from_file(tmp_path: Path) -> None:
@@ -51,3 +51,32 @@ def test_json_spec_value_max_length() -> None:
         == "Value is a large dictionary, should explore its keys directly"
     )
     assert spec.value('data["baz"]["test"]["foo"]') == "[1, 2..."
+
+
+def test_json_list_keys_tool() -> None:
+    """Test JsonSpec can return keys of a dict at given path."""
+    spec = JsonSpec(dict_={"foo": "bar", "baz": {"test": {"foo": [1, 2, 3]}}})
+    json_list_keys_tool = JsonListKeysTool(spec=spec)
+    assert json_list_keys_tool._run("data") == "['foo', 'baz']"
+    assert "ValueError" in json_list_keys_tool._run('data["foo"]')
+    assert json_list_keys_tool._run('data["baz"]') == "['test']"
+    assert json_list_keys_tool._run('data["baz"]["test"]') == "['foo']"
+    assert "ValueError" in json_list_keys_tool._run('data["baz"]["test"]["foo"]')
+
+
+def test_json_get_value_tool() -> None:
+    """Test JsonSpec can return value of a dict at given path."""
+    spec = JsonSpec(dict_={"foo": "bar", "baz": {"test": {"foo": [1, 2, 3]}}})
+    json_get_value_tool = JsonGetValueTool(spec=spec)
+    assert (
+        json_get_value_tool._run("data")
+        == "{'foo': 'bar', 'baz': {'test': {'foo': [1, 2, 3]}}}"
+    )
+    assert json_get_value_tool._run('data["foo"]') == "bar"
+    assert json_get_value_tool._run('data["baz"]') == "{'test': {'foo': [1, 2, 3]}}"
+    assert json_get_value_tool._run('data["baz"]["test"]') == "{'foo': [1, 2, 3]}"
+    assert json_get_value_tool._run('data["baz"]["test"]["foo"]') == "[1, 2, 3]"
+    assert json_get_value_tool._run("data['foo']") == "bar"
+    assert json_get_value_tool._run("data['baz']") == "{'test': {'foo': [1, 2, 3]}}"
+    assert json_get_value_tool._run("data['baz']['test']") == "{'foo': [1, 2, 3]}"
+    assert json_get_value_tool._run("data['baz']['test']['foo']") == "[1, 2, 3]"
