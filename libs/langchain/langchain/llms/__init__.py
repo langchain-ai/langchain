@@ -79,8 +79,7 @@ from langchain.llms.textgen import TextGen
 from langchain.llms.titan_takeoff import TitanTakeoff
 from langchain.llms.tongyi import Tongyi
 from langchain.llms.vertexai import VertexAI
-from langchain.llms.vllm import VLLM
-from langchain.llms.vllm import VLLMOpenAI
+from langchain.llms.vllm import VLLM, VLLMOpenAI
 from langchain.llms.writer import Writer
 from langchain.llms.xinference import Xinference
 
