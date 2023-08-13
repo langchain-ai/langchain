@@ -5,6 +5,7 @@ from langchain.docstore.document import Document
 from langchain.vectorstores.utils import (
     filter_complex_metadata,
     maximal_marginal_relevance,
+    maximal_marginal_relevance_with_score,
 )
 
 
@@ -56,6 +57,55 @@ def test_maximal_marginal_relevance_query_dim() -> None:
     first = maximal_marginal_relevance(query_embedding, embedding_list)
     second = maximal_marginal_relevance(query_embedding_2d, embedding_list)
     assert first == second
+
+
+def test_maximal_marginal_relevance_with_score() -> None:
+    query_embedding = np.array([1, 0])
+    embedding_list = [[3**0.5, 1], [1, 1], [1, 2 + (3**0.5)]]
+
+    expected = [(0, 0.8660254037844387), (2, -0.3669920536199742)]
+    actual = maximal_marginal_relevance_with_score(
+        query_embedding, embedding_list, lambda_mult=(25 / 71), k=2
+    )
+    assert len(expected) == len(actual)
+    for e, a in zip(expected, actual):
+        assert e[0] == a[0]
+        assert np.isclose(e[1], a[1])
+
+    expected = [
+        (0, 0.8660254037844387),
+        (2, -0.3669920536199742),
+        (1, -0.3768298377413163),
+    ]
+    actual = maximal_marginal_relevance_with_score(
+        query_embedding, embedding_list, lambda_mult=(25 / 71), k=3
+    )
+    assert len(expected) == len(actual)
+    for e, a in zip(expected, actual):
+        assert e[0] == a[0]
+        assert np.isclose(e[1], a[1])
+
+    expected = [(0, 0.8660254037844387), (1, -0.32970215865749625)]
+    actual = maximal_marginal_relevance_with_score(
+        query_embedding, embedding_list, lambda_mult=(27 / 71), k=2
+    )
+    assert len(expected) == len(actual)
+    for e, a in zip(expected, actual):
+        assert e[0] == a[0]
+        assert np.isclose(e[1], a[1])
+
+    expected = [
+        (0, 0.8660254037844387),
+        (1, -0.32970215865749625),
+        (2, -0.4382676556161582),
+    ]
+    actual = maximal_marginal_relevance_with_score(
+        query_embedding, embedding_list, lambda_mult=(27 / 71), k=3
+    )
+    assert len(expected) == len(actual)
+    for e, a in zip(expected, actual):
+        assert e[0] == a[0]
+        assert np.isclose(e[1], a[1])
 
 
 def test_filter_list_metadata() -> None:
