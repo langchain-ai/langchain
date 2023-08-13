@@ -1,0 +1,10 @@
+# Vector store-backed retriever
+
+A vector store retriever is a retriever that uses a vector store to retrieve documents. It is a lightweight wrapper around the Vector Store class to make it conform to the Retriever interface.
+It uses the search methods implemented by a vector store, like similarity search and MMR, to query the texts in the vector store.
+
+Once you construct a Vector store, it's very easy to construct a retriever. Let's walk through an example.
+
+import Example from "@snippets/modules/data_connection/retrievers/how_to/vectorstore.mdx"
+
+<Example/>
