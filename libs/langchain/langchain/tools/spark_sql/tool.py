@@ -2,7 +2,7 @@
 """Tools for interacting with Spark SQL."""
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic_v1 import BaseModel, Extra, Field, root_validator
 
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.callbacks.manager import (

@@ -2,7 +2,7 @@ import logging
 import re
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic_v1 import BaseModel, Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,

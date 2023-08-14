@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class NewsURLLoader(BaseLoader):
-    """Loader that uses newspaper to load news articles from URLs.
+    """Load news articles from URLs using `Unstructured`.
 
     Args:
         urls: URLs to load. Each is loaded into its own document.

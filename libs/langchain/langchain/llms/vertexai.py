@@ -4,7 +4,7 @@ import asyncio
 from concurrent.futures import Executor, ThreadPoolExecutor
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Optional
 
-from pydantic import BaseModel, root_validator
+from pydantic_v1 import BaseModel, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,

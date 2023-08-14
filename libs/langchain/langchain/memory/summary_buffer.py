@@ -1,6 +1,6 @@
 from typing import Any, Dict, List
 
-from pydantic import root_validator
+from pydantic_v1 import root_validator
 
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.summary import SummarizerMixin

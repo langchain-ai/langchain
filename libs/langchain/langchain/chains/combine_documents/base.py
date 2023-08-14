@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import Field
+from pydantic_v1 import Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,

@@ -2,7 +2,7 @@
 from typing import Any, Callable, List, Sequence
 
 import numpy as np
-from pydantic import BaseModel, Field
+from pydantic_v1 import BaseModel, Field
 
 from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseDocumentTransformer, Document

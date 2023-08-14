@@ -16,7 +16,7 @@ import os
 from typing import Any, Dict, Optional, Type, Union
 
 import requests
-from pydantic import BaseModel, Field
+from pydantic_v1 import BaseModel, Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,

@@ -23,7 +23,7 @@ from typing import (
     cast,
 )
 
-from pydantic import Field
+from pydantic_v1 import Field
 
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.load.dump import dumpd

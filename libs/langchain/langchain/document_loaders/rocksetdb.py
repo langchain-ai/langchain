@@ -17,7 +17,7 @@ class ColumnNotFoundError(Exception):
 
 
 class RocksetLoader(BaseLoader):
-    """Wrapper around Rockset db
+    """Load from a `Rockset` database.
 
     To use, you should have the `rockset` python package installed.
 

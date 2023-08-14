@@ -1,7 +1,7 @@
 import warnings
 from typing import Any, Dict, List, Set
 
-from pydantic import validator
+from pydantic_v1 import validator
 
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.schema import BaseMemory
