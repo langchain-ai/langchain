@@ -3,14 +3,16 @@ import sys
 from langchain import _PYDANTIC_MAJOR_VERSION
 
 if _PYDANTIC_MAJOR_VERSION == 1:
-    import langchain.tools.openapi.utils._api_models_p1 as module_to_use
+    from langchain.tools.openapi.utils._api_models_p1 import (
+        APIOperation,
+        APIRequestBody,
+        APIRequestBodyProperty,
+    )
 else:
-    import langchain.tools.openapi.utils._api_models_p2 as module_to_use
+    from langchain.tools.openapi.utils._api_models_p2 import (
+        APIOperation,
+        APIRequestBody,
+        APIRequestBodyProperty,
+    )
 
-
-thismodule = sys.modules[__name__]
-
-members = dir(module_to_use)
-
-for member in members:
-    setattr(thismodule, member, getattr(module_to_use, member))
+__all__ = ["APIOperation", "APIRequestBody", "APIRequestBodyProperty"]
