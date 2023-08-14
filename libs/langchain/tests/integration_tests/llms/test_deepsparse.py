@@ -1,6 +1,4 @@
 """Test DeepSparse wrapper."""
-import pytest
-
 from langchain.llms import DeepSparse
 
 

@@ -1,22 +1,26 @@
-"""Wrapper around the DeepSparse library."""
-from typing import Any, Dict, Optional, Sequence
+# flake8: noqa
+from typing import Any, Dict, Optional, List
 
 from pydantic import root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
+from langchain.llms.utils import enforce_stop_tokens
 
 
 class DeepSparse(LLM):
-    """Wrapper around the Neural Magic DeepSparse LLM interface.
-    To use, you should have the ``deepsparse`` or ``deepsparse-nightly`` python package installed.
-    See https://github.com/neuralmagic/deepsparse
-    This interface let's you deploy optimized LLMs straight from the [SparseZoo](https://sparsezoo.neuralmagic.com/?useCase=text_generation)
+    """Neural Magic DeepSparse LLM interface.
+
+    To use, you should have the ``deepsparse`` or ``deepsparse-nightly``
+    python package installed. See https://github.com/neuralmagic/deepsparse
+
+    This interface let's you deploy optimized LLMs straight from the
+    [SparseZoo](https://sparsezoo.neuralmagic.com/?useCase=text_generation)
     Example:
         .. code-block:: python
             from langchain.llms import DeepSparse
             llm = DeepSparse(model="zoo:nlg/text_generation/codegen_mono-350m/pytorch/huggingface/bigpython_bigquery_thepile/base-none")
-    """
+    """  # noqa: E501
 
     pipeline: Any  #: :meta private:
 
@@ -62,14 +66,14 @@ class DeepSparse(LLM):
     def _call(
         self,
         prompt: str,
-        stop: Optional[Sequence[str]] = None,
+        stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
         """Generate text from a prompt.
         Args:
             prompt: The prompt to generate text from.
-            stop: A list of sequences to stop generation when encountered.
+            stop: A list of strings to stop generation when encountered.
         Returns:
             The generated text.
         Example:
