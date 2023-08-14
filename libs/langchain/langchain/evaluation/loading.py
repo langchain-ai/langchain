@@ -14,6 +14,10 @@ from langchain.evaluation.embedding_distance.base import (
     EmbeddingDistanceEvalChain,
     PairwiseEmbeddingDistanceEvalChain,
 )
+from langchain.evaluation.parsing.base import (
+    JsonEqualityEvaluator,
+    JsonValidityEvaluator,
+)
 from langchain.evaluation.qa import ContextQAEvalChain, CotQAEvalChain, QAEvalChain
 from langchain.evaluation.schema import EvaluatorType, LLMEvalChain
 from langchain.evaluation.string_distance.base import (
@@ -70,6 +74,8 @@ _EVALUATOR_MAP: Dict[EvaluatorType, Union[Type[LLMEvalChain], Type[Chain]]] = {
     EvaluatorType.PAIRWISE_STRING_DISTANCE: PairwiseStringDistanceEvalChain,
     EvaluatorType.EMBEDDING_DISTANCE: EmbeddingDistanceEvalChain,
     EvaluatorType.PAIRWISE_EMBEDDING_DISTANCE: PairwiseEmbeddingDistanceEvalChain,
+    EvaluatorType.JSON_VALIDITY: JsonValidityEvaluator,
+    EvaluatorType.JSON_EQUALITY: JsonEqualityEvaluator,
 }
 
 
