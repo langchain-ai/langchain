@@ -52,7 +52,6 @@ jobs:
                 poetry install -E extended_testing
               fi
       - name: Verify pydantic version
-        if: ${{ matrix.test_type == 'core-pydantic-v2' }}
         run: |
           if [[ "${{ matrix.test_type }}" == "core-pydantic-v2" ]]; then
             EXPECTED_VERSION=2
