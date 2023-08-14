@@ -33,7 +33,7 @@ def _default_text_mapping(dim: int) -> Dict:
     }
 
 
-def _default_script_query(query_vector: List[float], filter: Optional[dict]) -> Dict:
+def _default_script_query(query_vector: List[float], filter: Optional[dict[str, List]]) -> Dict:
     if filter:
         ((key, value),) = filter.items()
         filter = {"terms": {f"metadata.{key}.keyword": value}}
