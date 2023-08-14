@@ -2225,6 +2225,23 @@ files = [
 ]
 
 [[package]]
+name = "dashvector"
+version = "1.0.0"
+description = "DashVector Client Python Sdk Library"
+category = "main"
+optional = true
+python-versions = ">=3.7.0"
+files = [
+    {file = "dashvector-1.0.0-py3-none-any.whl", hash = "sha256:aba4eadf521f9644ebd501ecd1116a7205fdf6e8bb3968ff47444e17a201ba27"},
+]
+
+[package.dependencies]
+aiohttp = ">=3.1.0"
+grpcio = ">=1.22.0"
+numpy = "*"
+protobuf = ">=3.8.0,<4.0.0"
+
+[[package]]
 name = "dataclasses-json"
 version = "0.5.8"
 description = "Easily serialize dataclasses to and from JSON"
@@ -13311,7 +13328,7 @@ clarifai = ["clarifai"]
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["amazon-textract-caller", "anthropic", "atlassian-python-api", "beautifulsoup4", "betabageldb", "bibtexparser", "cassio", "chardet", "esprima", "feedparser", "geopandas", "gitpython", "gql", "html2text", "jinja2", "jq", "lxml", "mwparserfromhell", "mwxml", "newspaper3k", "openai", "openai", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "requests-toolbelt", "scikit-learn", "streamlit", "sympy", "telethon", "tqdm", "xata", "xinference", "xmltodict", "zep-python"]
+extended-testing = ["amazon-textract-caller", "anthropic", "atlassian-python-api", "beautifulsoup4", "betabageldb", "bibtexparser", "cassio", "chardet", "dashvector", "esprima", "feedparser", "geopandas", "gitpython", "gql", "html2text", "jinja2", "jq", "lxml", "mwparserfromhell", "mwxml", "newspaper3k", "openai", "openai", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "requests-toolbelt", "scikit-learn", "streamlit", "sympy", "telethon", "tqdm", "xata", "xinference", "xmltodict", "zep-python"]
 javascript = ["esprima"]
 llms = ["anthropic", "clarifai", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "openllm", "openlm", "torch", "transformers", "xinference"]
 openai = ["openai", "tiktoken"]
@@ -13321,4 +13338,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "b61889380aec6007b6fcf7f823bf9b783177f2641c8efa0bc29b547b481c5b02"
+content-hash = "362d6a745bee6dac7aabce4fda1030e6986884301f1b03537a0c691ff7aa6f13"
