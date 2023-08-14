@@ -245,7 +245,7 @@ class Vectara(VectorStore):
         k: int = 5,
         lambda_val: float = 0.025,
         filter: Optional[str] = None,
-        n_sentence_context: int = 0,
+        n_sentence_context: int = 2,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return Vectara documents most similar to query, along with scores.
@@ -259,7 +259,7 @@ class Vectara(VectorStore):
                 https://docs.vectara.com/docs/search-apis/sql/filter-overview
                 for more details.
             n_sentence_context: number of sentences before/after the matching segment
-                to add
+                to add, defaults to 2
 
         Returns:
             List of Documents most similar to the query and score for each.
@@ -328,7 +328,7 @@ class Vectara(VectorStore):
         k: int = 5,
         lambda_val: float = 0.025,
         filter: Optional[str] = None,
-        n_sentence_context: int = 0,
+        n_sentence_context: int = 2,
         **kwargs: Any,
     ) -> List[Document]:
         """Return Vectara documents most similar to query, along with scores.
@@ -341,7 +341,7 @@ class Vectara(VectorStore):
                 https://docs.vectara.com/docs/search-apis/sql/filter-overview for more
                 details.
             n_sentence_context: number of sentences before/after the matching segment
-                to add
+                to add, defaults to 2
 
         Returns:
             List of Documents most similar to the query
@@ -427,7 +427,7 @@ class VectaraRetriever(VectorStoreRetriever):
             "lambda_val": 0.025,
             "k": 5,
             "filter": "",
-            "n_sentence_context": "0",
+            "n_sentence_context": "2",
         }
     )
     """Search params.

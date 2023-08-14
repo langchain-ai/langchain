@@ -35,7 +35,7 @@ class LanguageParser(BaseBlobParser):
 
     Examples:
 
-        .. code-block:: python
+       .. code-block:: python
 
             from langchain.text_splitter.Language
             from langchain.document_loaders.generic import GenericLoader
@@ -51,7 +51,7 @@ class LanguageParser(BaseBlobParser):
 
         Example instantiations to manually select the language:
 
-        ... code-block:: python
+        .. code-block:: python
 
             from langchain.text_splitter import Language
 
@@ -64,7 +64,7 @@ class LanguageParser(BaseBlobParser):
 
         Example instantiations to set number of lines threshold:
 
-        ... code-block:: python
+        .. code-block:: python
 
             loader = GenericLoader.from_filesystem(
                 "./code",

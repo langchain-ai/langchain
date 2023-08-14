@@ -4,7 +4,7 @@ from pydantic import root_validator
 
 from langchain.memory.chat_memory import BaseChatMemory, BaseMemory
 from langchain.memory.utils import get_prompt_input_key
-from langchain.schema.messages import get_buffer_string
+from langchain.schema.messages import BaseMessage, get_buffer_string
 
 
 class ConversationBufferMemory(BaseChatMemory):
@@ -17,14 +17,21 @@ class ConversationBufferMemory(BaseChatMemory):
     @property
     def buffer(self) -> Any:
         """String buffer of memory."""
-        if self.return_messages:
-            return self.chat_memory.messages
-        else:
-            return get_buffer_string(
-                self.chat_memory.messages,
-                human_prefix=self.human_prefix,
-                ai_prefix=self.ai_prefix,
-            )
+        return self.buffer_as_messages if self.return_messages else self.buffer_as_str
+
+    @property
+    def buffer_as_str(self) -> str:
+        """Exposes the buffer as a string in case return_messages is True."""
+        return get_buffer_string(
+            self.chat_memory.messages,
+            human_prefix=self.human_prefix,
+            ai_prefix=self.ai_prefix,
+        )
+
+    @property
+    def buffer_as_messages(self) -> List[BaseMessage]:
+        """Exposes the buffer as a list of messages in case return_messages is False."""
+        return self.chat_memory.messages
 
     @property
     def memory_variables(self) -> List[str]:
