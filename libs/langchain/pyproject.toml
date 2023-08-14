@@ -114,7 +114,6 @@ cassio = {version = "^0.0.7", optional = true}
 rdflib = {version = "^6.3.2", optional = true}
 sympy = {version = "^1.12", optional = true}
 rapidfuzz = {version = "^3.1.1", optional = true}
-# pydantic
 langsmith = "~0.0.21"
 rank-bm25 = {version = "^0.2.2", optional = true}
 amadeus = {version = ">=8.1.0", optional = true}
