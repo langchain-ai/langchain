@@ -34,7 +34,7 @@ class EdenAiTextToSpeech(EdenaiTool):
     language of the text passed to the model.
     """    
     provider: str
-    """ provider to use (amazon,base64,microsoft,mindee,klippa )"""
+    """ provider to use """
     voice : str 
     """voice option : 'MALE' or 'FEMALE' """
 

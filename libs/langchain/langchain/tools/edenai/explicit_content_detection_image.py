@@ -40,7 +40,7 @@ class EdenAiExplicitImage(EdenaiTool):
     subfeature="explicit_content"
     
     
-    @root_validator(pre=True)
+    @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
         values["edenai_api_key"] = get_from_dict_or_env(
@@ -71,9 +71,9 @@ class EdenAiExplicitImage(EdenaiTool):
         """Use the tool."""
         try:
             query_params = {"file_url": query,"attributes_as_list": False}
-            text_analysis_result = self._call_eden_ai(query_params)
-            text_analysis_result=text_analysis_result.json()
-            return self._format_json_to_string(text_analysis_result)
+            image_analysis_result = self._call_eden_ai(query_params)
+            image_analysis_result=image_analysis_result.json()
+            return self._format_json_to_string(image_analysis_result)
 
         except Exception as e:
             raise RuntimeError(f"Error while running EdenAiExplicitText: {e}")

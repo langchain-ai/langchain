@@ -22,7 +22,7 @@ class EdenAiExplicitTextDetection(EdenaiTool):
     base_url = "https://api.edenai.run/v2/text/moderation"
     
     
-    language: Optional[str] 
+    language: str
     provider: str
     
     

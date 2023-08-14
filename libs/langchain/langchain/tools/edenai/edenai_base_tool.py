@@ -14,7 +14,7 @@ class EdenaiTool(BaseTool):
     edenai_api_key: Optional[str] = None
     provider: str
         
-    @root_validator(pre=True)
+    @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
         values["edenai_api_key"] = get_from_dict_or_env(
