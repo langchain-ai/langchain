@@ -1,7 +1,7 @@
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
-from langchain.callbacks.base import Callbacks
+from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema.document import Document
 from langchain.schema.retriever import BaseRetriever
 from langchain.schema.storage import BaseStore
@@ -72,15 +72,16 @@ class ParentDocumentRetriever(BaseRetriever):
     """The text splitter to use to create parent documents.
     If none, then the parent documents will be the raw documents passed in."""
 
-    def get_relevant_documents(
-        self,
-        query: str,
-        *,
-        callbacks: Callbacks = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
+        """Get documents relevant to a query.
+        Args:
+            query: String to find relevant documents for
+            run_manager: The callbacks handler to use
+        Returns:
+            List of relevant documents
+        """
         sub_docs = self.vectorstore.similarity_search(query)
         # We do this to maintain the order of the ids that are returned
         ids = []
