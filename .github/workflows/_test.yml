@@ -46,7 +46,7 @@ jobs:
               elif [ "${{ matrix.test_type }}" == "core-pydantic-2" ]; then
                 echo "Running core-pydantic-v2 tests, installing dependencies with poetry..."
                 poetry install
-                poetry run pip install pydantic==2.1.1
+                poetry add pydantic@2.1
               else
                 echo "Running extended tests, installing dependencies with poetry..."
                 poetry install -E extended_testing
