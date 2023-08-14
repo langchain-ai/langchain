@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Literal, Optional
 
 from pydantic import Field
 
@@ -27,7 +27,13 @@ else:
 class AINetworkToolkit(BaseToolkit):
     """Toolkit for interacting with AINetwork Blockchain."""
 
-    interface: Ain = Field(default_factory=authenticate)
+    network: Optional[Literal["mainnet", "testnet"]] = Field("mainnet")
+    interface: Optional[Ain] = Field(None)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.interface:
+            self.interface = authenticate(network=self.network)
 
     class Config:
         """Pydantic config."""
