@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 
 
 class ChatLiteLLMException(Exception):
-    """Error raised when there is an issue with the LiteLLM I/O Library"""
+    """Error with the `LiteLLM I/O` library"""
 
 
 def _truncate_at_stop_tokens(
@@ -65,7 +65,7 @@ def _truncate_at_stop_tokens(
 
 
 class FunctionMessage(BaseMessage):
-    """A Message for passing the result of executing a function back to a model."""
+    """Message for passing the result of executing a function back to a model."""
 
     name: str
     """The name of the function that was executed."""
@@ -77,6 +77,8 @@ class FunctionMessage(BaseMessage):
 
 
 class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
+    """Message Chunk for passing the result of executing a function back to a model."""
+
     pass
 
 
@@ -187,7 +189,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
 
 class ChatLiteLLM(BaseChatModel):
-    """Wrapper around the LiteLLM Model I/O library.
+    """`LiteLLM` Chat models API.
 
     To use you must have the google.generativeai Python package installed and
     either:
