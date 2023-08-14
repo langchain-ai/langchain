@@ -22,8 +22,9 @@ except ImportError:
     pydantic_v1 = importlib.import_module("pydantic")
 
 if "pydantic_v1" not in sys.modules:
-    # Make check conditional since langchain experimental
-    # will use the same strategy to add pydantic_v1 to sys.modules.
+    # Use a conditional because langchain experimental
+    # will use the same strategy to add pydantic_v1 to sys.modules
+    # and may run prior to langchain core package.
     sys.modules["pydantic_v1"] = pydantic_v1
 
 from langchain.agents import MRKLChain, ReActChain, SelfAskWithSearchChain
