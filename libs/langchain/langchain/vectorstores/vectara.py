@@ -8,7 +8,7 @@ from hashlib import md5
 from typing import Any, Iterable, List, Optional, Tuple, Type
 
 import requests
-from pydantic import Field
+from pydantic_v1 import Field
 
 from langchain.embeddings.base import Embeddings
 from langchain.schema import Document
@@ -39,6 +39,7 @@ class Vectara(VectorStore):
         vectara_customer_id: Optional[str] = None,
         vectara_corpus_id: Optional[str] = None,
         vectara_api_key: Optional[str] = None,
+        vectara_api_timeout: int = 60,
     ):
         """Initialize with Vectara API."""
         self._vectara_customer_id = vectara_customer_id or os.environ.get(
@@ -62,6 +63,7 @@ class Vectara(VectorStore):
         self._session = requests.Session()  # to reuse connections
         adapter = requests.adapters.HTTPAdapter(max_retries=3)
         self._session.mount("http://", adapter)
+        self.vectara_api_timeout = vectara_api_timeout
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
@@ -96,6 +98,7 @@ class Vectara(VectorStore):
             data=json.dumps(body),
             verify=True,
             headers=self._get_post_headers(),
+            timeout=self.vectara_api_timeout,
         )
         if response.status_code != 200:
             logger.error(
@@ -116,7 +119,7 @@ class Vectara(VectorStore):
             headers=self._get_post_headers(),
             url="https://api.vectara.io/v1/core/index",
             data=json.dumps(request),
-            timeout=30,
+            timeout=self.vectara_api_timeout,
             verify=True,
         )
 
@@ -168,6 +171,7 @@ class Vectara(VectorStore):
                 files=files,
                 verify=True,
                 headers=headers,
+                timeout=self.vectara_api_timeout,
             )
 
             if response.status_code == 409:
@@ -241,7 +245,7 @@ class Vectara(VectorStore):
         k: int = 5,
         lambda_val: float = 0.025,
         filter: Optional[str] = None,
-        n_sentence_context: int = 0,
+        n_sentence_context: int = 2,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return Vectara documents most similar to query, along with scores.
@@ -255,7 +259,7 @@ class Vectara(VectorStore):
                 https://docs.vectara.com/docs/search-apis/sql/filter-overview
                 for more details.
             n_sentence_context: number of sentences before/after the matching segment
-                to add
+                to add, defaults to 2
 
         Returns:
             List of Documents most similar to the query and score for each.
@@ -288,7 +292,7 @@ class Vectara(VectorStore):
             headers=self._get_post_headers(),
             url="https://api.vectara.io/v1/query",
             data=data,
-            timeout=10,
+            timeout=self.vectara_api_timeout,
         )
 
         if response.status_code != 200:
@@ -324,7 +328,7 @@ class Vectara(VectorStore):
         k: int = 5,
         lambda_val: float = 0.025,
         filter: Optional[str] = None,
-        n_sentence_context: int = 0,
+        n_sentence_context: int = 2,
         **kwargs: Any,
     ) -> List[Document]:
         """Return Vectara documents most similar to query, along with scores.
@@ -337,7 +341,7 @@ class Vectara(VectorStore):
                 https://docs.vectara.com/docs/search-apis/sql/filter-overview for more
                 details.
             n_sentence_context: number of sentences before/after the matching segment
-                to add
+                to add, defaults to 2
 
         Returns:
             List of Documents most similar to the query
@@ -423,7 +427,7 @@ class VectaraRetriever(VectorStoreRetriever):
             "lambda_val": 0.025,
             "k": 5,
             "filter": "",
-            "n_sentence_context": "0",
+            "n_sentence_context": "2",
         }
     )
     """Search params.

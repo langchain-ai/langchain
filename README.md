@@ -21,7 +21,7 @@ Looking for the JS/TS version? Check out [LangChain.js](https://github.com/hwcha
 **Production Support:** As you move your LangChains into production, we'd love to offer more hands-on support.
 Fill out [this form](https://airtable.com/appwQzlErAS2qiP0L/shrGtGaVBVAz7NcV2) to share more about what you're building, and our team will get in touch.
 
-## 🚨Breaking Changes for select chains (SQLDatabase) on 7/28
+## 🚨Breaking Changes for select chains (SQLDatabase) on 7/28/23
 
 In an effort to make `langchain` leaner and safer, we are moving select chains to `langchain_experimental`.
 This migration has already started, but we are remaining backwards compatible until 7/28.

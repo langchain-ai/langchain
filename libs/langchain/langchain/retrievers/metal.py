@@ -1,6 +1,6 @@
 from typing import Any, List, Optional
 
-from pydantic import root_validator
+from pydantic_v1 import root_validator
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document

@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Optional, Type
 
-from pydantic import BaseModel, Field
+from pydantic_v1 import BaseModel, Field
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
@@ -34,6 +34,14 @@ class UpdateSessionSchema(BaseModel):
 
 
 class MultionUpdateSession(BaseTool):
+    """Tool that updates an existing Multion Browser Window with provided fields.
+
+    Attributes:
+        name: The name of the tool. Default: "update_multion_session"
+        description: The description of the tool.
+        args_schema: The schema for the tool's arguments. Default: UpdateSessionSchema
+    """
+
     name: str = "update_multion_session"
     description: str = """Use this tool to update \
         a existing corresponding \

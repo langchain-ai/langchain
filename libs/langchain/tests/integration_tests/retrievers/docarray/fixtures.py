@@ -1,43 +1,30 @@
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Any, Dict, Generator, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Generator, Tuple
 
 import numpy as np
 import pytest
-from docarray import BaseDoc
-from docarray.index import (
-    ElasticDocIndex,
-    HnswDocumentIndex,
-    InMemoryExactNNIndex,
-    QdrantDocumentIndex,
-    WeaviateDocumentIndex,
-)
-from docarray.typing import NdArray
-from pydantic import Field
-from qdrant_client.http import models as rest
+from pydantic_v1 import Field
+
+if TYPE_CHECKING:
+    from docarray.index import (
+        ElasticDocIndex,
+        HnswDocumentIndex,
+        InMemoryExactNNIndex,
+        QdrantDocumentIndex,
+        WeaviateDocumentIndex,
+    )
+    from docarray.typing import NdArray
+    from qdrant_client.http import models as rest
 
 from langchain.embeddings import FakeEmbeddings
-
-
-class MyDoc(BaseDoc):
-    title: str
-    title_embedding: NdArray[32]  # type: ignore
-    other_emb: NdArray[32]  # type: ignore
-    year: int
-
-
-class WeaviateDoc(BaseDoc):
-    # When initializing the Weaviate index, denote the field
-    # you want to search on with `is_embedding=True`
-    title: str
-    title_embedding: NdArray[32] = Field(is_embedding=True)  # type: ignore
-    other_emb: NdArray[32]  # type: ignore
-    year: int
 
 
 @pytest.fixture
 def init_weaviate() -> (
     Generator[
-        Tuple[WeaviateDocumentIndex[WeaviateDoc], Dict[str, Any], FakeEmbeddings],
+        Tuple[WeaviateDocumentIndex, Dict[str, Any], FakeEmbeddings],
         None,
         None,
     ]
@@ -46,6 +33,19 @@ def init_weaviate() -> (
     cd tests/integration_tests/vectorstores/docker-compose
     docker compose -f weaviate.yml up
     """
+    from docarray import BaseDoc
+    from docarray.index import (
+        WeaviateDocumentIndex,
+    )
+
+    class WeaviateDoc(BaseDoc):
+        # When initializing the Weaviate index, denote the field
+        # you want to search on with `is_embedding=True`
+        title: str
+        title_embedding: NdArray[32] = Field(is_embedding=True)  # type: ignore
+        other_emb: NdArray[32]  # type: ignore
+        year: int
+
     embeddings = FakeEmbeddings(size=32)
 
     # initialize WeaviateDocumentIndex
@@ -76,12 +76,23 @@ def init_weaviate() -> (
 
 @pytest.fixture
 def init_elastic() -> (
-    Generator[Tuple[ElasticDocIndex[MyDoc], Dict[str, Any], FakeEmbeddings], None, None]
+    Generator[Tuple[ElasticDocIndex, Dict[str, Any], FakeEmbeddings], None, None]
 ):
     """
     cd tests/integration_tests/vectorstores/docker-compose
     docker-compose -f elasticsearch.yml up
     """
+    from docarray import BaseDoc
+    from docarray.index import (
+        ElasticDocIndex,
+    )
+
+    class MyDoc(BaseDoc):
+        title: str
+        title_embedding: NdArray[32]  # type: ignore
+        other_emb: NdArray[32]  # type: ignore
+        year: int
+
     embeddings = FakeEmbeddings(size=32)
 
     # initialize ElasticDocIndex
@@ -109,7 +120,16 @@ def init_elastic() -> (
 
 
 @pytest.fixture
-def init_qdrant() -> Tuple[QdrantDocumentIndex[MyDoc], rest.Filter, FakeEmbeddings]:
+def init_qdrant() -> Tuple[QdrantDocumentIndex, rest.Filter, FakeEmbeddings]:
+    from docarray import BaseDoc
+    from docarray.index import QdrantDocumentIndex
+
+    class MyDoc(BaseDoc):
+        title: str
+        title_embedding: NdArray[32]  # type: ignore
+        other_emb: NdArray[32]  # type: ignore
+        year: int
+
     embeddings = FakeEmbeddings(size=32)
 
     # initialize QdrantDocumentIndex
@@ -144,9 +164,16 @@ def init_qdrant() -> Tuple[QdrantDocumentIndex[MyDoc], rest.Filter, FakeEmbeddin
 
 
 @pytest.fixture
-def init_in_memory() -> (
-    Tuple[InMemoryExactNNIndex[MyDoc], Dict[str, Any], FakeEmbeddings]
-):
+def init_in_memory() -> Tuple[InMemoryExactNNIndex, Dict[str, Any], FakeEmbeddings]:
+    from docarray import BaseDoc
+    from docarray.index import InMemoryExactNNIndex
+
+    class MyDoc(BaseDoc):
+        title: str
+        title_embedding: NdArray[32]  # type: ignore
+        other_emb: NdArray[32]  # type: ignore
+        year: int
+
     embeddings = FakeEmbeddings(size=32)
 
     # initialize InMemoryExactNNIndex
@@ -172,7 +199,18 @@ def init_in_memory() -> (
 @pytest.fixture
 def init_hnsw(
     tmp_path: Path,
-) -> Tuple[HnswDocumentIndex[MyDoc], Dict[str, Any], FakeEmbeddings]:
+) -> Tuple[HnswDocumentIndex, Dict[str, Any], FakeEmbeddings]:
+    from docarray import BaseDoc
+    from docarray.index import (
+        HnswDocumentIndex,
+    )
+
+    class MyDoc(BaseDoc):
+        title: str
+        title_embedding: NdArray[32]  # type: ignore
+        other_emb: NdArray[32]  # type: ignore
+        year: int
+
     embeddings = FakeEmbeddings(size=32)
 
     # initialize InMemoryExactNNIndex

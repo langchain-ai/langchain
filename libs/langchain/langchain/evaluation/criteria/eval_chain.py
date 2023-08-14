@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any, Dict, List, Mapping, Optional, Union
 
-from pydantic import Extra, Field
+from pydantic_v1 import Extra, Field
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
@@ -65,14 +65,14 @@ class CriteriaResultOutputParser(BaseOutputParser[dict]):
     def _type(self) -> str:
         return "criteria_result"
 
-    def parse(self, text: str) -> Any:
+    def parse(self, text: str) -> Dict[str, Any]:
         """Parse the output text.
 
         Args:
             text (str): The output text to parse.
 
         Returns:
-            Any: The parsed output.
+            Dict: The parsed output.
         """
         parsed = text.strip().rsplit("\n", maxsplit=1)
         if len(parsed) == 1:

@@ -3,7 +3,7 @@ import logging
 from functools import partial
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import BaseModel, Extra
+from pydantic_v1 import BaseModel, Extra
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -26,7 +26,9 @@ from langchain.schema.messages import (
 logger = logging.getLogger(__name__)
 
 
-class ChatParams(BaseModel, extra=Extra.allow):
+# Ignoring type because below is valid pydantic code
+# Unexpected keyword argument "extra" for "__init_subclass__" of "object"  [call-arg]
+class ChatParams(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
     """Parameters for the MLflow AI Gateway LLM."""
 
     temperature: float = 0.0

@@ -2,7 +2,7 @@ import importlib.util
 import logging
 from typing import Any, Callable, List, Mapping, Optional
 
-from pydantic import Extra
+from pydantic_v1 import Extra
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.self_hosted import SelfHostedPipeline

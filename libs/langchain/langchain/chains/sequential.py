@@ -1,7 +1,7 @@
 """Chain pipeline where the outputs of one step feed directly into next."""
 from typing import Any, Dict, List, Optional
 
-from pydantic import Extra, root_validator
+from pydantic_v1 import Extra, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,

@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import Any, Dict, Optional, Tuple
 
-from pydantic import Field
+from pydantic_v1 import Field
 
 from langchain.memory.chat_message_histories.in_memory import ChatMessageHistory
 from langchain.memory.utils import get_prompt_input_key

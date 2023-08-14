@@ -8,7 +8,7 @@ from functools import partial
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
-from pydantic import (
+from pydantic_v1 import (
     BaseModel,
     Extra,
     Field,
@@ -16,7 +16,15 @@ from pydantic import (
     root_validator,
     validate_arguments,
 )
-from pydantic.main import ModelMetaclass
+
+# The metaclass must be imported directly from the pydantic module rather than
+# from the proxy module, otherwise it looks like inconsistent metaclasses are
+# used raising an exception.
+try:
+    from pydantic.v1.main import ModelMetaclass
+except ImportError:
+    from pydantic.main import ModelMetaclass
+
 
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
@@ -203,7 +211,13 @@ class BaseTool(BaseModel, Runnable[Union[str, Dict], Any], metaclass=ToolMetacla
         **kwargs: Any,
     ) -> Any:
         config = config or {}
-        return self.run(input, **config, **kwargs)
+        return self.run(
+            input,
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            **kwargs,
+        )
 
     async def ainvoke(
         self,
@@ -216,7 +230,13 @@ class BaseTool(BaseModel, Runnable[Union[str, Dict], Any], metaclass=ToolMetacla
             return super().ainvoke(input, config, **kwargs)
 
         config = config or {}
-        return await self.arun(input, **config, **kwargs)
+        return await self.arun(
+            input,
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            **kwargs,
+        )
 
     # --- Tool ---
 
@@ -651,7 +671,9 @@ class StructuredTool(BaseTool):
             The tool
 
         Examples:
-            ... code-block:: python
+
+            .. code-block:: python
+
                 def add(a: int, b: int) -> int:
                     \"\"\"Add two numbers\"\"\"
                     return a + b

@@ -375,7 +375,11 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
             )
 
         # Configure how example rows are fed as a reference string to the evaluator
-        if reference_key is not None or data_type in (DataType.llm, DataType.chat):
+        if (
+            reference_key is not None
+            or data_type in (DataType.llm, DataType.chat)
+            or evaluator.requires_reference
+        ):
             example_mapper = StringExampleMapper(reference_key=reference_key)
         elif evaluator.requires_reference:
             raise ValueError(
