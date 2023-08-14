@@ -15,7 +15,7 @@ from typing import (
     Union,
 )
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic_v1 import Field, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -186,7 +186,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     return message_dict
 
 
-class ChatLiteLLM(BaseChatModel, BaseModel):
+class ChatLiteLLM(BaseChatModel):
     """Wrapper around the LiteLLM Model I/O library.
 
     To use you must have the google.generativeai Python package installed and
