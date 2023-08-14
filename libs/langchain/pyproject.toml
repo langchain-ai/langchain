@@ -343,7 +343,6 @@ extended_testing = [
  "feedparser",
  "xata",
  "xmltodict",
- "betabageldb",
 ]
 
 [tool.ruff]
