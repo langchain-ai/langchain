@@ -93,7 +93,7 @@ def create_base_retry_decorator(
                 try:
                     loop = asyncio.get_event_loop()
                     if loop.is_running():
-                        loop.create_task(coro)
+                        task = loop.create_task(coro)
                     else:
                         asyncio.run(coro)
                 except Exception as e:

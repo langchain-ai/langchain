@@ -1310,7 +1310,7 @@ def _handle_coroutine(coro: Coroutine) -> Any:
     except RuntimeError:  # No event loop
         return asyncio.run(coro)
     if loop.is_running():
-        return loop.create_task(coro)
+        return loop.run_until_complete(coro)
     else:
         return asyncio.run(coro)
 
