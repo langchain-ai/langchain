@@ -19,7 +19,7 @@ PathLike = Union[str, PurePath]
 
 
 class Blob(BaseModel):
-    """A blob is used to represent raw data by either reference or value.
+    """Blob represents raw data by either reference or value.
 
     Provides an interface to materialize the blob in different representations, and
     help to decouple the development of data loaders from the downstream parsing of
