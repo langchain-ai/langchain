@@ -1,10 +1,10 @@
-import logging
 import json
-from typing import Any, Dict, List, Mapping, Optional, Callable
+import logging
+from typing import Any, Callable, Dict, List, Mapping, Optional
 
 import requests
 from pydantic import Extra, root_validator
-from requests import ConnectTimeout, RequestException, ReadTimeout
+from requests import ConnectTimeout, ReadTimeout, RequestException
 from tenacity import (
     before_sleep_log,
     retry,
