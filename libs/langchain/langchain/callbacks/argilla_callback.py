@@ -21,11 +21,10 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
             default workspace will be used.
         api_url: URL of the Argilla Server that we want to use, and where the
             `FeedbackDataset` lives in. Defaults to `None`, which means that either
-            `ARGILLA_API_URL` environment variable or the default http://localhost:6900
-            will be used.
+            `ARGILLA_API_URL` environment variable or the default will be used.
         api_key: API Key to connect to the Argilla Server. Defaults to `None`, which
             means that either `ARGILLA_API_KEY` environment variable or the default
-            `argilla.apikey` will be used.
+            will be used.
 
     Raises:
         ImportError: if the `argilla` package is not installed.
@@ -58,7 +57,6 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
     BLOG_URL = "https://docs.argilla.io/en/latest/guides/llms/practical_guides/use_argilla_callback_in_langchain.html"  # noqa: E501
 
     DEFAULT_API_URL = "http://localhost:6900"
-    DEFAULT_API_KEY = "argilla.apikey"
 
     def __init__(
         self,
@@ -67,22 +65,22 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
         api_url: Optional[str] = None,
         api_key: Optional[str] = None,
     ) -> None:
-        f"""Initializes the `ArgillaCallbackHandler`.
+        """Initializes the `ArgillaCallbackHandler`.
 
         Args:
             dataset_name: name of the `FeedbackDataset` in Argilla. Note that it must
                 exist in advance. If you need help on how to create a `FeedbackDataset`
-                in Argilla, please visit {self.BLOG_URL}.
+                in Argilla, please visit
+                https://docs.argilla.io/en/latest/guides/llms/practical_guides/use_argilla_callback_in_langchain.html.
             workspace_name: name of the workspace in Argilla where the specified
                 `FeedbackDataset` lives in. Defaults to `None`, which means that the
                 default workspace will be used.
             api_url: URL of the Argilla Server that we want to use, and where the
                 `FeedbackDataset` lives in. Defaults to `None`, which means that either
-                `ARGILLA_API_URL` environment variable or `{self.DEFAULT_API_URL}` will
-                be used.
+                `ARGILLA_API_URL` environment variable or the default will be used.
             api_key: API Key to connect to the Argilla Server. Defaults to `None`, which
                 means that either `ARGILLA_API_KEY` environment variable or the default
-                `{self.DEFAULT_API_KEY}` will be used.
+                will be used.
 
         Raises:
             ImportError: if the `argilla` package is not installed.
@@ -116,16 +114,27 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
             warnings.warn(
                 (
                     "Since `api_url` is None, and the env var `ARGILLA_API_URL` is not"
-                    f" set, it will default to `{self.DEFAULT_API_URL}`."
+                    f" set, it will default to `{self.DEFAULT_API_URL}`, which is the"
+                    " default API URL in Argilla Quickstart."
                 ),
             )
+            api_url = self.DEFAULT_API_URL
+
         if api_key is None and os.getenv("ARGILLA_API_KEY") is None:
+            self.DEFAULT_API_KEY = (
+                "admin.apikey"
+                if parse(self.ARGILLA_VERSION) < parse("1.11.0")
+                else "owner.apikey"
+            )
+
             warnings.warn(
                 (
                     "Since `api_key` is None, and the env var `ARGILLA_API_KEY` is not"
-                    f" set, it will default to `{self.DEFAULT_API_KEY}`."
+                    f" set, it will default to `{self.DEFAULT_API_KEY}`, which is the"
+                    " default API key in Argilla Quickstart."
                 ),
             )
+            api_url = self.DEFAULT_API_URL
 
         # Connect to Argilla with the provided credentials, if applicable
         try:

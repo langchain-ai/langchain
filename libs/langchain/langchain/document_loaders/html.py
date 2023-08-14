@@ -1,11 +1,10 @@
-"""Loader that uses unstructured to load HTML files."""
 from typing import List
 
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
 
 
 class UnstructuredHTMLLoader(UnstructuredFileLoader):
-    """Loader that uses Unstructured to load HTML files.
+    """Load `HTML` files using `Unstructured`.
 
     You can run the loader in one of two modes: "single" and "elements".
     If you use "single" mode, the document will be returned as a single

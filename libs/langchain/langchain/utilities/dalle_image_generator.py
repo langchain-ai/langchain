@@ -1,4 +1,4 @@
-"""Util that calls OpenAI's Dall-E Image Generator."""
+"""Utility that calls OpenAI's Dall-E Image Generator."""
 from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Extra, root_validator
