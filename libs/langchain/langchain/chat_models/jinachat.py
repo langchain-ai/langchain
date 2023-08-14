@@ -35,8 +35,8 @@ from langchain.schema import (
     ChatGeneration,
     ChatMessage,
     ChatResult,
-    HumanMessage,
     FunctionMessage,
+    HumanMessage,
     SystemMessage,
 )
 from langchain.schema.messages import (
