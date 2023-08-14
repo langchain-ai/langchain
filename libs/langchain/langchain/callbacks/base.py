@@ -112,6 +112,13 @@ class ChainManagerMixin:
     ) -> Any:
         """Run on agent end."""
 
+    def on_retry(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
+        """Run on agent retry."""
+
 
 class ToolManagerMixin:
     """Mixin for tool callbacks."""
