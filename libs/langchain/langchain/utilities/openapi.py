@@ -7,7 +7,7 @@ import logging
 import re
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import requests
 import yaml
@@ -189,8 +189,8 @@ if _PYDANTIC_MAJOR_VERSION == 1:
                 cls._alert_unsupported_spec(obj)
                 return super().parse_obj(obj)
             except ValidationError as e:
-                # We are handling possibly misconfigured specs and want to do a best-effort
-                # job to get a reasonable interface out of it.
+                # We are handling possibly misconfigured specs and
+                # want to do a best-effort job to get a reasonable interface out of it.
                 new_obj = copy.deepcopy(obj)
                 for error in e.errors():
                     keys = error["loc"]
@@ -300,4 +300,4 @@ else:
         """Shim for pydantic version >=2"""
 
         def __init__(self) -> None:
-            raise NotImplementedError(f"Only supported for pydantic version 1")
+            raise NotImplementedError("Only supported for pydantic version 1")

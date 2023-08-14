@@ -550,7 +550,8 @@ if _PYDANTIC_MAJOR_VERSION == 1:
                     prop_type = f"{{\n{nested_props}\n{' ' * indent}}}"
 
                 formatted_props.append(
-                    f"{prop_desc}\n{' ' * indent}{prop_name}{prop_required}: {prop_type},"
+                    f"{prop_desc}\n{' ' * indent}{prop_name}"
+                    f"{prop_required}: {prop_type},"
                 )
 
             return "\n".join(formatted_props)
@@ -611,16 +612,16 @@ else:
 
     class APIProperty(APIPropertyBase):
         def __init__(self, *args: Any, **kwargs: Any) -> None:
-            raise NotImplementedError(f"Only supported for pydantic v1")
+            raise NotImplementedError("Only supported for pydantic v1")
 
     class APIRequestBodyProperty(APIPropertyBase):
         def __init__(self, *args: Any, **kwargs: Any) -> None:
-            raise NotImplementedError(f"Only supported for pydantic v1")
+            raise NotImplementedError("Only supported for pydantic v1")
 
     class APIRequestBody(BaseModel):
         def __init__(self, *args: Any, **kwargs: Any) -> None:
-            raise NotImplementedError(f"Only supported for pydantic v1")
+            raise NotImplementedError("Only supported for pydantic v1")
 
     class APIOperation(BaseModel):
         def __init__(self, *args: Any, **kwargs: Any) -> None:
-            raise NotImplementedError(f"Only supported for pydantic v1")
+            raise NotImplementedError("Only supported for pydantic v1")
