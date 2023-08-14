@@ -610,18 +610,18 @@ if _PYDANTIC_MAJOR_VERSION == 1:
 
 else:
 
-    class APIProperty(APIPropertyBase):
+    class APIProperty(APIPropertyBase):  # type: ignore[no-redef]
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             raise NotImplementedError("Only supported for pydantic v1")
 
-    class APIRequestBodyProperty(APIPropertyBase):
+    class APIRequestBodyProperty(APIPropertyBase):  # type: ignore[no-redef]
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             raise NotImplementedError("Only supported for pydantic v1")
 
-    class APIRequestBody(BaseModel):
+    class APIRequestBody(BaseModel):  # type: ignore[no-redef]
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             raise NotImplementedError("Only supported for pydantic v1")
 
-    class APIOperation(BaseModel):
+    class APIOperation(BaseModel):  # type: ignore[no-redef]
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             raise NotImplementedError("Only supported for pydantic v1")

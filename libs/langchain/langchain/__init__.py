@@ -24,7 +24,7 @@ except ImportError:
 sys.modules["pydantic_v1"] = pydantic_v1
 
 try:
-    _PYDANTIC_MAJOR_VERSION = int(metadata.version("pydantic").split(".")[0])
+    _PYDANTIC_MAJOR_VERSION: int = int(metadata.version("pydantic").split(".")[0])
 except metadata.PackageNotFoundError:
     _PYDANTIC_MAJOR_VERSION = 0
 

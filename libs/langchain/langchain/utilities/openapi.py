@@ -296,7 +296,7 @@ if _PYDANTIC_MAJOR_VERSION == 1:
 
 else:
 
-    class OpenAPISpec:
+    class OpenAPISpec:  # type: ignore[no-redef]
         """Shim for pydantic version >=2"""
 
         def __init__(self) -> None:
