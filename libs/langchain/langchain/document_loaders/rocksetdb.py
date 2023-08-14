@@ -94,7 +94,7 @@ class RocksetLoader(BaseLoader):
         self.request_model = QueryRequestSql
 
         try:
-            self.client.set_application('langchain')
+            self.client.set_application("langchain")
         except AttributeError:
             # ignore
             pass

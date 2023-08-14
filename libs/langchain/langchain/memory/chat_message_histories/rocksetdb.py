@@ -198,11 +198,10 @@ class RocksetChatMessageHistory(BaseChatMessageHistory):
         self.sync = sync
 
         try:
-            self.client.set_application('langchain')
+            self.client.set_application("langchain")
         except AttributeError:
             # ignore
             pass
-
 
         if not self._collection_exists():
             self._create_collection()

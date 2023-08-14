@@ -85,7 +85,7 @@ class Rockset(VectorStore):
         self._workspace = workspace
 
         try:
-            self._client.set_application('langchain')
+            self._client.set_application("langchain")
         except AttributeError:
             # ignore
             pass
