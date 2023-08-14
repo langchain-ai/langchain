@@ -121,7 +121,7 @@ class StringEvaluator(_EvalArgsMixin, ABC):
     @property
     def evaluation_name(self) -> str:
         """The name of the evaluation."""
-        raise self.__class__.__name__
+        return self.__class__.__name__
 
     @property
     def requires_reference(self) -> bool:

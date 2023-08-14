@@ -1,6 +1,6 @@
 """Evaluators for parsing strings."""
 from operator import eq
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, cast
 
 from langchain.evaluation.schema import StringEvaluator
 from langchain.output_parsers.json import parse_json_markdown
@@ -139,5 +139,5 @@ class JsonEqualityEvaluator(StringEvaluator):
             dict: A dictionary containing the evaluation score.
         """
         parsed = self._parse_json(prediction)
-        gt = self._parse_json(reference)
+        gt = self._parse_json(cast(str, reference))
         return {"score": self.operator(parsed, gt)}
