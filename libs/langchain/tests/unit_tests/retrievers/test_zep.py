@@ -58,10 +58,13 @@ def zep_retriever(
     mocker: MockerFixture, search_results: List[MemorySearchResult]
 ) -> ZepRetriever:
     mock_zep_client: ZepClient = mocker.patch("zep_python.ZepClient", autospec=True)
-    mock_zep_client.search_memory.return_value = copy.deepcopy(  # type: ignore
+    mock_zep_client.memory = mocker.patch(
+        "zep_python.memory.client.MemoryClient", autospec=True
+    )
+    mock_zep_client.memory.search_memory.return_value = copy.deepcopy(  # type: ignore
         search_results
     )
-    mock_zep_client.asearch_memory.return_value = copy.deepcopy(  # type: ignore
+    mock_zep_client.memory.asearch_memory.return_value = copy.deepcopy(  # type: ignore
         search_results
     )
     zep = ZepRetriever(session_id="123", url="http://localhost:8000")

@@ -77,7 +77,7 @@ class ZepRetriever(BaseRetriever):
             text=query, metadata=metadata
         )
 
-        results: List[MemorySearchResult] = self.zep_client.search_memory(
+        results: List[MemorySearchResult] = self.zep_client.memory.search_memory(
             self.session_id, payload, limit=self.top_k
         )
 
@@ -96,7 +96,7 @@ class ZepRetriever(BaseRetriever):
             text=query, metadata=metadata
         )
 
-        results: List[MemorySearchResult] = await self.zep_client.asearch_memory(
+        results: List[MemorySearchResult] = await self.zep_client.memory.asearch_memory(
             self.session_id, payload, limit=self.top_k
         )
 
