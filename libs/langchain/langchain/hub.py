@@ -1,11 +1,11 @@
-from typing import Any
+from typing import Any, Optional
 
 from langchainhub import Client
 from langchain.utils import get_from_dict_or_env, get_from_env
 from langchain.load.load import loads
 from langchain.load.dump import dumps
 
-def _get_client(kwargs):
+def _get_client(kwargs: dict) -> Client:
     api_url = get_from_dict_or_env(kwargs, "api_url", "LANGCHAIN_HUB_API_URL")
 
     # read hub-specific api key
@@ -16,7 +16,7 @@ def _get_client(kwargs):
         api_key = get_from_env("api_key", "LANGCHAIN_API_KEY")
     return Client(api_url, api_key=api_key)
 
-def push(repo_full_name, parent_commit_hash, object, **kwargs) -> str:
+def push(repo_full_name: str, parent_commit_hash: Optional[str], object: Any, **kwargs) -> str:
     """
     Pushes an object to the hub and returns the URL.
     """
@@ -27,7 +27,7 @@ def push(repo_full_name, parent_commit_hash, object, **kwargs) -> str:
     return commit_hash
 
 
-def pull(repo_full_name, commit_hash, **kwargs) -> Any:
+def pull(repo_full_name: str, commit_hash: str, **kwargs) -> Any:
     """
     Pulls an object from the hub and returns it.
     """
