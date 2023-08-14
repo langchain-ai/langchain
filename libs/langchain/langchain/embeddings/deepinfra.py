@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
-from pydantic import BaseModel, Extra, root_validator
+from pydantic_v1 import BaseModel, Extra, root_validator
 
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env

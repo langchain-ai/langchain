@@ -1,7 +1,7 @@
 """Tool for the SearxNG search API."""
 from typing import Optional
 
-from pydantic import Extra
+from pydantic_v1 import Extra
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,

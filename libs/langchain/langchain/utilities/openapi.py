@@ -20,7 +20,7 @@ from openapi_schema_pydantic import (
     RequestBody,
     Schema,
 )
-from pydantic import ValidationError
+from pydantic_v1 import ValidationError
 
 logger = logging.getLogger(__name__)
 

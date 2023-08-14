@@ -7,7 +7,7 @@ import sys
 from typing import TYPE_CHECKING, Optional, Set
 
 import requests
-from pydantic import Field, root_validator
+from pydantic_v1 import Field, root_validator
 
 from langchain.adapters.openai import convert_message_to_dict
 from langchain.chat_models.openai import (
