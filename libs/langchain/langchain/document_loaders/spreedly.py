@@ -1,4 +1,3 @@
-"""Loader that fetches data from Spreedly API."""
 import json
 import urllib.request
 from typing import List
@@ -20,7 +19,7 @@ SPREEDLY_ENDPOINTS = {
 
 
 class SpreedlyLoader(BaseLoader):
-    """Loader that fetches data from Spreedly API."""
+    """Load from `Spreedly` API."""
 
     def __init__(self, access_token: str, resource: str) -> None:
         """Initialize with an access token and a resource.

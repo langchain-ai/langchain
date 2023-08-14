@@ -784,6 +784,13 @@ def test_deep_stream() -> None:
     assert len(chunks) == len("foo-lish")
     assert "".join(chunks) == "foo-lish"
 
+    chunks = []
+    for chunk in (chain | RunnablePassthrough()).stream({"question": "What up"}):
+        chunks.append(chunk)
+
+    assert len(chunks) == len("foo-lish")
+    assert "".join(chunks) == "foo-lish"
+
 
 @pytest.mark.asyncio
 async def test_deep_astream() -> None:
@@ -799,6 +806,13 @@ async def test_deep_astream() -> None:
 
     chunks = []
     async for chunk in stream:
+        chunks.append(chunk)
+
+    assert len(chunks) == len("foo-lish")
+    assert "".join(chunks) == "foo-lish"
+
+    chunks = []
+    async for chunk in (chain | RunnablePassthrough()).astream({"question": "What up"}):
         chunks.append(chunk)
 
     assert len(chunks) == len("foo-lish")

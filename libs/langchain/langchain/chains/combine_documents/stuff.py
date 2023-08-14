@@ -100,6 +100,13 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
                 )
         return values
 
+    @property
+    def input_keys(self) -> List[str]:
+        extra_keys = [
+            k for k in self.llm_chain.input_keys if k != self.document_variable_name
+        ]
+        return super().input_keys + extra_keys
+
     def _get_inputs(self, docs: List[Document], **kwargs: Any) -> dict:
         """Construct inputs from kwargs and docs.
 
