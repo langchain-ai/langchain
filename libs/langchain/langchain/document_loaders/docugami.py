@@ -1,5 +1,3 @@
-"""Loads processed documents from Docugami."""
-
 import io
 import logging
 import os
@@ -29,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 class DocugamiLoader(BaseLoader, BaseModel):
-    """Loads processed docs from Docugami.
+    """Load from `Docugami`.
 
     To use, you should have the ``lxml`` python package installed.
     """

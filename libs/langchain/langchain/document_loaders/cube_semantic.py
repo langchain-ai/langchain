@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class CubeSemanticLoader(BaseLoader):
-    """Load Cube semantic layer metadata.
+    """Load `Cube semantic layer` metadata.
 
     Args:
         cube_api_url: REST API endpoint.

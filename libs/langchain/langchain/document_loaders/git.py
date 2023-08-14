@@ -6,7 +6,8 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class GitLoader(BaseLoader):
-    """Loads files from a Git repository into a list of documents.
+    """Load `Git` repository files.
+
     The Repository can be local on disk available at `repo_path`,
     or remote at `clone_url` that will be cloned to `repo_path`.
     Currently, supports only text files.
