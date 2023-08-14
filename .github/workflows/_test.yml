@@ -60,6 +60,7 @@ jobs:
             EXPECTED_VERSION=1
           fi
           VERSION=$(python -c "import pydantic; print(pydantic.__version__)" | cut -d. -f1) && ([[ "$VERSION" -eq $EXPECTED_VERSION ]] || { echo "Error: pydantic version must be equal to ${EXPECTED_VERSION}"; exit 1; })
+          echo "Found pydantic version ${VERSION}, as expected"
         shell: bash
       - name: Install langchain editable
         if: ${{ inputs.working-directory != 'langchain' }}
