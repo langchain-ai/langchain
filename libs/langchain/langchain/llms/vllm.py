@@ -4,6 +4,7 @@ from pydantic import root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import BaseLLM
+from langchain.llms.openai import BaseOpenAI
 from langchain.schema.output import Generation, LLMResult
 
 
@@ -127,3 +128,27 @@ class VLLM(BaseLLM):
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "vllm"
+
+
+class VLLMOpenAI(BaseOpenAI):
+    """vLLM OpenAI-compatible API client"""
+
+    @property
+    def _invocation_params(self) -> Dict[str, Any]:
+        """Get the parameters used to invoke the model."""
+        openai_creds: Dict[str, Any] = {
+            "api_key": self.openai_api_key,
+            "api_base": self.openai_api_base,
+        }
+
+        return {
+            "model": self.model_name,
+            **openai_creds,
+            **self._default_params,
+            "logit_bias": None,
+        }
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "vllm-openai"
