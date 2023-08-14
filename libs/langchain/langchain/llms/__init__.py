@@ -80,7 +80,7 @@ from langchain.llms.textgen import TextGen
 from langchain.llms.titan_takeoff import TitanTakeoff
 from langchain.llms.tongyi import Tongyi
 from langchain.llms.vertexai import VertexAI
-from langchain.llms.vllm import VLLM
+from langchain.llms.vllm import VLLM, VLLMOpenAI
 from langchain.llms.writer import Writer
 from langchain.llms.xinference import Xinference
 
@@ -149,6 +149,7 @@ __all__ = [
     "Tongyi",
     "VertexAI",
     "VLLM",
+    "VLLMOpenAI",
     "Writer",
     "OctoAIEndpoint",
     "Xinference",
@@ -213,6 +214,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "openllm": OpenLLM,
     "openllm_client": OpenLLM,
     "vllm": VLLM,
+    "vllm_openai": VLLMOpenAI,
     "writer": Writer,
     "xinference": Xinference,
 }
