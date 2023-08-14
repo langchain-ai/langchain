@@ -10,7 +10,7 @@ on:
       test_type:
         type: string
         description: "Test types to run"
-        default: '["core", "extended"]'
+        default: '["core", "extended", "core-pydantic-2"]'
 
 env:
   POETRY_VERSION: "1.4.2"
@@ -43,6 +43,10 @@ jobs:
               if [ "${{ matrix.test_type }}" == "core" ]; then
                 echo "Running core tests, installing dependencies with poetry..."
                 poetry install
+              elif [[ "${{ matrix.test_type }}" == "core-pydantic-v2" ]]; then
+                echo "Running core-pydantic-v2 tests, installing dependencies with poetry..."
+                poetry install
+                pip install pydantic==2.1.1
               else
                 echo "Running extended tests, installing dependencies with poetry..."
                 poetry install -E extended_testing
