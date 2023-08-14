@@ -1,41 +1,56 @@
 """AINetwork Blockchain tool utils."""
 import logging
 import os
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Literal, Optional, Union
 
 if TYPE_CHECKING:
     from ain.ain import Ain
 
-logger = logging.getLogger(__name__)
 
-
-def authenticate() -> Union["Ain", None]:
+def authenticate(network: Optional[Literal["mainnet", "testnet"]] = "mainnet") -> "Ain":
     """Authenticate using the AIN Blockchain"""
 
     try:
         from ain.ain import Ain
     except ImportError as e:
-        logger.error(
+        raise ImportError(
             "Cannot import ain-py related modules. Please install the package with `pip install ain-py`."
         )
-        return None
 
-    if (
-        "AIN_BLOCKCHAIN_PROVIDER_URL" in os.environ
-        and "AIN_BLOCKCHAIN_ACCOUNT_PRIVATE_KEY" in os.environ
-    ):
-        provider_url = os.environ["AIN_BLOCKCHAIN_PROVIDER_URL"]
-        private_key = os.environ["AIN_BLOCKCHAIN_ACCOUNT_PRIVATE_KEY"]
+    if network == "mainnet":
+        provider_url = "https://mainnet-api.ainetwork.ai/"
+        chain_id = 1
+        if "AIN_BLOCKCHAIN_ACCOUNT_PRIVATE_KEY" in os.environ:
+            private_key = os.environ["AIN_BLOCKCHAIN_ACCOUNT_PRIVATE_KEY"]
+        else:
+            raise EnvironmentError(
+                "Error: The AIN_BLOCKCHAIN_ACCOUNT_PRIVATE_KEY environmental variable has not been set."
+            )
+    elif network == "testnet":
+        provider_url = "https://testnet-api.ainetwork.ai/"
+        chain_id = 0
+        if "AIN_BLOCKCHAIN_ACCOUNT_PRIVATE_KEY" in os.environ:
+            private_key = os.environ["AIN_BLOCKCHAIN_ACCOUNT_PRIVATE_KEY"]
+        else:
+            raise EnvironmentError(
+                "Error: The AIN_BLOCKCHAIN_ACCOUNT_PRIVATE_KEY environmental variable has not been set."
+            )
+    elif network == None:
+        if (
+            "AIN_BLOCKCHAIN_PROVIDER_URL" in os.environ
+            and "AIN_BLOCKCHAIN_CHAIN_ID" in os.environ
+            and "AIN_BLOCKCHAIN_ACCOUNT_PRIVATE_KEY" in os.environ
+        ):
+            provider_url = os.environ["AIN_BLOCKCHAIN_PROVIDER_URL"]
+            chain_id = int(os.environ["AIN_BLOCKCHAIN_CHAIN_ID"])
+            private_key = os.environ["AIN_BLOCKCHAIN_ACCOUNT_PRIVATE_KEY"]
+        else:
+            raise EnvironmentError(
+                "Error: The AIN_BLOCKCHAIN_PROVIDER_URL and AIN_BLOCKCHAIN_ACCOUNT_PRIVATE_KEY and AIN_BLOCKCHAIN_CHAIN_ID environmental variable has not been set."
+            )
     else:
-        logger.error(
-            "Error: The AIN_BLOCKCHAIN_PROVIDER_URL and AIN_BLOCKCHAIN_ACCOUNT_PRIVATE_KEY environmental variable has not been set."
-        )
-        return None
+        raise ValueError(f"Unsupported 'network': {network}")
 
-    try:
-        ain = Ain(provider_url)
-        ain.wallet.addAndSetDefaultAccount(private_key)
-        return ain
-    except Exception as e:
-        logger.error(f"Error initializing AIN account: {str(e)}")
-        return None
+    ain = Ain(provider_url, chain_id)
+    ain.wallet.addAndSetDefaultAccount(private_key)
+    return ain
