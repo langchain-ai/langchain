@@ -101,23 +101,19 @@ def test_json_equality_evaluator_evaluate_strings_not_equal(
     assert result == {"score": False}
 
 
-def test_json_equality_evaluator_evaluate_strings_custom_operator_equal(
-    json_equality_evaluator: JsonEqualityEvaluator,
-) -> None:
-    def operator(x, y):
+def test_json_equality_evaluator_evaluate_strings_custom_operator_equal() -> None:
+    def operator(x: dict, y: dict) -> bool:
         return x["a"] == y["a"]
 
     evaluator = JsonEqualityEvaluator(operator=operator)
-    prediction = '{"a": 1}'
-    reference = '{"a": 1}'
+    prediction = '{"a": 1, "b": 2}'
+    reference = '{"a": 1, "c": 3}'
     result = evaluator.evaluate_strings(prediction=prediction, reference=reference)
     assert result == {"score": True}
 
 
-def test_json_equality_evaluator_evaluate_strings_custom_operator_not_equal(
-    json_equality_evaluator: JsonEqualityEvaluator,
-) -> None:
-    def operator(x, y):
+def test_json_equality_evaluator_evaluate_strings_custom_operator_not_equal() -> None:
+    def operator(x: dict, y: dict) -> bool:
         return x["a"] == y["a"]
 
     evaluator = JsonEqualityEvaluator(operator=operator)

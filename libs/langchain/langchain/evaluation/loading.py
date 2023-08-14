@@ -19,7 +19,7 @@ from langchain.evaluation.parsing.base import (
     JsonValidityEvaluator,
 )
 from langchain.evaluation.qa import ContextQAEvalChain, CotQAEvalChain, QAEvalChain
-from langchain.evaluation.schema import EvaluatorType, LLMEvalChain
+from langchain.evaluation.schema import EvaluatorType, LLMEvalChain, StringEvaluator
 from langchain.evaluation.string_distance.base import (
     PairwiseStringDistanceEvalChain,
     StringDistanceEvalChain,
@@ -61,7 +61,9 @@ def load_dataset(uri: str) -> List[Dict]:
     return [d for d in dataset["train"]]
 
 
-_EVALUATOR_MAP: Dict[EvaluatorType, Union[Type[LLMEvalChain], Type[Chain]]] = {
+_EVALUATOR_MAP: Dict[
+    EvaluatorType, Union[Type[LLMEvalChain], Type[Chain], Type[StringEvaluator]]
+] = {
     EvaluatorType.QA: QAEvalChain,
     EvaluatorType.COT_QA: CotQAEvalChain,
     EvaluatorType.CONTEXT_QA: ContextQAEvalChain,
@@ -84,7 +86,7 @@ def load_evaluator(
     *,
     llm: Optional[BaseLanguageModel] = None,
     **kwargs: Any,
-) -> Chain:
+) -> Union[Chain, StringEvaluator]:
     """Load the requested evaluation chain specified by a string.
 
     Parameters
@@ -125,7 +127,7 @@ def load_evaluators(
     llm: Optional[BaseLanguageModel] = None,
     config: Optional[dict] = None,
     **kwargs: Any,
-) -> List[Chain]:
+) -> List[Union[Chain, StringEvaluator]]:
     """Load evaluators specified by a list of evaluator types.
 
     Parameters
