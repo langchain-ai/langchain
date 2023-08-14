@@ -43,7 +43,7 @@ jobs:
               if [ "${{ matrix.test_type }}" == "core" ]; then
                 echo "Running core tests, installing dependencies with poetry..."
                 poetry install
-              elif [[ "${{ matrix.test_type }}" == "core-pydantic-v2" ]]; then
+              elif [ "${{ matrix.test_type }}" == "core-pydantic-v2" ]; then
                 echo "Running core-pydantic-v2 tests, installing dependencies with poetry..."
                 poetry install
                 pip install pydantic==2.1.1
@@ -53,11 +53,12 @@ jobs:
               fi
       - name: Verify pydantic version
         run: |
-          if [[ "${{ matrix.test_type }}" == "core-pydantic-v2" ]]; then
+          if [ "${{ matrix.test_type }}" == "core-pydantic-v2" ]; then
             EXPECTED_VERSION=2
           else
             EXPECTED_VERSION=1
           fi
+          echo "Checking pydantic version... Expecting ${EXPECTED_VERSION}"
           VERSION=$(poetry run python -c "import pydantic; print(pydantic.__version__)" | cut -d. -f1) && ([[ "$VERSION" -eq $EXPECTED_VERSION ]] || { echo "Error: pydantic version must be equal to ${EXPECTED_VERSION}"; exit 1; })
           echo "Found pydantic version ${VERSION}, as expected"
         shell: bash
