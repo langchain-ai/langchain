@@ -62,10 +62,10 @@ jobs:
           VERSION=$(poetry run python -c "import pydantic; print(pydantic.__version__)" | cut -d. -f1) && ([[ "$VERSION" -eq $EXPECTED_VERSION ]] || { echo "Error: pydantic version must be equal to ${EXPECTED_VERSION}; Found: ${VERSION}"; exit 1; })
           echo "Found pydantic version ${VERSION}, as expected"
         shell: bash
-      - name: Install langchain editable
-        if: ${{ inputs.working-directory != 'langchain' }}
+      - name: pip freeze
         run: |
-          pip install -e ../langchain
+          echo $(pip freeze)
+        shell: bash
       - name: Run ${{matrix.test_type}} tests
         run: |
           case "${{ matrix.test_type }}" in
@@ -76,4 +76,5 @@ jobs:
                   make extended_tests
                   ;;
           esac
+
         shell: bash
