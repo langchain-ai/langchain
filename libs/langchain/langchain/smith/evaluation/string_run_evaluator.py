@@ -313,7 +313,14 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         self, run: Run, example: Optional[Example] = None
     ) -> EvaluationResult:
         """Evaluate an example."""
-        result = self({"run": run, "example": example}, include_run_info=True)
+        try:
+            result = self({"run": run, "example": example}, include_run_info=True)
+        except Exception as e:
+            result= EvaluationResult(
+                key=self.string_evaluator.evaluation_name,
+                comment=f"Error evaluating run {run.id}: {e}",
+
+            )
         return self._prepare_evaluator_output(result)
 
     async def aevaluate_run(
