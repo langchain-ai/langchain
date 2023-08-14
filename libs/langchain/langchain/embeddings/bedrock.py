@@ -4,7 +4,7 @@ import os
 from functools import partial
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic_v1 import BaseModel, Extra, root_validator
 
 from langchain.embeddings.base import Embeddings
 

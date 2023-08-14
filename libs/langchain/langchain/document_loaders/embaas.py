@@ -3,7 +3,7 @@ import warnings
 from typing import Any, Dict, Iterator, List, Optional
 
 import requests
-from pydantic import BaseModel, root_validator, validator
+from pydantic_v1 import BaseModel, root_validator, validator
 from typing_extensions import NotRequired, TypedDict
 
 from langchain.docstore.document import Document
