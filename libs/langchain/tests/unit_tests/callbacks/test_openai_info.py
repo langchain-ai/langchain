@@ -124,3 +124,10 @@ def test_on_llm_end_no_cost_invalid_model(
     )
     handler.on_llm_end(response)
     assert handler.total_cost == 0
+
+def test_on_retry_works(handler: OpenAICallbackHandler) -> None:
+    response = LLMResult(
+        generations=[],
+        llm_output={}
+    )
+    handler.on_retry(response)
