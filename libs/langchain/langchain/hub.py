@@ -17,6 +17,9 @@ def _get_client(kwargs):
     return Client(api_url, api_key=api_key)
 
 def push(repo_full_name, parent_commit_hash, object, **kwargs) -> str:
+    """
+    Pushes an object to the hub and returns the URL.
+    """
     client = _get_client(kwargs)
     manifest_json = dumps(object)
     resp = client.push(repo_full_name, parent_commit_hash, manifest_json)
@@ -25,6 +28,9 @@ def push(repo_full_name, parent_commit_hash, object, **kwargs) -> str:
 
 
 def pull(repo_full_name, commit_hash, **kwargs) -> Any:
+    """
+    Pulls an object from the hub and returns it.
+    """
     client = _get_client(kwargs)
     resp: str = client.pull(repo_full_name, commit_hash)
     return loads(resp)
