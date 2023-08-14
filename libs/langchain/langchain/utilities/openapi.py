@@ -1,20 +1,19 @@
 """Utility functions for parsing an OpenAPI spec."""
 from __future__ import annotations
+
 import copy
 import json
 import logging
 import re
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 import requests
 import yaml
-
-from typing import TYPE_CHECKING
-from langchain import _PYDANTIC_MAJOR_VERSION
-
 from pydantic_v1 import ValidationError
+
+from langchain import _PYDANTIC_MAJOR_VERSION
 
 logger = logging.getLogger(__name__)
 
