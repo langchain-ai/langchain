@@ -51,6 +51,16 @@ jobs:
                 echo "Running extended tests, installing dependencies with poetry..."
                 poetry install -E extended_testing
               fi
+      - name: Verify pydantic version
+        if: ${{ matrix.test_type == 'core-pydantic-v2' }}
+        run: |
+          if [[ "${{ matrix.test_type }}" == "core-pydantic-v2" ]]; then
+            EXPECTED_VERSION=2
+          else
+            EXPECTED_VERSION=1
+          fi
+          VERSION=$(python -c "import pydantic; print(pydantic.__version__)" | cut -d. -f1) && ([[ "$VERSION" -eq $EXPECTED_VERSION ]] || { echo "Error: pydantic version must be equal to ${EXPECTED_VERSION}"; exit 1; })
+        shell: bash
       - name: Install langchain editable
         if: ${{ inputs.working-directory != 'langchain' }}
         run: |
