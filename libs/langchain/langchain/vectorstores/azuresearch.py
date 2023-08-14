@@ -40,6 +40,7 @@ if TYPE_CHECKING:
         SemanticSettings,
         VectorSearch,
     )
+    from azure.search.documents.models import Vector
 
 
 # Allow overriding field names for Azure Search
@@ -74,6 +75,7 @@ def _get_search_client(
     scoring_profiles: Optional[List[ScoringProfile]] = None,
     default_scoring_profile: Optional[str] = None,
     default_fields: Optional[List[SearchField]] = None,
+    user_agent: Optional[str] = "langchain",
 ) -> SearchClient:
     from azure.core.credentials import AzureKeyCredential
     from azure.core.exceptions import ResourceNotFoundError
@@ -87,7 +89,7 @@ def _get_search_client(
         SemanticField,
         SemanticSettings,
         VectorSearch,
-        VectorSearchAlgorithmConfiguration,
+        HnswVectorSearchAlgorithmConfiguration,
     )
 
     default_fields = default_fields or []
@@ -96,7 +98,7 @@ def _get_search_client(
     else:
         credential = AzureKeyCredential(key)
     index_client: SearchIndexClient = SearchIndexClient(
-        endpoint=endpoint, credential=credential, user_agent="langchain"
+        endpoint=endpoint, credential=credential, user_agent=user_agent
     )
     try:
         index_client.get_index(name=index_name)
@@ -131,10 +133,10 @@ def _get_search_client(
         if vector_search is None:
             vector_search = VectorSearch(
                 algorithm_configurations=[
-                    VectorSearchAlgorithmConfiguration(
+                    HnswVectorSearchAlgorithmConfiguration(
                         name="default",
                         kind="hnsw",
-                        hnsw_parameters={  # type: ignore
+                        parameters={  # type: ignore
                             "m": 4,
                             "efConstruction": 400,
                             "efSearch": 500,
@@ -172,7 +174,7 @@ def _get_search_client(
         endpoint=endpoint,
         index_name=index_name,
         credential=credential,
-        user_agent="langchain",
+        user_agent=user_agent,
     )
 
 
@@ -321,7 +323,14 @@ class AzureSearch(VectorStore):
         else:
             raise ValueError(f"search_type of {search_type} not allowed.")
         return docs
-
+    
+    def similarity_search_with_relevance_scores(
+        self, query: str, k: int = 4, **kwargs: Any
+    ):
+        score_threshold = kwargs.pop("score_threshold", None)
+        result = self.vector_search_with_score(query, k=k, **kwargs)
+        return result if score_threshold is None else [r for r in result if r[1] >= score_threshold]
+        
     def vector_search(self, query: str, k: int = 4, **kwargs: Any) -> List[Document]:
         """
         Returns the most similar indexed documents to the query text.
@@ -350,12 +359,14 @@ class AzureSearch(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-
+        from azure.search.documents.models import Vector
         results = self.client.search(
             search_text="",
-            vector=np.array(self.embedding_function(query), dtype=np.float32).tolist(),
-            top_k=k,
-            vector_fields=FIELDS_CONTENT_VECTOR,
+            vectors= [Vector(
+                value=np.array(self.embedding_function(query), dtype=np.float32).tolist(),
+                k=k,
+                fields=FIELDS_CONTENT_VECTOR,
+                )],
             select=[FIELDS_ID, FIELDS_CONTENT, FIELDS_METADATA],
             filter=filters,
         )
@@ -400,12 +411,14 @@ class AzureSearch(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-
+        from azure.search.documents.models import Vector
         results = self.client.search(
             search_text=query,
-            vector=np.array(self.embedding_function(query), dtype=np.float32).tolist(),
-            top_k=k,
-            vector_fields=FIELDS_CONTENT_VECTOR,
+            vectors= [Vector(
+                value=np.array(self.embedding_function(query), dtype=np.float32).tolist(),
+                k=k,
+                fields=FIELDS_CONTENT_VECTOR,
+                )],
             select=[FIELDS_ID, FIELDS_CONTENT, FIELDS_METADATA],
             filter=filters,
             top=k,
@@ -453,11 +466,14 @@ class AzureSearch(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
+        from azure.search.documents.models import Vector
         results = self.client.search(
             search_text=query,
-            vector=np.array(self.embedding_function(query), dtype=np.float32).tolist(),
-            top_k=50,  # Hardcoded value to maximize L2 retrieval
-            vector_fields=FIELDS_CONTENT_VECTOR,
+            vectors= [Vector(
+                value=np.array(self.embedding_function(query), dtype=np.float32).tolist(),
+                k=50,
+                fields=FIELDS_CONTENT_VECTOR,
+                )],
             select=[FIELDS_ID, FIELDS_CONTENT, FIELDS_METADATA],
             filter=filters,
             query_type="semantic",
