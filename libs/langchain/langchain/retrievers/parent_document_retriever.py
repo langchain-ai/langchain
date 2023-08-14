@@ -1,6 +1,8 @@
 import uuid
 from typing import List, Optional
 
+from pydantic import Field
+
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema.document import Document
 from langchain.schema.retriever import BaseRetriever
@@ -71,6 +73,8 @@ class ParentDocumentRetriever(BaseRetriever):
     parent_splitter: Optional[TextSplitter] = None
     """The text splitter to use to create parent documents.
     If none, then the parent documents will be the raw documents passed in."""
+    search_kwargs: dict = Field(default_factory=dict)
+    """Keyword arguments to pass to the search function."""
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
@@ -82,7 +86,7 @@ class ParentDocumentRetriever(BaseRetriever):
         Returns:
             List of relevant documents
         """
-        sub_docs = self.vectorstore.similarity_search(query)
+        sub_docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
         # We do this to maintain the order of the ids that are returned
         ids = []
         for d in sub_docs:
