@@ -1,14 +1,13 @@
 from __future__ import annotations
 import logging
 from typing import Dict, Optional,Any
-from pydantic import root_validator
+from pydantic import root_validator,Field
 from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.tools.base import BaseTool
+from langchain.tools.edenai.edenai_base_tool import EdenaiTool
 from langchain.utils import get_from_dict_or_env
-import requests
 logger = logging.getLogger(__name__)
 
-class EdenAiParsingIDTool(BaseTool):
+class EdenAiParsingIDTool(EdenaiTool):
     """Tool that queries the Eden AI  Identity parsingAPI.
 
     for api reference check edenai documentation: https://docs.edenai.co/reference/ocr_identity_parser_create.
@@ -37,7 +36,7 @@ class EdenAiParsingIDTool(BaseTool):
     
     provider: str
     """ provider to use (amazon,base64,microsoft,mindee,klippa )"""
-    params : Optional[Dict[str,Any]] = None
+    params : Optional[Dict[str,Any]] = Field(default_factory=dict)
 
     
     
@@ -70,7 +69,8 @@ class EdenAiParsingIDTool(BaseTool):
             formatted_text += f"{key} : {formatted_value}\n"
         
         return formatted_text
-        
+    
+    
     
     def _run(
         self,
@@ -79,7 +79,11 @@ class EdenAiParsingIDTool(BaseTool):
     ) -> str:
         """Use the tool."""
         try:
-            query_params = {"file_url": query, "language": self.language,**self.params}
+            query_params = {"file_url": query,
+                            "language": self.language,
+                            **self.params,
+                            "response_as_dict": True,
+                            "attributes_as_list": False}
             text_analysis_result = self._call_eden_ai(query_params)
             text_analysis_result=text_analysis_result.json()
             return self._format_id_parsing_result(text_analysis_result)
