@@ -125,7 +125,7 @@ MessageLike = Union["Message", Tuple[str, PromptLike], Mapping[str, PromptLike]]
 MessageAddable = Union[MessageLike, "MessageSequence"]
 MessageType = Literal["human", "ai", "system", "function"]
 MSG_TYPES = {"human", "ai", "function", "system"}
-MSG_TYPE_TO_NAME = {
+MSG_TYPE_TO_NAME: Dict = {
     "human": "Human",
     "ai": "AI",
     "function": "Function",
