@@ -24,66 +24,6 @@ DEFAULT_NEBULA_SERVICE_PATH = "/v1/model/generate"
 logger = logging.getLogger(__name__)
 
 
-def _create_retry_decorator(llm) -> Callable[[Any], Any]:
-    min_seconds = 4
-    max_seconds = 10
-    # Wait 2^x * 1 second between each retry starting with
-    # 4 seconds, then up to 10 seconds, then 10 seconds afterward
-    max_retries = llm.max_retries if llm.max_retries is not None else 3
-    return retry(
-        reraise=True,
-        stop=stop_after_attempt(max_retries),
-        wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
-        retry=(retry_if_exception_type((RequestException, ConnectTimeout, ReadTimeout))),
-        before_sleep=before_sleep_log(logger, logging.WARNING),
-    )
-
-
-def make_request(self, instruction: str, conversation: str, url: str = None, params=None) -> Any:
-    """Generate text from the model."""
-    if params is None:
-        params = {}
-
-    headers = {
-        "Content-Type": "application/json",
-        "ApiKey": f"{self.nebula_api_key}",
-    }
-
-    body = {
-        "prompt": {
-            "instruction": instruction,
-            "conversation": {"text": f"{conversation}"},
-        }
-    }
-
-    # add params to body
-    for key, value in params.items():
-        body[key] = value
-
-    # make request
-    response = requests.post(
-        url,
-        headers=headers,
-        json=body
-    )
-
-    if response.status_code != 200:
-        raise Exception(f"Request failed with status code {response.status_code} and message {response.text}")
-
-    return json.loads(response.text)
-
-
-def completion_with_retry(llm, **kwargs: Any) -> Any:
-    """Use tenacity to retry the completion call."""
-    retry_decorator = _create_retry_decorator(llm)
-
-    @retry_decorator
-    def _completion_with_retry(**_kwargs: Any) -> Any:
-        return make_request(llm, **_kwargs)
-
-    return _completion_with_retry(**kwargs)
-
-
 class Nebula(LLM):
     """Nebula Service models.
 
@@ -190,7 +130,9 @@ class Nebula(LLM):
         """Return type of llm."""
         return "nebula"
 
-    def _invocation_params(self, stop_sequences: Optional[List[str]], **kwargs: Any) -> dict:
+    def _invocation_params(
+        self, stop_sequences: Optional[List[str]], **kwargs: Any
+    ) -> dict:
         params = self._default_params
         if self.stop_sequences is not None and stop_sequences is not None:
             raise ValueError("`stop` found in both the input and default params.")
@@ -202,7 +144,7 @@ class Nebula(LLM):
 
     @staticmethod
     def _process_response(response: Any, stop: Optional[List[str]]) -> str:
-        text = response['output']['text']
+        text = response["output"]["text"]
         if stop:
             text = enforce_stop_tokens(text, stop)
         return text
@@ -228,13 +170,79 @@ class Nebula(LLM):
         prompt = prompt.strip()
         if "\n" in prompt:
             instruction = prompt.split("\n")[0]
-            conversation = '\n'.join(prompt.split("\n")[1:])
+            conversation = "\n".join(prompt.split("\n")[1:])
         else:
             raise ValueError("Prompt must contain instruction and conversation.")
 
-        response = completion_with_retry(self, instruction=instruction,
-                                         conversation=conversation,
-                                         params=params,
-                                         url=f"{self.nebula_service_url}{self.nebula_service_path}")
+        response = completion_with_retry(
+            self,
+            instruction=instruction,
+            conversation=conversation,
+            params=params,
+            url=f"{self.nebula_service_url}{self.nebula_service_path}",
+        )
         _stop = params.get("stop_sequences")
         return self._process_response(response, _stop)
+
+
+def make_request(
+    self: Nebula,
+    instruction: str,
+    conversation: str,
+    url: str = f"{DEFAULT_NEBULA_SERVICE_URL}{DEFAULT_NEBULA_SERVICE_PATH}",
+    params: Dict = {},
+) -> Any:
+    """Generate text from the model."""
+    headers = {
+        "Content-Type": "application/json",
+        "ApiKey": f"{self.nebula_api_key}",
+    }
+
+    body = {
+        "prompt": {
+            "instruction": instruction,
+            "conversation": {"text": f"{conversation}"},
+        }
+    }
+
+    # add params to body
+    for key, value in params.items():
+        body[key] = value
+
+    # make request
+    response = requests.post(url, headers=headers, json=body)
+
+    if response.status_code != 200:
+        raise Exception(
+            f"Request failed with status code {response.status_code} and message {response.text}"
+        )
+
+    return json.loads(response.text)
+
+
+def _create_retry_decorator(llm: Nebula) -> Callable[[Any], Any]:
+    min_seconds = 4
+    max_seconds = 10
+    # Wait 2^x * 1 second between each retry starting with
+    # 4 seconds, then up to 10 seconds, then 10 seconds afterward
+    max_retries = llm.max_retries if llm.max_retries is not None else 3
+    return retry(
+        reraise=True,
+        stop=stop_after_attempt(max_retries),
+        wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
+        retry=(
+            retry_if_exception_type((RequestException, ConnectTimeout, ReadTimeout))
+        ),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+    )
+
+
+def completion_with_retry(llm: Nebula, **kwargs: Any) -> Any:
+    """Use tenacity to retry the completion call."""
+    retry_decorator = _create_retry_decorator(llm)
+
+    @retry_decorator
+    def _completion_with_retry(**_kwargs: Any) -> Any:
+        return make_request(llm, **_kwargs)
+
+    return _completion_with_retry(**kwargs)
