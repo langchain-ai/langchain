@@ -42,8 +42,8 @@ class ErnieChat(BaseChatModel):
     and will be regenerated after expiration
     """
 
-    client_id: Optional[str] = None
-    client_secret: Optional[str] = None
+    ernie_client_id: Optional[str] = None
+    ernie_client_secret: Optional[str] = None
     access_token: Optional[str] = None
 
     model_name: str = "ERNIE-Bot-turbo"
@@ -57,12 +57,12 @@ class ErnieChat(BaseChatModel):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        values["client_id"] = get_from_dict_or_env(
+        values["ernie_client_id"] = get_from_dict_or_env(
             values,
             "ernie_client_id",
             "ERNIE_CLIENT_ID",
         )
-        values["client_secret"] = get_from_dict_or_env(
+        values["ernie_client_secret"] = get_from_dict_or_env(
             values,
             "ernie_client_secret",
             "ERNIE_CLIENT_SECRET",
@@ -99,8 +99,8 @@ class ErnieChat(BaseChatModel):
                 },
                 params={
                     "grant_type": "client_credentials",
-                    "client_id": self.client_id,
-                    "client_secret": self.client_secret,
+                    "client_id": self.ernie_client_id,
+                    "client_secret": self.ernie_client_secret,
                 },
             )
             self.access_token = str(resp.json().get("access_token"))

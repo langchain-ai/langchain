@@ -28,6 +28,7 @@ from langchain.chat_models.mlflow_ai_gateway import ChatMLflowAIGateway
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.chat_models.promptlayer_openai import PromptLayerChatOpenAI
 from langchain.chat_models.vertexai import ChatVertexAI
+from langchain.chat_models.ernie import ErnieChat
 
 __all__ = [
     "ChatOpenAI",
@@ -41,4 +42,5 @@ __all__ = [
     "JinaChat",
     "HumanInputChatModel",
     "ChatAnyscale",
+    "ErnieChat"
 ]
