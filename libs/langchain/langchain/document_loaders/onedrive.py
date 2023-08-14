@@ -8,7 +8,7 @@ from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional, Type, Union
 
-from pydantic import BaseModel, BaseSettings, Field, FilePath, SecretStr
+from pydantic_v1 import BaseModel, BaseSettings, Field, FilePath, SecretStr
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -60,7 +60,7 @@ class _SupportedFileTypes(BaseModel):
 
 
 class OneDriveLoader(BaseLoader, BaseModel):
-    """Loads data from OneDrive."""
+    """Load from `Microsoft OneDrive`."""
 
     settings: _OneDriveSettings = Field(default_factory=_OneDriveSettings)
     """ The settings for the OneDrive API client."""

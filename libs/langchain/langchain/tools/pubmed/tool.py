@@ -1,12 +1,10 @@
-"""Tool for the Pubmed API."""
-
 from typing import Optional
 
-from pydantic import Field
+from pydantic_v1 import Field
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
-from langchain.utilities.pupmed import PubMedAPIWrapper
+from langchain.utilities.pubmed import PubMedAPIWrapper
 
 
 class PubmedQueryRun(BaseTool):
@@ -14,11 +12,10 @@ class PubmedQueryRun(BaseTool):
 
     name = "PubMed"
     description = (
-        "A wrapper around PubMed.org "
-        "Useful for when you need to answer questions about Physics, Mathematics, "
-        "Computer Science, Quantitative Biology, Quantitative Finance, Statistics, "
-        "Electrical Engineering, and Economics "
-        "from scientific articles on PubMed.org. "
+        "A wrapper around PubMed. "
+        "Useful for when you need to answer questions about medicine, health, "
+        "and biomedical topics "
+        "from biomedical literature, MEDLINE, life science journals, and online books. "
         "Input should be a search query."
     )
     api_wrapper: PubMedAPIWrapper = Field(default_factory=PubMedAPIWrapper)
@@ -28,5 +25,5 @@ class PubmedQueryRun(BaseTool):
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
-        """Use the Arxiv tool."""
+        """Use the PubMed tool."""
         return self.api_wrapper.run(query)

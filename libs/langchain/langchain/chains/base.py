@@ -1,14 +1,16 @@
 """Base interface that all chains should implement."""
+import asyncio
 import inspect
 import json
 import logging
 import warnings
 from abc import ABC, abstractmethod
+from functools import partial
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import yaml
-from pydantic import Field, root_validator, validator
+from pydantic_v1 import Field, root_validator, validator
 
 import langchain
 from langchain.callbacks.base import BaseCallbackManager
@@ -55,18 +57,40 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
     """
 
     def invoke(
-        self, input: Dict[str, Any], config: Optional[RunnableConfig] = None
+        self,
+        input: Dict[str, Any],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> Dict[str, Any]:
-        return self(input, **(config or {}))
+        config = config or {}
+        return self(
+            input,
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            **kwargs,
+        )
 
     async def ainvoke(
-        self, input: Dict[str, Any], config: Optional[RunnableConfig] = None
+        self,
+        input: Dict[str, Any],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> Dict[str, Any]:
         if type(self)._acall == Chain._acall:
             # If the chain does not implement async, fall back to default implementation
-            return await super().ainvoke(input, config)
+            return await asyncio.get_running_loop().run_in_executor(
+                None, partial(self.invoke, input, config, **kwargs)
+            )
 
-        return await self.acall(input, **(config or {}))
+        config = config or {}
+        return await self.acall(
+            input,
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            **kwargs,
+        )
 
     memory: Optional[BaseMemory] = None
     """Optional memory object. Defaults to None.
@@ -553,7 +577,7 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
             A dictionary representation of the chain.
 
         Example:
-            ..code-block:: python
+            .. code-block:: python
 
                 chain.dict(exclude_unset=True)
                 # -> {"_type": "foo", "verbose": False, ...}

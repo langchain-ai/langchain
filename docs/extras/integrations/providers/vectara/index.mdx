@@ -63,7 +63,7 @@ results = vectara.similarity_score("what is LangChain?")
 - `k`: number of results to return (defaults to 5)
 - `lambda_val`: the [lexical matching](https://docs.vectara.com/docs/api-reference/search-apis/lexical-matching) factor for hybrid search (defaults to 0.025)
 - `filter`: a [filter](https://docs.vectara.com/docs/common-use-cases/filtering-by-metadata/filter-overview) to apply to the results (default None)
-- `n_sentence_context`: number of sentences to include before/after the actual matching segment when returning results. This defaults to 0 so as to return the exact text segment that matches, but can be used with other values e.g. 2 or 3 to return adjacent text segments.
+- `n_sentence_context`: number of sentences to include before/after the actual matching segment when returning results. This defaults to 2.
 
 The results are returned as a list of relevant documents, and a relevance score of each document.
 

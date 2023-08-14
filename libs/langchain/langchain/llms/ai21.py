@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 import requests
-from pydantic import BaseModel, Extra, root_validator
+from pydantic_v1 import BaseModel, Extra, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM

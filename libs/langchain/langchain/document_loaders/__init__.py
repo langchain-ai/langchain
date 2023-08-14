@@ -16,9 +16,20 @@
 """
 
 from langchain.document_loaders.acreom import AcreomLoader
+from langchain.document_loaders.airbyte import (
+    AirbyteCDKLoader,
+    AirbyteGongLoader,
+    AirbyteHubspotLoader,
+    AirbyteSalesforceLoader,
+    AirbyteShopifyLoader,
+    AirbyteStripeLoader,
+    AirbyteTypeformLoader,
+    AirbyteZendeskSupportLoader,
+)
 from langchain.document_loaders.airbyte_json import AirbyteJSONLoader
 from langchain.document_loaders.airtable import AirtableLoader
 from langchain.document_loaders.apify_dataset import ApifyDatasetLoader
+from langchain.document_loaders.arcgis_loader import ArcGISLoader
 from langchain.document_loaders.arxiv import ArxivLoader
 from langchain.document_loaders.async_html import AsyncHtmlLoader
 from langchain.document_loaders.azlyrics import AZLyricsLoader
@@ -42,6 +53,7 @@ from langchain.document_loaders.blockchain import BlockchainDocumentLoader
 from langchain.document_loaders.brave_search import BraveSearchLoader
 from langchain.document_loaders.browserless import BrowserlessLoader
 from langchain.document_loaders.chatgpt import ChatGPTLoader
+from langchain.document_loaders.chromium import AsyncChromiumLoader
 from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
 from langchain.document_loaders.concurrent import ConcurrentLoader
 from langchain.document_loaders.confluence import ConfluenceLoader
@@ -122,6 +134,7 @@ from langchain.document_loaders.pdf import (
 )
 from langchain.document_loaders.powerpoint import UnstructuredPowerPointLoader
 from langchain.document_loaders.psychic import PsychicLoader
+from langchain.document_loaders.pubmed import PubMedLoader
 from langchain.document_loaders.pyspark_dataframe import PySparkDataFrameLoader
 from langchain.document_loaders.python import PythonLoader
 from langchain.document_loaders.readthedocs import ReadTheDocsLoader
@@ -146,6 +159,7 @@ from langchain.document_loaders.telegram import (
 )
 from langchain.document_loaders.tencent_cos_directory import TencentCOSDirectoryLoader
 from langchain.document_loaders.tencent_cos_file import TencentCOSFileLoader
+from langchain.document_loaders.tensorflow_datasets import TensorflowDatasetLoader
 from langchain.document_loaders.text import TextLoader
 from langchain.document_loaders.tomarkdown import ToMarkdownLoader
 from langchain.document_loaders.toml import TomlLoader
@@ -186,11 +200,24 @@ TelegramChatLoader = TelegramChatFileLoader
 __all__ = [
     "AcreomLoader",
     "AsyncHtmlLoader",
+    "AsyncChromiumLoader",
     "AZLyricsLoader",
+    "AcreomLoader",
+    "AirbyteCDKLoader",
+    "AirbyteGongLoader",
     "AirbyteJSONLoader",
+    "AirbyteHubspotLoader",
+    "AirbyteSalesforceLoader",
+    "AirbyteShopifyLoader",
+    "AirbyteStripeLoader",
+    "AirbyteTypeformLoader",
+    "AirbyteZendeskSupportLoader",
     "AirtableLoader",
+    "AmazonTextractPDFLoader",
     "ApifyDatasetLoader",
+    "ArcGISLoader",
     "ArxivLoader",
+    "AsyncHtmlLoader",
     "AzureBlobStorageContainerLoader",
     "AzureBlobStorageFileLoader",
     "BSHTMLLoader",
@@ -207,10 +234,11 @@ __all__ = [
     "ChatGPTLoader",
     "CoNLLULoader",
     "CollegeConfidentialLoader",
+    "ConcurrentLoader",
     "ConfluenceLoader",
     "CubeSemanticLoader",
-    "DatadogLogsLoader",
     "DataFrameLoader",
+    "DatadogLogsLoader",
     "DiffbotLoader",
     "DirectoryLoader",
     "DiscordChatLoader",
@@ -246,12 +274,12 @@ __all__ = [
     "JSONLoader",
     "JoplinLoader",
     "LarkSuiteDocLoader",
+    "MHTMLLoader",
     "MWDumpLoader",
     "MastodonTootsLoader",
     "MathpixPDFLoader",
     "MaxComputeLoader",
     "MergedDataLoader",
-    "MHTMLLoader",
     "ModernTreasuryLoader",
     "NewsURLLoader",
     "NotebookLoader",
@@ -263,26 +291,27 @@ __all__ = [
     "OneDriveFileLoader",
     "OneDriveLoader",
     "OnlinePDFLoader",
-    "OutlookMessageLoader",
     "OpenCityDataLoader",
+    "OutlookMessageLoader",
     "PDFMinerLoader",
     "PDFMinerPDFasHTMLLoader",
     "PDFPlumberLoader",
     "PagedPDFSplitter",
     "PlaywrightURLLoader",
     "PsychicLoader",
+    "PubMedLoader",
     "PyMuPDFLoader",
     "PyPDFDirectoryLoader",
     "PyPDFLoader",
     "PyPDFium2Loader",
     "PySparkDataFrameLoader",
     "PythonLoader",
+    "RSSFeedLoader",
     "ReadTheDocsLoader",
     "RecursiveUrlLoader",
     "RedditPostsLoader",
     "RoamLoader",
     "RocksetLoader",
-    "RSSFeedLoader",
     "S3DirectoryLoader",
     "S3FileLoader",
     "SRTLoader",
@@ -292,11 +321,12 @@ __all__ = [
     "SnowflakeLoader",
     "SpreedlyLoader",
     "StripeLoader",
-    "TencentCOSDirectoryLoader",
-    "TencentCOSFileLoader",
     "TelegramChatApiLoader",
     "TelegramChatFileLoader",
     "TelegramChatLoader",
+    "TensorflowDatasetLoader",
+    "TencentCOSDirectoryLoader",
+    "TencentCOSFileLoader",
     "TextLoader",
     "ToMarkdownLoader",
     "TomlLoader",
@@ -330,6 +360,4 @@ __all__ = [
     "XorbitsLoader",
     "YoutubeAudioLoader",
     "YoutubeLoader",
-    "ConcurrentLoader",
-    "AmazonTextractPDFLoader",
 ]

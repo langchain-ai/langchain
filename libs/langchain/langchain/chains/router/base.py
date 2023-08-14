@@ -4,7 +4,7 @@ from __future__ import annotations
 from abc import ABC
 from typing import Any, Dict, List, Mapping, NamedTuple, Optional
 
-from pydantic import Extra
+from pydantic_v1 import Extra
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,

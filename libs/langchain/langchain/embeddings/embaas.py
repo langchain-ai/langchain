@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
-from pydantic import BaseModel, Extra, root_validator
+from pydantic_v1 import BaseModel, Extra, root_validator
 from typing_extensions import NotRequired, TypedDict
 
 from langchain.embeddings.base import Embeddings
@@ -13,7 +13,7 @@ EMBAAS_API_URL = "https://api.embaas.io/v1/embeddings/"
 
 
 class EmbaasEmbeddingsPayload(TypedDict):
-    """Payload for the embaas embeddings API."""
+    """Payload for the Embaas embeddings API."""
 
     model: str
     texts: List[str]

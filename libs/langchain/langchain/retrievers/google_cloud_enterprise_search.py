@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 
-from pydantic import Extra, Field, root_validator
+from pydantic_v1 import Extra, Field, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document
@@ -116,22 +116,37 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
         self, results: Sequence[SearchResult]
     ) -> List[Document]:
         """Converts a sequence of search results to a list of LangChain documents."""
+        from google.protobuf.json_format import MessageToDict
+
         documents: List[Document] = []
 
         for result in results:
-            derived_struct_data = result.document.derived_struct_data
-            doc_metadata = result.document.struct_data
-            doc_metadata.source = derived_struct_data.link or ""
-            doc_metadata.id = result.document.id
+            document_dict = MessageToDict(
+                result.document._pb, preserving_proto_field_name=True
+            )
+            derived_struct_data = document_dict.get("derived_struct_data", None)
+            if not derived_struct_data:
+                continue
 
-            for chunk in (
-                derived_struct_data.extractive_answers
-                or derived_struct_data.extractive_segments
-            ):
-                if hasattr(chunk, "page_number"):
-                    doc_metadata.source += f":{chunk.page_number}"
+            doc_metadata = document_dict.get("struct_data", {})
+            doc_metadata["id"] = document_dict["id"]
+
+            chunk_type = (
+                "extractive_answers"
+                if self.get_extractive_answers
+                else "extractive_segments"
+            )
+
+            for chunk in getattr(derived_struct_data, chunk_type, []):
+                doc_metadata["source"] = derived_struct_data.get("link", "")
+
+                if chunk_type == "extractive_answers":
+                    doc_metadata["source"] += f":{chunk.get('pageNumber', '')}"
+
                 documents.append(
-                    Document(page_content=chunk.content, metadata=doc_metadata)
+                    Document(
+                        page_content=chunk.get("content", ""), metadata=doc_metadata
+                    )
                 )
 
         return documents
