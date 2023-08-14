@@ -6620,29 +6620,6 @@ signals = ["blinker (>=1.4.0)"]
 signedtoken = ["cryptography (>=3.0.0)", "pyjwt (>=2.0.0,<3)"]
 
 [[package]]
-name = "octoai-sdk"
-version = "0.1.1"
-description = "A runtime library for OctoAI."
-optional = true
-python-versions = ">=3.8.1,<4.0.0"
-files = [
-    {file = "octoai_sdk-0.1.1-py3-none-any.whl", hash = "sha256:9b02aaa060e0c1295918653e290bb64c65dea9f8649983c86f0ab2d8e530a8df"},
-    {file = "octoai_sdk-0.1.1.tar.gz", hash = "sha256:e4aa32b18b7b2bd8553eada0f59953aec8b799b65ee9b59958c16686aa32773f"},
-]
-
-[package.dependencies]
-click = ">=8.1.3,<9.0.0"
-fastapi = ">=0.95.2,<0.96.0"
-httpx = ">=0.24.0,<0.25.0"
-numpy = ">=1.24.3,<2.0.0"
-pillow = ">=9.5.0,<10.0.0"
-pydantic = ">=1.10.8,<2.0.0"
-pyyaml = ">=6.0,<7.0"
-soundfile = ">=0.12.1,<0.13.0"
-types-pyyaml = ">=6.0.12.10,<7.0.0.0"
-uvicorn = ">=0.22.0,<0.23.0"
-
-[[package]]
 name = "openai"
 version = "0.27.8"
 description = "Python client library for the OpenAI API"
@@ -12761,7 +12738,7 @@ clarifai = ["clarifai"]
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["amazon-textract-caller", "anthropic", "atlassian-python-api", "beautifulsoup4", "betabageldb", "bibtexparser", "cassio", "chardet", "esprima", "feedparser", "geopandas", "gitpython", "gql", "html2text", "jinja2", "jq", "lxml", "mwparserfromhell", "mwxml", "newspaper3k", "openai", "openai", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "requests-toolbelt", "scikit-learn", "streamlit", "sympy", "telethon", "tqdm", "xata", "xinference", "xmltodict", "zep-python"]
+extended-testing = ["amazon-textract-caller", "anthropic", "atlassian-python-api", "beautifulsoup4", "betabageldb", "bibtexparser", "cassio", "chardet", "esprima", "feedparser", "geopandas", "gitpython", "gql", "html2text", "jinja2", "jq", "lxml", "mwparserfromhell", "mwxml", "newspaper3k", "openai", "openai", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "requests-toolbelt", "scikit-learn", "streamlit", "sympy", "telethon", "tqdm", "xata", "xinference", "xmltodict"]
 javascript = ["esprima"]
 llms = ["anthropic", "clarifai", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "openllm", "openlm", "torch", "transformers", "xinference"]
 openai = ["openai", "tiktoken"]
@@ -12771,4 +12748,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "ad960038dd209c4bd487566133fe2b5da3796519e39f99be1e23a64aa76ba0c7"
+content-hash = "251cfde07f94e6bed31106213466666c46c28b8ed863652ae156ff79d2af7bdf"
