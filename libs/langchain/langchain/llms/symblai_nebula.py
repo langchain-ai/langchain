@@ -131,7 +131,7 @@ class Nebula(LLM):
         return "nebula"
 
     def _invocation_params(
-            self, stop_sequences: Optional[List[str]], **kwargs: Any
+        self, stop_sequences: Optional[List[str]], **kwargs: Any
     ) -> dict:
         params = self._default_params
         if self.stop_sequences is not None and stop_sequences is not None:
@@ -150,11 +150,11 @@ class Nebula(LLM):
         return text
 
     def _call(
-            self,
-            prompt: str,
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """Call out to Nebula Service endpoint.
         Args:
@@ -186,11 +186,11 @@ class Nebula(LLM):
 
 
 def make_request(
-        self: Nebula,
-        instruction: str,
-        conversation: str,
-        url: str = f"{DEFAULT_NEBULA_SERVICE_URL}{DEFAULT_NEBULA_SERVICE_PATH}",
-        params: Dict = {},
+    self: Nebula,
+    instruction: str,
+    conversation: str,
+    url: str = f"{DEFAULT_NEBULA_SERVICE_URL}{DEFAULT_NEBULA_SERVICE_PATH}",
+    params: Dict = {},
 ) -> Any:
     """Generate text from the model."""
     headers = {
