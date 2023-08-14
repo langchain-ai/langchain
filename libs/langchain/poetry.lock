@@ -889,34 +889,6 @@ tracing-zipkin = ["opentelemetry-exporter-zipkin (==1.17.0)"]
 triton = ["tritonclient[all] (>=2.29.0)"]
 
 [[package]]
-name = "betabageldb"
-version = "0.2.32"
-description = "BagelDB is a Python library for interacting with the BagelDB API."
-optional = true
-python-versions = "*"
-files = [
-    {file = "betabageldb-0.2.32-py3-none-any.whl", hash = "sha256:1fc6fc6b1353bc8b8ca5f72ad0aa5d38069fd0d7236a6d4c96c12bc7bad8913e"},
-    {file = "betabageldb-0.2.32.tar.gz", hash = "sha256:17ca10b8edf7b7689c92e904bbe90292c71bbf8d2fa11e468fdda3af7ab222bf"},
-]
-
-[package.dependencies]
-certifi = ">=2023.5.7"
-charset-normalizer = ">=3.2.0"
-graphlib-backport = ">=1.0.3"
-idna = ">=3.4"
-numpy = ">=1.21.6"
-overrides = ">=7.3.1"
-pandas = ">=2.0.1"
-pydantic = ">=1.10.10,<2.0"
-python-dateutil = ">=2.8.2"
-pytz = ">=2023.3"
-requests = ">=2.28"
-six = ">=1.16.0"
-typing-extensions = ">=4.6.3"
-tzdata = ">=2022.1"
-urllib3 = ">=1.26.16"
-
-[[package]]
 name = "bibtexparser"
 version = "1.4.0"
 description = "Bibtex parser for python 3"
@@ -2709,20 +2681,6 @@ files = [
 ]
 
 [[package]]
-name = "fluent-logger"
-version = "0.10.0"
-description = "A Python logging handler for Fluentd event collector"
-optional = true
-python-versions = ">=3.5"
-files = [
-    {file = "fluent-logger-0.10.0.tar.gz", hash = "sha256:678bda90c513ff0393964b64544ce41ef25669d2089ce6c3b63d9a18554b9bfa"},
-    {file = "fluent_logger-0.10.0-py2.py3-none-any.whl", hash = "sha256:543637e5e62ec3fc3c92b44e5a4e148a3cea88a0f8ca4fae26c7e60fda7564c1"},
-]
-
-[package.dependencies]
-msgpack = ">1.0"
-
-[[package]]
 name = "fonttools"
 version = "4.41.1"
 description = "Tools to manipulate font files"
@@ -3283,17 +3241,6 @@ packaging = "*"
 requests = ">=2.0,<3.0"
 typing-extensions = ">=4.0,<5.0"
 websockets = ">=10.0,<12.0"
-
-[[package]]
-name = "graphlib-backport"
-version = "1.0.3"
-description = "Backport of the Python 3.9 graphlib module for Python 3.6+"
-optional = true
-python-versions = ">=3.6,<4.0"
-files = [
-    {file = "graphlib_backport-1.0.3-py3-none-any.whl", hash = "sha256:24246967b9e7e6a91550bc770e6169585d35aa32790258579a8a3899a8c18fde"},
-    {file = "graphlib_backport-1.0.3.tar.gz", hash = "sha256:7bb8fc7757b8ae4e6d8000a26cd49e9232aaa9a3aa57edb478474b8424bfaae2"},
-]
 
 [[package]]
 name = "graphql-core"
@@ -9160,17 +9107,6 @@ dev = ["Django (>=1.11)", "check-manifest", "colorama (<=0.4.1)", "coverage", "f
 doc = ["Sphinx", "sphinx-rtd-theme"]
 
 [[package]]
-name = "semver"
-version = "3.0.1"
-description = "Python helper for Semantic Versioning (https://semver.org)"
-optional = true
-python-versions = ">=3.7"
-files = [
-    {file = "semver-3.0.1-py3-none-any.whl", hash = "sha256:2a23844ba1647362c7490fe3995a86e097bb590d16f0f32dfc383008f19e4cdf"},
-    {file = "semver-3.0.1.tar.gz", hash = "sha256:9ec78c5447883c67b97f98c3b6212796708191d22e4ad30f4570f840171cbce1"},
-]
-
-[[package]]
 name = "send2trash"
 version = "1.8.2"
 description = "Send file to trash natively under Mac OS X, Windows and Linux"
@@ -9659,28 +9595,6 @@ typing-extensions = {version = ">=3.10.0", markers = "python_version < \"3.10\""
 
 [package.extras]
 full = ["httpx (>=0.22.0)", "itsdangerous", "jinja2", "python-multipart", "pyyaml"]
-
-[[package]]
-name = "steamship"
-version = "2.17.10"
-description = "The fastest way to add language AI to your product."
-optional = true
-python-versions = "*"
-files = [
-    {file = "steamship-2.17.10-py3-none-any.whl", hash = "sha256:233c6e8c42911ec59343e345407acdc3b042bc0aa5fd40fb9b966fdae1cf8465"},
-    {file = "steamship-2.17.10.tar.gz", hash = "sha256:fc5b6f8f440d80b53b527fd5c94d11bc331cab429f75baa9f2c27a6ae8eea43f"},
-]
-
-[package.dependencies]
-aiohttp = ">=3.8.4,<3.9.0"
-click = ">=8.1.3,<8.2.0"
-fluent-logger = ">=0.10.0,<0.11.0"
-inflection = ">=0.5.1,<0.6.0"
-pydantic = ">=1.10.2,<1.11.0"
-requests = ">=2.28.1,<2.29.0"
-semver = ">=3.0.0,<3.1.0"
-tiktoken = ">=0.3.3,<0.4.0"
-toml = ">=0.10.2,<0.11.0"
 
 [[package]]
 name = "streamlit"
@@ -11809,7 +11723,7 @@ cffi = {version = ">=1.11", markers = "platform_python_implementation == \"PyPy\
 cffi = ["cffi (>=1.11)"]
 
 [extras]
-all = ["O365", "aleph-alpha-client", "amadeus", "arxiv", "atlassian-python-api", "awadb", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-cosmos", "azure-identity", "beautifulsoup4", "clarifai", "clickhouse-connect", "cohere", "deeplake", "docarray", "duckduckgo-search", "elasticsearch", "esprima", "faiss-cpu", "google-api-python-client", "google-auth", "google-search-results", "gptcache", "html2text", "huggingface_hub", "jinja2", "jq", "lancedb", "langkit", "lark", "libdeeplake", "librosa", "lxml", "manifest-ml", "marqo", "momento", "nebula3-python", "neo4j", "networkx", "nlpcloud", "nltk", "nomic", "openai", "openlm", "opensearch-py", "pdfminer-six", "pexpect", "pgvector", "pinecone-client", "pinecone-text", "psycopg2-binary", "pymongo", "pyowm", "pypdf", "pytesseract", "python-arango", "pyvespa", "qdrant-client", "rdflib", "redis", "requests-toolbelt", "sentence-transformers", "singlestoredb", "spacy", "steamship", "tensorflow-text", "tigrisdb", "tiktoken", "torch", "transformers", "weaviate-client", "wikipedia", "wolframalpha", "xinference"]
+all = ["O365", "aleph-alpha-client", "amadeus", "arxiv", "atlassian-python-api", "awadb", "azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-cosmos", "azure-identity", "beautifulsoup4", "clarifai", "clickhouse-connect", "cohere", "deeplake", "docarray", "duckduckgo-search", "elasticsearch", "esprima", "faiss-cpu", "google-api-python-client", "google-auth", "google-search-results", "gptcache", "html2text", "huggingface_hub", "jinja2", "jq", "lancedb", "langkit", "lark", "libdeeplake", "librosa", "lxml", "manifest-ml", "marqo", "momento", "nebula3-python", "neo4j", "networkx", "nlpcloud", "nltk", "nomic", "openai", "openlm", "opensearch-py", "pdfminer-six", "pexpect", "pgvector", "pinecone-client", "pinecone-text", "psycopg2-binary", "pymongo", "pyowm", "pypdf", "pytesseract", "python-arango", "pyvespa", "qdrant-client", "rdflib", "redis", "requests-toolbelt", "sentence-transformers", "singlestoredb", "tensorflow-text", "tigrisdb", "tiktoken", "torch", "transformers", "weaviate-client", "wikipedia", "wolframalpha", "xinference"]
 azure = ["azure-ai-formrecognizer", "azure-ai-vision", "azure-cognitiveservices-speech", "azure-core", "azure-cosmos", "azure-identity", "azure-search-documents", "openai"]
 clarifai = ["clarifai"]
 cohere = ["cohere"]
@@ -11825,4 +11739,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "14df451634dc5e180b77290600bfaa7d45d89a76217ad03939bb5d920f4a55e7"
+content-hash = "919b9992fa613162baccbb0e3e74ba8fdaa34d052783f316c143b65b6436687f"
