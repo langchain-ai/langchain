@@ -51,7 +51,7 @@ def _get_verbosity() -> bool:
 
 
 class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
-    """Base class for chat models."""
+    """Base class for Chat models."""
 
     cache: Optional[bool] = None
     """Whether to cache the response."""

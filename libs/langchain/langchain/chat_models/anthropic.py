@@ -22,7 +22,7 @@ from langchain.schema.output import ChatGenerationChunk
 
 
 class ChatAnthropic(BaseChatModel, _AnthropicCommon):
-    """Anthropic's large language chat model.
+    """`Anthropic` chat large language models.
 
     To use, you should have the ``anthropic`` python package installed, and the
     environment variable ``ANTHROPIC_API_KEY`` set with your API key, or pass

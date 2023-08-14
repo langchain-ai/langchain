@@ -28,7 +28,7 @@ DEFAULT_MODEL = "meta-llama/Llama-2-7b-chat-hf"
 
 
 class ChatAnyscale(ChatOpenAI):
-    """Wrapper around Anyscale Chat large language models.
+    """`Anyscale` Chat large language models.
 
     To use, you should have the ``openai`` python package installed, and the
     environment variable ``ANYSCALE_API_KEY`` set with your API key.
