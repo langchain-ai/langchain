@@ -11,27 +11,31 @@ from langchain.tools.ainetwork.base import AINBaseTool, OperationType
 
 class AppOperationType(str, Enum):
     SET_ADMIN = "SET_ADMIN"
+    GET_CONFIG = "GET_CONFIG"
 
 
 class AppSchema(BaseModel):
     type: AppOperationType = Field(...)
     appName: str = Field(..., description="Blockchain reference path")
     address: Optional[Union[str, list[str]]] = Field(
-        None, description="A single address or a list of addresses"
+        None,
+        description="A single address or a list of addresses. Default: current session's address",
     )
 
 
 class AINAppOps(AINBaseTool):
     name: str = "AINappOps"
     description: str = """
-Create an app in the AINetwork Blockchain database by creating the /apps/<appName> path
+Create an app in the AINetwork Blockchain database by creating the /apps/<appName> path.
+An address set as `admin` can grant `owner` rights to other addresses (refer to `AINownerOps` for more details).
+Also, `admin` is initialized to have all `owner` permissions and `rule` allowed for that path.
 
-## appName Specific Rules
-- Valid characters: `[a-zA-Z_0-9]`
+## appName Rule
+- [a-zA-Z_0-9]+
 
-## address Specific Rules
+## address Rules
 - 0x[0-9a-fA-F]{40}
-- Defaults to the current session's public address
+- Defaults to the current session's address
 - Multiple addresses can be specified if needed
 
 ## SET_ADMIN Example 1
@@ -40,7 +44,7 @@ Create an app in the AINetwork Blockchain database by creating the /apps/<appNam
 
 ### Result:
 1. Path /apps/ain_project created.
-2. Current session's public address registered as admin.
+2. Current session's address registered as admin.
 
 ## SET_ADMIN Example 2
 - type: SET_ADMIN
@@ -58,7 +62,7 @@ Create an app in the AINetwork Blockchain database by creating the /apps/<appNam
         self,
         type: AppOperationType,
         appName: str,
-        address: Optional[str] = None,
+        address: Optional[Union[str, list[str]]] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         from ain.types import ValueOnlyTransactionInput
@@ -69,15 +73,19 @@ Create an app in the AINetwork Blockchain database by creating the /apps/<appNam
                 if address is None:
                     address = self.interface.wallet.defaultAccount.address
                 if isinstance(address, str):
-                    address_list = [address]
+                    address = [address]
 
                 res = await self.interface.db.ref(
                     f"/manage_app/{appName}/create/{getTimestamp()}"
                 ).setValue(
                     transactionInput=ValueOnlyTransactionInput(
-                        value={"admin": {address: True for address in address_list}}
+                        value={"admin": {address: True for address in address}}
                     )
                 )
+            elif type is AppOperationType.GET_CONFIG:
+                res = await self.interface.db.ref(
+                    f"/manage_app/{appName}/config"
+                ).getValue()
             else:
                 raise ValueError(f"Unsupported 'type': {type}.")
             return json.dumps(res, ensure_ascii=False)

@@ -17,14 +17,15 @@ class RuleSchema(BaseModel):
 class AINRuleOps(AINBaseTool):
     name: str = "AINruleOps"
     description: str = """
-Covers the write rules for the AINetwork Blockchain database. The SET type specifies write permissions using the `eval` variable as a JavaScript eval string.
+Covers the write `rule` for the AINetwork Blockchain database. The SET type specifies write permissions using the `eval` variable as a JavaScript eval string.
+In order to AINvalueOps with SET at the path, the execution result of the `eval` string must be true.
 
-## Path Special Rules
-1. Valid characters for paths: `[a-zA-Z_0-9]`
-2. Use `$<key>` for template variables in paths.
+## Path Rules
+1. Allowed characters for directory: `[a-zA-Z_0-9]`
+2. Use `$<key>` for template variables as directory.
 
 ## Eval String Special Variables
-- auth.addr: Public address of the writer for the path
+- auth.addr: Address of the writer for the path
 - newData: New data for the path
 - data: Current data for the path
 - currentTime: Time in seconds

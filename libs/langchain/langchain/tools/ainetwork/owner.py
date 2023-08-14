@@ -14,45 +14,53 @@ class RuleSchema(BaseModel):
     address: Optional[Union[str, list[str]]] = Field(
         None, description="A single address or a list of addresses"
     )
-    write_owner: Optional[bool] = Field(False, description="Edit ownership permission")
-    write_rule: Optional[bool] = Field(False, description="Edit path rules permission")
+    write_owner: Optional[bool] = Field(
+        False, description="Authority to edit `owner` of the path"
+    )
+    write_rule: Optional[bool] = Field(
+        False, description="Authority to edit `write rule` for the path"
+    )
     write_function: Optional[bool] = Field(
-        False, description="Set function permission for path"
+        False, description="Authority to `set function` for the path"
     )
     branch_owner: Optional[bool] = Field(
-        False, description="Inherits ownership for sub-paths"
+        False, description="Authority to initialize `owner` of sub-paths"
     )
 
 
 class AINOwnerOps(AINBaseTool):
     name: str = "AINownerOps"
     description: str = """
-Rules for ownership in AINetwork Blockchain database.
+Rules for `owner` in AINetwork Blockchain database.
+An address set as `owner` can modify permissions according to its granted authorities
 
-## Path Specific Rules
-- Valid characters: `[a-zA-Z_0-9]`
+## Path Rule
+- (/[a-zA-Z_0-9]+)+
+- Permission checks ascend from the most specific (child) path to broader (parent) paths until an `owner` is located.
 
 ## Address Rules
-- 0x[0-9a-fA-F]{40}: 40-digit hexadecimal public address
-- *: Allows all address
-- Defaults to the current session's public address
+- 0x[0-9a-fA-F]{40}: 40-digit hexadecimal address
+- *: All addresses permitted
+- Defaults to the current session's address
 
-## Permission Types
-- write_owner: Edit ownership of the path
-- write_rule: Edit rules for the path
-- write_function: Set function for the path
-- branch_owner: Inherits ownership for sub-paths
+## SET
+- `SET` alters permissions for specific addresses, while other addresses remain unaffected.
+- When removing an address of `owner`, set all authorities for that address to false.
+- message `write_owner permission evaluated false` if fail
 
-## SET Example
+### Example
 - type: SET
 - path: /apps/langchain
-- address: *
+- address: [<address 1>, <address 2>]
 - write_owner: True
 - write_rule: True
 - write_function: True
 - branch_owner: True
 
-## GET Example
+## GET
+- Provides all addresses with `owner` permissions and their authorities in the path.
+
+### Example
 - type: GET
 - path: /apps/langchain
 """
@@ -76,7 +84,7 @@ Rules for ownership in AINetwork Blockchain database.
                 if address is None:
                     address = self.interface.wallet.defaultAccount.address
                 if isinstance(address, str):
-                    address_list = [address]
+                    address = [address]
                 res = await self.interface.db.ref(path).setOwner(
                     transactionInput=ValueOnlyTransactionInput(
                         value={
@@ -88,7 +96,7 @@ Rules for ownership in AINetwork Blockchain database.
                                         "write_function": write_function,
                                         "branch_owner": branch_owner,
                                     }
-                                    for address in address_list
+                                    for address in address
                                 }
                             }
                         }
