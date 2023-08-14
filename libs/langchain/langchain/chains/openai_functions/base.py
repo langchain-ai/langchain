@@ -1,9 +1,18 @@
 """Methods for creating chains that use OpenAI function-calling APIs."""
 import inspect
-import re
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 
-from pydantic import BaseModel
+from pydantic_v1 import BaseModel
 
 from langchain.base_language import BaseLanguageModel
 from langchain.chains import LLMChain
@@ -25,8 +34,7 @@ PYTHON_TO_JSON_TYPES = {
 
 def _get_python_function_name(function: Callable) -> str:
     """Get the name of a Python function."""
-    source = inspect.getsource(function)
-    return re.search(r"^def (.*)\(", source).groups()[0]  # type: ignore
+    return function.__name__
 
 
 def _parse_python_function_docstring(function: Callable) -> Tuple[str, dict]:
@@ -79,7 +87,9 @@ def _get_python_function_arguments(function: Callable, arg_descriptions: dict) -
         if arg == "return":
             continue
         if isinstance(arg_type, type) and issubclass(arg_type, BaseModel):
-            properties[arg] = arg_type.schema()
+            # Mypy error:
+            # "type" has no attribute "schema"
+            properties[arg] = arg_type.schema()  # type: ignore[attr-defined]
         elif arg_type.__name__ in PYTHON_TO_JSON_TYPES:
             properties[arg] = {"type": PYTHON_TO_JSON_TYPES[arg_type.__name__]}
         if arg in arg_descriptions:
@@ -94,10 +104,16 @@ def _get_python_function_required_args(function: Callable) -> List[str]:
     spec = inspect.getfullargspec(function)
     required = spec.args[: -len(spec.defaults)] if spec.defaults else spec.args
     required += [k for k in spec.kwonlyargs if k not in (spec.kwonlydefaults or {})]
+
+    is_class = type(function) is type
+    if is_class and required[0] == "self":
+        required = required[1:]
     return required
 
 
-def convert_python_function_to_openai_function(function: Callable) -> Dict[str, Any]:
+def convert_python_function_to_openai_function(
+    function: Callable,
+) -> Dict[str, Any]:
     """Convert a Python function to an OpenAI function-calling API compatible dict.
 
     Assumes the Python function has type hints and a docstring with a description. If
@@ -133,7 +149,9 @@ def convert_to_openai_function(
     if isinstance(function, dict):
         return function
     elif isinstance(function, type) and issubclass(function, BaseModel):
-        schema = function.schema()
+        # Mypy error:
+        # "type" has no attribute "schema"
+        schema = function.schema()  # type: ignore[attr-defined]
         return {
             "name": schema["title"],
             "description": schema["description"],
@@ -210,7 +228,7 @@ def create_openai_fn_chain(
                 from langchain.chat_models import ChatOpenAI
                 from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 
-                from pydantic import BaseModel, Field
+                from pydantic_v1 import BaseModel, Field
 
 
                 class RecordPerson(BaseModel):
@@ -296,7 +314,7 @@ def create_structured_output_chain(
                 from langchain.chat_models import ChatOpenAI
                 from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 
-                from pydantic import BaseModel, Field
+                from pydantic_v1 import BaseModel, Field
 
                 class Dog(BaseModel):
                     \"\"\"Identifying information about a dog.\"\"\"

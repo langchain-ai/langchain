@@ -34,12 +34,12 @@ def test_sql_query() -> None:
 
     client = rockset.RocksetClient(host, api_key)
 
-    col_1 = "Rockset is a real-time analytics database which enables queries on massive, semi-structured data without operational burden. Rockset is serverless and fully managed. It offloads the work of managing configuration, cluster provisioning, denormalization, and shard / index management. Rockset is also SOC 2 Type II compliant and offers encryption at rest and in flight, securing and protecting any sensitive data. Most teams can ingest data into Rockset and start executing queries in less than 15 minutes."  # noqa: E501
+    col_1 = "Rockset is a real-time analytics database"
     col_2 = 2
     col_3 = "e903e069-b0b5-4b80-95e2-86471b41f55f"
     id = 7320132
 
-    """Run a simple SQL query query"""
+    """Run a simple SQL query"""
     loader = RocksetLoader(
         client,
         rockset.models.QueryRequestSql(

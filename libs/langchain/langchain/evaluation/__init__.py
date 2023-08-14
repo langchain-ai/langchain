@@ -1,4 +1,4 @@
-"""Evaluation chains for grading LLM and Chain outputs.
+"""**Evaluation** chains for grading LLM and Chain outputs.
 
 This module contains off-the-shelf evaluation chains for grading the output of
 LangChain primitives such as language models and chains.

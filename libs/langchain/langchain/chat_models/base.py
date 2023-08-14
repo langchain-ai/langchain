@@ -14,7 +14,7 @@ from typing import (
     cast,
 )
 
-from pydantic import Field, root_validator
+from pydantic_v1 import Field, root_validator
 
 import langchain
 from langchain.callbacks.base import BaseCallbackManager
@@ -51,6 +51,8 @@ def _get_verbosity() -> bool:
 
 
 class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
+    """Base class for Chat models."""
+
     cache: Optional[bool] = None
     """Whether to cache the response."""
     verbose: bool = Field(default_factory=_get_verbosity)
@@ -101,13 +103,20 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
         config: Optional[RunnableConfig] = None,
         *,
         stop: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> BaseMessageChunk:
+        config = config or {}
         return cast(
             BaseMessageChunk,
             cast(
                 ChatGeneration,
                 self.generate_prompt(
-                    [self._convert_input(input)], stop=stop, **(config or {})
+                    [self._convert_input(input)],
+                    stop=stop,
+                    callbacks=config.get("callbacks"),
+                    tags=config.get("tags"),
+                    metadata=config.get("metadata"),
+                    **kwargs,
                 ).generations[0][0],
             ).message,
         )
@@ -118,15 +127,22 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
         config: Optional[RunnableConfig] = None,
         *,
         stop: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> BaseMessageChunk:
         if type(self)._agenerate == BaseChatModel._agenerate:
             # model doesn't implement async generation, so use default implementation
             return await asyncio.get_running_loop().run_in_executor(
-                None, partial(self.invoke, input, config, stop=stop)
+                None, partial(self.invoke, input, config, stop=stop, **kwargs)
             )
 
+        config = config or {}
         llm_result = await self.agenerate_prompt(
-            [self._convert_input(input)], stop=stop, **(config or {})
+            [self._convert_input(input)],
+            stop=stop,
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            **kwargs,
         )
         return cast(
             BaseMessageChunk, cast(ChatGeneration, llm_result.generations[0][0]).message

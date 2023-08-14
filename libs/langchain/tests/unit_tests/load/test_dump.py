@@ -129,12 +129,6 @@ def test_serialize_llmchain_chat(snapshot: Any) -> None:
         del os.environ["OPENAI_API_KEY"]
 
 
-def test_serialize_prompt(snapshot: Any) -> None:
-    """Test that prompt is serialized correctly"""
-    prompt = PromptTemplate.from_template("hello {name}!")
-    assert dumps(prompt, pretty=True) == snapshot
-
-
 @pytest.mark.requires("openai")
 def test_serialize_llmchain_with_non_serializable_arg(snapshot: Any) -> None:
     llm = OpenAI(

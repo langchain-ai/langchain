@@ -1,6 +1,5 @@
 """Test Redis cache functionality."""
 import pytest
-import redis
 
 import langchain
 from langchain.cache import RedisCache, RedisSemanticCache
@@ -12,7 +11,18 @@ from tests.unit_tests.llms.fake_llm import FakeLLM
 REDIS_TEST_URL = "redis://localhost:6379"
 
 
+def test_redis_cache_ttl() -> None:
+    import redis
+
+    langchain.llm_cache = RedisCache(redis_=redis.Redis.from_url(REDIS_TEST_URL), ttl=1)
+    langchain.llm_cache.update("foo", "bar", [Generation(text="fizz")])
+    key = langchain.llm_cache._key("foo", "bar")
+    assert langchain.llm_cache.redis.pttl(key) > 0
+
+
 def test_redis_cache() -> None:
+    import redis
+
     langchain.llm_cache = RedisCache(redis_=redis.Redis.from_url(REDIS_TEST_URL))
     llm = FakeLLM()
     params = llm.dict()
@@ -31,6 +41,8 @@ def test_redis_cache() -> None:
 
 
 def test_redis_cache_chat() -> None:
+    import redis
+
     langchain.llm_cache = RedisCache(redis_=redis.Redis.from_url(REDIS_TEST_URL))
     llm = FakeChatModel()
     params = llm.dict()
@@ -69,6 +81,8 @@ def test_redis_semantic_cache() -> None:
 
 
 def test_redis_semantic_cache_chat() -> None:
+    import redis
+
     langchain.llm_cache = RedisCache(redis_=redis.Redis.from_url(REDIS_TEST_URL))
     llm = FakeChatModel()
     params = llm.dict()

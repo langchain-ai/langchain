@@ -2,7 +2,7 @@ import logging
 import re
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic_v1 import BaseModel, Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -34,18 +34,18 @@ class SearchQueries(BaseModel):
 
 DEFAULT_LLAMA_SEARCH_PROMPT = PromptTemplate(
     input_variables=["question"],
-    template="""<<SYS>> \n You are an assistant tasked with improving Google search 
-    results. \n <</SYS>> \n\n [INST] Generate THREE Google search queries that 
-    are similar to this question. The output should be a numbered list of questions 
-    and each should have a question mark at the end: \n\n {question} [/INST]""",
+    template="""<<SYS>> \n You are an assistant tasked with improving Google search \
+results. \n <</SYS>> \n\n [INST] Generate THREE Google search queries that \
+are similar to this question. The output should be a numbered list of questions \
+and each should have a question mark at the end: \n\n {question} [/INST]""",
 )
 
 DEFAULT_SEARCH_PROMPT = PromptTemplate(
     input_variables=["question"],
-    template="""You are an assistant tasked with improving Google search 
-    results. Generate THREE Google search queries that are similar to
-    this question. The output should be a numbered list of questions and each
-    should have a question mark at the end: {question}""",
+    template="""You are an assistant tasked with improving Google search \
+results. Generate THREE Google search queries that are similar to \
+this question. The output should be a numbered list of questions and each \
+should have a question mark at the end: {question}""",
 )
 
 
@@ -179,15 +179,16 @@ class WebResearchRetriever(BaseRetriever):
         logger.info(f"Questions for Google Search: {questions}")
 
         # Get urls
-        logger.info("Searching for relevat urls ...")
+        logger.info("Searching for relevant urls...")
         urls_to_look = []
         for query in questions:
             # Google search
             search_results = self.search_tool(query, self.num_search_results)
-            logger.info("Searching for relevat urls ...")
+            logger.info("Searching for relevant urls...")
             logger.info(f"Search results: {search_results}")
             for res in search_results:
-                urls_to_look.append(res["link"])
+                if res.get("link", None):
+                    urls_to_look.append(res["link"])
 
         # Relevant urls
         urls = set(urls_to_look)

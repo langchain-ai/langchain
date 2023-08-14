@@ -1,7 +1,7 @@
 """Reorder documents"""
 from typing import Any, List, Sequence
 
-from pydantic import BaseModel
+from pydantic_v1 import BaseModel
 
 from langchain.schema import BaseDocumentTransformer, Document
 

@@ -27,7 +27,7 @@ from typing import (
 )
 
 import yaml
-from pydantic import Field, root_validator, validator
+from pydantic_v1 import Field, root_validator, validator
 from tenacity import (
     RetryCallState,
     before_sleep_log,
@@ -91,7 +91,11 @@ def create_base_retry_decorator(
             if isinstance(run_manager, AsyncCallbackManagerForLLMRun):
                 coro = run_manager.on_retry(retry_state)
                 try:
-                    asyncio.run(coro)
+                    loop = asyncio.get_event_loop()
+                    if loop.is_running():
+                        loop.create_task(coro)
+                    else:
+                        asyncio.run(coro)
                 except Exception as e:
                     _log_error_once(f"Error in on_retry: {e}")
             else:
@@ -213,10 +217,17 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         config: Optional[RunnableConfig] = None,
         *,
         stop: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> str:
+        config = config or {}
         return (
             self.generate_prompt(
-                [self._convert_input(input)], stop=stop, **(config or {})
+                [self._convert_input(input)],
+                stop=stop,
+                callbacks=config.get("callbacks"),
+                tags=config.get("tags"),
+                metadata=config.get("metadata"),
+                **kwargs,
             )
             .generations[0][0]
             .text
@@ -228,15 +239,22 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         config: Optional[RunnableConfig] = None,
         *,
         stop: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> str:
         if type(self)._agenerate == BaseLLM._agenerate:
             # model doesn't implement async invoke, so use default implementation
             return await asyncio.get_running_loop().run_in_executor(
-                None, partial(self.invoke, input, config, stop=stop)
+                None, partial(self.invoke, input, config, stop=stop, **kwargs)
             )
 
+        config = config or {}
         llm_result = await self.agenerate_prompt(
-            [self._convert_input(input)], stop=stop, **(config or {})
+            [self._convert_input(input)],
+            stop=stop,
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            **kwargs,
         )
         return llm_result.generations[0][0].text
 
@@ -245,6 +263,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         inputs: List[LanguageModelInput],
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
         max_concurrency: Optional[int] = None,
+        **kwargs: Any,
     ) -> List[str]:
         config = self._get_config_list(config, len(inputs))
 
@@ -254,6 +273,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 callbacks=[c.get("callbacks") for c in config],
                 tags=[c.get("tags") for c in config],
                 metadata=[c.get("metadata") for c in config],
+                **kwargs,
             )
             return [g[0].text for g in llm_result.generations]
         else:
@@ -264,7 +284,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             return [
                 output
                 for batch in batches
-                for output in self.batch(batch, config=config)
+                for output in self.batch(batch, config=config, **kwargs)
             ]
 
     async def abatch(
@@ -272,6 +292,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         inputs: List[LanguageModelInput],
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
         max_concurrency: Optional[int] = None,
+        **kwargs: Any,
     ) -> List[str]:
         if type(self)._agenerate == BaseLLM._agenerate:
             # model doesn't implement async batch, so use default implementation
@@ -287,6 +308,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 callbacks=[c.get("callbacks") for c in config],
                 tags=[c.get("tags") for c in config],
                 metadata=[c.get("metadata") for c in config],
+                **kwargs,
             )
             return [g[0].text for g in llm_result.generations]
         else:
@@ -297,7 +319,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             return [
                 output
                 for batch in batches
-                for output in await self.abatch(batch, config=config)
+                for output in await self.abatch(batch, config=config, **kwargs)
             ]
 
     def stream(
@@ -306,15 +328,17 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         config: Optional[RunnableConfig] = None,
         *,
         stop: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> Iterator[str]:
         if type(self)._stream == BaseLLM._stream:
             # model doesn't implement streaming, so use default implementation
-            yield self.invoke(input, config=config, stop=stop)
+            yield self.invoke(input, config=config, stop=stop, **kwargs)
         else:
             prompt = self._convert_input(input).to_string()
             config = config or {}
             params = self.dict()
             params["stop"] = stop
+            params = {**params, **kwargs}
             options = {"stop": stop}
             callback_manager = CallbackManager.configure(
                 config.get("callbacks"),
@@ -330,7 +354,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             )
             try:
                 generation: Optional[GenerationChunk] = None
-                for chunk in self._stream(prompt, stop=stop, run_manager=run_manager):
+                for chunk in self._stream(
+                    prompt, stop=stop, run_manager=run_manager, **kwargs
+                ):
                     yield chunk.text
                     if generation is None:
                         generation = chunk
@@ -349,15 +375,17 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         config: Optional[RunnableConfig] = None,
         *,
         stop: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> AsyncIterator[str]:
         if type(self)._astream == BaseLLM._astream:
             # model doesn't implement streaming, so use default implementation
-            yield await self.ainvoke(input, config=config, stop=stop)
+            yield await self.ainvoke(input, config=config, stop=stop, **kwargs)
         else:
             prompt = self._convert_input(input).to_string()
             config = config or {}
             params = self.dict()
             params["stop"] = stop
+            params = {**params, **kwargs}
             options = {"stop": stop}
             callback_manager = AsyncCallbackManager.configure(
                 config.get("callbacks"),
@@ -374,7 +402,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             try:
                 generation: Optional[GenerationChunk] = None
                 async for chunk in self._astream(
-                    prompt, stop=stop, run_manager=run_manager
+                    prompt, stop=stop, run_manager=run_manager, **kwargs
                 ):
                     yield chunk.text
                     if generation is None:

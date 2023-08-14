@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from pydantic.fields import Field
+from pydantic_v1.fields import Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,

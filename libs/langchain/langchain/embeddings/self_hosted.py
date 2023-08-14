@@ -1,6 +1,6 @@
 from typing import Any, Callable, List
 
-from pydantic import Extra
+from pydantic_v1 import Extra
 
 from langchain.embeddings.base import Embeddings
 from langchain.llms import SelfHostedPipeline

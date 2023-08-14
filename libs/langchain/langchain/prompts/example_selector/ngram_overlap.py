@@ -6,7 +6,7 @@ https://aclanthology.org/P02-1040.pdf
 from typing import Dict, List
 
 import numpy as np
-from pydantic import BaseModel, root_validator
+from pydantic_v1 import BaseModel, root_validator
 
 from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.prompts.prompt import PromptTemplate
@@ -72,8 +72,9 @@ class NGramOverlapExampleSelector(BaseExampleSelector, BaseModel):
                 sentence_bleu,
             )
         except ImportError as e:
-            raise ValueError(
-                "Not all the correct dependencies for this ExampleSelect exist"
+            raise ImportError(
+                "Not all the correct dependencies for this ExampleSelect exist."
+                "Please install nltk with `pip install nltk`."
             ) from e
 
         return values

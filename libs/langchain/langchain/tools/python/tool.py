@@ -8,7 +8,7 @@ from contextlib import redirect_stdout
 from io import StringIO
 from typing import Any, Dict, Optional
 
-from pydantic import Field, root_validator
+from pydantic_v1 import Field, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
@@ -136,6 +136,10 @@ class PythonAstREPLTool(BaseTool):
         self,
         query: str,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
+    ) -> Any:
         """Use the tool asynchronously."""
-        raise NotImplementedError("PythonReplTool does not support async")
+
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(None, self._run, query)
+
+        return result

@@ -2,13 +2,15 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import BaseModel, Extra
+from pydantic_v1 import BaseModel, Extra
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 
 
-class Params(BaseModel, extra=Extra.allow):
+# Ignoring type because below is valid pydantic code
+# Unexpected keyword argument "extra" for "__init_subclass__" of "object"
+class Params(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
     """Parameters for the MLflow AI Gateway LLM."""
 
     temperature: float = 0.0

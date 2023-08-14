@@ -1,12 +1,14 @@
 """Base implementation for tools or skills."""
 from __future__ import annotations
 
+import asyncio
 import warnings
-from abc import ABC, abstractmethod
+from abc import abstractmethod
+from functools import partial
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
-from pydantic import (
+from pydantic_v1 import (
     BaseModel,
     Extra,
     Field,
@@ -14,7 +16,15 @@ from pydantic import (
     root_validator,
     validate_arguments,
 )
-from pydantic.main import ModelMetaclass
+
+# The metaclass must be imported directly from the pydantic module rather than
+# from the proxy module, otherwise it looks like inconsistent metaclasses are
+# used raising an exception.
+try:
+    from pydantic.v1.main import ModelMetaclass
+except ImportError:
+    from pydantic.main import ModelMetaclass
+
 
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
@@ -24,6 +34,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForToolRun,
     Callbacks,
 )
+from langchain.schema.runnable import Runnable, RunnableConfig
 
 
 class SchemaAnnotationError(TypeError):
@@ -33,7 +44,7 @@ class SchemaAnnotationError(TypeError):
 class ToolMetaclass(ModelMetaclass):
     """Metaclass for BaseTool to ensure the provided args_schema
 
-    doesn't silently ignored."""
+    doesn't silently ignore."""
 
     def __new__(
         cls: Type[ToolMetaclass], name: str, bases: Tuple[Type, ...], dct: dict
@@ -129,7 +140,7 @@ class ToolException(Exception):
     pass
 
 
-class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
+class BaseTool(BaseModel, Runnable[Union[str, Dict], Any], metaclass=ToolMetaclass):
     """Interface LangChain tools must implement."""
 
     name: str
@@ -191,6 +202,44 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
             schema = create_schema_from_function(self.name, self._run)
             return schema.schema()["properties"]
 
+    # --- Runnable ---
+
+    def invoke(
+        self,
+        input: Union[str, Dict],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> Any:
+        config = config or {}
+        return self.run(
+            input,
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            **kwargs,
+        )
+
+    async def ainvoke(
+        self,
+        input: Union[str, Dict],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> Any:
+        if type(self)._arun == BaseTool._arun:
+            # If the tool does not implement async, fall back to default implementation
+            return super().ainvoke(input, config, **kwargs)
+
+        config = config or {}
+        return await self.arun(
+            input,
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            **kwargs,
+        )
+
+    # --- Tool ---
+
     def _parse_input(
         self,
         tool_input: Union[str, Dict],
@@ -231,7 +280,6 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         to child implementations to enable tracing,
         """
 
-    @abstractmethod
     async def _arun(
         self,
         *args: Any,
@@ -242,6 +290,7 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         Add run_manager: Optional[AsyncCallbackManagerForToolRun] = None
         to child implementations to enable tracing,
         """
+        raise NotImplementedError()
 
     def _to_args_and_kwargs(self, tool_input: Union[str, Dict]) -> Tuple[Tuple, Dict]:
         # For backwards compatibility, if run_input is a string,
@@ -411,6 +460,24 @@ class Tool(BaseTool):
     coroutine: Optional[Callable[..., Awaitable[str]]] = None
     """The asynchronous version of the function."""
 
+    # --- Runnable ---
+
+    async def ainvoke(
+        self,
+        input: Union[str, Dict],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> Any:
+        if not self.coroutine:
+            # If the tool does not implement async, fall back to default implementation
+            return await asyncio.get_running_loop().run_in_executor(
+                None, partial(self.invoke, input, config, **kwargs)
+            )
+
+        return super().ainvoke(input, config, **kwargs)
+
+    # --- Tool ---
+
     @property
     def args(self) -> dict:
         """The tool's input arguments."""
@@ -513,6 +580,24 @@ class StructuredTool(BaseTool):
     coroutine: Optional[Callable[..., Awaitable[Any]]] = None
     """The asynchronous version of the function."""
 
+    # --- Runnable ---
+
+    async def ainvoke(
+        self,
+        input: Union[str, Dict],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> Any:
+        if not self.coroutine:
+            # If the tool does not implement async, fall back to default implementation
+            return await asyncio.get_running_loop().run_in_executor(
+                None, partial(self.invoke, input, config, **kwargs)
+            )
+
+        return super().ainvoke(input, config, **kwargs)
+
+    # --- Tool ---
+
     @property
     def args(self) -> dict:
         """The tool's input arguments."""
@@ -586,7 +671,9 @@ class StructuredTool(BaseTool):
             The tool
 
         Examples:
-            ... code-block:: python
+
+            .. code-block:: python
+
                 def add(a: int, b: int) -> int:
                     \"\"\"Add two numbers\"\"\"
                     return a + b
