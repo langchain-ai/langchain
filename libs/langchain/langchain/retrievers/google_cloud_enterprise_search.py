@@ -221,7 +221,7 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
         else:
             # TODO: Add extra data type handling for type website
             raise NotImplementedError(
-                "Only engine data type 0 (Unstructured) or 1 (Unstructured)"
+                "Only engine data type 0 (Unstructured) or 1 (Structured)"
                 + " are supported currently."
                 + f" Got {self.engine_data_type}"
             )
@@ -258,7 +258,7 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
         else:
             # TODO: Add extra data type handling for type website
             raise NotImplementedError(
-                "Only engine data type 0 (Unstructured) or 1 (Unstructured)"
+                "Only engine data type 0 (Unstructured) or 1 (Structured)"
                 + " are supported currently."
                 + f" Got {self.engine_data_type}"
             )
