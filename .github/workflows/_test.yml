@@ -68,9 +68,12 @@ jobs:
           pip install -e ../langchain
       - name: Run ${{matrix.test_type}} tests
         run: |
-          if [ "${{ matrix.test_type }}" == "core" ]; then
-            make test
-          else
-            make extended_tests
-          fi
+          case "${{ matrix.test_type }}" in
+              core | core-pydantic-2)
+                  make test
+                  ;;
+              *)
+                  make extended_tests
+                  ;;
+          esac
         shell: bash
