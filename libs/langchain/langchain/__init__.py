@@ -33,6 +33,12 @@ except metadata.PackageNotFoundError:
     _PYDANTIC_MAJOR_VERSION = 0
 
 
+try:
+    _PYDANTIC_MAJOR_VERSION: int = int(metadata.version("pydantic").split(".")[0])
+except metadata.PackageNotFoundError:
+    _PYDANTIC_MAJOR_VERSION = 0
+
+
 from langchain.agents import MRKLChain, ReActChain, SelfAskWithSearchChain
 from langchain.cache import BaseCache
 from langchain.chains import (
