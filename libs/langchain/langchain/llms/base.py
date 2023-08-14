@@ -27,7 +27,7 @@ from typing import (
 )
 
 import yaml
-from pydantic import Field, root_validator, validator
+from pydantic_v1 import Field, root_validator, validator
 from tenacity import (
     RetryCallState,
     before_sleep_log,

@@ -8,7 +8,7 @@ from functools import partial
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
-from pydantic import (
+from pydantic_v1 import (
     BaseModel,
     Extra,
     Field,
@@ -16,7 +16,15 @@ from pydantic import (
     root_validator,
     validate_arguments,
 )
-from pydantic.main import ModelMetaclass
+
+# The metaclass must be imported directly from the pydantic module rather than
+# from the proxy module, otherwise it looks like inconsistent metaclasses are
+# used raising an exception.
+try:
+    from pydantic.v1.main import ModelMetaclass
+except ImportError:
+    from pydantic.main import ModelMetaclass
+
 
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (

@@ -10,7 +10,7 @@ from typing import (
 )
 
 import requests
-from pydantic import BaseModel, Extra, Field, PrivateAttr, root_validator
+from pydantic_v1 import BaseModel, Extra, Field, PrivateAttr, root_validator
 
 from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,

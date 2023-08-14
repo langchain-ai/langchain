@@ -14,7 +14,7 @@ from typing import (
     cast,
 )
 
-from pydantic import Field, root_validator
+from pydantic_v1 import Field, root_validator
 
 import langchain
 from langchain.callbacks.base import BaseCallbackManager
