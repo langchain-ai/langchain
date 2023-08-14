@@ -38,6 +38,7 @@ from langchain.llms.cohere import Cohere
 from langchain.llms.ctransformers import CTransformers
 from langchain.llms.databricks import Databricks
 from langchain.llms.deepinfra import DeepInfra
+from langchain.llms.deepsparse import DeepSparse
 from langchain.llms.edenai import EdenAI
 from langchain.llms.fake import FakeListLLM
 from langchain.llms.fireworks import Fireworks, FireworksChat
@@ -103,6 +104,7 @@ __all__ = [
     "Cohere",
     "Databricks",
     "DeepInfra",
+    "DeepSparse",
     "EdenAI",
     "FakeListLLM",
     "Fireworks",
@@ -172,6 +174,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "ctransformers": CTransformers,
     "databricks": Databricks,
     "deepinfra": DeepInfra,
+    "deepsparse": DeepSparse,
     "edenai": EdenAI,
     "fake-list": FakeListLLM,
     "forefrontai": ForefrontAI,
