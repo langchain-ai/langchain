@@ -142,12 +142,25 @@ class Pinecone(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
+        return self.similarity_search_by_vector_with_score(
+            self._embed_query(query), k=k, filter=filter, namespace=namespace
+        )
+
+    def similarity_search_by_vector_with_score(
+        self,
+        embedding: List[float],
+        *,
+        k: int = 4,
+        filter: Optional[dict] = None,
+        namespace: Optional[str] = None,
+    ) -> List[Tuple[Document, float]]:
+        """Return pinecone documents most similar to embedding, along with scores."""
+
         if namespace is None:
             namespace = self._namespace
-        query_obj = self._embed_query(query)
         docs = []
         results = self._index.query(
-            [query_obj],
+            [embedding],
             top_k=k,
             include_metadata=True,
             namespace=namespace,

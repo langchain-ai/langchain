@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional, Type
 
-from pydantic import BaseModel, Extra, Field
+from pydantic_v1 import BaseModel, Extra, Field
 
 from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
 from langchain.chains.retrieval_qa.base import RetrievalQA

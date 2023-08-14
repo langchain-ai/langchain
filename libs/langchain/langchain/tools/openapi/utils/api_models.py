@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from openapi_schema_pydantic import MediaType, Parameter, Reference, RequestBody, Schema
-from pydantic import BaseModel, Field
+from pydantic_v1 import BaseModel, Field
 
 from langchain.tools.openapi.utils.openapi_utils import HTTPVerb, OpenAPISpec
 

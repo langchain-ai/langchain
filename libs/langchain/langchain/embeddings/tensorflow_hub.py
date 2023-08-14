@@ -1,6 +1,6 @@
 from typing import Any, List
 
-from pydantic import BaseModel, Extra
+from pydantic_v1 import BaseModel, Extra
 
 from langchain.embeddings.base import Embeddings
 

@@ -1,4 +1,3 @@
-"""Load Data from a Confluence Space"""
 import logging
 from enum import Enum
 from io import BytesIO
@@ -33,7 +32,7 @@ class ContentFormat(str, Enum):
 
 
 class ConfluenceLoader(BaseLoader):
-    """Load Confluence pages.
+    """Load `Confluence` pages.
 
     Port of https://llamahub.ai/l/confluence
     This currently supports username/api_key, Oauth2 login or personal access token

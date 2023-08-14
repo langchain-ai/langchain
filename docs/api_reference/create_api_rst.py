@@ -145,30 +145,36 @@ def _load_package_modules(
     package_name = package_path.name
 
     for file_path in package_path.rglob("*.py"):
-        if not file_path.name.startswith("__"):
-            relative_module_name = file_path.relative_to(package_path)
-            # Get the full namespace of the module
-            namespace = str(relative_module_name).replace(".py", "").replace("/", ".")
-            # Keep only the top level namespace
-            top_namespace = namespace.split(".")[0]
+        if file_path.name.startswith("_"):
+            continue
 
-            try:
-                module_members = _load_module_members(
-                    f"{package_name}.{namespace}", namespace
+        relative_module_name = file_path.relative_to(package_path)
+
+        if relative_module_name.name.startswith("_"):
+            continue
+
+        # Get the full namespace of the module
+        namespace = str(relative_module_name).replace(".py", "").replace("/", ".")
+        # Keep only the top level namespace
+        top_namespace = namespace.split(".")[0]
+
+        try:
+            module_members = _load_module_members(
+                f"{package_name}.{namespace}", namespace
+            )
+            # Merge module members if the namespace already exists
+            if top_namespace in modules_by_namespace:
+                existing_module_members = modules_by_namespace[top_namespace]
+                _module_members = _merge_module_members(
+                    [existing_module_members, module_members]
                 )
-                # Merge module members if the namespace already exists
-                if top_namespace in modules_by_namespace:
-                    existing_module_members = modules_by_namespace[top_namespace]
-                    _module_members = _merge_module_members(
-                        [existing_module_members, module_members]
-                    )
-                else:
-                    _module_members = module_members
+            else:
+                _module_members = module_members
 
-                modules_by_namespace[top_namespace] = _module_members
+            modules_by_namespace[top_namespace] = _module_members
 
-            except ImportError as e:
-                print(f"Error: Unable to import module '{namespace}' with error: {e}")
+        except ImportError as e:
+            print(f"Error: Unable to import module '{namespace}' with error: {e}")
 
     return modules_by_namespace
 
@@ -222,9 +228,9 @@ Classes
 """
 
             for class_ in classes:
-                if not class_['is_public']:
+                if not class_["is_public"]:
                     continue
-                    
+
                 if class_["kind"] == "TypedDict":
                     template = "typeddict.rst"
                 elif class_["kind"] == "enum":

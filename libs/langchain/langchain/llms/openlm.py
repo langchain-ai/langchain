@@ -1,6 +1,6 @@
 from typing import Any, Dict
 
-from pydantic import root_validator
+from pydantic_v1 import root_validator
 
 from langchain.llms.openai import BaseOpenAI
 
