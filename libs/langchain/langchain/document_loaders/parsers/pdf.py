@@ -8,7 +8,7 @@ from langchain.schema import Document
 
 
 class PyPDFParser(BaseBlobParser):
-    """Loads a PDF with pypdf and chunks at character level."""
+    """Load `PDF` using `pypdf` and chunk at character level."""
 
     def __init__(self, password: Optional[Union[str, bytes]] = None):
         self.password = password
@@ -29,7 +29,7 @@ class PyPDFParser(BaseBlobParser):
 
 
 class PDFMinerParser(BaseBlobParser):
-    """Parse PDFs with PDFMiner."""
+    """Parse `PDF` using `PDFMiner`."""
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
@@ -42,7 +42,7 @@ class PDFMinerParser(BaseBlobParser):
 
 
 class PyMuPDFParser(BaseBlobParser):
-    """Parse PDFs with PyMuPDF."""
+    """Parse `PDF` using `PyMuPDF`."""
 
     def __init__(self, text_kwargs: Optional[Mapping[str, Any]] = None) -> None:
         """Initialize the parser.
@@ -81,7 +81,7 @@ class PyMuPDFParser(BaseBlobParser):
 
 
 class PyPDFium2Parser(BaseBlobParser):
-    """Parse PDFs with PyPDFium2."""
+    """Parse `PDF` with `PyPDFium2`."""
 
     def __init__(self) -> None:
         """Initialize the parser."""
@@ -114,7 +114,7 @@ class PyPDFium2Parser(BaseBlobParser):
 
 
 class PDFPlumberParser(BaseBlobParser):
-    """Parse PDFs with PDFPlumber."""
+    """Parse `PDF` with `PDFPlumber`."""
 
     def __init__(self, text_kwargs: Optional[Mapping[str, Any]] = None) -> None:
         """Initialize the parser.
@@ -153,7 +153,7 @@ class PDFPlumberParser(BaseBlobParser):
 
 
 class AmazonTextractPDFParser(BaseBlobParser):
-    """Sends PDF files to Amazon Textract and parses them to generate Documents.
+    """Send `PDF` files to `Amazon Textract` and parse them.
 
     For parsing multi-page PDFs, they have to reside on S3.
     """
