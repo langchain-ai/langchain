@@ -59,7 +59,16 @@ jobs:
             EXPECTED_VERSION=1
           fi
           echo "Checking pydantic version... Expecting ${EXPECTED_VERSION}"
-          VERSION=$(poetry run python -c "import pydantic; print(pydantic.__version__)" | cut -d. -f1) && ([[ "$VERSION" -eq $EXPECTED_VERSION ]] || { echo "Error: pydantic version must be equal to ${EXPECTED_VERSION}; Found: ${VERSION}"; exit 1; })
+          
+          # Determine the major part of pydantic version
+          VERSION=$(poetry run python -c "import pydantic; print(pydantic.__version__)" | cut -d. -f1)
+          
+          # Check that the major part of pydantic version is as expected, if not
+          # raise an error
+          if [[ "$VERSION" -ne $EXPECTED_VERSION ]]; then
+            echo "Error: pydantic version must be equal to ${EXPECTED_VERSION}; Found: ${VERSION}"
+            exit 1
+          fi
           echo "Found pydantic version ${VERSION}, as expected"
         shell: bash
       - name: Run ${{matrix.test_type}} tests
