@@ -8,6 +8,7 @@ import pytest
 from langchain.embeddings.openai import OpenAIEmbeddings
 
 
+@pytest.mark.scheduled
 def test_openai_embedding_documents() -> None:
     """Test openai embeddings."""
     documents = ["foo bar"]
@@ -17,6 +18,7 @@ def test_openai_embedding_documents() -> None:
     assert len(output[0]) == 1536
 
 
+@pytest.mark.scheduled
 def test_openai_embedding_documents_multiple() -> None:
     """Test openai embeddings."""
     documents = ["foo bar", "bar foo", "foo"]
@@ -29,6 +31,7 @@ def test_openai_embedding_documents_multiple() -> None:
     assert len(output[2]) == 1536
 
 
+@pytest.mark.scheduled
 @pytest.mark.asyncio
 async def test_openai_embedding_documents_async_multiple() -> None:
     """Test openai embeddings."""
@@ -42,6 +45,7 @@ async def test_openai_embedding_documents_async_multiple() -> None:
     assert len(output[2]) == 1536
 
 
+@pytest.mark.scheduled
 def test_openai_embedding_query() -> None:
     """Test openai embeddings."""
     document = "foo bar"
@@ -50,6 +54,7 @@ def test_openai_embedding_query() -> None:
     assert len(output) == 1536
 
 
+@pytest.mark.scheduled
 @pytest.mark.asyncio
 async def test_openai_embedding_async_query() -> None:
     """Test openai embeddings."""
@@ -59,6 +64,7 @@ async def test_openai_embedding_async_query() -> None:
     assert len(output) == 1536
 
 
+@pytest.mark.scheduled
 def test_openai_embedding_with_empty_string() -> None:
     """Test openai embeddings with empty string."""
     document = ["", "abc"]
@@ -73,11 +79,13 @@ def test_openai_embedding_with_empty_string() -> None:
     assert len(output[1]) == 1536
 
 
+@pytest.mark.scheduled
 def test_embed_documents_normalized() -> None:
     output = OpenAIEmbeddings().embed_documents(["foo walked to the market"])
     assert np.isclose(np.linalg.norm(output[0]), 1.0)
 
 
+@pytest.mark.scheduled
 def test_embed_query_normalized() -> None:
     output = OpenAIEmbeddings().embed_query("foo walked to the market")
     assert np.isclose(np.linalg.norm(output), 1.0)
