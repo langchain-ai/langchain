@@ -1,11 +1,10 @@
-from langchain.llms.base import LLM
-from langchain.callbacks.manager import CallbackManagerForLLMRun
-
-from typing import List, Optional, Mapping, Any
-import json
-
 import http.client
+import json
 import ssl
+from typing import Any, List, Mapping, Optional
+
+from langchain.callbacks.manager import CallbackManagerForLLMRun
+from langchain.llms.base import LLM
 
 
 class NIBittensorLLM(LLM):
@@ -49,7 +48,8 @@ class NIBittensorLLM(LLM):
 
         Parameters (optional):
             system_prompt(str): A system prompt defining how your model should respond.
-            top_responses(int): Total top miner responses to retrieve from Bittensor protocol.
+            top_responses(int): Total top miner responses to retrieve from Bittensor
+                protocol.
 
         Return:
             The generated response(s).

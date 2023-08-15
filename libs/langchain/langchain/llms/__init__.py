@@ -31,6 +31,7 @@ from langchain.llms.base import BaseLLM
 from langchain.llms.baseten import Baseten
 from langchain.llms.beam import Beam
 from langchain.llms.bedrock import Bedrock
+from langchain.llms.bittensor import NIBittensorLLM
 from langchain.llms.cerebriumai import CerebriumAI
 from langchain.llms.chatglm import ChatGLM
 from langchain.llms.clarifai import Clarifai
@@ -58,7 +59,6 @@ from langchain.llms.minimax import Minimax
 from langchain.llms.mlflow_ai_gateway import MlflowAIGateway
 from langchain.llms.modal import Modal
 from langchain.llms.mosaicml import MosaicML
-from langchain.llms.bittensor import NIBittensorLLM
 from langchain.llms.nlpcloud import NLPCloud
 from langchain.llms.octoai_endpoint import OctoAIEndpoint
 from langchain.llms.ollama import Ollama
