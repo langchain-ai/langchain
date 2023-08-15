@@ -8,7 +8,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 def satisfies_min_unstructured_version(min_version: str) -> bool:
-    """Checks to see if the installed unstructured version exceeds the minimum version
+    """Check if the installed `Unstructured` version exceeds the minimum version
     for the feature in question."""
     from unstructured.__version__ import __version__ as __unstructured_version__
 
@@ -25,7 +25,7 @@ def satisfies_min_unstructured_version(min_version: str) -> bool:
 
 
 def validate_unstructured_version(min_unstructured_version: str) -> None:
-    """Raises an error if the unstructured version does not exceed the
+    """Raise an error if the `Unstructured` version does not exceed the
     specified minimum."""
     if not satisfies_min_unstructured_version(min_unstructured_version):
         raise ValueError(
@@ -34,7 +34,7 @@ def validate_unstructured_version(min_unstructured_version: str) -> None:
 
 
 class UnstructuredBaseLoader(BaseLoader, ABC):
-    """Loader that uses Unstructured to load files."""
+    """Base Loader that uses `Unstructured`."""
 
     def __init__(
         self,
@@ -181,7 +181,7 @@ def get_elements_from_api(
     api_key: str = "",
     **unstructured_kwargs: Any,
 ) -> List:
-    """Retrieves a list of elements from the Unstructured API."""
+    """Retrieve a list of elements from the `Unstructured API`."""
     if isinstance(file, collections.abc.Sequence) or isinstance(file_path, list):
         from unstructured.partition.api import partition_multiple_via_api
 

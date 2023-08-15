@@ -19,7 +19,7 @@ SCOPES = ["https://www.googleapis.com/auth/youtube.readonly"]
 
 @dataclass
 class GoogleApiClient:
-    """A Generic Google Api Client.
+    """Generic Google API Client.
 
     To use, you should have the ``google_auth_oauthlib,youtube_transcript_api,google``
     python package installed.
