@@ -83,13 +83,13 @@ def _get_search_client(
     from azure.search.documents import SearchClient
     from azure.search.documents.indexes import SearchIndexClient
     from azure.search.documents.indexes.models import (
+        HnswVectorSearchAlgorithmConfiguration,
         PrioritizedFields,
         SearchIndex,
         SemanticConfiguration,
         SemanticField,
         SemanticSettings,
         VectorSearch,
-        HnswVectorSearchAlgorithmConfiguration,
     )
 
     default_fields = default_fields or []
@@ -323,14 +323,18 @@ class AzureSearch(VectorStore):
         else:
             raise ValueError(f"search_type of {search_type} not allowed.")
         return docs
-    
+
     def similarity_search_with_relevance_scores(
         self, query: str, k: int = 4, **kwargs: Any
     ):
         score_threshold = kwargs.pop("score_threshold", None)
         result = self.vector_search_with_score(query, k=k, **kwargs)
-        return result if score_threshold is None else [r for r in result if r[1] >= score_threshold]
-        
+        return (
+            result
+            if score_threshold is None
+            else [r for r in result if r[1] >= score_threshold]
+        )
+
     def vector_search(self, query: str, k: int = 4, **kwargs: Any) -> List[Document]:
         """
         Returns the most similar indexed documents to the query text.
@@ -360,13 +364,18 @@ class AzureSearch(VectorStore):
             List of Documents most similar to the query and score for each
         """
         from azure.search.documents.models import Vector
+
         results = self.client.search(
             search_text="",
-            vectors= [Vector(
-                value=np.array(self.embedding_function(query), dtype=np.float32).tolist(),
-                k=k,
-                fields=FIELDS_CONTENT_VECTOR,
-                )],
+            vectors=[
+                Vector(
+                    value=np.array(
+                        self.embedding_function(query), dtype=np.float32
+                    ).tolist(),
+                    k=k,
+                    fields=FIELDS_CONTENT_VECTOR,
+                )
+            ],
             select=[FIELDS_ID, FIELDS_CONTENT, FIELDS_METADATA],
             filter=filters,
         )
@@ -412,13 +421,18 @@ class AzureSearch(VectorStore):
             List of Documents most similar to the query and score for each
         """
         from azure.search.documents.models import Vector
+
         results = self.client.search(
             search_text=query,
-            vectors= [Vector(
-                value=np.array(self.embedding_function(query), dtype=np.float32).tolist(),
-                k=k,
-                fields=FIELDS_CONTENT_VECTOR,
-                )],
+            vectors=[
+                Vector(
+                    value=np.array(
+                        self.embedding_function(query), dtype=np.float32
+                    ).tolist(),
+                    k=k,
+                    fields=FIELDS_CONTENT_VECTOR,
+                )
+            ],
             select=[FIELDS_ID, FIELDS_CONTENT, FIELDS_METADATA],
             filter=filters,
             top=k,
@@ -467,13 +481,18 @@ class AzureSearch(VectorStore):
             List of Documents most similar to the query and score for each
         """
         from azure.search.documents.models import Vector
+
         results = self.client.search(
             search_text=query,
-            vectors= [Vector(
-                value=np.array(self.embedding_function(query), dtype=np.float32).tolist(),
-                k=50,
-                fields=FIELDS_CONTENT_VECTOR,
-                )],
+            vectors=[
+                Vector(
+                    value=np.array(
+                        self.embedding_function(query), dtype=np.float32
+                    ).tolist(),
+                    k=50,
+                    fields=FIELDS_CONTENT_VECTOR,
+                )
+            ],
             select=[FIELDS_ID, FIELDS_CONTENT, FIELDS_METADATA],
             filter=filters,
             query_type="semantic",
