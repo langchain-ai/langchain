@@ -1,6 +1,6 @@
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
-from pydantic import Extra, Field, root_validator
+from pydantic_v1 import Extra, Field, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,

@@ -17,7 +17,7 @@ from typing import (
     Union,
 )
 
-from pydantic import Field, root_validator
+from pydantic_v1 import Field, root_validator
 
 from langchain.adapters.openai import convert_dict_to_message, convert_message_to_dict
 from langchain.callbacks.manager import (
@@ -118,7 +118,7 @@ def _convert_delta_to_message_chunk(
 
 
 class ChatOpenAI(BaseChatModel):
-    """Wrapper around OpenAI Chat large language models.
+    """`OpenAI` Chat large language models API.
 
     To use, you should have the ``openai`` python package installed, and the
     environment variable ``OPENAI_API_KEY`` set with your API key.

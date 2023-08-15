@@ -3,7 +3,7 @@
 from typing import Any, Dict, List, Optional, Tuple
 
 import pytest
-from pydantic import Field
+from pydantic_v1 import Field
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.evaluation.agents.trajectory_eval_chain import (

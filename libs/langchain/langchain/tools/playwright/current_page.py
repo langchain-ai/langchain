@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Optional, Type
 
-from pydantic import BaseModel
+from pydantic_v1 import BaseModel
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
