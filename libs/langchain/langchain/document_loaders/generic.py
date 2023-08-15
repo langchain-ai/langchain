@@ -15,7 +15,7 @@ DEFAULT = Literal["default"]
 
 
 class GenericLoader(BaseLoader):
-    """A generic document loader.
+    """Generic Document Loader.
 
     A generic document loader that allows combining an arbitrary blob loader with
     a blob parser.

@@ -3,7 +3,7 @@ from __future__ import annotations
 import tempfile
 from typing import TYPE_CHECKING, List
 
-from pydantic import BaseModel, Field
+from pydantic_v1 import BaseModel, Field
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -16,7 +16,7 @@ CHUNK_SIZE = 1024 * 1024 * 5
 
 
 class OneDriveFileLoader(BaseLoader, BaseModel):
-    """Loads a file from OneDrive."""
+    """Load a file from `Microsoft OneDrive`."""
 
     file: File = Field(...)
     """The file to load."""

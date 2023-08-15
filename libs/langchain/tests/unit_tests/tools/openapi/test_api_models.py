@@ -5,6 +5,18 @@ from pathlib import Path
 from typing import Iterable, List, Tuple
 
 import pytest
+
+# Keep at top of file to ensure that pydantic test can be skipped before
+# pydantic v1 related imports are attempted by openapi_schema_pydantic.
+from langchain import _PYDANTIC_MAJOR_VERSION
+
+if _PYDANTIC_MAJOR_VERSION != 1:
+    pytest.skip(
+        f"Pydantic major version {_PYDANTIC_MAJOR_VERSION} is not supported.",
+        allow_module_level=True,
+    )
+
+import pytest
 import yaml
 from openapi_schema_pydantic import (
     Components,

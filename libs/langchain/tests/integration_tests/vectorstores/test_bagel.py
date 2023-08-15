@@ -1,5 +1,3 @@
-from bagel.config import Settings
-
 from langchain.docstore.document import Document
 from langchain.vectorstores import Bagel
 from tests.integration_tests.vectorstores.fake_embeddings import (
@@ -8,7 +6,9 @@ from tests.integration_tests.vectorstores.fake_embeddings import (
 
 
 def test_similarity_search() -> None:
-    """Test smiliarity search"""
+    """Test similarity search"""
+    from bagel.config import Settings
+
     setting = Settings(
         bagel_api_impl="rest",
         bagel_server_host="api.bageldb.ai",

@@ -10,7 +10,7 @@ from langchain.document_loaders.unstructured import (
 
 
 class CSVLoader(BaseLoader):
-    """Loads a CSV file into a list of documents.
+    """Load a `CSV` file into a list of Documents.
 
     Each document represents one row of the CSV file. Every row is converted into a
     key/value pair and outputted to a new line in the document's page_content.

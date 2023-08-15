@@ -37,7 +37,7 @@ def _build_metadata(soup: Any, url: str) -> dict:
 
 
 class WebBaseLoader(BaseLoader):
-    """Loader that uses urllib and beautiful soup to load webpages."""
+    """Load HTML pages using `urllib` and parse them with `BeautifulSoup'."""
 
     web_paths: List[str]
 
