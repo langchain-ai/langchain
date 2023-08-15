@@ -173,8 +173,7 @@ class OpenAICallbackHandler(BaseCallbackHandler):
         self.successful_requests += 1
         if "token_usage" not in response.llm_output:
             return None
-        if self.streaming is False:
-            token_usage = response.llm_output["token_usage"]
+        token_usage = response.llm_output["token_usage"]
         completion_tokens = token_usage.get("completion_tokens", 0)
         prompt_tokens = token_usage.get("prompt_tokens", 0)
         model_name = standardize_model_name(response.llm_output.get("model_name", ""))
