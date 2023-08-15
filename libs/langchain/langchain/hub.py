@@ -1,13 +1,16 @@
-from typing import Any, Dict, Optional
-
-from langchainhub import Client
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from langchain.load.dump import dumps
 from langchain.load.load import loads
 from langchain.utils import get_from_env
 
+if TYPE_CHECKING:
+    from langchainhub import Client
+
 
 def _get_client(api_url: Optional[str] = None, api_key: Optional[str] = None) -> Client:
+    from langchainhub import Client
+
     api_url = api_url or get_from_env("api_url", "LANGCHAIN_HUB_API_URL")
     api_key = api_key or get_from_env("api_key", "LANGCHAIN_HUB_API_KEY", default="")
     api_key = api_key or get_from_env("api_key", "LANGCHAIN_API_KEY")
