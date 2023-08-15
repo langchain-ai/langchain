@@ -5,152 +5,76 @@
       "destination": "/docs/additional_resources/youtube"
     },
     {
-      "source": "/en/latest/integrations/agent_with_wandb_tracing.html",
-      "destination": "/docs/integrations/providers/agent_with_wandb_tracing"
-    },
-    {
       "source": "/docs/integrations/agent_with_wandb_tracing",
       "destination": "/docs/integrations/providers/agent_with_wandb_tracing"
-    },
-    {
-      "source": "/en/latest/integrations/ai21.html",
-      "destination": "/docs/integrations/providers/ai21"
     },
     {
       "source": "/docs/integrations/ai21",
       "destination": "/docs/integrations/providers/ai21"
     },
     {
-      "source": "/en/latest/integrations/aim_tracking.html",
-      "destination": "/docs/integrations/providers/aim_tracking"
-    },
-    {
       "source": "/docs/integrations/aim_tracking",
       "destination": "/docs/integrations/providers/aim_tracking"
-    },
-    {
-      "source": "/en/latest/integrations/airbyte.html",
-      "destination": "/docs/integrations/providers/airbyte"
     },
     {
       "source": "/docs/integrations/airbyte",
       "destination": "/docs/integrations/providers/airbyte"
     },
     {
-      "source": "/en/latest/integrations/aleph_alpha.html",
-      "destination": "/docs/integrations/providers/aleph_alpha"
-    },
-    {
       "source": "/docs/integrations/aleph_alpha",
       "destination": "/docs/integrations/providers/aleph_alpha"
-    },
-    {
-      "source": "/en/latest/integrations/analyticdb.html",
-      "destination": "/docs/integrations/providers/analyticdb"
     },
     {
       "source": "/docs/integrations/analyticdb",
       "destination": "/docs/integrations/providers/analyticdb"
     },
     {
-      "source": "/en/latest/integrations/annoy.html",
-      "destination": "/docs/integrations/providers/annoy"
-    },
-    {
       "source": "/docs/integrations/annoy",
       "destination": "/docs/integrations/providers/annoy"
-    },
-    {
-      "source": "/en/latest/integrations/anyscale.html",
-      "destination": "/docs/integrations/providers/anyscale"
     },
     {
       "source": "/docs/integrations/anyscale",
       "destination": "/docs/integrations/providers/anyscale"
     },
     {
-      "source": "/en/latest/integrations/apify.html",
-      "destination": "/docs/integrations/providers/apify"
-    },
-    {
       "source": "/docs/integrations/apify",
       "destination": "/docs/integrations/providers/apify"
-    },
-    {
-      "source": "/en/latest/integrations/argilla.html",
-      "destination": "/docs/integrations/providers/argilla"
     },
     {
       "source": "/docs/integrations/argilla",
       "destination": "/docs/integrations/providers/argilla"
     },
     {
-      "source": "/en/latest/integrations/arxiv.html",
-      "destination": "/docs/integrations/providers/arxiv"
-    },
-    {
       "source": "/docs/integrations/arxiv",
       "destination": "/docs/integrations/providers/arxiv"
-    },
-    {
-      "source": "/en/latest/integrations/atlas.html",
-      "destination": "/docs/integrations/providers/atlas"
     },
     {
       "source": "/docs/integrations/atlas",
       "destination": "/docs/integrations/providers/atlas"
     },
     {
-      "source": "/en/latest/integrations/awadb.html",
-      "destination": "/docs/integrations/providers/awadb"
-    },
-    {
       "source": "/docs/integrations/awadb",
       "destination": "/docs/integrations/providers/awadb"
-    },
-    {
-      "source": "/en/latest/integrations/aws_s3.html",
-      "destination": "/docs/integrations/providers/aws_s3"
     },
     {
       "source": "/docs/integrations/aws_s3",
       "destination": "/docs/integrations/providers/aws_s3"
     },
     {
-      "source": "/en/latest/integrations/azlyrics.html",
-      "destination": "/docs/integrations/providers/azlyrics"
-    },
-    {
       "source": "/docs/integrations/azlyrics",
       "destination": "/docs/integrations/providers/azlyrics"
-    },
-    {
-      "source": "/en/latest/integrations/azure_blob_storage.html",
-      "destination": "/docs/integrations/providers/azure_blob_storage"
     },
     {
       "source": "/docs/integrations/azure_blob_storage",
       "destination": "/docs/integrations/providers/azure_blob_storage"
     },
     {
-      "source": "/en/latest/integrations/azure_cognitive_search_.html",
-      "destination": "/docs/integrations/providers/azure_cognitive_search_"
-    },
-    {
       "source": "/docs/integrations/azure_cognitive_search_",
       "destination": "/docs/integrations/providers/azure_cognitive_search_"
     },
     {
-      "source": "/en/latest/integrations/azure_openai.html",
-      "destination": "/docs/integrations/providers/azure_openai"
-    },
-    {
       "source": "/docs/integrations/azure_openai",
       "destination": "/docs/integrations/providers/azure_openai"
-    },
-    {
-      "source": "/en/latest/integrations/bananadev.html",
-      "destination": "/docs/integrations/providers/bananadev"
     },
     {
       "source": "/docs/integrations/bananadev",
@@ -165,112 +89,56 @@
       "destination": "/docs/integrations/providers/baseten"
     },
     {
-      "source": "/en/latest/integrations/beam.html",
-      "destination": "/docs/integrations/providers/beam"
-    },
-    {
       "source": "/docs/integrations/beam",
       "destination": "/docs/integrations/providers/beam"
-    },
-    {
-      "source": "/en/latest/integrations/amazon_bedrock.html",
-      "destination": "/docs/integrations/providers/bedrock"
     },
     {
       "source": "/docs/integrations/bedrock",
       "destination": "/docs/integrations/providers/bedrock"
     },
     {
-      "source": "/en/latest/integrations/bilibili.html",
-      "destination": "/docs/integrations/providers/bilibili"
-    },
-    {
       "source": "/docs/integrations/bilibili",
       "destination": "/docs/integrations/providers/bilibili"
-    },
-    {
-      "source": "/en/latest/integrations/blackboard.html",
-      "destination": "/docs/integrations/providers/blackboard"
     },
     {
       "source": "/docs/integrations/blackboard",
       "destination": "/docs/integrations/providers/blackboard"
     },
     {
-      "source": "/en/latest/integrations/cassandra.html",
-      "destination": "/docs/integrations/providers/cassandra"
-    },
-    {
       "source": "/docs/integrations/cassandra",
       "destination": "/docs/integrations/providers/cassandra"
-    },
-    {
-      "source": "/en/latest/integrations/cerebriumai.html",
-      "destination": "/docs/integrations/providers/cerebriumai"
     },
     {
       "source": "/docs/integrations/cerebriumai",
       "destination": "/docs/integrations/providers/cerebriumai"
     },
     {
-      "source": "/en/latest/integrations/chroma.html",
-      "destination": "/docs/integrations/providers/chroma"
-    },
-    {
       "source": "/docs/integrations/chroma",
       "destination": "/docs/integrations/providers/chroma"
-    },
-    {
-      "source": "/en/latest/integrations/clearml_tracking.html",
-      "destination": "/docs/integrations/providers/clearml_tracking"
     },
     {
       "source": "/docs/integrations/clearml_tracking",
       "destination": "/docs/integrations/providers/clearml_tracking"
     },
     {
-      "source": "/en/latest/integrations/cohere.html",
-      "destination": "/docs/integrations/providers/cohere"
-    },
-    {
       "source": "/docs/integrations/cohere",
       "destination": "/docs/integrations/providers/cohere"
-    },
-    {
-      "source": "/en/latest/integrations/college_confidential.html",
-      "destination": "/docs/integrations/providers/college_confidential"
     },
     {
       "source": "/docs/integrations/college_confidential",
       "destination": "/docs/integrations/providers/college_confidential"
     },
     {
-      "source": "/en/latest/integrations/comet_tracking.html",
-      "destination": "/docs/integrations/providers/comet_tracking"
-    },
-    {
       "source": "/docs/integrations/comet_tracking",
       "destination": "/docs/integrations/providers/comet_tracking"
-    },
-    {
-      "source": "/en/latest/integrations/confluence.html",
-      "destination": "/docs/integrations/providers/confluence"
     },
     {
       "source": "/docs/integrations/confluence",
       "destination": "/docs/integrations/providers/confluence"
     },
     {
-      "source": "/en/latest/integrations/ctransformers.html",
-      "destination": "/docs/integrations/providers/ctransformers"
-    },
-    {
       "source": "/docs/integrations/ctransformers",
       "destination": "/docs/integrations/providers/ctransformers"
-    },
-    {
-      "source": "/en/latest/integrations/databerry.html",
-      "destination": "/docs/integrations/providers/chaindesk"
     },
     {
       "source": "/docs/integrations/chaindesk",
@@ -285,344 +153,172 @@
       "destination": "/docs/integrations/providers/chaindesk"
     },
     {
-      "source": "/en/latest/integrations/databricks/databricks.html",
+      "source": "/docs/integrations/databricks",
       "destination": "/docs/integrations/providers/databricks"
     },
     {
       "source": "/docs/integrations/databricks",
       "destination": "/docs/integrations/providers/databricks"
-    },
-    {
-      "source": "/en/latest/integrations/databricks.html",
-      "destination": "/docs/integrations/providers/databricks"
-    },
-    {
-      "source": "/docs/integrations/databricks",
-      "destination": "/docs/integrations/providers/databricks"
-    },
-    {
-      "source": "/en/latest/integrations/deepinfra.html",
-      "destination": "/docs/integrations/providers/deepinfra"
     },
     {
       "source": "/docs/integrations/deepinfra",
       "destination": "/docs/integrations/providers/deepinfra"
     },
     {
-      "source": "/en/latest/integrations/deeplake.html",
-      "destination": "/docs/integrations/providers/deeplake"
-    },
-    {
       "source": "/docs/integrations/deeplake",
       "destination": "/docs/integrations/providers/deeplake"
-    },
-    {
-      "source": "/en/latest/integrations/diffbot.html",
-      "destination": "/docs/integrations/providers/diffbot"
     },
     {
       "source": "/docs/integrations/diffbot",
       "destination": "/docs/integrations/providers/diffbot"
     },
     {
-      "source": "/en/latest/integrations/discord.html",
-      "destination": "/docs/integrations/providers/discord"
-    },
-    {
       "source": "/docs/integrations/discord",
       "destination": "/docs/integrations/providers/discord"
-    },
-    {
-      "source": "/en/latest/integrations/docugami.html",
-      "destination": "/docs/integrations/providers/docugami"
     },
     {
       "source": "/docs/integrations/docugami",
       "destination": "/docs/integrations/providers/docugami"
     },
     {
-      "source": "/en/latest/integrations/duckdb.html",
-      "destination": "/docs/integrations/providers/duckdb"
-    },
-    {
       "source": "/docs/integrations/duckdb",
       "destination": "/docs/integrations/providers/duckdb"
-    },
-    {
-      "source": "/en/latest/integrations/elasticsearch.html",
-      "destination": "/docs/integrations/providers/elasticsearch"
     },
     {
       "source": "/docs/integrations/elasticsearch",
       "destination": "/docs/integrations/providers/elasticsearch"
     },
     {
-      "source": "/en/latest/integrations/evernote.html",
-      "destination": "/docs/integrations/providers/evernote"
-    },
-    {
       "source": "/docs/integrations/evernote",
       "destination": "/docs/integrations/providers/evernote"
-    },
-    {
-      "source": "/en/latest/integrations/facebook_chat.html",
-      "destination": "/docs/integrations/providers/facebook_chat"
     },
     {
       "source": "/docs/integrations/facebook_chat",
       "destination": "/docs/integrations/providers/facebook_chat"
     },
     {
-      "source": "/en/latest/integrations/figma.html",
-      "destination": "/docs/integrations/providers/figma"
-    },
-    {
       "source": "/docs/integrations/figma",
       "destination": "/docs/integrations/providers/figma"
-    },
-    {
-      "source": "/en/latest/integrations/forefrontai.html",
-      "destination": "/docs/integrations/providers/forefrontai"
     },
     {
       "source": "/docs/integrations/forefrontai",
       "destination": "/docs/integrations/providers/forefrontai"
     },
     {
-      "source": "/en/latest/integrations/git.html",
-      "destination": "/docs/integrations/providers/git"
-    },
-    {
       "source": "/docs/integrations/git",
       "destination": "/docs/integrations/providers/git"
-    },
-    {
-      "source": "/en/latest/integrations/gitbook.html",
-      "destination": "/docs/integrations/providers/gitbook"
     },
     {
       "source": "/docs/integrations/gitbook",
       "destination": "/docs/integrations/providers/gitbook"
     },
     {
-      "source": "/en/latest/integrations/google_bigquery.html",
-      "destination": "/docs/integrations/providers/google_bigquery"
-    },
-    {
       "source": "/docs/integrations/google_bigquery",
       "destination": "/docs/integrations/providers/google_bigquery"
-    },
-    {
-      "source": "/en/latest/integrations/google_cloud_storage.html",
-      "destination": "/docs/integrations/providers/google_cloud_storage"
     },
     {
       "source": "/docs/integrations/google_cloud_storage",
       "destination": "/docs/integrations/providers/google_cloud_storage"
     },
     {
-      "source": "/en/latest/integrations/google_drive.html",
-      "destination": "/docs/integrations/providers/google_drive"
-    },
-    {
       "source": "/docs/integrations/google_drive",
       "destination": "/docs/integrations/providers/google_drive"
-    },
-    {
-      "source": "/en/latest/integrations/google_search.html",
-      "destination": "/docs/integrations/providers/google_search"
     },
     {
       "source": "/docs/integrations/google_search",
       "destination": "/docs/integrations/providers/google_search"
     },
     {
-      "source": "/en/latest/integrations/google_serper.html",
-      "destination": "/docs/integrations/providers/google_serper"
-    },
-    {
       "source": "/docs/integrations/google_serper",
       "destination": "/docs/integrations/providers/google_serper"
-    },
-    {
-      "source": "/en/latest/integrations/gooseai.html",
-      "destination": "/docs/integrations/providers/gooseai"
     },
     {
       "source": "/docs/integrations/gooseai",
       "destination": "/docs/integrations/providers/gooseai"
     },
     {
-      "source": "/en/latest/integrations/gpt4all.html",
-      "destination": "/docs/integrations/providers/gpt4all"
-    },
-    {
       "source": "/docs/integrations/gpt4all",
       "destination": "/docs/integrations/providers/gpt4all"
-    },
-    {
-      "source": "/en/latest/integrations/graphsignal.html",
-      "destination": "/docs/integrations/providers/graphsignal"
     },
     {
       "source": "/docs/integrations/graphsignal",
       "destination": "/docs/integrations/providers/graphsignal"
     },
     {
-      "source": "/en/latest/integrations/gutenberg.html",
-      "destination": "/docs/integrations/providers/gutenberg"
-    },
-    {
       "source": "/docs/integrations/gutenberg",
       "destination": "/docs/integrations/providers/gutenberg"
-    },
-    {
-      "source": "/en/latest/integrations/hacker_news.html",
-      "destination": "/docs/integrations/providers/hacker_news"
     },
     {
       "source": "/docs/integrations/hacker_news",
       "destination": "/docs/integrations/providers/hacker_news"
     },
     {
-      "source": "/en/latest/integrations/hazy_research.html",
-      "destination": "/docs/integrations/providers/hazy_research"
-    },
-    {
       "source": "/docs/integrations/hazy_research",
       "destination": "/docs/integrations/providers/hazy_research"
-    },
-    {
-      "source": "/en/latest/integrations/helicone.html",
-      "destination": "/docs/integrations/providers/helicone"
     },
     {
       "source": "/docs/integrations/helicone",
       "destination": "/docs/integrations/providers/helicone"
     },
     {
-      "source": "/en/latest/integrations/huggingface.html",
-      "destination": "/docs/integrations/providers/huggingface"
-    },
-    {
       "source": "/docs/integrations/huggingface",
       "destination": "/docs/integrations/providers/huggingface"
-    },
-    {
-      "source": "/en/latest/integrations/ifixit.html",
-      "destination": "/docs/integrations/providers/ifixit"
     },
     {
       "source": "/docs/integrations/ifixit",
       "destination": "/docs/integrations/providers/ifixit"
     },
     {
-      "source": "/en/latest/integrations/imsdb.html",
-      "destination": "/docs/integrations/providers/imsdb"
-    },
-    {
       "source": "/docs/integrations/imsdb",
       "destination": "/docs/integrations/providers/imsdb"
-    },
-    {
-      "source": "/en/latest/integrations/jina.html",
-      "destination": "/docs/integrations/providers/jina"
     },
     {
       "source": "/docs/integrations/jina",
       "destination": "/docs/integrations/providers/jina"
     },
     {
-      "source": "/en/latest/integrations/lancedb.html",
-      "destination": "/docs/integrations/providers/lancedb"
-    },
-    {
       "source": "/docs/integrations/lancedb",
       "destination": "/docs/integrations/providers/lancedb"
-    },
-    {
-      "source": "/en/latest/integrations/langchain_decorators.html",
-      "destination": "/docs/integrations/providers/langchain_decorators"
     },
     {
       "source": "/docs/integrations/langchain_decorators",
       "destination": "/docs/integrations/providers/langchain_decorators"
     },
     {
-      "source": "/en/latest/integrations/llamacpp.html",
-      "destination": "/docs/integrations/providers/llamacpp"
-    },
-    {
       "source": "/docs/integrations/llamacpp",
       "destination": "/docs/integrations/providers/llamacpp"
-    },
-    {
-      "source": "/en/latest/integrations/log10.html",
-      "destination": "/docs/integrations/providers/log10"
     },
     {
       "source": "/docs/integrations/log10",
       "destination": "/docs/integrations/providers/log10"
     },
     {
-      "source": "/en/latest/integrations/mediawikidump.html",
-      "destination": "/docs/integrations/providers/mediawikidump"
-    },
-    {
       "source": "/docs/integrations/mediawikidump",
       "destination": "/docs/integrations/providers/mediawikidump"
-    },
-    {
-      "source": "/en/latest/integrations/metal.html",
-      "destination": "/docs/integrations/providers/metal"
     },
     {
       "source": "/docs/integrations/metal",
       "destination": "/docs/integrations/providers/metal"
     },
     {
-      "source": "/en/latest/integrations/microsoft_onedrive.html",
-      "destination": "/docs/integrations/providers/microsoft_onedrive"
-    },
-    {
       "source": "/docs/integrations/microsoft_onedrive",
       "destination": "/docs/integrations/providers/microsoft_onedrive"
-    },
-    {
-      "source": "/en/latest/integrations/microsoft_powerpoint.html",
-      "destination": "/docs/integrations/providers/microsoft_powerpoint"
     },
     {
       "source": "/docs/integrations/microsoft_powerpoint",
       "destination": "/docs/integrations/providers/microsoft_powerpoint"
     },
     {
-      "source": "/en/latest/integrations/microsoft_word.html",
-      "destination": "/docs/integrations/providers/microsoft_word"
-    },
-    {
       "source": "/docs/integrations/microsoft_word",
       "destination": "/docs/integrations/providers/microsoft_word"
-    },
-    {
-      "source": "/en/latest/integrations/milvus.html",
-      "destination": "/docs/integrations/providers/milvus"
     },
     {
       "source": "/docs/integrations/milvus",
       "destination": "/docs/integrations/providers/milvus"
     },
     {
-      "source": "/en/latest/integrations/mlflow_tracking.html",
-      "destination": "/docs/integrations/providers/mlflow_tracking"
-    },
-    {
       "source": "/docs/integrations/mlflow_tracking",
       "destination": "/docs/integrations/providers/mlflow_tracking"
-    },
-    {
-      "source": "/en/latest/integrations/modal.html",
-      "destination": "/docs/integrations/providers/modal"
     },
     {
       "source": "/docs/integrations/modal",
@@ -637,448 +333,224 @@
       "destination": "/docs/integrations/providers/modelscope"
     },
     {
-      "source": "/en/latest/integrations/modern_treasury.html",
-      "destination": "/docs/integrations/providers/modern_treasury"
-    },
-    {
       "source": "/docs/integrations/modern_treasury",
       "destination": "/docs/integrations/providers/modern_treasury"
-    },
-    {
-      "source": "/en/latest/integrations/momento.html",
-      "destination": "/docs/integrations/providers/momento"
     },
     {
       "source": "/docs/integrations/momento",
       "destination": "/docs/integrations/providers/momento"
     },
     {
-      "source": "/en/latest/integrations/myscale.html",
-      "destination": "/docs/integrations/providers/myscale"
-    },
-    {
       "source": "/docs/integrations/myscale",
       "destination": "/docs/integrations/providers/myscale"
-    },
-    {
-      "source": "/en/latest/integrations/nlpcloud.html",
-      "destination": "/docs/integrations/providers/nlpcloud"
     },
     {
       "source": "/docs/integrations/nlpcloud",
       "destination": "/docs/integrations/providers/nlpcloud"
     },
     {
-      "source": "/en/latest/integrations/notion.html",
-      "destination": "/docs/integrations/providers/notion"
-    },
-    {
       "source": "/docs/integrations/notion",
       "destination": "/docs/integrations/providers/notion"
-    },
-    {
-      "source": "/en/latest/integrations/obsidian.html",
-      "destination": "/docs/integrations/providers/obsidian"
     },
     {
       "source": "/docs/integrations/obsidian",
       "destination": "/docs/integrations/providers/obsidian"
     },
     {
-      "source": "/en/latest/integrations/openai.html",
-      "destination": "/docs/integrations/providers/openai"
-    },
-    {
       "source": "/docs/integrations/openai",
       "destination": "/docs/integrations/providers/openai"
-    },
-    {
-      "source": "/en/latest/integrations/opensearch.html",
-      "destination": "/docs/integrations/providers/opensearch"
     },
     {
       "source": "/docs/integrations/opensearch",
       "destination": "/docs/integrations/providers/opensearch"
     },
     {
-      "source": "/en/latest/integrations/openweathermap.html",
-      "destination": "/docs/integrations/providers/openweathermap"
-    },
-    {
       "source": "/docs/integrations/openweathermap",
       "destination": "/docs/integrations/providers/openweathermap"
-    },
-    {
-      "source": "/en/latest/integrations/petals.html",
-      "destination": "/docs/integrations/providers/petals"
     },
     {
       "source": "/docs/integrations/petals",
       "destination": "/docs/integrations/providers/petals"
     },
     {
-      "source": "/en/latest/integrations/pgvector.html",
-      "destination": "/docs/integrations/providers/pgvector"
-    },
-    {
       "source": "/docs/integrations/pgvector",
       "destination": "/docs/integrations/providers/pgvector"
-    },
-    {
-      "source": "/en/latest/integrations/pinecone.html",
-      "destination": "/docs/integrations/providers/pinecone"
     },
     {
       "source": "/docs/integrations/pinecone",
       "destination": "/docs/integrations/providers/pinecone"
     },
     {
-      "source": "/en/latest/integrations/pipelineai.html",
-      "destination": "/docs/integrations/providers/pipelineai"
-    },
-    {
       "source": "/docs/integrations/pipelineai",
       "destination": "/docs/integrations/providers/pipelineai"
-    },
-    {
-      "source": "/en/latest/integrations/predictionguard.html",
-      "destination": "/docs/integrations/providers/predictionguard"
     },
     {
       "source": "/docs/integrations/predictionguard",
       "destination": "/docs/integrations/providers/predictionguard"
     },
     {
-      "source": "/en/latest/integrations/promptlayer.html",
-      "destination": "/docs/integrations/providers/promptlayer"
-    },
-    {
       "source": "/docs/integrations/promptlayer",
       "destination": "/docs/integrations/providers/promptlayer"
-    },
-    {
-      "source": "/en/latest/integrations/psychic.html",
-      "destination": "/docs/integrations/providers/psychic"
     },
     {
       "source": "/docs/integrations/psychic",
       "destination": "/docs/integrations/providers/psychic"
     },
     {
-      "source": "/en/latest/integrations/qdrant.html",
-      "destination": "/docs/integrations/providers/qdrant"
-    },
-    {
       "source": "/docs/integrations/qdrant",
       "destination": "/docs/integrations/providers/qdrant"
-    },
-    {
-      "source": "/en/latest/integrations/ray_serve.html",
-      "destination": "/docs/integrations/providers/ray_serve"
     },
     {
       "source": "/docs/integrations/ray_serve",
       "destination": "/docs/integrations/providers/ray_serve"
     },
     {
-      "source": "/en/latest/integrations/rebuff.html",
-      "destination": "/docs/integrations/providers/rebuff"
-    },
-    {
       "source": "/docs/integrations/rebuff",
       "destination": "/docs/integrations/providers/rebuff"
-    },
-    {
-      "source": "/en/latest/integrations/reddit.html",
-      "destination": "/docs/integrations/providers/reddit"
     },
     {
       "source": "/docs/integrations/reddit",
       "destination": "/docs/integrations/providers/reddit"
     },
     {
-      "source": "/en/latest/integrations/redis.html",
-      "destination": "/docs/integrations/providers/redis"
-    },
-    {
       "source": "/docs/integrations/redis",
       "destination": "/docs/integrations/providers/redis"
-    },
-    {
-      "source": "/en/latest/integrations/replicate.html",
-      "destination": "/docs/integrations/providers/replicate"
     },
     {
       "source": "/docs/integrations/replicate",
       "destination": "/docs/integrations/providers/replicate"
     },
     {
-      "source": "/en/latest/integrations/roam.html",
-      "destination": "/docs/integrations/providers/roam"
-    },
-    {
       "source": "/docs/integrations/roam",
       "destination": "/docs/integrations/providers/roam"
-    },
-    {
-      "source": "/en/latest/integrations/runhouse.html",
-      "destination": "/docs/integrations/providers/runhouse"
     },
     {
       "source": "/docs/integrations/runhouse",
       "destination": "/docs/integrations/providers/runhouse"
     },
     {
-      "source": "/en/latest/integrations/rwkv.html",
-      "destination": "/docs/integrations/providers/rwkv"
-    },
-    {
       "source": "/docs/integrations/rwkv",
       "destination": "/docs/integrations/providers/rwkv"
-    },
-    {
-      "source": "/en/latest/integrations/sagemaker_endpoint.html",
-      "destination": "/docs/integrations/providers/sagemaker_endpoint"
     },
     {
       "source": "/docs/integrations/sagemaker_endpoint",
       "destination": "/docs/integrations/providers/sagemaker_endpoint"
     },
     {
-      "source": "/en/latest/integrations/searx.html",
-      "destination": "/docs/integrations/providers/searx"
-    },
-    {
       "source": "/docs/integrations/searx",
       "destination": "/docs/integrations/providers/searx"
-    },
-    {
-      "source": "/en/latest/integrations/serpapi.html",
-      "destination": "/docs/integrations/providers/serpapi"
     },
     {
       "source": "/docs/integrations/serpapi",
       "destination": "/docs/integrations/providers/serpapi"
     },
     {
-      "source": "/en/latest/integrations/shaleprotocol.html",
-      "destination": "/docs/integrations/providers/shaleprotocol"
-    },
-    {
       "source": "/docs/integrations/shaleprotocol",
       "destination": "/docs/integrations/providers/shaleprotocol"
-    },
-    {
-      "source": "/en/latest/integrations/sklearn.html",
-      "destination": "/docs/integrations/providers/sklearn"
     },
     {
       "source": "/docs/integrations/sklearn",
       "destination": "/docs/integrations/providers/sklearn"
     },
     {
-      "source": "/en/latest/integrations/slack.html",
-      "destination": "/docs/integrations/providers/slack"
-    },
-    {
       "source": "/docs/integrations/slack",
       "destination": "/docs/integrations/providers/slack"
-    },
-    {
-      "source": "/en/latest/integrations/spacy.html",
-      "destination": "/docs/integrations/providers/spacy"
     },
     {
       "source": "/docs/integrations/spacy",
       "destination": "/docs/integrations/providers/spacy"
     },
     {
-      "source": "/en/latest/integrations/spreedly.html",
-      "destination": "/docs/integrations/providers/spreedly"
-    },
-    {
       "source": "/docs/integrations/spreedly",
       "destination": "/docs/integrations/providers/spreedly"
-    },
-    {
-      "source": "/en/latest/integrations/stochasticai.html",
-      "destination": "/docs/integrations/providers/stochasticai"
     },
     {
       "source": "/docs/integrations/stochasticai",
       "destination": "/docs/integrations/providers/stochasticai"
     },
     {
-      "source": "/en/latest/integrations/stripe.html",
-      "destination": "/docs/integrations/providers/stripe"
-    },
-    {
       "source": "/docs/integrations/stripe",
       "destination": "/docs/integrations/providers/stripe"
-    },
-    {
-      "source": "/en/latest/integrations/tair.html",
-      "destination": "/docs/integrations/providers/tair"
     },
     {
       "source": "/docs/integrations/tair",
       "destination": "/docs/integrations/providers/tair"
     },
     {
-      "source": "/en/latest/integrations/telegram.html",
-      "destination": "/docs/integrations/providers/telegram"
-    },
-    {
       "source": "/docs/integrations/telegram",
       "destination": "/docs/integrations/providers/telegram"
-    },
-    {
-      "source": "/en/latest/integrations/tomarkdown.html",
-      "destination": "/docs/integrations/providers/tomarkdown"
     },
     {
       "source": "/docs/integrations/tomarkdown",
       "destination": "/docs/integrations/providers/tomarkdown"
     },
     {
-      "source": "/en/latest/integrations/trello.html",
-      "destination": "/docs/integrations/providers/trello"
-    },
-    {
       "source": "/docs/integrations/trello",
       "destination": "/docs/integrations/providers/trello"
-    },
-    {
-      "source": "/en/latest/integrations/twitter.html",
-      "destination": "/docs/integrations/providers/twitter"
     },
     {
       "source": "/docs/integrations/twitter",
       "destination": "/docs/integrations/providers/twitter"
     },
     {
-      "source": "/en/latest/integrations/unstructured.html",
-      "destination": "/docs/integrations/providers/unstructured"
-    },
-    {
       "source": "/docs/integrations/unstructured",
       "destination": "/docs/integrations/providers/unstructured"
-    },
-    {
-      "source": "/en/latest/integrations/vectara/vectara_chat.html",
-      "destination": "/docs/integrations/providers/vectara_chat"
     },
     {
       "source": "/docs/integrations/vectara/vectara_chat",
       "destination": "/docs/integrations/providers/vectara_chat"
     },
     {
-      "source": "/en/latest/integrations/vectara/vectara_text_generation.html",
-      "destination": "/docs/integrations/providers/vectara_text_generation"
-    },
-    {
       "source": "/docs/integrations/vectara/vectara_text_generation",
       "destination": "/docs/integrations/providers/vectara_text_generation"
-    },
-    {
-      "source": "/en/latest/integrations/vespa.html",
-      "destination": "/docs/integrations/providers/vespa"
     },
     {
       "source": "/docs/integrations/vespa",
       "destination": "/docs/integrations/providers/vespa"
     },
     {
-      "source": "/en/latest/integrations/wandb_tracking.html",
-      "destination": "/docs/integrations/providers/wandb_tracking"
-    },
-    {
       "source": "/docs/integrations/wandb_tracking",
       "destination": "/docs/integrations/providers/wandb_tracking"
-    },
-    {
-      "source": "/en/latest/integrations/weather.html",
-      "destination": "/docs/integrations/providers/weather"
     },
     {
       "source": "/docs/integrations/weather",
       "destination": "/docs/integrations/providers/weather"
     },
     {
-      "source": "/en/latest/integrations/weaviate.html",
-      "destination": "/docs/integrations/providers/weaviate"
-    },
-    {
       "source": "/docs/integrations/weaviate",
       "destination": "/docs/integrations/providers/weaviate"
-    },
-    {
-      "source": "/en/latest/integrations/whatsapp.html",
-      "destination": "/docs/integrations/providers/whatsapp"
     },
     {
       "source": "/docs/integrations/whatsapp",
       "destination": "/docs/integrations/providers/whatsapp"
     },
     {
-      "source": "/en/latest/integrations/whylabs_profiling.html",
-      "destination": "/docs/integrations/providers/whylabs_profiling"
-    },
-    {
       "source": "/docs/integrations/whylabs_profiling",
       "destination": "/docs/integrations/providers/whylabs_profiling"
-    },
-    {
-      "source": "/en/latest/integrations/wikipedia.html",
-      "destination": "/docs/integrations/providers/wikipedia"
     },
     {
       "source": "/docs/integrations/wikipedia",
       "destination": "/docs/integrations/providers/wikipedia"
     },
     {
-      "source": "/en/latest/integrations/wolfram_alpha.html",
-      "destination": "/docs/integrations/providers/wolfram_alpha"
-    },
-    {
       "source": "/docs/integrations/wolfram_alpha",
       "destination": "/docs/integrations/providers/wolfram_alpha"
-    },
-    {
-      "source": "/en/latest/integrations/writer.html",
-      "destination": "/docs/integrations/providers/writer"
     },
     {
       "source": "/docs/integrations/writer",
       "destination": "/docs/integrations/providers/writer"
     },
     {
-      "source": "/en/latest/integrations/yeagerai.html",
-      "destination": "/docs/integrations/providers/yeagerai"
-    },
-    {
       "source": "/docs/integrations/yeagerai",
       "destination": "/docs/integrations/providers/yeagerai"
-    },
-    {
-      "source": "/en/latest/integrations/youtube.html",
-      "destination": "/docs/integrations/providers/youtube"
     },
     {
       "source": "/docs/integrations/youtube",
       "destination": "/docs/integrations/providers/youtube"
     },
     {
-      "source": "/en/latest/integrations/zep.html",
-      "destination": "/docs/integrations/providers/zep"
-    },
-    {
       "source": "/docs/integrations/zep",
       "destination": "/docs/integrations/providers/zep"
-    },
-    {
-      "source": "/en/latest/integrations/zilliz.html",
-      "destination": "/docs/integrations/providers/zilliz"
     },
     {
       "source": "/docs/integrations/zilliz",
@@ -4059,6 +3531,10 @@
     {
       "source": "docs/integrations/providers/agent_with_wandb_tracing",
       "destination": "docs/integrations/providers/wandb_tracing"
+    },
+    {
+      "source": "/en/latest/integrations/:path*",
+      "destination": "/docs/integrations/providers/:path*"
     }
   ]
 }
