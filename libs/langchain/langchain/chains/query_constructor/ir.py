@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, List, Optional, Sequence, Union
 
-from pydantic import BaseModel
+from pydantic_v1 import BaseModel
 
 
 class Visitor(ABC):

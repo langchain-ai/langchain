@@ -24,7 +24,7 @@ default_header_template = {
 
 
 class AsyncHtmlLoader(BaseLoader):
-    """Loads HTML asynchronously."""
+    """Load `HTML` asynchronously."""
 
     def __init__(
         self,
@@ -36,7 +36,7 @@ class AsyncHtmlLoader(BaseLoader):
         requests_kwargs: Dict[str, Any] = {},
         raise_for_status: bool = False,
     ):
-        """Initialize with webpage path."""
+        """Initialize with a webpage path."""
 
         # TODO: Deprecate web_path in favor of web_paths, and remove this
         # left like this because there are a number of loaders that expect single

@@ -18,5 +18,8 @@ def create_retriever_tool(
         Tool class to pass to an agent
     """
     return Tool(
-        name=name, description=description, func=retriever.get_relevant_documents
+        name=name,
+        description=description,
+        func=retriever.get_relevant_documents,
+        coroutine=retriever.aget_relevant_documents,
     )

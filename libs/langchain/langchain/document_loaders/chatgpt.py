@@ -1,4 +1,3 @@
-"""Load conversations from ChatGPT data export"""
 import datetime
 import json
 from typing import List
@@ -29,7 +28,7 @@ def concatenate_rows(message: dict, title: str) -> str:
 
 
 class ChatGPTLoader(BaseLoader):
-    """Load conversations from exported ChatGPT data."""
+    """Load conversations from exported `ChatGPT` data."""
 
     def __init__(self, log_file: str, num_logs: int = -1):
         """Initialize a class object.

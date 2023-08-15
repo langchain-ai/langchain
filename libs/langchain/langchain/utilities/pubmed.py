@@ -5,8 +5,8 @@ import urllib.error
 import urllib.request
 from typing import Any, Dict, Iterator, List
 
-from pydantic import BaseModel
-from pydantic.class_validators import root_validator
+from pydantic_v1 import BaseModel
+from pydantic_v1.class_validators import root_validator
 
 from langchain.schema import Document
 

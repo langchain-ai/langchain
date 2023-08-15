@@ -1,7 +1,7 @@
 from functools import partial
 from typing import Any, Dict, List, Optional, Sequence
 
-from pydantic import root_validator
+from pydantic_v1 import root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,

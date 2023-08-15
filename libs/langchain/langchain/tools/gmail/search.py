@@ -3,7 +3,7 @@ import email
 from enum import Enum
 from typing import Any, Dict, List, Optional, Type
 
-from pydantic import BaseModel, Field
+from pydantic_v1 import BaseModel, Field
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.gmail.base import GmailBaseTool
