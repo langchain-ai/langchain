@@ -85,13 +85,6 @@ class Nebula(LLM):
             values, "nebula_api_key", "NEBULA_API_KEY", None
         )
 
-        if nebula_api_key is None:
-            raise ValueError(
-                "API key must be provided by passing as parameter `nebula_api_key` in Nebula class or "
-                "by setting in environment variable `NEBULA_API_KEY` to use this model."
-                "See https://docs.symbl.ai/docs/model-api-quickstart for more information."
-            )
-
         if nebula_service_url.endswith("/"):
             nebula_service_url = nebula_service_url[:-1]
         if not nebula_service_path.startswith("/"):
