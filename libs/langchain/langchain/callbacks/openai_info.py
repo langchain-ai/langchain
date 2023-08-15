@@ -158,23 +158,23 @@ class OpenAICallbackHandler(BaseCallbackHandler):
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Collect token usage."""
-        if response.llm_output is None and self.streaming is False:
-            return None
         if self.streaming and self.streaming_completion_tokens > 0:
-            response.llm_output = {}
-            response.llm_output["token_usage"] = {}
             token_usage = {}
             token_usage["completion_tokens"] = self.streaming_completion_tokens
             token_usage["prompt_tokens"] = self.streaming_prompt_tokens
             token_usage["total_tokens"] = (
                 self.streaming_prompt_tokens + self.streaming_completion_tokens
             )
+            response.llm_output = {}
+            response.llm_output["token_usage"] = token_usage
             response.llm_output["model_name"] = self.streaming_model_name
-        else:
-            if "token_usage" not in response.llm_output:
-                return None
-            token_usage = response.llm_output["token_usage"]
+        if response.llm_output is None:
+            return None
         self.successful_requests += 1
+        if "token_usage" not in response.llm_output:
+            return None
+        if self.streaming is False:
+            token_usage = response.llm_output["token_usage"]
         completion_tokens = token_usage.get("completion_tokens", 0)
         prompt_tokens = token_usage.get("prompt_tokens", 0)
         model_name = standardize_model_name(response.llm_output.get("model_name", ""))
