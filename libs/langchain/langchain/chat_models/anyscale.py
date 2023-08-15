@@ -7,7 +7,7 @@ import sys
 from typing import TYPE_CHECKING, Optional, Set
 
 import requests
-from pydantic import Field, root_validator
+from pydantic_v1 import Field, root_validator
 
 from langchain.adapters.openai import convert_message_to_dict
 from langchain.chat_models.openai import (
@@ -28,7 +28,7 @@ DEFAULT_MODEL = "meta-llama/Llama-2-7b-chat-hf"
 
 
 class ChatAnyscale(ChatOpenAI):
-    """Wrapper around Anyscale Chat large language models.
+    """`Anyscale` Chat large language models.
 
     To use, you should have the ``openai`` python package installed, and the
     environment variable ``ANYSCALE_API_KEY`` set with your API key.

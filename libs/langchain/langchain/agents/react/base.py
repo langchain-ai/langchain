@@ -1,7 +1,7 @@
 """Chain that implements the ReAct paper from https://arxiv.org/pdf/2210.03629.pdf."""
 from typing import Any, List, Optional, Sequence
 
-from pydantic import Field
+from pydantic_v1 import Field
 
 from langchain.agents.agent import Agent, AgentExecutor, AgentOutputParser
 from langchain.agents.agent_types import AgentType

@@ -250,7 +250,9 @@ async def test_prompt_with_chat_model(
             HumanMessage(content="What is your name?"),
         ]
     )
+
     assert tracer.runs == snapshot
+
     mocker.stop(prompt_spy)
     mocker.stop(chat_spy)
 
@@ -442,6 +444,7 @@ def test_prompt_with_chat_model_and_parser(
         ]
     )
     assert parser_spy.call_args.args[1] == AIMessage(content="foo, bar")
+
     assert tracer.runs == snapshot
 
 
@@ -500,6 +503,7 @@ def test_combining_sequences(
     assert combined_chain.invoke(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
     ) == ["baz", "qux"]
+
     assert tracer.runs == snapshot
 
 

@@ -4,7 +4,7 @@ from typing import Any, AsyncGenerator, Dict, Optional
 
 import aiohttp
 import requests
-from pydantic import BaseModel, Extra
+from pydantic_v1 import BaseModel, Extra
 
 
 class Requests(BaseModel):

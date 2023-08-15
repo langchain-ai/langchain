@@ -1,6 +1,6 @@
 from typing import List
 
-from pydantic import BaseModel
+from pydantic_v1 import BaseModel
 
 from langchain.schema import (
     BaseChatMessageHistory,

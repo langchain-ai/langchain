@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
 import yaml
-from pydantic import Field, root_validator
+from pydantic_v1 import Field, root_validator
 
 from langchain.load.serializable import Serializable
 from langchain.schema.document import Document

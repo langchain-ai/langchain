@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, List
 
-from pydantic import BaseModel
+from pydantic_v1 import BaseModel
 
 from langchain.output_parsers.format_instructions import (
     STRUCTURED_FORMAT_INSTRUCTIONS,

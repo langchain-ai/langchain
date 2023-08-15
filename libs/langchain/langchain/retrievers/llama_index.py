@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, cast
 
-from pydantic import Field
+from pydantic_v1 import Field
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document

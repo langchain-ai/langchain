@@ -18,7 +18,7 @@ from typing import (
     cast,
 )
 
-from pydantic import Extra, Field
+from pydantic_v1 import Extra, Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
