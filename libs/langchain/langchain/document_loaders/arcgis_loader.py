@@ -1,9 +1,11 @@
 """Document Loader for ArcGIS FeatureLayers."""
+
 from __future__ import annotations
 
 import json
 import re
 import warnings
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Iterator, List, Optional, Union
 
 from langchain.docstore.document import Document
@@ -120,6 +122,8 @@ class ArcGISLoader(BaseLoader):
             yield Document(
                 page_content=json.dumps(feature),
                 metadata={
+                    "accessed": f"{datetime.now(timezone.utc).isoformat()}Z",
+                    "name": self.layer_properties["layer_properties"]["name"],
                     "url": self.url,
                     "layer_description": self.layer_properties["layer_description"],
                     "item_description": self.layer_properties["item_description"],
