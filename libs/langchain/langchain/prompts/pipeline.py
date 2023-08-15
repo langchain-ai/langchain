@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Tuple
 
-from pydantic import root_validator
+from pydantic_v1 import root_validator
 
 from langchain.prompts.chat import BaseChatPromptTemplate
 from langchain.schema import BasePromptTemplate, PromptValue

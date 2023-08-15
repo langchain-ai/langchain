@@ -2,7 +2,7 @@ import hashlib
 from typing import List
 
 import numpy as np
-from pydantic import BaseModel
+from pydantic_v1 import BaseModel
 
 from langchain.embeddings.base import Embeddings
 

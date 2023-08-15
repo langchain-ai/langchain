@@ -3,7 +3,7 @@ import platform
 import warnings
 from typing import List, Optional, Type, Union
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic_v1 import BaseModel, Field, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,

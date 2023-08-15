@@ -2,7 +2,7 @@ import warnings
 from typing import Any, Dict
 
 import pytest
-from pydantic import BaseModel
+from pydantic_v1 import BaseModel
 
 from langchain._api.deprecation import _warn_deprecated, deprecated
 
