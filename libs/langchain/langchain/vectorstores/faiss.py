@@ -143,7 +143,7 @@ class FAISS(VectorStore):
         ids = ids or [str(uuid.uuid4()) for _ in texts]
         self.docstore.add({id_: doc for id_, doc in zip(ids, documents)})
         starting_len = len(self.index_to_docstore_id)
-        index_to_id = {starting_len + i: id_ for i, id_ in enumerate(ids)}
+        index_to_id = {starting_len + j: id_ for j, id_ in enumerate(ids)}
         self.index_to_docstore_id.update(index_to_id)
         return ids
 
