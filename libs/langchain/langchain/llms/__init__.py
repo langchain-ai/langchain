@@ -39,7 +39,6 @@ from langchain.llms.ctransformers import CTransformers
 from langchain.llms.databricks import Databricks
 from langchain.llms.deepinfra import DeepInfra
 from langchain.llms.deepsparse import DeepSparse
-from langchain.llms.bittensor import NIBittensorLLM
 from langchain.llms.edenai import EdenAI
 from langchain.llms.fake import FakeListLLM
 from langchain.llms.fireworks import Fireworks, FireworksChat
@@ -59,6 +58,7 @@ from langchain.llms.minimax import Minimax
 from langchain.llms.mlflow_ai_gateway import MlflowAIGateway
 from langchain.llms.modal import Modal
 from langchain.llms.mosaicml import MosaicML
+from langchain.llms.bittensor import NIBittensorLLM
 from langchain.llms.nlpcloud import NLPCloud
 from langchain.llms.octoai_endpoint import OctoAIEndpoint
 from langchain.llms.ollama import Ollama

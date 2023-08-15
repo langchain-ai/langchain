@@ -1,15 +1,17 @@
 from langchain.llms.base import LLM
-from typing import List, Optional, Mapping, Any
 from langchain.callbacks.manager import CallbackManagerForLLMRun
-import http.client
+
+from typing import List, Optional, Mapping, Any
 import json
+
+import http.client
 import ssl
-import time
 
 
 class NIBittensorLLM(LLM):
     """
-    NIBittensorLLM is created by Neural Internet (https://neuralinternet.ai/), powered by Bittensor, a decentralized network full of different AI models.
+    NIBittensorLLM is created by Neural Internet (https://neuralinternet.ai/),
+    powered by Bittensor, a decentralized network full of different AI models.
 
     To analyze API_KEYS and logs of your usage visit
         https://api.neuralinternet.ai/api-keys
@@ -45,9 +47,9 @@ class NIBittensorLLM(LLM):
 
         Call the Neural Internet's BTVEP Server and return the output.
 
-        Parameters:
-            system_prompt(str, optional): A system prompt defining how your model should respond before every request.
-            top_responses(int, optional): The number of top miner responses to retrieve from Bittensor metagraph in a single call. If not specified, the default behavior is used.
+        Parameters (optional):
+            system_prompt(str): A system prompt defining how your model should respond.
+            top_responses(int): Total top miner responses to retrieve from Bittensor protocol.
 
         Return:
             The generated response(s).
@@ -56,7 +58,8 @@ class NIBittensorLLM(LLM):
             .. code-block:: python
 
                 from langchain.llms import NIBittensorLLM
-                llm = NIBittensorLLM(system_prompt="Act like you are professional programmer with 5+ years of experience.")
+                llm = NIBittensorLLM(system_prompt="Act like you are programmer with \
+                5+ years of experience.")
         """
 
         # Creating HTTPS connection with SSL
@@ -70,7 +73,8 @@ class NIBittensorLLM(LLM):
         else:
             top_n = 0
 
-        default_prompt = "You are an assistant which is created by Neural Internet(NI) in decentralized network named as a Bittensor."
+        default_prompt = "You are an assistant which is created by Neural Internet(NI) \
+            in decentralized network named as a Bittensor."
         if self.system_prompt is None:
             system_prompt = (
                 default_prompt
@@ -129,7 +133,7 @@ class NIBittensorLLM(LLM):
                     reply = init_json["choices"][0]["message"]["content"]
                     conn.close()
                     return reply
-                except Exception as e:
+                except Exception:
                     continue
 
         # For top miner based on bittensor response
