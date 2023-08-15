@@ -1,7 +1,6 @@
 """Test Anthropic API wrapper."""
-from typing import List
-
 import pytest
+from typing import List
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.anthropic import ChatAnthropic
@@ -95,3 +94,19 @@ def test_formatting() -> None:
     chat_messages = [HumanMessage(content="Hello"), AIMessage(content="Answer:")]
     result = chat._convert_messages_to_prompt(chat_messages)
     assert result == "\n\nHuman: Hello\n\nAssistant: Answer:"
+
+
+def test_anthropic_model_kwargs() -> None:
+    llm = ChatAnthropic(model_kwargs={"foo": "bar"})
+    assert llm.model_kwargs == {"foo": "bar"}
+
+
+def test_anthropic_invalid_model_kwargs() -> None:
+    with pytest.raises(ValueError):
+        ChatAnthropic(model_kwargs={"max_tokens_to_sample": 5})
+
+
+def test_anthropic_incorrect_field() -> None:
+    with pytest.warns(match="not default parameter"):
+        llm = ChatAnthropic(foo="bar")
+    assert llm.model_kwargs == {"foo": "bar"}
