@@ -18,7 +18,7 @@ if _PYDANTIC_MAJOR_VERSION != 1:
 
 import pytest
 import yaml
-from openapi_schema_pydantic import (
+from openapi_pydantic import (
     Components,
     Info,
     MediaType,

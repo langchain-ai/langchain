@@ -2021,17 +2021,15 @@ files = [
 ]
 
 [[package]]
-name = "openapi-schema-pydantic"
-version = "1.2.4"
-description = "OpenAPI (v3) specification schema as pydantic class"
-category = "main"
+name = "openapi-pydantic"
+version = "0.3.2"
+description = "Pydantic OpenAPI schema implementation"
 optional = false
 python-versions = ">=3.6.1"
 files = [
-    {file = "openapi-schema-pydantic-1.2.4.tar.gz", hash = "sha256:3e22cf58b74a69f752cc7e5f1537f6e44164282db2700cbbcd3bb99ddd065196"},
-    {file = "openapi_schema_pydantic-1.2.4-py3-none-any.whl", hash = "sha256:a932ecc5dcbb308950282088956e94dea069c9823c84e507d64f6b622222098c"},
+    {file = "openapi_pydantic-0.3.2.tar.gz", hash = "sha256:685aa631395c469ecfd04f01a2ffedd541f94d372943868a501b412e9de6ba8b"},
+    {file = "openapi_pydantic-0.3.2-py3-none-any.whl", hash = "sha256:24488566a0a61bee3b55de6d3665329adaf2aadfe8f292ac0bddfe22155fadac"},
 ]
-
 [package.dependencies]
 pydantic = ">=1.8.2"
 

@@ -4,7 +4,7 @@ from collections import defaultdict
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import requests
-from openapi_schema_pydantic import Parameter
+from openapi_pydantic import Parameter
 from requests import Response
 
 from langchain import LLMChain
