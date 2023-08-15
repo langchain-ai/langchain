@@ -4,7 +4,7 @@ from langchainhub import Client
 
 from langchain.load.dump import dumps
 from langchain.load.load import loads
-from langchain.utils import get_from_dict_or_env, get_from_env
+from langchain.utils import get_from_env
 
 
 def _get_client(api_url: Optional[str] = None, api_key: Optional[str] = None) -> Client:
