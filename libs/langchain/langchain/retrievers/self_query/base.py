@@ -15,6 +15,7 @@ from langchain.retrievers.self_query.myscale import MyScaleTranslator
 from langchain.retrievers.self_query.pinecone import PineconeTranslator
 from langchain.retrievers.self_query.qdrant import QdrantTranslator
 from langchain.retrievers.self_query.weaviate import WeaviateTranslator
+from langchain.retrievers.self_query.elasticsearch import ElasticsearchTranslator
 from langchain.schema import BaseRetriever, Document
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.vectorstores import (
@@ -25,6 +26,7 @@ from langchain.vectorstores import (
     Qdrant,
     VectorStore,
     Weaviate,
+    ElasticsearchStore,
 )
 
 
@@ -38,6 +40,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         Qdrant: QdrantTranslator,
         MyScale: MyScaleTranslator,
         DeepLake: DeepLakeTranslator,
+        ElasticsearchStore: ElasticsearchTranslator,
     }
     if vectorstore_cls not in BUILTIN_TRANSLATORS:
         raise ValueError(
