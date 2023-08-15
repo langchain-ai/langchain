@@ -229,7 +229,6 @@ class Vectara(VectorStore):
             ],
         }
 
-
         success_str = self._index_doc(doc)
         if success_str == "E_ALREADY_EXISTS":
             self._delete_doc(doc_id)
