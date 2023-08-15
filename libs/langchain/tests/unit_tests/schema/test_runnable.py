@@ -35,7 +35,6 @@ from langchain.schema.runnable import (
     RunnableSequence,
     RunnableWithFallbacks,
 )
-from langchain.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 
 class FakeTracer(BaseTracer):
@@ -253,13 +252,7 @@ async def test_prompt_with_chat_model(
         ]
     )
 
-    if PYDANTIC_MAJOR_VERSION == 1:
-        assert tracer.runs == snapshot
-    else:
-        warnings.warn(
-            f"testing snapshot for pydantic version {PYDANTIC_MAJOR_VERSION} is "
-            f"not supported yet"
-        )
+    assert tracer.runs == snapshot
 
     mocker.stop(prompt_spy)
     mocker.stop(chat_spy)
@@ -361,13 +354,7 @@ async def test_prompt_with_llm(
             HumanMessage(content="What is your name?"),
         ]
     )
-    if PYDANTIC_MAJOR_VERSION == 1:
-        assert tracer.runs == snapshot
-    else:
-        warnings.warn(
-            f"testing snapshot for pydantic version {PYDANTIC_MAJOR_VERSION} is "
-            f"not supported yet"
-        )
+    assert tracer.runs == snapshot
     mocker.stop(prompt_spy)
     mocker.stop(llm_spy)
 
@@ -400,13 +387,7 @@ async def test_prompt_with_llm(
             ]
         ),
     ]
-    if PYDANTIC_MAJOR_VERSION == 1:
-        assert tracer.runs == snapshot
-    else:
-        warnings.warn(
-            f"testing snapshot for pydantic version {PYDANTIC_MAJOR_VERSION} is "
-            f"not supported yet"
-        )
+    assert tracer.runs == snapshot
     mocker.stop(prompt_spy)
     mocker.stop(llm_spy)
 
@@ -465,13 +446,7 @@ def test_prompt_with_chat_model_and_parser(
     )
     assert parser_spy.call_args.args[1] == AIMessage(content="foo, bar")
 
-    if PYDANTIC_MAJOR_VERSION == 1:
-        assert tracer.runs == snapshot
-    else:
-        warnings.warn(
-            f"testing snapshot for pydantic version {PYDANTIC_MAJOR_VERSION} is "
-            f"not supported yet"
-        )
+    assert tracer.runs == snapshot
 
 
 @freeze_time("2023-01-01")
@@ -529,13 +504,8 @@ def test_combining_sequences(
     assert combined_chain.invoke(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
     ) == ["baz", "qux"]
-    if PYDANTIC_MAJOR_VERSION == 1:
-        assert tracer.runs == snapshot
-    else:
-        warnings.warn(
-            f"testing snapshot for pydantic version {PYDANTIC_MAJOR_VERSION} is "
-            f"not supported yet"
-        )
+
+    assert tracer.runs == snapshot
 
 
 @freeze_time("2023-01-01")
