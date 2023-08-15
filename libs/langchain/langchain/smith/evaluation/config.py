@@ -1,6 +1,6 @@
 """Configuration for run evaluators."""
 
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from langsmith import RunEvaluator
 from pydantic_v1 import BaseModel, Field
