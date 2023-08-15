@@ -5,7 +5,7 @@ from io import StringIO
 from typing import Any, Callable, Dict, List, Mapping, Optional
 
 import yaml
-from pydantic import Field
+from pydantic_v1 import Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,

@@ -1,7 +1,8 @@
-"""Wrapper around Elasticsearch vector database."""
+"""[DEPRECATED] Please use ElasticsearchStore instead."""
 from __future__ import annotations
 
 import uuid
+import warnings
 from abc import ABC
 from typing import (
     TYPE_CHECKING,
@@ -15,6 +16,7 @@ from typing import (
     Union,
 )
 
+from langchain._api import deprecated
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
@@ -50,13 +52,7 @@ def _default_script_query(query_vector: List[float], filter: Optional[dict]) -> 
     }
 
 
-# ElasticVectorSearch is a concrete implementation of the abstract base class
-# VectorStore, which defines a common interface for all vector database
-# implementations. By inheriting from the ABC class, ElasticVectorSearch can be
-# defined as an abstract base class itself, allowing the creation of subclasses with
-# their own specific implementations. If you plan to subclass ElasticVectorSearch,
-# you can inherit from it and define your own implementation of the necessary methods
-# and attributes.
+@deprecated("0.0.265", alternative="ElasticsearchStore class.", pending=True)
 class ElasticVectorSearch(VectorStore, ABC):
     """Wrapper around Elasticsearch as a vector database.
 
@@ -136,6 +132,11 @@ class ElasticVectorSearch(VectorStore, ABC):
         ssl_verify: Optional[Dict[str, Any]] = None,
     ):
         """Initialize with necessary components."""
+        warnings.warn(
+            "ElasticVectorSearch will be removed in a future release. See"
+            "Elasticsearch integration docs on how to upgrade."
+        )
+
         try:
             import elasticsearch
         except ImportError:
@@ -392,6 +393,11 @@ class ElasticKnnSearch(VectorStore, ABC):
                 "Please install it with `pip install elasticsearch`."
             )
 
+        warnings.warn(
+            "ElasticKnnSearch will be removed in a future release."
+            "Use ElasticsearchStore instead. See Elasticsearch "
+            "integration docs on how to upgrade."
+        )
         self.embedding = embedding
         self.index_name = index_name
         self.query_field = query_field

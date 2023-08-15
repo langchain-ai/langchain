@@ -2,7 +2,7 @@ import json
 from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 import requests
-from pydantic import Extra
+from pydantic_v1 import Extra
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import BaseLLM

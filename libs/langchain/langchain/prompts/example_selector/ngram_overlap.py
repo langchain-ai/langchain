@@ -6,7 +6,7 @@ https://aclanthology.org/P02-1040.pdf
 from typing import Dict, List
 
 import numpy as np
-from pydantic import BaseModel, root_validator
+from pydantic_v1 import BaseModel, root_validator
 
 from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.prompts.prompt import PromptTemplate

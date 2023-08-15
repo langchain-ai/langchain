@@ -2,7 +2,7 @@ import logging
 from datetime import datetime as dt
 from typing import Dict, Optional, Type
 
-from pydantic import BaseModel, Field
+from pydantic_v1 import BaseModel, Field
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.amadeus.base import AmadeusBaseTool

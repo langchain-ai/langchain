@@ -112,9 +112,11 @@ class Dingo(VectorStore):
         # upsert to Dingo
         for i in range(0, len(list(texts)), batch_size):
             j = i + batch_size
-            self._client.vector_add(
+            add_res = self._client.vector_add(
                 self._index_name, metadatas_list[i:j], embeds[i:j], ids[i:j]
             )
+            if not add_res:
+                raise Exception("vector add fail")
 
         return ids
 
@@ -205,20 +207,26 @@ class Dingo(VectorStore):
             List of Documents selected by maximal marginal relevance.
         """
         results = self._client.vector_search(
-            self._index_name, [embedding], search_params, k
+            self._index_name, [embedding], search_params=search_params, top_k=k
         )
 
         mmr_selected = maximal_marginal_relevance(
             np.array([embedding], dtype=np.float32),
-            [item["floatValues"] for item in results[0]["vectorWithDistances"]],
+            [
+                item["vector"]["floatValues"]
+                for item in results[0]["vectorWithDistances"]
+            ],
             k=k,
             lambda_mult=lambda_mult,
         )
-        selected = [
-            results[0]["vectorWithDistances"][i]["metaData"] for i in mmr_selected
-        ]
+        selected = []
+        for i in mmr_selected:
+            meta_data = {}
+            for k, v in results[0]["vectorWithDistances"][i]["scalarData"].items():
+                meta_data.update({str(k): v["fields"][0]["data"]})
+            selected.append(meta_data)
         return [
-            Document(page_content=metadata.pop((self._text_key)), metadata=metadata)
+            Document(page_content=metadata.pop(self._text_key), metadata=metadata)
             for metadata in selected
         ]
 
@@ -328,9 +336,11 @@ class Dingo(VectorStore):
         # upsert to Dingo
         for i in range(0, len(list(texts)), batch_size):
             j = i + batch_size
-            dingo_client.vector_add(
+            add_res = dingo_client.vector_add(
                 index_name, metadatas_list[i:j], embeds[i:j], ids[i:j]
             )
+            if not add_res:
+                raise Exception("vector add fail")
         return cls(embedding, text_key, client=dingo_client, index_name=index_name)
 
     def delete(

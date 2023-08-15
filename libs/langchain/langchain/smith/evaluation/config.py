@@ -3,7 +3,7 @@
 from typing import Any, Dict, List, Optional, Union
 
 from langsmith import RunEvaluator
-from pydantic import BaseModel, Field
+from pydantic_v1 import BaseModel, Field
 
 from langchain.embeddings.base import Embeddings
 from langchain.evaluation.criteria.eval_chain import CRITERIA_TYPE
