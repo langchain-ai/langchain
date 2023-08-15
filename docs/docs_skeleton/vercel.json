@@ -1654,7 +1654,7 @@
     },
     {
       "source": "/en/latest/modules/chains/examples/llm_checker.html",
-      "destination": "/docs/use_cases/self_check/llm_checker"
+      "destination": "/docs/use_cases/more/self_check/llm_checker"
     },
     {
       "source": "/en/latest/modules/chains/examples/llm_math.html",
@@ -1666,7 +1666,7 @@
     },
     {
       "source": "/en/latest/modules/chains/examples/llm_summarization_checker.html",
-      "destination": "/docs/use_cases/self_check/llm_summarization_checker"
+      "destination": "/docs/use_cases/more/self_check/llm_summarization_checker"
     },
     {
       "source": "/en/latest/modules/chains/examples/openapi.html",
@@ -4026,11 +4026,27 @@
     },
     {
       "source": "/docs/modules/chains/additional/llm_checker",
-      "destination": "/docs/use_cases/self_check/llm_checker"
+      "destination": "/docs/use_cases/more/self_check/llm_checker"
+    },
+    {
+      "source": "/docs/use_cases/self_check/llm_checker",
+      "destination": "/docs/use_cases/more/self_check/llm_checker"
     },
     {
       "source": "/docs/modules/chains/additional/llm_summarization_checker",
-      "destination": "/docs/use_cases/self_check/llm_summarization_checker"
+      "destination": "/docs/use_cases/more/self_check/llm_summarization_checker"
+    },
+    {
+      "source": "/docs/use_cases/self_check/llm_summarization_checker",
+      "destination": "/docs/use_cases/more/self_check/llm_summarization_checker"
+    },
+    {
+      "source": "/docs/use_cases/self_check/smart_llm",
+      "destination": "/docs/use_cases/more/self_check/smart_llm"
+    },
+    {
+      "source": "/docs/use_cases/self_check(/?)",
+      "destination": "/docs/use_cases/more/self_check/"
     },
     {
       "source": "/docs/modules/chains/additional/elasticsearch_database",
