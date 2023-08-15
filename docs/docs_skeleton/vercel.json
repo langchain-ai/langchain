@@ -1646,7 +1646,7 @@
     },
     {
       "source": "/en/latest/modules/chains/examples/llm_math.html",
-      "destination": "/docs/use_cases/code_writing/llm_math"
+      "destination": "/docs/use_cases/more/code_writing/llm_math"
     },
     {
       "source": "/en/latest/modules/chains/examples/llm_requests.html",
@@ -1662,7 +1662,7 @@
     },
     {
       "source": "/en/latest/modules/chains/examples/pal.html",
-      "destination": "/docs/use_cases/code_writing/pal"
+      "destination": "/docs/use_cases/more/code_writing/pal"
     },
     {
       "source": "/en/latest/modules/chains/examples/tagging.html",
@@ -3858,23 +3858,51 @@
     },
     {
       "source": "/docs/modules/chains/additional/cpal",
-      "destination": "/docs/use_cases/code_writing/cpal"
+      "destination": "/docs/use_cases/more/code_writing/cpal"
+    },
+    {
+      "source": "/docs/use_cases/code_writing/cpal",
+      "destination": "/docs/use_cases/more/code_writing/cpal"
     },
     {
       "source": "/docs/modules/chains/additional/llm_bash",
-      "destination": "/docs/use_cases/code_writing/llm_bash"
+      "destination": "/docs/use_cases/more/code_writing/llm_bash"
+    },
+    {
+      "source": "/docs/use_cases/code_writing/llm_bash",
+      "destination": "/docs/use_cases/more/code_writing/llm_bash"
     },
     {
       "source": "/docs/modules/chains/additional/llm_math",
-      "destination": "/docs/use_cases/code_writing/llm_math"
+      "destination": "/docs/use_cases/more/code_writing/llm_math"
+    },
+    {
+      "source": "/docs/use_cases/code_writing/llm_math",
+      "destination": "/docs/use_cases/more/code_writing/llm_math"
     },
     {
       "source": "/docs/modules/chains/additional/llm_symbolic_math",
-      "destination": "/docs/use_cases/code_writing/llm_symbolic_math"
+      "destination": "/docs/use_cases/more/code_writing/llm_symbolic_math"
+    },
+    {
+      "source": "/docs/use_cases/code_writing/llm_symbolic_math",
+      "destination": "/docs/use_cases/more/code_writing/llm_symbolic_math"
     },
     {
       "source": "/docs/modules/chains/additional/pal",
-      "destination": "/docs/use_cases/code_writing/pal"
+      "destination": "/docs/use_cases/more/code_writing/pal"
+    },
+    {
+      "source": "/docs/use_cases/code_writing/pal",
+      "destination": "/docs/use_cases/more/code_writing/pal"
+    },
+    {
+      "source": "/docs/uses_cases/code_writing(/?)",
+      "destination": "/docs/use_cases/more/code_writing/"
+    },
+    {
+      "source": "/docs/uses_cases/graph(/?)",
+      "destination": "/docs/use_cases/more/graph/"
     },
     {
       "source": "/docs/modules/chains/additional/graph_arangodb_qa",
