@@ -1,6 +1,7 @@
 """Test Anthropic API wrapper."""
-import pytest
 from typing import List
+
+import pytest
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.anthropic import ChatAnthropic
