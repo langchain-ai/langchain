@@ -16,11 +16,11 @@ def _get_client(api_url: Optional[str] = None, api_key: Optional[str] = None) ->
 
 def push(
     repo_full_name: str,
-    parent_commit_hash: Optional[str],
     object: Any,
     *,
     api_url: Optional[str] = None,
     api_key: Optional[str] = None,
+    parent_commit_hash: Optional[str] = "latest",
     **kwargs: Dict[str, Any]
 ) -> str:
     """
@@ -28,14 +28,15 @@ def push(
     """
     client = _get_client(api_url, api_key)
     manifest_json = dumps(object)
-    resp = client.push(repo_full_name, parent_commit_hash, manifest_json)
+    resp = client.push(
+        repo_full_name, manifest_json, parent_commit_hash=parent_commit_hash
+    )
     commit_hash: str = resp["commit"]["commit_hash"]
     return commit_hash
 
 
 def pull(
-    repo_full_name: str,
-    commit_hash: str,
+    owner_repo_commit: str,
     *,
     api_url: Optional[str] = None,
     api_key: Optional[str] = None,
@@ -45,5 +46,5 @@ def pull(
     Pulls an object from the hub and returns it.
     """
     client = _get_client(api_url, api_key)
-    resp: str = client.pull(repo_full_name, commit_hash)
+    resp: str = client.pull(owner_repo_commit)
     return loads(resp)
