@@ -38,6 +38,7 @@ class NIBittensorLLM(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> str:
         """
         Wrapper around the bittensor top miner models. Its built by Neural Internet.
