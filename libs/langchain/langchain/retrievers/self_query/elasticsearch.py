@@ -100,7 +100,7 @@ class ElasticsearchTranslator(Visitor):
                 field: comparison.value
             }
         }
-
+        
     def visit_structured_query(
         self, structured_query: StructuredQuery
     ) -> Tuple[str, dict]:

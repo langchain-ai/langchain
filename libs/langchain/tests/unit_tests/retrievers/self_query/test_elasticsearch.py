@@ -15,43 +15,43 @@ DEFAULT_TRANSLATOR = ElasticsearchTranslator()
 
 def test_visit_comparison() -> None:
     comp = Comparison(comparator=Comparator.EQ, attribute="foo", value="1")
-    expected = {"term": { "foo": "1"}}
+    expected = {"term": { "metadata.foo.keyword": "1"}}
     actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
     assert expected == actual
 
 def test_visit_comparison_range_gt() -> None:
     comp = Comparison(comparator=Comparator.GT, attribute="foo", value=1)
-    expected = {"range": { "foo": { "gt": 1}}}
+    expected = {"range": { "metadata.foo": { "gt": 1}}}
     actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
     assert expected == actual
 
 def test_visit_comparison_range_gte() -> None:
     comp = Comparison(comparator=Comparator.GTE, attribute="foo", value=1)
-    expected = {"range": { "foo": { "gte": 1}}}
+    expected = {"range": { "metadata.foo": { "gte": 1}}}
     actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
     assert expected == actual
 
 def test_visit_comparison_range_lt() -> None:
     comp = Comparison(comparator=Comparator.LT, attribute="foo", value=1)
-    expected = {"range": { "foo": { "lt": 1}}}
+    expected = {"range": { "metadata.foo": { "lt": 1}}}
     actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
     assert expected == actual
 
 def test_visit_comparison_range_lte() -> None:
     comp = Comparison(comparator=Comparator.LTE, attribute="foo", value=1)
-    expected = {"range": { "foo": { "lte": 1}}}
+    expected = {"range": { "metadata.foo": { "lte": 1}}}
     actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
     assert expected == actual
 
 def test_visit_comparison_range_match() -> None:
     comp = Comparison(comparator=Comparator.CONTAIN, attribute="foo", value="1")
-    expected = {"match": { "foo": "1"}}
+    expected = {"match": { "metadata.foo": "1"}}
     actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
     assert expected == actual
 
 def test_visit_comparison_range_like() -> None:
     comp = Comparison(comparator=Comparator.LIKE, attribute="foo", value="bar")
-    expected = {"fuzzy": {"foo": { "value": "bar", "fuzziness": "AUTO"}}}
+    expected = {"fuzzy": {"metadata.foo": { "value": "bar", "fuzziness": "AUTO"}}}
     actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
     assert expected == actual
 
@@ -66,8 +66,8 @@ def test_visit_operation() -> None:
     expected = {
         "bool": {
             "must": [
-                {"term": { "foo": 2}},
-                {"term": { "bar": "baz"}}
+                {"term": { "metadata.foo": 2}},
+                {"term": { "metadata.bar.keyword": "baz"}}
             ]
         }
     }
@@ -85,8 +85,8 @@ def test_visit_operation_or() -> None:
     expected = {
         "bool": {
             "should": [
-                {"term": { "foo": 2}},
-                {"term": { "bar": "baz"}}
+                {"term": { "metadata.foo": 2}},
+                {"term": { "metadata.bar.keyword": "baz"}}
             ]
         }
     }
@@ -104,8 +104,8 @@ def test_visit_operation_not() -> None:
     expected = {
         "bool": {
             "must_not": [
-                {"term": { "foo": 2}},
-                {"term": { "bar": "baz"}}
+                {"term": { "metadata.foo": 2}},
+                {"term": { "metadata.bar.keyword": "baz"}}
             ]
         }
     }
@@ -134,7 +134,7 @@ def test_visit_structured_query_filter() -> None:
     )
     expected = (
         query,
-        {"filter": {"term": { "foo": "1"}}},
+        {"filter": [{"term": { "metadata.foo.keyword": "1"}}]},
     )
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
     assert expected == actual
@@ -156,14 +156,14 @@ def test_visit_structured_query_filter_and() -> None:
     expected = (
         query,
         {
-            "filter": {
+            "filter": [{
                 "bool": {
                     "must": [
-                        {"term": { "foo": 2}},
-                        {"term": { "bar": "baz"}}
+                        {"term": { "metadata.foo": 2}},
+                        {"term": { "metadata.bar.keyword": "baz"}}
                     ]
                 }
-            }
+            }]
         },
     )
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
@@ -192,21 +192,21 @@ def test_visit_structured_query_complex() -> None:
     expected = (
         query,
         {
-            "filter": {
+            "filter": [{
                 "bool": {
                     "must": [
-                        {"term": { "foo": 2}},
+                        {"term": { "metadata.foo": 2}},
                         {
                             "bool": {
                                 "should": [
-                                    {"range": { "bar": { "lt": 1}}},
-                                    {"fuzzy": {"bar": { "value": "10", "fuzziness": "AUTO"}}}
+                                    {"range": { "metadata.bar": { "lt": 1}}},
+                                    {"fuzzy": {"metadata.bar": { "value": "10", "fuzziness": "AUTO"}}}
                                 ]
                             }
                         }
                     ]
                 }
-            }
+            }]
         },
     )
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
