@@ -3909,11 +3909,15 @@
       "destination": "/docs/use_cases/more/code_writing/pal"
     },
     {
-      "source": "/docs/uses_cases/code_writing(/?)",
+      "source": "/docs/use_cases/code_writing/",
       "destination": "/docs/use_cases/more/code_writing/"
     },
     {
-      "source": "/docs/uses_cases/graph(/?)",
+      "source": "/docs/use_cases/code_writing(/?)",
+      "destination": "/docs/use_cases/more/code_writing/"
+    },
+    {
+      "source": "/docs/use_cases/graph(/?)",
       "destination": "/docs/use_cases/more/graph/"
     },
     {
