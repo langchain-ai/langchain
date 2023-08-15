@@ -7,7 +7,7 @@ from typing import Dict, List, Optional
 
 import aiohttp
 import requests
-from pydantic import Extra, root_validator
+from pydantic_v1 import Extra, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,

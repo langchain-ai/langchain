@@ -41,7 +41,7 @@ def redis_client() -> Redis:
 
 def test_mget(redis_client: Redis) -> None:
     """Test mget method."""
-    store = RedisStore(redis_client, ttl=None)
+    store = RedisStore(client=redis_client, ttl=None)
     keys = ["key1", "key2"]
     redis_client.mset({"key1": b"value1", "key2": b"value2"})
     result = store.mget(keys)
@@ -50,7 +50,7 @@ def test_mget(redis_client: Redis) -> None:
 
 def test_mset(redis_client: Redis) -> None:
     """Test that multiple keys can be set."""
-    store = RedisStore(redis_client, ttl=None)
+    store = RedisStore(client=redis_client, ttl=None)
     key_value_pairs = [("key1", b"value1"), ("key2", b"value2")]
     store.mset(key_value_pairs)
     result = redis_client.mget(["key1", "key2"])
@@ -59,7 +59,7 @@ def test_mset(redis_client: Redis) -> None:
 
 def test_mdelete(redis_client: Redis) -> None:
     """Test that deletion works as expected."""
-    store = RedisStore(redis_client, ttl=None)
+    store = RedisStore(client=redis_client, ttl=None)
     keys = ["key1", "key2"]
     redis_client.mset({"key1": b"value1", "key2": b"value2"})
     store.mdelete(keys)
@@ -68,7 +68,7 @@ def test_mdelete(redis_client: Redis) -> None:
 
 
 def test_yield_keys(redis_client: Redis) -> None:
-    store = RedisStore(redis_client, ttl=None)
+    store = RedisStore(client=redis_client, ttl=None)
     redis_client.mset({"key1": b"value1", "key2": b"value2"})
     assert sorted(store.yield_keys()) == ["key1", "key2"]
     assert sorted(store.yield_keys(prefix="key*")) == ["key1", "key2"]
@@ -77,7 +77,7 @@ def test_yield_keys(redis_client: Redis) -> None:
 
 def test_namespace(redis_client: Redis) -> None:
     """Test that a namespace is prepended to all keys properly."""
-    store = RedisStore(redis_client, ttl=None, namespace="meow")
+    store = RedisStore(client=redis_client, ttl=None, namespace="meow")
     key_value_pairs = [("key1", b"value1"), ("key2", b"value2")]
     store.mset(key_value_pairs)
 

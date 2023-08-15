@@ -37,7 +37,7 @@ def _make_iterator(
 
 
 class FileSystemBlobLoader(BlobLoader):
-    """Blob loader for the local file system.
+    """Load blobs in the local file system.
 
     Example:
 
@@ -58,7 +58,7 @@ class FileSystemBlobLoader(BlobLoader):
         suffixes: Optional[Sequence[str]] = None,
         show_progress: bool = False,
     ) -> None:
-        """Initialize with path to directory and how to glob over it.
+        """Initialize with a path to directory and how to glob over it.
 
         Args:
             path: Path to directory to load from
@@ -74,26 +74,23 @@ class FileSystemBlobLoader(BlobLoader):
 
         Examples:
 
-        ... code-block:: python
+            .. code-block:: python
 
-            # Recursively load all text files in a directory.
-            loader = FileSystemBlobLoader("/path/to/directory", glob="**/*.txt")
+                # Recursively load all text files in a directory.
+                loader = FileSystemBlobLoader("/path/to/directory", glob="**/*.txt")
 
-            # Recursively load all files in a directory, except for py or pyc files.
-            loader = FileSystemBlobLoader(
-                "/path/to/directory",
-                glob="**/*.txt",
-                exclude=["**/*.py", "**/*.pyc"]
-            )
+                # Recursively load all non-hidden files in a directory.
+                loader = FileSystemBlobLoader("/path/to/directory", glob="**/[!.]*")
 
-            # Recursively load all non-hidden files in a directory.
-            loader = FileSystemBlobLoader("/path/to/directory", glob="**/[!.]*")
+                # Load all files in a directory without recursion.
+                loader = FileSystemBlobLoader("/path/to/directory", glob="*")
 
-            # Load all files in a directory without recursion.
-            loader = FileSystemBlobLoader("/path/to/directory", glob="*")
-
-            # Load all files in a directory without recursion.
-
+                # Recursively load all files in a directory, except for py or pyc files.
+                loader = FileSystemBlobLoader(
+                    "/path/to/directory",
+                    glob="**/*.txt",
+                    exclude=["**/*.py", "**/*.pyc"]
+                )
         """
         if isinstance(path, Path):
             _path = path

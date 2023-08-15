@@ -216,10 +216,25 @@ class SQLiteCache(SQLAlchemyCache):
 class RedisCache(BaseCache):
     """Cache that uses Redis as a backend."""
 
-    # TODO - implement a TTL policy in Redis
+    def __init__(self, redis_: Any, *, ttl: Optional[int] = None):
+        """
+        Initialize an instance of RedisCache.
 
-    def __init__(self, redis_: Any):
-        """Initialize by passing in Redis instance."""
+        This method initializes an object with Redis caching capabilities.
+        It takes a `redis_` parameter, which should be an instance of a Redis
+        client class, allowing the object to interact with a Redis
+        server for caching purposes.
+
+        Parameters:
+            redis_ (Any): An instance of a Redis client class
+                (e.g., redis.Redis) used for caching.
+                This allows the object to communicate with a
+                Redis server for caching operations.
+            ttl (int, optional): Time-to-live (TTL) for cached items in seconds.
+                If provided, it sets the time duration for how long cached
+                items will remain valid. If not provided, cached items will not
+                have an automatic expiration.
+        """
         try:
             from redis import Redis
         except ImportError:
@@ -230,6 +245,7 @@ class RedisCache(BaseCache):
         if not isinstance(redis_, Redis):
             raise ValueError("Please pass in Redis object.")
         self.redis = redis_
+        self.ttl = ttl
 
     def _key(self, prompt: str, llm_string: str) -> str:
         """Compute key from prompt and llm_string"""
@@ -261,12 +277,19 @@ class RedisCache(BaseCache):
                 return
         # Write to a Redis HASH
         key = self._key(prompt, llm_string)
-        self.redis.hset(
-            key,
-            mapping={
-                str(idx): generation.text for idx, generation in enumerate(return_val)
-            },
-        )
+
+        with self.redis.pipeline() as pipe:
+            pipe.hset(
+                key,
+                mapping={
+                    str(idx): generation.text
+                    for idx, generation in enumerate(return_val)
+                },
+            )
+            if self.ttl is not None:
+                pipe.expire(key, self.ttl)
+
+            pipe.execute()
 
     def clear(self, **kwargs: Any) -> None:
         """Clear cache. If `asynchronous` is True, flush asynchronously."""

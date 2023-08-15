@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any, Dict, List, Mapping, Optional, Union
 
-from pydantic import Extra, Field
+from pydantic_v1 import Extra, Field
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple

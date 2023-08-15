@@ -1,5 +1,3 @@
-"""Loads processed documents from Docugami."""
-
 import io
 import logging
 import os
@@ -8,7 +6,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
 
 import requests
-from pydantic import BaseModel, root_validator
+from pydantic_v1 import BaseModel, root_validator
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -29,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 class DocugamiLoader(BaseLoader, BaseModel):
-    """Loads processed docs from Docugami.
+    """Load from `Docugami`.
 
     To use, you should have the ``lxml`` python package installed.
     """

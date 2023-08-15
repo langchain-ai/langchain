@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Iterator, List, Optional
 
-from pydantic import BaseModel
+from pydantic_v1 import BaseModel
 
 from langchain.embeddings.base import Embeddings
 
