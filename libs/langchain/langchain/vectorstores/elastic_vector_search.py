@@ -332,12 +332,20 @@ class ElasticVectorSearch(VectorStore, ABC):
             ids: List of ids to delete.
         """
 
-        if ids is None:
+        if not ids:  # include empty list.
             raise ValueError("No ids provided to delete.")
 
-        # TODO: Check if this can be done in bulk
-        for id in ids:
-            self.client.delete(index=self.index_name, id=id)
+        try:
+            from elasticsearch.helpers import bulk
+        except ImportError:
+            raise ImportError(
+                "Could not import elasticsearch python package. "
+                "Please install it with `pip install elasticsearch`."
+            )
+
+        # this can be done in bulk
+        actions = ({"_id": _id, "_op_type": "delete"} for _id in ids)
+        bulk(client=self.client, actions=actions, index=self.index_name, refresh=True)
 
 
 class ElasticKnnSearch(VectorStore, ABC):
