@@ -5064,22 +5064,6 @@ docs = ["mkdocs", "mkdocs-jupyter", "mkdocs-material", "mkdocstrings[python]"]
 tests = ["doctest", "pytest", "pytest-mock"]
 
 [[package]]
-name = "langchainhub"
-version = "0.1.1"
-description = ""
-category = "main"
-optional = false
-python-versions = ">=3.8.1,<4.0"
-files = [
-    {file = "langchainhub-0.1.1-py3-none-any.whl", hash = "sha256:8467a8e1f9e52743aeeb03ab92d3ff849f2ec0e2fbb9fbdb5894c114e173b086"},
-    {file = "langchainhub-0.1.1.tar.gz", hash = "sha256:bd9de5a519eebab243bb0f456f66915f2c629ee9d94ff892f2c555d8ecfb4e33"},
-]
-
-[package.dependencies]
-requests = ">=2,<3"
-types-requests = ">=2.31.0.2,<3.0.0.0"
-
-[[package]]
 name = "langcodes"
 version = "3.3.0"
 description = "Tools for labeling human languages with IETF language tags"
@@ -13338,4 +13322,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "1e7c22cece8aa8ec8096a4cbfbaaa02586c01809213e9821f9a6e93c4604b543"
+content-hash = "b61889380aec6007b6fcf7f823bf9b783177f2641c8efa0bc29b547b481c5b02"
