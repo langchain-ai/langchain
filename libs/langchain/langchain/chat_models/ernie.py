@@ -35,11 +35,25 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     return message_dict
 
 
-class ErnieChat(BaseChatModel):
-    """Ernie Chat large language model.
-    To use, you should have the ``client_id`` and ``client_secret`` set.
+class ErnieBotChat(BaseChatModel):
+    """ErnieBot Chat large language model.
+
+    ERNIE-Bot is a large language model developed by Baidu,
+    covering a huge amount of Chinese data.
+
+    To use, you should have the `ernie_client_id` and `ernie_client_secret` set.
+
+    or set the environment variable `ERNIE_CLIENT_ID` and `ERNIE_CLIENT_SECRET`.
+
     access_token will be automatically generated based on client_id and client_secret,
-    and will be regenerated after expiration
+    and will be regenerated after expiration.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.chat_models import ErnieBotChat
+            chat = ErnieBotChat()
+
     """
 
     ernie_client_id: Optional[str] = None
