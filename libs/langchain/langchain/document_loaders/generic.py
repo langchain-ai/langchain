@@ -105,7 +105,7 @@ class GenericLoader(BaseLoader):
         path: _PathLike,
         *,
         glob: str = "**/[!.]*",
-        exclude: Sequence[str] = ()
+        exclude: Sequence[str] = (),
         suffixes: Optional[Sequence[str]] = None,
         show_progress: bool = False,
         parser: Union[DEFAULT, BaseBlobParser] = "default",
