@@ -562,8 +562,8 @@ class ElasticsearchStore(VectorStore):
         return es_client
 
     @property
-    def embeddings(self) -> Embeddings:
-        return self.embeddings
+    def embeddings(self) -> Optional[Embeddings]:
+        return self.embedding
 
     def similarity_search(
         self,
@@ -679,10 +679,10 @@ class ElasticsearchStore(VectorStore):
             index=self.index_name,
             **query_body,
             size=k,
-            source=fields,  # type: ignore
+            source=fields,
         )
 
-        hits = [hit for hit in response["hits"]["hits"]]  # type: ignore
+        hits = [hit for hit in response["hits"]["hits"]]
         docs_and_scores = [
             (
                 Document(
