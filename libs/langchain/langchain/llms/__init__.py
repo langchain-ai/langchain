@@ -39,6 +39,7 @@ from langchain.llms.ctransformers import CTransformers
 from langchain.llms.databricks import Databricks
 from langchain.llms.deepinfra import DeepInfra
 from langchain.llms.deepsparse import DeepSparse
+from langchain.llms.bittensor import NIBittensorLLM
 from langchain.llms.edenai import EdenAI
 from langchain.llms.fake import FakeListLLM
 from langchain.llms.fireworks import Fireworks, FireworksChat
@@ -127,6 +128,7 @@ __all__ = [
     "Modal",
     "MosaicML",
     "Nebula",
+    "NIBittensorLLM",
     "NLPCloud",
     "Ollama",
     "OpenAI",
@@ -195,6 +197,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "modal": Modal,
     "mosaic": MosaicML,
     "nebula": Nebula,
+    "nibittensor": NIBittensorLLM,
     "nlpcloud": NLPCloud,
     "ollama": Ollama,
     "openai": OpenAI,
