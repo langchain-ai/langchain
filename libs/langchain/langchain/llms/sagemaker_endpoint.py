@@ -171,6 +171,12 @@ class SagemakerEndpoint(LLM):
                     # use default credentials
                     session = boto3.Session()
 
+                if values["region_name"] is None:
+                    raise ValueError(
+                        "region_name parameter is missing. "
+                        "Please add the region_name parameter in order to connect to client"
+                                     )
+
                 values["client"] = session.client(
                     "sagemaker-runtime", region_name=values["region_name"]
                 )
