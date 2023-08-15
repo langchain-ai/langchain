@@ -1621,16 +1621,28 @@
       "destination": "/docs/use_cases/question_answering/how_to/flare"
     },
     {
+      "source": "/docs/use_cases/graph/graph_cypher_qa",
+      "destination": "/docs/use_cases/more/graph/graph_cypher_qa"
+    },
+    {
       "source": "/en/latest/modules/chains/examples/graph_cypher_qa.html",
-      "destination": "/docs/use_cases/graph/graph_cypher_qa"
+      "destination": "/docs/use_cases/more/graph/graph_cypher_qa"
+    },
+    {
+      "source": "/docs/use_cases/graph/graph_nebula_qa",
+      "destination": "/docs/use_cases/more/graph/graph_nebula_qa"
     },
     {
       "source": "/en/latest/modules/chains/examples/graph_nebula_qa.html",
-      "destination": "/docs/use_cases/graph/graph_nebula_qa"
+      "destination": "/docs/use_cases/more/graph/graph_nebula_qa"
+    },
+    {
+      "source": "/docs/use_cases/graph/graph_qa",
+      "destination": "/docs/use_cases/more/graph/graph_qa"
     },
     {
       "source": "/en/latest/modules/chains/index_examples/graph_qa.html",
-      "destination": "/docs/use_cases/graph/graph_qa"
+      "destination": "/docs/use_cases/more/graph/graph_qa"
     },
     {
       "source": "/en/latest/modules/chains/index_examples/hyde.html",
@@ -1642,11 +1654,11 @@
     },
     {
       "source": "/en/latest/modules/chains/examples/llm_checker.html",
-      "destination": "/docs/use_cases/self_check/llm_checker"
+      "destination": "/docs/use_cases/more/self_check/llm_checker"
     },
     {
       "source": "/en/latest/modules/chains/examples/llm_math.html",
-      "destination": "/docs/use_cases/code_writing/llm_math"
+      "destination": "/docs/use_cases/more/code_writing/llm_math"
     },
     {
       "source": "/en/latest/modules/chains/examples/llm_requests.html",
@@ -1654,7 +1666,7 @@
     },
     {
       "source": "/en/latest/modules/chains/examples/llm_summarization_checker.html",
-      "destination": "/docs/use_cases/self_check/llm_summarization_checker"
+      "destination": "/docs/use_cases/more/self_check/llm_summarization_checker"
     },
     {
       "source": "/en/latest/modules/chains/examples/openapi.html",
@@ -1662,7 +1674,7 @@
     },
     {
       "source": "/en/latest/modules/chains/examples/pal.html",
-      "destination": "/docs/use_cases/code_writing/pal"
+      "destination": "/docs/use_cases/more/code_writing/pal"
     },
     {
       "source": "/en/latest/modules/chains/examples/tagging.html",
@@ -3858,59 +3870,127 @@
     },
     {
       "source": "/docs/modules/chains/additional/cpal",
-      "destination": "/docs/use_cases/code_writing/cpal"
+      "destination": "/docs/use_cases/more/code_writing/cpal"
+    },
+    {
+      "source": "/docs/use_cases/code_writing/cpal",
+      "destination": "/docs/use_cases/more/code_writing/cpal"
     },
     {
       "source": "/docs/modules/chains/additional/llm_bash",
-      "destination": "/docs/use_cases/code_writing/llm_bash"
+      "destination": "/docs/use_cases/more/code_writing/llm_bash"
+    },
+    {
+      "source": "/docs/use_cases/code_writing/llm_bash",
+      "destination": "/docs/use_cases/more/code_writing/llm_bash"
     },
     {
       "source": "/docs/modules/chains/additional/llm_math",
-      "destination": "/docs/use_cases/code_writing/llm_math"
+      "destination": "/docs/use_cases/more/code_writing/llm_math"
+    },
+    {
+      "source": "/docs/use_cases/code_writing/llm_math",
+      "destination": "/docs/use_cases/more/code_writing/llm_math"
     },
     {
       "source": "/docs/modules/chains/additional/llm_symbolic_math",
-      "destination": "/docs/use_cases/code_writing/llm_symbolic_math"
+      "destination": "/docs/use_cases/more/code_writing/llm_symbolic_math"
+    },
+    {
+      "source": "/docs/use_cases/code_writing/llm_symbolic_math",
+      "destination": "/docs/use_cases/more/code_writing/llm_symbolic_math"
     },
     {
       "source": "/docs/modules/chains/additional/pal",
-      "destination": "/docs/use_cases/code_writing/pal"
+      "destination": "/docs/use_cases/more/code_writing/pal"
+    },
+    {
+      "source": "/docs/use_cases/code_writing/pal",
+      "destination": "/docs/use_cases/more/code_writing/pal"
+    },
+    {
+      "source": "/docs/use_cases/code_writing/",
+      "destination": "/docs/use_cases/more/code_writing/"
+    },
+    {
+      "source": "/docs/use_cases/code_writing(/?)",
+      "destination": "/docs/use_cases/more/code_writing/"
+    },
+    {
+      "source": "/docs/use_cases/graph(/?)",
+      "destination": "/docs/use_cases/more/graph/"
+    },
+    {
+      "source": "/docs/use_cases/graph/graph_arangodb_qa",
+      "destination": "/docs/use_cases/more/graph/graph_arangodb_qa"
     },
     {
       "source": "/docs/modules/chains/additional/graph_arangodb_qa",
-      "destination": "/docs/use_cases/graph/graph_arangodb_qa"
+      "destination": "/docs/use_cases/more/graph/graph_arangodb_qa"
+    },
+    {
+      "source": "/docs/use_cases/graph/graph_cypher_qa",
+      "destination": "/docs/use_cases/more/graph/graph_cypher_qa"
     },
     {
       "source": "/docs/modules/chains/additional/graph_cypher_qa",
-      "destination": "/docs/use_cases/graph/graph_cypher_qa"
+      "destination": "/docs/use_cases/more/graph/graph_cypher_qa"
+    },
+    {
+      "source": "/docs/use_cases/graph/graph_hugegraph_qa",
+      "destination": "/docs/use_cases/more/graph/graph_hugegraph_qa"
     },
     {
       "source": "/docs/modules/chains/additional/graph_hugegraph_qa",
-      "destination": "/docs/use_cases/graph/graph_hugegraph_qa"
+      "destination": "/docs/use_cases/more/graph/graph_hugegraph_qa"
+    },
+    {
+      "source": "/docs/use_cases/graph/graph_kuzu_qa",
+      "destination": "/docs/use_cases/more/graph/graph_kuzu_qa"
     },
     {
       "source": "/docs/modules/chains/additional/graph_kuzu_qa",
-      "destination": "/docs/use_cases/graph/graph_kuzu_qa"
+      "destination": "/docs/use_cases/more/graph/graph_kuzu_qa"
+    },
+    {
+      "source": "/docs/use_cases/graph/graph_nebula_qa",
+      "destination": "/docs/use_cases/more/graph/graph_nebula_qa"
     },
     {
       "source": "/docs/modules/chains/additional/graph_nebula_qa",
-      "destination": "/docs/use_cases/graph/graph_nebula_qa"
+      "destination": "/docs/use_cases/more/graph/graph_nebula_qa"
+    },
+    {
+      "source": "/docs/use_cases/graph/graph_qa",
+      "destination": "/docs/use_cases/more/graph/graph_qa"
     },
     {
       "source": "/docs/modules/chains/additional/graph_qa",
-      "destination": "/docs/use_cases/graph/graph_qa"
+      "destination": "/docs/use_cases/more/graph/graph_qa"
+    },
+    {
+      "source": "/docs/use_cases/graph/graph_sparql_qa",
+      "destination": "/docs/use_cases/more/graph/graph_sparql_qa"
     },
     {
       "source": "/docs/modules/chains/additional/graph_sparql_qa",
-      "destination": "/docs/use_cases/graph/graph_sparql_qa"
+      "destination": "/docs/use_cases/more/graph/graph_sparql_qa"
+    },
+    {
+      "source": "/docs/use_cases/graph/neptune_cypher_qa",
+      "destination": "/docs/use_cases/more/graph/neptune_cypher_qa"
     },
     {
       "source": "/docs/modules/chains/additional/neptune_cypher_qa",
-      "destination": "/docs/use_cases/graph/neptune_cypher_qa"
+      "destination": "/docs/use_cases/more/graph/neptune_cypher_qa"
+    },
+    {
+      "source": "/docs/use_cases/graph/tot",
+      "destination": "/docs/use_cases/more/graph/tot"
     },
     {
       "source": "/docs/modules/chains/additional/tot",
-      "destination": "/docs/use_cases/graph/tot"
+      "destination": "/docs/use_cases/more/graph/tot"
     },
     {
       "source": "/docs/use_cases/question_answering//document-context-aware-QA",
@@ -3946,11 +4026,27 @@
     },
     {
       "source": "/docs/modules/chains/additional/llm_checker",
-      "destination": "/docs/use_cases/self_check/llm_checker"
+      "destination": "/docs/use_cases/more/self_check/llm_checker"
+    },
+    {
+      "source": "/docs/use_cases/self_check/llm_checker",
+      "destination": "/docs/use_cases/more/self_check/llm_checker"
     },
     {
       "source": "/docs/modules/chains/additional/llm_summarization_checker",
-      "destination": "/docs/use_cases/self_check/llm_summarization_checker"
+      "destination": "/docs/use_cases/more/self_check/llm_summarization_checker"
+    },
+    {
+      "source": "/docs/use_cases/self_check/llm_summarization_checker",
+      "destination": "/docs/use_cases/more/self_check/llm_summarization_checker"
+    },
+    {
+      "source": "/docs/use_cases/self_check/smart_llm",
+      "destination": "/docs/use_cases/more/self_check/smart_llm"
+    },
+    {
+      "source": "/docs/use_cases/self_check(/?)",
+      "destination": "/docs/use_cases/more/self_check/"
     },
     {
       "source": "/docs/modules/chains/additional/elasticsearch_database",
