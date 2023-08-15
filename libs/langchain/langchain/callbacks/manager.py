@@ -644,6 +644,14 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
             **kwargs,
         )
 
+    def on_event(
+        self,
+        token: str,
+        function_call: Any,
+        **kwargs: Any,
+    ) -> None:
+        pass
+
 
 class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
     """Async callback manager for LLM run."""
@@ -706,6 +714,14 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
             tags=self.tags,
             **kwargs,
         )
+
+    async def on_event(
+        self,
+        token: str,
+        function_call: Any,
+        **kwargs: Any,
+    ) -> None:
+        pass
 
 
 class CallbackManagerForChainRun(ParentRunManager, ChainManagerMixin):
