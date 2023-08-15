@@ -117,7 +117,7 @@ class Vectara(VectorStore):
 
         response = self._session.post(
             headers=self._get_post_headers(),
-            url="https://api.vectara.io/v1/core/index",
+            url="https://api.vectara.io/v1/index",
             data=json.dumps(request),
             timeout=self.vectara_api_timeout,
             verify=True,
@@ -223,11 +223,12 @@ class Vectara(VectorStore):
         doc = {
             "document_id": doc_id,
             "metadataJson": json.dumps(doc_metadata),
-            "parts": [
+            "section": [
                 {"text": text, "metadataJson": json.dumps(md)}
                 for text, md in zip(texts, metadatas)
             ],
         }
+
         success_str = self._index_doc(doc)
         if success_str == "E_ALREADY_EXISTS":
             self._delete_doc(doc_id)
@@ -304,6 +305,7 @@ class Vectara(VectorStore):
             return []
 
         result = response.json()
+
         responses = result["responseSet"][0]["response"]
         vectara_default_metadata = ["lang", "len", "offset"]
         docs = [
