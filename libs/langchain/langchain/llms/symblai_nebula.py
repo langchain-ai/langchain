@@ -207,7 +207,8 @@ def make_request(
 
     if response.status_code != 200:
         raise Exception(
-            f"Request failed with status code {response.status_code} and message {response.text}"
+            f"Request failed with status code {response.status_code}"
+            f" and message {response.text}"
         )
 
     return json.loads(response.text)
