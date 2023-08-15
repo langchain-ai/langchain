@@ -93,7 +93,7 @@ def _parse_examples(examples: List[BaseMessage]) -> List["InputOutputTextPair"]:
 
 
 class ChatVertexAI(_VertexAICommon, BaseChatModel):
-    """Wrapper around Vertex AI large language models."""
+    """`Vertex AI` Chat large language models API."""
 
     model_name: str = "chat-bison"
 
