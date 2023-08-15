@@ -1,9 +1,11 @@
 """Document Loader for ArcGIS FeatureLayers."""
+
 from __future__ import annotations
 
 import json
 import re
 import warnings
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Iterator, List, Optional, Union
 
 from langchain.docstore.document import Document
@@ -25,6 +27,7 @@ class ArcGISLoader(BaseLoader):
         where: str = "1=1",
         out_fields: Optional[Union[List[str], str]] = None,
         return_geometry: bool = False,
+        return_all_records: bool = True,
         **kwargs: Any,
     ):
         try:
@@ -64,10 +67,12 @@ class ArcGISLoader(BaseLoader):
             self.out_fields = ",".join(out_fields)
 
         self.return_geometry = return_geometry
+        self.return_all_records = return_all_records
         self.kwargs = kwargs
 
     def _get_layer_properties(self) -> dict:
         """Get the layer properties from the FeatureLayer."""
+        import arcgis
 
         layer_number_pattern = re.compile(r"/\d+$")
         props = self.layer.properties
@@ -109,7 +114,7 @@ class ArcGISLoader(BaseLoader):
             where=self.where,
             out_fields=self.out_fields,
             return_geometry=self.return_geometry,
-            return_all_records=True,
+            return_all_records=self.return_all_records,
             **self.kwargs,
         )
         features = (feature.as_dict["attributes"] for feature in query_response)
@@ -117,6 +122,8 @@ class ArcGISLoader(BaseLoader):
             yield Document(
                 page_content=json.dumps(feature),
                 metadata={
+                    "accessed": f"{datetime.now(timezone.utc).isoformat()}Z",
+                    "name": self.layer_properties["layer_properties"]["name"],
                     "url": self.url,
                     "layer_description": self.layer_properties["layer_description"],
                     "item_description": self.layer_properties["item_description"],
