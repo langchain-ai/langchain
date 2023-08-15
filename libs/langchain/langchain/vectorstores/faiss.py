@@ -493,7 +493,11 @@ class FAISS(VectorStore):
         self.index.remove_ids(np.array(index_to_delete, dtype=np.int64))
         for _id in index_to_delete:
             del self.index_to_docstore_id[_id]
-
+        
+        # reset index_to_docstore_id
+        reindex_id = {k: v for k, v in zip(range(self.index.ntotal), self.index_to_docstore_id.values())}
+        self.index_to_docstore_id = reindex_id
+        
         # Remove items from docstore.
         self.docstore.delete(ids)
         return True
