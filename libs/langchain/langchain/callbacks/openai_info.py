@@ -121,6 +121,10 @@ class OpenAICallbackHandler(BaseCallbackHandler):
     completion_tokens: int = 0
     successful_requests: int = 0
     total_cost: float = 0.0
+    streaming: bool = False
+    streaming_model_name: str = ""
+    streaming_prompt_tokens: int = 0
+    streaming_completion_tokens: int = 0
 
     def __repr__(self) -> str:
         return (
@@ -140,20 +144,37 @@ class OpenAICallbackHandler(BaseCallbackHandler):
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
         """Print out the prompts."""
-        pass
+        if kwargs["invocation_params"]["stream"] is not None:
+            self.streaming = kwargs["invocation_params"]["stream"]
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """Print out the token."""
-        pass
+        if kwargs["model"] is not None:
+            self.streaming_model_name = kwargs["model"]
+        if kwargs["prompt_tokens"] is not None:
+            self.streaming_prompt_tokens = kwargs["prompt_tokens"]
+        if token is not None and token != "":
+            self.streaming_completion_tokens += 1
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Collect token usage."""
-        if response.llm_output is None:
+        if response.llm_output is None and self.streaming is False:
             return None
+        if self.streaming and self.streaming_completion_tokens > 0:
+            response.llm_output = {}
+            response.llm_output["token_usage"] = {}
+            token_usage = {}
+            token_usage["completion_tokens"] = self.streaming_completion_tokens
+            token_usage["prompt_tokens"] = self.streaming_prompt_tokens
+            token_usage["total_tokens"] = (
+                self.streaming_prompt_tokens + self.streaming_completion_tokens
+            )
+            response.llm_output["model_name"] = self.streaming_model_name
+        else:
+            if "token_usage" not in response.llm_output:
+                return None
+            token_usage = response.llm_output["token_usage"]
         self.successful_requests += 1
-        if "token_usage" not in response.llm_output:
-            return None
-        token_usage = response.llm_output["token_usage"]
         completion_tokens = token_usage.get("completion_tokens", 0)
         prompt_tokens = token_usage.get("prompt_tokens", 0)
         model_name = standardize_model_name(response.llm_output.get("model_name", ""))

@@ -300,6 +300,7 @@ class ChatOpenAI(BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
+        prompt_tokens = self.get_num_tokens_from_messages(messages=messages)
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class = AIMessageChunk
@@ -308,12 +309,15 @@ class ChatOpenAI(BaseChatModel):
         ):
             if len(chunk["choices"]) == 0:
                 continue
+            model = chunk["model"]
             delta = chunk["choices"][0]["delta"]
             chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
             default_chunk_class = chunk.__class__
             yield ChatGenerationChunk(message=chunk)
             if run_manager:
-                run_manager.on_llm_new_token(chunk.content)
+                run_manager.on_llm_new_token(
+                    chunk.content, model=model, prompt_tokens=prompt_tokens
+                )
 
     def _generate(
         self,
@@ -374,6 +378,7 @@ class ChatOpenAI(BaseChatModel):
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
+        prompt_tokens = self.get_num_tokens_from_messages(messages=messages)
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class = AIMessageChunk
@@ -382,12 +387,15 @@ class ChatOpenAI(BaseChatModel):
         ):
             if len(chunk["choices"]) == 0:
                 continue
+            model = chunk["model"]
             delta = chunk["choices"][0]["delta"]
             chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
             default_chunk_class = chunk.__class__
             yield ChatGenerationChunk(message=chunk)
             if run_manager:
-                await run_manager.on_llm_new_token(chunk.content)
+                await run_manager.on_llm_new_token(
+                    chunk.content, model=model, prompt_tokens=prompt_tokens
+                )
 
     async def _agenerate(
         self,
