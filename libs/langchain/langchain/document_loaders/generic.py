@@ -105,6 +105,7 @@ class GenericLoader(BaseLoader):
         path: _PathLike,
         *,
         glob: str = "**/[!.]*",
+        exclude: Sequence[str] = ()
         suffixes: Optional[Sequence[str]] = None,
         show_progress: bool = False,
         parser: Union[DEFAULT, BaseBlobParser] = "default",
@@ -124,7 +125,7 @@ class GenericLoader(BaseLoader):
             A generic document loader.
         """
         blob_loader = FileSystemBlobLoader(
-            path, glob=glob, suffixes=suffixes, show_progress=show_progress
+            path, glob=glob, exclude=exclude, suffixes=suffixes, show_progress=show_progress
         )
         if isinstance(parser, str):
             blob_parser = get_parser(parser)
