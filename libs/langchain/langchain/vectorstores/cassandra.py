@@ -3,7 +3,18 @@ from __future__ import annotations
 
 import typing
 import uuid
-from typing import Any, Callable, Iterable, List, Optional, Tuple, Type, TypeVar
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import numpy as np
 
@@ -19,10 +30,12 @@ CVST = TypeVar("CVST", bound="Cassandra")
 
 
 class Cassandra(VectorStore):
-    """Wrapper around Cassandra embeddings platform.
+    """Wrapper around Apache Cassandra(R) for vector-store workloads.
 
-    There is no notion of a default table name, since each embedding
-    function implies its own vector dimension, which is part of the schema.
+    To use it, you need a recent installation of the `cassio` library
+    and a Cassandra cluster / Astra DB instance supporting vector capabilities.
+
+    Visit the cassio.org website for extensive quickstarts and code examples.
 
     Example:
         .. code-block:: python
@@ -31,12 +44,13 @@ class Cassandra(VectorStore):
                 from langchain.embeddings.openai import OpenAIEmbeddings
 
                 embeddings = OpenAIEmbeddings()
-                session = ...
-                keyspace = 'my_keyspace'
-                vectorstore = Cassandra(embeddings, session, keyspace, 'my_doc_archive')
+                session = ...             # create your Cassandra session object
+                keyspace = 'my_keyspace'  # the keyspace should exist already
+                table_name = 'my_vector_store'
+                vectorstore = Cassandra(embeddings, session, keyspace, table_name)
     """
 
-    _embedding_dimension: int | None
+    _embedding_dimension: Union[int, None]
 
     @staticmethod
     def _filter_to_metadata(filter_dict: Optional[Dict[str, str]]) -> Dict[str, Any]:
@@ -88,8 +102,18 @@ class Cassandra(VectorStore):
     def embeddings(self) -> Embeddings:
         return self.embedding
 
+    @staticmethod
+    def _dont_flip_the_cos_score(distance: float) -> float:
+        # the identity
+        return distance
+
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
-        return self._cosine_relevance_score_fn
+        """
+        The underlying VectorTable already returns a "score proper",
+        i.e. one in [0, 1] where higher means more *similar*,
+        so here the final score transformation is not reversing the interval:
+        """
+        return self._dont_flip_the_cos_score
 
     def delete_collection(self) -> None:
         """
