@@ -44,10 +44,10 @@ class MultionUpdateSession(BaseTool):
 
     name: str = "update_multion_session"
     description: str = """Use this tool to update \
-        a existing corresponding \
-    Multion Browser Window with provided fields. \
-        Note:TabId is got from one of the previous Browser window creation."""
+an existing corresponding Multion Browser Window with provided fields. \
+Note: TabId must be received from previous Browser window creation."""
     args_schema: Type[UpdateSessionSchema] = UpdateSessionSchema
+    tabId: str = ""
 
     def _run(
         self,
@@ -63,9 +63,10 @@ class MultionUpdateSession(BaseTool):
                 self.tabId = tabId
                 return content
             except Exception as e:
-                print(f"{e}, creating a new session")
-                response = multion.new_session({"input": query, "url": url})
-                self.tabID = response["tabId"]
-                return {"tabId": response["tabId"], "Response": response["message"]}
+                print(f"{e}, retrying...")
+                return {"error": f"{e}", "Response": "retrying..."}
+                # response = multion.new_session({"input": query, "url": url})
+                # self.tabID = response["tabId"]
+                # return {"tabId": response["tabId"], "Response": response["message"]}
         except Exception as e:
             raise Exception(f"An error occurred: {e}")
