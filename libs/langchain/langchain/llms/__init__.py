@@ -31,6 +31,7 @@ from langchain.llms.base import BaseLLM
 from langchain.llms.baseten import Baseten
 from langchain.llms.beam import Beam
 from langchain.llms.bedrock import Bedrock
+from langchain.llms.bittensor import NIBittensorLLM
 from langchain.llms.cerebriumai import CerebriumAI
 from langchain.llms.chatglm import ChatGLM
 from langchain.llms.clarifai import Clarifai
@@ -127,6 +128,7 @@ __all__ = [
     "Modal",
     "MosaicML",
     "Nebula",
+    "NIBittensorLLM",
     "NLPCloud",
     "Ollama",
     "OpenAI",
@@ -195,6 +197,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "modal": Modal,
     "mosaic": MosaicML,
     "nebula": Nebula,
+    "nibittensor": NIBittensorLLM,
     "nlpcloud": NLPCloud,
     "ollama": Ollama,
     "openai": OpenAI,

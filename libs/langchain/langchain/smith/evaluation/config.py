@@ -83,7 +83,9 @@ class RunEvalConfig(BaseModel):
         The language model to pass to any evaluators that use a language model.
     """  # noqa: E501
 
-    evaluators: List[Union[EvaluatorType, EvalConfig]] = Field(default_factory=list)
+    evaluators: List[Union[EvaluatorType, str, EvalConfig]] = Field(
+        default_factory=list
+    )
     """Configurations for which evaluators to apply to the dataset run.
     Each can be the string of an
     :class:`EvaluatorType <langchain.evaluation.schema.EvaluatorType>`, such
@@ -238,5 +240,23 @@ class RunEvalConfig(BaseModel):
         evaluator_type: EvaluatorType = EvaluatorType.CONTEXT_QA
         llm: Optional[BaseLanguageModel] = None
         prompt: Optional[BasePromptTemplate] = None
+
+    class JsonValidity(EvalConfig):
+        """Configuration for a json validity evaluator.
+
+        Parameters
+        ----------
+        """
+
+        evaluator_type: EvaluatorType = EvaluatorType.JSON_VALIDITY
+
+    class JsonEqualityEvaluator(EvalConfig):
+        """Configuration for a json equality evaluator.
+
+        Parameters
+        ----------
+        """
+
+        evaluator_type: EvaluatorType = EvaluatorType.JSON_EQUALITY
 
     # TODO: Trajectory
