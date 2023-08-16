@@ -100,6 +100,19 @@ def _format_intermediate_steps(
     return messages
 
 
+def _format_arguments(arguments: str) -> str:
+    try:
+        json.loads(arguments)
+        
+        return arguments 
+    
+    except JSONDecodeError:
+        pass
+    
+    return json.dumps({"python_code": arguments})
+
+
+
 def _parse_ai_message(message: BaseMessage) -> Union[AgentAction, AgentFinish]:
     """Parse an AI message."""
     if not isinstance(message, AIMessage):
@@ -110,7 +123,8 @@ def _parse_ai_message(message: BaseMessage) -> Union[AgentAction, AgentFinish]:
     if function_call:
         function_name = function_call["name"]
         try:
-            _tool_input = json.loads(function_call["arguments"])
+            formatted_arguments = _format_arguments(function_call["arguments"])
+            _tool_input = json.loads(formatted_arguments)
         except JSONDecodeError:
             raise OutputParserException(
                 f"Could not parse tool input: {function_call} because "
@@ -138,6 +152,7 @@ def _parse_ai_message(message: BaseMessage) -> Union[AgentAction, AgentFinish]:
         )
 
     return AgentFinish(return_values={"output": message.content}, log=message.content)
+
 
 
 class OpenAIFunctionsAgent(BaseSingleActionAgent):
