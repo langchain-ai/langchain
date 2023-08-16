@@ -103,14 +103,12 @@ def _format_intermediate_steps(
 def _format_arguments(arguments: str) -> str:
     try:
         json.loads(arguments)
-        
-        return arguments 
-    
-    except JSONDecodeError:
-        pass
-    
-    return json.dumps({"python_code": arguments})
 
+        return arguments
+    except JSONDecodeError:
+        pass 
+
+    return json.dumps(arguments)
 
 
 def _parse_ai_message(message: BaseMessage) -> Union[AgentAction, AgentFinish]:
