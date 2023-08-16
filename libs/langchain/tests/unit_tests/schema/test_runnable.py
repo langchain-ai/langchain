@@ -760,6 +760,73 @@ def test_seq_prompt_map(mocker: MockerFixture, snapshot: SnapshotAssertion) -> N
     assert len(map_run.child_runs) == 3
 
 
+def test_map_stream() -> None:
+    prompt = (
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
+    )
+
+    chat = FakeListChatModel(responses=["i'm a chatbot"])
+
+    llm = FakeListLLM(responses=["i'm a textbot"])
+
+    chain = prompt | {
+        "chat": chat.bind(stop=["Thought:"]),
+        "llm": llm,
+        "passthrough": RunnablePassthrough(),
+    }
+
+    stream = chain.stream({"question": "What is your name?"})
+
+    final_value = None
+    for chunk in stream:
+        if final_value is None:
+            final_value = chunk
+        else:
+            final_value += chunk
+
+    assert final_value is not None
+    assert final_value.get("chat").content == "i'm a chatbot"
+    assert final_value.get("llm") == "i'm a textbot"
+    assert final_value.get("passthrough") == prompt.invoke(
+        {"question": "What is your name?"}
+    )
+
+
+@pytest.mark.asyncio
+async def test_map_astream() -> None:
+    prompt = (
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
+    )
+
+    chat = FakeListChatModel(responses=["i'm a chatbot"])
+
+    llm = FakeListLLM(responses=["i'm a textbot"])
+
+    chain = prompt | {
+        "chat": chat.bind(stop=["Thought:"]),
+        "llm": llm,
+        "passthrough": RunnablePassthrough(),
+    }
+
+    stream = chain.astream({"question": "What is your name?"})
+
+    final_value = None
+    async for chunk in stream:
+        if final_value is None:
+            final_value = chunk
+        else:
+            final_value += chunk
+
+    assert final_value is not None
+    assert final_value.get("chat").content == "i'm a chatbot"
+    assert final_value.get("llm") == "i'm a textbot"
+    assert final_value.get("passthrough") == prompt.invoke(
+        {"question": "What is your name?"}
+    )
+
+
 def test_bind_bind() -> None:
     llm = FakeListLLM(responses=["i'm a textbot"])
 

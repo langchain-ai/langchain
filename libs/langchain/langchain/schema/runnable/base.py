@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
-from itertools import tee
+from itertools import tee, zip_longest
 from typing import (
     Any,
     AsyncIterator,
@@ -32,7 +32,7 @@ from langchain.schema.runnable.config import RunnableConfig
 from langchain.schema.runnable.utils import (
     gather_with_concurrency,
 )
-from langchain.utils.aiter import atee, py_anext
+from langchain.utils.aiter import atee, azip_longest, py_anext
 
 Input = TypeVar("Input")
 # Output type should implement __concat__, as eg str, list, dict do
@@ -1086,6 +1086,24 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             )
 
 
+class RunnableMapChunk(Dict[str, Any]):
+    """
+    Partial output from a RunnableMap
+    """
+
+    def __add__(self, other: RunnableMapChunk) -> RunnableMapChunk:
+        chunk = RunnableMapChunk(self)
+        for key in other:
+            if chunk[key] is None:
+                chunk[key] = other[key]
+            elif other[key] is not None:
+                try:
+                    chunk[key] = chunk[key] + other[key]
+                except TypeError:
+                    chunk[key] = other[key]
+        return chunk
+
+
 class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
     """
     A runnable that runs a mapping of runnables in parallel,
@@ -1135,7 +1153,9 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
             local_metadata=None,
         )
         # start the root run
-        run_manager = callback_manager.on_chain_start(dumpd(self), {"input": input})
+        run_manager = callback_manager.on_chain_start(
+            dumpd(self), input if isinstance(input, dict) else {"input": input}
+        )
 
         # gather results from all steps
         try:
@@ -1178,7 +1198,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
         )
         # start the root run
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self), {"input": input}
+            dumpd(self), input if isinstance(input, dict) else {"input": input}
         )
 
         # gather results from all steps
@@ -1203,6 +1223,93 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
         else:
             await run_manager.on_chain_end(output)
             return output
+
+    def stream(
+        self, input: Input, config: Optional[RunnableConfig] = None
+    ) -> Iterator[RunnableMapChunk]:
+        from langchain.callbacks.manager import CallbackManager
+
+        # setup callbacks
+        config = config or {}
+        callback_manager = CallbackManager.configure(
+            inheritable_callbacks=config.get("callbacks"),
+            local_callbacks=None,
+            verbose=False,
+            inheritable_tags=config.get("tags"),
+            local_tags=None,
+            inheritable_metadata=config.get("metadata"),
+            local_metadata=None,
+        )
+        # start the root run
+        run_manager = callback_manager.on_chain_start(
+            dumpd(self), input if isinstance(input, dict) else {"input": input}
+        )
+
+        steps = dict(self.steps)
+        final_output = None
+        try:
+            for results in zip_longest(
+                *(step.stream(input, config) for step in steps.values())
+            ):
+                chunk = RunnableMapChunk(
+                    {key: value for key, value in zip(steps, results)}
+                )
+                yield chunk
+                if final_output is None:
+                    final_output = chunk
+                else:
+                    final_output += chunk
+        # finish the root run
+        except (KeyboardInterrupt, Exception) as e:
+            run_manager.on_chain_error(e)
+            raise
+        else:
+            run_manager.on_chain_end(
+                final_output if final_output is not None else {"output": None}
+            )
+
+    async def astream(
+        self, input: Input, config: Optional[RunnableConfig] = None
+    ) -> AsyncIterator[RunnableMapChunk]:
+        from langchain.callbacks.manager import AsyncCallbackManager
+
+        # setup callbacks
+        config = config or {}
+        callback_manager = AsyncCallbackManager.configure(
+            inheritable_callbacks=config.get("callbacks"),
+            local_callbacks=None,
+            verbose=False,
+            inheritable_tags=config.get("tags"),
+            local_tags=None,
+            inheritable_metadata=config.get("metadata"),
+            local_metadata=None,
+        )
+        # start the root run
+        run_manager = await callback_manager.on_chain_start(
+            dumpd(self), input if isinstance(input, dict) else {"input": input}
+        )
+
+        steps = dict(self.steps)
+        final_output = None
+        try:
+            async for results in azip_longest(
+                *(step.astream(input, config) for step in steps.values())
+            ):
+                chunk = RunnableMapChunk(
+                    {key: value for key, value in zip(steps, results)}
+                )
+                yield chunk
+                if final_output is None:
+                    final_output = chunk
+                else:
+                    final_output += chunk
+        except (KeyboardInterrupt, Exception) as e:
+            await run_manager.on_chain_error(e)
+            raise
+        else:
+            await run_manager.on_chain_end(
+                final_output if final_output is not None else {"output": None}
+            )
 
 
 class RunnableLambda(Runnable[Input, Output]):
