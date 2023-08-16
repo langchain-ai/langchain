@@ -3,8 +3,8 @@ from __future__ import annotations
 import asyncio
 import copy
 from abc import ABC, abstractmethod
-from concurrent.futures import ThreadPoolExecutor
-from itertools import tee, zip_longest
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from itertools import tee
 from typing import (
     Any,
     AsyncIterator,
@@ -33,7 +33,7 @@ from langchain.schema.runnable.config import RunnableConfig
 from langchain.schema.runnable.utils import (
     gather_with_concurrency,
 )
-from langchain.utils.aiter import atee, azip_longest, py_anext
+from langchain.utils.aiter import atee, py_anext
 
 Input = TypeVar("Input")
 # Output type should implement __concat__, as eg str, list, dict do
@@ -1246,20 +1246,37 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
         steps = dict(self.steps)
         final_output = None
         try:
-            for results in zip_longest(
-                *(
-                    step.stream(input, patch_config(config, run_manager.get_child()))
-                    for step in steps.values()
-                )
-            ):
-                chunk = RunnableMapChunk(
-                    {key: value for key, value in zip(steps, results)}
-                )
-                yield chunk
-                if final_output is None:
-                    final_output = chunk
-                else:
-                    final_output += chunk
+            with ThreadPoolExecutor() as executor:
+                named_generators = [
+                    (
+                        step_name,
+                        steps[step_name].stream(
+                            input, patch_config(config, run_manager.get_child())
+                        ),
+                    )
+                    for step_name in steps
+                ]
+                futures = {
+                    executor.submit(next, generator): (step_name, generator)
+                    for step_name, generator in named_generators
+                }
+                while futures:
+                    completed_futures, _ = wait(futures, return_when=FIRST_COMPLETED)
+                    for future in completed_futures:
+                        (step_name, generator) = futures.pop(future)
+                        try:
+                            chunk = RunnableMapChunk({step_name: future.result()})
+                            yield chunk
+                            if final_output is None:
+                                final_output = chunk
+                            else:
+                                final_output += chunk
+                            futures[executor.submit(next, generator)] = (
+                                step_name,
+                                generator,
+                            )
+                        except StopIteration:
+                            pass
         # finish the root run
         except (KeyboardInterrupt, Exception) as e:
             run_manager.on_chain_error(e)
@@ -1291,22 +1308,36 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
         )
 
         steps = dict(self.steps)
+        named_generators = [
+            (
+                step_name,
+                steps[step_name].astream(
+                    input, patch_config(config, run_manager.get_child())
+                ),
+            )
+            for step_name in steps
+        ]
+        tasks = {
+            asyncio.create_task(py_anext(generator)): (step_name, generator)  # type: ignore
+            for step_name, generator in named_generators
+        }
         final_output = None
         try:
-            async for results in azip_longest(
-                *(
-                    step.astream(input, patch_config(config, run_manager.get_child()))
-                    for step in steps.values()
-                )
-            ):
-                chunk = RunnableMapChunk(
-                    {key: value for key, value in zip(steps, results)}
-                )
-                yield chunk
-                if final_output is None:
-                    final_output = chunk
-                else:
-                    final_output += chunk
+            while tasks:
+                done, _ = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+                for task in done:
+                    (step_name, generator) = tasks.pop(task)
+                    try:
+                        chunk = RunnableMapChunk({step_name: task.result()})
+                        yield chunk
+                        if final_output is None:
+                            final_output = chunk
+                        else:
+                            final_output += chunk
+                        new_task = asyncio.create_task(py_anext(generator))  # type: ignore
+                        tasks[new_task] = (step_name, generator)
+                    except StopAsyncIteration:
+                        pass
         except (KeyboardInterrupt, Exception) as e:
             await run_manager.on_chain_error(e)
             raise

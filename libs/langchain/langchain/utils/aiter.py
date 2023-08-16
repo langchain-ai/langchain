@@ -69,55 +69,6 @@ async def _repeat(value: T) -> AsyncIterator[T]:
         yield value
 
 
-async def azip_longest(
-    *iterables: AsyncIterator[Any], fillvalue: Any = None
-) -> AsyncIterator[Tuple[Any, ...]]:
-    """
-    Create an async iterator that aggregates elements from each of the (async) iterables
-
-    The next element of ``zip_longest`` is a :py:class:`tuple` of the next element of
-    each of its ``iterables``. As soon as all of its ``iterables`` are exhausted,
-    ``zip_longest`` is exhausted as well. Shorter iterables are padded by ``fillvalue``.
-    This means that if ``zip_longest`` receives *n* ``iterables``,
-    with the longest having *m* elements, it becomes a generator *m*-times producing
-    an *n*-tuple.
-
-    If ``iterables`` is empty, the ``zip_longest`` iterator is empty as well.
-    Multiple ``iterables`` may be mixed regular and async iterables.
-    """
-    if not iterables:
-        return
-    fill_iter = _repeat(fillvalue).__aiter__()
-    async_iters = [it.__aiter__() for it in iterables]
-    del iterables
-    try:
-        remaining = len(async_iters)
-        while True:
-            values = []
-            for index, aiterator in enumerate(async_iters):
-                try:
-                    value = await aiterator.__anext__()
-                except StopAsyncIteration:
-                    remaining -= 1
-                    if not remaining:
-                        return
-                    async_iters[index] = fill_iter
-                    values.append(fillvalue)
-                else:
-                    values.append(value)
-                    del value
-            yield tuple(values)
-    finally:
-        await fill_iter.aclose()  # type: ignore
-        for iterator in async_iters:
-            try:
-                aclose = iterator.aclose()  # type: ignore
-            except AttributeError:
-                pass
-            else:
-                await aclose
-
-
 async def tee_peer(
     iterator: AsyncIterator[T],
     # the buffer specific to this peer
