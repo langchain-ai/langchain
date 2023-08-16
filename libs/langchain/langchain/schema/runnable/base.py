@@ -1329,8 +1329,10 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
         final_output = None
         try:
             while tasks:
-                done, _ = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-                for task in done:
+                completed_tasks, _ = await asyncio.wait(
+                    tasks, return_when=asyncio.FIRST_COMPLETED
+                )
+                for task in completed_tasks:
                     (step_name, generator) = tasks.pop(task)
                     try:
                         chunk = RunnableMapChunk({step_name: task.result()})
