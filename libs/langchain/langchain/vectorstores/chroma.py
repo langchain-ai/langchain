@@ -205,12 +205,22 @@ class Chroma(VectorStore):
                     [embeddings[idx] for idx in non_empty_ids] if embeddings else None
                 )
                 ids_with_metadata = [ids[idx] for idx in non_empty_ids]
-                self._collection.upsert(
-                    metadatas=metadatas,
-                    embeddings=embeddings_with_metadatas,
-                    documents=texts_with_metadatas,
-                    ids=ids_with_metadata,
-                )
+                try:
+                    self._collection.upsert(
+                        metadatas=metadatas,
+                        embeddings=embeddings_with_metadatas,
+                        documents=texts_with_metadatas,
+                        ids=ids_with_metadata,
+                    )
+                except ValueError as e:
+                    if "Expected metadata value to be" in str(e):
+                        msg = (
+                            "Try filtering complex metadata from the document using "
+                            "langchain.vectorstore.utils.filter_complex_metadata."
+                        )
+                        raise ValueError(e.args[0] + "\n\n" + msg)
+                    else:
+                        raise e
             if empty_ids:
                 texts_without_metadatas = [texts[j] for j in empty_ids]
                 embeddings_without_metadatas = (

@@ -3,7 +3,7 @@
 import json
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, Field
+from pydantic_v1 import BaseModel, Field
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.chains import RetrievalQA, RetrievalQAWithSourcesChain

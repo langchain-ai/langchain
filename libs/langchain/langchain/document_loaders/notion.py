@@ -1,4 +1,3 @@
-"""Loads Notion directory dump."""
 from pathlib import Path
 from typing import List
 
@@ -7,7 +6,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class NotionDirectoryLoader(BaseLoader):
-    """Loads Notion directory dump."""
+    """Load `Notion directory` dump."""
 
     def __init__(self, path: str):
         """Initialize with a file path."""

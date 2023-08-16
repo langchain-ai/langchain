@@ -1,7 +1,7 @@
 import json
 from typing import Any, Dict, List, Optional
 
-from pydantic import validator
+from pydantic_v1 import validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import SimpleChatModel
@@ -17,7 +17,7 @@ from langchain.utils import get_from_dict_or_env
 
 
 class LlamaContentFormatter(ContentFormatterBase):
-    """Content formatter for LLaMa"""
+    """Content formatter for `LLaMA`."""
 
     SUPPORTED_ROLES = ["user", "assistant", "system"]
 
@@ -66,7 +66,7 @@ class LlamaContentFormatter(ContentFormatterBase):
 
 
 class AzureMLChatOnlineEndpoint(SimpleChatModel):
-    """Azure ML Chat Online Endpoint models.
+    """`AzureML` Chat models API.
 
     Example:
         .. code-block:: python

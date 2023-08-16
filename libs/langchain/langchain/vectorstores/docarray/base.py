@@ -2,7 +2,7 @@ from abc import ABC
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
 
 import numpy as np
-from pydantic import Field
+from pydantic_v1 import Field
 
 from langchain.embeddings.base import Embeddings
 from langchain.schema import Document

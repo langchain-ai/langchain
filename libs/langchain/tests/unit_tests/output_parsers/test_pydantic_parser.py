@@ -2,7 +2,7 @@
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic_v1 import BaseModel, Field
 
 from langchain.output_parsers.pydantic import PydanticOutputParser
 from langchain.schema import OutputParserException
