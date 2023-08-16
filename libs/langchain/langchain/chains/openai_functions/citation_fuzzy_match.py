@@ -1,6 +1,6 @@
 from typing import Iterator, List
 
-from pydantic import BaseModel, Field
+from pydantic_v1 import BaseModel, Field
 
 from langchain.chains.llm import LLMChain
 from langchain.chains.openai_functions.utils import get_llm_kwargs

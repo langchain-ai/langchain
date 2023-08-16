@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from typing import Any, List, Optional, Sequence
 
-from pydantic import Extra
+from pydantic_v1 import Extra
 
 from langchain import PromptTemplate
 from langchain.callbacks.manager import Callbacks

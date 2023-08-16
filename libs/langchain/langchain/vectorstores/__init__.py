@@ -33,6 +33,7 @@ from langchain.vectorstores.cassandra import Cassandra
 from langchain.vectorstores.chroma import Chroma
 from langchain.vectorstores.clarifai import Clarifai
 from langchain.vectorstores.clickhouse import Clickhouse, ClickhouseSettings
+from langchain.vectorstores.dashvector import DashVector
 from langchain.vectorstores.deeplake import DeepLake
 from langchain.vectorstores.dingo import Dingo
 from langchain.vectorstores.docarray import DocArrayHnswSearch, DocArrayInMemorySearch
@@ -40,6 +41,7 @@ from langchain.vectorstores.elastic_vector_search import (
     ElasticKnnSearch,
     ElasticVectorSearch,
 )
+from langchain.vectorstores.elasticsearch import ElasticsearchStore
 from langchain.vectorstores.faiss import FAISS
 from langchain.vectorstores.hologres import Hologres
 from langchain.vectorstores.lancedb import LanceDB
@@ -82,12 +84,14 @@ __all__ = [
     "Chroma",
     "Clickhouse",
     "ClickhouseSettings",
+    "DashVector",
     "DeepLake",
     "Dingo",
     "DocArrayHnswSearch",
     "DocArrayInMemorySearch",
     "ElasticVectorSearch",
     "ElasticKnnSearch",
+    "ElasticsearchStore",
     "FAISS",
     "PGEmbedding",
     "Hologres",

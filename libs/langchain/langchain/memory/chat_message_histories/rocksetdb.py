@@ -197,6 +197,12 @@ class RocksetChatMessageHistory(BaseChatMessageHistory):
         self.message_uuid_method = message_uuid_method
         self.sync = sync
 
+        try:
+            self.client.set_application("langchain")
+        except AttributeError:
+            # ignore
+            pass
+
         if not self._collection_exists():
             self._create_collection()
             self._wait_until_collection_created()

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from pydantic import root_validator
+from pydantic_v1 import root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -77,7 +77,7 @@ class ZepRetriever(BaseRetriever):
             text=query, metadata=metadata
         )
 
-        results: List[MemorySearchResult] = self.zep_client.search_memory(
+        results: List[MemorySearchResult] = self.zep_client.memory.search_memory(
             self.session_id, payload, limit=self.top_k
         )
 
@@ -96,7 +96,7 @@ class ZepRetriever(BaseRetriever):
             text=query, metadata=metadata
         )
 
-        results: List[MemorySearchResult] = await self.zep_client.asearch_memory(
+        results: List[MemorySearchResult] = await self.zep_client.memory.asearch_memory(
             self.session_id, payload, limit=self.top_k
         )
 
