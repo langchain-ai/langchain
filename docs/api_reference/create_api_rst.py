@@ -150,7 +150,8 @@ def _load_package_modules(
 
         relative_module_name = file_path.relative_to(package_path)
 
-        if str(relative_module_name).startswith("_"):
+        # Skip if any module part starts with an underscore
+        if any(part.startswith("_") for part in relative_module_name.parts):
             continue
 
         # Get the full namespace of the module
