@@ -86,7 +86,7 @@ class Clarifai(VectorStore):
         self._number_of_docs = number_of_docs
 
     def _post_texts_as_inputs(
-        self, texts: List[str], metadatas: List[dict] = None
+        self, texts: List[str], metadatas: Optional[List[dict]] = None
     ) -> List[str]:
         """Post text to Clarifai and return the ID of the input.
 
@@ -167,18 +167,20 @@ class Clarifai(VectorStore):
             List[str]: List of IDs of the added texts.
         """
 
-        assert len(list(texts)) > 0, "No texts provided to add to the vectorstore."
+        ltexts = list(texts)
+        length = len(ltexts)
+        assert length > 0, "No texts provided to add to the vectorstore."
 
         if metadatas is not None:
-            assert len(list(texts)) == len(
+            assert length == len(
                 metadatas
             ), "Number of texts and metadatas should be the same."
 
         batch_size = 32
         input_ids = []
-        for idx in range(0, len(texts), batch_size):
+        for idx in range(0, length, batch_size):
             try:
-                batch_texts = texts[idx : idx + batch_size]
+                batch_texts = ltexts[idx : idx + batch_size]
                 batch_metadatas = (
                     metadatas[idx : idx + batch_size] if metadatas else None
                 )
