@@ -175,7 +175,7 @@ class SagemakerEndpoint(LLM):
                     raise ValueError(
                         "region_name parameter is missing. "
                         "Please add the region_name parameter in order to connect to client"
-                                     )
+                    )
 
                 values["client"] = session.client(
                     "sagemaker-runtime", region_name=values["region_name"]
@@ -210,11 +210,11 @@ class SagemakerEndpoint(LLM):
         return "sagemaker_endpoint"
 
     def _call(
-        self,
-        prompt: str,
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
+            self,
+            prompt: str,
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
     ) -> str:
         """Call out to Sagemaker inference endpoint.
 
