@@ -135,8 +135,9 @@ class EdenAI(LLM):
         payload = {
             **self.params,
             "providers": self.provider,
-            "num_images": 1,  # always limit to 1 (ignored for text)
             "text": prompt,
+            **kwargs,
+            "num_images": 1,  # always limit to 1 (ignored for text)
         }
 
         if self.model is not None:
@@ -195,8 +196,9 @@ class EdenAI(LLM):
         payload = {
             **self.params,
             "providers": self.provider,
-            "num_images": 1,  # always limit to 1 (ignored for text)
             "text": prompt,
+            **kwargs,
+            "num_images": 1,  # always limit to 1 (ignored for text)
         }
 
         if self.model is not None:
