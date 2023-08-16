@@ -150,7 +150,7 @@ def _load_package_modules(
 
         relative_module_name = file_path.relative_to(package_path)
 
-        if relative_module_name.name.startswith("_"):
+        if str(relative_module_name).startswith("_"):
             continue
 
         # Get the full namespace of the module
