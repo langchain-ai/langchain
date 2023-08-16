@@ -17,7 +17,7 @@ class Generation(Serializable):
     """Generated text output."""
 
     generation_info: Optional[Dict[str, Any]] = None
-    """Raw response from the provider. May include things like the
+    """Raw response from the provider. May include things like the 
         reason for finishing or token log probabilities.
     """
     # TODO: add log probs as separate attribute
@@ -101,7 +101,7 @@ class ChatResult(BaseModel):
     """Class that contains all results for a single chat model call."""
 
     generations: List[ChatGeneration]
-    """List of the chat generations. This is a List because an input can have multiple
+    """List of the chat generations. This is a List because an input can have multiple 
         candidate generations.
     """
     llm_output: Optional[dict] = None
