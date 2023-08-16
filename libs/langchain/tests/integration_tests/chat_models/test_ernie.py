@@ -42,14 +42,14 @@ def test_extra_kwargs() -> None:
     assert chat.top_p == 0.7
 
 
-def test_failed_temperature_1() -> None:
+def test_wrong_temperature_1() -> None:
     chat = ErnieBotChat()
     message = HumanMessage(content="Hello")
     with pytest.raises(ValueError):
         chat([message], temperature=1.2)
 
 
-def test_failed_temperature_2() -> None:
+def test_wrong_temperature_2() -> None:
     chat = ErnieBotChat()
     message = HumanMessage(content="Hello")
     with pytest.raises(ValueError):
