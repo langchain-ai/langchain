@@ -231,3 +231,31 @@ class TestPinecone:
         assert all(
             (1 >= score or np.isclose(score, 1)) and score >= 0 for _, score in output
         )
+
+    @pytest.mark.skipif(reason="slow to run for benchmark")
+    def test_from_texts_with_metadatas_benchmark(
+        self, documents: List[Document], embedding_openai: OpenAIEmbeddings
+    ) -> None:
+        """Test end to end construction and search."""
+        POOL_THREADS = 4
+        MULTIPLIER = 1000
+        BATCH_SIZE = 32
+        EMBEDDING_CHUNK_SIZE = 1000
+
+        texts = [document.page_content for document in documents] * MULTIPLIER
+        uuids = [uuid.uuid4().hex for _ in range(len(texts))]
+        metadatas = [{"page": i} for i in range(len(texts))]
+        docsearch = Pinecone.from_texts(
+            texts,
+            embedding_openai,
+            ids=uuids,
+            metadatas=metadatas,
+            index_name=index_name,
+            namespace=namespace_name,
+            pool_threads=POOL_THREADS,
+            batch_size=BATCH_SIZE,
+            embeddings_chunk_size=EMBEDDING_CHUNK_SIZE,
+        )
+
+        query = "What did the president say about Ketanji Brown Jackson"
+        _ = docsearch.similarity_search(query, k=1, namespace=namespace_name)
