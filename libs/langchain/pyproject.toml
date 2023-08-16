@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.265"
+version = "0.0.266"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -12,7 +12,7 @@ langchain-server = "langchain.server:main"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-pydantic = ">=1,<3"
+pydantic = "^1"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
 PyYAML = ">=5.3"
@@ -334,6 +334,7 @@ extended_testing = [
  "feedparser",
  "xata",
  "xmltodict",
+ "faiss-cpu",
 ]
 
 [tool.ruff]
