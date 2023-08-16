@@ -51,9 +51,11 @@ class EdenaiTool(BaseTool):
                 f"EdenAI returned an unexpected response with status "
                 f"{response.status_code}: {response.text}"
             )
-            
-        if "error" in response.json()[0].keys():
-            raise ValueError(f"EdenAI received an invalid payload: {response.json()[0]['error']['message'] }" )
+        try :  
+            if "error" in response.json()[0].keys():
+                raise ValueError(f"EdenAI received an invalid payload: {response.json()[0]['error']['message'] }" )
+        except:
+            pass
         
         return response 
     
