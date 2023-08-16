@@ -1873,6 +1873,18 @@
       "destination": "/docs/integrations/document_loaders/youtube_transcript"
     },
     {
+      "source": "/docs/modules/data_connection/document_loaders/integrations/Etherscan",
+      "destination": "/docs/integrations/document_loaders/etherscan"
+    },
+    {
+      "source": "/docs/modules/data_connection/document_loaders/integrations/merge_doc_loader",
+      "destination": "/docs/integrations/document_loaders/merge_doc"
+    },
+    {
+      "source": "/docs/modules/data_connection/document_loaders/integrations/recursive_url_loader",
+      "destination": "/docs/integrations/document_loaders/recursive_url"
+    },
+    {
       "source": "/en/latest/modules/indexes/text_splitters/examples/markdown_header_metadata.html",
       "destination": "/docs/modules/data_connection/document_transformers/text_splitters/markdown_header_metadata"
     },
