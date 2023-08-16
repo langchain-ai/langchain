@@ -191,9 +191,6 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 class ChatLiteLLM(BaseChatModel):
     """`LiteLLM` Chat models API.
 
-    To use you must have the google.generativeai Python package installed and
-    either:
-
         1. The ``GOOGLE_API_KEY``` environment variable set with your API key, or
         2. Pass your API key using the google_api_key kwarg to the ChatGoogle
            constructor.
@@ -218,8 +215,9 @@ class ChatLiteLLM(BaseChatModel):
     streaming: bool = False
     api_base: Optional[str] = None
     organization: Optional[str] = None
+    custom_llm_provider: Optional[str] = None
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
-    temperature: Optional[float] = None
+    temperature: Optional[float] = 1
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Run inference with this temperature. Must by in the closed
        interval [0.0, 1.0]."""
