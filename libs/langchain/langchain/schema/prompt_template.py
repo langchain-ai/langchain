@@ -43,7 +43,7 @@ class BasePromptTemplate(Serializable, Runnable[Dict, PromptValue], ABC):
     def format_prompt(self, **kwargs: Any) -> PromptValue:
         """Create Chat Messages."""
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_variable_names(cls, values: Dict) -> Dict:
         """Validate variable names do not include restricted names."""

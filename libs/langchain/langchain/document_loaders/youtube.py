@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 from urllib.parse import parse_qs, urlparse
 
 from pydantic import root_validator
-from pydantic_v1.dataclasses import dataclass
+from pydantic.dataclasses import dataclass
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader

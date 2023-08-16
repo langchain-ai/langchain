@@ -99,7 +99,7 @@ class BaseGenerationOutputParser(
             )
 
 
-class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]):
+class BaseOutputParser(BaseLLMOutputParser[T], Runnable[Union[str, BaseMessage], T]):
     """Base class to parse the output of an LLM call.
 
     Output parsers help structure language model responses.
@@ -254,7 +254,7 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
         return output_parser_dict
 
 
-class BaseTransformOutputParser(BaseOutputParser[T]):
+class BaseTransformOutputParser(BaseOutputParser, Generic[T]):
     """Base class for an output parser that can handle streaming input."""
 
     def _transform(self, input: Iterator[Union[str, BaseMessage]]) -> Iterator[T]:

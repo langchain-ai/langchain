@@ -56,7 +56,7 @@ class ChatGeneration(Generation):
     message: BaseMessage
     """The message output by the chat model."""
 
-    @root_validator
+    @root_validator(skip_on_failure=True)
     def set_text(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Set the text attribute to be the contents of the message."""
         values["text"] = values["message"].content
