@@ -143,7 +143,7 @@ class SimpleSequentialChain(Chain):
         """
         return [self.output_key]
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_chains(cls, values: Dict) -> Dict:
         """Validate that chains are all single input/output."""

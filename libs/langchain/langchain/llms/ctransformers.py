@@ -58,7 +58,7 @@ class CTransformers(LLM):
         """Return type of llm."""
         return "ctransformers"
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that ``ctransformers`` package is installed."""

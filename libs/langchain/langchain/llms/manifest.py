@@ -13,7 +13,7 @@ class ManifestWrapper(LLM):
     llm_kwargs: Optional[Dict] = None
     model_config = ConfigDict(extra="forbid")
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that python package exists in environment."""

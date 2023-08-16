@@ -5,12 +5,24 @@ import datetime
 import warnings
 from typing import Any, Dict, List, Optional
 from uuid import UUID
+from enum import Enum
 
-from langsmith.schemas import RunBase as BaseRunV2
-from langsmith.schemas import RunTypeEnum as RunTypeEnumDep
 from pydantic import model_validator, BaseModel, Field
 
+# from langsmith.schemas import RunBase as BaseRunV2
 from langchain.schema import LLMResult
+
+
+class RunTypeEnumDep(str, Enum):
+    """(Deprecated) Enum for run types. Use string directly."""
+
+    tool = "tool"
+    chain = "chain"
+    llm = "llm"
+    retriever = "retriever"
+    embedding = "embedding"
+    prompt = "prompt"
+    parser = "parser"
 
 
 def RunTypeEnum() -> RunTypeEnumDep:
@@ -96,7 +108,46 @@ class ToolRun(BaseRun):
     child_tool_runs: List[ToolRun] = Field(default_factory=list)
 
 
-# Begin V2 API Schemas
+# class RunBase(BaseModel):
+#     """Base Run schema."""
+#
+#     id: UUID
+#     name: str
+#     start_time: datetime
+#     run_type: str
+#     """The type of run, such as tool, chain, llm, retriever,
+#     embedding, prompt, parser."""
+#     end_time: Optional[datetime] = None
+#     extra: Optional[dict] = None
+#     error: Optional[str] = None
+#     serialized: Optional[dict]
+#     events: Optional[List[Dict]] = None
+#     inputs: dict
+#     outputs: Optional[dict] = None
+#     reference_example_id: Optional[UUID] = None
+#     parent_run_id: Optional[UUID] = None
+#     tags: Optional[List[str]] = None
+
+
+class BaseRunV2(BaseModel):
+    """Base Run schema."""
+
+    id: UUID
+    name: str
+    start_time: datetime.datetime
+    run_type: str
+    """The type of run, such as tool, chain, llm, retriever,
+    embedding, prompt, parser."""
+    end_time: Optional[datetime.datetime] = None
+    extra: Optional[dict] = None
+    error: Optional[str] = None
+    serialized: Optional[dict]
+    events: Optional[List[Dict]] = None
+    inputs: dict
+    outputs: Optional[dict] = None
+    reference_example_id: Optional[UUID] = None
+    parent_run_id: Optional[UUID] = None
+    tags: Optional[List[str]] = None
 
 
 class Run(BaseRunV2):
@@ -127,7 +178,7 @@ __all__ = [
     "ChainRun",
     "LLMRun",
     "Run",
-    "RunTypeEnum",
+    "RunTypeEnumDep",
     "ToolRun",
     "TracerSession",
     "TracerSessionBase",

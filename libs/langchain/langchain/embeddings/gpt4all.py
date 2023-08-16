@@ -20,7 +20,7 @@ class GPT4AllEmbeddings(BaseModel, Embeddings):
 
     client: Any = None  #: :meta private:
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that GPT4All library is installed."""

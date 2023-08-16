@@ -66,7 +66,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
     metadata: Optional[Dict[str, Any]] = Field(default=None, exclude=True)
     """Metadata to add to the run trace."""
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def raise_deprecation(cls, values: Dict) -> Dict:
         """Raise deprecation warning if callback_manager is used."""

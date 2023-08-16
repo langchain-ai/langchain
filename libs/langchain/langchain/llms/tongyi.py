@@ -135,7 +135,7 @@ class Tongyi(LLM):
         """Return type of llm."""
         return "tongyi"
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""

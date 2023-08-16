@@ -50,12 +50,12 @@ class ArxivAPIWrapper(BaseModel):
     arxiv_search: Any = None  #: :meta private:
     arxiv_exceptions: Any = None  # :meta private:
     top_k_results: int = 3
-    ARXIV_MAX_QUERY_LENGTH = 300
+    ARXIV_MAX_QUERY_LENGTH: int = 300
     load_max_docs: int = 100
     load_all_available_meta: bool = False
     doc_content_chars_max: Optional[int] = 4000
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""

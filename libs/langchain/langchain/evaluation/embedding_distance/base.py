@@ -48,7 +48,7 @@ class _EmbeddingDistanceChainMixin(Chain):
     embeddings: Embeddings = Field(default_factory=OpenAIEmbeddings)
     distance_metric: EmbeddingDistance = Field(default=EmbeddingDistance.COSINE)
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def _validate_tiktoken_installed(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that the TikTok library is installed.

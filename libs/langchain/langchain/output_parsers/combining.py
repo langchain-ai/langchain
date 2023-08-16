@@ -16,7 +16,7 @@ class CombiningOutputParser(BaseOutputParser):
 
     parsers: List[BaseOutputParser]
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_parsers(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate the parsers."""

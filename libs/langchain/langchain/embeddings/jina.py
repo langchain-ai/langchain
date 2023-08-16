@@ -20,7 +20,7 @@ class JinaEmbeddings(BaseModel, Embeddings):
     jina_api_url: str = "https://api.clip.jina.ai/api/v1/models/"
     request_headers: Optional[dict] = None
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that auth token exists in environment."""

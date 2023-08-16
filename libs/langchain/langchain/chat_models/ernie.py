@@ -69,7 +69,7 @@ class ErnieBotChat(BaseChatModel):
 
     _lock = threading.Lock()
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         values["ernie_client_id"] = get_from_dict_or_env(

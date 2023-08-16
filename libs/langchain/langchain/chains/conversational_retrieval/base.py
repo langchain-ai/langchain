@@ -368,7 +368,7 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
     def _chain_type(self) -> str:
         return "chat-vector-db"
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def raise_deprecation(cls, values: Dict) -> Dict:
         warnings.warn(

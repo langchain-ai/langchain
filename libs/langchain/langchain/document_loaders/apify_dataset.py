@@ -49,7 +49,7 @@ class ApifyDatasetLoader(BaseLoader, BaseModel):
             dataset_id=dataset_id, dataset_mapping_function=dataset_mapping_function
         )
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate environment.

@@ -62,7 +62,7 @@ class _AnthropicCommon(BaseLanguageModel):
         )
         return values
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
@@ -160,7 +160,7 @@ class Anthropic(LLM, _AnthropicCommon):
             response = model(prompt)
     """
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def raise_warning(cls, values: Dict) -> Dict:
         """Raise warning that this class is deprecated."""

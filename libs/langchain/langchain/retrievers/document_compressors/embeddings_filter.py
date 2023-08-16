@@ -35,7 +35,7 @@ class EmbeddingsFilter(BaseDocumentCompressor):
     to None."""
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_params(cls, values: Dict) -> Dict:
         """Validate similarity parameters."""

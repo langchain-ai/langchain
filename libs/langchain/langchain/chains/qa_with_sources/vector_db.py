@@ -63,7 +63,7 @@ class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain):
     ) -> List[Document]:
         raise NotImplementedError("VectorDBQAWithSourcesChain does not support async")
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def raise_deprecation(cls, values: Dict) -> Dict:
         warnings.warn(

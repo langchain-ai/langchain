@@ -61,7 +61,7 @@ class TensorflowDatasets(BaseModel):
     sample_to_document_function: Optional[Callable[[Dict], Document]] = None
     dataset: Any = None  #: :meta private:
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""

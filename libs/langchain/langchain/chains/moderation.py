@@ -34,7 +34,7 @@ class OpenAIModerationChain(Chain):
     openai_api_key: Optional[str] = None
     openai_organization: Optional[str] = None
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""

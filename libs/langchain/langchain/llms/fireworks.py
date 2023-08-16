@@ -61,7 +61,7 @@ class BaseFireworks(BaseLLM):
         return super().__new__(cls)
     model_config = ConfigDict(populate_by_name=True)
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
@@ -190,7 +190,7 @@ class FireworksChat(BaseLLM):
     prefix_messages: List = Field(default_factory=list)
     """Series of messages for Chat input."""
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment"""

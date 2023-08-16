@@ -495,7 +495,7 @@ class Agent(BaseSingleActionAgent):
         """
         return list(set(self.llm_chain.input_keys) - {"agent_scratchpad"})
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_prompt(cls, values: Dict) -> Dict:
         """Validate that prompt matches format."""
@@ -695,7 +695,7 @@ s
             agent=agent, tools=tools, callback_manager=callback_manager, **kwargs
         )
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_tools(cls, values: Dict) -> Dict:
         """Validate that tools are compatible with agent."""
@@ -710,7 +710,7 @@ s
                 )
         return values
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_return_direct_tool(cls, values: Dict) -> Dict:
         """Validate that tools are compatible with agent."""

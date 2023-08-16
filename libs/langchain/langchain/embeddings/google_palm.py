@@ -61,7 +61,7 @@ class GooglePalmEmbeddings(BaseModel, Embeddings):
     model_name: str = "models/embedding-gecko-001"
     """Model name to use."""
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate api key, python package exists."""

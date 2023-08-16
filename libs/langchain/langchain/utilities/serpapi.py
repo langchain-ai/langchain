@@ -53,7 +53,7 @@ class SerpAPIWrapper(BaseModel):
     aiosession: Optional[aiohttp.ClientSession] = None
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""

@@ -28,7 +28,7 @@ class DallEAPIWrapper(BaseModel):
         response = self.client.create(**params)
         return response["data"][0]["url"]
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""

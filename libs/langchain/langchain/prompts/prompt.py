@@ -115,7 +115,7 @@ class PromptTemplate(StringPromptTemplate):
         kwargs = self._merge_partial_and_user_variables(**kwargs)
         return DEFAULT_FORMATTER_MAPPING[self.template_format](self.template, **kwargs)
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def template_is_valid(cls, values: Dict) -> Dict:
         """Check that template and input variables are consistent."""

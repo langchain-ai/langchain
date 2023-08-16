@@ -1,8 +1,6 @@
 import tokenize
 
 from langchain.document_loaders.text import TextLoader
-from langchain.tools.base import Tool
-
 
 
 class PythonLoader(TextLoader):

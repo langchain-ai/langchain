@@ -45,7 +45,7 @@ class LLMRequestsChain(Chain):
         """
         return [self.output_key]
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""

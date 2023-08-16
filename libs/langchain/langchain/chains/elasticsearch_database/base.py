@@ -49,7 +49,7 @@ class ElasticsearchDatabaseChain(Chain):
     """Whether or not to return the intermediate steps along with the final answer."""
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_indices(cls, values: dict) -> dict:
         if values["include_indices"] and values["ignore_indices"]:

@@ -47,7 +47,7 @@ class PubMedAPIWrapper(BaseModel):
     doc_content_chars_max: int = 2000
     email: str = "your_email@example.com"
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""

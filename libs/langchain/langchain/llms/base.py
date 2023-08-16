@@ -170,7 +170,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     """Metadata to add to the run trace."""
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def raise_deprecation(cls, values: Dict) -> Dict:
         """Raise deprecation warning if callback_manager is used."""

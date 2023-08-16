@@ -55,7 +55,7 @@ class StochasticAI(LLM):
         values["model_kwargs"] = extra
         return values
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""

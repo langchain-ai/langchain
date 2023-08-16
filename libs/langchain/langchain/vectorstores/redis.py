@@ -624,7 +624,7 @@ class RedisVectorStoreRetriever(VectorStoreRetriever):
     """Score threshold for similarity_limit search."""
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_search_type(cls, values: Dict) -> Dict:
         """Validate search type."""

@@ -57,7 +57,7 @@ class ConversationStringBufferMemory(BaseMemory):
     input_key: Optional[str] = None
     memory_key: str = "history"  #: :meta private:
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_chains(cls, values: Dict) -> Dict:
         """Validate that return messages is not True."""

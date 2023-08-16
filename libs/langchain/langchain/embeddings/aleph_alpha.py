@@ -81,7 +81,7 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
     nice to other users
     by de-prioritizing your request below concurrent ones."""
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""

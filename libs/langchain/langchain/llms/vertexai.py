@@ -153,7 +153,7 @@ class VertexAI(_VertexAICommon, LLM):
     tuned_model_name: Optional[str] = None
     "The name of a tuned model. If provided, model_name is ignored."
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""

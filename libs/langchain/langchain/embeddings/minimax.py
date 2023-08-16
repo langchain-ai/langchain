@@ -81,7 +81,7 @@ class MiniMaxEmbeddings(BaseModel, Embeddings):
     """API Key for MiniMax API."""
     model_config = ConfigDict(extra="forbid")
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that group id and api key exists in environment."""

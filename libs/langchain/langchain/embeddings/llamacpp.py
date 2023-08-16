@@ -56,7 +56,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
     """Number of layers to be loaded into gpu memory. Default None."""
     model_config = ConfigDict(extra="forbid")
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that llama-cpp-python library is installed."""

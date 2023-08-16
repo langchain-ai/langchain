@@ -97,7 +97,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
 
     model_name: str = "chat-bison"
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""

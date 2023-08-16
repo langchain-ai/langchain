@@ -9,21 +9,14 @@ from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from pydantic import (
-    model_validator, ConfigDict, BaseModel,
+    model_validator,
+    ConfigDict,
+    BaseModel,
     Extra,
     Field,
     create_model,
     validate_arguments,
 )
-
-# The metaclass must be imported directly from the pydantic module rather than
-# from the proxy module, otherwise it looks like inconsistent metaclasses are
-# used raising an exception.
-try:
-    from pydantic.v1.main import ModelMetaclass
-except ImportError:
-    from pydantic.main import ModelMetaclass
-
 
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
@@ -34,6 +27,8 @@ from langchain.callbacks.manager import (
     Callbacks,
 )
 from langchain.schema.runnable import Runnable, RunnableConfig
+
+from pydantic._internal._model_construction import ModelMetaclass
 
 
 class SchemaAnnotationError(TypeError):
@@ -251,7 +246,7 @@ class BaseTool(BaseModel, Runnable[Union[str, Dict], Any], metaclass=ToolMetacla
                 return {k: v for k, v in result.dict().items() if k in tool_input}
         return tool_input
 
-    @model_validator()
+    @model_validator(mode="before")
     @classmethod
     def raise_deprecation(cls, values: Dict) -> Dict:
         """Raise deprecation warning if callback_manager is used."""

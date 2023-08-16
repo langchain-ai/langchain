@@ -22,7 +22,7 @@ class LLMRouterChain(RouterChain):
     llm_chain: LLMChain
     """LLM chain used to perform routing"""
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_prompt(cls, values: dict) -> dict:
         prompt = values["llm_chain"].prompt

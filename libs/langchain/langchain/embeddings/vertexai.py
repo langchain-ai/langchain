@@ -12,7 +12,7 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
 
     model_name: str = "textembedding-gecko"
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validates that the python package exists in environment."""

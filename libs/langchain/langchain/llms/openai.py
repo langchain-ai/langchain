@@ -218,7 +218,7 @@ class BaseOpenAI(BaseLLM):
         )
         return values
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
@@ -653,7 +653,7 @@ class AzureOpenAI(BaseOpenAI):
     openai_api_type: str = ""
     openai_api_version: str = ""
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_azure_settings(cls, values: Dict) -> Dict:
         values["openai_api_version"] = get_from_dict_or_env(
@@ -739,7 +739,7 @@ class OpenAIChat(BaseLLM):
         values["model_kwargs"] = extra
         return values
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""

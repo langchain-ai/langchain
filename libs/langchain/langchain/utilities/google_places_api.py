@@ -34,7 +34,7 @@ class GooglePlacesAPIWrapper(BaseModel):
     top_k_results: Optional[int] = None
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key is in your environment variable."""

@@ -12,7 +12,7 @@ class EnumOutputParser(BaseOutputParser):
     enum: Type[Enum]
     """The enum to parse. Its values must be strings."""
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def raise_deprecation(cls, values: Dict) -> Dict:
         enum = values["enum"]

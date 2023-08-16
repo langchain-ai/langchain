@@ -31,7 +31,7 @@ class OctoAIEmbeddings(BaseModel, Embeddings):
     )
     model_config = ConfigDict(extra="forbid")
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Ensure that the API key and python package exist in environment."""

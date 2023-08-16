@@ -34,7 +34,7 @@ class ConversationChain(LLMChain):
         """Use this since so some prompt vars come from history."""
         return [self.input_key]
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_prompt_input_variables(cls, values: Dict) -> Dict:
         """Validate that prompt input variables are consistent."""

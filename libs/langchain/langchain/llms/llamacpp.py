@@ -117,7 +117,7 @@ class LlamaCpp(LLM):
     verbose: bool = True
     """Print verbose output to stderr."""
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that llama-cpp-python library is installed."""

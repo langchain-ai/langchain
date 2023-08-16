@@ -58,7 +58,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
 
         return values
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def template_is_valid(cls, values: Dict) -> Dict:
         """Check that prefix, suffix, and input variables are consistent."""

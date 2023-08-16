@@ -241,7 +241,7 @@ class VectorDBQA(BaseRetrievalQA):
     search_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Extra search args."""
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def raise_deprecation(cls, values: Dict) -> Dict:
         warnings.warn(
@@ -250,7 +250,7 @@ class VectorDBQA(BaseRetrievalQA):
         )
         return values
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_search_type(cls, values: Dict) -> Dict:
         """Validate search type."""

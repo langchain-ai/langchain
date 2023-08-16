@@ -42,7 +42,7 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
             )
         return {self.memory_key: final_buffer}
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_prompt_input_variables(cls, values: Dict) -> Dict:
         """Validate that prompt input variables are consistent."""

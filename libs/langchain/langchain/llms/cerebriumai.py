@@ -57,7 +57,7 @@ class CerebriumAI(LLM):
         values["model_kwargs"] = extra
         return values
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""

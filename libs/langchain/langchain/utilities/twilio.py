@@ -44,7 +44,7 @@ class TwilioAPIWrapper(BaseModel):
     """  # noqa: E501
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=False)
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""

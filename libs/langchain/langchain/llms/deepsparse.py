@@ -43,7 +43,7 @@ class DeepSparse(LLM):
         """Return type of llm."""
         return "deepsparse"
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that ``deepsparse`` package is installed."""

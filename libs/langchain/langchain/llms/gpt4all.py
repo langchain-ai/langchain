@@ -118,7 +118,7 @@ class GPT4All(LLM):
             "repeat_last_n": self.repeat_last_n,
         }
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in the environment."""

@@ -537,7 +537,7 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
     """Number of documents to return."""
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_search_type(cls, values: Dict) -> Dict:
         """Validate search type."""

@@ -47,7 +47,7 @@ class OctoAIEndpoint(LLM):
     """OCTOAI API Token"""
     model_config = ConfigDict(extra="forbid")
 
-    @model_validator()
+    @model_validator(mode='before')
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
