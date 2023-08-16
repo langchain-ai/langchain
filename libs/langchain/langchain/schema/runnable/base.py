@@ -1317,8 +1317,13 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
             )
             for step_name in steps
         ]
+
+        # Wrap in a coroutine to satisfy linter
+        async def get_next_chunk(generator: AsyncIterator) -> Optional[Output]:
+            return await py_anext(generator)
+
         tasks = {
-            asyncio.create_task(py_anext(generator)): (step_name, generator)  # type: ignore
+            asyncio.create_task(get_next_chunk(generator)): (step_name, generator)
             for step_name, generator in named_generators
         }
         final_output = None
@@ -1334,7 +1339,8 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
                             final_output = chunk
                         else:
                             final_output += chunk
-                        new_task = asyncio.create_task(py_anext(generator))  # type: ignore
+                        # Typing is funky for async tasks from
+                        new_task = asyncio.create_task(get_next_chunk(generator))
                         tasks[new_task] = (step_name, generator)
                     except StopAsyncIteration:
                         pass
