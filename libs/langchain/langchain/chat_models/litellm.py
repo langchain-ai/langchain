@@ -205,6 +205,7 @@ class ChatLiteLLM(BaseChatModel):
 
     client: Any  #: :meta private:
     model: str = "gpt-3.5-turbo"
+    model_name: Optional[str] = None
     """Model name to use."""
     openai_api_key: Optional[str] = None
     azure_api_key: Optional[str] = None
@@ -237,8 +238,11 @@ class ChatLiteLLM(BaseChatModel):
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling OpenAI API."""
+        set_model_value = self.model
+        if self.model_name != None:
+            set_model_value = self.model_name
         return {
-            "model": self.model,
+            "model": set_model_value,
             "force_timeout": self.request_timeout,
             "max_tokens": self.max_tokens,
             "stream": self.streaming,
@@ -250,10 +254,13 @@ class ChatLiteLLM(BaseChatModel):
     @property
     def _client_params(self) -> Dict[str, Any]:
         """Get the parameters used for the openai client."""
+        set_model_value = self.model
+        if self.model_name != None:
+            set_model_value = self.model_name
         self.client.api_base = self.api_base
         self.client.organization = self.organization
         creds: Dict[str, Any] = {
-            "model": self.model,
+            "model": set_model_value,
             "force_timeout": self.request_timeout,
         }
         return {**self._default_params, **creds}
@@ -346,7 +353,10 @@ class ChatLiteLLM(BaseChatModel):
             )
             generations.append(gen)
         token_usage = response.get("usage", {})
-        llm_output = {"token_usage": token_usage, "model": self.model}
+        set_model_value = self.model
+        if self.model_name != None:
+            set_model_value = self.model_name
+        llm_output = {"token_usage": token_usage, "model": set_model_value}
         return ChatResult(generations=generations, llm_output=llm_output)
 
     def _create_message_dicts(
@@ -436,8 +446,11 @@ class ChatLiteLLM(BaseChatModel):
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
+        set_model_value = self.model
+        if self.model_name != None:
+            set_model_value = self.model_name
         return {
-            "model": self.model,
+            "model": set_model_value,
             "temperature": self.temperature,
             "top_p": self.top_p,
             "top_k": self.top_k,
