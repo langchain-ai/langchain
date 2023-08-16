@@ -86,7 +86,7 @@ class Clarifai(VectorStore):
         self._number_of_docs = number_of_docs
 
     def _post_texts_as_inputs(
-        self, texts: List[str], metadata: List[dict]
+        self, texts: List[str], metadatas: List[dict] = None
     ) -> List[str]:
         """Post text to Clarifai and return the ID of the input.
 
@@ -107,11 +107,16 @@ class Clarifai(VectorStore):
                 "Please install it with `pip install clarifai`."
             ) from e
 
-        input_metadata = Struct()
-        input_metadata.update(metadata)
+        if metadatas is not None:
+            assert len(list(texts)) == len(
+                metadatas
+            ), "Number of texts and metadatas should be the same."
 
         inputs = []
         for idx, text in enumerate(texts):
+            if metadatas is not None:
+                input_metadata = Struct()
+                input_metadata.update(metadatas[idx])
             inputs.append(
                 resources_pb2.Input(
                     data=resources_pb2.Data(
@@ -149,7 +154,7 @@ class Clarifai(VectorStore):
     ) -> List[str]:
         """Add texts to the Clarifai vectorstore. This will push the text
         to a Clarifai application.
-        Application use base workflow that create and store embedding for each text.
+        Application use a base workflow that create and store embedding for each text.
         Make sure you are using a base workflow that is compatible with text
         (such as Language Understanding).
 
@@ -177,7 +182,7 @@ class Clarifai(VectorStore):
                 batch_metadatas = (
                     metadatas[idx : idx + batch_size] if metadatas else None
                 )
-                result_ids = self._post_texts_as_inputs(text, metadata)
+                result_ids = self._post_texts_as_inputs(batch_texts, batch_metadatas)
                 input_ids.extend(result_ids)
                 logger.debug(f"Input {result_ids} posted successfully.")
             except Exception as error:
@@ -261,7 +266,7 @@ class Clarifai(VectorStore):
 
         executor = ThreadPoolExecutor(max_workers=10)
 
-        def hit_to_document(hit):
+        def hit_to_document(hit: resources_pb2.Hit) -> Tuple[Document, float]:
             metadata = json_format.MessageToDict(hit.input.data.metadata)
             h = {"Authorization": f"Key {self._auth.pat}"}
             request = requests.get(hit.input.data.text.url, headers=h)
