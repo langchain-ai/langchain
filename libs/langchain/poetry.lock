@@ -7878,7 +7878,7 @@ name = "regex"
 version = "2023.6.3"
 description = "Alternative regular expression module, to replace re."
 category = "main"
-optional = true
+optional = false
 python-versions = ">=3.6"
 files = [
     {file = "regex-2023.6.3-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:824bf3ac11001849aec3fa1d69abcb67aac3e150a933963fb12bda5151fe1bfd"},
@@ -9215,7 +9215,7 @@ name = "tiktoken"
 version = "0.3.3"
 description = "tiktoken is a fast BPE tokeniser for use with OpenAI's models"
 category = "main"
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "tiktoken-0.3.3-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:d1f37fa75ba70c1bc7806641e8ccea1fba667d23e6341a1591ea333914c226a9"},
@@ -10487,4 +10487,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "6e85bdaca0b4a62bace541dd914266b49a4d7f90c7be2030fab639bf7efc23c6"
+content-hash = "0c6f0b48849161928ab5df69f818779d6f5c58760cf967448a8785c938a23b57"
