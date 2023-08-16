@@ -7,11 +7,12 @@ import pytest
 
 from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
-from langchain.docstore.wikipedia import Wikipedia
 from langchain.vectorstores.faiss import FAISS
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
+from tests.unit_tests.agents.test_react import FakeDocstore
 
 
+@pytest.mark.requires("faiss")
 def test_faiss() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -29,6 +30,7 @@ def test_faiss() -> None:
     assert output == [Document(page_content="foo")]
 
 
+@pytest.mark.requires("faiss")
 def test_faiss_vector_sim() -> None:
     """Test vector similarity."""
     texts = ["foo", "bar", "baz"]
@@ -47,6 +49,7 @@ def test_faiss_vector_sim() -> None:
     assert output == [Document(page_content="foo")]
 
 
+@pytest.mark.requires("faiss")
 def test_faiss_vector_sim_with_score_threshold() -> None:
     """Test vector similarity."""
     texts = ["foo", "bar", "baz"]
@@ -65,6 +68,7 @@ def test_faiss_vector_sim_with_score_threshold() -> None:
     assert output == [Document(page_content="foo")]
 
 
+@pytest.mark.requires("faiss")
 def test_similarity_search_with_score_by_vector() -> None:
     """Test vector similarity with score by vector."""
     texts = ["foo", "bar", "baz"]
@@ -84,6 +88,7 @@ def test_similarity_search_with_score_by_vector() -> None:
     assert output[0][0] == Document(page_content="foo")
 
 
+@pytest.mark.requires("faiss")
 def test_similarity_search_with_score_by_vector_with_score_threshold() -> None:
     """Test vector similarity with score by vector."""
     texts = ["foo", "bar", "baz"]
@@ -108,6 +113,7 @@ def test_similarity_search_with_score_by_vector_with_score_threshold() -> None:
     assert output[0][1] < 0.2
 
 
+@pytest.mark.requires("faiss")
 def test_faiss_mmr() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     docsearch = FAISS.from_texts(texts, FakeEmbeddings())
@@ -122,6 +128,7 @@ def test_faiss_mmr() -> None:
     assert output[1][0] != Document(page_content="foo")
 
 
+@pytest.mark.requires("faiss")
 def test_faiss_mmr_with_metadatas() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     metadatas = [{"page": i} for i in range(len(texts))]
@@ -136,6 +143,7 @@ def test_faiss_mmr_with_metadatas() -> None:
     assert output[1][0] != Document(page_content="foo", metadata={"page": 0})
 
 
+@pytest.mark.requires("faiss")
 def test_faiss_mmr_with_metadatas_and_filter() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     metadatas = [{"page": i} for i in range(len(texts))]
@@ -149,6 +157,7 @@ def test_faiss_mmr_with_metadatas_and_filter() -> None:
     assert output[0][1] == 0.0
 
 
+@pytest.mark.requires("faiss")
 def test_faiss_mmr_with_metadatas_and_list_filter() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     metadatas = [{"page": i} if i <= 3 else {"page": 3} for i in range(len(texts))]
@@ -163,6 +172,7 @@ def test_faiss_mmr_with_metadatas_and_list_filter() -> None:
     assert output[1][0] != Document(page_content="foo", metadata={"page": 0})
 
 
+@pytest.mark.requires("faiss")
 def test_faiss_with_metadatas() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -186,6 +196,7 @@ def test_faiss_with_metadatas() -> None:
     assert output == [Document(page_content="foo", metadata={"page": 0})]
 
 
+@pytest.mark.requires("faiss")
 def test_faiss_with_metadatas_and_filter() -> None:
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": i} for i in range(len(texts))]
@@ -208,6 +219,7 @@ def test_faiss_with_metadatas_and_filter() -> None:
     assert output == [Document(page_content="bar", metadata={"page": 1})]
 
 
+@pytest.mark.requires("faiss")
 def test_faiss_with_metadatas_and_list_filter() -> None:
     texts = ["foo", "bar", "baz", "foo", "qux"]
     metadatas = [{"page": i} if i <= 3 else {"page": 3} for i in range(len(texts))]
@@ -236,6 +248,7 @@ def test_faiss_with_metadatas_and_list_filter() -> None:
     assert output == [Document(page_content="foo", metadata={"page": 0})]
 
 
+@pytest.mark.requires("faiss")
 def test_faiss_search_not_found() -> None:
     """Test what happens when document is not found."""
     texts = ["foo", "bar", "baz"]
@@ -246,6 +259,7 @@ def test_faiss_search_not_found() -> None:
         docsearch.similarity_search("foo")
 
 
+@pytest.mark.requires("faiss")
 def test_faiss_add_texts() -> None:
     """Test end to end adding of texts."""
     # Create initial doc store.
@@ -257,13 +271,15 @@ def test_faiss_add_texts() -> None:
     assert output == [Document(page_content="foo"), Document(page_content="foo")]
 
 
+@pytest.mark.requires("faiss")
 def test_faiss_add_texts_not_supported() -> None:
     """Test adding of texts to a docstore that doesn't support it."""
-    docsearch = FAISS(FakeEmbeddings().embed_query, None, Wikipedia(), {})
+    docsearch = FAISS(FakeEmbeddings().embed_query, None, FakeDocstore(), {})
     with pytest.raises(ValueError):
         docsearch.add_texts(["foo"])
 
 
+@pytest.mark.requires("faiss")
 def test_faiss_local_save_load() -> None:
     """Test end to end serialization."""
     texts = ["foo", "bar", "baz"]
@@ -275,6 +291,7 @@ def test_faiss_local_save_load() -> None:
     assert new_docsearch.index is not None
 
 
+@pytest.mark.requires("faiss")
 def test_faiss_similarity_search_with_relevance_scores() -> None:
     """Test the similarity search with normalized similarities."""
     texts = ["foo", "bar", "baz"]
@@ -289,6 +306,7 @@ def test_faiss_similarity_search_with_relevance_scores() -> None:
     assert score == 1.0
 
 
+@pytest.mark.requires("faiss")
 def test_faiss_similarity_search_with_relevance_scores_with_threshold() -> None:
     """Test the similarity search with normalized similarities with score threshold."""
     texts = ["foo", "bar", "baz"]
@@ -306,6 +324,7 @@ def test_faiss_similarity_search_with_relevance_scores_with_threshold() -> None:
     assert score == 1.0
 
 
+@pytest.mark.requires("faiss")
 def test_faiss_invalid_normalize_fn() -> None:
     """Test the similarity search with normalized similarities."""
     texts = ["foo", "bar", "baz"]
@@ -316,12 +335,22 @@ def test_faiss_invalid_normalize_fn() -> None:
         docsearch.similarity_search_with_relevance_scores("foo", k=1)
 
 
+@pytest.mark.requires("faiss")
 def test_missing_normalize_score_fn() -> None:
     """Test doesn't perform similarity search without a valid distance strategy."""
+    texts = ["foo", "bar", "baz"]
+    faiss_instance = FAISS.from_texts(texts, FakeEmbeddings(), distance_strategy="fake")
     with pytest.raises(ValueError):
-        texts = ["foo", "bar", "baz"]
-        faiss_instance = FAISS.from_texts(
-            texts, FakeEmbeddings(), distance_strategy="fake"
-        )
-
         faiss_instance.similarity_search_with_relevance_scores("foo", k=2)
+
+
+@pytest.mark.requires("faiss")
+def test_delete() -> None:
+    """Test the similarity search with normalized similarities."""
+    ids = ["a", "b", "c"]
+    docsearch = FAISS.from_texts(["foo", "bar", "baz"], FakeEmbeddings(), ids=ids)
+    docsearch.delete(ids[1:2])
+
+    result = docsearch.similarity_search("bar", k=2)
+    assert sorted([d.page_content for d in result]) == ["baz", "foo"]
+    assert docsearch.index_to_docstore_id == {0: ids[0], 1: ids[2]}

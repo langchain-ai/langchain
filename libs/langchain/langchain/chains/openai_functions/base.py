@@ -192,6 +192,7 @@ def create_openai_fn_chain(
     llm: BaseLanguageModel,
     prompt: BasePromptTemplate,
     *,
+    output_key: str = "function",
     output_parser: Optional[BaseLLMOutputParser] = None,
     **kwargs: Any,
 ) -> LLMChain:
@@ -210,6 +211,7 @@ def create_openai_fn_chain(
             pydantic.BaseModels for arguments.
         llm: Language model to use, assumed to support the OpenAI function-calling API.
         prompt: BasePromptTemplate to pass to the model.
+        output_key: The key to use when returning the output in LLMChain.__call__.
         output_parser: BaseLLMOutputParser to use for parsing model outputs. By default
             will be inferred from the function types. If pydantic.BaseModels are passed
             in, then the OutputParser will try to parse outputs using those. Otherwise
@@ -226,9 +228,9 @@ def create_openai_fn_chain(
 
                 from langchain.chains.openai_functions import create_openai_fn_chain
                 from langchain.chat_models import ChatOpenAI
-                from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
+                from langchain.prompts import ChatPromptTemplate
 
-                from pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
 
                 class RecordPerson(BaseModel):
@@ -247,17 +249,15 @@ def create_openai_fn_chain(
                     fav_food: Optional[str] = Field(None, description="The dog's favorite food")
 
 
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0613", temperature=0)
-                prompt_msgs = [
-                    SystemMessage(
-                        content="You are a world class algorithm for recording entities"
-                    ),
-                    HumanMessage(content="Make calls to the relevant function to record the entities in the following input:"),
-                    HumanMessagePromptTemplate.from_template("{input}"),
-                    HumanMessage(content="Tips: Make sure to answer in the correct format"),
-                ]
-                prompt = ChatPromptTemplate(messages=prompt_msgs)
-                chain = create_openai_fn_chain([RecordPerson, RecordDog])
+                llm = ChatOpenAI(model="gpt-4", temperature=0)
+                prompt = ChatPromptTemplate.from_messages(
+                    [
+                        ("system", "You are a world class algorithm for recording entities."),
+                        ("human", "Make calls to the relevant function to record the entities in the following input: {input}"),
+                        ("human", "Tip: Make sure to answer in the correct format"),
+                    ]
+                )
+                chain = create_openai_fn_chain([RecordPerson, RecordDog], llm, prompt)
                 chain.run("Harry was a chubby brown beagle who loved chicken")
                 # -> RecordDog(name="Harry", color="brown", fav_food="chicken")
     """  # noqa: E501
@@ -276,7 +276,7 @@ def create_openai_fn_chain(
         prompt=prompt,
         output_parser=output_parser,
         llm_kwargs=llm_kwargs,
-        output_key="function",
+        output_key=output_key,
         **kwargs,
     )
     return llm_chain
@@ -287,6 +287,7 @@ def create_structured_output_chain(
     llm: BaseLanguageModel,
     prompt: BasePromptTemplate,
     *,
+    output_key: str = "function",
     output_parser: Optional[BaseLLMOutputParser] = None,
     **kwargs: Any,
 ) -> LLMChain:
@@ -299,6 +300,7 @@ def create_structured_output_chain(
             the schema represents and descriptions for the parameters.
         llm: Language model to use, assumed to support the OpenAI function-calling API.
         prompt: BasePromptTemplate to pass to the model.
+        output_key: The key to use when returning the output in LLMChain.__call__.
         output_parser: BaseLLMOutputParser to use for parsing model outputs. By default
             will be inferred from the function types. If pydantic.BaseModels are passed
             in, then the OutputParser will try to parse outputs using those. Otherwise
@@ -312,9 +314,9 @@ def create_structured_output_chain(
 
                 from langchain.chains.openai_functions import create_structured_output_chain
                 from langchain.chat_models import ChatOpenAI
-                from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
+                from langchain.prompts import ChatPromptTemplate
 
-                from pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
                 class Dog(BaseModel):
                     \"\"\"Identifying information about a dog.\"\"\"
@@ -324,15 +326,13 @@ def create_structured_output_chain(
                     fav_food: Optional[str] = Field(None, description="The dog's favorite food")
 
                 llm = ChatOpenAI(model="gpt-3.5-turbo-0613", temperature=0)
-                prompt_msgs = [
-                    SystemMessage(
-                        content="You are a world class algorithm for extracting information in structured formats."
-                    ),
-                    HumanMessage(content="Use the given format to extract information from the following input:"),
-                    HumanMessagePromptTemplate.from_template("{input}"),
-                    HumanMessage(content="Tips: Make sure to answer in the correct format"),
-                ]
-                prompt = ChatPromptTemplate(messages=prompt_msgs)
+                prompt = ChatPromptTemplate.from_messages(
+                    [
+                        ("system", "You are a world class algorithm for extracting information in structured formats."),
+                        ("human", "Use the given format to extract information from the following input: {input}"),
+                        ("human", "Tip: Make sure to answer in the correct format"),
+                    ]
+                )
                 chain = create_structured_output_chain(Dog, llm, prompt)
                 chain.run("Harry was a chubby brown beagle who loved chicken")
                 # -> Dog(name="Harry", color="brown", fav_food="chicken")
@@ -358,5 +358,10 @@ def create_structured_output_chain(
             pydantic_schema=_OutputFormatter, attr_name="output"
         )
     return create_openai_fn_chain(
-        [function], llm, prompt, output_parser=output_parser, **kwargs
+        [function],
+        llm,
+        prompt,
+        output_key=output_key,
+        output_parser=output_parser,
+        **kwargs,
     )
