@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import copy
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from itertools import tee, zip_longest
@@ -1092,15 +1093,12 @@ class RunnableMapChunk(Dict[str, Any]):
     """
 
     def __add__(self, other: RunnableMapChunk) -> RunnableMapChunk:
-        chunk = RunnableMapChunk(self)
+        chunk = copy.deepcopy(self)
         for key in other:
-            if chunk[key] is None:
+            if key not in chunk or chunk[key] is None:
                 chunk[key] = other[key]
             elif other[key] is not None:
-                try:
-                    chunk[key] = chunk[key] + other[key]
-                except TypeError:
-                    chunk[key] = other[key]
+                chunk[key] += other[key]
         return chunk
 
 
@@ -1249,7 +1247,10 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
         final_output = None
         try:
             for results in zip_longest(
-                *(step.stream(input, config) for step in steps.values())
+                *(
+                    step.stream(input, patch_config(config, run_manager.get_child()))
+                    for step in steps.values()
+                )
             ):
                 chunk = RunnableMapChunk(
                     {key: value for key, value in zip(steps, results)}
@@ -1293,7 +1294,10 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
         final_output = None
         try:
             async for results in azip_longest(
-                *(step.astream(input, config) for step in steps.values())
+                *(
+                    step.astream(input, patch_config(config, run_manager.get_child()))
+                    for step in steps.values()
+                )
             ):
                 chunk = RunnableMapChunk(
                     {key: value for key, value in zip(steps, results)}
