@@ -149,8 +149,8 @@ def zep_vectorstore(
     mock_client.return_value.document = mock_document_client
 
     vs = ZepVectorStore(
-        collection_name=mock_collection_config.name,
-        api_url="http://localhost:8080",
+        mock_collection_config.name,
+        "http://localhost:8080",
         api_key="test",
         config=mock_collection_config,
     )
