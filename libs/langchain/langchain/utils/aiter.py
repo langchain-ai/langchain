@@ -87,8 +87,8 @@ async def azip_longest(
     """
     if not iterables:
         return
-    fill_iter = aiter(_repeat(fillvalue))
-    async_iters = [aiter(it) for it in iterables]
+    fill_iter = _repeat(fillvalue).__aiter__()
+    async_iters = [it.__aiter__() for it in iterables]
     del iterables
     try:
         remaining = len(async_iters)
@@ -96,7 +96,7 @@ async def azip_longest(
             values = []
             for index, aiterator in enumerate(async_iters):
                 try:
-                    value = await anext(aiterator)
+                    value = await aiterator.__anext__()
                 except StopAsyncIteration:
                     remaining -= 1
                     if not remaining:
