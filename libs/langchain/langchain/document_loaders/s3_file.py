@@ -35,4 +35,8 @@ class S3FileLoader(BaseLoader):
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
             s3.download_file(self.bucket, self.key, file_path)
             loader = UnstructuredFileLoader(file_path)
-            return loader.load()
+            docs = loader.load()
+            for doc in docs:
+                doc.metadata["s3_object_key"] = self.key
+                doc.metadata["s3_bucket"] = self.bucket
+            return docs
