@@ -8,7 +8,7 @@ from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
-VALID_TASKS = ("text2text-generation", "text-generation", "summarization")
+VALID_TASKS = ("text2text-generation", "text-generation")
 
 
 class HuggingFaceEndpoint(LLM):
