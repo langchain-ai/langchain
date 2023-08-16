@@ -1341,7 +1341,6 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
                             final_output = chunk
                         else:
                             final_output += chunk
-                        # Typing is funky for async tasks from
                         new_task = asyncio.create_task(get_next_chunk(generator))
                         tasks[new_task] = (step_name, generator)
                     except StopAsyncIteration:
