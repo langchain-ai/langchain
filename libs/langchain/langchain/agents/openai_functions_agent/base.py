@@ -152,7 +152,6 @@ def _parse_ai_message(message: BaseMessage) -> Union[AgentAction, AgentFinish]:
     return AgentFinish(return_values={"output": message.content}, log=message.content)
 
 
-
 class OpenAIFunctionsAgent(BaseSingleActionAgent):
     """An Agent driven by OpenAIs function powered API.
 
