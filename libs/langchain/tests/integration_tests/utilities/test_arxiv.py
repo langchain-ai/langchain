@@ -15,12 +15,19 @@ def api_client() -> ArxivAPIWrapper:
     return ArxivAPIWrapper()
 
 
-def test_run_success(api_client: ArxivAPIWrapper) -> None:
-    """Test that returns the correct answer"""
+def test_run_success_paper_name(api_client: ArxivAPIWrapper) -> None:
+    """Test a query of paper name that returns the correct answer"""
 
-    output = api_client.run("1605.08386")
+    output = api_client.run("Heat-bath random walks with Markov bases")
+    assert "Probability distributions for Markov chains based quantum walks" in output
+    assert "Transformations of random walks on groups via Markov stopping times" in output
+    assert "Recurrence of Multidimensional Persistent Random Walks. Fourier and Series Criteria" in output
+
+def test_run_success_arxiv_identifier(api_client: ArxivAPIWrapper) -> None:
+    """Test a query of arxiv identifier returns the correct answer"""
+
+    output = api_client.run("1605.08386v1")
     assert "Heat-bath random walks with Markov bases" in output
-
 
 def test_run_returns_several_docs(api_client: ArxivAPIWrapper) -> None:
     """Test that returns several docs"""
@@ -43,13 +50,19 @@ def assert_docs(docs: List[Document]) -> None:
         assert set(doc.metadata) == {"Published", "Title", "Authors", "Summary"}
 
 
-def test_load_success(api_client: ArxivAPIWrapper) -> None:
-    """Test that returns one document"""
+def test_load_success_paper_name(api_client: ArxivAPIWrapper) -> None:
+    """Test a query of paper name that returns one document"""
 
-    docs = api_client.load("1605.08386")
-    assert len(docs) == 1
+    docs = api_client.load("Heat-bath random walks with Markov bases")
+    assert len(docs) == 3
     assert_docs(docs)
 
+def test_load_success_arxiv_identifier(api_client: ArxivAPIWrapper) -> None:
+    """Test a query of arxiv_identifier that returns one document"""
+
+    docs = api_client.load("1605.08386v1")
+    assert len(docs) == 1
+    assert_docs(docs)
 
 def test_load_returns_no_result(api_client: ArxivAPIWrapper) -> None:
     """Test that returns no docs"""
