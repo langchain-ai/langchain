@@ -61,7 +61,7 @@ class AirbyteCDKLoader(BaseLoader):
         )
 
     @property
-    def last_state(self):
+    def last_state(self) -> Any:
         return self._integration.last_state
 
 
