@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import traceback
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Iterable, List, Optional, Tuple
 
 import requests
@@ -84,7 +85,9 @@ class Clarifai(VectorStore):
         self._userDataObject = self._auth.get_user_app_id_proto()
         self._number_of_docs = number_of_docs
 
-    def _post_text_input(self, text: str, metadata: dict) -> str:
+    def _post_texts_as_inputs(
+        self, texts: List[str], metadata: List[dict]
+    ) -> List[str]:
         """Post text to Clarifai and return the ID of the input.
 
         Args:
@@ -107,17 +110,21 @@ class Clarifai(VectorStore):
         input_metadata = Struct()
         input_metadata.update(metadata)
 
+        inputs = []
+        for idx, text in enumerate(texts):
+            inputs.append(
+                resources_pb2.Input(
+                    data=resources_pb2.Data(
+                        text=resources_pb2.Text(raw=text),
+                        metadata=input_metadata,
+                    )
+                )
+            )
+
         post_inputs_response = self._stub.PostInputs(
             service_pb2.PostInputsRequest(
                 user_app_id=self._userDataObject,
-                inputs=[
-                    resources_pb2.Input(
-                        data=resources_pb2.Data(
-                            text=resources_pb2.Text(raw=text),
-                            metadata=input_metadata,
-                        )
-                    )
-                ],
+                inputs=inputs,
             )
         )
 
@@ -127,9 +134,11 @@ class Clarifai(VectorStore):
                 "Post inputs failed, status: " + post_inputs_response.status.description
             )
 
-        input_id = post_inputs_response.inputs[0].id
+        input_ids = []
+        for input in post_inputs_response.inputs:
+            input_ids.append(input.id)
 
-        return input_id
+        return input_ids
 
     def add_texts(
         self,
@@ -160,13 +169,17 @@ class Clarifai(VectorStore):
                 metadatas
             ), "Number of texts and metadatas should be the same."
 
+        batch_size = 32
         input_ids = []
-        for idx, text in enumerate(texts):
+        for idx in range(0, len(texts), batch_size):
             try:
-                metadata = metadatas[idx] if metadatas else {}
-                input_id = self._post_text_input(text, metadata)
-                input_ids.append(input_id)
-                logger.debug(f"Input {input_id} posted successfully.")
+                batch_texts = texts[idx : idx + batch_size]
+                batch_metadatas = (
+                    metadatas[idx : idx + batch_size] if metadatas else None
+                )
+                result_ids = self._post_texts_as_inputs(text, metadata)
+                input_ids.extend(result_ids)
+                logger.debug(f"Input {result_ids} posted successfully.")
             except Exception as error:
                 logger.warning(f"Post inputs failed: {error}")
                 traceback.print_exc()
@@ -196,6 +209,7 @@ class Clarifai(VectorStore):
             from clarifai_grpc.grpc.api import resources_pb2, service_pb2
             from clarifai_grpc.grpc.api.status import status_code_pb2
             from google.protobuf import json_format  # type: ignore
+            from google.protobuf.struct_pb2 import Struct  # type: ignore
         except ImportError as e:
             raise ImportError(
                 "Could not import clarifai python package. "
@@ -206,27 +220,34 @@ class Clarifai(VectorStore):
         if self._number_of_docs is not None:
             k = self._number_of_docs
 
-        post_annotations_searches_response = self._stub.PostAnnotationsSearches(
-            service_pb2.PostAnnotationsSearchesRequest(
-                user_app_id=self._userDataObject,
-                searches=[
-                    resources_pb2.Search(
-                        query=resources_pb2.Query(
-                            ranks=[
-                                resources_pb2.Rank(
-                                    annotation=resources_pb2.Annotation(
-                                        data=resources_pb2.Data(
-                                            text=resources_pb2.Text(raw=query),
-                                        )
+        req = service_pb2.PostAnnotationsSearchesRequest(
+            user_app_id=self._userDataObject,
+            searches=[
+                resources_pb2.Search(
+                    query=resources_pb2.Query(
+                        ranks=[
+                            resources_pb2.Rank(
+                                annotation=resources_pb2.Annotation(
+                                    data=resources_pb2.Data(
+                                        text=resources_pb2.Text(raw=query),
                                     )
                                 )
-                            ]
-                        )
+                            )
+                        ]
                     )
-                ],
-                pagination=service_pb2.Pagination(page=1, per_page=k),
-            )
+                )
+            ],
+            pagination=service_pb2.Pagination(page=1, per_page=k),
         )
+
+        # Add filter by metadata if provided.
+        if filter is not None:
+            search_metadata = Struct()
+            search_metadata.update(filter)
+            f = req.searches[0].query.filters.add()
+            f.annotation.data.metadata.update(search_metadata)
+
+        post_annotations_searches_response = self._stub.PostAnnotationsSearches(req)
 
         # Check if search was successful
         if post_annotations_searches_response.status.code != status_code_pb2.SUCCESS:
@@ -238,11 +259,12 @@ class Clarifai(VectorStore):
         # Retrieve hits
         hits = post_annotations_searches_response.hits
 
-        docs_and_scores = []
-        # Iterate over hits and retrieve metadata and text
-        for hit in hits:
+        executor = ThreadPoolExecutor(max_workers=10)
+
+        def hit_to_document(hit):
             metadata = json_format.MessageToDict(hit.input.data.metadata)
-            request = requests.get(hit.input.data.text.url)
+            h = {"Authorization": f"Key {self._auth.pat}"}
+            request = requests.get(hit.input.data.text.url, headers=h)
 
             # override encoding by real educated guess as provided by chardet
             request.encoding = request.apparent_encoding
@@ -252,10 +274,11 @@ class Clarifai(VectorStore):
                 f"\tScore {hit.score:.2f} for annotation: {hit.annotation.id}\
                 off input: {hit.input.id}, text: {requested_text[:125]}"
             )
+            return (Document(page_content=requested_text, metadata=metadata), hit.score)
 
-            docs_and_scores.append(
-                (Document(page_content=requested_text, metadata=metadata), hit.score)
-            )
+        # Iterate over hits and retrieve metadata and text
+        futures = [executor.submit(hit_to_document, hit) for hit in hits]
+        docs_and_scores = [future.result() for future in futures]
 
         return docs_and_scores
 
