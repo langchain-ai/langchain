@@ -334,6 +334,7 @@ extended_testing = [
  "feedparser",
  "xata",
  "xmltodict",
+ "faiss-cpu",
 ]
 
 [tool.ruff]

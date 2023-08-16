@@ -2262,11 +2262,19 @@
     },
     {
       "source": "/en/latest/modules/indexes/vectorstores/examples/deeplake.html",
-      "destination": "/docs/integrations/vectorstores/deeplake"
+      "destination": "/docs/integrations/vectorstores/activeloop_deeplake"
     },
     {
       "source": "/docs/modules/data_connection/vectorstores/integrations/deeplake",
-      "destination": "/docs/integrations/vectorstores/deeplake"
+      "destination": "/docs/integrations/vectorstores/activeloop_deeplake"
+    },
+    {
+      "source": "/docs/integrations/vectorstores/deeplake",
+      "destination": "/docs/integrations/vectorstores/activeloop_deeplake"
+    },
+    {
+      "source": "/docs/modules/data_connection/retrievers/self_query/deeplake_self_query",
+      "destination": "/docs/modules/data_connection/retrievers/self_query/activeloop_deeplake_self_query"
     },
     {
       "source": "/en/latest/modules/indexes/vectorstores/examples/docarray_hnsw.html",
