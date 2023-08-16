@@ -644,14 +644,6 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
             **kwargs,
         )
 
-    def on_event(
-        self,
-        token: str,
-        function_call: Any,
-        **kwargs: Any,
-    ) -> None:
-        pass
-
 
 class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
     """Async callback manager for LLM run."""
@@ -721,7 +713,23 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
         function_call: Any,
         **kwargs: Any,
     ) -> None:
-        pass
+        """Run when LLM generates a new event.
+
+        Args:
+            token (str): The new token.
+            function_call (Any): The function call.
+        """
+        await _ahandle_event(
+            self.handlers,
+            "on_event",
+            "ignore_llm",
+            token,
+            function_call,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            **kwargs,
+        )
 
 
 class CallbackManagerForChainRun(ParentRunManager, ChainManagerMixin):
