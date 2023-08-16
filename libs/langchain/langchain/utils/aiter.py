@@ -64,11 +64,6 @@ def py_anext(
     return anext_impl()
 
 
-async def _repeat(value: T) -> AsyncIterator[T]:
-    while True:
-        yield value
-
-
 async def tee_peer(
     iterator: AsyncIterator[T],
     # the buffer specific to this peer
