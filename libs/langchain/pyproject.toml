@@ -172,6 +172,7 @@ wrapt = "^1.15.0"
 openai = "^0.27.4"
 python-dotenv = "^1.0.0"
 cassio = "^0.0.7"
+tiktoken = "^0.3.2"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.0.249"
