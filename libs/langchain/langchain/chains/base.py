@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import yaml
-from pydantic import Field, root_validator, validator
+from pydantic_v1 import Field, root_validator, validator
 
 import langchain
 from langchain.callbacks.base import BaseCallbackManager

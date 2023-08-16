@@ -5,7 +5,7 @@ from pathlib import Path
 from string import Formatter
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import root_validator
+from pydantic_v1 import root_validator
 
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,

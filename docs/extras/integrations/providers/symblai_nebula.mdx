@@ -5,16 +5,14 @@ It is broken into two parts: installation and setup, and then references to spec
 
 ## Installation and Setup
 
-- Get an Nebula API Key and set as environment variables (`SYMBLAI_NEBULA_SERVICE_URL`, `SYMBLAI_NEBULA_SERVICE_PATH`, `SYMBLAI_NEBULA_SERVICE_TOKEN`)
-  - Sign up for a FREE Symbl.ai/Nebula Account: [https://nebula.symbl.ai/playground/](https://nebula.symbl.ai/playground/)
-- Please see the [Nebula documentation](https://docs.symbl.ai/docs/nebula-llm-overview) for more details.
-  - No time? Visit the [Nebula Quickstart Guide](https://docs.symbl.ai/docs/nebula-quickstart).
-
-## Wrappers
+- Get an [Nebula API Key](https://info.symbl.ai/Nebula_Private_Beta.html) and set as environment variable `NEBULA_API_KEY`
+- Please see the [Nebula documentation](https://docs.symbl.ai/docs/nebula-llm) for more details.
+- No time? Visit the [Nebula Quickstart Guide](https://docs.symbl.ai/docs/nebula-quickstart).
 
 ### LLM
 
-There exists an Nebula LLM wrapper, which you can access with 
+There exists an Nebula LLM wrapper, which you can access with
 ```python
 from langchain.llms import Nebula
+llm = Nebula()
 ```

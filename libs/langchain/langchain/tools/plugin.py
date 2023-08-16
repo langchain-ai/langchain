@@ -5,7 +5,7 @@ from typing import Optional, Type
 
 import requests
 import yaml
-from pydantic import BaseModel
+from pydantic_v1 import BaseModel
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,

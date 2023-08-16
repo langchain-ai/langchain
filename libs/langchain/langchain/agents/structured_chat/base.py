@@ -1,7 +1,7 @@
 import re
 from typing import Any, List, Optional, Sequence, Tuple
 
-from pydantic import Field
+from pydantic_v1 import Field
 
 from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.structured_chat.output_parser import (
