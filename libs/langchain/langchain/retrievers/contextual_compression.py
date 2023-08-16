@@ -8,6 +8,7 @@ from langchain.retrievers.document_compressors.base import (
     BaseDocumentCompressor,
 )
 from langchain.schema import BaseRetriever, Document
+from pydantic import ConfigDict
 
 
 class ContextualCompressionRetriever(BaseRetriever):
@@ -18,11 +19,7 @@ class ContextualCompressionRetriever(BaseRetriever):
 
     base_retriever: BaseRetriever
     """Base Retriever to use for getting relevant documents."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def _get_relevant_documents(
         self,

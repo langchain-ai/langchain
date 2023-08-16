@@ -4,7 +4,7 @@ import logging
 import time
 from typing import Any, Dict, Optional
 
-from pydantic_v1 import root_validator
+from pydantic import model_validator
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.azure_cognitive_services.utils import (
@@ -27,7 +27,7 @@ class AzureCogsSpeech2TextTool(BaseTool):
     azure_cogs_key: str = ""  #: :meta private:
     azure_cogs_region: str = ""  #: :meta private:
     speech_language: str = "en-US"  #: :meta private:
-    speech_config: Any  #: :meta private:
+    speech_config: Any = None  #: :meta private:
 
     name = "azure_cognitive_services_speech2text"
     description = (
@@ -36,7 +36,8 @@ class AzureCogsSpeech2TextTool(BaseTool):
         "Input should be a url to an audio file."
     )
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and endpoint exists in environment."""
         azure_cogs_key = get_from_dict_or_env(

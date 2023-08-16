@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, Iterator, List, Optional
 
-from pydantic_v1 import Field, root_validator
+from pydantic import model_validator, Field
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -26,7 +26,7 @@ class LlamaCpp(LLM):
             llm = LlamaCpp(model_path="/path/to/llama/model")
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model_path: str
     """The path to the Llama model file."""
 
@@ -117,7 +117,8 @@ class LlamaCpp(LLM):
     verbose: bool = True
     """Print verbose output to stderr."""
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that llama-cpp-python library is installed."""
         model_path = values["model_path"]
@@ -164,7 +165,8 @@ class LlamaCpp(LLM):
 
         return values
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def build_model_kwargs(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)

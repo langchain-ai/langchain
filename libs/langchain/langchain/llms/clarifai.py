@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-from pydantic_v1 import Extra, root_validator
+from pydantic import model_validator, ConfigDict
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -27,8 +27,8 @@ class Clarifai(LLM):
                 user_id=USER_ID, app_id=APP_ID, model_id=MODEL_ID)
     """
 
-    stub: Any  #: :meta private:
-    userDataObject: Any
+    stub: Any = None  #: :meta private:
+    userDataObject: Any = None
 
     model_id: Optional[str] = None
     """Model id to use."""
@@ -45,13 +45,10 @@ class Clarifai(LLM):
     pat: Optional[str] = None
 
     api_base: str = "https://api.clarifai.com"
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that we have all required info to access Clarifai
         platform and python package exists in environment."""

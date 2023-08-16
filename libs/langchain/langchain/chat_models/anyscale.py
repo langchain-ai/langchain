@@ -7,7 +7,7 @@ import sys
 from typing import TYPE_CHECKING, Optional, Set
 
 import requests
-from pydantic_v1 import Field, root_validator
+from pydantic import model_validator, Field
 
 from langchain.adapters.openai import convert_message_to_dict
 from langchain.chat_models.openai import (
@@ -95,7 +95,8 @@ class ChatAnyscale(ChatOpenAI):
 
         return {model["id"] for model in models_response.json()["data"]}
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_environment_override(cls, values: dict) -> dict:
         """Validate that api key and python package exists in environment."""
         values["openai_api_key"] = get_from_dict_or_env(

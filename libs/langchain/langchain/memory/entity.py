@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from itertools import islice
 from typing import Any, Dict, Iterable, List, Optional
 
-from pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 from langchain.chains.llm import LLMChain
 from langchain.memory.chat_memory import BaseChatMemory
@@ -77,7 +77,7 @@ class RedisEntityStore(BaseEntityStore):
     that TTL is extended by 3 days every time the entity is read back.
     """
 
-    redis_client: Any
+    redis_client: Any = None
     session_id: str = "default"
     key_prefix: str = "memory_store"
     ttl: Optional[int] = 60 * 60 * 24

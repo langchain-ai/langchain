@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional, Sequence
 
-from pydantic_v1 import Extra, root_validator
+from pydantic import model_validator, ConfigDict
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -25,7 +25,7 @@ class AlephAlpha(LLM):
             aleph_alpha = AlephAlpha(aleph_alpha_api_key="my-api-key")
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model: Optional[str] = "luminous-base"
     """Model name to use."""
 
@@ -161,13 +161,10 @@ class AlephAlpha(LLM):
     """Setting this to True, will signal to the API that you intend to be 
     nice to other users
     by de-prioritizing your request below concurrent ones."""
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         aleph_alpha_api_key = get_from_dict_or_env(

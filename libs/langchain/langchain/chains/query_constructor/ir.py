@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, List, Optional, Sequence, Union
 
-from pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 
 class Visitor(ABC):
@@ -98,7 +98,7 @@ class Comparison(FilterDirective):
 
     comparator: Comparator
     attribute: str
-    value: Any
+    value: Any = None
 
 
 class Operation(FilterDirective):
@@ -113,7 +113,7 @@ class StructuredQuery(Expr):
 
     query: str
     """Query string."""
-    filter: Optional[FilterDirective]
+    filter: Optional[FilterDirective] = None
     """Filtering expression."""
-    limit: Optional[int]
+    limit: Optional[int] = None
     """Limit on the number of results."""

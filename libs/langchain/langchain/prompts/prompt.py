@@ -5,7 +5,7 @@ from pathlib import Path
 from string import Formatter
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic_v1 import root_validator
+from pydantic import model_validator
 
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
@@ -115,7 +115,8 @@ class PromptTemplate(StringPromptTemplate):
         kwargs = self._merge_partial_and_user_variables(**kwargs)
         return DEFAULT_FORMATTER_MAPPING[self.template_format](self.template, **kwargs)
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def template_is_valid(cls, values: Dict) -> Dict:
         """Check that template and input variables are consistent."""
         if values["validate_template"]:

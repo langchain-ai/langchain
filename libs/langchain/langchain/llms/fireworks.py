@@ -12,7 +12,7 @@ from typing import (
 )
 
 import requests
-from pydantic_v1 import Field, root_validator
+from pydantic import model_validator, ConfigDict, Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -59,13 +59,10 @@ class BaseFireworks(BaseLLM):
         """Initialize the Fireworks object."""
         data.get("model_id", "")
         return super().__new__(cls)
+    model_config = ConfigDict(populate_by_name=True)
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        allow_population_by_field_name = True
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["fireworks_api_key"] = get_from_dict_or_env(
@@ -193,7 +190,8 @@ class FireworksChat(BaseLLM):
     prefix_messages: List = Field(default_factory=list)
     """Series of messages for Chat input."""
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment"""
         values["fireworks_api_key"] = get_from_dict_or_env(

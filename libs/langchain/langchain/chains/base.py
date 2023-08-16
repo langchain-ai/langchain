@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import yaml
-from pydantic_v1 import Field, root_validator, validator
+from pydantic import model_validator, ConfigDict, Field, validator
 
 import langchain
 from langchain.callbacks.base import BaseCallbackManager
@@ -122,17 +122,14 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a chain with its use case.
     """
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @property
     def _chain_type(self) -> str:
         raise NotImplementedError("Saving not supported for this chain type.")
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def raise_callback_manager_deprecation(cls, values: Dict) -> Dict:
         """Raise deprecation warning if callback_manager is used."""
         if values.get("callback_manager") is not None:
@@ -143,6 +140,8 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
             values["callbacks"] = values.pop("callback_manager", None)
         return values
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("verbose", pre=True, always=True)
     def set_verbose(cls, verbose: Optional[bool]) -> bool:
         """Set the chain verbosity.

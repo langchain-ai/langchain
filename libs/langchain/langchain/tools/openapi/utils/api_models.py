@@ -3,7 +3,7 @@ import logging
 from enum import Enum
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
-from pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 from langchain import _PYDANTIC_MAJOR_VERSION
 from langchain.tools.openapi.utils.openapi_utils import HTTPVerb, OpenAPISpec

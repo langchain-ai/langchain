@@ -4,7 +4,7 @@ import os
 from functools import partial
 from typing import Any, Dict, List, Optional
 
-from pydantic_v1 import BaseModel, Extra, root_validator
+from pydantic import model_validator, ConfigDict, BaseModel
 
 from langchain.embeddings.base import Embeddings
 
@@ -40,7 +40,7 @@ class BedrockEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     """Bedrock client."""
     region_name: Optional[str] = None
     """The aws region e.g., `us-west-2`. Fallsback to AWS_DEFAULT_REGION env variable
@@ -64,13 +64,10 @@ class BedrockEmbeddings(BaseModel, Embeddings):
 
     endpoint_url: Optional[str] = None
     """Needed if you don't want to default to us-east-1 endpoint"""
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that AWS credentials to and python package exists in environment."""
 

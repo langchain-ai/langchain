@@ -3,7 +3,7 @@
 import json
 from typing import Any, Dict, Optional
 
-from pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.chains import RetrievalQA, RetrievalQAWithSourcesChain
@@ -19,6 +19,8 @@ class BaseVectorStoreTool(BaseModel):
     vectorstore: VectorStore = Field(exclude=True)
     llm: BaseLanguageModel = Field(default_factory=lambda: OpenAI(temperature=0))
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(BaseTool.Config):
         """Configuration for this pydantic object."""
 

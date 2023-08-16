@@ -16,7 +16,7 @@ import os
 from typing import Any, Dict, Optional, Type, Union
 
 import requests
-from pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
@@ -46,11 +46,11 @@ class NUASchema(BaseModel):
         description="ID of the file to push or pull.",
     )
     path: Optional[str] = Field(
-        ...,
+        None,
         description="Path to the file to push (needed only for `push` action).",
     )
     text: Optional[str] = Field(
-        ...,
+        None,
         description="Text content to process (needed only for `push` action).",
     )
 

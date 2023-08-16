@@ -17,7 +17,7 @@ from typing import (
     Union,
 )
 
-from pydantic_v1 import Field, root_validator
+from pydantic import model_validator, ConfigDict, Field
 
 from langchain.adapters.openai import convert_dict_to_message, convert_message_to_dict
 from langchain.callbacks.manager import (
@@ -175,13 +175,10 @@ class ChatOpenAI(BaseChatModel):
     when using one of the many model providers that expose an OpenAI-like 
     API but with different models. In those cases, in order to avoid erroring 
     when tiktoken is called, you can specify a model name to use here."""
+    model_config = ConfigDict(populate_by_name=True)
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        allow_population_by_field_name = True
-
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
@@ -207,7 +204,8 @@ class ChatOpenAI(BaseChatModel):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["openai_api_key"] = get_from_dict_or_env(

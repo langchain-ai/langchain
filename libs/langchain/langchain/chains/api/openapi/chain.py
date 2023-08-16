@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, List, NamedTuple, Optional, cast
 
-from pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 from requests import Response
 
 from langchain.callbacks.manager import CallbackManagerForChainRun, Callbacks
@@ -29,7 +29,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
     """Chain interacts with an OpenAPI endpoint using natural language."""
 
     api_request_chain: LLMChain
-    api_response_chain: Optional[LLMChain]
+    api_response_chain: Optional[LLMChain] = None
     api_operation: APIOperation
     requests: Requests = Field(exclude=True, default_factory=Requests)
     param_mapping: _ParamMapping = Field(alias="param_mapping")

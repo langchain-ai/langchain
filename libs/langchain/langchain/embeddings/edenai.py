@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional
 
-from pydantic_v1 import BaseModel, Extra, Field, root_validator
+from pydantic import model_validator, ConfigDict, BaseModel, Field
 
 from langchain.embeddings.base import Embeddings
 from langchain.requests import Requests
@@ -17,13 +17,10 @@ class EdenAiEmbeddings(BaseModel, Embeddings):
 
     provider: Optional[str] = "openai"
     """embedding provider to use (eg: openai,google etc.)"""
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
         values["edenai_api_key"] = get_from_dict_or_env(

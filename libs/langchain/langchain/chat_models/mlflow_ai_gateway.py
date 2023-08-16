@@ -3,7 +3,7 @@ import logging
 from functools import partial
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic_v1 import BaseModel, Extra
+from pydantic import BaseModel, Extra
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,

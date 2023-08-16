@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic_v1 import Extra, root_validator
+from pydantic import model_validator, ConfigDict
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -27,7 +27,7 @@ class HuggingFaceHub(LLM):
             hf = HuggingFaceHub(repo_id="gpt2", huggingfacehub_api_token="my-api-key")
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     repo_id: str = DEFAULT_REPO_ID
     """Model name to use."""
     task: Optional[str] = None
@@ -37,13 +37,10 @@ class HuggingFaceHub(LLM):
     """Key word arguments to pass to the model."""
 
     huggingfacehub_api_token: Optional[str] = None
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         huggingfacehub_api_token = get_from_dict_or_env(

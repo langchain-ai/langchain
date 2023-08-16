@@ -3,7 +3,7 @@ import threading
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
-from pydantic_v1 import root_validator
+from pydantic import model_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import BaseChatModel
@@ -69,7 +69,8 @@ class ErnieBotChat(BaseChatModel):
 
     _lock = threading.Lock()
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         values["ernie_client_id"] = get_from_dict_or_env(
             values,

@@ -12,7 +12,7 @@ from typing import (
     Union,
 )
 
-from pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 from langchain.base_language import BaseLanguageModel
 from langchain.chains import LLMChain

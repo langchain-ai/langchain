@@ -15,7 +15,7 @@ from typing import (
     Union,
 )
 
-from pydantic_v1 import Field, root_validator
+from pydantic import model_validator, Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -272,7 +272,8 @@ class ChatLiteLLM(BaseChatModel):
 
         return _completion_with_retry(**kwargs)
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate api key, python package exists, temperature, top_p, and top_k."""
         try:

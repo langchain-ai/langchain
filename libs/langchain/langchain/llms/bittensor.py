@@ -23,7 +23,7 @@ class NIBittensorLLM(LLM):
             llm = NIBittensorLLM()
     """
 
-    system_prompt: Optional[str]
+    system_prompt: Optional[str] = None
     """Provide system prompt that you want to supply it to model before every prompt"""
 
     top_responses: Optional[int] = 0

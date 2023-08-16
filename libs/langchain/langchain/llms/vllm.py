@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-from pydantic_v1 import root_validator
+from pydantic import model_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import BaseLLM
@@ -60,9 +60,10 @@ class VLLM(BaseLLM):
     logprobs: Optional[int] = None
     """Number of log probabilities to return per output token."""
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that python package exists in environment."""
 

@@ -3,7 +3,7 @@ import logging
 import pickle
 from typing import Any, Callable, List, Mapping, Optional
 
-from pydantic_v1 import Extra
+from pydantic import ConfigDict
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -124,11 +124,11 @@ class SelfHostedPipeline(LLM):
             )
     """
 
-    pipeline_ref: Any  #: :meta private:
-    client: Any  #: :meta private:
+    pipeline_ref: Any = None  #: :meta private:
+    client: Any = None  #: :meta private:
     inference_fn: Callable = _generate_text  #: :meta private:
     """Inference function to send to the remote hardware."""
-    hardware: Any
+    hardware: Any = None
     """Remote hardware to send the inference function to."""
     model_load_fn: Callable
     """Function to load the model remotely on the server."""
@@ -136,11 +136,7 @@ class SelfHostedPipeline(LLM):
     """Key word arguments to pass to the model load function."""
     model_reqs: List[str] = ["./", "torch"]
     """Requirements to install on hardware to inference the model."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     def __init__(self, **kwargs: Any):
         """Init the pipeline with an auxiliary function.

@@ -23,7 +23,7 @@ from typing import (
     cast,
 )
 
-from pydantic_v1 import Field
+from pydantic import ConfigDict, Field
 
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.load.dump import dumpd
@@ -439,9 +439,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
     runnable: Runnable[Input, Output]
     fallbacks: Sequence[Runnable[Input, Output]]
     exceptions_to_handle: Tuple[Type[BaseException]] = (Exception,)
-
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @property
     def lc_serializable(self) -> bool:
@@ -692,9 +690,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
     @property
     def lc_namespace(self) -> List[str]:
         return self.__class__.__module__.split(".")[:-1]
-
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def __or__(
         self,
@@ -1114,9 +1110,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
     @property
     def lc_namespace(self) -> List[str]:
         return self.__class__.__module__.split(".")[:-1]
-
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None
@@ -1237,9 +1231,7 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
     bound: Runnable[Input, Output]
 
     kwargs: Mapping[str, Any]
-
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @property
     def lc_serializable(self) -> bool:

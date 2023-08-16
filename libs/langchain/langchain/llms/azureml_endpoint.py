@@ -4,7 +4,7 @@ import warnings
 from abc import abstractmethod
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic_v1 import BaseModel, validator
+from pydantic import BaseModel, validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -233,6 +233,8 @@ class AzureMLOnlineEndpoint(LLM, BaseModel):
     model_kwargs: Optional[dict] = None
     """Key word arguments to pass to the model."""
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("http_client", always=True, allow_reuse=True)
     @classmethod
     def validate_client(cls, field_value: Any, values: Dict) -> AzureMLEndpointClient:

@@ -16,7 +16,7 @@ from typing import (
     overload,
 )
 
-from pydantic_v1 import Field, root_validator
+from pydantic import model_validator, Field
 
 from langchain._api import deprecated
 from langchain.load.serializable import Serializable
@@ -392,7 +392,8 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
         else:
             raise NotImplementedError(f"Unsupported operand type for +: {type(other)}")
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_input_variables(cls, values: dict) -> dict:
         """Validate input variables.
 

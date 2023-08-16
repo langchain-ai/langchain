@@ -20,7 +20,7 @@ from typing import (
     Union,
 )
 
-from pydantic_v1 import Field, root_validator
+from pydantic import model_validator, ConfigDict, Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -205,13 +205,10 @@ class BaseOpenAI(BaseLLM):
             )
             return OpenAIChat(**data)
         return super().__new__(cls)
+    model_config = ConfigDict(populate_by_name=True)
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        allow_population_by_field_name = True
-
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
@@ -221,7 +218,8 @@ class BaseOpenAI(BaseLLM):
         )
         return values
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["openai_api_key"] = get_from_dict_or_env(
@@ -655,7 +653,8 @@ class AzureOpenAI(BaseOpenAI):
     openai_api_type: str = ""
     openai_api_version: str = ""
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_azure_settings(cls, values: Dict) -> Dict:
         values["openai_api_version"] = get_from_dict_or_env(
             values,
@@ -705,7 +704,7 @@ class OpenAIChat(BaseLLM):
             openaichat = OpenAIChat(model_name="gpt-3.5-turbo")
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model_name: str = "gpt-3.5-turbo"
     """Model name to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -725,7 +724,8 @@ class OpenAIChat(BaseLLM):
     disallowed_special: Union[Literal["all"], Collection[str]] = "all"
     """Set of special tokens that are not allowed。"""
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = {field.alias for field in cls.__fields__.values()}
@@ -739,7 +739,8 @@ class OpenAIChat(BaseLLM):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         openai_api_key = get_from_dict_or_env(

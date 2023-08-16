@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic_v1 import Extra, Field, root_validator
+from pydantic import model_validator, ConfigDict, Field
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -40,11 +40,7 @@ class Replicate(LLM):
 
     stop: Optional[List[str]] = Field(default=[])
     """Stop sequences to early-terminate generation."""
-
-    class Config:
-        """Configuration for this pydantic config."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
@@ -54,7 +50,8 @@ class Replicate(LLM):
     def lc_serializable(self) -> bool:
         return True
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = {field.alias for field in cls.__fields__.values()}
@@ -72,7 +69,8 @@ class Replicate(LLM):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         replicate_api_token = get_from_dict_or_env(

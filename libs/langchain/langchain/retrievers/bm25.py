@@ -9,6 +9,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document
+from pydantic import ConfigDict
 
 
 def default_preprocessing_func(text: str) -> List[str]:
@@ -26,11 +27,7 @@ class BM25Retriever(BaseRetriever):
     """ Number of documents to return."""
     preprocess_func: Callable[[str], List[str]] = default_preprocessing_func
     """ Preprocessing function to use on the text before BM25 vectorization."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @classmethod
     def from_texts(

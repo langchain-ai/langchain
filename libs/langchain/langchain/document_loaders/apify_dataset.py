@@ -1,6 +1,6 @@
 from typing import Any, Callable, Dict, List
 
-from pydantic_v1 import BaseModel, root_validator
+from pydantic import model_validator, BaseModel
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -26,7 +26,7 @@ class ApifyDatasetLoader(BaseLoader, BaseModel):
             documents = loader.load()
     """  # noqa: E501
 
-    apify_client: Any
+    apify_client: Any = None
     """An instance of the ApifyClient class from the apify-client Python package."""
     dataset_id: str
     """The ID of the dataset on the Apify platform."""
@@ -49,7 +49,8 @@ class ApifyDatasetLoader(BaseLoader, BaseModel):
             dataset_id=dataset_id, dataset_mapping_function=dataset_mapping_function
         )
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate environment.
 

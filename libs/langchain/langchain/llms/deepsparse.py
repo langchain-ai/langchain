@@ -1,7 +1,7 @@
 # flake8: noqa
 from typing import Any, Dict, Optional, List
 
-from pydantic_v1 import root_validator
+from pydantic import model_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -22,7 +22,7 @@ class DeepSparse(LLM):
             llm = DeepSparse(model="zoo:nlg/text_generation/codegen_mono-350m/pytorch/huggingface/bigpython_bigquery_thepile/base-none")
     """  # noqa: E501
 
-    pipeline: Any  #: :meta private:
+    pipeline: Any = None  #: :meta private:
 
     model: str
     """The path to a model file or directory or the name of a SparseZoo model stub."""
@@ -43,7 +43,8 @@ class DeepSparse(LLM):
         """Return type of llm."""
         return "deepsparse"
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that ``deepsparse`` package is installed."""
         try:

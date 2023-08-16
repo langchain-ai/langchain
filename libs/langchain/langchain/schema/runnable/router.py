@@ -25,6 +25,7 @@ from langchain.schema.runnable.base import (
 )
 from langchain.schema.runnable.config import RunnableConfig
 from langchain.schema.runnable.utils import gather_with_concurrency
+from pydantic import ConfigDict
 
 
 class RouterInput(TypedDict):
@@ -58,9 +59,7 @@ class RouterRunnable(
         super().__init__(
             runnables={key: coerce_to_runnable(r) for key, r in runnables.items()}
         )
-
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @property
     def lc_serializable(self) -> bool:

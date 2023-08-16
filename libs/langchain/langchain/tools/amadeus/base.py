@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pydantic_v1 import Field
+from pydantic import Field
 
 from langchain.tools.amadeus.utils import authenticate
 from langchain.tools.base import BaseTool

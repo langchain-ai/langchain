@@ -3,7 +3,7 @@ import warnings
 from typing import Any, Dict, Iterator, List, Optional
 
 import requests
-from pydantic_v1 import BaseModel, root_validator, validator
+from pydantic import model_validator, BaseModel, validator
 from typing_extensions import NotRequired, TypedDict
 
 from langchain.docstore.document import Document
@@ -61,7 +61,8 @@ class BaseEmbaasLoader(BaseModel):
     params: EmbaasDocumentExtractionParameters = EmbaasDocumentExtractionParameters()
     """Additional parameters to pass to the Embaas document extraction API."""
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         embaas_api_key = get_from_dict_or_env(
@@ -208,9 +209,11 @@ class EmbaasLoader(BaseEmbaasLoader, BaseLoader):
 
     file_path: str
     """The path to the file to load."""
-    blob_loader: Optional[EmbaasBlobLoader]
+    blob_loader: Optional[EmbaasBlobLoader] = None
     """The blob loader to use. If not provided, a default one will be created."""
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("blob_loader", always=True)
     def validate_blob_loader(
         cls, v: EmbaasBlobLoader, values: Dict

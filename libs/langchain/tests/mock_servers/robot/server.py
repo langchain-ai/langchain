@@ -7,7 +7,7 @@ import uvicorn
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
-from pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 PORT = 7289
 
@@ -79,9 +79,9 @@ class WalkInput(BaseModel):
     """Input for walking."""
 
     direction: Direction
-    speed: Optional[float]
+    speed: Optional[float] = None
     style_or_cautiousness: Union[Style, Cautiousness]
-    other_commands: Any
+    other_commands: Any = None
 
 
 class PublicCues(BaseModel):

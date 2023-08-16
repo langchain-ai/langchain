@@ -1,6 +1,6 @@
 from typing import Any, List
 
-from pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain

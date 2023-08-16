@@ -1,7 +1,7 @@
 """Utility that calls OpenAI's Dall-E Image Generator."""
 from typing import Any, Dict, Optional
 
-from pydantic_v1 import BaseModel, Extra, root_validator
+from pydantic import model_validator, ConfigDict, BaseModel
 
 from langchain.utils import get_from_dict_or_env
 
@@ -15,24 +15,21 @@ class DallEAPIWrapper(BaseModel):
 
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     openai_api_key: Optional[str] = None
     """number of images to generate"""
     n: int = 1
     """size of image to generate"""
     size: str = "1024x1024"
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     def _dalle_image_url(self, prompt: str) -> str:
         params = {"prompt": prompt, "n": self.n, "size": self.size}
         response = self.client.create(**params)
         return response["data"][0]["url"]
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         openai_api_key = get_from_dict_or_env(

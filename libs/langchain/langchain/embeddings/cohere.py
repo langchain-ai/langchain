@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-from pydantic_v1 import BaseModel, Extra, root_validator
+from pydantic import model_validator, ConfigDict, BaseModel
 
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
@@ -22,9 +22,9 @@ class CohereEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     """Cohere client."""
-    async_client: Any  #: :meta private:
+    async_client: Any = None  #: :meta private:
     """Cohere async client."""
     model: str = "embed-english-v2.0"
     """Model name to use."""
@@ -33,13 +33,10 @@ class CohereEmbeddings(BaseModel, Embeddings):
     """Truncate embeddings that are too long from start or end ("NONE"|"START"|"END")"""
 
     cohere_api_key: Optional[str] = None
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         cohere_api_key = get_from_dict_or_env(

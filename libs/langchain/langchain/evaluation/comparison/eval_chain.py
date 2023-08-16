@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic_v1 import Extra, Field
+from pydantic import ConfigDict, Field
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
@@ -174,11 +174,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
     output_parser: BaseOutputParser = Field(
         default_factory=PairwiseStringResultOutputParser
     )
-
-    class Config:
-        """Configuration for the PairwiseStringEvalChain."""
-
-        extra = Extra.ignore
+    model_config = ConfigDict(extra="ignore")
 
     @property
     def requires_reference(self) -> bool:

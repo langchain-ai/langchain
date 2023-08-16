@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-from pydantic_v1 import BaseModel, root_validator
+from pydantic import model_validator, BaseModel
 
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
@@ -30,7 +30,7 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
 
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
 
     # Embedding params
     model: str = "luminous-base"
@@ -81,7 +81,8 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
     nice to other users
     by de-prioritizing your request below concurrent ones."""
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         aleph_alpha_api_key = get_from_dict_or_env(

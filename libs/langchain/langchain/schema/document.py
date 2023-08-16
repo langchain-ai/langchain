@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Sequence
 
-from pydantic_v1 import Field
+from pydantic import Field
 
 from langchain.load.serializable import Serializable
 

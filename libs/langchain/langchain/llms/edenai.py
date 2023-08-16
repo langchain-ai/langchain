@@ -3,7 +3,7 @@ import logging
 from typing import Any, Dict, List, Literal, Optional
 
 from aiohttp import ClientSession
-from pydantic_v1 import Extra, Field, root_validator
+from pydantic import model_validator, ConfigDict, Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -55,13 +55,10 @@ class EdenAI(LLM):
 
     stop_sequences: Optional[List[str]] = None
     """Stop sequences to use."""
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
         values["edenai_api_key"] = get_from_dict_or_env(
@@ -69,7 +66,8 @@ class EdenAI(LLM):
         )
         return values
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = {field.alias for field in cls.__fields__.values()}

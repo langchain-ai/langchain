@@ -2,7 +2,7 @@ import importlib.util
 import logging
 from typing import Any, List, Mapping, Optional
 
-from pydantic_v1 import Extra
+from pydantic import ConfigDict
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -46,18 +46,14 @@ class HuggingFacePipeline(LLM):
             hf = HuggingFacePipeline(pipeline=pipe)
     """
 
-    pipeline: Any  #: :meta private:
+    pipeline: Any = None  #: :meta private:
     model_id: str = DEFAULT_MODEL_ID
     """Model name to use."""
     model_kwargs: Optional[dict] = None
     """Key word arguments passed to the model."""
     pipeline_kwargs: Optional[dict] = None
     """Key word arguments passed to the pipeline."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     @classmethod
     def from_model_id(

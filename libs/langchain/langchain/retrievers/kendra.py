@@ -2,7 +2,7 @@ import re
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Union
 
-from pydantic_v1 import BaseModel, Extra, root_validator, validator
+from pydantic import field_validator, model_validator, BaseModel, Extra
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.docstore.document import Document
@@ -60,9 +60,9 @@ class Highlight(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
     """The zero-based location in the excerpt where the highlight starts."""
     EndOffset: int
     """The zero-based location in the excerpt where the highlight ends."""
-    TopAnswer: Optional[bool]
+    TopAnswer: Optional[bool] = None
     """Indicates whether the result is the best one."""
-    Type: Optional[str]
+    Type: Optional[str] = None
     """The highlight type: STANDARD or THESAURUS_SYNONYM."""
 
 
@@ -72,7 +72,7 @@ class TextWithHighLights(BaseModel, extra=Extra.allow):  # type: ignore[call-arg
 
     Text: str
     """The text."""
-    Highlights: Optional[Any]
+    Highlights: Optional[Any] = None
     """The highlights."""
 
 
@@ -105,13 +105,13 @@ class AdditionalResultAttribute(BaseModel, extra=Extra.allow):  # type: ignore[c
 class DocumentAttributeValue(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
     """The value of a document attribute."""
 
-    DateValue: Optional[str]
+    DateValue: Optional[str] = None
     """The date expressed as an ISO 8601 string."""
-    LongValue: Optional[int]
+    LongValue: Optional[int] = None
     """The long value."""
-    StringListValue: Optional[List[str]]
+    StringListValue: Optional[List[str]] = None
     """The string list value."""
-    StringValue: Optional[str]
+    StringValue: Optional[str] = None
     """The string value."""
 
     @property
@@ -146,11 +146,11 @@ class DocumentAttribute(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
 class ResultItem(BaseModel, ABC, extra=Extra.allow):  # type: ignore[call-arg]
     """Abstract class that represents a result item."""
 
-    Id: Optional[str]
+    Id: Optional[str] = None
     """The ID of the relevant result item."""
-    DocumentId: Optional[str]
+    DocumentId: Optional[str] = None
     """The document ID."""
-    DocumentURI: Optional[str]
+    DocumentURI: Optional[str] = None
     """The document URI."""
     DocumentAttributes: Optional[List[DocumentAttribute]] = []
     """The document attributes."""
@@ -204,19 +204,19 @@ class QueryResultItem(ResultItem):
 
     DocumentTitle: TextWithHighLights
     """The document title."""
-    FeedbackToken: Optional[str]
+    FeedbackToken: Optional[str] = None
     """Identifies a particular result from a particular query."""
-    Format: Optional[str]
+    Format: Optional[str] = None
     """
     If the Type is ANSWER, then format is either:
         * TABLE: a table excerpt is returned in TableExcerpt;
         * TEXT: a text excerpt is returned in DocumentExcerpt.
     """
-    Type: Optional[str]
+    Type: Optional[str] = None
     """Type of result: DOCUMENT or QUESTION_ANSWER or ANSWER"""
     AdditionalAttributes: Optional[List[AdditionalResultAttribute]] = []
     """One or more additional attributes associated with the result."""
-    DocumentExcerpt: Optional[TextWithHighLights]
+    DocumentExcerpt: Optional[TextWithHighLights] = None
     """Excerpt of the document text."""
 
     def get_title(self) -> str:
@@ -251,9 +251,9 @@ class QueryResultItem(ResultItem):
 class RetrieveResultItem(ResultItem):
     """A Retrieve API result item."""
 
-    DocumentTitle: Optional[str]
+    DocumentTitle: Optional[str] = None
     """The document title."""
-    Content: Optional[str]
+    Content: Optional[str] = None
     """The content of the item."""
 
     def get_title(self) -> str:
@@ -336,13 +336,15 @@ class AmazonKendraRetriever(BaseRetriever):
     client: Any
     user_context: Optional[Dict] = None
 
-    @validator("top_k")
+    @field_validator("top_k")
+    @classmethod
     def validate_top_k(cls, value: int) -> int:
         if value < 0:
             raise ValueError(f"top_k ({value}) cannot be negative.")
         return value
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def create_client(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if values.get("client") is not None:
             return values

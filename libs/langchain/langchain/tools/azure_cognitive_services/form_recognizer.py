@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional
 
-from pydantic_v1 import root_validator
+from pydantic import model_validator
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.azure_cognitive_services.utils import detect_file_src_type
@@ -22,7 +22,7 @@ class AzureCogsFormRecognizerTool(BaseTool):
 
     azure_cogs_key: str = ""  #: :meta private:
     azure_cogs_endpoint: str = ""  #: :meta private:
-    doc_analysis_client: Any  #: :meta private:
+    doc_analysis_client: Any = None  #: :meta private:
 
     name = "azure_cognitive_services_form_recognizer"
     description = (
@@ -32,7 +32,8 @@ class AzureCogsFormRecognizerTool(BaseTool):
         "Input should be a url to a document."
     )
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and endpoint exists in environment."""
         azure_cogs_key = get_from_dict_or_env(

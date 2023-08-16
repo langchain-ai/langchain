@@ -9,7 +9,7 @@ To use this tool, you must first set as environment variables:
 """
 from typing import Optional
 
-from pydantic_v1 import Field
+from pydantic import Field
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool

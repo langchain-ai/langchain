@@ -1,7 +1,7 @@
 """Document transformers that use OpenAI Functions models"""
 from typing import Any, Dict, Optional, Sequence, Type, Union
 
-from pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 from langchain.chains.llm import LLMChain
 from langchain.chains.openai_functions import create_tagging_chain

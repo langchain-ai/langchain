@@ -1,7 +1,7 @@
 """Fake LLM wrapper for testing purposes."""
 from typing import Any, Dict, List, Mapping, Optional, cast
 
-from pydantic_v1 import validator
+from pydantic import validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -14,6 +14,8 @@ class FakeLLM(LLM):
     sequential_responses: Optional[bool] = False
     response_index: int = 0
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("queries", always=True)
     def check_queries_required(
         cls, queries: Optional[Mapping], values: Mapping[str, Any]

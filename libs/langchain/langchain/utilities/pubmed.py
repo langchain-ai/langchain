@@ -5,7 +5,7 @@ import urllib.error
 import urllib.request
 from typing import Any, Dict, Iterator, List
 
-from pydantic_v1 import BaseModel
+from pydantic import model_validator, BaseModel
 from pydantic_v1.class_validators import root_validator
 
 from langchain.schema import Document
@@ -34,7 +34,7 @@ class PubMedAPIWrapper(BaseModel):
         email: email address to be used for the PubMed API.
     """
 
-    parse: Any  #: :meta private:
+    parse: Any = None  #: :meta private:
 
     base_url_esearch = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?"
     base_url_efetch = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?"
@@ -47,7 +47,8 @@ class PubMedAPIWrapper(BaseModel):
     doc_content_chars_max: int = 2000
     email: str = "your_email@example.com"
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         try:

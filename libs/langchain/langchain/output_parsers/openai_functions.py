@@ -2,7 +2,7 @@ import copy
 import json
 from typing import Any, Dict, List, Type, Union
 
-from pydantic_v1 import BaseModel, root_validator
+from pydantic import model_validator, BaseModel
 
 from langchain.schema import (
     ChatGeneration,
@@ -68,7 +68,8 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
     pydantic_schema: Union[Type[BaseModel], Dict[str, Type[BaseModel]]]
     """The pydantic schema to parse the output with."""
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_schema(cls, values: Dict) -> Dict:
         schema = values["pydantic_schema"]
         if "args_only" not in values:

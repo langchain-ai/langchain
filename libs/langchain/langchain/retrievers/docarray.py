@@ -7,6 +7,7 @@ from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseRetriever, Document
 from langchain.vectorstores.utils import maximal_marginal_relevance
+from pydantic import ConfigDict
 
 
 class SearchType(str, Enum):
@@ -43,11 +44,7 @@ class DocArrayRetriever(BaseRetriever):
     search_type: SearchType = SearchType.similarity
     top_k: int = 1
     filters: Optional[Any] = None
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def _get_relevant_documents(
         self,

@@ -1,7 +1,7 @@
 from functools import partial
 from typing import Any, Dict, List, Optional, Sequence
 
-from pydantic_v1 import root_validator
+from pydantic import model_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -24,7 +24,7 @@ class CTransformers(LLM):
             llm = CTransformers(model="/path/to/ggml-gpt-2.bin", model_type="gpt2")
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
 
     model: str
     """The path to a model file or directory or the name of a Hugging Face Hub
@@ -58,7 +58,8 @@ class CTransformers(LLM):
         """Return type of llm."""
         return "ctransformers"
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that ``ctransformers`` package is installed."""
         try:

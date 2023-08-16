@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 
-from pydantic_v1 import Extra, Field, root_validator
+from pydantic import model_validator, ConfigDict, Field
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document
@@ -73,15 +73,12 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
 
     _client: SearchServiceClient
     _serving_config: str
+    # TODO[pydantic]: The following keys were removed: `underscore_attrs_are_private`.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True, underscore_attrs_are_private=True)
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-        underscore_attrs_are_private = True
-
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validates the environment."""
         try:

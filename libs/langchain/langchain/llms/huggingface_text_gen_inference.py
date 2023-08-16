@@ -1,6 +1,6 @@
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
-from pydantic_v1 import Extra, Field, root_validator
+from pydantic import model_validator, ConfigDict, Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -88,15 +88,12 @@ class HuggingFaceTextGenInference(LLM):
     timeout: int = 120
     server_kwargs: Dict[str, Any] = Field(default_factory=dict)
     streaming: bool = False
-    client: Any
-    async_client: Any
+    client: Any = None
+    async_client: Any = None
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that python package exists in environment."""
 

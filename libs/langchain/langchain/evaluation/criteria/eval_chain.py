@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any, Dict, List, Mapping, Optional, Union
 
-from pydantic_v1 import Extra, Field
+from pydantic import ConfigDict, Field
 
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
@@ -207,11 +207,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     criterion_name: str
     """The name of the criterion being evaluated."""
     output_key: str = "results"  #: :meta private:
-
-    class Config:
-        """Configuration for the QAEvalChain."""
-
-        extra = Extra.ignore
+    model_config = ConfigDict(extra="ignore")
 
     @property
     def requires_reference(self) -> bool:

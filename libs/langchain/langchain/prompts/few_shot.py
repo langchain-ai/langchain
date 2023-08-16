@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic_v1 import BaseModel, Extra, Field, root_validator
+from pydantic import model_validator, ConfigDict, BaseModel, Field
 
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
@@ -26,14 +26,10 @@ class _FewShotPromptTemplateMixin(BaseModel):
     example_selector: Optional[BaseExampleSelector] = None
     """ExampleSelector to choose the examples to format into the prompt.
     Either this or examples should be provided."""
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def check_examples_and_selector(cls, values: Dict) -> Dict:
         """Check that one and only one of examples/example_selector are provided."""
         examples = values.get("examples", None)
@@ -102,7 +98,8 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
     template_format: str = "f-string"
     """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def template_is_valid(cls, values: Dict) -> Dict:
         """Check that prefix, suffix, and input variables are consistent."""
         if values["validate_template"]:
@@ -112,12 +109,7 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
                 values["input_variables"] + list(values["partial_variables"]),
             )
         return values
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     def format(self, **kwargs: Any) -> str:
         """Format the prompt with the inputs.
@@ -293,12 +285,7 @@ class FewShotChatMessagePromptTemplate(
     to pass to the example_selector, if provided."""
     example_prompt: Union[BaseMessagePromptTemplate, BaseChatPromptTemplate]
     """The class to format each example."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """Format kwargs into a list of messages.

@@ -2,7 +2,7 @@ import json
 from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 import requests
-from pydantic_v1 import Extra
+from pydantic import ConfigDict
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import BaseLLM
@@ -156,11 +156,7 @@ class Ollama(BaseLLM, _OllamaCommon):
             from langchain.llms import Ollama
             ollama = Ollama(model="llama2")
     """
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     @property
     def _llm_type(self) -> str:

@@ -2,7 +2,7 @@ import re
 import warnings
 from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Mapping, Optional
 
-from pydantic_v1 import Field, root_validator
+from pydantic import model_validator, Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -52,7 +52,8 @@ class _AnthropicCommon(BaseLanguageModel):
     count_tokens: Optional[Callable[[str], int]] = None
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def build_extra(cls, values: Dict) -> Dict:
         extra = values.get("model_kwargs", {})
         all_required_field_names = get_pydantic_field_names(cls)
@@ -61,7 +62,8 @@ class _AnthropicCommon(BaseLanguageModel):
         )
         return values
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["anthropic_api_key"] = get_from_dict_or_env(
@@ -158,7 +160,8 @@ class Anthropic(LLM, _AnthropicCommon):
             response = model(prompt)
     """
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     def raise_warning(cls, values: Dict) -> Dict:
         """Raise warning that this class is deprecated."""
         warnings.warn(

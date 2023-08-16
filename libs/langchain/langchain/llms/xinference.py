@@ -64,10 +64,10 @@ class Xinference(LLM):
 
     """  # noqa: E501
 
-    client: Any
-    server_url: Optional[str]
+    client: Any = None
+    server_url: Optional[str] = None
     """URL of the xinference server"""
-    model_uid: Optional[str]
+    model_uid: Optional[str] = None
     """UID of the launched model"""
 
     def __init__(

@@ -10,7 +10,7 @@ from typing import (
 )
 
 import requests
-from pydantic_v1 import BaseModel, Extra, Field, PrivateAttr, root_validator
+from pydantic import model_validator, ConfigDict, BaseModel, Field, PrivateAttr
 
 from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
@@ -29,7 +29,8 @@ class _MinimaxEndpointClient(BaseModel):
     api_key: str
     api_url: str
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def set_api_url(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if "api_url" not in values:
             host = values["host"]
@@ -78,13 +79,10 @@ class Minimax(LLM):
     minimax_api_host: Optional[str] = None
     minimax_group_id: Optional[str] = None
     minimax_api_key: Optional[str] = None
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator()
+    @model_validator()
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["minimax_api_key"] = get_from_dict_or_env(

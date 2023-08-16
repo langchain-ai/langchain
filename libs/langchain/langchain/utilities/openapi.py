@@ -11,7 +11,7 @@ from typing import Dict, List, Optional, Union
 
 import requests
 import yaml
-from pydantic_v1 import ValidationError
+from pydantic import ValidationError
 
 from langchain import _PYDANTIC_MAJOR_VERSION
 
