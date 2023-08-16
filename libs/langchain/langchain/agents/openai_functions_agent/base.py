@@ -106,7 +106,7 @@ def _format_arguments(arguments: str) -> str:
 
         return arguments
     except JSONDecodeError:
-        pass 
+        pass
 
     return json.dumps(arguments)
 
