@@ -33,23 +33,26 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
 
 class ErnieBotChat(BaseChatModel):
-    """ErnieBot Chat large language model.
+    """`ERNIE-Bot` large language model.
 
     ERNIE-Bot is a large language model developed by Baidu,
     covering a huge amount of Chinese data.
 
-    To use, you should have the `ernie_client_id` and `ernie_client_secret` set.
-
+    To use, you should have the `ernie_client_id` and `ernie_client_secret` set,
     or set the environment variable `ERNIE_CLIENT_ID` and `ERNIE_CLIENT_SECRET`.
 
+    Note:
     access_token will be automatically generated based on client_id and client_secret,
-    and will be regenerated after expiration.
+    and will be regenerated after expiration (30 days).
+
+    Default model is `ERNIE-Bot-turbo`,
+    currently supported models are `ERNIE-Bot-turbo`, `ERNIE-Bot`
 
     Example:
         .. code-block:: python
 
             from langchain.chat_models import ErnieBotChat
-            chat = ErnieBotChat()
+            chat = ErnieBotChat(model_name='ERNIE-Bot')
 
     """
 
@@ -133,10 +136,13 @@ class ErnieBotChat(BaseChatModel):
             "top_p": self.top_p,
             "temperature": self.temperature,
             "penalty_score": self.penalty_score,
+            **kwargs,
         }
+        logger.debug(f"Payload for ernie api is {payload}")
         resp = self._chat(payload)
         if resp.get("error_code"):
             if resp.get("error_code") == 111:
+                logger.debug("access_token expired, refresh it")
                 self._refresh_access_token_with_lock()
                 resp = self._chat(payload)
             else:
@@ -153,4 +159,4 @@ class ErnieBotChat(BaseChatModel):
 
     @property
     def _llm_type(self) -> str:
-        return "ernie-chat"
+        return "ernie-bot-chat"
