@@ -100,7 +100,6 @@ if _PYDANTIC_MAJOR_VERSION == 1:
         from openapi_schema_pydantic import (
             MediaType,
             Parameter,
-            Reference,
             RequestBody,
             Schema,
         )
