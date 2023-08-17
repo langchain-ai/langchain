@@ -3,7 +3,7 @@ import logging
 from typing import Any, Callable, Dict, List, Mapping, Optional
 
 import requests
-from pydantic import Extra, root_validator
+from pydantic_v1 import Extra, root_validator
 from requests import ConnectTimeout, ReadTimeout, RequestException
 from tenacity import (
     before_sleep_log,
