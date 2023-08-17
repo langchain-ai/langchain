@@ -375,13 +375,21 @@ class AmazonKendraRetriever(BaseRetriever):
                 "profile name are valid."
             ) from e
 
-    def _kendra_query(self, query: str) -> Sequence[ResultItem]:
+    def _kendra_query(
+        self, 
+        query: str,
+        attribute_filter: Optional[Dict] = None,
+    ) -> Sequence[ResultItem]:
         kendra_kwargs = {
             "IndexId": self.index_id,
             "QueryText": query.strip(),
             "PageSize": self.top_k,
         }
-        if self.attribute_filter is not None:
+        #attribute_filter provided in _get_relevant_documents supersedes that defined at retriever instance
+        if attribute_filter is not None:
+            kendra_kwargs["AttributeFilter"] = attribute_filter
+        #otherwise attribute_filter falls back to retriever instance attribute
+        elif self.attribute_filter is not None:
             kendra_kwargs["AttributeFilter"] = self.attribute_filter
         if self.user_context is not None:
             kendra_kwargs["UserContext"] = self.user_context
@@ -406,6 +414,7 @@ class AmazonKendraRetriever(BaseRetriever):
     def _get_relevant_documents(
         self,
         query: str,
+        attribute_filter: Optional[Dict] = None,
         *,
         run_manager: CallbackManagerForRetrieverRun,
     ) -> List[Document]:
@@ -417,6 +426,6 @@ class AmazonKendraRetriever(BaseRetriever):
             docs = retriever.get_relevant_documents('This is my query')
 
         """
-        result_items = self._kendra_query(query)
+        result_items = self._kendra_query(query,attribute_filter)
         top_k_docs = self._get_top_k_docs(result_items)
         return top_k_docs
