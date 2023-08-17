@@ -10,7 +10,7 @@ on:
       test_type:
         type: string
         description: "Test types to run"
-        default: '["core", "extended"]'
+        default: '["core", "extended", "core-pydantic-2"]'
 
 env:
   POETRY_VERSION: "1.4.2"
@@ -43,19 +43,42 @@ jobs:
               if [ "${{ matrix.test_type }}" == "core" ]; then
                 echo "Running core tests, installing dependencies with poetry..."
                 poetry install
+              elif [ "${{ matrix.test_type }}" == "core-pydantic-2" ]; then
+                echo "Running core-pydantic-v2 tests, installing dependencies with poetry..."
+                poetry install
+                poetry add pydantic@2.1
               else
                 echo "Running extended tests, installing dependencies with poetry..."
                 poetry install -E extended_testing
               fi
-      - name: Install langchain editable
-        if: ${{ inputs.working-directory != 'langchain' }}
+      - name: Verify pydantic version
         run: |
-          pip install -e ../langchain
+          if [ "${{ matrix.test_type }}" == "core-pydantic-2" ]; then
+            EXPECTED_VERSION=2
+          else
+            EXPECTED_VERSION=1
+          fi
+          echo "Checking pydantic version... Expecting ${EXPECTED_VERSION}"
+          
+          # Determine the major part of pydantic version
+          VERSION=$(poetry run python -c "import pydantic; print(pydantic.__version__)" | cut -d. -f1)
+          
+          # Check that the major part of pydantic version is as expected, if not
+          # raise an error
+          if [[ "$VERSION" -ne $EXPECTED_VERSION ]]; then
+            echo "Error: pydantic version must be equal to ${EXPECTED_VERSION}; Found: ${VERSION}"
+            exit 1
+          fi
+          echo "Found pydantic version ${VERSION}, as expected"
+        shell: bash
       - name: Run ${{matrix.test_type}} tests
         run: |
-          if [ "${{ matrix.test_type }}" == "core" ]; then
-            make test
-          else
-            make extended_tests
-          fi
+          case "${{ matrix.test_type }}" in
+              core | core-pydantic-2)
+                  make test
+                  ;;
+              *)
+                  make extended_tests
+                  ;;
+          esac
         shell: bash

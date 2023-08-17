@@ -10,7 +10,8 @@ logger = logging.getLogger(__name__)
 
 
 class PlaywrightURLLoader(BaseLoader):
-    """Loader that uses Playwright and to load a page and unstructured to load the html.
+    """Load `HTML` pages with `Playwright` and parse with `Unstructured`.
+
     This is useful for loading pages that require javascript to render.
 
     Attributes:

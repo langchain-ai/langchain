@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.260"
+version = "0.0.267"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -12,21 +12,20 @@ langchain-server = "langchain.server:main"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-pydantic = "^1"
+pydantic = ">=1,<3"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
 PyYAML = ">=5.3"
 numpy = "^1"
 azure-core = {version = "^1.26.4", optional=true}
 tqdm = {version = ">=4.48.0", optional = true}
-openapi-schema-pydantic = "^1.2"
+openapi-schema-pydantic = {version = "^1.2", optional = true}
 faiss-cpu = {version = "^1", optional = true}
 wikipedia = {version = "^1", optional = true}
 elasticsearch = {version = "^8", optional = true}
 opensearch-py = {version = "^2.0.0", optional = true}
 redis = {version = "^4", optional = true}
 manifest-ml = {version = "^0.0.1", optional = true}
-spacy = {version = "^3", optional = true}
 nltk = {version = "^3", optional = true}
 transformers = {version = "^4", optional = true}
 beautifulsoup4 = {version = "^4", optional = true}
@@ -42,7 +41,6 @@ marqo = {version = "^0.11.0", optional=true}
 google-api-python-client = {version = "2.70.0", optional = true}
 google-auth = {version = "^2.18.1", optional = true}
 wolframalpha = {version = "5.0.0", optional = true}
-anthropic = {version = "^0.3", optional = true}
 qdrant-client = {version = "^1.3.1", optional = true, python = ">=3.8.1,<3.12"}
 dataclasses-json = "^0.5.7"
 tensorflow-text = {version = "^2.11.0", optional = true, python = "^3.10, <3.12"}
@@ -52,8 +50,6 @@ openai = {version = "^0", optional = true}
 nlpcloud = {version = "^1", optional = true}
 nomic = {version = "^1.0.43", optional = true}
 huggingface_hub = {version = "^0", optional = true}
-octoai-sdk = {version = "^0.1.1", optional = true}
-jina = {version = "^3.14", optional = true}
 google-search-results = {version = "^2", optional = true}
 sentence-transformers = {version = "^2", optional = true}
 aiohttp = "^3.8.3"
@@ -81,7 +77,6 @@ pexpect = {version = "^4.8.0", optional = true}
 pyvespa = {version = "^0.33.0", optional = true}
 O365 = {version = "^2.0.26", optional = true}
 jq = {version = "^1.4.1", optional = true}
-steamship = {version = "^2.16.9", optional = true}
 pdfminer-six = {version = "^20221105", optional = true}
 docarray = {version="^0.32.0", extras=["hnswlib"], optional=true}
 lxml = {version = "^4.9.2", optional = true}
@@ -91,7 +86,6 @@ gql = {version = "^3.4.1", optional = true}
 pandas = {version = "^2.0.1", optional = true}
 telethon = {version = "^1.28.5", optional = true}
 neo4j = {version = "^5.8.1", optional = true}
-zep-python = {version=">=0.32", optional=true}
 langkit = {version = ">=0.0.6, <0.1.0", optional = true}
 chardet = {version="^5.1.0", optional=true}
 requests-toolbelt = {version = "^1.0.0", optional = true}
@@ -113,18 +107,16 @@ mwxml = {version = "^0.3.3", optional = true}
 awadb = {version = "^0.3.9", optional = true}
 azure-search-documents = {version = "11.4.0b6", optional = true}
 esprima = {version = "^4.0.1", optional = true}
-openllm = {version = ">=0.1.19", optional = true}
 streamlit = {version = "^1.18.0", optional = true, python = ">=3.8.1,<3.9.7 || >3.9.7,<4.0"}
 psychicapi = {version = "^0.8.0", optional = true}
 cassio = {version = "^0.0.7", optional = true}
 rdflib = {version = "^6.3.2", optional = true}
 sympy = {version = "^1.12", optional = true}
 rapidfuzz = {version = "^3.1.1", optional = true}
-langsmith = "~0.0.11"
+langsmith = "~0.0.21"
 rank-bm25 = {version = "^0.2.2", optional = true}
 amadeus = {version = ">=8.1.0", optional = true}
 geopandas = {version = "^0.13.1", optional = true}
-xinference = {version = "^0.0.6", optional = true}
 python-arango = {version = "^7.5.9", optional = true}
 gitpython = {version = "^3.1.32", optional = true}
 librosa = {version="^0.10.0.post2", optional = true }
@@ -133,6 +125,7 @@ newspaper3k = {version = "^0.2.8", optional = true}
 amazon-textract-caller = {version = "<2", optional = true}
 xata = {version = "^1.0.0a7", optional = true}
 xmltodict = {version = "^0.13.0", optional = true}
+
 
 [tool.poetry.group.test.dependencies]
 # The only dependencies that should be added are
@@ -177,32 +170,9 @@ optional = true
 pytest-vcr = "^1.0.2"
 wrapt = "^1.15.0"
 openai = "^0.27.4"
-elasticsearch = {extras = ["async"], version = "^8.6.2"}
-redis = "^4.5.4"
-pinecone-client = "^2.2.1"
-pinecone-text = "^0.4.2"
-pymongo = "^4.3.3"
-clickhouse-connect = "^0.5.14"
-transformers = "^4.27.4"
-deeplake = "^3.6.8"
-libdeeplake = "^0.0.60"
-weaviate-client = "^3.15.5"
-torch = "^1.0.0"
-chromadb = "^0.4.0"
-tiktoken = "^0.3.3"
 python-dotenv = "^1.0.0"
-sentence-transformers = "^2"
-gptcache = "^0.1.9"
-promptlayer = "^0.1.80"
-tair = "^1.3.3"
-wikipedia = "^1"
 cassio = "^0.0.7"
-arxiv = "^1.4"
-mastodon-py = "^1.8.1"
-momento = "^1.5.0"
-# Please do not add any dependencies in the test_integration group
-# See instructions above ^^
-pygithub = "^1.59.0"
+tiktoken = "^0.3.2"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.0.249"
@@ -227,7 +197,7 @@ playwright = "^1.28.0"
 setuptools = "^67.6.1"
 
 [tool.poetry.extras]
-llms = ["anthropic", "clarifai", "cohere", "openai", "openllm", "openlm", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers", "xinference"]
+llms = ["clarifai", "cohere", "openai", "openlm", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
 qdrant = ["qdrant-client"]
 openai = ["openai", "tiktoken"]
 text_helpers = ["chardet"]
@@ -247,13 +217,11 @@ azure = [
     "azure-search-documents",
 ]
 all = [
-    "anthropic",
     "clarifai",
     "cohere",
     "openai",
     "nlpcloud",
     "huggingface_hub",
-    "jina",
     "manifest-ml",
     "elasticsearch",
     "opensearch-py",
@@ -261,7 +229,6 @@ all = [
     "faiss-cpu",
     "sentence-transformers",
     "transformers",
-    "spacy",
     "nltk",
     "wikipedia",
     "beautifulsoup4",
@@ -305,7 +272,6 @@ all = [
     "O365",
     "jq",
     "docarray",
-    "steamship",
     "pdfminer-six",
     "lxml",
     "requests-toolbelt",
@@ -320,10 +286,8 @@ all = [
     "nebula3-python",
     "awadb",
     "esprima",
-    "octoai-sdk",
     "rdflib",
     "amadeus",
-    "xinference",
     "librosa",
     "python-arango",
 ]
@@ -352,7 +316,6 @@ extended_testing = [
  "pandas",
  "telethon",
  "psychicapi",
- "zep-python",
  "gql",
  "requests_toolbelt",
  "html2text",
@@ -367,17 +330,13 @@ extended_testing = [
  "rank_bm25",
  "geopandas",
  "jinja2",
- "xinference",
  "gitpython",
  "newspaper3k",
  "feedparser",
  "xata",
  "xmltodict",
- "anthropic",
-]
-
-scheduled_testing = [
- "openai",
+ "faiss-cpu",
+ "openapi-schema-pydantic",
 ]
 
 [tool.ruff]

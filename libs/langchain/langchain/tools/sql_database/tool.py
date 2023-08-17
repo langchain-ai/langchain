@@ -2,7 +2,7 @@
 """Tools for interacting with a SQL database."""
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
 
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.callbacks.manager import (
@@ -33,8 +33,8 @@ class BaseSQLDatabaseTool(BaseModel):
 class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
     """Tool for querying a SQL database."""
 
-    name = "sql_db_query"
-    description = """
+    name: str = "sql_db_query"
+    description: str = """
     Input to this tool is a detailed and correct SQL query, output is a result from the database.
     If the query is not correct, an error message will be returned.
     If an error is returned, rewrite the query, check the query, and try again.
@@ -52,8 +52,8 @@ class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
 class InfoSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
     """Tool for getting metadata about a SQL database."""
 
-    name = "sql_db_schema"
-    description = """
+    name: str = "sql_db_schema"
+    description: str = """
     Input to this tool is a comma-separated list of tables, output is the schema and sample rows for those tables.    
 
     Example Input: "table1, table2, table3"
@@ -71,8 +71,8 @@ class InfoSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
 class ListSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
     """Tool for getting tables names."""
 
-    name = "sql_db_list_tables"
-    description = "Input is an empty string, output is a comma separated list of tables in the database."
+    name: str = "sql_db_list_tables"
+    description: str = "Input is an empty string, output is a comma separated list of tables in the database."
 
     def _run(
         self,
@@ -90,8 +90,8 @@ class QuerySQLCheckerTool(BaseSQLDatabaseTool, BaseTool):
     template: str = QUERY_CHECKER
     llm: BaseLanguageModel
     llm_chain: LLMChain = Field(init=False)
-    name = "sql_db_query_checker"
-    description = """
+    name: str = "sql_db_query_checker"
+    description: str = """
     Use this tool to double check if your query is correct before executing it.
     Always use this tool before executing a query with query_sql_db!
     """

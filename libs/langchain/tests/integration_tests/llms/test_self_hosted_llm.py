@@ -2,8 +2,6 @@
 import pickle
 from typing import Any, List, Optional
 
-from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
-
 from langchain.llms import SelfHostedHuggingFaceLLM, SelfHostedPipeline
 
 model_reqs = ["pip:./", "transformers", "torch"]
@@ -58,6 +56,8 @@ def test_self_hosted_huggingface_pipeline_summarization() -> None:
 
 def load_pipeline() -> Any:
     """Load pipeline for testing."""
+    from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+
     model_id = "gpt2"
     tokenizer = AutoTokenizer.from_pretrained(model_id)
     model = AutoModelForCausalLM.from_pretrained(model_id)
