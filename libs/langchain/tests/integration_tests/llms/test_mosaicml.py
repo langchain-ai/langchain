@@ -26,8 +26,7 @@ def test_mosaicml_extra_kwargs() -> None:
     llm = MosaicML(model_kwargs={"max_new_tokens": 1})
     assert llm.model_kwargs == {"max_new_tokens": 1}
 
-    input_str = "Say foo:"
-    output = llm(input_str)
+    output = llm("Say foo:")
 
     assert isinstance(output, str)
 
