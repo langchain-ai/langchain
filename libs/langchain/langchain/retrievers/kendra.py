@@ -264,7 +264,7 @@ class RetrieveResultItem(ResultItem):
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
 class QueryResult(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
-    """``Amazon Kendra Query API`` search result.
+    """`Amazon Kendra Query API` search result.
 
     It is composed of:
         * Relevant suggested answers: either a text excerpt or table excerpt.
@@ -278,7 +278,7 @@ class QueryResult(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
 class RetrieveResult(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
-    """``Amazon Kendra Retrieve API`` search result.
+    """`Amazon Kendra Retrieve API` search result.
 
     It is composed of:
         * relevant passages or text excerpts given an input query.
@@ -291,7 +291,7 @@ class RetrieveResult(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
 
 
 class AmazonKendraRetriever(BaseRetriever):
-    """``Amazon Kendra Index`` retriever.
+    """`Amazon Kendra Index` retriever.
 
     Args:
         index_id: Kendra index id

@@ -66,7 +66,7 @@ class QuestionListOutputParser(PydanticOutputParser):
 
 
 class WebResearchRetriever(BaseRetriever):
-    """``Google Search API`` retriever."""
+    """`Google Search API` retriever."""
 
     # Inputs
     vectorstore: VectorStore = Field(

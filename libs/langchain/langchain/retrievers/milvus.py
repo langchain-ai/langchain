@@ -12,7 +12,7 @@ from langchain.vectorstores.milvus import Milvus
 
 
 class MilvusRetriever(BaseRetriever):
-    """``Milvus API`` retriever."""
+    """`Milvus API` retriever."""
 
     embedding_function: Embeddings
     collection_name: str = "LangChainCollection"

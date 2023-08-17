@@ -20,7 +20,7 @@ else:
 
 
 class CohereRerank(BaseDocumentCompressor):
-    """Document compressor that uses ``Cohere Rerank API``."""
+    """Document compressor that uses `Cohere Rerank API`."""
 
     client: Client
     """Cohere client to use for compressing documents."""

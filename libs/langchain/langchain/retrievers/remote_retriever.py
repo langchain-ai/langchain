@@ -11,7 +11,7 @@ from langchain.schema import BaseRetriever, Document
 
 
 class RemoteLangChainRetriever(BaseRetriever):
-    """``LangChain API`` retriever."""
+    """`LangChain API` retriever."""
 
     url: str
     """URL of the remote LangChain API."""

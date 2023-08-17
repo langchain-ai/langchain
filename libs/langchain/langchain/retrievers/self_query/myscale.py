@@ -49,7 +49,7 @@ def _FUNCTION_COMPOSER(op_name: str) -> Callable:
 
 
 class MyScaleTranslator(Visitor):
-    """Translate ``MyScale`` internal query language elements to valid filters."""
+    """Translate `MyScale` internal query language elements to valid filters."""
 
     allowed_operators = [Operator.AND, Operator.OR, Operator.NOT]
     """Subset of allowed logical operators."""

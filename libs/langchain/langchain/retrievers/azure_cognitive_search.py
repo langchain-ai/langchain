@@ -16,7 +16,7 @@ from langchain.utils import get_from_dict_or_env
 
 
 class AzureCognitiveSearchRetriever(BaseRetriever):
-    """``Azure Cognitive Search`` service retriever."""
+    """`Azure Cognitive Search` service retriever."""
 
     service_name: str = ""
     """Name of Azure Cognitive Search service"""

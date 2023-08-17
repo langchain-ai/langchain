@@ -11,7 +11,7 @@ from langchain.schema import BaseRetriever, Document
 
 
 class DataberryRetriever(BaseRetriever):
-    """``Databerry API`` retriever."""
+    """`Databerry API` retriever."""
 
     datastore_url: str
     top_k: Optional[int]

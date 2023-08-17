@@ -95,7 +95,7 @@ def create_index(
 
 
 class PineconeHybridSearchRetriever(BaseRetriever):
-    """``Pinecone Hybrid Search`` retriever."""
+    """`Pinecone Hybrid Search` retriever."""
 
     embeddings: Embeddings
     """Embeddings model to use."""

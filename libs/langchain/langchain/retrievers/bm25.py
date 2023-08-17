@@ -11,7 +11,7 @@ def default_preprocessing_func(text: str) -> List[str]:
 
 
 class BM25Retriever(BaseRetriever):
-    """``BM25`` retriever without Elasticsearch."""
+    """`BM25` retriever without Elasticsearch."""
 
     vectorizer: Any
     """ BM25 vectorizer."""
