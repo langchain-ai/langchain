@@ -1,5 +1,6 @@
 """Fake ChatModel for testing purposes."""
 import asyncio
+import time
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union
 
 from langchain.callbacks.manager import (
@@ -50,6 +51,8 @@ class FakeListChatModel(SimpleChatModel):
         else:
             self.i = 0
         for c in response:
+            if self.sleep is not None:
+                time.sleep(self.sleep)
             yield ChatGenerationChunk(message=AIMessageChunk(content=c))
 
     async def _astream(
