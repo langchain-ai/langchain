@@ -75,7 +75,6 @@ def test_short_retry_does_not_loop() -> None:
         ValueError,
         match=re.escape("Error raised by inference API: rate limit exceeded.\nResponse: You have reached maximum request limit.\n"),
     ):
-        output = llm(prompt)
-        assert isinstance(output, str)
-        output = llm(prompt)
-        assert isinstance(output, str)
+        for _ in range(10):
+            output = llm(prompt)
+            assert isinstance(output, str)
