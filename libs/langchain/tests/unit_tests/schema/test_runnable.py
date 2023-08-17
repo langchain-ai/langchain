@@ -791,6 +791,11 @@ def test_map_stream() -> None:
         else:
             final_value += chunk
 
+    assert streamed_chunks[0] in [
+        {"passthrough": prompt.invoke({"question": "What is your name?"})},
+        {"llm": "i"},
+        {"chat": "i"},
+    ]
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + 1
     assert all(len(c.keys()) == 1 for c in streamed_chunks)
     assert final_value is not None
@@ -836,6 +841,7 @@ def test_map_stream_iterator_input() -> None:
         else:
             final_value += chunk
 
+    assert streamed_chunks[0] in [{"passthrough": "i"}, {"llm": "i"}, {"chat": "i"}]
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + len(llm_res)
     assert all(len(c.keys()) == 1 for c in streamed_chunks)
     assert final_value is not None
@@ -876,6 +882,11 @@ async def test_map_astream() -> None:
         else:
             final_value += chunk
 
+    assert streamed_chunks[0] in [
+        {"passthrough": prompt.invoke({"question": "What is your name?"})},
+        {"llm": "i"},
+        {"chat": "i"},
+    ]
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + 1
     assert all(len(c.keys()) == 1 for c in streamed_chunks)
     assert final_value is not None
@@ -922,6 +933,7 @@ async def test_map_astream_iterator_input() -> None:
         else:
             final_value += chunk
 
+    assert streamed_chunks[0] in [{"passthrough": "i"}, {"llm": "i"}, {"chat": "i"}]
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + len(llm_res)
     assert all(len(c.keys()) == 1 for c in streamed_chunks)
     assert final_value is not None
