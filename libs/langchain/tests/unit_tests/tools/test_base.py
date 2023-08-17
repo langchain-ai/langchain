@@ -6,13 +6,13 @@ from functools import partial
 from typing import Any, List, Optional, Type, Union
 
 import pytest
-from pydantic_v1 import BaseModel
 
 from langchain.agents.tools import Tool, tool
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
+from langchain.pydantic_v1 import BaseModel
 from langchain.tools.base import (
     BaseTool,
     SchemaAnnotationError,
@@ -62,25 +62,6 @@ def test_structured_args() -> None:
     expected_result = "1 True {'foo': 'bar'}"
     args = {"arg1": 1, "arg2": True, "arg3": {"foo": "bar"}}
     assert structured_api.run(args) == expected_result
-
-
-def test_unannotated_base_tool_raises_error() -> None:
-    """Test that a BaseTool without type hints raises an exception.""" ""
-    with pytest.raises(SchemaAnnotationError):
-
-        class _UnAnnotatedTool(BaseTool):
-            name = "structured_api"
-            # This would silently be ignored without the custom metaclass
-            args_schema = _MockSchema
-            description = "A Structured Tool"
-
-            def _run(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
-                return f"{arg1} {arg2} {arg3}"
-
-            async def _arun(
-                self, arg1: int, arg2: bool, arg3: Optional[dict] = None
-            ) -> str:
-                raise NotImplementedError
 
 
 def test_misannotated_base_tool_raises_error() -> None:

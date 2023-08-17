@@ -3,8 +3,6 @@
 import warnings
 from typing import Any, Dict, List
 
-from pydantic_v1 import Field, root_validator
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
@@ -12,6 +10,7 @@ from langchain.callbacks.manager import (
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.qa_with_sources.base import BaseQAWithSourcesChain
 from langchain.docstore.document import Document
+from langchain.pydantic_v1 import Field, root_validator
 from langchain.vectorstores.base import VectorStore
 
 

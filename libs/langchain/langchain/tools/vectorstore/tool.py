@@ -3,11 +3,10 @@
 import json
 from typing import Any, Dict, Optional
 
-from pydantic_v1 import BaseModel, Field
-
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.chains import RetrievalQA, RetrievalQAWithSourcesChain
 from langchain.llms.openai import OpenAI
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 from langchain.vectorstores.base import VectorStore
