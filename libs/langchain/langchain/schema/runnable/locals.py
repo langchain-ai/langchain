@@ -3,8 +3,9 @@ from __future__ import annotations
 from typing import Any, AsyncIterator, Dict, Iterator, Mapping, Optional, Union
 
 from langchain.load.serializable import Serializable
-from langchain.schema.runnable import Runnable, RunnableConfig, RunnablePassthrough
-from langchain.schema.runnable.base import Input, Output
+from langchain.schema.runnable.base import Input, Output, Runnable
+from langchain.schema.runnable.config import RunnableConfig
+from langchain.schema.runnable.passthrough import RunnablePassthrough
 
 
 class PutLocalVar(RunnablePassthrough):
@@ -27,7 +28,12 @@ class PutLocalVar(RunnablePassthrough):
             )
         if isinstance(self.key, str):
             config["_locals"][self.key] = input
-        elif isinstance(input, Mapping):
+        elif isinstance(self.key, Mapping):
+            if not isinstance(input, Mapping):
+                raise TypeError(
+                    f"Received key of type Mapping but input of type {type(input)}. "
+                    f"input is expected to be of type Mapping when key is Mapping."
+                )
             for input_key, put_key in self.key.items():
                 config["_locals"][put_key] = input[input_key]
         else:
@@ -44,17 +50,23 @@ class PutLocalVar(RunnablePassthrough):
                 "PutLocalVar should only be used in a RunnableSequence, and should "
                 "therefore always receive a non-null config."
             )
+        print(config)
         if isinstance(self.key, str):
             if self.key not in config["_locals"]:
                 config["_locals"][self.key] = input
             else:
                 config["_locals"][self.key] += input
-        elif isinstance(input, Mapping):
+        elif isinstance(self.key, Mapping):
+            if not isinstance(input, Mapping):
+                raise TypeError(
+                    f"Received key of type Mapping but input of type {type(input)}. "
+                    f"input is expected to be of type Mapping when key is Mapping."
+                )
             for input_key, put_key in self.key.items():
                 if put_key not in config["_locals"]:
-                    config["_locals"][put_key] = input
+                    config["_locals"][put_key] = input[input_key]
                 else:
-                    config["_locals"][put_key] += input
+                    config["_locals"][put_key] += input[input_key]
         else:
             raise TypeError(
                 f"`key` should be a string or Mapping[str, str], received type "
@@ -75,14 +87,14 @@ class PutLocalVar(RunnablePassthrough):
         self, input: Iterator[Input], config: RunnableConfig | None = None
     ) -> Iterator[Input]:
         for chunk in super().transform(input, config=config):
-            self._concat_put(input, config=config)
+            self._concat_put(chunk, config=config)
             yield chunk
 
     async def atransform(
         self, input: AsyncIterator[Input], config: RunnableConfig | None = None
     ) -> AsyncIterator[Input]:
         async for chunk in super().atransform(input, config=config):
-            self._concat_put(input, config=config)
+            self._concat_put(chunk, config=config)
             yield chunk
 
 
