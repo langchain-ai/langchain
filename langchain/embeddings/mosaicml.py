@@ -86,7 +86,7 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
                 # if we get rate limited, try sleeping for 1 second
                 if (
                     not is_retry
-                    and "rate limit exceeded" in parsed_response["error"].lower()
+                    and "reached maximum request limit" in parsed_response["error"].lower()
                 ):
                     import time
 

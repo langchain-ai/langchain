@@ -145,7 +145,7 @@ class MosaicML(LLM):
                 # if we get rate limited, try sleeping for 1 second
                 if (
                     not is_retry
-                    and "rate limit exceeded" in parsed_response["error"].lower()
+                    and "reached maximum request limit" in parsed_response["error"].lower()
                 ):
                     import time
 
@@ -176,8 +176,6 @@ class MosaicML(LLM):
                     text = output_item
             else:
                 raise ValueError(f"Unexpected response type: {parsed_response}")
-
-            text = text[len(prompt) :]
 
         except requests.exceptions.JSONDecodeError as e:
             raise ValueError(
