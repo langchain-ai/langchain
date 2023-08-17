@@ -9,11 +9,20 @@ from langchain.tools.base import BaseTool
 
 class EdenaiTool(BaseTool):
     
+    """
+    the base tool for all the EdenAI Tools .
+    you should have
+    the environment variable ``EDENAI_API_KEY`` set with your API token.
+    You can find your token here: https://app.edenai.run/admin/account/settings
+    """
+    
     feature: str
     subfeature: str
     edenai_api_key: Optional[str] = None
+    
     provider: str
-        
+    """provider to use for the API call."""
+    
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
@@ -23,6 +32,16 @@ class EdenaiTool(BaseTool):
         return values  
     
     def _call_eden_ai(self, query_params: dict) -> requests.Response:
+        """
+    Make an API call to the EdenAI service with the specified query parameters.
+
+    Args:
+        query_params (dict): The parameters to include in the API call.
+
+    Returns:
+        requests.Response: The response from the EdenAI API call.
+
+    """
         
         #faire l'API call 
         

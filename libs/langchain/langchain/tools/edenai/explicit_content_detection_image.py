@@ -30,21 +30,12 @@ class EdenAiExplicitImage(EdenaiTool):
         the age of 18 and includes nudity, sexual activity, pornography, violence, gore content, etc."""
         "Input should be the string url of the image ."
     )
-    
-    url="https://api.edenai.run/v2/image/explicit_content"
-        
+            
     
     feature="image"
     subfeature="explicit_content"
     
     
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key exists in environment."""
-        values["edenai_api_key"] = get_from_dict_or_env(
-            values, "edenai_api_key", "EDENAI_API_KEY"
-        )
-        return values
     
     def _parse_json(self,json_data: dict) -> str:
         result_str = f"nsfw_likelihood: {json_data['nsfw_likelihood']}\n"
@@ -56,6 +47,7 @@ class EdenAiExplicitImage(EdenaiTool):
         return result_str[:-2]
 
     def _format_explicit_image(self,json_data : list )->str:
+        
         if len(json_data) == 1 :
             result=self._parse_json(json_data[0])
         else:

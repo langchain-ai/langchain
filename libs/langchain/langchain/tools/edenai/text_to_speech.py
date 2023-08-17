@@ -44,15 +44,6 @@ class EdenAiTextToSpeech(EdenaiTool):
     subfeature : str ="text_to_speech"
 
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key exists in environment."""
-        values["edenai_api_key"] = get_from_dict_or_env(
-            values, "edenai_api_key", "EDENAI_API_KEY"
-        )
-        return values
-
-
     def _download_wav(self,url : str, save_path: str) -> None:
         response = requests.get(url)
         if response.status_code == 200:

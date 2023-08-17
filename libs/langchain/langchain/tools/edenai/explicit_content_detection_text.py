@@ -9,39 +9,37 @@ from langchain.tools.edenai.edenai_base_tool import EdenaiTool
 logger = logging.getLogger(__name__)
   
 class EdenAiExplicitTextDetection(EdenaiTool):  
+    """Tool that queries the Eden AI Explicit text detection.
+
+    for api reference check edenai documentation: https://docs.edenai.co/reference/image_explicit_content_create.
+    
+    To use, you should have
+    the environment variable ``EDENAI_API_KEY`` set with your API token.
+    You can find your token here: https://app.edenai.run/admin/account/settings
+
+    """
+    
     edenai_api_key : Optional[str] = None  
 
     name="edenai_explicit_content_detection_text"
+    
     description = (
         "A wrapper around edenai Services explicit content detection for text. "
         """Useful for when you have to scan text for offensive, sexually explicit or suggestive content,
         it checks also if there is any content of self-harm, violence, racist or hate speech."""
         "Input should be a string."
-        """in the output
-        the structure is : 
+        """the structure is : 
         'the type of explicity : the likelihood of it being explicit'
-         consider something is explicit if the likelihood is equal or above 3 
-        
+        consider something is explicit if the likelihood is equal or above 3 
         """
     )
     
-    base_url = "https://api.edenai.run/v2/text/moderation"
     
     
     language: str
 
-    
     feature : str = "text"
     subfeature: str = "moderation"
-    
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key exists in environment."""
-        values["edenai_api_key"] = get_from_dict_or_env(
-            values, "edenai_api_key", "EDENAI_API_KEY"
-        )
-        return values  
-    
 
 
     def _format_text_explicit_content_detection_result(
