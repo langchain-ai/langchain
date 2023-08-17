@@ -83,7 +83,7 @@ class LLMRouterChain(RouterChain):
 
 
 class RouterOutputParser(BaseOutputParser[Dict[str, str]]):
-    """Parser for output of router chain int he multi-prompt chain."""
+    """Parser for output of router chain in the multi-prompt chain."""
 
     default_destination: str = "DEFAULT"
     next_inputs_type: Type = str

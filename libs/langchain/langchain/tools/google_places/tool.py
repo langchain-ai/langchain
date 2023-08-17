@@ -18,8 +18,8 @@ class GooglePlacesSchema(BaseModel):
 class GooglePlacesTool(BaseTool):
     """Tool that queries the Google places API."""
 
-    name = "google_places"
-    description = (
+    name: str = "google_places"
+    description: str = (
         "A wrapper around Google Places. "
         "Useful for when you need to validate or "
         "discover addressed from ambiguous text. "
