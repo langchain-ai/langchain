@@ -52,7 +52,7 @@ jobs:
                 poetry install -E extended_testing
               fi
               if [ "${{ inputs.working-directory }}" == "libs/experimental" ]; then
-                pip install -e ../langchain
+                poetry run pip install -e ../langchain
               fi
       - name: Verify pydantic version
         run: |
