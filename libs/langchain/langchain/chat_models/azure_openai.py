@@ -4,9 +4,8 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, Mapping
 
-from pydantic_v1 import root_validator
-
 from langchain.chat_models.openai import ChatOpenAI
+from langchain.pydantic_v1 import root_validator
 from langchain.schema import ChatResult
 from langchain.utils import get_from_dict_or_env
 

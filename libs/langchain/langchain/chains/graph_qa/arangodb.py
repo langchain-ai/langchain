@@ -4,8 +4,6 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional
 
-from pydantic_v1 import Field
-
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
@@ -16,6 +14,7 @@ from langchain.chains.graph_qa.prompts import (
 )
 from langchain.chains.llm import LLMChain
 from langchain.graphs.arangodb_graph import ArangoGraph
+from langchain.pydantic_v1 import Field
 from langchain.schema import BasePromptTemplate
 
 

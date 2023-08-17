@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, List
 
-from pydantic_v1 import Field
-
 from langchain.agents.agent_toolkits.base import BaseToolkit
+from langchain.pydantic_v1 import Field
 from langchain.tools import BaseTool
 from langchain.tools.gmail.create_draft import GmailCreateDraft
 from langchain.tools.gmail.get_message import GmailGetMessage

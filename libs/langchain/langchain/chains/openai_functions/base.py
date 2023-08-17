@@ -12,8 +12,6 @@ from typing import (
     Union,
 )
 
-from pydantic_v1 import BaseModel
-
 from langchain.base_language import BaseLanguageModel
 from langchain.chains import LLMChain
 from langchain.output_parsers.openai_functions import (
@@ -22,6 +20,7 @@ from langchain.output_parsers.openai_functions import (
     PydanticOutputFunctionsParser,
 )
 from langchain.prompts import BasePromptTemplate
+from langchain.pydantic_v1 import BaseModel
 from langchain.schema import BaseLLMOutputParser
 
 PYTHON_TO_JSON_TYPES = {

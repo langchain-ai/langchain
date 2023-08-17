@@ -1,12 +1,11 @@
 """Tool for the SearxNG search API."""
 from typing import Optional
 
-from pydantic_v1 import Extra
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
+from langchain.pydantic_v1 import Extra
 from langchain.tools.base import BaseTool, Field
 from langchain.utilities.searx_search import SearxSearchWrapper
 
