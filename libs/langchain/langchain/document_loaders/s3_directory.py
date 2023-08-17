@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Any
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -8,7 +8,7 @@ from langchain.document_loaders.s3_file import S3FileLoader
 class S3DirectoryLoader(BaseLoader):
     """Load from `Amazon AWS S3` directory."""
 
-    def __init__(self, bucket: str, prefix: str = ""):
+    def __init__(self, bucket: str, prefix: str = "", **kwargs: Any):
         """Initialize with bucket and key name.
 
         Args:
@@ -17,6 +17,7 @@ class S3DirectoryLoader(BaseLoader):
         """
         self.bucket = bucket
         self.prefix = prefix
+        self.boto_kwargs = kwargs
 
     def load(self) -> List[Document]:
         """Load documents."""
@@ -27,10 +28,10 @@ class S3DirectoryLoader(BaseLoader):
                 "Could not import boto3 python package. "
                 "Please install it with `pip install boto3`."
             )
-        s3 = boto3.resource("s3")
+        s3 = boto3.resource("s3", **self.boto_kwargs)
         bucket = s3.Bucket(self.bucket)
         docs = []
         for obj in bucket.objects.filter(Prefix=self.prefix):
-            loader = S3FileLoader(self.bucket, obj.key)
+            loader = S3FileLoader(self.bucket, obj.key, **self.boto_kwargs)
             docs.extend(loader.load())
         return docs

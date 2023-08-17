@@ -1,6 +1,6 @@
 import os
 import tempfile
-from typing import List
+from typing import List, Any
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -10,7 +10,7 @@ from langchain.document_loaders.unstructured import UnstructuredFileLoader
 class S3FileLoader(BaseLoader):
     """Load from `Amazon AWS S3` file."""
 
-    def __init__(self, bucket: str, key: str):
+    def __init__(self, bucket: str, key: str, **kwargs: Any):
         """Initialize with bucket and key name.
 
         Args:
@@ -19,6 +19,7 @@ class S3FileLoader(BaseLoader):
         """
         self.bucket = bucket
         self.key = key
+        self.boto_kwargs = kwargs
 
     def load(self) -> List[Document]:
         """Load documents."""
@@ -29,7 +30,7 @@ class S3FileLoader(BaseLoader):
                 "Could not import `boto3` python package. "
                 "Please install it with `pip install boto3`."
             )
-        s3 = boto3.client("s3")
+        s3 = boto3.client("s3", **self.boto_kwargs)
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = f"{temp_dir}/{self.key}"
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
