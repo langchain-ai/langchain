@@ -70,7 +70,7 @@ class MyScaleSettings(BaseSettings):
     username: Optional[str] = None
     password: Optional[str] = None
 
-    index_type: str = "IVFFLAT"
+    index_type: str = "MSTG"
     index_param: Optional[Dict[str, str]] = None
 
     column_map: Dict[str, str] = {
