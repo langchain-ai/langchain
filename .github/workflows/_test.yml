@@ -51,6 +51,9 @@ jobs:
                 echo "Running extended tests, installing dependencies with poetry..."
                 poetry install -E extended_testing
               fi
+              if [ "${{ inputs.working-directory }}" == "libs/experimental"]; then
+                pip install -e ../langchain
+              fi
       - name: Verify pydantic version
         run: |
           if [ "${{ matrix.test_type }}" == "core-pydantic-2" ]; then
