@@ -4,7 +4,7 @@ from typing import Any, Callable, List
 from langchain.prompts.chat import (
     BaseChatPromptTemplate,
 )
-from langchain.pydantic_v1 import BaseModel
+from langchain_experimental.pydantic_v1 import BaseModel
 from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain.tools.base import BaseTool
 from langchain.vectorstores.base import VectorStoreRetriever

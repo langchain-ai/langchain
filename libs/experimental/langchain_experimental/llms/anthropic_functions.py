@@ -9,7 +9,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.chat_models.anthropic import ChatAnthropic
 from langchain.chat_models.base import BaseChatModel
-from langchain.pydantic_v1 import root_validator
+from langchain_experimental.pydantic_v1 import root_validator
 from langchain.schema import (
     ChatGeneration,
     ChatResult,

@@ -12,7 +12,7 @@ from langchain.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
 )
-from langchain.pydantic_v1 import Extra, root_validator
+from langchain_experimental.pydantic_v1 import Extra, root_validator
 from langchain.schema import LLMResult, PromptValue
 
 

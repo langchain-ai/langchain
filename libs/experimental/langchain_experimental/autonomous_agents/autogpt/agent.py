@@ -5,7 +5,7 @@ from typing import List, Optional
 from langchain.chains.llm import LLMChain
 from langchain.chat_models.base import BaseChatModel
 from langchain.memory import ChatMessageHistory
-from langchain.pydantic_v1 import ValidationError
+from langchain_experimental.pydantic_v1 import ValidationError
 from langchain.schema import (
     BaseChatMessageHistory,
     Document,

@@ -6,7 +6,7 @@ from typing import Any, Optional, Union
 import duckdb
 import pandas as pd
 from langchain.graphs.networkx_graph import NetworkxEntityGraph
-from langchain.pydantic_v1 import (
+from langchain_experimental.pydantic_v1 import (
     BaseModel,
     Field,
     PrivateAttr,
