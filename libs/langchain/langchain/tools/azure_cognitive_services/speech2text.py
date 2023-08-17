@@ -28,8 +28,8 @@ class AzureCogsSpeech2TextTool(BaseTool):
     speech_language: str = "en-US"  #: :meta private:
     speech_config: Any  #: :meta private:
 
-    name = "azure_cognitive_services_speech2text"
-    description = (
+    name: str = "azure_cognitive_services_speech2text"
+    description: str = (
         "A wrapper around Azure Cognitive Services Speech2Text. "
         "Useful for when you need to transcribe audio to text. "
         "Input should be a url to an audio file."

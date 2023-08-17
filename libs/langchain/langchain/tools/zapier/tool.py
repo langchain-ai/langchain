@@ -108,8 +108,8 @@ class ZapierNLARunAction(BaseTool):
     base_prompt: str = BASE_ZAPIER_TOOL_PROMPT
     zapier_description: str
     params_schema: Dict[str, str] = Field(default_factory=dict)
-    name = ""
-    description = ""
+    name: str = ""
+    description: str = ""
 
     @root_validator
     def set_name_description(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -167,8 +167,8 @@ class ZapierNLAListActions(BaseTool):
 
     """
 
-    name = "ZapierNLA_list_actions"
-    description = BASE_ZAPIER_TOOL_PROMPT + (
+    name: str = "ZapierNLA_list_actions"
+    description: str = BASE_ZAPIER_TOOL_PROMPT + (
         "This tool returns a list of the user's exposed actions."
     )
     api_wrapper: ZapierNLAWrapper = Field(default_factory=ZapierNLAWrapper)

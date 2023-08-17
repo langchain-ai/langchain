@@ -24,8 +24,8 @@ class AzureCogsText2SpeechTool(BaseTool):
     speech_language: str = "en-US"  #: :meta private:
     speech_config: Any  #: :meta private:
 
-    name = "azure_cognitive_services_text2speech"
-    description = (
+    name: str = "azure_cognitive_services_text2speech"
+    description: str = (
         "A wrapper around Azure Cognitive Services Text2Speech. "
         "Useful for when you need to convert text to speech. "
     )

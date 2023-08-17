@@ -18,7 +18,7 @@ from langchain.utils import get_from_dict_or_env
 class LlamaContentFormatter(ContentFormatterBase):
     """Content formatter for `LLaMA`."""
 
-    SUPPORTED_ROLES = ["user", "assistant", "system"]
+    SUPPORTED_ROLES: List[str] = ["user", "assistant", "system"]
 
     @staticmethod
     def _convert_message_to_dict(message: BaseMessage) -> Dict:
