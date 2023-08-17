@@ -69,11 +69,6 @@ class EdenAiParsingInvoice(EdenaiTool):
             else:
                 formatted_list.append(f"{'  ' * level}{list_item}")
     
-    def _formatting(self,extracted_data : dict):
-        self._parse_json(extracted_data, formatted_list)
-        
-        return "\n".join(formatted_list)
-        
     def _format_invoice_parsing(self,json_data : list )->str:
         formatted_list = []
 
