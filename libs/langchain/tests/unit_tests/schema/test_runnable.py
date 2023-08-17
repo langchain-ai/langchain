@@ -528,7 +528,7 @@ Question:
 
     parser = CommaSeparatedListOutputParser()
 
-    chain = (
+    chain: Runnable = (
         {
             "question": RunnablePassthrough[str]() | passthrough,
             "documents": passthrough | retriever,
@@ -774,7 +774,7 @@ def test_map_stream() -> None:
     # sleep to better simulate a real stream
     llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
 
-    chain = prompt | {
+    chain: Runnable = prompt | {
         "chat": chat.bind(stop=["Thought:"]),
         "llm": llm,
         "passthrough": RunnablePassthrough(),
@@ -815,7 +815,7 @@ def test_map_stream_iterator_input() -> None:
     # sleep to better simulate a real stream
     llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
 
-    chain = (
+    chain: Runnable = (
         prompt
         | llm
         | {
@@ -859,7 +859,7 @@ async def test_map_astream() -> None:
     # sleep to better simulate a real stream
     llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
 
-    chain = prompt | {
+    chain: Runnable = prompt | {
         "chat": chat.bind(stop=["Thought:"]),
         "llm": llm,
         "passthrough": RunnablePassthrough(),
@@ -901,7 +901,7 @@ async def test_map_astream_iterator_input() -> None:
     # sleep to better simulate a real stream
     llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
 
-    chain = (
+    chain: Runnable = (
         prompt
         | llm
         | {

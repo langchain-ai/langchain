@@ -61,7 +61,7 @@ class Runnable(Generic[Input, Output], ABC):
         other: Union[
             Runnable[Any, Other],
             Callable[[Any], Other],
-            Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other]]],
+            Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other], Any]],
         ],
     ) -> RunnableSequence[Input, Other]:
         return RunnableSequence(first=self, last=coerce_to_runnable(other))
@@ -71,7 +71,7 @@ class Runnable(Generic[Input, Output], ABC):
         other: Union[
             Runnable[Other, Any],
             Callable[[Any], Other],
-            Mapping[str, Union[Runnable[Other, Any], Callable[[Other], Any]]],
+            Mapping[str, Union[Runnable[Other, Any], Callable[[Other], Any], Any]],
         ],
     ) -> RunnableSequence[Other, Output]:
         return RunnableSequence(first=coerce_to_runnable(other), last=self)
@@ -802,7 +802,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         other: Union[
             Runnable[Any, Other],
             Callable[[Any], Other],
-            Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other]]],
+            Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other], Any]],
         ],
     ) -> RunnableSequence[Input, Other]:
         if isinstance(other, RunnableSequence):
@@ -823,7 +823,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         other: Union[
             Runnable[Other, Any],
             Callable[[Any], Other],
-            Mapping[str, Union[Runnable[Other, Any], Callable[[Other], Any]]],
+            Mapping[str, Union[Runnable[Other, Any], Callable[[Other], Any], Any]],
         ],
     ) -> RunnableSequence[Other, Output]:
         if isinstance(other, RunnableSequence):
@@ -1568,7 +1568,7 @@ def coerce_to_runnable(
     thing: Union[
         Runnable[Input, Output],
         Callable[[Input], Output],
-        Mapping[str, Union[Runnable[Input, Output], Callable[[Input], Output]]],
+        Mapping[str, Any],
     ]
 ) -> Runnable[Input, Output]:
     if isinstance(thing, Runnable):
@@ -1576,7 +1576,9 @@ def coerce_to_runnable(
     elif callable(thing):
         return RunnableLambda(thing)
     elif isinstance(thing, dict):
-        runnables = {key: coerce_to_runnable(r) for key, r in thing.items()}
+        runnables: Mapping[str, Runnable[Any, Any]] = {
+            key: coerce_to_runnable(r) for key, r in thing.items()
+        }
         return cast(Runnable[Input, Output], RunnableMap(steps=runnables))
     else:
         raise TypeError(
