@@ -38,7 +38,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           working-directory: ${{ inputs.working-directory }}
           poetry-version: "1.4.2"
-          cache-key: ${{ matrix.test_type }}
+          cache-key: ${{ matrix.test_type }}-${{ inputs.working-directory }}
           install-command: |
               if [ "${{ matrix.test_type }}" == "core" ]; then
                 echo "Running core tests, installing dependencies with poetry..."
