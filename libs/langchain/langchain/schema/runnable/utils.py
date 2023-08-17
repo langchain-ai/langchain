@@ -20,7 +20,10 @@ async def gather_with_concurrency(n: Union[int, None], *coros: Coroutine) -> lis
 
 
 def accepts_run_manager(callable: Callable[..., Any]) -> bool:
-    return signature(callable).parameters.get("run_manager") is not None
+    try:
+        return signature(callable).parameters.get("run_manager") is not None
+    except ValueError:
+        return False
 
 
 def accepts_run_manager_and_config(callable: Callable[..., Any]) -> bool:
