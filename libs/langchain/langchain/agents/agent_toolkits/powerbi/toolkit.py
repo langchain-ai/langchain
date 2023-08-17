@@ -39,10 +39,7 @@ class PowerBIToolkit(BaseToolkit):
     output_token_limit: Optional[int] = None
     tiktoken_model_name: Optional[str] = None
 
-    class Config:
-        """Configuration for this pydantic object."""
 
-        arbitrary_types_allowed = True
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
