@@ -1,0 +1,54 @@
+# Elasticsearch
+
+> [Elasticsearch](https://www.elastic.co/elasticsearch/) is a distributed, RESTful search and analytics engine.
+> It provides a distributed, multi-tenant-capable full-text search engine with an HTTP web interface and schema-free
+> JSON documents.
+
+## Installation and Setup
+
+There are two ways to get started with Elasticsearch:
+
+#### Install Elasticsearch on your local machine via docker
+
+Example: Run a single-node Elasticsearch instance with security disabled. This is not recommended for production use.
+
+```bash
+    docker run -p 9200:9200 -e "discovery.type=single-node" -e "xpack.security.enabled=false" -e "xpack.security.http.ssl.enabled=false" docker.elastic.co/elasticsearch/elasticsearch:8.9.0
+```
+
+#### Deploy Elasticsearch on Elastic Cloud
+
+Elastic Cloud is a managed Elasticsearch service. Signup for a [free trial](https://cloud.elastic.co/registration?storm=langchain-notebook).
+
+### Install Client
+
+```bash
+pip install elasticsearch
+```
+
+## Vector Store
+
+The vector store is a simple wrapper around Elasticsearch. It provides a simple interface to store and retrieve vectors.
+
+```python
+from langchain.vectorstores import ElasticsearchStore
+
+from langchain.document_loaders import TextLoader
+from langchain.text_splitter import CharacterTextSplitter
+
+loader = TextLoader("./state_of_the_union.txt")
+documents = loader.load()
+text_splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=0)
+docs = text_splitter.split_documents(documents)
+
+embeddings = OpenAIEmbeddings()
+
+db = ElasticsearchStore.from_documents(
+    docs, embeddings, es_url="http://localhost:9200", index_name="test-basic",
+)
+
+db.client.indices.refresh(index="test-basic")
+
+query = "What did the president say about Ketanji Brown Jackson"
+results = db.similarity_search(query)
+```
