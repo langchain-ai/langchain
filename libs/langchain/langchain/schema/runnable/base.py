@@ -1327,7 +1327,10 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
     ) -> Iterator[RunnableMapChunk]:
+        # Shallow copy steps to ignore mutations while in progress
         steps = dict(self.steps)
+        # Each step gets a copy of the input iterator,
+        # which is consumed in parallel in a separate thread.
         input_copies = list(safetee(input, len(steps), lock=threading.Lock()))
         with ThreadPoolExecutor() as executor:
             named_generators = [
@@ -1379,7 +1382,10 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
         run_manager: AsyncCallbackManagerForChainRun,
         config: RunnableConfig,
     ) -> AsyncIterator[RunnableMapChunk]:
+        # Shallow copy steps to ignore mutations while in progress
         steps = dict(self.steps)
+        # Each step gets a copy of the input iterator,
+        # which is consumed in parallel in a separate thread.
         input_copies = list(atee(input, len(steps), lock=asyncio.Lock()))
         named_generators = [
             (
