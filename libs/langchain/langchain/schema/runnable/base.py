@@ -238,7 +238,10 @@ class Runnable(Generic[Input, Output], ABC):
         return (
             config
             if isinstance(config, list)
-            else [deepcopy(config) if config is not None else {} for _ in range(length)]
+            else [
+                deepcopy(config) if config is not None else _empty_config()
+                for _ in range(length)
+            ]
         )
 
     def _call_with_config(
@@ -750,7 +753,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         self, input: Input, config: Optional[RunnableConfig] = None
     ) -> Output:
         # setup callbacks
-        config = config or {}
+        config = config or _empty_config()
         callback_manager = _get_async_callback_manager(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
@@ -896,7 +899,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         self, input: Input, config: Optional[RunnableConfig] = None
     ) -> Iterator[Output]:
         # setup callbacks
-        config = config or {}
+        config = config or _empty_config()
         callback_manager = _get_callback_manager(config)
         # start the root run
         run_manager = callback_manager.on_chain_start(
@@ -963,7 +966,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         self, input: Input, config: Optional[RunnableConfig] = None
     ) -> AsyncIterator[Output]:
         # setup callbacks
-        config = config or {}
+        config = config or _empty_config()
         callback_manager = _get_async_callback_manager(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
