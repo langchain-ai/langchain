@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
@@ -34,17 +34,17 @@ class LLMInputOutputAdapter:
         return input_body
 
     @classmethod
-    def prepare_output(cls, provider: str, response: Any) -> str:
+    def prepare_output(cls, provider: str, response: Any) -> Tuple(str, bool):
         if provider == "anthropic":
             response_body = json.loads(response.get("body").read().decode())
-            return response_body.get("completion")
+            return response_body.get("completion"), response_body.get('stop_reason') == 'stop_sequence'
         else:
             response_body = json.loads(response.get("body").read())
 
         if provider == "ai21":
-            return response_body.get("completions")[0].get("data").get("text")
-        else:
-            return response_body.get("results")[0].get("outputText")
+            return response_body.get("completions")[0].get("data").get("text"), response_body.get("completions")[0].get("finishReason").get('reason') == 'endoftext'
+        elif provider == "amazon":
+            return response_body.get("results")[0].get("outputText"), response_body.get("results")[0].get('completionReason') == 'FINISH'
 
 
 class Bedrock(LLM):
@@ -181,16 +181,19 @@ class Bedrock(LLM):
 
         provider = self.model_id.split(".")[0]
         params = {**_model_kwargs, **kwargs}
-        input_body = LLMInputOutputAdapter.prepare_input(provider, prompt, params)
-        body = json.dumps(input_body)
-        accept = "application/json"
-        contentType = "application/json"
-
         try:
-            response = self.client.invoke_model(
-                body=body, modelId=self.model_id, accept=accept, contentType=contentType
-            )
-            text = LLMInputOutputAdapter.prepare_output(provider, response)
+            is_fin = False
+            accept = "application/json"
+            contentType = "application/json"
+            text = ""
+            while not is_fin:
+                input_body = LLMInputOutputAdapter.prepare_input(provider, prompt + text, params)
+                body = json.dumps(input_body)
+                response = self.client.invoke_model(
+                    body=body, modelId=self.model_id, accept=accept, contentType=contentType
+                )
+                out, is_fin = LLMInputOutputAdapter.prepare_output(provider, response)
+                text += out
 
         except Exception as e:
             raise ValueError(f"Error raised by bedrock service: {e}")
