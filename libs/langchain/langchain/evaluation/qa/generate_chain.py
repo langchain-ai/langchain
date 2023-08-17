@@ -3,11 +3,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic_v1 import Field
-
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.qa.generate_prompt import PROMPT
 from langchain.output_parsers.regex import RegexParser
+from langchain.pydantic_v1 import Field
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.output_parser import BaseLLMOutputParser
 

@@ -4,11 +4,10 @@ from __future__ import annotations
 
 from typing import Any, Callable, List, Optional, Protocol, Tuple
 
-from pydantic_v1 import Extra
-
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.docstore.document import Document
+from langchain.pydantic_v1 import Extra
 
 
 class CombineDocsProtocol(Protocol):

@@ -2,8 +2,8 @@ import json
 from typing import List
 
 import requests
-from pydantic_v1 import BaseModel, Field
 
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema import Document
 
 

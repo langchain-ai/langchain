@@ -1,9 +1,8 @@
 """Toolkit for interacting with an SQL database."""
 from typing import List
 
-from pydantic_v1 import Field
-
 from langchain.agents.agent_toolkits.base import BaseToolkit
+from langchain.pydantic_v1 import Field
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool
 from langchain.tools.sql_database.tool import (

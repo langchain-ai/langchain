@@ -11,9 +11,8 @@ from typing import Dict, List, Optional, Union
 
 import requests
 import yaml
-from pydantic_v1 import ValidationError
 
-from langchain import _PYDANTIC_MAJOR_VERSION
+from langchain.pydantic_v1 import _PYDANTIC_MAJOR_VERSION, ValidationError
 
 logger = logging.getLogger(__name__)
 
