@@ -327,20 +327,17 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
         client = Client(api_url="http://localhost:1984", api_key="123")
         chain = mock.MagicMock()
         chain.input_keys = ["foothing"]
-        num_repetitions = 3
         results = await arun_on_dataset(
             dataset_name="test",
             llm_or_chain_factory=lambda: chain,
             concurrency_level=2,
             project_name="test_project",
-            num_repetitions=num_repetitions,
             client=client,
         )
 
         expected = {
             uuid_: [
-                {"result": f"Result for example {uuid.UUID(uuid_)}"}
-                for _ in range(num_repetitions)
+                {"result": f"Result for example {uuid.UUID(uuid_)}"} for _ in range(1)
             ]
             for uuid_ in uuids
         }
