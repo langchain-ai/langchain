@@ -47,6 +47,11 @@ class RunnableConfig(TypedDict, total=False):
     ThreadPoolExecutor will be created.
     """
 
+    recursion_limit: int
+    """
+    Maximum number of times a call can recurse. If not provided, defaults to 10.
+    """
+
 
 def ensure_config(config: Optional[RunnableConfig]) -> RunnableConfig:
     empty = RunnableConfig(
@@ -54,6 +59,7 @@ def ensure_config(config: Optional[RunnableConfig]) -> RunnableConfig:
         metadata={},
         callbacks=None,
         _locals={},
+        recursion_limit=10,
     )
     if config is not None:
         empty.update(config)
@@ -66,6 +72,7 @@ def patch_config(
     deep_copy_locals: bool = False,
     callbacks: Optional[BaseCallbackManager] = None,
     executor: Optional[Executor] = None,
+    recursion_limit: Optional[int] = None,
 ) -> RunnableConfig:
     config = ensure_config(config)
     if deep_copy_locals:
@@ -74,6 +81,8 @@ def patch_config(
         config["callbacks"] = callbacks
     if executor is not None:
         config["executor"] = executor
+    if recursion_limit is not None:
+        config["recursion_limit"] = recursion_limit
     return config
 
 

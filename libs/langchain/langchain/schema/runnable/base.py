@@ -13,7 +13,6 @@ from typing import (
     AsyncIterator,
     Awaitable,
     Callable,
-    Coroutine,
     Dict,
     Generic,
     Iterator,
@@ -1347,8 +1346,8 @@ class RunnableLambda(Runnable[Input, Output]):
 
     def __init__(
         self,
-        func: Union[Callable[[Input], Output], Coroutine[Input, Any, Output]],
-        afunc: Optional[Coroutine[Input, Any, Output]] = None,
+        func: Union[Callable[[Input], Output], Callable[[Input], Awaitable[Output]]],
+        afunc: Optional[Callable[[Input], Awaitable[Output]]] = None,
     ) -> None:
         if afunc is not None:
             self.afunc = afunc
@@ -1356,7 +1355,7 @@ class RunnableLambda(Runnable[Input, Output]):
         if inspect.iscoroutinefunction(func):
             self.afunc = func
         elif callable(func):
-            self.func = func
+            self.func = cast(Callable[[Input], Output], func)
         else:
             raise TypeError(
                 "Expected a callable type for `func`."
@@ -1374,6 +1373,54 @@ class RunnableLambda(Runnable[Input, Output]):
         else:
             return False
 
+    def _invoke(
+        self,
+        input: Input,
+        run_manager: CallbackManagerForChainRun,
+        config: RunnableConfig,
+    ) -> Output:
+        output = self.func(input)
+        # If the output is a runnable, invoke it
+        if isinstance(output, Runnable):
+            recursion_limit = config["recursion_limit"]
+            if recursion_limit <= 0:
+                raise RecursionError(
+                    f"Recursion limit reached when invoking {self} with input {input}."
+                )
+            output = output.invoke(
+                input,
+                patch_config(
+                    config,
+                    callbacks=run_manager.get_child(),
+                    recursion_limit=recursion_limit - 1,
+                ),
+            )
+        return output
+
+    async def _ainvoke(
+        self,
+        input: Input,
+        run_manager: AsyncCallbackManagerForChainRun,
+        config: RunnableConfig,
+    ) -> Output:
+        output = await self.afunc(input)
+        # If the output is a runnable, invoke it
+        if isinstance(output, Runnable):
+            recursion_limit = config["recursion_limit"]
+            if recursion_limit <= 0:
+                raise RecursionError(
+                    f"Recursion limit reached when invoking {self} with input {input}."
+                )
+            output = await output.ainvoke(
+                input,
+                patch_config(
+                    config,
+                    callbacks=run_manager.get_child(),
+                    recursion_limit=recursion_limit - 1,
+                ),
+            )
+        return output
+
     def invoke(
         self,
         input: Input,
@@ -1381,7 +1428,7 @@ class RunnableLambda(Runnable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> Output:
         if hasattr(self, "func"):
-            return self._call_with_config(self.func, input, config)
+            return self._call_with_config(self._invoke, input, config)
         else:
             raise TypeError(
                 "Cannot invoke a coroutine function synchronously."
@@ -1395,7 +1442,7 @@ class RunnableLambda(Runnable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> Output:
         if hasattr(self, "afunc"):
-            return await self._acall_with_config(self.afunc, input, config)
+            return await self._acall_with_config(self._ainvoke, input, config)
         else:
             return await super().ainvoke(input, config)
 
