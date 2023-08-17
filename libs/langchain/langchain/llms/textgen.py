@@ -165,8 +165,7 @@ class TextGen(LLM):
         # Raise error if stop sequences are in both input and default params
         # if self.stop and stop is not None:
         if self.stopping_strings and stop is not None:
-            raise ValueError(
-                "`stop` found in both the input and default params.")
+            raise ValueError("`stop` found in both the input and default params.")
 
         if self.preset is None:
             params = self._default_params
