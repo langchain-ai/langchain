@@ -158,4 +158,5 @@ class Tee(Generic[T]):
             child.close()
 
 
+# Why this is needed https://stackoverflow.com/a/44638570
 safetee = Tee
