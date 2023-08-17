@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import copy
+import threading
 from abc import ABC, abstractmethod
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from itertools import tee
-import threading
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -348,7 +348,7 @@ class Runnable(Generic[Input, Output], ABC):
                 [
                     Iterator[Input],
                     CallbackManagerForChainRun,
-                    List[RunnableConfig],
+                    RunnableConfig,
                 ],
                 Iterator[Output],
             ],
@@ -446,7 +446,7 @@ class Runnable(Generic[Input, Output], ABC):
                 [
                     AsyncIterator[Input],
                     AsyncCallbackManagerForChainRun,
-                    List[RunnableConfig],
+                    RunnableConfig,
                 ],
                 AsyncIterator[Output],
             ],

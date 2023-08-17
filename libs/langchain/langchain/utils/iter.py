@@ -8,12 +8,13 @@ from typing import (
     Iterator,
     List,
     Optional,
-    Sequence,
     Tuple,
     TypeVar,
     Union,
     overload,
 )
+
+from typing_extensions import Literal
 
 T = TypeVar("T")
 
@@ -24,7 +25,7 @@ class NoLock:
     def __enter__(self) -> None:
         pass
 
-    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> Literal[False]:
         return False
 
 
@@ -148,7 +149,7 @@ class Tee(Generic[T]):
     def __enter__(self) -> "Tee[T]":
         return self
 
-    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> Literal[False]:
         self.close()
         return False
 
