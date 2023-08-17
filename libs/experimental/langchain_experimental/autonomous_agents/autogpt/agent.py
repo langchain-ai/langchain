@@ -5,7 +5,6 @@ from typing import List, Optional
 from langchain.chains.llm import LLMChain
 from langchain.chat_models.base import BaseChatModel
 from langchain.memory import ChatMessageHistory
-from langchain_experimental.pydantic_v1 import ValidationError
 from langchain.schema import (
     BaseChatMessageHistory,
     Document,
@@ -23,6 +22,7 @@ from langchain_experimental.autonomous_agents.autogpt.prompt import AutoGPTPromp
 from langchain_experimental.autonomous_agents.autogpt.prompt_generator import (
     FINISH_NAME,
 )
+from langchain_experimental.pydantic_v1 import ValidationError
 
 
 class AutoGPT:

@@ -6,6 +6,8 @@ from typing import Any, Optional, Union
 import duckdb
 import pandas as pd
 from langchain.graphs.networkx_graph import NetworkxEntityGraph
+
+from langchain_experimental.cpal.constants import Constant
 from langchain_experimental.pydantic_v1 import (
     BaseModel,
     Field,
@@ -13,8 +15,6 @@ from langchain_experimental.pydantic_v1 import (
     root_validator,
     validator,
 )
-
-from langchain_experimental.cpal.constants import Constant
 
 
 class NarrativeModel(BaseModel):
