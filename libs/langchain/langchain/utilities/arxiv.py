@@ -62,10 +62,10 @@ class ArxivAPIWrapper(BaseModel):
     def is_arxiv_identifier(self, query: str) -> bool:
         """Check if a query is an arxiv identifier."""
         arxiv_identifier_pattern = r'\d{4}\.\d{4,5}.*|\d{7}.*'
-        if re.match(arxiv_identifier_pattern, query[: self.ARXIV_MAX_QUERY_LENGTH]):
-            return True
-        else:
-            return False
+        for query_item in query[: self.ARXIV_MAX_QUERY_LENGTH].split():
+            if not re.match(arxiv_identifier_pattern, query_item):
+                return False
+        return True
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -103,7 +103,7 @@ class ArxivAPIWrapper(BaseModel):
         try:
             if self.is_arxiv_identifier(query):
                 results = self.arxiv_search( 
-                    id_list=[query[: self.ARXIV_MAX_QUERY_LENGTH]], 
+                    id_list=query[: self.ARXIV_MAX_QUERY_LENGTH].split(), 
                     max_results=self.top_k_results
                 ).results()
             else:
@@ -150,7 +150,7 @@ class ArxivAPIWrapper(BaseModel):
             query = query.replace(":", "").replace("-", "")
             if self.is_arxiv_identifier(query):
                 results = self.arxiv_search( 
-                    id_list=[query[: self.ARXIV_MAX_QUERY_LENGTH]], 
+                    id_list=query[: self.ARXIV_MAX_QUERY_LENGTH].split(), 
                     max_results=self.load_max_docs
                 ).results()
             else:
