@@ -30,7 +30,7 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
         try:
             from duckduckgo_search import DDGS  # noqa: F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import duckduckgo-search python package. "
                 "Please install it with `pip install duckduckgo-search`."
             )
