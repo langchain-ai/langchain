@@ -581,27 +581,26 @@ cryptography = ">=3.2"
 
 [[package]]
 name = "awadb"
-version = "0.3.9"
+version = "0.3.10"
 description = "AI Native database for embedding vectors"
 category = "main"
 optional = true
 python-versions = ">=3.7"
 files = [
-    {file = "awadb-0.3.9-cp310-cp310-macosx_10_13_x86_64.whl", hash = "sha256:8a3f88f9b4426f1c588752a5af89f2daa52b4faf5fe25046f9bfcaa8d8201298"},
-    {file = "awadb-0.3.9-cp310-cp310-macosx_13_0_arm64.whl", hash = "sha256:1d7fa3a75fcdd81d486a5254237234058d772cb70478c2f197ee9560a3596813"},
-    {file = "awadb-0.3.9-cp310-cp310-manylinux1_x86_64.whl", hash = "sha256:8276b5ee5dddc48c2e111253231d64a12684bf10971c44dd5bc01ea737fdffdc"},
-    {file = "awadb-0.3.9-cp311-cp311-macosx_10_13_x86_64.whl", hash = "sha256:9c770aa9f9f17852e8cb3e78e1d3677b2c4ffda817889cf23935b3147c94a013"},
-    {file = "awadb-0.3.9-cp311-cp311-macosx_13_0_arm64.whl", hash = "sha256:0abaf08b1accd5b58296a13143eab2f55c576c00d896b692f8a2846bfbb33be9"},
-    {file = "awadb-0.3.9-cp311-cp311-manylinux1_x86_64.whl", hash = "sha256:ac6d34a6688b6daf412a859ffd85b5c18a30d25d267074dcdbc176a005fc5db2"},
-    {file = "awadb-0.3.9-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:151ae39f9b74a032f86a4cde7399cb5c1bdd796e995de550ae3583ddd1e45884"},
-    {file = "awadb-0.3.9-cp37-cp37m-macosx_10_13_x86_64.whl", hash = "sha256:1f62bf20c0824ad57711c4898d96b74d7f083cb129b11455f36e64850fe6a064"},
-    {file = "awadb-0.3.9-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:3b78e0a3a87ae60242dc9d07eba12f7c455838e6c9afb22fc68c75b510f27614"},
-    {file = "awadb-0.3.9-cp38-cp38-macosx_10_13_x86_64.whl", hash = "sha256:51ca452327011cf97aa6a7316e39c7cda5c537c5a8cbbbd28a5f0f1394499845"},
-    {file = "awadb-0.3.9-cp38-cp38-macosx_13_0_arm64.whl", hash = "sha256:5b816916b0d61aace79b0ed0cd0bdc4b35bfc5299a095ba6e2bb350d8f485860"},
-    {file = "awadb-0.3.9-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:608472fcc694e298b4ff920e4e6da502d5314b6441637f608869dc6d4af627db"},
-    {file = "awadb-0.3.9-cp39-cp39-macosx_10_13_x86_64.whl", hash = "sha256:50f1ab8cf92cd714ef57dd2c496b9e65003fb531295b8f99cd89b7575578d382"},
-    {file = "awadb-0.3.9-cp39-cp39-macosx_13_0_arm64.whl", hash = "sha256:911b78156cb3c0e723317c622a1d3cabcaea771f464200b30709bbb4143eb8a8"},
-    {file = "awadb-0.3.9-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:330440be36f18e3f02cb645465618fd2a425b3260f2f645d7065d9f93857cf11"},
+    {file = "awadb-0.3.10-cp310-cp310-macosx_10_13_x86_64.whl", hash = "sha256:1149b1c6fee95bd6e0f7ff625de060db679ea3985cad2332028eb50a76b9726e"},
+    {file = "awadb-0.3.10-cp310-cp310-macosx_13_0_arm64.whl", hash = "sha256:a447894ed721184a680566ac8584154d6801d1f99e98996c1d4bd198c022aa07"},
+    {file = "awadb-0.3.10-cp310-cp310-manylinux1_x86_64.whl", hash = "sha256:ab21a90930f58e666a6874618813cc32a93b1e2fd4e66901c9e5392844165034"},
+    {file = "awadb-0.3.10-cp311-cp311-macosx_10_13_x86_64.whl", hash = "sha256:bfa1b64dfb9b77710180be9b2971afa6e19608bad54460b819131c2d24efa4f4"},
+    {file = "awadb-0.3.10-cp311-cp311-macosx_13_0_arm64.whl", hash = "sha256:45a3094119ca3ee1a04abf23a9c22a14bb06cd938a128b28de423031b471787f"},
+    {file = "awadb-0.3.10-cp311-cp311-manylinux1_x86_64.whl", hash = "sha256:5a8f532621e4e551cdf4ccf0fcfb3a31d3be4d4fe262b26ba7bd7ff769722c9c"},
+    {file = "awadb-0.3.10-cp37-cp37m-macosx_10_13_x86_64.whl", hash = "sha256:52480a9589e564fb03f504fb2eb26a27fcf552129725fd25a458b0db7d56fde5"},
+    {file = "awadb-0.3.10-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:d38a1fb571a6e708218c00ec08ffc2b136f9eba8d4308f3d8ed1a3dc89fcdef6"},
+    {file = "awadb-0.3.10-cp38-cp38-macosx_10_13_x86_64.whl", hash = "sha256:d0e9f2ecb943ea6ba3ccbb849ef79f814fd59efee7d4c698a5220bc3ce308457"},
+    {file = "awadb-0.3.10-cp38-cp38-macosx_13_0_arm64.whl", hash = "sha256:fb4ab07c75bc3a92be9db2241551f60d705b18bcd48af95d57977084477647d9"},
+    {file = "awadb-0.3.10-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:157a1f64e8ad3a28cc7cc5a22d39d0703121b1088db46d02adae23ea41a0346c"},
+    {file = "awadb-0.3.10-cp39-cp39-macosx_10_13_x86_64.whl", hash = "sha256:afad9bec8a0b183de77210cff12fef7d61f8f524cdfd6c0f4c440f7fea763e30"},
+    {file = "awadb-0.3.10-cp39-cp39-macosx_13_0_arm64.whl", hash = "sha256:71c084197abff80addf3568457a561df54db4bcaf13244f98b68d5fb32d9c2b0"},
+    {file = "awadb-0.3.10-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:cc9212d8ab743331329b225a594eaa64918e32a06046373bc07821f8e9aa423e"},
 ]
 
 [package.extras]
