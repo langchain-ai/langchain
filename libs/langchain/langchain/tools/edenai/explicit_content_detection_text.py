@@ -17,14 +17,19 @@ class EdenAiExplicitTextDetection(EdenaiTool):
         """Useful for when you have to scan text for offensive, sexually explicit or suggestive content,
         it checks also if there is any content of self-harm, violence, racist or hate speech."""
         "Input should be a string."
+        """in the output
+        the structure is : 
+        'the type of explicity : the likelihood of it being explicit'
+         consider something is explicit if the likelihood is equal or above 3 
+        
+        """
     )
     
     base_url = "https://api.edenai.run/v2/text/moderation"
     
     
     language: str
-    provider: str
-    
+
     
     feature : str = "text"
     subfeature: str = "moderation"

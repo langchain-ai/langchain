@@ -22,7 +22,7 @@ class EdenaiTool(BaseTool):
         )
         return values  
     
-    def _call_eden_ai(self, query_params: dict) -> list:
+    def _call_eden_ai(self, query_params: dict) -> requests.Response:
         
         #faire l'API call 
         
@@ -57,5 +57,5 @@ class EdenaiTool(BaseTool):
         except:
             pass
         
-        return response 
+        return response
     

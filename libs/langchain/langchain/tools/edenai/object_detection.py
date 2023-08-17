@@ -29,13 +29,10 @@ class EdenAiObjectDetectionTool(EdenaiTool):
     )
     
     base_url = "https://docs.edenai.co/reference/image_object_detection_create"
-    
-    provider: str
-    """ provider to use (amazon,base64,microsoft,mindee,klippa )"""
-    
+
     params : Optional[Dict[str,Any]] = Field(default_factory=dict)
     
-    show_positions : bool = True
+    show_positions : bool = False
     
     feature="image"
     subfeature = "object_detection"
@@ -49,28 +46,35 @@ class EdenAiObjectDetectionTool(EdenaiTool):
         return values
     
     
-    def _format_object_detection_result(self,json_data : list )->str:
+    def _parse_json(self,json_data : dict ) -> str :       
         result = []
-        for entry in json_data:
-            if entry.get("provider") == "eden-ai":
-                label_info = []
-                for label, confidence in zip(entry.get("label", []), entry.get("confidence", [])):
-                    label_str = f"{label} - Confidence: {confidence}"
-                    if self.show_positions:
-                        x_min = entry.get("x_min", [])[entry.get("label", []).index(label)]
-                        x_max = entry.get("x_max", [])[entry.get("label", []).index(label)]
-                        y_min = entry.get("y_min", [])[entry.get("label", []).index(label)]
-                        y_max = entry.get("y_max", [])[entry.get("label", []).index(label)]
-                        label_str += f",at the position x_min: {x_min}, x_max: {x_max}, y_min: {y_min}, y_max: {y_max}"
-                    label_info.append(label_str)
-            else:
-                pass
-
-        
-        result.append("\n".join(label_info))
-
-        return "\n\n".join(result)
+        label_info = []
     
+        for found_obj in json_data['items']:
+            label_str = f"{found_obj['label']} - Confidence {found_obj['confidence']}"
+            x_min = found_obj.get("x_min")
+            x_max = found_obj.get("x_max")
+            y_min = found_obj.get("y_min")
+            y_max = found_obj.get("y_max")
+            if self.show_positions and all([x_min, x_max, y_min, y_max]):  # some providers don't return positions
+                label_str += f",at the position x_min: {x_min}, x_max: {x_max}, y_min: {y_min}, y_max: {y_max}"  
+            label_info.append(label_str)
+    
+        result.append("\n".join(label_info))
+        return "\n\n".join(result)
+            
+    
+    def _format_object_detection_result(self,json_data : list )->str:
+        if len(json_data) == 1 :
+            result=self._parse_json(json_data[0])
+        else:
+            for entry in json_data:
+                if entry.get("provider") == "eden-ai":                    
+                    result=self._parse_json(entry)
+    
+        return result            
+        
+
     def _run(
         self,
         query: str,
@@ -78,7 +82,7 @@ class EdenAiObjectDetectionTool(EdenaiTool):
     ) -> str:
         """Use the tool."""
         try:
-            query_params = {"file_url": query}
+            query_params = {"file_url": query,"attributes_as_list": False}
             image_analysis_result = self._call_eden_ai(query_params)
             image_analysis_result=image_analysis_result.json()
             return self._format_object_detection_result(image_analysis_result)

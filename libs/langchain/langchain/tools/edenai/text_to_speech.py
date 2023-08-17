@@ -1,6 +1,6 @@
 from __future__ import annotations
 import logging
-from typing import Dict, Optional,Any
+from typing import Dict, Optional,Any,Literal
 from pydantic import root_validator,Field
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.base import BaseTool
@@ -25,17 +25,19 @@ class EdenAiTextToSpeech(EdenaiTool):
     description = (
         "A wrapper around edenai Services text to speech."
         "Useful for when you need to convert text to speech."
+        """the output is a string representing the URL of the audio file,
+        or the path to the downloaded wav file """
     )
     
     
     params: Optional[Dict[str,Any]] = Field(default_factory=dict)
+    
     language: Optional[str] = "en"
     """
     language of the text passed to the model.
     """    
-    provider: str
-    """ provider to use """
-    voice : str 
+
+    voice : Literal["MALE","FEMALE"] 
     """voice option : 'MALE' or 'FEMALE' """
 
     feature: str="audio"

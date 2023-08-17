@@ -33,8 +33,6 @@ class EdenAiExplicitImage(EdenaiTool):
     
     url="https://api.edenai.run/v2/image/explicit_content"
         
-    provider: str
-    """ provider to use"""
     
     feature="image"
     subfeature="explicit_content"
@@ -48,19 +46,24 @@ class EdenAiExplicitImage(EdenaiTool):
         )
         return values
     
-    def _format_json_to_string(self,json_data: list) -> str:
-        for item in json_data:
-            if item["provider"]== "eden-ai" :
-                result_str = f"nsfw_likelihood: {item['nsfw_likelihood']}\n"
-                for idx, item in enumerate(item["items"]):
-                    label = item["label"].lower()
-                    likelihood = item["likelihood"]
-                    result_str += f"{idx}: {label} likelihood {likelihood},\n"
-            else : 
-                pass
+    def _parse_json(self,json_data: dict) -> str:
+        result_str = f"nsfw_likelihood: {json_data['nsfw_likelihood']}\n"
+        for idx, found_obj in enumerate(json_data["items"]):
+            label = found_obj["label"].lower()
+            likelihood = found_obj["likelihood"]
+            result_str += f"{idx}: {label} likelihood {likelihood},\n"
             
         return result_str[:-2]
 
+    def _format_explicit_image(self,json_data : list )->str:
+        if len(json_data) == 1 :
+            result=self._parse_json(json_data[0])
+        else:
+            for entry in json_data:
+                if entry.get("provider") == "eden-ai":                    
+                    result=self._parse_json(entry)
+    
+        return result            
         
     
     def _run(
@@ -73,7 +76,7 @@ class EdenAiExplicitImage(EdenaiTool):
             query_params = {"file_url": query,"attributes_as_list": False}
             image_analysis_result = self._call_eden_ai(query_params)
             image_analysis_result=image_analysis_result.json()
-            return self._format_json_to_string(image_analysis_result)
+            return self._format_explicit_image(image_analysis_result)
 
         except Exception as e:
             raise RuntimeError(f"Error while running EdenAiExplicitText: {e}")
