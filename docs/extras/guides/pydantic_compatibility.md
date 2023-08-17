@@ -7,14 +7,14 @@
 
 ## LangChain Pydantic Migration Plan
 
-Langchain will carry out the migration to pydantic v2 in two steps:
+LangChain will carry out the migration to pydantic v2 in two steps:
 
 1. 2023-08-17: LangChain will allow users to install either Pydantic V1 or V2. 
    * Internally LangChain will continue to [use V1](https://docs.pydantic.dev/latest/migration/#continue-using-pydantic-v1-features).
    * During this time, users can pin their pydantic version to v1 to avoid breaking changes, or start a partial
    migration using pydantic v2 throughout their code, but avoiding mixing v1 and v2 code for LangChain (see below).
 
-2. 2023-08-25: Langchain will migrate internally to using V2 code. 
+2. 2023-08-25: LangChain will migrate internally to using V2 code. 
   * Users will have to upgrade to V2 as well to use LangChain.
   * Users should stop using the `pydantic.v1` namespace when using LangChain.
   * See the [bump-pydantic package](https://github.com/pydantic/bump-pydantic) to help with the upgrade process.
