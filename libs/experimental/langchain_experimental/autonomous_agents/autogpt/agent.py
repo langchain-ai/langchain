@@ -5,6 +5,7 @@ from typing import List, Optional
 from langchain.chains.llm import LLMChain
 from langchain.chat_models.base import BaseChatModel
 from langchain.memory import ChatMessageHistory
+from langchain.pydantic_v1 import ValidationError
 from langchain.schema import (
     BaseChatMessageHistory,
     Document,
@@ -13,7 +14,6 @@ from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
 from langchain.tools.base import BaseTool
 from langchain.tools.human.tool import HumanInputRun
 from langchain.vectorstores.base import VectorStoreRetriever
-from langchain.pydantic_v1 import ValidationError
 
 from langchain_experimental.autonomous_agents.autogpt.output_parser import (
     AutoGPTOutputParser,

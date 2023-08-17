@@ -9,6 +9,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.chat_models.anthropic import ChatAnthropic
 from langchain.chat_models.base import BaseChatModel
+from langchain.pydantic_v1 import root_validator
 from langchain.schema import (
     ChatGeneration,
     ChatResult,
@@ -19,7 +20,6 @@ from langchain.schema.messages import (
     BaseMessage,
     SystemMessage,
 )
-from langchain.pydantic_v1 import root_validator
 
 prompt = """In addition to responding, you can use tools. \
 You have access to the following tools.

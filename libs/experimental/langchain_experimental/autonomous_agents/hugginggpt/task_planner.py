@@ -12,8 +12,8 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain.tools.base import BaseTool
 from langchain.pydantic_v1 import BaseModel
+from langchain.tools.base import BaseTool
 
 DEMONSTRATIONS = [
     {
