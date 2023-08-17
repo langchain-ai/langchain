@@ -230,6 +230,7 @@ class AzureSearch(VectorStore):
                 type=SearchFieldDataType.String,
             ),
         ]
+        user_agent = kwargs.get("user_agent", "langchain")
         self.client = _get_search_client(
             azure_search_endpoint,
             azure_search_key,
@@ -241,6 +242,7 @@ class AzureSearch(VectorStore):
             scoring_profiles=scoring_profiles,
             default_scoring_profile=default_scoring_profile,
             default_fields=default_fields,
+            user_agent=user_agent,
         )
         self.search_type = search_type
         self.semantic_configuration_name = semantic_configuration_name
