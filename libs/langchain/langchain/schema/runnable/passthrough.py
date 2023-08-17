@@ -41,7 +41,8 @@ class RunnablePassthrough(Serializable, Runnable[Input, Input]):
     ) -> Iterator[Input]:
         return self._transform_stream_with_config(input, identity, config)
 
-    def atransform(
+    async def atransform(
         self, input: AsyncIterator[Input], config: RunnableConfig | None = None
     ) -> AsyncIterator[Input]:
-        return self._atransform_stream_with_config(input, identity, config)
+        async for chunk in self._atransform_stream_with_config(input, identity, config):
+            yield chunk
