@@ -148,8 +148,8 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     llm : BaseLanguageModel
         The language model to use for evaluation.
     criteria : Union[Mapping[str, str]]
-        The criteriaor rubric to evaluate the runs against. It can be a mapping of
-        criterion name to its sdescription, or a single criterion name.
+        The criteria or rubric to evaluate the runs against. It can be a mapping of
+        criterion name to its description, or a single criterion name.
     prompt : Optional[BasePromptTemplate], default=None
         The prompt template to use for generating prompts. If not provided, a
         default prompt template will be used based on the value of
