@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 from typing import Any, Callable, Dict, List, Optional
 
-from pydantic_v1 import BaseModel, root_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -14,6 +13,7 @@ from tenacity import (
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms import BaseLLM
+from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema import Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
 

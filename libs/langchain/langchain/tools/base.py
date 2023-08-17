@@ -8,7 +8,7 @@ from functools import partial
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
-from pydantic_v1 import (
+from langchain.pydantic_v1 import (
     BaseModel,
     Extra,
     Field,
