@@ -1,5 +1,3 @@
-"""Wrapper around open source StarRocks VectorSearch capability."""
-
 from __future__ import annotations
 
 import json
@@ -17,7 +15,7 @@ logger = logging.getLogger()
 DEBUG = False
 
 
-def has_mul_sub_str(s: str, *args: Any) -> bool:
+def _has_mul_sub_str(s: str, *args: Any) -> bool:
     """
     Check if a string has multiple substrings.
     Args:
@@ -33,7 +31,7 @@ def has_mul_sub_str(s: str, *args: Any) -> bool:
     return True
 
 
-def debug_output(s: Any) -> None:
+def _debug_output(s: Any) -> None:
     """
     Print a debug message if DEBUG is True.
     Args:
@@ -43,7 +41,7 @@ def debug_output(s: Any) -> None:
         print(s)
 
 
-def get_named_result(connection: Any, query: str) -> List[dict[str, Any]]:
+def _get_named_result(connection: Any, query: str) -> List[dict[str, Any]]:
     """
     Get a named result from a query.
     Args:
@@ -63,13 +61,13 @@ def get_named_result(connection: Any, query: str) -> List[dict[str, Any]]:
             k = columns[idx][0]
             r[k] = datum
         result.append(r)
-    debug_output(result)
+    _debug_output(result)
     cursor.close()
     return result
 
 
 class StarRocksSettings(BaseSettings):
-    """StarRocks Client Configuration
+    """StarRocks client configuration.
 
     Attribute:
         StarRocks_host (str) : An URL to connect to MyScale backend.
@@ -121,7 +119,7 @@ class StarRocksSettings(BaseSettings):
 
 
 class StarRocks(VectorStore):
-    """Wrapper around StarRocks vector database
+    """`StarRocks` vector store.
 
     You need a `pymysql` python package, and a valid account
     to connect to StarRocks.
@@ -188,7 +186,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         self.must_escape = ("\\", "'")
         self.embedding_function = embedding
         self.dist_order = "DESC"
-        debug_output(self.config)
+        _debug_output(self.config)
 
         # Create a connection to StarRocks
         self.connection = pymysql.connect(
@@ -200,8 +198,8 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
             **kwargs,
         )
 
-        debug_output(self.schema)
-        get_named_result(self.connection, self.schema)
+        _debug_output(self.schema)
+        _get_named_result(self.connection, self.schema)
 
     def escape_str(self, value: str) -> str:
         return "".join(f"{self.BS}{c}" if c in self.must_escape else c for c in value)
@@ -236,8 +234,8 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
 
     def _insert(self, transac: Iterable, column_names: Iterable[str]) -> None:
         _insert_query = self._build_insert_sql(transac, column_names)
-        debug_output(_insert_query)
-        get_named_result(self.connection, _insert_query)
+        _debug_output(_insert_query)
+        _get_named_result(self.connection, _insert_query)
 
     def add_texts(
         self,
@@ -343,8 +341,8 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         _repr += f"\033[0m|\033[96m{columns[2]:24s}\033[0m|\n"
         _repr += "-" * (width * fields + 1) + "\n"
         q_str = f"DESC {self.config.database}.{self.config.table}"
-        debug_output(q_str)
-        rs = get_named_result(self.connection, q_str)
+        _debug_output(q_str)
+        rs = _get_named_result(self.connection, q_str)
         for r in rs:
             _repr += f"|\033[94m{r['Field']:24s}\033[0m|\033[96m{r['Type']:24s}"
             _repr += f"\033[0m|\033[96m{r['Key']:24s}\033[0m|\n"
@@ -371,7 +369,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
             LIMIT {topk}
             """
 
-        debug_output(q_str)
+        _debug_output(q_str)
         return q_str
 
     def similarity_search(
@@ -427,7 +425,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
                     page_content=r[self.config.column_map["document"]],
                     metadata=json.loads(r[self.config.column_map["metadata"]]),
                 )
-                for r in get_named_result(self.connection, q_str)
+                for r in _get_named_result(self.connection, q_str)
             ]
         except Exception as e:
             logger.error(f"\033[91m\033[1m{type(e)}\033[0m \033[95m{str(e)}\033[0m")
@@ -464,7 +462,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
                     ),
                     r["dist"],
                 )
-                for r in get_named_result(self.connection, q_str)
+                for r in _get_named_result(self.connection, q_str)
             ]
         except Exception as e:
             logger.error(f"\033[91m\033[1m{type(e)}\033[0m \033[95m{str(e)}\033[0m")
@@ -474,7 +472,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         """
         Helper function: Drop data
         """
-        get_named_result(
+        _get_named_result(
             self.connection,
             f"DROP TABLE IF EXISTS {self.config.database}.{self.config.table}",
         )

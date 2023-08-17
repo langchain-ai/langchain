@@ -10,9 +10,9 @@ logger = logging.getLogger(__name__)
 
 
 class Zilliz(Milvus):
-    """Initialize wrapper around the Zilliz vector database.
+    """`Zilliz` vector store.
 
-    In order to use this you need to have `pymilvus` installed and a
+    You need to have `pymilvus` installed and a
     running Zilliz database.
 
     See the following documentation for how to run a Zilliz instance:

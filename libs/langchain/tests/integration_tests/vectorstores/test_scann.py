@@ -7,7 +7,7 @@ import pytest
 
 from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
-from langchain.vectorstores.scann import ScaNN, dependable_scann_import, normalize
+from langchain.vectorstores.scann import ScaNN, _dependable_scann_import, normalize
 from langchain.vectorstores.utils import DistanceStrategy
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
@@ -59,7 +59,7 @@ def test_scann_with_config() -> None:
     # Quantization: uses 16-centroid quantizer every 2 dimension.
     # Reordering: reorder top 100 results.
     scann_config = (
-        dependable_scann_import()
+        _dependable_scann_import()
         .scann_ops_pybind.builder(np.zeros(shape=(0, 10)), 10, "squared_l2")
         .tree(num_leaves=100, num_leaves_to_search=10)
         .score_ah(2)

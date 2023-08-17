@@ -1,4 +1,3 @@
-"""Wrapper around MyScale vector database."""
 from __future__ import annotations
 
 import json
@@ -32,7 +31,7 @@ def has_mul_sub_str(s: str, *args: Any) -> bool:
 
 
 class MyScaleSettings(BaseSettings):
-    """MyScale Client Configuration
+    """MyScale client configuration.
 
     Attribute:
         myscale_host (str) : An URL to connect to MyScale backend.
@@ -93,13 +92,13 @@ class MyScaleSettings(BaseSettings):
 
 
 class MyScale(VectorStore):
-    """Wrapper around MyScale vector database
+    """`MyScale` vector store.
 
     You need a `clickhouse-connect` python package, and a valid account
     to connect to MyScale.
 
-    MyScale can not only search with simple vector indexes,
-    it also supports complex query with multiple conditions,
+    MyScale can not only search with simple vector indexes.
+    It also supports a complex query with multiple conditions,
     constraints and even sub-queries.
 
     For more information, please visit
@@ -122,7 +121,7 @@ class MyScale(VectorStore):
         try:
             from clickhouse_connect import get_client
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import clickhouse connect python package. "
                 "Please install it with `pip install clickhouse-connect`."
             )

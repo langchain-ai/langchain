@@ -1,4 +1,3 @@
-"""Wrapper around ScaNN vector database."""
 from __future__ import annotations
 
 import operator
@@ -23,9 +22,9 @@ def normalize(x: np.ndarray) -> np.ndarray:
     return x
 
 
-def dependable_scann_import() -> Any:
+def _dependable_scann_import() -> Any:
     """
-    Import scann if available, otherwise raise error.
+    Import `scann` if available, otherwise raise error.
     """
     try:
         import scann
@@ -38,7 +37,7 @@ def dependable_scann_import() -> Any:
 
 
 class ScaNN(VectorStore):
-    """Wrapper around ScaNN vector database.
+    """`ScaNN` vector store.
 
     To use, you should have the ``scann`` python package installed.
 
@@ -313,7 +312,7 @@ class ScaNN(VectorStore):
         normalize_L2: bool = False,
         **kwargs: Any,
     ) -> ScaNN:
-        scann = dependable_scann_import()
+        scann = _dependable_scann_import()
         distance_strategy = kwargs.get(
             "distance_strategy", DistanceStrategy.EUCLIDEAN_DISTANCE
         )
@@ -475,7 +474,7 @@ class ScaNN(VectorStore):
         scann_path = path / "{index_name}.scann".format(index_name=index_name)
         scann_path.mkdir(exist_ok=True, parents=True)
         # load index separately since it is not picklable
-        scann = dependable_scann_import()
+        scann = _dependable_scann_import()
         index = scann.scann_ops_pybind.load_searcher(str(scann_path))
 
         # load docstore and index_to_docstore_id

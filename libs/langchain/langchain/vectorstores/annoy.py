@@ -1,4 +1,3 @@
-"""Wrapper around Annoy vector database."""
 from __future__ import annotations
 
 import os
@@ -21,12 +20,12 @@ INDEX_METRICS = frozenset(["angular", "euclidean", "manhattan", "hamming", "dot"
 DEFAULT_METRIC = "angular"
 
 
-def dependable_annoy_import() -> Any:
+def _dependable_annoy_import() -> Any:
     """Import annoy if available, otherwise raise error."""
     try:
         import annoy
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "Could not import annoy python package. "
             "Please install it with `pip install --user annoy` "
         )
@@ -34,7 +33,7 @@ def dependable_annoy_import() -> Any:
 
 
 class Annoy(VectorStore):
-    """Wrapper around Annoy vector database.
+    """`Annoy` vector store.
 
     To use, you should have the ``annoy`` python package installed.
 
@@ -301,7 +300,7 @@ class Annoy(VectorStore):
                     f"Expected one of {list(INDEX_METRICS)}"
                 )
             )
-        annoy = dependable_annoy_import()
+        annoy = _dependable_annoy_import()
         if not embeddings:
             raise ValueError("embeddings must be provided to build AnnoyIndex")
         f = len(embeddings[0])
@@ -440,7 +439,7 @@ class Annoy(VectorStore):
         """
         path = Path(folder_path)
         # load index separately since it is not picklable
-        annoy = dependable_annoy_import()
+        annoy = _dependable_annoy_import()
         # load docstore and index_to_docstore_id
         with open(path / "index.pkl", "rb") as file:
             docstore, index_to_docstore_id, config_object = pickle.load(file)
