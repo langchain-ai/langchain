@@ -3,7 +3,8 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import Any, Callable, Iterable, List, Optional, Tuple
+import warnings
+from typing import Any, Callable, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -38,7 +39,7 @@ class Pinecone(VectorStore):
     def __init__(
         self,
         index: Any,
-        embedding_function: Callable,
+        embedding: Union[Embeddings, Callable],
         text_key: str,
         namespace: Optional[str] = None,
         distance_strategy: Optional[DistanceStrategy] = DistanceStrategy.COSINE,
@@ -47,7 +48,7 @@ class Pinecone(VectorStore):
         try:
             import pinecone
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import pinecone python package. "
                 "Please install it with `pip install pinecone-client`."
             )
@@ -56,16 +57,35 @@ class Pinecone(VectorStore):
                 f"client should be an instance of pinecone.index.Index, "
                 f"got {type(index)}"
             )
+        if not isinstance(embedding, Embeddings):
+            warnings.warn(
+                "Passing in `embedding` as a Callable is deprecated. Please pass in an"
+                " Embeddings object instead."
+            )
         self._index = index
-        self._embedding_function = embedding_function
+        self._embedding = embedding
         self._text_key = text_key
         self._namespace = namespace
         self.distance_strategy = distance_strategy
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
-        # TODO: Accept this object directly
+        """Access the query embedding object if available."""
+        if isinstance(self._embedding, Embeddings):
+            return self._embedding
         return None
+
+    def _embed_documents(self, texts: Iterable[str]) -> List[List[float]]:
+        """Embed search docs."""
+        if isinstance(self._embedding, Embeddings):
+            return self._embedding.embed_documents(list(texts))
+        return [self._embedding(t) for t in texts]
+
+    def _embed_query(self, text: str) -> List[float]:
+        """Embed query text."""
+        if isinstance(self._embedding, Embeddings):
+            return self._embedding.embed_query(text)
+        return self._embedding(text)
 
     def add_texts(
         self,
@@ -93,8 +113,8 @@ class Pinecone(VectorStore):
         # Embed and create the documents
         docs = []
         ids = ids or [str(uuid.uuid4()) for _ in texts]
-        for i, text in enumerate(texts):
-            embedding = self._embedding_function(text)
+        embeddings = self._embed_documents(texts)
+        for i, (text, embedding) in enumerate(zip(texts, embeddings)):
             metadata = metadatas[i] if metadatas else {}
             metadata[self._text_key] = text
             docs.append((ids[i], embedding, metadata))
@@ -122,12 +142,25 @@ class Pinecone(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
+        return self.similarity_search_by_vector_with_score(
+            self._embed_query(query), k=k, filter=filter, namespace=namespace
+        )
+
+    def similarity_search_by_vector_with_score(
+        self,
+        embedding: List[float],
+        *,
+        k: int = 4,
+        filter: Optional[dict] = None,
+        namespace: Optional[str] = None,
+    ) -> List[Tuple[Document, float]]:
+        """Return pinecone documents most similar to embedding, along with scores."""
+
         if namespace is None:
             namespace = self._namespace
-        query_obj = self._embedding_function(query)
         docs = []
         results = self._index.query(
-            [query_obj],
+            [embedding],
             top_k=k,
             include_metadata=True,
             namespace=namespace,
@@ -265,7 +298,7 @@ class Pinecone(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        embedding = self._embedding_function(query)
+        embedding = self._embed_query(query)
         return self.max_marginal_relevance_search_by_vector(
             embedding, k, fetch_k, lambda_mult, filter, namespace
         )
@@ -356,7 +389,7 @@ class Pinecone(VectorStore):
             # upsert to Pinecone
             _upsert_kwargs = upsert_kwargs or {}
             index.upsert(vectors=list(to_upsert), namespace=namespace, **_upsert_kwargs)
-        return cls(index, embedding.embed_query, text_key, namespace, **kwargs)
+        return cls(index, embedding, text_key, namespace, **kwargs)
 
     @classmethod
     def from_existing_index(
@@ -375,9 +408,7 @@ class Pinecone(VectorStore):
                 "Please install it with `pip install pinecone-client`."
             )
 
-        return cls(
-            pinecone.Index(index_name), embedding.embed_query, text_key, namespace
-        )
+        return cls(pinecone.Index(index_name), embedding, text_key, namespace)
 
     def delete(
         self,

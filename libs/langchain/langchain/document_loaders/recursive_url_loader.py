@@ -10,7 +10,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class RecursiveUrlLoader(BaseLoader):
-    """Loads all child links from a given url."""
+    """Load all child links from a URL page."""
 
     def __init__(
         self,

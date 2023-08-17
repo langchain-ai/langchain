@@ -462,7 +462,7 @@ def _determine_reference_key(
 
 
 def _construct_run_evaluator(
-    eval_config: Union[EvaluatorType, EvalConfig],
+    eval_config: Union[EvaluatorType, str, EvalConfig],
     eval_llm: BaseLanguageModel,
     run_type: str,
     data_type: DataType,
@@ -471,7 +471,9 @@ def _construct_run_evaluator(
     input_key: Optional[str],
     prediction_key: Optional[str],
 ) -> RunEvaluator:
-    if isinstance(eval_config, EvaluatorType):
+    if isinstance(eval_config, (EvaluatorType, str)):
+        if not isinstance(eval_config, EvaluatorType):
+            eval_config = EvaluatorType(eval_config)
         evaluator_ = load_evaluator(eval_config, llm=eval_llm)
         eval_type_tag = eval_config.value
     else:
@@ -1314,7 +1316,7 @@ def _handle_coroutine(coro: Coroutine) -> Any:
     except RuntimeError:  # No event loop
         return asyncio.run(coro)
     if loop.is_running():
-        return loop.create_task(coro)
+        return loop.run_until_complete(coro)
     else:
         return asyncio.run(coro)
 

@@ -1,7 +1,8 @@
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
-from langchain.callbacks.base import Callbacks
+from langchain.callbacks.manager import CallbackManagerForRetrieverRun
+from langchain.pydantic_v1 import Field
 from langchain.schema.document import Document
 from langchain.schema.retriever import BaseRetriever
 from langchain.schema.storage import BaseStore
@@ -30,31 +31,32 @@ class ParentDocumentRetriever(BaseRetriever):
     chunk.
 
     Examples:
-        ... code-block:: python
 
-        # Imports
-        from langchain.vectorstores import Chroma
-        from langchain.embeddings import OpenAIEmbeddings
-        from langchain.text_splitter import RecursiveCharacterTextSplitter
-        from langchain.storage import InMemoryStore
+        .. code-block:: python
 
-        # This text splitter is used to create the parent documents
-        parent_splitter = RecursiveCharacterTextSplitter(chunk_size=2000)
-        # This text splitter is used to create the child documents
-        # It should create documents smaller than the parent
-        child_splitter = RecursiveCharacterTextSplitter(chunk_size=400)
-        # The vectorstore to use to index the child chunks
-        vectorstore = Chroma(embedding_function=OpenAIEmbeddings())
-        # The storage layer for the parent documents
-        store = InMemoryStore()
+            # Imports
+            from langchain.vectorstores import Chroma
+            from langchain.embeddings import OpenAIEmbeddings
+            from langchain.text_splitter import RecursiveCharacterTextSplitter
+            from langchain.storage import InMemoryStore
 
-        # Initialize the retriever
-        retriever = ParentDocumentRetriever(
-            vectorstore=vectorstore,
-            docstore=store,
-            child_splitter=child_splitter,
-            parent_splitter=parent_splitter,
-        )
+            # This text splitter is used to create the parent documents
+            parent_splitter = RecursiveCharacterTextSplitter(chunk_size=2000)
+            # This text splitter is used to create the child documents
+            # It should create documents smaller than the parent
+            child_splitter = RecursiveCharacterTextSplitter(chunk_size=400)
+            # The vectorstore to use to index the child chunks
+            vectorstore = Chroma(embedding_function=OpenAIEmbeddings())
+            # The storage layer for the parent documents
+            store = InMemoryStore()
+
+            # Initialize the retriever
+            retriever = ParentDocumentRetriever(
+                vectorstore=vectorstore,
+                docstore=store,
+                child_splitter=child_splitter,
+                parent_splitter=parent_splitter,
+            )
     """
 
     vectorstore: VectorStore
@@ -70,17 +72,20 @@ class ParentDocumentRetriever(BaseRetriever):
     parent_splitter: Optional[TextSplitter] = None
     """The text splitter to use to create parent documents.
     If none, then the parent documents will be the raw documents passed in."""
+    search_kwargs: dict = Field(default_factory=dict)
+    """Keyword arguments to pass to the search function."""
 
-    def get_relevant_documents(
-        self,
-        query: str,
-        *,
-        callbacks: Callbacks = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
-        sub_docs = self.vectorstore.similarity_search(query)
+        """Get documents relevant to a query.
+        Args:
+            query: String to find relevant documents for
+            run_manager: The callbacks handler to use
+        Returns:
+            List of relevant documents
+        """
+        sub_docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
         # We do this to maintain the order of the ids that are returned
         ids = []
         for d in sub_docs:

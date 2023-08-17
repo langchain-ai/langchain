@@ -2,13 +2,12 @@ import re
 import warnings
 from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Mapping, Optional
 
-from pydantic import Field, root_validator
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import LLM
+from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.output import GenerationChunk
 from langchain.utils import (

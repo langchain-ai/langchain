@@ -1,5 +1,3 @@
-"""Loads data from Google Drive."""
-
 # Prerequisites:
 # 1. Create a Google Cloud project
 # 2. Enable the Google Drive API:
@@ -13,16 +11,15 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union
 
-from pydantic import BaseModel, root_validator, validator
-
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.pydantic_v1 import BaseModel, root_validator, validator
 
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 
 
 class GoogleDriveLoader(BaseLoader, BaseModel):
-    """Loads Google Docs from Google Drive."""
+    """Load Google Docs from `Google Drive`."""
 
     service_account_key: Path = Path.home() / ".credentials" / "keys.json"
     """Path to the service account key file."""

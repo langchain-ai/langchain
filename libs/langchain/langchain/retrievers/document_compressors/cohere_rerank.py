@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Dict, Optional, Sequence
 
-from pydantic import Extra, root_validator
-
 from langchain.callbacks.manager import Callbacks
+from langchain.pydantic_v1 import Extra, root_validator
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 from langchain.schema import Document
 from langchain.utils import get_from_dict_or_env

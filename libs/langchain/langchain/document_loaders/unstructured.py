@@ -1,14 +1,14 @@
 """Loader that uses unstructured to load files."""
 import collections
 from abc import ABC, abstractmethod
-from typing import IO, Any, Callable, Dict, List, Sequence, Union
+from typing import IO, Any, Callable, Dict, List, Optional, Sequence, Union
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 
 def satisfies_min_unstructured_version(min_version: str) -> bool:
-    """Checks to see if the installed unstructured version exceeds the minimum version
+    """Check if the installed `Unstructured` version exceeds the minimum version
     for the feature in question."""
     from unstructured.__version__ import __version__ as __unstructured_version__
 
@@ -25,7 +25,7 @@ def satisfies_min_unstructured_version(min_version: str) -> bool:
 
 
 def validate_unstructured_version(min_unstructured_version: str) -> None:
-    """Raises an error if the unstructured version does not exceed the
+    """Raise an error if the `Unstructured` version does not exceed the
     specified minimum."""
     if not satisfies_min_unstructured_version(min_unstructured_version):
         raise ValueError(
@@ -34,12 +34,12 @@ def validate_unstructured_version(min_unstructured_version: str) -> None:
 
 
 class UnstructuredBaseLoader(BaseLoader, ABC):
-    """Loader that uses Unstructured to load files."""
+    """Base Loader that uses `Unstructured`."""
 
     def __init__(
         self,
         mode: str = "single",
-        post_processors: List[Callable] = [],
+        post_processors: Optional[List[Callable]] = None,
         **unstructured_kwargs: Any,
     ):
         """Initialize with file path."""
@@ -62,7 +62,7 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
                 unstructured_kwargs.pop("strategy")
 
         self.unstructured_kwargs = unstructured_kwargs
-        self.post_processors = post_processors
+        self.post_processors = post_processors or []
 
     @abstractmethod
     def _get_elements(self) -> List:
@@ -130,7 +130,7 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
 
 
 class UnstructuredFileLoader(UnstructuredBaseLoader):
-    """Loader that uses Unstructured to load files.
+    """Load files using `Unstructured`.
 
     The file loader uses the
     unstructured partition function and will automatically detect the file
@@ -181,7 +181,7 @@ def get_elements_from_api(
     api_key: str = "",
     **unstructured_kwargs: Any,
 ) -> List:
-    """Retrieves a list of elements from the Unstructured API."""
+    """Retrieve a list of elements from the `Unstructured API`."""
     if isinstance(file, collections.abc.Sequence) or isinstance(file_path, list):
         from unstructured.partition.api import partition_multiple_via_api
 
@@ -211,7 +211,7 @@ def get_elements_from_api(
 
 
 class UnstructuredAPIFileLoader(UnstructuredFileLoader):
-    """Loader that uses the Unstructured API to load files.
+    """Load files using `Unstructured` API.
 
     By default, the loader makes a call to the hosted Unstructured API.
     If you are running the unstructured API locally, you can change the
@@ -275,7 +275,7 @@ class UnstructuredAPIFileLoader(UnstructuredFileLoader):
 
 
 class UnstructuredFileIOLoader(UnstructuredBaseLoader):
-    """Loader that uses Unstructured to load files.
+    """Load files using `Unstructured`.
 
     The file loader
     uses the unstructured partition function and will automatically detect the file
@@ -322,7 +322,7 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
 
 
 class UnstructuredAPIFileIOLoader(UnstructuredFileIOLoader):
-    """Loader that uses the Unstructured API to load files.
+    """Load files using `Unstructured` API.
 
     By default, the loader makes a call to the hosted Unstructured API.
     If you are running the unstructured API locally, you can change the
