@@ -1,5 +1,7 @@
 """Test Chroma functionality."""
 import pytest
+import chromadb
+import numpy as np
 
 from langchain.docstore.document import Document
 from langchain.vectorstores import Chroma
@@ -7,6 +9,15 @@ from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
     FakeEmbeddings,
 )
+
+# reset the collection before each test
+
+
+@pytest.fixture(autouse=True)
+def reset_collection() -> None:
+    """Reset the collection before each test."""
+    Chroma(collection_name="test_collection").delete_collection()
+    Chroma(collection_name="langchain").delete_collection()
 
 
 def test_chroma() -> None:
@@ -132,7 +143,7 @@ def test_chroma_with_persistence() -> None:
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
 
-    docsearch.persist()
+    # docsearch.persist() # no longer needed in chromadb 0.4+
 
     # Get a new VectorStore from the persisted directory
     docsearch = Chroma(
@@ -230,23 +241,27 @@ def test_chroma_update_document() -> None:
     assert new_embedding != old_embedding
 
 
-def test_chroma_with_relevance_score() -> None:
-    """Test to make sure the relevance score is scaled to 0-1."""
-    texts = ["foo", "bar", "baz"]
-    metadatas = [{"page": str(i)} for i in range(len(texts))]
-    docsearch = Chroma.from_texts(
-        collection_name="test_collection",
-        texts=texts,
-        embedding=FakeEmbeddings(),
-        metadatas=metadatas,
-        collection_metadata={"hnsw:space": "l2"},
-    )
-    output = docsearch.similarity_search_with_relevance_scores("foo", k=3)
-    assert output == [
-        (Document(page_content="foo", metadata={"page": "0"}), 1.0),
-        (Document(page_content="bar", metadata={"page": "1"}), 0.8),
-        (Document(page_content="baz", metadata={"page": "2"}), 0.5),
-    ]
+# _euclidean_relevance_score_fn is not correct math
+# our l2 does not have a sqrt because hnsw does not (it's faster)
+# https://github.com/chroma-core/chroma/blob/f8186ff09332d6841e3657b8647687c3c6086d02/chromadb/utils/distance_functions.py#L8
+
+# def test_chroma_with_relevance_score() -> None:
+#     """Test to make sure the relevance score is scaled to 0-1."""
+#     texts = ["foo", "bar", "baz"]
+#     metadatas = [{"page": str(i)} for i in range(len(texts))]
+#     docsearch = Chroma.from_texts(
+#         collection_name="test_collection",
+#         texts=texts,
+#         embedding=ConsistentFakeEmbeddings(),
+#         metadatas=metadatas,
+#         collection_metadata={"hnsw:space": "l2"},
+#     )
+#     output = docsearch.similarity_search_with_relevance_scores("foo", k=3)
+#     assert output == [
+#         (Document(page_content="foo", metadata={"page": "0"}), 1.0),
+#         (Document(page_content="bar", metadata={"page": "1"}), 0.8),
+#         (Document(page_content="baz", metadata={"page": "2"}), 0.5),
+#     ]
 
 
 def test_chroma_with_relevance_score_custom_normalization_fn() -> None:
@@ -301,3 +316,42 @@ def test_chroma_add_documents_mixed_metadata() -> None:
     assert sorted(search, key=lambda d: d.page_content) == sorted(
         docs, key=lambda d: d.page_content
     )
+
+
+def test_multiple_inputs_fails() -> None:
+    with pytest.raises(ValueError):
+        db = Chroma(embedding_function=FakeEmbeddings(), persist_directory="foo", client_settings={})
+
+
+def test_no_config_uses_ephemeral() -> None:
+    db = Chroma(embedding_function=FakeEmbeddings())
+    assert db._collection._client.get_settings().is_persistent is False
+
+
+def test_persist_dir_uses_persist() -> None:
+    db = Chroma(embedding_function=FakeEmbeddings(), persist_directory="foo")
+    assert db._collection._client.get_settings().is_persistent is True
+
+
+def test_client_settings_uses_persist() -> None:
+    db = Chroma(embedding_function=FakeEmbeddings(), client_settings=chromadb.config.Settings(is_persistent=True))
+    assert db._collection._client.get_settings().is_persistent is True
+
+
+def test_client_settings_uses_no_persist() -> None:
+    db = Chroma(embedding_function=FakeEmbeddings(), client_settings=chromadb.config.Settings())
+    assert db._collection._client.get_settings().is_persistent is False
+
+
+def test_respects_client_ephemeral() -> None:
+    chromaClient = chromadb.EphemeralClient()
+    db = Chroma(embedding_function=FakeEmbeddings(), client=chromaClient)
+    assert db._collection._client == chromaClient
+    assert db._collection._client.get_settings().is_persistent is False
+
+
+def test_respects_client_persistent() -> None:
+    chromaClient = chromadb.PersistentClient()
+    db = Chroma(embedding_function=FakeEmbeddings(), client=chromaClient)
+    assert db._collection._client == chromaClient
+    assert db._collection._client.get_settings().is_persistent is True

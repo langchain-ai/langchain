@@ -96,6 +96,7 @@ class Chroma(VectorStore):
     """
 
     _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain"
+    _client: chromadb.Client = None
 
     def __init__(
         self,
@@ -120,6 +121,7 @@ class Chroma(VectorStore):
         _check_client_params(client, client_settings, persist_directory)
         # default settings
         _client_settings = chromadb.config.Settings()
+        self._client = chromadb.EphemeralClient(settings=_client_settings)
 
         # if user provides client, use it
         if client:
