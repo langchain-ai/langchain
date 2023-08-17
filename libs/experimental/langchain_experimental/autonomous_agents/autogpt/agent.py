@@ -9,7 +9,7 @@ from langchain.schema import (
     BaseChatMessageHistory,
     Document,
 )
-from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
+from langchain.schema import AIMessage, HumanMessage, SystemMessage
 from langchain.tools.base import BaseTool
 from langchain.tools.human.tool import HumanInputRun
 from langchain.vectorstores.base import VectorStoreRetriever
