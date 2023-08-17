@@ -615,9 +615,9 @@ class Agent(BaseSingleActionAgent):
 class ExceptionTool(BaseTool):
     """Tool that just returns the query."""
 
-    name = "_Exception"
+    name: str = "_Exception"
     """Name of the tool."""
-    description = "Exception tool"
+    description: str = "Exception tool"
     """Description of the tool."""
 
     def _run(

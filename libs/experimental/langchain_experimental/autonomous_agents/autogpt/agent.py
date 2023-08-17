@@ -13,7 +13,7 @@ from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
 from langchain.tools.base import BaseTool
 from langchain.tools.human.tool import HumanInputRun
 from langchain.vectorstores.base import VectorStoreRetriever
-from pydantic import ValidationError
+from pydantic_v1 import ValidationError
 
 from langchain_experimental.autonomous_agents.autogpt.output_parser import (
     AutoGPTOutputParser,

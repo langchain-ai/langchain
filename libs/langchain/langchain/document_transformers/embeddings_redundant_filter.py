@@ -182,7 +182,7 @@ class EmbeddingsClusteringFilter(BaseDocumentTransformer, BaseModel):
     """By default results are re-ordered "grouping" them by cluster, if sorted is true
     result will be ordered by the original position from the retriever"""
 
-    remove_duplicates = False
+    remove_duplicates: bool = False
     """ By default duplicated results are skipped and replaced by the next closest 
     vector in the cluster. If remove_duplicates is true no replacement will be done:
     This could dramatically reduce results when there is a lot of overlap between 

@@ -58,8 +58,8 @@ class NUASchema(BaseModel):
 class NucliaUnderstandingAPI(BaseTool):
     """Tool to process files with the Nuclia Understanding API."""
 
-    name = "nuclia_understanding_api"
-    description = (
+    name: str = "nuclia_understanding_api"
+    description: str = (
         "A wrapper around Nuclia Understanding API endpoints. "
         "Useful for when you need to extract text from any kind of files. "
     )
