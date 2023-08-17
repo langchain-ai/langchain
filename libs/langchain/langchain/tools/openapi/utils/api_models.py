@@ -1,7 +1,19 @@
 """Pydantic models for parsing an OpenAPI spec."""
+from __future__ import annotations
+
 import logging
 from enum import Enum
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 
 from langchain.pydantic_v1 import _PYDANTIC_MAJOR_VERSION, BaseModel, Field
 from langchain.tools.openapi.utils.openapi_utils import HTTPVerb, OpenAPISpec
@@ -84,13 +96,14 @@ class APIPropertyBase(BaseModel):
 
 
 if _PYDANTIC_MAJOR_VERSION == 1:
-    from openapi_schema_pydantic import (
-        MediaType,
-        Parameter,
-        Reference,
-        RequestBody,
-        Schema,
-    )
+    if TYPE_CHECKING:
+        from openapi_schema_pydantic import (
+            MediaType,
+            Parameter,
+            Reference,
+            RequestBody,
+            Schema,
+        )
 
     class APIProperty(APIPropertyBase):
         """A model for a property in the query, path, header, or cookie params."""

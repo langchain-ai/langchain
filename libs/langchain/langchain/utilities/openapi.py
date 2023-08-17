@@ -7,7 +7,7 @@ import logging
 import re
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 import requests
 import yaml
@@ -39,17 +39,22 @@ class HTTPVerb(str, Enum):
 
 
 if _PYDANTIC_MAJOR_VERSION == 1:
-    from openapi_schema_pydantic import (
-        Components,
-        OpenAPI,
-        Operation,
-        Parameter,
-        PathItem,
-        Paths,
-        Reference,
-        RequestBody,
-        Schema,
-    )
+    if TYPE_CHECKING:
+        from openapi_schema_pydantic import (
+            Components,
+            Operation,
+            Parameter,
+            PathItem,
+            Paths,
+            Reference,
+            RequestBody,
+            Schema,
+        )
+
+    try:
+        from openapi_schema_pydantic import OpenAPI
+    except ImportError:
+        OpenAPI = object
 
     class OpenAPISpec(OpenAPI):
         """OpenAPI Model that removes mis-formatted parts of the spec."""
