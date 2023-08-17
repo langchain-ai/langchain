@@ -479,6 +479,8 @@ class Runnable(Generic[Input, Output], ABC):
             run_type=run_type,
         )
         try:
+            # mypy can't quite work out thew type guard here, but this is safe,
+            # check implementations of the accepts_* functions
             if accepts_run_manager_and_config(transformer):
                 iterator = transformer(
                     input_for_transform,
@@ -1336,13 +1338,13 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
             # Create the transform() generator for each step
             named_generators = [
                 (
-                    step_name,
-                    steps[step_name].transform(
+                    name,
+                    step.transform(
                         input_copies.pop(),
                         patch_config(config, run_manager.get_child()),
                     ),
                 )
-                for step_name in steps
+                for name, step in steps.items()
             ]
             # Start the first iteration of each generator
             futures = {
@@ -1395,12 +1397,12 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
         # Create the transform() generator for each step
         named_generators = [
             (
-                step_name,
-                steps[step_name].atransform(
+                name,
+                step.atransform(
                     input_copies.pop(), patch_config(config, run_manager.get_child())
                 ),
             )
-            for step_name in steps
+            for name, step in steps.items()
         ]
 
         # Wrap in a coroutine to satisfy linter
@@ -1544,7 +1546,7 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Iterator[Output]:
-        yield from self.bound.transform(input, config, **self.kwargs, **kwargs)
+        yield from self.bound.transform(input, config, **{**self.kwargs, **kwargs})
 
     async def atransform(
         self,
@@ -1552,7 +1554,9 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> AsyncIterator[Output]:
-        async for item in self.bound.atransform(input, config, **self.kwargs, **kwargs):
+        async for item in self.bound.atransform(
+            input, config, **{**self.kwargs, **kwargs}
+        ):
             yield item
 
 

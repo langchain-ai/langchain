@@ -32,14 +32,14 @@ class RunnablePassthrough(Serializable, Runnable[Input, Input]):
         return self._call_with_config(identity, input, config)
 
     async def ainvoke(
-        self, input: Input, config: RunnableConfig | None = None
+        self, input: Input, config: Optional[RunnableConfig] = None
     ) -> Input:
         return await self._acall_with_config(aidentity, input, config)
 
     def transform(
         self,
         input: Iterator[Input],
-        config: RunnableConfig | None = None,
+        config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Iterator[Input]:
         return self._transform_stream_with_config(input, identity, config)
@@ -47,7 +47,7 @@ class RunnablePassthrough(Serializable, Runnable[Input, Input]):
     def atransform(
         self,
         input: AsyncIterator[Input],
-        config: RunnableConfig | None = None,
+        config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> AsyncIterator[Input]:
         return self._atransform_stream_with_config(input, identity, config)
