@@ -44,9 +44,10 @@ DEFAULT_QUERY_PROMPT = PromptTemplate(
 
 
 class MultiQueryRetriever(BaseRetriever):
+    """Given a query, use an LLM to write a set of queries.
 
-    """Given a user query, use an LLM to write a set of queries.
-    Retrieve docs for each query. Rake the unique union of all retrieved docs."""
+    Retrieve docs for each query. Rake the unique union of all retrieved docs.
+    """
 
     retriever: BaseRetriever
     llm_chain: LLMChain
