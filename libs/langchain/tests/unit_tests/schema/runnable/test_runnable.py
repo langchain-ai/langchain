@@ -1,4 +1,4 @@
-from ast import Not
+from operator import itemgetter
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
@@ -39,7 +39,6 @@ from langchain.schema.runnable import (
     RunnablePassthrough,
     RunnableSequence,
     RunnableWithFallbacks,
-    passthrough,
 )
 
 
@@ -178,6 +177,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 tags=[],
                 callbacks=None,
                 _locals={},
+                recursion_limit=10,
             ),
         ),
         mocker.call(
@@ -187,6 +187,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 tags=[],
                 callbacks=None,
                 _locals={},
+                recursion_limit=10,
             ),
         ),
     ]
@@ -766,6 +767,105 @@ async def test_router_runnable(
     router_run = parent_run.child_runs[1]
     assert router_run.name == "RunnableSequence"  # TODO: should be RunnableRouter
     assert len(router_run.child_runs) == 2
+
+
+@pytest.mark.asyncio
+@freeze_time("2023-01-01")
+async def test_higher_order_lambda_runnable(
+    mocker: MockerFixture, snapshot: SnapshotAssertion
+) -> None:
+    math_chain = ChatPromptTemplate.from_template(
+        "You are a math genius. Answer the question: {question}"
+    ) | FakeListLLM(responses=["4"])
+    english_chain = ChatPromptTemplate.from_template(
+        "You are an english major. Answer the question: {question}"
+    ) | FakeListLLM(responses=["2"])
+    input_map = RunnableMap(
+        {  # type: ignore[arg-type]
+            "key": lambda x: x["key"],
+            "input": {"question": lambda x: x["question"]},
+        }
+    )
+
+    def router(input: Dict[str, Any]) -> Runnable:
+        if input["key"] == "math":
+            return itemgetter("input") | math_chain
+        elif input["key"] == "english":
+            return itemgetter("input") | english_chain
+        else:
+            raise ValueError(f"Unknown key: {input['key']}")
+
+    chain: Runnable = input_map | router
+    assert dumps(chain, pretty=True) == snapshot
+
+    result = chain.invoke({"key": "math", "question": "2 + 2"})
+    assert result == "4"
+
+    result2 = chain.batch(
+        [{"key": "math", "question": "2 + 2"}, {"key": "english", "question": "2 + 2"}]
+    )
+    assert result2 == ["4", "2"]
+
+    result = await chain.ainvoke({"key": "math", "question": "2 + 2"})
+    assert result == "4"
+
+    result2 = await chain.abatch(
+        [{"key": "math", "question": "2 + 2"}, {"key": "english", "question": "2 + 2"}]
+    )
+    assert result2 == ["4", "2"]
+
+    # Test invoke
+    math_spy = mocker.spy(math_chain.__class__, "invoke")
+    tracer = FakeTracer()
+    assert (
+        chain.invoke({"key": "math", "question": "2 + 2"}, dict(callbacks=[tracer]))
+        == "4"
+    )
+    assert math_spy.call_args.args[1] == {
+        "key": "math",
+        "input": {"question": "2 + 2"},
+    }
+    assert len([r for r in tracer.runs if r.parent_run_id is None]) == 1
+    parent_run = next(r for r in tracer.runs if r.parent_run_id is None)
+    assert len(parent_run.child_runs) == 2
+    router_run = parent_run.child_runs[1]
+    assert router_run.name == "RunnableLambda"
+    assert len(router_run.child_runs) == 1
+    math_run = router_run.child_runs[0]
+    assert math_run.name == "RunnableSequence"
+    assert len(math_run.child_runs) == 3
+
+    # Test ainvoke
+    async def arouter(input: Dict[str, Any]) -> Runnable:
+        if input["key"] == "math":
+            return itemgetter("input") | math_chain
+        elif input["key"] == "english":
+            return itemgetter("input") | english_chain
+        else:
+            raise ValueError(f"Unknown key: {input['key']}")
+
+    achain: Runnable = input_map | arouter
+    math_spy = mocker.spy(math_chain.__class__, "ainvoke")
+    tracer = FakeTracer()
+    assert (
+        await achain.ainvoke(
+            {"key": "math", "question": "2 + 2"}, dict(callbacks=[tracer])
+        )
+        == "4"
+    )
+    assert math_spy.call_args.args[1] == {
+        "key": "math",
+        "input": {"question": "2 + 2"},
+    }
+    assert len([r for r in tracer.runs if r.parent_run_id is None]) == 1
+    parent_run = next(r for r in tracer.runs if r.parent_run_id is None)
+    assert len(parent_run.child_runs) == 2
+    router_run = parent_run.child_runs[1]
+    assert router_run.name == "RunnableLambda"
+    assert len(router_run.child_runs) == 1
+    math_run = router_run.child_runs[0]
+    assert math_run.name == "RunnableSequence"
+    assert len(math_run.child_runs) == 3
 
 
 @freeze_time("2023-01-01")
