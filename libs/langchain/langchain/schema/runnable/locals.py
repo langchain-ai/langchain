@@ -50,7 +50,6 @@ class PutLocalVar(RunnablePassthrough):
                 "PutLocalVar should only be used in a RunnableSequence, and should "
                 "therefore always receive a non-null config."
             )
-        print(config)
         if isinstance(self.key, str):
             if self.key not in config["_locals"]:
                 config["_locals"][self.key] = input
