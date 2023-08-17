@@ -974,7 +974,6 @@ def _run_chain(
 def _run_llm_or_chain(
     example: Example,
     llm_or_chain_factory: MCF,
-    n_repetitions: int,
     *,
     tags: Optional[List[str]] = None,
     callbacks: Optional[List[BaseCallbackHandler]] = None,
@@ -986,7 +985,6 @@ def _run_llm_or_chain(
     Args:
         example: The example to run.
         llm_or_chain_factory: The Chain or language model constructor to run.
-        n_repetitions: The number of times to run the model on each example.
         tags: Optional tags to add to the run.
         callbacks: Optional callbacks to use during the run.
 
@@ -1007,32 +1005,31 @@ def _run_llm_or_chain(
     chain_or_llm = (
         "LLM" if isinstance(llm_or_chain_factory, BaseLanguageModel) else "Chain"
     )
-    for _ in range(n_repetitions):
-        try:
-            if isinstance(llm_or_chain_factory, BaseLanguageModel):
-                output: Any = _run_llm(
-                    llm_or_chain_factory,
-                    example.inputs,
-                    callbacks,
-                    tags=tags,
-                    input_mapper=input_mapper,
-                )
-            else:
-                chain = llm_or_chain_factory()
-                output = _run_chain(
-                    chain,
-                    example.inputs,
-                    callbacks,
-                    tags=tags,
-                    input_mapper=input_mapper,
-                )
-            outputs.append(output)
-        except Exception as e:
-            logger.warning(
-                f"{chain_or_llm} failed for example {example.id} with inputs:"
-                f" {example.inputs}.\nError: {e}",
+    try:
+        if isinstance(llm_or_chain_factory, BaseLanguageModel):
+            output: Any = _run_llm(
+                llm_or_chain_factory,
+                example.inputs,
+                callbacks,
+                tags=tags,
+                input_mapper=input_mapper,
             )
-            outputs.append({"Error": str(e)})
+        else:
+            chain = llm_or_chain_factory()
+            output = _run_chain(
+                chain,
+                example.inputs,
+                callbacks,
+                tags=tags,
+                input_mapper=input_mapper,
+            )
+        outputs.append(output)
+    except Exception as e:
+        logger.warning(
+            f"{chain_or_llm} failed for example {example.id} with inputs:"
+            f" {example.inputs}.\nError: {e}",
+        )
+        outputs.append({"Error": str(e)})
     if callbacks and previous_example_ids:
         for example_id, tracer in zip(previous_example_ids, callbacks):
             if hasattr(tracer, "example_id"):
