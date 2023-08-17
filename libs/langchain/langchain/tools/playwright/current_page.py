@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from typing import Optional, Type
 
-from pydantic_v1 import BaseModel
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
+from langchain.pydantic_v1 import BaseModel
 from langchain.tools.playwright.base import BaseBrowserTool
 from langchain.tools.playwright.utils import aget_current_page, get_current_page
 

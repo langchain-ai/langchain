@@ -1,8 +1,7 @@
 """Util that calls Twilio."""
 from typing import Any, Dict, Optional
 
-from pydantic_v1 import BaseModel, Extra, root_validator
-
+from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.utils import get_from_dict_or_env
 
 

@@ -3,9 +3,8 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Dict, List, Sequence
 
-from pydantic_v1 import Field
-
 from langchain.load.serializable import Serializable
+from langchain.pydantic_v1 import Field
 
 if TYPE_CHECKING:
     from langchain.prompts.chat import ChatPromptTemplate

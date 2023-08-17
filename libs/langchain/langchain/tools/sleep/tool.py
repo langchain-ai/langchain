@@ -3,12 +3,11 @@ from asyncio import sleep as asleep
 from time import sleep
 from typing import Optional, Type
 
-from pydantic_v1 import BaseModel, Field
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.base import BaseTool
 
 
@@ -21,9 +20,9 @@ class SleepInput(BaseModel):
 class SleepTool(BaseTool):
     """Tool that adds the capability to sleep."""
 
-    name = "sleep"
+    name: str = "sleep"
     args_schema: Type[BaseModel] = SleepInput
-    description = "Make agent sleep for a specified number of seconds."
+    description: str = "Make agent sleep for a specified number of seconds."
 
     def _run(
         self,

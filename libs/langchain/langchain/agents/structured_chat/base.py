@@ -1,8 +1,6 @@
 import re
 from typing import Any, List, Optional, Sequence, Tuple
 
-from pydantic_v1 import Field
-
 from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.structured_chat.output_parser import (
     StructuredChatOutputParserWithRetries,
@@ -15,6 +13,7 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
+from langchain.pydantic_v1 import Field
 from langchain.schema import AgentAction, BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool

@@ -3,7 +3,7 @@
 import json
 from typing import Any, Dict, Optional
 
-from pydantic_v1 import BaseModel
+from langchain.pydantic_v1 import BaseModel
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
@@ -32,8 +32,8 @@ class BaseRequestsTool(BaseModel):
 class RequestsGetTool(BaseRequestsTool, BaseTool):
     """Tool for making a GET request to an API endpoint."""
 
-    name = "requests_get"
-    description = "A portal to the internet. Use this when you need to get specific content from a website. Input should be a  url (i.e. https://www.google.com). The output will be the text response of the GET request."
+    name: str = "requests_get"
+    description: str = "A portal to the internet. Use this when you need to get specific content from a website. Input should be a  url (i.e. https://www.google.com). The output will be the text response of the GET request."
 
     def _run(
         self, url: str, run_manager: Optional[CallbackManagerForToolRun] = None
@@ -53,8 +53,8 @@ class RequestsGetTool(BaseRequestsTool, BaseTool):
 class RequestsPostTool(BaseRequestsTool, BaseTool):
     """Tool for making a POST request to an API endpoint."""
 
-    name = "requests_post"
-    description = """Use this when you want to POST to a website.
+    name: str = "requests_post"
+    description: str = """Use this when you want to POST to a website.
     Input should be a json string with two keys: "url" and "data".
     The value of "url" should be a string, and the value of "data" should be a dictionary of 
     key-value pairs you want to POST to the url.
@@ -90,8 +90,8 @@ class RequestsPostTool(BaseRequestsTool, BaseTool):
 class RequestsPatchTool(BaseRequestsTool, BaseTool):
     """Tool for making a PATCH request to an API endpoint."""
 
-    name = "requests_patch"
-    description = """Use this when you want to PATCH to a website.
+    name: str = "requests_patch"
+    description: str = """Use this when you want to PATCH to a website.
     Input should be a json string with two keys: "url" and "data".
     The value of "url" should be a string, and the value of "data" should be a dictionary of 
     key-value pairs you want to PATCH to the url.
@@ -127,8 +127,8 @@ class RequestsPatchTool(BaseRequestsTool, BaseTool):
 class RequestsPutTool(BaseRequestsTool, BaseTool):
     """Tool for making a PUT request to an API endpoint."""
 
-    name = "requests_put"
-    description = """Use this when you want to PUT to a website.
+    name: str = "requests_put"
+    description: str = """Use this when you want to PUT to a website.
     Input should be a json string with two keys: "url" and "data".
     The value of "url" should be a string, and the value of "data" should be a dictionary of 
     key-value pairs you want to PUT to the url.
@@ -164,8 +164,8 @@ class RequestsPutTool(BaseRequestsTool, BaseTool):
 class RequestsDeleteTool(BaseRequestsTool, BaseTool):
     """Tool for making a DELETE request to an API endpoint."""
 
-    name = "requests_delete"
-    description = "A portal to the internet. Use this when you need to make a DELETE request to a URL. Input should be a specific url, and the output will be the text response of the DELETE request."
+    name: str = "requests_delete"
+    description: str = "A portal to the internet. Use this when you need to make a DELETE request to a URL. Input should be a specific url, and the output will be the text response of the DELETE request."
 
     def _run(
         self,
