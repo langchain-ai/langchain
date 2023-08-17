@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from pydantic_v1 import root_validator
-
+from langchain.pydantic_v1 import root_validator
 from langchain.schema import BaseOutputParser
 
 

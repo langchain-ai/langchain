@@ -52,11 +52,11 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
         "Argilla, no doubt about it."
     """
 
-    REPO_URL = "https://github.com/argilla-io/argilla"
-    ISSUES_URL = f"{REPO_URL}/issues"
-    BLOG_URL = "https://docs.argilla.io/en/latest/guides/llms/practical_guides/use_argilla_callback_in_langchain.html"  # noqa: E501
+    REPO_URL: str = "https://github.com/argilla-io/argilla"
+    ISSUES_URL: str = f"{REPO_URL}/issues"
+    BLOG_URL: str = "https://docs.argilla.io/en/latest/guides/llms/practical_guides/use_argilla_callback_in_langchain.html"  # noqa: E501
 
-    DEFAULT_API_URL = "http://localhost:6900"
+    DEFAULT_API_URL: str = "http://localhost:6900"
 
     def __init__(
         self,

@@ -79,12 +79,11 @@ agent.run(("Summarize the last email I received regarding Silicon Valley Bank. "
 """
 from typing import Any, Dict, Optional
 
-from pydantic_v1 import Field, root_validator
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
+from langchain.pydantic_v1 import Field, root_validator
 from langchain.tools.base import BaseTool
 from langchain.tools.zapier.prompt import BASE_ZAPIER_TOOL_PROMPT
 from langchain.utilities.zapier import ZapierNLAWrapper
@@ -109,8 +108,8 @@ class ZapierNLARunAction(BaseTool):
     base_prompt: str = BASE_ZAPIER_TOOL_PROMPT
     zapier_description: str
     params_schema: Dict[str, str] = Field(default_factory=dict)
-    name = ""
-    description = ""
+    name: str = ""
+    description: str = ""
 
     @root_validator
     def set_name_description(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -168,8 +167,8 @@ class ZapierNLAListActions(BaseTool):
 
     """
 
-    name = "ZapierNLA_list_actions"
-    description = BASE_ZAPIER_TOOL_PROMPT + (
+    name: str = "ZapierNLA_list_actions"
+    description: str = BASE_ZAPIER_TOOL_PROMPT + (
         "This tool returns a list of the user's exposed actions."
     )
     api_wrapper: ZapierNLAWrapper = Field(default_factory=ZapierNLAWrapper)

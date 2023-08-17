@@ -592,7 +592,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
     def count_tokens(self, *, text: str) -> int:
         return len(self._encode(text))
 
-    _max_length_equal_32_bit_integer = 2**32
+    _max_length_equal_32_bit_integer: int = 2**32
 
     def _encode(self, text: str) -> List[int]:
         token_ids_with_start_and_end_token_ids = self.tokenizer.encode(

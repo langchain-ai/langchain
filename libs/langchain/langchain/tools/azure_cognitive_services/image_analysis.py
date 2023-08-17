@@ -3,9 +3,8 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, Optional
 
-from pydantic_v1 import root_validator
-
 from langchain.callbacks.manager import CallbackManagerForToolRun
+from langchain.pydantic_v1 import root_validator
 from langchain.tools.azure_cognitive_services.utils import detect_file_src_type
 from langchain.tools.base import BaseTool
 from langchain.utils import get_from_dict_or_env
@@ -25,8 +24,8 @@ class AzureCogsImageAnalysisTool(BaseTool):
     vision_service: Any  #: :meta private:
     analysis_options: Any  #: :meta private:
 
-    name = "azure_cognitive_services_image_analysis"
-    description = (
+    name: str = "azure_cognitive_services_image_analysis"
+    description: str = (
         "A wrapper around Azure Cognitive Services Image Analysis. "
         "Useful for when you need to analyze images. "
         "Input should be a url to an image."
