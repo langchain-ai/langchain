@@ -46,6 +46,7 @@ _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain"
 
 class BaseModel(Base):
     """Base model for the SQL stores."""
+
     __abstract__ = True
     uuid = sqlalchemy.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
