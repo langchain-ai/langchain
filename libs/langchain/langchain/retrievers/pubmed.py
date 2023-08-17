@@ -2,7 +2,7 @@ from typing import List
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document
-from langchain.utilities.pupmed import PubMedAPIWrapper
+from langchain.utilities.pubmed import PubMedAPIWrapper
 
 
 class PubMedRetriever(BaseRetriever, PubMedAPIWrapper):

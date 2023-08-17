@@ -15,7 +15,7 @@ from typing import (
     Union,
 )
 
-from pydantic import Field, root_validator
+from pydantic_v1 import Field, root_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -35,6 +35,7 @@ from langchain.schema import (
     ChatGeneration,
     ChatMessage,
     ChatResult,
+    FunctionMessage,
     HumanMessage,
     SystemMessage,
 )
@@ -125,6 +126,12 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {"role": "assistant", "content": message.content}
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
+    elif isinstance(message, FunctionMessage):
+        message_dict = {
+            "role": "function",
+            "name": message.name,
+            "content": message.content,
+        }
     else:
         raise ValueError(f"Got unknown type {message}")
     if "name" in message.additional_kwargs:
@@ -133,8 +140,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
 
 class JinaChat(BaseChatModel):
-    """Wrapper for Jina AI's LLM service, providing cost-effective
-    image chat capabilities.
+    """`Jina AI` Chat models API.
 
     To use, you should have the ``openai`` python package installed, and the
     environment variable ``JINACHAT_API_KEY`` set to your API key, which you

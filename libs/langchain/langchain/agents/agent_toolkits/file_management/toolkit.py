@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from pydantic import root_validator
+from pydantic_v1 import root_validator
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.tools import BaseTool
@@ -15,7 +15,8 @@ from langchain.tools.file_management.read import ReadFileTool
 from langchain.tools.file_management.write import WriteFileTool
 
 _FILE_TOOLS = {
-    tool_cls.__fields__["name"].default: tool_cls
+    # "Type[Runnable[Any, Any]]" has no attribute "__fields__"  [attr-defined]
+    tool_cls.__fields__["name"].default: tool_cls  # type: ignore[attr-defined]
     for tool_cls in [
         CopyFileTool,
         DeleteFileTool,

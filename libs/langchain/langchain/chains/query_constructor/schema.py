@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic_v1 import BaseModel
 
 
 class AttributeInfo(BaseModel):

@@ -84,6 +84,12 @@ class Rockset(VectorStore):
         self._embedding_key = embedding_key
         self._workspace = workspace
 
+        try:
+            self._client.set_application("langchain")
+        except AttributeError:
+            # ignore
+            pass
+
     @property
     def embeddings(self) -> Embeddings:
         return self._embeddings

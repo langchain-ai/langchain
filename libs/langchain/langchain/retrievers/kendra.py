@@ -2,7 +2,7 @@ import re
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Union
 
-from pydantic import BaseModel, Extra, root_validator, validator
+from pydantic_v1 import BaseModel, Extra, root_validator, validator
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.docstore.document import Document
@@ -49,7 +49,8 @@ DocumentAttributeValueType = Union[str, int, List[str], None]
 """Possible types of a DocumentAttributeValue. Dates are also represented as str."""
 
 
-class Highlight(BaseModel, extra=Extra.allow):
+# Unexpected keyword argument "extra" for "__init_subclass__" of "object"
+class Highlight(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
     """
     Represents the information that can be
     used to highlight key words in the excerpt.
@@ -65,7 +66,8 @@ class Highlight(BaseModel, extra=Extra.allow):
     """The highlight type: STANDARD or THESAURUS_SYNONYM."""
 
 
-class TextWithHighLights(BaseModel, extra=Extra.allow):
+# Unexpected keyword argument "extra" for "__init_subclass__" of "object"
+class TextWithHighLights(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
     """Text with highlights."""
 
     Text: str
@@ -74,14 +76,18 @@ class TextWithHighLights(BaseModel, extra=Extra.allow):
     """The highlights."""
 
 
-class AdditionalResultAttributeValue(BaseModel, extra=Extra.allow):
+# Unexpected keyword argument "extra" for "__init_subclass__" of "object"
+class AdditionalResultAttributeValue(  # type: ignore[call-arg]
+    BaseModel, extra=Extra.allow
+):
     """The value of an additional result attribute."""
 
     TextWithHighlightsValue: TextWithHighLights
     """The text with highlights value."""
 
 
-class AdditionalResultAttribute(BaseModel, extra=Extra.allow):
+# Unexpected keyword argument "extra" for "__init_subclass__" of "object"
+class AdditionalResultAttribute(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
     """An additional result attribute."""
 
     Key: str
@@ -95,7 +101,8 @@ class AdditionalResultAttribute(BaseModel, extra=Extra.allow):
         return self.Value.TextWithHighlightsValue.Text
 
 
-class DocumentAttributeValue(BaseModel, extra=Extra.allow):
+# Unexpected keyword argument "extra" for "__init_subclass__" of "object"
+class DocumentAttributeValue(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
     """The value of a document attribute."""
 
     DateValue: Optional[str]
@@ -125,7 +132,8 @@ class DocumentAttributeValue(BaseModel, extra=Extra.allow):
         return None
 
 
-class DocumentAttribute(BaseModel, extra=Extra.allow):
+# Unexpected keyword argument "extra" for "__init_subclass__" of "object"
+class DocumentAttribute(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
     """A document attribute."""
 
     Key: str
@@ -134,7 +142,8 @@ class DocumentAttribute(BaseModel, extra=Extra.allow):
     """The value of the attribute."""
 
 
-class ResultItem(BaseModel, ABC, extra=Extra.allow):
+# Unexpected keyword argument "extra" for "__init_subclass__" of "object"
+class ResultItem(BaseModel, ABC, extra=Extra.allow):  # type: ignore[call-arg]
     """Abstract class that represents a result item."""
 
     Id: Optional[str]
@@ -254,7 +263,8 @@ class RetrieveResultItem(ResultItem):
         return self.Content or ""
 
 
-class QueryResult(BaseModel, extra=Extra.allow):
+# Unexpected keyword argument "extra" for "__init_subclass__" of "object"
+class QueryResult(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
     """
     Represents an Amazon Kendra Query API search result, which is composed of:
         * Relevant suggested answers: either a text excerpt or table excerpt.
@@ -266,7 +276,8 @@ class QueryResult(BaseModel, extra=Extra.allow):
     """The result items."""
 
 
-class RetrieveResult(BaseModel, extra=Extra.allow):
+# Unexpected keyword argument "extra" for "__init_subclass__" of "object"
+class RetrieveResult(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
     """
     Represents an Amazon Kendra Retrieve API search result, which is composed of:
         * relevant passages or text excerpts given an input query.
@@ -304,6 +315,9 @@ class AmazonKendraRetriever(BaseRetriever):
 
         client: boto3 client for Kendra
 
+        user_context: Provides information about the user context
+            See: https://docs.aws.amazon.com/kendra/latest/APIReference
+
     Example:
         .. code-block:: python
 
@@ -320,6 +334,7 @@ class AmazonKendraRetriever(BaseRetriever):
     attribute_filter: Optional[Dict] = None
     page_content_formatter: Callable[[ResultItem], str] = combined_text
     client: Any
+    user_context: Optional[Dict] = None
 
     @validator("top_k")
     def validate_top_k(cls, value: int) -> int:
@@ -368,6 +383,8 @@ class AmazonKendraRetriever(BaseRetriever):
         }
         if self.attribute_filter is not None:
             kendra_kwargs["AttributeFilter"] = self.attribute_filter
+        if self.user_context is not None:
+            kendra_kwargs["UserContext"] = self.user_context
 
         response = self.client.retrieve(**kendra_kwargs)
         r_result = RetrieveResult.parse_obj(response)

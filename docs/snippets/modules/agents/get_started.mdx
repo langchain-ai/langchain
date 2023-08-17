@@ -44,6 +44,7 @@ This allows for a few different ways to customize, including passing in a custom
 
 ```python
 from langchain.schema import SystemMessage
+from langchain.agents import OpenAIFunctionsAgent
 system_message = SystemMessage(content="You are very powerful assistant, but bad at calculating lengths of words.")
 prompt = OpenAIFunctionsAgent.create_prompt(system_message=system_message)
 ```
@@ -51,7 +52,6 @@ prompt = OpenAIFunctionsAgent.create_prompt(system_message=system_message)
 Putting those pieces together, we can now create the agent.
 
 ```python
-from langchain.agents import OpenAIFunctionsAgent
 agent = OpenAIFunctionsAgent(llm=llm, tools=tools, prompt=prompt)
 ```
 

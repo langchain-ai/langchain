@@ -11,7 +11,7 @@ from langchain.callbacks.manager import Callbacks
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import Run
 from langchain.chat_models.fake import FakeListChatModel
-from langchain.llms.fake import FakeListLLM
+from langchain.llms.fake import FakeListLLM, FakeStreamingListLLM
 from langchain.load.dump import dumpd, dumps
 from langchain.output_parsers.list import CommaSeparatedListOutputParser
 from langchain.prompts.chat import (
@@ -22,6 +22,7 @@ from langchain.prompts.chat import (
 )
 from langchain.schema.document import Document
 from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
+from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.retriever import BaseRetriever
 from langchain.schema.runnable import (
     RouterRunnable,
@@ -61,6 +62,8 @@ class FakeTracer(BaseTracer):
                 if run.parent_run_id
                 else None,
                 "child_runs": [self._copy_run(child) for child in run.child_runs],
+                "execution_order": None,
+                "child_execution_order": None,
             }
         )
 
@@ -247,7 +250,9 @@ async def test_prompt_with_chat_model(
             HumanMessage(content="What is your name?"),
         ]
     )
+
     assert tracer.runs == snapshot
+
     mocker.stop(prompt_spy)
     mocker.stop(chat_spy)
 
@@ -302,7 +307,7 @@ async def test_prompt_with_chat_model(
     tracer = FakeTracer()
     assert [
         *chain.stream({"question": "What is your name?"}, dict(callbacks=[tracer]))
-    ] == [AIMessage(content="foo")]
+    ] == [AIMessage(content="f"), AIMessage(content="o"), AIMessage(content="o")]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
@@ -439,6 +444,7 @@ def test_prompt_with_chat_model_and_parser(
         ]
     )
     assert parser_spy.call_args.args[1] == AIMessage(content="foo, bar")
+
     assert tracer.runs == snapshot
 
 
@@ -497,6 +503,7 @@ def test_combining_sequences(
     assert combined_chain.invoke(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
     ) == ["baz", "qux"]
+
     assert tracer.runs == snapshot
 
 
@@ -678,7 +685,12 @@ async def test_router_runnable(
         "key": "math",
         "input": {"question": "2 + 2"},
     }
-    assert tracer.runs == snapshot
+    assert len([r for r in tracer.runs if r.parent_run_id is None]) == 1
+    parent_run = next(r for r in tracer.runs if r.parent_run_id is None)
+    assert len(parent_run.child_runs) == 2
+    router_run = parent_run.child_runs[1]
+    assert router_run.name == "RunnableSequence"  # TODO: should be RunnableRouter
+    assert len(router_run.child_runs) == 2
 
 
 @freeze_time("2023-01-01")
@@ -758,6 +770,59 @@ def test_bind_bind() -> None:
     ) == dumpd(llm.bind(stop=["Observation:"], one="two", hello="world"))
 
 
+def test_deep_stream() -> None:
+    prompt = (
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
+    )
+    llm = FakeStreamingListLLM(responses=["foo-lish"])
+
+    chain = prompt | llm | StrOutputParser()
+
+    stream = chain.stream({"question": "What up"})
+
+    chunks = []
+    for chunk in stream:
+        chunks.append(chunk)
+
+    assert len(chunks) == len("foo-lish")
+    assert "".join(chunks) == "foo-lish"
+
+    chunks = []
+    for chunk in (chain | RunnablePassthrough()).stream({"question": "What up"}):
+        chunks.append(chunk)
+
+    assert len(chunks) == len("foo-lish")
+    assert "".join(chunks) == "foo-lish"
+
+
+@pytest.mark.asyncio
+async def test_deep_astream() -> None:
+    prompt = (
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
+    )
+    llm = FakeStreamingListLLM(responses=["foo-lish"])
+
+    chain = prompt | llm | StrOutputParser()
+
+    stream = chain.astream({"question": "What up"})
+
+    chunks = []
+    async for chunk in stream:
+        chunks.append(chunk)
+
+    assert len(chunks) == len("foo-lish")
+    assert "".join(chunks) == "foo-lish"
+
+    chunks = []
+    async for chunk in (chain | RunnablePassthrough()).astream({"question": "What up"}):
+        chunks.append(chunk)
+
+    assert len(chunks) == len("foo-lish")
+    assert "".join(chunks) == "foo-lish"
+
+
 @pytest.fixture()
 def llm_with_fallbacks() -> RunnableWithFallbacks:
     error_llm = FakeListLLM(responses=["foo"], i=1)
@@ -792,7 +857,7 @@ def llm_chain_with_fallbacks() -> RunnableSequence:
 )
 @pytest.mark.asyncio
 async def test_llm_with_fallbacks(
-    runnable: RunnableWithFallbacks, request: Any
+    runnable: RunnableWithFallbacks, request: Any, snapshot: SnapshotAssertion
 ) -> None:
     runnable = request.getfixturevalue(runnable)
     assert runnable.invoke("hello") == "bar"
@@ -801,3 +866,4 @@ async def test_llm_with_fallbacks(
     assert await runnable.ainvoke("hello") == "bar"
     assert await runnable.abatch(["hi", "hey", "bye"]) == ["bar"] * 3
     assert list(await runnable.ainvoke("hello")) == list("bar")
+    assert dumps(runnable, pretty=True) == snapshot

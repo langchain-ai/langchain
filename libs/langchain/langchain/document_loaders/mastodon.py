@@ -1,4 +1,3 @@
-"""Mastodon document loader."""
 from __future__ import annotations
 
 import os
@@ -23,7 +22,7 @@ def _dependable_mastodon_import() -> mastodon:
 
 
 class MastodonTootsLoader(BaseLoader):
-    """Mastodon toots loader."""
+    """Load the `Mastodon` 'toots'."""
 
     def __init__(
         self,

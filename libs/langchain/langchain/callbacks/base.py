@@ -4,6 +4,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 from uuid import UUID
 
+from tenacity import RetryCallState
+
 if TYPE_CHECKING:
     from langchain.schema.agent import AgentAction, AgentFinish
     from langchain.schema.document import Document
@@ -222,6 +224,16 @@ class RunManagerMixin:
     ) -> Any:
         """Run on arbitrary text."""
 
+    def on_retry(
+        self,
+        retry_state: RetryCallState,
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run on a retry event."""
+
 
 class BaseCallbackHandler(
     LLMManagerMixin,
@@ -413,6 +425,16 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """Run on arbitrary text."""
+
+    async def on_retry(
+        self,
+        retry_state: RetryCallState,
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run on a retry event."""
 
     async def on_agent_action(
         self,
