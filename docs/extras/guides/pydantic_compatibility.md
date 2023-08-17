@@ -31,7 +31,7 @@ the case of inheritance and in the case of passing objects to LangChain.
 **YES** 
 
 ```python
-from pydantic.v1 import root_validator, validator
+from langchain.pydantic_v1 import root_validator, validator
 
 class CustomTool(BaseTool): # BaseTool is v1 code
     x: int = Field(default=1)
@@ -84,7 +84,7 @@ CustomTool(
 
 ```python
 from langchain.tools.base import Tool
-from pydantic.v1 import BaseModel, Field # <-- Uses v1 namespace
+from langchain.pydantic_v1 import BaseModel, Field # <-- Uses v1 namespace
 
 class CalculatorInput(BaseModel):
     question: str = Field()
