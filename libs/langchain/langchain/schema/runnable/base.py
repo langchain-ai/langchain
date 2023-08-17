@@ -243,8 +243,8 @@ class Runnable(Generic[Input, Output], ABC):
 
     def _call_with_config(
         self,
-        func: Callable[[Input], Output],
-        input: Input,
+        func: Callable[[Any], Output],
+        input: Any,
         config: Optional[RunnableConfig],
         run_type: Optional[str] = None,
     ) -> Output:
@@ -273,8 +273,8 @@ class Runnable(Generic[Input, Output], ABC):
 
     async def _acall_with_config(
         self,
-        func: Callable[[Input], Awaitable[Output]],
-        input: Input,
+        func: Callable[[Any], Awaitable[Output]],
+        input: Any,
         config: Optional[RunnableConfig],
         run_type: Optional[str] = None,
     ) -> Output:
