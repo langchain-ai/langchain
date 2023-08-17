@@ -653,46 +653,6 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
         raise first_error
 
 
-class PutLocalVar(Serializable, Runnable[Input, Input]):
-    key: Union[str, Dict[str, str]]
-
-    def __init__(self, key: str, **kwargs: Any) -> None:
-        super().__init__(key=key, **kwargs)
-
-    def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Input:
-        if config is None:
-            raise ValueError(
-                "PutLocalVar should only be used in a RunnableSequence, and should "
-                "therefore always receive a non-null config."
-            )
-        if isinstance(self.key, str):
-            config["_locals"][self.key] = input
-        else:
-            if not isinstance(input, Mapping):
-                raise ValueError
-            for get_key, put_key in self.key.items():
-                config["_locals"][put_key] = input[get_key]
-        return self._call_with_config(lambda x: x, input, config)
-
-
-class GetLocalVar(Serializable, Runnable[str, Any]):
-    key: str
-    passthrough_key: Optional[str] = None
-
-    def __init__(self, key: str, **kwargs: Any) -> None:
-        super().__init__(key=key, **kwargs)
-
-    def invoke(self, input: str, config: Optional[RunnableConfig] = None) -> Any:
-        if config is None:
-            raise ValueError(
-                "PutLocalVar should only be used in a RunnableSequence, and should "
-                "therefore always receive a non-null config."
-            )
-        if self.passthrough_key is not None:
-            return {self.key: config["_locals"][self.key], self.passthrough_key: input}
-        return config["_locals"][self.key]
-
-
 class RunnableSequence(Serializable, Runnable[Input, Output]):
     """
     A sequence of runnables, where the output of each is the input of the next.
