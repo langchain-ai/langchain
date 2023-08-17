@@ -15,8 +15,8 @@ class OpenWeatherMapQueryRun(BaseTool):
         default_factory=OpenWeatherMapAPIWrapper
     )
 
-    name = "OpenWeatherMap"
-    description = (
+    name: str = "OpenWeatherMap"
+    description: str = (
         "A wrapper around OpenWeatherMap API. "
         "Useful for fetching current weather information for a specified location. "
         "Input should be a location string (e.g. London,GB)."

@@ -11,8 +11,8 @@ from langchain.utilities.arxiv import ArxivAPIWrapper
 class ArxivQueryRun(BaseTool):
     """Tool that searches the Arxiv API."""
 
-    name = "arxiv"
-    description = (
+    name: str = "arxiv"
+    description: str = (
         "A wrapper around Arxiv.org "
         "Useful for when you need to answer questions about Physics, Mathematics, "
         "Computer Science, Quantitative Biology, Quantitative Finance, Statistics, "
