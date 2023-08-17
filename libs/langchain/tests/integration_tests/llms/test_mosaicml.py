@@ -1,6 +1,7 @@
 """Test MosaicML API wrapper."""
 import pytest
 import re
+import time
 
 from langchain.llms.mosaicml import PROMPT_FOR_GENERATION_FORMAT, MosaicML
 
@@ -72,7 +73,7 @@ def test_short_retry_does_not_loop() -> None:
 
     with pytest.raises(
         ValueError,
-        match=re.escape("Error raised by inference API: Expecting value: line 1 column 1 (char 0).\nResponse: You have reached maximum request limit.\n"),
+        match=re.escape("Error raised by inference API: rate limit exceeded.\nResponse: You have reached maximum request limit.\n"),
     ):
         output = llm(prompt)
         assert isinstance(output, str)

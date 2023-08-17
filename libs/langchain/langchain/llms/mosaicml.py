@@ -138,13 +138,9 @@ class MosaicML(LLM):
             raise ValueError(f"Error raised by inference endpoint: {e}")
 
         try:
-            parsed_response = response.json()
-
-            if "error" in parsed_response:
-                # if we get rate limited, try sleeping for 1 second
+            if response.status_code == 429:
                 if (
                     not is_retry
-                    and "reached maximum request limit" in parsed_response["error"].lower()
                 ):
                     import time
 
@@ -153,8 +149,10 @@ class MosaicML(LLM):
                     return self._call(prompt, stop, run_manager, is_retry=True)
 
                 raise ValueError(
-                    f"Error raised by inference API: {parsed_response['error']}"
+                    f"Error raised by inference API: rate limit exceeded.\nResponse: {response.text}"
                 )
+
+            parsed_response = response.json()
 
             # The inference API has changed a couple of times, so we add some handling
             # to be robust to multiple response formats.
