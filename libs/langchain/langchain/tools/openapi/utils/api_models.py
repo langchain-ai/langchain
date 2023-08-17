@@ -131,6 +131,11 @@ if _PYDANTIC_MAJOR_VERSION == 1:
         def _get_schema_type_for_array(
             schema: Schema,
         ) -> Optional[Union[str, Tuple[str, ...]]]:
+            from openapi_schema_pydantic import (
+                Reference,
+                Schema,
+            )
+
             items = schema.items
             if isinstance(items, Schema):
                 schema_type = APIProperty._cast_schema_list_type(items)
@@ -188,6 +193,11 @@ if _PYDANTIC_MAJOR_VERSION == 1:
 
         @staticmethod
         def _get_schema(parameter: Parameter, spec: OpenAPISpec) -> Optional[Schema]:
+            from openapi_schema_pydantic import (
+                Reference,
+                Schema,
+            )
+
             schema = parameter.param_schema
             if isinstance(schema, Reference):
                 schema = spec.get_referenced_schema(schema)
@@ -244,6 +254,10 @@ if _PYDANTIC_MAJOR_VERSION == 1:
         def _process_object_schema(
             cls, schema: Schema, spec: OpenAPISpec, references_used: List[str]
         ) -> Tuple[Union[str, List[str], None], List["APIRequestBodyProperty"]]:
+            from openapi_schema_pydantic import (
+                Reference,
+            )
+
             properties = []
             required_props = schema.required or []
             if schema.properties is None:
@@ -278,6 +292,8 @@ if _PYDANTIC_MAJOR_VERSION == 1:
             spec: OpenAPISpec,
             references_used: List[str],
         ) -> str:
+            from openapi_schema_pydantic import Reference, Schema
+
             items = schema.items
             if items is not None:
                 if isinstance(items, Reference):
@@ -365,6 +381,8 @@ if _PYDANTIC_MAJOR_VERSION == 1:
             spec: OpenAPISpec,
         ) -> List[APIRequestBodyProperty]:
             """Process the media type of the request body."""
+            from openapi_schema_pydantic import Reference
+
             references_used = []
             schema = media_type_obj.media_type_schema
             if isinstance(schema, Reference):
