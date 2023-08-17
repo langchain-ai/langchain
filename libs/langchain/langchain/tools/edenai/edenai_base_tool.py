@@ -78,3 +78,23 @@ class EdenaiTool(BaseTool):
         
         return response
     
+    
+    def _get_edenai(self,url : str) -> requests.Response:
+        headers = {
+            "accept": "application/json",
+            "authorization": f"Bearer {self.edenai_api_key}"
+        }
+        
+        response = requests.get(url, headers=headers)
+        
+        if response.status_code >= 500:
+            raise Exception(f"EdenAI Server: Error {response.status_code}")
+        elif response.status_code >= 400:
+            raise ValueError(f"EdenAI received an invalid payload: {response.text}")
+        elif response.status_code != 200:
+            raise Exception(
+                f"EdenAI returned an unexpected response with status "
+                f"{response.status_code}: {response.text}"
+            )
+
+        return response
