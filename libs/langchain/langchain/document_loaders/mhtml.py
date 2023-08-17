@@ -1,5 +1,3 @@
-"""Load MHTML files, enriching metadata with page title."""
-
 import email
 import logging
 from typing import Dict, List, Union
@@ -11,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class MHTMLLoader(BaseLoader):
-    """Loader that uses beautiful soup to parse HTML files."""
+    """Parse `MHTML` files with `BeautifulSoup`."""
 
     def __init__(
         self,

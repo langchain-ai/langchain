@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import yaml
-from pydantic import BaseModel, root_validator
+from pydantic_v1 import BaseModel, root_validator
 
 from langchain.agents.agent_iterator import AgentExecutorIterator
 from langchain.agents.agent_types import AgentType
@@ -615,9 +615,9 @@ class Agent(BaseSingleActionAgent):
 class ExceptionTool(BaseTool):
     """Tool that just returns the query."""
 
-    name = "_Exception"
+    name: str = "_Exception"
     """Name of the tool."""
-    description = "Exception tool"
+    description: str = "Exception tool"
     """Description of the tool."""
 
     def _run(

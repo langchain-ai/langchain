@@ -8,7 +8,7 @@ from uuid import UUID
 
 from langsmith.schemas import RunBase as BaseRunV2
 from langsmith.schemas import RunTypeEnum as RunTypeEnumDep
-from pydantic import BaseModel, Field, root_validator
+from pydantic_v1 import BaseModel, Field, root_validator
 
 from langchain.schema import LLMResult
 

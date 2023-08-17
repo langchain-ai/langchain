@@ -29,6 +29,7 @@ from langchain.document_loaders.airbyte import (
 from langchain.document_loaders.airbyte_json import AirbyteJSONLoader
 from langchain.document_loaders.airtable import AirtableLoader
 from langchain.document_loaders.apify_dataset import ApifyDatasetLoader
+from langchain.document_loaders.arcgis_loader import ArcGISLoader
 from langchain.document_loaders.arxiv import ArxivLoader
 from langchain.document_loaders.async_html import AsyncHtmlLoader
 from langchain.document_loaders.azlyrics import AZLyricsLoader
@@ -52,6 +53,7 @@ from langchain.document_loaders.blockchain import BlockchainDocumentLoader
 from langchain.document_loaders.brave_search import BraveSearchLoader
 from langchain.document_loaders.browserless import BrowserlessLoader
 from langchain.document_loaders.chatgpt import ChatGPTLoader
+from langchain.document_loaders.chromium import AsyncChromiumLoader
 from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
 from langchain.document_loaders.concurrent import ConcurrentLoader
 from langchain.document_loaders.confluence import ConfluenceLoader
@@ -196,6 +198,9 @@ PagedPDFSplitter = PyPDFLoader
 TelegramChatLoader = TelegramChatFileLoader
 
 __all__ = [
+    "AcreomLoader",
+    "AsyncHtmlLoader",
+    "AsyncChromiumLoader",
     "AZLyricsLoader",
     "AcreomLoader",
     "AirbyteCDKLoader",
@@ -210,6 +215,7 @@ __all__ = [
     "AirtableLoader",
     "AmazonTextractPDFLoader",
     "ApifyDatasetLoader",
+    "ArcGISLoader",
     "ArxivLoader",
     "AsyncHtmlLoader",
     "AzureBlobStorageContainerLoader",

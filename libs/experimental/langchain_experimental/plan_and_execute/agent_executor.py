@@ -5,7 +5,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForChainRun,
 )
 from langchain.chains.base import Chain
-from pydantic import Field
+from pydantic_v1 import Field
 
 from langchain_experimental.plan_and_execute.executors.base import BaseExecutor
 from langchain_experimental.plan_and_execute.planners.base import BasePlanner

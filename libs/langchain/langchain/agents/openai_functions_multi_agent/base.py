@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from json import JSONDecodeError
 from typing import Any, List, Optional, Sequence, Tuple, Union
 
-from pydantic import root_validator
+from pydantic_v1 import root_validator
 
 from langchain.agents import BaseMultiActionAgent
 from langchain.callbacks.base import BaseCallbackManager

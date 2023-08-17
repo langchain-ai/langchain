@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, Iterator, List, Optional
 
-from pydantic import Field, root_validator
+from pydantic_v1 import Field, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
