@@ -32,11 +32,11 @@ if TYPE_CHECKING:
         CallbackManagerForChainRun,
     )
 
-from pydantic_v1 import Field
 
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
+from langchain.pydantic_v1 import Field
 from langchain.schema.runnable.config import RunnableConfig
 from langchain.schema.runnable.utils import (
     accepts_run_manager,

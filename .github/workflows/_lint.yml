@@ -26,14 +26,27 @@ jobs:
           - "3.11"
     steps:
       - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        id: cache-pip
+        name: Cache langchain editable pip install - ${{ matrix.python-version }}
+        env:
+          SEGMENT_DOWNLOAD_TIMEOUT_MIN: "15"
+        with:
+          path: |
+            ~/.cache/pip
+          key: pip-editable-langchain-deps-${{ runner.os }}-${{ runner.arch }}-py-${{ matrix.python-version }}
       - name: Install poetry
         run: |
           pipx install poetry==$POETRY_VERSION
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
+        env:
+          SEGMENT_DOWNLOAD_TIMEOUT_MIN: "15"
         with:
           python-version: ${{ matrix.python-version }}
           cache: poetry
+          cache-dependency-path: |
+            ${{ inputs.working-directory == '' && '.' || inputs.working-directory }}/**/poetry.lock
       - name: Install dependencies
         run: |
           poetry install
