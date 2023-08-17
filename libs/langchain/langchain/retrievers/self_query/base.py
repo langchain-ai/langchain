@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List, Optional, Type, cast
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic_v1 import BaseModel, Field, root_validator
 
 from langchain import LLMChain
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
@@ -11,6 +11,7 @@ from langchain.chains.query_constructor.ir import StructuredQuery, Visitor
 from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.retrievers.self_query.chroma import ChromaTranslator
 from langchain.retrievers.self_query.deeplake import DeepLakeTranslator
+from langchain.retrievers.self_query.elasticsearch import ElasticsearchTranslator
 from langchain.retrievers.self_query.myscale import MyScaleTranslator
 from langchain.retrievers.self_query.pinecone import PineconeTranslator
 from langchain.retrievers.self_query.qdrant import QdrantTranslator
@@ -20,6 +21,7 @@ from langchain.schema.language_model import BaseLanguageModel
 from langchain.vectorstores import (
     Chroma,
     DeepLake,
+    ElasticsearchStore,
     MyScale,
     Pinecone,
     Qdrant,
@@ -38,6 +40,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         Qdrant: QdrantTranslator,
         MyScale: MyScaleTranslator,
         DeepLake: DeepLakeTranslator,
+        ElasticsearchStore: ElasticsearchTranslator,
     }
     if vectorstore_cls not in BUILTIN_TRANSLATORS:
         raise ValueError(

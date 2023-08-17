@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 
-from pydantic import Extra, Field, root_validator
+from pydantic_v1 import Extra, Field, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema import BaseRetriever, Document
@@ -170,8 +170,9 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
         self, results: Sequence[SearchResult]
     ) -> List[Document]:
         """Converts a sequence of search results to a list of LangChain documents."""
-        from google.protobuf.json_format import MessageToDict
         import json
+
+        from google.protobuf.json_format import MessageToDict
 
         documents: List[Document] = []
 
