@@ -8,12 +8,11 @@ from contextlib import redirect_stdout
 from io import StringIO
 from typing import Any, Dict, Optional
 
-from pydantic_v1 import Field, root_validator
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
+from langchain.pydantic_v1 import Field, root_validator
 from langchain.tools.base import BaseTool
 from langchain.utilities import PythonREPL
 

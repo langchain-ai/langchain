@@ -8,24 +8,6 @@ from functools import partial
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
-from pydantic_v1 import (
-    BaseModel,
-    Extra,
-    Field,
-    create_model,
-    root_validator,
-    validate_arguments,
-)
-
-# The metaclass must be imported directly from the pydantic module rather than
-# from the proxy module, otherwise it looks like inconsistent metaclasses are
-# used raising an exception.
-try:
-    from pydantic.v1.main import ModelMetaclass
-except ImportError:
-    from pydantic.main import ModelMetaclass
-
-
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
     AsyncCallbackManager,
@@ -34,45 +16,19 @@ from langchain.callbacks.manager import (
     CallbackManagerForToolRun,
     Callbacks,
 )
+from langchain.pydantic_v1 import (
+    BaseModel,
+    Extra,
+    Field,
+    create_model,
+    root_validator,
+    validate_arguments,
+)
 from langchain.schema.runnable import Runnable, RunnableConfig
 
 
 class SchemaAnnotationError(TypeError):
     """Raised when 'args_schema' is missing or has an incorrect type annotation."""
-
-
-class ToolMetaclass(ModelMetaclass):
-    """Metaclass for BaseTool to ensure the provided args_schema
-
-    doesn't silently ignore."""
-
-    def __new__(
-        cls: Type[ToolMetaclass], name: str, bases: Tuple[Type, ...], dct: dict
-    ) -> ToolMetaclass:
-        """Create the definition of the new tool class."""
-        schema_type: Optional[Type[BaseModel]] = dct.get("args_schema")
-        if schema_type is not None:
-            schema_annotations = dct.get("__annotations__", {})
-            args_schema_type = schema_annotations.get("args_schema", None)
-            if args_schema_type is None or args_schema_type == BaseModel:
-                # Throw errors for common mis-annotations.
-                # TODO: Use get_args / get_origin and fully
-                # specify valid annotations.
-                typehint_mandate = """
-class ChildTool(BaseTool):
-    ...
-    args_schema: Type[BaseModel] = SchemaClass
-    ..."""
-                raise SchemaAnnotationError(
-                    f"Tool definition for {name} must include valid type annotations"
-                    f" for argument 'args_schema' to behave as expected.\n"
-                    f"Expected annotation of 'Type[BaseModel]'"
-                    f" but got '{args_schema_type}'.\n"
-                    f"Expected class looks like:\n"
-                    f"{typehint_mandate}"
-                )
-        # Pass through to Pydantic's metaclass
-        return super().__new__(cls, name, bases, dct)
 
 
 def _create_subset_model(
@@ -140,8 +96,34 @@ class ToolException(Exception):
     pass
 
 
-class BaseTool(BaseModel, Runnable[Union[str, Dict], Any], metaclass=ToolMetaclass):
+class BaseTool(BaseModel, Runnable[Union[str, Dict], Any]):
     """Interface LangChain tools must implement."""
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        """Create the definition of the new tool class."""
+        super().__init_subclass__(**kwargs)
+
+        args_schema_type = cls.__annotations__.get("args_schema", None)
+
+        if args_schema_type is not None:
+            if args_schema_type is None or args_schema_type == BaseModel:
+                # Throw errors for common mis-annotations.
+                # TODO: Use get_args / get_origin and fully
+                # specify valid annotations.
+                typehint_mandate = """
+class ChildTool(BaseTool):
+    ...
+    args_schema: Type[BaseModel] = SchemaClass
+    ..."""
+                name = cls.__name__
+                raise SchemaAnnotationError(
+                    f"Tool definition for {name} must include valid type annotations"
+                    f" for argument 'args_schema' to behave as expected.\n"
+                    f"Expected annotation of 'Type[BaseModel]'"
+                    f" but got '{args_schema_type}'.\n"
+                    f"Expected class looks like:\n"
+                    f"{typehint_mandate}"
+                )
 
     name: str
     """The unique name of the tool that clearly communicates its purpose."""

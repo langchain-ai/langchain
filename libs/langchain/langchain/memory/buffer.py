@@ -1,9 +1,8 @@
 from typing import Any, Dict, List, Optional
 
-from pydantic_v1 import root_validator
-
 from langchain.memory.chat_memory import BaseChatMemory, BaseMemory
 from langchain.memory.utils import get_prompt_input_key
+from langchain.pydantic_v1 import root_validator
 from langchain.schema.messages import BaseMessage, get_buffer_string
 
 
