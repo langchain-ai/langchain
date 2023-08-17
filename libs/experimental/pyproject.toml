@@ -10,7 +10,7 @@ repository = "https://www.github.com/hwchase17/langchain"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain = { path = "../libs/langchain", develop = true }
+langchain = { path = "../langchain", develop = true }
 
 
 [tool.poetry.group.lint.dependencies]
