@@ -5637,7 +5637,7 @@ name = "openapi-schema-pydantic"
 version = "1.2.4"
 description = "OpenAPI (v3) specification schema as pydantic class"
 category = "main"
-optional = false
+optional = true
 python-versions = ">=3.6.1"
 files = [
     {file = "openapi-schema-pydantic-1.2.4.tar.gz", hash = "sha256:3e22cf58b74a69f752cc7e5f1537f6e44164282db2700cbbcd3bb99ddd065196"},
@@ -10477,7 +10477,7 @@ clarifai = ["clarifai"]
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["amazon-textract-caller", "atlassian-python-api", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "esprima", "faiss-cpu", "feedparser", "geopandas", "gitpython", "gql", "html2text", "jinja2", "jq", "lxml", "mwparserfromhell", "mwxml", "newspaper3k", "openai", "openai", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "requests-toolbelt", "scikit-learn", "streamlit", "sympy", "telethon", "tqdm", "xata", "xmltodict"]
+extended-testing = ["amazon-textract-caller", "atlassian-python-api", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "esprima", "faiss-cpu", "feedparser", "geopandas", "gitpython", "gql", "html2text", "jinja2", "jq", "lxml", "mwparserfromhell", "mwxml", "newspaper3k", "openai", "openai", "openapi-schema-pydantic", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "requests-toolbelt", "scikit-learn", "streamlit", "sympy", "telethon", "tqdm", "xata", "xmltodict"]
 javascript = ["esprima"]
 llms = ["clarifai", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "openlm", "torch", "transformers"]
 openai = ["openai", "tiktoken"]
@@ -10487,4 +10487,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "594d1f6ea7a3e00f0ab6c74cab8b75245d112a84635af440df7ab1242d464140"
+content-hash = "a5e3458dd0cabcefd83caec6eb33b6fb593c2c347ca1d33c1f182341e852a9c8"
