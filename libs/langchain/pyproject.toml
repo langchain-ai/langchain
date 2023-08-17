@@ -336,6 +336,7 @@ extended_testing = [
  "xata",
  "xmltodict",
  "faiss-cpu",
+ "openapi-schema-pydantic",
 ]
 
 [tool.ruff]
