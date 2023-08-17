@@ -48,8 +48,8 @@ class SteamshipImageGenerationTool(BaseTool):
     steamship: Steamship
     return_urls: Optional[bool] = False
 
-    name = "GenerateImage"
-    description = (
+    name: str = "GenerateImage"
+    description: str = (
         "Useful for when you need to generate an image."
         "Input: A detailed text-2-image prompt describing an image"
         "Output: the UUID of a generated image"

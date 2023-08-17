@@ -42,8 +42,8 @@ def sanitize_input(query: str) -> str:
 class PythonREPLTool(BaseTool):
     """A tool for running python code in a REPL."""
 
-    name = "Python_REPL"
-    description = (
+    name: str = "Python_REPL"
+    description: str = (
         "A Python shell. Use this to execute python commands. "
         "Input should be a valid python command. "
         "If you want to see the output of a value, you should print it out "
@@ -80,8 +80,8 @@ class PythonREPLTool(BaseTool):
 class PythonAstREPLTool(BaseTool):
     """A tool for running python code in a REPL."""
 
-    name = "python_repl_ast"
-    description = (
+    name: str = "python_repl_ast"
+    description: str = (
         "A Python shell. Use this to execute python commands. "
         "Input should be a valid python command. "
         "When using this tool, sometimes output is abbreviated - "
