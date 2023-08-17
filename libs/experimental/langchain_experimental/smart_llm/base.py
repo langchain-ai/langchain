@@ -13,7 +13,7 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
 )
 from langchain.schema import LLMResult, PromptValue
-from pydantic import Extra, root_validator
+from pydantic_v1 import Extra, root_validator
 
 
 class SmartLLMChain(Chain):

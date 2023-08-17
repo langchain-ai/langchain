@@ -13,7 +13,7 @@ from langchain.prompts.chat import (
     SystemMessagePromptTemplate,
 )
 from langchain.tools.base import BaseTool
-from pydantic import BaseModel
+from pydantic_v1 import BaseModel
 
 DEMONSTRATIONS = [
     {
