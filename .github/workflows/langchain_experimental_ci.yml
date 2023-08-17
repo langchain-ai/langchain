@@ -25,5 +25,5 @@ jobs:
       ./.github/workflows/_test.yml
     with:
       working-directory: libs/experimental
-      test_type: '["core"]'
+      test_type: '["core", "core-pydantic-2"]'
     secrets: inherit
