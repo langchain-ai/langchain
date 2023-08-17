@@ -5637,7 +5637,7 @@ name = "openapi-schema-pydantic"
 version = "1.2.4"
 description = "OpenAPI (v3) specification schema as pydantic class"
 category = "main"
-optional = false
+optional = true
 python-versions = ">=3.6.1"
 files = [
     {file = "openapi-schema-pydantic-1.2.4.tar.gz", hash = "sha256:3e22cf58b74a69f752cc7e5f1537f6e44164282db2700cbbcd3bb99ddd065196"},
@@ -10487,4 +10487,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "594d1f6ea7a3e00f0ab6c74cab8b75245d112a84635af440df7ab1242d464140"
+content-hash = "b93afc5ae76e00c7fc88d9744764c9a8b8da2543ba26641e980a6c3148c05841"
