@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 import threading
 from abc import ABC, abstractmethod
 from concurrent.futures import FIRST_COMPLETED, wait
@@ -12,6 +13,7 @@ from typing import (
     AsyncIterator,
     Awaitable,
     Callable,
+    Coroutine,
     Dict,
     Generic,
     Iterator,
@@ -1343,8 +1345,17 @@ class RunnableLambda(Runnable[Input, Output]):
     A runnable that runs a callable.
     """
 
-    def __init__(self, func: Callable[[Input], Output]) -> None:
-        if callable(func):
+    def __init__(
+        self,
+        func: Union[Callable[[Input], Output], Coroutine[Input, Any, Output]],
+        afunc: Optional[Coroutine[Input, Any, Output]] = None,
+    ) -> None:
+        if afunc is not None:
+            self.afunc = afunc
+
+        if inspect.iscoroutinefunction(func):
+            self.afunc = func
+        elif callable(func):
             self.func = func
         else:
             raise TypeError(
@@ -1354,7 +1365,12 @@ class RunnableLambda(Runnable[Input, Output]):
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, RunnableLambda):
-            return self.func == other.func
+            if hasattr(self, "func") and hasattr(other, "func"):
+                return self.func == other.func
+            elif hasattr(self, "afunc") and hasattr(other, "afunc"):
+                return self.afunc == other.afunc
+            else:
+                return False
         else:
             return False
 
@@ -1364,7 +1380,24 @@ class RunnableLambda(Runnable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Output:
-        return self._call_with_config(self.func, input, config)
+        if hasattr(self, "func"):
+            return self._call_with_config(self.func, input, config)
+        else:
+            raise TypeError(
+                "Cannot invoke a coroutine function synchronously."
+                "Use `ainvoke` instead."
+            )
+
+    async def ainvoke(
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> Output:
+        if hasattr(self, "afunc"):
+            return await self._acall_with_config(self.afunc, input, config)
+        else:
+            return await super().ainvoke(input, config)
 
 
 class RunnableEach(Serializable, Runnable[List[Input], List[Output]]):
