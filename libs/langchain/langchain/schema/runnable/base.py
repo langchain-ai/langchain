@@ -977,7 +977,6 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
     ) -> List[Output]:
         from langchain.callbacks.manager import (
             AsyncCallbackManager,
-            AsyncCallbackManagerForChainRun,
         )
 
         # setup callbacks
