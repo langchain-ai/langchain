@@ -8,7 +8,7 @@ from langchain.tools.ainetwork.base import AINBaseTool
 
 
 class TransferSchema(BaseModel):
-    transferAddress: str = Field(..., description="Address to transfer AIN to")
+    address: str = Field(..., description="Address to transfer AIN to")
     amount: int = Field(..., description="Amount of AIN to transfer")
 
 
@@ -19,14 +19,12 @@ class AINTransfer(AINBaseTool):
 
     async def _arun(
         self,
-        transferAddress: str,
+        address: str,
         amount: int,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         try:
-            res = await self.interface.wallet.transfer(
-                transferAddress, amount, nonce=-1
-            )
+            res = await self.interface.wallet.transfer(address, amount, nonce=-1)
             return json.dumps(res, ensure_ascii=False)
         except Exception as e:
             return f"{type(e).__name__}: {str(e)}"

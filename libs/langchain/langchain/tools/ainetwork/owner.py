@@ -91,10 +91,10 @@ An address set as `owner` can modify permissions according to its granted author
                             ".owner": {
                                 "owners": {
                                     address: {
-                                        "write_owner": write_owner,
-                                        "write_rule": write_rule,
-                                        "write_function": write_function,
-                                        "branch_owner": branch_owner,
+                                        "write_owner": write_owner or False,
+                                        "write_rule": write_rule or False,
+                                        "write_function": write_function or False,
+                                        "branch_owner": branch_owner or False,
                                     }
                                     for address in address
                                 }

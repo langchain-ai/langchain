@@ -54,7 +54,7 @@ In order to AINvalueOps with SET at the path, the execution result of the `eval`
         self,
         type: OperationType,
         path: str,
-        eval: Optional[dict] = None,
+        eval: Optional[str] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         from ain.types import ValueOnlyTransactionInput
