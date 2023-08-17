@@ -21,9 +21,9 @@ class SleepInput(BaseModel):
 class SleepTool(BaseTool):
     """Tool that adds the capability to sleep."""
 
-    name = "sleep"
+    name: str = "sleep"
     args_schema: Type[BaseModel] = SleepInput
-    description = "Make agent sleep for a specified number of seconds."
+    description: str = "Make agent sleep for a specified number of seconds."
 
     def _run(
         self,

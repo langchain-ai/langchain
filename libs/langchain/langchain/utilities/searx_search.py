@@ -144,7 +144,7 @@ def _get_default_params() -> dict:
 class SearxResults(dict):
     """Dict like wrapper around search api results."""
 
-    _data = ""
+    _data: str = ""
 
     def __init__(self, data: str):
         """Take a raw result from Searx and make it into a dict like object."""
