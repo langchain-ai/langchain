@@ -1333,6 +1333,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
         # which is consumed in parallel in a separate thread.
         input_copies = list(safetee(input, len(steps), lock=threading.Lock()))
         with ThreadPoolExecutor() as executor:
+            # Create the transform() generator for each step
             named_generators = [
                 (
                     step_name,
@@ -1343,10 +1344,14 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
                 )
                 for step_name in steps
             ]
+            # Start the first iteration of each generator
             futures = {
                 executor.submit(next, generator): (step_name, generator)
                 for step_name, generator in named_generators
             }
+            # Yield chunks from each as they become available,
+            # and start the next iteration of that generator that yielded it.
+            # When all generators are exhausted, stop.
             while futures:
                 completed_futures, _ = wait(futures, return_when=FIRST_COMPLETED)
                 for future in completed_futures:
@@ -1387,6 +1392,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
         # Each step gets a copy of the input iterator,
         # which is consumed in parallel in a separate thread.
         input_copies = list(atee(input, len(steps), lock=asyncio.Lock()))
+        # Create the transform() generator for each step
         named_generators = [
             (
                 step_name,
@@ -1401,10 +1407,14 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
         async def get_next_chunk(generator: AsyncIterator) -> Optional[Output]:
             return await py_anext(generator)
 
+        # Start the first iteration of each generator
         tasks = {
             asyncio.create_task(get_next_chunk(generator)): (step_name, generator)
             for step_name, generator in named_generators
         }
+        # Yield chunks from each as they become available,
+        # and start the next iteration of the generator that yielded it.
+        # When all generators are exhausted, stop.
         while tasks:
             completed_tasks, _ = await asyncio.wait(
                 tasks, return_when=asyncio.FIRST_COMPLETED
