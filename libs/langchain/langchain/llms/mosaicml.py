@@ -175,6 +175,10 @@ class MosaicML(LLM):
                     text = output_item
             else:
                 raise ValueError(f"Unexpected response type: {parsed_response}")
+        
+            # Older versions of the API include the input in the output response
+            if text.startswith(prompt):
+                text = text[len(prompt) :]
 
         except requests.exceptions.JSONDecodeError as e:
             raise ValueError(

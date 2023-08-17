@@ -31,7 +31,7 @@ def test_mosaicml_extra_kwargs() -> None:
     assert isinstance(output, str)
 
     # should only generate one new token (which might be a new line or whitespace token)
-    assert len(output.split()) <= len(input_str) + 1
+    assert len(output.split()) <= 1
 
 
 def test_instruct_prompt() -> None:
