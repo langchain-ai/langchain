@@ -171,6 +171,7 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
     ) -> List[Document]:
         """Converts a sequence of search results to a list of LangChain documents."""
         from google.protobuf.json_format import MessageToDict
+        import json
 
         documents: List[Document] = []
 
@@ -181,7 +182,7 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
 
             documents.append(
                 Document(
-                    page_content=str(document_dict.get("struct_data", {})),
+                    page_content=json.dumps(document_dict.get("struct_data", {})),
                     metadata={"id": document_dict["id"], "name": document_dict["name"]},
                 )
             )
