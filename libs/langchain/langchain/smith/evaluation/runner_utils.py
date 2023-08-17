@@ -8,6 +8,7 @@ import inspect
 import itertools
 import logging
 import uuid
+import warnings
 from enum import Enum
 from typing import (
     Any,
@@ -1147,6 +1148,7 @@ async def arun_on_dataset(
     verbose: bool = False,
     tags: Optional[List[str]] = None,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
+    **kwargs: Any,
 ) -> Dict[str, Any]:
     """
     Asynchronously run the Chain or language model on a dataset
@@ -1255,6 +1257,13 @@ async def arun_on_dataset(
             evaluation=evaluation_config,
         )
     """  # noqa: E501
+    if kwargs:
+        warnings.warn(
+            "The following arguments are deprecated and will "
+            "be removed in a future release: "
+            f"{kwargs.keys()}.",
+            DeprecationWarning,
+        )
     wrapped_model, project_name, dataset, examples = _prepare_eval_run(
         client, dataset_name, llm_or_chain_factory, project_name
     )
@@ -1308,6 +1317,7 @@ def run_on_dataset(
     verbose: bool = False,
     tags: Optional[List[str]] = None,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
+    **kwargs: Any,
 ) -> Dict[str, Any]:
     """
     Run the Chain or language model on a dataset and store traces
@@ -1417,6 +1427,13 @@ def run_on_dataset(
             evaluation=evaluation_config,
         )
     """  # noqa: E501
+    if kwargs:
+        warnings.warn(
+            "The following arguments are deprecated and "
+            "will be removed in a future release: "
+            f"{kwargs.keys()}.",
+            DeprecationWarning,
+        )
     wrapped_model, project_name, dataset, examples = _prepare_eval_run(
         client, dataset_name, llm_or_chain_factory, project_name
     )
