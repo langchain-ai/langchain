@@ -1,4 +1,5 @@
 """Fake ChatModel for testing purposes."""
+import asyncio
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union
 
 from langchain.callbacks.manager import (
@@ -14,6 +15,7 @@ class FakeListChatModel(SimpleChatModel):
     """Fake ChatModel for testing purposes."""
 
     responses: List
+    sleep: Optional[float] = None
     i: int = 0
 
     @property
@@ -63,6 +65,8 @@ class FakeListChatModel(SimpleChatModel):
         else:
             self.i = 0
         for c in response:
+            if self.sleep is not None:
+                await asyncio.sleep(self.sleep)
             yield ChatGenerationChunk(message=AIMessageChunk(content=c))
 
     @property
