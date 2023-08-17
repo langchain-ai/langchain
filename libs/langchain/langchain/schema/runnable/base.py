@@ -5,7 +5,9 @@ import copy
 from abc import ABC, abstractmethod
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from itertools import tee
+import threading
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncIterator,
     Awaitable,
@@ -24,6 +26,12 @@ from typing import (
     cast,
 )
 
+if TYPE_CHECKING:
+    from langchain.callbacks.manager import (
+        AsyncCallbackManagerForChainRun,
+        CallbackManagerForChainRun,
+    )
+
 from pydantic_v1 import Field
 
 from langchain.callbacks.base import BaseCallbackManager
@@ -31,9 +39,12 @@ from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
 from langchain.schema.runnable.config import RunnableConfig
 from langchain.schema.runnable.utils import (
+    accepts_run_manager,
+    accepts_run_manager_and_config,
     gather_with_concurrency,
 )
 from langchain.utils.aiter import atee, py_anext
+from langchain.utils.iter import safetee
 
 Input = TypeVar("Input")
 # Output type should implement __concat__, as eg str, list, dict do
@@ -137,7 +148,10 @@ class Runnable(Generic[Input, Output], ABC):
         yield await self.ainvoke(input, config)
 
     def transform(
-        self, input: Iterator[Input], config: Optional[RunnableConfig] = None
+        self,
+        input: Iterator[Input],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
     ) -> Iterator[Output]:
         """
         Default implementation of transform, which buffers input and then calls stream.
@@ -154,10 +168,13 @@ class Runnable(Generic[Input, Output], ABC):
                 # This method should throw an error if gathering fails.
                 final += chunk  # type: ignore[operator]
         if final:
-            yield from self.stream(final, config)
+            yield from self.stream(final, config, **kwargs)
 
     async def atransform(
-        self, input: AsyncIterator[Input], config: Optional[RunnableConfig] = None
+        self,
+        input: AsyncIterator[Input],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
         """
         Default implementation of atransform, which buffers input and calls astream.
@@ -175,7 +192,7 @@ class Runnable(Generic[Input, Output], ABC):
                 final += chunk  # type: ignore[operator]
 
         if final:
-            async for output in self.astream(final, config):
+            async for output in self.astream(final, config, **kwargs):
                 yield output
 
     def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
@@ -219,7 +236,11 @@ class Runnable(Generic[Input, Output], ABC):
 
     def _call_with_config(
         self,
-        func: Callable[[Input], Output],
+        func: Union[
+            Callable[[Input], Output],
+            Callable[[Input, CallbackManagerForChainRun], Output],
+            Callable[[Input, CallbackManagerForChainRun, RunnableConfig], Output],
+        ],
         input: Input,
         config: Optional[RunnableConfig],
         run_type: Optional[str] = None,
@@ -240,7 +261,16 @@ class Runnable(Generic[Input, Output], ABC):
             run_type=run_type,
         )
         try:
-            output = func(input)
+            if accepts_run_manager_and_config(func):
+                output = func(
+                    input,
+                    run_manager=run_manager,
+                    config=config,
+                )  # type: ignore[call-arg]
+            elif accepts_run_manager(func):
+                output = func(input, run_manager=run_manager)  # type: ignore[call-arg]
+            else:
+                output = func(input)  # type: ignore[call-arg]
         except Exception as e:
             run_manager.on_chain_error(e)
             raise
@@ -255,7 +285,14 @@ class Runnable(Generic[Input, Output], ABC):
 
     async def _acall_with_config(
         self,
-        func: Callable[[Input], Awaitable[Output]],
+        func: Union[
+            Callable[[Input], Awaitable[Output]],
+            Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]],
+            Callable[
+                [Input, AsyncCallbackManagerForChainRun, RunnableConfig],
+                Awaitable[Output],
+            ],
+        ],
         input: Input,
         config: Optional[RunnableConfig],
         run_type: Optional[str] = None,
@@ -276,7 +313,19 @@ class Runnable(Generic[Input, Output], ABC):
             run_type=run_type,
         )
         try:
-            output = await func(input)
+            if accepts_run_manager_and_config(func):
+                output = await func(
+                    input,
+                    run_manager=run_manager,
+                    config=config,
+                )  # type: ignore[call-arg]
+            elif accepts_run_manager(func):
+                output = await func(
+                    input,
+                    run_manager=run_manager,
+                )  # type: ignore[call-arg]
+            else:
+                output = await func(input)  # type: ignore[call-arg]
         except Exception as e:
             await run_manager.on_chain_error(e)
             raise
@@ -292,7 +341,18 @@ class Runnable(Generic[Input, Output], ABC):
     def _transform_stream_with_config(
         self,
         input: Iterator[Input],
-        transformer: Callable[[Iterator[Input]], Iterator[Output]],
+        transformer: Union[
+            Callable[[Iterator[Input]], Iterator[Output]],
+            Callable[[Iterator[Input], CallbackManagerForChainRun], Iterator[Output]],
+            Callable[
+                [
+                    Iterator[Input],
+                    CallbackManagerForChainRun,
+                    List[RunnableConfig],
+                ],
+                Iterator[Output],
+            ],
+        ],
         config: Optional[RunnableConfig],
         run_type: Optional[str] = None,
     ) -> Iterator[Output]:
@@ -321,7 +381,20 @@ class Runnable(Generic[Input, Output], ABC):
             run_type=run_type,
         )
         try:
-            for chunk in transformer(input_for_transform):
+            if accepts_run_manager_and_config(transformer):
+                iterator = transformer(
+                    input_for_transform,
+                    run_manager=run_manager,
+                    config=config,
+                )  # type: ignore[call-arg]
+            elif accepts_run_manager(transformer):
+                iterator = transformer(
+                    input_for_transform,
+                    run_manager=run_manager,
+                )  # type: ignore[call-arg]
+            else:
+                iterator = transformer(input_for_transform)  # type: ignore[call-arg]
+            for chunk in iterator:
                 yield chunk
                 if final_output_supported:
                     if final_output is None:
@@ -363,7 +436,21 @@ class Runnable(Generic[Input, Output], ABC):
     async def _atransform_stream_with_config(
         self,
         input: AsyncIterator[Input],
-        transformer: Callable[[AsyncIterator[Input]], AsyncIterator[Output]],
+        transformer: Union[
+            Callable[[AsyncIterator[Input]], AsyncIterator[Output]],
+            Callable[
+                [AsyncIterator[Input], AsyncCallbackManagerForChainRun],
+                AsyncIterator[Output],
+            ],
+            Callable[
+                [
+                    AsyncIterator[Input],
+                    AsyncCallbackManagerForChainRun,
+                    List[RunnableConfig],
+                ],
+                AsyncIterator[Output],
+            ],
+        ],
         config: Optional[RunnableConfig],
         run_type: Optional[str] = None,
     ) -> AsyncIterator[Output]:
@@ -392,7 +479,20 @@ class Runnable(Generic[Input, Output], ABC):
             run_type=run_type,
         )
         try:
-            async for chunk in transformer(input_for_transform):
+            if accepts_run_manager_and_config(transformer):
+                iterator = transformer(
+                    input_for_transform,
+                    run_manager=run_manager,
+                    config=config,
+                )  # type: ignore[call-arg]
+            elif accepts_run_manager(transformer):
+                iterator = transformer(
+                    input_for_transform,
+                    run_manager=run_manager,
+                )  # type: ignore[call-arg]
+            else:
+                iterator = transformer(input_for_transform)  # type: ignore[call-arg]
+            async for chunk in iterator:
                 yield chunk
                 if final_output_supported:
                     if final_output is None:
@@ -1222,97 +1322,71 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
             await run_manager.on_chain_end(output)
             return output
 
+    def _transform(
+        self,
+        input: Iterator[Input],
+        run_manager: CallbackManagerForChainRun,
+        config: RunnableConfig,
+    ) -> Iterator[RunnableMapChunk]:
+        steps = dict(self.steps)
+        input_copies = list(safetee(input, len(steps), lock=threading.Lock()))
+        with ThreadPoolExecutor() as executor:
+            named_generators = [
+                (
+                    step_name,
+                    steps[step_name].transform(
+                        input_copies.pop(),
+                        patch_config(config, run_manager.get_child()),
+                    ),
+                )
+                for step_name in steps
+            ]
+            futures = {
+                executor.submit(next, generator): (step_name, generator)
+                for step_name, generator in named_generators
+            }
+            while futures:
+                completed_futures, _ = wait(futures, return_when=FIRST_COMPLETED)
+                for future in completed_futures:
+                    (step_name, generator) = futures.pop(future)
+                    try:
+                        chunk = RunnableMapChunk({step_name: future.result()})
+                        yield chunk
+                        futures[executor.submit(next, generator)] = (
+                            step_name,
+                            generator,
+                        )
+                    except StopIteration:
+                        pass
+
+    def transform(
+        self,
+        input: Iterator[Input],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> Iterator[Dict[str, Any]]:
+        yield from self._transform_stream_with_config(
+            input, self._transform, config, **kwargs
+        )
+
     def stream(
         self, input: Input, config: Optional[RunnableConfig] = None
-    ) -> Iterator[RunnableMapChunk]:
-        from langchain.callbacks.manager import CallbackManager
+    ) -> Iterator[Dict[str, Any]]:
+        yield from self.transform(iter([input]), config)
 
-        # setup callbacks
-        config = config or {}
-        callback_manager = CallbackManager.configure(
-            inheritable_callbacks=config.get("callbacks"),
-            local_callbacks=None,
-            verbose=False,
-            inheritable_tags=config.get("tags"),
-            local_tags=None,
-            inheritable_metadata=config.get("metadata"),
-            local_metadata=None,
-        )
-        # start the root run
-        run_manager = callback_manager.on_chain_start(
-            dumpd(self), input if isinstance(input, dict) else {"input": input}
-        )
-
-        steps = dict(self.steps)
-        final_output = None
-        try:
-            with ThreadPoolExecutor() as executor:
-                named_generators = [
-                    (
-                        step_name,
-                        steps[step_name].stream(
-                            input, patch_config(config, run_manager.get_child())
-                        ),
-                    )
-                    for step_name in steps
-                ]
-                futures = {
-                    executor.submit(next, generator): (step_name, generator)
-                    for step_name, generator in named_generators
-                }
-                while futures:
-                    completed_futures, _ = wait(futures, return_when=FIRST_COMPLETED)
-                    for future in completed_futures:
-                        (step_name, generator) = futures.pop(future)
-                        try:
-                            chunk = RunnableMapChunk({step_name: future.result()})
-                            yield chunk
-                            if final_output is None:
-                                final_output = chunk
-                            else:
-                                final_output += chunk
-                            futures[executor.submit(next, generator)] = (
-                                step_name,
-                                generator,
-                            )
-                        except StopIteration:
-                            pass
-        # finish the root run
-        except (KeyboardInterrupt, Exception) as e:
-            run_manager.on_chain_error(e)
-            raise
-        else:
-            run_manager.on_chain_end(
-                final_output if final_output is not None else {"output": None}
-            )
-
-    async def astream(
-        self, input: Input, config: Optional[RunnableConfig] = None
+    async def _atransform(
+        self,
+        input: AsyncIterator[Input],
+        run_manager: AsyncCallbackManagerForChainRun,
+        config: RunnableConfig,
     ) -> AsyncIterator[RunnableMapChunk]:
-        from langchain.callbacks.manager import AsyncCallbackManager
-
-        # setup callbacks
-        config = config or {}
-        callback_manager = AsyncCallbackManager.configure(
-            inheritable_callbacks=config.get("callbacks"),
-            local_callbacks=None,
-            verbose=False,
-            inheritable_tags=config.get("tags"),
-            local_tags=None,
-            inheritable_metadata=config.get("metadata"),
-            local_metadata=None,
-        )
-        # start the root run
-        run_manager = await callback_manager.on_chain_start(
-            dumpd(self), input if isinstance(input, dict) else {"input": input}
-        )
-
         steps = dict(self.steps)
+        input_copies = list(atee(input, len(steps), lock=asyncio.Lock()))
         named_generators = [
             (
                 step_name,
-                steps[step_name].astream(
-                    input, patch_config(config, run_manager.get_child())
+                steps[step_name].atransform(
+                    input_copies.pop(), patch_config(config, run_manager.get_child())
                 ),
             )
             for step_name in steps
@@ -1326,32 +1400,39 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
             asyncio.create_task(get_next_chunk(generator)): (step_name, generator)
             for step_name, generator in named_generators
         }
-        final_output = None
-        try:
-            while tasks:
-                completed_tasks, _ = await asyncio.wait(
-                    tasks, return_when=asyncio.FIRST_COMPLETED
-                )
-                for task in completed_tasks:
-                    (step_name, generator) = tasks.pop(task)
-                    try:
-                        chunk = RunnableMapChunk({step_name: task.result()})
-                        yield chunk
-                        if final_output is None:
-                            final_output = chunk
-                        else:
-                            final_output += chunk
-                        new_task = asyncio.create_task(get_next_chunk(generator))
-                        tasks[new_task] = (step_name, generator)
-                    except StopAsyncIteration:
-                        pass
-        except (KeyboardInterrupt, Exception) as e:
-            await run_manager.on_chain_error(e)
-            raise
-        else:
-            await run_manager.on_chain_end(
-                final_output if final_output is not None else {"output": None}
+        while tasks:
+            completed_tasks, _ = await asyncio.wait(
+                tasks, return_when=asyncio.FIRST_COMPLETED
             )
+            for task in completed_tasks:
+                (step_name, generator) = tasks.pop(task)
+                try:
+                    chunk = RunnableMapChunk({step_name: task.result()})
+                    yield chunk
+                    new_task = asyncio.create_task(get_next_chunk(generator))
+                    tasks[new_task] = (step_name, generator)
+                except StopAsyncIteration:
+                    pass
+
+    async def atransform(
+        self,
+        input: AsyncIterator[Input],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[Dict[str, Any]]:
+        async for chunk in self._atransform_stream_with_config(
+            input, self._atransform, config, **kwargs
+        ):
+            yield chunk
+
+    async def astream(
+        self, input: Input, config: Optional[RunnableConfig] = None
+    ) -> AsyncIterator[Dict[str, Any]]:
+        async def input_aiter() -> AsyncIterator[Input]:
+            yield input
+
+        async for chunk in self.atransform(input_aiter(), config):
+            yield chunk
 
 
 class RunnableLambda(Runnable[Input, Output]):
@@ -1443,14 +1524,20 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
             yield item
 
     def transform(
-        self, input: Iterator[Input], config: Optional[RunnableConfig] = None
+        self,
+        input: Iterator[Input],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> Iterator[Output]:
-        yield from self.bound.transform(input, config, **self.kwargs)
+        yield from self.bound.transform(input, config, **self.kwargs, **kwargs)
 
     async def atransform(
-        self, input: AsyncIterator[Input], config: Optional[RunnableConfig] = None
+        self,
+        input: AsyncIterator[Input],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> AsyncIterator[Output]:
-        async for item in self.bound.atransform(input, config, **self.kwargs):
+        async for item in self.bound.atransform(input, config, **self.kwargs, **kwargs):
             yield item
 
 
