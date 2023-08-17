@@ -59,7 +59,7 @@ class ArxivAPIWrapper(BaseModel):
     load_all_available_meta: bool = False
     doc_content_chars_max: Optional[int] = 4000
 
-    def is_arxiv_identifier(query: str) -> bool:
+    def is_arxiv_identifier(self, query: str) -> bool:
         """Check if a query is an arxiv identifier."""
         arxiv_identifier_pattern = r'\d{4}\.\d{4,5}.*|\d{7}.*'
         if re.match(arxiv_identifier_pattern, query[: self.ARXIV_MAX_QUERY_LENGTH]):
