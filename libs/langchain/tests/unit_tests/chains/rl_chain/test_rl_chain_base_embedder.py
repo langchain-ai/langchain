@@ -1,8 +1,4 @@
-import sys
-
-sys.path.append("..")
-
-import rl_chain.rl_chain_base as base
+import langchain.chains.rl_chain.rl_chain_base as base
 from test_utils import MockEncoder
 
 import pytest

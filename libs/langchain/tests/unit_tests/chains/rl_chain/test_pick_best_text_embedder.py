@@ -1,8 +1,4 @@
-import sys
-
-sys.path.append("..")
-
-import rl_chain.pick_best_chain as pick_best_chain
+import langchain.chains.rl_chain.pick_best_chain as pick_best_chain
 from test_utils import MockEncoder
 
 import pytest
