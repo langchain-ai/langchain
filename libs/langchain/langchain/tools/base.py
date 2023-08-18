@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import warnings
+import inspect
 from abc import abstractmethod
 from functools import partial
 from inspect import signature
@@ -533,17 +534,22 @@ class Tool(BaseTool):
     @classmethod
     def from_function(
         cls,
-        func: Callable,
+        func: Optional[Callable],
         name: str,  # We keep these required to support backwards compatibility
         description: str,
         return_direct: bool = False,
         args_schema: Optional[Type[BaseModel]] = None,
+        coroutine: Optional[Callable[..., Awaitable[Any]]] = None, # This is last for compatability, but should be after func
         **kwargs: Any,
     ) -> Tool:
         """Initialize tool from a function."""
+        assert (
+            func is not None or coroutine is not None
+        ), "Function and/or coroutine must be provided"
         return cls(
             name=name,
             func=func,
+            coroutine=coroutine,
             description=description,
             return_direct=return_direct,
             args_schema=args_schema,
@@ -628,7 +634,8 @@ class StructuredTool(BaseTool):
     @classmethod
     def from_function(
         cls,
-        func: Callable,
+        func: Optional[Callable] = None,
+        coroutine: Optional[Callable[..., Awaitable[Any]]] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
         return_direct: bool = False,
@@ -642,6 +649,7 @@ class StructuredTool(BaseTool):
 
         Args:
             func: The function from which to create a tool
+            coroutine: The async function from which to create a tool
             name: The name of the tool. Defaults to the function name
             description: The description of the tool. Defaults to the function docstring
             return_direct: Whether to return the result directly or as a callback
@@ -662,8 +670,12 @@ class StructuredTool(BaseTool):
                 tool = StructuredTool.from_function(add)
                 tool.run(1, 2) # 3
         """
-        name = name or func.__name__
-        description = description or func.__doc__
+        assert (
+            func is not None or coroutine is not None
+        ), "Function and/or coroutine must be provided"
+
+        name = name or (func if func is not None else coroutine).__name__
+        description = description or (func if func is not None else coroutine).__doc__
         assert (
             description is not None
         ), "Function must have a docstring if description not provided."
@@ -677,6 +689,7 @@ class StructuredTool(BaseTool):
         return cls(
             name=name,
             func=func,
+            coroutine=coroutine,
             args_schema=_args_schema,
             description=description,
             return_direct=return_direct,
@@ -720,10 +733,18 @@ def tool(
     """
 
     def _make_with_name(tool_name: str) -> Callable:
-        def _make_tool(func: Callable) -> BaseTool:
+        def _make_tool(dec_func: Callable) -> BaseTool:
+            if inspect.iscoroutinefunction(dec_func):
+                coroutine = dec_func
+                func = None
+            else:
+                coroutine = None
+                func = dec_func
+
             if infer_schema or args_schema is not None:
                 return StructuredTool.from_function(
                     func,
+                    coroutine,
                     name=tool_name,
                     return_direct=return_direct,
                     args_schema=args_schema,
@@ -737,6 +758,7 @@ def tool(
                 func=func,
                 description=f"{tool_name} tool",
                 return_direct=return_direct,
+                coroutine=coroutine
             )
 
         return _make_tool
