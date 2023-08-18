@@ -792,7 +792,7 @@ class Qdrant(VectorStore):
             filter=filter,
             search_params=search_params,
             score_threshold=score_threshold,
-            consistent=consistency,
+            consistency=consistency,
             **kwargs,
         )
 
