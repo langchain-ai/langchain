@@ -43,7 +43,11 @@ class FakeChain(Chain):
         inputs: Dict[str, str],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
-        return self._call(inputs, run_manager)
+        outputs = {}
+        for var in self.output_variables:
+            variables = [inputs[k] for k in self.input_variables]
+            outputs[var] = f"{' '.join(variables)}foo"
+        return outputs
 
 
 def test_sequential_usage_single_inputs() -> None:
