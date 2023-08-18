@@ -1,6 +1,0 @@
-**/__pycache__/**
-models/*
-logs/*
-**/*.vw
-.venv
-
