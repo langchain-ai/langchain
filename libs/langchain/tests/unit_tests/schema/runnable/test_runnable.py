@@ -171,21 +171,11 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
     assert spy.call_args_list == [
         mocker.call(
             "hello",
-            dict(
-                metadata={"key": "value"},
-                tags=[],
-                callbacks=None,
-                _locals={},
-            ),
+            dict(metadata={"key": "value"}, tags=[], callbacks=None, _locals={}),
         ),
         mocker.call(
             "wooorld",
-            dict(
-                metadata={"key": "value"},
-                tags=[],
-                callbacks=None,
-                _locals={},
-            ),
+            dict(metadata={"key": "value"}, tags=[], callbacks=None, _locals={}),
         ),
     ]
 
