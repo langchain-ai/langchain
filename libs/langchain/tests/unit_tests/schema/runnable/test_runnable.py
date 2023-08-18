@@ -780,7 +780,7 @@ async def test_higher_order_lambda_runnable(
     english_chain = ChatPromptTemplate.from_template(
         "You are an english major. Answer the question: {question}"
     ) | FakeListLLM(responses=["2"])
-    input_map = RunnableMap(
+    input_map: Runnable = RunnableMap(
         {  # type: ignore[arg-type]
             "key": lambda x: x["key"],
             "input": {"question": lambda x: x["question"]},
