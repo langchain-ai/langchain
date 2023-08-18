@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional, Tuple, Type
 
-from pydantic_v1 import root_validator
-
+from langchain.pydantic_v1 import root_validator
 from langchain.tools.base import BaseTool
 
 if TYPE_CHECKING:

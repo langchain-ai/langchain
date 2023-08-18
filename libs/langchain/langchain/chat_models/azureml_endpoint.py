@@ -1,11 +1,10 @@
 import json
 from typing import Any, Dict, List, Optional
 
-from pydantic_v1 import validator
-
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import SimpleChatModel
 from langchain.llms.azureml_endpoint import AzureMLEndpointClient, ContentFormatterBase
+from langchain.pydantic_v1 import validator
 from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
@@ -19,7 +18,7 @@ from langchain.utils import get_from_dict_or_env
 class LlamaContentFormatter(ContentFormatterBase):
     """Content formatter for `LLaMA`."""
 
-    SUPPORTED_ROLES = ["user", "assistant", "system"]
+    SUPPORTED_ROLES: List[str] = ["user", "assistant", "system"]
 
     @staticmethod
     def _convert_message_to_dict(message: BaseMessage) -> Dict:

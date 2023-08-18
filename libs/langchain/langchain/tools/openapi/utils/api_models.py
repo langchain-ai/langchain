@@ -1,11 +1,21 @@
 """Pydantic models for parsing an OpenAPI spec."""
+from __future__ import annotations
+
 import logging
 from enum import Enum
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 
-from pydantic_v1 import BaseModel, Field
-
-from langchain import _PYDANTIC_MAJOR_VERSION
+from langchain.pydantic_v1 import _PYDANTIC_MAJOR_VERSION, BaseModel, Field
 from langchain.tools.openapi.utils.openapi_utils import HTTPVerb, OpenAPISpec
 
 logger = logging.getLogger(__name__)
@@ -86,13 +96,13 @@ class APIPropertyBase(BaseModel):
 
 
 if _PYDANTIC_MAJOR_VERSION == 1:
-    from openapi_schema_pydantic import (
-        MediaType,
-        Parameter,
-        Reference,
-        RequestBody,
-        Schema,
-    )
+    if TYPE_CHECKING:
+        from openapi_schema_pydantic import (
+            MediaType,
+            Parameter,
+            RequestBody,
+            Schema,
+        )
 
     class APIProperty(APIPropertyBase):
         """A model for a property in the query, path, header, or cookie params."""
@@ -120,6 +130,11 @@ if _PYDANTIC_MAJOR_VERSION == 1:
         def _get_schema_type_for_array(
             schema: Schema,
         ) -> Optional[Union[str, Tuple[str, ...]]]:
+            from openapi_schema_pydantic import (
+                Reference,
+                Schema,
+            )
+
             items = schema.items
             if isinstance(items, Schema):
                 schema_type = APIProperty._cast_schema_list_type(items)
@@ -177,6 +192,11 @@ if _PYDANTIC_MAJOR_VERSION == 1:
 
         @staticmethod
         def _get_schema(parameter: Parameter, spec: OpenAPISpec) -> Optional[Schema]:
+            from openapi_schema_pydantic import (
+                Reference,
+                Schema,
+            )
+
             schema = parameter.param_schema
             if isinstance(schema, Reference):
                 schema = spec.get_referenced_schema(schema)
@@ -233,6 +253,10 @@ if _PYDANTIC_MAJOR_VERSION == 1:
         def _process_object_schema(
             cls, schema: Schema, spec: OpenAPISpec, references_used: List[str]
         ) -> Tuple[Union[str, List[str], None], List["APIRequestBodyProperty"]]:
+            from openapi_schema_pydantic import (
+                Reference,
+            )
+
             properties = []
             required_props = schema.required or []
             if schema.properties is None:
@@ -267,6 +291,8 @@ if _PYDANTIC_MAJOR_VERSION == 1:
             spec: OpenAPISpec,
             references_used: List[str],
         ) -> str:
+            from openapi_schema_pydantic import Reference, Schema
+
             items = schema.items
             if items is not None:
                 if isinstance(items, Reference):
@@ -354,6 +380,8 @@ if _PYDANTIC_MAJOR_VERSION == 1:
             spec: OpenAPISpec,
         ) -> List[APIRequestBodyProperty]:
             """Process the media type of the request body."""
+            from openapi_schema_pydantic import Reference
+
             references_used = []
             schema = media_type_obj.media_type_schema
             if isinstance(schema, Reference):

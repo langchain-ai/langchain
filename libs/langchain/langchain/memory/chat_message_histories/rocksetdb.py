@@ -37,9 +37,9 @@ class RocksetChatMessageHistory(BaseChatMessageHistory):
     # These values are configured for the typical
     # free VI. Read more about VIs here:
     # https://rockset.com/docs/instances
-    SLEEP_INTERVAL_MS = 5
-    ADD_TIMEOUT_MS = 5000
-    CREATE_TIMEOUT_MS = 20000
+    SLEEP_INTERVAL_MS: int = 5
+    ADD_TIMEOUT_MS: int = 5000
+    CREATE_TIMEOUT_MS: int = 20000
 
     def _wait_until(self, method: Callable, timeout: int, **method_params: Any) -> None:
         """Sleeps until meth() evaluates to true. Passes kwargs into

@@ -1,9 +1,8 @@
 import uuid
 from typing import List, Optional
 
-from pydantic_v1 import Field
-
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
+from langchain.pydantic_v1 import Field
 from langchain.schema.document import Document
 from langchain.schema.retriever import BaseRetriever
 from langchain.schema.storage import BaseStore

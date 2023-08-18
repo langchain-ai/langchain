@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
-from pydantic_v1 import BaseModel
+from langchain.pydantic_v1 import BaseModel
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
@@ -84,8 +84,8 @@ class JsonSpec(BaseModel):
 class JsonListKeysTool(BaseTool):
     """Tool for listing keys in a JSON spec."""
 
-    name = "json_spec_list_keys"
-    description = """
+    name: str = "json_spec_list_keys"
+    description: str = """
     Can be used to list all keys at a given path. 
     Before calling this you should be SURE that the path to this exists.
     The input is a text representation of the path to the dict in Python syntax (e.g. data["key1"][0]["key2"]).
@@ -110,8 +110,8 @@ class JsonListKeysTool(BaseTool):
 class JsonGetValueTool(BaseTool):
     """Tool for getting a value in a JSON spec."""
 
-    name = "json_spec_get_value"
-    description = """
+    name: str = "json_spec_get_value"
+    description: str = """
     Can be used to see value in string format at a given path.
     Before calling this you should be SURE that the path to this exists.
     The input is a text representation of the path to the dict in Python syntax (e.g. data["key1"][0]["key2"]).
