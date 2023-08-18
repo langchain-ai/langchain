@@ -125,6 +125,7 @@ newspaper3k = {version = "^0.2.8", optional = true}
 amazon-textract-caller = {version = "<2", optional = true}
 xata = {version = "^1.0.0a7", optional = true}
 xmltodict = {version = "^0.13.0", optional = true}
+vowpal-wabbit-next = "0.6.0"
 
 
 [tool.poetry.group.test.dependencies]
