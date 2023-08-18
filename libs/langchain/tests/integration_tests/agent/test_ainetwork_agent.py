@@ -1,12 +1,9 @@
 import asyncio
-import json
-import os
+import time
 import urllib.request
 import uuid
 from enum import Enum
 from urllib.error import HTTPError
-
-import pytest
 
 from langchain.agents import AgentType, initialize_agent
 from langchain.agents.agent_toolkits.ainetwork.toolkit import AINetworkToolkit
@@ -57,20 +54,8 @@ class Match(Enum):
             return value == template
 
 
-@pytest.fixture(scope="module")
-def get_faucet(address):
-    try:
-        with urllib.request.urlopen(
-            f"http://faucet.ainetwork.ai/api/test/{address}/"
-        ) as response:
-            status_code = response.getcode()
-        return status_code == 200
-    except HTTPError as e:
-        return e.getcode()
-
-
 def test_ainetwork_toolkit() -> None:
-    def get(path, type="value"):
+    def get(path, type="value", default=None):
         ref = ain.db.ref(path)
         value = asyncio.run(
             {
@@ -79,14 +64,11 @@ def test_ainetwork_toolkit() -> None:
                 "owner": ref.getOwner,
             }[type]()
         )
-        return json.loads(value)
+        return default if value is None else value
 
     def validate(path, template, type="value"):
-        try:
-            value = get(path, type)
-            return Match.__eq__(value, template)
-        except:
-            return True
+        value = get(path, type)
+        return Match.__eq__(value, template)
 
     toolkit = AINetworkToolkit(network="testnet")
     llm = ChatOpenAI(model="gpt-4", temperature=0)
@@ -101,7 +83,10 @@ def test_ainetwork_toolkit() -> None:
     co_address = "0x6813Eb9362372EEF6200f3b1dbC3f819671cBA69"
 
     # Test creating an app
-    app_name = f"_langchain_test_{str(uuid.uuid1()).replace('-', '_')}"
+    UUID = uuid.UUID(
+        int=(int(time.time() * 1000) << 64) | (uuid.uuid4().int & ((1 << 64) - 1))
+    )
+    app_name = f"_langchain_test__{str(UUID).replace('-', '_')}"
     agent.run(f"""Create app {app_name}""")
     validate(f"/manage_app/{app_name}/config", {"admin": {self_address: True}})
     validate(f"/apps/{app_name}/DB", None, "owner")
@@ -156,8 +141,18 @@ def test_ainetwork_toolkit() -> None:
     assert ...  # check rule that self_address exists
 
     # Test sending AIN
-    if get_faucet(self_address):
-        balance = get(f"/accounts/{co_address}/balance")
-        validate(f"/apps/{app_name}/DB", {1: 1904, 2: 43})
-        agent.run(f"""Send 10 AIN to {co_address}""")
-        assert balance + 10 == get(f"/accounts/{co_address}/balance")
+    balance = get(f"/accounts/{co_address}/balance", default=0)
+    if balance < 1:
+        try:
+            with urllib.request.urlopen(
+                f"http://faucet.ainetwork.ai/api/test/{self_address}/"
+            ) as response:
+                try_test = response.getcode()
+        except HTTPError as e:
+            try_test = e.getcode()
+    else:
+        try_test = 200
+
+    if try_test == 200:
+        agent.run(f"""Send 1 AIN to {co_address}""")
+        assert balance + 1 == get(f"/accounts/{co_address}/balance", default=0)
