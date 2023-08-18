@@ -5,11 +5,10 @@ from __future__ import annotations
 from enum import Enum
 from typing import Dict, Iterator, List, Optional
 
-from pydantic import BaseModel, Field
-
 from langchain.docstore.document import Document
 from langchain.document_loaders.base_o365 import O365BaseLoader
 from langchain.document_loaders.parsers.registry import get_parser
+from langchain.pydantic_v1 import BaseModel, Field
 
 SCOPES = ["sharepoint", "basic"]
 
