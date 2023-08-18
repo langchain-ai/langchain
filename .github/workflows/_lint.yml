@@ -23,10 +23,15 @@ jobs:
       WORKDIR: ${{ inputs.working-directory == '' && '.' || inputs.working-directory }}
     strategy:
       matrix:
+        # Only lint on the min and max supported Python versions.
+        # It's extremely unlikely that there's a lint issue on any version in between
+        # that doesn't show up on the min or max versions.
+        #
+        # GitHub rate-limits how many jobs can be running at any one time.
+        # Starting new jobs is also relatively slow,
+        # so linting on fewer versions makes CI faster.
         python-version:
           - "3.8"
-          - "3.9"
-          - "3.10"
           - "3.11"
     steps:
       - uses: actions/checkout@v3
