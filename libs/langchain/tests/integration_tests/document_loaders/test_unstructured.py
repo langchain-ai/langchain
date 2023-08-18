@@ -12,7 +12,8 @@ EXAMPLE_DOCS_DIRECTORY = str(Path(__file__).parent.parent / "examples/")
 
 
 def test_unstructured_loader_with_post_processor() -> None:
-    add_the_end = lambda text: text + "THE END!"
+    def add_the_end(text: str):
+        return text + "THE END!"
 
     file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
     loader = UnstructuredFileLoader(
