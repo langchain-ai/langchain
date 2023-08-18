@@ -79,7 +79,10 @@ class BaseGenerationOutputParser(
             )
 
     async def ainvoke(
-        self, input: str | BaseMessage, config: RunnableConfig | None = None
+        self,
+        input: str | BaseMessage,
+        config: RunnableConfig | None = None,
+        **kwargs: Optional[Any],
     ) -> T:
         if isinstance(input, BaseMessage):
             return await self._acall_with_config(
@@ -147,7 +150,10 @@ class BaseOutputParser(BaseLLMOutputParser, Runnable[Union[str, BaseMessage], T]
             )
 
     async def ainvoke(
-        self, input: str | BaseMessage, config: RunnableConfig | None = None
+        self,
+        input: str | BaseMessage,
+        config: RunnableConfig | None = None,
+        **kwargs: Optional[Any],
     ) -> T:
         if isinstance(input, BaseMessage):
             return await self._acall_with_config(
