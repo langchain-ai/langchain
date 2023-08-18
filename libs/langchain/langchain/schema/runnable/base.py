@@ -217,9 +217,10 @@ class Runnable(Generic[Input, Output], ABC):
         """
         return RunnableBinding(bound=self, kwargs=kwargs)
 
-    def each(self) -> Runnable[List[Input], List[Output]]:
+    def map(self) -> Runnable[List[Input], List[Output]]:
         """
-        Wrap a Runnable to run it on each element of the input sequence.
+        Return a new Runnable that maps a list of inputs to a list of outputs,
+        by calling invoke() with each input.
         """
         return RunnableEach(bound=self)
 
@@ -1384,7 +1385,7 @@ class RunnableEach(Serializable, Runnable[List[Input], List[Output]]):
     def lc_namespace(self) -> List[str]:
         return self.__class__.__module__.split(".")[:-1]
 
-    def each(self) -> RunnableEach[Input, Output]:  # type: ignore[override]
+    def map(self) -> RunnableEach[Input, Output]:  # type: ignore[override]
         return self
 
     def bind(self, **kwargs: Any) -> RunnableEach[Input, Output]:

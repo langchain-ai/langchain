@@ -563,10 +563,9 @@
           "lc": 1,
           "type": "constructor",
           "id": [
-            "langchain",
-            "output_parsers",
-            "list",
-            "CommaSeparatedListOutputParser"
+            "runnable",
+            "test_runnable",
+            "FakeSplitIntoListParser"
           ],
           "kwargs": {}
         }
