@@ -1,4 +1,5 @@
-import langchain.chains.rl_chain as rl_chain
+import langchain.chains.rl_chain.pick_best_chain as pick_best_chain
+import langchain.chains.rl_chain.base as rl_chain
 from test_utils import MockEncoder
 import pytest
 from langchain.prompts.prompt import PromptTemplate
@@ -17,7 +18,7 @@ def setup():
 
 def test_multiple_ToSelectFrom_throws():
     llm, PROMPT = setup()
-    chain = rl_chain.PickBest.from_llm(llm=llm, prompt=PROMPT)
+    chain = pick_best_chain.PickBest.from_llm(llm=llm, prompt=PROMPT)
     actions = ["0", "1", "2"]
     with pytest.raises(ValueError):
         chain.run(
@@ -29,7 +30,7 @@ def test_multiple_ToSelectFrom_throws():
 
 def test_missing_basedOn_from_throws():
     llm, PROMPT = setup()
-    chain = rl_chain.PickBest.from_llm(llm=llm, prompt=PROMPT)
+    chain = pick_best_chain.PickBest.from_llm(llm=llm, prompt=PROMPT)
     actions = ["0", "1", "2"]
     with pytest.raises(ValueError):
         chain.run(action=rl_chain.ToSelectFrom(actions))
@@ -37,7 +38,7 @@ def test_missing_basedOn_from_throws():
 
 def test_ToSelectFrom_not_a_list_throws():
     llm, PROMPT = setup()
-    chain = rl_chain.PickBest.from_llm(llm=llm, prompt=PROMPT)
+    chain = pick_best_chain.PickBest.from_llm(llm=llm, prompt=PROMPT)
     actions = {"actions": ["0", "1", "2"]}
     with pytest.raises(ValueError):
         chain.run(
@@ -50,7 +51,7 @@ def test_update_with_delayed_score_with_auto_validator_throws():
     llm, PROMPT = setup()
     # this LLM returns a number so that the auto validator will return that
     auto_val_llm = FakeListChatModel(responses=["3"])
-    chain = rl_chain.PickBest.from_llm(
+    chain = pick_best_chain.PickBest.from_llm(
         llm=llm,
         prompt=PROMPT,
         selection_scorer=rl_chain.AutoSelectionScorer(llm=auto_val_llm),
@@ -71,7 +72,7 @@ def test_update_with_delayed_score_force():
     llm, PROMPT = setup()
     # this LLM returns a number so that the auto validator will return that
     auto_val_llm = FakeListChatModel(responses=["3"])
-    chain = rl_chain.PickBest.from_llm(
+    chain = pick_best_chain.PickBest.from_llm(
         llm=llm,
         prompt=PROMPT,
         selection_scorer=rl_chain.AutoSelectionScorer(llm=auto_val_llm),
@@ -92,7 +93,7 @@ def test_update_with_delayed_score_force():
 
 def test_update_with_delayed_score():
     llm, PROMPT = setup()
-    chain = rl_chain.PickBest.from_llm(
+    chain = pick_best_chain.PickBest.from_llm(
         llm=llm, prompt=PROMPT, selection_scorer=None
     )
     actions = ["0", "1", "2"]
@@ -115,7 +116,7 @@ def test_user_defined_scorer():
             score = 200
             return score
 
-    chain = rl_chain.PickBest.from_llm(
+    chain = pick_best_chain.PickBest.from_llm(
         llm=llm, prompt=PROMPT, selection_scorer=CustomSelectionScorer()
     )
     actions = ["0", "1", "2"]
@@ -130,8 +131,8 @@ def test_user_defined_scorer():
 
 def test_default_embeddings():
     llm, PROMPT = setup()
-    feature_embedder = rl_chain.PickBestFeatureEmbedder(model=MockEncoder())
-    chain = rl_chain.PickBest.from_llm(
+    feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
+    chain = pick_best_chain.PickBest.from_llm(
         llm=llm, prompt=PROMPT, feature_embedder=feature_embedder
     )
 
@@ -163,8 +164,8 @@ def test_default_embeddings():
 
 def test_default_embeddings_off():
     llm, PROMPT = setup()
-    feature_embedder = rl_chain.PickBestFeatureEmbedder(model=MockEncoder())
-    chain = rl_chain.PickBest.from_llm(
+    feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
+    chain = pick_best_chain.PickBest.from_llm(
         llm=llm, prompt=PROMPT, feature_embedder=feature_embedder, auto_embed=False
     )
 
@@ -188,8 +189,8 @@ def test_default_embeddings_off():
 
 def test_default_embeddings_mixed_w_explicit_user_embeddings():
     llm, PROMPT = setup()
-    feature_embedder = rl_chain.PickBestFeatureEmbedder(model=MockEncoder())
-    chain = rl_chain.PickBest.from_llm(
+    feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
+    chain = pick_best_chain.PickBest.from_llm(
         llm=llm, prompt=PROMPT, feature_embedder=feature_embedder
     )
 
@@ -223,7 +224,7 @@ def test_default_embeddings_mixed_w_explicit_user_embeddings():
 def test_default_no_scorer_specified():
     _, PROMPT = setup()
     chain_llm = FakeListChatModel(responses=[100])
-    chain = rl_chain.PickBest.from_llm(llm=chain_llm, prompt=PROMPT)
+    chain = pick_best_chain.PickBest.from_llm(llm=chain_llm, prompt=PROMPT)
     response = chain.run(
         User=rl_chain.BasedOn("Context"),
         action=rl_chain.ToSelectFrom(["0", "1", "2"]),
@@ -236,7 +237,7 @@ def test_default_no_scorer_specified():
 
 def test_explicitly_no_scorer():
     llm, PROMPT = setup()
-    chain = rl_chain.PickBest.from_llm(
+    chain = pick_best_chain.PickBest.from_llm(
         llm=llm, prompt=PROMPT, selection_scorer=None
     )
     response = chain.run(
@@ -252,7 +253,7 @@ def test_explicitly_no_scorer():
 def test_auto_scorer_with_user_defined_llm():
     llm, PROMPT = setup()
     scorer_llm = FakeListChatModel(responses=[300])
-    chain = rl_chain.PickBest.from_llm(
+    chain = pick_best_chain.PickBest.from_llm(
         llm=llm,
         prompt=PROMPT,
         selection_scorer=rl_chain.AutoSelectionScorer(llm=scorer_llm),
@@ -269,7 +270,7 @@ def test_auto_scorer_with_user_defined_llm():
 
 def test_calling_chain_w_reserved_inputs_throws():
     llm, PROMPT = setup()
-    chain = rl_chain.PickBest.from_llm(llm=llm, prompt=PROMPT)
+    chain = pick_best_chain.PickBest.from_llm(llm=llm, prompt=PROMPT)
     with pytest.raises(ValueError):
         chain.run(
             User=rl_chain.BasedOn("Context"),

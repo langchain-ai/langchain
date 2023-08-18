@@ -1,5 +1,5 @@
 from langchain.chains.rl_chain.pick_best_chain import PickBest
-from langchain.chains.rl_chain.rl_chain_base import (
+from langchain.chains.rl_chain.base import (
     Embed,
     BasedOn,
     ToSelectFrom,
