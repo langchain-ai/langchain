@@ -18,7 +18,41 @@ class ValueSchema(BaseModel):
 
 class AINValueOps(AINBaseTool):
     name: str = "AINvalueOps"
-    description: str = "On the AIN blockchain, use the SET operation to set a value at a given path. If you choose the GET operation, you can retrieve a value from that path. In this case, the value parameter is ignored."
+    description: str = """
+Covers the read and write value for the AINetwork Blockchain database.
+
+## SET
+- Set a value at a given path
+
+### Example
+- type: SET
+- path: /apps/langchain_test_1/object
+- value: {1: 2, "34": 56}
+
+## GET
+- Retrieve a value at a given path
+
+### Example
+- type: GET
+- path: /apps/langchain_test_1/DB
+
+## Special paths
+- `/accounts/<address>/balance`: Account balance
+- `/accounts/<address>/nonce`: Account nonce
+- `/apps`: Applications
+- `/consensus`: Consensus
+- `/checkin`: Check-in
+- `/deposit/<service id>/<address>/<deposit id>`: Deposit
+- `/deposit_accounts/<service id>/<address>/<account id>`: Deposit accounts
+- `/escrow`: Escrow
+- `/payments`: Payment
+- `/sharding`: Sharding
+- `/token/name`: Token name
+- `/token/symbol`: Token symbol
+- `/token/total_supply`: Token total supply
+- `/transfer/<address from>/<address to>/<key>/value`: Transfer
+- `/withdraw/<service id>/<address>/<withdraw id>`: Withdraw
+"""
     args_schema: Type[BaseModel] = ValueSchema
 
     async def _arun(
