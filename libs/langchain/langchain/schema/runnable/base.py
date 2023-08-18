@@ -34,7 +34,6 @@ if TYPE_CHECKING:
     )
 
 
-from langchain.callbacks.base import BaseCallbackManager
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import Field
@@ -43,6 +42,7 @@ from langchain.schema.runnable.config import (
     ensure_config,
     get_async_callback_manager_for_config,
     get_callback_manager_for_config,
+    patch_config,
 )
 from langchain.schema.runnable.utils import (
     accepts_run_manager,
@@ -1470,18 +1470,6 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
             input, config, **{**self.kwargs, **kwargs}
         ):
             yield item
-
-
-def patch_config(
-    config: RunnableConfig,
-    callback_manager: BaseCallbackManager,
-    _locals: Optional[Dict[str, Any]] = None,
-) -> RunnableConfig:
-    config = config.copy()
-    config["callbacks"] = callback_manager
-    if _locals is not None:
-        config["_locals"] = _locals
-    return config
 
 
 def coerce_to_runnable(
