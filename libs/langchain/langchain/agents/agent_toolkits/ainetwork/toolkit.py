@@ -9,7 +9,6 @@ from langchain.tools import BaseTool
 from langchain.tools.ainetwork.app import AINAppOps
 from langchain.tools.ainetwork.owner import AINOwnerOps
 from langchain.tools.ainetwork.rule import AINRuleOps
-from langchain.tools.ainetwork.set_function import AINSetFunction
 from langchain.tools.ainetwork.transfer import AINTransfer
 from langchain.tools.ainetwork.utils import authenticate
 from langchain.tools.ainetwork.value import AINValueOps
@@ -48,7 +47,6 @@ class AINetworkToolkit(BaseToolkit):
             AINAppOps(interface=self.interface),
             AINOwnerOps(interface=self.interface),
             AINRuleOps(interface=self.interface),
-            AINSetFunction(interface=self.interface),
             AINTransfer(interface=self.interface),
             AINValueOps(interface=self.interface),
         ]
