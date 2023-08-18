@@ -46,7 +46,7 @@ class SyntheticDataGenerator(BaseModel):
 
         return values
 
-    def generate(self, subject: str, runs: int, extra: str = "") -> List[str]:
+    def generate(self, subject: str, runs: int, **kwargs) -> List[str]:
         """Generate synthetic data using the given subject string.
 
         Args:
@@ -57,11 +57,11 @@ class SyntheticDataGenerator(BaseModel):
             List[str]: List of generated synthetic data.
         """
         for _ in range(runs):
-            result = self.llm_chain.run(subject, extra)
+            result = self.llm_chain.run(subject=subject, **kwargs)
             self.results.append(result)
         return self.results
 
-    async def agenerate(self, subject: str, runs: int, extra: str = "") -> List[str]:
+    async def agenerate(self, subject: str, runs: int, **kwargs) -> List[str]:
         """Generate synthetic data using the given subject async.
 
         Args:
@@ -72,9 +72,9 @@ class SyntheticDataGenerator(BaseModel):
             List[str]: List of generated synthetic data for the given subject.
         """
 
-        async def run_chain(subject: str, extra: str):
-            result = await self.llm_chain.arun(subject, extra)
+        async def run_chain(subject: str, **kwargs):
+            result = await self.llm_chain.arun(subject=subject, **kwargs)
             self.results.append(result)
 
-        await asyncio.gather(*(run_chain(subject) for _ in range(runs)))
+        await asyncio.gather(*(run_chain(subject=subject, **kwargs) for _ in range(runs)))
         return self.results
