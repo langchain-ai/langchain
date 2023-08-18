@@ -25,7 +25,7 @@ class FakeEmbeddings(Embeddings):
         as it was passed to embed_documents."""
         return [float(1.0)] * 9 + [float(0.0)]
 
-    def aembed_query(self, text: str) -> List[float]:
+    async def aembed_query(self, text: str) -> List[float]:
         return self.embed_query(text)
 
 
