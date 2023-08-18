@@ -235,7 +235,7 @@ class Runnable(Generic[Input, Output], ABC):
             )
 
         return (
-            config
+            list(map(ensure_config, config))
             if isinstance(config, list)
             else [deepcopy(ensure_config(config)) for _ in range(length)]
         )
