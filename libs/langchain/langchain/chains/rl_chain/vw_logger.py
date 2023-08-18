@@ -1,6 +1,6 @@
-from typing import Union, Optional
-from pathlib import Path
 from os import PathLike
+from pathlib import Path
+from typing import Optional, Union
 
 
 class VwLogger:
