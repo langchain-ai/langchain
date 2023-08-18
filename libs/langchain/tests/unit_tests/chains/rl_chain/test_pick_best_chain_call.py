@@ -159,7 +159,7 @@ def test_default_embeddings():
     encoded_ctx_str_1 = encoded_text + " ".join(char for char in ctx_str_1)
     encoded_text + " ".join(char for char in ctx_str_2)
 
-    expected = f"""shared |User {ctx_str_1 + " " + encoded_ctx_str_1} \n|action {str1 + " " + encoded_str1} \n|action {str2 + " " + encoded_str2} \n|action {str3 + " " + encoded_str3} """
+    expected = f"""shared |User {ctx_str_1 + " " + encoded_ctx_str_1} \n|action {str1 + " " + encoded_str1} \n|action {str2 + " " + encoded_str2} \n|action {str3 + " " + encoded_str3} """  # noqa
 
     actions = [str1, str2, str3]
 
@@ -185,7 +185,7 @@ def test_default_embeddings_off():
     str3 = "2"
     ctx_str_1 = "context1"
 
-    expected = f"""shared |User {ctx_str_1} \n|action {str1} \n|action {str2} \n|action {str3} """
+    expected = f"""shared |User {ctx_str_1} \n|action {str1} \n|action {str2} \n|action {str3} """  # noqa
 
     actions = [str1, str2, str3]
 
@@ -219,7 +219,7 @@ def test_default_embeddings_mixed_w_explicit_user_embeddings():
     encoded_ctx_str_1 = encoded_text + " ".join(char for char in ctx_str_1)
     encoded_ctx_str_2 = encoded_text + " ".join(char for char in ctx_str_2)
 
-    expected = f"""shared |User {encoded_ctx_str_1} |User2 {ctx_str_2 + " " + encoded_ctx_str_2} \n|action {str1 + " " + encoded_str1} \n|action {str2 + " " + encoded_str2} \n|action {encoded_str3} """
+    expected = f"""shared |User {encoded_ctx_str_1} |User2 {ctx_str_2 + " " + encoded_ctx_str_2} \n|action {str1 + " " + encoded_str1} \n|action {str2 + " " + encoded_str2} \n|action {encoded_str3} """  # noqa
 
     actions = [str1, str2, rl_chain.Embed(str3)]
 
