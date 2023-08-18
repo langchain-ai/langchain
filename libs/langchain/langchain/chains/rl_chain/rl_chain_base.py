@@ -6,9 +6,9 @@ from typing import Any, Dict, List, Optional, Tuple, Union, Sequence
 from abc import ABC, abstractmethod
 
 import vowpal_wabbit_next as vw
-from .vw_logger import VwLogger
-from .model_repository import ModelRepository
-from .metrics import MetricsTracker
+from langchain.chains.rl_chain.vw_logger import VwLogger
+from langchain.chains.rl_chain.model_repository import ModelRepository
+from langchain.chains.rl_chain.metrics import MetricsTracker
 from langchain.prompts import BasePromptTemplate
 
 from langchain.pydantic_v1 import Extra, BaseModel, root_validator
