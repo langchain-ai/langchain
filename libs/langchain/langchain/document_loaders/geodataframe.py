@@ -67,7 +67,6 @@ class GeoDataFrameLoader(BaseLoader):
             metadata.pop(self.page_content_column)
 
             # using WKT instead of str() to help GIS system interoperability
-            # Python str() looks a lot like WKT, but not allows the same...
             yield Document(page_content=geom.wkt, metadata=metadata)
 
     def load(self) -> List[Document]:
