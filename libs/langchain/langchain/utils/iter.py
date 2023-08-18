@@ -1,18 +1,9 @@
-"""
-Adapted from
-https://github.com/maxfischer2781/asyncstdlib/blob/master/asyncstdlib/itertools.py
-MIT License
-"""
-
 from collections import deque
 from typing import (
     Any,
-    AsyncContextManager,
-    AsyncGenerator,
-    AsyncIterator,
-    Awaitable,
-    Callable,
+    ContextManager,
     Deque,
+    Generator,
     Generic,
     Iterator,
     List,
@@ -20,82 +11,44 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
-    cast,
     overload,
 )
 
+from typing_extensions import Literal
+
 T = TypeVar("T")
-
-_no_default = object()
-
-
-# https://github.com/python/cpython/blob/main/Lib/test/test_asyncgen.py#L54
-# before 3.10, the builtin anext() was not available
-def py_anext(
-    iterator: AsyncIterator[T], default: Union[T, Any] = _no_default
-) -> Awaitable[Union[T, None, Any]]:
-    """Pure-Python implementation of anext() for testing purposes.
-
-    Closely matches the builtin anext() C implementation.
-    Can be used to compare the built-in implementation of the inner
-    coroutines machinery to C-implementation of __anext__() and send()
-    or throw() on the returned generator.
-    """
-
-    try:
-        __anext__ = cast(
-            Callable[[AsyncIterator[T]], Awaitable[T]], type(iterator).__anext__
-        )
-    except AttributeError:
-        raise TypeError(f"{iterator!r} is not an async iterator")
-
-    if default is _no_default:
-        return __anext__(iterator)
-
-    async def anext_impl() -> Union[T, Any]:
-        try:
-            # The C code is way more low-level than this, as it implements
-            # all methods of the iterator protocol. In this implementation
-            # we're relying on higher-level coroutine concepts, but that's
-            # exactly what we want -- crosstest pure-Python high-level
-            # implementation and low-level C anext() iterators.
-            return await __anext__(iterator)
-        except StopAsyncIteration:
-            return default
-
-    return anext_impl()
 
 
 class NoLock:
     """Dummy lock that provides the proper interface but no protection"""
 
-    async def __aenter__(self) -> None:
+    def __enter__(self) -> None:
         pass
 
-    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> Literal[False]:
         return False
 
 
-async def tee_peer(
-    iterator: AsyncIterator[T],
+def tee_peer(
+    iterator: Iterator[T],
     # the buffer specific to this peer
     buffer: Deque[T],
     # the buffers of all peers, including our own
     peers: List[Deque[T]],
-    lock: AsyncContextManager[Any],
-) -> AsyncGenerator[T, None]:
+    lock: ContextManager[Any],
+) -> Generator[T, None, None]:
     """An individual iterator of a :py:func:`~.tee`"""
     try:
         while True:
             if not buffer:
-                async with lock:
+                with lock:
                     # Another peer produced an item while we were waiting for the lock.
                     # Proceed with the next loop iteration to yield the item.
                     if buffer:
                         continue
                     try:
-                        item = await iterator.__anext__()
-                    except StopAsyncIteration:
+                        item = next(iterator)
+                    except StopIteration:
                         break
                     else:
                         # Append to all buffers, including our own. We'll fetch our
@@ -113,8 +66,8 @@ async def tee_peer(
                 peers.pop(idx)
                 break
         # if we are the last peer, try and close the iterator
-        if not peers and hasattr(iterator, "aclose"):
-            await iterator.aclose()
+        if not peers and hasattr(iterator, "close"):
+            iterator.close()
 
 
 class Tee(Generic[T]):
@@ -157,12 +110,12 @@ class Tee(Generic[T]):
 
     def __init__(
         self,
-        iterable: AsyncIterator[T],
+        iterable: Iterator[T],
         n: int = 2,
         *,
-        lock: Optional[AsyncContextManager[Any]] = None,
+        lock: Optional[ContextManager[Any]] = None,
     ):
-        self._iterator = iterable.__aiter__()  # before 3.10 aiter() doesn't exist
+        self._iterator = iter(iterable)
         self._buffers: List[Deque[T]] = [deque() for _ in range(n)]
         self._children = tuple(
             tee_peer(
@@ -178,31 +131,32 @@ class Tee(Generic[T]):
         return len(self._children)
 
     @overload
-    def __getitem__(self, item: int) -> AsyncIterator[T]:
+    def __getitem__(self, item: int) -> Iterator[T]:
         ...
 
     @overload
-    def __getitem__(self, item: slice) -> Tuple[AsyncIterator[T], ...]:
+    def __getitem__(self, item: slice) -> Tuple[Iterator[T], ...]:
         ...
 
     def __getitem__(
         self, item: Union[int, slice]
-    ) -> Union[AsyncIterator[T], Tuple[AsyncIterator[T], ...]]:
+    ) -> Union[Iterator[T], Tuple[Iterator[T], ...]]:
         return self._children[item]
 
-    def __iter__(self) -> Iterator[AsyncIterator[T]]:
+    def __iter__(self) -> Iterator[Iterator[T]]:
         yield from self._children
 
-    async def __aenter__(self) -> "Tee[T]":
+    def __enter__(self) -> "Tee[T]":
         return self
 
-    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
-        await self.aclose()
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> Literal[False]:
+        self.close()
         return False
 
-    async def aclose(self) -> None:
+    def close(self) -> None:
         for child in self._children:
-            await child.aclose()
+            child.close()
 
 
-atee = Tee
+# Why this is needed https://stackoverflow.com/a/44638570
+safetee = Tee
