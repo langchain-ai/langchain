@@ -33,7 +33,14 @@ class AINBaseTool(BaseTool):
     """The interface object for the AINetwork Blockchain."""
 
     def _run(self, *args, **kwargs):
-        loop = asyncio.get_event_loop()
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        if loop.is_closed():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
 
         if loop.is_running():
             result_container = []

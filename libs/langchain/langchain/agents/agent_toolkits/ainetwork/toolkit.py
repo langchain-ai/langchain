@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, List, Literal, Optional
 
-from pydantic import Field
+from pydantic import Field, root_validator
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.tools import BaseTool
@@ -27,13 +27,14 @@ else:
 class AINetworkToolkit(BaseToolkit):
     """Toolkit for interacting with AINetwork Blockchain."""
 
-    network: Optional[Literal["mainnet", "testnet"]] = Field("mainnet")
-    interface: Optional[Ain] = Field(None)
+    network: Optional[Literal["mainnet", "testnet"]] = Field("testnet")
+    interface: Optional["Ain"] = Field(None)
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if not self.interface:
-            self.interface = authenticate(network=self.network)
+    @root_validator(pre=True)
+    def set_interface(cls, values):
+        if not values.get("interface"):
+            values["interface"] = authenticate(network=values.get("network", "testnet"))
+        return values
 
     class Config:
         """Pydantic config."""
