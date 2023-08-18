@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from . import rl_chain_base as base
+import langchain.chains.rl_chain.rl_chain_base as base
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
