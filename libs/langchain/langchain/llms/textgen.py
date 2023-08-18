@@ -3,7 +3,6 @@ import logging
 from typing import Any, Dict, Iterator, List, Optional
 
 import requests
-import websocket
 from pydantic_v1 import Field
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
@@ -261,6 +260,13 @@ class TextGen(LLM):
                     print(chunk, end='', flush=True)
 
         """
+        try:
+            import websocket
+        except ImportError:
+            raise ImportError(
+                "The `websocket-client` package is required for streaming."
+            )
+
         params = {**self._get_parameters(stop), **kwargs}
 
         url = f"{self.model_url}/api/v1/stream"
