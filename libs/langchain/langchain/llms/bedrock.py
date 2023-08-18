@@ -34,17 +34,27 @@ class LLMInputOutputAdapter:
         return input_body
 
     @classmethod
-    def prepare_output(cls, provider: str, response: Any) -> Tuple(str, bool):
+    def prepare_output(cls, provider: str, response: Any) -> Tuple[str, bool]:
         if provider == "anthropic":
             response_body = json.loads(response.get("body").read().decode())
-            return response_body.get("completion"), response_body.get('stop_reason') == 'stop_sequence'
+            return (
+                response_body.get("completion"),
+                response_body.get("stop_reason") == "stop_sequence",
+            )
         else:
             response_body = json.loads(response.get("body").read())
 
         if provider == "ai21":
-            return response_body.get("completions")[0].get("data").get("text"), response_body.get("completions")[0].get("finishReason").get('reason') == 'endoftext'
+            return (
+                response_body.get("completions")[0].get("data").get("text"),
+                response_body.get("completions")[0].get("finishReason").get("reason")
+                == "endoftext",
+            )
         elif provider == "amazon":
-            return response_body.get("results")[0].get("outputText"), response_body.get("results")[0].get('completionReason') == 'FINISH'
+            return (
+                response_body.get("results")[0].get("outputText"),
+                response_body.get("results")[0].get("completionReason") == "FINISH",
+            )
         else:
             raise ValueError(f"Provider {provider} not supported.")
 
@@ -189,10 +199,15 @@ class Bedrock(LLM):
             contentType = "application/json"
             text = ""
             while not is_fin:
-                input_body = LLMInputOutputAdapter.prepare_input(provider, prompt + text, params)
+                input_body = LLMInputOutputAdapter.prepare_input(
+                    provider, prompt + text, params
+                )
                 body = json.dumps(input_body)
                 response = self.client.invoke_model(
-                    body=body, modelId=self.model_id, accept=accept, contentType=contentType
+                    body=body,
+                    modelId=self.model_id,
+                    accept=accept,
+                    contentType=contentType,
                 )
                 out, is_fin = LLMInputOutputAdapter.prepare_output(provider, response)
                 text += out
