@@ -116,7 +116,10 @@ class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
         )
 
     async def ainvoke(
-        self, input: str, config: Optional[RunnableConfig] = None
+        self,
+        input: str,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
     ) -> List[Document]:
         if type(self).aget_relevant_documents == BaseRetriever.aget_relevant_documents:
             # If the retriever doesn't implement async, use default implementation

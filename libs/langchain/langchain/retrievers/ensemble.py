@@ -13,8 +13,9 @@ from langchain.schema import BaseRetriever, Document
 
 
 class EnsembleRetriever(BaseRetriever):
-    """
-    This class ensemble the results of multiple retrievers by using rank fusion.
+    """Retriever that ensembles the multiple retrievers.
+
+    It uses a rank fusion.
 
     Args:
         retrievers: A list of retrievers to ensemble.
