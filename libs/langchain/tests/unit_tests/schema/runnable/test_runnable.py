@@ -1113,10 +1113,16 @@ def test_each(snapshot: SnapshotAssertion) -> None:
         + "{question}"
     )
     first_llm = FakeStreamingListLLM(responses=["first item, second item, third item"])
+    parser = FakeSplitIntoListParser()
     second_llm = FakeStreamingListLLM(responses=["this", "is", "a", "test"])
 
-    chain = prompt | first_llm | FakeSplitIntoListParser() | second_llm.map()
+    chain = prompt | first_llm | parser | second_llm.map()
 
     assert dumps(chain, pretty=True) == snapshot
     output = chain.invoke({"question": "What up"})
     assert output == ["this", "is", "a"]
+
+    assert (parser | second_llm.map()).invoke("first item, second item") == [
+        "test",
+        "this",
+    ]
