@@ -471,7 +471,7 @@ class RLChain(Chain):
 
     def save_progress(self) -> None:
         """
-        This function should be called to save the state of the Vowpal Wabbit model.
+        This function should be called to save the state of the learned policy model.
         """
         self.policy.save()
 
