@@ -37,11 +37,19 @@ class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
 class JsonOutputFunctionsParser(OutputFunctionsParser):
     """Parse an output as the Json object."""
 
+    strict: bool = True
+    """Whether to allow non-JSON-compliant strings.
+    
+    See: https://docs.python.org/3/library/json.html#encoders-and-decoders
+    
+    Useful when the parsed output may include unicode characters
+    """
+
     def parse_result(self, result: List[Generation]) -> Any:
         function_call_info = super().parse_result(result)
         if self.args_only:
             try:
-                return json.loads(function_call_info)
+                return json.loads(function_call_info, strict=self.strict)
             except (json.JSONDecodeError, TypeError) as exc:
                 raise OutputParserException(
                     f"Could not parse function call data: {exc}"
