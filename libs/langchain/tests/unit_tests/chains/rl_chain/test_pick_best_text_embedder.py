@@ -1,12 +1,13 @@
-import langchain.chains.rl_chain.pick_best_chain as pick_best_chain
-import langchain.chains.rl_chain.base as rl_chain
+import pytest
 from test_utils import MockEncoder
 
-import pytest
+import langchain.chains.rl_chain.base as rl_chain
+import langchain.chains.rl_chain.pick_best_chain as pick_best_chain
 
 encoded_text = "[ e n c o d e d ] "
 
 
+@pytest.mark.requires("vowpal_wabbit_next")
 def test_pickbest_textembedder_missing_context_throws():
     feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
     named_action = {"action": ["0", "1", "2"]}
@@ -17,6 +18,7 @@ def test_pickbest_textembedder_missing_context_throws():
         feature_embedder.format(event)
 
 
+@pytest.mark.requires("vowpal_wabbit_next")
 def test_pickbest_textembedder_missing_actions_throws():
     feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
     event = pick_best_chain.PickBest.Event(
@@ -26,6 +28,7 @@ def test_pickbest_textembedder_missing_actions_throws():
         feature_embedder.format(event)
 
 
+@pytest.mark.requires("vowpal_wabbit_next")
 def test_pickbest_textembedder_no_label_no_emb():
     feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
     named_actions = {"action1": ["0", "1", "2"]}
@@ -37,6 +40,7 @@ def test_pickbest_textembedder_no_label_no_emb():
     assert vw_ex_str == expected
 
 
+@pytest.mark.requires("vowpal_wabbit_next")
 def test_pickbest_textembedder_w_label_no_score_no_emb():
     feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
     named_actions = {"action1": ["0", "1", "2"]}
@@ -52,6 +56,7 @@ def test_pickbest_textembedder_w_label_no_score_no_emb():
     assert vw_ex_str == expected
 
 
+@pytest.mark.requires("vowpal_wabbit_next")
 def test_pickbest_textembedder_w_full_label_no_emb():
     feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
     named_actions = {"action1": ["0", "1", "2"]}
@@ -69,6 +74,7 @@ def test_pickbest_textembedder_w_full_label_no_emb():
     assert vw_ex_str == expected
 
 
+@pytest.mark.requires("vowpal_wabbit_next")
 def test_pickbest_textembedder_w_full_label_w_emb():
     feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
     str1 = "0"
@@ -92,6 +98,7 @@ def test_pickbest_textembedder_w_full_label_w_emb():
     assert vw_ex_str == expected
 
 
+@pytest.mark.requires("vowpal_wabbit_next")
 def test_pickbest_textembedder_w_full_label_w_embed_and_keep():
     feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
     str1 = "0"
@@ -115,6 +122,7 @@ def test_pickbest_textembedder_w_full_label_w_embed_and_keep():
     assert vw_ex_str == expected
 
 
+@pytest.mark.requires("vowpal_wabbit_next")
 def test_pickbest_textembedder_more_namespaces_no_label_no_emb():
     feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
     named_actions = {"action1": [{"a": "0", "b": "0"}, "1", "2"]}
@@ -127,6 +135,7 @@ def test_pickbest_textembedder_more_namespaces_no_label_no_emb():
     assert vw_ex_str == expected
 
 
+@pytest.mark.requires("vowpal_wabbit_next")
 def test_pickbest_textembedder_more_namespaces_w_label_no_emb():
     feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
     named_actions = {"action1": [{"a": "0", "b": "0"}, "1", "2"]}
@@ -140,6 +149,7 @@ def test_pickbest_textembedder_more_namespaces_w_label_no_emb():
     assert vw_ex_str == expected
 
 
+@pytest.mark.requires("vowpal_wabbit_next")
 def test_pickbest_textembedder_more_namespaces_w_full_label_no_emb():
     feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
     named_actions = {"action1": [{"a": "0", "b": "0"}, "1", "2"]}
@@ -153,6 +163,7 @@ def test_pickbest_textembedder_more_namespaces_w_full_label_no_emb():
     assert vw_ex_str == expected
 
 
+@pytest.mark.requires("vowpal_wabbit_next")
 def test_pickbest_textembedder_more_namespaces_w_full_label_w_full_emb():
     feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
 
@@ -168,9 +179,7 @@ def test_pickbest_textembedder_more_namespaces_w_full_label_w_full_emb():
     encoded_ctx_str_1 = encoded_text + " ".join(char for char in ctx_str_1)
     encoded_ctx_str_2 = encoded_text + " ".join(char for char in ctx_str_2)
 
-    named_actions = {
-        "action1": rl_chain.Embed([{"a": str1, "b": str1}, str2, str3])
-    }
+    named_actions = {"action1": rl_chain.Embed([{"a": str1, "b": str1}, str2, str3])}
     context = {
         "context1": rl_chain.Embed(ctx_str_1),
         "context2": rl_chain.Embed(ctx_str_2),
@@ -185,6 +194,7 @@ def test_pickbest_textembedder_more_namespaces_w_full_label_w_full_emb():
     assert vw_ex_str == expected
 
 
+@pytest.mark.requires("vowpal_wabbit_next")
 def test_pickbest_textembedder_more_namespaces_w_full_label_w_full_embed_and_keep():
     feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
 
@@ -201,9 +211,7 @@ def test_pickbest_textembedder_more_namespaces_w_full_label_w_full_embed_and_kee
     encoded_ctx_str_2 = encoded_text + " ".join(char for char in ctx_str_2)
 
     named_actions = {
-        "action1": rl_chain.EmbedAndKeep(
-            [{"a": str1, "b": str1}, str2, str3]
-        )
+        "action1": rl_chain.EmbedAndKeep([{"a": str1, "b": str1}, str2, str3])
     }
     context = {
         "context1": rl_chain.EmbedAndKeep(ctx_str_1),
@@ -219,6 +227,7 @@ def test_pickbest_textembedder_more_namespaces_w_full_label_w_full_embed_and_kee
     assert vw_ex_str == expected
 
 
+@pytest.mark.requires("vowpal_wabbit_next")
 def test_pickbest_textembedder_more_namespaces_w_full_label_w_partial_emb():
     feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
 
@@ -252,6 +261,7 @@ def test_pickbest_textembedder_more_namespaces_w_full_label_w_partial_emb():
     assert vw_ex_str == expected
 
 
+@pytest.mark.requires("vowpal_wabbit_next")
 def test_pickbest_textembedder_more_namespaces_w_full_label_w_partial_embed_and_keep():
     feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
 
@@ -288,6 +298,7 @@ def test_pickbest_textembedder_more_namespaces_w_full_label_w_partial_embed_and_
     assert vw_ex_str == expected
 
 
+@pytest.mark.requires("vowpal_wabbit_next")
 def test_raw_features_underscored():
     feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
     str1 = "this is a long string"

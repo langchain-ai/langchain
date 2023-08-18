@@ -1,11 +1,10 @@
-from pathlib import Path
-import shutil
 import datetime
-import vowpal_wabbit_next as vw
-from typing import Union, Sequence
-import os
 import glob
 import logging
+import os
+import shutil
+from pathlib import Path
+from typing import Sequence, Union
 
 logger = logging.getLogger(__name__)
 
@@ -35,14 +34,18 @@ class ModelRepository:
     def has_history(self) -> bool:
         return len(glob.glob(str(self.folder / "model-????????-??????.vw"))) > 0
 
-    def save(self, workspace: vw.Workspace) -> None:
+    def save(self, workspace: "vw.Workspace") -> None:
+        import vowpal_wabbit_next as vw
+
         with open(self.model_path, "wb") as f:
             logger.info(f"storing rl_chain model in: {self.model_path}")
             f.write(workspace.serialize())
         if self.with_history:  # write history
             shutil.copyfile(self.model_path, self.folder / f"model-{self.get_tag()}.vw")
 
-    def load(self, commandline: Sequence[str]) -> vw.Workspace:
+    def load(self, commandline: Sequence[str]) -> "vw.Workspace":
+        import vowpal_wabbit_next as vw
+
         model_data = None
         if self.model_path.exists():
             with open(self.model_path, "rb") as f:

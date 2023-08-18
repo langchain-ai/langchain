@@ -2,25 +2,22 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any, Dict, List, Optional, Tuple, Union, Sequence
 from abc import ABC, abstractmethod
-
-import vowpal_wabbit_next as vw
-from langchain.chains.rl_chain.vw_logger import VwLogger
-from langchain.chains.rl_chain.model_repository import ModelRepository
-from langchain.chains.rl_chain.metrics import MetricsTracker
-from langchain.prompts import BasePromptTemplate
-
-from langchain.pydantic_v1 import Extra, BaseModel, root_validator
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
+from langchain.chains.rl_chain.metrics import MetricsTracker
+from langchain.chains.rl_chain.model_repository import ModelRepository
+from langchain.chains.rl_chain.vw_logger import VwLogger
 from langchain.prompts import (
+    BasePromptTemplate,
     ChatPromptTemplate,
-    SystemMessagePromptTemplate,
     HumanMessagePromptTemplate,
+    SystemMessagePromptTemplate,
 )
+from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +84,9 @@ def EmbedAndKeep(anything):
 # helper functions
 
 
-def parse_lines(parser: vw.TextFormatParser, input_str: str) -> List[vw.Example]:
+def parse_lines(parser: "vw.TextFormatParser", input_str: str) -> List["vw.Example"]:
+    import vowpal_wabbit_next as vw
+
     return [parser.parse_line(line) for line in input_str.split("\n")]
 
 
@@ -100,7 +99,8 @@ def get_based_on_and_to_select_from(inputs: Dict[str, Any]):
 
     if not to_select_from:
         raise ValueError(
-            "No variables using 'ToSelectFrom' found in the inputs. Please include at least one variable containing a list to select from."
+            "No variables using 'ToSelectFrom' found in the inputs. \
+                Please include at least one variable containing a list to select from."
         )
 
     based_on = {
@@ -173,14 +173,17 @@ class VwPolicy(Policy):
         self.vw_logger = vw_logger
 
     def predict(self, event: Event) -> Any:
+        import vowpal_wabbit_next as vw
+
         text_parser = vw.TextFormatParser(self.workspace)
         return self.workspace.predict_one(
             parse_lines(text_parser, self.feature_embedder.format(event))
         )
 
     def learn(self, event: Event):
-        vw_ex = self.feature_embedder.format(event)
+        import vowpal_wabbit_next as vw
 
+        vw_ex = self.feature_embedder.format(event)
         text_parser = vw.TextFormatParser(self.workspace)
         multi_ex = parse_lines(text_parser, vw_ex)
         self.workspace.learn_one(multi_ex)
@@ -216,7 +219,7 @@ class AutoSelectionScorer(SelectionScorer, BaseModel):
     @staticmethod
     def get_default_system_prompt() -> SystemMessagePromptTemplate:
         return SystemMessagePromptTemplate.from_template(
-            "PLEASE RESPOND ONLY WITH A SIGNLE FLOAT AND NO OTHER TEXT EXPLANATION\n You are a strict judge that is called on to rank a response based on given criteria.\
+            "PLEASE RESPOND ONLY WITH A SINGLE FLOAT AND NO OTHER TEXT EXPLANATION\n You are a strict judge that is called on to rank a response based on given criteria.\
                     You must respond with your ranking by providing a single float within the range [0, 1], 0 being very bad response and 1 being very good response."
         )
 
