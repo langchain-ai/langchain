@@ -1,10 +1,9 @@
 import logging
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import Extra, Field, root_validator
-
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
+from langchain.pydantic_v1 import Extra, Field, root_validator
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -38,10 +37,21 @@ class Replicate(LLM):
     streaming: bool = Field(default=False)
     """Whether to stream the results."""
 
+    stop: Optional[List[str]] = Field(default=[])
+    """Stop sequences to early-terminate generation."""
+
     class Config:
         """Configuration for this pydantic config."""
 
         extra = Extra.forbid
+
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"replicate_api_token": "REPLICATE_API_TOKEN"}
+
+    @property
+    def lc_serializable(self) -> bool:
+        return True
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -114,12 +124,27 @@ class Replicate(LLM):
         first_input_name = input_properties[0][0]
         inputs = {first_input_name: prompt, **self.input}
 
-        iterator = replicate_python.run(self.model, input={**inputs, **kwargs})
-        full_completion = ""
-        for output in iterator:
-            full_completion += output
+        prediction = replicate_python.predictions.create(
+            version=version, input={**inputs, **kwargs}
+        )
+        current_completion: str = ""
+        stop_condition_reached = False
+        for output in prediction.output_iterator():
+            current_completion += output
+
+            # test for stop conditions, if specified
+            if stop:
+                for s in stop:
+                    if s in current_completion:
+                        prediction.cancel()
+                        stop_index = current_completion.find(s)
+                        current_completion = current_completion[:stop_index]
+                        stop_condition_reached = True
+                        break
+
+            if stop_condition_reached:
+                break
+
             if self.streaming and run_manager:
-                run_manager.on_llm_new_token(
-                    output,
-                )
-        return full_completion
+                run_manager.on_llm_new_token(output)
+        return current_completion

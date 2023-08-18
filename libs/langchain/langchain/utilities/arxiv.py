@@ -3,8 +3,7 @@ import logging
 import os
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, root_validator
-
+from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema import Document
 
 logger = logging.getLogger(__name__)
@@ -21,21 +20,36 @@ class ArxivAPIWrapper(BaseModel):
     It limits the Document content by doc_content_chars_max.
     Set doc_content_chars_max=None if you don't want to limit the content size.
 
-    Parameters:
+    Attributes:
         top_k_results: number of the top-scored document used for the arxiv tool
         ARXIV_MAX_QUERY_LENGTH: the cut limit on the query used for the arxiv tool.
         load_max_docs: a limit to the number of loaded documents
         load_all_available_meta:
-          if True: the `metadata` of the loaded Documents gets all available meta info
-            (see https://lukasschwab.me/arxiv.py/index.html#Result),
-          if False: the `metadata` gets only the most informative fields.
+            if True: the `metadata` of the loaded Documents contains all available
+            meta info (see https://lukasschwab.me/arxiv.py/index.html#Result),
+            if False: the `metadata` contains only the published date, title,
+            authors and summary.
+        doc_content_chars_max: an optional cut limit for the length of a document's
+            content
 
+    Example:
+        .. code-block:: python
+
+            from langchain.utilities.arxiv import ArxivAPIWrapper
+            arxiv = ArxivAPIWrapper(
+                top_k_results = 3,
+                ARXIV_MAX_QUERY_LENGTH = 300,
+                load_max_docs = 3,
+                load_all_available_meta = False,
+                doc_content_chars_max = 40000
+            )
+            arxiv.run("tree of thought llm)
     """
 
     arxiv_search: Any  #: :meta private:
     arxiv_exceptions: Any  # :meta private:
     top_k_results: int = 3
-    ARXIV_MAX_QUERY_LENGTH = 300
+    ARXIV_MAX_QUERY_LENGTH: int = 300
     load_max_docs: int = 100
     load_all_available_meta: bool = False
     doc_content_chars_max: Optional[int] = 4000
@@ -62,11 +76,17 @@ class ArxivAPIWrapper(BaseModel):
 
     def run(self, query: str) -> str:
         """
-        Run Arxiv search and get the article meta information.
-        See https://lukasschwab.me/arxiv.py/index.html#Search
-        See https://lukasschwab.me/arxiv.py/index.html#Result
-        It uses only the most informative fields of article meta information.
-        """
+        Performs an arxiv search and A single string
+        with the publish date, title, authors, and summary
+        for each article separated by two newlines.
+
+        If an error occurs or no documents found, error text
+        is returned instead. Wrapper for
+        https://lukasschwab.me/arxiv.py/index.html#Search
+
+        Args:
+            query: a plaintext search query
+        """  # noqa: E501
         try:
             results = self.arxiv_search(  # type: ignore
                 query[: self.ARXIV_MAX_QUERY_LENGTH], max_results=self.top_k_results
@@ -74,7 +94,8 @@ class ArxivAPIWrapper(BaseModel):
         except self.arxiv_exceptions as ex:
             return f"Arxiv exception: {ex}"
         docs = [
-            f"Published: {result.updated.date()}\nTitle: {result.title}\n"
+            f"Published: {result.updated.date()}\n"
+            f"Title: {result.title}\n"
             f"Authors: {', '.join(a.name for a in result.authors)}\n"
             f"Summary: {result.summary}"
             for result in results
@@ -91,7 +112,12 @@ class ArxivAPIWrapper(BaseModel):
 
         Returns: a list of documents with the document.page_content in text format
 
-        """
+        Performs an arxiv search, downloads the top k results as PDFs, loads
+        them as Documents, and returns them in a List.
+
+        Args:
+            query: a plaintext search query
+        """  # noqa: E501
         try:
             import fitz
         except ImportError:
@@ -101,6 +127,8 @@ class ArxivAPIWrapper(BaseModel):
             )
 
         try:
+            # Remove the ":" and "-" from the query, as they can cause search problems
+            query = query.replace(":", "").replace("-", "")
             results = self.arxiv_search(  # type: ignore
                 query[: self.ARXIV_MAX_QUERY_LENGTH], max_results=self.load_max_docs
             ).results()
@@ -114,7 +142,7 @@ class ArxivAPIWrapper(BaseModel):
                 doc_file_name: str = result.download_pdf()
                 with fitz.open(doc_file_name) as doc_file:
                     text: str = "".join(page.get_text() for page in doc_file)
-            except FileNotFoundError as f_ex:
+            except (FileNotFoundError, fitz.fitz.FileDataError) as f_ex:
                 logger.debug(f_ex)
                 continue
             if self.load_all_available_meta:

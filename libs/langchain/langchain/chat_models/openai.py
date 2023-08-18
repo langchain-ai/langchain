@@ -6,8 +6,10 @@ import sys
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncIterator,
     Callable,
     Dict,
+    Iterator,
     List,
     Mapping,
     Optional,
@@ -15,32 +17,25 @@ from typing import (
     Union,
 )
 
-from pydantic import Field, root_validator
-from tenacity import (
-    before_sleep_log,
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_exponential,
-)
-
+from langchain.adapters.openai import convert_dict_to_message, convert_message_to_dict
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models.base import BaseChatModel
-from langchain.schema import (
-    ChatGeneration,
-    ChatResult,
-)
+from langchain.llms.base import create_base_retry_decorator
+from langchain.pydantic_v1 import Field, root_validator
+from langchain.schema import ChatGeneration, ChatResult
 from langchain.schema.messages import (
-    AIMessage,
+    AIMessageChunk,
     BaseMessage,
-    ChatMessage,
-    FunctionMessage,
-    HumanMessage,
-    SystemMessage,
+    BaseMessageChunk,
+    ChatMessageChunk,
+    FunctionMessageChunk,
+    HumanMessageChunk,
+    SystemMessageChunk,
 )
+from langchain.schema.output import ChatGenerationChunk
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
 
 if TYPE_CHECKING:
@@ -61,31 +56,33 @@ def _import_tiktoken() -> Any:
     return tiktoken
 
 
-def _create_retry_decorator(llm: ChatOpenAI) -> Callable[[Any], Any]:
+def _create_retry_decorator(
+    llm: ChatOpenAI,
+    run_manager: Optional[
+        Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
+    ] = None,
+) -> Callable[[Any], Any]:
     import openai
 
-    min_seconds = 1
-    max_seconds = 60
-    # Wait 2^x * 1 second between each retry starting with
-    # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
-    return retry(
-        reraise=True,
-        stop=stop_after_attempt(llm.max_retries),
-        wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
-        retry=(
-            retry_if_exception_type(openai.error.Timeout)
-            | retry_if_exception_type(openai.error.APIError)
-            | retry_if_exception_type(openai.error.APIConnectionError)
-            | retry_if_exception_type(openai.error.RateLimitError)
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)
-        ),
-        before_sleep=before_sleep_log(logger, logging.WARNING),
+    errors = [
+        openai.error.Timeout,
+        openai.error.APIError,
+        openai.error.APIConnectionError,
+        openai.error.RateLimitError,
+        openai.error.ServiceUnavailableError,
+    ]
+    return create_base_retry_decorator(
+        error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
     )
 
 
-async def acompletion_with_retry(llm: ChatOpenAI, **kwargs: Any) -> Any:
+async def acompletion_with_retry(
+    llm: ChatOpenAI,
+    run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+    **kwargs: Any,
+) -> Any:
     """Use tenacity to retry the async completion call."""
-    retry_decorator = _create_retry_decorator(llm)
+    retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
     async def _completion_with_retry(**kwargs: Any) -> Any:
@@ -95,53 +92,32 @@ async def acompletion_with_retry(llm: ChatOpenAI, **kwargs: Any) -> Any:
     return await _completion_with_retry(**kwargs)
 
 
-def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
-    role = _dict["role"]
-    if role == "user":
-        return HumanMessage(content=_dict["content"])
-    elif role == "assistant":
-        # Fix for azure
-        # Also OpenAI returns None for tool invocations
-        content = _dict.get("content", "") or ""
-        if _dict.get("function_call"):
-            additional_kwargs = {"function_call": dict(_dict["function_call"])}
-        else:
-            additional_kwargs = {}
-        return AIMessage(content=content, additional_kwargs=additional_kwargs)
-    elif role == "system":
-        return SystemMessage(content=_dict["content"])
-    elif role == "function":
-        return FunctionMessage(content=_dict["content"], name=_dict["name"])
+def _convert_delta_to_message_chunk(
+    _dict: Mapping[str, Any], default_class: type[BaseMessageChunk]
+) -> BaseMessageChunk:
+    role = _dict.get("role")
+    content = _dict.get("content") or ""
+    if _dict.get("function_call"):
+        additional_kwargs = {"function_call": dict(_dict["function_call"])}
     else:
-        return ChatMessage(content=_dict["content"], role=role)
+        additional_kwargs = {}
 
-
-def _convert_message_to_dict(message: BaseMessage) -> dict:
-    if isinstance(message, ChatMessage):
-        message_dict = {"role": message.role, "content": message.content}
-    elif isinstance(message, HumanMessage):
-        message_dict = {"role": "user", "content": message.content}
-    elif isinstance(message, AIMessage):
-        message_dict = {"role": "assistant", "content": message.content}
-        if "function_call" in message.additional_kwargs:
-            message_dict["function_call"] = message.additional_kwargs["function_call"]
-    elif isinstance(message, SystemMessage):
-        message_dict = {"role": "system", "content": message.content}
-    elif isinstance(message, FunctionMessage):
-        message_dict = {
-            "role": "function",
-            "content": message.content,
-            "name": message.name,
-        }
+    if role == "user" or default_class == HumanMessageChunk:
+        return HumanMessageChunk(content=content)
+    elif role == "assistant" or default_class == AIMessageChunk:
+        return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
+    elif role == "system" or default_class == SystemMessageChunk:
+        return SystemMessageChunk(content=content)
+    elif role == "function" or default_class == FunctionMessageChunk:
+        return FunctionMessageChunk(content=content, name=_dict["name"])
+    elif role or default_class == ChatMessageChunk:
+        return ChatMessageChunk(content=content, role=role)
     else:
-        raise ValueError(f"Got unknown type {message}")
-    if "name" in message.additional_kwargs:
-        message_dict["name"] = message.additional_kwargs["name"]
-    return message_dict
+        return default_class(content=content)
 
 
 class ChatOpenAI(BaseChatModel):
-    """Wrapper around OpenAI Chat large language models.
+    """`OpenAI` Chat large language models API.
 
     To use, you should have the ``openai`` python package installed, and the
     environment variable ``OPENAI_API_KEY`` set with your API key.
@@ -164,7 +140,7 @@ class ChatOpenAI(BaseChatModel):
     def lc_serializable(self) -> bool:
         return True
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model_name: str = Field(default="gpt-3.5-turbo", alias="model")
     """Model name to use."""
     temperature: float = 0.7
@@ -289,9 +265,11 @@ class ChatOpenAI(BaseChatModel):
             **self.model_kwargs,
         }
 
-    def completion_with_retry(self, **kwargs: Any) -> Any:
+    def completion_with_retry(
+        self, run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any
+    ) -> Any:
         """Use tenacity to retry the completion call."""
-        retry_decorator = _create_retry_decorator(self)
+        retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
 
         @retry_decorator
         def _completion_with_retry(**kwargs: Any) -> Any:
@@ -313,60 +291,71 @@ class ChatOpenAI(BaseChatModel):
                     overall_token_usage[k] = v
         return {"token_usage": overall_token_usage, "model_name": self.model_name}
 
-    def _generate(
+    def _stream(
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        message_dicts, params = self._create_message_dicts(messages, stop)
+        params = {**params, **kwargs, "stream": True}
+
+        default_chunk_class = AIMessageChunk
+        for chunk in self.completion_with_retry(
+            messages=message_dicts, run_manager=run_manager, **params
+        ):
+            if len(chunk["choices"]) == 0:
+                continue
+            delta = chunk["choices"][0]["delta"]
+            chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
+            default_chunk_class = chunk.__class__
+            yield ChatGenerationChunk(message=chunk)
+            if run_manager:
+                run_manager.on_llm_new_token(chunk.content)
+
+    def _generate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stream: Optional[bool] = None,
+        **kwargs: Any,
     ) -> ChatResult:
+        if stream if stream is not None else self.streaming:
+            generation: Optional[ChatGenerationChunk] = None
+            for chunk in self._stream(
+                messages=messages, stop=stop, run_manager=run_manager, **kwargs
+            ):
+                if generation is None:
+                    generation = chunk
+                else:
+                    generation += chunk
+            assert generation is not None
+            return ChatResult(generations=[generation])
+
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
-        if self.streaming:
-            inner_completion = ""
-            role = "assistant"
-            params["stream"] = True
-            function_call: Optional[dict] = None
-            for stream_resp in self.completion_with_retry(
-                messages=message_dicts, **params
-            ):
-                role = stream_resp["choices"][0]["delta"].get("role", role)
-                token = stream_resp["choices"][0]["delta"].get("content") or ""
-                inner_completion += token
-                _function_call = stream_resp["choices"][0]["delta"].get("function_call")
-                if _function_call:
-                    if function_call is None:
-                        function_call = _function_call
-                    else:
-                        function_call["arguments"] += _function_call["arguments"]
-                if run_manager:
-                    run_manager.on_llm_new_token(token)
-            message = _convert_dict_to_message(
-                {
-                    "content": inner_completion,
-                    "role": role,
-                    "function_call": function_call,
-                }
-            )
-            return ChatResult(generations=[ChatGeneration(message=message)])
-        response = self.completion_with_retry(messages=message_dicts, **params)
+        response = self.completion_with_retry(
+            messages=message_dicts, run_manager=run_manager, **params
+        )
         return self._create_chat_result(response)
 
     def _create_message_dicts(
         self, messages: List[BaseMessage], stop: Optional[List[str]]
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-        params = dict(self._client_params)
+        params = self._client_params
         if stop is not None:
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
-        message_dicts = [_convert_message_to_dict(m) for m in messages]
+        message_dicts = [convert_message_to_dict(m) for m in messages]
         return message_dicts, params
 
     def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
         generations = []
         for res in response["choices"]:
-            message = _convert_dict_to_message(res["message"])
+            message = convert_dict_to_message(res["message"])
             gen = ChatGeneration(
                 message=message,
                 generation_info=dict(finish_reason=res.get("finish_reason")),
@@ -376,55 +365,63 @@ class ChatOpenAI(BaseChatModel):
         llm_output = {"token_usage": token_usage, "model_name": self.model_name}
         return ChatResult(generations=generations, llm_output=llm_output)
 
-    async def _agenerate(
+    async def _astream(
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        message_dicts, params = self._create_message_dicts(messages, stop)
+        params = {**params, **kwargs, "stream": True}
+
+        default_chunk_class = AIMessageChunk
+        async for chunk in await acompletion_with_retry(
+            self, messages=message_dicts, run_manager=run_manager, **params
+        ):
+            if len(chunk["choices"]) == 0:
+                continue
+            delta = chunk["choices"][0]["delta"]
+            chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
+            default_chunk_class = chunk.__class__
+            yield ChatGenerationChunk(message=chunk)
+            if run_manager:
+                await run_manager.on_llm_new_token(chunk.content)
+
+    async def _agenerate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stream: Optional[bool] = None,
+        **kwargs: Any,
     ) -> ChatResult:
+        if stream if stream is not None else self.streaming:
+            generation: Optional[ChatGenerationChunk] = None
+            async for chunk in self._astream(
+                messages=messages, stop=stop, run_manager=run_manager, **kwargs
+            ):
+                if generation is None:
+                    generation = chunk
+                else:
+                    generation += chunk
+            assert generation is not None
+            return ChatResult(generations=[generation])
+
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
-        if self.streaming:
-            inner_completion = ""
-            role = "assistant"
-            params["stream"] = True
-            function_call: Optional[dict] = None
-            async for stream_resp in await acompletion_with_retry(
-                self, messages=message_dicts, **params
-            ):
-                role = stream_resp["choices"][0]["delta"].get("role", role)
-                token = stream_resp["choices"][0]["delta"].get("content", "")
-                inner_completion += token or ""
-                _function_call = stream_resp["choices"][0]["delta"].get("function_call")
-                if _function_call:
-                    if function_call is None:
-                        function_call = _function_call
-                    else:
-                        function_call["arguments"] += _function_call["arguments"]
-                if run_manager:
-                    await run_manager.on_llm_new_token(token)
-            message = _convert_dict_to_message(
-                {
-                    "content": inner_completion,
-                    "role": role,
-                    "function_call": function_call,
-                }
-            )
-            return ChatResult(generations=[ChatGeneration(message=message)])
-        else:
-            response = await acompletion_with_retry(
-                self, messages=message_dicts, **params
-            )
-            return self._create_chat_result(response)
+        response = await acompletion_with_retry(
+            self, messages=message_dicts, run_manager=run_manager, **params
+        )
+        return self._create_chat_result(response)
 
     @property
-    def _identifying_params(self) -> Mapping[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
         return {**{"model_name": self.model_name}, **self._default_params}
 
     @property
-    def _client_params(self) -> Mapping[str, Any]:
+    def _client_params(self) -> Dict[str, Any]:
         """Get the parameters used for the openai client."""
         openai_creds: Dict[str, Any] = {
             "api_key": self.openai_api_key,
@@ -436,17 +433,17 @@ class ChatOpenAI(BaseChatModel):
             import openai
 
             openai.proxy = {"http": self.openai_proxy, "https": self.openai_proxy}  # type: ignore[assignment]  # noqa: E501
-        return {**openai_creds, **self._default_params}
+        return {**self._default_params, **openai_creds}
 
     def _get_invocation_params(
         self, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> Dict[str, Any]:
-        """Get the parameters used to invoke the model FOR THE CALLBACKS."""
+        """Get the parameters used to invoke the model."""
         return {
-            **super()._get_invocation_params(stop=stop, **kwargs),
-            **self._default_params,
             "model": self.model_name,
-            "function": kwargs.get("functions"),
+            **super()._get_invocation_params(stop=stop),
+            **self._default_params,
+            **kwargs,
         }
 
     @property
@@ -493,12 +490,12 @@ class ChatOpenAI(BaseChatModel):
         if sys.version_info[1] <= 7:
             return super().get_num_tokens_from_messages(messages)
         model, encoding = self._get_encoding_model()
-        if model.startswith("gpt-3.5-turbo"):
+        if model.startswith("gpt-3.5-turbo-0301"):
             # every message follows <im_start>{role/name}\n{content}<im_end>\n
             tokens_per_message = 4
             # if there's a name, the role is omitted
             tokens_per_name = -1
-        elif model.startswith("gpt-4"):
+        elif model.startswith("gpt-3.5-turbo") or model.startswith("gpt-4"):
             tokens_per_message = 3
             tokens_per_name = 1
         else:
@@ -509,11 +506,13 @@ class ChatOpenAI(BaseChatModel):
                 "information on how messages are converted to tokens."
             )
         num_tokens = 0
-        messages_dict = [_convert_message_to_dict(m) for m in messages]
+        messages_dict = [convert_message_to_dict(m) for m in messages]
         for message in messages_dict:
             num_tokens += tokens_per_message
             for key, value in message.items():
-                num_tokens += len(encoding.encode(value))
+                # Cast str(value) in case the message value is not a string
+                # This occurs with function messages
+                num_tokens += len(encoding.encode(str(value)))
                 if key == "name":
                     num_tokens += tokens_per_name
         # every reply is primed with <im_start>assistant

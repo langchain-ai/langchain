@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 class CosmosDBChatMessageHistory(BaseChatMessageHistory):
-    """Chat history backed by Azure CosmosDB."""
+    """Chat message history backed by Azure CosmosDB."""
 
     def __init__(
         self,
@@ -66,6 +66,7 @@ class CosmosDBChatMessageHistory(BaseChatMessageHistory):
         except ImportError as exc:
             raise ImportError(
                 "You must install the azure-cosmos package to use the CosmosDBChatMessageHistory."  # noqa: E501
+                "Please install it with `pip install azure-cosmos`."
             ) from exc
         if self.credential:
             self._client = CosmosClient(
@@ -94,6 +95,7 @@ class CosmosDBChatMessageHistory(BaseChatMessageHistory):
         except ImportError as exc:
             raise ImportError(
                 "You must install the azure-cosmos package to use the CosmosDBChatMessageHistory."  # noqa: E501
+                "Please install it with `pip install azure-cosmos`."
             ) from exc
         database = self._client.create_database_if_not_exists(self.cosmos_database)
         self._container = database.create_container_if_not_exists(
@@ -130,6 +132,7 @@ class CosmosDBChatMessageHistory(BaseChatMessageHistory):
         except ImportError as exc:
             raise ImportError(
                 "You must install the azure-cosmos package to use the CosmosDBChatMessageHistory."  # noqa: E501
+                "Please install it with `pip install azure-cosmos`."
             ) from exc
         try:
             item = self._container.read_item(

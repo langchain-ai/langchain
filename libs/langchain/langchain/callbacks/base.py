@@ -1,13 +1,16 @@
 """Base callback handler that can be used to handle callbacks in langchain."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 from uuid import UUID
 
-from langchain.schema.agent import AgentAction, AgentFinish
-from langchain.schema.document import Document
-from langchain.schema.messages import BaseMessage
-from langchain.schema.output import LLMResult
+from tenacity import RetryCallState
+
+if TYPE_CHECKING:
+    from langchain.schema.agent import AgentAction, AgentFinish
+    from langchain.schema.document import Document
+    from langchain.schema.messages import BaseMessage
+    from langchain.schema.output import LLMResult
 
 
 class RetrieverManagerMixin:
@@ -221,6 +224,16 @@ class RunManagerMixin:
     ) -> Any:
         """Run on arbitrary text."""
 
+    def on_retry(
+        self,
+        retry_state: RetryCallState,
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run on a retry event."""
+
 
 class BaseCallbackHandler(
     LLMManagerMixin,
@@ -239,6 +252,11 @@ class BaseCallbackHandler(
     @property
     def ignore_llm(self) -> bool:
         """Whether to ignore LLM callbacks."""
+        return False
+
+    @property
+    def ignore_retry(self) -> bool:
+        """Whether to ignore retry callbacks."""
         return False
 
     @property
@@ -408,6 +426,16 @@ class AsyncCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Run on arbitrary text."""
 
+    async def on_retry(
+        self,
+        retry_state: RetryCallState,
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run on a retry event."""
+
     async def on_agent_action(
         self,
         action: AgentAction,
@@ -467,7 +495,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
 
 class BaseCallbackManager(CallbackManagerMixin):
-    """Base callback manager that can be used to handle callbacks from LangChain."""
+    """Base callback manager that handles callbacks from LangChain."""
 
     def __init__(
         self,
@@ -543,3 +571,6 @@ class BaseCallbackManager(CallbackManagerMixin):
         for key in keys:
             self.metadata.pop(key)
             self.inheritable_metadata.pop(key)
+
+
+Callbacks = Optional[Union[List[BaseCallbackHandler], BaseCallbackManager]]

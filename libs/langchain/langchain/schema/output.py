@@ -4,10 +4,9 @@ from copy import deepcopy
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, root_validator
-
 from langchain.load.serializable import Serializable
-from langchain.schema.messages import BaseMessage
+from langchain.pydantic_v1 import BaseModel, root_validator
+from langchain.schema.messages import BaseMessage, BaseMessageChunk
 
 
 class Generation(Serializable):
@@ -28,6 +27,26 @@ class Generation(Serializable):
         return True
 
 
+class GenerationChunk(Generation):
+    """A Generation chunk, which can be concatenated with other Generation chunks."""
+
+    def __add__(self, other: GenerationChunk) -> GenerationChunk:
+        if isinstance(other, GenerationChunk):
+            generation_info = (
+                {**(self.generation_info or {}), **(other.generation_info or {})}
+                if self.generation_info is not None or other.generation_info is not None
+                else None
+            )
+            return GenerationChunk(
+                text=self.text + other.text,
+                generation_info=generation_info,
+            )
+        else:
+            raise TypeError(
+                f"unsupported operand type(s) for +: '{type(self)}' and '{type(other)}'"
+            )
+
+
 class ChatGeneration(Generation):
     """A single chat generation output."""
 
@@ -41,6 +60,33 @@ class ChatGeneration(Generation):
         """Set the text attribute to be the contents of the message."""
         values["text"] = values["message"].content
         return values
+
+
+class ChatGenerationChunk(ChatGeneration):
+    """A ChatGeneration chunk, which can be concatenated with other
+      ChatGeneration chunks.
+
+    Attributes:
+        message: The message chunk output by the chat model.
+    """
+
+    message: BaseMessageChunk
+
+    def __add__(self, other: ChatGenerationChunk) -> ChatGenerationChunk:
+        if isinstance(other, ChatGenerationChunk):
+            generation_info = (
+                {**(self.generation_info or {}), **(other.generation_info or {})}
+                if self.generation_info is not None or other.generation_info is not None
+                else None
+            )
+            return ChatGenerationChunk(
+                message=self.message + other.message,
+                generation_info=generation_info,
+            )
+        else:
+            raise TypeError(
+                f"unsupported operand type(s) for +: '{type(self)}' and '{type(other)}'"
+            )
 
 
 class RunInfo(BaseModel):

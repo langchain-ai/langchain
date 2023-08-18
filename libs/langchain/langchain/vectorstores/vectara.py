@@ -8,11 +8,13 @@ from hashlib import md5
 from typing import Any, Iterable, List, Optional, Tuple, Type
 
 import requests
-from pydantic import Field
 
 from langchain.embeddings.base import Embeddings
+from langchain.pydantic_v1 import Field
 from langchain.schema import Document
 from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
+
+logger = logging.getLogger(__name__)
 
 
 class Vectara(VectorStore):
@@ -37,6 +39,7 @@ class Vectara(VectorStore):
         vectara_customer_id: Optional[str] = None,
         vectara_corpus_id: Optional[str] = None,
         vectara_api_key: Optional[str] = None,
+        vectara_api_timeout: int = 60,
     ):
         """Initialize with Vectara API."""
         self._vectara_customer_id = vectara_customer_id or os.environ.get(
@@ -51,15 +54,16 @@ class Vectara(VectorStore):
             or self._vectara_corpus_id is None
             or self._vectara_api_key is None
         ):
-            logging.warning(
+            logger.warning(
                 "Can't find Vectara credentials, customer_id or corpus_id in "
                 "environment."
             )
         else:
-            logging.debug(f"Using corpus id {self._vectara_corpus_id}")
+            logger.debug(f"Using corpus id {self._vectara_corpus_id}")
         self._session = requests.Session()  # to reuse connections
         adapter = requests.adapters.HTTPAdapter(max_retries=3)
         self._session.mount("http://", adapter)
+        self.vectara_api_timeout = vectara_api_timeout
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
@@ -94,9 +98,10 @@ class Vectara(VectorStore):
             data=json.dumps(body),
             verify=True,
             headers=self._get_post_headers(),
+            timeout=self.vectara_api_timeout,
         )
         if response.status_code != 200:
-            logging.error(
+            logger.error(
                 f"Delete request failed for doc_id = {doc_id} with status code "
                 f"{response.status_code}, reason {response.reason}, text "
                 f"{response.text}"
@@ -112,9 +117,9 @@ class Vectara(VectorStore):
 
         response = self._session.post(
             headers=self._get_post_headers(),
-            url="https://api.vectara.io/v1/core/index",
+            url="https://api.vectara.io/v1/index",
             data=json.dumps(request),
-            timeout=30,
+            timeout=self.vectara_api_timeout,
             verify=True,
         )
 
@@ -152,7 +157,7 @@ class Vectara(VectorStore):
         doc_ids = []
         for inx, file in enumerate(files_list):
             if not os.path.exists(file):
-                logging.error(f"File {file} does not exist, skipping")
+                logger.error(f"File {file} does not exist, skipping")
                 continue
             md = metadatas[inx] if metadatas else {}
             files: dict = {
@@ -166,18 +171,19 @@ class Vectara(VectorStore):
                 files=files,
                 verify=True,
                 headers=headers,
+                timeout=self.vectara_api_timeout,
             )
 
             if response.status_code == 409:
                 doc_id = response.json()["document"]["documentId"]
-                logging.info(
+                logger.info(
                     f"File {file} already exists on Vectara (doc_id={doc_id}), skipping"
                 )
             elif response.status_code == 200:
                 doc_id = response.json()["document"]["documentId"]
                 doc_ids.append(doc_id)
             else:
-                logging.info(f"Error indexing file {file}: {response.json()}")
+                logger.info(f"Error indexing file {file}: {response.json()}")
 
         return doc_ids
 
@@ -217,11 +223,12 @@ class Vectara(VectorStore):
         doc = {
             "document_id": doc_id,
             "metadataJson": json.dumps(doc_metadata),
-            "parts": [
+            "section": [
                 {"text": text, "metadataJson": json.dumps(md)}
                 for text, md in zip(texts, metadatas)
             ],
         }
+
         success_str = self._index_doc(doc)
         if success_str == "E_ALREADY_EXISTS":
             self._delete_doc(doc_id)
@@ -239,7 +246,7 @@ class Vectara(VectorStore):
         k: int = 5,
         lambda_val: float = 0.025,
         filter: Optional[str] = None,
-        n_sentence_context: int = 0,
+        n_sentence_context: int = 2,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return Vectara documents most similar to query, along with scores.
@@ -253,7 +260,7 @@ class Vectara(VectorStore):
                 https://docs.vectara.com/docs/search-apis/sql/filter-overview
                 for more details.
             n_sentence_context: number of sentences before/after the matching segment
-                to add
+                to add, defaults to 2
 
         Returns:
             List of Documents most similar to the query and score for each.
@@ -286,11 +293,11 @@ class Vectara(VectorStore):
             headers=self._get_post_headers(),
             url="https://api.vectara.io/v1/query",
             data=data,
-            timeout=10,
+            timeout=self.vectara_api_timeout,
         )
 
         if response.status_code != 200:
-            logging.error(
+            logger.error(
                 "Query failed %s",
                 f"(code {response.status_code}, reason {response.reason}, details "
                 f"{response.text})",
@@ -298,6 +305,7 @@ class Vectara(VectorStore):
             return []
 
         result = response.json()
+
         responses = result["responseSet"][0]["response"]
         vectara_default_metadata = ["lang", "len", "offset"]
         docs = [
@@ -322,7 +330,7 @@ class Vectara(VectorStore):
         k: int = 5,
         lambda_val: float = 0.025,
         filter: Optional[str] = None,
-        n_sentence_context: int = 0,
+        n_sentence_context: int = 2,
         **kwargs: Any,
     ) -> List[Document]:
         """Return Vectara documents most similar to query, along with scores.
@@ -335,7 +343,7 @@ class Vectara(VectorStore):
                 https://docs.vectara.com/docs/search-apis/sql/filter-overview for more
                 details.
             n_sentence_context: number of sentences before/after the matching segment
-                to add
+                to add, defaults to 2
 
         Returns:
             List of Documents most similar to the query
@@ -407,18 +415,21 @@ class Vectara(VectorStore):
 
     def as_retriever(self, **kwargs: Any) -> VectaraRetriever:
         tags = kwargs.pop("tags", None) or []
-        tags.extend(self.__get_retriever_tags())
+        tags.extend(self._get_retriever_tags())
         return VectaraRetriever(vectorstore=self, **kwargs, tags=tags)
 
 
 class VectaraRetriever(VectorStoreRetriever):
+    """Retriever class for Vectara."""
+
     vectorstore: Vectara
+    """Vectara vectorstore."""
     search_kwargs: dict = Field(
         default_factory=lambda: {
             "lambda_val": 0.025,
             "k": 5,
             "filter": "",
-            "n_sentence_context": "0",
+            "n_sentence_context": "2",
         }
     )
     """Search params.

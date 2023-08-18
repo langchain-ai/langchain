@@ -1,16 +1,12 @@
 import logging
 from typing import List
 
-from pydantic import BaseModel, Field
-
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
+from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import BaseLLM
 from langchain.output_parsers.pydantic import PydanticOutputParser
 from langchain.prompts.prompt import PromptTemplate
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema import BaseRetriever, Document
 
 logger = logging.getLogger(__name__)
@@ -100,14 +96,6 @@ class MultiQueryRetriever(BaseRetriever):
         documents = self.retrieve_documents(queries, run_manager)
         unique_documents = self.unique_union(documents)
         return unique_documents
-
-    async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: AsyncCallbackManagerForRetrieverRun,
-    ) -> List[Document]:
-        raise NotImplementedError
 
     def generate_queries(
         self, question: str, run_manager: CallbackManagerForRetrieverRun

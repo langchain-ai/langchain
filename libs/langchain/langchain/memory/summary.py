@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Type
 
-from pydantic import BaseModel, root_validator
-
 from langchain.chains.llm import LLMChain
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.prompt import SUMMARY_PROMPT
+from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema import (
     BaseChatMessageHistory,
     BasePromptTemplate,
@@ -16,6 +15,8 @@ from langchain.schema.messages import BaseMessage, SystemMessage, get_buffer_str
 
 
 class SummarizerMixin(BaseModel):
+    """Mixin for summarizer."""
+
     human_prefix: str = "Human"
     ai_prefix: str = "AI"
     llm: BaseLanguageModel
@@ -36,7 +37,7 @@ class SummarizerMixin(BaseModel):
 
 
 class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
-    """Conversation summarizer to memory."""
+    """Conversation summarizer to chat memory."""
 
     buffer: str = ""
     memory_key: str = "history"  #: :meta private:

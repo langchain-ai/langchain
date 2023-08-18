@@ -2,16 +2,15 @@
 
 from typing import Any, Dict, List, Optional, Sequence, Union
 
-from pydantic import Field
-
 from langchain.memory.chat_memory import BaseMemory
 from langchain.memory.utils import get_prompt_input_key
+from langchain.pydantic_v1 import Field
 from langchain.schema import Document
 from langchain.vectorstores.base import VectorStoreRetriever
 
 
 class VectorStoreRetrieverMemory(BaseMemory):
-    """Class for a VectorStore-backed memory object."""
+    """VectorStoreRetriever-backed memory."""
 
     retriever: VectorStoreRetriever = Field(exclude=True)
     """VectorStoreRetriever object to connect to."""

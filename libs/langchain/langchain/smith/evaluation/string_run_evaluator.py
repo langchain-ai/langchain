@@ -5,7 +5,7 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
 from langsmith import EvaluationResult, RunEvaluator
-from langsmith.schemas import DataType, Example, Run, RunTypeEnum
+from langsmith.schemas import DataType, Example, Run
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -13,8 +13,8 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import StringEvaluator
-from langchain.load.dump import dumps
-from langchain.load.load import loads
+from langchain.load.dump import dumpd
+from langchain.load.load import load
 from langchain.load.serializable import Serializable
 from langchain.schema import RUN_KEY, messages_from_dict
 from langchain.schema.messages import BaseMessage, get_buffer_string
@@ -25,7 +25,7 @@ def _get_messages_from_run_dict(messages: List[dict]) -> List[BaseMessage]:
         return []
     first_message = messages[0]
     if "lc" in first_message:
-        return [loads(dumps(message)) for message in messages]
+        return [load(dumpd(message)) for message in messages]
     else:
         return messages_from_dict(messages)
 
@@ -126,9 +126,13 @@ class ChainStringRunMapper(StringRunMapper):
     """Extract items to evaluate from the run object from a chain."""
 
     input_key: Optional[str] = None
-    """The key from the model Run's inputs to use as the eval input."""
+    """The key from the model Run's inputs to use as the eval input.
+    If not provided, will use the only input key or raise an
+    error if there are multiple."""
     prediction_key: Optional[str] = None
-    """The key from the model Run's outputs to use as the eval prediction."""
+    """The key from the model Run's outputs to use as the eval prediction.
+    If not provided, will use the only output key or raise an error
+    if there are multiple."""
 
     def _get_key(self, source: Dict, key: Optional[str], which: str) -> str:
         if key is not None:
@@ -145,11 +149,9 @@ class ChainStringRunMapper(StringRunMapper):
         """Maps the Run to a dictionary."""
         if not run.outputs:
             raise ValueError(f"Run {run.id} has no outputs to evaluate.")
-        if run.run_type != "chain":
-            raise ValueError("Chain RunMapper only supports Chain runs.")
-        if self.input_key not in run.inputs:
+        if self.input_key is not None and self.input_key not in run.inputs:
             raise ValueError(f"Run {run.id} does not have input key {self.input_key}.")
-        elif self.prediction_key not in run.outputs:
+        elif self.prediction_key is not None and self.prediction_key not in run.outputs:
             raise ValueError(
                 f"Run {run.id} does not have prediction key {self.prediction_key}."
             )
@@ -311,23 +313,36 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         self, run: Run, example: Optional[Example] = None
     ) -> EvaluationResult:
         """Evaluate an example."""
-        result = self({"run": run, "example": example}, include_run_info=True)
-        return self._prepare_evaluator_output(result)
+        try:
+            result = self({"run": run, "example": example}, include_run_info=True)
+            return self._prepare_evaluator_output(result)
+        except Exception as e:
+            return EvaluationResult(
+                key=self.string_evaluator.evaluation_name,
+                comment=f"Error evaluating run {run.id}: {e}",
+                # TODO: Add run ID once we can declare it via callbacks
+            )
 
     async def aevaluate_run(
         self, run: Run, example: Optional[Example] = None
     ) -> EvaluationResult:
         """Evaluate an example."""
-        result = await self.acall(
-            {"run": run, "example": example}, include_run_info=True
-        )
-        return self._prepare_evaluator_output(result)
+        try:
+            result = await self.acall(
+                {"run": run, "example": example}, include_run_info=True
+            )
+            return self._prepare_evaluator_output(result)
+        except Exception as e:
+            return EvaluationResult(
+                key=self.string_evaluator.evaluation_name,
+                comment=f"Error evaluating run {run.id}: {e}",
+            )
 
     @classmethod
     def from_run_and_data_type(
         cls,
         evaluator: StringEvaluator,
-        run_type: RunTypeEnum,
+        run_type: str,
         data_type: DataType,
         input_key: Optional[str] = None,
         prediction_key: Optional[str] = None,
@@ -343,7 +358,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
 
         Args:
             evaluator (StringEvaluator): The string evaluator to use.
-            run_type (RunTypeEnum): The type of run being evaluated.
+            run_type (str): The type of run being evaluated.
                 Supported types are LLM and Chain.
             data_type (DataType): The type of dataset used in the run.
             input_key (str, optional): The key used to map the input from the run.
@@ -361,9 +376,9 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         """  # noqa: E501
 
         # Configure how run inputs/predictions are passed to the evaluator
-        if run_type == RunTypeEnum.llm:
+        if run_type == "llm":
             run_mapper: StringRunMapper = LLMStringRunMapper()
-        elif run_type == RunTypeEnum.chain:
+        elif run_type == "chain":
             run_mapper = ChainStringRunMapper(
                 input_key=input_key, prediction_key=prediction_key
             )
@@ -373,7 +388,11 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
             )
 
         # Configure how example rows are fed as a reference string to the evaluator
-        if reference_key is not None or data_type in (DataType.llm, DataType.chat):
+        if (
+            reference_key is not None
+            or data_type in (DataType.llm, DataType.chat)
+            or evaluator.requires_reference
+        ):
             example_mapper = StringExampleMapper(reference_key=reference_key)
         elif evaluator.requires_reference:
             raise ValueError(

@@ -1,14 +1,13 @@
 """Chain pipeline where the outputs of one step feed directly into next."""
 from typing import Any, Dict, List, Optional
 
-from pydantic import Extra, root_validator
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
 from langchain.chains.base import Chain
-from langchain.input import get_color_mapping
+from langchain.pydantic_v1 import Extra, root_validator
+from langchain.utils.input import get_color_mapping
 
 
 class SequentialChain(Chain):

@@ -4,14 +4,13 @@ import asyncio
 from concurrent.futures import Executor, ThreadPoolExecutor
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Optional
 
-from pydantic import BaseModel, root_validator
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import LLM, create_base_retry_decorator
 from langchain.llms.utils import enforce_stop_tokens
+from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.utilities.vertexai import (
     init_vertexai,
     raise_vertex_import_error,
@@ -121,6 +120,11 @@ class _VertexAICommon(BaseModel):
         if stop:
             return enforce_stop_tokens(text, stop)
         return text
+
+    @property
+    def _identifying_params(self) -> Dict[str, Any]:
+        """Get the identifying parameters."""
+        return {**{"model_name": self.model_name}, **self._default_params}
 
     @property
     def _llm_type(self) -> str:

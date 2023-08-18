@@ -4,8 +4,6 @@ from __future__ import annotations
 import warnings
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
-from pydantic import Extra, Field
-
 from langchain.callbacks.manager import (
     AsyncCallbackManager,
     AsyncCallbackManagerForChainRun,
@@ -14,17 +12,18 @@ from langchain.callbacks.manager import (
     Callbacks,
 )
 from langchain.chains.base import Chain
-from langchain.input import get_colored_text
 from langchain.load.dump import dumpd
 from langchain.prompts.prompt import PromptTemplate
+from langchain.pydantic_v1 import Extra, Field
 from langchain.schema import (
     BaseLLMOutputParser,
     BasePromptTemplate,
     LLMResult,
-    NoOpOutputParser,
     PromptValue,
+    StrOutputParser,
 )
 from langchain.schema.language_model import BaseLanguageModel
+from langchain.utils.input import get_colored_text
 
 
 class LLMChain(Chain):
@@ -50,7 +49,7 @@ class LLMChain(Chain):
     llm: BaseLanguageModel
     """Language model to call."""
     output_key: str = "text"  #: :meta private:
-    output_parser: BaseLLMOutputParser = Field(default_factory=NoOpOutputParser)
+    output_parser: BaseLLMOutputParser = Field(default_factory=StrOutputParser)
     """Output parser to use.
     Defaults to one that takes the most likely string but does not change it 
     otherwise."""
@@ -127,6 +126,8 @@ class LLMChain(Chain):
     ) -> Tuple[List[PromptValue], Optional[List[str]]]:
         """Prepare prompts from inputs."""
         stop = None
+        if len(input_list) == 0:
+            return [], stop
         if "stop" in input_list[0]:
             stop = input_list[0]["stop"]
         prompts = []
@@ -151,6 +152,8 @@ class LLMChain(Chain):
     ) -> Tuple[List[PromptValue], Optional[List[str]]]:
         """Prepare prompts from inputs."""
         stop = None
+        if len(input_list) == 0:
+            return [], stop
         if "stop" in input_list[0]:
             stop = input_list[0]["stop"]
         prompts = []

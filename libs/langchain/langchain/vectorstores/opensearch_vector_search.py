@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import uuid
+import warnings
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
@@ -71,6 +72,26 @@ def _validate_embeddings_and_bulk_size(embeddings_length: int, bulk_size: int) -
         )
 
 
+def _validate_aoss_with_engines(is_aoss: bool, engine: str) -> None:
+    """Validate AOSS with the engine."""
+    if is_aoss and engine != "nmslib" and engine != "faiss":
+        raise ValueError(
+            "Amazon OpenSearch Service Serverless only "
+            "supports `nmslib` or `faiss` engines"
+        )
+
+
+def _is_aoss_enabled(http_auth: Any) -> bool:
+    """Check if the service is http_auth is set as `aoss`."""
+    if (
+        http_auth is not None
+        and hasattr(http_auth, "service")
+        and http_auth.service == "aoss"
+    ):
+        return True
+    return False
+
+
 def _bulk_ingest_embeddings(
     client: Any,
     index_name: str,
@@ -82,6 +103,7 @@ def _bulk_ingest_embeddings(
     text_field: str = "text",
     mapping: Optional[Dict] = None,
     max_chunk_bytes: Optional[int] = 1 * 1024 * 1024,
+    is_aoss: bool = False,
 ) -> List[str]:
     """Bulk Ingest Embeddings into given index."""
     if not mapping:
@@ -107,12 +129,16 @@ def _bulk_ingest_embeddings(
             vector_field: embeddings[i],
             text_field: text,
             "metadata": metadata,
-            "_id": _id,
         }
+        if is_aoss:
+            request["id"] = _id
+        else:
+            request["_id"] = _id
         requests.append(request)
         return_ids.append(_id)
     bulk(client, requests, max_chunk_bytes=max_chunk_bytes)
-    client.indices.refresh(index=index_name)
+    if not is_aoss:
+        client.indices.refresh(index=index_name)
     return return_ids
 
 
@@ -192,22 +218,24 @@ def _approximate_search_query_with_boolean_filter(
     }
 
 
-def _approximate_search_query_with_lucene_filter(
+def _approximate_search_query_with_efficient_filter(
     query_vector: List[float],
-    lucene_filter: Dict,
+    efficient_filter: Dict,
     k: int = 4,
     vector_field: str = "vector_field",
 ) -> Dict:
-    """For Approximate k-NN Search, with Lucene Filter."""
+    """For Approximate k-NN Search, with Efficient Filter for Lucene and
+    Faiss Engines."""
     search_query = _default_approximate_search_query(
         query_vector, k=k, vector_field=vector_field
     )
-    search_query["query"]["knn"][vector_field]["filter"] = lucene_filter
+    search_query["query"]["knn"][vector_field]["filter"] = efficient_filter
     return search_query
 
 
 def _default_script_query(
     query_vector: List[float],
+    k: int = 4,
     space_type: str = "l2",
     pre_filter: Optional[Dict] = None,
     vector_field: str = "vector_field",
@@ -218,6 +246,7 @@ def _default_script_query(
         pre_filter = MATCH_ALL_QUERY
 
     return {
+        "size": k,
         "query": {
             "script_score": {
                 "query": pre_filter,
@@ -231,22 +260,16 @@ def _default_script_query(
                     },
                 },
             }
-        }
+        },
     }
 
 
 def __get_painless_scripting_source(
-    space_type: str, query_vector: List[float], vector_field: str = "vector_field"
+    space_type: str, vector_field: str = "vector_field"
 ) -> str:
     """For Painless Scripting, it returns the script source based on space type."""
     source_value = (
-        "(1.0 + "
-        + space_type
-        + "("
-        + str(query_vector)
-        + ", doc['"
-        + vector_field
-        + "']))"
+        "(1.0 + " + space_type + "(params.query_value, doc['" + vector_field + "']))"
     )
     if space_type == "cosineSimilarity":
         return source_value
@@ -256,6 +279,7 @@ def __get_painless_scripting_source(
 
 def _default_painless_scripting_query(
     query_vector: List[float],
+    k: int = 4,
     space_type: str = "l2Squared",
     pre_filter: Optional[Dict] = None,
     vector_field: str = "vector_field",
@@ -265,8 +289,9 @@ def _default_painless_scripting_query(
     if not pre_filter:
         pre_filter = MATCH_ALL_QUERY
 
-    source = __get_painless_scripting_source(space_type, query_vector)
+    source = __get_painless_scripting_source(space_type, vector_field=vector_field)
     return {
+        "size": k,
         "query": {
             "script_score": {
                 "query": pre_filter,
@@ -278,7 +303,7 @@ def _default_painless_scripting_query(
                     },
                 },
             }
-        }
+        },
     }
 
 
@@ -314,6 +339,8 @@ class OpenSearchVectorSearch(VectorStore):
         """Initialize with necessary components."""
         self.embedding_function = embedding_function
         self.index_name = index_name
+        http_auth = _get_kwargs_value(kwargs, "http_auth", None)
+        self.is_aoss = _is_aoss_enabled(http_auth=http_auth)
         self.client = _get_opensearch_client(opensearch_url, **kwargs)
 
     @property
@@ -358,6 +385,8 @@ class OpenSearchVectorSearch(VectorStore):
         vector_field = _get_kwargs_value(kwargs, "vector_field", "vector_field")
         max_chunk_bytes = _get_kwargs_value(kwargs, "max_chunk_bytes", 1 * 1024 * 1024)
 
+        _validate_aoss_with_engines(self.is_aoss, engine)
+
         mapping = _default_text_mapping(
             dim, engine, space_type, ef_search, ef_construction, m, vector_field
         )
@@ -373,6 +402,7 @@ class OpenSearchVectorSearch(VectorStore):
             text_field=text_field,
             mapping=mapping,
             max_chunk_bytes=max_chunk_bytes,
+            is_aoss=self.is_aoss,
         )
 
     def similarity_search(
@@ -404,14 +434,18 @@ class OpenSearchVectorSearch(VectorStore):
         Optional Args for Approximate Search:
             search_type: "approximate_search"; default: "approximate_search"
 
-            boolean_filter: A Boolean filter consists of a Boolean query that
-            contains a k-NN query and a filter.
+            boolean_filter: A Boolean filter is a post filter consists of a Boolean
+            query that contains a k-NN query and a filter.
 
             subquery_clause: Query clause on the knn vector field; default: "must"
 
             lucene_filter: the Lucene algorithm decides whether to perform an exact
             k-NN search with pre-filtering or an approximate search with modified
-            post-filtering.
+            post-filtering. (deprecated, use `efficient_filter`)
+
+            efficient_filter: the Lucene Engine or Faiss Engine decides whether to
+            perform an exact k-NN search with pre-filtering or an approximate search
+            with modified post-filtering.
 
         Optional Args for Script Scoring Search:
             search_type: "script_scoring"; default: "approximate_search"
@@ -494,15 +528,41 @@ class OpenSearchVectorSearch(VectorStore):
         search_type = _get_kwargs_value(kwargs, "search_type", "approximate_search")
         vector_field = _get_kwargs_value(kwargs, "vector_field", "vector_field")
 
+        if (
+            self.is_aoss
+            and search_type != "approximate_search"
+            and search_type != SCRIPT_SCORING_SEARCH
+        ):
+            raise ValueError(
+                "Amazon OpenSearch Service Serverless only "
+                "supports `approximate_search` and `script_scoring`"
+            )
+
         if search_type == "approximate_search":
             boolean_filter = _get_kwargs_value(kwargs, "boolean_filter", {})
             subquery_clause = _get_kwargs_value(kwargs, "subquery_clause", "must")
+            efficient_filter = _get_kwargs_value(kwargs, "efficient_filter", {})
+            # `lucene_filter` is deprecated, added for Backwards Compatibility
             lucene_filter = _get_kwargs_value(kwargs, "lucene_filter", {})
-            if boolean_filter != {} and lucene_filter != {}:
+
+            if boolean_filter != {} and efficient_filter != {}:
                 raise ValueError(
-                    "Both `boolean_filter` and `lucene_filter` are provided which "
+                    "Both `boolean_filter` and `efficient_filter` are provided which "
                     "is invalid"
                 )
+
+            if lucene_filter != {} and efficient_filter != {}:
+                raise ValueError(
+                    "Both `lucene_filter` and `efficient_filter` are provided which "
+                    "is invalid. `lucene_filter` is deprecated"
+                )
+
+            if lucene_filter != {} and boolean_filter != {}:
+                raise ValueError(
+                    "Both `lucene_filter` and `boolean_filter` are provided which "
+                    "is invalid. `lucene_filter` is deprecated"
+                )
+
             if boolean_filter != {}:
                 search_query = _approximate_search_query_with_boolean_filter(
                     embedding,
@@ -511,8 +571,16 @@ class OpenSearchVectorSearch(VectorStore):
                     vector_field=vector_field,
                     subquery_clause=subquery_clause,
                 )
+            elif efficient_filter != {}:
+                search_query = _approximate_search_query_with_efficient_filter(
+                    embedding, efficient_filter, k=k, vector_field=vector_field
+                )
             elif lucene_filter != {}:
-                search_query = _approximate_search_query_with_lucene_filter(
+                warnings.warn(
+                    "`lucene_filter` is deprecated. Please use the keyword argument"
+                    " `efficient_filter`"
+                )
+                search_query = _approximate_search_query_with_efficient_filter(
                     embedding, lucene_filter, k=k, vector_field=vector_field
                 )
             else:
@@ -523,20 +591,20 @@ class OpenSearchVectorSearch(VectorStore):
             space_type = _get_kwargs_value(kwargs, "space_type", "l2")
             pre_filter = _get_kwargs_value(kwargs, "pre_filter", MATCH_ALL_QUERY)
             search_query = _default_script_query(
-                embedding, space_type, pre_filter, vector_field
+                embedding, k, space_type, pre_filter, vector_field
             )
         elif search_type == PAINLESS_SCRIPTING_SEARCH:
             space_type = _get_kwargs_value(kwargs, "space_type", "l2Squared")
             pre_filter = _get_kwargs_value(kwargs, "pre_filter", MATCH_ALL_QUERY)
             search_query = _default_painless_scripting_query(
-                embedding, space_type, pre_filter, vector_field
+                embedding, k, space_type, pre_filter, vector_field
             )
         else:
             raise ValueError("Invalid `search_type` provided as an argument")
 
         response = self.client.search(index=self.index_name, body=search_query)
 
-        return [hit for hit in response["hits"]["hits"][:k]]
+        return [hit for hit in response["hits"]["hits"]]
 
     def max_marginal_relevance_search(
         self,
@@ -659,6 +727,7 @@ class OpenSearchVectorSearch(VectorStore):
             "ef_construction",
             "m",
             "max_chunk_bytes",
+            "is_aoss",
         ]
         embeddings = embedding.embed_documents(texts)
         _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
@@ -672,12 +741,23 @@ class OpenSearchVectorSearch(VectorStore):
         vector_field = _get_kwargs_value(kwargs, "vector_field", "vector_field")
         text_field = _get_kwargs_value(kwargs, "text_field", "text")
         max_chunk_bytes = _get_kwargs_value(kwargs, "max_chunk_bytes", 1 * 1024 * 1024)
+        http_auth = _get_kwargs_value(kwargs, "http_auth", None)
+        is_aoss = _is_aoss_enabled(http_auth=http_auth)
+
+        if is_aoss and not is_appx_search:
+            raise ValueError(
+                "Amazon OpenSearch Service Serverless only "
+                "supports `approximate_search`"
+            )
+
         if is_appx_search:
             engine = _get_kwargs_value(kwargs, "engine", "nmslib")
             space_type = _get_kwargs_value(kwargs, "space_type", "l2")
             ef_search = _get_kwargs_value(kwargs, "ef_search", 512)
             ef_construction = _get_kwargs_value(kwargs, "ef_construction", 512)
             m = _get_kwargs_value(kwargs, "m", 16)
+
+            _validate_aoss_with_engines(is_aoss, engine)
 
             mapping = _default_text_mapping(
                 dim, engine, space_type, ef_search, ef_construction, m, vector_field
@@ -697,5 +777,6 @@ class OpenSearchVectorSearch(VectorStore):
             text_field=text_field,
             mapping=mapping,
             max_chunk_bytes=max_chunk_bytes,
+            is_aoss=is_aoss,
         )
         return cls(opensearch_url, index_name, embedding, **kwargs)

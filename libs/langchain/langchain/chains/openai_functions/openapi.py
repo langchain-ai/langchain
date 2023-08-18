@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import json
 import re
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
 
 import requests
-from openapi_schema_pydantic import Parameter
 from requests import Response
 
 from langchain import LLMChain
@@ -12,13 +13,16 @@ from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.sequential import SequentialChain
 from langchain.chat_models import ChatOpenAI
-from langchain.input import get_colored_text
 from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import APIOperation
 from langchain.utilities.openapi import OpenAPISpec
+from langchain.utils.input import get_colored_text
+
+if TYPE_CHECKING:
+    from openapi_schema_pydantic import Parameter
 
 
 def _get_description(o: Any, prefer_short: bool) -> Optional[str]:
@@ -212,8 +216,8 @@ class SimpleRequestChain(Chain):
     ) -> Dict[str, Any]:
         """Run the logic of this chain and return the output."""
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
-        name = inputs["function"].pop("name")
-        args = inputs["function"].pop("arguments")
+        name = inputs[self.input_key].pop("name")
+        args = inputs[self.input_key].pop("arguments")
         _pretty_name = get_colored_text(name, "green")
         _pretty_args = get_colored_text(json.dumps(args, indent=2), "green")
         _text = f"Calling endpoint {_pretty_name} with arguments:\n" + _pretty_args

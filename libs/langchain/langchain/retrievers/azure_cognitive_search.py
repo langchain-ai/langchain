@@ -7,12 +7,12 @@ from typing import Dict, List, Optional
 
 import aiohttp
 import requests
-from pydantic import Extra, root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
+from langchain.pydantic_v1 import Extra, root_validator
 from langchain.schema import BaseRetriever, Document
 from langchain.utils import get_from_dict_or_env
 

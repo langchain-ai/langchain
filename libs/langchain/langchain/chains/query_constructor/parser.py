@@ -9,6 +9,7 @@ try:
 except ImportError:
 
     def v_args(*args: Any, **kwargs: Any) -> Any:  # type: ignore
+        """Dummy decorator for when lark is not installed."""
         return lambda _: None
 
     Transformer = object  # type: ignore
@@ -53,9 +54,7 @@ GRAMMAR = """
 
 @v_args(inline=True)
 class QueryTransformer(Transformer):
-    """Transforms a query string into an IR representation
-    (intermediate representation).
-    """
+    """Transforms a query string into an intermediate representation."""
 
     def __init__(
         self,

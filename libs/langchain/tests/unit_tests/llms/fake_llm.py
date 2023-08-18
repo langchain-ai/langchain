@@ -1,10 +1,9 @@
 """Fake LLM wrapper for testing purposes."""
-from typing import Any, List, Mapping, Optional, cast
-
-from pydantic import validator
+from typing import Any, Dict, List, Mapping, Optional, cast
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
+from langchain.pydantic_v1 import validator
 
 
 class FakeLLM(LLM):
@@ -51,7 +50,7 @@ class FakeLLM(LLM):
             return "bar"
 
     @property
-    def _identifying_params(self) -> Mapping[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         return {}
 
     @property

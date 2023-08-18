@@ -1,3 +1,4 @@
+import logging
 from typing import Dict, Iterator, List, Union
 
 import requests
@@ -6,13 +7,17 @@ from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import Blob
 
+logger = logging.getLogger(__name__)
+
 
 class ServerUnavailableException(Exception):
+    """Exception raised when the Grobid server is unavailable."""
+
     pass
 
 
 class GrobidParser(BaseBlobParser):
-    """Loader that uses Grobid to load article PDF files."""
+    """Load  article `PDF` files using `Grobid`."""
 
     def __init__(
         self,
@@ -24,7 +29,7 @@ class GrobidParser(BaseBlobParser):
         try:
             requests.get(grobid_server)
         except requests.exceptions.RequestException:
-            print(
+            logger.error(
                 "GROBID server does not appear up and running, \
                 please ensure Grobid is installed and the server is running"
             )
@@ -134,6 +139,7 @@ class GrobidParser(BaseBlobParser):
             )
             xml_data = r.text
         except requests.exceptions.ReadTimeout:
+            logger.error("GROBID server timed out. Return None.")
             xml_data = None
 
         if xml_data is None:

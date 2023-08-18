@@ -2,9 +2,8 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
-from pydantic import BaseModel, root_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -18,6 +17,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models.base import BaseChatModel
+from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema import (
     ChatGeneration,
     ChatResult,
@@ -38,9 +38,7 @@ logger = logging.getLogger(__name__)
 
 
 class ChatGooglePalmError(Exception):
-    """Error raised when there is an issue with the Google PaLM API."""
-
-    pass
+    """Error with the `Google PaLM` API."""
 
 
 def _truncate_at_stop_tokens(
@@ -216,7 +214,7 @@ async def achat_with_retry(llm: ChatGooglePalm, **kwargs: Any) -> Any:
 
 
 class ChatGooglePalm(BaseChatModel, BaseModel):
-    """Wrapper around Google's PaLM Chat API.
+    """`Google PaLM` Chat models API.
 
     To use you must have the google.generativeai Python package installed and
     either:
@@ -323,7 +321,7 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
         return _response_to_result(response, stop)
 
     @property
-    def _identifying_params(self) -> Mapping[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
         return {
             "model_name": self.model_name,

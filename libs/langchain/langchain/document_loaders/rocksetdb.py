@@ -5,16 +5,19 @@ from langchain.schema import Document
 
 
 def default_joiner(docs: List[Tuple[str, Any]]) -> str:
+    """Default joiner for content columns."""
     return "\n".join([doc[1] for doc in docs])
 
 
 class ColumnNotFoundError(Exception):
+    """Column not found error."""
+
     def __init__(self, missing_key: str, query: str):
         super().__init__(f'Column "{missing_key}" not selected in query:\n{query}')
 
 
 class RocksetLoader(BaseLoader):
-    """Wrapper around Rockset db
+    """Load from a `Rockset` database.
 
     To use, you should have the `rockset` python package installed.
 
@@ -89,6 +92,12 @@ class RocksetLoader(BaseLoader):
         self.metadata_keys = metadata_keys
         self.paginator = QueryPaginator
         self.request_model = QueryRequestSql
+
+        try:
+            self.client.set_application("langchain")
+        except AttributeError:
+            # ignore
+            pass
 
     def load(self) -> List[Document]:
         return list(self.lazy_load())

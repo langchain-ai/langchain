@@ -1,16 +1,15 @@
-"""LLM Chain specifically for evaluating question answering."""
+"""LLM Chains for evaluating question answering."""
 from __future__ import annotations
 
 import re
 from typing import Any, List, Optional, Sequence
-
-from pydantic import Extra
 
 from langchain import PromptTemplate
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.qa.eval_prompt import CONTEXT_PROMPT, COT_PROMPT, PROMPT
 from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
+from langchain.pydantic_v1 import Extra
 from langchain.schema import RUN_KEY
 from langchain.schema.language_model import BaseLanguageModel
 
@@ -50,7 +49,7 @@ def _parse_string_eval_output(text: str) -> dict:
 
 
 class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
-    """LLM Chain specifically for evaluating question answering."""
+    """LLM Chain for evaluating question answering."""
 
     output_key: str = "results"  #: :meta private:
 
@@ -184,7 +183,7 @@ class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
 
 
 class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
-    """LLM Chain specifically for evaluating QA w/o GT based on context"""
+    """LLM Chain for evaluating QA w/o GT based on context"""
 
     @property
     def requires_reference(self) -> bool:
@@ -308,7 +307,7 @@ class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
 
 
 class CotQAEvalChain(ContextQAEvalChain):
-    """LLM Chain specifically for evaluating QA using chain of thought reasoning."""
+    """LLM Chain for evaluating QA using chain of thought reasoning."""
 
     @property
     def evaluation_name(self) -> str:

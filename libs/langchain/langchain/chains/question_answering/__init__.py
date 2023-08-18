@@ -83,6 +83,7 @@ def _load_stuff_chain(
         document_variable_name=document_variable_name,
         verbose=verbose,
         callback_manager=callback_manager,
+        callbacks=callbacks,
         **kwargs,
     )
 
@@ -209,6 +210,7 @@ def _load_refine_chain(
         initial_response_name=initial_response_name,
         verbose=verbose,
         callback_manager=callback_manager,
+        callbacks=callbacks,
         **kwargs,
     )
 

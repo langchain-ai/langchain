@@ -1,14 +1,18 @@
 """Utility functions for working with vectors and vectorstores."""
 
 from enum import Enum
-from typing import List
+from typing import List, Tuple, Type
 
 import numpy as np
 
+from langchain.docstore.document import Document
 from langchain.utils.math import cosine_similarity
 
 
 class DistanceStrategy(str, Enum):
+    """Enumerator of the Distance strategies for calculating distances
+    between vectors."""
+
     EUCLIDEAN_DISTANCE = "EUCLIDEAN_DISTANCE"
     MAX_INNER_PRODUCT = "MAX_INNER_PRODUCT"
     DOT_PRODUCT = "DOT_PRODUCT"
@@ -48,3 +52,23 @@ def maximal_marginal_relevance(
         idxs.append(idx_to_add)
         selected = np.append(selected, [embedding_list[idx_to_add]], axis=0)
     return idxs
+
+
+def filter_complex_metadata(
+    documents: List[Document],
+    *,
+    allowed_types: Tuple[Type, ...] = (str, bool, int, float)
+) -> List[Document]:
+    """Filter out metadata types that are not supported for a vector store."""
+    updated_documents = []
+    for document in documents:
+        filtered_metadata = {}
+        for key, value in document.metadata.items():
+            if not isinstance(value, allowed_types):
+                continue
+            filtered_metadata[key] = value
+
+        document.metadata = filtered_metadata
+        updated_documents.append(document)
+
+    return updated_documents

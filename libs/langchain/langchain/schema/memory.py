@@ -8,7 +8,7 @@ from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
 
 
 class BaseMemory(Serializable, ABC):
-    """Base abstract class for memory in Chains.
+    """Abstract base class for memory in Chains.
 
     Memory refers to state in Chains. Memory can be used to store information about
         past executions of a Chain and inject that information into the inputs of
@@ -107,14 +107,14 @@ class BaseChatMessageHistory(ABC):
         """
         self.add_message(AIMessage(content=message))
 
-    # TODO: Make this an abstractmethod.
+    @abstractmethod
     def add_message(self, message: BaseMessage) -> None:
         """Add a Message object to the store.
 
         Args:
             message: A BaseMessage object to store.
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abstractmethod
     def clear(self) -> None:

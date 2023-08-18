@@ -1,11 +1,7 @@
 from typing import Any, Dict, List, cast
 
-from pydantic import Field
-
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
+from langchain.callbacks.manager import CallbackManagerForRetrieverRun
+from langchain.pydantic_v1 import Field
 from langchain.schema import BaseRetriever, Document
 
 
@@ -41,11 +37,6 @@ class LlamaIndexRetriever(BaseRetriever):
                 Document(page_content=source_node.source_text, metadata=metadata)
             )
         return docs
-
-    async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        raise NotImplementedError("LlamaIndexRetriever does not support async")
 
 
 class LlamaIndexGraphRetriever(BaseRetriever):
@@ -88,8 +79,3 @@ class LlamaIndexGraphRetriever(BaseRetriever):
                 Document(page_content=source_node.source_text, metadata=metadata)
             )
         return docs
-
-    async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        raise NotImplementedError("LlamaIndexGraphRetriever does not support async")

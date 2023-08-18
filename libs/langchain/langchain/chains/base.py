@@ -1,14 +1,15 @@
 """Base interface that all chains should implement."""
+import asyncio
 import inspect
 import json
 import logging
 import warnings
 from abc import ABC, abstractmethod
+from functools import partial
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import yaml
-from pydantic import Field, root_validator, validator
 
 import langchain
 from langchain.callbacks.base import BaseCallbackManager
@@ -21,7 +22,9 @@ from langchain.callbacks.manager import (
 )
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
+from langchain.pydantic_v1 import Field, root_validator, validator
 from langchain.schema import RUN_KEY, BaseMemory, RunInfo
+from langchain.schema.runnable import Runnable, RunnableConfig
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +33,7 @@ def _get_verbosity() -> bool:
     return langchain.verbose
 
 
-class Chain(Serializable, ABC):
+class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
     """Abstract base class for creating structured sequences of calls to components.
 
     Chains should be used to encode a sequence of calls to components like
@@ -49,9 +52,45 @@ class Chain(Serializable, ABC):
             execute a Chain. This takes inputs as a dictionary and returns a
             dictionary output.
         - `run`: A convenience method that takes inputs as args/kwargs and returns the
-            output as a string. This method can only be used for a subset of chains and
-            cannot return as rich of an output as `__call__`.
+            output as a string or object. This method can only be used for a subset of
+            chains and cannot return as rich of an output as `__call__`.
     """
+
+    def invoke(
+        self,
+        input: Dict[str, Any],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        config = config or {}
+        return self(
+            input,
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            **kwargs,
+        )
+
+    async def ainvoke(
+        self,
+        input: Dict[str, Any],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        if type(self)._acall == Chain._acall:
+            # If the chain does not implement async, fall back to default implementation
+            return await asyncio.get_running_loop().run_in_executor(
+                None, partial(self.invoke, input, config, **kwargs)
+            )
+
+        config = config or {}
+        return await self.acall(
+            input,
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            **kwargs,
+        )
 
     memory: Optional[BaseMemory] = None
     """Optional memory object. Defaults to None.
@@ -390,17 +429,13 @@ class Chain(Serializable, ABC):
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
-    ) -> str:
-        """Execute chain when there's a single string output.
+    ) -> Any:
+        """Convenience method for executing chain.
 
-        The main difference between this method and `Chain.__call__` is that this method
-            can only be used for chains that return a single string output. If a Chain
-            has more outputs, a non-string output, or you want to return the inputs/run
-            info along with the outputs, use `Chain.__call__`.
-
-        The other difference is that this method expects inputs to be passed directly in
-        as positional arguments or keyword arguments, whereas `Chain.__call__` expects
-        a single input dictionary with all the inputs.
+        The main difference between this method and `Chain.__call__` is that this
+        method expects inputs to be passed directly in as positional arguments or
+        keyword arguments, whereas `Chain.__call__` expects a single input dictionary
+        with all the inputs
 
         Args:
             *args: If the chain expects a single input, it can be passed in as the
@@ -415,7 +450,7 @@ class Chain(Serializable, ABC):
                 directly as keyword arguments.
 
         Returns:
-            The chain output as a string.
+            The chain output.
 
         Example:
             .. code-block:: python
@@ -464,17 +499,14 @@ class Chain(Serializable, ABC):
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
-    ) -> str:
-        """Execute chain when there's a single string output.
+    ) -> Any:
+        """Convenience method for executing chain.
 
-        The main difference between this method and `Chain.__call__` is that this method
-            can only be used for chains that return a single string output. If a Chain
-            has more outputs, a non-string output, or you want to return the inputs/run
-            info along with the outputs, use `Chain.__call__`.
+        The main difference between this method and `Chain.__call__` is that this
+        method expects inputs to be passed directly in as positional arguments or
+        keyword arguments, whereas `Chain.__call__` expects a single input dictionary
+        with all the inputs
 
-        The other difference is that this method expects inputs to be passed directly in
-        as positional arguments or keyword arguments, whereas `Chain.__call__` expects
-        a single input dictionary with all the inputs.
 
         Args:
             *args: If the chain expects a single input, it can be passed in as the
@@ -489,7 +521,7 @@ class Chain(Serializable, ABC):
                 directly as keyword arguments.
 
         Returns:
-            The chain output as a string.
+            The chain output.
 
         Example:
             .. code-block:: python
@@ -545,7 +577,7 @@ class Chain(Serializable, ABC):
             A dictionary representation of the chain.
 
         Example:
-            ..code-block:: python
+            .. code-block:: python
 
                 chain.dict(exclude_unset=True)
                 # -> {"_type": "foo", "verbose": False, ...}

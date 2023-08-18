@@ -1,20 +1,12 @@
 """Base implementation for tools or skills."""
 from __future__ import annotations
 
+import asyncio
 import warnings
-from abc import ABC, abstractmethod
+from abc import abstractmethod
+from functools import partial
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
-
-from pydantic import (
-    BaseModel,
-    Extra,
-    Field,
-    create_model,
-    root_validator,
-    validate_arguments,
-)
-from pydantic.main import ModelMetaclass
 
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
@@ -24,44 +16,19 @@ from langchain.callbacks.manager import (
     CallbackManagerForToolRun,
     Callbacks,
 )
+from langchain.pydantic_v1 import (
+    BaseModel,
+    Extra,
+    Field,
+    create_model,
+    root_validator,
+    validate_arguments,
+)
+from langchain.schema.runnable import Runnable, RunnableConfig
 
 
 class SchemaAnnotationError(TypeError):
     """Raised when 'args_schema' is missing or has an incorrect type annotation."""
-
-
-class ToolMetaclass(ModelMetaclass):
-    """Metaclass for BaseTool to ensure the provided args_schema
-
-    doesn't silently ignored."""
-
-    def __new__(
-        cls: Type[ToolMetaclass], name: str, bases: Tuple[Type, ...], dct: dict
-    ) -> ToolMetaclass:
-        """Create the definition of the new tool class."""
-        schema_type: Optional[Type[BaseModel]] = dct.get("args_schema")
-        if schema_type is not None:
-            schema_annotations = dct.get("__annotations__", {})
-            args_schema_type = schema_annotations.get("args_schema", None)
-            if args_schema_type is None or args_schema_type == BaseModel:
-                # Throw errors for common mis-annotations.
-                # TODO: Use get_args / get_origin and fully
-                # specify valid annotations.
-                typehint_mandate = """
-class ChildTool(BaseTool):
-    ...
-    args_schema: Type[BaseModel] = SchemaClass
-    ..."""
-                raise SchemaAnnotationError(
-                    f"Tool definition for {name} must include valid type annotations"
-                    f" for argument 'args_schema' to behave as expected.\n"
-                    f"Expected annotation of 'Type[BaseModel]'"
-                    f" but got '{args_schema_type}'.\n"
-                    f"Expected class looks like:\n"
-                    f"{typehint_mandate}"
-                )
-        # Pass through to Pydantic's metaclass
-        return super().__new__(cls, name, bases, dct)
 
 
 def _create_subset_model(
@@ -88,8 +55,8 @@ def _get_filtered_args(
 class _SchemaConfig:
     """Configuration for the pydantic model."""
 
-    extra = Extra.forbid
-    arbitrary_types_allowed = True
+    extra: Any = Extra.forbid
+    arbitrary_types_allowed: bool = True
 
 
 def create_schema_from_function(
@@ -129,8 +96,34 @@ class ToolException(Exception):
     pass
 
 
-class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
+class BaseTool(BaseModel, Runnable[Union[str, Dict], Any]):
     """Interface LangChain tools must implement."""
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        """Create the definition of the new tool class."""
+        super().__init_subclass__(**kwargs)
+
+        args_schema_type = cls.__annotations__.get("args_schema", None)
+
+        if args_schema_type is not None:
+            if args_schema_type is None or args_schema_type == BaseModel:
+                # Throw errors for common mis-annotations.
+                # TODO: Use get_args / get_origin and fully
+                # specify valid annotations.
+                typehint_mandate = """
+class ChildTool(BaseTool):
+    ...
+    args_schema: Type[BaseModel] = SchemaClass
+    ..."""
+                name = cls.__name__
+                raise SchemaAnnotationError(
+                    f"Tool definition for {name} must include valid type annotations"
+                    f" for argument 'args_schema' to behave as expected.\n"
+                    f"Expected annotation of 'Type[BaseModel]'"
+                    f" but got '{args_schema_type}'.\n"
+                    f"Expected class looks like:\n"
+                    f"{typehint_mandate}"
+                )
 
     name: str
     """The unique name of the tool that clearly communicates its purpose."""
@@ -191,6 +184,44 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
             schema = create_schema_from_function(self.name, self._run)
             return schema.schema()["properties"]
 
+    # --- Runnable ---
+
+    def invoke(
+        self,
+        input: Union[str, Dict],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> Any:
+        config = config or {}
+        return self.run(
+            input,
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            **kwargs,
+        )
+
+    async def ainvoke(
+        self,
+        input: Union[str, Dict],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> Any:
+        if type(self)._arun == BaseTool._arun:
+            # If the tool does not implement async, fall back to default implementation
+            return super().ainvoke(input, config, **kwargs)
+
+        config = config or {}
+        return await self.arun(
+            input,
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            **kwargs,
+        )
+
+    # --- Tool ---
+
     def _parse_input(
         self,
         tool_input: Union[str, Dict],
@@ -231,7 +262,6 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         to child implementations to enable tracing,
         """
 
-    @abstractmethod
     async def _arun(
         self,
         *args: Any,
@@ -242,6 +272,7 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         Add run_manager: Optional[AsyncCallbackManagerForToolRun] = None
         to child implementations to enable tracing,
         """
+        raise NotImplementedError()
 
     def _to_args_and_kwargs(self, tool_input: Union[str, Dict]) -> Tuple[Tuple, Dict]:
         # For backwards compatibility, if run_input is a string,
@@ -411,6 +442,24 @@ class Tool(BaseTool):
     coroutine: Optional[Callable[..., Awaitable[str]]] = None
     """The asynchronous version of the function."""
 
+    # --- Runnable ---
+
+    async def ainvoke(
+        self,
+        input: Union[str, Dict],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> Any:
+        if not self.coroutine:
+            # If the tool does not implement async, fall back to default implementation
+            return await asyncio.get_running_loop().run_in_executor(
+                None, partial(self.invoke, input, config, **kwargs)
+            )
+
+        return super().ainvoke(input, config, **kwargs)
+
+    # --- Tool ---
+
     @property
     def args(self) -> dict:
         """The tool's input arguments."""
@@ -513,6 +562,24 @@ class StructuredTool(BaseTool):
     coroutine: Optional[Callable[..., Awaitable[Any]]] = None
     """The asynchronous version of the function."""
 
+    # --- Runnable ---
+
+    async def ainvoke(
+        self,
+        input: Union[str, Dict],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> Any:
+        if not self.coroutine:
+            # If the tool does not implement async, fall back to default implementation
+            return await asyncio.get_running_loop().run_in_executor(
+                None, partial(self.invoke, input, config, **kwargs)
+            )
+
+        return super().ainvoke(input, config, **kwargs)
+
+    # --- Tool ---
+
     @property
     def args(self) -> dict:
         """The tool's input arguments."""
@@ -586,7 +653,9 @@ class StructuredTool(BaseTool):
             The tool
 
         Examples:
-            ... code-block:: python
+
+            .. code-block:: python
+
                 def add(a: int, b: int) -> int:
                     \"\"\"Add two numbers\"\"\"
                     return a + b

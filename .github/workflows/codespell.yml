@@ -20,3 +20,5 @@ jobs:
         uses: actions/checkout@v3
       - name: Codespell
         uses: codespell-project/actions-codespell@v2
+        with:
+          skip: guide_imports.json

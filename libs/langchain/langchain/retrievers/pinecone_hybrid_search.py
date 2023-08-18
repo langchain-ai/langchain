@@ -3,13 +3,9 @@
 import hashlib
 from typing import Any, Dict, List, Optional
 
-from pydantic import Extra, root_validator
-
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
+from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.embeddings.base import Embeddings
+from langchain.pydantic_v1 import Extra, root_validator
 from langchain.schema import BaseRetriever, Document
 
 
@@ -175,8 +171,3 @@ class PineconeHybridSearchRetriever(BaseRetriever):
             )
         # return search results as json
         return final_result
-
-    async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        raise NotImplementedError

@@ -1,4 +1,3 @@
-"""Loading logic for loading documents from Tencent Cloud COS file."""
 import os
 import tempfile
 from typing import Any, Iterator, List
@@ -9,7 +8,7 @@ from langchain.document_loaders.unstructured import UnstructuredFileLoader
 
 
 class TencentCOSFileLoader(BaseLoader):
-    """Loading logic for loading documents from Tencent Cloud COS."""
+    """Load from `Tencent Cloud COS` file."""
 
     def __init__(self, conf: Any, bucket: str, key: str):
         """Initialize with COS config, bucket and key name.
@@ -29,7 +28,7 @@ class TencentCOSFileLoader(BaseLoader):
         try:
             from qcloud_cos import CosS3Client
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import cos-python-sdk-v5 python package. "
                 "Please install it with `pip install cos-python-sdk-v5`."
             )

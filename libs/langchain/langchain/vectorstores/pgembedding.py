@@ -87,6 +87,8 @@ class EmbeddingStore(BaseModel):
 
 
 class QueryResult:
+    """QueryResult is a result from a query."""
+
     EmbeddingStore: EmbeddingStore
     distance: float
 
@@ -94,6 +96,7 @@ class QueryResult:
 class PGEmbedding(VectorStore):
     """
     VectorStore implementation using Postgres and the pg_embedding extension.
+
     pg_embedding uses sequential scan by default. but you can create a HNSW index
     using the create_hnsw_index method.
     - `connection_string` is a postgres connection string.

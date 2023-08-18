@@ -3,8 +3,6 @@ from abc import ABC, abstractmethod
 from itertools import islice
 from typing import Any, Dict, Iterable, List, Optional
 
-from pydantic import BaseModel, Field
-
 from langchain.chains.llm import LLMChain
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.prompt import (
@@ -12,6 +10,7 @@ from langchain.memory.prompt import (
     ENTITY_SUMMARIZATION_PROMPT,
 )
 from langchain.memory.utils import get_prompt_input_key
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage, get_buffer_string
@@ -21,6 +20,8 @@ logger = logging.getLogger(__name__)
 
 
 class BaseEntityStore(BaseModel, ABC):
+    """Abstract base class for Entity store."""
+
     @abstractmethod
     def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
         """Get entity value from store."""
@@ -48,7 +49,7 @@ class BaseEntityStore(BaseModel, ABC):
 
 
 class InMemoryEntityStore(BaseEntityStore):
-    """Basic in-memory entity store."""
+    """In-memory Entity store."""
 
     store: Dict[str, Optional[str]] = {}
 
@@ -69,7 +70,9 @@ class InMemoryEntityStore(BaseEntityStore):
 
 
 class RedisEntityStore(BaseEntityStore):
-    """Redis-backed Entity store. Entities get a TTL of 1 day by default, and
+    """Redis-backed Entity store.
+
+    Entities get a TTL of 1 day by default, and
     that TTL is extended by 3 days every time the entity is read back.
     """
 
@@ -245,7 +248,7 @@ class ConversationEntityMemory(BaseChatMemory):
     """Entity extractor & summarizer memory.
 
     Extracts named entities from the recent chat history and generates summaries.
-    With a swapable entity store, persisting entities across conversations.
+    With a swappable entity store, persisting entities across conversations.
     Defaults to an in-memory entity store, and can be swapped out for a Redis,
     SQLite, or other entity store.
     """

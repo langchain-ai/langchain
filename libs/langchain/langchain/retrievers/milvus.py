@@ -2,13 +2,9 @@
 import warnings
 from typing import Any, Dict, List, Optional
 
-from pydantic import root_validator
-
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
+from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.embeddings.base import Embeddings
+from langchain.pydantic_v1 import root_validator
 from langchain.schema import BaseRetriever, Document
 from langchain.vectorstores.milvus import Milvus
 
@@ -62,15 +58,6 @@ class MilvusRetriever(BaseRetriever):
         return self.retriever.get_relevant_documents(
             query, run_manager=run_manager.get_child(), **kwargs
         )
-
-    async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: AsyncCallbackManagerForRetrieverRun,
-        **kwargs: Any,
-    ) -> List[Document]:
-        raise NotImplementedError
 
 
 def MilvusRetreiver(*args: Any, **kwargs: Any) -> MilvusRetriever:
