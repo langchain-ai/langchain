@@ -1,8 +1,8 @@
 from __future__ import annotations
+
 from concurrent.futures import Executor, ThreadPoolExecutor
 from contextlib import contextmanager
 from copy import deepcopy
-
 from typing import Any, Dict, Generator, List, Optional, TypedDict
 
 from langchain.callbacks.base import BaseCallbackManager, Callbacks
@@ -37,7 +37,8 @@ class RunnableConfig(TypedDict, total=False):
 
     max_concurrency: Optional[int]
     """
-    Maximum number of parallel calls to make. If not provided, defaults to ThreadPoolExecutor's default. This is ignored if an executor is provided.
+    Maximum number of parallel calls to make. If not provided, defaults to 
+    ThreadPoolExecutor's default. This is ignored if an executor is provided.
     """
 
     executor: Executor
