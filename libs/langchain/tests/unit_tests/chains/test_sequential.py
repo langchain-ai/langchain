@@ -3,11 +3,15 @@ from typing import Dict, List, Optional
 
 import pytest
 
-from langchain.callbacks.manager import CallbackManagerForChainRun, AsyncCallbackManagerForChainRun
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+)
 from langchain.chains.base import Chain
 from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.simple import SimpleMemory
+
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
@@ -176,6 +180,7 @@ def test_simple_sequential_functionality() -> None:
     expected_output = {"output": "123foofoo", "input": "123"}
     assert output == expected_output
 
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("isAsync", [False, True])
 async def test_simple_sequential_functionality_with_callbacks(isAsync: bool) -> None:
@@ -183,9 +188,15 @@ async def test_simple_sequential_functionality_with_callbacks(isAsync: bool) -> 
     handler_1 = FakeCallbackHandler()
     handler_2 = FakeCallbackHandler()
     handler_3 = FakeCallbackHandler()
-    chain_1 = FakeChain(input_variables=["foo"], output_variables=["bar"], callbacks=[handler_1])
-    chain_2 = FakeChain(input_variables=["bar"], output_variables=["baz"], callbacks=[handler_2])
-    chain_3 = FakeChain(input_variables=["jack"], output_variables=["baf"], callbacks=[handler_3])
+    chain_1 = FakeChain(
+        input_variables=["foo"], output_variables=["bar"], callbacks=[handler_1]
+    )
+    chain_2 = FakeChain(
+        input_variables=["bar"], output_variables=["baz"], callbacks=[handler_2]
+    )
+    chain_3 = FakeChain(
+        input_variables=["jack"], output_variables=["baf"], callbacks=[handler_3]
+    )
     chain = SimpleSequentialChain(chains=[chain_1, chain_2, chain_3])
     if isAsync:
         output = await chain.ainvoke({"input": "123"})
