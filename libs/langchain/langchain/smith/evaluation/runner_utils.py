@@ -654,9 +654,7 @@ async def _arun_chain(
         else:
             output = await chain.acall(inputs_, callbacks=callbacks, tags=tags)
     else:
-        runnable_config = RunnableConfig(
-            tags=tags or [], callbacks=callbacks, _locals={}
-        )
+        runnable_config = RunnableConfig(tags=tags or [], callbacks=callbacks)
         output = await chain.ainvoke(inputs_, config=runnable_config)
     return output
 
@@ -977,9 +975,7 @@ def _run_chain(
         else:
             output = chain(inputs_, callbacks=callbacks, tags=tags)
     else:
-        runnable_config = RunnableConfig(
-            tags=tags or [], callbacks=callbacks, _locals={}
-        )
+        runnable_config = RunnableConfig(tags=tags or [], callbacks=callbacks)
         output = chain.invoke(inputs_, config=runnable_config)
     return output
 
