@@ -17,11 +17,10 @@ if TYPE_CHECKING:
 
 
 class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
-    """Retriever for the Google Cloud Enterprise Search Service API.
+    """`Google Cloud Enterprise Search API` retriever.
 
-    For the detailed explanation of the Enterprise Search concepts
-    and configuration parameters refer to the product documentation.
-
+    For a detailed explanation of the Enterprise Search concepts
+    and configuration parameters, refer to the product documentation.
     https://cloud.google.com/generative-ai-app-builder/docs/enterprise-search-introduction
     """
 

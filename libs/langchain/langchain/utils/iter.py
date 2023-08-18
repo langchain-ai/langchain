@@ -60,14 +60,15 @@ def tee_peer(
                             peer_buffer.append(item)
             yield buffer.popleft()
     finally:
-        # this peer is done – remove its buffer
-        for idx, peer_buffer in enumerate(peers):  # pragma: no branch
-            if peer_buffer is buffer:
-                peers.pop(idx)
-                break
-        # if we are the last peer, try and close the iterator
-        if not peers and hasattr(iterator, "close"):
-            iterator.close()
+        with lock:
+            # this peer is done – remove its buffer
+            for idx, peer_buffer in enumerate(peers):  # pragma: no branch
+                if peer_buffer is buffer:
+                    peers.pop(idx)
+                    break
+            # if we are the last peer, try and close the iterator
+            if not peers and hasattr(iterator, "close"):
+                iterator.close()
 
 
 class Tee(Generic[T]):

@@ -32,7 +32,10 @@ class RunnablePassthrough(Serializable, Runnable[Input, Input]):
         return self._call_with_config(identity, input, config)
 
     async def ainvoke(
-        self, input: Input, config: Optional[RunnableConfig] = None
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
     ) -> Input:
         return await self._acall_with_config(aidentity, input, config)
 
