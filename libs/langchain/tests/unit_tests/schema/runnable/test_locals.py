@@ -1,6 +1,13 @@
 import pytest
 
-from langchain.schema.runnable import GetLocalVar, PutLocalVar
+from langchain import PromptTemplate
+from langchain.llms import FakeListLLM
+from langchain.schema.runnable import (
+    GetLocalVar,
+    PutLocalVar,
+    RunnablePassthrough,
+    RunnableSequence,
+)
 
 
 @pytest.mark.asyncio
@@ -29,3 +36,30 @@ def test_get_missing_var_invoke() -> None:
     with pytest.raises(KeyError):
         runnable.invoke("foo")
 
+
+def test_get_in_map() -> None:
+    runnable: RunnableSequence = PutLocalVar("input") | {"bar": GetLocalVar("input")}
+    assert runnable.invoke("foo") == {"bar": "foo"}
+
+
+def test_cant_put_in_map() -> None:
+    runnable: RunnableSequence = {"bar": PutLocalVar("input")} | GetLocalVar("input")
+    with pytest.raises(KeyError):
+        runnable.invoke("foo")
+
+
+def test_get_passthrough_key() -> None:
+    runnable = PutLocalVar("input") | GetLocalVar("input", passthrough_key="output")
+    assert runnable.invoke("foo") == {"input": "foo", "output": "foo"}
+
+
+def test_multi_step_sequence() -> None:
+    prompt = PromptTemplate.from_template("say {foo}")
+    runnable = (
+        PutLocalVar("foo")
+        | {"foo": RunnablePassthrough()}
+        | prompt
+        | FakeListLLM(responses=["bar"])
+        | GetLocalVar("foo", passthrough_key="output")
+    )
+    assert runnable.invoke("hello") == {"foo": "hello", "output": "bar"}
