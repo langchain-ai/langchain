@@ -1059,7 +1059,7 @@ class RunnableMapChunk(Dict[str, Any]):
     """
 
     def __add__(self, other: RunnableMapChunk) -> RunnableMapChunk:
-        chunk = self.copy()
+        chunk = RunnableMapChunk(self)
         for key in other:
             if key not in chunk or chunk[key] is None:
                 chunk[key] = other[key]
