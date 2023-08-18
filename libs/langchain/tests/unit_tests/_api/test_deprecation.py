@@ -2,9 +2,9 @@ import warnings
 from typing import Any, Dict
 
 import pytest
-from pydantic_v1 import BaseModel
 
 from langchain._api.deprecation import _warn_deprecated, deprecated
+from langchain.pydantic_v1 import BaseModel
 
 
 @pytest.mark.parametrize(

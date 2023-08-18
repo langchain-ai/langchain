@@ -5,9 +5,7 @@ import urllib.error
 import urllib.request
 from typing import Any, Dict, Iterator, List
 
-from pydantic_v1 import BaseModel
-from pydantic_v1.class_validators import root_validator
-
+from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema import Document
 
 logger = logging.getLogger(__name__)
