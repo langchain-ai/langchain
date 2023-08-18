@@ -1471,8 +1471,6 @@ class Qdrant(VectorStore):
         cls: Type[Qdrant],
         texts: List[str],
         embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
-        ids: Optional[Sequence[str]] = None,
         location: Optional[str] = None,
         url: Optional[str] = None,
         port: Optional[int] = 6333,
@@ -1498,6 +1496,7 @@ class Qdrant(VectorStore):
         wal_config: Optional[common_types.WalConfigDiff] = None,
         quantization_config: Optional[common_types.QuantizationConfig] = None,
         init_from: Optional[common_types.InitFrom] = None,
+        on_disk: Optional[bool] = None,
         force_recreate: bool = False,
         **kwargs: Any,
     ) -> Qdrant:
@@ -1598,6 +1597,7 @@ class Qdrant(VectorStore):
             vectors_config = rest.VectorParams(
                 size=vector_size,
                 distance=rest.Distance[distance_func],
+                on_disk=on_disk,
             )
 
             # If vector name was provided, we're going to use the named vectors feature
