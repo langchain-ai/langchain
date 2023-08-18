@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional
 from uuid import UUID
+from xml.dom import ValidationErr
 
 import pytest
 from freezegun import freeze_time
@@ -20,6 +21,7 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
+from langchain.pydantic_v1 import ValidationError
 from langchain.schema.document import Document
 from langchain.schema.messages import (
     AIMessage,
@@ -1086,3 +1088,18 @@ async def test_llm_with_fallbacks(
     assert await runnable.abatch(["hi", "hey", "bye"]) == ["bar"] * 3
     assert list(await runnable.ainvoke("hello")) == list("bar")
     assert dumps(runnable, pretty=True) == snapshot
+
+
+def test_each(snapshot: SnapshotAssertion) -> None:
+    prompt = (
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
+    )
+    first_llm = FakeStreamingListLLM(responses=["first item, second item, third item"])
+    second_llm = FakeStreamingListLLM(responses=["this", "is", "a", "test"])
+
+    chain = prompt | first_llm | CommaSeparatedListOutputParser() | second_llm.each()
+
+    assert dumps(chain, pretty=True) == snapshot
+    output = chain.invoke({"question": "What up"})
+    assert output == ["this", "is", "a"]

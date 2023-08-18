@@ -217,6 +217,12 @@ class Runnable(Generic[Input, Output], ABC):
         """
         return RunnableBinding(bound=self, kwargs=kwargs)
 
+    def each(self) -> Runnable[List[Input], List[Output]]:
+        """
+        Wrap a Runnable to run it on each element of the input sequence.
+        """
+        return RunnableEach(bound=self)
+
     def with_fallbacks(
         self,
         fallbacks: Sequence[Runnable[Input, Output]],
@@ -1358,6 +1364,41 @@ class RunnableLambda(Runnable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> Output:
         return self._call_with_config(self.func, input, config)
+
+
+class RunnableEach(Serializable, Runnable[List[Input], List[Output]]):
+    """
+    A runnable that delegates calls to another runnable with each element of the input sequence.
+    """
+
+    bound: Runnable[Input, Output]
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    @property
+    def lc_serializable(self) -> bool:
+        return True
+
+    @property
+    def lc_namespace(self) -> List[str]:
+        return self.__class__.__module__.split(".")[:-1]
+
+    def each(self) -> RunnableEach[Input, Output]:  # type: ignore[override]
+        return self
+
+    def bind(self, **kwargs: Any) -> RunnableEach[Input, Output]:
+        return RunnableEach(bound=self.bound.bind(**kwargs))
+
+    def invoke(
+        self, input: List[Input], config: Optional[RunnableConfig] = None
+    ) -> List[Output]:
+        return self.bound.batch(input, config)
+
+    async def ainvoke(
+        self, input: List[Input], config: Optional[RunnableConfig] = None
+    ) -> List[Output]:
+        return await self.bound.abatch(input, config)
 
 
 class RunnableBinding(Serializable, Runnable[Input, Output]):
