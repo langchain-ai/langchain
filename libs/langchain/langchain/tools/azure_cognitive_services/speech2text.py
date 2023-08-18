@@ -4,9 +4,8 @@ import logging
 import time
 from typing import Any, Dict, Optional
 
-from pydantic_v1 import root_validator
-
 from langchain.callbacks.manager import CallbackManagerForToolRun
+from langchain.pydantic_v1 import root_validator
 from langchain.tools.azure_cognitive_services.utils import (
     detect_file_src_type,
     download_audio_from_url,
@@ -29,8 +28,8 @@ class AzureCogsSpeech2TextTool(BaseTool):
     speech_language: str = "en-US"  #: :meta private:
     speech_config: Any  #: :meta private:
 
-    name = "azure_cognitive_services_speech2text"
-    description = (
+    name: str = "azure_cognitive_services_speech2text"
+    description: str = (
         "A wrapper around Azure Cognitive Services Speech2Text. "
         "Useful for when you need to transcribe audio to text. "
         "Input should be a url to an audio file."
