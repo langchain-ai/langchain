@@ -6,6 +6,9 @@ from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.utils import get_from_dict_or_env
 from langchain.tools.edenai import EdenaiTool
 import json
+import time
+import requests
+
 logger = logging.getLogger(__name__)
   
 
@@ -28,24 +31,28 @@ class EdenAiSpeechToText(EdenaiTool):
         "A wrapper around edenai Services speech to text "
         "Useful for when you have to convert audio to text."
         "Input should be a url to an audio file."
-    )
-    
-    base_url = "https://api.edenai.run/v2/audio/speech_to_text_async"
-    
+    )    
     
     language: Optional[str] ="en"
     params : Optional[Dict[str,Any]] = Field(default_factory=dict)
     
     feature : str = "audio"
     subfeature: str = "speech_to_text_async"
-
     base_url="https://api.edenai.run/v2/audio/speech_to_text_async/"          
 
-    def _format_text_explicit_content_detection_result(
-        self,
-        text_analysis_result: list) -> str:
-        pass
-    
+    def _wait_processing(self,url : str) -> requests.Response:
+        
+        for _ in range(10):
+            time.sleep(1)
+            audio_analysis_result = self._get_edenai(url)
+            temp=audio_analysis_result.json()
+            if temp["status"]=="finished":
+                if temp['results'][self.providers[0]]['error'] != None:
+                    raise Exception(f"EdenAI returned an unexpected response {temp['results'][self.providers[0]]['error']}")
+                else :
+                    return audio_analysis_result
+        
+        raise Exception(f"Edenai speech to text job id processing Timed out")
     def _run(
         self,
         query: str,
@@ -60,12 +67,13 @@ class EdenAiSpeechToText(EdenaiTool):
             
             url=self.base_url+job_id
             
-            audio_analysis_result = self._get_edenai(url)
+            audio_analysis_result =self._wait_processing(url)
+            
             
             result=audio_analysis_result.text 
             formatted_text=json.loads(result)
 
-            text=formatted_text['results'][self.provider]['text']
+            text=formatted_text['results'][self.providers[0]]['text']
 
             return text
 
