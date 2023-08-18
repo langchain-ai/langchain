@@ -338,7 +338,8 @@ extended_testing = [
  "xmltodict",
  "faiss-cpu",
  "openapi-schema-pydantic",
- "vowpal-wabbit-next"
+ "vowpal-wabbit-next",
+ "sentence-transformers"
 ]
 
 [tool.ruff]
