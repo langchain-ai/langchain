@@ -9457,7 +9457,7 @@ yarl = "*"
 name = "vowpal-wabbit-next"
 version = "0.6.0"
 description = "Experimental python bindings for VowpalWabbit"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "vowpal-wabbit-next-0.6.0.tar.gz", hash = "sha256:f0381614d99fac6a0f52e995ee0bfc7b681054f397bea7ff08b8a523d5315a54"},
@@ -10083,4 +10083,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "505c324e9a84f481084f62ebccf3091e18a165b753d96bd43ec60344c33dc01d"
+content-hash = "eba7c01296c1948ab432ca2bc70e274e79a4135d66b4c189d6bb95b5e0c41198"
