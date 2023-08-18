@@ -5,7 +5,6 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional
 
 import yaml
-from pydantic_v1 import Field
 
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_toolkits.openapi.planner_prompt import (
@@ -33,6 +32,7 @@ from langchain.chains.llm import LLMChain
 from langchain.llms.openai import OpenAI
 from langchain.memory import ReadOnlySharedMemory
 from langchain.prompts import PromptTemplate
+from langchain.pydantic_v1 import Field
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
@@ -66,7 +66,7 @@ def _get_default_llm_chain_factory(
 class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
     """Requests GET tool with LLM-instructed extraction of truncated responses."""
 
-    name = "requests_get"
+    name: str = "requests_get"
     """Tool name."""
     description = REQUESTS_GET_TOOL_DESCRIPTION
     """Tool description."""
@@ -96,7 +96,7 @@ class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
 class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):
     """Requests POST tool with LLM-instructed extraction of truncated responses."""
 
-    name = "requests_post"
+    name: str = "requests_post"
     """Tool name."""
     description = REQUESTS_POST_TOOL_DESCRIPTION
     """Tool description."""
@@ -125,7 +125,7 @@ class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):
 class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
     """Requests PATCH tool with LLM-instructed extraction of truncated responses."""
 
-    name = "requests_patch"
+    name: str = "requests_patch"
     """Tool name."""
     description = REQUESTS_PATCH_TOOL_DESCRIPTION
     """Tool description."""
@@ -154,7 +154,7 @@ class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
 class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):
     """A tool that sends a DELETE request and parses the response."""
 
-    name = "requests_delete"
+    name: str = "requests_delete"
     """The name of the tool."""
     description = REQUESTS_DELETE_TOOL_DESCRIPTION
     """The description of the tool."""
