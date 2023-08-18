@@ -28,7 +28,7 @@ def test_missing_config() -> None:
         PutLocalVar("input").invoke("foo")
 
     with pytest.raises(ValueError):
-        GetLocalVar("input").invoke("foo")
+        GetLocalVar[str, str]("input").invoke("foo")
 
 
 def test_get_missing_var_invoke() -> None:
