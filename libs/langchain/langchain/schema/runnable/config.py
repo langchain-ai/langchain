@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, TypedDict
 
-from langchain.callbacks.base import Callbacks
+from langchain.callbacks.base import BaseCallbackManager, Callbacks
 from langchain.callbacks.manager import AsyncCallbackManager, CallbackManager
 
 
@@ -38,6 +38,15 @@ def ensure_config(config: Optional[RunnableConfig]) -> RunnableConfig:
     if config is not None:
         empty.update(config)
     return empty
+
+
+def patch_config(
+    config: RunnableConfig,
+    callbacks: BaseCallbackManager,
+) -> RunnableConfig:
+    config = config.copy()
+    config["callbacks"] = callbacks
+    return config
 
 
 def get_callback_manager_for_config(config: RunnableConfig) -> CallbackManager:
