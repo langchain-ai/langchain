@@ -3,8 +3,7 @@ import logging
 import os
 from typing import Any, Dict, List, Optional
 
-from pydantic_v1 import BaseModel, root_validator
-
+from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema import Document
 
 logger = logging.getLogger(__name__)

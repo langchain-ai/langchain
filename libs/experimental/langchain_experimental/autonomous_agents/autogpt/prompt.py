@@ -7,9 +7,9 @@ from langchain.prompts.chat import (
 from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain.tools.base import BaseTool
 from langchain.vectorstores.base import VectorStoreRetriever
-from pydantic import BaseModel
 
 from langchain_experimental.autonomous_agents.autogpt.prompt_generator import get_prompt
+from langchain_experimental.pydantic_v1 import BaseModel
 
 
 class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):

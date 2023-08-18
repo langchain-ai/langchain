@@ -28,7 +28,7 @@ LangChain is the product of over 5,000+ contributions by 1,500+ contributors, an
 # 🌍 Meetups, Events, and Hackathons
 
 One of our favorite things about working in AI is how much enthusiasm there is for building together. We want to help make that as easy and impactful for you as possible! 
-- **Find a meetup, hackathon, or webinar:** you can find the one for you on on our [global events calendar](https://mirror-feeling-d80.notion.site/0bc81da76a184297b86ca8fc782ee9a3?v=0d80342540df465396546976a50cfb3f).  
+- **Find a meetup, hackathon, or webinar:** you can find the one for you on our [global events calendar](https://mirror-feeling-d80.notion.site/0bc81da76a184297b86ca8fc782ee9a3?v=0d80342540df465396546976a50cfb3f).  
     - **Submit an event to our calendar:** email us at events@langchain.dev with a link to your event page! We can also help you spread the word with our local communities.
 - **Host a meetup:** If you want to bring a group of builders together, we want to help! We can publicize your event on our event calendar/Twitter, share with our local communities in Discord, send swag, or potentially hook you up with a sponsor. Email us at events@langchain.dev to tell us about your event!
 - **Become a meetup sponsor:** we often hear from groups of builders that want to get together, but are blocked or limited on some dimension (space to host, budget for snacks, prizes to distribute, etc.). If you’d like to help, send us an email to events@langchain.dev we can share more about how it works!
