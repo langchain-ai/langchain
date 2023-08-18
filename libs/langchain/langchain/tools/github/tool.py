@@ -20,8 +20,8 @@ class GitHubAction(BaseTool):
 
     api_wrapper: GitHubAPIWrapper = Field(default_factory=GitHubAPIWrapper)
     mode: str
-    name = ""
-    description = ""
+    name: str = ""
+    description: str = ""
 
     def _run(
         self,

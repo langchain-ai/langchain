@@ -14,8 +14,8 @@ from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 class GoogleSerperRun(BaseTool):
     """Tool that queries the Serper.dev Google search API."""
 
-    name = "google_serper"
-    description = (
+    name: str = "google_serper"
+    description: str = (
         "A low-cost Google Search API."
         "Useful for when you need to answer questions about current events."
         "Input should be a search query."
@@ -43,8 +43,8 @@ class GoogleSerperResults(BaseTool):
     """Tool that queries the Serper.dev Google Search API
     and get back json."""
 
-    name = "google_serrper_results_json"
-    description = (
+    name: str = "google_serrper_results_json"
+    description: str = (
         "A low-cost Google Search API."
         "Useful for when you need to answer questions about current events."
         "Input should be a search query. Output is a JSON object of the query results"

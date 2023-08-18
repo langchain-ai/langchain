@@ -23,8 +23,8 @@ class AzureCogsFormRecognizerTool(BaseTool):
     azure_cogs_endpoint: str = ""  #: :meta private:
     doc_analysis_client: Any  #: :meta private:
 
-    name = "azure_cognitive_services_form_recognizer"
-    description = (
+    name: str = "azure_cognitive_services_form_recognizer"
+    description: str = (
         "A wrapper around Azure Cognitive Services Form Recognizer. "
         "Useful for when you need to "
         "extract text, tables, and key-value pairs from documents. "

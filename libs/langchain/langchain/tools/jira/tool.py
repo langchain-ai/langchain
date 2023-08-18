@@ -41,8 +41,8 @@ class JiraAction(BaseTool):
 
     api_wrapper: JiraAPIWrapper = Field(default_factory=JiraAPIWrapper)
     mode: str
-    name = ""
-    description = ""
+    name: str = ""
+    description: str = ""
 
     def _run(
         self,

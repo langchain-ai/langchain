@@ -99,6 +99,20 @@ Tool.from_function( # <-- tool uses v1 namespace
 
 **NO**
 
+```python
+from langchain.tools.base import Tool
+from pydantic import BaseModel, Field # <-- Uses v2 namespace
+
+class CalculatorInput(BaseModel):
+    question: str = Field()
+
+Tool.from_function( # <-- tool uses v1 namespace
+    func=lambda question: 'hello',
+    name="Calculator",
+    description="useful for when you need to answer questions about math",
+    args_schema=CalculatorInput
+)
+```
 
 ## After 2023-08-25 release
 

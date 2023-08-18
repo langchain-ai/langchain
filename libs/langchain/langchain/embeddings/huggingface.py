@@ -149,7 +149,7 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
                 self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
             )
         except ImportError as e:
-            raise ValueError("Dependencies for InstructorEmbedding not found.") from e
+            raise ImportError("Dependencies for InstructorEmbedding not found.") from e
 
     class Config:
         """Configuration for this pydantic object."""

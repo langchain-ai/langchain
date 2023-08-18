@@ -55,8 +55,8 @@ def _get_filtered_args(
 class _SchemaConfig:
     """Configuration for the pydantic model."""
 
-    extra = Extra.forbid
-    arbitrary_types_allowed = True
+    extra: Any = Extra.forbid
+    arbitrary_types_allowed: bool = True
 
 
 def create_schema_from_function(

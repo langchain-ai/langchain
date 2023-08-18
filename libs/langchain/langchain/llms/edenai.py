@@ -30,7 +30,7 @@ class EdenAI(LLM):
     for api reference check edenai documentation: http://docs.edenai.co.
     """
 
-    base_url = "https://api.edenai.run/v2"
+    base_url: str = "https://api.edenai.run/v2"
 
     edenai_api_key: Optional[str] = None
 
