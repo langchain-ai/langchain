@@ -6,7 +6,7 @@ from langchain.schema import BaseRetriever, Document
 
 
 class MetalRetriever(BaseRetriever):
-    """Retriever that uses the Metal API."""
+    """`Metal API` retriever."""
 
     client: Any
     """The Metal client to use."""
