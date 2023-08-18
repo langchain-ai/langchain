@@ -10,7 +10,11 @@ from langchain.schema import BaseRetriever
 
 
 class WeaviateHybridSearchRetriever(BaseRetriever):
-    """Retriever for the Weaviate's hybrid search."""
+    """`Weaviate hybrid search` retriever.
+
+    See the documentation:
+      https://weaviate.io/blog/hybrid-search-explained
+    """
 
     client: Any
     """keyword arguments to pass to the Weaviate client."""
