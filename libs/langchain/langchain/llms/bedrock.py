@@ -45,6 +45,8 @@ class LLMInputOutputAdapter:
             return response_body.get("completions")[0].get("data").get("text"), response_body.get("completions")[0].get("finishReason").get('reason') == 'endoftext'
         elif provider == "amazon":
             return response_body.get("results")[0].get("outputText"), response_body.get("results")[0].get('completionReason') == 'FINISH'
+        else:
+            raise ValueError(f"Provider {provider} not supported.")
 
 
 class Bedrock(LLM):
