@@ -63,7 +63,10 @@ class PutLocalVar(RunnablePassthrough):
         return super().invoke(input, config=config)
 
     async def ainvoke(
-        self, input: Input, config: Optional[RunnableConfig] = None
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
     ) -> Input:
         self._concat_put(input, config=config, replace=True)
         return await super().ainvoke(input, config=config)
@@ -139,7 +142,10 @@ class GetLocalVar(
         return self._call_with_config(self._get, input, config)
 
     async def ainvoke(
-        self, input: Input, config: Optional[RunnableConfig] = None
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
     ) -> Union[Output, Dict[str, Union[Input, Output]]]:
         if config is None:
             raise ValueError(
