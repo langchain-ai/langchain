@@ -20,7 +20,7 @@ class EdenaiTool(BaseTool):
     subfeature: str
     edenai_api_key: Optional[str] = None
     
-    provider: str
+    providers: list[str]
     """provider to use for the API call."""
     
     @root_validator()
@@ -50,12 +50,11 @@ class EdenaiTool(BaseTool):
         url =f"https://api.edenai.run/v2/{self.feature}/{self.subfeature}"
         
         payload={
-            "providers": self.provider,
+            "providers": str(self.providers),
             "response_as_dict": False,
             "attributes_as_list": True,
             "show_original_response": False,
             }
-
 
         payload.update(query_params)
 

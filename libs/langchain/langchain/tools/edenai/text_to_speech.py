@@ -80,7 +80,6 @@ class EdenAiTextToSpeech(EdenaiTool):
             text_analysis_result=text_analysis_result.json()
             
             result = self._format_text_to_speech_result(text_analysis_result)
-            print(result)
             return result
         
         except Exception as e:

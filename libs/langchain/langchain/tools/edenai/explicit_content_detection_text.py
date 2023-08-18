@@ -25,16 +25,17 @@ class EdenAiExplicitTextDetection(EdenaiTool):
     
     description = (
         "A wrapper around edenai Services explicit content detection for text. "
+        
         """Useful for when you have to scan text for offensive, sexually explicit or suggestive content,
         it checks also if there is any content of self-harm, violence, racist or hate speech."""
-        "Input should be a string."
-        """the structure is : 
+
+        """the structure of the observation is : 
         'the type of explicity : the likelihood of it being explicit'
         consider something is explicit if the likelihood is equal or above 3 
         """
+        
+        "Input should be a string."
     )
-    
-    
     
     language: str
 
