@@ -134,8 +134,12 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
 
     assert fake.batch(["hello", "wooorld"], dict(tags=["a-tag"])) == [5, 7]
     assert spy.call_args_list == [
-        mocker.call("hello", dict(tags=["a-tag"])),
-        mocker.call("wooorld", dict(tags=["a-tag"])),
+        mocker.call(
+            "hello", dict(tags=["a-tag"], metadata={}, callbacks=None, _locals={})
+        ),
+        mocker.call(
+            "wooorld", dict(tags=["a-tag"], metadata={}, callbacks=None, _locals={})
+        ),
     ]
     spy.reset_mock()
 
@@ -156,8 +160,14 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
         7,
     ]
     assert spy.call_args_list == [
-        mocker.call("hello", dict(metadata={"key": "value"})),
-        mocker.call("wooorld", dict(metadata={"key": "value"})),
+        mocker.call(
+            "hello",
+            dict(metadata={"key": "value"}, tags=[], callbacks=None, _locals={}),
+        ),
+        mocker.call(
+            "wooorld",
+            dict(metadata={"key": "value"}, tags=[], callbacks=None, _locals={}),
+        ),
     ]
 
 
