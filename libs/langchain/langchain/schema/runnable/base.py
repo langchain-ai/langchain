@@ -238,6 +238,8 @@ class Runnable(Generic[Input, Output], ABC):
         Helper method to get a list of configs from a single config or a list of
         configs, useful for subclasses overriding batch() or abatch().
         """
+        if length < 1:
+            raise ValueError(f"length must be >= 1, but got {length}")
         if isinstance(config, list) and len(config) != length:
             raise ValueError(
                 f"config must be a list of the same length as inputs, "
