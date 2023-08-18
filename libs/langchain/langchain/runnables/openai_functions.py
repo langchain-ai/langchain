@@ -38,7 +38,7 @@ class OpenAIFunctionsRouter(RunnableBinding[ChatGeneration, Any]):
         if functions is not None:
             assert len(functions) == len(runnables)
             assert all(func["name"] in runnables for func in functions)
-        router: Runnable[ChatGeneration, Any] = (
+        router = (
             JsonOutputFunctionsParser(args_only=False)
             | {"key": itemgetter("name"), "input": itemgetter("arguments")}
             | RouterRunnable(runnables)

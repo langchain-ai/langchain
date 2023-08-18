@@ -62,6 +62,19 @@ runs:
       run: |
         poetry lock --check
 
+    - name: Set proper Poetry.lock file
+      shell: bash
+      env:
+        WORKDIR: ${{ inputs.working-directory == '' && '.' || inputs.working-directory }}
+      run: |
+        if [ -f "$WORKDIR/poetry.lock" ]; then
+          echo 'Using working directory poetry.lock in cache key'
+          cp "$WORKDIR/poetry.lock" poetry-lock.cache-key
+        else
+          echo 'Using the top-level poetry.lock in cache key'
+          cp poetry.lock poetry-lock.cache-key
+        fi
+
     - uses: actions/cache@v3
       id: cache-poetry
       env:
@@ -71,7 +84,8 @@ runs:
           ~/.cache/pypoetry/virtualenvs
           ~/.cache/pypoetry/cache
           ~/.cache/pypoetry/artifacts
-        key: poetry-${{ runner.os }}-${{ runner.arch }}-py-${{ inputs.python-version }}-poetry-${{ inputs.poetry-version }}-${{ inputs.cache-key }}-${{ hashFiles('poetry.lock') }}
+          ${{ inputs.working-directory == '' && '.' || inputs.working-directory }}/.venv
+        key: poetry-${{ runner.os }}-${{ runner.arch }}-py-${{ inputs.python-version }}-poetry-${{ inputs.poetry-version }}-${{ inputs.cache-key }}-${{ hashFiles('poetry-lock.cache-key') }}
 
     - run: ${{ inputs.install-command }}
       working-directory: ${{ inputs.working-directory }}

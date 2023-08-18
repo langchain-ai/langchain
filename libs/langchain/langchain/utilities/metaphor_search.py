@@ -7,8 +7,8 @@ from typing import Dict, List, Optional
 
 import aiohttp
 import requests
-from pydantic_v1 import BaseModel, Extra, root_validator
 
+from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.utils import get_from_dict_or_env
 
 METAPHOR_API_URL = "https://api.metaphor.systems"

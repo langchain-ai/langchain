@@ -15,14 +15,13 @@ from typing import (
     Union,
 )
 
-from pydantic_v1 import Field, root_validator
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.base import create_base_retry_decorator
+from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import (
     ChatGeneration,
     ChatResult,
