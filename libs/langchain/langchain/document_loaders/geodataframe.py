@@ -34,8 +34,7 @@ class GeoDataFrameLoader(BaseLoader):
                 f"Expected data_frame to have a column named {page_content_column}"
             )
 
-        if not isinstance(data_frame[page_content_column].iloc[0],
-                          gpd.GeoSeries):
+        if not isinstance(data_frame[page_content_column].iloc[0], gpd.GeoSeries):
             raise ValueError(
                 f"Expected data_frame[{page_content_column}] to be a GeoSeries"
             )
@@ -51,18 +50,17 @@ class GeoDataFrameLoader(BaseLoader):
         geometry_type = self.data_frame.geometry.geom_type.iloc[0]
 
         for _, row in self.data_frame.iterrows():
-
             geom = row[self.page_content_column]
 
             xmin, ymin, xmax, ymax = geom.bounds
 
             metadata = row.to_dict()
-            metadata['crs'] = crs_str
-            metadata['geometry_type'] = geometry_type
-            metadata['xmin'] = xmin
-            metadata['ymin'] = ymin
-            metadata['xmax'] = xmax
-            metadata['ymax'] = ymax
+            metadata["crs"] = crs_str
+            metadata["geometry_type"] = geometry_type
+            metadata["xmin"] = xmin
+            metadata["ymin"] = ymin
+            metadata["xmax"] = xmax
+            metadata["ymax"] = ymax
 
             metadata.pop(self.page_content_column)
 
