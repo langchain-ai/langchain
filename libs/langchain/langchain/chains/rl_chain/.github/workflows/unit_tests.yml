@@ -1,0 +1,23 @@
+name: Unit Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  python-unit-test:
+    container:
+      image: python:3.8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Run Tests
+        shell: bash
+        run: |
+          pip install -r requirements.txt
+          pip install pytest
+          python -m pytest tests/
