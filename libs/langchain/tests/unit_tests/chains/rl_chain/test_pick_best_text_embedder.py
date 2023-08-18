@@ -235,12 +235,12 @@ def test_pickbest_textembedder_more_namespaces_w_full_label_w_partial_emb():
     str2 = "1"
     str3 = "2"
     encoded_str1 = encoded_text + " ".join(char for char in str1)
-    encoded_str2 = encoded_text + " ".join(char for char in str2)
+    encoded_text + " ".join(char for char in str2)
     encoded_str3 = encoded_text + " ".join(char for char in str3)
 
     ctx_str_1 = "context1"
     ctx_str_2 = "context2"
-    encoded_ctx_str_1 = encoded_text + " ".join(char for char in ctx_str_1)
+    encoded_text + " ".join(char for char in ctx_str_1)
     encoded_ctx_str_2 = encoded_text + " ".join(char for char in ctx_str_2)
 
     named_actions = {
@@ -269,12 +269,12 @@ def test_pickbest_textembedder_more_namespaces_w_full_label_w_partial_embed_and_
     str2 = "1"
     str3 = "2"
     encoded_str1 = encoded_text + " ".join(char for char in str1)
-    encoded_str2 = encoded_text + " ".join(char for char in str2)
+    encoded_text + " ".join(char for char in str2)
     encoded_str3 = encoded_text + " ".join(char for char in str3)
 
     ctx_str_1 = "context1"
     ctx_str_2 = "context2"
-    encoded_ctx_str_1 = encoded_text + " ".join(char for char in ctx_str_1)
+    encoded_text + " ".join(char for char in ctx_str_1)
     encoded_ctx_str_2 = encoded_text + " ".join(char for char in ctx_str_2)
 
     named_actions = {

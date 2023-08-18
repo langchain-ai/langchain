@@ -111,7 +111,7 @@ def test_update_with_delayed_score():
     )
     assert response["response"] == "hey"
     selection_metadata = response["selection_metadata"]
-    assert selection_metadata.selected.score == None
+    assert selection_metadata.selected.score is None
     chain.update_with_delayed_score(event=selection_metadata, score=100)
     assert selection_metadata.selected.score == 100.0
 
@@ -157,7 +157,7 @@ def test_default_embeddings():
     ctx_str_2 = "context2"
 
     encoded_ctx_str_1 = encoded_text + " ".join(char for char in ctx_str_1)
-    encoded_ctx_str_2 = encoded_text + " ".join(char for char in ctx_str_2)
+    encoded_text + " ".join(char for char in ctx_str_2)
 
     expected = f"""shared |User {ctx_str_1 + " " + encoded_ctx_str_1} \n|action {str1 + " " + encoded_str1} \n|action {str2 + " " + encoded_str2} \n|action {str3 + " " + encoded_str3} """
 
@@ -261,7 +261,7 @@ def test_explicitly_no_scorer():
     # chain llm used for both basic prompt and for scoring
     assert response["response"] == "hey"
     selection_metadata = response["selection_metadata"]
-    assert selection_metadata.selected.score == None
+    assert selection_metadata.selected.score is None
 
 
 @pytest.mark.requires("vowpal_wabbit_next")

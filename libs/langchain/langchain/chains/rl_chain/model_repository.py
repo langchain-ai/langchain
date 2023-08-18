@@ -4,7 +4,10 @@ import logging
 import os
 import shutil
 from pathlib import Path
-from typing import Sequence, Union
+from typing import TYPE_CHECKING, Sequence, Union
+
+if TYPE_CHECKING:
+    import vowpal_wabbit_next as vw
 
 logger = logging.getLogger(__name__)
 
@@ -35,8 +38,6 @@ class ModelRepository:
         return len(glob.glob(str(self.folder / "model-????????-??????.vw"))) > 0
 
     def save(self, workspace: "vw.Workspace") -> None:
-        import vowpal_wabbit_next as vw
-
         with open(self.model_path, "wb") as f:
             logger.info(f"storing rl_chain model in: {self.model_path}")
             f.write(workspace.serialize())
