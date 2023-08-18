@@ -16,7 +16,7 @@ class AppOperationType(str, Enum):
 
 class AppSchema(BaseModel):
     type: AppOperationType = Field(...)
-    appName: str = Field(..., description="Blockchain reference path")
+    appName: str = Field(..., description="Name of the application on the blockchain")
     address: Optional[Union[str, list[str]]] = Field(
         None,
         description="A single address or a list of addresses. Default: current session's address",
@@ -31,7 +31,7 @@ An address set as `admin` can grant `owner` rights to other addresses (refer to 
 Also, `admin` is initialized to have all `owner` permissions and `rule` allowed for that path.
 
 ## appName Rule
-- [a-zA-Z_0-9]+
+- [a-z_0-9]+
 
 ## address Rules
 - 0x[0-9a-fA-F]{40}

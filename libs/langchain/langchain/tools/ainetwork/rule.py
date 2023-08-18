@@ -10,7 +10,7 @@ from langchain.tools.ainetwork.base import AINBaseTool, OperationType
 
 class RuleSchema(BaseModel):
     type: OperationType = Field(...)
-    path: str = Field(..., description="Blockchain reference path")
+    path: str = Field(..., description="Path on the blockchain where the rule applies")
     eval: Optional[str] = Field(None, description="eval string to determine permission")
 
 

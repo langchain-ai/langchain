@@ -122,7 +122,7 @@ def test_ainetwork_toolkit() -> None:
 
     # Test reading owner config
     agent.run(f"""Read owner config of /apps/{app_name}/DB .""")
-    assert ...  # check owner {self_address} exist
+    assert ...  # Check if owner {self_address} exists
 
     # Test reading a value
     agent.run(f"""Read value in /apps/{app_name}/DB""")

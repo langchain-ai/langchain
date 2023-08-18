@@ -15,7 +15,7 @@ class RuleSchema(BaseModel):
         None, description="A single address or a list of addresses"
     )
     write_owner: Optional[bool] = Field(
-        False, description="Authority to edit `owner` of the path"
+        False, description="Authority to edit the `owner` property of the path"
     )
     write_rule: Optional[bool] = Field(
         False, description="Authority to edit `write rule` for the path"

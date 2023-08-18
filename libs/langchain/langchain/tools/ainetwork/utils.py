@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from ain.ain import Ain
 
 
-def authenticate(network: Optional[Literal["mainnet", "testnet"]] = "mainnet") -> "Ain":
+def authenticate(network: Optional[Literal["mainnet", "testnet"]] = "testnet") -> "Ain":
     """Authenticate using the AIN Blockchain"""
 
     try:
