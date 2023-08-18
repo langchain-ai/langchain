@@ -11,7 +11,6 @@ from langchain.chains.base import Chain
 from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.simple import SimpleMemory
-
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
