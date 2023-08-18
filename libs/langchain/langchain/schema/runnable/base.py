@@ -52,7 +52,6 @@ from langchain.schema.runnable.utils import (
 from langchain.utils.aiter import atee, py_anext
 from langchain.utils.iter import safetee
 
-
 Input = TypeVar("Input")
 # Output type should implement __concat__, as eg str, list, dict do
 Output = TypeVar("Output")
