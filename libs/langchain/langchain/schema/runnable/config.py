@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, TypedDict
 
 from langchain.callbacks.base import Callbacks
-from langchain.callbacks.manager import CallbackManager, AsyncCallbackManager
+from langchain.callbacks.manager import AsyncCallbackManager, CallbackManager
 
 
 class RunnableConfig(TypedDict, total=False):
