@@ -1,56 +1,20 @@
-<!--
-Thank you for contributing to LangChain! Your PR will appear in our release under the title you set. Please make sure it highlights your valuable contribution.
+<!-- Thank you for contributing to LangChain!
 
-Replace this with a description of the change, the issue it fixes (if applicable), and relevant context. List any dependencies required for this change.
+Replace this entire comment with:
+  - Description: a description of the change, 
+  - Issue: the issue # it fixes (if applicable),
+  - Dependencies: any dependencies required for this change,
+  - Tag maintainer: for a quicker response, tag the relevant maintainer (see below),
+  - Twitter handle: we announce bigger features on Twitter. If your PR gets announced and you'd like a mention, we'll gladly shout you out!
 
-After you're done, someone will review your PR. They may suggest improvements. If no one reviews your PR within a few days, feel free to @-mention the same people again, as notifications can get lost.
+Please make sure your PR is passing linting and testing before submitting. Run `make format`, `make lint` and `make test` to check this locally.
 
-Finally, we'd love to show appreciation for your contribution - if you'd like us to shout you out on Twitter, please also include your handle!
--->
-
-<!-- Remove if not applicable -->
-
-Fixes # (issue)
-
-#### Before submitting
-
-<!-- If you're adding a new integration, please include:
-
-1. a test for the integration - favor unit tests that does not rely on network access.
-2. an example notebook showing its use
-
-
-See contribution guidelines for more information on how to write tests, lint
-etc:
-
+See contribution guidelines for more information on how to write/run tests, lint, etc: 
 https://github.com/hwchase17/langchain/blob/master/.github/CONTRIBUTING.md
--->
 
-#### Who can review?
+If you're adding a new integration, please include:
+  1. a test for the integration, preferably unit tests that do not rely on network access,
+  2. an example notebook showing its use. These live is docs/extras directory.
 
-Tag maintainers/contributors who might be interested:
-
-<!-- For a quicker response, figure out the right person to tag with @
-
-  @hwchase17 - project lead
-
-  Tracing / Callbacks
-  - @agola11
-
-  Async
-  - @agola11
-
-  DataLoaders
-  - @eyurtsev
-
-  Models
-  - @hwchase17
-  - @agola11
-
-  Agents / Tools / Toolkits
-  - @vowelparrot
-
-  VectorStores / Retrievers / Memory
-  - @dev2049
-
+If no one reviews your PR within a few days, please @-mention one of @baskaryan, @eyurtsev, @hwchase17, @rlancemartin.
  -->
