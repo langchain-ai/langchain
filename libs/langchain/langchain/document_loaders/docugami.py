@@ -147,6 +147,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
             metadata = {
                 XPATH_KEY: _xpath_for_chunk(node),
                 DOCUMENT_ID_KEY: document[DOCUMENT_ID_KEY],
+                DOCUMENT_NAME_KEY: document[DOCUMENT_NAME_KEY],
                 DOCUMENT_SOURCE_KEY: document[DOCUMENT_NAME_KEY],
                 STRUCTURE_KEY: node.attrib.get("structure", ""),
                 TAG_KEY: re.sub(r"\{.*\}", "", node.tag),
