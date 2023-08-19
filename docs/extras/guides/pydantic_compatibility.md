@@ -6,7 +6,7 @@
 
 ## LangChain Pydantic Migration Plan
 
-A of `langchain>=0.0.267`, LangChain will allow users to install either Pydantic V1 or V2. 
+As of `langchain>=0.0.267`, LangChain will allow users to install either Pydantic V1 or V2. 
    * Internally LangChain will continue to [use V1](https://docs.pydantic.dev/latest/migration/#continue-using-pydantic-v1-features).
    * During this time, users can pin their pydantic version to v1 to avoid breaking changes, or start a partial
    migration using pydantic v2 throughout their code, but avoiding mixing v1 and v2 code for LangChain (see below).
