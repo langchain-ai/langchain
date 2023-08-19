@@ -5,7 +5,6 @@ from qdrant_client import models
 
 from langchain.schema import Document
 from langchain.vectorstores import Qdrant
-from langchain.vectorstores.qdrant import MetadataFilter
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
 )
@@ -15,30 +14,24 @@ from tests.integration_tests.vectorstores.fake_embeddings import (
 @pytest.mark.parametrize("content_payload_key", [Qdrant.CONTENT_KEY, "test_content"])
 @pytest.mark.parametrize("metadata_payload_key", [Qdrant.METADATA_KEY, "test_metadata"])
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
-@pytest.mark.parametrize(
-    "filter",
-    [
-        None,
-        models.Filter(
-            must=[
-                models.FieldCondition(
-                    key="metadata.page",
-                    match=models.MatchValue(
-                        value=2,
-                    ),
-                ),
-            ],
-        ),
-    ],
-)
 def test_qdrant_max_marginal_relevance_search(
     batch_size: int,
     content_payload_key: str,
     metadata_payload_key: str,
     vector_name: Optional[str],
-    filter: Optional[MetadataFilter],
 ) -> None:
     """Test end to end construction and MRR search."""
+    filter = models.Filter(
+        must=[
+            models.FieldCondition(
+                key=f"{metadata_payload_key}.page",
+                match=models.MatchValue(
+                    value=2,
+                ),
+            ),
+        ],
+    )
+
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = Qdrant.from_texts(
