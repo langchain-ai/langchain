@@ -57,7 +57,7 @@ def test_vectara_add_documents() -> None:
     assert output1[1].metadata["abbr"] == "ir"
 
     # test with metadata filter (doc level)
-    # since the query does not match test_num=1 directly we get RAG as the matching result
+    # since the query does not match test_num=1 directly we get "RAG" as the result
     output2 = docsearch.similarity_search(
         "large language model",
         k=1,
