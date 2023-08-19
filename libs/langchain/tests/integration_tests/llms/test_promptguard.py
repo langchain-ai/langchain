@@ -1,7 +1,7 @@
 import langchain.utilities.promptguard as pgf
 from langchain import LLMChain, PromptTemplate
 from langchain.llms import OpenAI
-from langchain.llms.promptguard import PromptGuardLLMWrapper
+from langchain.llms.promptguard import PromptGuard
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnableMap
@@ -42,10 +42,10 @@ Question: ```{question}```
 """
 
 
-def test_promptguard_llm_wrapper() -> None:
+def test_promptguard() -> None:
     chain = LLMChain(
         prompt=PromptTemplate.from_template(prompt_template),
-        llm=PromptGuardLLMWrapper(llm=OpenAI()),
+        llm=PromptGuard(llm=OpenAI()),
         memory=ConversationBufferWindowMemory(k=2),
     )
 
