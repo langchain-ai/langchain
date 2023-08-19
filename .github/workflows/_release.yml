@@ -14,8 +14,8 @@ env:
 jobs:
   if_release:
     if: |
-        ${{ github.event.pull_request.merged == true }}
-        && ${{ contains(github.event.pull_request.labels.*.name, 'release') }}
+        github.event.pull_request.merged == true
+        && contains(github.event.pull_request.labels.*.name, 'release')
     runs-on: ubuntu-latest
     defaults:
       run:
