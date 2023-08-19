@@ -18,6 +18,7 @@ class GPT4AllEmbeddings(BaseModel, Embeddings):
     """
 
     client: Any  #: :meta private:
+    model: str = 'ggml-all-MiniLM-L6-v2-f16'
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
