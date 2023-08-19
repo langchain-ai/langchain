@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import uuid
 import warnings
-from abc import ABC
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -53,7 +52,7 @@ def _default_script_query(query_vector: List[float], filter: Optional[dict]) -> 
 
 
 @deprecated("0.0.265", alternative="ElasticsearchStore class.", pending=True)
-class ElasticVectorSearch(VectorStore, ABC):
+class ElasticVectorSearch(VectorStore):
     """Wrapper around Elasticsearch as a vector database.
 
     To connect to an Elasticsearch instance that does not require
@@ -340,7 +339,7 @@ class ElasticVectorSearch(VectorStore, ABC):
             self.client.delete(index=self.index_name, id=id)
 
 
-class ElasticKnnSearch(VectorStore, ABC):
+class ElasticKnnSearch(VectorStore):
     """
     ElasticKnnSearch is a class for performing k-nearest neighbor
     (k-NN) searches on text data using Elasticsearch.
