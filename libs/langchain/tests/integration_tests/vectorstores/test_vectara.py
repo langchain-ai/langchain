@@ -14,6 +14,7 @@ from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 #    VECTARA_API_KEY, VECTARA_CORPUS_ID and VECTARA_CUSTOMER_ID
 #
 
+
 def get_abbr(s: str) -> str:
     words = s.split(" ")  # Split the string into words
     first_letters = [word[0] for word in words]  # Extract the first letter of each word
@@ -51,9 +52,9 @@ def test_vectara_add_documents() -> None:
     )
     assert len(output1) == 2
     assert output1[0].page_content == "large language model"
-    assert output1[0].metadata['abbr'] == "llm"
+    assert output1[0].metadata["abbr"] == "llm"
     assert output1[1].page_content == "information retrieval"
-    assert output1[1].metadata['abbr'] == "ir"
+    assert output1[1].metadata["abbr"] == "ir"
 
     # test with metadata filter (doc level)
     # since the query does not match test_num=1 directly we get RAG as the matching result
@@ -65,10 +66,11 @@ def test_vectara_add_documents() -> None:
     )
     assert len(output2) == 1
     assert output2[0].page_content == "retrieval augmented generation"
-    assert output2[0].metadata['abbr'] == "rag"
+    assert output2[0].metadata["abbr"] == "rag"
 
     for doc_id in doc_ids:
         docsearch._delete_doc(doc_id)
+
 
 def test_vectara_from_files() -> None:
     """Test end to end construction and search."""

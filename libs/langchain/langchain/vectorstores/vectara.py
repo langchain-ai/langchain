@@ -311,9 +311,9 @@ class Vectara(VectorStore):
 
         metadatas = []
         for x in responses:
-            md = { m["name"]: m["value"] for m in x["metadata"] }
-            doc_num = x['documentIndex']
-            doc_md = { m["name"]: m["value"] for m in documents[doc_num]['metadata'] }
+            md = {m["name"]: m["value"] for m in x["metadata"]}
+            doc_num = x["documentIndex"]
+            doc_md = {m["name"]: m["value"] for m in documents[doc_num]["metadata"]}
             md.update(doc_md)
             metadatas.append(md)
 
@@ -325,7 +325,7 @@ class Vectara(VectorStore):
                 ),
                 x["score"],
             )
-            for x,md in zip(responses,metadatas)
+            for x, md in zip(responses, metadatas)
         ]
 
         return docs
