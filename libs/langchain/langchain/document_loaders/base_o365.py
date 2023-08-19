@@ -65,8 +65,8 @@ class O365BaseLoader(BaseLoader, BaseModel):
     chunk_size: Union[int, str] = CHUNK_SIZE
     """Number of bytes to retrieve from each api call to the server. int or 'auto'."""
 
-    @abstractmethod
     @property
+    @abstractmethod
     def _file_types(self) -> Sequence[_FileType]:
         """Return supported file types."""
 
@@ -75,8 +75,8 @@ class O365BaseLoader(BaseLoader, BaseModel):
         """Return a dict of supported file types to corresponding mime types."""
         return fetch_mime_types(self._file_types)
 
-    @abstractmethod
     @property
+    @abstractmethod
     def _scopes(self) -> List[str]:
         """Return required scopes."""
 
