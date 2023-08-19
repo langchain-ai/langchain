@@ -42,7 +42,7 @@ class JsonOutputFunctionsParser(OutputFunctionsParser):
     
     See: https://docs.python.org/3/library/json.html#encoders-and-decoders
     
-    Useful when the parsed output may include unicode characters
+    Useful when the parsed output may include unicode characters or new lines.
     """
 
     def parse_result(self, result: List[Generation]) -> Any:
