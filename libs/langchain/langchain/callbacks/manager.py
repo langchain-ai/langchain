@@ -582,7 +582,7 @@ class AsyncParentRunManager(AsyncRunManager):
         return manager
 
 
-class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
+class CallbackManagerForLLMRun(ParentRunManager, LLMManagerMixin):
     """Callback manager for LLM run."""
 
     def on_llm_new_token(
@@ -645,7 +645,7 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
         )
 
 
-class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
+class AsyncCallbackManagerForLLMRun(AsyncParentRunManager, LLMManagerMixin):
     """Async callback manager for LLM run."""
 
     async def on_llm_new_token(
