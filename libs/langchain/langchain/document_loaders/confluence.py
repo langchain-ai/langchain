@@ -475,7 +475,7 @@ class ConfluenceLoader(BaseLoader):
         else:
             content = content_format.get_content(page)
             if keep_newlines:
-                text=BeautifulSoup(content.replace('</p>','\n</p>').replace('<br />','\n'), "lxml").get_text(" ")+ "".join(
+                text = BeautifulSoup(content.replace('</p>', '\n</p>').replace('<br />', '\n'), "lxml").get_text(" ") + "".join(
                     attachment_texts
                 )
             else:
