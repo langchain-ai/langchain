@@ -10,6 +10,7 @@ on:
 
 env:
   POETRY_VERSION: "1.4.2"
+  WORKDIR: ${{ inputs.working-directory == '' && '.' || inputs.working-directory }}
 
 jobs:
   build:
@@ -20,7 +21,6 @@ jobs:
       # and also as small as possible since increasing the number makes
       # the initial `git fetch` slower.
       FETCH_DEPTH: 50
-      WORKDIR: ${{ inputs.working-directory == '' && '.' || inputs.working-directory }}
     strategy:
       matrix:
         # Only lint on the min and max supported Python versions.
@@ -47,8 +47,6 @@ jobs:
         # since the previous action step just created them.
         # This command resets the mtime to the last time the files were modified in git instead,
         # which is a high-quality and stable representation of the last modification date.
-        env:
-          WORKDIR: ${{ inputs.working-directory == '' && '.' || inputs.working-directory }}
         run: |
           # Important considerations:
           # - These commands run at base of the repo, since we never `cd` to the `WORKDIR`.
@@ -102,7 +100,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: poetry
           cache-dependency-path: |
-            ${{ inputs.working-directory == '' && '.' || inputs.working-directory }}/**/poetry.lock
+            ${{ env.WORKDIR }}/**/poetry.lock
       - name: Install dependencies
         working-directory: ${{ inputs.working-directory }}
         run: |

@@ -337,7 +337,7 @@ MessageLikeRepresentation = Union[
 ]
 
 
-class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
+class ChatPromptTemplate(BaseChatPromptTemplate):
     """A prompt template for chat models.
 
     Use to create flexible templated prompts for chat models.
