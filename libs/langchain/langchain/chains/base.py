@@ -1,4 +1,5 @@
 """Base interface that all chains should implement."""
+import time
 import asyncio
 import inspect
 import json
@@ -55,7 +56,7 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
             output as a string or object. This method can only be used for a subset of
             chains and cannot return as rich of an output as `__call__`.
     """
-
+    RETRY_COUNT = 5
     def invoke(
         self,
         input: Dict[str, Any],
@@ -278,6 +279,22 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
                 else self._call(inputs)
             )
         except (KeyboardInterrupt, Exception) as e:
+            if "time" in str(e):
+                #TIMEOUT
+                for i in range(self.RETRY_COUNT):  # Retry up to 5 times
+                    try:
+                        outputs = (
+                            self._call(inputs, run_manager=run_manager)
+                            if new_arg_supported
+                            else self._call(inputs)
+                        )
+                        break  # If the operation is successful, break the loop
+                    except ValueError as e:
+                        if "time out" in str(e):
+                            print(f"Timeout error occurred, retrying in {i+1} seconds...")
+                            time.sleep(i+1)  # Wait for i+1 seconds before retrying
+        else:
+            raise
             run_manager.on_chain_error(e)
             raise e
         run_manager.on_chain_end(outputs)
