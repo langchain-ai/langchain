@@ -9,7 +9,7 @@ from langchain.chains.llm import LLMChain
 from langchain.chains.qa_generation.prompt import PROMPT_SELECTOR
 from langchain.output_parsers.json import SimpleJsonOutputParser
 from langchain.pydantic_v1 import Field
-from langchain.schema import BasePromptTemplate
+from langchain.schema import BaseOutputParser, BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
@@ -35,6 +35,7 @@ class QAGenerationChain(Chain):
         cls,
         llm: BaseLanguageModel,
         prompt: Optional[BasePromptTemplate] = None,
+        output_parser: Optional[BaseOutputParser] = None,
         **kwargs: Any,
     ) -> QAGenerationChain:
         """
@@ -43,15 +44,15 @@ class QAGenerationChain(Chain):
         Args:
             llm: a language model
             prompt: a prompt template
+            output_parser: an output parser
             **kwargs: additional arguments
 
         Returns:
             a QAGenerationChain class
         """
         _prompt = prompt or PROMPT_SELECTOR.get_prompt(llm)
-        chain = LLMChain(
-            llm=llm, prompt=_prompt, output_parser=SimpleJsonOutputParser()
-        )
+        _output_parser = output_parser or SimpleJsonOutputParser()
+        chain = LLMChain(llm=llm, prompt=_prompt, output_parser=_output_parser)
         return cls(llm_chain=chain, **kwargs)
 
     @property
