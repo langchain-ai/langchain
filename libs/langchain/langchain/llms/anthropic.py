@@ -52,6 +52,15 @@ class _AnthropicCommon(BaseLanguageModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
     @root_validator(pre=True)
+    def consistent_kwargs(cls, values: Dict) -> Dict:
+        """Allow the use of kwargs consistent with ChatOpenAI."""
+        if "model_name" in values.keys():
+            values["model"] = values["model_name"]
+        if "max_tokens" in values.keys():
+            values["max_tokens_to_sample"] = values["max_tokens"]
+        return values
+
+    @root_validator(pre=True)
     def build_extra(cls, values: Dict) -> Dict:
         extra = values.get("model_kwargs", {})
         all_required_field_names = get_pydantic_field_names(cls)
