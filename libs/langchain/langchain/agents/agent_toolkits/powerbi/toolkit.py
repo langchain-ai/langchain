@@ -1,8 +1,6 @@
 """Toolkit for interacting with a Power BI dataset."""
 from typing import List, Optional, Union
 
-from pydantic_v1 import Field
-
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
@@ -13,6 +11,7 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
+from langchain.pydantic_v1 import Field
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool
 from langchain.tools.powerbi.prompt import (

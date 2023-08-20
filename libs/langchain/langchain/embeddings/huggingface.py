@@ -1,8 +1,7 @@
 from typing import Any, Dict, List, Optional
 
-from pydantic_v1 import BaseModel, Extra, Field
-
 from langchain.embeddings.base import Embeddings
+from langchain.pydantic_v1 import BaseModel, Extra, Field
 
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
 DEFAULT_INSTRUCT_MODEL = "hkunlp/instructor-large"
@@ -150,7 +149,7 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
                 self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
             )
         except ImportError as e:
-            raise ValueError("Dependencies for InstructorEmbedding not found.") from e
+            raise ImportError("Dependencies for InstructorEmbedding not found.") from e
 
     class Config:
         """Configuration for this pydantic object."""

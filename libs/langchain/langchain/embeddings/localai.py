@@ -15,7 +15,6 @@ from typing import (
     Union,
 )
 
-from pydantic_v1 import BaseModel, Extra, Field, root_validator
 from tenacity import (
     AsyncRetrying,
     before_sleep_log,
@@ -26,6 +25,7 @@ from tenacity import (
 )
 
 from langchain.embeddings.base import Embeddings
+from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
 
 logger = logging.getLogger(__name__)

@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, List
 
-from pydantic_v1 import Field
-
 from langchain.agents.agent_toolkits.base import BaseToolkit
+from langchain.pydantic_v1 import Field
 from langchain.tools import BaseTool
 from langchain.tools.office365.create_draft_message import O365CreateDraftMessage
 from langchain.tools.office365.events_search import O365SearchEvents

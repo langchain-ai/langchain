@@ -15,7 +15,6 @@ from typing import (
     Union,
 )
 
-from pydantic_v1 import Field, root_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -29,6 +28,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models.base import BaseChatModel
+from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import (
     AIMessage,
     BaseMessage,
@@ -140,8 +140,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
 
 class JinaChat(BaseChatModel):
-    """Wrapper for Jina AI's LLM service, providing cost-effective
-    image chat capabilities.
+    """`Jina AI` Chat models API.
 
     To use, you should have the ``openai`` python package installed, and the
     environment variable ``JINACHAT_API_KEY`` set to your API key, which you

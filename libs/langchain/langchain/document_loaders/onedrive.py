@@ -8,11 +8,10 @@ from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional, Type, Union
 
-from pydantic_v1 import BaseModel, BaseSettings, Field, FilePath, SecretStr
-
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.onedrive_file import OneDriveFileLoader
+from langchain.pydantic_v1 import BaseModel, BaseSettings, Field, FilePath, SecretStr
 
 if TYPE_CHECKING:
     from O365 import Account

@@ -1,9 +1,8 @@
 from typing import Any, Callable, List
 
-from pydantic_v1 import Extra
-
 from langchain.embeddings.base import Embeddings
 from langchain.llms import SelfHostedPipeline
+from langchain.pydantic_v1 import Extra
 
 
 def _embed_documents(pipeline: Any, *args: Any, **kwargs: Any) -> List[List[float]]:

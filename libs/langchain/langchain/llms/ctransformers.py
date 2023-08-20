@@ -1,13 +1,12 @@
 from functools import partial
 from typing import Any, Dict, List, Optional, Sequence
 
-from pydantic_v1 import root_validator
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import LLM
+from langchain.pydantic_v1 import root_validator
 
 
 class CTransformers(LLM):
