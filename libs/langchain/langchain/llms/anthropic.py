@@ -23,9 +23,13 @@ class _AnthropicCommon(BaseLanguageModel):
     async_client: Any = None  #: :meta private:
     model: str = "claude-2"
     """Model name to use."""
+    model_name: str = "claude-2"
+    """Model name to use (alias)."""
 
     max_tokens_to_sample: int = 256
     """Denotes the number of tokens to predict per generation."""
+    max_tokens: int = 256
+    """Denotes the number of tokens to predict per generation (alias)."""
 
     temperature: Optional[float] = None
     """A non-negative float that tunes the degree of randomness in generation."""
@@ -54,10 +58,15 @@ class _AnthropicCommon(BaseLanguageModel):
     @root_validator(pre=True)
     def consistent_kwargs(cls, values: Dict) -> Dict:
         """Allow the use of kwargs consistent with ChatOpenAI."""
-        if "model_name" in values.keys():
-            values["model"] = values["model_name"]
-        if "max_tokens" in values.keys():
-            values["max_tokens_to_sample"] = values["max_tokens"]
+
+        def patch_alias(original_name: str, alias_name: str):
+            if alias_name in values.keys():
+                values[original_name] = values[alias_name]
+            else:
+                values[alias_name] = values[original_name]
+
+        patch_alias("model", "model_name")
+        patch_alias("max_tokens_to_sample", "max_tokens")
         return values
 
     @root_validator(pre=True)
