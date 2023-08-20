@@ -59,14 +59,15 @@ class _AnthropicCommon(BaseLanguageModel):
     def consistent_kwargs(cls, values: Dict) -> Dict:
         """Allow the use of kwargs consistent with ChatOpenAI."""
 
-        def patch_alias(original_name: str, alias_name: str):
+        def patch_alias(_values: Dict, original_name: str, alias_name: str) -> Dict:
             if alias_name in values.keys():
-                values[original_name] = values[alias_name]
+                _values[original_name] = _values[alias_name]
             else:
-                values[alias_name] = values[original_name]
+                _values[alias_name] = _values[original_name]
+            return _values
 
-        patch_alias("model", "model_name")
-        patch_alias("max_tokens_to_sample", "max_tokens")
+        values = patch_alias(values, "model", "model_name")
+        values = patch_alias(values, "max_tokens_to_sample", "max_tokens")
         return values
 
     @root_validator(pre=True)
