@@ -68,6 +68,15 @@ class ConfluenceLoader(BaseLoader):
             )
             documents = loader.load(space_key="SPACE",limit=50)
 
+            # Server on perm
+            loader = ConfluenceLoader(
+                url="https://confluence.yoursite.com/",
+                username="me",
+                api_key="your_password",
+                cloud=False
+            )
+            documents = loader.load(space_key="SPACE",limit=50)
+
     :param url: _description_
     :type url: str
     :param api_key: _description_, defaults to None
@@ -205,6 +214,7 @@ class ConfluenceLoader(BaseLoader):
         max_pages: Optional[int] = 1000,
         ocr_languages: Optional[str] = None,
         keep_markdown_format: bool = False,
+        keep_newlines=False
     ) -> List[Document]:
         """
         :param space_key: Space key retrieved from a confluence URL, defaults to None
@@ -237,6 +247,9 @@ class ConfluenceLoader(BaseLoader):
         :param keep_markdown_format: Whether to keep the markdown format, defaults to
             False
         :type keep_markdown_format: bool
+        :param keep_newlines: Whether to keep the newlines format, defaults to
+            False
+        :type keep_newlines: bool
         :raises ValueError: _description_
         :raises ImportError: _description_
         :return: _description_
@@ -461,9 +474,14 @@ class ConfluenceLoader(BaseLoader):
 
         else:
             content = content_format.get_content(page)
-            text = BeautifulSoup(content, "lxml").get_text(" ", strip=True) + "".join(
-                attachment_texts
-            )
+            if keep_newlines:
+                text=BeautifulSoup(content.replace('</p>','\n</p>').replace('<br />','\n'), "lxml").get_text(" ")+ "".join(
+                    attachment_texts
+                )
+            else:
+                text = BeautifulSoup(content, "lxml").get_text(" ", strip=True) + "".join(
+                    attachment_texts
+                )
 
         if include_comments:
             comments = self.confluence.get_page_comments(
