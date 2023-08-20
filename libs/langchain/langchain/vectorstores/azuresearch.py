@@ -18,7 +18,6 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -26,6 +25,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
+from langchain.pydantic_v1 import root_validator
 from langchain.schema import BaseRetriever
 from langchain.utils import get_from_env
 from langchain.vectorstores.base import VectorStore
@@ -269,12 +269,6 @@ class AzureSearch(VectorStore):
             metadata = metadatas[i] if metadatas else {}
             # Add data to index
             # Additional metadata to fields mapping
-            if metadata:
-                additional_fields = {
-                    k: v
-                    for k, v in metadata.items()
-                    if k in [x.name for x in self.fields]
-                }
             doc = {
                 "@search.action": "upload",
                 FIELDS_ID: key,
@@ -284,7 +278,13 @@ class AzureSearch(VectorStore):
                 ).tolist(),
                 FIELDS_METADATA: json.dumps(metadata),
             }
-            doc.update(additional_fields)
+            if metadata:
+                additional_fields = {
+                    k: v
+                    for k, v in metadata.items()
+                    if k in [x.name for x in self.fields]
+                }
+                doc.update(additional_fields)
             data.append(doc)
             ids.append(key)
             # Upload data in batches

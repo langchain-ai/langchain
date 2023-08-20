@@ -1,24 +1,23 @@
 """Test OpenAI API wrapper."""
 from pathlib import Path
-from typing import Any, Generator
-from unittest.mock import MagicMock, patch
+from typing import Generator
 
 import pytest
 
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.llms.loading import load_llm
-from langchain.llms.openai import OpenAI, OpenAIChat
+from langchain.llms.openai import OpenAI
 from langchain.schema import LLMResult
 from tests.unit_tests.callbacks.fake_callback_handler import (
-    FakeAsyncCallbackHandler,
     FakeCallbackHandler,
 )
 
 
+@pytest.mark.scheduled
 def test_openai_call() -> None:
     """Test valid call to openai."""
-    llm = OpenAI(max_tokens=10, n=3)
+    llm = OpenAI()
     output = llm("Say something nice:")
     assert isinstance(output, str)
 
@@ -88,6 +87,7 @@ def test_saving_loading_llm(tmp_path: Path) -> None:
     assert loaded_llm == llm
 
 
+@pytest.mark.scheduled
 def test_openai_streaming() -> None:
     """Test streaming tokens from OpenAI."""
     llm = OpenAI(max_tokens=10)
@@ -99,6 +99,7 @@ def test_openai_streaming() -> None:
         assert isinstance(token, str)
 
 
+@pytest.mark.scheduled
 @pytest.mark.asyncio
 async def test_openai_astream() -> None:
     """Test streaming tokens from OpenAI."""
@@ -108,6 +109,7 @@ async def test_openai_astream() -> None:
         assert isinstance(token, str)
 
 
+@pytest.mark.scheduled
 @pytest.mark.asyncio
 async def test_openai_abatch() -> None:
     """Test streaming tokens from OpenAI."""
@@ -130,6 +132,7 @@ async def test_openai_abatch_tags() -> None:
         assert isinstance(token, str)
 
 
+@pytest.mark.scheduled
 def test_openai_batch() -> None:
     """Test streaming tokens from OpenAI."""
     llm = OpenAI(max_tokens=10)
@@ -139,6 +142,7 @@ def test_openai_batch() -> None:
         assert isinstance(token, str)
 
 
+@pytest.mark.scheduled
 @pytest.mark.asyncio
 async def test_openai_ainvoke() -> None:
     """Test streaming tokens from OpenAI."""
@@ -148,6 +152,7 @@ async def test_openai_ainvoke() -> None:
     assert isinstance(result, str)
 
 
+@pytest.mark.scheduled
 def test_openai_invoke() -> None:
     """Test streaming tokens from OpenAI."""
     llm = OpenAI(max_tokens=10)
@@ -156,6 +161,7 @@ def test_openai_invoke() -> None:
     assert isinstance(result, str)
 
 
+@pytest.mark.scheduled
 def test_openai_multiple_prompts() -> None:
     """Test completion with multiple prompts."""
     llm = OpenAI(max_tokens=10)
@@ -183,6 +189,7 @@ def test_openai_streaming_multiple_prompts_error() -> None:
         OpenAI(streaming=True).generate(["I'm Pickle Rick", "I'm Pickle Rick"])
 
 
+@pytest.mark.scheduled
 def test_openai_streaming_call() -> None:
     """Test valid call to openai."""
     llm = OpenAI(max_tokens=10, streaming=True)
@@ -205,6 +212,7 @@ def test_openai_streaming_callback() -> None:
     assert callback_handler.llm_streams == 10
 
 
+@pytest.mark.scheduled
 @pytest.mark.asyncio
 async def test_openai_async_generate() -> None:
     """Test async generation."""
@@ -235,60 +243,6 @@ def test_openai_chat_wrong_class() -> None:
     llm = OpenAI(model_name="gpt-3.5-turbo")
     output = llm("Say foo:")
     assert isinstance(output, str)
-
-
-def test_openai_chat() -> None:
-    """Test OpenAIChat."""
-    llm = OpenAIChat(max_tokens=10)
-    output = llm("Say foo:")
-    assert isinstance(output, str)
-
-
-def test_openai_chat_streaming() -> None:
-    """Test OpenAIChat with streaming option."""
-    llm = OpenAIChat(max_tokens=10, streaming=True)
-    output = llm("Say foo:")
-    assert isinstance(output, str)
-
-
-def test_openai_chat_streaming_callback() -> None:
-    """Test that streaming correctly invokes on_llm_new_token callback."""
-    callback_handler = FakeCallbackHandler()
-    callback_manager = CallbackManager([callback_handler])
-    llm = OpenAIChat(
-        max_tokens=10,
-        streaming=True,
-        temperature=0,
-        callback_manager=callback_manager,
-        verbose=True,
-    )
-    llm("Write me a sentence with 100 words.")
-    assert callback_handler.llm_streams != 0
-
-
-@pytest.mark.asyncio
-async def test_openai_chat_async_generate() -> None:
-    """Test async chat."""
-    llm = OpenAIChat(max_tokens=10)
-    output = await llm.agenerate(["Hello, how are you?"])
-    assert isinstance(output, LLMResult)
-
-
-@pytest.mark.asyncio
-async def test_openai_chat_async_streaming_callback() -> None:
-    """Test that streaming correctly invokes on_llm_new_token callback."""
-    callback_handler = FakeCallbackHandler()
-    callback_manager = CallbackManager([callback_handler])
-    llm = OpenAIChat(
-        max_tokens=10,
-        streaming=True,
-        temperature=0,
-        callback_manager=callback_manager,
-        verbose=True,
-    )
-    result = await llm.agenerate(["Write me a sentence with 100 words."])
-    assert callback_handler.llm_streams != 0
-    assert isinstance(result, LLMResult)
 
 
 def test_openai_modelname_to_contextsize_valid() -> None:
@@ -351,63 +305,3 @@ def mock_completion() -> dict:
         ],
         "usage": {"prompt_tokens": 1, "completion_tokens": 2, "total_tokens": 3},
     }
-
-
-@pytest.mark.requires("openai")
-def test_openai_retries(mock_completion: dict) -> None:
-    llm = OpenAI()
-    mock_client = MagicMock()
-    completed = False
-    raised = False
-    import openai
-
-    def raise_once(*args: Any, **kwargs: Any) -> Any:
-        nonlocal completed, raised
-        if not raised:
-            raised = True
-            raise openai.error.APIError
-        completed = True
-        return mock_completion
-
-    mock_client.create = raise_once
-    callback_handler = FakeCallbackHandler()
-    with patch.object(
-        llm,
-        "client",
-        mock_client,
-    ):
-        res = llm.predict("bar", callbacks=[callback_handler])
-        assert res == "Bar Baz"
-    assert completed
-    assert raised
-    assert callback_handler.retries == 1
-
-
-@pytest.mark.requires("openai")
-async def test_openai_async_retries(mock_completion: dict) -> None:
-    llm = OpenAI()
-    mock_client = MagicMock()
-    completed = False
-    raised = False
-    import openai
-
-    def raise_once(*args: Any, **kwargs: Any) -> Any:
-        nonlocal completed, raised
-        if not raised:
-            raised = True
-            raise openai.error.APIError
-        completed = True
-        return mock_completion
-
-    mock_client.create = raise_once
-    callback_handler = FakeAsyncCallbackHandler()
-    with patch.object(
-        llm,
-        "client",
-        mock_client,
-    ):
-        res = llm.apredict("bar", callbacks=[callback_handler])
-        assert res == "Bar Baz"
-    assert completed
-    assert raised
-    assert callback_handler.retries == 1

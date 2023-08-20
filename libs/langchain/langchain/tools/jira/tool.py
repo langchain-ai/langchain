@@ -30,12 +30,8 @@ agent = initialize_agent(
 """
 from typing import Optional
 
-from pydantic import Field
-
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
+from langchain.callbacks.manager import CallbackManagerForToolRun
+from langchain.pydantic_v1 import Field
 from langchain.tools.base import BaseTool
 from langchain.utilities.jira import JiraAPIWrapper
 
@@ -45,8 +41,8 @@ class JiraAction(BaseTool):
 
     api_wrapper: JiraAPIWrapper = Field(default_factory=JiraAPIWrapper)
     mode: str
-    name = ""
-    description = ""
+    name: str = ""
+    description: str = ""
 
     def _run(
         self,
@@ -55,11 +51,3 @@ class JiraAction(BaseTool):
     ) -> str:
         """Use the Atlassian Jira API to run an operation."""
         return self.api_wrapper.run(self.mode, instructions)
-
-    async def _arun(
-        self,
-        _: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the Atlassian Jira API to run an operation."""
-        raise NotImplementedError("JiraAction does not support async")

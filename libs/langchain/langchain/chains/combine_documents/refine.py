@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Tuple
 
-from pydantic import Extra, Field, root_validator
-
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
     BaseCombineDocumentsChain,
@@ -13,6 +11,7 @@ from langchain.chains.combine_documents.base import (
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
 from langchain.prompts.prompt import PromptTemplate
+from langchain.pydantic_v1 import Extra, Field, root_validator
 from langchain.schema import BasePromptTemplate, format_document
 
 
@@ -53,7 +52,7 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
             prompt = PromptTemplate.from_template(
                 "Summarize this content: {context}"
             )
-            llm_chain = LLMChain(llm=llm, prompt=prompt)
+            initial_llm_chain = LLMChain(llm=llm, prompt=prompt)
             initial_response_name = "prev_response"
             # The prompt here should take as an input variable the
             # `document_variable_name` as well as `initial_response_name`
@@ -61,7 +60,7 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
                 "Here's your first summary: {prev_response}. "
                 "Now add to it based on the following context: {context}"
             )
-            llm_chain_refine = LLMChain(llm=llm, prompt=prompt_refine)
+            refine_llm_chain = LLMChain(llm=llm, prompt=prompt_refine)
             chain = RefineDocumentsChain(
                 initial_llm_chain=initial_llm_chain,
                 refine_llm_chain=refine_llm_chain,

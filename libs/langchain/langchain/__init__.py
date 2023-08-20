@@ -1,5 +1,5 @@
+# ruff: noqa: E402
 """Main entrypoint into package."""
-
 from importlib import metadata
 from typing import Optional
 
@@ -66,6 +66,7 @@ llm_cache: Optional[BaseCache] = None
 
 # For backwards compatibility
 SerpAPIChain = SerpAPIWrapper
+
 
 __all__ = [
     "LLMChain",
