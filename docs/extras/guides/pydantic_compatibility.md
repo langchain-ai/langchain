@@ -4,22 +4,12 @@
 - v2 contains has a number of breaking changes (https://docs.pydantic.dev/2.0/migration/)
 - Pydantic v2 and v1 are under the same package name, so both versions cannot be installed at the same time
 
-
 ## LangChain Pydantic Migration Plan
 
-LangChain will carry out the migration to pydantic v2 in two steps:
-
-1. 2023-08-17: LangChain will allow users to install either Pydantic V1 or V2. 
+As of `langchain>=0.0.267`, LangChain will allow users to install either Pydantic V1 or V2. 
    * Internally LangChain will continue to [use V1](https://docs.pydantic.dev/latest/migration/#continue-using-pydantic-v1-features).
    * During this time, users can pin their pydantic version to v1 to avoid breaking changes, or start a partial
    migration using pydantic v2 throughout their code, but avoiding mixing v1 and v2 code for LangChain (see below).
-
-2. 2023-08-25: LangChain will migrate internally to using V2 code. 
-  * Users will have to upgrade to V2 as well to use LangChain.
-  * Users should stop using the `pydantic.v1` namespace when using LangChain.
-  * See the [bump-pydantic package](https://github.com/pydantic/bump-pydantic) to help with the upgrade process.
-
-## Between 2023-08-17 and 2023-08-25 releases
 
 User can either pin to pydantic v1, and upgrade their code in one go once LangChain has migrated to v2 internally, or they can start a partial migration to v2, but must avoid mixing v1 and v2 code for LangChain.
 
@@ -113,9 +103,3 @@ Tool.from_function( # <-- tool uses v1 namespace
     args_schema=CalculatorInput
 )
 ```
-
-## After 2023-08-25 release
-
-* Users must upgrade to v2
-* Users should not pass `pydantic.v1` derived objects to LangChain or rely on `pydantic.v1` when extending functionality
-
