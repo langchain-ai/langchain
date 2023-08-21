@@ -1,7 +1,6 @@
 """Fake ChatModel for testing purposes."""
 import asyncio
 import time
-from itertools import cycle
 from typing import Any
 from typing import AsyncIterator
 from typing import Dict
@@ -19,7 +18,6 @@ from langchain.schema.messages import BaseMessage
 from langchain.schema.output import ChatGeneration
 from langchain.schema.output import ChatGenerationChunk
 from langchain.schema.output import ChatResult
-from pydantic import PrivateAttr
 
 
 class FakeListChatModel(SimpleChatModel):
@@ -87,6 +85,7 @@ class FakeListChatModel(SimpleChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         response = self.get_next_response()
+        print(response)
 
         if isinstance(response, dict):
             message = AIMessage(
@@ -95,7 +94,12 @@ class FakeListChatModel(SimpleChatModel):
                     "function_call": response
                 },
             )
-            generation = ChatGeneration(message=message)
-            return ChatResult(generations=[generation])
+        elif isinstance(response, str):
+            message = AIMessage(content=response)
+        elif isinstance(response, AIMessage):
+            message = response
+        else:
+            raise ValueError(f"Invalid response type: {type(response)}")
 
-        return super()._generate(messages, stop, run_manager, **kwargs)
+        generation = ChatGeneration(message=message)
+        return ChatResult(generations=[generation])
