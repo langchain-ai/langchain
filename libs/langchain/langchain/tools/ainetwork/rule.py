@@ -46,7 +46,7 @@ In order to AINvalueOps with SET at the path, the execution result of the `eval`
 ## GET Example
 - type: GET
 - path: /apps/langchain_project_1
-"""
+"""  # noqa: E501
     args_schema: Type[BaseModel] = RuleSchema
 
     async def _arun(

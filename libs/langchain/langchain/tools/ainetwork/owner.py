@@ -62,7 +62,7 @@ An address set as `owner` can modify permissions according to its granted author
 ### Example
 - type: GET
 - path: /apps/langchain
-"""
+"""  # noqa: E501
     args_schema: Type[BaseModel] = RuleSchema
 
     async def _arun(

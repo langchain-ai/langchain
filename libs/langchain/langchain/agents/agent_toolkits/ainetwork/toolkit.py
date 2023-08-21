@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, List, Literal, Optional
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
-from langchain.pydantic_v1 import Field, root_validator
+from langchain.pydantic_v1 import root_validator
 from langchain.tools import BaseTool
 from langchain.tools.ainetwork.app import AINAppOps
 from langchain.tools.ainetwork.owner import AINOwnerOps
@@ -14,19 +14,13 @@ from langchain.tools.ainetwork.value import AINValueOps
 
 if TYPE_CHECKING:
     from ain.ain import Ain
-else:
-    try:
-        # We do this so pydantic can resolve the types when instantiating
-        from ain.ain import Ain
-    except ImportError:
-        pass
 
 
 class AINetworkToolkit(BaseToolkit):
     """Toolkit for interacting with AINetwork Blockchain."""
 
-    network: Optional[Literal["mainnet", "testnet"]] = Field("testnet")
-    interface: Optional["Ain"] = Field(None)
+    network: Optional[Literal["mainnet", "testnet"]] = "testnet"
+    interface: Optional[Ain] = None
 
     @root_validator(pre=True)
     def set_interface(cls, values: dict) -> dict:

@@ -18,7 +18,10 @@ class AppSchema(BaseModel):
     appName: str = Field(..., description="Name of the application on the blockchain")
     address: Optional[Union[str, list[str]]] = Field(
         None,
-        description="A single address or a list of addresses. Default: current session's address",
+        description=(
+            "A single address or a list of addresses. Default: current session's "
+            "address"
+        ),
     )
 
 
@@ -54,7 +57,7 @@ Also, `admin` is initialized to have all `owner` permissions and `rule` allowed 
 1. Path /apps/test_project created.
 2. <address1> and <address2> registered as admin.
 
-"""
+"""  # noqa: E501
     args_schema: Type[BaseModel] = AppSchema
 
     async def _arun(

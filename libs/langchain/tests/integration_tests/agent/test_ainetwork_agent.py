@@ -109,7 +109,7 @@ def test_ainetwork_toolkit() -> None:
 
     # Test granting owner config
     agent.run(
-        f"""Grant owner authority to {co_address} for edit write rule permission of /apps/{app_name}/DB_co ."""
+        f"""Grant owner authority to {co_address} for edit write rule permission of /apps/{app_name}/DB_co ."""  # noqa: E501
     )
     validate(
         f"/apps/{app_name}/DB_co",
