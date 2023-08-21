@@ -11,7 +11,7 @@ from langchain.vectorstores.zilliz import Zilliz
 
 
 class ZillizRetriever(BaseRetriever):
-    """Retriever for the Zilliz API."""
+    """`Zilliz API` retriever."""
 
     embedding_function: Embeddings
     """The underlying embedding function from which documents will be retrieved."""
