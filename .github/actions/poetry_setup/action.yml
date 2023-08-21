@@ -47,7 +47,7 @@ runs:
           ~/.cache/pip
         key: pip-${{ runner.os }}-${{ runner.arch }}-py-${{ inputs.python-version }}
 
-    - run: pipx install poetry==${{ inputs.poetry-version }} --python python${{ inputs.python-version }}
+    - run: pipx install poetry==${{ inputs.poetry-version }} --python python${{ inputs.python-version }} --verbose
       shell: bash
 
     - name: Check Poetry File
