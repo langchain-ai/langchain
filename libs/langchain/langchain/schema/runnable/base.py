@@ -217,11 +217,14 @@ class Runnable(Generic[Input, Output], ABC):
         *,
         exceptions_to_handle: Tuple[Type[BaseException]] = (Exception,),
     ) -> R:
-        return cast(R, RunnableWithFallbacks(
-            runnable=self,
-            fallbacks=fallbacks,
-            exceptions_to_handle=exceptions_to_handle,
-        ))
+        return cast(
+            R,
+            RunnableWithFallbacks(
+                runnable=self,
+                fallbacks=fallbacks,
+                exceptions_to_handle=exceptions_to_handle,
+            ),
+        )
 
     """ --- Helper methods for Subclasses --- """
 
