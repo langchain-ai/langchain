@@ -35,7 +35,7 @@ def try_load_from_hub(
     if remote_path.parts[0] != valid_prefix:
         return None
     if remote_path.suffix[1:] not in valid_suffixes:
-        raise ValueError("Unsupported file type.")
+        raise ValueError(f"Unsupported file type, must be one of {valid_suffixes}.")
 
     # Using Path with URLs is not recommended, because on Windows
     # the backslash is used as the path separator, which can cause issues
