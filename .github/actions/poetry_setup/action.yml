@@ -45,7 +45,9 @@ runs:
       with:
         path: |
           ~/.cache/pip
-        key: pip-${{ runner.os }}-${{ runner.arch }}-py-${{ inputs.python-version }}
+        # This step primarily caches the poetry installation,
+        # so make sure it's keyed on the poetry version as well.
+        key: pip-${{ runner.os }}-${{ runner.arch }}-py-${{ inputs.python-version }}-${{ inputs.poetry-version }}
 
     - name: Install poetry
       shell: bash
