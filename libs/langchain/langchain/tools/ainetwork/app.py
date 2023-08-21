@@ -1,7 +1,7 @@
 import builtins
 import json
 from enum import Enum
-from typing import Optional, Type, Union
+from typing import List, Optional, Type, Union
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import BaseModel, Field
@@ -16,7 +16,7 @@ class AppOperationType(str, Enum):
 class AppSchema(BaseModel):
     type: AppOperationType = Field(...)
     appName: str = Field(..., description="Name of the application on the blockchain")
-    address: Optional[Union[str, list[str]]] = Field(
+    address: Optional[Union[str, List[str]]] = Field(
         None,
         description=(
             "A single address or a list of addresses. Default: current session's "
@@ -64,7 +64,7 @@ Also, `admin` is initialized to have all `owner` permissions and `rule` allowed 
         self,
         type: AppOperationType,
         appName: str,
-        address: Optional[Union[str, list[str]]] = None,
+        address: Optional[Union[str, List[str]]] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         from ain.types import ValueOnlyTransactionInput

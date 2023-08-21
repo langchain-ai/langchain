@@ -1,6 +1,6 @@
 import builtins
 import json
-from typing import Optional, Type, Union
+from typing import List, Optional, Type, Union
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import BaseModel, Field
@@ -10,7 +10,7 @@ from langchain.tools.ainetwork.base import AINBaseTool, OperationType
 class RuleSchema(BaseModel):
     type: OperationType = Field(...)
     path: str = Field(..., description="Blockchain reference path")
-    address: Optional[Union[str, list[str]]] = Field(
+    address: Optional[Union[str, List[str]]] = Field(
         None, description="A single address or a list of addresses"
     )
     write_owner: Optional[bool] = Field(
@@ -69,7 +69,7 @@ An address set as `owner` can modify permissions according to its granted author
         self,
         type: OperationType,
         path: str,
-        address: Optional[Union[str, list[str]]] = None,
+        address: Optional[Union[str, List[str]]] = None,
         write_owner: Optional[bool] = None,
         write_rule: Optional[bool] = None,
         write_function: Optional[bool] = None,
