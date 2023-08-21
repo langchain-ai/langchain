@@ -104,6 +104,12 @@ class EdenAI(LLM):
         else:
             return output[self.provider]["items"][0]["image"]
 
+    @staticmethod
+    def get_user_agent():
+        from langchain import __version__
+        return f"langchain/{__version__}"
+
+
     def _call(
         self,
         prompt: str,
@@ -131,7 +137,10 @@ class EdenAI(LLM):
             stops = stop
 
         url = f"{self.base_url}/{self.feature}/{self.subfeature}"
-        headers = {"Authorization": f"Bearer {self.edenai_api_key}"}
+        headers = {
+            "Authorization": f"Bearer {self.edenai_api_key}",
+            "User-Agent": self.get_user_agent(),
+        }
         payload = {
             **self.params,
             "providers": self.provider,
@@ -192,7 +201,10 @@ class EdenAI(LLM):
             stops = stop
 
         url = f"{self.base_url}/{self.feature}/{self.subfeature}"
-        headers = {"Authorization": f"Bearer {self.edenai_api_key}"}
+        headers = {
+            "Authorization": f"Bearer {self.edenai_api_key}",
+            "User-Agent": self.get_user_agent(),
+        }
         payload = {
             **self.params,
             "providers": self.provider,
