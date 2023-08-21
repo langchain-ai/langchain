@@ -47,8 +47,12 @@ runs:
           ~/.cache/pip
         key: pip-${{ runner.os }}-${{ runner.arch }}-py-${{ inputs.python-version }}
 
-    - run: pipx install poetry==${{ inputs.poetry-version }} --python python${{ inputs.python-version }}
+    - name: Install poetry
       shell: bash
+      env:
+        POETRY_VERSION: ${{ inputs.poetry-version }}
+        PYTHON_VERSION: ${{ inputs.python-version }}
+      run: pipx install "poetry==$POETRY_VERSION" --python "python$PYTHON_VERSION" --verbose
 
     - name: Check Poetry File
       shell: bash
