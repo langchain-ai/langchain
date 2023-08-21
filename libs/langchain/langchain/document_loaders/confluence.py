@@ -278,8 +278,9 @@ class ConfluenceLoader(BaseLoader):
                 include_attachments,
                 include_comments,
                 content_format,
-                ocr_languages,
-                keep_markdown_format,
+                ocr_languages=ocr_languages,
+                keep_markdown_format=keep_markdown_format,
+                keep_newlines=keep_newlines,
             )
 
         if label:
@@ -417,6 +418,7 @@ class ConfluenceLoader(BaseLoader):
         content_format: ContentFormat,
         ocr_languages: Optional[str] = None,
         keep_markdown_format: Optional[bool] = False,
+        keep_newlines: bool = False,
     ) -> List[Document]:
         """Process a list of pages into a list of documents."""
         docs = []
@@ -428,8 +430,9 @@ class ConfluenceLoader(BaseLoader):
                 include_attachments,
                 include_comments,
                 content_format,
-                ocr_languages,
-                keep_markdown_format,
+                ocr_languages=ocr_languages,
+                keep_markdown_format=keep_markdown_format,
+                keep_newlines=keep_newlines,
             )
             docs.append(doc)
 
@@ -443,6 +446,7 @@ class ConfluenceLoader(BaseLoader):
         content_format: ContentFormat,
         ocr_languages: Optional[str] = None,
         keep_markdown_format: Optional[bool] = False,
+        keep_newlines: bool = False,
     ) -> Document:
         if keep_markdown_format:
             try:
@@ -474,7 +478,7 @@ class ConfluenceLoader(BaseLoader):
 
         else:
             content = content_format.get_content(page)
-            if self.keep_newlines:
+            if keep_newlines:
                 text = BeautifulSoup(
                     content.replace("</p>", "\n</p>").replace("<br />", "\n"), "lxml"
                 ).get_text(" ") + "".join(attachment_texts)
