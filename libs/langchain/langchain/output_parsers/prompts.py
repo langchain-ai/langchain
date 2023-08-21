@@ -1,22 +1,22 @@
 # flake8: noqa
 from langchain.prompts.prompt import PromptTemplate
 
-NAIVE_FIX = """Instructions:
+NAIVE_FIX = """Инструкции:
 --------------
 {instructions}
 --------------
-Completion:
+Завершение:
 --------------
 {completion}
 --------------
 
-Above, the Completion did not satisfy the constraints given in the Instructions.
-Error:
+Вышеуказанное Завершение не удовлетворяет ограничениям, указанным в Инструкциях.
+Ошибка:
 --------------
 {error}
 --------------
 
-Please try again. Please only respond with an answer that satisfies the constraints laid out in the Instructions:"""
+Пожалуйста, попробуй ещё раз. Отвечай только так, чтобы это удовлетворяло ограничениям, изложенным в Инструкциях:"""
 
 
 NAIVE_FIX_PROMPT = PromptTemplate.from_template(NAIVE_FIX)

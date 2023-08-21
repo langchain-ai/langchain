@@ -1,21 +1,21 @@
 # flake8: noqa
 from langchain.prompts.prompt import PromptTemplate
 
-_PROMPT_TEMPLATE = """Translate a math problem into a expression that can be executed using Python's SymPy library. Use the output of running this code to answer the question.
+_PROMPT_TEMPLATE = """Переведи математическую задачу в выражение, которое можно выполнить с помощью библиотеки SymPy в Python. Используй результат выполнения этого кода, чтобы ответить на вопрос.
 
-Question: ${{Question with math problem.}}
+Вопрос: ${{Вопрос с математической задачей.}}
 ```text
-${{single line sympy expression that solves the problem}}
+${{однострочное выражение sympy, которое решает задачу}}
 ```
 ...sympy.sympify(text, evaluate=True)...
 ```output
-${{Output of running the code}}
+${{Результат выполнения кода}}
 ```
-Answer: ${{Answer}}
+Ответ: ${{Ответ}}
 
-Begin.
+Начнем.
 
-Question: What is the limit of sin(x) / x as x goes to 0
+Вопрос: Каков предел sin(x) / x при x, стремящемся к 0
 ```text
 limit(sin(x)/x, x, 0)
 ```
@@ -23,9 +23,9 @@ limit(sin(x)/x, x, 0)
 ```output
 1
 ```
-Answer: 1
+Ответ: 1
 
-Question: What is the integral of e^-x from 0 to infinity
+Вопрос: Каков интеграл от e^-x от 0 до бесконечности
 ```text
 integrate(exp(-x), (x, 0, oo))
 ```
@@ -34,7 +34,7 @@ integrate(exp(-x), (x, 0, oo))
 1
 ```
 
-Question: What are the solutions to this equation x**2 - x?
+Вопрос: Какие решения у этого уравнения x**2 - x?
 ```text
 solveset(x**2 - x, x)
 ```
@@ -42,7 +42,7 @@ solveset(x**2 - x, x)
 ```output
 [0, 1]
 ```
-Question: {question}
+Вопрос: {question}
 """
 
 PROMPT = PromptTemplate(

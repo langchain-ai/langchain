@@ -7,23 +7,23 @@ from typing import List
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseOutputParser, OutputParserException
 
-_PROMPT_TEMPLATE = """If someone asks you to perform a task, your job is to come up with a series of bash commands that will perform the task. There is no need to put "#!/bin/bash" in your answer. Make sure to reason step by step, using this format:
+_PROMPT_TEMPLATE = """Если кто-то просит тебя выполнить задачу, твоя задача - придумать серию команд bash, которые выполнит эту задачу. Нет необходимости добавлять "#!/bin/bash" в свой ответ. Обязательно объясняй шаг за шагом, используя этот формат:
 
-Question: "copy the files in the directory named 'target' into a new directory at the same level as target called 'myNewDirectory'"
+Вопрос: "скопировать файлы из директории с именем 'target' в новую директорию на том же уровне, что и target, под названием 'myNewDirectory'"
 
-I need to take the following actions:
-- List all files in the directory
-- Create a new directory
-- Copy the files from the first directory into the second directory
+Мне нужно выполнить следующие действия:
+- Перечислить все файлы в директории
+- Создать новую директорию
+- Скопировать файлы из первой директории во вторую
 ```bash
 ls
 mkdir myNewDirectory
 cp -r target/* myNewDirectory
 ```
 
-That is the format. Begin!
+Вот и весь формат. Начинай!
 
-Question: {question}"""
+Вопрос: {question}"""
 
 
 class BashOutputParser(BaseOutputParser):

@@ -1,21 +1,21 @@
 # flake8: noqa
 from langchain.prompts.prompt import PromptTemplate
 
-_PROMPT_TEMPLATE = """Translate a math problem into a expression that can be executed using Python's numexpr library. Use the output of running this code to answer the question.
+_PROMPT_TEMPLATE = """Переведи математическую задачу в выражение, которое можно выполнить с помощью библиотеки numexpr в Python. Используй результат выполнения этого кода, чтобы ответить на вопрос.
 
-Question: ${{Question with math problem.}}
+Вопрос: ${{Вопрос с математической задачей.}}
 ```text
-${{single line mathematical expression that solves the problem}}
+${{однострочное математическое выражение, решающее задачу}}
 ```
 ...numexpr.evaluate(text)...
 ```output
-${{Output of running the code}}
+${{Результат выполнения кода}}
 ```
-Answer: ${{Answer}}
+Ответ: ${{Ответ}}
 
-Begin.
+Начнем.
 
-Question: What is 37593 * 67?
+Вопрос: Чему равно 37593 * 67?
 ```text
 37593 * 67
 ```
@@ -23,9 +23,9 @@ Question: What is 37593 * 67?
 ```output
 2518731
 ```
-Answer: 2518731
+Ответ: 2518731
 
-Question: 37593^(1/5)
+Вопрос: 37593^(1/5)
 ```text
 37593**(1/5)
 ```
@@ -33,9 +33,9 @@ Question: 37593^(1/5)
 ```output
 8.222831614237718
 ```
-Answer: 8.222831614237718
+Ответ: 8.222831614237718
 
-Question: {question}
+Вопрос: {question}
 """
 
 PROMPT = PromptTemplate(

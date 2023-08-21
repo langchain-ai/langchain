@@ -23,16 +23,16 @@ class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):
 
     def construct_full_prompt(self, goals: List[str]) -> str:
         prompt_start = (
-            "Your decisions must always be made independently "
-            "without seeking user assistance.\n"
-            "Play to your strengths as an LLM and pursue simple "
-            "strategies with no legal complications.\n"
-            "If you have completed all your tasks, make sure to "
-            'use the "finish" command.'
+            "Ваши решения всегда должны приниматься независимо, "
+            "без привлечения помощи пользователя.\n"
+            "Играйте на своих сильных сторонах как LLM и преследуйте простые "
+            "стратегии без юридических сложностей.\n"
+            "Если вы выполнили все свои задачи, обязательно "
+            'используйте команду "завершить".'
         )
         # Construct full prompt
         full_prompt = (
-            f"You are {self.ai_name}, {self.ai_role}\n{prompt_start}\n\nGOALS:\n\n"
+            f"Вы {self.ai_name}, {self.ai_role}\n{prompt_start}\n\nЦЕЛИ:\n\n"
         )
         for i, goal in enumerate(goals):
             full_prompt += f"{i+1}. {goal}\n"
@@ -43,7 +43,7 @@ class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         base_prompt = SystemMessage(content=self.construct_full_prompt(kwargs["goals"]))
         time_prompt = SystemMessage(
-            content=f"The current time and date is {time.strftime('%c')}"
+            content=f"Текущее время и дата {time.strftime('%c')}"
         )
         used_tokens = self.token_counter(base_prompt.content) + self.token_counter(
             time_prompt.content
@@ -61,8 +61,8 @@ class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):
                 [self.token_counter(doc) for doc in relevant_memory]
             )
         content_format = (
-            f"This reminds you of these events "
-            f"from your past:\n{relevant_memory}\n\n"
+            f"Это напоминает вам о следующих событиях "
+            f"из вашего прошлого:\n{relevant_memory}\n\n"
         )
         memory_message = SystemMessage(content=content_format)
         used_tokens += self.token_counter(memory_message.content)
@@ -78,3 +78,4 @@ class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):
         messages += historical_messages
         messages.append(input_message)
         return messages
+    

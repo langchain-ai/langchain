@@ -7,60 +7,59 @@ Zheng, et. al. https://arxiv.org/abs/2306.05685
 # flake8: noqa
 from langchain.prompts import PromptTemplate
 
-template = """Act as a fair judge and rate the two responses to the question below.\
- Choose the response that best followed the instructions and answered the question.\
- Your assessment should weigh the following criteria:
+template = """Выступи в роли справедливого судьи и оцени два ответа на приведенный ниже вопрос.\
+ Выбери ответ, который лучше всего следовал инструкциям и ответил на вопрос.\
+ Твоя оценка должна учитывать следующие критерии:
 {criteria}\
- Start by comparing both responses and give a brief rationale.\
- Avoid bias from the order of presentation or response length.
-After giving your rationale, make your final decision using this format:\
- "[[A]]" if assistant A is better, "[[B]]" if assistant B is better,\
- and "[[C]]" for a tie. Finally, repeat the decision again on its own on a new line.
+ Начни с сравнения обоих ответов и дай краткое обоснование.\
+ Избегай предвзятости из-за порядка представления или длины ответа.
+После того как ты дал обоснование, прими окончательное решение, используя этот формат:\
+ "[[A]]", если помощник A лучше, "[[B]]", если помощник B лучше,\
+ и "[[C]]" в случае ничьей. Наконец, повтори решение еще раз само по себе на новой строке.
 
-[QUESTION]
+[ВОПРОС]
 {input}
-[/QUESTION]
+[/ВОПРОС]
 
-[RESPONSE A]
+[ОТВЕТ A]
 {prediction}
-[/RESPONSE A]
+[/ОТВЕТ A]
 
-[RESPONSE B]
+[ОТВЕТ B]
 {prediction_b}
-[/RESPONSE B]"""
+[/ОТВЕТ B]"""
 PROMPT = PromptTemplate(
     input_variables=["input", "prediction", "prediction_b", "criteria"],
     template=template,
 )
 
-template = """Act as a fair judge and rate the two responses to the question below.\
- Choose the response that best followed the instructions and answered the question.\
- Your assessment should weigh the following criteria:
+template = """Выступи в роли справедливого судьи и оцени два ответа на приведенный ниже вопрос.\
+ Выбери ответ, который лучше всего следовал инструкциям и ответил на вопрос.\
+ Твоя оценка должна учитывать следующие критерии:
 {criteria}\
- Start by comparing both responses and give a brief rationale.\
- Avoid bias from the order of presentation or response length.\
- Weigh accuracy based on the following ground truth reference\
- answer to the question:
+ Начни с сравнения обоих ответов и дай краткое обоснование.\
+ Избегай предвзятости из-за порядка представления или длины ответа.\
+ Оцени точность на основе следующего эталонного ответа на вопрос:
 
-[REFERENCE]
+[ЭТАЛОН]
 {reference}
-[/REFERENCE]
+[/ЭТАЛОН]
 
-After giving your rationale, make your final decision using this format:\
- "[[A]]" if assistant A is better, "[[B]]" if assistant B is better,\
- and "[[C]]" for a tie. Finally, repeat the decision again on its own on a new line.
+После того как ты дал обоснование, прими окончательное решение, используя этот формат:\
+ "[[A]]", если помощник A лучше, "[[B]]", если помощник B лучше,\
+ и "[[C]]" в случае ничьей. Наконец, повтори решение еще раз само по себе на новой строке.
 
-[QUESTION]
+[ВОПРОС]
 {input}
-[/QUESTION]
+[/ВОПРОС]
 
-[RESPONSE A]
+[ОТВЕТ A]
 {prediction}
-[/RESPONSE A]
+[/ОТВЕТ A]
 
-[RESPONSE B]
+[ОТВЕТ B]
 {prediction_b}
-[/RESPONSE B]"""
+[/ОТВЕТ B]"""
 
 PROMPT_WITH_REFERENCE = PromptTemplate(
     input_variables=["input", "prediction", "prediction_b", "reference", "criteria"],

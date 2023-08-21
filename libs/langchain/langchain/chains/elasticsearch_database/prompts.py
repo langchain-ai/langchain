@@ -1,36 +1,36 @@
 # flake8: noqa
 from langchain.prompts.prompt import PromptTemplate
 
-PROMPT_SUFFIX = """Only use the following Elasticsearch indices:
+PROMPT_SUFFIX = """Используй только следующие индексы Elasticsearch:
 {indices_info}
 
-Question: {input}
+Вопрос: {input}
 ESQuery:"""
 
-DEFAULT_DSL_TEMPLATE = """Given an input question, create a syntactically correct Elasticsearch query to run. Unless the user specifies in their question a specific number of examples they wish to obtain, always limit your query to at most {top_k} results. You can order the results by a relevant column to return the most interesting examples in the database.
+DEFAULT_DSL_TEMPLATE = """Получив входной вопрос, создай синтаксически правильный запрос Elasticsearch для его выполнения. Если пользователь не указывает в своем вопросе конкретное количество примеров, которые он хочет получить, всегда ограничивай свой запрос максимумом {top_k} результатов. Ты можешь упорядочить результаты по релевантной колонке, чтобы вернуть наиболее интересные примеры из базы данных.
 
-Unless told to do not query for all the columns from a specific index, only ask for a the few relevant columns given the question.
+Если не указано иное, не запрашивай все колонки из определенного индекса, запрашивай только несколько релевантных колонок, учитывая вопрос.
 
-Pay attention to use only the column names that you can see in the mapping description. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which index. Return the query as valid json.
+Обрати внимание, чтобы использовать только имена колонок, которые ты видишь в описании сопоставления. Будь осторожен, чтобы не запрашивать колонки, которые не существуют. Также обрати внимание, какая колонка находится в каком индексе. Верни запрос в виде действительного json.
 
-Use the following format:
+Используй следующий формат:
 
-Question: Question here
-ESQuery: Elasticsearch Query formatted as json
+Вопрос: Здесь вопрос
+ESQuery: Запрос Elasticsearch, отформатированный как json
 """
 
 DSL_PROMPT = PromptTemplate.from_template(DEFAULT_DSL_TEMPLATE + PROMPT_SUFFIX)
 
-DEFAULT_ANSWER_TEMPLATE = """Given an input question and relevant data from a database, answer the user question.
+DEFAULT_ANSWER_TEMPLATE = """Получив входной вопрос и релевантные данные из базы данных, ответь на вопрос пользователя.
 
-Use the following format:
+Используй следующий формат:
 
-Question: Question here
-Data: Relevant data here
-Answer: Final answer here
+Вопрос: Здесь вопрос
+Данные: Здесь релевантные данные
+Ответ: Здесь окончательный ответ
 
-Question: {input}
-Data: {data}
-Answer:"""
+Вопрос: {input}
+Данные: {data}
+Ответ:"""
 
 ANSWER_PROMPT = PromptTemplate.from_template(DEFAULT_ANSWER_TEMPLATE)

@@ -116,6 +116,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+venv_clear/
 
 # Spyder project settings
 .spyderproject
@@ -171,3 +172,4 @@ docs/api_reference/*/
 docs/docs_skeleton/build
 docs/docs_skeleton/node_modules
 docs/docs_skeleton/yarn.lock
+processed.txt

@@ -12,22 +12,22 @@ COT_PROMPT = PromptTemplate(
     input_variables=["problem_description", "thoughts"],
     template=dedent(
         """
-        You are an intelligent agent that is generating one thought at a time in
-        a tree of thoughts setting.
+        Ты - интеллектуальный агент, который генерирует одну мысль за раз в
+        древовидной структуре мыслей.
 
-        PROBLEM 
+        ПРОБЛЕМА 
         
         {{problem_description}}
         
         {% if thoughts %}
-        THOUGHTS
+        МЫСЛИ
         
         {% for thought in thoughts %}
         {{ thought }}
         {% endfor %}
         {% endif %}
         
-        Let's think step by step.
+        Давайте думать шаг за шагом.
         """
     ).strip(),
 )
@@ -56,35 +56,35 @@ PROPOSE_PROMPT = PromptTemplate(
     output_parser=JSONListOutputParser(),
     template=dedent(
         """
-        You are an intelligent agent that is generating thoughts in a tree of
-        thoughts setting.
+        Ты - интеллектуальный агент, который генерирует мысли в древовидной
+        структуре мыслей.
 
-        The output should be a markdown code snippet formatted as a JSON list of
-        strings, including the leading and trailing "```json" and "```":
+        Вывод должен быть оформлен в виде фрагмента кода на markdown, отформатированного как JSON-список
+        строк, включая ведущие и замыкающие "```json" и "```":
 
         ```json
         [
-            "<thought-1>",
-            "<thought-2>",
-            "<thought-3>"
+            "<мысль-1>",
+            "<мысль-2>",
+            "<мысль-3>"
         ]
         ```
 
-        PROBLEM
+        ПРОБЛЕМА
 
         {{ problem_description }}
 
         {% if thoughts %}
-        VALID THOUGHTS
+        ВАЛИДНЫЕ МЫСЛИ
 
         {% for thought in thoughts %}
         {{ thought }}
         {% endfor %}
 
-        Possible next {{ n }} valid thoughts based on the last valid thought:
+        Возможные следующие {{ n }} валидные мысли на основе последней валидной мысли:
         {% else %}
 
-        Possible next {{ n }} valid thoughts based on the PROBLEM:
+        Возможные следующие {{ n }} валидные мысли на основе ПРОБЛЕМЫ:
         {%- endif -%}
         """
     ).strip(),
@@ -113,25 +113,23 @@ CHECKER_PROMPT = PromptTemplate(
     input_variables=["problem_description", "thoughts"],
     template=dedent(
         """
-        You are an intelligent agent, validating thoughts of another intelligent agent.
+        Ты - интеллектуальный агент, проверяющий мысли другого интеллектуального агента.
 
-        PROBLEM 
+        ПРОБЛЕМА 
         
         {problem_description}
 
-        THOUGHTS
+        МЫСЛИ
         
         {thoughts}
 
-        Evaluate the thoughts and respond with one word.
+        Оцени мысли и ответь одним словом.
 
-        - Respond VALID if the last thought is a valid final solution to the
-        poblem.
-        - Respond INVALID if the last thought is invalid.
-        - Respond INTERMEDIATE if the last thought is valid but not the final
-        solution to the problem.
+        - Ответь ВАЛИДНО, если последняя мысль является валидным окончательным решением проблемы.
+        - Ответь НЕВАЛИДНО, если последняя мысль невалидна.
+        - Ответь ПРОМЕЖУТОЧНО, если последняя мысль валидна, но не является окончательным решением проблемы.
 
-        This chain of thoughts is"""
+        Эта цепочка мыслей"""
     ).strip(),
     output_parser=CheckerOutputParser(),
 )
