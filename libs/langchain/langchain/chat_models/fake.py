@@ -28,13 +28,11 @@ class FakeListChatModel(SimpleChatModel):
     responses: List
     sleep: Optional[float] = None
     i: int = 0
-    _response_iterator: cycle = PrivateAttr(None)
 
     @property
-    def response_iterator(self):
-        if self._response_iterator is None:
-            self._response_iterator = cycle(self.responses)
-        return self._response_iterator
+    def next_response(self):
+        self.i = self.i + 1 % len(self.responses)
+        return self.responses[self.i]
 
     @property
     def _llm_type(self) -> str:
@@ -48,7 +46,7 @@ class FakeListChatModel(SimpleChatModel):
         **kwargs: Any,
     ) -> str:
         """First try to lookup in queries, else return 'foo' or 'bar'."""
-        return next(self.response_iterator)
+        return self.next_response
 
     def _stream(
         self,
@@ -70,7 +68,7 @@ class FakeListChatModel(SimpleChatModel):
         run_manager: Union[AsyncCallbackManagerForLLMRun, None] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        response = next(self.response_iterator)
+        response = self.next_response
         for c in response:
             if self.sleep is not None:
                 await asyncio.sleep(self.sleep)
@@ -89,7 +87,7 @@ class FakeListChatModel(SimpleChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        response = next(self.response_iterator)
+        response = self.next_response
 
         if isinstance(response, dict):
             message = AIMessage(
