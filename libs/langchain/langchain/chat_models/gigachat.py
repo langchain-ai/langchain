@@ -31,9 +31,9 @@ class GigaChat(SimpleChatModel):
     model: str = "GigaChat:v1.13.0"
     profanity: bool = True
     temperature: float = 0
-    token: str = os.environ.get("GIGA_TOKEN", None)
-    user: str = os.environ.get("GIGA_USER", None)
-    password: str = os.environ.get("GIGA_PASSWORD", None)
+    token: str = os.environ.get("GIGA_TOKEN", "")
+    user: str = os.environ.get("GIGA_USER", "")
+    password: str = os.environ.get("GIGA_PASSWORD", "")
     verbose: bool = False
 
     logger = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ class GigaChat(SimpleChatModel):
                     "function_call"
                 ]
                 if message_dict["content"] == "":
-                    message_dict["content"] = None
+                    message_dict.pop("content")
         elif isinstance(message, SystemMessage):
             message_dict = {"role": "system", "content": message.content}
         elif isinstance(message, FunctionMessage):
@@ -77,7 +77,7 @@ class GigaChat(SimpleChatModel):
 
         return message_dict
 
-    def _authorize(self):
+    def _authorize(self) -> None:
         if self.user is None or self.password is None:
             raise ValueError(
                 "Please provide GIGA_USER and GIGA_PASSWORD environment variables."
@@ -96,6 +96,7 @@ class GigaChat(SimpleChatModel):
             )
 
         self.token = response.json()["tok"]
+        return
 
     def _call(
         self,
