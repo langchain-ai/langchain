@@ -539,7 +539,7 @@ class Tool(BaseTool):
         description: str,
         return_direct: bool = False,
         args_schema: Optional[Type[BaseModel]] = None,
-        coroutine: Optional[Callable[..., Awaitable[Any]]] = None, # This is last for compatability, but should be after func
+        coroutine: Optional[Callable[..., Awaitable[Any]]] = None, # This is last for compatibility, but should be after func
         **kwargs: Any,
     ) -> Tool:
         """Initialize tool from a function."""
