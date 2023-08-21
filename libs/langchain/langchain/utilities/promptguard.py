@@ -15,18 +15,14 @@ def sanitize(
         "secure_context": <secure context>
     }
 
-    The secure context is a bytes object that is needed to desanitize the response
+    The secure context is a bytes object that is needed to de-sanitize the response
     from the LLM.
 
-    Parameters
-    ----------
-    input : Union[str, Dict[str, str]]
-        input string or dict of strings
+    Args:
+        input: Input string or dict of strings.
 
-    Returns
-    -------
-    Dict[str, Union[str, Dict[str, str]]]
-        sanitized input string or dict of strings and the secure context
+    Returns:
+        Sanitized input string or dict of strings and the secure context
         as a dict following the format:
         {
             "sanitized_input": <sanitized input string or dict of strings>,
@@ -83,17 +79,12 @@ def desanitize(sanitized_text: str, secure_context: bytes) -> str:
     """
     Restore the original sensitive data from the sanitized text.
 
-    Parameters
-    ----------
-    sanitized_text : str
-        sanitized text
-    secure_context : bytes
-        secure context returned by the `sanitize` function
+    Args:
+        sanitized_text: Sanitized text.
+        secure_context: Secure context returned by the `sanitize` function.
 
-    Returns
-    -------
-    str
-        desanitized text
+    Returns:
+        De-sanitized text.
     """
     try:
         import promptguard as pg
