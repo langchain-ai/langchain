@@ -105,10 +105,10 @@ class EdenAI(LLM):
             return output[self.provider]["items"][0]["image"]
 
     @staticmethod
-    def get_user_agent():
+    def get_user_agent() -> str:
         from langchain import __version__
-        return f"langchain/{__version__}"
 
+        return f"langchain/{__version__}"
 
     def _call(
         self,
