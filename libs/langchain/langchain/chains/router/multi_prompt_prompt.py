@@ -1,3 +1,4 @@
+# flake8: noqa
 """Запрос для роутера в цепочке множественных запросов."""
 
 MULTI_PROMPT_ROUTER_TEMPLATE = """\

@@ -4,14 +4,16 @@ GigaChatModel for GigaChat.
 
 import logging
 import os
-from typing import Any, Dict, List, Optional, Union, Iterator, AsyncIterator
+from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union
 
 import requests
-from langchain.callbacks.manager import AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun
+from langchain.callbacks.manager import (AsyncCallbackManagerForLLMRun,
+                                         CallbackManagerForLLMRun)
 from langchain.chat_models.base import SimpleChatModel
-from langchain.schema.messages import AIMessage, AIMessageChunk, BaseMessage, ChatMessage, FunctionMessage, HumanMessage, SystemMessage
+from langchain.schema.messages import (AIMessage, AIMessageChunk, BaseMessage,
+                                       ChatMessage, FunctionMessage,
+                                       HumanMessage, SystemMessage)
 from langchain.schema.output import ChatGenerationChunk
-from pydantic import Field
 
 
 class GigaChat(SimpleChatModel):
