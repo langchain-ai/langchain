@@ -122,12 +122,6 @@ class ConfluenceLoader(BaseLoader):
         )
         if errors:
             raise ValueError(f"Error(s) while validating input: {errors}")
-
-        self.base_url = url
-        self.number_of_retries = number_of_retries
-        self.min_retry_seconds = min_retry_seconds
-        self.max_retry_seconds = max_retry_seconds
-
         try:
             from atlassian import Confluence  # noqa: F401
         except ImportError:
@@ -135,6 +129,11 @@ class ConfluenceLoader(BaseLoader):
                 "`atlassian` package not found, please run "
                 "`pip install atlassian-python-api`"
             )
+
+        self.base_url = url
+        self.number_of_retries = number_of_retries
+        self.min_retry_seconds = min_retry_seconds
+        self.max_retry_seconds = max_retry_seconds
 
         if session:
             self.confluence = Confluence(url=url, session=session, **confluence_kwargs)
@@ -160,6 +159,7 @@ class ConfluenceLoader(BaseLoader):
         url: Optional[str] = None,
         api_key: Optional[str] = None,
         username: Optional[str] = None,
+        session: Optional[requests.Session] = None,
         oauth2: Optional[dict] = None,
         token: Optional[str] = None,
     ) -> Union[List, None]:
@@ -175,6 +175,12 @@ class ConfluenceLoader(BaseLoader):
                 "the other must be as well."
             )
 
+        non_null_creds = (x is not None for x in ((api_key or username), session, oauth2, token))
+        if sum(non_null_creds) > 1:
+            names = (n for x, n in zip(non_null_creds, ("api_key, username", "session", "oath2", "token")))
+            errors.append(
+                "Cannot provide a value for more than one of: (api_key, username), session, oath2, token. Received values for: "
+            )
         if (api_key or username) and oauth2:
             errors.append(
                 "Cannot provide a value for `api_key` and/or "
