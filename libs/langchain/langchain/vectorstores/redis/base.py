@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import uuid
 from typing import (
     TYPE_CHECKING,
@@ -28,7 +29,7 @@ from langchain.callbacks.manager import (
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.utilities.redis import (
-    array_to_buffer,
+    _array_to_buffer,
     check_redis_module_exist,
     get_client,
 )
@@ -110,29 +111,21 @@ class Redis(VectorStore):
             )
     """
 
-    _default_content_vector_schema = {
-        "name": "content_vector",
-        "dims": 1536,
-        "distance_metric": "cosine",
-        "algorithm": "flat",
-        "datatype": "float32",
-    }
-
     def __init__(
         self,
         redis_url: str,
         index_name: str,
         embedding_function: Callable,
-        content_key: str = "content",
-        vector_key: str = "content_vector",
-        vector_schema: Optional[Dict] = None,
-        metadata_schema: Optional[Dict] = None,
+        index_schema: Optional[Union[Dict[str, str], str, os.PathLike]] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
         **kwargs: Any,
     ):
         """Initialize with necessary components."""
+        self._check_deprecated_kwargs(kwargs)
         try:
-            from langchain.vectorstores.redis.schema import RedisMetadata
+            import redis
+
+            from langchain.vectorstores.redis.schema import RedisModel, read_schema
         except ImportError as e:
             raise ImportError(
                 "Could not import redis python package. "
@@ -140,8 +133,6 @@ class Redis(VectorStore):
             ) from e
 
         self.index_name = index_name
-        self.content_key = content_key
-        self.vector_key = vector_key
         self.embedding_function = embedding_function
         try:
             redis_client = get_client(redis_url=redis_url, **kwargs)
@@ -151,73 +142,51 @@ class Redis(VectorStore):
             raise ValueError(f"Redis failed to connect: {e}")
 
         self.client = redis_client
+        if index_schema:
+            self._schema = read_schema(index_schema)
+        else:
+            self._schema = RedisModel()
+
+        # select scoring function
         self.relevance_score_fn = relevance_score_fn
-
-        # set default vector schema and update with user provided schema
-        self._vector_schema = {}
-        self._vector_schema.update(self._default_content_vector_schema)
-        if isinstance(vector_schema, dict):
-            self._vector_schema.update(vector_schema)
-
-        # set metadata schema if provided by user
-        self._metadata_schema = RedisMetadata(
-            **metadata_schema if metadata_schema else {}
-        )
-
-        # set vector distance metric and scoring function
-        self._distance_metric = str(self._vector_schema["distance_metric"]).upper()
         self._select_relevance_score_fn()
+
+    def _check_deprecated_kwargs(self, kwargs: Mapping[str, Any]) -> None:
+        """Check for deprecated kwargs."""
+        deprecated_kwargs = {
+            "redis_host": "redis_url",
+            "redis_port": "redis_url",
+            "redis_password": "redis_url",
+            "content_key": "index_schema",
+            "vector_key": "index_schema",
+        }
+        for key, value in kwargs.items():
+            if key in deprecated_kwargs:
+                raise ValueError(
+                    f"Keyword argument '{key}' is deprecated. "
+                    f"Please use '{deprecated_kwargs[key]}' instead."
+                )
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         if self.relevance_score_fn:
             return self.relevance_score_fn
-
-        if self._distance_metric not in REDIS_DISTANCE_METRICS:
-            raise ValueError(
-                f"Invalid distance metric: {self._distance_metric}. Options are: {REDIS_DISTANCE_METRICS}"
-            )
 
         metric_map = {
             "COSINE": self._cosine_relevance_score_fn,
             "IP": self._max_inner_product_relevance_score_fn,
             "L2": self._euclidean_relevance_score_fn,
         }
-        if self._distance_metric in metric_map:
-            return metric_map[self._distance_metric]
-        else:
+        try:
+            return metric_map[self._schema.content_vector.distance_metric]
+        except KeyError:
             return _default_relevance_score
 
-    @property
-    def embeddings(self) -> Optional[Embeddings]:
-        # TODO: Accept embedding object directly
-        return None
-
     def _create_index(self, dim: int = 1536) -> None:
-        fields = []
         try:
-            from redis.commands.search.field import TextField
-            from redis.commands.search.indexDefinition import IndexDefinition, IndexType
-
-            from langchain.vectorstores.redis.schema import (
-                FlatVectorField,
-                HNSWVectorField,
+            from redis.commands.search.indexDefinition import (  # type: ignore
+                IndexDefinition,
+                IndexType,
             )
-
-            # Field for content
-            fields.append(TextField(self.content_key))
-
-            # set dims and name for vector field
-            self._vector_schema["dims"] = dim
-            self._vector_schema["name"] = self.vector_key
-
-            if str(self._vector_schema["algorithm"]).upper() == "FLAT":
-                fields.append(FlatVectorField(**self._vector_schema).as_field())  # type: ignore
-            else:
-                fields.append(HNSWVectorField(**self._vector_schema).as_field())  # type: ignore
-
-            # Fields for metadata
-            if not self._metadata_schema.is_empty:
-                fields.extend(self._metadata_schema.get_fields())
 
         except ImportError:
             raise ValueError(
@@ -225,13 +194,18 @@ class Redis(VectorStore):
                 "Please install it with `pip install redis`."
             )
 
+        # Set vector dimension
+        # can't obtain beforehand because we don't
+        # know which embedding model is being used.
+        self._schema.content_vector.dims = dim
+
         # Check if index exists
         if not check_index_exists(self.client, self.index_name):
             prefix = _redis_prefix(self.index_name)
 
             # Create Redis Index
             self.client.ft(self.index_name).create_index(
-                fields=fields,
+                fields=self._schema.get_fields(),
                 definition=IndexDefinition(prefix=[prefix], index_type=IndexType.HASH),
             )
 
@@ -282,8 +256,8 @@ class Redis(VectorStore):
             pipeline.hset(
                 key,
                 mapping={
-                    self.content_key: text,
-                    self.vector_key: array_to_buffer(embedding),
+                    self._schema.content_key: text,
+                    self._schema.content_vector_key: _array_to_buffer(embedding),
                     **metadata,
                 },
             )
@@ -322,7 +296,7 @@ class Redis(VectorStore):
 
         # Creates Redis query
         params_dict: Dict[str, Union[str, bytes]] = {
-            "vector": array_to_buffer(embedding),
+            "vector": _array_to_buffer(embedding),
         }
 
         if score_threshold is None:
@@ -339,7 +313,7 @@ class Redis(VectorStore):
         docs = []
         scores = []
         for result in results.docs:
-            metadata = {k: getattr(result, k) for k in self._metadata_schema.keys}
+            metadata = {k: getattr(result, k) for k in self._schema.keys}
             metadata["id"] = result.id
             doc = Document(page_content=result.content, metadata=metadata)
             docs.append(doc)
@@ -422,15 +396,14 @@ class Redis(VectorStore):
                 "Could not import redis python package. "
                 "Please install it with `pip install redis`."
             ) from e
-        base_query = f"@{self.vector_key}:[VECTOR_RANGE $score_threshold $vector]"
+        base_query = f"@{self._schema.content_vector_key}:[VECTOR_RANGE $score_threshold $vector]"
 
         if filter:
             base_query = "(" + base_query + " " + str(filter) + ")"
 
         query_string = base_query + "=>{$yield_distance_as: vector_score}"
         return_fields = [
-            *self._metadata_schema.keys,
-            self.content_key,
+            *self._schema.keys,
             "vector_score",
             "id",
         ]
@@ -464,12 +437,9 @@ class Redis(VectorStore):
         query_prefix = "*"
         if filter:
             query_prefix = f"{str(filter)}"
-        base_query = (
-            f"({query_prefix})=>[KNN {k} @{self.vector_key} $vector AS vector_score]"
-        )
+        base_query = f"({query_prefix})=>[KNN {k} @{self._schema.content_vector_key} $vector AS vector_score]"
         return_fields = [
-            *self._metadata_schema.keys,
-            self.content_key,
+            *self._schema.keys,
             "vector_score",
             "id",
         ]
@@ -488,10 +458,7 @@ class Redis(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         index_name: Optional[str] = None,
-        content_key: str = "content",
-        vector_key: str = "content_vector",
-        vector_schema: Optional[Dict[str, str]] = None,
-        metadata_schema: Optional[Dict[str, List[Dict[str, str]]]] = None,
+        index_schema: Optional[Union[Dict[str, str], str, os.PathLike]] = None,
         **kwargs: Any,
     ) -> Tuple[Redis, List[str]]:
         """Create a Redis vectorstore from raw documents.
@@ -529,10 +496,7 @@ class Redis(VectorStore):
             redis_url,
             index_name,
             embedding.embed_query,
-            content_key=content_key,
-            vector_key=vector_key,
-            vector_schema=vector_schema,
-            metadata_schema=metadata_schema,
+            index_schema=index_schema,
             **kwargs,
         )
 
@@ -553,10 +517,7 @@ class Redis(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         index_name: Optional[str] = None,
-        content_key: str = "content",
-        vector_key: str = "content_vector",
-        vector_schema: Optional[Dict[str, str]] = None,
-        metadata_schema: Optional[Dict[str, List[Dict[str, str]]]] = None,
+        index_schema: Optional[Union[Dict[str, str], str, os.PathLike]] = None,
         **kwargs: Any,
     ) -> Redis:
         """Create a Redis vectorstore from raw documents.
@@ -584,10 +545,7 @@ class Redis(VectorStore):
             embedding,
             metadatas=metadatas,
             index_name=index_name,
-            content_key=content_key,
-            vector_key=vector_key,
-            vector_schema=vector_schema,
-            metadata_schema=metadata_schema,
+            index_schema=index_schema,
             **kwargs,
         )
         return instance
@@ -681,9 +639,7 @@ class Redis(VectorStore):
         cls,
         embedding: Embeddings,
         index_name: str,
-        content_key: str = "content",
-        vector_key: str = "content_vector",
-        metadata_schema: Optional[Dict[str, List[Dict[str, str]]]] = None,
+        index_schema: Optional[Union[Dict[str, str], str, os.PathLike]] = None,
         **kwargs: Any,
     ) -> Redis:
         """Connect to an existing Redis index."""
@@ -714,9 +670,7 @@ class Redis(VectorStore):
             redis_url,
             index_name,
             embedding.embed_query,
-            content_key=content_key,
-            vector_key=vector_key,
-            metadata_schema=metadata_schema,
+            index_schema=index_schema,
             **kwargs,
         )
 

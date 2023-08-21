@@ -1,7 +1,14 @@
-from typing import TYPE_CHECKING, List, Optional, Union
+import os
+from enum import Enum
+from pathlib import Path
+from typing import Annotated, Dict, List, Optional, Union
+from uuid import uuid4
 
-from pydantic import BaseModel, Field, validator
-from redis.commands.search.field import (
+import yaml
+from pydantic import BaseModel, Field, root_validator, validator
+
+# ignore type error here as it's a redis-py type problem
+from redis.commands.search.field import (  # type: ignore
     GeoField,
     NumericField,
     TagField,
@@ -10,22 +17,25 @@ from redis.commands.search.field import (
 )
 from typing_extensions import Literal
 
-if TYPE_CHECKING:
-    from redis.commands.search.field import Field as RedisField
+
+class RedisDistanceMetric(str, Enum):
+    l2 = "L2"
+    cosine = "COSINE"
+    ip = "IP"
 
 
-class BaseField(BaseModel):
+class RedisField(BaseModel):
     name: str = Field(...)
     sortable: Optional[bool] = False
 
 
-class TextFieldSchema(BaseField):
-    weight: Optional[float] = 1
-    no_stem: Optional[bool] = False
+class TextFieldSchema(RedisField):
+    weight: float = 1
+    no_stem: bool = False
     phonetic_matcher: Optional[str] = None
-    withsuffixtrie: Optional[bool] = False
+    withsuffixtrie: bool = False
 
-    def as_field(self) -> TextField:
+    def as_field(self):
         return TextField(
             self.name,
             weight=self.weight,
@@ -35,11 +45,11 @@ class TextFieldSchema(BaseField):
         )
 
 
-class TagFieldSchema(BaseField):
-    separator: Optional[str] = ","
-    case_sensitive: Optional[bool] = False
+class TagFieldSchema(RedisField):
+    separator: str = ","
+    case_sensitive: bool = False
 
-    def as_field(self) -> TagField:
+    def as_field(self):
         return TagField(
             self.name,
             separator=self.separator,
@@ -48,39 +58,34 @@ class TagFieldSchema(BaseField):
         )
 
 
-class NumericFieldSchema(BaseField):
-    def as_field(self) -> NumericField:
+class NumericFieldSchema(RedisField):
+    def as_field(self):
         return NumericField(self.name, sortable=self.sortable)
 
 
-class GeoFieldSchema(BaseField):
-    def as_field(self) -> GeoField:
+class GeoFieldSchema(RedisField):
+    def as_field(self):
         return GeoField(self.name, sortable=self.sortable)
 
 
-class BaseVectorField(BaseModel):
+class RedisVectorField(BaseModel):
     name: str = Field(...)
     dims: int = Field(...)
     algorithm: object = Field(...)
     datatype: str = Field(default="FLOAT32")
-    distance_metric: str = Field(default="COSINE")
+    distance_metric: RedisDistanceMetric = Field(default="COSINE")
     initial_cap: int = Field(default=20000)
 
-    @validator("algorithm", "datatype", "distance_metric")
-    @classmethod
-    def uppercase_strings(cls, v: str) -> str:
+    @validator("datatype", "distance_metric", pre=True)
+    def uppercase_strings(cls, v):
         return v.upper()
 
-    @property
-    def metric(self) -> str:
-        return self.distance_metric
 
-
-class FlatVectorField(BaseVectorField):
-    algorithm: object = Literal["FLAT"]
+class FlatVectorField(RedisVectorField):
+    algorithm: Literal["FLAT"] = "FLAT"
     block_size: int = Field(default=1000)
 
-    def as_field(self) -> VectorField:
+    def as_field(self):
         return VectorField(
             self.name,
             self.algorithm,
@@ -94,14 +99,14 @@ class FlatVectorField(BaseVectorField):
         )
 
 
-class HNSWVectorField(BaseVectorField):
-    algorithm: object = Literal["HNSW"]
+class HNSWVectorField(RedisVectorField):
+    algorithm: Literal["HNSW"] = "HNSW"
     m: int = Field(default=16)
     ef_construction: int = Field(default=200)
     ef_runtime: int = Field(default=10)
     epsilon: float = Field(default=0.8)
 
-    def as_field(self) -> VectorField:
+    def as_field(self):
         return VectorField(
             self.name,
             self.algorithm,
@@ -118,12 +123,23 @@ class HNSWVectorField(BaseVectorField):
         )
 
 
-class RedisMetadata(BaseModel):
+class RedisModel(BaseModel):
     tag: Optional[List[TagFieldSchema]] = None
-    text: Optional[List[TextFieldSchema]] = None
+    text: List[TextFieldSchema] = [TextFieldSchema(name="content")]
     numeric: Optional[List[NumericFieldSchema]] = None
     geo: Optional[List[GeoFieldSchema]] = None
-    vector: Optional[List[Union[FlatVectorField, HNSWVectorField]]] = None
+    vector: List[Union[FlatVectorField, HNSWVectorField]] = Field(
+        default_factory=lambda: [FlatVectorField(name="content_vector", dims=1536)]
+    )
+    content_key: str = "content"
+    content_vector_key: str = "content_vector"
+
+    @property
+    def content_vector(self) -> Union[FlatVectorField, HNSWVectorField]:
+        for field in self.vector:
+            if field.name == self.content_vector_key:
+                return field
+        raise ValueError("No content_vector field found")
 
     @property
     def is_empty(self) -> bool:
@@ -138,10 +154,11 @@ class RedisMetadata(BaseModel):
             return redis_fields
 
         for field_name in self.__fields__.keys():
-            field_group = getattr(self, field_name)
-            if field_group is not None:
-                for field in field_group:
-                    redis_fields.append(field.as_field())
+            if field_name not in ["content_key", "content_vector_key"]:
+                field_group = getattr(self, field_name)
+                if field_group is not None:
+                    for field in field_group:
+                        redis_fields.append(field.as_field())
         return redis_fields
 
     @property
@@ -154,5 +171,22 @@ class RedisMetadata(BaseModel):
             field_group = getattr(self, field_name)
             if field_group is not None:
                 for field in field_group:
-                    keys.append(field.name)
+                    if not isinstance(field, str):
+                        keys.append(field.name)
         return keys
+
+
+def read_schema(index_schema: Optional[Union[Dict[str, str], str, os.PathLike]]):
+    # check if its a dict and return RedisModel otherwise, check if it's a path and
+    # read in the file assuming it's a yaml file and return a RedisModel
+    if isinstance(index_schema, dict):
+        return RedisModel(**index_schema)  # type: ignore
+    elif isinstance(index_schema, (str, Path)):
+        if Path(index_schema).is_file():
+            with open(index_schema, "rb") as f:
+                return RedisModel(**yaml.safe_load(f))
+    else:
+        raise TypeError(
+            f"index_schema must be a dict, path to a yaml file, or a yaml string. "
+            f"Got {type(index_schema)}"
+        )

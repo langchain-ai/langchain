@@ -1,4 +1,19 @@
-from .filters import RedisNumericFilter, RedisTagFilter, RedisTextFilter
-from .redis import Redis
+from .base import Redis
+from .filters import (
+    RedisFilter,
+    RedisGeo,
+    RedisGeoRadius,
+    RedisNum,
+    RedisTag,
+    RedisText,
+)
 
-__all__ = ["Redis", "RedisTagFilter", "RedisNumericFilter", "RedisTextFilter"]
+__all__ = [
+    "Redis",
+    "RedisFilter",
+    "RedisTag",
+    "RedisText",
+    "RedisNum",
+    "RedisGeo",
+    "RedisGeoRadius",
+]
