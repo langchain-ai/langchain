@@ -1,3 +1,4 @@
+# flake8: noqa
 """Prompt для цепочки роутеров в цепочке вопросов и ответов с множественным извлечением."""
 
 MULTI_RETRIEVAL_ROUTER_TEMPLATE = """\
