@@ -30,7 +30,7 @@ class FakeListChatModel(SimpleChatModel):
     i: int = 0
 
     @property
-    def next_response(self):
+    def get_next_response(self):
         self.i = self.i + 1 % len(self.responses)
         return self.responses[self.i]
 
@@ -46,7 +46,7 @@ class FakeListChatModel(SimpleChatModel):
         **kwargs: Any,
     ) -> str:
         """First try to lookup in queries, else return 'foo' or 'bar'."""
-        return self.next_response
+        return self.get_next_response()
 
     def _stream(
         self,
@@ -55,7 +55,7 @@ class FakeListChatModel(SimpleChatModel):
         run_manager: Union[CallbackManagerForLLMRun, None] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        response = next(self.responses)  # type: ignore
+        response = self.get_next_response()
         for c in response:
             if self.sleep is not None:
                 time.sleep(self.sleep)
@@ -68,7 +68,7 @@ class FakeListChatModel(SimpleChatModel):
         run_manager: Union[AsyncCallbackManagerForLLMRun, None] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        response = self.next_response
+        response = self.get_next_response()
         for c in response:
             if self.sleep is not None:
                 await asyncio.sleep(self.sleep)
@@ -87,7 +87,7 @@ class FakeListChatModel(SimpleChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        response = self.next_response
+        response = self.get_next_response()
 
         if isinstance(response, dict):
             message = AIMessage(
