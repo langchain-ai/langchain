@@ -51,6 +51,7 @@ Input = TypeVar("Input")
 # Output type should implement __concat__, as eg str, list, dict do
 Output = TypeVar("Output")
 Other = TypeVar("Other")
+R = TypeVar("R", bound="Runnable")
 
 
 class Runnable(Generic[Input, Output], ABC):
@@ -211,16 +212,16 @@ class Runnable(Generic[Input, Output], ABC):
         return RunnableBinding(bound=self, kwargs=kwargs)
 
     def with_fallbacks(
-        self,
+        self: R,
         fallbacks: Sequence[Runnable[Input, Output]],
         *,
         exceptions_to_handle: Tuple[Type[BaseException]] = (Exception,),
-    ) -> RunnableWithFallbacks[Input, Output]:
-        return RunnableWithFallbacks(
+    ) -> R:
+        return cast(R, RunnableWithFallbacks(
             runnable=self,
             fallbacks=fallbacks,
             exceptions_to_handle=exceptions_to_handle,
-        )
+        ))
 
     """ --- Helper methods for Subclasses --- """
 
@@ -520,6 +521,9 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
 
     class Config:
         arbitrary_types_allowed = True
+
+    def __getattr__(self, item):
+        return getattr(self.runnable, item)
 
     @property
     def lc_serializable(self) -> bool:
