@@ -266,7 +266,7 @@ class Runnable(Generic[Input, Output], ABC):
         )
         run_manager = callback_manager.on_chain_start(
             dumpd(self),
-            input if isinstance(input, dict) else {"input": input},
+            input,
             run_type=run_type,
         )
         try:
@@ -284,12 +284,7 @@ class Runnable(Generic[Input, Output], ABC):
             run_manager.on_chain_error(e)
             raise
         else:
-            output_for_tracer = dumpd(output)
-            run_manager.on_chain_end(
-                output_for_tracer
-                if isinstance(output_for_tracer, dict)
-                else {"output": output_for_tracer}
-            )
+            run_manager.on_chain_end(dumpd(output))
             return output
 
     async def _acall_with_config(
@@ -318,7 +313,7 @@ class Runnable(Generic[Input, Output], ABC):
         )
         run_manager = await callback_manager.on_chain_start(
             dumpd(self),
-            input if isinstance(input, dict) else {"input": input},
+            input,
             run_type=run_type,
         )
         try:
@@ -339,12 +334,7 @@ class Runnable(Generic[Input, Output], ABC):
             await run_manager.on_chain_error(e)
             raise
         else:
-            output_for_tracer = dumpd(output)
-            await run_manager.on_chain_end(
-                output_for_tracer
-                if isinstance(output_for_tracer, dict)
-                else {"output": output_for_tracer}
-            )
+            await run_manager.on_chain_end(dumpd(output))
             return output
 
     def _transform_stream_with_config(
@@ -425,22 +415,10 @@ class Runnable(Generic[Input, Output], ABC):
                             final_input = None
                             final_input_supported = False
         except Exception as e:
-            run_manager.on_chain_error(
-                e,
-                inputs=final_input
-                if isinstance(final_input, dict)
-                else {"input": final_input},
-            )
+            run_manager.on_chain_error(e, inputs=final_input)
             raise
         else:
-            run_manager.on_chain_end(
-                final_output
-                if isinstance(final_output, dict)
-                else {"output": final_output},
-                inputs=final_input
-                if isinstance(final_input, dict)
-                else {"input": final_input},
-            )
+            run_manager.on_chain_end(final_output, inputs=final_input)
 
     async def _atransform_stream_with_config(
         self,
@@ -525,22 +503,10 @@ class Runnable(Generic[Input, Output], ABC):
                             final_input = None
                             final_input_supported = False
         except Exception as e:
-            await run_manager.on_chain_error(
-                e,
-                inputs=final_input
-                if isinstance(final_input, dict)
-                else {"input": final_input},
-            )
+            await run_manager.on_chain_error(e, inputs=final_input)
             raise
         else:
-            await run_manager.on_chain_end(
-                final_output
-                if isinstance(final_output, dict)
-                else {"output": final_output},
-                inputs=final_input
-                if isinstance(final_input, dict)
-                else {"input": final_input},
-            )
+            await run_manager.on_chain_end(final_output, inputs=final_input)
 
 
 class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
@@ -583,9 +549,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
             local_metadata=None,
         )
         # start the root run
-        run_manager = callback_manager.on_chain_start(
-            dumpd(self), input if isinstance(input, dict) else {"input": input}
-        )
+        run_manager = callback_manager.on_chain_start(dumpd(self), input)
         first_error = None
         for runnable in self.runnables:
             try:
@@ -600,9 +564,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
                 run_manager.on_chain_error(e)
                 raise e
             else:
-                run_manager.on_chain_end(
-                    output if isinstance(output, dict) else {"output": output}
-                )
+                run_manager.on_chain_end(output)
                 return output
         if first_error is None:
             raise ValueError("No error stored at end of fallbacks.")
@@ -629,9 +591,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
             local_metadata=None,
         )
         # start the root run
-        run_manager = await callback_manager.on_chain_start(
-            dumpd(self), input if isinstance(input, dict) else {"input": input}
-        )
+        run_manager = await callback_manager.on_chain_start(dumpd(self), input)
 
         first_error = None
         for runnable in self.runnables:
@@ -647,9 +607,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
                 await run_manager.on_chain_error(e)
                 raise e
             else:
-                await run_manager.on_chain_end(
-                    output if isinstance(output, dict) else {"output": output}
-                )
+                await run_manager.on_chain_end(output)
                 return output
         if first_error is None:
             raise ValueError("No error stored at end of fallbacks.")
@@ -709,9 +667,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
                 raise e
             else:
                 for rm, output in zip(run_managers, outputs):
-                    rm.on_chain_end(
-                        output if isinstance(output, dict) else {"output": output}
-                    )
+                    rm.on_chain_end(output)
                 return outputs
         if first_error is None:
             raise ValueError("No error stored at end of fallbacks.")
@@ -749,9 +705,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
         # start the root runs, one per input
         run_managers: List[AsyncCallbackManagerForChainRun] = await asyncio.gather(
             *(
-                cm.on_chain_start(
-                    dumpd(self), input if isinstance(input, dict) else {"input": input}
-                )
+                cm.on_chain_start(dumpd(self), input)
                 for cm, input in zip(callback_managers, inputs)
             )
         )
@@ -776,9 +730,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
             else:
                 await asyncio.gather(
                     *(
-                        rm.on_chain_end(
-                            output if isinstance(output, dict) else {"output": output}
-                        )
+                        rm.on_chain_end(output)
                         for rm, output in zip(run_managers, outputs)
                     )
                 )
@@ -870,9 +822,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             local_metadata=None,
         )
         # start the root run
-        run_manager = callback_manager.on_chain_start(
-            dumpd(self), input if isinstance(input, dict) else {"input": input}
-        )
+        run_manager = callback_manager.on_chain_start(dumpd(self), input)
 
         # invoke all steps in sequence
         try:
@@ -887,9 +837,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             run_manager.on_chain_error(e)
             raise
         else:
-            run_manager.on_chain_end(
-                input if isinstance(input, dict) else {"output": input}
-            )
+            run_manager.on_chain_end(input)
             return cast(Output, input)
 
     async def ainvoke(
@@ -912,9 +860,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             local_metadata=None,
         )
         # start the root run
-        run_manager = await callback_manager.on_chain_start(
-            dumpd(self), input if isinstance(input, dict) else {"input": input}
-        )
+        run_manager = await callback_manager.on_chain_start(dumpd(self), input)
 
         # invoke all steps in sequence
         try:
@@ -929,9 +875,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             await run_manager.on_chain_error(e)
             raise
         else:
-            await run_manager.on_chain_end(
-                input if isinstance(input, dict) else {"output": input}
-            )
+            await run_manager.on_chain_end(input)
             return cast(Output, input)
 
     def batch(
@@ -960,9 +904,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         ]
         # start the root runs, one per input
         run_managers = [
-            cm.on_chain_start(
-                dumpd(self), input if isinstance(input, dict) else {"input": input}
-            )
+            cm.on_chain_start(dumpd(self), input)
             for cm, input in zip(callback_managers, inputs)
         ]
 
@@ -985,7 +927,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             raise
         else:
             for rm, input in zip(run_managers, inputs):
-                rm.on_chain_end(input if isinstance(input, dict) else {"output": input})
+                rm.on_chain_end(input)
             return cast(List[Output], inputs)
 
     async def abatch(
@@ -1017,9 +959,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         # start the root runs, one per input
         run_managers: List[AsyncCallbackManagerForChainRun] = await asyncio.gather(
             *(
-                cm.on_chain_start(
-                    dumpd(self), input if isinstance(input, dict) else {"input": input}
-                )
+                cm.on_chain_start(dumpd(self), input)
                 for cm, input in zip(callback_managers, inputs)
             )
         )
@@ -1043,12 +983,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             raise
         else:
             await asyncio.gather(
-                *(
-                    rm.on_chain_end(
-                        input if isinstance(input, dict) else {"output": input}
-                    )
-                    for rm, input in zip(run_managers, inputs)
-                )
+                *(rm.on_chain_end(input) for rm, input in zip(run_managers, inputs))
             )
             return cast(List[Output], inputs)
 
@@ -1072,9 +1007,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             local_metadata=None,
         )
         # start the root run
-        run_manager = callback_manager.on_chain_start(
-            dumpd(self), input if isinstance(input, dict) else {"input": input}
-        )
+        run_manager = callback_manager.on_chain_start(dumpd(self), input)
 
         steps = [self.first] + self.middle + [self.last]
         streaming_start_index = 0
@@ -1128,9 +1061,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             run_manager.on_chain_error(e)
             raise
         else:
-            run_manager.on_chain_end(
-                final if isinstance(final, dict) else {"output": final}
-            )
+            run_manager.on_chain_end(final)
 
     async def astream(
         self,
@@ -1152,9 +1083,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             local_metadata=None,
         )
         # start the root run
-        run_manager = await callback_manager.on_chain_start(
-            dumpd(self), input if isinstance(input, dict) else {"input": input}
-        )
+        run_manager = await callback_manager.on_chain_start(dumpd(self), input)
 
         steps = [self.first] + self.middle + [self.last]
         streaming_start_index = len(steps) - 1
@@ -1208,9 +1137,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             await run_manager.on_chain_error(e)
             raise
         else:
-            await run_manager.on_chain_end(
-                final if isinstance(final, dict) else {"output": final}
-            )
+            await run_manager.on_chain_end(final)
 
 
 class RunnableMapChunk(Dict[str, Any]):
@@ -1277,9 +1204,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
             local_metadata=None,
         )
         # start the root run
-        run_manager = callback_manager.on_chain_start(
-            dumpd(self), input if isinstance(input, dict) else {"input": input}
-        )
+        run_manager = callback_manager.on_chain_start(dumpd(self), input)
 
         # gather results from all steps
         try:
@@ -1324,9 +1249,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
             local_metadata=None,
         )
         # start the root run
-        run_manager = await callback_manager.on_chain_start(
-            dumpd(self), input if isinstance(input, dict) else {"input": input}
-        )
+        run_manager = await callback_manager.on_chain_start(dumpd(self), input)
 
         # gather results from all steps
         try:
