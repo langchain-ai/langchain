@@ -489,16 +489,18 @@ class Tool(BaseTool):
         **kwargs: Any,
     ) -> Any:
         """Use the tool."""
-        new_argument_supported = signature(self.func).parameters.get("callbacks")
-        return (
-            self.func(
-                *args,
-                callbacks=run_manager.get_child() if run_manager else None,
-                **kwargs,
+        if self.func:
+            new_argument_supported = signature(self.func).parameters.get("callbacks")
+            return (
+                self.func(
+                    *args,
+                    callbacks=run_manager.get_child() if run_manager else None,
+                    **kwargs,
+                )
+                if new_argument_supported
+                else self.func(*args, **kwargs)
             )
-            if new_argument_supported
-            else self.func(*args, **kwargs)
-        )
+        raise NotImplementedError("Tool does not support sync")
 
     async def _arun(
         self,
@@ -565,7 +567,7 @@ class StructuredTool(BaseTool):
     description: str = ""
     args_schema: Type[BaseModel] = Field(..., description="The tool schema.")
     """The input arguments' schema."""
-    func: Callable[..., Any]
+    func: Optional[Callable[..., Any]]
     """The function to run when the tool is called."""
     coroutine: Optional[Callable[..., Awaitable[Any]]] = None
     """The asynchronous version of the function."""
@@ -600,16 +602,18 @@ class StructuredTool(BaseTool):
         **kwargs: Any,
     ) -> Any:
         """Use the tool."""
-        new_argument_supported = signature(self.func).parameters.get("callbacks")
-        return (
-            self.func(
-                *args,
-                callbacks=run_manager.get_child() if run_manager else None,
-                **kwargs,
+        if self.func:
+            new_argument_supported = signature(self.func).parameters.get("callbacks")
+            return (
+                self.func(
+                    *args,
+                    callbacks=run_manager.get_child() if run_manager else None,
+                    **kwargs,
+                )
+                if new_argument_supported
+                else self.func(*args, **kwargs)
             )
-            if new_argument_supported
-            else self.func(*args, **kwargs)
-        )
+        raise NotImplementedError("Tool does not support sync")
 
     async def _arun(
         self,
