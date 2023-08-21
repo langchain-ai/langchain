@@ -88,37 +88,6 @@ def process_file(file_path):
                 f.write(file_path + '\n')
             return True
 
-
-            # tree = ast.parse(source)
-            # set_parent(tree)
-
-            # strings_to_translate = []
-
-            # for node in ast.walk(tree):
-            #     if isinstance(node, ast.Assign):
-            #         if isinstance(node.value, (ast.Str, ast.JoinedStr)):
-            #             # Получить полную строку для замены
-            #             raw_string = source[node.value.lineno - 1:node.value.end_lineno].strip()
-            #             strings_to_translate.append(raw_string)
-
-            # modified = source
-            # updated = False
-            # for s in strings_to_translate:
-            #     if not is_russian(s) and len(s) > 10 and ' ' in s and is_not_error_message(s) \
-            #             and not s.strip().startswith('<') and not 'http://' in s and not 'https://' in s \
-            #             and "{" in s and "}" in s and not s.startswith("["):
-            #         print(f"\nFound string:\n{s}")
-            #         translated = translate_to_russian(s)
-            #         combined = f"# {s}\n{translated}"
-            #         modified = modified.replace(s, combined, 1)
-            #         updated = True
-
-            # if updated:
-            #     print(f"Updating file {file_path}")
-            #     with open(file_path, 'w', encoding='utf-8') as f:
-            #         f.write(modified)
-            #         return True
-
     except UnicodeDecodeError:
         pass
     return False

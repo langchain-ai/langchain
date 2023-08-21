@@ -1,7 +1,8 @@
-# 🦜️🔗 LangChain
+# 🦜️🔗 LangChain (GigaChat version)
 
 ⚡ Building applications with LLMs through composability ⚡
 
+<!--
 [![Release Notes](https://img.shields.io/github/release/langchain-ai/langchain)](https://github.com/langchain-ai/langchain/releases)
 [![CI](https://github.com/langchain-ai/langchain/actions/workflows/langchain_ci.yml/badge.svg)](https://github.com/langchain-ai/langchain/actions/workflows/langchain_ci.yml)
 [![Experimental CI](https://github.com/langchain-ai/langchain/actions/workflows/langchain_experimental_ci.yml/badge.svg)](https://github.com/langchain-ai/langchain/actions/workflows/langchain_experimental_ci.yml)
@@ -14,12 +15,15 @@
 [![GitHub star chart](https://img.shields.io/github/stars/langchain-ai/langchain?style=social)](https://star-history.com/#langchain-ai/langchain)
 [![Dependency Status](https://img.shields.io/librariesio/github/langchain-ai/langchain)](https://libraries.io/github/langchain-ai/langchain)
 [![Open Issues](https://img.shields.io/github/issues-raw/langchain-ai/langchain)](https://github.com/langchain-ai/langchain/issues)
+-->
 
 
 Looking for the JS/TS version? Check out [LangChain.js](https://github.com/hwchase17/langchainjs).
 
+<!--
 **Production Support:** As you move your LangChains into production, we'd love to offer more hands-on support.
 Fill out [this form](https://airtable.com/appwQzlErAS2qiP0L/shrGtGaVBVAz7NcV2) to share more about what you're building, and our team will get in touch.
+-->
 
 ## 🚨Breaking Changes for select chains (SQLDatabase) on 7/28/23
 
@@ -31,9 +35,12 @@ Read how to migrate your code [here](MIGRATE.md).
 
 ## Quick Install
 
+`pip install git+https://github.com/ai-forever/gigachain --isolated`
+<!--
 `pip install langchain`
 or
 `pip install langsmith && conda install langchain -c conda-forge`
+-->
 
 ## 🤔 What is this?
 
