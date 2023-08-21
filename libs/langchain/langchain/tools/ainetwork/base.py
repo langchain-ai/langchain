@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 import threading
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydantic import Field
 
@@ -32,7 +32,7 @@ class AINBaseTool(BaseTool):
     interface: Ain = Field(default_factory=authenticate)
     """The interface object for the AINetwork Blockchain."""
 
-    def _run(self, *args, **kwargs):
+    def _run(self, *args: Any, **kwargs: Any) -> str:
         try:
             loop = asyncio.get_event_loop()
         except RuntimeError:
@@ -45,7 +45,7 @@ class AINBaseTool(BaseTool):
         if loop.is_running():
             result_container = []
 
-            def thread_target():
+            def thread_target() -> None:
                 nonlocal result_container
                 new_loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(new_loop)

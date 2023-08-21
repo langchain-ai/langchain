@@ -1,8 +1,10 @@
 import asyncio
+import os
 import time
 import urllib.request
 import uuid
 from enum import Enum
+from typing import Any
 from urllib.error import HTTPError
 
 import pytest
@@ -23,7 +25,7 @@ class Match(Enum):
     ObjectWildcard = 6
 
     @classmethod
-    def __eq__(cls, value, template):
+    def match(cls, value: Any, template: Any) -> bool:
         if template is cls.ListWildcard:
             return isinstance(value, list)
         elif template is cls.StrWildcard:
@@ -42,14 +44,14 @@ class Match(Enum):
             if len(value) != len(template):
                 return False
             for k, v in value.items():
-                if k not in template or not cls.__eq__(v, template[k]):
+                if k not in template or not cls.match(v, template[k]):
                     return False
             return True
         elif isinstance(value, list):
             if len(value) != len(template):
                 return False
             for i in range(len(value)):
-                if not cls.__eq__(value[i], template[i]):
+                if not cls.match(value[i], template[i]):
                     return False
             return True
         else:
@@ -58,7 +60,7 @@ class Match(Enum):
 
 @pytest.mark.requires("ain")
 def test_ainetwork_toolkit() -> None:
-    def get(path, type="value", default=None):
+    def get(path: str, type: str = "value", default: Any = None) -> Any:
         ref = ain.db.ref(path)
         value = asyncio.run(
             {
@@ -69,11 +71,18 @@ def test_ainetwork_toolkit() -> None:
         )
         return default if value is None else value
 
-    def validate(path, template, type="value"):
+    def validate(path: str, template: Any, type: str = "value") -> bool:
         value = get(path, type)
-        return Match.__eq__(value, template)
+        return Match.match(value, template)
 
-    toolkit = AINetworkToolkit(network="testnet")
+    if not os.environ.get("AIN_BLOCKCHAIN_ACCOUNT_PRIVATE_KEY", None):
+        from ain.account import Account
+
+        account = Account.create()
+        os.environ["AIN_BLOCKCHAIN_ACCOUNT_PRIVATE_KEY"] = account.private_key
+
+    interface = authenticate(network="testnet")
+    toolkit = AINetworkToolkit(network="testnet", interface=interface)
     llm = ChatOpenAI(model="gpt-4", temperature=0)
     agent = initialize_agent(
         tools=toolkit.get_tools(),
@@ -81,7 +90,7 @@ def test_ainetwork_toolkit() -> None:
         verbose=True,
         agent=AgentType.OPENAI_FUNCTIONS,
     )
-    ain = toolkit.get_tools()[0].interface
+    ain = interface
     self_address = ain.wallet.defaultAccount.address
     co_address = "0x6813Eb9362372EEF6200f3b1dbC3f819671cBA69"
 

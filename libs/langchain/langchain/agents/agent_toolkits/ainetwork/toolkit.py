@@ -30,7 +30,7 @@ class AINetworkToolkit(BaseToolkit):
     interface: Optional["Ain"] = Field(None)
 
     @root_validator(pre=True)
-    def set_interface(cls, values):
+    def set_interface(cls, values: dict) -> dict:
         if not values.get("interface"):
             values["interface"] = authenticate(network=values.get("network", "testnet"))
         return values
@@ -44,9 +44,9 @@ class AINetworkToolkit(BaseToolkit):
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
         return [
-            AINAppOps(interface=self.interface),
-            AINOwnerOps(interface=self.interface),
-            AINRuleOps(interface=self.interface),
-            AINTransfer(interface=self.interface),
-            AINValueOps(interface=self.interface),
+            AINAppOps(),
+            AINOwnerOps(),
+            AINRuleOps(),
+            AINTransfer(),
+            AINValueOps(),
         ]
