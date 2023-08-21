@@ -27,11 +27,10 @@ class FakeListChatModel(SimpleChatModel):
 
     responses: List
     sleep: Optional[float] = None
-    i: int = 0
+    i: int = -1
 
-    @property
     def get_next_response(self):
-        self.i = self.i + 1 % len(self.responses)
+        self.i = (self.i + 1) % len(self.responses)
         return self.responses[self.i]
 
     @property
