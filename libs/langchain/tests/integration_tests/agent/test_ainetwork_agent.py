@@ -144,8 +144,9 @@ def test_ainetwork_toolkit() -> None:
     assert ...  # check rule that self_address exists
 
     # Test sending AIN
-    balance = get(f"/accounts/{co_address}/balance", default=0)
-    if balance < 1:
+    self_balance = get(f"/accounts/{self_address}/balance", default=0)
+    transaction_history = get(f"/transfer/{self_address}/{co_address}", default={})
+    if self_balance < 1:
         try:
             with urllib.request.urlopen(
                 f"http://faucet.ainetwork.ai/api/test/{self_address}/"
@@ -158,4 +159,8 @@ def test_ainetwork_toolkit() -> None:
 
     if try_test == 200:
         agent.run(f"""Send 1 AIN to {co_address}""")
-        assert balance + 1 == get(f"/accounts/{co_address}/balance", default=0)
+        transaction_update = get(f"/transfer/{self_address}/{co_address}", default={})
+        assert any(
+            transaction_update[key]["value"] == 1
+            for key in transaction_update.keys() - transaction_history.keys()
+        )
