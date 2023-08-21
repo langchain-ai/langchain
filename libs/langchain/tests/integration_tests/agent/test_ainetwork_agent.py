@@ -2,6 +2,7 @@ import asyncio
 import time
 import urllib.request
 import uuid
+import pytest
 from enum import Enum
 from urllib.error import HTTPError
 
@@ -54,6 +55,7 @@ class Match(Enum):
             return value == template
 
 
+@pytest.mark.requires("ain")
 def test_ainetwork_toolkit() -> None:
     def get(path, type="value", default=None):
         ref = ain.db.ref(path)
