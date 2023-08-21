@@ -74,12 +74,12 @@ class EdenaiTool(BaseTool):
                 f"EdenAI returned an unexpected response with status "
                 f"{response.status_code}: {response.text}"
             )
-        try:
-            if "error" in response.json()[0].keys():
-                error_message = response.json()[0]["error"]["message"]
-                raise ValueError(error_message)
-        except Exception:
-            pass
+
+        key = self.providers if payload.get("response_as_dict") else 0
+
+        provider_response = response.json()[key]
+        if provider_response["status"] == "fail":
+            raise ValueError(provider_response["error"]["message"])
 
         return response
 
