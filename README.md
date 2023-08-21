@@ -1,23 +1,22 @@
-# 🦜️🔗 GigaChain (LangChain + GigaChat)
+# 🦜️🔗 GigaChain (GigaChat + LangChain)
 
 ⚡ Building applications with LLMs through composability ⚡
 
 <!--
-[![Release Notes](https://img.shields.io/github/release/langchain-ai/langchain)](https://github.com/langchain-ai/langchain/releases)
+[![Release Notes](https://img.shields.io/github/release/langchain-ai/langchain)](https://github.com/ai-forever/gigachain/releases)
 -->
-[![CI](https://github.com/langchain-ai/langchain/actions/workflows/langchain_ci.yml/badge.svg)](https://github.com/langchain-ai/langchain/actions/workflows/langchain_ci.yml)
+[![CI](https://github.com/ai-forever/gigachain/actions/workflows/langchain_ci.yml/badge.svg)](https://github.com/ai-forever/gigachain/actions/workflows/langchain_ci.yml)
 <!--
-[![Experimental CI](https://github.com/langchain-ai/langchain/actions/workflows/langchain_experimental_ci.yml/badge.svg)](https://github.com/langchain-ai/langchain/actions/workflows/langchain_experimental_ci.yml)
-[![Downloads](https://static.pepy.tech/badge/langchain/month)](https://pepy.tech/project/langchain) -->
+[![Experimental CI](https://github.com/ai-forever/gigachain/actions/workflows/langchain_experimental_ci.yml/badge.svg)](https://github.com/ai-forever/gigachain/actions/workflows/langchain_experimental_ci.yml)
+[![Downloads](https://static.pepy.tech/badge/langchain/month)](https://pepy.tech/project/langchain)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-<!--
 [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchainai.svg?style=social&label=Follow%20%40LangChainAI)](https://twitter.com/langchainai)
 [![](https://dcbadge.vercel.app/api/server/6adMQxSpJS?compact=true&style=flat)](https://discord.gg/6adMQxSpJS)
 [![Open in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/langchain-ai/langchain)
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/langchain-ai/langchain)
 [![GitHub star chart](https://img.shields.io/github/stars/langchain-ai/langchain?style=social)](https://star-history.com/#langchain-ai/langchain)
 [![Dependency Status](https://img.shields.io/librariesio/github/langchain-ai/langchain)](https://libraries.io/github/langchain-ai/langchain)
-[![Open Issues](https://img.shields.io/github/issues-raw/langchain-ai/langchain)](https://github.com/langchain-ai/langchain/issues)
+[![Open Issues](https://img.shields.io/github/issues-raw/langchain-ai/langchain)](https://github.com/ai-forever/gigachain/issues)
 -->
 
 
@@ -38,7 +37,7 @@ Read how to migrate your code [here](MIGRATE.md).
 
 ## Quick Install
 
-`pip install gigachain`
+`pip install git+https://github.com/ai-forever/gigachain --isolated`
 <!--
 `pip install langchain`
 or
