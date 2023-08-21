@@ -438,7 +438,7 @@ class Tool(BaseTool):
     """Tool that takes in function or coroutine directly."""
 
     description: str = ""
-    func: Callable[..., str]
+    func: Optional[Callable[..., str]]
     """The function to run when the tool is called."""
     coroutine: Optional[Callable[..., Awaitable[str]]] = None
     """The asynchronous version of the function."""
@@ -539,7 +539,9 @@ class Tool(BaseTool):
         description: str,
         return_direct: bool = False,
         args_schema: Optional[Type[BaseModel]] = None,
-        coroutine: Optional[Callable[..., Awaitable[Any]]] = None, # This is last for compatibility, but should be after func
+        coroutine: Optional[
+            Callable[..., Awaitable[Any]]
+        ] = None,  # This is last for compatibility, but should be after func
         **kwargs: Any,
     ) -> Tool:
         """Initialize tool from a function."""
@@ -758,7 +760,7 @@ def tool(
                 func=func,
                 description=f"{tool_name} tool",
                 return_direct=return_direct,
-                coroutine=coroutine
+                coroutine=coroutine,
             )
 
         return _make_tool
