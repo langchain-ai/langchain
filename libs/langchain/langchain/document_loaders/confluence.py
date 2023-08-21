@@ -460,7 +460,7 @@ class ConfluenceLoader(BaseLoader):
                     "`markdownify` package not found, please run "
                     "`pip install markdownify`"
                 )
-        else:
+        if include_comments or not keep_markdown_format:
             try:
                 from bs4 import BeautifulSoup  # type: ignore
             except ImportError:
@@ -468,7 +468,6 @@ class ConfluenceLoader(BaseLoader):
                     "`beautifulsoup4` package not found, please run "
                     "`pip install beautifulsoup4`"
                 )
-
         if include_attachments:
             attachment_texts = self.process_attachment(page["id"], ocr_languages)
         else:
