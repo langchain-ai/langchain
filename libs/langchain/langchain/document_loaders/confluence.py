@@ -3,6 +3,7 @@ from enum import Enum
 from io import BytesIO
 from typing import Any, Callable, Dict, List, Optional, Union
 
+import requests
 from tenacity import (
     before_sleep_log,
     retry,
@@ -106,6 +107,7 @@ class ConfluenceLoader(BaseLoader):
         url: str,
         api_key: Optional[str] = None,
         username: Optional[str] = None,
+        session: Optional[requests.Session] = None,
         oauth2: Optional[dict] = None,
         token: Optional[str] = None,
         cloud: Optional[bool] = True,
@@ -134,7 +136,9 @@ class ConfluenceLoader(BaseLoader):
                 "`pip install atlassian-python-api`"
             )
 
-        if oauth2:
+        if session:
+            self.confluence = Confluence(url=url, session=session, **confluence_kwargs)
+        elif oauth2:
             self.confluence = Confluence(
                 url=url, oauth2=oauth2, cloud=cloud, **confluence_kwargs
             )
