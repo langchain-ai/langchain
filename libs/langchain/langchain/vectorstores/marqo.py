@@ -78,7 +78,6 @@ class Marqo(VectorStore):
         self._searchable_attributes = searchable_attributes
         self.page_content_builder = page_content_builder
 
-        #self._non_tensor_fields = ["metadata"]
         self.tensor_fields = ["text"]
 
         self._document_batch_size = 1024
@@ -133,7 +132,6 @@ class Marqo(VectorStore):
         for i in range(0, num_docs, self._document_batch_size):
             response = self._client.index(self._index_name).add_documents(
                 documents[i : i + self._document_batch_size],
-                #non_tensor_fields=self._non_tensor_fields,
                 tensor_fields=self.tensor_fields,
                 **self._add_documents_settings,
             )
@@ -333,26 +331,14 @@ class Marqo(VectorStore):
             object
         """
         bulk_results = {
-            "result":[
-                self._client.index(self._index_name).search(q=query, searchable_attributes=self._searchable_attributes, limit=k)
+            "result": [
+                self._client.index(self._index_name).search(
+                    q=query, searchable_attributes=self._searchable_attributes, limit=k
+                )
                 for query in queries
             ]
         }
-        """
-        Depreciated:
 
-        bulk_results = self._client.bulk_search(
-            [
-                {
-                    "index": self._index_name,
-                    "q": query,
-                    "searchableAttributes": self._searchable_attributes,
-                    "limit": k,
-                }
-                for query in queries
-            ]
-        )
-        """
         return bulk_results
 
     @classmethod
