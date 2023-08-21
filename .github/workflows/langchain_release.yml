@@ -2,11 +2,6 @@
 name: libs/langchain Release
 
 on:
-  push:
-    branches:
-      - master
-    paths:
-      - 'libs/langchain/pyproject.toml'
   workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
 
 jobs:
