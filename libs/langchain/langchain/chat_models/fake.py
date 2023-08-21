@@ -53,17 +53,7 @@ class FakeListChatModel(SimpleChatModel):
         for c in response:
             if self.sleep is not None:
                 time.sleep(self.sleep)
-            if isinstance(response, dict):
-                message = AIMessageChunk(
-                    content="",
-                    additional_kwargs={
-                        "function_call": response
-                    },
-                )
-                yield ChatGenerationChunk(message=message)
-            else:
-                yield ChatGenerationChunk(message=AIMessageChunk(content=c))
-
+            yield ChatGenerationChunk(message=AIMessageChunk(content=c))
 
     async def _astream(
         self,
@@ -80,17 +70,7 @@ class FakeListChatModel(SimpleChatModel):
         for c in response:
             if self.sleep is not None:
                 await asyncio.sleep(self.sleep)
-            if isinstance(response, dict):
-                message = AIMessageChunk(
-                    content="",
-                    additional_kwargs={
-                        "function_call": response
-                    },
-                )
-                yield ChatGenerationChunk(message=message)
-            else:
-                yield ChatGenerationChunk(message=AIMessageChunk(content=c))
-
+            yield ChatGenerationChunk(message=AIMessageChunk(content=c))
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
