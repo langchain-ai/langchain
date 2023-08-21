@@ -715,11 +715,11 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
 class CallbackManagerForChainRun(ParentRunManager, ChainManagerMixin):
     """Callback manager for chain run."""
 
-    def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
+    def on_chain_end(self, outputs: Union[Dict[str, Any], Any], **kwargs: Any) -> None:
         """Run when chain ends running.
 
         Args:
-            outputs (Dict[str, Any]): The outputs of the chain.
+            outputs (Union[Dict[str, Any], Any]): The outputs of the chain.
         """
         _handle_event(
             self.handlers,
@@ -797,11 +797,13 @@ class CallbackManagerForChainRun(ParentRunManager, ChainManagerMixin):
 class AsyncCallbackManagerForChainRun(AsyncParentRunManager, ChainManagerMixin):
     """Async callback manager for chain run."""
 
-    async def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
+    async def on_chain_end(
+        self, outputs: Union[Dict[str, Any], Any], **kwargs: Any
+    ) -> None:
         """Run when chain ends running.
 
         Args:
-            outputs (Dict[str, Any]): The outputs of the chain.
+            outputs (Union[Dict[str, Any], Any]): The outputs of the chain.
         """
         await _ahandle_event(
             self.handlers,
@@ -1144,7 +1146,7 @@ class CallbackManager(BaseCallbackManager):
     def on_chain_start(
         self,
         serialized: Dict[str, Any],
-        inputs: Dict[str, Any],
+        inputs: Union[Dict[str, Any], Any],
         run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> CallbackManagerForChainRun:
@@ -1152,7 +1154,7 @@ class CallbackManager(BaseCallbackManager):
 
         Args:
             serialized (Dict[str, Any]): The serialized chain.
-            inputs (Dict[str, Any]): The inputs to the chain.
+            inputs (Union[Dict[str, Any], Any]): The inputs to the chain.
             run_id (UUID, optional): The ID of the run. Defaults to None.
 
         Returns:
@@ -1433,7 +1435,7 @@ class AsyncCallbackManager(BaseCallbackManager):
     async def on_chain_start(
         self,
         serialized: Dict[str, Any],
-        inputs: Dict[str, Any],
+        inputs: Union[Dict[str, Any], Any],
         run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> AsyncCallbackManagerForChainRun:
@@ -1441,7 +1443,7 @@ class AsyncCallbackManager(BaseCallbackManager):
 
         Args:
             serialized (Dict[str, Any]): The serialized chain.
-            inputs (Dict[str, Any]): The inputs to the chain.
+            inputs (Union[Dict[str, Any], Any]): The inputs to the chain.
             run_id (UUID, optional): The ID of the run. Defaults to None.
 
         Returns:
