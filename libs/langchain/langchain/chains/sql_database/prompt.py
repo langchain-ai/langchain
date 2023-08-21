@@ -281,3 +281,4 @@ SQL_PROMPTS = {
     "sqlite": SQLITE_PROMPT,
     "clickhouse": CLICKHOUSE_PROMPT,
     "prestodb": PRESTODB_PROMPT,
+}
