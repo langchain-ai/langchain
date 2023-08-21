@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.267"
-description = "Building applications with LLMs through composability"
+version = "0.0.267+giga"
+description = "Building applications with LLMs through composability with GigaChat support"
 authors = []
 license = "MIT"
 readme = "README.md"

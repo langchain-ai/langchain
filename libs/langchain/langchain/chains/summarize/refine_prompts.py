@@ -2,15 +2,15 @@
 from langchain.prompts import PromptTemplate
 
 REFINE_PROMPT_TMPL = (
-    "Your job is to produce a final summary\n"
-    "We have provided an existing summary up to a certain point: {existing_answer}\n"
-    "We have the opportunity to refine the existing summary"
-    "(only if needed) with some more context below.\n"
+    "Твоя задача - создать окончательное резюме\n"
+    "Мы предоставили существующее резюме до определенного момента: {existing_answer}\n"
+    "У нас есть возможность улучшить существующее резюме"
+    "(только если это необходимо) с некоторым дополнительным контекстом ниже.\n"
     "------------\n"
     "{text}\n"
     "------------\n"
-    "Given the new context, refine the original summary\n"
-    "If the context isn't useful, return the original summary."
+    "Учитывая новый контекст, улучши оригинальное резюме\n"
+    "Если контекст не полезен, верни оригинальное резюме."
 )
 REFINE_PROMPT = PromptTemplate(
     input_variables=["existing_answer", "text"],
@@ -18,11 +18,11 @@ REFINE_PROMPT = PromptTemplate(
 )
 
 
-prompt_template = """Write a concise summary of the following:
+prompt_template = """Напиши краткое резюме следующего:
 
 
 "{text}"
 
 
-CONCISE SUMMARY:"""
+КРАТКОЕ РЕЗЮМЕ:"""
 PROMPT = PromptTemplate(template=prompt_template, input_variables=["text"])

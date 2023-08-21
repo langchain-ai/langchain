@@ -9,30 +9,30 @@ from langchain.prompts.chat import (
 from langchain.prompts.prompt import PromptTemplate
 
 DEFAULT_REFINE_PROMPT_TMPL = (
-    "The original question is as follows: {question}\n"
-    "We have provided an existing answer: {existing_answer}\n"
-    "We have the opportunity to refine the existing answer"
-    "(only if needed) with some more context below.\n"
+    "Оригинальный вопрос звучит так: {question}\n"
+    "Мы предоставили существующий ответ: {existing_answer}\n"
+    "У нас есть возможность уточнить существующий ответ"
+    "(если это необходимо) с некоторым дополнительным контекстом ниже.\n"
     "------------\n"
     "{context_str}\n"
     "------------\n"
-    "Given the new context, refine the original answer to better "
-    "answer the question. "
-    "If the context isn't useful, return the original answer."
+    "Учитывая новый контекст, уточни оригинальный ответ, чтобы лучше "
+    "ответить на вопрос. "
+    "Если контекст не полезен, верни оригинальный ответ."
 )
 DEFAULT_REFINE_PROMPT = PromptTemplate(
     input_variables=["question", "existing_answer", "context_str"],
     template=DEFAULT_REFINE_PROMPT_TMPL,
 )
 refine_template = (
-    "We have the opportunity to refine the existing answer"
-    "(only if needed) with some more context below.\n"
+    "У нас есть возможность уточнить существующий ответ"
+    "(если это необходимо) с некоторым дополнительным контекстом ниже.\n"
     "------------\n"
     "{context_str}\n"
     "------------\n"
-    "Given the new context, refine the original answer to better "
-    "answer the question. "
-    "If the context isn't useful, return the original answer."
+    "Учитывая новый контекст, уточни оригинальный ответ, чтобы лучше "
+    "ответить на вопрос. "
+    "Если контекст не полезен, верни оригинальный ответ."
 )
 messages = [
     HumanMessagePromptTemplate.from_template("{question}"),
@@ -47,23 +47,23 @@ REFINE_PROMPT_SELECTOR = ConditionalPromptSelector(
 
 
 DEFAULT_TEXT_QA_PROMPT_TMPL = (
-    "Context information is below. \n"
+    "Информация контекста ниже. \n"
     "---------------------\n"
     "{context_str}"
     "\n---------------------\n"
-    "Given the context information and not prior knowledge, "
-    "answer the question: {question}\n"
+    "Учитывая информацию контекста и отсутствие предварительных знаний, "
+    "ответь на вопрос: {question}\n"
 )
 DEFAULT_TEXT_QA_PROMPT = PromptTemplate(
     input_variables=["context_str", "question"], template=DEFAULT_TEXT_QA_PROMPT_TMPL
 )
 chat_qa_prompt_template = (
-    "Context information is below. \n"
+    "Информация контекста ниже. \n"
     "---------------------\n"
     "{context_str}"
     "\n---------------------\n"
-    "Given the context information and not prior knowledge, "
-    "answer any questions"
+    "Учитывая информацию контекста и отсутствие предварительных знаний, "
+    "ответь на любые вопросы"
 )
 messages = [
     SystemMessagePromptTemplate.from_template(chat_qa_prompt_template),

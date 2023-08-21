@@ -1,39 +1,39 @@
 # flake8: noqa
 from langchain.prompts.prompt import PromptTemplate
 
-web_search_template = """Please write a passage to answer the question 
-Question: {QUESTION}
-Passage:"""
+web_search_template = """Пожалуйста, напиши текст, чтобы ответить на вопрос 
+Вопрос: {QUESTION}
+Текст:"""
 web_search = PromptTemplate(template=web_search_template, input_variables=["QUESTION"])
-sci_fact_template = """Please write a scientific paper passage to support/refute the claim 
-Claim: {Claim}
-Passage:"""
+sci_fact_template = """Пожалуйста, напиши отрывок из научной статьи, чтобы подтвердить/опровергнуть утверждение 
+Утверждение: {Claim}
+Текст:"""
 sci_fact = PromptTemplate(template=sci_fact_template, input_variables=["Claim"])
-arguana_template = """Please write a counter argument for the passage 
-Passage: {PASSAGE}
-Counter Argument:"""
+arguana_template = """Пожалуйста, напиши контраргумент к тексту 
+Текст: {PASSAGE}
+Контраргумент:"""
 arguana = PromptTemplate(template=arguana_template, input_variables=["PASSAGE"])
-trec_covid_template = """Please write a scientific paper passage to answer the question
-Question: {QUESTION}
-Passage:"""
+trec_covid_template = """Пожалуйста, напиши отрывок из научной статьи, чтобы ответить на вопрос
+Вопрос: {QUESTION}
+Текст:"""
 trec_covid = PromptTemplate(template=trec_covid_template, input_variables=["QUESTION"])
-fiqa_template = """Please write a financial article passage to answer the question
-Question: {QUESTION}
-Passage:"""
+fiqa_template = """Пожалуйста, напиши отрывок из финансовой статьи, чтобы ответить на вопрос
+Вопрос: {QUESTION}
+Текст:"""
 fiqa = PromptTemplate(template=fiqa_template, input_variables=["QUESTION"])
-dbpedia_entity_template = """Please write a passage to answer the question.
-Question: {QUESTION}
-Passage:"""
+dbpedia_entity_template = """Пожалуйста, напиши текст, чтобы ответить на вопрос.
+Вопрос: {QUESTION}
+Текст:"""
 dbpedia_entity = PromptTemplate(
     template=dbpedia_entity_template, input_variables=["QUESTION"]
 )
-trec_news_template = """Please write a news passage about the topic.
-Topic: {TOPIC}
-Passage:"""
+trec_news_template = """Пожалуйста, напиши новостной отрывок на заданную тему.
+Тема: {TOPIC}
+Текст:"""
 trec_news = PromptTemplate(template=trec_news_template, input_variables=["TOPIC"])
-mr_tydi_template = """Please write a passage in Swahili/Korean/Japanese/Bengali to answer the question in detail.
-Question: {QUESTION}
-Passage:"""
+mr_tydi_template = """Пожалуйста, напиши текст на свахили/корейском/японском/бенгальском, чтобы подробно ответить на вопрос.
+Вопрос: {QUESTION}
+Текст:"""
 mr_tydi = PromptTemplate(template=mr_tydi_template, input_variables=["QUESTION"])
 PROMPT_MAP = {
     "web_search": web_search,

@@ -1,55 +1,55 @@
 # flake8: noqa
 from langchain.prompts import PromptTemplate
 
-question_prompt_template = """Use the following portion of a long document to see if any of the text is relevant to answer the question. 
-Return any relevant text verbatim.
+question_prompt_template = """Используй следующий фрагмент длинного документа, чтобы увидеть, содержит ли текст информацию, относящуюся к ответу на вопрос. 
+Верни любой релевантный текст дословно.
 {context}
-Question: {question}
-Relevant text, if any:"""
+Вопрос: {question}
+Релевантный текст, если таковой имеется:"""
 QUESTION_PROMPT = PromptTemplate(
     template=question_prompt_template, input_variables=["context", "question"]
 )
 
-combine_prompt_template = """Given the following extracted parts of a long document and a question, create a final answer with references ("SOURCES"). 
-If you don't know the answer, just say that you don't know. Don't try to make up an answer.
-ALWAYS return a "SOURCES" part in your answer.
+combine_prompt_template = """Учитывая следующие извлеченные части длинного документа и вопрос, создай окончательный ответ с ссылками ("ИСТОЧНИКИ"). 
+Если ты не знаешь ответа, просто скажи, что не знаешь. Не пытайся выдумать ответ.
+ВСЕГДА возвращай часть "ИСТОЧНИКИ" в своем ответе.
 
-QUESTION: Which state/country's law governs the interpretation of the contract?
+ВОПРОС: Какое государственное/страновое законодательство регулирует толкование контракта?
 =========
-Content: This Agreement is governed by English law and the parties submit to the exclusive jurisdiction of the English courts in  relation to any dispute (contractual or non-contractual) concerning this Agreement save that either party may apply to any court for an  injunction or other relief to protect its Intellectual Property Rights.
-Source: 28-pl
-Content: No Waiver. Failure or delay in exercising any right or remedy under this Agreement shall not constitute a waiver of such (or any other)  right or remedy.\n\n11.7 Severability. The invalidity, illegality or unenforceability of any term (or part of a term) of this Agreement shall not affect the continuation  in force of the remainder of the term (if any) and this Agreement.\n\n11.8 No Agency. Except as expressly stated otherwise, nothing in this Agreement shall create an agency, partnership or joint venture of any  kind between the parties.\n\n11.9 No Third-Party Beneficiaries.
-Source: 30-pl
-Content: (b) if Google believes, in good faith, that the Distributor has violated or caused Google to violate any Anti-Bribery Laws (as  defined in Clause 8.5) or that such a violation is reasonably likely to occur,
-Source: 4-pl
+Содержание: Это Соглашение регулируется английским законодательством, и стороны подчиняются исключительной юрисдикции английских судов в отношении любого спора (контрактного или внеконтрактного) по данному Соглашению, за исключением того, что любая из сторон может обратиться в любой суд за получением судебного запрета или иного средства защиты своих прав интеллектуальной собственности.
+Источник: 28-pl
+Содержание: Неотзыв. Несоблюдение или задержка в осуществлении любого права или средства правовой защиты по данному Соглашению не составляет отказа от такого (или любого другого) права или средства правовой защиты.\n\n11.7 Разделимость. Недействительность, незаконность или неосуществимость любого условия (или его части) данного Соглашения не влияет на продолжение действия остатка условия (если таковой имеется) и данного Соглашения.\n\n11.8 Нет агентства. За исключением случаев, прямо указанных в противном случае, ничто в данном Соглашении не создает агентства, партнерства или совместного предприятия любого рода между сторонами.\n\n11.9 Нет третьих лиц-бенефициаров.
+Источник: 30-pl
+Содержание: (b) если Google верит, в доброй вере, что Дистрибьютор нарушил или заставил Google нарушить любые Антикоррупционные законы (как определено в пункте 8.5) или что такое нарушение вполне вероятно,
+Источник: 4-pl
 =========
-FINAL ANSWER: This Agreement is governed by English law.
-SOURCES: 28-pl
+ОКОНЧАТЕЛЬНЫЙ ОТВЕТ: Это Соглашение регулируется английским законодательством.
+ИСТОЧНИКИ: 28-pl
 
-QUESTION: What did the president say about Michael Jackson?
+ВОПРОС: Что президент сказал о Майкле Джексоне?
 =========
-Content: Madam Speaker, Madam Vice President, our First Lady and Second Gentleman. Members of Congress and the Cabinet. Justices of the Supreme Court. My fellow Americans.  \n\nLast year COVID-19 kept us apart. This year we are finally together again. \n\nTonight, we meet as Democrats Republicans and Independents. But most importantly as Americans. \n\nWith a duty to one another to the American people to the Constitution. \n\nAnd with an unwavering resolve that freedom will always triumph over tyranny. \n\nSix days ago, Russia’s Vladimir Putin sought to shake the foundations of the free world thinking he could make it bend to his menacing ways. But he badly miscalculated. \n\nHe thought he could roll into Ukraine and the world would roll over. Instead he met a wall of strength he never imagined. \n\nHe met the Ukrainian people. \n\nFrom President Zelenskyy to every Ukrainian, their fearlessness, their courage, their determination, inspires the world. \n\nGroups of citizens blocking tanks with their bodies. Everyone from students to retirees teachers turned soldiers defending their homeland.
-Source: 0-pl
-Content: And we won’t stop. \n\nWe have lost so much to COVID-19. Time with one another. And worst of all, so much loss of life. \n\nLet’s use this moment to reset. Let’s stop looking at COVID-19 as a partisan dividing line and see it for what it is: A God-awful disease.  \n\nLet’s stop seeing each other as enemies, and start seeing each other for who we really are: Fellow Americans.  \n\nWe can’t change how divided we’ve been. But we can change how we move forward—on COVID-19 and other issues we must face together. \n\nI recently visited the New York City Police Department days after the funerals of Officer Wilbert Mora and his partner, Officer Jason Rivera. \n\nThey were responding to a 9-1-1 call when a man shot and killed them with a stolen gun. \n\nOfficer Mora was 27 years old. \n\nOfficer Rivera was 22. \n\nBoth Dominican Americans who’d grown up on the same streets they later chose to patrol as police officers. \n\nI spoke with their families and told them that we are forever in debt for their sacrifice, and we will carry on their mission to restore the trust and safety every community deserves.
-Source: 24-pl
-Content: And a proud Ukrainian people, who have known 30 years  of independence, have repeatedly shown that they will not tolerate anyone who tries to take their country backwards.  \n\nTo all Americans, I will be honest with you, as I’ve always promised. A Russian dictator, invading a foreign country, has costs around the world. \n\nAnd I’m taking robust action to make sure the pain of our sanctions  is targeted at Russia’s economy. And I will use every tool at our disposal to protect American businesses and consumers. \n\nTonight, I can announce that the United States has worked with 30 other countries to release 60 Million barrels of oil from reserves around the world.  \n\nAmerica will lead that effort, releasing 30 Million barrels from our own Strategic Petroleum Reserve. And we stand ready to do more if necessary, unified with our allies.  \n\nThese steps will help blunt gas prices here at home. And I know the news about what’s happening can seem alarming. \n\nBut I want you to know that we are going to be okay.
-Source: 5-pl
-Content: More support for patients and families. \n\nTo get there, I call on Congress to fund ARPA-H, the Advanced Research Projects Agency for Health. \n\nIt’s based on DARPA—the Defense Department project that led to the Internet, GPS, and so much more.  \n\nARPA-H will have a singular purpose—to drive breakthroughs in cancer, Alzheimer’s, diabetes, and more. \n\nA unity agenda for the nation. \n\nWe can do this. \n\nMy fellow Americans—tonight , we have gathered in a sacred space—the citadel of our democracy. \n\nIn this Capitol, generation after generation, Americans have debated great questions amid great strife, and have done great things. \n\nWe have fought for freedom, expanded liberty, defeated totalitarianism and terror. \n\nAnd built the strongest, freest, and most prosperous nation the world has ever known. \n\nNow is the hour. \n\nOur moment of responsibility. \n\nOur test of resolve and conscience, of history itself. \n\nIt is in this moment that our character is formed. Our purpose is found. Our future is forged. \n\nWell I know this nation.
-Source: 34-pl
+Содержание: Госпожа Спикер, госпожа Вице-президент, наша Первая леди и Второй джентльмен. Члены Конгресса и Кабинета министров. Судьи Верховного суда. Мои соотечественники.  \n\nВ прошлом году COVID-19 разделил нас. В этом году мы наконец вместе снова. \n\nСегодня вечером мы встречаемся как демократы, республиканцы и независимые. Но самое главное - как американцы. \n\nС обязанностью перед друг другом, перед американским народом, перед Конституцией. \n\nИ с непоколебимой решимостью, что свобода всегда побеждает тиранию. \n\nШесть дней назад, Владимир Путин из России попытался потрясти основы свободного мира, думая, что он может заставить его подчиниться своим угрожающим методам. Но он сильно ошибся. \n\nОн думал, что может ворваться в Украину, и мир отступит. Вместо этого он столкнулся со стеной силы, о которой он даже не представлял. \n\nОн столкнулся с украинским народом. \n\nОт президента Зеленского до каждого украинца, их бесстрашие, их мужество, их решимость вдохновляют мир. \n\nГруппы граждан, блокирующих танки своими телами. Все, от студентов до пенсионеров, учителей, превратившихся в солдат, защищают свою родину.
+Источник: 0-pl
+Содержание: И мы не остановимся. \n\nМы потеряли так много из-за COVID-19. Время с друг другом. И самое страшное, так много потерь жизни. \n\nДавайте используем этот момент для перезагрузки. Давайте перестанем смотреть на COVID-19 как на партийную линию разделения и увидим его за то, что он есть: Божественно ужасная болезнь.  \n\nДавайте перестанем видеть друг в друге врагов и начнем видеть друг в друге тех, кем мы на самом деле являемся: соотечественниками.  \n\nМы не можем изменить, насколько мы были разделены. Но мы можем изменить то, как мы будем двигаться вперед - по COVID-19 и другим вопросам, которые мы должны решить вместе. \n\nЯ недавно посетил полицейский департамент Нью-Йорка несколько дней после похорон офицера Вильберта Мора и его партнера, офицера Джейсона Ривера. \n\nОни откликнулись на вызов 9-1-1, когда мужчина застрелил их из украденного оружия. \n\nОфицер Мора был 27 лет. \n\nОфицер Ривера был 22. \n\nОба доминиканцы-американцы, которые выросли на тех же улицах, которые они позже выбрали для патрулирования в качестве полицейских. \n\nЯ говорил с их семьями и сказал им, что мы навсегда обязаны за их жертву, и мы продолжим их миссию восстановления доверия и безопасности, которые заслуживает каждое сообщество.
+Источник: 24-pl
+Содержание: И гордый украинский народ, который знает 30 лет независимости, неоднократно показывал, что он не потерпит тех, кто пытается вернуть их страну назад.  \n\nВсем американцам, я буду честен с вами, как я всегда обещал. Русский диктатор, вторгающийся в чужую страну, имеет свою цену во всем мире. \n\nИ я принимаю решительные меры, чтобы убедиться, что боль наших санкций направлена на экономику России. И я буду использовать все доступные нам средства для защиты американских предприятий и потребителей. \n\nСегодня вечером я могу объявить, что Соединенные Штаты совместно с 30 другими странами освободили 60 миллионов баррелей нефти из резервов по всему миру.  \n\nАмерика возглавит эту работу, освободив 30 миллионов баррелей из нашего собственного Стратегического нефтяного резерва. И мы готовы сделать больше, если это будет необходимо, объединившись с нашими союзниками.  \n\nЭти шаги помогут смягчить цены на бензин здесь, дома. И я знаю, что новости о том, что происходит, могут показаться тревожными. \n\nНо я хочу, чтобы вы знали, что с нами все будет в порядке.
+Источник: 5-pl
+Содержание: Больше поддержки для пациентов и семей. \n\nЧтобы добиться этого, я призываю Конгресс финансировать ARPA-H, Агентство по передовым исследовательским проектам в области здравоохранения. \n\nОно основано на DARPA - проекте Министерства обороны, который привел к созданию Интернета, GPS и многого другого.  \n\nЦель ARPA-H - стимулировать прорывы в области рака, болезни Альцгеймера, диабета и других заболеваний. \n\nЕдиная программа для нации. \n\nМы можем сделать это. \n\nМои соотечественники - сегодня вечером мы собрались в священном месте - цитадели нашей демократии. \n\nВ этом Капитолии, из поколения в поколение, американцы обсуждали великие вопросы среди великих бедствий и совершали великие дела. \n\nМы боролись за свободу, расширяли свободу, побеждали тоталитаризм и террор. \n\nИ построили самую сильную, свободную и процветающую нацию, которую мир когда-либо знал. \n\nСейчас настал наш час. \n\nНаш момент ответственности. \n\nНаш тест на решимость и совесть, на историю саму по себе. \n\nИменно в этот момент формируется наш характер. Наша цель находится. Наше будущее куется. \n\nНу я знаю эту нацию.
+Источник: 34-pl
 =========
-FINAL ANSWER: The president did not mention Michael Jackson.
-SOURCES:
+ОКОНЧАТЕЛЬНЫЙ ОТВЕТ: Президент не упоминал Майкла Джексона.
+ИСТОЧНИКИ:
 
-QUESTION: {question}
+ВОПРОС: {question}
 =========
 {summaries}
 =========
-FINAL ANSWER:"""
+ОКОНЧАТЕЛЬНЫЙ ОТВЕТ:"""
 COMBINE_PROMPT = PromptTemplate(
     template=combine_prompt_template, input_variables=["summaries", "question"]
 )
 
 EXAMPLE_PROMPT = PromptTemplate(
-    template="Content: {page_content}\nSource: {source}",
+    template="Содержание: {page_content}\nИсточник: {source}",
     input_variables=["page_content", "source"],
 )

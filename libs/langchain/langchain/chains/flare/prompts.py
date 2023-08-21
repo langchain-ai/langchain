@@ -17,13 +17,13 @@ class FinishedOutputParser(BaseOutputParser[Tuple[str, bool]]):
 
 
 PROMPT_TEMPLATE = """\
-Respond to the user message using any relevant context. \
-If context is provided, you should ground your answer in that context. \
-Once you're done responding return FINISHED.
+Ответь на сообщение пользователя, используя любой релевантный контекст. \
+Если контекст предоставлен, ты должен основывать свой ответ на этом контексте. \
+Как только ты закончишь отвечать, верни FINISHED.
 
->>> CONTEXT: {context}
->>> USER INPUT: {user_input}
->>> RESPONSE: {response}\
+>>> КОНТЕКСТ: {context}
+>>> ВВОД ПОЛЬЗОВАТЕЛЯ: {user_input}
+>>> ОТВЕТ: {response}\
 """
 
 PROMPT = PromptTemplate(
@@ -33,13 +33,13 @@ PROMPT = PromptTemplate(
 
 
 QUESTION_GENERATOR_PROMPT_TEMPLATE = """\
-Given a user input and an existing partial response as context, \
-ask a question to which the answer is the given term/entity/phrase:
+Учитывая ввод пользователя и существующий частичный ответ в качестве контекста, \
+задай вопрос, на который ответом является данный термин/сущность/фраза:
 
->>> USER INPUT: {user_input}
->>> EXISTING PARTIAL RESPONSE: {current_response}
+>>> ВВОД ПОЛЬЗОВАТЕЛЯ: {user_input}
+>>> СУЩЕСТВУЮЩИЙ ЧАСТИЧНЫЙ ОТВЕТ: {current_response}
 
-The question to which the answer is the term/entity/phrase "{uncertain_span}" is:"""
+Вопрос, на который ответом является термин/сущность/фраза "{uncertain_span}", это:"""
 QUESTION_GENERATOR_PROMPT = PromptTemplate(
     template=QUESTION_GENERATOR_PROMPT_TEMPLATE,
     input_variables=["user_input", "current_response", "uncertain_span"],

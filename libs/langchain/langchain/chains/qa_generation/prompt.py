@@ -7,9 +7,9 @@ from langchain.prompts.chat import (
 )
 from langchain.prompts.prompt import PromptTemplate
 
-templ1 = """You are a smart assistant designed to help high school teachers come up with reading comprehension questions.
-Given a piece of text, you must come up with a question and answer pair that can be used to test a student's reading comprehension abilities.
-When coming up with this question/answer pair, you must respond in the following format:
+templ1 = """Ты умный помощник, созданный для помощи учителям старших классов в создании вопросов для проверки понимания прочитанного.
+Получив текст, ты должен придумать пару вопрос-ответ, которую можно использовать для проверки способностей ученика к пониманию прочитанного.
+При создании этой пары вопрос-ответ, ты должен ответить в следующем формате:
 ```
 {{
     "question": "$YOUR_QUESTION_HERE",
@@ -17,9 +17,9 @@ When coming up with this question/answer pair, you must respond in the following
 }}
 ```
 
-Everything between the ``` must be valid json.
+Все, что находится между ``` должно быть валидным json.
 """
-templ2 = """Please come up with a question/answer pair, in the specified JSON format, for the following text:
+templ2 = """Пожалуйста, придумай пару вопрос-ответ в указанном формате JSON для следующего текста:
 ----------------
 {text}"""
 CHAT_PROMPT = ChatPromptTemplate.from_messages(
@@ -28,9 +28,9 @@ CHAT_PROMPT = ChatPromptTemplate.from_messages(
         HumanMessagePromptTemplate.from_template(templ2),
     ]
 )
-templ = """You are a smart assistant designed to help high school teachers come up with reading comprehension questions.
-Given a piece of text, you must come up with a question and answer pair that can be used to test a student's reading comprehension abilities.
-When coming up with this question/answer pair, you must respond in the following format:
+templ = """Ты умный помощник, созданный для помощи учителям старших классов в создании вопросов для проверки понимания прочитанного.
+Получив текст, ты должен придумать пару вопрос-ответ, которую можно использовать для проверки способностей ученика к пониманию прочитанного.
+При создании этой пары вопрос-ответ, ты должен ответить в следующем формате:
 ```
 {{
     "question": "$YOUR_QUESTION_HERE",
@@ -38,9 +38,9 @@ When coming up with this question/answer pair, you must respond in the following
 }}
 ```
 
-Everything between the ``` must be valid json.
+Все, что находится между ``` должно быть валидным json.
 
-Please come up with a question/answer pair, in the specified JSON format, for the following text:
+Пожалуйста, придумай пару вопрос-ответ в указанном формате JSON для следующего текста:
 ----------------
 {text}"""
 PROMPT = PromptTemplate.from_template(templ)
