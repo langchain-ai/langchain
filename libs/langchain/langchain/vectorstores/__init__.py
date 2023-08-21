@@ -69,6 +69,7 @@ from langchain.vectorstores.supabase import SupabaseVectorStore
 from langchain.vectorstores.tair import Tair
 from langchain.vectorstores.tencentvectordb import TencentVectorDB
 from langchain.vectorstores.tigris import Tigris
+from langchain.vectorstores.timescalevector import TimescaleVector
 from langchain.vectorstores.typesense import Typesense
 from langchain.vectorstores.usearch import USearch
 from langchain.vectorstores.vectara import Vectara
@@ -131,6 +132,7 @@ __all__ = [
     "SupabaseVectorStore",
     "Tair",
     "Tigris",
+    "TimescaleVector",
     "Typesense",
     "USearch",
     "Vectara",
