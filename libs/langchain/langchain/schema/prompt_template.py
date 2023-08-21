@@ -25,6 +25,8 @@ class BasePromptTemplate(Serializable, Runnable[Dict, PromptValue], ABC):
     partial_variables: Mapping[str, Union[str, Callable[[], str]]] = Field(
         default_factory=dict
     )
+    additional_kwargs: dict = Field(default_factory=dict)
+    """Additional keyword arguments to pass to the prompt template."""
 
     @property
     def lc_serializable(self) -> bool:

@@ -489,6 +489,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
     def from_messages(
         cls,
         messages: Sequence[MessageLikeRepresentation],
+        **kwargs: Any,
     ) -> ChatPromptTemplate:
         """Create a chat prompt template from a variety of message formats.
 
@@ -534,7 +535,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             ):
                 input_vars.update(_message.input_variables)
 
-        return cls(input_variables=sorted(input_vars), messages=_messages)
+        return cls(input_variables=sorted(input_vars), messages=_messages, **kwargs)
 
     def format(self, **kwargs: Any) -> str:
         """Format the chat template into a string.
