@@ -2,9 +2,7 @@
 name: libs/experimental Release
 
 on:
-  pull_request:
-    types:
-      - closed
+  push:
     branches:
       - master
     paths:
