@@ -10049,6 +10049,7 @@ embeddings = ["sentence-transformers"]
 extended-testing = ["amazon-textract-caller", "atlassian-python-api", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "esprima", "faiss-cpu", "feedparser", "geopandas", "gitpython", "gql", "html2text", "jinja2", "jq", "lxml", "mwparserfromhell", "mwxml", "newspaper3k", "openai", "openai", "openapi-schema-pydantic", "pandas", "pdfminer-six", "pgvector", "psychicapi", "py-trello", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "requests-toolbelt", "scikit-learn", "streamlit", "sympy", "telethon", "tqdm", "xata", "xmltodict"]
 javascript = ["esprima"]
 llms = ["clarifai", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "openlm", "torch", "transformers"]
+marqo = ["marqo"]
 openai = ["openai", "tiktoken"]
 qdrant = ["qdrant-client"]
 text-helpers = ["chardet"]
@@ -10056,4 +10057,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "a7fd866910ab49f212bd44844aa6b5def17cd1b5451973a855dcf1cc44fd7265"
+content-hash = "c451c1f5726845922d781cfec027770eadbe78771907489c2be6e359605fde85"
