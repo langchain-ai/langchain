@@ -59,7 +59,7 @@ runs:
         "python$PYTHON_VERSION" -m pip cache info
         echo "poetry cache info: $("python$PYTHON_VERSION" -m pip cache list poetry)"
 
-        "python$PYTHON_VERSION" -m venv --without-pip /opt/pipx/venvs/poetry
+        "python$PYTHON_VERSION" -m venv /opt/pipx/venvs/poetry
         /opt/pipx/venvs/poetry/bin/python -m pip install "poetry==$POETRY_VERSION" --verbose
 
         /opt/pipx/venvs/poetry/bin/python -m pip cache dir
