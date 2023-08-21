@@ -8,12 +8,11 @@ from contextlib import redirect_stdout
 from io import StringIO
 from typing import Any, Dict, Optional
 
-from pydantic import Field, root_validator
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
+from langchain.pydantic_v1 import Field, root_validator
 from langchain.tools.base import BaseTool
 from langchain.utilities import PythonREPL
 
@@ -43,8 +42,8 @@ def sanitize_input(query: str) -> str:
 class PythonREPLTool(BaseTool):
     """A tool for running python code in a REPL."""
 
-    name = "Python_REPL"
-    description = (
+    name: str = "Python_REPL"
+    description: str = (
         "A Python shell. Use this to execute python commands. "
         "Input should be a valid python command. "
         "If you want to see the output of a value, you should print it out "
@@ -81,8 +80,8 @@ class PythonREPLTool(BaseTool):
 class PythonAstREPLTool(BaseTool):
     """A tool for running python code in a REPL."""
 
-    name = "python_repl_ast"
-    description = (
+    name: str = "python_repl_ast"
+    description: str = (
         "A Python shell. Use this to execute python commands. "
         "Input should be a valid python command. "
         "When using this tool, sometimes output is abbreviated - "
@@ -131,3 +130,15 @@ class PythonAstREPLTool(BaseTool):
                 return io_buffer.getvalue()
         except Exception as e:
             return "{}: {}".format(type(e).__name__, str(e))
+
+    async def _arun(
+        self,
+        query: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> Any:
+        """Use the tool asynchronously."""
+
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(None, self._run, query)
+
+        return result

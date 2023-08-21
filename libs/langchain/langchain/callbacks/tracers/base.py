@@ -47,6 +47,9 @@ class BaseTracer(BaseCallbackHandler, ABC):
             parent_run = self.run_map[str(run.parent_run_id)]
             if parent_run:
                 self._add_child_run(parent_run, run)
+                parent_run.child_execution_order = max(
+                    parent_run.child_execution_order, run.child_execution_order
+                )
             else:
                 logger.debug(f"Parent run with UUID {run.parent_run_id} not found.")
         self.run_map[str(run.id)] = run
@@ -254,7 +257,12 @@ class BaseTracer(BaseCallbackHandler, ABC):
         self._on_chain_start(chain_run)
 
     def on_chain_end(
-        self, outputs: Dict[str, Any], *, run_id: UUID, **kwargs: Any
+        self,
+        outputs: Dict[str, Any],
+        *,
+        run_id: UUID,
+        inputs: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> None:
         """End a trace for a chain run."""
         if not run_id:
@@ -266,6 +274,8 @@ class BaseTracer(BaseCallbackHandler, ABC):
         chain_run.outputs = outputs
         chain_run.end_time = datetime.utcnow()
         chain_run.events.append({"name": "end", "time": chain_run.end_time})
+        if inputs is not None:
+            chain_run.inputs = inputs
         self._end_trace(chain_run)
         self._on_chain_end(chain_run)
 
@@ -273,6 +283,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         self,
         error: Union[Exception, KeyboardInterrupt],
         *,
+        inputs: Optional[Dict[str, Any]] = None,
         run_id: UUID,
         **kwargs: Any,
     ) -> None:
@@ -286,6 +297,8 @@ class BaseTracer(BaseCallbackHandler, ABC):
         chain_run.error = repr(error)
         chain_run.end_time = datetime.utcnow()
         chain_run.events.append({"name": "error", "time": chain_run.end_time})
+        if inputs is not None:
+            chain_run.inputs = inputs
         self._end_trace(chain_run)
         self._on_chain_error(chain_run)
 

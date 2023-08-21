@@ -12,19 +12,20 @@ logger = logging.getLogger()
 
 
 class AlibabaCloudOpenSearchSettings:
-    """Opensearch Client Configuration
+    """Alibaba Cloud Opensearch Client Configuration.
+
     Attribute:
         endpoint (str) : The endpoint of opensearch instance, You can find it
-        from the console of Alibaba Cloud OpenSearch.
+          from the console of Alibaba Cloud OpenSearch.
         instance_id (str) : The identify of opensearch instance, You can find
-        it from the console of Alibaba Cloud OpenSearch.
+          it from the console of Alibaba Cloud OpenSearch.
         datasource_name (str): The name of the data source specified when creating it.
         username (str) : The username specified when purchasing the instance.
         password (str) : The password specified when purchasing the instance.
         embedding_index_name (str) :  The name of the vector attribute specified
-        when configuring the instance attributes.
+          when configuring the instance attributes.
         field_name_mapping (Dict) : Using field name mapping between opensearch
-        vector store and opensearch instance configuration table field names:
+          vector store and opensearch instance configuration table field names:
         {
             'id': 'The id field name map of index document.',
             'document': 'The text field name map of index document.',

@@ -142,10 +142,11 @@ class DeepLake(VectorStore):
 
         self.dataset_path = dataset_path
 
-        logger.warning(
-            "Using embedding function is deprecated and will be removed "
-            "in the future. Please use embedding instead."
-        )
+        if embedding_function:
+            logger.warning(
+                "Using embedding function is deprecated and will be removed "
+                "in the future. Please use embedding instead."
+            )
 
         self.vectorstore = DeepLakeVectorStore(
             path=self.dataset_path,

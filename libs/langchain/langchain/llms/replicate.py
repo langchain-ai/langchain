@@ -1,10 +1,9 @@
 import logging
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import Extra, Field, root_validator
-
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
+from langchain.pydantic_v1 import Extra, Field, root_validator
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -45,6 +44,14 @@ class Replicate(LLM):
         """Configuration for this pydantic config."""
 
         extra = Extra.forbid
+
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"replicate_api_token": "REPLICATE_API_TOKEN"}
+
+    @property
+    def lc_serializable(self) -> bool:
+        return True
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:

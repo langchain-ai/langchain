@@ -20,13 +20,12 @@ from typing import (
     Union,
 )
 
-from pydantic import Field, root_validator
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain.llms.base import BaseLLM, create_base_retry_decorator
+from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import Generation, LLMResult
 from langchain.schema.output import GenerationChunk
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
@@ -143,8 +142,8 @@ class BaseOpenAI(BaseLLM):
     def lc_serializable(self) -> bool:
         return True
 
-    client: Any  #: :meta private:
-    model_name: str = Field("text-davinci-003", alias="model")
+    client: Any = None  #: :meta private:
+    model_name: str = Field(default="text-davinci-003", alias="model")
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""

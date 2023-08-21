@@ -68,14 +68,17 @@ def get_client(redis_url: str, **kwargs: Any) -> RedisType:
     # check if normal redis:// or redis+sentinel:// url
     if redis_url.startswith("redis+sentinel"):
         redis_client = _redis_sentinel_client(redis_url, **kwargs)
-    if redis_url.startswith("rediss+sentinel"):  # sentinel with TLS support enables
+    elif redis_url.startswith("rediss+sentinel"):  # sentinel with TLS support enables
         kwargs["ssl"] = True
         if "ssl_cert_reqs" not in kwargs:
             kwargs["ssl_cert_reqs"] = "none"
         redis_client = _redis_sentinel_client(redis_url, **kwargs)
     else:
-        # connect to redis server from url
+        # connect to redis server from url, reconnect with cluster client if needed
         redis_client = redis.from_url(redis_url, **kwargs)
+        if _check_for_cluster(redis_client):
+            redis_client.close()
+            redis_client = _redis_cluster_client(redis_url, **kwargs)
     return redis_client
 
 
@@ -138,3 +141,19 @@ answered NO PASSWORD NEEDED - Please check Sentinel configuration"
             raise ae
 
     return sentinel_client.master_for(service_name)
+
+
+def _check_for_cluster(redis_client: RedisType) -> bool:
+    import redis
+
+    try:
+        cluster_info = redis_client.info("cluster")
+        return cluster_info["cluster_enabled"] == 1
+    except redis.exceptions.RedisError:
+        return False
+
+
+def _redis_cluster_client(redis_url: str, **kwargs: Any) -> RedisType:
+    from redis.cluster import RedisCluster
+
+    return RedisCluster.from_url(redis_url, **kwargs)

@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import json
 import re
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
 
 import requests
-from openapi_schema_pydantic import Parameter
 from requests import Response
 
 from langchain import LLMChain
@@ -19,6 +20,9 @@ from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import APIOperation
 from langchain.utilities.openapi import OpenAPISpec
 from langchain.utils.input import get_colored_text
+
+if TYPE_CHECKING:
+    from openapi_schema_pydantic import Parameter
 
 
 def _get_description(o: Any, prefer_short: bool) -> Optional[str]:
