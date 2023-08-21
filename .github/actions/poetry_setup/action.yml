@@ -55,9 +55,12 @@ runs:
       run: |
         "python$PYTHON_VERSION" -m pip cache dir
         "python$PYTHON_VERSION" -m pip cache info
-        "python$PYTHON_VERSION" -m pip cache list poetry
+        echo "poetry cache info: $("python$PYTHON_VERSION" -m pip cache list poetry)"
         pipx install "poetry==$POETRY_VERSION" --python "python$PYTHON_VERSION" --verbose
         /opt/pipx/venvs/poetry/bin/python -m pip cache dir
+        "python$PYTHON_VERSION" -m pip cache dir
+        "python$PYTHON_VERSION" -m pip cache info
+        echo "poetry cache info: $("python$PYTHON_VERSION" -m pip cache list poetry)"
 
     - name: Check Poetry File
       shell: bash
