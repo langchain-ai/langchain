@@ -33,7 +33,10 @@ class Epsilla(VectorStore):
                                  Defaults to "langchain_store".
     Example:
         .. code-block:: python
-            from langchain import Epsilla
+
+            from langchain.vectorstores import Epsilla
+            from pyepsilla import vectordb
+
             client = vectordb.Client()
             embeddings = OpenAIEmbeddings()
             db_path = "/tmp/vectorstore"
@@ -55,14 +58,14 @@ class Epsilla(VectorStore):
         """Initialize with necessary components."""
         try:
             import pyepsilla
-        except ImportError:
-            raise ValueError(
+        except ImportError as e:
+            raise ImportError(
                 "Could not import pyepsilla python package. "
-                "Please install pyepsilla package with `pip/pip3 install pyepsilla`."
-            )
+                "Please install pyepsilla package with `pip install pyepsilla`."
+            ) from e
 
         if not isinstance(client, pyepsilla.vectordb.Client):
-            raise ValueError(
+            raise TypeError(
                 f"client should be an instance of pyepsilla.vectordb.Client, "
                 f"got {type(client)}"
             )
@@ -75,7 +78,7 @@ class Epsilla(VectorStore):
         self._client.use_db(db_name=db_name)
 
     @property
-    def embeddings(self) -> Embeddings:
+    def embeddings(self) -> Optional[Embeddings]:
         return self._embeddings
 
     def use_collection(self, collection_name: str) -> None:
