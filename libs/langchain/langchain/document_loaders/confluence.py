@@ -118,7 +118,12 @@ class ConfluenceLoader(BaseLoader):
     ):
         confluence_kwargs = confluence_kwargs or {}
         errors = ConfluenceLoader.validate_init_args(
-            url, api_key, username, oauth2, token
+            url=url,
+            api_key=api_key,
+            username=username,
+            session=session,
+            oauth2=oauth2,
+            token=token,
         )
         if errors:
             raise ValueError(f"Error(s) while validating input: {errors}")
@@ -175,39 +180,28 @@ class ConfluenceLoader(BaseLoader):
                 "the other must be as well."
             )
 
-        non_null_creds = (x is not None for x in ((api_key or username), session, oauth2, token))
+        non_null_creds = list(
+            x is not None for x in ((api_key or username), session, oauth2, token)
+        )
         if sum(non_null_creds) > 1:
-            names = (n for x, n in zip(non_null_creds, ("api_key, username", "session", "oath2", "token")))
+            all_names = ("(api_key, username)", "session", "oath2", "token")
+            provided = tuple(n for x, n in zip(non_null_creds, all_names) if x)
             errors.append(
-                "Cannot provide a value for more than one of: (api_key, username), session, oath2, token. Received values for: "
+                f"Cannot provide a value for more than one of: {all_names}. Received "
+                f"values for: {provided}"
             )
-        if (api_key or username) and oauth2:
-            errors.append(
-                "Cannot provide a value for `api_key` and/or "
-                "`username` and provide a value for `oauth2`"
-            )
-
-        if oauth2 and oauth2.keys() != [
+        if oauth2 and set(oauth2.keys()) != {
             "access_token",
             "access_token_secret",
             "consumer_key",
             "key_cert",
-        ]:
+        }:
             errors.append(
                 "You have either omitted require keys or added extra "
                 "keys to the oauth2 dictionary. key values should be "
                 "`['access_token', 'access_token_secret', 'consumer_key', 'key_cert']`"
             )
-
-        if token and (api_key or username or oauth2):
-            errors.append(
-                "Cannot provide a value for `token` and a value for `api_key`, "
-                "`username` or `oauth2`"
-            )
-
-        if errors:
-            return errors
-        return None
+        return errors or None
 
     def load(
         self,
