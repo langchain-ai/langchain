@@ -107,7 +107,7 @@ jobs:
           poetry install
       - name: Install langchain editable
         working-directory: ${{ inputs.working-directory }}
-        if: ${{ inputs.working-directory != 'langchain' }}
+        if: ${{ inputs.working-directory != 'libs/langchain' }}
         run: |
           pip install -e ../langchain
 
