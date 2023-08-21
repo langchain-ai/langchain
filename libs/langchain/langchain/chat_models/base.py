@@ -14,8 +14,6 @@ from typing import (
     cast,
 )
 
-from pydantic import Field, root_validator
-
 import langchain
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
@@ -28,6 +26,7 @@ from langchain.callbacks.manager import (
 from langchain.load.dump import dumpd, dumps
 from langchain.prompts.base import StringPromptValue
 from langchain.prompts.chat import ChatPromptValue
+from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import (
     ChatGeneration,
     ChatResult,
@@ -51,7 +50,7 @@ def _get_verbosity() -> bool:
 
 
 class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
-    """Base class for chat models."""
+    """Base class for Chat models."""
 
     cache: Optional[bool] = None
     """Whether to cache the response."""

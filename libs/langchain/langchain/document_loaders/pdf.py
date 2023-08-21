@@ -459,7 +459,7 @@ class PDFPlumberLoader(BasePDFLoader):
 
 
 class AmazonTextractPDFLoader(BasePDFLoader):
-    """ "Load `PDF` files from a local file system, HTTP or S3.
+    """Load `PDF` files from a local file system, HTTP or S3.
 
     To authenticate, the AWS client uses the following methods to
     automatically load credentials:

@@ -37,7 +37,7 @@ class ContextCallbackHandler(BaseCallbackHandler):
 
     Keyword Args:
         token (optional): The token with which to authenticate requests to Context.
-            Visit https://go.getcontext.ai/settings to generate a token.
+            Visit https://with.context.ai/settings to generate a token.
             If not provided, the value of the `CONTEXT_TOKEN` environment
             variable will be used.
 

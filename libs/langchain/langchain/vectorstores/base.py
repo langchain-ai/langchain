@@ -22,14 +22,13 @@ from typing import (
     TypeVar,
 )
 
-from pydantic import Field, root_validator
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
+from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import BaseRetriever
 
 logger = logging.getLogger(__name__)
