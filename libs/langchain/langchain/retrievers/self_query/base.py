@@ -2,13 +2,12 @@
 
 from typing import Any, Dict, List, Optional, Type, cast
 
-from pydantic_v1 import BaseModel, Field, root_validator
-
 from langchain import LLMChain
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.chains.query_constructor.base import load_query_constructor_chain
 from langchain.chains.query_constructor.ir import StructuredQuery, Visitor
 from langchain.chains.query_constructor.schema import AttributeInfo
+from langchain.pydantic_v1 import BaseModel, Field, root_validator
 from langchain.retrievers.self_query.chroma import ChromaTranslator
 from langchain.retrievers.self_query.deeplake import DeepLakeTranslator
 from langchain.retrievers.self_query.elasticsearch import ElasticsearchTranslator

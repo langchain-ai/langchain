@@ -3,13 +3,12 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any, Dict, List, Mapping, Optional, Union
 
-from pydantic_v1 import Extra, Field
-
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.criteria.prompt import PROMPT, PROMPT_WITH_REFERENCES
 from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
+from langchain.pydantic_v1 import Extra, Field
 from langchain.schema import RUN_KEY, BaseOutputParser, BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 
@@ -148,8 +147,8 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     llm : BaseLanguageModel
         The language model to use for evaluation.
     criteria : Union[Mapping[str, str]]
-        The criteriaor rubric to evaluate the runs against. It can be a mapping of
-        criterion name to its sdescription, or a single criterion name.
+        The criteria or rubric to evaluate the runs against. It can be a mapping of
+        criterion name to its description, or a single criterion name.
     prompt : Optional[BasePromptTemplate], default=None
         The prompt template to use for generating prompts. If not provided, a
         default prompt template will be used based on the value of

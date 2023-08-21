@@ -16,12 +16,12 @@ import os
 from typing import Any, Dict, Optional, Type, Union
 
 import requests
-from pydantic_v1 import BaseModel, Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.base import BaseTool
 
 logger = logging.getLogger(__name__)
@@ -58,8 +58,8 @@ class NUASchema(BaseModel):
 class NucliaUnderstandingAPI(BaseTool):
     """Tool to process files with the Nuclia Understanding API."""
 
-    name = "nuclia_understanding_api"
-    description = (
+    name: str = "nuclia_understanding_api"
+    description: str = (
         "A wrapper around Nuclia Understanding API endpoints. "
         "Useful for when you need to extract text from any kind of files. "
     )

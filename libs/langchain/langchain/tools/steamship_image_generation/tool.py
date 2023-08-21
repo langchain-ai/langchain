@@ -16,9 +16,8 @@ from __future__ import annotations
 from enum import Enum
 from typing import TYPE_CHECKING, Dict, Optional
 
-from pydantic_v1 import root_validator
-
 from langchain.callbacks.manager import CallbackManagerForToolRun
+from langchain.pydantic_v1 import root_validator
 from langchain.tools import BaseTool
 from langchain.tools.steamship_image_generation.utils import make_image_public
 from langchain.utils import get_from_dict_or_env
@@ -49,8 +48,8 @@ class SteamshipImageGenerationTool(BaseTool):
     steamship: Steamship
     return_urls: Optional[bool] = False
 
-    name = "GenerateImage"
-    description = (
+    name: str = "GenerateImage"
+    description: str = (
         "Useful for when you need to generate an image."
         "Input: A detailed text-2-image prompt describing an image"
         "Output: the UUID of a generated image"

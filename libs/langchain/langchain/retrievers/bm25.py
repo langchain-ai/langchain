@@ -1,8 +1,3 @@
-"""
-BM25 Retriever without elastic search
-"""
-
-
 from __future__ import annotations
 
 from typing import Any, Callable, Dict, Iterable, List, Optional
@@ -16,7 +11,7 @@ def default_preprocessing_func(text: str) -> List[str]:
 
 
 class BM25Retriever(BaseRetriever):
-    """BM25 Retriever without elastic search."""
+    """`BM25` retriever without Elasticsearch."""
 
     vectorizer: Any
     """ BM25 vectorizer."""

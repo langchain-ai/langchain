@@ -8,9 +8,9 @@ from hashlib import md5
 from typing import Any, Iterable, List, Optional, Tuple, Type
 
 import requests
-from pydantic_v1 import Field
 
 from langchain.embeddings.base import Embeddings
+from langchain.pydantic_v1 import Field
 from langchain.schema import Document
 from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 
@@ -117,7 +117,7 @@ class Vectara(VectorStore):
 
         response = self._session.post(
             headers=self._get_post_headers(),
-            url="https://api.vectara.io/v1/core/index",
+            url="https://api.vectara.io/v1/index",
             data=json.dumps(request),
             timeout=self.vectara_api_timeout,
             verify=True,
@@ -202,12 +202,12 @@ class Vectara(VectorStore):
             doc_metadata: optional metadata for the document
 
         This function indexes all the input text strings in the Vectara corpus as a
-        single Vectara document, where each input text is considered a "part" and the
-        metadata are associated with each part.
+        single Vectara document, where each input text is considered a "section" and the
+        metadata are associated with each section.
         if 'doc_metadata' is provided, it is associated with the Vectara document.
 
         Returns:
-            List of ids from adding the texts into the vectorstore.
+            document ID of the document added
 
         """
         doc_hash = md5()
@@ -223,11 +223,12 @@ class Vectara(VectorStore):
         doc = {
             "document_id": doc_id,
             "metadataJson": json.dumps(doc_metadata),
-            "parts": [
+            "section": [
                 {"text": text, "metadataJson": json.dumps(md)}
                 for text, md in zip(texts, metadatas)
             ],
         }
+
         success_str = self._index_doc(doc)
         if success_str == "E_ALREADY_EXISTS":
             self._delete_doc(doc_id)
@@ -304,22 +305,29 @@ class Vectara(VectorStore):
             return []
 
         result = response.json()
+
         responses = result["responseSet"][0]["response"]
-        vectara_default_metadata = ["lang", "len", "offset"]
+        documents = result["responseSet"][0]["document"]
+
+        metadatas = []
+        for x in responses:
+            md = {m["name"]: m["value"] for m in x["metadata"]}
+            doc_num = x["documentIndex"]
+            doc_md = {m["name"]: m["value"] for m in documents[doc_num]["metadata"]}
+            md.update(doc_md)
+            metadatas.append(md)
+
         docs = [
             (
                 Document(
                     page_content=x["text"],
-                    metadata={
-                        m["name"]: m["value"]
-                        for m in x["metadata"]
-                        if m["name"] not in vectara_default_metadata
-                    },
+                    metadata=md,
                 ),
                 x["score"],
             )
-            for x in responses
+            for x, md in zip(responses, metadatas)
         ]
+
         return docs
 
     def similarity_search(

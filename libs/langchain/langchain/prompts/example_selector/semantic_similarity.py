@@ -3,10 +3,9 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Type
 
-from pydantic_v1 import BaseModel, Extra
-
 from langchain.embeddings.base import Embeddings
 from langchain.prompts.example_selector.base import BaseExampleSelector
+from langchain.pydantic_v1 import BaseModel, Extra
 from langchain.vectorstores.base import VectorStore
 
 
