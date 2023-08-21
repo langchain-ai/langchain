@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import (
     Any,
     Callable,
+    Dict,
     List,
     Sequence,
     Set,
@@ -297,6 +298,15 @@ class ChatPromptValue(PromptValue):
 
 class BaseChatPromptTemplate(BasePromptTemplate, ABC):
     """Base class for chat prompt templates."""
+
+    @property
+    def lc_attributes(self) -> Dict:
+        """
+        Return a list of attribute names that should be included in the
+        serialized kwargs. These attributes must be accepted by the
+        constructor.
+        """
+        return {"input_variables": self.input_variables}
 
     def format(self, **kwargs: Any) -> str:
         """Format the chat template into a string.
