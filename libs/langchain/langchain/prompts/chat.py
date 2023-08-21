@@ -429,7 +429,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                     f"Got: {values['input_variables']}"
                 )
         else:
-            values["input_variables"] = list(input_vars)
+            values["input_variables"] = sorted(input_vars)
         return values
 
     @classmethod
