@@ -2,9 +2,10 @@ import asyncio
 import time
 import urllib.request
 import uuid
-import pytest
 from enum import Enum
 from urllib.error import HTTPError
+
+import pytest
 
 from langchain.agents import AgentType, initialize_agent
 from langchain.agents.agent_toolkits.ainetwork.toolkit import AINetworkToolkit
