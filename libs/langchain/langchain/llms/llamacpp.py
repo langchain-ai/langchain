@@ -1,7 +1,10 @@
 import logging
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain.llms.base import LLM
 from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema.output import GenerationChunk
@@ -269,6 +272,13 @@ class LlamaCpp(LLM):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
+        """Async call the Llama model and return the output.
+        Args:
+            prompt: The prompt to use for generation.
+            stop: A list of strings to stop generation when encountered.
+        Returns:
+            The generated text.
+        """
         if self.streaming:
             combined_text_output = ""
             async for chunk in self._astream(prompt, stop, run_manager, **kwargs):
@@ -338,6 +348,15 @@ class LlamaCpp(LLM):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
+        """Yields results objects as they are generated in real time.
+        It also calls the callback manager's on_llm_new_token event with
+        similar parameters to the OpenAI LLM class method of the same name.
+        Args:
+            prompt: The prompts to pass into the model.
+            stop: Optional list of stop words to use when generating.
+        Returns:
+            An async generator representing the stream of tokens being generated.
+        """
         params = {**self._get_parameters(stop), **kwargs}
         result = self.client(prompt=prompt, stream=True, **params)
         for part in result:
