@@ -9,13 +9,12 @@ on:
         description: "From which folder this pipeline executes"
 
 env:
-  POETRY_VERSION: "1.4.2"
+  POETRY_VERSION: "1.5.1"
 
 jobs:
   if_release:
-    if: |
-        ${{ github.event.pull_request.merged == true }}
-        && ${{ contains(github.event.pull_request.labels.*.name, 'release') }}
+    # Disallow publishing from branches that aren't `master`.
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -23,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Install poetry
-        run: pipx install poetry==$POETRY_VERSION
+        run: pipx install "poetry==$POETRY_VERSION"
       - name: Set up Python 3.10
         uses: actions/setup-python@v4
         with:

@@ -2,129 +2,49 @@
 from __future__ import annotations
 
 import logging
-import os
-import tempfile
-from enum import Enum
-from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Iterator, List, Optional, Sequence, Union
 
 from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
-from langchain.document_loaders.onedrive_file import OneDriveFileLoader
-from langchain.pydantic_v1 import BaseModel, BaseSettings, Field, FilePath, SecretStr
+from langchain.document_loaders.base_o365 import (
+    O365BaseLoader,
+    _FileType,
+)
+from langchain.document_loaders.parsers.registry import get_parser
+from langchain.pydantic_v1 import Field
 
 if TYPE_CHECKING:
-    from O365 import Account
     from O365.drive import Drive, Folder
 
-SCOPES = ["offline_access", "Files.Read.All"]
 logger = logging.getLogger(__name__)
 
 
-class _OneDriveSettings(BaseSettings):
-    client_id: str = Field(..., env="O365_CLIENT_ID")
-    client_secret: SecretStr = Field(..., env="O365_CLIENT_SECRET")
-
-    class Config:
-        env_prefix = ""
-        case_sentive = False
-        env_file = ".env"
-
-
-class _OneDriveTokenStorage(BaseSettings):
-    token_path: FilePath = Field(Path.home() / ".credentials" / "o365_token.txt")
-
-
-class _FileType(str, Enum):
-    DOC = "doc"
-    DOCX = "docx"
-    PDF = "pdf"
-
-
-class _SupportedFileTypes(BaseModel):
-    file_types: List[_FileType]
-
-    def fetch_mime_types(self) -> Dict[str, str]:
-        mime_types_mapping = {}
-        for file_type in self.file_types:
-            if file_type.value == "doc":
-                mime_types_mapping[file_type.value] = "application/msword"
-            elif file_type.value == "docx":
-                mime_types_mapping[
-                    file_type.value
-                ] = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"  # noqa: E501
-            elif file_type.value == "pdf":
-                mime_types_mapping[file_type.value] = "application/pdf"
-        return mime_types_mapping
-
-
-class OneDriveLoader(BaseLoader, BaseModel):
+class OneDriveLoader(O365BaseLoader):
     """Load from `Microsoft OneDrive`."""
 
-    settings: _OneDriveSettings = Field(default_factory=_OneDriveSettings)
-    """ The settings for the OneDrive API client."""
     drive_id: str = Field(...)
     """ The ID of the OneDrive drive to load data from."""
     folder_path: Optional[str] = None
     """ The path to the folder to load data from."""
     object_ids: Optional[List[str]] = None
     """ The IDs of the objects to load data from."""
-    auth_with_token: bool = False
-    """ Whether to authenticate with a token or not. Defaults to False."""
 
-    def _auth(self) -> Type[Account]:
-        """
-        Authenticates the OneDrive API client using the specified
-        authentication method and returns the Account object.
+    @property
+    def _file_types(self) -> Sequence[_FileType]:
+        """Return supported file types."""
+        return _FileType.DOC, _FileType.DOCX, _FileType.PDF
 
-        Returns:
-            Type[Account]: The authenticated Account object.
-        """
-        try:
-            from O365 import FileSystemTokenBackend
-        except ImportError:
-            raise ImportError(
-                "O365 package not found, please install it with `pip install o365`"
-            )
-        if self.auth_with_token:
-            token_storage = _OneDriveTokenStorage()
-            token_path = token_storage.token_path
-            token_backend = FileSystemTokenBackend(
-                token_path=token_path.parent, token_filename=token_path.name
-            )
-            account = Account(
-                credentials=(
-                    self.settings.client_id,
-                    self.settings.client_secret.get_secret_value(),
-                ),
-                scopes=SCOPES,
-                token_backend=token_backend,
-                **{"raise_http_errors": False},
-            )
-        else:
-            token_backend = FileSystemTokenBackend(
-                token_path=Path.home() / ".credentials"
-            )
-            account = Account(
-                credentials=(
-                    self.settings.client_id,
-                    self.settings.client_secret.get_secret_value(),
-                ),
-                scopes=SCOPES,
-                token_backend=token_backend,
-                **{"raise_http_errors": False},
-            )
-            # make the auth
-            account.authenticate()
-        return account
+    @property
+    def _scopes(self) -> List[str]:
+        """Return required scopes."""
+        return ["offline_access", "Files.Read.All"]
 
-    def _get_folder_from_path(self, drive: Type[Drive]) -> Union[Folder, Drive]:
+    def _get_folder_from_path(self, drive: Drive) -> Union[Folder, Drive]:
         """
         Returns the folder or drive object located at the
         specified path relative to the given drive.
 
         Args:
-            drive (Type[Drive]): The root drive from which the folder path is relative.
+            drive (Drive): The root drive from which the folder path is relative.
 
         Returns:
             Union[Folder, Drive]: The folder or drive object
@@ -151,90 +71,26 @@ class OneDriveLoader(BaseLoader, BaseModel):
                 raise FileNotFoundError("Path {} not exist.".format(self.folder_path))
         return subfolder_drive
 
-    def _load_from_folder(self, folder: Type[Folder]) -> List[Document]:
-        """
-        Loads all supported document files from the specified folder
-        and returns a list of Document objects.
-
-        Args:
-            folder (Type[Folder]): The folder object to load the documents from.
-
-        Returns:
-            List[Document]: A list of Document objects representing
-            the loaded documents.
-
-        """
-        docs = []
-        file_types = _SupportedFileTypes(file_types=["doc", "docx", "pdf"])
-        file_mime_types = file_types.fetch_mime_types()
-        items = folder.get_items()
-        with tempfile.TemporaryDirectory() as temp_dir:
-            file_path = f"{temp_dir}"
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            for file in items:
-                if file.is_file:
-                    if file.mime_type in list(file_mime_types.values()):
-                        loader = OneDriveFileLoader(file=file)
-                        docs.extend(loader.load())
-        return docs
-
-    def _load_from_object_ids(self, drive: Type[Drive]) -> List[Document]:
-        """
-        Loads all supported document files from the specified OneDrive
-        drive based on their object IDs and returns a list
-        of Document objects.
-
-        Args:
-            drive (Type[Drive]): The OneDrive drive object
-            to load the documents from.
-
-        Returns:
-            List[Document]: A list of Document objects representing
-            the loaded documents.
-        """
-        docs = []
-        file_types = _SupportedFileTypes(file_types=["doc", "docx", "pdf"])
-        file_mime_types = file_types.fetch_mime_types()
-        with tempfile.TemporaryDirectory() as temp_dir:
-            file_path = f"{temp_dir}"
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-
-            for object_id in self.object_ids if self.object_ids else [""]:
-                file = drive.get_item(object_id)
-                if not file:
-                    logger.warning(
-                        "There isn't a file with "
-                        f"object_id {object_id} in drive {drive}."
-                    )
-                    continue
-                if file.is_file:
-                    if file.mime_type in list(file_mime_types.values()):
-                        loader = OneDriveFileLoader(file=file)
-                        docs.extend(loader.load())
-        return docs
+    def lazy_load(self) -> Iterator[Document]:
+        """Load documents lazily. Use this when working at a large scale."""
+        try:
+            from O365.drive import Drive
+        except ImportError:
+            raise ImportError(
+                "O365 package not found, please install it with `pip install o365`"
+            )
+        drive = self._auth().storage().get_drive(self.drive_id)
+        if not isinstance(drive, Drive):
+            raise ValueError(f"There isn't a Drive with id {self.drive_id}.")
+        blob_parser = get_parser("default")
+        if self.folder_path:
+            folder = self._get_folder_from_path(drive)
+            for blob in self._load_from_folder(folder):
+                yield from blob_parser.lazy_parse(blob)
+        if self.object_ids:
+            for blob in self._load_from_object_ids(drive, self.object_ids):
+                yield from blob_parser.lazy_parse(blob)
 
     def load(self) -> List[Document]:
-        """
-        Loads all supported document files from the specified OneDrive drive
-        and return a list of Document objects.
-
-        Returns:
-            List[Document]: A list of Document objects
-            representing the loaded documents.
-
-        Raises:
-            ValueError: If the specified drive ID
-            does not correspond to a drive in the OneDrive storage.
-        """
-        account = self._auth()
-        storage = account.storage()
-        drive = storage.get_drive(self.drive_id)
-        docs: List[Document] = []
-        if not drive:
-            raise ValueError(f"There isn't a drive with id {self.drive_id}.")
-        if self.folder_path:
-            folder = self._get_folder_from_path(drive=drive)
-            docs.extend(self._load_from_folder(folder=folder))
-        elif self.object_ids:
-            docs.extend(self._load_from_object_ids(drive=drive))
-        return docs
+        """Load all documents."""
+        return list(self.lazy_load())

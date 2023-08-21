@@ -9,7 +9,7 @@ on:
         description: "From which folder this pipeline executes"
 
 env:
-  POETRY_VERSION: "1.4.2"
+  POETRY_VERSION: "1.5.1"
   WORKDIR: ${{ inputs.working-directory == '' && '.' || inputs.working-directory }}
 
 jobs:
@@ -91,7 +91,7 @@ jobs:
           key: pip-editable-langchain-deps-${{ runner.os }}-${{ runner.arch }}-py-${{ matrix.python-version }}
       - name: Install poetry
         run: |
-          pipx install poetry==$POETRY_VERSION
+          pipx install "poetry==$POETRY_VERSION"
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         env:
@@ -107,7 +107,7 @@ jobs:
           poetry install
       - name: Install langchain editable
         working-directory: ${{ inputs.working-directory }}
-        if: ${{ inputs.working-directory != 'langchain' }}
+        if: ${{ inputs.working-directory != 'libs/langchain' }}
         run: |
           pip install -e ../langchain
 

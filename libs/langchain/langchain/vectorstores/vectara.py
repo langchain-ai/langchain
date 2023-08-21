@@ -202,12 +202,12 @@ class Vectara(VectorStore):
             doc_metadata: optional metadata for the document
 
         This function indexes all the input text strings in the Vectara corpus as a
-        single Vectara document, where each input text is considered a "part" and the
-        metadata are associated with each part.
+        single Vectara document, where each input text is considered a "section" and the
+        metadata are associated with each section.
         if 'doc_metadata' is provided, it is associated with the Vectara document.
 
         Returns:
-            List of ids from adding the texts into the vectorstore.
+            document ID of the document added
 
         """
         doc_hash = md5()
@@ -307,21 +307,27 @@ class Vectara(VectorStore):
         result = response.json()
 
         responses = result["responseSet"][0]["response"]
-        vectara_default_metadata = ["lang", "len", "offset"]
+        documents = result["responseSet"][0]["document"]
+
+        metadatas = []
+        for x in responses:
+            md = {m["name"]: m["value"] for m in x["metadata"]}
+            doc_num = x["documentIndex"]
+            doc_md = {m["name"]: m["value"] for m in documents[doc_num]["metadata"]}
+            md.update(doc_md)
+            metadatas.append(md)
+
         docs = [
             (
                 Document(
                     page_content=x["text"],
-                    metadata={
-                        m["name"]: m["value"]
-                        for m in x["metadata"]
-                        if m["name"] not in vectara_default_metadata
-                    },
+                    metadata=md,
                 ),
                 x["score"],
             )
-            for x in responses
+            for x, md in zip(responses, metadatas)
         ]
+
         return docs
 
     def similarity_search(
