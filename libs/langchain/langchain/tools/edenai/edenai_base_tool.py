@@ -102,3 +102,33 @@ class EdenaiTool(BaseTool):
             )
 
         return response
+
+    def _parse_json_multilevel(
+        self, extracted_data: dict, formatted_list: list, level: int = 0
+    ) -> None:
+        for section, subsections in extracted_data.items():
+            indentation = "  " * level
+            if isinstance(subsections, str):
+                subsections = subsections.replace("\n", ",")
+                formatted_list.append(f"{indentation}{section} : {subsections}")
+
+            elif isinstance(subsections, list):
+                formatted_list.append(f"{indentation}{section} : ")
+                self._list_handling(subsections, formatted_list, level + 1)
+
+            elif isinstance(subsections, dict):
+                formatted_list.append(f"{indentation}{section} : ")
+                self._parse_json_multilevel(subsections, formatted_list, level + 1)
+
+    def _list_handling(
+        self, subsection_list: list, formatted_list: list, level: int
+    ) -> None:
+        for list_item in subsection_list:
+            if isinstance(list_item, dict):
+                self._parse_json_multilevel(list_item, formatted_list, level)
+
+            elif isinstance(list_item, list):
+                self._list_handling(list_item, formatted_list, level + 1)
+
+            else:
+                formatted_list.append(f"{'  ' * level}{list_item}")
