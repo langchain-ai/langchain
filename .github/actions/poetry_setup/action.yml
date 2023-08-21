@@ -53,6 +53,9 @@ runs:
         POETRY_VERSION: ${{ inputs.poetry-version }}
         PYTHON_VERSION: ${{ inputs.python-version }}
       run: |
+        "python$PYTHON_VERSION" -m pip cache dir
+        "python$PYTHON_VERSION" -m pip cache info
+        "python$PYTHON_VERSION" -m pip cache list poetry
         pipx install "poetry==$POETRY_VERSION" --python "python$PYTHON_VERSION" --verbose
         /opt/pipx/venvs/poetry/bin/python -m pip cache dir
 
