@@ -199,7 +199,6 @@ setuptools = "^67.6.1"
 [tool.poetry.extras]
 llms = ["clarifai", "cohere", "openai", "openlm", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
 qdrant = ["qdrant-client"]
-marqo = ["marqo"]
 openai = ["openai", "tiktoken"]
 text_helpers = ["chardet"]
 clarifai = ["clarifai"]
