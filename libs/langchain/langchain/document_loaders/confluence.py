@@ -214,7 +214,7 @@ class ConfluenceLoader(BaseLoader):
         max_pages: Optional[int] = 1000,
         ocr_languages: Optional[str] = None,
         keep_markdown_format: bool = False,
-        keep_newlines=False,
+        keep_newlines: bool = False,
     ) -> List[Document]:
         """
         :param space_key: Space key retrieved from a confluence URL, defaults to None
@@ -474,7 +474,7 @@ class ConfluenceLoader(BaseLoader):
 
         else:
             content = content_format.get_content(page)
-            if keep_newlines:
+            if self.keep_newlines:
                 text = BeautifulSoup(
                     content.replace("</p>", "\n</p>").replace("<br />", "\n"), "lxml"
                 ).get_text(" ") + "".join(attachment_texts)
