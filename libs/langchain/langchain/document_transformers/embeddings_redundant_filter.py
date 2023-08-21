@@ -2,9 +2,9 @@
 from typing import Any, Callable, List, Sequence
 
 import numpy as np
-from pydantic_v1 import BaseModel, Field
 
 from langchain.embeddings.base import Embeddings
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema import BaseDocumentTransformer, Document
 from langchain.utils.math import cosine_similarity
 

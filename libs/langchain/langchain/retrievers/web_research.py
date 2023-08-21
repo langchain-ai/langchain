@@ -2,8 +2,6 @@ import logging
 import re
 from typing import List, Optional
 
-from pydantic_v1 import BaseModel, Field
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
@@ -16,6 +14,7 @@ from langchain.llms import LlamaCpp
 from langchain.llms.base import BaseLLM
 from langchain.output_parsers.pydantic import PydanticOutputParser
 from langchain.prompts import BasePromptTemplate, PromptTemplate
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema import BaseRetriever, Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.utilities import GoogleSearchAPIWrapper
@@ -25,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 class SearchQueries(BaseModel):
-    """Search queries to run to research for the user's goal."""
+    """Search queries to research for the user's goal."""
 
     queries: List[str] = Field(
         ..., description="List of search queries to look up on Google"
@@ -67,7 +66,7 @@ class QuestionListOutputParser(PydanticOutputParser):
 
 
 class WebResearchRetriever(BaseRetriever):
-    """Retriever for web research based on the Google Search API."""
+    """`Google Search API` retriever."""
 
     # Inputs
     vectorstore: VectorStore = Field(

@@ -11,10 +11,9 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union
 
-from pydantic_v1 import BaseModel, root_validator, validator
-
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.pydantic_v1 import BaseModel, root_validator, validator
 
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 
