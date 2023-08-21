@@ -71,3 +71,7 @@
 ./libs/langchain/langchain/chains/graph_qa/prompts.py
 ./libs/langchain/langchain/chains/question_answering/map_reduce_prompt.py
 ./libs/langchain/langchain/chains/qa_with_sources/map_reduce_prompt.py
+./libs/langchain/langchain/chains/llm_summarization_checker/prompts/check_facts.txt
+./libs/langchain/langchain/chains/llm_summarization_checker/prompts/revise_summary.txt
+./libs/langchain/langchain/chains/llm_summarization_checker/prompts/create_facts.txt
+./libs/langchain/langchain/chains/llm_summarization_checker/prompts/are_all_true_prompt.txt

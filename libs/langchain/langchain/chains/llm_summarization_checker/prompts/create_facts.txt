@@ -1,10 +1,10 @@
-Given some text, extract a list of facts from the text.
+Дан некоторый текст, извлеки из него список фактов.
 
-Format your output as a bulleted list.
+Форматируй свой вывод в виде маркированного списка.
 
-Text:
+Текст:
 """
 {summary}
 """
 
-Facts:
+Факты:

@@ -88,7 +88,7 @@ class GigaChat(SimpleChatModel):
             f"{self.api_url}/v1/token",
             auth=(self.user, self.password),
             data=[],
-            timeout=3,
+            timeout=600,
         )
         if not response.ok:
             raise ValueError(
