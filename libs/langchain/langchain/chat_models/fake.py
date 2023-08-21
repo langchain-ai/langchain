@@ -1,15 +1,25 @@
 """Fake ChatModel for testing purposes."""
 import asyncio
 import time
-from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union
+from itertools import cycle
+from typing import Any
+from typing import AsyncIterator
+from typing import Dict
+from typing import Iterator
+from typing import List
+from typing import Optional
+from typing import Union
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
+from langchain.callbacks.manager import AsyncCallbackManagerForLLMRun
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import SimpleChatModel
-from langchain.schema.messages import AIMessageChunk, BaseMessage, AIMessage
-from langchain.schema.output import ChatGenerationChunk, ChatGeneration, ChatResult
+from langchain.schema.messages import AIMessage
+from langchain.schema.messages import AIMessageChunk
+from langchain.schema.messages import BaseMessage
+from langchain.schema.output import ChatGeneration
+from langchain.schema.output import ChatGenerationChunk
+from langchain.schema.output import ChatResult
+from pydantic import PrivateAttr
 
 
 class FakeListChatModel(SimpleChatModel):
@@ -18,6 +28,13 @@ class FakeListChatModel(SimpleChatModel):
     responses: List
     sleep: Optional[float] = None
     i: int = 0
+    _response_iterator: cycle = PrivateAttr(None)
+
+    @property
+    def response_iterator(self):
+        if self._response_iterator is None:
+            self._response_iterator = cycle(self.responses)
+        return self._response_iterator
 
     @property
     def _llm_type(self) -> str:
@@ -31,12 +48,7 @@ class FakeListChatModel(SimpleChatModel):
         **kwargs: Any,
     ) -> str:
         """First try to lookup in queries, else return 'foo' or 'bar'."""
-        response = self.responses[self.i]
-        if self.i < len(self.responses) - 1:
-            self.i += 1
-        else:
-            self.i = 0
-        return response
+        return next(self.response_iterator)
 
     def _stream(
         self,
@@ -45,11 +57,7 @@ class FakeListChatModel(SimpleChatModel):
         run_manager: Union[CallbackManagerForLLMRun, None] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        response = self.responses[self.i]
-        if self.i < len(self.responses) - 1:
-            self.i += 1
-        else:
-            self.i = 0
+        response = next(self.responses)  # type: ignore
         for c in response:
             if self.sleep is not None:
                 time.sleep(self.sleep)
@@ -62,11 +70,7 @@ class FakeListChatModel(SimpleChatModel):
         run_manager: Union[AsyncCallbackManagerForLLMRun, None] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        response = self.responses[self.i]
-        if self.i < len(self.responses) - 1:
-            self.i += 1
-        else:
-            self.i = 0
+        response = next(self.response_iterator)
         for c in response:
             if self.sleep is not None:
                 await asyncio.sleep(self.sleep)
@@ -74,7 +78,9 @@ class FakeListChatModel(SimpleChatModel):
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
-        return {"responses": self.responses}
+        return {
+            "responses": self.responses
+        }
 
     def _generate(
         self,
@@ -83,12 +89,14 @@ class FakeListChatModel(SimpleChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        response = next(self.responses)  # type: ignore
+        response = next(self.response_iterator)
 
         if isinstance(response, dict):
             message = AIMessage(
                 content="",
-                additional_kwargs={"function_call": response},
+                additional_kwargs={
+                    "function_call": response
+                },
             )
             generation = ChatGeneration(message=message)
             return ChatResult(generations=[generation])
