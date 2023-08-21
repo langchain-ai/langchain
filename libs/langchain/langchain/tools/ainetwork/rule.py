@@ -1,10 +1,9 @@
 import builtins
 import json
-from typing import Optional, Type, Union
-
-from pydantic import BaseModel, Field
+from typing import Optional, Type
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.ainetwork.base import AINBaseTool, OperationType
 
 

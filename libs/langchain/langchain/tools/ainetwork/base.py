@@ -6,19 +6,12 @@ import threading
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
-from pydantic import Field
-
+from langchain.pydantic_v1 import Field
 from langchain.tools.ainetwork.utils import authenticate
 from langchain.tools.base import BaseTool
 
 if TYPE_CHECKING:
     from ain.ain import Ain
-else:
-    try:
-        # We do this so pydantic can resolve the types when instantiating
-        from ain.ain import Ain
-    except ImportError:
-        pass
 
 
 class OperationType(str, Enum):

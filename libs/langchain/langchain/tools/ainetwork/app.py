@@ -3,10 +3,9 @@ import json
 from enum import Enum
 from typing import Optional, Type, Union
 
-from pydantic import BaseModel, Field
-
 from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.tools.ainetwork.base import AINBaseTool, OperationType
+from langchain.pydantic_v1 import BaseModel, Field
+from langchain.tools.ainetwork.base import AINBaseTool
 
 
 class AppOperationType(str, Enum):
