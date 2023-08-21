@@ -3,6 +3,7 @@ from enum import Enum
 from io import BytesIO
 from typing import Any, Callable, Dict, List, Optional, Union
 
+import requests
 from tenacity import (
     before_sleep_log,
     retry,
@@ -68,6 +69,15 @@ class ConfluenceLoader(BaseLoader):
             )
             documents = loader.load(space_key="SPACE",limit=50)
 
+            # Server on perm
+            loader = ConfluenceLoader(
+                url="https://confluence.yoursite.com/",
+                username="me",
+                api_key="your_password",
+                cloud=False
+            )
+            documents = loader.load(space_key="SPACE",limit=50)
+
     :param url: _description_
     :type url: str
     :param api_key: _description_, defaults to None
@@ -97,6 +107,7 @@ class ConfluenceLoader(BaseLoader):
         url: str,
         api_key: Optional[str] = None,
         username: Optional[str] = None,
+        session: Optional[requests.Session] = None,
         oauth2: Optional[dict] = None,
         token: Optional[str] = None,
         cloud: Optional[bool] = True,
@@ -125,7 +136,9 @@ class ConfluenceLoader(BaseLoader):
                 "`pip install atlassian-python-api`"
             )
 
-        if oauth2:
+        if session:
+            self.confluence = Confluence(url=url, session=session, **confluence_kwargs)
+        elif oauth2:
             self.confluence = Confluence(
                 url=url, oauth2=oauth2, cloud=cloud, **confluence_kwargs
             )
@@ -205,6 +218,7 @@ class ConfluenceLoader(BaseLoader):
         max_pages: Optional[int] = 1000,
         ocr_languages: Optional[str] = None,
         keep_markdown_format: bool = False,
+        keep_newlines: bool = False,
     ) -> List[Document]:
         """
         :param space_key: Space key retrieved from a confluence URL, defaults to None
@@ -237,6 +251,9 @@ class ConfluenceLoader(BaseLoader):
         :param keep_markdown_format: Whether to keep the markdown format, defaults to
             False
         :type keep_markdown_format: bool
+        :param keep_newlines: Whether to keep the newlines format, defaults to
+            False
+        :type keep_newlines: bool
         :raises ValueError: _description_
         :raises ImportError: _description_
         :return: _description_
@@ -265,8 +282,9 @@ class ConfluenceLoader(BaseLoader):
                 include_attachments,
                 include_comments,
                 content_format,
-                ocr_languages,
-                keep_markdown_format,
+                ocr_languages=ocr_languages,
+                keep_markdown_format=keep_markdown_format,
+                keep_newlines=keep_newlines,
             )
 
         if label:
@@ -404,6 +422,7 @@ class ConfluenceLoader(BaseLoader):
         content_format: ContentFormat,
         ocr_languages: Optional[str] = None,
         keep_markdown_format: Optional[bool] = False,
+        keep_newlines: bool = False,
     ) -> List[Document]:
         """Process a list of pages into a list of documents."""
         docs = []
@@ -415,8 +434,9 @@ class ConfluenceLoader(BaseLoader):
                 include_attachments,
                 include_comments,
                 content_format,
-                ocr_languages,
-                keep_markdown_format,
+                ocr_languages=ocr_languages,
+                keep_markdown_format=keep_markdown_format,
+                keep_newlines=keep_newlines,
             )
             docs.append(doc)
 
@@ -430,6 +450,7 @@ class ConfluenceLoader(BaseLoader):
         content_format: ContentFormat,
         ocr_languages: Optional[str] = None,
         keep_markdown_format: Optional[bool] = False,
+        keep_newlines: bool = False,
     ) -> Document:
         if keep_markdown_format:
             try:
@@ -439,7 +460,7 @@ class ConfluenceLoader(BaseLoader):
                     "`markdownify` package not found, please run "
                     "`pip install markdownify`"
                 )
-        else:
+        if include_comments or not keep_markdown_format:
             try:
                 from bs4 import BeautifulSoup  # type: ignore
             except ImportError:
@@ -447,7 +468,6 @@ class ConfluenceLoader(BaseLoader):
                     "`beautifulsoup4` package not found, please run "
                     "`pip install beautifulsoup4`"
                 )
-
         if include_attachments:
             attachment_texts = self.process_attachment(page["id"], ocr_languages)
         else:
@@ -461,9 +481,14 @@ class ConfluenceLoader(BaseLoader):
 
         else:
             content = content_format.get_content(page)
-            text = BeautifulSoup(content, "lxml").get_text(" ", strip=True) + "".join(
-                attachment_texts
-            )
+            if keep_newlines:
+                text = BeautifulSoup(
+                    content.replace("</p>", "\n</p>").replace("<br />", "\n"), "lxml"
+                ).get_text(" ") + "".join(attachment_texts)
+            else:
+                text = BeautifulSoup(content, "lxml").get_text(
+                    " ", strip=True
+                ) + "".join(attachment_texts)
 
         if include_comments:
             comments = self.confluence.get_page_comments(
