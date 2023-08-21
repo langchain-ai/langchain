@@ -13,9 +13,8 @@ env:
 
 jobs:
   if_release:
-    if: |
-        github.event.pull_request.merged == true
-        && contains(github.event.pull_request.labels.*.name, 'release')
+    # Disallow publishing from branches that aren't `master`.
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     defaults:
       run:
