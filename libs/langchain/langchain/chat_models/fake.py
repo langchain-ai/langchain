@@ -8,8 +8,8 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models.base import SimpleChatModel
-from langchain.schema.messages import AIMessageChunk, BaseMessage
-from langchain.schema.output import ChatGenerationChunk
+from langchain.schema.messages import AIMessageChunk, BaseMessage, AIMessage
+from langchain.schema.output import ChatGenerationChunk, ChatGeneration, ChatResult
 
 
 class FakeListChatModel(SimpleChatModel):
@@ -75,3 +75,22 @@ class FakeListChatModel(SimpleChatModel):
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         return {"responses": self.responses}
+
+    def _generate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        response = next(self.responses)  # type: ignore
+
+        if isinstance(response, dict):
+            message = AIMessage(
+                content="",
+                additional_kwargs={"function_call": response},
+            )
+            generation = ChatGeneration(message=message)
+            return ChatResult(generations=[generation])
+
+        return super()._generate(messages, stop, run_manager, **kwargs)
