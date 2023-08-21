@@ -6,7 +6,9 @@ from langchain.schema import BaseRetriever, Document
 
 
 class LlamaIndexRetriever(BaseRetriever):
-    """Retriever for the question-answering with sources over
+    """`LlamaIndex` retriever.
+
+    It is used for the question-answering with sources over
     an LlamaIndex data structure."""
 
     index: Any
@@ -40,7 +42,9 @@ class LlamaIndexRetriever(BaseRetriever):
 
 
 class LlamaIndexGraphRetriever(BaseRetriever):
-    """Retriever for question-answering with sources over an LlamaIndex
+    """`LlamaIndex` graph data structure retriever.
+
+    It is used for question-answering with sources over an LlamaIndex
     graph data structure."""
 
     graph: Any

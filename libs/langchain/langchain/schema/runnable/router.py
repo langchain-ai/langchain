@@ -104,7 +104,10 @@ class RouterRunnable(
         return runnable.invoke(actual_input, config)
 
     async def ainvoke(
-        self, input: RouterInput, config: Optional[RunnableConfig] = None
+        self,
+        input: RouterInput,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
     ) -> Output:
         key = input["key"]
         actual_input = input["input"]
@@ -120,6 +123,7 @@ class RouterRunnable(
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
         *,
         max_concurrency: Optional[int] = None,
+        **kwargs: Optional[Any],
     ) -> List[Output]:
         keys = [input["key"] for input in inputs]
         actual_inputs = [input["input"] for input in inputs]
@@ -144,6 +148,7 @@ class RouterRunnable(
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
         *,
         max_concurrency: Optional[int] = None,
+        **kwargs: Optional[Any],
     ) -> List[Output]:
         keys = [input["key"] for input in inputs]
         actual_inputs = [input["input"] for input in inputs]
@@ -161,7 +166,10 @@ class RouterRunnable(
         )
 
     def stream(
-        self, input: RouterInput, config: Optional[RunnableConfig] = None
+        self,
+        input: RouterInput,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
     ) -> Iterator[Output]:
         key = input["key"]
         actual_input = input["input"]
@@ -172,7 +180,10 @@ class RouterRunnable(
         yield from runnable.stream(actual_input, config)
 
     async def astream(
-        self, input: RouterInput, config: Optional[RunnableConfig] = None
+        self,
+        input: RouterInput,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
         key = input["key"]
         actual_input = input["input"]

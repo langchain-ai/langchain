@@ -11,7 +11,7 @@ from langchain.chains.query_constructor.ir import (
 
 
 class ElasticsearchTranslator(Visitor):
-    """Translate the internal query language elements to valid filters."""
+    """Translate `Elasticsearch` internal query language elements to valid filters."""
 
     allowed_comparators = [
         Comparator.EQ,
