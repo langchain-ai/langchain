@@ -13,7 +13,7 @@ on:
         default: '["core", "extended", "core-pydantic-2"]'
 
 env:
-  POETRY_VERSION: "1.4.2"
+  POETRY_VERSION: "1.5.1"
 
 jobs:
   build:
@@ -37,7 +37,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           working-directory: ${{ inputs.working-directory }}
-          poetry-version: "1.4.2"
+          poetry-version: ${{ env.POETRY_VERSION }}
           cache-key: ${{ matrix.test_type }}
           install-command: |
               if [ "${{ matrix.test_type }}" == "core" ]; then
