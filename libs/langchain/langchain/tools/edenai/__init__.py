@@ -1,13 +1,13 @@
 """Edenai Tools."""
 from langchain.tools.edenai.audio_speech_to_text import (
-    EdenAiSpeechToText,
+    EdenAiSpeechToTextTool,
 )
 from langchain.tools.edenai.audio_text_to_speech import (
-    EdenAiTextToSpeech,
+    EdenAiTextToSpeechTool,
 )
 from langchain.tools.edenai.edenai_base_tool import EdenaiTool
 from langchain.tools.edenai.image_explicitcontent import (
-    EdenAiExplicitImage,
+    EdenAiExplicitImageTool,
 )
 from langchain.tools.edenai.image_objectdetection import (
     EdenAiObjectDetectionTool,
@@ -16,19 +16,19 @@ from langchain.tools.edenai.ocr_identityparser import (
     EdenAiParsingIDTool,
 )
 from langchain.tools.edenai.ocr_invoiceparser import (
-    EdenAiParsingInvoice,
+    EdenAiParsingInvoiceTool,
 )
 from langchain.tools.edenai.text_moderation import (
-    EdenAiExplicitTextDetection,
+    EdenAiTextModerationTool,
 )
 
 __all__ = [
-    "EdenAiExplicitImage",
+    "EdenAiExplicitImageTool",
     "EdenAiObjectDetectionTool",
     "EdenAiParsingIDTool",
-    "EdenAiParsingInvoice",
-    "EdenAiSpeechToText",
-    "EdenAiTextToSpeech",
-    "EdenAiExplicitTextDetection",
+    "EdenAiParsingInvoiceTool",
+    "EdenAiTextToSpeechTool",
+    "EdenAiSpeechToTextTool",
+    "EdenAiTextModerationTool",
     "EdenaiTool",
 ]
