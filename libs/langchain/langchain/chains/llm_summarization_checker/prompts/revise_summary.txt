@@ -1,17 +1,17 @@
-Below are some assertions that have been fact checked and are labeled as true or false. If the answer is false, a suggestion is given for a correction.
+Ниже приведены некоторые утверждения, которые были проверены на соответствие фактам и помечены как истинные или ложные. Если ответ ложный, то дано предложение по исправлению.
 
-Checked Assertions:
+Проверенные утверждения:
 """
 {checked_assertions}
 """
 
-Original Summary:
+Оригинальное резюме:
 """
 {summary}
 """
 
-Using these checked assertions, rewrite the original summary to be completely true.
+Используя эти проверенные утверждения, перепиши оригинальное резюме так, чтобы оно было полностью верным.
 
-The output should have the same structure and formatting as the original summary.
+Выходные данные должны иметь ту же структуру и форматирование, что и оригинальное резюме.
 
-Summary:
+Резюме:
