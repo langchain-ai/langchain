@@ -19,7 +19,7 @@ from typing import (
 import sqlalchemy
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Session, declarative_base
-
+from sqlalchemy import delete
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
@@ -168,7 +168,29 @@ class PGVector(VectorStore):
                 return
             session.delete(collection)
             session.commit()
-
+            
+    def delete(
+        self,
+        ids: Optional[List[str]] = None,
+        custom_ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> None:
+        self.logger.debug("Trying to delete vectors by ids")
+        with Session(self._conn) as session:
+            if ids is not None:
+                for id in ids:
+                    stmt = delete(self.EmbeddingStore).where(
+                        self.EmbeddingStore.uuid == id
+                    )
+                    session.execute(stmt)
+            if custom_ids is not None:
+                for cid in custom_ids:
+                    stmt = delete(self.EmbeddingStore).where(
+                        self.EmbeddingStore.custom_id == cid
+                    )
+                    session.execute(stmt)
+            session.commit()
+        
     def get_collection(self, session: Session) -> Optional["CollectionStore"]:
         return self.CollectionStore.get_by_name(session, self.collection_name)
 
