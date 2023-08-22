@@ -34,7 +34,7 @@ from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, sessionmaker
 
-from langchain.indexing.base import RecordManager
+from langchain.indexes.base import RecordManager
 
 Base = declarative_base()
 
