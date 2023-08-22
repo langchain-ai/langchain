@@ -9,7 +9,7 @@ from langchain.tools.edenai.edenai_base_tool import EdenaiTool
 logger = logging.getLogger(__name__)
 
 
-class EdenAiExplicitTextDetection(EdenaiTool):
+class EdenAiTextModerationTool(EdenaiTool):
     """Tool that queries the Eden AI Explicit text detection.
 
     for api reference check edenai documentation:

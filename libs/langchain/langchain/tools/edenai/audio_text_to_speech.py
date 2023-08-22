@@ -12,7 +12,7 @@ from langchain.tools.edenai.edenai_base_tool import EdenaiTool
 logger = logging.getLogger(__name__)
 
 
-class EdenAiTextToSpeech(EdenaiTool):
+class EdenAiTextToSpeechTool(EdenaiTool):
     """Tool that queries the Eden AI Text to speech API.
     for api reference check edenai documentation:
     https://docs.edenai.co/reference/audio_text_to_speech_create.

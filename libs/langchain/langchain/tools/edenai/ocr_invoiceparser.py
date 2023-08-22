@@ -11,7 +11,7 @@ from langchain.tools.edenai.edenai_base_tool import EdenaiTool
 logger = logging.getLogger(__name__)
 
 
-class EdenAiParsingInvoice(EdenaiTool):
+class EdenAiParsingInvoiceTool(EdenaiTool):
     """Tool that queries the Eden AI Invoice parsing API.
 
     for api reference check edenai documentation:

@@ -14,7 +14,7 @@ from langchain.tools.edenai.edenai_base_tool import EdenaiTool
 logger = logging.getLogger(__name__)
 
 
-class EdenAiSpeechToText(EdenaiTool):
+class EdenAiSpeechToTextTool(EdenaiTool):
     """Tool that queries the Eden AI Speech To Text API.
 
     for api reference check edenai documentation:

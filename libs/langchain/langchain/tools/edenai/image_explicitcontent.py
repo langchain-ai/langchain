@@ -9,7 +9,7 @@ from langchain.tools.edenai.edenai_base_tool import EdenaiTool
 logger = logging.getLogger(__name__)
 
 
-class EdenAiExplicitImage(EdenaiTool):
+class EdenAiExplicitImageTool(EdenaiTool):
 
     """Tool that queries the Eden AI Explicit image detection.
 
