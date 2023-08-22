@@ -20,7 +20,7 @@ RETURN DISTINCT "(:" + src + ")-[:" + type + "]->(:" + dst + ")" AS output
 """
 
 
-class FalkorDB:
+class FalkorDBGraph:
     """FalkorDB wrapper for graph operations."""
 
     def __init__(
