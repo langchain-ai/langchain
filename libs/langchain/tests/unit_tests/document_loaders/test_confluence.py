@@ -3,6 +3,7 @@ from typing import Dict
 from unittest.mock import MagicMock, patch
 
 import pytest
+import requests
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.confluence import ConfluenceLoader
@@ -23,7 +24,7 @@ class TestConfluenceLoader:
 
     def test_confluence_loader_initialization(self, mock_confluence: MagicMock) -> None:
         ConfluenceLoader(
-            url=self.CONFLUENCE_URL,
+            self.CONFLUENCE_URL,
             username=self.MOCK_USERNAME,
             api_key=self.MOCK_API_TOKEN,
         )
@@ -33,6 +34,36 @@ class TestConfluenceLoader:
             password="api_token",
             cloud=True,
         )
+
+    def test_confluence_loader_initialization_invalid(self) -> None:
+        with pytest.raises(ValueError):
+            ConfluenceLoader(
+                self.CONFLUENCE_URL,
+                username=self.MOCK_USERNAME,
+                api_key=self.MOCK_API_TOKEN,
+                token="foo",
+            )
+
+        with pytest.raises(ValueError):
+            ConfluenceLoader(
+                self.CONFLUENCE_URL,
+                username=self.MOCK_USERNAME,
+                api_key=self.MOCK_API_TOKEN,
+                oauth2={
+                    "access_token": "bar",
+                    "access_token_secret": "bar",
+                    "consumer_key": "bar",
+                    "key_cert": "bar",
+                },
+            )
+
+        with pytest.raises(ValueError):
+            ConfluenceLoader(
+                self.CONFLUENCE_URL,
+                username=self.MOCK_USERNAME,
+                api_key=self.MOCK_API_TOKEN,
+                session=requests.Session(),
+            )
 
     def test_confluence_loader_initialization_from_env(
         self, mock_confluence: MagicMock
@@ -51,7 +82,7 @@ class TestConfluenceLoader:
 
     def test_confluence_loader_load_data_invalid_args(self) -> None:
         confluence_loader = ConfluenceLoader(
-            url=self.CONFLUENCE_URL,
+            self.CONFLUENCE_URL,
             username=self.MOCK_USERNAME,
             api_key=self.MOCK_API_TOKEN,
         )
@@ -125,7 +156,7 @@ class TestConfluenceLoader:
         self, mock_confluence: MagicMock
     ) -> ConfluenceLoader:
         confluence_loader = ConfluenceLoader(
-            url=self.CONFLUENCE_URL,
+            self.CONFLUENCE_URL,
             username=self.MOCK_USERNAME,
             api_key=self.MOCK_API_TOKEN,
         )
