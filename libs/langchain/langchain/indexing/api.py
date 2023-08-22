@@ -14,6 +14,7 @@ from typing import (
     List,
     Literal,
     Optional,
+    Sequence,
     TypedDict,
     TypeVar,
     Union,
@@ -222,7 +223,7 @@ def index(
             for doc in doc_batch
         ]
 
-        source_ids: List[Optional[str]] = [
+        source_ids: Sequence[Optional[str]] = [
             source_id_assigner(doc.to_document()) for doc in hashed_docs
         ]
 
@@ -236,7 +237,8 @@ def index(
                         f"content: {hashed_doc.page_content[:100]} was not assigned "
                         f"as source id."
                     )
-            source_ids = cast(List[str], source_ids)
+            # source ids cannot be None after for loop above.
+            source_ids = cast(Sequence[str], source_ids)  # type: ignore[assignment]
 
         exists_batch = record_manager.exists([doc.uid for doc in hashed_docs])
 
