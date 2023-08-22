@@ -2,7 +2,7 @@ import builtins
 import json
 from typing import Optional, Type, Union
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
+from langchain.callbacks.manager import AsyncCallbackManagerForToolRun
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.ainetwork.base import AINBaseTool, OperationType
 
@@ -59,7 +59,7 @@ Covers the read and write value for the AINetwork Blockchain database.
         type: OperationType,
         path: str,
         value: Optional[Union[int, str, float, dict]] = None,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         from ain.types import ValueOnlyTransactionInput
 

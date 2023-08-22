@@ -4,8 +4,9 @@ from __future__ import annotations
 import asyncio
 import threading
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
+from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.pydantic_v1 import Field
 from langchain.tools.ainetwork.utils import authenticate
 from langchain.tools.base import BaseTool
@@ -25,7 +26,12 @@ class AINBaseTool(BaseTool):
     interface: Ain = Field(default_factory=authenticate)
     """The interface object for the AINetwork Blockchain."""
 
-    def _run(self, *args: Any, **kwargs: Any) -> str:
+    def _run(
+        self,
+        *args: Any,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+        **kwargs: Any,
+    ) -> str:
         try:
             loop = asyncio.get_event_loop()
         except RuntimeError:

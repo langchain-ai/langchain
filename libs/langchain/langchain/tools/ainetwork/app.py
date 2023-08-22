@@ -3,7 +3,7 @@ import json
 from enum import Enum
 from typing import List, Optional, Type, Union
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
+from langchain.callbacks.manager import AsyncCallbackManagerForToolRun
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.ainetwork.base import AINBaseTool
 
@@ -65,7 +65,7 @@ Also, `admin` is initialized to have all `owner` permissions and `rule` allowed 
         type: AppOperationType,
         appName: str,
         address: Optional[Union[str, List[str]]] = None,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         from ain.types import ValueOnlyTransactionInput
         from ain.utils import getTimestamp

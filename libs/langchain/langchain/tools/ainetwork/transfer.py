@@ -1,7 +1,7 @@
 import json
 from typing import Optional, Type
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
+from langchain.callbacks.manager import AsyncCallbackManagerForToolRun
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.ainetwork.base import AINBaseTool
 
@@ -20,7 +20,7 @@ class AINTransfer(AINBaseTool):
         self,
         address: str,
         amount: int,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         try:
             res = await self.interface.wallet.transfer(address, amount, nonce=-1)

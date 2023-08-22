@@ -2,7 +2,7 @@ import builtins
 import json
 from typing import List, Optional, Type, Union
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
+from langchain.callbacks.manager import AsyncCallbackManagerForToolRun
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.ainetwork.base import AINBaseTool, OperationType
 
@@ -74,7 +74,7 @@ An address set as `owner` can modify permissions according to its granted author
         write_rule: Optional[bool] = None,
         write_function: Optional[bool] = None,
         branch_owner: Optional[bool] = None,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         from ain.types import ValueOnlyTransactionInput
 
