@@ -54,6 +54,7 @@ def test_connect_arangodb() -> None:
     sample_aql_result = graph.query("RETURN 'hello world'")
     assert ["hello_world"] == sample_aql_result
 
+
 def test_empty_schema_on_no_data() -> None:
     """Test that the schema is empty for an empty ArangoDB Database"""
     db = get_arangodb_client()
