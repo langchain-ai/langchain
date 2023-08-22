@@ -7,8 +7,8 @@ from freezegun import freeze_time
 
 from langchain.document_loaders.base import BaseLoader
 from langchain.embeddings.base import Embeddings
-from langchain.indexing import index
-from langchain.indexing._sql_record_manager import SQLRecordManager
+from langchain.indexes import index
+from langchain.indexes._sql_record_manager import SQLRecordManager
 from langchain.schema import Document
 from langchain.vectorstores.base import VST, VectorStore
 

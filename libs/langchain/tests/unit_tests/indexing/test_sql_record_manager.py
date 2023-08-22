@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 
-from langchain.indexing._sql_record_manager import SQLRecordManager, UpsertionRecord
+from langchain.indexes._sql_record_manager import SQLRecordManager, UpsertionRecord
 
 
 @pytest.fixture()

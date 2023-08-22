@@ -22,7 +22,7 @@ from typing import (
 )
 
 from langchain.document_loaders.base import BaseLoader
-from langchain.indexing.base import NAMESPACE_UUID, RecordManager
+from langchain.indexes.base import NAMESPACE_UUID, RecordManager
 from langchain.pydantic_v1 import root_validator
 from langchain.schema import Document
 from langchain.vectorstores.base import VectorStore
