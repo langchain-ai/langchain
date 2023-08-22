@@ -1,13 +1,15 @@
-import langchain.chains.rl_chain.pick_best_chain as pick_best_chain
-import langchain.chains.rl_chain.base as rl_chain
-from test_utils import MockEncoder
 import pytest
-from langchain.prompts.prompt import PromptTemplate
+from test_utils import MockEncoder
+
+import langchain.chains.rl_chain.base as rl_chain
+import langchain.chains.rl_chain.pick_best_chain as pick_best_chain
 from langchain.chat_models import FakeListChatModel
+from langchain.prompts.prompt import PromptTemplate
 
 encoded_text = "[ e n c o d e d ] "
 
 
+@pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
 def setup():
     _PROMPT_TEMPLATE = """This is a dummy prompt that will be ignored by the fake llm"""
     PROMPT = PromptTemplate(input_variables=[], template=_PROMPT_TEMPLATE)
@@ -16,6 +18,7 @@ def setup():
     return llm, PROMPT
 
 
+@pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
 def test_multiple_ToSelectFrom_throws():
     llm, PROMPT = setup()
     chain = pick_best_chain.PickBest.from_llm(llm=llm, prompt=PROMPT)
@@ -28,6 +31,7 @@ def test_multiple_ToSelectFrom_throws():
         )
 
 
+@pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
 def test_missing_basedOn_from_throws():
     llm, PROMPT = setup()
     chain = pick_best_chain.PickBest.from_llm(llm=llm, prompt=PROMPT)
@@ -36,6 +40,7 @@ def test_missing_basedOn_from_throws():
         chain.run(action=rl_chain.ToSelectFrom(actions))
 
 
+@pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
 def test_ToSelectFrom_not_a_list_throws():
     llm, PROMPT = setup()
     chain = pick_best_chain.PickBest.from_llm(llm=llm, prompt=PROMPT)
@@ -47,6 +52,7 @@ def test_ToSelectFrom_not_a_list_throws():
         )
 
 
+@pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
 def test_update_with_delayed_score_with_auto_validator_throws():
     llm, PROMPT = setup()
     # this LLM returns a number so that the auto validator will return that
@@ -68,6 +74,7 @@ def test_update_with_delayed_score_with_auto_validator_throws():
         chain.update_with_delayed_score(event=selection_metadata, score=100)
 
 
+@pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
 def test_update_with_delayed_score_force():
     llm, PROMPT = setup()
     # this LLM returns a number so that the auto validator will return that
@@ -91,6 +98,7 @@ def test_update_with_delayed_score_force():
     assert selection_metadata.selected.score == 100.0
 
 
+@pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
 def test_update_with_delayed_score():
     llm, PROMPT = setup()
     chain = pick_best_chain.PickBest.from_llm(
@@ -103,11 +111,12 @@ def test_update_with_delayed_score():
     )
     assert response["response"] == "hey"
     selection_metadata = response["selection_metadata"]
-    assert selection_metadata.selected.score == None
+    assert selection_metadata.selected.score is None
     chain.update_with_delayed_score(event=selection_metadata, score=100)
     assert selection_metadata.selected.score == 100.0
 
 
+@pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
 def test_user_defined_scorer():
     llm, PROMPT = setup()
 
@@ -129,6 +138,7 @@ def test_user_defined_scorer():
     assert selection_metadata.selected.score == 200.0
 
 
+@pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
 def test_default_embeddings():
     llm, PROMPT = setup()
     feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
@@ -147,9 +157,9 @@ def test_default_embeddings():
     ctx_str_2 = "context2"
 
     encoded_ctx_str_1 = encoded_text + " ".join(char for char in ctx_str_1)
-    encoded_ctx_str_2 = encoded_text + " ".join(char for char in ctx_str_2)
+    encoded_text + " ".join(char for char in ctx_str_2)
 
-    expected = f"""shared |User {ctx_str_1 + " " + encoded_ctx_str_1} \n|action {str1 + " " + encoded_str1} \n|action {str2 + " " + encoded_str2} \n|action {str3 + " " + encoded_str3} """
+    expected = f"""shared |User {ctx_str_1 + " " + encoded_ctx_str_1} \n|action {str1 + " " + encoded_str1} \n|action {str2 + " " + encoded_str2} \n|action {str3 + " " + encoded_str3} """  # noqa
 
     actions = [str1, str2, str3]
 
@@ -162,6 +172,7 @@ def test_default_embeddings():
     assert vw_str == expected
 
 
+@pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
 def test_default_embeddings_off():
     llm, PROMPT = setup()
     feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
@@ -174,7 +185,7 @@ def test_default_embeddings_off():
     str3 = "2"
     ctx_str_1 = "context1"
 
-    expected = f"""shared |User {ctx_str_1} \n|action {str1} \n|action {str2} \n|action {str3} """
+    expected = f"""shared |User {ctx_str_1} \n|action {str1} \n|action {str2} \n|action {str3} """  # noqa
 
     actions = [str1, str2, str3]
 
@@ -187,6 +198,7 @@ def test_default_embeddings_off():
     assert vw_str == expected
 
 
+@pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
 def test_default_embeddings_mixed_w_explicit_user_embeddings():
     llm, PROMPT = setup()
     feature_embedder = pick_best_chain.PickBestFeatureEmbedder(model=MockEncoder())
@@ -207,7 +219,7 @@ def test_default_embeddings_mixed_w_explicit_user_embeddings():
     encoded_ctx_str_1 = encoded_text + " ".join(char for char in ctx_str_1)
     encoded_ctx_str_2 = encoded_text + " ".join(char for char in ctx_str_2)
 
-    expected = f"""shared |User {encoded_ctx_str_1} |User2 {ctx_str_2 + " " + encoded_ctx_str_2} \n|action {str1 + " " + encoded_str1} \n|action {str2 + " " + encoded_str2} \n|action {encoded_str3} """
+    expected = f"""shared |User {encoded_ctx_str_1} |User2 {ctx_str_2 + " " + encoded_ctx_str_2} \n|action {str1 + " " + encoded_str1} \n|action {str2 + " " + encoded_str2} \n|action {encoded_str3} """  # noqa
 
     actions = [str1, str2, rl_chain.Embed(str3)]
 
@@ -221,6 +233,7 @@ def test_default_embeddings_mixed_w_explicit_user_embeddings():
     assert vw_str == expected
 
 
+@pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
 def test_default_no_scorer_specified():
     _, PROMPT = setup()
     chain_llm = FakeListChatModel(responses=[100])
@@ -235,6 +248,7 @@ def test_default_no_scorer_specified():
     assert selection_metadata.selected.score == 100.0
 
 
+@pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
 def test_explicitly_no_scorer():
     llm, PROMPT = setup()
     chain = pick_best_chain.PickBest.from_llm(
@@ -247,9 +261,10 @@ def test_explicitly_no_scorer():
     # chain llm used for both basic prompt and for scoring
     assert response["response"] == "hey"
     selection_metadata = response["selection_metadata"]
-    assert selection_metadata.selected.score == None
+    assert selection_metadata.selected.score is None
 
 
+@pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
 def test_auto_scorer_with_user_defined_llm():
     llm, PROMPT = setup()
     scorer_llm = FakeListChatModel(responses=[300])
@@ -268,15 +283,14 @@ def test_auto_scorer_with_user_defined_llm():
     assert selection_metadata.selected.score == 300.0
 
 
+@pytest.mark.requires("vowpal_wabbit_next", "sentence_transformers")
 def test_calling_chain_w_reserved_inputs_throws():
     llm, PROMPT = setup()
     chain = pick_best_chain.PickBest.from_llm(llm=llm, prompt=PROMPT)
     with pytest.raises(ValueError):
         chain.run(
             User=rl_chain.BasedOn("Context"),
-            rl_chain_selected_based_on=rl_chain.ToSelectFrom(
-                ["0", "1", "2"]
-            ),
+            rl_chain_selected_based_on=rl_chain.ToSelectFrom(["0", "1", "2"]),
         )
 
     with pytest.raises(ValueError):
