@@ -61,7 +61,14 @@ class UpsertionRecord(Base):  # type: ignore[valid-type,misc]
     # that time is incremented monotonically.
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(
-        DateTime, server_default=func.now(), server_onupdate=func.now(), index=True
+        DateTime,
+        server_default=func.now(),
+        # Disabling type hints for most SQLAlchemy violations since its unclear
+        # that mypy and SQLAlchemy are playing nicely together.
+        # Argument "server_onupdate" to "Column" has incompatible type "now";
+        # expected "Optional[FetchedValue]"
+        server_onupdate=func.now(),  # type: ignore[arg-type]
+        index=True,
     )
 
     __table_args__ = (
@@ -137,7 +144,10 @@ class SQLRecordManager(RecordManager):
         we want a monotonic clock.
         """
         with self._make_session() as session:
-            return session.execute(select(func.now())).scalar()
+            dt = session.execute(select(func.now())).scalar()
+            if not isinstance(dt, datetime):
+                raise AssertionError(f"Unexpected type for datetime: {type(dt)}")
+            return dt
 
     def update(
         self,
@@ -194,7 +204,8 @@ class SQLRecordManager(RecordManager):
         """Check if the given keys exist in the SQLite database."""
         with self._make_session() as session:
             records = (
-                session.query(UpsertionRecord.key)
+                # mypy does not recognize .all()
+                session.query(UpsertionRecord.key)  # type: ignore[attr-defined]
                 .filter(
                     and_(
                         UpsertionRecord.key.in_(keys),
@@ -219,22 +230,30 @@ class SQLRecordManager(RecordManager):
                 UpsertionRecord.namespace == self.namespace
             )
 
+            # mypy does not recognize .all() or .filter()
             if after:
-                query = query.filter(UpsertionRecord.updated_at > after)
+                query = query.filter(  # type: ignore[attr-defined]
+                    UpsertionRecord.updated_at > after
+                )
             if before:
-                query = query.filter(UpsertionRecord.updated_at < before)
+                query = query.filter(  # type: ignore[attr-defined]
+                    UpsertionRecord.updated_at < before
+                )
             if group_ids:
-                query = query.filter(UpsertionRecord.group_id.in_(group_ids))
-            records = query.all()
+                query = query.filter(  # type: ignore[attr-defined]
+                    UpsertionRecord.group_id.in_(group_ids)
+                )
+            records = query.all()  # type: ignore[attr-defined]
         return [r.key for r in records]
 
     def delete_keys(self, keys: Sequence[str]) -> None:
         """Delete records from the SQLite database."""
         with self._make_session() as session:
+            # mypy does not recognize .delete()
             session.query(UpsertionRecord).filter(
                 and_(
                     UpsertionRecord.key.in_(keys),
                     UpsertionRecord.namespace == self.namespace,
                 )
-            ).delete()
+            ).delete()  # type: ignore[attr-defined]
             session.commit()
