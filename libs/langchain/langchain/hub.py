@@ -20,9 +20,7 @@ def _get_client(api_url: Optional[str] = None, api_key: Optional[str] = None) ->
             "langchainhub`."
         ) from e
 
-    api_url = api_url or get_from_env("api_url", "LANGCHAIN_HUB_API_URL")
-    api_key = api_key or get_from_env("api_key", "LANGCHAIN_HUB_API_KEY", default="")
-    api_key = api_key or get_from_env("api_key", "LANGCHAIN_API_KEY")
+    # Client logic will also attempt to load URL/key from environment variables
     return Client(api_url, api_key=api_key)
 
 
