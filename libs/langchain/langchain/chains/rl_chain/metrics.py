@@ -1,5 +1,7 @@
-import pandas as pd
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 
 class MetricsTracker:
@@ -23,5 +25,7 @@ class MetricsTracker:
         if self._step > 0 and self._i % self._step == 0:
             self._history.append({"step": self._i, "score": self.score})
 
-    def to_pandas(self) -> pd.DataFrame:
+    def to_pandas(self) -> "pd.DataFrame":
+        import pandas as pd
+
         return pd.DataFrame(self._history)
