@@ -16,7 +16,8 @@ from importlib import metadata
 # https://github.com/pydantic/pydantic/issues/6022
 #
 # In the lint environment, pydantic is currently v1.
-# When we upgrade it to pydantic v2, we'll need to replace this with `from pydantic.v1 import *`.
+# When we upgrade it to pydantic v2, we'll need
+# to replace this with `from pydantic.v1 import *`.
 if typing.TYPE_CHECKING:
     from pydantic import *  # noqa: F403
 else:
