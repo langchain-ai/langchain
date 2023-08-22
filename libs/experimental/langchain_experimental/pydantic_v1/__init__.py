@@ -12,11 +12,13 @@ from importlib import metadata
 #   unambiguously uses either v1 or v2 API.
 # * This change is easier to roll out and roll back.
 
-# Mypy doesn't handle try-except conditional imports well.
-# In the lint environment, pydantic is always v2 (since v2 is supported by langchain)
-# so let mypy think that we're always using the `pydantic.v1` namespace in pydantic v2.
+# It's currently impossible to support mypy for both pydantic v1 and v2 at once:
+# https://github.com/pydantic/pydantic/issues/6022
+#
+# In the lint environment, pydantic is currently v1.
+# When we upgrade it to pydantic v2, we'll need to replace this with `from pydantic.v1 import *`.
 if typing.TYPE_CHECKING:
-    from pydantic.v1 import *  # noqa: F403
+    from pydantic import *  # noqa: F403
 else:
     try:
         from pydantic.v1 import *  # noqa: F403
