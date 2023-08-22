@@ -1,13 +1,13 @@
-from typing import Any, Iterator, List
+from typing import Any, Iterator
 
 from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
+from langchain.document_loaders.dataframe import BaseDataFrameLoader
 
 
-class PolarsDataFrameLoader(BaseLoader):
+class PolarsDataFrameLoader(BaseDataFrameLoader):
     """Load `Polars` DataFrame."""
 
-    def __init__(self, data_frame: Any, page_content_column: str = "text"):
+    def __init__(self, data_frame: Any, *, page_content_column: str = "text"):
         """Initialize with dataframe object.
 
         Args:
@@ -21,8 +21,7 @@ class PolarsDataFrameLoader(BaseLoader):
             raise ValueError(
                 f"Expected data_frame to be a pl.DataFrame, got {type(data_frame)}"
             )
-        self.data_frame = data_frame
-        self.page_content_column = page_content_column
+        super().__init__(data_frame, page_content_column=page_content_column)
 
     def lazy_load(self) -> Iterator[Document]:
         """Lazy load records from dataframe."""
@@ -31,7 +30,3 @@ class PolarsDataFrameLoader(BaseLoader):
             text = row[self.page_content_column]
             row.pop(self.page_content_column)
             yield Document(page_content=text, metadata=row)
-
-    def load(self) -> List[Document]:
-        """Load full dataframe."""
-        return list(self.lazy_load())
