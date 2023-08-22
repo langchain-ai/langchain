@@ -60,11 +60,15 @@ runs:
         "python$PYTHON_VERSION" -m pip cache info
         echo "poetry cache info: $("python$PYTHON_VERSION" -m pip cache list poetry)"
 
+        ls -alh /opt/pipx_bin/poetry
+
         pipx install "poetry==$POETRY_VERSION" --python "python$PYTHON_VERSION" --verbose
         hash -r
 
         echo "poetry binary:"
         which poetry
+
+        ls -alh /opt/pipx_bin/poetry
 
         echo "path => $PATH"
 
