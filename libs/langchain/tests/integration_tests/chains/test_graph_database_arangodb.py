@@ -65,8 +65,9 @@ def test_empty_schema_on_no_data() -> None:
 
     assert graph.schema == {
         "Graph Schema": [],
-        "Collection Schema": []
+        "Collection Schema": [],
     }
+
 
 def test_aql_generation() -> None:
     """Test that AQL statement is correctly generated and executed."""
