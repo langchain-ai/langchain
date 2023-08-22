@@ -63,10 +63,13 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
         **kwargs: Any,
     ) -> Dict[str, Any]:
         config = config or {}
-        config_kwargs: Dict = {
-            k: config.get(k) for k in ("callbacks", "tags", "metadata")
-        }
-        return self(input, **config_kwargs, **kwargs)
+        return self(
+            input,
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            **kwargs,
+        )
 
     async def ainvoke(
         self,
@@ -79,11 +82,15 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
             return await asyncio.get_running_loop().run_in_executor(
                 None, partial(self.invoke, input, config, **kwargs)
             )
+
         config = config or {}
-        config_kwargs: Dict = {
-            k: config.get(k) for k in ("callbacks", "tags", "metadata")
-        }
-        return await self.acall(input, **config_kwargs, **kwargs)
+        return await self.acall(
+            input,
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            **kwargs,
+        )
 
     memory: Optional[BaseMemory] = None
     """Optional memory object. Defaults to None.

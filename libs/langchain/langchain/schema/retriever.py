@@ -108,10 +108,12 @@ class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
         self, input: str, config: Optional[RunnableConfig] = None
     ) -> List[Document]:
         config = config or {}
-        config_kwargs: Dict = {
-            k: config.get(k) for k in ("callbacks", "tags", "metadata")
-        }
-        return self.get_relevant_documents(input, **config_kwargs)
+        return self.get_relevant_documents(
+            input,
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+        )
 
     async def ainvoke(
         self,
@@ -124,10 +126,12 @@ class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
             return await super().ainvoke(input, config)
 
         config = config or {}
-        config_kwargs: Dict = {
-            k: config.get(k) for k in ("callbacks", "tags", "metadata")
-        }
-        return await self.aget_relevant_documents(input, **config_kwargs)
+        return await self.aget_relevant_documents(
+            input,
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+        )
 
     @abstractmethod
     def _get_relevant_documents(
