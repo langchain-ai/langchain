@@ -166,7 +166,7 @@
     },
     {
       "source": "/docs/integrations/deeplake",
-      "destination": "/docs/integrations/providers/deeplake"
+      "destination": "/docs/integrations/providers/activeloop_deeplake"
     },
     {
       "source": "/docs/integrations/diffbot",
