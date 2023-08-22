@@ -146,7 +146,7 @@ class _OllamaCommon(BaseLanguageModel):
 
 
 class Ollama(BaseLLM, _OllamaCommon):
-    """Ollama locally run large language models.
+    """Ollama locally runs large language models.
 
     To use, follow the instructions at https://ollama.ai/.
 
