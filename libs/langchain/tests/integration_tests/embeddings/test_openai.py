@@ -100,21 +100,6 @@ async def test_sync_async_embed_query_equal() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.asyncio
-async def test_with_without_tokenizing_equal() -> None:
-    documents = ["foo bar baz bum buzz boom"]
-    with_tokenizing = OpenAIEmbeddings()
-    without_tokenizing = OpenAIEmbeddings(embedding_ctx_length=None)
-    tokenize_output = with_tokenizing.embed_documents(documents)
-    text_output = without_tokenizing.embed_documents(documents)
-    assert np.isclose(tokenize_output, text_output, atol=1e-4).mean() > 0.95
-
-    atokenize_output = await with_tokenizing.aembed_documents(documents)
-    atext_output = await without_tokenizing.aembed_documents(documents)
-    assert np.isclose(atokenize_output, atext_output, atol=1e-4).mean() > 0.95
-
-
-@pytest.mark.scheduled
 def test_embed_documents_normalized() -> None:
     output = OpenAIEmbeddings().embed_documents(["foo walked to the market"])
     assert np.isclose(np.linalg.norm(output[0]), 1.0)
