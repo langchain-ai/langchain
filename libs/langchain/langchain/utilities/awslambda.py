@@ -2,7 +2,7 @@
 import json
 from typing import Any, Dict, Optional
 
-from pydantic_v1 import BaseModel, Extra, root_validator
+from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 
 
 class LambdaWrapper(BaseModel):

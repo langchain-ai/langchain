@@ -5,9 +5,7 @@ import urllib.error
 import urllib.request
 from typing import Any, Dict, Iterator, List
 
-from pydantic_v1 import BaseModel
-from pydantic_v1.class_validators import root_validator
-
+from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema import Document
 
 logger = logging.getLogger(__name__)
@@ -36,14 +34,16 @@ class PubMedAPIWrapper(BaseModel):
 
     parse: Any  #: :meta private:
 
-    base_url_esearch = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?"
-    base_url_efetch = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?"
-    max_retry = 5
-    sleep_time = 0.2
+    base_url_esearch: str = (
+        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?"
+    )
+    base_url_efetch: str = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?"
+    max_retry: int = 5
+    sleep_time: float = 0.2
 
     # Default values for the parameters
     top_k_results: int = 3
-    MAX_QUERY_LENGTH = 300
+    MAX_QUERY_LENGTH: int = 300
     doc_content_chars_max: int = 2000
     email: str = "your_email@example.com"
 

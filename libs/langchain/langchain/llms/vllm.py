@@ -1,10 +1,9 @@
 from typing import Any, Dict, List, Optional
 
-from pydantic_v1 import root_validator
-
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import BaseLLM
 from langchain.llms.openai import BaseOpenAI
+from langchain.pydantic_v1 import root_validator
 from langchain.schema.output import Generation, LLMResult
 
 

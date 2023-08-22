@@ -3,8 +3,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic_v1 import BaseModel, Extra, Field, root_validator
-
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
     StringPromptTemplate,
@@ -13,6 +11,7 @@ from langchain.prompts.base import (
 from langchain.prompts.chat import BaseChatPromptTemplate, BaseMessagePromptTemplate
 from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.prompts.prompt import PromptTemplate
+from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain.schema.messages import BaseMessage, get_buffer_string
 
 

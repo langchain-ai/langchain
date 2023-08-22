@@ -27,7 +27,6 @@ from typing import (
 )
 
 import yaml
-from pydantic_v1 import Field, root_validator, validator
 from tenacity import (
     RetryCallState,
     before_sleep_log,
@@ -50,6 +49,7 @@ from langchain.callbacks.manager import (
 from langchain.load.dump import dumpd
 from langchain.prompts.base import StringPromptValue
 from langchain.prompts.chat import ChatPromptValue
+from langchain.pydantic_v1 import Field, root_validator, validator
 from langchain.schema import (
     Generation,
     LLMResult,
