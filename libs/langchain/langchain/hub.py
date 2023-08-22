@@ -31,6 +31,8 @@ def push(
     api_url: Optional[str] = None,
     api_key: Optional[str] = None,
     parent_commit_hash: Optional[str] = "latest",
+    new_repo_is_public: bool = False,
+    new_repo_description: str = "",
 ) -> str:
     """
     Pushes an object to the hub and returns the URL.
@@ -38,7 +40,11 @@ def push(
     client = _get_client(api_url=api_url, api_key=api_key)
     manifest_json = dumps(object)
     resp = client.push(
-        repo_full_name, manifest_json, parent_commit_hash=parent_commit_hash
+        repo_full_name,
+        manifest_json,
+        parent_commit_hash=parent_commit_hash,
+        new_repo_is_public=new_repo_is_public,
+        new_repo_description=new_repo_description,
     )
     commit_hash: str = resp["commit"]["commit_hash"]
     return commit_hash
