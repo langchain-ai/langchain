@@ -1,4 +1,9 @@
-"""Implementation of a record management layer.
+"""Implementation of a record management layer in SQLAlchemy.
+
+The management layer uses SQLAlchemy to track upserted records.
+
+Currently, this layer only works with SQLite; hopwever, should be adaptable
+to other SQL implementations with minimal effort.
 
 Currently, includes an implementation that uses SQLAlchemy which should
 allow it to work with a variety of SQL as a backend.
@@ -190,6 +195,8 @@ class SQLRecordManager(RecordManager):
         ]
 
         with self._make_session() as session:
+            # Note: uses SQLite insert to make on_conflict_do_update work.
+            # This code needs to be generalized a bit to work with more dialects.
             insert_stmt = insert(UpsertionRecord).values(records_to_upsert)
             stmt = insert_stmt.on_conflict_do_update(
                 [UpsertionRecord.key, UpsertionRecord.namespace],
