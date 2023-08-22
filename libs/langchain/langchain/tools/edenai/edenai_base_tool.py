@@ -84,7 +84,7 @@ class EdenaiTool(BaseTool):
                 f"{response.status_code}: {response.text}"
             )
 
-        key = self.providers if payload.get("response_as_dict") else 0
+        key = self.providers[0] if payload.get("response_as_dict") else 0
 
         provider_response = response.json()[key]
         if provider_response["status"] == "fail":
