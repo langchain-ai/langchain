@@ -17,6 +17,9 @@ The Chain interface makes it easy to create apps that are:
     Chain --> <name>Chain  # Examples: LLMChain, MapReduceChain, RouterChain
 """
 
+from langchain.chains.amazon_comprehend_moderation import (
+    AmazonComprehendModerationChain,
+)
 from langchain.chains.api.base import APIChain
 from langchain.chains.api.openapi.chain import OpenAPIEndpointChain
 from langchain.chains.combine_documents.base import AnalyzeDocumentChain
@@ -25,6 +28,15 @@ from langchain.chains.combine_documents.map_rerank import MapRerankDocumentsChai
 from langchain.chains.combine_documents.reduce import ReduceDocumentsChain
 from langchain.chains.combine_documents.refine import RefineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
+from langchain.chains.comprehend_moderation import (
+    BaseModeration,
+    BaseModerationActions,
+    BaseModerationCallbackHandler,
+    BaseModerationFilters,
+    ComprehendIntent,
+    ComprehendPII,
+    ComprehendToxicity,
+)
 from langchain.chains.constitutional_ai.base import ConstitutionalChain
 from langchain.chains.conversation.base import ConversationChain
 from langchain.chains.conversational_retrieval.base import (
@@ -78,6 +90,14 @@ from langchain.chains.sql_database.query import create_sql_query_chain
 from langchain.chains.transform import TransformChain
 
 __all__ = [
+    "AmazonComprehendModerationChain",
+    "BaseModeration",
+    "BaseModerationActions",
+    "BaseModerationFilters",
+    "ComprehendPII",
+    "ComprehendIntent",
+    "ComprehendToxicity",
+    "BaseModerationCallbackHandler",
     "APIChain",
     "AnalyzeDocumentChain",
     "ArangoGraphQAChain",
