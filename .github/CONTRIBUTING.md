@@ -80,7 +80,7 @@ For example, to contribute to `langchain` run `cd libs/langchain` before getting
 To install requirements:
 
 ```bash
-poetry install
+poetry install --with test
 ```
 
 This will install all requirements for running the package, examples, linting, formatting, tests, and coverage.
