@@ -9,9 +9,11 @@ from langchain.document_loaders.parsers.pdf import (
     PyPDFium2Parser,
     PyPDFParser,
 )
+from langchain.document_loaders.parsers.pdf_docai import DocAIPdfLoader
 
 __all__ = [
     "BS4HTMLParser",
+    "DocAIPdfLoader",
     "GrobidParser",
     "LanguageParser",
     "OpenAIWhisperParser",
