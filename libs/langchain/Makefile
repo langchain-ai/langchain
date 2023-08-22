@@ -76,9 +76,9 @@ lint format: PYTHON_FILES=.
 lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/langchain --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
 
 lint lint_diff:
-	poetry run mypy $(PYTHON_FILES)
-	poetry run black $(PYTHON_FILES) --check
 	poetry run ruff .
+	poetry run black $(PYTHON_FILES) --check
+	poetry run mypy $(PYTHON_FILES)
 
 format format_diff:
 	poetry run black $(PYTHON_FILES)

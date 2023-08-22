@@ -69,6 +69,7 @@ from langchain.llms.petals import Petals
 from langchain.llms.pipelineai import PipelineAI
 from langchain.llms.predibase import Predibase
 from langchain.llms.predictionguard import PredictionGuard
+from langchain.llms.promptguard import PromptGuard
 from langchain.llms.promptlayer_openai import PromptLayerOpenAI, PromptLayerOpenAIChat
 from langchain.llms.replicate import Replicate
 from langchain.llms.rwkv import RWKV
@@ -141,6 +142,7 @@ __all__ = [
     "PredictionGuard",
     "PromptLayerOpenAI",
     "PromptLayerOpenAIChat",
+    "PromptGuard",
     "RWKV",
     "Replicate",
     "SagemakerEndpoint",
@@ -205,6 +207,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "petals": Petals,
     "pipelineai": PipelineAI,
     "predibase": Predibase,
+    "promptguard": PromptGuard,
     "replicate": Replicate,
     "rwkv": RWKV,
     "sagemaker_endpoint": SagemakerEndpoint,
