@@ -97,7 +97,7 @@ class SQLRecordManager(RecordManager):
                 to be passed when creating the engine. Default is an empty dictionary.
 
         Raises:
-            ValueError: If both db_url and engine are provided or netiher.
+            ValueError: If both db_url and engine are provided or neither.
             AssertionError: If something unexpected happens during engine configuration.
         """
         super().__init__(namespace=namespace)
