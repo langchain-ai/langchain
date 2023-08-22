@@ -328,12 +328,6 @@ class Redis(VectorStore):
                     **metadata,
                 },
             )
-            mapping = {
-                self._schema.content_key: text,
-                self._schema.content_vector_key: _array_to_buffer(embedding),
-                **metadata,
-            }
-            print(mapping)
             ids.append(key)
 
             # Write batch
@@ -544,7 +538,7 @@ class Redis(VectorStore):
         if filter:
             query_prefix = f"{str(filter)}"
         base_query = f"({query_prefix})=>[KNN {k} @{self._schema.content_vector_key} $vector AS score]"
-        print(base_query)
+
         query = (
             Query(base_query).return_fields(*return_fields).sort_by("score").dialect(2)
         )
