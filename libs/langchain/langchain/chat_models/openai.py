@@ -386,10 +386,13 @@ class ChatOpenAI(BaseChatModel):
             function_call = chunk["choices"][0]["delta"].get("function_call")
             chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
             default_chunk_class = chunk.__class__
-            yield ChatGenerationChunk(message=chunk)
+            full_chunk = ChatGenerationChunk(message=chunk)
+            yield full_chunk
             if run_manager:
-                await run_manager.on_llm_new_token(chunk.content)
-                await run_manager.on_event(chunk.content, function_call=function_call)
+                if function_call:
+                    full_chunk += ChatGenerationChunk(message=function_call)
+                await run_manager.on_llm_new_token(token=chunk.content, chunk=full_chunk)
+                #await run_manager.on_event(chunk.content, function_call=function_call)
 
     async def _agenerate(
         self,

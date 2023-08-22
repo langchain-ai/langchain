@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from langchain.schema.agent import AgentAction, AgentFinish
     from langchain.schema.document import Document
     from langchain.schema.messages import BaseMessage
-    from langchain.schema.output import LLMResult
+    from langchain.schema.output import LLMResult, GenerationChunk, ChatGenerationChunk
 
 
 class RetrieverManagerMixin:
@@ -43,12 +43,19 @@ class LLMManagerMixin:
     def on_llm_new_token(
         self,
         token: str,
+        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
-        """Run on new LLM token. Only available when streaming is enabled."""
+        """Run on new LLM token. Only available when streaming is enabled.
+
+        Args:
+            token (str): The new token.
+            chunk (GenerationChunk | ChatGenerationChunk): The new generated chunk, containing
+                content and other information.
+        """
 
     def on_llm_end(
         self,
