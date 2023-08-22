@@ -261,7 +261,11 @@ def index(
         # And only then update the record store.
         # Update ALL records, even if they already exist since we want to refresh
         # their timestamp.
-        record_manager.update([doc.uid for doc in hashed_docs], group_ids=source_ids)
+        record_manager.update(
+            [doc.uid for doc in hashed_docs],
+            group_ids=source_ids,
+            time_at_least=index_start_dt,
+        )
 
         # If source IDs are provided, we can do the deletion incrementally!
         if delete_mode == "incremental":
