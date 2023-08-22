@@ -3,15 +3,18 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, cast
 from uuid import uuid4
 
-from pydantic_v1 import root_validator
-
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.docstore.document import Document
+from langchain.pydantic_v1 import root_validator
 from langchain.schema import BaseRetriever
 
 
 class WeaviateHybridSearchRetriever(BaseRetriever):
-    """Retriever for the Weaviate's hybrid search."""
+    """`Weaviate hybrid search` retriever.
+
+    See the documentation:
+      https://weaviate.io/blog/hybrid-search-explained
+    """
 
     client: Any
     """keyword arguments to pass to the Weaviate client."""

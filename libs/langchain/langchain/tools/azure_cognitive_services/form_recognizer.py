@@ -3,9 +3,8 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional
 
-from pydantic_v1 import root_validator
-
 from langchain.callbacks.manager import CallbackManagerForToolRun
+from langchain.pydantic_v1 import root_validator
 from langchain.tools.azure_cognitive_services.utils import detect_file_src_type
 from langchain.tools.base import BaseTool
 from langchain.utils import get_from_dict_or_env
@@ -24,8 +23,8 @@ class AzureCogsFormRecognizerTool(BaseTool):
     azure_cogs_endpoint: str = ""  #: :meta private:
     doc_analysis_client: Any  #: :meta private:
 
-    name = "azure_cognitive_services_form_recognizer"
-    description = (
+    name: str = "azure_cognitive_services_form_recognizer"
+    description: str = (
         "A wrapper around Azure Cognitive Services Form Recognizer. "
         "Useful for when you need to "
         "extract text, tables, and key-value pairs from documents. "

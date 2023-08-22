@@ -16,12 +16,11 @@ from typing import (
     overload,
 )
 
-from pydantic_v1 import Field, root_validator
-
 from langchain._api import deprecated
 from langchain.load.serializable import Serializable
 from langchain.prompts.base import StringPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
+from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import (
     BasePromptTemplate,
     PromptValue,
@@ -338,7 +337,7 @@ MessageLikeRepresentation = Union[
 ]
 
 
-class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
+class ChatPromptTemplate(BaseChatPromptTemplate):
     """A prompt template for chat models.
 
     Use to create flexible templated prompts for chat models.

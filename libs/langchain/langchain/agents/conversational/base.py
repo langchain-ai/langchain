@@ -3,8 +3,6 @@ from __future__ import annotations
 
 from typing import Any, List, Optional, Sequence
 
-from pydantic_v1 import Field
-
 from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.agent_types import AgentType
 from langchain.agents.conversational.output_parser import ConvoOutputParser
@@ -13,6 +11,7 @@ from langchain.agents.utils import validate_tools_single_input
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
+from langchain.pydantic_v1 import Field
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
 

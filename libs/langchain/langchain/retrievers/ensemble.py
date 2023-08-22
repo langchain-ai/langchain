@@ -4,18 +4,18 @@ multiple retrievers by using weighted  Reciprocal Rank Fusion
 """
 from typing import Any, Dict, List
 
-from pydantic_v1 import root_validator
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
+from langchain.pydantic_v1 import root_validator
 from langchain.schema import BaseRetriever, Document
 
 
 class EnsembleRetriever(BaseRetriever):
-    """
-    This class ensemble the results of multiple retrievers by using rank fusion.
+    """Retriever that ensembles the multiple retrievers.
+
+    It uses a rank fusion.
 
     Args:
         retrievers: A list of retrievers to ensemble.
