@@ -404,6 +404,17 @@ def _setup_evaluation(
     return run_evaluators, examples
 
 
+def _format_eval_config_error(key_name: str, option: str) -> str:
+    """Format the eval config for a key."""
+    return f"""
+
+For example:
+RunEvalConfig(
+    evaluators=[...],
+    {key_name}="{option}",
+)"""
+
+
 def _determine_input_key(
     config: RunEvalConfig,
     run_inputs: Optional[List[str]],
@@ -417,7 +428,9 @@ def _determine_input_key(
         input_key = run_inputs[0]
     elif run_inputs is not None and len(run_inputs) > 1:
         raise ValueError(
-            f"Must specify input key for model with multiple inputs: {run_inputs}"
+            "Must specify input key for model with"
+            f" multiple inputs: {run_inputs}"
+            f"{_format_eval_config_error('input_key', run_inputs[0])}"
         )
 
     return input_key
@@ -432,7 +445,7 @@ def _determine_prediction_key(
         prediction_key = config.prediction_key
         if run_outputs and prediction_key not in run_outputs:
             raise ValueError(
-                f"Prediction key {prediction_key} not in run outputs {run_outputs}"
+                f"Prediction key {prediction_key} not in \n outputs {run_outputs}"
             )
     elif run_outputs and len(run_outputs) == 1:
         prediction_key = run_outputs[0]
@@ -440,6 +453,7 @@ def _determine_prediction_key(
         raise ValueError(
             f"Must specify prediction key for model"
             f" with multiple outputs: {run_outputs}"
+            f"{_format_eval_config_error('prediction_key', run_outputs[0])}"
         )
     return prediction_key
 
