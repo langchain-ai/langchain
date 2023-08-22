@@ -10,25 +10,26 @@ allow it to work with a variety of SQL as a backend.
 """
 import contextlib
 import uuid
-from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import List, Optional, Sequence, Dict, Any, Generator
+from typing import Any, Dict, Generator, List, Optional, Sequence
 
 from sqlalchemy import (
+    Column,
+    DateTime,
+    Engine,
+    Index,
+    String,
+    UniqueConstraint,
     and_,
     create_engine,
-    select,
-    Column,
-    String,
-    DateTime,
     func,
-    Engine,
-    UniqueConstraint,
-    Index,
+    select,
 )
 from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, sessionmaker
+
+from langchain.indexing.base import RecordManager
 
 Base = declarative_base()
 
@@ -36,6 +37,10 @@ Base = declarative_base()
 class UpsertionRecord(Base):  # type: ignore[valid-type,misc]
     """Table used to keep track of when a key was last updated."""
 
+    # ATTENTION:
+    # Prior to modifying this table, please determine whether
+    # we should create migrations for this table to make sure
+    # users do not experience data loss.
     __tablename__ = "upsertion_record"
 
     uuid = Column(
@@ -65,98 +70,8 @@ class UpsertionRecord(Base):  # type: ignore[valid-type,misc]
     )
 
 
-class AbstractRecordManager(ABC):
-    """An abstract base class representing the interface for a record manager."""
-
-    def __init__(
-        self,
-        namespace: str,
-    ) -> None:
-        """
-        Initialize the record manager.
-
-        Args:
-            namespace (str): The namespace for the record manager.
-        """
-        self.namespace = namespace
-
-    @abstractmethod
-    def create_schema(self) -> None:
-        """Create the database schema for the record manager."""
-        pass
-
-    @abstractmethod
-    def get_time(self) -> datetime:
-        """Get the current server time.
-
-        It's important to get this from the server to ensure a monotonic clock,
-        otherwise there may be data loss when cleaning up old documents!
-
-        Returns:
-            The current server time.
-        """
-
-    @abstractmethod
-    def update(
-        self,
-        keys: Sequence[str],
-        *,
-        group_ids: Optional[Sequence[Optional[str]]] = None,
-        time_at_least: Optional[datetime] = None,
-    ) -> None:
-        """Upsert records into the database.
-
-        Args:
-            keys: A list of record keys to upsert.
-            group_ids: A list of group IDs corresponding to the keys.
-            time_at_least: if provided, updates should only happen if the
-              updated_at field is at least this time.
-
-        Raises:
-            ValueError: If the length of keys doesn't match the length of group_ids.
-        """
-
-    @abstractmethod
-    def exists(self, keys: Sequence[str]) -> List[bool]:
-        """Check if the provided keys exist in the database.
-
-        Args:
-            keys: A list of keys to check.
-
-        Returns:
-            A list of boolean values indicating the existence of each key.
-        """
-
-    @abstractmethod
-    def list_keys(
-        self,
-        *,
-        before: Optional[datetime] = None,
-        after: Optional[datetime] = None,
-        group_ids: Optional[Sequence[str]] = None,
-    ) -> List[str]:
-        """List records in the database based on the provided filters.
-
-        Args:
-            before: Filter to list records updated before this time.
-            after: Filter to list records updated after this time.
-            group_ids: Filter to list records with specific group IDs.
-
-        Returns:
-            A list of keys for the matching records.
-        """
-
-    @abstractmethod
-    def delete_keys(self, keys: Sequence[str]) -> None:
-        """Delete specified records from the database.
-
-        Args:
-            keys: A list of keys to delete.
-        """
-
-
-class SQLRecordManager(AbstractRecordManager):
-    """A manager persistence layer used to keep track of upserted records."""
+class SQLRecordManager(RecordManager):
+    """A SQL Alchemy based implementation of the record manager."""
 
     def __init__(
         self,
@@ -166,7 +81,25 @@ class SQLRecordManager(AbstractRecordManager):
         db_url: Optional[str] = None,
         engine_kwargs: Optional[Dict[str, Any]] = None,
     ) -> None:
-        """Initialize the record store."""
+        """Initialize the SQLRecordManager.
+
+        This class serves as a manager persistence layer that uses an SQL
+        backend to track upserted records. You should specify either a db_url
+        to create an engine or provide an existing engine.
+
+        Args:
+            namespace: The namespace associated with this record manager.
+            engine: An already existing SQL Alchemy engine.
+                Default is None.
+            db_url: A database connection string used to create
+                an SQL Alchemy engine. Default is None.
+            engine_kwargs: Additional keyword arguments
+                to be passed when creating the engine. Default is an empty dictionary.
+
+        Raises:
+            ValueError: If both db_url and engine are provided or netiher.
+            AssertionError: If something unexpected happens during engine configuration.
+        """
         super().__init__(namespace=namespace)
         if db_url is None and engine is None:
             raise ValueError("Must specify either db_url or engine")
@@ -223,6 +156,13 @@ class SQLRecordManager(AbstractRecordManager):
                 f"group_ids ({len(group_ids)})"
             )
 
+        # Get the current time from the server.
+        # This makes an extra round trip to the server, should not be a big deal
+        # if the batch size is large enough.
+        # Getting the time here helps us compare it against the time_at_least
+        # and raise an error if there is a time sync issue.
+        # Here, we're just being extra careful to minimize the chance of
+        # data loss due to incorrectly deleting records.
         update_time = self.get_time()
 
         if time_at_least and update_time < time_at_least:

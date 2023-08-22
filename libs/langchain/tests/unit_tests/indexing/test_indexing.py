@@ -1,27 +1,43 @@
-from typing import Any, Dict, Optional, Sequence
-
 from datetime import datetime
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence, Type
+from unittest.mock import patch
+
 import pytest
 from freezegun import freeze_time
-from unittest.mock import patch
+
+from langchain.document_loaders.base import BaseLoader
+from langchain.embeddings.base import Embeddings
+from langchain.indexing import index
+from langchain.indexing._sql_record_manager import SQLRecordManager
 from langchain.schema import Document
+from langchain.vectorstores.base import VST, VectorStore
 
 
-from langconnect.indexing import index
-from langconnect.indexing.record_manager import SQLRecordManager
-from langconnect.indexing.api import ManageableVectorStore
-from langconnect.schema import HashedDocument
-from tests.utils import ToyLoader
+class ToyLoader(BaseLoader):
+    """Toy loader that always returns the same documents."""
+
+    def __init__(self, documents: Sequence[Document]) -> None:
+        """Initialize with the documents to return."""
+        self.documents = documents
+
+    def lazy_load(
+        self,
+    ) -> Iterator[Document]:
+        yield from self.documents
+
+    def load(self) -> List[Document]:
+        """Load the documents from the source."""
+        return list(self.lazy_load())
 
 
-class InMemoryVectorStore(ManageableVectorStore):
+class InMemoryVectorStore(VectorStore):
     """In-memory implementation of VectorStore using a dictionary."""
 
     def __init__(self) -> None:
         """Vector store interface for testing things in memory."""
         self.store: Dict[str, Document] = {}
 
-    def delete(self, ids: Sequence[str], **kwargs: Any) -> None:
+    def delete(self, ids: Optional[Sequence[str]] = None, **kwargs: Any) -> None:
         """Delete the given documents from the store using their IDs."""
         for _id in ids:
             self.store.pop(_id, None)
@@ -48,6 +64,31 @@ class InMemoryVectorStore(ManageableVectorStore):
                     f"Document with uid {_id} already exists in the store."
                 )
             self.store[_id] = document
+
+    def add_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Add the given texts to the store (insert behavior)."""
+        raise NotImplementedError()
+
+    def from_texts(
+        cls: Type[VST],
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
+    ) -> VST:
+        """Create a vector store from a list of texts."""
+        raise NotImplementedError()
+
+    def similarity_search(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> List[Document]:
+        """Find the most similar documents to the given query."""
+        raise NotImplementedError()
 
 
 @pytest.fixture
@@ -203,6 +244,81 @@ def test_incremental_fails_with_bad_source_ids(
         )
 
 
+def test_no_delete(
+    record_manager: SQLRecordManager, vector_store: InMemoryVectorStore
+) -> None:
+    """Test indexing without a deletion strategy."""
+    loader = ToyLoader(
+        documents=[
+            Document(
+                page_content="This is a test document.",
+                metadata={"source": "1"},
+            ),
+            Document(
+                page_content="This is another document.",
+                metadata={"source": "2"},
+            ),
+        ]
+    )
+
+    with patch.object(record_manager, "get_time", return_value=datetime(2021, 1, 2)):
+        assert index(
+            loader,
+            record_manager,
+            vector_store,
+            delete_mode=None,
+            source_id_key="source",
+        ) == {
+            "num_added": 2,
+            "num_deleted": 0,
+            "num_skipped": 0,
+            "num_updated": 0,
+        }
+
+    # If we add the same content twice it should be skipped
+    with patch.object(record_manager, "get_time", return_value=datetime(2021, 1, 2)):
+        assert index(
+            loader,
+            record_manager,
+            vector_store,
+            delete_mode=None,
+            source_id_key="source",
+        ) == {
+            "num_added": 0,
+            "num_deleted": 0,
+            "num_skipped": 2,
+            "num_updated": 0,
+        }
+
+    loader = ToyLoader(
+        documents=[
+            Document(
+                page_content="mutated content",
+                metadata={"source": "1"},
+            ),
+            Document(
+                page_content="This is another document.",
+                metadata={"source": "2"},
+            ),
+        ]
+    )
+
+    # Should result in no updates or deletions!
+    with patch.object(record_manager, "get_time", return_value=datetime(2021, 1, 2)):
+        assert index(
+            loader,
+            record_manager,
+            vector_store,
+            delete_mode=None,
+            source_id_key="source",
+        ) == {
+            "num_added": 1,
+            "num_deleted": 0,
+            "num_skipped": 1,
+            "num_updated": 0,
+        }
+
+
 def test_incremental_delete(
     record_manager: SQLRecordManager, vector_store: InMemoryVectorStore
 ) -> None:
@@ -301,10 +417,8 @@ def test_incremental_delete(
     }
 
 
-def test_indexing_with_no_docs(
-    record_manager, vector_store: ManageableVectorStore
-) -> None:
-    """Check edge case when lodaer returns no new docs."""
+def test_indexing_with_no_docs(record_manager, vector_store: VectorStore) -> None:
+    """Check edge case when loader returns no new docs."""
     loader = ToyLoader(documents=[])
 
     assert index(loader, record_manager, vector_store, delete_mode="full") == {

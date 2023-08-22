@@ -1,28 +1,100 @@
 """Module contains logic for indexing documents into vector stores."""
 from __future__ import annotations
 
+import hashlib
+import json
+import uuid
 from itertools import islice
 from typing import (
-    Protocol,
-    Sequence,
+    Any,
+    Callable,
+    Dict,
     Iterable,
     Iterator,
     List,
+    Literal,
     Optional,
     TypedDict,
     TypeVar,
     Union,
-    Callable,
     cast,
-    Literal,
 )
 
 from langchain.document_loaders.base import BaseLoader
-
-from langconnect.indexing.record_manager import AbstractRecordManager
-from langconnect.schema import Document, HashedDocument
+from langchain.indexing.base import NAMESPACE_UUID, RecordManager
+from langchain.pydantic_v1 import root_validator
+from langchain.schema import Document
+from langchain.vectorstores.base import VectorStore
 
 T = TypeVar("T")
+
+
+def _hash_string_to_uuid(input_string: str) -> uuid.UUID:
+    """Hashes a string and returns the corresponding UUID."""
+    hash_value = hashlib.sha1(input_string.encode("utf-8")).hexdigest()
+    return uuid.uuid5(NAMESPACE_UUID, hash_value)
+
+
+def _hash_nested_dict_to_uuid(data: dict) -> uuid.UUID:
+    """Hashes a nested dictionary and returns the corresponding UUID."""
+    serialized_data = json.dumps(data, sort_keys=True)
+    hash_value = hashlib.sha1(serialized_data.encode("utf-8")).hexdigest()
+    return uuid.uuid5(NAMESPACE_UUID, hash_value)
+
+
+class _HashedDocument(Document):
+    """A hashed document with a unique ID."""
+
+    uid: str
+    hash_: str
+    """The hash of the document including content and metadat."""
+    content_hash: str
+    """The hash of the document content."""
+    metadata_hash: str
+    """The hash of the document metadata."""
+
+    @root_validator(pre=True)
+    def calculate_hashes(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Root validator to calculate content and metadata hash."""
+        content = values.get("page_content", "")
+        metadata = values.get("metadata", {})
+
+        content_hash = str(_hash_string_to_uuid(content))
+        try:
+            metadata_hash = str(_hash_nested_dict_to_uuid(metadata))
+        except Exception as e:
+            raise ValueError(
+                f"Failed to hash metadata: {e}. "
+                f"Please use a dict that can be serialized using json."
+            )
+
+        values["content_hash"] = content_hash
+        values["metadata_hash"] = metadata_hash
+        values["hash_"] = str(_hash_string_to_uuid(content_hash + metadata_hash))
+
+        _uid = values.get("uid", None)
+
+        if _uid is None:
+            values["uid"] = values["hash_"]
+        return values
+
+    def to_document(self) -> Document:
+        """Return a Document object."""
+        return Document(
+            page_content=self.page_content,
+            metadata=self.metadata,
+        )
+
+    @classmethod
+    def from_document(
+        cls, document: Document, *, uid: Optional[str] = None
+    ) -> _HashedDocument:
+        """Create a HashedDocument from a Document."""
+        return cls(
+            uid=uid,
+            page_content=document.page_content,
+            metadata=document.metadata,
+        )
 
 
 def _batch(size: int, iterable: Iterable[T]) -> Iterator[List[T]]:
@@ -36,8 +108,8 @@ def _batch(size: int, iterable: Iterable[T]) -> Iterator[List[T]]:
 
 
 def _get_source_id_assigner(
-    source_id_key: Union[str, Callable[[HashedDocument], str], None],
-) -> Callable[[HashedDocument], Union[str, None]]:
+    source_id_key: Union[str, Callable[[Document], str], None],
+) -> Callable[[Document], Union[str, None]]:
     """Get the source id from the document."""
     if source_id_key is None:
         return lambda doc: None
@@ -48,15 +120,6 @@ def _get_source_id_assigner(
 
 
 # PUBLIC API
-
-
-class ManageableVectorStore(Protocol):
-    def delete(self, ids: Sequence[str]) -> None:
-        ...
-
-    def add_documents(self, documents: Sequence[Document], ids: Sequence[str]) -> None:
-        """Add the given documents to the store w/ upsert."""
-        ...
 
 
 class IndexingResult(TypedDict):
@@ -74,12 +137,12 @@ class IndexingResult(TypedDict):
 
 def index(
     loader: BaseLoader,
-    record_manager: AbstractRecordManager,
-    vector_store: ManageableVectorStore,
+    record_manager: RecordManager,
+    vector_store: VectorStore,
     *,
     batch_size: int = 100,
-    delete_mode: Literal["incremental", "full", None] = "incremental",
-    source_id_key: Union[str, Callable[[HashedDocument], str], None] = None,
+    delete_mode: Literal["incremental", "full", None] = None,
+    source_id_key: Union[str, Callable[[Document], str], None] = None,
 ) -> IndexingResult:
     """Index data from the loader into the vector store.
 
@@ -150,12 +213,12 @@ def index(
 
     for doc_batch in _batch(batch_size, doc_iterator):
         hashed_docs = [
-            HashedDocument(page_content=doc.page_content, metadata=doc.metadata)
+            _HashedDocument(page_content=doc.page_content, metadata=doc.metadata)
             for doc in doc_batch
         ]
 
         source_ids: List[Optional[str, None]] = [
-            source_id_assigner(doc) for doc in hashed_docs
+            source_id_assigner(doc.to_document()) for doc in hashed_docs
         ]
 
         if delete_mode == "incremental":
