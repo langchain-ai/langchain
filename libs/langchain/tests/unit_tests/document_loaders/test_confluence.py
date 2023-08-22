@@ -6,8 +6,7 @@ import pytest
 import requests
 
 from langchain.docstore.document import Document
-from langchain.document_loaders.confluence import ConfluenceLoader
-from langchain.document_loaders.confluence import ContentFormat
+from langchain.document_loaders.confluence import ConfluenceLoader, ContentFormat
 
 
 @pytest.fixture
@@ -153,8 +152,7 @@ class TestConfluenceLoader:
         assert mock_confluence.cql.call_count == 0
         assert mock_confluence.get_page_child_by_type.call_count == 0
 
-
-    def test_confluence_loader_load_data_by_space_id_with_content_format_and_keep_markdown_format_enabled(
+    def test_confluence_loader_when_content_format_and_keep_markdown_format_enabled(
         self, mock_confluence: MagicMock
     ) -> None:
         # one response with two pages
@@ -169,10 +167,12 @@ class TestConfluenceLoader:
 
         confluence_loader = self._get_mock_confluence_loader(mock_confluence)
 
-        documents = confluence_loader.load(space_key=self.MOCK_SPACE_KEY,
-                                           content_format=ContentFormat.VIEW,
-                                           keep_markdown_format=True,
-                                           max_pages=2)
+        documents = confluence_loader.load(
+            space_key=self.MOCK_SPACE_KEY,
+            content_format=ContentFormat.VIEW,
+            keep_markdown_format=True,
+            max_pages=2,
+        )
 
         assert mock_confluence.get_all_pages_from_space.call_count == 1
 
@@ -198,13 +198,14 @@ class TestConfluenceLoader:
         return confluence_loader
 
     def _get_mock_page(
-        self, page_id: str,
-        content_format: ContentFormat = ContentFormat.STORAGE
+        self, page_id: str, content_format: ContentFormat = ContentFormat.STORAGE
     ) -> Dict:
         return {
             "id": f"{page_id}",
             "title": f"Page {page_id}",
-            "body": {f"{content_format.name.lower()}": {"value": f"<p>Content {page_id}</p>"}},
+            "body": {
+                f"{content_format.name.lower()}": {"value": f"<p>Content {page_id}</p>"}
+            },
             "status": "current",
             "type": "page",
             "_links": {

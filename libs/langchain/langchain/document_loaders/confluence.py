@@ -481,9 +481,7 @@ class ConfluenceLoader(BaseLoader):
         content = content_format.get_content(page)
         if keep_markdown_format:
             # Use markdownify to keep the page Markdown style
-            text = markdownify(
-                content, heading_style="ATX"
-            ) + "".join(attachment_texts)
+            text = markdownify(content, heading_style="ATX") + "".join(attachment_texts)
 
         else:
             if keep_newlines:
