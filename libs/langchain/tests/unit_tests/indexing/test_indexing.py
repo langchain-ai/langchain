@@ -39,8 +39,9 @@ class InMemoryVectorStore(VectorStore):
 
     def delete(self, ids: Optional[Sequence[str]] = None, **kwargs: Any) -> None:
         """Delete the given documents from the store using their IDs."""
-        for _id in ids:
-            self.store.pop(_id, None)
+        if ids:
+            for _id in ids:
+                self.store.pop(_id, None)
 
     def add_documents(  # type: ignore
         self,
@@ -74,6 +75,7 @@ class InMemoryVectorStore(VectorStore):
         """Add the given texts to the store (insert behavior)."""
         raise NotImplementedError()
 
+    @classmethod
     def from_texts(
         cls: Type[VST],
         texts: List[str],
@@ -106,7 +108,7 @@ def vector_store() -> InMemoryVectorStore:
 
 
 def test_indexing_same_content(
-    record_manager, vector_store: InMemoryVectorStore
+    record_manager: SQLRecordManager, vector_store: InMemoryVectorStore
 ) -> None:
     """Indexing some content to confirm it gets added only once."""
     loader = ToyLoader(
@@ -222,6 +224,10 @@ def test_incremental_fails_with_bad_source_ids(
                 page_content="This is another document.",
                 metadata={"source": "2"},
             ),
+            Document(
+                page_content="This is yet another document.",
+                metadata={"source": None},
+            ),
         ]
     )
 
@@ -231,16 +237,12 @@ def test_incremental_fails_with_bad_source_ids(
 
     with pytest.raises(ValueError):
         # Should raise an error because no source id function was specified
-        def _bad_source_id(doc: Document) -> Optional[str]:
-            """Bad source id function."""
-            return None
-
         index(
             loader,
             record_manager,
             vector_store,
             delete_mode="incremental",
-            source_id_key=_bad_source_id,
+            source_id_key="source",
         )
 
 
@@ -417,7 +419,9 @@ def test_incremental_delete(
     }
 
 
-def test_indexing_with_no_docs(record_manager, vector_store: VectorStore) -> None:
+def test_indexing_with_no_docs(
+    record_manager: SQLRecordManager, vector_store: VectorStore
+) -> None:
     """Check edge case when loader returns no new docs."""
     loader = ToyLoader(documents=[])
 

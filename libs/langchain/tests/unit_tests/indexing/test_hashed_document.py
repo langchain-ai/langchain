@@ -46,5 +46,5 @@ def test_from_document() -> None:
 
     hashed_document = _HashedDocument.from_document(document)
     # hash should be deterministic
-    assert hashed_document.hash_ == "fd1dc827-051b-537d-a1fe-1fa043e8b276'"
+    assert hashed_document.hash_ == "fd1dc827-051b-537d-a1fe-1fa043e8b276"
     assert hashed_document.uid == hashed_document.hash_

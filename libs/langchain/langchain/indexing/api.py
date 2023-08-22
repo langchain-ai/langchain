@@ -116,7 +116,12 @@ def _get_source_id_assigner(
     elif isinstance(source_id_key, str):
         return lambda doc: doc.metadata[source_id_key]
     elif callable(source_id_key):
-        return lambda doc: source_id_key(doc)
+        return source_id_key
+    else:
+        raise ValueError(
+            f"source_id_key should be either None, a string or a callable. "
+            f"Got {source_id_key} of type {type(source_id_key)}."
+        )
 
 
 # PUBLIC API
