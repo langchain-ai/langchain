@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "gigachain"
+name = "langchain"
 version = "0.0.270"
 description = "Building applications with LLMs through composability"
 authors = []
