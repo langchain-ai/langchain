@@ -200,7 +200,11 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         creds = self._load_credentials()
         service = build("drive", "v3", credentials=creds)
 
-        file = service.files().get(fileId=id, supportsAllDrives=True, fields="modifiedTime,name").execute()
+        file = (
+            service.files()
+            .get(fileId=id, supportsAllDrives=True, fields="modifiedTime,name")
+            .execute()
+        )
         request = service.files().export_media(fileId=id, mimeType="text/plain")
         fh = BytesIO()
         downloader = MediaIoBaseDownload(fh, request)
