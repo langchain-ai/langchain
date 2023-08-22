@@ -23,9 +23,9 @@ Fill out [this form](https://airtable.com/appwQzlErAS2qiP0L/shrGtGaVBVAz7NcV2) t
 
 ## Quick Install
 
-`pip install langchain`
+`pip install gigachain`
 or
-`pip install langsmith && conda install langchain -c conda-forge`
+`pip install langsmith && conda install gigachain -c conda-forge`
 
 ## 🤔 What is this?
 
