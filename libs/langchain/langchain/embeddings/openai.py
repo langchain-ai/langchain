@@ -357,9 +357,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         _iter = range(0, len(inputs), _chunk_size)
         if self.show_progress_bar:
             try:
-                import tqdm
+                from tqdm.auto import tqdm
 
-                _iter = tqdm.tqdm(_iter)
+                _iter = tqdm(_iter)
             except ImportError:
                 pass
 
@@ -380,9 +380,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         _iter = range(0, len(inputs), _chunk_size)
         if self.show_progress_bar:
             try:
-                import tqdm
+                from tqdm.auto import tqdm
 
-                _iter = tqdm.tqdm(_iter)
+                _iter = tqdm(_iter)
             except ImportError:
                 pass
 
