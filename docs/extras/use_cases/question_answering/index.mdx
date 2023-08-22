@@ -1,5 +1,5 @@
 ---
-sidebar_position: 0
+sidebar_position: -1
 ---
 
 # QA over Documents
@@ -138,9 +138,9 @@ len(docs_svm)
     4
 
 Some common ways to improve on vector similarity search include:
-- `MultiQueryRetriever` [generates variants of the input question](/docs/modules/data_connection/retrievers/how_to/MultiQueryRetriever) to improve retrieval.
+- `MultiQueryRetriever` [generates variants of the input question](/docs/modules/data_connection/retrievers/MultiQueryRetriever) to improve retrieval.
 - `Max marginal relevance` selects for [relevance and diversity](https://www.cs.cmu.edu/~jgc/publication/The_Use_MMR_Diversity_Based_LTMIR_1998.pdf) among the retrieved documents.
-- Documents can be filtered during retrieval using [`metadata` filters](/docs/use_cases/question_answering/document-context-aware-QA).
+- Documents can be filtered during retrieval using [`metadata` filters](/docs/use_cases/question_answering/how_to/document-context-aware-QA).
 
 
 ```python

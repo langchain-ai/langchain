@@ -7,7 +7,16 @@ import pickle
 import uuid
 import warnings
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Sized,
+    Tuple,
+)
 
 import numpy as np
 
@@ -40,22 +49,35 @@ def dependable_faiss_import(no_avx2: Optional[bool] = None) -> Any:
     except ImportError:
         raise ImportError(
             "Could not import faiss python package. "
-            "Please install it with `pip install faiss` "
+            "Please install it with `pip install faiss-gpu` (for CUDA supported GPU) "
             "or `pip install faiss-cpu` (depending on Python version)."
         )
     return faiss
 
 
+def _len_check_if_sized(x: Any, y: Any, x_name: str, y_name: str) -> None:
+    if isinstance(x, Sized) and isinstance(y, Sized) and len(x) != len(y):
+        raise ValueError(
+            f"{x_name} and {y_name} expected to be equal length but "
+            f"len({x_name})={len(x)} and len({y_name})={len(y)}"
+        )
+    return
+
+
 class FAISS(VectorStore):
     """Wrapper around FAISS vector database.
 
-    To use, you should have the ``faiss`` python package installed.
+    To use, you must have the ``faiss`` python package installed.
 
     Example:
         .. code-block:: python
 
-            from langchain import FAISS
-            faiss = FAISS(embedding_function, index, docstore, index_to_docstore_id)
+            from langchain.embeddings.openai import OpenAIEmbeddings
+            from langchain.vectorstores import FAISS
+
+            embeddings = OpenAIEmbeddings()
+            texts = ["FAISS is an important library", "LangChain supports FAISS"]
+            faiss = FAISS.from_texts(texts, embeddings)
 
     """
 
@@ -87,44 +109,43 @@ class FAISS(VectorStore):
                 )
             )
 
-    @property
-    def embeddings(self) -> Optional[Embeddings]:
-        # TODO: Accept embeddings object directly
-        return None
-
     def __add(
         self,
         texts: Iterable[str],
         embeddings: Iterable[List[float]],
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[Iterable[dict]] = None,
         ids: Optional[List[str]] = None,
-        **kwargs: Any,
     ) -> List[str]:
+        faiss = dependable_faiss_import()
+
         if not isinstance(self.docstore, AddableMixin):
             raise ValueError(
                 "If trying to add texts, the underlying docstore should support "
                 f"adding items, which {self.docstore} does not"
             )
-        documents = []
-        for i, text in enumerate(texts):
-            metadata = metadatas[i] if metadatas else {}
-            documents.append(Document(page_content=text, metadata=metadata))
-        if ids is None:
-            ids = [str(uuid.uuid4()) for _ in texts]
-        # Add to the index, the index_to_id mapping, and the docstore.
-        starting_len = len(self.index_to_docstore_id)
-        faiss = dependable_faiss_import()
+
+        _len_check_if_sized(texts, metadatas, "texts", "metadatas")
+        _metadatas = metadatas or ({} for _ in texts)
+        documents = [
+            Document(page_content=t, metadata=m) for t, m in zip(texts, _metadatas)
+        ]
+
+        _len_check_if_sized(documents, embeddings, "documents", "embeddings")
+        _len_check_if_sized(documents, ids, "documents", "ids")
+
+        # Add to the index.
         vector = np.array(embeddings, dtype=np.float32)
         if self._normalize_L2:
             faiss.normalize_L2(vector)
         self.index.add(vector)
-        # Get list of index, id, and docs.
-        full_info = [(starting_len + i, ids[i], doc) for i, doc in enumerate(documents)]
+
         # Add information to docstore and index.
-        self.docstore.add({_id: doc for _, _id, doc in full_info})
-        index_to_id = {index: _id for index, _id, _ in full_info}
+        ids = ids or [str(uuid.uuid4()) for _ in texts]
+        self.docstore.add({id_: doc for id_, doc in zip(ids, documents)})
+        starting_len = len(self.index_to_docstore_id)
+        index_to_id = {starting_len + j: id_ for j, id_ in enumerate(ids)}
         self.index_to_docstore_id.update(index_to_id)
-        return [_id for _, _id, _ in full_info]
+        return ids
 
     def add_texts(
         self,
@@ -143,14 +164,8 @@ class FAISS(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        if not isinstance(self.docstore, AddableMixin):
-            raise ValueError(
-                "If trying to add texts, the underlying docstore should support "
-                f"adding items, which {self.docstore} does not"
-            )
-        # Embed and create the documents.
         embeddings = [self.embedding_function(text) for text in texts]
-        return self.__add(texts, embeddings, metadatas=metadatas, ids=ids, **kwargs)
+        return self.__add(texts, embeddings, metadatas=metadatas, ids=ids)
 
     def add_embeddings(
         self,
@@ -170,15 +185,9 @@ class FAISS(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        if not isinstance(self.docstore, AddableMixin):
-            raise ValueError(
-                "If trying to add texts, the underlying docstore should support "
-                f"adding items, which {self.docstore} does not"
-            )
         # Embed and create the documents.
         texts, embeddings = zip(*text_embeddings)
-
-        return self.__add(texts, embeddings, metadatas=metadatas, ids=ids, **kwargs)
+        return self.__add(texts, embeddings, metadatas=metadatas, ids=ids)
 
     def similarity_search_with_score_by_vector(
         self,
@@ -468,6 +477,40 @@ class FAISS(VectorStore):
         )
         return docs
 
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+        """Delete by ID. These are the IDs in the vectorstore.
+
+        Args:
+            ids: List of ids to delete.
+
+        Returns:
+            Optional[bool]: True if deletion is successful,
+            False otherwise, None if not implemented.
+        """
+        if ids is None:
+            raise ValueError("No ids provided to delete.")
+        missing_ids = set(ids).difference(self.index_to_docstore_id.values())
+        if missing_ids:
+            raise ValueError(
+                f"Some specified ids do not exist in the current store. Ids not found: "
+                f"{missing_ids}"
+            )
+
+        reversed_index = {id_: idx for idx, id_ in self.index_to_docstore_id.items()}
+        index_to_delete = [reversed_index[id_] for id_ in ids]
+
+        self.index.remove_ids(np.array(index_to_delete, dtype=np.int64))
+        self.docstore.delete(ids)
+
+        remaining_ids = [
+            id_
+            for i, id_ in sorted(self.index_to_docstore_id.items())
+            if i not in index_to_delete
+        ]
+        self.index_to_docstore_id = {i: id_ for i, id_ in enumerate(remaining_ids)}
+
+        return True
+
     def merge_from(self, target: FAISS) -> None:
         """Merge another FAISS object with the current one.
 
@@ -503,50 +546,32 @@ class FAISS(VectorStore):
     @classmethod
     def __from(
         cls,
-        texts: List[str],
+        texts: Iterable[str],
         embeddings: List[List[float]],
         embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[Iterable[dict]] = None,
         ids: Optional[List[str]] = None,
         normalize_L2: bool = False,
+        distance_strategy: DistanceStrategy = DistanceStrategy.EUCLIDEAN_DISTANCE,
         **kwargs: Any,
     ) -> FAISS:
         faiss = dependable_faiss_import()
-        distance_strategy = kwargs.get(
-            "distance_strategy", DistanceStrategy.EUCLIDEAN_DISTANCE
-        )
         if distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
             index = faiss.IndexFlatIP(len(embeddings[0]))
         else:
             # Default to L2, currently other metric types not initialized.
             index = faiss.IndexFlatL2(len(embeddings[0]))
-        vector = np.array(embeddings, dtype=np.float32)
-        if normalize_L2 and distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
-            faiss.normalize_L2(vector)
-        index.add(vector)
-        documents = []
-        if ids is None:
-            ids = [str(uuid.uuid4()) for _ in texts]
-        for i, text in enumerate(texts):
-            metadata = metadatas[i] if metadatas else {}
-            documents.append(Document(page_content=text, metadata=metadata))
-        index_to_id = dict(enumerate(ids))
-
-        if len(index_to_id) != len(documents):
-            raise Exception(
-                f"{len(index_to_id)} ids provided for {len(documents)} documents."
-                " Each document should have an id."
-            )
-
-        docstore = InMemoryDocstore(dict(zip(index_to_id.values(), documents)))
-        return cls(
+        vecstore = cls(
             embedding.embed_query,
             index,
-            docstore,
-            index_to_id,
+            InMemoryDocstore(),
+            {},
             normalize_L2=normalize_L2,
+            distance_strategy=distance_strategy,
             **kwargs,
         )
+        vecstore.__add(texts, embeddings, metadatas=metadatas, ids=ids)
+        return vecstore
 
     @classmethod
     def from_texts(
@@ -571,6 +596,7 @@ class FAISS(VectorStore):
 
                 from langchain import FAISS
                 from langchain.embeddings import OpenAIEmbeddings
+
                 embeddings = OpenAIEmbeddings()
                 faiss = FAISS.from_texts(texts, embeddings)
         """
@@ -587,9 +613,9 @@ class FAISS(VectorStore):
     @classmethod
     def from_embeddings(
         cls,
-        text_embeddings: List[Tuple[str, List[float]]],
+        text_embeddings: Iterable[Tuple[str, List[float]]],
         embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[Iterable[dict]] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> FAISS:
@@ -607,9 +633,10 @@ class FAISS(VectorStore):
 
                 from langchain import FAISS
                 from langchain.embeddings import OpenAIEmbeddings
+
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)
-                text_embedding_pairs = list(zip(texts, text_embeddings))
+                text_embedding_pairs = zip(texts, text_embeddings)
                 faiss = FAISS.from_embeddings(text_embedding_pairs, embeddings)
         """
         texts = [t[0] for t in text_embeddings]
@@ -674,6 +701,23 @@ class FAISS(VectorStore):
             embeddings.embed_query, index, docstore, index_to_docstore_id, **kwargs
         )
 
+    def serialize_to_bytes(self) -> bytes:
+        """Serialize FAISS index, docstore, and index_to_docstore_id to bytes."""
+        return pickle.dumps((self.index, self.docstore, self.index_to_docstore_id))
+
+    @classmethod
+    def deserialize_from_bytes(
+        cls,
+        serialized: bytes,
+        embeddings: Embeddings,
+        **kwargs: Any,
+    ) -> FAISS:
+        """Deserialize FAISS index, docstore, and index_to_docstore_id from bytes."""
+        index, docstore, index_to_docstore_id = pickle.loads(serialized)
+        return cls(
+            embeddings.embed_query, index, docstore, index_to_docstore_id, **kwargs
+        )
+
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """
         The 'correct' relevance function
@@ -710,7 +754,6 @@ class FAISS(VectorStore):
         """Return docs and their similarity scores on a scale from 0 to 1."""
         # Pop score threshold so that only relevancy scores, not raw scores, are
         # filtered.
-        score_threshold = kwargs.pop("score_threshold", None)
         relevance_score_fn = self._select_relevance_score_fn()
         if relevance_score_fn is None:
             raise ValueError(
@@ -727,10 +770,4 @@ class FAISS(VectorStore):
         docs_and_rel_scores = [
             (doc, relevance_score_fn(score)) for doc, score in docs_and_scores
         ]
-        if score_threshold is not None:
-            docs_and_rel_scores = [
-                (doc, similarity)
-                for doc, similarity in docs_and_rel_scores
-                if similarity >= score_threshold
-            ]
         return docs_and_rel_scores

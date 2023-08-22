@@ -3,9 +3,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 
-from pydantic import Extra, Field, root_validator
-
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
+from langchain.pydantic_v1 import Extra, Field, root_validator
 from langchain.schema import BaseRetriever, Document
 from langchain.utils import get_from_dict_or_env
 
@@ -18,11 +17,10 @@ if TYPE_CHECKING:
 
 
 class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
-    """Retriever for the Google Cloud Enterprise Search Service API.
+    """`Google Cloud Enterprise Search API` retriever.
 
-    For the detailed explanation of the Enterprise Search concepts
-    and configuration parameters refer to the product documentation.
-
+    For a detailed explanation of the Enterprise Search concepts
+    and configuration parameters, refer to the product documentation.
     https://cloud.google.com/generative-ai-app-builder/docs/enterprise-search-introduction
     """
 
@@ -55,6 +53,16 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
     1 - Disabled query expansion. Only the exact search query is used, even if 
         SearchResponse.total_size is zero.
     2 - Automatic query expansion built by the Search API.
+    """
+    spell_correction_mode: int = Field(default=2, ge=0, le=2)
+    """Specification to determine under which conditions query expansion should occur.
+    0 - Unspecified spell correction mode. In this case, server behavior defaults 
+        to auto.
+    1 - Suggestion only. Search API will try to find a spell suggestion if there is any
+        and put in the `SearchResponse.corrected_query`.
+        The spell suggestion will not be used as the search query.
+    2 - Automatic spell correction built by the Search API.
+        Search will be based on the corrected query if found.
     """
     credentials: Any = None
     """The default custom credentials (google.auth.credentials.Credentials) to use
@@ -106,22 +114,37 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
         self, results: Sequence[SearchResult]
     ) -> List[Document]:
         """Converts a sequence of search results to a list of LangChain documents."""
+        from google.protobuf.json_format import MessageToDict
+
         documents: List[Document] = []
 
         for result in results:
-            derived_struct_data = result.document.derived_struct_data
-            doc_metadata = result.document.struct_data
-            doc_metadata.source = derived_struct_data.link or ""
-            doc_metadata.id = result.document.id
+            document_dict = MessageToDict(
+                result.document._pb, preserving_proto_field_name=True
+            )
+            derived_struct_data = document_dict.get("derived_struct_data", None)
+            if not derived_struct_data:
+                continue
 
-            for chunk in (
-                derived_struct_data.extractive_answers
-                or derived_struct_data.extractive_segments
-            ):
-                if hasattr(chunk, "page_number"):
-                    doc_metadata.source += f":{chunk.page_number}"
+            doc_metadata = document_dict.get("struct_data", {})
+            doc_metadata["id"] = document_dict["id"]
+
+            chunk_type = (
+                "extractive_answers"
+                if self.get_extractive_answers
+                else "extractive_segments"
+            )
+
+            for chunk in getattr(derived_struct_data, chunk_type, []):
+                doc_metadata["source"] = derived_struct_data.get("link", "")
+
+                if chunk_type == "extractive_answers":
+                    doc_metadata["source"] += f":{chunk.get('pageNumber', '')}"
+
                 documents.append(
-                    Document(page_content=chunk.content, metadata=doc_metadata)
+                    Document(
+                        page_content=chunk.get("content", ""), metadata=doc_metadata
+                    )
                 )
 
         return documents
@@ -132,6 +155,10 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
 
         query_expansion_spec = SearchRequest.QueryExpansionSpec(
             condition=self.query_expansion_condition,
+        )
+
+        spell_correction_spec = SearchRequest.SpellCorrectionSpec(
+            mode=self.spell_correction_mode
         )
 
         if self.get_extractive_answers:
@@ -158,6 +185,7 @@ class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
             page_size=self.max_documents,
             content_search_spec=content_search_spec,
             query_expansion_spec=query_expansion_spec,
+            spell_correction_spec=spell_correction_spec,
         )
 
     def _get_relevant_documents(

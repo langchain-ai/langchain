@@ -2,10 +2,13 @@ from typing import Any, Dict, List
 
 from langchain.memory.chat_memory import BaseChatMemory, get_prompt_input_key
 from langchain.vectorstores.base import VectorStoreRetriever
-from pydantic import Field
+
+from langchain_experimental.pydantic_v1 import Field
 
 
 class AutoGPTMemory(BaseChatMemory):
+    """Memory for AutoGPT."""
+
     retriever: VectorStoreRetriever = Field(exclude=True)
     """VectorStoreRetriever object to connect to."""
 

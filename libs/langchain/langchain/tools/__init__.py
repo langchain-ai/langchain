@@ -1,5 +1,27 @@
-"""Core toolkit implementations."""
+"""**Tools** are classes that an Agent uses to interact with the world.
 
+Each tool has a **description**. Agent uses the description to choose the right
+tool for the job.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    ToolMetaclass --> BaseTool --> <name>Tool  # Examples: AIPluginTool, BaseGraphQLTool
+                                   <name>      # Examples: BraveSearch, HumanInputRun
+
+**Main helpers:**
+
+.. code-block::
+
+    CallbackManagerForToolRun, AsyncCallbackManagerForToolRun
+"""
+
+from langchain.tools.ainetwork.app import AINAppOps
+from langchain.tools.ainetwork.owner import AINOwnerOps
+from langchain.tools.ainetwork.rule import AINRuleOps
+from langchain.tools.ainetwork.transfer import AINTransfer
+from langchain.tools.ainetwork.value import AINValueOps
 from langchain.tools.arxiv.tool import ArxivQueryRun
 from langchain.tools.azure_cognitive_services import (
     AzureCogsFormRecognizerTool,
@@ -101,6 +123,11 @@ from langchain.tools.youtube.search import YouTubeSearchTool
 from langchain.tools.zapier.tool import ZapierNLAListActions, ZapierNLARunAction
 
 __all__ = [
+    "AINAppOps",
+    "AINOwnerOps",
+    "AINRuleOps",
+    "AINTransfer",
+    "AINValueOps",
     "AIPluginTool",
     "APIOperation",
     "ArxivQueryRun",
@@ -112,8 +139,6 @@ __all__ = [
     "BaseRequestsTool",
     "BaseSQLDatabaseTool",
     "BaseSparkSQLTool",
-    "BaseTool",
-    "BaseTool",
     "BaseTool",
     "BingSearchResults",
     "BingSearchRun",

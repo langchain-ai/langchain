@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 class SupabaseVectorStore(VectorStore):
     """VectorStore for a Supabase postgres database. Assumes you have the `pgvector`
     extension installed and a `match_documents` (or similar) function. For more details:
-    https://js.langchain.com/docs/modules/indexes/vector_stores/integrations/supabase
+    https://integrations.langchain.com/vectorstores?integration_name=SupabaseVectorStore
 
     You can implement your own `match_documents` function in order to limit the search
     space to a subset of documents based on your own authorization or business logic.
@@ -37,15 +37,49 @@ class SupabaseVectorStore(VectorStore):
 
     If you'd like to use `max_marginal_relevance_search`, please review the instructions
     below on modifying the `match_documents` function to return matched embeddings.
-    """
 
-    _client: supabase.client.Client
-    # This is the embedding function. Don't confuse with the embedding vectors.
-    # We should perhaps rename the underlying Embedding base class to EmbeddingFunction
-    # or something
-    _embedding: Embeddings
-    table_name: str
-    query_name: str
+
+    Examples:
+
+    .. code-block:: python
+
+        from langchain.embeddings.openai import OpenAIEmbeddings
+        from langchain.schema import Document
+        from langchain.vectorstores import SupabaseVectorStore
+        from supabase.client import create_client
+
+        docs = [
+            Document(page_content="foo", metadata={"id": 1}),
+        ]
+        embeddings = OpenAIEmbeddings()
+        supabase_client = create_client("my_supabase_url", "my_supabase_key")
+        vector_store = SupabaseVectorStore.from_documents(
+            docs,
+            embeddings,
+            client=supabase_client,
+            table_name="documents",
+            query_name="match_documents",
+        )
+
+    To load from an existing table:
+
+    .. code-block:: python
+
+        from langchain.embeddings.openai import OpenAIEmbeddings
+        from langchain.vectorstores import SupabaseVectorStore
+        from supabase.client import create_client
+
+
+        embeddings = OpenAIEmbeddings()
+        supabase_client = create_client("my_supabase_url", "my_supabase_key")
+        vector_store = SupabaseVectorStore(
+            client=supabase_client,
+            embedding=embeddings,
+            table_name="documents",
+            query_name="match_documents",
+        )
+
+    """
 
     def __init__(
         self,
@@ -108,7 +142,7 @@ class SupabaseVectorStore(VectorStore):
         embeddings = embedding.embed_documents(texts)
         ids = [str(uuid.uuid4()) for _ in texts]
         docs = cls._texts_to_documents(texts, metadatas)
-        _ids = cls._add_vectors(client, table_name, embeddings, docs, ids)
+        cls._add_vectors(client, table_name, embeddings, docs, ids)
 
         return cls(
             client=client,

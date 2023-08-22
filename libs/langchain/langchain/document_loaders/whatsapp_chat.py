@@ -12,7 +12,7 @@ def concatenate_rows(date: str, sender: str, text: str) -> str:
 
 
 class WhatsAppChatLoader(BaseLoader):
-    """Loads WhatsApp messages text file."""
+    """Load `WhatsApp` messages text file."""
 
     def __init__(self, path: str):
         """Initialize with path."""

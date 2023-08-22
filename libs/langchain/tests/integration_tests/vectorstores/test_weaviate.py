@@ -5,7 +5,6 @@ import uuid
 from typing import Generator, Union
 
 import pytest
-from weaviate import Client
 
 from langchain.docstore.document import Document
 from langchain.embeddings.openai import OpenAIEmbeddings
@@ -29,6 +28,8 @@ class TestWeaviate:
     @pytest.fixture(scope="class", autouse=True)
     def weaviate_url(self) -> Union[str, Generator[str, None, None]]:
         """Return the weaviate url."""
+        from weaviate import Client
+
         url = "http://localhost:8080"
         yield url
 

@@ -5,6 +5,7 @@ the sequence of actions taken and their outcomes. It uses a language model
 chain (LLMChain) to generate the reasoning and scores.
 """
 
+import re
 from typing import (
     Any,
     Dict,
@@ -16,8 +17,6 @@ from typing import (
     Union,
     cast,
 )
-
-from pydantic import Extra, Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -31,6 +30,7 @@ from langchain.evaluation.agents.trajectory_eval_prompt import (
     TOOL_FREE_EVAL_CHAT_PROMPT,
 )
 from langchain.evaluation.schema import AgentTrajectoryEvaluator, LLMEvalChain
+from langchain.pydantic_v1 import Extra, Field
 from langchain.schema import AgentAction, BaseOutputParser, OutputParserException
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools.base import BaseTool
@@ -40,7 +40,7 @@ class TrajectoryEval(TypedDict):
     """A named tuple containing the score and reasoning for a trajectory."""
 
     score: float
-    """The score for the trajectory, normalized from 0 to 1.s"""
+    """The score for the trajectory, normalized from 0 to 1."""
     reasoning: str
     """The reasoning for the score."""
 
@@ -74,15 +74,24 @@ class TrajectoryOutputParser(BaseOutputParser):
 
         reasoning, score_str = reasoning.strip(), score_str.strip()
 
-        score_str = next(
-            (char for char in score_str if char.isdigit()), "0"
-        )  # Scan for first digit
-
-        if not 1 <= int(score_str) <= 5:
+        # Use regex to extract the score.
+        # This will get the number in the string, even if it is a float or more than 10.
+        # E.g. "Score: 1" will return 1, "Score: 3.5" will return 3.5, and
+        # "Score: 10" will return 10.
+        # The score should be an integer digit in the range 1-5.
+        _score = re.search(r"(\d+(\.\d+)?)", score_str)
+        # If the score is not found or is a float, raise an exception.
+        if _score is None or "." in _score.group(1):
+            raise OutputParserException(
+                f"Score is not an integer digit in the range 1-5: {text}"
+            )
+        score = int(_score.group(1))
+        # If the score is not in the range 1-5, raise an exception.
+        if not 1 <= score <= 5:
             raise OutputParserException(
                 f"Score is not a digit in the range 1-5: {text}"
             )
-        normalized_score = (int(score_str) - 1) / 4
+        normalized_score = (score - 1) / 4
         return TrajectoryEval(score=normalized_score, reasoning=reasoning)
 
 

@@ -1,4 +1,6 @@
 """Test openai embeddings."""
+import os
+
 import numpy as np
 import openai
 import pytest
@@ -6,6 +8,7 @@ import pytest
 from langchain.embeddings.openai import OpenAIEmbeddings
 
 
+@pytest.mark.scheduled
 def test_openai_embedding_documents() -> None:
     """Test openai embeddings."""
     documents = ["foo bar"]
@@ -15,6 +18,7 @@ def test_openai_embedding_documents() -> None:
     assert len(output[0]) == 1536
 
 
+@pytest.mark.scheduled
 def test_openai_embedding_documents_multiple() -> None:
     """Test openai embeddings."""
     documents = ["foo bar", "bar foo", "foo"]
@@ -27,6 +31,7 @@ def test_openai_embedding_documents_multiple() -> None:
     assert len(output[2]) == 1536
 
 
+@pytest.mark.scheduled
 @pytest.mark.asyncio
 async def test_openai_embedding_documents_async_multiple() -> None:
     """Test openai embeddings."""
@@ -40,6 +45,7 @@ async def test_openai_embedding_documents_async_multiple() -> None:
     assert len(output[2]) == 1536
 
 
+@pytest.mark.scheduled
 def test_openai_embedding_query() -> None:
     """Test openai embeddings."""
     document = "foo bar"
@@ -48,6 +54,7 @@ def test_openai_embedding_query() -> None:
     assert len(output) == 1536
 
 
+@pytest.mark.scheduled
 @pytest.mark.asyncio
 async def test_openai_embedding_async_query() -> None:
     """Test openai embeddings."""
@@ -57,6 +64,7 @@ async def test_openai_embedding_async_query() -> None:
     assert len(output) == 1536
 
 
+@pytest.mark.scheduled
 def test_openai_embedding_with_empty_string() -> None:
     """Test openai embeddings with empty string."""
     document = ["", "abc"]
@@ -69,3 +77,38 @@ def test_openai_embedding_with_empty_string() -> None:
     ][0]["embedding"]
     assert np.allclose(output[0], expected_output)
     assert len(output[1]) == 1536
+
+
+@pytest.mark.scheduled
+def test_embed_documents_normalized() -> None:
+    output = OpenAIEmbeddings().embed_documents(["foo walked to the market"])
+    assert np.isclose(np.linalg.norm(output[0]), 1.0)
+
+
+@pytest.mark.scheduled
+def test_embed_query_normalized() -> None:
+    output = OpenAIEmbeddings().embed_query("foo walked to the market")
+    assert np.isclose(np.linalg.norm(output), 1.0)
+
+
+def test_azure_openai_embeddings() -> None:
+    from openai import error
+
+    os.environ["OPENAI_API_TYPE"] = "azure"
+    os.environ["OPENAI_API_BASE"] = "https://your-endpoint.openai.azure.com/"
+    os.environ["OPENAI_API_KEY"] = "your AzureOpenAI key"
+    os.environ["OPENAI_API_VERSION"] = "2023-03-15-preview"
+
+    embeddings = OpenAIEmbeddings(deployment="your-embeddings-deployment-name")
+    text = "This is a test document."
+
+    try:
+        embeddings.embed_query(text)
+    except error.InvalidRequestError as e:
+        if "Must provide an 'engine' or 'deployment_id' parameter" in str(e):
+            assert (
+                False
+            ), "deployment was provided to but openai.Embeddings didn't get it."
+    except Exception:
+        # Expected to fail because endpoint doesn't exist.
+        pass

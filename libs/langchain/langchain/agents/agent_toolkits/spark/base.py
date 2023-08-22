@@ -46,7 +46,7 @@ def create_spark_dataframe_agent(
     """Construct a Spark agent from an LLM and dataframe."""
 
     if not _validate_spark_df(df) and not _validate_spark_connect_df(df):
-        raise ValueError("Spark is not installed. run `pip install pyspark`.")
+        raise ImportError("Spark is not installed. run `pip install pyspark`.")
 
     if input_variables is None:
         input_variables = ["df", "input", "agent_scratchpad"]

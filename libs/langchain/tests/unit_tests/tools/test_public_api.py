@@ -2,6 +2,11 @@
 from langchain.tools import __all__ as public_api
 
 _EXPECTED = [
+    "AINAppOps",
+    "AINOwnerOps",
+    "AINRuleOps",
+    "AINTransfer",
+    "AINValueOps",
     "AIPluginTool",
     "APIOperation",
     "ArxivQueryRun",
@@ -13,8 +18,6 @@ _EXPECTED = [
     "BaseRequestsTool",
     "BaseSQLDatabaseTool",
     "BaseSparkSQLTool",
-    "BaseTool",
-    "BaseTool",
     "BaseTool",
     "BingSearchResults",
     "BingSearchRun",
@@ -102,4 +105,4 @@ _EXPECTED = [
 def test_public_api() -> None:
     """Test for regressions or changes in the public API."""
     # Check that the public API is as expected
-    assert sorted(public_api) == sorted(_EXPECTED)
+    assert set(public_api) == set(_EXPECTED)

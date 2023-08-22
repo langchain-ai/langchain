@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Union
+from typing import Any, List, Union
 
 import pytest
 
@@ -13,12 +13,14 @@ from langchain.prompts.chat import (
     ChatPromptValue,
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
+    _convert_to_message,
 )
 from langchain.schema.messages import (
     AIMessage,
     BaseMessage,
     HumanMessage,
     SystemMessage,
+    get_buffer_string,
 )
 
 
@@ -138,6 +140,33 @@ def test_chat_prompt_template_from_messages() -> None:
     assert len(chat_prompt_template.messages) == 4
 
 
+def test_chat_prompt_template_from_messages_using_role_strings() -> None:
+    """Test creating a chat prompt template from role string messages."""
+    template = ChatPromptTemplate.from_messages(
+        [
+            ("system", "You are a helpful AI bot. Your name is {name}."),
+            ("human", "Hello, how are you doing?"),
+            ("ai", "I'm doing well, thanks!"),
+            ("human", "{user_input}"),
+        ]
+    )
+
+    messages = template.format_messages(name="Bob", user_input="What is your name?")
+
+    assert messages == [
+        SystemMessage(
+            content="You are a helpful AI bot. Your name is Bob.", additional_kwargs={}
+        ),
+        HumanMessage(
+            content="Hello, how are you doing?", additional_kwargs={}, example=False
+        ),
+        AIMessage(
+            content="I'm doing well, thanks!", additional_kwargs={}, example=False
+        ),
+        HumanMessage(content="What is your name?", additional_kwargs={}, example=False),
+    ]
+
+
 def test_chat_prompt_template_with_messages() -> None:
     messages: List[
         Union[BaseMessagePromptTemplate, BaseMessage]
@@ -205,7 +234,7 @@ def test_chat_from_role_strings() -> None:
     template = ChatPromptTemplate.from_role_strings(
         [
             ("system", "You are a bot."),
-            ("ai", "hello!"),
+            ("assistant", "hello!"),
             ("human", "{question}"),
             ("other", "{quack}"),
         ]
@@ -213,8 +242,110 @@ def test_chat_from_role_strings() -> None:
 
     messages = template.format_messages(question="How are you?", quack="duck")
     assert messages == [
-        SystemMessage(content="You are a bot."),
-        AIMessage(content="hello!"),
-        HumanMessage(content="How are you?"),
+        ChatMessage(content="You are a bot.", role="system"),
+        ChatMessage(content="hello!", role="assistant"),
+        ChatMessage(content="How are you?", role="human"),
         ChatMessage(content="duck", role="other"),
     ]
+
+
+@pytest.mark.parametrize(
+    "args,expected",
+    [
+        (
+            ("human", "{question}"),
+            HumanMessagePromptTemplate(
+                prompt=PromptTemplate.from_template("{question}")
+            ),
+        ),
+        (
+            "{question}",
+            HumanMessagePromptTemplate(
+                prompt=PromptTemplate.from_template("{question}")
+            ),
+        ),
+        (HumanMessage(content="question"), HumanMessage(content="question")),
+        (
+            HumanMessagePromptTemplate(
+                prompt=PromptTemplate.from_template("{question}")
+            ),
+            HumanMessagePromptTemplate(
+                prompt=PromptTemplate.from_template("{question}")
+            ),
+        ),
+    ],
+)
+def test_convert_to_message(
+    args: Any, expected: Union[BaseMessage, BaseMessagePromptTemplate]
+) -> None:
+    """Test convert to message."""
+    assert _convert_to_message(args) == expected
+
+
+def test_chat_prompt_template_indexing() -> None:
+    message1 = SystemMessage(content="foo")
+    message2 = HumanMessage(content="bar")
+    message3 = HumanMessage(content="baz")
+    template = ChatPromptTemplate.from_messages([message1, message2, message3])
+    assert template[0] == message1
+    assert template[1] == message2
+
+    # Slice starting from index 1
+    slice_template = template[1:]
+    assert slice_template[0] == message2
+    assert len(slice_template) == 2
+
+
+def test_chat_prompt_template_append_and_extend() -> None:
+    """Test append and extend methods of ChatPromptTemplate."""
+    message1 = SystemMessage(content="foo")
+    message2 = HumanMessage(content="bar")
+    message3 = HumanMessage(content="baz")
+    template = ChatPromptTemplate.from_messages([message1])
+    template.append(message2)
+    template.append(message3)
+    assert len(template) == 3
+    template.extend([message2, message3])
+    assert len(template) == 5
+    assert template.messages == [
+        message1,
+        message2,
+        message3,
+        message2,
+        message3,
+    ]
+    template.append(("system", "hello!"))
+    assert template[-1] == SystemMessagePromptTemplate.from_template("hello!")
+
+
+def test_convert_to_message_is_strict() -> None:
+    """Verify that _convert_to_message is strict."""
+    with pytest.raises(ValueError):
+        # meow does not correspond to a valid message type.
+        # this test is here to ensure that functionality to interpret `meow`
+        # as a role is NOT added.
+        _convert_to_message(("meow", "question"))
+
+
+def test_chat_message_partial() -> None:
+    template = ChatPromptTemplate.from_messages(
+        [
+            ("system", "You are an AI assistant named {name}."),
+            ("human", "Hi I'm {user}"),
+            ("ai", "Hi there, {user}, I'm {name}."),
+            ("human", "{input}"),
+        ]
+    )
+    template2 = template.partial(user="Lucy", name="R2D2")
+    with pytest.raises(KeyError):
+        template.format_messages(input="hello")
+
+    res = template2.format_messages(input="hello")
+    expected = [
+        SystemMessage(content="You are an AI assistant named R2D2."),
+        HumanMessage(content="Hi I'm Lucy"),
+        AIMessage(content="Hi there, Lucy, I'm R2D2."),
+        HumanMessage(content="hello"),
+    ]
+    assert res == expected
+    assert template2.format(input="hello") == get_buffer_string(expected)
