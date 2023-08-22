@@ -165,8 +165,8 @@
       "destination": "/docs/integrations/providers/deepinfra"
     },
     {
-      "source": "/docs/integrations/activeloop_deeplake",
-      "destination": "/docs/integrations/providers/activeloop_deeplake"
+      "source": "/docs/integrations/deeplake",
+      "destination": "/docs/integrations/providers/deeplake"
     },
     {
       "source": "/docs/integrations/diffbot",
@@ -2261,19 +2261,19 @@
       "destination": "/docs/integrations/vectorstores/chroma"
     },
     {
-      "source": "/en/latest/modules/indexes/vectorstores/examples/activeloop_deeplake.html",
+      "source": "/en/latest/modules/indexes/vectorstores/examples/deeplake.html",
       "destination": "/docs/integrations/vectorstores/activeloop_deeplake"
     },
     {
-      "source": "/docs/modules/data_connection/vectorstores/integrations/activeloop_deeplake",
+      "source": "/docs/modules/data_connection/vectorstores/integrations/deeplake",
       "destination": "/docs/integrations/vectorstores/activeloop_deeplake"
     },
     {
-      "source": "/docs/integrations/vectorstores/activeloop_deeplake",
+      "source": "/docs/integrations/vectorstores/deeplake",
       "destination": "/docs/integrations/vectorstores/activeloop_deeplake"
     },
     {
-      "source": "/docs/modules/data_connection/retrievers/self_query/activeloop_deeplake_self_query",
+      "source": "/docs/modules/data_connection/retrievers/self_query/deeplake_self_query",
       "destination": "/docs/modules/data_connection/retrievers/self_query/activeloop_deeplake_self_query"
     },
     {
