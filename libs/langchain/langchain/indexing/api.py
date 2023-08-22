@@ -272,8 +272,17 @@ def index(
         # If source IDs are provided, we can do the deletion incrementally!
         if delete_mode == "incremental":
             # Get the uids of the documents that were not returned by the loader.
+            # mypy isn't good enough to determine that source ids cannot be None
+            # here due to a check that's happening above, so we check again.
+
+            for source_id in source_ids:
+                if source_id is None:
+                    raise AssertionError("Source ids cannot be None here.")
+
+            _source_ids = cast(Sequence[str], source_ids)
+
             uids_to_delete = record_manager.list_keys(
-                group_ids=source_ids, before=index_start_dt
+                group_ids=_source_ids, before=index_start_dt
             )
             if uids_to_delete:
                 # Then delete from vector store.
