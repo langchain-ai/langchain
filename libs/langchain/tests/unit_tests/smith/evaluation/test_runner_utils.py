@@ -296,8 +296,8 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
         tags: Optional[List[str]] = None,
         callbacks: Optional[Any] = None,
         **kwargs: Any,
-    ) -> List[Dict[str, Any]]:
-        return [{"result": f"Result for example {example.id}"}]
+    ) -> Dict[str, Any]:
+        return {"result": f"Result for example {example.id}"}
 
     def mock_create_project(*args: Any, **kwargs: Any) -> Any:
         proj = mock.MagicMock()
@@ -324,9 +324,10 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
         )
 
         expected = {
-            uuid_: [
-                {"result": f"Result for example {uuid.UUID(uuid_)}"} for _ in range(1)
-            ]
+            uuid_: {
+                "output": {"result": f"Result for example {uuid.UUID(uuid_)}"},
+                "feedback": [],
+            }
             for uuid_ in uuids
         }
         assert results["results"] == expected
