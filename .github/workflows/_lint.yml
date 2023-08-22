@@ -9,7 +9,8 @@ on:
         description: "From which folder this pipeline executes"
 
 env:
-  POETRY_VERSION: "1.4.2"
+  POETRY_VERSION: "1.5.1"
+  WORKDIR: ${{ inputs.working-directory == '' && '.' || inputs.working-directory }}
 
 jobs:
   build:
@@ -20,13 +21,17 @@ jobs:
       # and also as small as possible since increasing the number makes
       # the initial `git fetch` slower.
       FETCH_DEPTH: 50
-      WORKDIR: ${{ inputs.working-directory == '' && '.' || inputs.working-directory }}
     strategy:
       matrix:
+        # Only lint on the min and max supported Python versions.
+        # It's extremely unlikely that there's a lint issue on any version in between
+        # that doesn't show up on the min or max versions.
+        #
+        # GitHub rate-limits how many jobs can be running at any one time.
+        # Starting new jobs is also relatively slow,
+        # so linting on fewer versions makes CI faster.
         python-version:
           - "3.8"
-          - "3.9"
-          - "3.10"
           - "3.11"
     steps:
       - uses: actions/checkout@v3
@@ -42,8 +47,6 @@ jobs:
         # since the previous action step just created them.
         # This command resets the mtime to the last time the files were modified in git instead,
         # which is a high-quality and stable representation of the last modification date.
-        env:
-          WORKDIR: ${{ inputs.working-directory == '' && '.' || inputs.working-directory }}
         run: |
           # Important considerations:
           # - These commands run at base of the repo, since we never `cd` to the `WORKDIR`.
@@ -88,7 +91,7 @@ jobs:
           key: pip-editable-langchain-deps-${{ runner.os }}-${{ runner.arch }}-py-${{ matrix.python-version }}
       - name: Install poetry
         run: |
-          pipx install poetry==$POETRY_VERSION
+          pipx install "poetry==$POETRY_VERSION"
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         env:
@@ -97,14 +100,14 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: poetry
           cache-dependency-path: |
-            ${{ inputs.working-directory == '' && '.' || inputs.working-directory }}/**/poetry.lock
+            ${{ env.WORKDIR }}/**/poetry.lock
       - name: Install dependencies
         working-directory: ${{ inputs.working-directory }}
         run: |
           poetry install
       - name: Install langchain editable
         working-directory: ${{ inputs.working-directory }}
-        if: ${{ inputs.working-directory != 'langchain' }}
+        if: ${{ inputs.working-directory != 'libs/langchain' }}
         run: |
           pip install -e ../langchain
 

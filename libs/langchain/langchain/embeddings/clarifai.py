@@ -103,37 +103,44 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
                 "Please install it with `pip install clarifai`."
             )
 
-        post_model_outputs_request = service_pb2.PostModelOutputsRequest(
-            user_app_id=self.userDataObject,
-            model_id=self.model_id,
-            version_id=self.model_version_id,
-            inputs=[
-                resources_pb2.Input(
-                    data=resources_pb2.Data(text=resources_pb2.Text(raw=t))
-                )
-                for t in texts
-            ],
-        )
-        post_model_outputs_response = self.stub.PostModelOutputs(
-            post_model_outputs_request
-        )
+        batch_size = 32
+        embeddings = []
+        for i in range(0, len(texts), batch_size):
+            batch = texts[i : i + batch_size]
 
-        if post_model_outputs_response.status.code != status_code_pb2.SUCCESS:
-            logger.error(post_model_outputs_response.status)
-            first_output_failure = (
-                post_model_outputs_response.outputs[0].status
-                if len(post_model_outputs_response.outputs[0])
-                else None
+            post_model_outputs_request = service_pb2.PostModelOutputsRequest(
+                user_app_id=self.userDataObject,
+                model_id=self.model_id,
+                version_id=self.model_version_id,
+                inputs=[
+                    resources_pb2.Input(
+                        data=resources_pb2.Data(text=resources_pb2.Text(raw=t))
+                    )
+                    for t in batch
+                ],
             )
-            raise Exception(
-                f"Post model outputs failed, status: "
-                f"{post_model_outputs_response.status}, first output failure: "
-                f"{first_output_failure}"
+            post_model_outputs_response = self.stub.PostModelOutputs(
+                post_model_outputs_request
             )
-        embeddings = [
-            list(o.data.embeddings[0].vector)
-            for o in post_model_outputs_response.outputs
-        ]
+
+            if post_model_outputs_response.status.code != status_code_pb2.SUCCESS:
+                logger.error(post_model_outputs_response.status)
+                first_output_failure = (
+                    post_model_outputs_response.outputs[0].status
+                    if len(post_model_outputs_response.outputs)
+                    else None
+                )
+                raise Exception(
+                    f"Post model outputs failed, status: "
+                    f"{post_model_outputs_response.status}, first output failure: "
+                    f"{first_output_failure}"
+                )
+            embeddings.extend(
+                [
+                    list(o.data.embeddings[0].vector)
+                    for o in post_model_outputs_response.outputs
+                ]
+            )
         return embeddings
 
     def embed_query(self, text: str) -> List[float]:
