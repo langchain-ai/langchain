@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from langchain.load.dump import dumps
 from langchain.load.load import loads
-from langchain.utils import get_from_env
 
 if TYPE_CHECKING:
     from langchainhub import Client
