@@ -222,7 +222,7 @@ def index(
             for doc in doc_batch
         ]
 
-        source_ids: List[Optional[str, None]] = [
+        source_ids: List[Optional[str]] = [
             source_id_assigner(doc.to_document()) for doc in hashed_docs
         ]
 
