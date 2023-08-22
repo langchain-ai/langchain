@@ -231,6 +231,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         parent_run_id: Optional[UUID] = None,
         metadata: Optional[Dict[str, Any]] = None,
         run_type: Optional[str] = None,
+        name: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Start a trace for a chain run."""
@@ -243,7 +244,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             id=run_id,
             parent_run_id=parent_run_id,
             serialized=serialized,
-            inputs=inputs,
+            inputs=inputs if isinstance(inputs, dict) else {"input": inputs},
             extra=kwargs,
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
@@ -251,6 +252,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             child_execution_order=execution_order,
             child_runs=[],
             run_type=run_type or "chain",
+            name=name,
             tags=tags or [],
         )
         self._start_trace(chain_run)
@@ -271,11 +273,13 @@ class BaseTracer(BaseCallbackHandler, ABC):
         if chain_run is None:
             raise TracerException(f"No chain Run found to be traced for {run_id}")
 
-        chain_run.outputs = outputs
+        chain_run.outputs = (
+            outputs if isinstance(outputs, dict) else {"output": outputs}
+        )
         chain_run.end_time = datetime.utcnow()
         chain_run.events.append({"name": "end", "time": chain_run.end_time})
         if inputs is not None:
-            chain_run.inputs = inputs
+            chain_run.inputs = inputs if isinstance(inputs, dict) else {"input": inputs}
         self._end_trace(chain_run)
         self._on_chain_end(chain_run)
 
@@ -298,7 +302,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         chain_run.end_time = datetime.utcnow()
         chain_run.events.append({"name": "error", "time": chain_run.end_time})
         if inputs is not None:
-            chain_run.inputs = inputs
+            chain_run.inputs = inputs if isinstance(inputs, dict) else {"input": inputs}
         self._end_trace(chain_run)
         self._on_chain_error(chain_run)
 
