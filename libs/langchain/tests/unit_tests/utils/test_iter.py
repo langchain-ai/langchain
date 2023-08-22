@@ -1,6 +1,8 @@
-from langchain.utils.iter import batch
 from typing import List
+
 import pytest
+
+from langchain.utils.iter import batch
 
 
 @pytest.mark.parametrize(

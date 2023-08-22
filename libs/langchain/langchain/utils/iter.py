@@ -6,6 +6,7 @@ from typing import (
     Deque,
     Generator,
     Generic,
+    Iterable,
     Iterator,
     List,
     Optional,
@@ -13,7 +14,6 @@ from typing import (
     TypeVar,
     Union,
     overload,
-    Iterable,
 )
 
 from typing_extensions import Literal
