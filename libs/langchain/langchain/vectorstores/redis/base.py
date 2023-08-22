@@ -46,7 +46,7 @@ if TYPE_CHECKING:
     from redis.client import Redis as RedisType
     from redis.commands.search.query import Query
 
-    from langchain.vectorstores.redis.filters import RedisFilter
+    from langchain.vectorstores.redis.filters import RedisFilterExpression
 
 
 def _redis_key(prefix: str) -> str:
@@ -72,6 +72,39 @@ def check_index_exists(client: RedisType, index_name: str) -> bool:
         return False
     logger.info("Index already exists")
     return True
+
+
+def generate_field_schema(data: Dict[str, Any]) -> Dict[str, Any]:
+    result: Dict[str, Any] = {
+        "text": [],
+        "numeric": [],
+    }
+
+    for key, value in data.items():
+        # Numeric fields
+        try:
+            int(value)
+            result["numeric"].append({"name": key})
+            continue
+        except (ValueError, TypeError):
+            pass
+
+        # None values set to a text field with no_index
+        if value is None:
+            result["text"].append({"name": key, "no_index": True})
+            continue
+
+        # Check if value is string before processing further
+        if isinstance(value, str):
+            result["text"].append({"name": key})
+
+        # throw up hands, we couldn't figure out what to do
+        else:
+            raise ValueError(
+                f"Could not generate Redis index field type mapping for metadata: '{key}': {type(value).__name__}"
+            )
+
+    return result
 
 
 class Redis(VectorStore):
@@ -111,12 +144,21 @@ class Redis(VectorStore):
             )
     """
 
+    DEFAULT_VECTOR_SCHEMA = {
+        "name": "content_vector",
+        "algorithm": "FLAT",
+        "dims": 1536,
+        "distance_metric": "COSINE",
+        "datatype": "FLOAT32",
+    }
+
     def __init__(
         self,
         redis_url: str,
         index_name: str,
         embedding_function: Callable,
         index_schema: Optional[Union[Dict[str, str], str, os.PathLike]] = None,
+        vector_schema: Optional[Dict[str, Union[str, int]]] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
         **kwargs: Any,
     ):
@@ -142,10 +184,34 @@ class Redis(VectorStore):
             raise ValueError(f"Redis failed to connect: {e}")
 
         self.client = redis_client
+
+        # read in schema (yaml file or dict) and
+        # pass to the Pydantic validators
         if index_schema:
-            self._schema = read_schema(index_schema)
+            schema = read_schema(index_schema)
+            self._schema = RedisModel(**schema)
+
+            # ensure user did not exclude the content field
+            # no modifications if content field found
+            self._schema.add_content_field()
         else:
             self._schema = RedisModel()
+
+        # if no content_vector field, add vector field to schema
+        # this makes adding a vector field to the schema optional when
+        # the user just wants additional metadata
+        try:
+            # see if user overrode the content vector
+            self._schema.content_vector
+
+        # user did not override content vector
+        except ValueError:
+            # set default vector schema and update with user provided schema
+            # if the user provided any
+            vector_field = self.DEFAULT_VECTOR_SCHEMA.copy()
+            if vector_schema:
+                vector_field.update(vector_schema)
+            self._schema.add_vector_field(vector_field)
 
         # select scoring function
         self.relevance_score_fn = relevance_score_fn
@@ -158,7 +224,8 @@ class Redis(VectorStore):
             "redis_port": "redis_url",
             "redis_password": "redis_url",
             "content_key": "index_schema",
-            "vector_key": "index_schema",
+            "vector_key": "vector_schema",
+            "distance_metric": "vector_schema",
         }
         for key, value in kwargs.items():
             if key in deprecated_kwargs:
@@ -261,6 +328,12 @@ class Redis(VectorStore):
                     **metadata,
                 },
             )
+            mapping = {
+                self._schema.content_key: text,
+                self._schema.content_vector_key: _array_to_buffer(embedding),
+                **metadata,
+            }
+            print(mapping)
             ids.append(key)
 
             # Write batch
@@ -275,9 +348,10 @@ class Redis(VectorStore):
         self,
         query: str,
         k: int = 4,
-        filter: Optional[RedisFilter] = None,
+        filter: Optional[RedisFilterExpression] = None,
         score_threshold: Optional[float] = None,
-        return_score: bool = False,
+        return_scores: bool = False,
+        return_metadata: bool = True,
         **kwargs: Any,
     ) -> Union[List[Document], List[Tuple[Document, float]]]:
         """
@@ -299,10 +373,21 @@ class Redis(VectorStore):
             "vector": _array_to_buffer(embedding),
         }
 
+        return_fields = [self._schema.content_key]
+        if return_metadata:
+            return_fields.extend(self._schema.metadata_keys)
+            return_fields.append("score")
+        if return_scores:
+            return_fields.append("score")
+
         if score_threshold is None:
-            redis_query = self._prepare_vector_query(k, filter=filter)
+            redis_query = self._prepare_vector_query(
+                k, filter=filter, return_fields=return_fields
+            )
         else:
-            redis_query = self._prepare_range_query(k, filter=filter)
+            redis_query = self._prepare_range_query(
+                k, filter=filter, return_fields=return_fields
+            )
             params_dict["score_threshold"] = str(score_threshold)
 
         # Perform vector search
@@ -313,13 +398,16 @@ class Redis(VectorStore):
         docs = []
         scores = []
         for result in results.docs:
-            metadata = {k: getattr(result, k) for k in self._schema.keys}
-            metadata["id"] = result.id
+            metadata = {}
+            if return_metadata:
+                metadata = {k: getattr(result, k) for k in self._schema.metadata_keys}
+                metadata["id"] = result.id
+                metadata["score"] = result.score
             doc = Document(page_content=result.content, metadata=metadata)
             docs.append(doc)
-            if return_score:
-                scores.append(result.score)
-        if return_score:
+            if return_scores:
+                scores.append(float(result.score))
+        if return_scores:
             return list(zip(docs, scores))
         else:
             return docs
@@ -329,7 +417,8 @@ class Redis(VectorStore):
         query: str,
         k: int = 4,
         score_threshold: float = 0.2,
-        filter: Optional[RedisFilter] = None,
+        filter: Optional[RedisFilterExpression] = None,
+        return_metadata: bool = True,
         **kwargs: Any,
     ) -> List[Document]:
         """
@@ -343,7 +432,7 @@ class Redis(VectorStore):
                 to be considered a match. Defaults to 0.2.
                 Because the similarity calculation algorithm is based on cosine
                 similarity, the smaller the angle, the higher the similarity.
-            filter (Optional[RedisFilter]): A filter to apply to the search results.
+            filter (Optional[RedisFilterExpression]): A filter to apply to the search results.
 
         Returns:
             List[Document]: A list of documents that are most similar to the query text,
@@ -361,6 +450,7 @@ class Redis(VectorStore):
             score_threshold=score_threshold,
             filter=filter,
             return_scores=False,
+            return_metadata=return_metadata,
         )
         return docs  # type: ignore
 
@@ -368,26 +458,43 @@ class Redis(VectorStore):
         self,
         query: str,
         k: int = 4,
-        filter: Optional[RedisFilter] = None,
+        filter: Optional[RedisFilterExpression] = None,
+        return_metadata: bool = True,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Run similarity search with distance."""
-        docs = self._similarity_search(query, k=k, filter=filter, return_scores=True)
-        return docs  # type: ignore
+        docs_with_scores = self._similarity_search(
+            query,
+            k=k,
+            filter=filter,
+            return_scores=True,
+            return_metadata=return_metadata,
+        )
+        return docs_with_scores  # type: ignore
 
     def similarity_search(
         self,
         query: str,
         k: int = 4,
-        filter: Optional[RedisFilter] = None,
+        filter: Optional[RedisFilterExpression] = None,
+        return_metadata: bool = True,
         **kwargs: Any,
     ) -> List[Document]:
         """Run similarity search."""
-        docs = self._similarity_search(query, k=k, filter=filter, return_scores=False)
+        docs = self._similarity_search(
+            query,
+            k=k,
+            filter=filter,
+            return_scores=False,
+            return_metadata=return_metadata,
+        )
         return docs  # type: ignore
 
     def _prepare_range_query(
-        self, k: int, filter: Optional[RedisFilter] = None
+        self,
+        k: int,
+        filter: Optional[RedisFilterExpression] = None,
+        return_fields: List[str] = [],
     ) -> "Query":
         try:
             from redis.commands.search.query import Query
@@ -401,22 +508,21 @@ class Redis(VectorStore):
         if filter:
             base_query = "(" + base_query + " " + str(filter) + ")"
 
-        query_string = base_query + "=>{$yield_distance_as: vector_score}"
-        return_fields = [
-            *self._schema.keys,
-            "vector_score",
-            "id",
-        ]
+        query_string = base_query + "=>{$yield_distance_as: score}"
+
         return (
             Query(query_string)
             .return_fields(*return_fields)
-            .sort_by("vector_score")
+            .sort_by("score")
             .paging(0, k)
             .dialect(2)
         )
 
     def _prepare_vector_query(
-        self, k: int, filter: Optional[RedisFilter] = None
+        self,
+        k: int,
+        filter: Optional[RedisFilterExpression] = None,
+        return_fields: List[str] = [],
     ) -> "Query":
         """Prepare query for vector search.
 
@@ -437,17 +543,10 @@ class Redis(VectorStore):
         query_prefix = "*"
         if filter:
             query_prefix = f"{str(filter)}"
-        base_query = f"({query_prefix})=>[KNN {k} @{self._schema.content_vector_key} $vector AS vector_score]"
-        return_fields = [
-            *self._schema.keys,
-            "vector_score",
-            "id",
-        ]
+        base_query = f"({query_prefix})=>[KNN {k} @{self._schema.content_vector_key} $vector AS score]"
+        print(base_query)
         query = (
-            Query(base_query)
-            .return_fields(*return_fields)
-            .sort_by("vector_score")
-            .dialect(2)
+            Query(base_query).return_fields(*return_fields).sort_by("score").dialect(2)
         )
         return query
 
@@ -459,6 +558,7 @@ class Redis(VectorStore):
         metadatas: Optional[List[dict]] = None,
         index_name: Optional[str] = None,
         index_schema: Optional[Union[Dict[str, str], str, os.PathLike]] = None,
+        vector_schema: Optional[Dict[str, Union[str, int]]] = None,
         **kwargs: Any,
     ) -> Tuple[Redis, List[str]]:
         """Create a Redis vectorstore from raw documents.
@@ -491,12 +591,34 @@ class Redis(VectorStore):
         if not index_name:
             index_name = uuid.uuid4().hex
 
+        # type check for metadata
+        if metadatas:
+            if isinstance(metadatas, list) and len(metadatas) != len(texts):  # type: ignore
+                raise ValueError("Number of metadatas must match number of texts")
+            if not isinstance(metadatas, list) and not isinstance(metadatas[0], dict):
+                raise ValueError("Metadatas must be a list of dicts")
+
+            generated_schema = generate_field_schema(metadatas[0])
+            if index_schema:
+                # the very rare case where a super user decides to pass the index
+                # schema and a document loader is used that has metadata which
+                # we need to map into fields.
+                if index_schema != generated_schema:
+                    logger.warning(
+                        "index_schema does not match generated schema from metadata.\n"
+                        + f"index_schema: {index_schema}\n"
+                        + f"generated_schema: {generated_schema}\n"
+                    )
+            else:
+                index_schema = generated_schema
+
         # Create instance
         instance = cls(
             redis_url,
             index_name,
             embedding.embed_query,
             index_schema=index_schema,
+            vector_schema=vector_schema,
             **kwargs,
         )
 
@@ -518,6 +640,7 @@ class Redis(VectorStore):
         metadatas: Optional[List[dict]] = None,
         index_name: Optional[str] = None,
         index_schema: Optional[Union[Dict[str, str], str, os.PathLike]] = None,
+        vector_schema: Optional[Dict[str, Union[str, int]]] = None,
         **kwargs: Any,
     ) -> Redis:
         """Create a Redis vectorstore from raw documents.
@@ -546,6 +669,7 @@ class Redis(VectorStore):
             metadatas=metadatas,
             index_name=index_name,
             index_schema=index_schema,
+            vector_schema=vector_schema,
             **kwargs,
         )
         return instance
@@ -640,6 +764,7 @@ class Redis(VectorStore):
         embedding: Embeddings,
         index_name: str,
         index_schema: Optional[Union[Dict[str, str], str, os.PathLike]] = None,
+        vector_schema: Optional[Dict[str, Union[str, int]]] = None,
         **kwargs: Any,
     ) -> Redis:
         """Connect to an existing Redis index."""
@@ -671,6 +796,7 @@ class Redis(VectorStore):
             index_name,
             embedding.embed_query,
             index_schema=index_schema,
+            vector_schema=vector_schema,
             **kwargs,
         )
 

@@ -1,7 +1,7 @@
 import os
 from enum import Enum
 from pathlib import Path
-from typing import Annotated, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 from uuid import uuid4
 
 import yaml
@@ -34,6 +34,7 @@ class TextFieldSchema(RedisField):
     no_stem: bool = False
     phonetic_matcher: Optional[str] = None
     withsuffixtrie: bool = False
+    no_index: bool = False
 
     def as_field(self):
         return TextField(
@@ -42,12 +43,14 @@ class TextFieldSchema(RedisField):
             no_stem=self.no_stem,
             phonetic_matcher=self.phonetic_matcher,
             sortable=self.sortable,
+            no_index=self.no_index,
         )
 
 
 class TagFieldSchema(RedisField):
     separator: str = ","
     case_sensitive: bool = False
+    no_index: bool = False
 
     def as_field(self):
         return TagField(
@@ -55,17 +58,22 @@ class TagFieldSchema(RedisField):
             separator=self.separator,
             case_sensitive=self.case_sensitive,
             sortable=self.sortable,
+            no_index=self.no_index,
         )
 
 
 class NumericFieldSchema(RedisField):
+    no_index: bool = False
+
     def as_field(self):
-        return NumericField(self.name, sortable=self.sortable)
+        return NumericField(self.name, sortable=self.sortable, no_index=self.no_index)
 
 
 class GeoFieldSchema(RedisField):
+    no_index: bool = False
+
     def as_field(self):
-        return GeoField(self.name, sortable=self.sortable)
+        return GeoField(self.name, sortable=self.sortable, no_index=self.no_index)
 
 
 class RedisVectorField(BaseModel):
@@ -124,18 +132,45 @@ class HNSWVectorField(RedisVectorField):
 
 
 class RedisModel(BaseModel):
-    tag: Optional[List[TagFieldSchema]] = None
+    # always have a content field for text
     text: List[TextFieldSchema] = [TextFieldSchema(name="content")]
+    tag: Optional[List[TagFieldSchema]] = None
     numeric: Optional[List[NumericFieldSchema]] = None
     geo: Optional[List[GeoFieldSchema]] = None
-    vector: List[Union[FlatVectorField, HNSWVectorField]] = Field(
-        default_factory=lambda: [FlatVectorField(name="content_vector", dims=1536)]
-    )
+
+    # filled by default_vector_schema
+    vector: Optional[List[Union[FlatVectorField, HNSWVectorField]]] = None
     content_key: str = "content"
     content_vector_key: str = "content_vector"
 
+    def add_content_field(self):
+        if self.text is None:
+            self.text = []
+        for field in self.text:
+            if field.name == self.content_key:
+                return
+        self.text.append(TextFieldSchema(name=self.content_key))
+
+    def add_vector_field(self, vector_field: Dict[str, Any]):
+        # catch case where user inputted no vector field spec
+        # in the index schema
+        if self.vector is None:
+            self.vector = []
+
+        # ignore types as pydantic is handling type validation and conversion
+        if vector_field["algorithm"] == "FLAT":
+            self.vector.append(FlatVectorField(**vector_field))  # type: ignore
+        elif vector_field["algorithm"] == "HNSW":
+            self.vector.append(HNSWVectorField(**vector_field))  # type: ignore
+        else:
+            raise ValueError(
+                f"algorithm must be either FLAT or HNSW. Got {vector_field['algorithm']}"
+            )
+
     @property
     def content_vector(self) -> Union[FlatVectorField, HNSWVectorField]:
+        if not self.vector:
+            raise ValueError("No vector fields found")
         for field in self.vector:
             if field.name == self.content_vector_key:
                 return field
@@ -162,7 +197,7 @@ class RedisModel(BaseModel):
         return redis_fields
 
     @property
-    def keys(self) -> List[str]:
+    def metadata_keys(self) -> List[str]:
         keys: List[str] = []
         if self.is_empty:
             return keys
@@ -171,22 +206,27 @@ class RedisModel(BaseModel):
             field_group = getattr(self, field_name)
             if field_group is not None:
                 for field in field_group:
-                    if not isinstance(field, str):
+                    # check if it's a metadata field. exclude vector and content key
+                    if not isinstance(field, str) and field.name not in [
+                        self.content_key,
+                        self.content_vector_key,
+                    ]:
                         keys.append(field.name)
         return keys
 
 
-def read_schema(index_schema: Optional[Union[Dict[str, str], str, os.PathLike]]):
+def read_schema(
+    index_schema: Optional[Union[Dict[str, str], str, os.PathLike]]
+) -> Dict[str, Any]:
     # check if its a dict and return RedisModel otherwise, check if it's a path and
     # read in the file assuming it's a yaml file and return a RedisModel
     if isinstance(index_schema, dict):
-        return RedisModel(**index_schema)  # type: ignore
-    elif isinstance(index_schema, (str, Path)):
-        if Path(index_schema).is_file():
-            with open(index_schema, "rb") as f:
-                return RedisModel(**yaml.safe_load(f))
+        return index_schema
+    elif isinstance(index_schema, Path):
+        with open(index_schema, "rb") as f:
+            return yaml.safe_load(f)
     else:
         raise TypeError(
-            f"index_schema must be a dict, path to a yaml file, or a yaml string. "
+            f"index_schema must be a dict, or path to a yaml file "
             f"Got {type(index_schema)}"
         )

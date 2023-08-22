@@ -27,16 +27,12 @@ class RedisFilter:
         return RedisText(field)
 
     @staticmethod
-    def num(self, field: str) -> "RedisNum":
+    def num(field: str) -> "RedisNum":
         return RedisNum(field)
 
     @staticmethod
-    def tag(self, field: str) -> "RedisTag":
+    def tag(field: str) -> "RedisTag":
         return RedisTag(field)
-
-    @staticmethod
-    def geo(self, field: str) -> "RedisGeo":
-        return RedisGeo(field)
 
 
 class RedisFilterField:
@@ -165,103 +161,6 @@ class RedisTag(RedisFilterField):
             self._field,
             self._formatted_tag_value,
         )
-
-
-class RedisGeo(RedisFilterField):
-    """A RedisGeo is a RedisFilterField representing a geographic (lat/lon)
-    field in a Redis index.
-
-    """
-
-    OPERATORS = {
-        RedisFilterOperator.EQ: "==",
-        RedisFilterOperator.NE: "!=",
-    }
-    OPERATOR_MAP = {
-        RedisFilterOperator.EQ: "@%s:[%f %f %i %s]",
-        RedisFilterOperator.NE: "(-@%s:[%f %f %i %s])",
-    }
-
-    @check_operator_misuse
-    def __eq__(self, other: "RedisGeoSpec") -> "RedisFilterExpression":
-        """Create a Geographic equality filter expression
-
-        Args:
-            other (RedisGeoSpec): The geographic spec to filter on.
-
-        Example:
-            >>> from langchain.vectorstores.redis import RedisGeo, RedisGeoRadius
-            >>> filter = RedisGeo("location") == RedisGeoRadius(-122.4194, 37.7749, 1, unit="m")
-        """
-        self._set_value(other, RedisGeoSpec, RedisFilterOperator.EQ)
-        return RedisFilterExpression(str(self))
-
-    @check_operator_misuse
-    def __ne__(self, other: "RedisGeoSpec") -> "RedisFilterExpression":
-        """Create a Geographic inequality filter expression
-
-        Args:
-            other (RedisGeoSpec): The geographic spec to filter on.
-
-        Example:
-            >>> from langchain.vectorstores.redis import RedisGeo, RedisGeoRadius
-            >>> filter = RedisGeo("location") != RedisGeoRadius(-122.4194, 37.7749, 1, unit="m")
-        """
-        self._set_value(other, RedisGeoSpec, RedisFilterOperator.NE)
-        return RedisFilterExpression(str(self))
-
-    def __str__(self) -> str:
-        if not self._value:
-            raise ValueError(
-                f"Operator must be used before calling __str__. Operators are {self.OPERATORS.values()}"
-            )
-
-        """Return the Redis Query syntax for a Geographic filter expression"""
-        return self.OPERATOR_MAP[self._operator] % (
-            self._field,
-            *self._value.get_args(),
-        )
-
-
-class RedisGeoSpec:
-    GEO_UNITS = ["m", "km", "mi", "ft"]
-
-    # class for the operand for RedisFilterExpressions with RedisGeo
-    def __init__(self, longitude: float, latitude: float, unit: str = "km"):
-        if unit.lower() not in self.GEO_UNITS:
-            raise ValueError(f"Unit must be one of {self.GEO_UNITS}")
-        self._longitude = longitude
-        self._latitude = latitude
-        self._unit = unit.lower()
-
-
-class RedisGeoRadius(RedisGeoSpec):
-    """A RedisGeoRadius is a RedisGeoSpec representing a geographic radius"""
-
-    def __init__(
-        self,
-        longitude: float,
-        latitude: float,
-        radius: int = 1,
-        unit: str = "km",
-    ):
-        """Create a RedisGeoRadius specification (RedisGeoSpec)
-
-        Args:
-            longitude (float): The longitude of the center of the radius.
-            latitude (float): The latitude of the center of the radius.
-            radius (int, optional): The radius of the circle. Defaults to 1.
-            unit (str, optional): The unit of the radius. Defaults to "km".
-
-        Raises:
-            ValueError: If the unit is not one of "m", "km", "mi", or "ft".
-
-        """
-        super().__init__(longitude, latitude, unit=unit)
-        self._radius = radius
-
-    def get_args(self) -> List[Union[float, int, str]]:
-        return [self._longitude, self._latitude, self._radius, self._unit]
 
 
 class RedisNum(RedisFilterField):
