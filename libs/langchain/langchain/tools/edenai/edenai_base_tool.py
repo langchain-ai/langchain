@@ -37,10 +37,10 @@ class EdenaiTool(BaseTool):
         return values
 
     @staticmethod
-    def get_user_agent():
+    def get_user_agent() -> str:
         from langchain import __version__
-        return f"langchain/{__version__}"
 
+        return f"langchain/{__version__}"
 
     def _call_eden_ai(self, query_params: Dict[str, Any]) -> requests.Response:
         """
@@ -58,7 +58,7 @@ class EdenaiTool(BaseTool):
 
         headers = {
             "Authorization": f"Bearer {self.edenai_api_key}",
-            "User-Agent": self.get_user_agent()
+            "User-Agent": self.get_user_agent(),
         }
 
         url = f"https://api.edenai.run/v2/{self.feature}/{self.subfeature}"
