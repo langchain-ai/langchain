@@ -52,6 +52,9 @@ class Milvus(VectorStore):
             default of index.
         drop_old (Optional[bool]): Whether to drop the current collection. Defaults
             to False.
+        primary_field (str): Name of the primary key field. Defaults to "pk".
+        text_field (str): Name of the text field. Defaults to "text".
+        vector_field (str): Name of the vector field. Defaults to "vector".
 
     The connection args used for this class comes in the form of a dict,
     here are a few of the options:
@@ -107,6 +110,10 @@ class Milvus(VectorStore):
         index_params: Optional[dict] = None,
         search_params: Optional[dict] = None,
         drop_old: Optional[bool] = False,
+        *,
+        primary_field: str = "pk",
+        text_field: str = "text",
+        vector_field: str = "vector",
     ):
         """Initialize the Milvus vector store."""
         try:
@@ -138,11 +145,11 @@ class Milvus(VectorStore):
         self.consistency_level = consistency_level
 
         # In order for a collection to be compatible, pk needs to be auto'id and int
-        self._primary_field = "pk"
-        # In order for compatiblility, the text field will need to be called "text"
-        self._text_field = "text"
+        self._primary_field = primary_field
+        # In order for compatibility, the text field will need to be called "text"
+        self._text_field = text_field
         # In order for compatibility, the vector field needs to be called "vector"
-        self._vector_field = "vector"
+        self._vector_field = vector_field
         self.fields: list[str] = []
         # Create the connection to the server
         if connection_args is None:
