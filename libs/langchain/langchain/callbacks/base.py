@@ -77,17 +77,6 @@ class LLMManagerMixin:
     ) -> Any:
         """Run when LLM errors."""
 
-    def on_event(
-        self,
-        token: str,
-        function_call: Any,
-        *,
-        run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        **kwargs: Any,
-    ) -> Any:
-        """Run on new LLM token. Only available when streaming is enabled."""
-
 
 class ChainManagerMixin:
     """Mixin for chain callbacks."""

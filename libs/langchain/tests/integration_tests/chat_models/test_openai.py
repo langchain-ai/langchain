@@ -16,6 +16,7 @@ from langchain.schema import (
     LLMResult,
 )
 from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain.schema.output import ChatGenerationChunk
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
@@ -173,9 +174,10 @@ async def test_async_chat_openai_streaming_with_function() -> None:
 
     class MyCustomAsyncHandler(AsyncCallbackHandler):
 
-        async def on_event(self, token: str, function_call: Any, **kwargs: Any) -> Any:
+        def on_llm_new_token(self, token: str, chunk: ChatGenerationChunk, **kwargs: Any,) -> Any:
             print(f"I just got a token: {token}")
-            print(f"I just got a function call: {function_call}")
+            print(f"I just got a chunk: {chunk}")
+
 
     json_schema = {
         "title": "Person",
