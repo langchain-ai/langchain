@@ -55,12 +55,18 @@ runs:
         POETRY_VERSION: ${{ inputs.poetry-version }}
         PYTHON_VERSION: ${{ inputs.python-version }}
       run: |
+        echo "$PATH"
         "python$PYTHON_VERSION" -m pip cache dir
         "python$PYTHON_VERSION" -m pip cache info
         echo "poetry cache info: $("python$PYTHON_VERSION" -m pip cache list poetry)"
 
-        "python$PYTHON_VERSION" -m venv /opt/pipx/venvs/poetry
-        /opt/pipx/venvs/poetry/bin/python -m pip install "poetry==$POETRY_VERSION" --verbose
+        pipx install "poetry==$POETRY_VERSION" --python "python$PYTHON_VERSION" --verbose
+        hash -r
+
+        echo "poetry binary:"
+        which poetry
+
+        echo "path => $PATH"
 
         /opt/pipx/venvs/poetry/bin/python -m pip cache dir
         "python$PYTHON_VERSION" -m pip cache dir
