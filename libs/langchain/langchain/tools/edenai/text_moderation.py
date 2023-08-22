@@ -32,14 +32,14 @@ class EdenAiExplicitTextDetection(EdenaiTool):
         it checks also if there is any content of self-harm,
         violence, racist or hate speech."""
         """the structure of the output is : 
-        'the type of explicity : the likelihood of it being explicit'
+        'the type of the explicit content : the likelihood of it being explicit'
         the likelihood is a number 
         between 1 and 5, 1 being the lowest and 5 the highest.
         something is explicit if the likelihood is equal or higher than 3.
-        for exemple : 
+        for example : 
         nsfw_likelihood: 1
         this is not explicit.
-        for exemple : 
+        for example : 
         nsfw_likelihood: 3
         this is explicit.
         """
