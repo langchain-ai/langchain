@@ -1,6 +1,6 @@
-# Contributing to LangChain
+# Contributing to GigaChain
 
-Hi there! Thank you for even being interested in contributing to LangChain.
+Hi there! Thank you for even being interested in contributing to GigaChain.
 As an open source project in a rapidly developing field, we are extremely open
 to contributions, whether they be in the form of new features, improved infra, better documentation, or bug fixes.
 
@@ -32,7 +32,7 @@ best way to get our attention.
 
 ### 🚩GitHub Issues
 
-Our [issues](https://github.com/hwchase17/langchain/issues) page is kept up to date
+Our [issues](https://github.com/ai-forever/gigachain/issues) page is kept up to date
 with bugs, improvements, and feature requests.
 
 There is a taxonomy of labels to help with sorting and discovery of issues of interest. Please use these to help
@@ -169,9 +169,9 @@ make coverage
 
 ### Working with Optional Dependencies
 
-Langchain relies heavily on optional dependencies to keep the Langchain package lightweight.
+GigaChain relies heavily on optional dependencies to keep the GigaChain package lightweight.
 
-If you're adding a new dependency to Langchain, assume that it will be an optional dependency, and
+If you're adding a new dependency to GigaChain, assume that it will be an optional dependency, and
 that most users won't have it installed.
 
 Users that do not have the dependency installed should be able to **import** your code without
@@ -252,7 +252,7 @@ Launch a notebook:
 poetry run jupyter notebook
 ```
 
-When you run `poetry install`, the `langchain` package is installed as editable in the virtualenv, so your new logic can be imported into the notebook.
+When you run `poetry install`, the `gigachain` package is installed as editable in the virtualenv, so your new logic can be imported into the notebook.
 
 ## Documentation
 
@@ -297,10 +297,10 @@ make api_docs_linkcheck
 
 ## 🏭 Release Process
 
-As of now, LangChain has an ad hoc release process: releases are cut with high frequency by
-a developer and published to [PyPI](https://pypi.org/project/langchain/).
+As of now, GigaChain has an ad hoc release process: releases are cut with high frequency by
+a developer and published to [PyPI](https://pypi.org/project/gigachain/).
 
-LangChain follows the [semver](https://semver.org/) versioning standard. However, as pre-1.0 software,
+GigaChain follows the [semver](https://semver.org/) versioning standard. However, as pre-1.0 software,
 even patch releases may contain [non-backwards-compatible changes](https://semver.org/#spec-item-4).
 
 ### 🌟 Recognition
