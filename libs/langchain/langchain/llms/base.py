@@ -528,7 +528,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 f" argument of type {type(prompts)}."
             )
         # Create callback managers
-        if isinstance(callbacks, list) and (
+        if isinstance(callbacks, list) and callbacks and (
             isinstance(callbacks[0], (list, BaseCallbackManager))
             or callbacks[0] is None
         ):

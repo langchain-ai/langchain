@@ -2,7 +2,7 @@ from typing import List
 
 import pytest
 
-from langchain.utils.iter import batch
+from langchain.utils.iter import batch_iterate
 
 
 @pytest.mark.parametrize(
@@ -14,8 +14,8 @@ from langchain.utils.iter import batch
         (4, [], []),
     ],
 )
-def test_batching(
+def test_batch_iterate(
     input_size: int, input_iterable: List[str], expected_output: List[str]
 ) -> None:
     """Test batching function."""
-    assert list(batch(input_size, input_iterable)) == expected_output
+    assert list(batch_iterate(input_size, input_iterable)) == expected_output

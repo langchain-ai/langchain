@@ -165,7 +165,7 @@ class Tee(Generic[T]):
 safetee = Tee
 
 
-def batch(size: int, iterable: Iterable[T]) -> Iterator[List[T]]:
+def batch_iterate(size: int, iterable: Iterable[T]) -> Iterator[List[T]]:
     """Utility batching function."""
     it = iter(iterable)
     while True:
