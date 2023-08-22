@@ -36,6 +36,12 @@ class EdenaiTool(BaseTool):
         )
         return values
 
+    @staticmethod
+    def get_user_agent():
+        from langchain import __version__
+        return f"langchain/{__version__}"
+
+
     def _call_eden_ai(self, query_params: Dict[str, Any]) -> requests.Response:
         """
         Make an API call to the EdenAI service with the specified query parameters.
@@ -50,7 +56,10 @@ class EdenaiTool(BaseTool):
 
         # faire l'API call
 
-        headers = {"Authorization": f"Bearer {self.edenai_api_key}"}
+        headers = {
+            "Authorization": f"Bearer {self.edenai_api_key}",
+            "User-Agent": self.get_user_agent()
+        }
 
         url = f"https://api.edenai.run/v2/{self.feature}/{self.subfeature}"
 
