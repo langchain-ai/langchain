@@ -17,9 +17,10 @@ from typing import (
 )
 
 import sqlalchemy
+from sqlalchemy import delete
+
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Session, declarative_base
-from sqlalchemy import delete
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
