@@ -696,7 +696,7 @@ async def _arun_llm_or_chain(
     tags: Optional[List[str]] = None,
     callbacks: Optional[List[BaseCallbackHandler]] = None,
     input_mapper: Optional[Callable[[Dict], Any]] = None,
-) -> Union[List[dict], List[str], List[LLMResult], List[ChatResult]]:
+) -> Union[dict, str, LLMResult, ChatResult]:
     """Asynchronously run the Chain or language model.
 
     Args:
@@ -718,10 +718,10 @@ async def _arun_llm_or_chain(
                 tracer.example_id = example.id
     else:
         previous_example_ids = None
-    outputs = []
     chain_or_llm = (
         "LLM" if isinstance(llm_or_chain_factory, BaseLanguageModel) else "Chain"
     )
+    result = None
     try:
         if isinstance(llm_or_chain_factory, BaseLanguageModel):
             output: Any = await _arun_llm(
@@ -740,15 +740,15 @@ async def _arun_llm_or_chain(
                 callbacks=callbacks,
                 input_mapper=input_mapper,
             )
-        outputs.append(output)
+        result = output
     except Exception as e:
         logger.warning(f"{chain_or_llm} failed for example {example.id}. Error: {e}")
-        outputs.append({"Error": str(e)})
+        result = {"Error": str(e)}
     if callbacks and previous_example_ids:
         for example_id, tracer in zip(previous_example_ids, callbacks):
             if hasattr(tracer, "example_id"):
                 tracer.example_id = example_id
-    return outputs
+    return result
 
 
 async def _gather_with_concurrency(
@@ -885,7 +885,7 @@ async def _arun_on_examples(
         wrapped_model, examples, evaluation, data_type
     )
     examples = _validate_example_inputs(examples, wrapped_model, input_mapper)
-    results: Dict[str, List[Any]] = {}
+    results: Dict[str, dict] = {}
 
     async def process_example(
         example: Example, callbacks: List[BaseCallbackHandler], job_state: dict
@@ -1039,7 +1039,7 @@ def _run_llm_or_chain(
     chain_or_llm = (
         "LLM" if isinstance(llm_or_chain_factory, BaseLanguageModel) else "Chain"
     )
-    result: Union[dict, str, LLMResult, ChatResult] = None
+    result = None
     try:
         if isinstance(llm_or_chain_factory, BaseLanguageModel):
             output: Any = _run_llm(
@@ -1069,8 +1069,6 @@ def _run_llm_or_chain(
         for example_id, tracer in zip(previous_example_ids, callbacks):
             if hasattr(tracer, "example_id"):
                 tracer.example_id = example_id
-    if isinstance(result, None):
-        raise ValueError(f"Could not process {example.id}")
     return result
 
 
@@ -1112,7 +1110,7 @@ def _run_on_examples(
     Returns:
         A dictionary mapping example ids to the model outputs.
     """
-    results: Dict[str, Any] = {}
+    results: Dict[str, dict] = {}
     wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory)
     project_name = _get_project_name(project_name, wrapped_model)
     tracer = LangChainTracer(
