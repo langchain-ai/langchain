@@ -80,31 +80,32 @@ jobs:
           find "$WORKDIR" -name '*.py' -type f -not -newermt "$OLDEST_COMMIT_TIME" -exec touch -c -m -t '200001010000' '{}' '+'
 
           echo "oldest-commit=$OLDEST_COMMIT" >> "$GITHUB_OUTPUT"
-      - uses: actions/cache@v3
-        id: cache-pip
-        name: Cache langchain editable pip install - ${{ matrix.python-version }}
-        env:
-          SEGMENT_DOWNLOAD_TIMEOUT_MIN: "4"
-        with:
-          path: |
-            ~/.cache/pip
-          key: pip-editable-langchain-deps-${{ runner.os }}-${{ runner.arch }}-py-${{ matrix.python-version }}
-      - name: Install poetry
-        run: |
-          pipx install "poetry==$POETRY_VERSION"
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        env:
-          SEGMENT_DOWNLOAD_TIMEOUT_MIN: "4"
+
+      - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
+        uses: "./.github/actions/poetry_setup"
         with:
           python-version: ${{ matrix.python-version }}
-          cache: poetry
-          cache-dependency-path: |
-            ${{ env.WORKDIR }}/**/poetry.lock
+          poetry-version: ${{ env.POETRY_VERSION }}
+          working-directory: ${{ inputs.working-directory }}
+          cache-key: lint
+
+      - name: Check Poetry File
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          poetry check
+
+      - name: Check lock file
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          poetry lock --check
+
       - name: Install dependencies
         working-directory: ${{ inputs.working-directory }}
         run: |
           poetry install
+
       - name: Install langchain editable
         working-directory: ${{ inputs.working-directory }}
         if: ${{ inputs.working-directory != 'libs/langchain' }}

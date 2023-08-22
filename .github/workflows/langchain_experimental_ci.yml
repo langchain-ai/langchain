@@ -61,18 +61,23 @@ jobs:
     name: test with unpublished langchain - Python ${{ matrix.python-version }}
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }}
+
+      - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
         uses: "./.github/actions/poetry_setup"
         with:
           python-version: ${{ matrix.python-version }}
-          working-directory: ${{ env.WORKDIR }}
           poetry-version: ${{ env.POETRY_VERSION }}
+          working-directory: ${{ env.WORKDIR }}
           cache-key: unpublished-langchain
-          install-command: |
-            echo "Running tests with unpublished langchain, installing dependencies with poetry..."
-            poetry install
 
-            echo "Editably installing langchain outside of poetry, to avoid messing up lockfile..."
-            poetry run pip install -e ../langchain
+      - name: Install dependencies
+        shell: bash
+        run: |
+          echo "Running tests with unpublished langchain, installing dependencies with poetry..."
+          poetry install
+
+          echo "Editably installing langchain outside of poetry, to avoid messing up lockfile..."
+          poetry run pip install -e ../langchain
+
       - name: Run tests
         run: make test
