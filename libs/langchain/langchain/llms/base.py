@@ -220,13 +220,18 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         **kwargs: Any,
     ) -> str:
         config = config or {}
-        config_kwargs: Dict = {
-            k: config.get(k) for k in ("callbacks", "tags", "metadata")
-        }
-        result = self.generate_prompt(
-            [self._convert_input(input)], stop=stop, **config_kwargs, **kwargs
+        return (
+            self.generate_prompt(
+                [self._convert_input(input)],
+                stop=stop,
+                callbacks=config.get("callbacks"),
+                tags=config.get("tags"),
+                metadata=config.get("metadata"),
+                **kwargs,
+            )
+            .generations[0][0]
+            .text
         )
-        return result.generations[0][0].text
 
     async def ainvoke(
         self,
@@ -243,11 +248,13 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             )
 
         config = config or {}
-        config_kwargs: Dict = {
-            k: config.get(k) for k in ("callbacks", "tags", "metadata")
-        }
         llm_result = await self.agenerate_prompt(
-            [self._convert_input(input)], stop=stop, **config_kwargs, **kwargs
+            [self._convert_input(input)],
+            stop=stop,
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            **kwargs,
         )
         return llm_result.generations[0][0].text
 
