@@ -55,7 +55,7 @@ class DocAIPdfLoader(BaseBlobParser):
         )
 
     def batch_parse(
-        self, blobs: List[Blob], gcs_output_path: str
+        self, blobs: Sequence[Blob], gcs_output_path: str
     ) -> Iterator[Document]:
         """Parses a list of blobs lazily.
 
