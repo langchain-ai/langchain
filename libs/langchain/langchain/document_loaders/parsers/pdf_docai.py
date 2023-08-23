@@ -30,6 +30,7 @@ class DocAIPdfLoader(BaseBlobParser):
     def __init__(
         self,
         project: str,
+        *,
         location: str = "us",
         processor_name: Optional[str] = None,
         gcs_output_path: Optional[str] = None,
