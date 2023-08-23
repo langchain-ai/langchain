@@ -27,7 +27,7 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain.schema.output_parser import StrOutputParser
+from langchain.schema.output_parser import BaseOutputParser, StrOutputParser
 from langchain.schema.retriever import BaseRetriever
 from langchain.schema.runnable import (
     RouterRunnable,
@@ -171,11 +171,21 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
     assert spy.call_args_list == [
         mocker.call(
             "hello",
-            dict(metadata={"key": "value"}, tags=[], callbacks=None, _locals={}),
+            dict(
+                metadata={"key": "value"},
+                tags=[],
+                callbacks=None,
+                _locals={},
+            ),
         ),
         mocker.call(
             "wooorld",
-            dict(metadata={"key": "value"}, tags=[], callbacks=None, _locals={}),
+            dict(
+                metadata={"key": "value"},
+                tags=[],
+                callbacks=None,
+                _locals={},
+            ),
         ),
     ]
 
@@ -1076,3 +1086,53 @@ async def test_llm_with_fallbacks(
     assert await runnable.abatch(["hi", "hey", "bye"]) == ["bar"] * 3
     assert list(await runnable.ainvoke("hello")) == list("bar")
     assert dumps(runnable, pretty=True) == snapshot
+
+
+class FakeSplitIntoListParser(BaseOutputParser[List[str]]):
+    """Parse the output of an LLM call to a comma-separated list."""
+
+    @property
+    def lc_serializable(self) -> bool:
+        return True
+
+    def get_format_instructions(self) -> str:
+        return (
+            "Your response should be a list of comma separated values, "
+            "eg: `foo, bar, baz`"
+        )
+
+    def parse(self, text: str) -> List[str]:
+        """Parse the output of an LLM call."""
+        return text.strip().split(", ")
+
+
+def test_each_simple() -> None:
+    """Test that each() works with a simple runnable."""
+    parser = FakeSplitIntoListParser()
+    assert parser.invoke("first item, second item") == ["first item", "second item"]
+    assert parser.map().invoke(["a, b", "c"]) == [["a", "b"], ["c"]]
+    assert parser.map().map().invoke([["a, b", "c"], ["c, e"]]) == [
+        [["a", "b"], ["c"]],
+        [["c", "e"]],
+    ]
+
+
+def test_each(snapshot: SnapshotAssertion) -> None:
+    prompt = (
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
+    )
+    first_llm = FakeStreamingListLLM(responses=["first item, second item, third item"])
+    parser = FakeSplitIntoListParser()
+    second_llm = FakeStreamingListLLM(responses=["this", "is", "a", "test"])
+
+    chain = prompt | first_llm | parser | second_llm.map()
+
+    assert dumps(chain, pretty=True) == snapshot
+    output = chain.invoke({"question": "What up"})
+    assert output == ["this", "is", "a"]
+
+    assert (parser | second_llm.map()).invoke("first item, second item") == [
+        "test",
+        "this",
+    ]
