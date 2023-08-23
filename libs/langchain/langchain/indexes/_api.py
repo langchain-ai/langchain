@@ -15,6 +15,7 @@ from typing import (
     Literal,
     Optional,
     Sequence,
+    Iterable,
     TypedDict,
     TypeVar,
     Union,
@@ -125,6 +126,18 @@ def _get_source_id_assigner(
         )
 
 
+def _deduplicate_in_order(
+    hashed_documents: Iterable[_HashedDocument],
+) -> Iterator[_HashedDocument]:
+    """Deduplicate a list of hashed documents while preserving order."""
+    seen = set()
+
+    for hashed_doc in hashed_documents:
+        if hashed_doc.hash_ not in seen:
+            seen.add(hashed_doc.hash_)
+            yield hashed_doc
+
+
 # PUBLIC API
 
 
@@ -142,7 +155,7 @@ class IndexingResult(TypedDict):
 
 
 def index(
-    loader: BaseLoader,
+    docs_source: Union[BaseLoader, Iterable[Document]],
     record_manager: RecordManager,
     vector_store: VectorStore,
     *,
@@ -168,7 +181,7 @@ def index(
        supposed to.
 
     Args:
-        loader: Data loader that returns a sequence of documents.
+        docs_source: Data loader or iterable of documents to index.
         record_manager: Timestamped set to keep track of which documents were
                          updated.
         vector_store: Vector store to index the documents into.
@@ -191,6 +204,12 @@ def index(
         Indexing result which contains information about how many documents
         were added, updated, deleted, or skipped.
     """
+    if delete_mode not in {"incremental", "full", None}:
+        raise ValueError(
+            f"delete_mode should be one of 'incremental', 'full' or None. "
+            f"Got {delete_mode}."
+        )
+
     if delete_mode == "incremental" and source_id_key is None:
         raise ValueError("Source id key is required when delete mode is incremental.")
 
@@ -203,10 +222,13 @@ def index(
                 f"Vectorstore {vector_store} does not have required method {method}"
             )
 
-    try:
-        doc_iterator = loader.lazy_load()
-    except NotImplementedError:
-        doc_iterator = iter(loader.load())
+    if isinstance(docs_source, BaseLoader):
+        try:
+            doc_iterator = docs_source.lazy_load()
+        except NotImplementedError:
+            doc_iterator = iter(docs_source.load())
+    else:
+        doc_iterator = docs_source
 
     source_id_assigner = _get_source_id_assigner(source_id_key)
 
@@ -218,10 +240,16 @@ def index(
     num_deleted = 0
 
     for doc_batch in _batch(batch_size, doc_iterator):
-        hashed_docs = [
-            _HashedDocument(page_content=doc.page_content, metadata=doc.metadata)
-            for doc in doc_batch
-        ]
+        hashed_docs = list(
+            _deduplicate_in_order(
+                [
+                    _HashedDocument(
+                        page_content=doc.page_content, metadata=doc.metadata
+                    )
+                    for doc in doc_batch
+                ]
+            )
+        )
 
         source_ids: Sequence[Optional[str]] = [
             source_id_assigner(doc.to_document()) for doc in hashed_docs
