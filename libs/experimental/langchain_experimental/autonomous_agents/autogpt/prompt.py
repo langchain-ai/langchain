@@ -31,9 +31,7 @@ class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):
             'используйте команду "завершить".'
         )
         # Construct full prompt
-        full_prompt = (
-            f"Вы {self.ai_name}, {self.ai_role}\n{prompt_start}\n\nЦЕЛИ:\n\n"
-        )
+        full_prompt = f"Вы {self.ai_name}, {self.ai_role}\n{prompt_start}\n\nЦЕЛИ:\n\n"
         for i, goal in enumerate(goals):
             full_prompt += f"{i+1}. {goal}\n"
 
@@ -78,4 +76,3 @@ class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):
         messages += historical_messages
         messages.append(input_message)
         return messages
-    

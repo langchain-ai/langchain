@@ -85,9 +85,7 @@ class PromptGenerator:
                 f"{i + 1}. {self._generate_command_string(item)}"
                 for i, item in enumerate(items)
             ]
-            finish_description = (
-                "используйте это, чтобы сигнализировать, что вы выполнили все свои задачи"
-            )
+            finish_description = "используйте это, чтобы сигнализировать, что вы выполнили все свои задачи"
             finish_args = (
                 '"response": "окончательный ответ, чтобы '
                 'люди знали, что вы выполнили свои задачи"'
@@ -155,9 +153,7 @@ def get_prompt(tools: List[BaseTool]) -> str:
         prompt_generator.add_tool(tool)
 
     # Add resources to the PromptGenerator object
-    prompt_generator.add_resource(
-        "Доступ в Интернет для поиска и сбора информации."
-    )
+    prompt_generator.add_resource("Доступ в Интернет для поиска и сбора информации.")
     prompt_generator.add_resource("Управление долгосрочной памятью.")
     prompt_generator.add_resource(
         "Агенты на базе GPT-3.5 для делегирования простых задач."

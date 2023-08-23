@@ -6,7 +6,17 @@ import time
 import openai
 import tiktoken
 
-IGNORED_DIRS = {"venv", ".venv", "build", ".git", "__pycache__", "tests", "venv_clear", "docs", "external_tools"}
+IGNORED_DIRS = {
+    "venv",
+    ".venv",
+    "build",
+    ".git",
+    "__pycache__",
+    "tests",
+    "venv_clear",
+    "docs",
+    "external_tools",
+}
 enc = tiktoken.get_encoding("cl100k_base")
 
 ALREADY_PROCESSED_STORE = "libs/external_tools/translator_processed.txt"
