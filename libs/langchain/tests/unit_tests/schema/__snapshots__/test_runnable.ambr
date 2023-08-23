@@ -1352,7 +1352,6 @@
                   "lc": 1,
                   "type": "not_implemented",
                   "id": [
-                    "runnable",
                     "test_runnable",
                     "FakeRetriever"
                   ]
