@@ -41,11 +41,8 @@ class FalkorDBGraph:
 
         try:
             self.refresh_schema()
-        except:
-            raise ValueError(
-                "Could not connect to redis database. "
-                "Please ensure that the url is correct"
-            )
+        except Exception as e:
+            raise ValueError(f"Could not refresh schema. Error: {e}")
 
     @property
     def get_schema(self) -> str:

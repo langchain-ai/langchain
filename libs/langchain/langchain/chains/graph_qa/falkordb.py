@@ -4,9 +4,9 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional
 
+from FalkorDB import FalkorDB
 from pydantic import Field
 
-from FalkorDB import FalkorDB
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
