@@ -1,6 +1,8 @@
 """Test ChatOpenAI wrapper."""
 
 
+from typing import Any
+
 import pytest
 
 from langchain.callbacks.manager import CallbackManager
@@ -87,6 +89,34 @@ def test_chat_openai_streaming() -> None:
     response = chat([message])
     assert callback_handler.llm_streams > 0
     assert isinstance(response, BaseMessage)
+
+
+@pytest.mark.scheduled
+def test_chat_openai_streaming_generation_info() -> None:
+    """Test that generation info is preserved when streaming."""
+
+    class _FakeCallback(FakeCallbackHandler):
+        saved_things: dict = {}
+
+        def on_llm_end(
+            self,
+            *args: Any,
+            **kwargs: Any,
+        ) -> Any:
+            # Save the generation
+            self.saved_things["generation"] = args[0]
+
+    callback = _FakeCallback()
+    callback_manager = CallbackManager([callback])
+    chat = ChatOpenAI(
+        max_tokens=2,
+        temperature=0,
+        callback_manager=callback_manager,
+    )
+    list(chat.stream("hi"))
+    generation = callback.saved_things["generation"]
+    # `Hello!` is two tokens, assert that that is what is returned
+    assert generation.generations[0][0].text == "Hello!"
 
 
 def test_chat_openai_llm_output_contains_model_name() -> None:
