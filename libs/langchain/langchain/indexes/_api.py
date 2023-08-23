@@ -237,7 +237,7 @@ def index(
         except NotImplementedError:
             doc_iterator = iter(docs_source.load())
     else:
-        doc_iterator = docs_source
+        doc_iterator = iter(docs_source)
 
     source_id_assigner = _get_source_id_assigner(source_id_key)
 

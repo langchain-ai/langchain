@@ -1,6 +1,6 @@
 from datetime import datetime
-
 from unittest.mock import patch
+
 import pytest
 
 from langchain.indexes._sql_record_manager import SQLRecordManager, UpsertionRecord
@@ -38,7 +38,7 @@ def test_update_timestamp(manager: SQLRecordManager) -> None:
         records = (
             session.query(UpsertionRecord)
             .filter(UpsertionRecord.namespace == manager.namespace)
-            .all()
+            .all()  # type: ignore[attr-defined]
         )
 
         assert [
@@ -65,7 +65,7 @@ def test_update_timestamp(manager: SQLRecordManager) -> None:
         records = (
             session.query(UpsertionRecord)
             .filter(UpsertionRecord.namespace == manager.namespace)
-            .all()
+            .all()  # type: ignore[attr-defined]
         )
 
         assert [
@@ -92,7 +92,7 @@ def test_update_timestamp(manager: SQLRecordManager) -> None:
         records = (
             session.query(UpsertionRecord)
             .filter(UpsertionRecord.namespace == manager.namespace)
-            .all()
+            .all()  # type: ignore[attr-defined]
         )
 
         assert [
