@@ -1445,7 +1445,7 @@ class RunnableLambda(Runnable[Input, Output]):
             return await self._acall_with_config(self._ainvoke, input, config)
         else:
             # Delegating to super implementation of ainvoke.
-            # Uses asyncio executor to run the sync version (invoke) 
+            # Uses asyncio executor to run the sync version (invoke)
             return await super().ainvoke(input, config)
 
 
