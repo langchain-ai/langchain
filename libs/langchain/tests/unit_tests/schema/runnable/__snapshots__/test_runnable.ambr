@@ -545,6 +545,9 @@
                 }
               }
             }
+          ],
+          "input_variables": [
+            "question"
           ]
         }
       },
