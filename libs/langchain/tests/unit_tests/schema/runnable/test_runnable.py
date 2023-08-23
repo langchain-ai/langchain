@@ -1,5 +1,5 @@
 from operator import itemgetter
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 import pytest
@@ -1282,3 +1282,17 @@ def test_each(snapshot: SnapshotAssertion) -> None:
         "test",
         "this",
     ]
+
+
+def test_recursive_lambda() -> None:
+    def _simple_recursion(x: int) -> Union[int, Runnable]:
+        if x < 10:
+            return RunnableLambda(lambda *args: _simple_recursion(x + 1))
+        else:
+            return x
+
+    runnable = RunnableLambda(_simple_recursion)
+    assert runnable.invoke(5) == 10
+
+    with pytest.raises(RecursionError):
+        runnable.invoke(0, {"recursion_limit": 9})
