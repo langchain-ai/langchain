@@ -29,7 +29,7 @@
 Fill out [this form](https://airtable.com/appwQzlErAS2qiP0L/shrGtGaVBVAz7NcV2) to share more about what you're building, and our team will get in touch.
 -->
 
-## 🚨🚨🚨ВАЖНО!!!🚨🚨🚨#
+## 🚨🚨🚨ВАЖНО!!!🚨🚨🚨
 
 Данная библиотека - очень ранняя альфа-версия. Она находится в процессе перевода и адаптации к GigaChat. Большая часть компонентов пока не проверена на совместимость с GigaChat, поэтому могут возникать ошибки. Пожалуйста, будьте осторожны при использовании этой библиотеки в своих проектах. Будем рады видеть ваши pull request'ы и issues.
 
