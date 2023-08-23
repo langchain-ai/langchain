@@ -15,7 +15,6 @@ from typing import (
     Literal,
     Optional,
     Sequence,
-    Iterable,
     TypedDict,
     TypeVar,
     Union,
@@ -49,7 +48,7 @@ class _HashedDocument(Document):
 
     uid: str
     hash_: str
-    """The hash of the document including content and metadat."""
+    """The hash of the document including content and metadata."""
     content_hash: str
     """The hash of the document content."""
     metadata_hash: str
@@ -61,7 +60,17 @@ class _HashedDocument(Document):
         content = values.get("page_content", "")
         metadata = values.get("metadata", {})
 
+        forbidden_keys = ("hash_", "content_hash", "metadata_hash")
+
+        for key in forbidden_keys:
+            if key in metadata:
+                raise ValueError(
+                    f"Metadata cannot contain key {key} as it "
+                    f"is reserved for internal use."
+                )
+
         content_hash = str(_hash_string_to_uuid(content))
+
         try:
             metadata_hash = str(_hash_nested_dict_to_uuid(metadata))
         except Exception as e:
@@ -144,13 +153,13 @@ def _deduplicate_in_order(
 class IndexingResult(TypedDict):
     """Return a detailed a breakdown of the result of the indexing operation."""
 
-    num_added: Optional[int]
+    num_added: int
     """Number of added documents."""
-    num_updated: Optional[int]
+    num_updated: int
     """Number of updated documents because they were not up to date."""
-    num_deleted: Optional[int]
+    num_deleted: int
     """Number of deleted documents."""
-    num_skipped: Optional[int]
+    num_skipped: int
     """Number of skipped documents because they were already up to date."""
 
 
@@ -242,17 +251,12 @@ def index(
     for doc_batch in _batch(batch_size, doc_iterator):
         hashed_docs = list(
             _deduplicate_in_order(
-                [
-                    _HashedDocument(
-                        page_content=doc.page_content, metadata=doc.metadata
-                    )
-                    for doc in doc_batch
-                ]
+                [_HashedDocument.from_document(doc) for doc in doc_batch]
             )
         )
 
         source_ids: Sequence[Optional[str]] = [
-            source_id_assigner(doc.to_document()) for doc in hashed_docs
+            source_id_assigner(doc) for doc in hashed_docs
         ]
 
         if delete_mode == "incremental":
@@ -273,13 +277,13 @@ def index(
         # Filter out documents that already exist in the record store.
         uids = []
         docs_to_index = []
-        for doc, smart_doc, doc_exists in zip(doc_batch, hashed_docs, exists_batch):
+        for doc, hashed_doc, doc_exists in zip(doc_batch, hashed_docs, exists_batch):
             if doc_exists:
                 # Must be updated to refresh timestamp.
-                record_manager.update([smart_doc.uid], time_at_least=index_start_dt)
+                record_manager.update([hashed_doc.uid], time_at_least=index_start_dt)
                 num_skipped += 1
                 continue
-            uids.append(smart_doc.uid)
+            uids.append(hashed_doc.uid)
             docs_to_index.append(doc)
 
         # Be pessimistic and assume that all vector store write will fail.
@@ -300,9 +304,9 @@ def index(
         # If source IDs are provided, we can do the deletion incrementally!
         if delete_mode == "incremental":
             # Get the uids of the documents that were not returned by the loader.
+            
             # mypy isn't good enough to determine that source ids cannot be None
             # here due to a check that's happening above, so we check again.
-
             for source_id in source_ids:
                 if source_id is None:
                     raise AssertionError("Source ids cannot be None here.")
