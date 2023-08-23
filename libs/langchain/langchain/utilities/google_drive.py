@@ -1407,23 +1407,102 @@ class GoogleDriveUtilities(Serializable, BaseModel):
 
     @staticmethod
     def _extract_text(
-        node: Any, key: str = "content", path: str = "/textRun"
+        node: Any,
+        *,
+        key: str = "content",
+        path: str = "/textRun",
+        markdown: bool = True,
     ) -> List[str]:
-        result = []
-
-        def visitor(node: Any, parent: str) -> None:
+        def visitor(result: List[str], node: Any, parent: str) -> List[str]:
             if isinstance(node, dict):
+                if "paragraphMarker" in node:
+                    result.append("- " if "bullet" in node["paragraphMarker"] else "")
+                    return result
+                if "paragraph" in node:
+                    result.append("- " if "bullet" in node["paragraph"] else "")
+                if "table" in node:
+                    col_size = [0 for _ in range(node["table"]["columns"])]
+                    rows = [[] for _ in range(node["table"]["rows"])]
+                    for row_idx, row in enumerate(node["table"]["tableRows"]):
+                        for col_idx, cell in enumerate(row["tableCells"]):
+                            body = "".join(
+                                visitor([], cell, parent + "/table/tableCells/[]")
+                            )
+                            # remove URL to calculate the col max size
+                            pure_body = re.sub(r"\[(.*)\](?:\(.*\))", r"\1", body)
+                            cell_size = max(3, len(max(pure_body.split("\n"), key=len)))
+                            col_size[col_idx] = max(col_size[col_idx], cell_size)
+                            str_cell = re.sub(r"\n", r"<br />", "".join(body).strip())
+                            rows[row_idx].append(str_cell)
+                    # Reformate to markdown with extra space
+                    table_result = []
+                    for row in rows:
+                        for col_idx, cell in enumerate(row):
+                            split_cell = re.split(r"(<br />|\n)", cell)
+                            # Split each portion and pad with space
+                            for i, portion in enumerate(split_cell):
+                                if portion != "<br />":
+                                    pure_portion = re.sub(
+                                        r"\[(.*)\](?:\(.*\))", r"\1", portion
+                                    )
+                                    split_cell[i] = portion + (
+                                        " " * (col_size[col_idx] - len(pure_portion))
+                                    )
+                            # rebuild the body
+                            row[col_idx] = "".join(split_cell)
+                    # Now, build a markdown array
+                    for row_idx, row in enumerate(rows):
+                        row_result = ["| "]
+                        for cell in row:
+                            row_result.append(f"{cell} | ")
+                        result.append("".join(row_result) + "\n")
+                        if row_idx == 0:
+                            row_result = ["|"]
+                            for col_idx in range(len(row)):
+                                row_result.append(("-" * (col_size[col_idx] + 2)) + "|")
+                            result.append("".join(row_result) + "\n")
+                    return result
+
                 if key in node and isinstance(node.get(key), str):
                     if parent.endswith(path):
-                        result.append(node[key].strip())
+                        if node[key].strip():
+                            if markdown and (
+                                ("style" in node and "link" in node["style"])
+                                or ("textStyle" in node and "link" in node["textStyle"])
+                            ):
+                                style_node = (
+                                    node["style"]
+                                    if "style" in node
+                                    else node["textStyle"]
+                                )
+                                link = style_node["link"]
+                                if link:
+                                    result[
+                                        -1
+                                    ] = f"{result[-1]}[{node[key]}]({style_node['link']})"
+                                else:
+                                    # Empty link
+                                    result[-1] = f"{result[-1]}{node[key]}"
+                            else:
+                                result[-1] = f"{result[-1]}{node[key]}"
+
                 for k, v in node.items():
-                    visitor(v, parent + "/" + k)
+                    visitor(result, v, parent + "/" + k)
             elif isinstance(node, list):
                 for v in node:
-                    visitor(v, parent + "/[]")
+                    visitor(result, v, parent + "/[]")
+            return result
 
-        visitor(node, "")
-        return result
+        result = []
+        visitor(result, node, "")
+        # Clean the result:
+        purge_result = []
+        for line in result:
+            line = re.sub("\x0b\s*", "\n", line).strip()
+            if not line:
+                line = "\n"
+            purge_result.append(line)
+        return purge_result
 
     def _lazy_load_sheet_from_file(self, file: Dict) -> Iterator[Document]:
         """Load a sheet and all tabs from an ID."""
@@ -1514,12 +1593,12 @@ class GoogleDriveUtilities(Serializable, BaseModel):
                             x["transform"].get("translateX", 0),
                         ),
                     )
-                    lines += GoogleDriveUtilities._extract_text(page_elements)
+                    lines.extend(GoogleDriveUtilities._extract_text(page_elements))
                     lines.append("<PAGE BREAK>")
             if lines:
                 lines = lines[:-1]
             yield Document(
-                page_content="\n\n".join(lines), metadata=self._extract_meta_data(file)
+                page_content="\n".join(lines), metadata=self._extract_meta_data(file)
             )
         elif self.gslide_mode == "slide":
             for slide in gslide["slides"]:
@@ -1539,7 +1618,7 @@ class GoogleDriveUtilities(Serializable, BaseModel):
                         source += f"#slide=id.{slide['objectId']}"
                     meta["source"] = source
                     yield Document(
-                        page_content="\n\n".join(
+                        page_content="\n".join(
                             GoogleDriveUtilities._extract_text(page_elements)
                         ),
                         metadata=meta,
@@ -1580,7 +1659,7 @@ class GoogleDriveUtilities(Serializable, BaseModel):
             gdoc = self._docs.get(documentId=file["id"]).execute()
             text = GoogleDriveUtilities._extract_text(gdoc["body"]["content"])
             yield Document(
-                page_content="\n\n".join(text), metadata=self._extract_meta_data(file)
+                page_content="\n".join(text), metadata=self._extract_meta_data(file)
             )
 
     def lazy_load_document_from_id(self, file_id: str) -> Iterator[Document]:
