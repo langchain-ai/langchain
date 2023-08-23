@@ -40,7 +40,6 @@ if TYPE_CHECKING:
         SemanticSettings,
         VectorSearch,
     )
-    from azure.search.documents.models import Vector
 
 
 # Allow overriding field names for Azure Search
@@ -230,11 +229,9 @@ class AzureSearch(VectorStore):
                 type=SearchFieldDataType.String,
             ),
         ]
-        user_agent = (
-            f"langchain {user_agent}"
-            if kwargs.get("user_agent", None) is not None
-            else "langchain"
-        )
+        user_agent = "langchain"
+        if "user_agent" in kwargs and kwargs["user_agent"]:
+            user_agent += " " + kwargs["user_agent"]
         self.client = _get_search_client(
             azure_search_endpoint,
             azure_search_key,
@@ -332,7 +329,7 @@ class AzureSearch(VectorStore):
 
     def similarity_search_with_relevance_scores(
         self, query: str, k: int = 4, **kwargs: Any
-    ):
+    ) -> List[Tuple[Document, float]]:
         score_threshold = kwargs.pop("score_threshold", None)
         result = self.vector_search_with_score(query, k=k, **kwargs)
         return (
