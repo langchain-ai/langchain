@@ -75,15 +75,7 @@ class EdenaiTool(BaseTool):
 
         response = requests.post(url, json=payload, headers=headers)
 
-        if response.status_code >= 500:
-            raise Exception(f"EdenAI Server: Error {response.status_code}")
-        elif response.status_code >= 400:
-            raise ValueError(f"EdenAI received an invalid payload: {response.text}")
-        elif response.status_code != 200:
-            raise Exception(
-                f"EdenAI returned an unexpected response with status "
-                f"{response.status_code}: {response.text}"
-            )
+        self._raise_on_error(response)
 
         key = self.providers[0] if payload.get("response_as_dict") else 0
 
@@ -96,6 +88,17 @@ class EdenaiTool(BaseTool):
             return self._parse_response(data)
         except Exception as e:
             raise RuntimeError(f"An error occured while running tool: {e}")
+
+    def _raise_on_error(self, response: requests.Response) -> None:
+        if response.status_code >= 500:
+            raise Exception(f"EdenAI Server: Error {response.status_code}")
+        elif response.status_code >= 400:
+            raise ValueError(f"EdenAI received an invalid payload: {response.text}")
+        elif response.status_code != 200:
+            raise Exception(
+                f"EdenAI returned an unexpected response with status "
+                f"{response.status_code}: {response.text}"
+            )
 
     @abstractmethod
     def _parse_response(self, response: Any) -> str:
@@ -111,15 +114,7 @@ class EdenaiTool(BaseTool):
 
         response = requests.get(url, headers=headers)
 
-        if response.status_code >= 500:
-            raise Exception(f"EdenAI Server: Error {response.status_code}")
-        elif response.status_code >= 400:
-            raise ValueError(f"EdenAI received an invalid payload: {response.text}")
-        elif response.status_code != 200:
-            raise Exception(
-                f"EdenAI returned an unexpected response with status "
-                f"{response.status_code}: {response.text}"
-            )
+        self._raise_on_error(response)
 
         return response
 
