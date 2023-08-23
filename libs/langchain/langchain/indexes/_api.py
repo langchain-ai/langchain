@@ -304,7 +304,7 @@ def index(
         # If source IDs are provided, we can do the deletion incrementally!
         if delete_mode == "incremental":
             # Get the uids of the documents that were not returned by the loader.
-            
+
             # mypy isn't good enough to determine that source ids cannot be None
             # here due to a check that's happening above, so we check again.
             for source_id in source_ids:
