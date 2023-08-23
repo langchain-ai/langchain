@@ -205,7 +205,7 @@ class DocAIPdfLoader(BaseBlobParser):
 
         if enable_native_pdf_parsing:
             process_options = ProcessOptions(
-                ocr_config=OcrConfig(enable_native_pdf_parsing=True)
+                ocr_config=OcrConfig(enable_native_pdf_parsing=enable_native_pdf_parsing)
             )
         else:
             process_options = ProcessOptions()
