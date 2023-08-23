@@ -710,7 +710,7 @@ class ElasticsearchStore(VectorStore):
                             after deleting documents. Defaults to True.
         """
         try:
-            from elasticsearch.helpers import bulk
+            from elasticsearch.helpers import bulk, BulkIndexError
         except ImportError:
             raise ImportError(
                 "Could not import elasticsearch python package. "
@@ -731,8 +731,9 @@ class ElasticsearchStore(VectorStore):
                 logger.debug(f"Deleted {len(body)} texts from index")
 
                 return True
-            except Exception as e:
+            except BulkIndexError as e:
                 logger.error(f"Error deleting texts: {e}")
+                logger.error(f"First error reason: {e.errors[0].get('index', {}).get('error', {}).get('reason')}")
                 raise e
 
         else:
@@ -801,7 +802,7 @@ class ElasticsearchStore(VectorStore):
             List of ids from adding the texts into the vectorstore.
         """
         try:
-            from elasticsearch.helpers import bulk
+            from elasticsearch.helpers import bulk, BulkIndexError
         except ImportError:
             raise ImportError(
                 "Could not import elasticsearch python package. "
@@ -867,8 +868,9 @@ class ElasticsearchStore(VectorStore):
 
                 logger.debug(f"added texts {ids} to index")
                 return ids
-            except Exception as e:
+            except BulkIndexError as e:
                 logger.error(f"Error adding texts: {e}")
+                logger.error(f"First error reason: {e.errors[0].get('index', {}).get('error', {}).get('reason')}")
                 raise e
 
         else:
