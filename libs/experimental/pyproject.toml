@@ -14,7 +14,7 @@ langchain = ">=0.0.239"
 
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.0.285"
+ruff = "^0.0.249"
 black = "^23.1.0"
 
 [tool.poetry.group.typing.dependencies]
