@@ -15,20 +15,18 @@ allow it to work with a variety of SQL as a backend.
 """
 import contextlib
 import uuid
-from datetime import datetime
 from typing import Any, Dict, Generator, List, Optional, Sequence
 
 from sqlalchemy import (
     Column,
-    DateTime,
     Engine,
+    Float,
     Index,
     String,
     UniqueConstraint,
     and_,
     create_engine,
-    func,
-    select,
+    text,
 )
 from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.ext.declarative import declarative_base
@@ -62,19 +60,8 @@ class UpsertionRecord(Base):  # type: ignore[valid-type,misc]
     namespace = Column(String, index=True, nullable=False)
     group_id = Column(String, index=True, nullable=True)
 
-    # Created at and updated at should be using the server time to make sure
-    # that time is incremented monotonically.
-    created_at = Column(DateTime, server_default=func.now())
-    updated_at = Column(
-        DateTime,
-        server_default=func.now(),
-        # Disabling type hints for most SQLAlchemy violations since its unclear
-        # that mypy and SQLAlchemy are playing nicely together.
-        # Argument "server_onupdate" to "Column" has incompatible type "now";
-        # expected "Optional[FetchedValue]"
-        server_onupdate=func.now(),  # type: ignore[arg-type]
-        index=True,
-    )
+    # The timestamp associated with the last record upsertion.
+    updated_at = Column(Float, index=True)
 
     __table_args__ = (
         UniqueConstraint("key", "namespace", name="uix_key_namespace"),
@@ -142,15 +129,25 @@ class SQLRecordManager(RecordManager):
         finally:
             session.close()
 
-    def get_time(self) -> datetime:
-        """Get the current server time.
+    def get_time(self) -> float:
+        """Get the current server time as a timestamp.
 
         Please note it's critical that time is obtained from the server since
         we want a monotonic clock.
         """
         with self._make_session() as session:
-            dt = session.execute(select(func.now())).scalar()
-            if not isinstance(dt, datetime):
+            # * SQLite specific implementation, can be changed based on dialect.
+            # * For SQLite, unlike unixepoch it will work with older versions of SQLite.
+            # ----
+            # julianday('now'): Julian day number for the current date and time.
+            # The Julian day is a continuous count of days, starting from a
+            # reference date (Julian day number 0).
+            # 2440587.5 - constant represents the Julian day number for January 1, 1970
+            # 86400.0 - constant represents the number of seconds
+            # in a day (24 hours * 60 minutes * 60 seconds)
+            query = text("SELECT (julianday('now') - 2440587.5) * 86400.0;")
+            dt = session.execute(query).scalar()
+            if not isinstance(dt, float):
                 raise AssertionError(f"Unexpected type for datetime: {type(dt)}")
             return dt
 
@@ -159,7 +156,7 @@ class SQLRecordManager(RecordManager):
         keys: Sequence[str],
         *,
         group_ids: Optional[Sequence[Optional[str]]] = None,
-        time_at_least: Optional[datetime] = None,
+        time_at_least: Optional[float] = None,
     ) -> None:
         """Upsert records into the SQLite database."""
         if group_ids is None:
@@ -229,8 +226,8 @@ class SQLRecordManager(RecordManager):
     def list_keys(
         self,
         *,
-        before: Optional[datetime] = None,
-        after: Optional[datetime] = None,
+        before: Optional[float] = None,
+        after: Optional[float] = None,
         group_ids: Optional[Sequence[str]] = None,
     ) -> List[str]:
         """List records in the SQLite database based on the provided date range."""

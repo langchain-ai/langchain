@@ -31,7 +31,9 @@ def test_update(manager: SQLRecordManager) -> None:
 def test_update_timestamp(manager: SQLRecordManager) -> None:
     """Test updating records in the database."""
     # no keys should be present in the set
-    with patch.object(manager, "get_time", return_value=datetime(2021, 1, 2)):
+    with patch.object(
+        manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+    ):
         manager.update(["key1"])
 
     with manager._make_session() as session:
@@ -54,11 +56,13 @@ def test_update_timestamp(manager: SQLRecordManager) -> None:
                 "group_id": None,
                 "key": "key1",
                 "namespace": "kittens",
-                "updated_at": datetime(2021, 1, 2, 0, 0),
+                "updated_at": datetime(2021, 1, 2, 0, 0).timestamp(),
             }
         ]
 
-    with patch.object(manager, "get_time", return_value=datetime(2023, 1, 2)):
+    with patch.object(
+        manager, "get_time", return_value=datetime(2023, 1, 2).timestamp()
+    ):
         manager.update(["key1"])
 
     with manager._make_session() as session:
@@ -81,11 +85,13 @@ def test_update_timestamp(manager: SQLRecordManager) -> None:
                 "group_id": None,
                 "key": "key1",
                 "namespace": "kittens",
-                "updated_at": datetime(2023, 1, 2, 0, 0),
+                "updated_at": datetime(2023, 1, 2, 0, 0).timestamp(),
             }
         ]
 
-    with patch.object(manager, "get_time", return_value=datetime(2023, 2, 2)):
+    with patch.object(
+        manager, "get_time", return_value=datetime(2023, 2, 2).timestamp()
+    ):
         manager.update(["key1"], group_ids=["group1"])
 
     with manager._make_session() as session:
@@ -108,7 +114,7 @@ def test_update_timestamp(manager: SQLRecordManager) -> None:
                 "group_id": "group1",
                 "key": "key1",
                 "namespace": "kittens",
-                "updated_at": datetime(2023, 2, 2, 0, 0),
+                "updated_at": datetime(2023, 2, 2, 0, 0).timestamp(),
             }
         ]
 
@@ -149,36 +155,46 @@ def test_list_keys(manager: SQLRecordManager) -> None:
         # Add some keys with explicit updated_ats
         session.add(
             UpsertionRecord(
-                key="key1", updated_at=datetime(2021, 1, 1), namespace="kittens"
+                key="key1",
+                updated_at=datetime(2021, 1, 1).timestamp(),
+                namespace="kittens",
             )
         )
         session.add(
             UpsertionRecord(
-                key="key2", updated_at=datetime(2022, 1, 1), namespace="kittens"
+                key="key2",
+                updated_at=datetime(2022, 1, 1).timestamp(),
+                namespace="kittens",
             )
         )
         session.add(
             UpsertionRecord(
-                key="key3", updated_at=datetime(2023, 1, 1), namespace="kittens"
+                key="key3",
+                updated_at=datetime(2023, 1, 1).timestamp(),
+                namespace="kittens",
             )
         )
         session.add(
             UpsertionRecord(
                 key="key4",
                 group_id="group1",
-                updated_at=datetime(2024, 1, 1),
+                updated_at=datetime(2024, 1, 1).timestamp(),
                 namespace="kittens",
             )
         )
         # Insert keys from a different namespace, these should not be visible!
         session.add(
             UpsertionRecord(
-                key="key1", updated_at=datetime(2021, 1, 1), namespace="puppies"
+                key="key1",
+                updated_at=datetime(2021, 1, 1).timestamp(),
+                namespace="puppies",
             )
         )
         session.add(
             UpsertionRecord(
-                key="key5", updated_at=datetime(2021, 1, 1), namespace="puppies"
+                key="key5",
+                updated_at=datetime(2021, 1, 1).timestamp(),
+                namespace="puppies",
             )
         )
         session.commit()
@@ -187,32 +203,34 @@ def test_list_keys(manager: SQLRecordManager) -> None:
     assert manager.list_keys() == ["key1", "key2", "key3", "key4"]
 
     # Retrieve keys updated after a certain date
-    assert manager.list_keys(after=datetime(2022, 2, 1)) == ["key3", "key4"]
+    assert manager.list_keys(after=datetime(2022, 2, 1).timestamp()) == ["key3", "key4"]
 
     # Retrieve keys updated after a certain date
-    assert manager.list_keys(before=datetime(2022, 2, 1)) == [
+    assert manager.list_keys(before=datetime(2022, 2, 1).timestamp()) == [
         "key1",
         "key2",
     ]
 
     # Retrieve keys updated after a certain date
-    assert manager.list_keys(before=datetime(2019, 2, 1)) == []
+    assert manager.list_keys(before=datetime(2019, 2, 1).timestamp()) == []
 
     # Retrieve keys in a time range
     assert manager.list_keys(
-        before=datetime(2022, 2, 1),
-        after=datetime(2021, 11, 1),
+        before=datetime(2022, 2, 1).timestamp(),
+        after=datetime(2021, 11, 1).timestamp(),
     ) == ["key2"]
 
     assert manager.list_keys(group_ids=["group1", "group2"]) == ["key4"]
 
     # Test multiple filters
     assert (
-        manager.list_keys(group_ids=["group1", "group2"], before=datetime(2019, 1, 1))
+        manager.list_keys(
+            group_ids=["group1", "group2"], before=datetime(2019, 1, 1).timestamp()
+        )
         == []
     )
     assert manager.list_keys(
-        group_ids=["group1", "group2"], after=datetime(2019, 1, 1)
+        group_ids=["group1", "group2"], after=datetime(2019, 1, 1).timestamp()
     ) == ["key4"]
 
 

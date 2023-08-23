@@ -3,7 +3,6 @@ from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence, Type
 from unittest.mock import patch
 
 import pytest
-from freezegun import freeze_time
 
 from langchain.document_loaders.base import BaseLoader
 from langchain.embeddings.base import Embeddings
@@ -122,25 +121,23 @@ def test_indexing_same_content(
         ]
     )
 
-    with freeze_time("2021-01-01"):
-        assert index(loader, record_manager, vector_store) == {
-            "num_added": 2,
-            "num_deleted": 0,
-            "num_skipped": 0,
-            "num_updated": 0,
-        }
+    assert index(loader, record_manager, vector_store) == {
+        "num_added": 2,
+        "num_deleted": 0,
+        "num_skipped": 0,
+        "num_updated": 0,
+    }
 
     assert len(list(vector_store.store)) == 2
 
     for _ in range(2):
         # Run the indexing again
-        with freeze_time("2021-01-02"):
-            assert index(loader, record_manager, vector_store) == {
-                "num_added": 0,
-                "num_deleted": 0,
-                "num_skipped": 2,
-                "num_updated": 0,
-            }
+        assert index(loader, record_manager, vector_store) == {
+            "num_added": 0,
+            "num_deleted": 0,
+            "num_skipped": 2,
+            "num_updated": 0,
+        }
 
 
 def test_index_simple_delete_full(

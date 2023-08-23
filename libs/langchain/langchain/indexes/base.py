@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import uuid
 from abc import ABC, abstractmethod
-from datetime import datetime
 from typing import List, Optional, Sequence
 
 NAMESPACE_UUID = uuid.UUID(int=1984)
@@ -27,14 +26,14 @@ class RecordManager(ABC):
         """Create the database schema for the record manager."""
 
     @abstractmethod
-    def get_time(self) -> datetime:
-        """Get the current server time.
+    def get_time(self) -> float:
+        """Get the current server time as a high resolution timestamp!
 
         It's important to get this from the server to ensure a monotonic clock,
         otherwise there may be data loss when cleaning up old documents!
 
         Returns:
-            The current server time.
+            The current server time as a flaot timestamp.
         """
 
     @abstractmethod
@@ -43,7 +42,7 @@ class RecordManager(ABC):
         keys: Sequence[str],
         *,
         group_ids: Optional[Sequence[Optional[str]]] = None,
-        time_at_least: Optional[datetime] = None,
+        time_at_least: Optional[float] = None,
     ) -> None:
         """Upsert records into the database.
 
@@ -72,8 +71,8 @@ class RecordManager(ABC):
     def list_keys(
         self,
         *,
-        before: Optional[datetime] = None,
-        after: Optional[datetime] = None,
+        before: Optional[float] = None,
+        after: Optional[float] = None,
         group_ids: Optional[Sequence[str]] = None,
     ) -> List[str]:
         """List records in the database based on the provided filters.
