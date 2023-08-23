@@ -155,7 +155,9 @@ def test_index_simple_delete_full(
         ]
     )
 
-    with patch.object(record_manager, "get_time", return_value=datetime(2021, 1, 1)):
+    with patch.object(
+        record_manager, "get_time", return_value=datetime(2021, 1, 1).timestamp()
+    ):
         assert index(loader, record_manager, vector_store, delete_mode="full") == {
             "num_added": 2,
             "num_deleted": 0,
@@ -163,7 +165,9 @@ def test_index_simple_delete_full(
             "num_updated": 0,
         }
 
-    with patch.object(record_manager, "get_time", return_value=datetime(2021, 1, 1)):
+    with patch.object(
+        record_manager, "get_time", return_value=datetime(2021, 1, 1).timestamp()
+    ):
         assert index(loader, record_manager, vector_store, delete_mode="full") == {
             "num_added": 0,
             "num_deleted": 0,
@@ -182,7 +186,9 @@ def test_index_simple_delete_full(
         ]
     )
 
-    with patch.object(record_manager, "get_time", return_value=datetime(2021, 1, 2)):
+    with patch.object(
+        record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+    ):
         assert index(loader, record_manager, vector_store, delete_mode="full") == {
             "num_added": 1,
             "num_deleted": 1,
@@ -198,7 +204,9 @@ def test_index_simple_delete_full(
     assert doc_texts == {"mutated document 1", "This is another document."}
 
     # Attempt to index again verify that nothing changes
-    with patch.object(record_manager, "get_time", return_value=datetime(2021, 1, 2)):
+    with patch.object(
+        record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+    ):
         assert index(loader, record_manager, vector_store, delete_mode="full") == {
             "num_added": 0,
             "num_deleted": 0,
@@ -260,7 +268,9 @@ def test_no_delete(
         ]
     )
 
-    with patch.object(record_manager, "get_time", return_value=datetime(2021, 1, 2)):
+    with patch.object(
+        record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+    ):
         assert index(
             loader,
             record_manager,
@@ -275,7 +285,9 @@ def test_no_delete(
         }
 
     # If we add the same content twice it should be skipped
-    with patch.object(record_manager, "get_time", return_value=datetime(2021, 1, 2)):
+    with patch.object(
+        record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+    ):
         assert index(
             loader,
             record_manager,
@@ -303,7 +315,9 @@ def test_no_delete(
     )
 
     # Should result in no updates or deletions!
-    with patch.object(record_manager, "get_time", return_value=datetime(2021, 1, 2)):
+    with patch.object(
+        record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+    ):
         assert index(
             loader,
             record_manager,
@@ -335,7 +349,9 @@ def test_incremental_delete(
         ]
     )
 
-    with patch.object(record_manager, "get_time", return_value=datetime(2021, 1, 2)):
+    with patch.object(
+        record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+    ):
         assert index(
             loader,
             record_manager,
@@ -357,7 +373,9 @@ def test_incremental_delete(
     assert doc_texts == {"This is another document.", "This is a test document."}
 
     # Attempt to index again verify that nothing changes
-    with patch.object(record_manager, "get_time", return_value=datetime(2021, 1, 2)):
+    with patch.object(
+        record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+    ):
         assert index(
             loader,
             record_manager,
@@ -390,7 +408,9 @@ def test_incremental_delete(
     )
 
     # Attempt to index again verify that nothing changes
-    with patch.object(record_manager, "get_time", return_value=datetime(2021, 1, 3)):
+    with patch.object(
+        record_manager, "get_time", return_value=datetime(2021, 1, 3).timestamp()
+    ):
         assert index(
             loader,
             record_manager,
