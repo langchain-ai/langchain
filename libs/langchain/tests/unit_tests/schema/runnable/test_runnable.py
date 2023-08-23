@@ -1106,6 +1106,17 @@ class FakeSplitIntoListParser(BaseOutputParser[List[str]]):
         return text.strip().split(", ")
 
 
+def test_each_simple() -> None:
+    """Test that each() works with a simple runnable."""
+    parser = FakeSplitIntoListParser()
+    assert parser.invoke("first item, second item") == ["first item", "second item"]
+    assert parser.map().invoke(["a, b", "c"]) == [["a", "b"], ["c"]]
+    assert parser.map().map().invoke([["a, b", "c"], ["c, e"]]) == [
+        [["a", "b"], ["c"]],
+        [["c", "e"]],
+    ]
+
+
 def test_each(snapshot: SnapshotAssertion) -> None:
     prompt = (
         SystemMessagePromptTemplate.from_template("You are a nice assistant.")
