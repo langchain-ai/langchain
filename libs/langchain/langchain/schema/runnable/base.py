@@ -1385,9 +1385,6 @@ class RunnableEach(Serializable, Runnable[List[Input], List[Output]]):
     def lc_namespace(self) -> List[str]:
         return self.__class__.__module__.split(".")[:-1]
 
-    def map(self) -> RunnableEach[Input, Output]:  # type: ignore[override]
-        return self
-
     def bind(self, **kwargs: Any) -> RunnableEach[Input, Output]:
         return RunnableEach(bound=self.bound.bind(**kwargs))
 
