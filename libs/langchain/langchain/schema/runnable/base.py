@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 import threading
 from abc import ABC, abstractmethod
 from concurrent.futures import FIRST_COMPLETED, wait
@@ -1343,9 +1344,18 @@ class RunnableLambda(Runnable[Input, Output]):
     A runnable that runs a callable.
     """
 
-    def __init__(self, func: Callable[[Input], Output]) -> None:
-        if callable(func):
-            self.func = func
+    def __init__(
+        self,
+        func: Union[Callable[[Input], Output], Callable[[Input], Awaitable[Output]]],
+        afunc: Optional[Callable[[Input], Awaitable[Output]]] = None,
+    ) -> None:
+        if afunc is not None:
+            self.afunc = afunc
+
+        if inspect.iscoroutinefunction(func):
+            self.afunc = func
+        elif callable(func):
+            self.func = cast(Callable[[Input], Output], func)
         else:
             raise TypeError(
                 "Expected a callable type for `func`."
@@ -1354,9 +1364,62 @@ class RunnableLambda(Runnable[Input, Output]):
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, RunnableLambda):
-            return self.func == other.func
+            if hasattr(self, "func") and hasattr(other, "func"):
+                return self.func == other.func
+            elif hasattr(self, "afunc") and hasattr(other, "afunc"):
+                return self.afunc == other.afunc
+            else:
+                return False
         else:
             return False
+
+    def _invoke(
+        self,
+        input: Input,
+        run_manager: CallbackManagerForChainRun,
+        config: RunnableConfig,
+    ) -> Output:
+        output = self.func(input)
+        # If the output is a runnable, invoke it
+        if isinstance(output, Runnable):
+            recursion_limit = config["recursion_limit"]
+            if recursion_limit <= 0:
+                raise RecursionError(
+                    f"Recursion limit reached when invoking {self} with input {input}."
+                )
+            output = output.invoke(
+                input,
+                patch_config(
+                    config,
+                    callbacks=run_manager.get_child(),
+                    recursion_limit=recursion_limit - 1,
+                ),
+            )
+        return output
+
+    async def _ainvoke(
+        self,
+        input: Input,
+        run_manager: AsyncCallbackManagerForChainRun,
+        config: RunnableConfig,
+    ) -> Output:
+        output = await self.afunc(input)
+        # If the output is a runnable, invoke it
+        if isinstance(output, Runnable):
+            recursion_limit = config["recursion_limit"]
+            if recursion_limit <= 0:
+                raise RecursionError(
+                    f"Recursion limit reached when invoking {self} with input {input}."
+                )
+            output = await output.ainvoke(
+                input,
+                patch_config(
+                    config,
+                    callbacks=run_manager.get_child(),
+                    recursion_limit=recursion_limit - 1,
+                ),
+            )
+        return output
 
     def invoke(
         self,
@@ -1364,7 +1427,26 @@ class RunnableLambda(Runnable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Output:
-        return self._call_with_config(self.func, input, config)
+        if hasattr(self, "func"):
+            return self._call_with_config(self._invoke, input, config)
+        else:
+            raise TypeError(
+                "Cannot invoke a coroutine function synchronously."
+                "Use `ainvoke` instead."
+            )
+
+    async def ainvoke(
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> Output:
+        if hasattr(self, "afunc"):
+            return await self._acall_with_config(self._ainvoke, input, config)
+        else:
+            # Delegating to super implementation of ainvoke.
+            # Uses asyncio executor to run the sync version (invoke)
+            return await super().ainvoke(input, config)
 
 
 class RunnableEach(Serializable, Runnable[List[Input], List[Output]]):
