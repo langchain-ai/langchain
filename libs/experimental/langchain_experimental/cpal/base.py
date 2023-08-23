@@ -6,7 +6,6 @@ from __future__ import annotations
 import json
 from typing import Any, ClassVar, Dict, List, Optional, Type
 
-import pydantic
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
@@ -14,6 +13,7 @@ from langchain.chains.llm import LLMChain
 from langchain.output_parsers import PydanticOutputParser
 from langchain.prompts.prompt import PromptTemplate
 
+from langchain_experimental import pydantic_v1 as pydantic
 from langchain_experimental.cpal.constants import Constant
 from langchain_experimental.cpal.models import (
     CausalModel,

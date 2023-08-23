@@ -132,6 +132,7 @@ from langchain.document_loaders.pdf import (
     PyPDFLoader,
     UnstructuredPDFLoader,
 )
+from langchain.document_loaders.polars_dataframe import PolarsDataFrameLoader
 from langchain.document_loaders.powerpoint import UnstructuredPowerPointLoader
 from langchain.document_loaders.psychic import PsychicLoader
 from langchain.document_loaders.pubmed import PubMedLoader
@@ -299,6 +300,7 @@ __all__ = [
     "PDFPlumberLoader",
     "PagedPDFSplitter",
     "PlaywrightURLLoader",
+    "PolarsDataFrameLoader",
     "PsychicLoader",
     "PubMedLoader",
     "PyMuPDFLoader",
