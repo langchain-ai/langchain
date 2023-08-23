@@ -64,17 +64,16 @@ class EdenAiSpeechToTextTool(EdenaiTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
+        if self.params is None:
+            query_params = {"file_url": query, "language": self.language}
+        else:
+            query_params = {
+                "file_url": query,
+                "language": self.language,
+                **self.params,
+            }
+        get_job_result = self._call_eden_ai(query_params)
         try:
-            if self.params is None:
-                query_params = {"file_url": query, "language": self.language}
-            else:
-                query_params = {
-                    "file_url": query,
-                    "language": self.language,
-                    **self.params,
-                }
-            get_job_result = self._call_eden_ai(query_params)
-
             job_id = get_job_result.json()["public_id"]
 
             url = self.base_url + job_id

@@ -78,23 +78,21 @@ class EdenAiTextToSpeechTool(EdenaiTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
+        if self.params is None:
+            self.params = {"return_type": "url"}
+        else:
+            if "return_type" not in self.params.keys():
+                self.params.update({"return_type": "url"})
+        query_params = {
+            "text": query,
+            "language": self.language,
+            "option": self.voice,
+            **self.params,
+        }
+
+        text_analysis_result = self._call_eden_ai(query_params)
         try:
-            if self.params is None:
-                self.params = {"return_type": "url"}
-            else:
-                if "return_type" not in self.params.keys():
-                    self.params.update({"return_type": "url"})
-            query_params = {
-                "text": query,
-                "language": self.language,
-                "option": self.voice,
-                **self.params,
-            }
-
-            text_analysis_result = self._call_eden_ai(query_params)
-
             text_analysis_dict = text_analysis_result.json()
-
             result = self._format_text_to_speech_result(text_analysis_dict)
             return result
 

@@ -79,9 +79,9 @@ class EdenAiObjectDetectionTool(EdenaiTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
+        query_params = {"file_url": query, "attributes_as_list": False}
+        image_analysis_result = self._call_eden_ai(query_params)
         try:
-            query_params = {"file_url": query, "attributes_as_list": False}
-            image_analysis_result = self._call_eden_ai(query_params)
             image_analysis_dict = image_analysis_result.json()
             return self._format_object_detection_result(image_analysis_dict)
 
