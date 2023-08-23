@@ -79,7 +79,7 @@ class FalkorDBQAChain(Chain):
         qa_prompt: BasePromptTemplate = CYPHER_QA_PROMPT,
         cypher_prompt: BasePromptTemplate = CYPHER_GENERATION_PROMPT,
         **kwargs: Any,
-    ) -> GraphCypherQAChain:
+    ) -> FalkorDBQAChain:
         """Initialize from LLM."""
         qa_chain = LLMChain(llm=llm, prompt=qa_prompt)
         cypher_generation_chain = LLMChain(llm=llm, prompt=cypher_prompt)
