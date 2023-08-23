@@ -80,10 +80,10 @@ For example, to contribute to `langchain` run `cd libs/langchain` before getting
 To install requirements:
 
 ```bash
-poetry install -E all
+poetry install --with test
 ```
 
-This will install all requirements for running the package, examples, linting, formatting, tests, and coverage. Note the `-E all` flag will install all optional dependencies necessary for integration testing.
+This will install all requirements for running the package, examples, linting, formatting, tests, and coverage.
 
 ❗Note: If during installation you receive a `WheelFileValidationError` for `debugpy`, please make sure you are running Poetry v1.5.1. This bug was present in older versions of Poetry (e.g. 1.4.1) and has been resolved in newer releases. If you are still seeing this bug on v1.5.1, you may also try disabling "modern installation" (`poetry config installer.modern-installation false`) and re-installing requirements. See [this `debugpy` issue](https://github.com/microsoft/debugpy/issues/1246) for more details.
 
