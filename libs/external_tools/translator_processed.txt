@@ -75,3 +75,7 @@
 ./libs/langchain/langchain/chains/llm_summarization_checker/prompts/revise_summary.txt
 ./libs/langchain/langchain/chains/llm_summarization_checker/prompts/create_facts.txt
 ./libs/langchain/langchain/chains/llm_summarization_checker/prompts/are_all_true_prompt.txt
+./libs/langchain/langchain/utilities/promptguard.py
+no prompts
+./libs/langchain/langchain/llms/promptguard.py
+no prompts

@@ -1,3 +1,5 @@
+# ruff: noqa: E501
+
 import json
 from textwrap import dedent
 from typing import List

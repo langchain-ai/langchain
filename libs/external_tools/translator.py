@@ -105,16 +105,27 @@ def process_file(file_path):
         with open(file_path, "r", encoding="utf-8") as f:
             source = f.read()
 
-        if ("prompt" in source and "prompt" in file_path.lower()) or file_path.endswith(
+        if ("prompt" in source) or file_path.endswith(
             ".txt"
         ):
             print(f"Found file: {file_path}")
-            translated = translate_to_russian(source)
-            with open(file_path, "w", encoding="utf-8") as f:
-                f.write(translated)
-            # Save file to processed list
-            with open(ALREADY_PROCESSED_STORE, "a", encoding="utf-8") as f:
-                f.write(file_path + "\n")
+            print(f"Source: {source}\n\n")
+            print(f"Do you see prompts here? (y/n)")
+
+            answer = input()
+            if answer.lower() == "y":
+                translated = translate_to_russian(source)
+                if not translated.endswith("\n"):
+                    translated += "\n"
+                with open(file_path, "w", encoding="utf-8") as f:
+                    f.write(translated)
+                # Save file to processed list
+                with open(ALREADY_PROCESSED_STORE, "a", encoding="utf-8") as f:
+                    f.write(file_path + "\n")
+                pass
+            else:
+                with open(ALREADY_PROCESSED_STORE, "a", encoding="utf-8") as f:
+                    f.write(file_path + "\n" + "no prompts" + "\n")
             return True
 
     except UnicodeDecodeError:
