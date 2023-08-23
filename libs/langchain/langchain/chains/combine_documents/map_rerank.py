@@ -4,13 +4,12 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
-from pydantic_v1 import Extra, root_validator
-
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
 from langchain.output_parsers.regex import RegexParser
+from langchain.pydantic_v1 import Extra, root_validator
 
 
 class MapRerankDocumentsChain(BaseCombineDocumentsChain):

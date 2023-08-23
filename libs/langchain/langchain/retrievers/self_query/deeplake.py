@@ -35,7 +35,7 @@ def can_cast_to_float(string: str) -> bool:
 
 
 class DeepLakeTranslator(Visitor):
-    """Logic for converting internal query language elements to valid filters."""
+    """Translate `DeepLake` internal query language elements to valid filters."""
 
     allowed_operators = [Operator.AND, Operator.OR]
     """Subset of allowed logical operators."""

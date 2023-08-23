@@ -48,7 +48,9 @@ def test_invalid_suffix() -> None:
     loader = Mock()
     valid_suffixes = {"json"}
 
-    with pytest.raises(ValueError, match="Unsupported file type."):
+    with pytest.raises(
+        ValueError, match=f"Unsupported file type, must be one of {valid_suffixes}."
+    ):
         try_load_from_hub(path, loader, "chains", valid_suffixes)
 
     loader.assert_not_called()

@@ -3,7 +3,6 @@ import logging
 from typing import Any, Callable, Dict, List, Mapping, Optional
 
 import requests
-from pydantic_v1 import Extra, root_validator
 from requests import ConnectTimeout, ReadTimeout, RequestException
 from tenacity import (
     before_sleep_log,
@@ -16,6 +15,7 @@ from tenacity import (
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
+from langchain.pydantic_v1 import Extra, root_validator
 from langchain.utils import get_from_dict_or_env
 
 DEFAULT_NEBULA_SERVICE_URL = "https://api-nebula.symbl.ai"

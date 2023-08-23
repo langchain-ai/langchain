@@ -15,7 +15,6 @@ from typing import (
     Union,
 )
 
-from pydantic_v1 import Field, root_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -29,6 +28,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
 from langchain.chat_models.base import BaseChatModel
+from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import (
     AIMessage,
     BaseMessage,

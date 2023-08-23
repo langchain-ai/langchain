@@ -1,7 +1,7 @@
 # flake8: noqa
 from typing import Any, Dict, Optional, List
 
-from pydantic_v1 import root_validator
+from langchain.pydantic_v1 import root_validator
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
