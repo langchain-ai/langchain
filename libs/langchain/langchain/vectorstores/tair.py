@@ -227,7 +227,7 @@ class Tair(VectorStore):
 
         tair_vector_store.add_texts(texts, metadatas, keys=keys)
         return tair_vector_store
-    
+
     @classmethod
     def from_documents(
         cls,
