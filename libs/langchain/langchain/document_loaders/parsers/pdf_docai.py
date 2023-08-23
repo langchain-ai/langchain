@@ -177,6 +177,7 @@ class DocAIPdfLoader(BaseBlobParser):
         self,
         blobs: List[Blob],
         gcs_output_path: str,
+        *,
         enable_native_pdf_parsing: bool = True,
     ) -> Operation:
         from google.cloud import documentai
