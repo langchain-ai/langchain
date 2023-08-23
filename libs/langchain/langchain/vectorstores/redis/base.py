@@ -156,7 +156,7 @@ class Redis(VectorStore):
         self,
         redis_url: str,
         index_name: str,
-        embeddings: Embeddings,
+        embedding_function: Callable,
         index_schema: Optional[Union[Dict[str, str], str, os.PathLike]] = None,
         vector_schema: Optional[Dict[str, Union[str, int]]] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
@@ -226,7 +226,6 @@ class Redis(VectorStore):
             "content_key": "index_schema",
             "vector_key": "vector_schema",
             "distance_metric": "vector_schema",
-            "embedding_function": "embeddings",
         }
         for key, value in kwargs.items():
             if key in deprecated_kwargs:
@@ -311,7 +310,7 @@ class Redis(VectorStore):
         if metadatas:
             if isinstance(metadatas, list) and len(metadatas) != len(texts):  # type: ignore
                 raise ValueError("Number of metadatas must match number of texts")
-            if not (isinstance(metadatas, list) and not isinstance(metadatas[0], dict)):
+            if not (isinstance(metadatas, list) and isinstance(metadatas[0], dict)):
                 raise ValueError("Metadatas must be a list of dicts")
 
         # Write data to redis
@@ -586,10 +585,6 @@ class Redis(VectorStore):
 
         # type check for metadata
         if metadatas:
-            if isinstance(metadatas, list) and len(metadatas) != len(texts):  # type: ignore
-                raise ValueError("Number of metadatas must match number of texts")
-            if not isinstance(metadatas, list) and not isinstance(metadatas[0], dict):
-                raise ValueError("Metadatas must be a list of dicts")
 
             generated_schema = generate_field_schema(metadatas[0])
             if index_schema:
