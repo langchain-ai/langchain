@@ -1,6 +1,5 @@
 from typing import Any, Dict, List, Optional
 from uuid import UUID
-from xml.dom import ValidationErr
 
 import pytest
 from freezegun import freeze_time

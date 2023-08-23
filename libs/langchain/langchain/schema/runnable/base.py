@@ -1369,7 +1369,8 @@ class RunnableLambda(Runnable[Input, Output]):
 
 class RunnableEach(Serializable, Runnable[List[Input], List[Output]]):
     """
-    A runnable that delegates calls to another runnable with each element of the input sequence.
+    A runnable that delegates calls to another runnable
+    with each element of the input sequence.
     """
 
     bound: Runnable[Input, Output]
@@ -1394,9 +1395,9 @@ class RunnableEach(Serializable, Runnable[List[Input], List[Output]]):
         return self.bound.batch(input, config)
 
     async def ainvoke(
-        self, input: List[Input], config: Optional[RunnableConfig] = None
+        self, input: List[Input], config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> List[Output]:
-        return await self.bound.abatch(input, config)
+        return await self.bound.abatch(input, config, **kwargs)
 
 
 class RunnableBinding(Serializable, Runnable[Input, Output]):
