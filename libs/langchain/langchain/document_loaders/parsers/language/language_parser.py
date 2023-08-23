@@ -19,8 +19,7 @@ LANGUAGE_SEGMENTERS: Dict[str, Any] = {
 
 
 class LanguageParser(BaseBlobParser):
-    """
-    Language parser that split code using the respective language syntax.
+    """Parse using the respective programming language syntax.
 
     Each top-level function and class in the code is loaded into separate documents.
     Furthermore, an extra document is generated, containing the remaining top-level code

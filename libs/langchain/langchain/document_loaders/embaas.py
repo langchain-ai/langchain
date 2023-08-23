@@ -3,12 +3,12 @@ import warnings
 from typing import Any, Dict, Iterator, List, Optional
 
 import requests
-from pydantic import BaseModel, root_validator, validator
 from typing_extensions import NotRequired, TypedDict
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseBlobParser, BaseLoader
 from langchain.document_loaders.blob_loaders import Blob
+from langchain.pydantic_v1 import BaseModel, root_validator, validator
 from langchain.text_splitter import TextSplitter
 from langchain.utils import get_from_dict_or_env
 
@@ -52,14 +52,14 @@ class EmbaasDocumentExtractionPayload(EmbaasDocumentExtractionParameters):
 
 
 class BaseEmbaasLoader(BaseModel):
-    """Base loader for embedding a model into an `Embaas` document extraction API."""
+    """Base loader for `Embaas` document extraction API."""
 
     embaas_api_key: Optional[str] = None
-    """The API key for the embaas document extraction API."""
+    """The API key for the Embaas document extraction API."""
     api_url: str = EMBAAS_DOC_API_URL
-    """The URL of the embaas document extraction API."""
+    """The URL of the Embaas document extraction API."""
     params: EmbaasDocumentExtractionParameters = EmbaasDocumentExtractionParameters()
-    """Additional parameters to pass to the embaas document extraction API."""
+    """Additional parameters to pass to the Embaas document extraction API."""
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
@@ -163,13 +163,13 @@ class EmbaasBlobLoader(BaseEmbaasLoader, BaseBlobParser):
         except requests.exceptions.RequestException as e:
             if e.response is None or not e.response.text:
                 raise ValueError(
-                    f"Error raised by embaas document text extraction API: {e}"
+                    f"Error raised by Embaas document text extraction API: {e}"
                 )
 
             parsed_response = e.response.json()
             if "message" in parsed_response:
                 raise ValueError(
-                    f"Validation Error raised by embaas document text extraction API:"
+                    f"Validation Error raised by Embaas document text extraction API:"
                     f" {parsed_response['message']}"
                 )
             raise

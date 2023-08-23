@@ -1,4 +1,4 @@
-# Community Navigator
+# Community navigator
 
 Hi! Thanks for being here. We’re lucky to have a community of so many passionate developers building with LangChain–we have so much to teach and learn from each other. Community members contribute code, host meetups, write blog posts, amplify each other’s work, become each other's customers and collaborators, and so much more.
 
@@ -28,7 +28,7 @@ LangChain is the product of over 5,000+ contributions by 1,500+ contributors, an
 # 🌍 Meetups, Events, and Hackathons
 
 One of our favorite things about working in AI is how much enthusiasm there is for building together. We want to help make that as easy and impactful for you as possible! 
-- **Find a meetup, hackathon, or webinar:** you can find the one for you on on our [global events calendar](https://mirror-feeling-d80.notion.site/0bc81da76a184297b86ca8fc782ee9a3?v=0d80342540df465396546976a50cfb3f).  
+- **Find a meetup, hackathon, or webinar:** you can find the one for you on our [global events calendar](https://mirror-feeling-d80.notion.site/0bc81da76a184297b86ca8fc782ee9a3?v=0d80342540df465396546976a50cfb3f).  
     - **Submit an event to our calendar:** email us at events@langchain.dev with a link to your event page! We can also help you spread the word with our local communities.
 - **Host a meetup:** If you want to bring a group of builders together, we want to help! We can publicize your event on our event calendar/Twitter, share with our local communities in Discord, send swag, or potentially hook you up with a sponsor. Email us at events@langchain.dev to tell us about your event!
 - **Become a meetup sponsor:** we often hear from groups of builders that want to get together, but are blocked or limited on some dimension (space to host, budget for snacks, prizes to distribute, etc.). If you’d like to help, send us an email to events@langchain.dev we can share more about how it works!
@@ -47,8 +47,8 @@ If you’re working on something you’re proud of, and think the LangChain comm
 
 Here’s where our team hangs out, talks shop, spotlights cool work, and shares what we’re up to. We’d love to see you there too.
 
-- **[Twitter](https://twitter.com/LangChainAI):** we post about what we’re working on and what cool things we’re seeing in the space. If you tag @langchainai in your post, we’ll almost certainly see it, and can snow you some love!
-- **[Discord](https://discord.gg/6adMQxSpJS):** connect with with >30k developers who are building with LangChain
+- **[Twitter](https://twitter.com/LangChainAI):** we post about what we’re working on and what cool things we’re seeing in the space. If you tag @langchainai in your post, we’ll almost certainly see it, and can show you some love!
+- **[Discord](https://discord.gg/6adMQxSpJS):** connect with >30k developers who are building with LangChain
 - **[GitHub](https://github.com/langchain-ai/langchain):** open pull requests, contribute to a discussion, and/or contribute
 - **[Subscribe to our bi-weekly Release Notes](https://6w1pwbss0py.typeform.com/to/KjZB1auB):** a twice/month email roundup of the coolest things going on in our orbit
 - **Slack:** if you’re building an application in production at your company, we’d love to get into a Slack channel together. Fill out [this form](https://airtable.com/appwQzlErAS2qiP0L/shrGtGaVBVAz7NcV2) and we’ll get in touch about setting one up.

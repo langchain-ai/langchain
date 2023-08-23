@@ -33,6 +33,7 @@ from langchain.vectorstores.cassandra import Cassandra
 from langchain.vectorstores.chroma import Chroma
 from langchain.vectorstores.clarifai import Clarifai
 from langchain.vectorstores.clickhouse import Clickhouse, ClickhouseSettings
+from langchain.vectorstores.dashvector import DashVector
 from langchain.vectorstores.deeplake import DeepLake
 from langchain.vectorstores.dingo import Dingo
 from langchain.vectorstores.docarray import DocArrayHnswSearch, DocArrayInMemorySearch
@@ -40,6 +41,8 @@ from langchain.vectorstores.elastic_vector_search import (
     ElasticKnnSearch,
     ElasticVectorSearch,
 )
+from langchain.vectorstores.elasticsearch import ElasticsearchStore
+from langchain.vectorstores.epsilla import Epsilla
 from langchain.vectorstores.faiss import FAISS
 from langchain.vectorstores.hologres import Hologres
 from langchain.vectorstores.lancedb import LanceDB
@@ -67,6 +70,7 @@ from langchain.vectorstores.typesense import Typesense
 from langchain.vectorstores.usearch import USearch
 from langchain.vectorstores.vectara import Vectara
 from langchain.vectorstores.weaviate import Weaviate
+from langchain.vectorstores.zep import ZepVectorStore
 from langchain.vectorstores.zilliz import Zilliz
 
 __all__ = [
@@ -82,12 +86,15 @@ __all__ = [
     "Chroma",
     "Clickhouse",
     "ClickhouseSettings",
+    "DashVector",
     "DeepLake",
     "Dingo",
     "DocArrayHnswSearch",
     "DocArrayInMemorySearch",
     "ElasticVectorSearch",
     "ElasticKnnSearch",
+    "ElasticsearchStore",
+    "Epsilla",
     "FAISS",
     "PGEmbedding",
     "Hologres",
@@ -123,6 +130,7 @@ __all__ = [
     "Vectara",
     "VectorStore",
     "Weaviate",
+    "ZepVectorStore",
     "Zilliz",
     "PGVector",
     "USearch",

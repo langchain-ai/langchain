@@ -3,14 +3,25 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Callable, List, Sequence, Tuple, Type, TypeVar, Union, overload
-
-from pydantic import Field, root_validator
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from langchain._api import deprecated
 from langchain.load.serializable import Serializable
 from langchain.prompts.base import StringPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
+from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import (
     BasePromptTemplate,
     PromptValue,
@@ -288,6 +299,15 @@ class ChatPromptValue(PromptValue):
 class BaseChatPromptTemplate(BasePromptTemplate, ABC):
     """Base class for chat prompt templates."""
 
+    @property
+    def lc_attributes(self) -> Dict:
+        """
+        Return a list of attribute names that should be included in the
+        serialized kwargs. These attributes must be accepted by the
+        constructor.
+        """
+        return {"input_variables": self.input_variables}
+
     def format(self, **kwargs: Any) -> str:
         """Format the chat template into a string.
 
@@ -327,7 +347,7 @@ MessageLikeRepresentation = Union[
 ]
 
 
-class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
+class ChatPromptTemplate(BaseChatPromptTemplate):
     """A prompt template for chat models.
 
     Use to create flexible templated prompts for chat models.
@@ -409,7 +429,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
                     f"Got: {values['input_variables']}"
                 )
         else:
-            values["input_variables"] = list(input_vars)
+            values["input_variables"] = sorted(input_vars)
         return values
 
     @classmethod
@@ -507,7 +527,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
         _messages = [_convert_to_message(message) for message in messages]
 
         # Automatically infer input variables from messages
-        input_vars = set()
+        input_vars: Set[str] = set()
         for _message in _messages:
             if isinstance(
                 _message, (BaseChatPromptTemplate, BaseMessagePromptTemplate)
