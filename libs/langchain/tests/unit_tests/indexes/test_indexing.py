@@ -447,3 +447,11 @@ def test_deduplication(
             metadata={"source": "1"},
         ),
     ]
+
+    # Should result in only a single document being added
+    assert index(docs, record_manager, vector_store, delete_mode="full") == {
+        "num_added": 1,
+        "num_deleted": 0,
+        "num_skipped": 0,
+        "num_updated": 0,
+    }
