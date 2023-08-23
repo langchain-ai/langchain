@@ -106,7 +106,7 @@ class ParentDocumentRetriever(BaseParentDocumentRetriever):
     def add_documents(
         self,
         documents: List[Document],
-        ids: Optional[List[str]],
+        ids: Optional[List[str]] = None,
         add_to_docstore: bool = True,
     ) -> None:
         """Adds documents to the docstore and vectorstores.
