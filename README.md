@@ -29,6 +29,10 @@
 Fill out [this form](https://airtable.com/appwQzlErAS2qiP0L/shrGtGaVBVAz7NcV2) to share more about what you're building, and our team will get in touch.
 -->
 
+## 🚨🚨🚨ВАЖНО!!!🚨🚨🚨#
+
+Данная библиотека - очень ранняя альфа-версия. Она находится в процессе перевода и адаптации к GigaChat. Большая часть компонентов пока не проверена на совместимость с GigaChat, поэтому могут возникать ошибки. Пожалуйста, будьте осторожны при использовании этой библиотеки в своих проектах. Будем рады видеть ваши pull request'ы и issues.
+
 ## 🚨Кардинальные изменения для отдельных цепочек (SQLDatabase) с 28.07.23
 
 В попытке сделать `gigachain` более компактным и безопасным, мы переносим отдельные цепочки в langchain_experimental.
@@ -77,23 +81,26 @@ while(True):
 **❓ Ответы на вопросы**
 
 - [Documentation](https://python.langchain.com/docs/use_cases/question_answering/)
-- Полный пример: [Ответы на вопросы по статьям из wikipedia](https://github.com/ai-forever/gigachain/blob/master/docs/extras/integrations/retrievers/wikipedia.ipynb)
+- Пример: [Ответы на вопросы по статьям из wikipedia](https://github.com/ai-forever/gigachain/blob/master/docs/extras/integrations/retrievers/wikipedia.ipynb)
 
-<!--**❓ Ответы на вопросы по конкретным документам**
+**❓ Ответы на вопросы по конкретным документам**
 
-- [Documentation](https://python.langchain.com/docs/use_cases/question_answering/)
+...
+<!--- [Documentation](https://python.langchain.com/docs/use_cases/question_answering/)
 - Полный пример: [Question Answering over Notion Database](https://github.com/hwchase17/notion-qa)
-
+-->
 **💬 Чат-боты**
 
-- [Documentation](https://python.langchain.com/docs/use_cases/chatbots/)
+...
+<!-- - [Documentation](https://python.langchain.com/docs/use_cases/chatbots/)
 - Полный пример: [Chat-LangChain](https://github.com/hwchase17/chat-langchain)
-
-**🤖 Agents**
+-->
+**🤖 Агенты**
 
 - [Documentation](https://python.langchain.com/docs/modules/agents/)
-- Полный пример: [GPT+WolframAlpha](https://huggingface.co/spaces/JavaFXpert/Chat-GPT-LangChain)
--->
+<!--- Полный пример: [GPT+WolframAlpha](https://huggingface.co/spaces/JavaFXpert/Chat-GPT-LangChain)-->
+- Пример: [Игра в стиле DnD с GPT-3.5 и GigaChat](docs/extras/use_cases/agent_simulations/multi_llm_thre_player_dnd.ipynb)
+
 ## 📖 Documentation
 
 Please see [here](https://python.langchain.com) for full documentation on:
