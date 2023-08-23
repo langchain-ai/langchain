@@ -3,9 +3,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 
-from pydantic_v1 import Extra, Field, root_validator
-
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
+from langchain.pydantic_v1 import Extra, Field, root_validator
 from langchain.schema import BaseRetriever, Document
 from langchain.utils import get_from_dict_or_env
 
@@ -18,11 +17,10 @@ if TYPE_CHECKING:
 
 
 class GoogleCloudEnterpriseSearchRetriever(BaseRetriever):
-    """Retriever for the Google Cloud Enterprise Search Service API.
+    """`Google Cloud Enterprise Search API` retriever.
 
-    For the detailed explanation of the Enterprise Search concepts
-    and configuration parameters refer to the product documentation.
-
+    For a detailed explanation of the Enterprise Search concepts
+    and configuration parameters, refer to the product documentation.
     https://cloud.google.com/generative-ai-app-builder/docs/enterprise-search-introduction
     """
 

@@ -14,8 +14,6 @@ from typing import (
     cast,
 )
 
-from pydantic_v1 import Field, root_validator
-
 import langchain
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
@@ -28,6 +26,7 @@ from langchain.callbacks.manager import (
 from langchain.load.dump import dumpd, dumps
 from langchain.prompts.base import StringPromptValue
 from langchain.prompts.chat import ChatPromptValue
+from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import (
     ChatGeneration,
     ChatResult,

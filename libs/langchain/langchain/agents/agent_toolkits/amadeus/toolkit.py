@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, List
 
-from pydantic_v1 import Field
-
 from langchain.agents.agent_toolkits.base import BaseToolkit
+from langchain.pydantic_v1 import Field
 from langchain.tools import BaseTool
 from langchain.tools.amadeus.closest_airport import AmadeusClosestAirport
 from langchain.tools.amadeus.flight_search import AmadeusFlightSearch
