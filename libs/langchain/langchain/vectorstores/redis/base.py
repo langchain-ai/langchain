@@ -156,7 +156,7 @@ class Redis(VectorStore):
         self,
         redis_url: str,
         index_name: str,
-        embedding_function: Callable,
+        embeddings: Embeddings,
         index_schema: Optional[Union[Dict[str, str], str, os.PathLike]] = None,
         vector_schema: Optional[Dict[str, Union[str, int]]] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
@@ -226,6 +226,7 @@ class Redis(VectorStore):
             "content_key": "index_schema",
             "vector_key": "vector_schema",
             "distance_metric": "vector_schema",
+            "embedding_function": "embeddings",
         }
         for key, value in kwargs.items():
             if key in deprecated_kwargs:
@@ -310,7 +311,7 @@ class Redis(VectorStore):
         if metadatas:
             if isinstance(metadatas, list) and len(metadatas) != len(texts):  # type: ignore
                 raise ValueError("Number of metadatas must match number of texts")
-            if not isinstance(metadatas, list) and not isinstance(metadatas[0], dict):
+            if not (isinstance(metadatas, list) and not isinstance(metadatas[0], dict)):
                 raise ValueError("Metadatas must be a list of dicts")
 
         # Write data to redis
@@ -370,7 +371,6 @@ class Redis(VectorStore):
         return_fields = [self._schema.content_key]
         if return_metadata:
             return_fields.extend(self._schema.metadata_keys)
-            return_fields.append("score")
         if return_scores:
             return_fields.append("score")
 
@@ -396,7 +396,6 @@ class Redis(VectorStore):
             if return_metadata:
                 metadata = {k: getattr(result, k) for k in self._schema.metadata_keys}
                 metadata["id"] = result.id
-                metadata["score"] = result.score
             doc = Document(page_content=result.content, metadata=metadata)
             docs.append(doc)
             if return_scores:
