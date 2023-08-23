@@ -1,7 +1,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, Union
 
 from langchain.chat_loaders.base import BaseChatLoader, ChatSession
 from langchain.schema.messages import AIMessage, HumanMessage
@@ -14,8 +14,10 @@ class InvalidFile(Exception):
 
 
 class SingleFileFacebookMessengerChatLoader(BaseChatLoader):
-    file_path: Path
-    person_name: str
+    def __init__(self, file_path: Union[Path, str], person_name: str) -> None:
+        super().__init__()
+        self.file_path = file_path if isinstance(file_path, Path) else Path(file_path)
+        self.person_name = person_name
 
     def lazy_load_messages(self) -> Iterator[ChatSession]:
         with open(self.file_path) as f:
@@ -39,8 +41,12 @@ class SingleFileFacebookMessengerChatLoader(BaseChatLoader):
 
 
 class FolderFacebookMessengerChatLoader(BaseChatLoader):
-    directory_path: Path
-    person_name: str
+    def __init__(self, directory_path: Union[str, Path], person_name: str) -> None:
+        super().__init__()
+        self.directory_path = (
+            Path(directory_path) if isinstance(directory_path, str) else directory_path
+        )
+        self.person_name = person_name
 
     def lazy_load_messages(self) -> Iterator[ChatSession]:
         inbox_path = self.directory_path / "inbox"
