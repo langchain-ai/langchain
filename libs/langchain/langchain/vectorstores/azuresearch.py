@@ -230,7 +230,11 @@ class AzureSearch(VectorStore):
                 type=SearchFieldDataType.String,
             ),
         ]
-        user_agent = kwargs.get("user_agent", "langchain")
+        user_agent = (
+            f"langchain {user_agent}"
+            if kwargs.get("user_agent", None) is not None
+            else "langchain"
+        )
         self.client = _get_search_client(
             azure_search_endpoint,
             azure_search_key,
