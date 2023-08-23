@@ -21,15 +21,11 @@ from langchain.utils.utils import build_extra_kwargs
 class _AnthropicCommon(BaseLanguageModel):
     client: Any = None  #: :meta private:
     async_client: Any = None  #: :meta private:
-    model: str = "claude-2"
+    model: str = Field(default="claude-2", alias="model_name")
     """Model name to use."""
-    model_name: str = "claude-2"
-    """Model name to use (alias)."""
 
-    max_tokens_to_sample: int = 256
+    max_tokens_to_sample: int = Field(default=256, alias="max_tokens")
     """Denotes the number of tokens to predict per generation."""
-    max_tokens: int = 256
-    """Denotes the number of tokens to predict per generation (alias)."""
 
     temperature: Optional[float] = None
     """A non-negative float that tunes the degree of randomness in generation."""
@@ -54,21 +50,6 @@ class _AnthropicCommon(BaseLanguageModel):
     AI_PROMPT: Optional[str] = None
     count_tokens: Optional[Callable[[str], int]] = None
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
-
-    @root_validator(pre=True)
-    def consistent_kwargs(cls, values: Dict) -> Dict:
-        """Allow the use of kwargs consistent with ChatOpenAI."""
-
-        def patch_alias(_values: Dict, original_name: str, alias_name: str) -> Dict:
-            if alias_name in values.keys():
-                _values[original_name] = _values[alias_name]
-            else:
-                _values[alias_name] = _values[original_name]
-            return _values
-
-        values = patch_alias(values, "model", "model_name")
-        values = patch_alias(values, "max_tokens_to_sample", "max_tokens")
-        return values
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict) -> Dict:
