@@ -33,7 +33,7 @@ class RecordManager(ABC):
         otherwise there may be data loss when cleaning up old documents!
 
         Returns:
-            The current server time as a flaot timestamp.
+            The current server time as a float timestamp.
         """
 
     @abstractmethod
