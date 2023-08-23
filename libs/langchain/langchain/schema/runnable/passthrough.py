@@ -47,11 +47,10 @@ class RunnablePassthrough(Serializable, Runnable[Input, Input]):
     ) -> Iterator[Input]:
         return self._transform_stream_with_config(input, identity, config)
 
-    async def atransform(
+    def atransform(
         self,
         input: AsyncIterator[Input],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> AsyncIterator[Input]:
-        async for chunk in self._atransform_stream_with_config(input, identity, config):
-            yield chunk
+        return self._atransform_stream_with_config(input, identity, config)
