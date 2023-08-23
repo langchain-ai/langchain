@@ -2,9 +2,8 @@
 
 from typing import Optional, Type
 
-from pydantic_v1 import BaseModel, Field
-
 from langchain.callbacks.manager import CallbackManagerForToolRun
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.base import BaseTool
 from langchain.utilities.google_places_api import GooglePlacesAPIWrapper
 
@@ -18,8 +17,8 @@ class GooglePlacesSchema(BaseModel):
 class GooglePlacesTool(BaseTool):
     """Tool that queries the Google places API."""
 
-    name = "google_places"
-    description = (
+    name: str = "google_places"
+    description: str = (
         "A wrapper around Google Places. "
         "Useful for when you need to validate or "
         "discover addressed from ambiguous text. "

@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 
 class QdrantTranslator(Visitor):
-    """Translate the internal query language elements to valid filters."""
+    """Translate `Qdrant` internal query language elements to valid filters."""
 
     allowed_comparators = (
         Comparator.EQ,

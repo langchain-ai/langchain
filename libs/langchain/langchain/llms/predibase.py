@@ -1,9 +1,8 @@
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic_v1 import Field
-
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
+from langchain.pydantic_v1 import Field
 
 
 class Predibase(LLM):

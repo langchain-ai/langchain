@@ -2,7 +2,7 @@
 """Tools for interacting with Spark SQL."""
 from typing import Any, Dict, Optional
 
-from pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
 
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.callbacks.manager import (
@@ -33,8 +33,8 @@ class BaseSparkSQLTool(BaseModel):
 class QuerySparkSQLTool(BaseSparkSQLTool, BaseTool):
     """Tool for querying a Spark SQL."""
 
-    name = "query_sql_db"
-    description = """
+    name: str = "query_sql_db"
+    description: str = """
     Input to this tool is a detailed and correct SQL query, output is a result from the Spark SQL.
     If the query is not correct, an error message will be returned.
     If an error is returned, rewrite the query, check the query, and try again.
@@ -52,8 +52,8 @@ class QuerySparkSQLTool(BaseSparkSQLTool, BaseTool):
 class InfoSparkSQLTool(BaseSparkSQLTool, BaseTool):
     """Tool for getting metadata about a Spark SQL."""
 
-    name = "schema_sql_db"
-    description = """
+    name: str = "schema_sql_db"
+    description: str = """
     Input to this tool is a comma-separated list of tables, output is the schema and sample rows for those tables.
     Be sure that the tables actually exist by calling list_tables_sql_db first!
 
@@ -72,8 +72,8 @@ class InfoSparkSQLTool(BaseSparkSQLTool, BaseTool):
 class ListSparkSQLTool(BaseSparkSQLTool, BaseTool):
     """Tool for getting tables names."""
 
-    name = "list_tables_sql_db"
-    description = "Input is an empty string, output is a comma separated list of tables in the Spark SQL."
+    name: str = "list_tables_sql_db"
+    description: str = "Input is an empty string, output is a comma separated list of tables in the Spark SQL."
 
     def _run(
         self,
@@ -91,8 +91,8 @@ class QueryCheckerTool(BaseSparkSQLTool, BaseTool):
     template: str = QUERY_CHECKER
     llm: BaseLanguageModel
     llm_chain: LLMChain = Field(init=False)
-    name = "query_checker_sql_db"
-    description = """
+    name: str = "query_checker_sql_db"
+    description: str = """
     Use this tool to double check if your query is correct before executing it.
     Always use this tool before executing a query with query_sql_db!
     """

@@ -11,10 +11,9 @@ import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from pydantic_v1 import BaseModel, root_validator
-
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.pydantic_v1 import BaseModel, root_validator
 
 
 class DropboxLoader(BaseLoader, BaseModel):

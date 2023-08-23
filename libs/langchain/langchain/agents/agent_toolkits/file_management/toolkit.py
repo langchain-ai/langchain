@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from pydantic_v1 import root_validator
-
 from langchain.agents.agent_toolkits.base import BaseToolkit
+from langchain.pydantic_v1 import root_validator
 from langchain.tools import BaseTool
 from langchain.tools.file_management.copy import CopyFileTool
 from langchain.tools.file_management.delete import DeleteFileTool

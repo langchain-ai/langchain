@@ -3,8 +3,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic_v1 import Extra, Field
-
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
@@ -15,6 +13,7 @@ from langchain.evaluation.criteria.eval_chain import (
 )
 from langchain.evaluation.schema import LLMEvalChain, PairwiseStringEvaluator
 from langchain.prompts.prompt import PromptTemplate
+from langchain.pydantic_v1 import Extra, Field
 from langchain.schema import RUN_KEY, BaseOutputParser
 from langchain.schema.language_model import BaseLanguageModel
 
