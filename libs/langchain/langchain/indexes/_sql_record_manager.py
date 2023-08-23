@@ -201,8 +201,9 @@ class SQLRecordManager(RecordManager):
             stmt = insert_stmt.on_conflict_do_update(  # type: ignore[attr-defined]
                 [UpsertionRecord.key, UpsertionRecord.namespace],
                 set_=dict(
-                    updated_at=insert_stmt.excluded.updated_at,  # type: ignore[attr-defined]
-                    group_id=insert_stmt.excluded.group_id,  # type: ignore[attr-defined]
+                    # attr-defined type ignore
+                    updated_at=insert_stmt.excluded.updated_at,  # type: ignore
+                    group_id=insert_stmt.excluded.group_id,  # type: ignore
                 ),
             )
             session.execute(stmt)
