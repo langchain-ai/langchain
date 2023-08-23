@@ -5,6 +5,7 @@ import copy
 import threading
 from abc import ABC, abstractmethod
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from copy import deepcopy
 from functools import partial
 from itertools import tee
 from typing import (
@@ -34,11 +35,16 @@ if TYPE_CHECKING:
     )
 
 
-from langchain.callbacks.base import BaseCallbackManager
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import Field
-from langchain.schema.runnable.config import RunnableConfig
+from langchain.schema.runnable.config import (
+    RunnableConfig,
+    ensure_config,
+    get_async_callback_manager_for_config,
+    get_callback_manager_for_config,
+    patch_config,
+)
 from langchain.schema.runnable.utils import (
     accepts_run_manager,
     accepts_run_manager_and_config,
@@ -238,9 +244,9 @@ class Runnable(Generic[Input, Output], ABC):
             )
 
         return (
-            config
+            list(map(ensure_config, config))
             if isinstance(config, list)
-            else [config.copy() if config is not None else {} for _ in range(length)]
+            else [deepcopy(ensure_config(config)) for _ in range(length)]
         )
 
     def _call_with_config(
@@ -256,14 +262,8 @@ class Runnable(Generic[Input, Output], ABC):
     ) -> Output:
         """Helper method to transform an Input value to an Output value,
         with callbacks. Use this method to implement invoke() in subclasses."""
-        from langchain.callbacks.manager import CallbackManager
-
-        config = config or {}
-        callback_manager = CallbackManager.configure(
-            inheritable_callbacks=config.get("callbacks"),
-            inheritable_tags=config.get("tags"),
-            inheritable_metadata=config.get("metadata"),
-        )
+        config = ensure_config(config)
+        callback_manager = get_callback_manager_for_config(config)
         run_manager = callback_manager.on_chain_start(
             dumpd(self),
             input,
@@ -303,14 +303,8 @@ class Runnable(Generic[Input, Output], ABC):
     ) -> Output:
         """Helper method to transform an Input value to an Output value,
         with callbacks. Use this method to implement ainvoke() in subclasses."""
-        from langchain.callbacks.manager import AsyncCallbackManager
-
-        config = config or {}
-        callback_manager = AsyncCallbackManager.configure(
-            inheritable_callbacks=config.get("callbacks"),
-            inheritable_tags=config.get("tags"),
-            inheritable_metadata=config.get("metadata"),
-        )
+        config = ensure_config(config)
+        callback_manager = get_async_callback_manager_for_config(config)
         run_manager = await callback_manager.on_chain_start(
             dumpd(self),
             input,
@@ -358,8 +352,6 @@ class Runnable(Generic[Input, Output], ABC):
         """Helper method to transform an Iterator of Input values into an Iterator of
         Output values, with callbacks.
         Use this to implement `stream()` or `transform()` in Runnable subclasses."""
-        from langchain.callbacks.manager import CallbackManager
-
         # tee the input so we can iterate over it twice
         input_for_tracing, input_for_transform = tee(input, 2)
         # Start the input iterator to ensure the input runnable starts before this one
@@ -368,12 +360,8 @@ class Runnable(Generic[Input, Output], ABC):
         final_output: Optional[Output] = None
         final_output_supported = True
 
-        config = config or {}
-        callback_manager = CallbackManager.configure(
-            inheritable_callbacks=config.get("callbacks"),
-            inheritable_tags=config.get("tags"),
-            inheritable_metadata=config.get("metadata"),
-        )
+        config = ensure_config(config)
+        callback_manager = get_callback_manager_for_config(config)
         run_manager = callback_manager.on_chain_start(
             dumpd(self),
             {"input": ""},
@@ -444,8 +432,6 @@ class Runnable(Generic[Input, Output], ABC):
         """Helper method to transform an Async Iterator of Input values into an Async
         Iterator of Output values, with callbacks.
         Use this to implement `astream()` or `atransform()` in Runnable subclasses."""
-        from langchain.callbacks.manager import AsyncCallbackManager
-
         # tee the input so we can iterate over it twice
         input_for_tracing, input_for_transform = atee(input, 2)
         # Start the input iterator to ensure the input runnable starts before this one
@@ -454,12 +440,8 @@ class Runnable(Generic[Input, Output], ABC):
         final_output: Optional[Output] = None
         final_output_supported = True
 
-        config = config or {}
-        callback_manager = AsyncCallbackManager.configure(
-            inheritable_callbacks=config.get("callbacks"),
-            inheritable_tags=config.get("tags"),
-            inheritable_metadata=config.get("metadata"),
-        )
+        config = ensure_config(config)
+        callback_manager = get_async_callback_manager_for_config(config)
         run_manager = await callback_manager.on_chain_start(
             dumpd(self),
             {"input": ""},
@@ -535,19 +517,9 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
         yield from self.fallbacks
 
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
-        from langchain.callbacks.manager import CallbackManager
-
         # setup callbacks
-        config = config or {}
-        callback_manager = CallbackManager.configure(
-            inheritable_callbacks=config.get("callbacks"),
-            local_callbacks=None,
-            verbose=False,
-            inheritable_tags=config.get("tags"),
-            local_tags=None,
-            inheritable_metadata=config.get("metadata"),
-            local_metadata=None,
-        )
+        config = ensure_config(config)
+        callback_manager = get_callback_manager_for_config(config)
         # start the root run
         run_manager = callback_manager.on_chain_start(dumpd(self), input)
         first_error = None
@@ -577,19 +549,9 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Output:
-        from langchain.callbacks.manager import AsyncCallbackManager
-
         # setup callbacks
-        config = config or {}
-        callback_manager = AsyncCallbackManager.configure(
-            inheritable_callbacks=config.get("callbacks"),
-            local_callbacks=None,
-            verbose=False,
-            inheritable_tags=config.get("tags"),
-            local_tags=None,
-            inheritable_metadata=config.get("metadata"),
-            local_metadata=None,
-        )
+        config = ensure_config(config)
+        callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(dumpd(self), input)
 
@@ -808,19 +770,9 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             )
 
     def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
-        from langchain.callbacks.manager import CallbackManager
-
         # setup callbacks
-        config = config or {}
-        callback_manager = CallbackManager.configure(
-            inheritable_callbacks=config.get("callbacks"),
-            local_callbacks=None,
-            verbose=False,
-            inheritable_tags=config.get("tags"),
-            local_tags=None,
-            inheritable_metadata=config.get("metadata"),
-            local_metadata=None,
-        )
+        config = ensure_config(config)
+        callback_manager = get_callback_manager_for_config(config)
         # start the root run
         run_manager = callback_manager.on_chain_start(dumpd(self), input)
 
@@ -846,19 +798,9 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Output:
-        from langchain.callbacks.manager import AsyncCallbackManager
-
         # setup callbacks
-        config = config or {}
-        callback_manager = AsyncCallbackManager.configure(
-            inheritable_callbacks=config.get("callbacks"),
-            local_callbacks=None,
-            verbose=False,
-            inheritable_tags=config.get("tags"),
-            local_tags=None,
-            inheritable_metadata=config.get("metadata"),
-            local_metadata=None,
-        )
+        config = ensure_config(config)
+        callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(dumpd(self), input)
 
@@ -993,19 +935,9 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Iterator[Output]:
-        from langchain.callbacks.manager import CallbackManager
-
         # setup callbacks
-        config = config or {}
-        callback_manager = CallbackManager.configure(
-            inheritable_callbacks=config.get("callbacks"),
-            local_callbacks=None,
-            verbose=False,
-            inheritable_tags=config.get("tags"),
-            local_tags=None,
-            inheritable_metadata=config.get("metadata"),
-            local_metadata=None,
-        )
+        config = ensure_config(config)
+        callback_manager = get_callback_manager_for_config(config)
         # start the root run
         run_manager = callback_manager.on_chain_start(dumpd(self), input)
 
@@ -1069,19 +1001,9 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
-        from langchain.callbacks.manager import AsyncCallbackManager
-
         # setup callbacks
-        config = config or {}
-        callback_manager = AsyncCallbackManager.configure(
-            inheritable_callbacks=config.get("callbacks"),
-            local_callbacks=None,
-            verbose=False,
-            inheritable_tags=config.get("tags"),
-            local_tags=None,
-            inheritable_metadata=config.get("metadata"),
-            local_metadata=None,
-        )
+        config = ensure_config(config)
+        callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(dumpd(self), input)
 
@@ -1193,7 +1115,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
         from langchain.callbacks.manager import CallbackManager
 
         # setup callbacks
-        config = config or {}
+        config = ensure_config(config)
         callback_manager = CallbackManager.configure(
             inheritable_callbacks=config.get("callbacks"),
             local_callbacks=None,
@@ -1216,7 +1138,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
                         step.invoke,
                         input,
                         # mark each step as a child run
-                        patch_config(config, run_manager.get_child()),
+                        patch_config(deepcopy(config), run_manager.get_child()),
                     )
                     for step in steps.values()
                 ]
@@ -1235,19 +1157,9 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Dict[str, Any]:
-        from langchain.callbacks.manager import AsyncCallbackManager
-
         # setup callbacks
-        config = config or {}
-        callback_manager = AsyncCallbackManager.configure(
-            inheritable_callbacks=config.get("callbacks"),
-            local_callbacks=None,
-            verbose=False,
-            inheritable_tags=config.get("tags"),
-            local_tags=None,
-            inheritable_metadata=config.get("metadata"),
-            local_metadata=None,
-        )
+        config = ensure_config(config)
+        callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(dumpd(self), input)
 
@@ -1538,14 +1450,6 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
             input, config, **{**self.kwargs, **kwargs}
         ):
             yield item
-
-
-def patch_config(
-    config: RunnableConfig, callback_manager: BaseCallbackManager
-) -> RunnableConfig:
-    config = config.copy()
-    config["callbacks"] = callback_manager
-    return config
 
 
 def coerce_to_runnable(
