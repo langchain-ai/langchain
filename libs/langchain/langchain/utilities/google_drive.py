@@ -1476,10 +1476,10 @@ class GoogleDriveUtilities(Serializable, BaseModel):
                                     else node["textStyle"]
                                 )
                                 link = style_node["link"]
+                                if isinstance(link, dict):
+                                    link = link["url"]
                                 if link:
-                                    result[
-                                        -1
-                                    ] = f"{result[-1]}[{node[key]}]({style_node['link']})"
+                                    result[-1] = f"{result[-1]}[{node[key]}]({link})"
                                 else:
                                     # Empty link
                                     result[-1] = f"{result[-1]}{node[key]}"
@@ -1497,10 +1497,16 @@ class GoogleDriveUtilities(Serializable, BaseModel):
         visitor(result, node, "")
         # Clean the result:
         purge_result = []
+        previous_empty = False
         for line in result:
             line = re.sub("\x0b\s*", "\n", line).strip()
             if not line:
-                line = "\n"
+                if previous_empty:
+                    continue
+                previous_empty = True
+            else:
+                previous_empty = False
+
             purge_result.append(line)
         return purge_result
 
@@ -1576,6 +1582,46 @@ class GoogleDriveUtilities(Serializable, BaseModel):
             else:
                 raise ValueError(f"Invalid mode '{self.gslide_mode}'")
 
+    def _only_obj(
+        self,
+        page_elements: Dict[str, Any],
+        translateX: float = 0.0,
+        translateY: float = 0.0,
+    ):
+        only_objets = []
+        for obj in page_elements:
+            if "elementGroup" in obj:
+                group_translate_x = obj["transform"].get("translateX", 0)
+                group_translate_y = obj["transform"].get("translateY", 0)
+                only_objets.extend(
+                    self._only_obj(
+                        obj["elementGroup"]["children"],
+                        translateX=group_translate_x,
+                        translateY=group_translate_y,
+                    )
+                )
+                pass
+            elif "image" in obj:
+                pass
+            else:
+                only_objets.append(obj)
+        return only_objets
+
+    def _sort_page_elements(
+        self,
+        page_elements: Dict[str, Any],
+        translateX: float = 0.0,
+        translateY: float = 0.0,
+    ):
+        only_obj = self._only_obj(page_elements, 0, 0)
+        return sorted(
+            only_obj,
+            key=lambda x: (
+                x["transform"].get("translateY", 0),
+                x["transform"].get("translateX", 0),
+            ),
+        )
+
     def _lazy_load_slides_from_file(self, file: Dict) -> Iterator[Document]:
         """Load a GSlide. Split each slide to different documents"""
         if file["mimeType"] != "application/vnd.google-apps.presentation":
@@ -1586,13 +1632,7 @@ class GoogleDriveUtilities(Serializable, BaseModel):
             lines = []
             for slide in gslide["slides"]:
                 if "pageElements" in slide:
-                    page_elements = sorted(
-                        slide["pageElements"],
-                        key=lambda x: (
-                            x["transform"].get("translateY", 0),
-                            x["transform"].get("translateX", 0),
-                        ),
-                    )
+                    page_elements = self._sort_page_elements(slide["pageElements"])
                     lines.extend(GoogleDriveUtilities._extract_text(page_elements))
                     lines.append("<PAGE BREAK>")
             if lines:
@@ -1603,13 +1643,7 @@ class GoogleDriveUtilities(Serializable, BaseModel):
         elif self.gslide_mode == "slide":
             for slide in gslide["slides"]:
                 if "pageElements" in slide:
-                    page_elements = sorted(
-                        slide["pageElements"],
-                        key=lambda x: (
-                            x["transform"].get("translateY", 0),
-                            x["transform"].get("translateX", 0),
-                        ),
-                    )
+                    page_elements = self._sort_page_elements(slide["pageElements"])
                     meta = self._extract_meta_data(file).copy()
                     source = meta["source"]
                     if "#" in source:
@@ -1632,13 +1666,7 @@ class GoogleDriveUtilities(Serializable, BaseModel):
                     )
                 for slide in gslide["slides"]:
                     if "pageElements" in slide:
-                        page_elements = sorted(
-                            slide["pageElements"],
-                            key=lambda x: (
-                                x["transform"].get("translateY", 0),
-                                x["transform"].get("translateX", 0),
-                            ),
-                        )
+                        page_elements = self._sort_page_elements(slide["pageElements"])
                         for i, line in enumerate(
                             GoogleDriveUtilities._extract_text(page_elements)
                         ):
