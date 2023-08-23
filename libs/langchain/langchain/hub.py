@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from langchain.load.dump import dumps
 from langchain.load.load import loads
-from langchain.utils import get_from_env
 
 if TYPE_CHECKING:
     from langchainhub import Client
@@ -20,9 +19,7 @@ def _get_client(api_url: Optional[str] = None, api_key: Optional[str] = None) ->
             "langchainhub`."
         ) from e
 
-    api_url = api_url or get_from_env("api_url", "LANGCHAIN_HUB_API_URL")
-    api_key = api_key or get_from_env("api_key", "LANGCHAIN_HUB_API_KEY", default="")
-    api_key = api_key or get_from_env("api_key", "LANGCHAIN_API_KEY")
+    # Client logic will also attempt to load URL/key from environment variables
     return Client(api_url, api_key=api_key)
 
 
@@ -33,14 +30,33 @@ def push(
     api_url: Optional[str] = None,
     api_key: Optional[str] = None,
     parent_commit_hash: Optional[str] = "latest",
+    new_repo_is_public: bool = False,
+    new_repo_description: str = "",
 ) -> str:
     """
-    Pushes an object to the hub and returns the URL.
+    Pushes an object to the hub and returns the new commit hash.
+
+    :param repo_full_name: The full name of the repo to push to in the format of
+        `owner/repo`.
+    :param object: The LangChain to serialize and push to the hub.
+    :param api_url: The URL of the LangChain Hub API. Defaults to the hosted API service
+        if you have an api key set, or a localhost instance if not.
+    :param api_key: The API key to use to authenticate with the LangChain Hub API.
+    :param parent_commit_hash: The commit hash of the parent commit to push to. Defaults
+        to the latest commit automatically.
+    :param new_repo_is_public: Whether the repo should be public. Defaults to
+        False (Private by default).
+    :param new_repo_description: The description of the repo. Defaults to an empty
+        string.
     """
     client = _get_client(api_url=api_url, api_key=api_key)
     manifest_json = dumps(object)
     resp = client.push(
-        repo_full_name, manifest_json, parent_commit_hash=parent_commit_hash
+        repo_full_name,
+        manifest_json,
+        parent_commit_hash=parent_commit_hash,
+        new_repo_is_public=new_repo_is_public,
+        new_repo_description=new_repo_description,
     )
     commit_hash: str = resp["commit"]["commit_hash"]
     return commit_hash
@@ -53,7 +69,13 @@ def pull(
     api_key: Optional[str] = None,
 ) -> Any:
     """
-    Pulls an object from the hub and returns it.
+    Pulls an object from the hub and returns it as a LangChain object.
+
+    :param owner_repo_commit: The full name of the repo to pull from in the format of
+        `owner/repo:commit_hash`.
+    :param api_url: The URL of the LangChain Hub API. Defaults to the hosted API service
+        if you have an api key set, or a localhost instance if not.
+    :param api_key: The API key to use to authenticate with the LangChain Hub API.
     """
     client = _get_client(api_url=api_url, api_key=api_key)
     resp: str = client.pull(owner_repo_commit)

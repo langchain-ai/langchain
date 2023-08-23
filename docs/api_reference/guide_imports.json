@@ -2071,8 +2071,8 @@
         "PromptLayer": "https://python.langchain.com/docs/integrations/providers/promptlayer",
         "PromptLayer OpenAI": "https://python.langchain.com/docs/integrations/llms/promptlayer_openai"
     },
-    "DeepLake": {
-        "Deep Lake": "https://python.langchain.com/docs/integrations/providers/deeplake",
+    "Activeloop DeepLake": {
+        "Deep Lake": "https://python.langchain.com/docs/integrations/providers/activeloop_deeplake",
         "Activeloop's Deep Lake": "https://python.langchain.com/docs/integrations/vectorstores/activeloop_deeplake",
         "Analysis of Twitter the-algorithm source code with LangChain, GPT4 and Activeloop's Deep Lake": "https://python.langchain.com/docs/use_cases/question_answering/how_to/code/twitter-the-algorithm-analysis-deeplake",
         "Use LangChain, GPT and Activeloop's Deep Lake to work with code base": "https://python.langchain.com/docs/use_cases/question_answering/how_to/code/code-analysis-deeplake",
