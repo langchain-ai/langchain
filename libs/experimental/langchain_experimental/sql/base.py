@@ -16,7 +16,13 @@ from langchain.tools.sql_database.prompt import QUERY_CHECKER
 
 from langchain_experimental.utilities.sql_database import SQLDatabase
 from langchain_experimental.sql.parser import SQLCommandOutputParser
-from langchain_experimental.pydantic_v1 import BaseModel, Extra, Field, root_validator, validator
+from langchain_experimental.pydantic_v1 import (
+    BaseModel,
+    Extra,
+    Field,
+    root_validator,
+    validator,
+)
 
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 
