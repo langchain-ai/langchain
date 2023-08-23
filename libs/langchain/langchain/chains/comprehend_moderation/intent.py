@@ -73,7 +73,7 @@ class ComprehendIntent:
             action = BaseModerationActions.STOP
 
         ########## Get intent for Private Beta (GA should not have this code) ##########
-        arn = "arn:aws:comprehend:us-east-2:aws:document-classifier-endpoint/prompt-intent"
+        arn = "arn:aws:comprehend:us-east-1:aws:document-classifier-endpoint/prompt-intent"
         endpoint_arn = config.get("endpoint_arn", arn) if config else arn
         ########## Get intent for Private Beta (GA should not have this code) ##########
 
