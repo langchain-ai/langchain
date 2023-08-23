@@ -72,9 +72,9 @@ class EdenAiTextModerationTool(EdenaiTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
+        query_params = {"text": query, "language": self.language}
+        text_analysis_result = self._call_eden_ai(query_params)
         try:
-            query_params = {"text": query, "language": self.language}
-            text_analysis_result = self._call_eden_ai(query_params)
             text_analysis_dict = text_analysis_result.json()
             return self._format_text_explicit_content_detection_result(
                 text_analysis_dict
