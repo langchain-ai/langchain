@@ -528,9 +528,13 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 f" argument of type {type(prompts)}."
             )
         # Create callback managers
-        if isinstance(callbacks, list) and (
-            isinstance(callbacks[0], (list, BaseCallbackManager))
-            or callbacks[0] is None
+        if (
+            isinstance(callbacks, list)
+            and callbacks
+            and (
+                isinstance(callbacks[0], (list, BaseCallbackManager))
+                or callbacks[0] is None
+            )
         ):
             # We've received a list of callbacks args to apply to each input
             assert len(callbacks) == len(prompts)
