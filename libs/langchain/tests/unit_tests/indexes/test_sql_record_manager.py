@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from unittest.mock import patch
 import pytest
 
 from langchain.indexes._sql_record_manager import SQLRecordManager, UpsertionRecord
@@ -25,6 +26,91 @@ def test_update(manager: SQLRecordManager) -> None:
     # Retrieve the records
     read_keys = manager.list_keys()
     assert read_keys == ["key1", "key2", "key3"]
+
+
+def test_update_timestamp(manager: SQLRecordManager) -> None:
+    """Test updating records in the database."""
+    # no keys should be present in the set
+    with patch.object(manager, "get_time", return_value=datetime(2021, 1, 2)):
+        manager.update(["key1"])
+
+    with manager._make_session() as session:
+        records = (
+            session.query(UpsertionRecord)
+            .filter(UpsertionRecord.namespace == manager.namespace)
+            .all()
+        )
+
+        assert [
+            {
+                "key": record.key,
+                "namespace": record.namespace,
+                "updated_at": record.updated_at,
+                "group_id": record.group_id,
+            }
+            for record in records
+        ] == [
+            {
+                "group_id": None,
+                "key": "key1",
+                "namespace": "kittens",
+                "updated_at": datetime(2021, 1, 2, 0, 0),
+            }
+        ]
+
+    with patch.object(manager, "get_time", return_value=datetime(2023, 1, 2)):
+        manager.update(["key1"])
+
+    with manager._make_session() as session:
+        records = (
+            session.query(UpsertionRecord)
+            .filter(UpsertionRecord.namespace == manager.namespace)
+            .all()
+        )
+
+        assert [
+            {
+                "key": record.key,
+                "namespace": record.namespace,
+                "updated_at": record.updated_at,
+                "group_id": record.group_id,
+            }
+            for record in records
+        ] == [
+            {
+                "group_id": None,
+                "key": "key1",
+                "namespace": "kittens",
+                "updated_at": datetime(2023, 1, 2, 0, 0),
+            }
+        ]
+
+    with patch.object(manager, "get_time", return_value=datetime(2023, 2, 2)):
+        manager.update(["key1"], group_ids=["group1"])
+
+    with manager._make_session() as session:
+        records = (
+            session.query(UpsertionRecord)
+            .filter(UpsertionRecord.namespace == manager.namespace)
+            .all()
+        )
+
+        assert [
+            {
+                "key": record.key,
+                "namespace": record.namespace,
+                "updated_at": record.updated_at,
+                "group_id": record.group_id,
+            }
+            for record in records
+        ] == [
+            {
+                "group_id": "group1",
+                "key": "key1",
+                "namespace": "kittens",
+                "updated_at": datetime(2023, 2, 2, 0, 0),
+            }
+        ]
 
 
 def test_update_with_group_ids(manager: SQLRecordManager) -> None:

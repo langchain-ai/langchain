@@ -198,10 +198,11 @@ class SQLRecordManager(RecordManager):
             # Note: uses SQLite insert to make on_conflict_do_update work.
             # This code needs to be generalized a bit to work with more dialects.
             insert_stmt = insert(UpsertionRecord).values(records_to_upsert)
-            stmt = insert_stmt.on_conflict_do_update(
+            stmt = insert_stmt.on_conflict_do_update(  # type: ignore[attr-defined]
                 [UpsertionRecord.key, UpsertionRecord.namespace],
                 set_=dict(
-                    updated_at=insert_stmt.excluded.updated_at,
+                    updated_at=insert_stmt.excluded.updated_at,  # type: ignore[attr-defined]
+                    group_id=insert_stmt.excluded.group_id,  # type: ignore[attr-defined]
                 ),
             )
             session.execute(stmt)

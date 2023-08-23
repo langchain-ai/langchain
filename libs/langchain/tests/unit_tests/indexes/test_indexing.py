@@ -431,3 +431,19 @@ def test_indexing_with_no_docs(
         "num_skipped": 0,
         "num_updated": 0,
     }
+
+
+def test_deduplication(
+    record_manager: SQLRecordManager, vector_store: VectorStore
+) -> None:
+    """Check edge case when loader returns no new docs."""
+    docs = [
+        Document(
+            page_content="This is a test document.",
+            metadata={"source": "1"},
+        ),
+        Document(
+            page_content="This is a test document.",
+            metadata={"source": "1"},
+        ),
+    ]
