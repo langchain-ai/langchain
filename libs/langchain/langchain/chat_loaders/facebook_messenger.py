@@ -32,12 +32,11 @@ class SingleFileFacebookMessengerChatLoader(BaseChatLoader):
         sorted_data = sorted(data["messages"], key=lambda x: x["timestamp_ms"])
         messages = []
         for m in sorted_data:
-            if "content" in m:
-                if m["sender_name"] == self.person_name:
-                    message_class = AIMessage
-                else:
-                    message_class = HumanMessage
-                messages.append(message_class(content=m["content"]))
+            if m["sender_name"] == self.person_name:
+                message_class = AIMessage
+            else:
+                message_class = HumanMessage
+            messages.append(message_class(content=m["content"]))
         yield ChatSession(messages=messages)
 
 
