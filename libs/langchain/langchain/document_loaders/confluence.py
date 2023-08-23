@@ -20,16 +20,14 @@ logger = logging.getLogger(__name__)
 class ContentFormat(str, Enum):
     """Enumerator of the content formats of Confluence page."""
 
+    EDITOR = "body.editor"
+    EXPORT_VIEW = "body.export_view"
+    ANONYMOUS_EXPORT_VIEW = "body.anonymous_export_view"
     STORAGE = "body.storage"
     VIEW = "body.view"
 
     def get_content(self, page: dict) -> str:
-        if self == ContentFormat.STORAGE:
-            return page["body"]["storage"]["value"]
-        elif self == ContentFormat.VIEW:
-            return page["body"]["view"]["value"]
-
-        raise ValueError("unknown content format")
+        return page["body"][self.name.lower()]["value"]
 
 
 class ConfluenceLoader(BaseLoader):
@@ -52,7 +50,10 @@ class ConfluenceLoader(BaseLoader):
     raw XML representation for storage. The view format is the HTML representation for
     viewing with macros are rendered as though it is viewed by users. You can pass
     a enum `content_format` argument to `load()` to specify the content format, this is
-    set to `ContentFormat.STORAGE` by default.
+    set to `ContentFormat.STORAGE` by default, the supported values are:
+    `ContentFormat.EDITOR`, `ContentFormat.EXPORT_VIEW`,
+    `ContentFormat.ANONYMOUS_EXPORT_VIEW`, `ContentFormat.STORAGE`,
+    and `ContentFormat.VIEW`.
 
     Hint: space_key and page_id can both be found in the URL of a page in Confluence
     - https://yoursite.atlassian.com/wiki/spaces/<space_key>/pages/<page_id>
@@ -238,7 +239,11 @@ class ConfluenceLoader(BaseLoader):
         :type include_attachments: bool, optional
         :param include_comments: defaults to False
         :type include_comments: bool, optional
-        :param content_format: Specify content format, defaults to ContentFormat.STORAGE
+        :param content_format: Specify content format, defaults to
+                                ContentFormat.STORAGE, the supported values are:
+                                `ContentFormat.EDITOR`, `ContentFormat.EXPORT_VIEW`,
+                                `ContentFormat.ANONYMOUS_EXPORT_VIEW`,
+                                `ContentFormat.STORAGE`, and `ContentFormat.VIEW`.
         :type content_format: ContentFormat
         :param limit: Maximum number of pages to retrieve per request, defaults to 50
         :type limit: int, optional
@@ -473,14 +478,12 @@ class ConfluenceLoader(BaseLoader):
         else:
             attachment_texts = []
 
+        content = content_format.get_content(page)
         if keep_markdown_format:
             # Use markdownify to keep the page Markdown style
-            text = markdownify(
-                page["body"]["storage"]["value"], heading_style="ATX"
-            ) + "".join(attachment_texts)
+            text = markdownify(content, heading_style="ATX") + "".join(attachment_texts)
 
         else:
-            content = content_format.get_content(page)
             if keep_newlines:
                 text = BeautifulSoup(
                     content.replace("</p>", "\n</p>").replace("<br />", "\n"), "lxml"
