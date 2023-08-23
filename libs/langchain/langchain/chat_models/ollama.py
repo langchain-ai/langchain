@@ -15,7 +15,7 @@ from langchain.schema.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain.schema.output import ChatGenerationChunk
+from langchain.schema.output import ChatGeneration, ChatGenerationChunk
 
 
 def _stream_response_to_chat_generation_chunk(
@@ -77,20 +77,14 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
         **kwargs: Any,
     ) -> ChatResult:
         prompt = self._format_messages_as_text(messages)
-        final_chunk: Optional[ChatGenerationChunk] = None
-        for stream_resp in self._create_stream(prompt, stop, **kwargs):
-            if stream_resp:
-                chunk = _stream_response_to_chat_generation_chunk(stream_resp)
-                if final_chunk is None:
-                    final_chunk = chunk
-                else:
-                    final_chunk += chunk
-                if run_manager:
-                    run_manager.on_llm_new_token(
-                        chunk.text,
-                        verbose=self.verbose,
-                    )
-        return ChatResult(generations=[final_chunk])
+        final_chunk = super()._stream_with_aggregation(
+            prompt, stop=stop, run_manager=run_manager, verbose=self.verbose, **kwargs
+        )
+        chat_generation = ChatGeneration(
+            message=AIMessage(content=final_chunk.text),
+            generation_info=final_chunk.generation_info,
+        )
+        return ChatResult(generations=[chat_generation])
 
     def _stream(
         self,
