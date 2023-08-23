@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, TypedDict
+from concurrent.futures import Executor, ThreadPoolExecutor
+from contextlib import contextmanager
+from copy import deepcopy
+from typing import Any, Dict, Generator, List, Optional, TypedDict
 
 from langchain.callbacks.base import BaseCallbackManager, Callbacks
 from langchain.callbacks.manager import AsyncCallbackManager, CallbackManager
@@ -32,20 +35,45 @@ class RunnableConfig(TypedDict, total=False):
     Local variables
     """
 
+    max_concurrency: Optional[int]
+    """
+    Maximum number of parallel calls to make. If not provided, defaults to 
+    ThreadPoolExecutor's default. This is ignored if an executor is provided.
+    """
+
+    executor: Executor
+    """
+    Externally-managed executor to use for parallel calls. If not provided, a new
+    ThreadPoolExecutor will be created.
+    """
+
 
 def ensure_config(config: Optional[RunnableConfig]) -> RunnableConfig:
-    empty = RunnableConfig(tags=[], metadata={}, callbacks=None, _locals={})
+    empty = RunnableConfig(
+        tags=[],
+        metadata={},
+        callbacks=None,
+        _locals={},
+    )
     if config is not None:
         empty.update(config)
     return empty
 
 
 def patch_config(
-    config: RunnableConfig,
-    callbacks: BaseCallbackManager,
+    config: Optional[RunnableConfig],
+    *,
+    deep_copy_locals: bool = False,
+    callbacks: Optional[BaseCallbackManager] = None,
+    executor: Optional[Executor] = None,
 ) -> RunnableConfig:
-    config = config.copy()
-    config["callbacks"] = callbacks
+    config = ensure_config(config)
+    if deep_copy_locals:
+        config["_locals"] = deepcopy(config["_locals"])
+    if callbacks is not None:
+        config["callbacks"] = callbacks
+    if executor is not None:
+        config["executor"] = executor
     return config
 
 
@@ -65,3 +93,12 @@ def get_async_callback_manager_for_config(
         inheritable_tags=config.get("tags"),
         inheritable_metadata=config.get("metadata"),
     )
+
+
+@contextmanager
+def get_executor_for_config(config: RunnableConfig) -> Generator[Executor, None, None]:
+    if config.get("executor"):
+        yield config["executor"]
+    else:
+        with ThreadPoolExecutor(max_workers=config.get("max_concurrency")) as executor:
+            yield executor

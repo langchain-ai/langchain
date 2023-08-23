@@ -131,26 +131,25 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
     assert fake.batch(
         ["hello", "wooorld"], [dict(tags=["a-tag"]), dict(metadata={"key": "value"})]
     ) == [5, 7]
-    assert spy.call_args_list == [
-        mocker.call(
-            "hello", dict(tags=["a-tag"], metadata={}, callbacks=None, _locals={})
-        ),
-        mocker.call(
-            "wooorld",
-            dict(metadata={"key": "value"}, tags=[], callbacks=None, _locals={}),
-        ),
-    ]
+
+    assert len(spy.call_args_list) == 2
+    for i, call in enumerate(spy.call_args_list):
+        assert call.args[0] == ("hello" if i == 0 else "wooorld")
+        if i == 0:
+            assert call.args[1].get("tags") == ["a-tag"]
+            assert call.args[1].get("metadata") == {}
+        else:
+            assert call.args[1].get("tags") == []
+            assert call.args[1].get("metadata") == {"key": "value"}
+
     spy.reset_mock()
 
     assert fake.batch(["hello", "wooorld"], dict(tags=["a-tag"])) == [5, 7]
-    assert spy.call_args_list == [
-        mocker.call(
-            "hello", dict(tags=["a-tag"], metadata={}, callbacks=None, _locals={})
-        ),
-        mocker.call(
-            "wooorld", dict(tags=["a-tag"], metadata={}, callbacks=None, _locals={})
-        ),
-    ]
+    assert len(spy.call_args_list) == 2
+    for i, call in enumerate(spy.call_args_list):
+        assert call.args[0] == ("hello" if i == 0 else "wooorld")
+        assert call.args[1].get("tags") == ["a-tag"]
+        assert call.args[1].get("metadata") == {}
     spy.reset_mock()
 
     assert await fake.ainvoke("hello", config={"callbacks": []}) == 5
