@@ -86,7 +86,10 @@ class Tair(VectorStore):
         """Add texts data to an existing index."""
         ids = []
         keys = kwargs.get("keys", None)
-        use_hybrid_search = kwargs.get("use_hybrid_search", False)
+        index_params = kwargs.get("index_params", {})
+        use_hybrid_search = False
+        if index_params.get("lexical_algorithm") == "bm25":
+            use_hybrid_search = True
         # Write data to tair
         pipeline = self.client.pipeline(transaction=False)
         embeddings = self.embedding_function.embed_documents(list(texts))
@@ -221,10 +224,8 @@ class Tair(VectorStore):
             data_type,
             **index_params,
         )
-        use_hybrid_search = False
-        if index_params.get('lexical_algorithm') == "bm25":
-            use_hybrid_search = True
-        tair_vector_store.add_texts(texts, metadatas, keys=keys, use_hybrid_search=use_hybrid_search)
+
+        tair_vector_store.add_texts(texts, metadatas, keys=keys, index_params=index_params)
         return tair_vector_store
     
     @classmethod
