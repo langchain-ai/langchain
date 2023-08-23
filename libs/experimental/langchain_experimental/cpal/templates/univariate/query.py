@@ -4,48 +4,47 @@
 # fmt: off
 template = (
     """
-Transform the narrative_input into an SQL expression. If you are
-unsure, then do not guess, instead add a llm_error_msg that explains why you are unsure.
+Преобразуй narrative_input в SQL выражение. Если ты не уверен, то не угадывай, вместо этого добавь llm_error_msg, который объясняет, почему ты не уверен.
 
 
 {format_instructions}
 
 
-narrative_input: how much money will boris have?
+narrative_input: сколько денег у Бориса будет?
 
 
 # JSON:
 
     {{
-        "narrative_input": "how much money will boris have?",
+        "narrative_input": "сколько денег у Бориса будет?",
         "llm_error_msg": "",
         "expression": "SELECT name, value FROM df WHERE name = 'boris'"
     }}
 
 
 
-narrative_input: How much money does ted have?
+narrative_input: Сколько денег у Теда?
 
 
 
 # JSON:
 
     {{
-        "narrative_input": "How much money does ted have?",
+        "narrative_input": "Сколько денег у Теда?",
         "llm_error_msg": "",
         "expression": "SELECT name, value FROM df WHERE name = 'ted'"
     }}
 
 
 
-narrative_input: what is the sum of pet count for all the people?
+narrative_input: какова сумма количества питомцев у всех людей?
 
 
 
 # JSON:
 
     {{
-        "narrative_input": "what is the sum of pet count for all the people?",
+        "narrative_input": "какова сумма количества питомцев у всех людей?",
         "llm_error_msg": "",
         "expression": "SELECT SUM(value) FROM df"
     }}
@@ -53,14 +52,14 @@ narrative_input: what is the sum of pet count for all the people?
 
 
 
-narrative_input: what's the average of the pet counts for all the people?
+narrative_input: каково среднее количество питомцев у всех людей?
 
 
 
 # JSON:
 
     {{
-        "narrative_input": "what's the average of the pet counts for all the people?",
+        "narrative_input": "каково среднее количество питомцев у всех людей?",
         "llm_error_msg": "",
         "expression": "SELECT AVG(value) FROM df"
     }}
@@ -68,14 +67,14 @@ narrative_input: what's the average of the pet counts for all the people?
 
 
 
-narrative_input: what's the maximum of the pet counts for all the people?
+narrative_input: какое максимальное количество питомцев у всех людей?
 
 
 
 # JSON:
 
     {{
-        "narrative_input": "what's the maximum of the pet counts for all the people?",
+        "narrative_input": "какое максимальное количество питомцев у всех людей?",
         "llm_error_msg": "",
         "expression": "SELECT MAX(value) FROM df"
     }}
@@ -83,14 +82,14 @@ narrative_input: what's the maximum of the pet counts for all the people?
 
 
 
-narrative_input: what's the minimum of the pet counts for all the people?
+narrative_input: какое минимальное количество питомцев у всех людей?
 
 
 
 # JSON:
 
     {{
-        "narrative_input": "what's the minimum of the pet counts for all the people?",
+        "narrative_input": "какое минимальное количество питомцев у всех людей?",
         "llm_error_msg": "",
         "expression": "SELECT MIN(value) FROM df"
     }}
@@ -98,14 +97,14 @@ narrative_input: what's the minimum of the pet counts for all the people?
 
 
 
-narrative_input: what's the number of people with pet counts greater than 10?
+narrative_input: сколько людей имеют больше 10 питомцев?
 
 
 
 # JSON:
 
     {{
-        "narrative_input": "what's the number of people with pet counts greater than 10?",
+        "narrative_input": "сколько людей имеют больше 10 питомцев?",
         "llm_error_msg": "",
         "expression": "SELECT COUNT(*) FROM df WHERE value > 10"
     }}
@@ -113,14 +112,14 @@ narrative_input: what's the number of people with pet counts greater than 10?
 
 
 
-narrative_input: what's the pet count for boris?
+narrative_input: сколько питомцев у Бориса?
 
 
 
 # JSON:
 
     {{
-        "narrative_input": "what's the pet count for boris?",
+        "narrative_input": "сколько питомцев у Бориса?",
         "llm_error_msg": "",
         "expression": "SELECT name, value FROM df WHERE name = 'boris'"
     }}
@@ -128,14 +127,14 @@ narrative_input: what's the pet count for boris?
 
 
 
-narrative_input: what's the pet count for cindy and marcia?
+narrative_input: сколько питомцев у Синди и Марсии?
 
 
 
 # JSON:
 
     {{
-        "narrative_input": "what's the pet count for cindy and marcia?",
+        "narrative_input": "сколько питомцев у Синди и Марсии?",
         "llm_error_msg": "",
         "expression": "SELECT name, value FROM df WHERE name IN ('cindy', 'marcia')"
     }}
@@ -143,14 +142,14 @@ narrative_input: what's the pet count for cindy and marcia?
 
 
 
-narrative_input: what's the total pet count for cindy and marcia?
+narrative_input: какова общая сумма питомцев у Синди и Марсии?
 
 
 
 # JSON:
 
     {{
-        "narrative_input": "what's the total pet count for cindy and marcia?",
+        "narrative_input": "какова общая сумма питомцев у Синди и Марсии?",
         "llm_error_msg": "",
         "expression": "SELECT SUM(value) FROM df WHERE name IN ('cindy', 'marcia')"
     }}
@@ -158,14 +157,14 @@ narrative_input: what's the total pet count for cindy and marcia?
 
 
 
-narrative_input: what's the total pet count for TED?
+narrative_input: какова общая сумма питомцев у ТЕД?
 
 
 
 # JSON:
 
     {{
-        "narrative_input": "what's the total pet count for TED?",
+        "narrative_input": "какова общая сумма питомцев у ТЕД?",
         "llm_error_msg": "",
         "expression": "SELECT SUM(value) FROM df WHERE name = 'TED'"
     }}
@@ -174,14 +173,14 @@ narrative_input: what's the total pet count for TED?
 
 
 
-narrative_input: what's the total dollar count for TED and cindy?
+narrative_input: какова общая сумма долларов у ТЕД и Синди?
 
 
 
 # JSON:
 
     {{
-        "narrative_input": "what's the total dollar count for TED and cindy?",
+        "narrative_input": "какова общая сумма долларов у ТЕД и Синди?",
         "llm_error_msg": "",
         "expression": "SELECT SUM(value) FROM df WHERE name IN ('TED', 'cindy')"
     }}
@@ -189,7 +188,7 @@ narrative_input: what's the total dollar count for TED and cindy?
 
 
 
-narrative_input: what's the total pet count for TED and cindy?
+narrative_input: какова общая сумма питомцев у ТЕД и Синди?
 
 
 
@@ -197,7 +196,7 @@ narrative_input: what's the total pet count for TED and cindy?
 # JSON:
 
     {{
-        "narrative_input": "what's the total pet count for TED and cindy?",
+        "narrative_input": "какова общая сумма питомцев у ТЕД и Синди?",
         "llm_error_msg": "",
         "expression": "SELECT SUM(value) FROM df WHERE name IN ('TED', 'cindy')"
     }}
@@ -205,7 +204,7 @@ narrative_input: what's the total pet count for TED and cindy?
 
 
 
-narrative_input: what's the best for TED and cindy?
+narrative_input: что лучше для ТЕД и Синди?
 
 
 
@@ -213,15 +212,15 @@ narrative_input: what's the best for TED and cindy?
 # JSON:
 
     {{
-        "narrative_input": "what's the best for TED and cindy?",
-        "llm_error_msg": "ambiguous narrative_input, not sure what 'best' means",
+        "narrative_input": "что лучше для ТЕД и Синди?",
+        "llm_error_msg": "неоднозначный narrative_input, не уверен, что значит 'лучше'",
         "expression": ""
     }}
 
 
 
 
-narrative_input: what's the value?
+narrative_input: какова стоимость?
 
 
 
@@ -229,8 +228,8 @@ narrative_input: what's the value?
 # JSON:
 
     {{
-        "narrative_input": "what's the value?",
-        "llm_error_msg": "ambiguous narrative_input, not sure what entity is being asked about",
+        "narrative_input": "какова стоимость?",
+        "llm_error_msg": "неоднозначный narrative_input, не уверен, о каком объекте идет речь",
         "expression": ""
     }}
 
@@ -239,7 +238,7 @@ narrative_input: what's the value?
 
 
 
-narrative_input: how many total pets do the three have?
+narrative_input: сколько всего питомцев у троих?
 
 
 
@@ -248,7 +247,7 @@ narrative_input: how many total pets do the three have?
 # JSON:
 
     {{
-        "narrative_input": "how many total pets do the three have?",
+        "narrative_input": "сколько всего питомцев у троих?",
         "llm_error_msg": "",
         "expression": "SELECT SUM(value) FROM df"
     }}

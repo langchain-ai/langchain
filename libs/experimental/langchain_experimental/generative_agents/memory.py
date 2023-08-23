@@ -60,9 +60,9 @@ class GenerativeAgentMemory(BaseMemory):
         """Return the 3 most salient high-level questions about recent observations."""
         prompt = PromptTemplate.from_template(
             "{observations}\n\n"
-            "Given only the information above, what are the 3 most salient "
-            "high-level questions we can answer about the subjects in the statements?\n"
-            "Provide each question on a new line."
+            "Учитывая только приведенную выше информацию, какие 3 наиболее важных "
+            "вопроса высокого уровня мы можем ответить о субъектах в утверждениях?\n"
+            "Укажи каждый вопрос на новой строке."
         )
         observations = self.memory_retriever.memory_stream[-last_k:]
         observation_str = "\n".join(
@@ -76,16 +76,16 @@ class GenerativeAgentMemory(BaseMemory):
     ) -> List[str]:
         """Generate 'insights' on a topic of reflection, based on pertinent memories."""
         prompt = PromptTemplate.from_template(
-            "Statements relevant to: '{topic}'\n"
+            "Утверждения, относящиеся к: '{topic}'\n"
             "---\n"
             "{related_statements}\n"
             "---\n"
-            "What 5 high-level novel insights can you infer from the above statements "
-            "that are relevant for answering the following question?\n"
-            "Do not include any insights that are not relevant to the question.\n"
-            "Do not repeat any insights that have already been made.\n\n"
-            "Question: {topic}\n\n"
-            "(example format: insight (because of 1, 5, 3))\n"
+            "Какие 5 высокоуровневых новых выводов ты можешь сделать из приведенных выше утверждений, "
+            "которые актуальны для ответа на следующий вопрос?\n"
+            "Не включай выводы, которые не относятся к вопросу.\n"
+            "Не повторяй выводы, которые уже были сделаны.\n\n"
+            "Вопрос: {topic}\n\n"
+            "(пример формата: вывод (из-за 1, 5, 3))\n"
         )
 
         related_memories = self.fetch_memories(topic, now=now)
@@ -117,13 +117,12 @@ class GenerativeAgentMemory(BaseMemory):
     def _score_memory_importance(self, memory_content: str) -> float:
         """Score the absolute importance of the given memory."""
         prompt = PromptTemplate.from_template(
-            "On the scale of 1 to 10, where 1 is purely mundane"
-            + " (e.g., brushing teeth, making bed) and 10 is"
-            + " extremely poignant (e.g., a break up, college"
-            + " acceptance), rate the likely poignancy of the"
-            + " following piece of memory. Respond with a single integer."
-            + "\nMemory: {memory_content}"
-            + "\nRating: "
+            "На шкале от 1 до 10, где 1 - это совершенно обыденное"
+            + " (например, чистка зубов, застилание кровати) и 10 -"
+            + " это чрезвычайно важное (например, расставание, поступление в колледж),"
+            + " оцени вероятную важность следующего фрагмента памяти. Ответь одним числом."
+            + "\nПамять: {memory_content}"
+            + "\nОценка: "
         )
         score = self.chain(prompt).run(memory_content=memory_content).strip()
         if self.verbose:
@@ -137,15 +136,14 @@ class GenerativeAgentMemory(BaseMemory):
     def _score_memories_importance(self, memory_content: str) -> List[float]:
         """Score the absolute importance of the given memory."""
         prompt = PromptTemplate.from_template(
-            "On the scale of 1 to 10, where 1 is purely mundane"
-            + " (e.g., brushing teeth, making bed) and 10 is"
-            + " extremely poignant (e.g., a break up, college"
-            + " acceptance), rate the likely poignancy of the"
-            + " following piece of memory. Always answer with only a list of numbers."
-            + " If just given one memory still respond in a list."
-            + " Memories are separated by semi colans (;)"
-            + "\Memories: {memory_content}"
-            + "\nRating: "
+            "На шкале от 1 до 10, где 1 - это совершенно обыденное"
+            + " (например, чистка зубов, застилание кровати) и 10 -"
+            + " это чрезвычайно важное (например, расставание, поступление в колледж),"
+            + " оцени вероятную важность следующего фрагмента памяти. Всегда отвечай только списком чисел."
+            + " Если дана только одна память, все равно отвечай списком."
+            + " Память разделена точками с запятой (;)"
+            + "\Память: {memory_content}"
+            + "\nОценка: "
         )
         scores = self.chain(prompt).run(memory_content=memory_content).strip()
 

@@ -41,10 +41,9 @@ class AmadeusClosestAirport(AmadeusBaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         template = (
-            " What is the nearest airport to {location}? Please respond with the "
-            " airport's International Air Transport Association (IATA) Location "
-            ' Identifier in the following JSON format. JSON: "iataCode": "IATA '
-            ' Location Identifier" '
+            " Какой аэропорт ближе всего к {location}? Ответь, пожалуйста, с "
+            " кодом аэропорта по международной ассоциации воздушного транспорта (IATA) "
+            ' в следующем формате JSON. JSON: "iataCode": "Код местоположения IATA" '
         )
 
         llm = ChatOpenAI(temperature=0)

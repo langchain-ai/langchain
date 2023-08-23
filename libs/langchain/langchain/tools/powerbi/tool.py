@@ -26,9 +26,9 @@ class QueryPowerBITool(BaseTool):
 
     name: str = "query_powerbi"
     description: str = """
-    Input to this tool is a detailed question about the dataset, output is a result from the dataset. It will try to answer the question using the dataset, and if it cannot, it will ask for clarification.
+    Ввод для этого инструмента - подробный вопрос о наборе данных, вывод - результат из набора данных. Он попытается ответить на вопрос, используя набор данных, и если не сможет, попросит уточнения.
 
-    Example Input: "How many rows are in table1?"
+    Пример ввода: "Сколько строк в таблице1?"
     """  # noqa: E501
     llm_chain: LLMChain
     powerbi: PowerBIDataset = Field(exclude=True)
@@ -88,7 +88,7 @@ class QueryPowerBITool(BaseTool):
         except Exception as exc:  # pylint: disable=broad-except
             self.session_cache[tool_input] = f"Error on call to LLM: {exc}"
             return self.session_cache[tool_input]
-        if query == "I cannot answer this":
+        if query == "Я не могу ответить на это":
             self.session_cache[tool_input] = query
             return self.session_cache[tool_input]
         logger.info("PBI Query:\n%s", query)
@@ -101,7 +101,7 @@ class QueryPowerBITool(BaseTool):
         if error is not None and "TokenExpired" in error:
             self.session_cache[
                 tool_input
-            ] = "Authentication token expired or invalid, please try reauthenticate."
+            ] = "Срок действия или недействительность токена аутентификации истек, пожалуйста, попробуйте повторно аутентифицироваться."
             return self.session_cache[tool_input]
 
         iterations = kwargs.get("iterations", 0)
@@ -128,7 +128,7 @@ class QueryPowerBITool(BaseTool):
         """Execute the query, return the results or an error message."""
         if cache := self._check_cache(tool_input):
             logger.debug("Found cached result for %s: %s", tool_input, cache)
-            return f"{cache}, from cache, you have already asked this question."
+            return f"{cache}, из кэша, ты уже задавал этот вопрос."
         try:
             logger.info("Running PBI Query Tool with input: %s", tool_input)
             query = await self.llm_chain.apredict(
@@ -142,7 +142,7 @@ class QueryPowerBITool(BaseTool):
             self.session_cache[tool_input] = f"Error on call to LLM: {exc}"
             return self.session_cache[tool_input]
 
-        if query == "I cannot answer this":
+        if query == "Я не могу ответить на это":
             self.session_cache[tool_input] = query
             return self.session_cache[tool_input]
         logger.info("PBI Query: %s", query)
@@ -155,7 +155,7 @@ class QueryPowerBITool(BaseTool):
         if error is not None and ("TokenExpired" in error or "TokenError" in error):
             self.session_cache[
                 tool_input
-            ] = "Authentication token expired or invalid, please try to reauthenticate or check the scope of the credential."  # noqa: E501
+            ] = "Срок действия токена аутентификации истек или недействителен, пожалуйста, попробуйте повторно аутентифицироваться или проверьте область действия учетных данных."  # noqa: E501
             return self.session_cache[tool_input]
 
         iterations = kwargs.get("iterations", 0)
@@ -183,13 +183,13 @@ class QueryPowerBITool(BaseTool):
                 logger.info("0 records in result, query was valid.")
                 return (
                     None,
-                    "0 rows returned, this might be correct, but please validate if all filter values were correct?",  # noqa: E501
+                    "Возвращено 0 строк, это может быть правильно, но, пожалуйста, проверьте, были ли все значения фильтра правильными?",  # noqa: E501
                 )
             result = json_to_md(rows)
             too_long, length = self._result_too_large(result)
             if too_long:
                 return (
-                    f"Result too large, please try to be more specific or use the `TOPN` function. The result is {length} tokens long, the limit is {self.output_token_limit} tokens.",  # noqa: E501
+                    f"Результат слишком большой, пожалуйста, попробуйте быть более конкретным или используйте функцию `TOPN`. Результат составляет {length} токенов, лимит - {self.output_token_limit} токенов.",  # noqa: E501
                     None,
                 )
             return result, None
@@ -219,10 +219,10 @@ class InfoPowerBITool(BaseTool):
 
     name: str = "schema_powerbi"
     description: str = """
-    Input to this tool is a comma-separated list of tables, output is the schema and sample rows for those tables.
-    Be sure that the tables actually exist by calling list_tables_powerbi first!
+    Ввод для этого инструмента - список таблиц, разделенных запятыми, вывод - схема и образцы строк для этих таблиц.
+    Убедитесь, что таблицы действительно существуют, сначала вызвав list_tables_powerbi!
 
-    Example Input: "table1, table2, table3"
+    Пример ввода: "table1, table2, table3"
     """  # noqa: E501
     powerbi: PowerBIDataset = Field(exclude=True)
 
@@ -251,7 +251,7 @@ class ListPowerBITool(BaseTool):
     """Tool for getting tables names."""
 
     name: str = "list_tables_powerbi"
-    description: str = "Input is an empty string, output is a comma separated list of tables in the database."  # noqa: E501 # pylint: disable=C0301
+    description: str = "Ввод - пустая строка, вывод - список таблиц в базе данных, разделенных запятыми."  # noqa: E501 # pylint: disable=C0301
     powerbi: PowerBIDataset = Field(exclude=True)
 
     class Config:

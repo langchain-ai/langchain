@@ -75,7 +75,69 @@
 ./libs/langchain/langchain/chains/llm_summarization_checker/prompts/revise_summary.txt
 ./libs/langchain/langchain/chains/llm_summarization_checker/prompts/create_facts.txt
 ./libs/langchain/langchain/chains/llm_summarization_checker/prompts/are_all_true_prompt.txt
+No prompts:
 ./libs/langchain/langchain/utilities/promptguard.py
-no prompts
+No prompts:
 ./libs/langchain/langchain/llms/promptguard.py
-no prompts
+./libs/experimental/langchain_experimental/autonomous_agents/hugginggpt/task_planner.py
+./libs/experimental/langchain_experimental/autonomous_agents/hugginggpt/repsonse_generator.py
+./libs/experimental/langchain_experimental/autonomous_agents/baby_agi/task_prioritization.py
+./libs/experimental/langchain_experimental/autonomous_agents/baby_agi/task_creation.py
+./libs/experimental/langchain_experimental/autonomous_agents/baby_agi/task_execution.py
+No prompts:
+./libs/experimental/langchain_experimental/autonomous_agents/autogpt/memory.py
+No prompts:
+./libs/experimental/langchain_experimental/autonomous_agents/autogpt/agent.py
+No prompts:
+./libs/experimental/langchain_experimental/tot/thought_generation.py
+No prompts:
+./libs/experimental/langchain_experimental/tot/base.py
+./libs/experimental/langchain_experimental/plan_and_execute/executors/agent_executor.py
+./libs/experimental/langchain_experimental/plan_and_execute/planners/chat_planner.py
+No prompts:
+./libs/experimental/langchain_experimental/cpal/base.py
+./libs/experimental/langchain_experimental/smart_llm/base.py
+./libs/experimental/langchain_experimental/llms/anthropic_functions.py
+No prompts:
+./libs/experimental/langchain_experimental/llms/rellm_decoder.py
+No prompts:
+./libs/experimental/langchain_experimental/llms/jsonformer_decoder.py
+./libs/experimental/langchain_experimental/cpal/templates/univariate/query.py
+./libs/experimental/langchain_experimental/cpal/templates/univariate/narrative.py
+./libs/experimental/langchain_experimental/cpal/templates/univariate/intervention.py
+./libs/experimental/langchain_experimental/cpal/templates/univariate/causal.py
+./libs/experimental/langchain_experimental/generative_agents/memory.py
+No prompts:
+./libs/experimental/langchain_experimental/pal_chain/base.py
+No prompts:
+./libs/experimental/langchain_experimental/sql/base.py
+File is too big:
+./libs/langchain/langchain/text_splitter.py
+No prompts:
+./libs/langchain/langchain/cache.py
+No prompts:
+./libs/langchain/langchain/__init__.py
+No prompts:
+./libs/langchain/langchain/model_laboratory.py
+./libs/langchain/langchain/retrievers/web_research.py
+No prompts:
+./libs/langchain/langchain/retrievers/elastic_search_bm25.py
+./libs/langchain/langchain/retrievers/re_phraser.py
+./libs/langchain/langchain/retrievers/multi_query.py
+No prompts:
+./libs/langchain/langchain/retrievers/document_compressors/chain_filter.py
+No prompts:
+./libs/langchain/langchain/retrievers/document_compressors/chain_extract.py
+No prompts:
+./libs/langchain/langchain/tools/spark_sql/tool.py
+No prompts:
+./libs/langchain/langchain/tools/zapier/tool.py
+No prompts:
+./libs/langchain/langchain/tools/sql_database/tool.py
+No prompts:
+./libs/langchain/langchain/tools/file_management/utils.py
+./libs/langchain/langchain/tools/powerbi/tool.py
+No prompts:
+./libs/langchain/langchain/tools/steamship_image_generation/tool.py
+./libs/langchain/langchain/tools/amadeus/closest_airport.py
+./libs/langchain/langchain/tools/human/tool.py

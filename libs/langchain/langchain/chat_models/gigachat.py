@@ -8,6 +8,7 @@ import os
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union
 
 import requests
+from tenacity import retry, stop_after_attempt
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -98,6 +99,7 @@ class GigaChat(SimpleChatModel):
         self.token = response.json()["tok"]
         return
 
+    @retry(stop=stop_after_attempt(3))
     def _call(
         self,
         messages: List[BaseMessage],
@@ -124,7 +126,7 @@ class GigaChat(SimpleChatModel):
         }
 
         if self.verbose:
-            self.logger.warning(f"Giga request: {payload}")
+            self.logger.warning("Giga request: %s", payload)
 
         response = requests.post(
             f"{self.api_url}/v1/chat/completions",
@@ -132,10 +134,20 @@ class GigaChat(SimpleChatModel):
             json=payload,
             timeout=600,
         )
+        if not response.ok:
+            if self.verbose:
+                self.logger.warning(
+                    "Giga error: %i %s", response.status_code, response.text
+                )
+            if response.status_code == 401:
+                self.token = None
+            raise ValueError(
+                f"Can't get response from GigaChat. Error code: {response.status_code}"
+            )
         text = self.transform_output(response)
 
         if self.verbose:
-            self.logger.warning(f"Giga response: {text}")
+            self.logger.warning("Giga response: %s", text)
 
         return text
 

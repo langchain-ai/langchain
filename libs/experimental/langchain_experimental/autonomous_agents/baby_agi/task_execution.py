@@ -10,10 +10,10 @@ class TaskExecutionChain(LLMChain):
     def from_llm(cls, llm: BaseLanguageModel, verbose: bool = True) -> LLMChain:
         """Get the response parser."""
         execution_template = (
-            "You are an AI who performs one task based on the following objective: "
+            "Ты - искусственный интеллект, который выполняет одну задачу на основе следующей цели: "
             "{objective}."
-            "Take into account these previously completed tasks: {context}."
-            " Your task: {task}. Response:"
+            "Учти эти ранее выполненные задачи: {context}."
+            " Твоя задача: {task}. Ответ:"
         )
         prompt = PromptTemplate(
             template=execution_template,
