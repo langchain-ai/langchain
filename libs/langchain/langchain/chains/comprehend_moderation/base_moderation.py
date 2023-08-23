@@ -2,11 +2,10 @@ import uuid
 from typing import Any, Dict, Optional
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
-from langchain.chains.comprehend_moderation import (
-    ComprehendIntent,
-    ComprehendPII,
-    ComprehendToxicity,
-)
+from langchain.chains.comprehend_moderation.intent import ComprehendIntent
+from langchain.chains.comprehend_moderation.pii import ComprehendPII
+from langchain.chains.comprehend_moderation.toxicity import ComprehendToxicity
+    
 from langchain.prompts.base import StringPromptValue
 from langchain.prompts.chat import ChatPromptValue
 from langchain.schema import AIMessage, HumanMessage
@@ -47,7 +46,7 @@ class BaseModeration:
             AIMessage will be checked. We can perhaps loop through and take advantage of the
             additional_kwargs property in the HumanMessage and AIMessage schema to mark messages
             that have been moderated. However that means that this class could generate multiple
-            text chunks and moderate() logig would need to be updated. This also means some complexity
+            text chunks and moderate() logging would need to be updated. This also means some complexity
             in re-constructing the prompt while keeping the messages in sequence.
             """
             message = prompt.messages[-1]

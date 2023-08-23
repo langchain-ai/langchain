@@ -134,7 +134,7 @@ class ComprehendToxicity:
                 self.moderation_beacon["moderation_output"] = response
 
             if config:
-                from langchain_cm.chains.comprehend_moderation.base_moderation_enums import (
+                from langchain.chains.comprehend_moderation.base_moderation_enums import (
                     BaseModerationActions,
                 )
 
