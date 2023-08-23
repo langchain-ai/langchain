@@ -1,8 +1,8 @@
 import json
 import logging
 import os
-from pathlib import Path
 import zipfile
+from pathlib import Path
 from typing import Iterator, List, Union
 
 from bs4 import BeautifulSoup
