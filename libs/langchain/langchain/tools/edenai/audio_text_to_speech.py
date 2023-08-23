@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 import requests
-from pydantic import Field
+from pydantic import Field, root_validator, validator
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.edenai.edenai_base_tool import EdenaiTool
@@ -40,11 +40,44 @@ class EdenAiTextToSpeechTool(EdenaiTool):
     language of the text passed to the model.
     """
 
+    # optional params see api documentation for more info
+    return_type: Literal["url", "wav"] = "url"
+    rate: Optional[int]
+    pitch: Optional[int]
+    volume: Optional[int]
+    audio_format: Optional[str]
+    sampling_rate: Optional[int]
+    voice_models: Dict[str, str] = Field(default_factory=dict)
+
     voice: Literal["MALE", "FEMALE"]
     """voice option : 'MALE' or 'FEMALE' """
 
     feature: str = "audio"
     subfeature: str = "text_to_speech"
+
+    @validator("providers")
+    def check_only_one_provider_selected(cls, v: List[str]) -> List[str]:
+        """
+        This tool has no feature to combine providers results.
+        Therefore we only allow one provider
+        """
+        if len(v) > 1:
+            raise ValueError(
+                "Please select only one provider. "
+                "The feature to combine providers results is not available "
+                "for this tool."
+            )
+        return v
+
+    @root_validator
+    def check_voice_models_key_is_provider_name(cls, values: dict) -> dict:
+        for key in values.get("voice_models", {}).keys():
+            if key not in values.get("providers", []):
+                raise ValueError(
+                    "voice_model should be formatted like this "
+                    "{<provider_name>: <its_voice_model>}"
+                )
+        return values
 
     def _download_wav(self, url: str, save_path: str) -> None:
         response = requests.get(url)
@@ -54,23 +87,13 @@ class EdenAiTextToSpeechTool(EdenaiTool):
         else:
             raise ValueError("Error while downloading wav file")
 
-    def _format_text_to_speech_result(self, text_to_speech_result: list) -> str:
-        result = text_to_speech_result[0]
-        if self.params is not None:
-            if self.params.get("return_type") == "url":
-                return result["audio_resource_url"]
-
-            elif self.params.get("return_type") == "wav":
-                self._download_wav(result["audio_resource_url"], "audio.wav")
-                return "audio.wav"
-
-            else:
-                raise ValueError(
-                    f"""return_type should be url or wav, not 
-                    {self.params['return_type']}"""
-                )
-        else:
+    def _parse_response(self, response: list) -> str:
+        result = response[0]
+        if self.return_type == "url":
             return result["audio_resource_url"]
+        else:
+            self._download_wav(result["audio_resource_url"], "audio.wav")
+            return "audio.wav"
 
     def _run(
         self,
@@ -78,25 +101,20 @@ class EdenAiTextToSpeechTool(EdenaiTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        try:
-            if self.params is None:
-                self.params = {"return_type": "url"}
-            else:
-                if "return_type" not in self.params.keys():
-                    self.params.update({"return_type": "url"})
-            query_params = {
-                "text": query,
-                "language": self.language,
-                "option": self.voice,
-                **self.params,
-            }
+        all_params = {
+            "text": query,
+            "language": self.language,
+            "option": self.voice,
+            "return_type": self.return_type,
+            "rate": self.rate,
+            "pitch": self.pitch,
+            "volume": self.volume,
+            "audio_format": self.audio_format,
+            "sampling_rate": self.sampling_rate,
+            "settings": self.voice_models,
+        }
 
-            text_analysis_result = self._call_eden_ai(query_params)
+        # filter so we don't send val to api when val is `None
+        query_params = {k: v for k, v in all_params.items() if v is not None}
 
-            text_analysis_dict = text_analysis_result.json()
-
-            result = self._format_text_to_speech_result(text_analysis_dict)
-            return result
-
-        except Exception as e:
-            raise RuntimeError(f"Error while running Edenai API: {e}")
+        return self._call_eden_ai(query_params)

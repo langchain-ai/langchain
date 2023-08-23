@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Optional
-
-from pydantic import Field
+from typing import Optional
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.edenai.edenai_base_tool import EdenaiTool
@@ -42,20 +40,18 @@ class EdenAiParsingInvoiceTool(EdenaiTool):
     language of the image passed to the model.
     """
 
-    params: Optional[Dict[str, Any]] = Field(default_factory=dict)
-
     feature = "ocr"
     subfeature = "invoice_parser"
 
-    def _format_invoice_parsing(self, json_data: list) -> str:
+    def _parse_response(self, response: list) -> str:
         formatted_list: list = []
 
-        if len(json_data) == 1:
+        if len(response) == 1:
             self._parse_json_multilevel(
-                json_data[0]["extracted_data"][0], formatted_list
+                response[0]["extracted_data"][0], formatted_list
             )
         else:
-            for entry in json_data:
+            for entry in response:
                 if entry.get("provider") == "eden-ai":
                     self._parse_json_multilevel(
                         entry["extracted_data"][0], formatted_list
@@ -69,24 +65,10 @@ class EdenAiParsingInvoiceTool(EdenaiTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        try:
-            if self.params is None:
-                query_params = {
-                    "file_url": query,
-                    "language": self.language,
-                    "attributes_as_list": False,
-                }
-            else:
-                query_params = {
-                    "file_url": query,
-                    "language": self.language,
-                    **self.params,
-                    "attributes_as_list": False,
-                }
+        query_params = {
+            "file_url": query,
+            "language": self.language,
+            "attributes_as_list": False,
+        }
 
-            image_analysis_result = self._call_eden_ai(query_params)
-            image_analysis_dict = image_analysis_result.json()
-            return self._format_invoice_parsing(image_analysis_dict)
-
-        except Exception as e:
-            raise RuntimeError(f"Error while running EdenAiExplicitText: {e}")
+        return self._call_eden_ai(query_params)

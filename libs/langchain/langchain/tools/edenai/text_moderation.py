@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
+from typing import List, Optional
+
+from pydantic import validator
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.edenai.edenai_base_tool import EdenaiTool
@@ -51,11 +53,23 @@ class EdenAiTextModerationTool(EdenaiTool):
     feature: str = "text"
     subfeature: str = "moderation"
 
-    def _format_text_explicit_content_detection_result(
-        self, text_analysis_result: list
-    ) -> str:
+    @validator("providers")
+    def check_only_one_provider_selected(cls, v: List[str]) -> List[str]:
+        """
+        This tool has no feature to combine providers results.
+        Therefore we only allow one provider
+        """
+        if len(v) > 1:
+            raise ValueError(
+                "Please select only one provider. "
+                "The feature to combine providers results is not available "
+                "for this tool."
+            )
+        return v
+
+    def _parse_response(self, response: list) -> str:
         formatted_result = []
-        for result in text_analysis_result:
+        for result in response:
             if "nsfw_likelihood" in result.keys():
                 formatted_result.append(
                     "nsfw_likelihood: " + str(result["nsfw_likelihood"])
@@ -72,13 +86,5 @@ class EdenAiTextModerationTool(EdenaiTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        try:
-            query_params = {"text": query, "language": self.language}
-            text_analysis_result = self._call_eden_ai(query_params)
-            text_analysis_dict = text_analysis_result.json()
-            return self._format_text_explicit_content_detection_result(
-                text_analysis_dict
-            )
-
-        except Exception as e:
-            raise RuntimeError(f"Error while running EdenAiExplicitText: {e}")
+        query_params = {"text": query, "language": self.language}
+        return self._call_eden_ai(query_params)

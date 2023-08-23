@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from abc import abstractmethod
 from typing import Any, Dict, Optional
 
 import requests
@@ -42,7 +43,7 @@ class EdenaiTool(BaseTool):
 
         return f"langchain/{__version__}"
 
-    def _call_eden_ai(self, query_params: Dict[str, Any]) -> requests.Response:
+    def _call_eden_ai(self, query_params: Dict[str, Any]) -> str:
         """
         Make an API call to the EdenAI service with the specified query parameters.
 
@@ -90,12 +91,22 @@ class EdenaiTool(BaseTool):
         if provider_response["status"] == "fail":
             raise ValueError(provider_response["error"]["message"])
 
-        return response
+        try:
+            data = response.json()
+            return self._parse_response(data)
+        except Exception as e:
+            raise RuntimeError(f"An error occured while running tool: {e}")
+
+    @abstractmethod
+    def _parse_response(self, response: Any) -> str:
+        """Take a dict response and condense it's data in a human readable string"""
+        pass
 
     def _get_edenai(self, url: str) -> requests.Response:
         headers = {
             "accept": "application/json",
             "authorization": f"Bearer {self.edenai_api_key}",
+            "User-Agent": self.get_user_agent(),
         }
 
         response = requests.get(url, headers=headers)

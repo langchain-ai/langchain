@@ -36,6 +36,7 @@ class EdenAiExplicitImageTool(EdenaiTool):
         "Input should be the string url of the image ."
     )
 
+    combine_available = True
     feature = "image"
     subfeature = "explicit_content"
 
@@ -48,7 +49,7 @@ class EdenAiExplicitImageTool(EdenaiTool):
 
         return result_str[:-2]
 
-    def _format_explicit_image(self, json_data: list) -> str:
+    def _parse_response(self, json_data: list) -> str:
         if len(json_data) == 1:
             result = self._parse_json(json_data[0])
         else:
@@ -64,11 +65,5 @@ class EdenAiExplicitImageTool(EdenaiTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        try:
-            query_params = {"file_url": query, "attributes_as_list": False}
-            image_analysis_result = self._call_eden_ai(query_params)
-            image_analysis_dict = image_analysis_result.json()
-            return self._format_explicit_image(image_analysis_dict)
-
-        except Exception as e:
-            raise RuntimeError(f"Error while running EdenAiExplicitText: {e}")
+        query_params = {"file_url": query, "attributes_as_list": False}
+        return self._call_eden_ai(query_params)

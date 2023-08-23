@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Optional
-
-from pydantic import Field
+from typing import Optional
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.edenai.edenai_base_tool import EdenaiTool
@@ -34,10 +32,6 @@ class EdenAiObjectDetectionTool(EdenaiTool):
         "Input should be the string url of the image to identify."
     )
 
-    base_url = "https://docs.edenai.co/reference/image_object_detection_create"
-
-    params: Optional[Dict[str, Any]] = Field(default_factory=dict)
-
     show_positions: bool = False
 
     feature = "image"
@@ -63,11 +57,11 @@ class EdenAiObjectDetectionTool(EdenaiTool):
         result.append("\n".join(label_info))
         return "\n\n".join(result)
 
-    def _format_object_detection_result(self, json_data: list) -> str:
-        if len(json_data) == 1:
-            result = self._parse_json(json_data[0])
+    def _parse_response(self, response: list) -> str:
+        if len(response) == 1:
+            result = self._parse_json(response[0])
         else:
-            for entry in json_data:
+            for entry in response:
                 if entry.get("provider") == "eden-ai":
                     result = self._parse_json(entry)
 
@@ -79,11 +73,5 @@ class EdenAiObjectDetectionTool(EdenaiTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        try:
-            query_params = {"file_url": query, "attributes_as_list": False}
-            image_analysis_result = self._call_eden_ai(query_params)
-            image_analysis_dict = image_analysis_result.json()
-            return self._format_object_detection_result(image_analysis_dict)
-
-        except Exception as e:
-            raise RuntimeError(f"Error while running EdenAiExplicitText: {e}")
+        query_params = {"file_url": query, "attributes_as_list": False}
+        return self._call_eden_ai(query_params)

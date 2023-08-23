@@ -3,10 +3,10 @@ from __future__ import annotations
 import json
 import logging
 import time
-from typing import Any, Dict, Optional
+from typing import List, Optional
 
 import requests
-from pydantic import Field
+from pydantic import validator
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.edenai.edenai_base_tool import EdenaiTool
@@ -36,11 +36,27 @@ class EdenAiSpeechToTextTool(EdenaiTool):
     )
 
     language: Optional[str] = "en"
-    params: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    speakers: Optional[int]
+    profanity_filter: bool = False
+    custom_vocabulary: Optional[List[str]]
 
     feature: str = "audio"
     subfeature: str = "speech_to_text_async"
     base_url = "https://api.edenai.run/v2/audio/speech_to_text_async/"
+
+    @validator("providers")
+    def check_only_one_provider_selected(cls, v: List[str]) -> List[str]:
+        """
+        This tool has no feature to combine providers results.
+        Therefore we only allow one provider
+        """
+        if len(v) > 1:
+            raise ValueError(
+                "Please select only one provider. "
+                "The feature to combine providers results is not available "
+                "for this tool."
+            )
+        return v
 
     def _wait_processing(self, url: str) -> requests.Response:
         for _ in range(10):
@@ -58,35 +74,29 @@ class EdenAiSpeechToTextTool(EdenaiTool):
 
         raise Exception("Edenai speech to text job id processing Timed out")
 
+    def _parse_response(self, response: dict) -> str:
+        return response["public_id"]
+
     def _run(
         self,
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        try:
-            if self.params is None:
-                query_params = {"file_url": query, "language": self.language}
-            else:
-                query_params = {
-                    "file_url": query,
-                    "language": self.language,
-                    **self.params,
-                }
-            get_job_result = self._call_eden_ai(query_params)
+        all_params = {
+            "file_url": query,
+            "language": self.language,
+            "speakers": self.speakers,
+            "profanity_filter": self.profanity_filter,
+            "custom_vocabulary": self.custom_vocabulary,
+        }
 
-            job_id = get_job_result.json()["public_id"]
+        # filter so we don't send val to api when val is `None
+        query_params = {k: v for k, v in all_params.items() if v is not None}
 
-            url = self.base_url + job_id
-
-            audio_analysis_result = self._wait_processing(url)
-
-            result = audio_analysis_result.text
-            formatted_text = json.loads(result)
-
-            text = formatted_text["results"][self.providers[0]]["text"]
-
-            return text
-
-        except Exception as e:
-            raise RuntimeError(f"Error while running EdenAiExplicitText: {e}")
+        job_id = self._call_eden_ai(query_params)
+        url = self.base_url + job_id
+        audio_analysis_result = self._wait_processing(url)
+        result = audio_analysis_result.text
+        formatted_text = json.loads(result)
+        return formatted_text["results"][self.providers[0]]["text"]
