@@ -55,11 +55,11 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
         if isinstance(message, ChatMessage):
             message_text = f"\n\n{message.role.capitalize()}: {message.content}"
         elif isinstance(message, HumanMessage):
-            message_text = f"Human: {message.content}"
+            message_text = f"[INST] {message.content} [/INST]"
         elif isinstance(message, AIMessage):
-            message_text = f"AI: {message.content}"
-        elif isinstance(message, SystemMessage):
             message_text = f"{message.content}"
+        elif isinstance(message, SystemMessage):
+            message_text = f"<<SYS>> {message.content} <</SYS>>"
         else:
             raise ValueError(f"Got unknown type {message}")
         return message_text
