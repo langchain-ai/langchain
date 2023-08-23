@@ -76,6 +76,23 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        """Call out to Ollama's generate endpoint.
+
+        Args:
+            messages: The list of base messages to pass into the model.
+            stop: Optional list of stop words to use when generating.
+
+        Returns:
+            Chat generations from the model
+
+        Example:
+            .. code-block:: python
+
+                response = ollama([
+                    HumanMessage(content="Tell me about the history of AI")
+                ])
+        """
+
         prompt = self._format_messages_as_text(messages)
         final_chunk = super()._stream_with_aggregation(
             prompt, stop=stop, run_manager=run_manager, verbose=self.verbose, **kwargs
