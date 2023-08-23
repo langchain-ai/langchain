@@ -5,7 +5,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class DuckDBLoader(BaseLoader):
-    """Loads a query result from DuckDB into a list of documents.
+    """Load from `DuckDB`.
 
     Each document represents one row of the result. The `page_content_columns`
     are written into the `page_content` of the document. The `metadata_columns`

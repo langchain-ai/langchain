@@ -1,4 +1,3 @@
-"""Loads Telegram chat json dump."""
 from __future__ import annotations
 
 import asyncio
@@ -24,7 +23,7 @@ def concatenate_rows(row: dict) -> str:
 
 
 class TelegramChatFileLoader(BaseLoader):
-    """Loads Telegram chat json directory dump."""
+    """Load from `Telegram chat` dump."""
 
     def __init__(self, path: str):
         """Initialize with a path."""
@@ -48,7 +47,7 @@ class TelegramChatFileLoader(BaseLoader):
 
 
 def text_to_docs(text: Union[str, List[str]]) -> List[Document]:
-    """Converts a string or list of strings to a list of Documents with metadata."""
+    """Convert a string or list of strings to a list of Documents with metadata."""
     if isinstance(text, str):
         # Take a single string as one page
         text = [text]
@@ -79,7 +78,7 @@ def text_to_docs(text: Union[str, List[str]]) -> List[Document]:
 
 
 class TelegramChatApiLoader(BaseLoader):
-    """Loads Telegram chat json directory dump."""
+    """Load `Telegram` chat json directory dump."""
 
     def __init__(
         self,

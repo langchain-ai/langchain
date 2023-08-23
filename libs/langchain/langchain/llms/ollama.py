@@ -2,10 +2,10 @@ import json
 from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 import requests
-from pydantic import Extra
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import BaseLLM
+from langchain.pydantic_v1 import Extra
 from langchain.schema import LLMResult
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.output import GenerationChunk
@@ -23,7 +23,7 @@ def _stream_response_to_generation_chunk(
 
 
 class _OllamaCommon(BaseLanguageModel):
-    base_url = "http://localhost:11434"
+    base_url: str = "http://localhost:11434"
     """Base url the model is hosted under."""
 
     model: str = "llama2"

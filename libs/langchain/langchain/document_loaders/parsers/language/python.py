@@ -5,7 +5,7 @@ from langchain.document_loaders.parsers.language.code_segmenter import CodeSegme
 
 
 class PythonSegmenter(CodeSegmenter):
-    """The code segmenter for Python."""
+    """Code segmenter for `Python`."""
 
     def __init__(self, code: str):
         super().__init__(code)

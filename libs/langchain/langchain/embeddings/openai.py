@@ -16,7 +16,6 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import BaseModel, Extra, Field, root_validator
 from tenacity import (
     AsyncRetrying,
     before_sleep_log,
@@ -27,6 +26,7 @@ from tenacity import (
 )
 
 from langchain.embeddings.base import Embeddings
+from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
 
 logger = logging.getLogger(__name__)
@@ -352,9 +352,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
         if self.show_progress_bar:
             try:
-                import tqdm
+                from tqdm.auto import tqdm
 
-                _iter = tqdm.tqdm(range(0, len(tokens), _chunk_size))
+                _iter = tqdm(range(0, len(tokens), _chunk_size))
             except ImportError:
                 _iter = range(0, len(tokens), _chunk_size)
         else:

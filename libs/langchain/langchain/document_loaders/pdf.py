@@ -1,4 +1,3 @@
-"""Loads PDF files."""
 import json
 import logging
 import os
@@ -30,7 +29,8 @@ logger = logging.getLogger(__file__)
 
 
 class UnstructuredPDFLoader(UnstructuredFileLoader):
-    """Loader that uses unstructured to load PDF files.
+    """Load `PDF` files using `Unstructured`.
+
     You can run the loader in one of two modes: "single" and "elements".
     If you use "single" mode, the document will be returned as a single
     langchain Document object. If you use "elements" mode, the unstructured
@@ -59,7 +59,7 @@ class UnstructuredPDFLoader(UnstructuredFileLoader):
 
 
 class BasePDFLoader(BaseLoader, ABC):
-    """Base loader class for PDF files.
+    """Base Loader class for `PDF` files.
 
     Defaults to check for local file, but if the file is a web path, it will download it
     to a temporary file, use it, then clean up the temporary file after completion
@@ -122,7 +122,7 @@ class BasePDFLoader(BaseLoader, ABC):
 
 
 class OnlinePDFLoader(BasePDFLoader):
-    """Loads online PDFs."""
+    """Load online `PDF`."""
 
     def load(self) -> List[Document]:
         """Load documents."""
@@ -131,7 +131,7 @@ class OnlinePDFLoader(BasePDFLoader):
 
 
 class PyPDFLoader(BasePDFLoader):
-    """Loads a PDF with pypdf and chunks at character level.
+    """Load `PDF using `pypdf` and chunks at character level.
 
     Loader also stores page numbers in metadata.
     """
@@ -162,7 +162,7 @@ class PyPDFLoader(BasePDFLoader):
 
 
 class PyPDFium2Loader(BasePDFLoader):
-    """Loads a PDF with pypdfium2 and chunks at character level."""
+    """Load `PDF` using `pypdfium2` and chunks at character level."""
 
     def __init__(self, file_path: str):
         """Initialize with a file path."""
@@ -182,7 +182,7 @@ class PyPDFium2Loader(BasePDFLoader):
 
 
 class PyPDFDirectoryLoader(BaseLoader):
-    """Loads a directory with PDF files with pypdf and chunks at character level.
+    """Load a directory with `PDF` files using `pypdf` and chunks at character level.
 
     Loader also stores page numbers in metadata.
     """
@@ -227,7 +227,7 @@ class PyPDFDirectoryLoader(BaseLoader):
 
 
 class PDFMinerLoader(BasePDFLoader):
-    """Loader that uses PDFMiner to load PDF files."""
+    """Load `PDF` files using `PDFMiner`."""
 
     def __init__(self, file_path: str) -> None:
         """Initialize with file path."""
@@ -255,7 +255,7 @@ class PDFMinerLoader(BasePDFLoader):
 
 
 class PDFMinerPDFasHTMLLoader(BasePDFLoader):
-    """Loader that uses PDFMiner to load PDF files as HTML content."""
+    """Load `PDF` files as HTML content using `PDFMiner`."""
 
     def __init__(self, file_path: str):
         """Initialize with a file path."""
@@ -289,7 +289,7 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
 
 
 class PyMuPDFLoader(BasePDFLoader):
-    """Loader that uses PyMuPDF to load PDF files."""
+    """Load `PDF` files using `PyMuPDF`."""
 
     def __init__(self, file_path: str) -> None:
         """Initialize with a file path."""
@@ -314,7 +314,7 @@ class PyMuPDFLoader(BasePDFLoader):
 # MathpixPDFLoader implementation taken largely from Daniel Gross's:
 # https://gist.github.com/danielgross/3ab4104e14faccc12b49200843adab21
 class MathpixPDFLoader(BasePDFLoader):
-    """This class uses Mathpix service to load PDF files."""
+    """Load `PDF` files using `Mathpix` service."""
 
     def __init__(
         self,
@@ -433,7 +433,7 @@ class MathpixPDFLoader(BasePDFLoader):
 
 
 class PDFPlumberLoader(BasePDFLoader):
-    """Loader that uses pdfplumber to load PDF files."""
+    """Load `PDF` files using `pdfplumber`."""
 
     def __init__(
         self, file_path: str, text_kwargs: Optional[Mapping[str, Any]] = None
@@ -459,7 +459,7 @@ class PDFPlumberLoader(BasePDFLoader):
 
 
 class AmazonTextractPDFLoader(BasePDFLoader):
-    """Loads a PDF document from local file system, HTTP or S3.
+    """Load `PDF` files from a local file system, HTTP or S3.
 
     To authenticate, the AWS client uses the following methods to
     automatically load credentials:
