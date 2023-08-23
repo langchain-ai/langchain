@@ -109,26 +109,37 @@ class ArcGISLoader(BaseLoader):
 
     def lazy_load(self) -> Iterator[Document]:
         """Lazy load records from FeatureLayer."""
-
         query_response = self.layer.query(
-            where=self.where,
-            out_fields=self.out_fields,
-            return_geometry=self.return_geometry,
-            return_all_records=self.return_all_records,
-            **self.kwargs,
-        )
-        features = (feature.as_dict["attributes"] for feature in query_response)
+        where=self.where,
+        out_fields=self.out_fields,
+        return_geometry=self.return_geometry,
+        return_all_records=self.return_all_records,
+        **self.kwargs,
+    )
+        features = (feature.as_dict for feature in query_response)
         for feature in features:
+            attributes = feature["attributes"]
+            page_content = json.dumps(attributes)
+
+            metadata = {
+                "accessed": f"{datetime.now(timezone.utc).isoformat()}Z",
+                "name": self.layer_properties["layer_properties"]["name"],
+                "url": self.url,
+                "layer_description": self.layer_properties["layer_description"],
+                "item_description": self.layer_properties["item_description"],
+                "layer_properties": self.layer_properties["layer_properties"],
+            }
+            
+            if self.return_geometry:
+                try:
+                    geometry = feature["geometry"]
+                    metadata.update({"geometry": geometry})
+                except KeyError:
+                    warnings.warn("Geometry could not be retrieved from the feature layer.")
+
             yield Document(
-                page_content=json.dumps(feature),
-                metadata={
-                    "accessed": f"{datetime.now(timezone.utc).isoformat()}Z",
-                    "name": self.layer_properties["layer_properties"]["name"],
-                    "url": self.url,
-                    "layer_description": self.layer_properties["layer_description"],
-                    "item_description": self.layer_properties["item_description"],
-                    "layer_properties": self.layer_properties["layer_properties"],
-                },
+                page_content=page_content,
+                metadata=metadata
             )
 
     def load(self) -> List[Document]:
