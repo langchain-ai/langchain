@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, TypedDict
+from typing import Any, Dict, List, Optional, TypedDict
 
-from langchain.callbacks.base import Callbacks
+from langchain.callbacks.base import BaseCallbackManager, Callbacks
+from langchain.callbacks.manager import AsyncCallbackManager, CallbackManager
 
 
 class RunnableConfig(TypedDict, total=False):
@@ -25,3 +26,42 @@ class RunnableConfig(TypedDict, total=False):
     Callbacks for this call and any sub-calls (eg. a Chain calling an LLM).
     Tags are passed to all callbacks, metadata is passed to handle*Start callbacks.
     """
+
+    _locals: Dict[str, Any]
+    """
+    Local variables
+    """
+
+
+def ensure_config(config: Optional[RunnableConfig]) -> RunnableConfig:
+    empty = RunnableConfig(tags=[], metadata={}, callbacks=None, _locals={})
+    if config is not None:
+        empty.update(config)
+    return empty
+
+
+def patch_config(
+    config: RunnableConfig,
+    callbacks: BaseCallbackManager,
+) -> RunnableConfig:
+    config = config.copy()
+    config["callbacks"] = callbacks
+    return config
+
+
+def get_callback_manager_for_config(config: RunnableConfig) -> CallbackManager:
+    return CallbackManager.configure(
+        inheritable_callbacks=config.get("callbacks"),
+        inheritable_tags=config.get("tags"),
+        inheritable_metadata=config.get("metadata"),
+    )
+
+
+def get_async_callback_manager_for_config(
+    config: RunnableConfig,
+) -> AsyncCallbackManager:
+    return AsyncCallbackManager.configure(
+        inheritable_callbacks=config.get("callbacks"),
+        inheritable_tags=config.get("tags"),
+        inheritable_metadata=config.get("metadata"),
+    )
