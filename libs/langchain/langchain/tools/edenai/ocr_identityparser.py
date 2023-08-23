@@ -21,8 +21,6 @@ class EdenAiParsingIDTool(EdenaiTool):
 
     """
 
-    edenai_api_key: Optional[str] = None
-
     name = "edenai_identity_parsing"
 
     description = (

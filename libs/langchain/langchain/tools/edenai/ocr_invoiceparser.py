@@ -21,8 +21,6 @@ class EdenAiParsingInvoiceTool(EdenaiTool):
 
     """
 
-    edenai_api_key: Optional[str] = None
-
     name = "edenai_invoice_parsing"
 
     description = (

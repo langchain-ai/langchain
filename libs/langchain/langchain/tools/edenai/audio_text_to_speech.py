@@ -23,8 +23,6 @@ class EdenAiTextToSpeechTool(EdenaiTool):
 
     """
 
-    edenai_api_key: Optional[str] = None
-
     name = "edenai_text_to_speech"
     description = (
         "A wrapper around edenai Services text to speech."
@@ -32,8 +30,6 @@ class EdenAiTextToSpeechTool(EdenaiTool):
         """the output is a string representing the URL of the audio file,
         or the path to the downloaded wav file """
     )
-
-    params: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
     language: Optional[str] = "en"
     """

@@ -21,8 +21,6 @@ class EdenAiObjectDetectionTool(EdenaiTool):
 
     """
 
-    edenai_api_key: Optional[str] = None
-
     name = "edenai_object_detection"
 
     description = (

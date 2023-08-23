@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import List, Optional
-
-from pydantic import validator
+from typing import Optional
 
 from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain.tools.edenai.edenai_base_tool import EdenaiTool
@@ -22,8 +20,6 @@ class EdenAiTextModerationTool(EdenaiTool):
     You can find your token here: https://app.edenai.run/admin/account/settings
 
     """
-
-    edenai_api_key: Optional[str] = None
 
     name = "edenai_explicit_content_detection_text"
 
@@ -52,20 +48,6 @@ class EdenAiTextModerationTool(EdenaiTool):
 
     feature: str = "text"
     subfeature: str = "moderation"
-
-    @validator("providers")
-    def check_only_one_provider_selected(cls, v: List[str]) -> List[str]:
-        """
-        This tool has no feature to combine providers results.
-        Therefore we only allow one provider
-        """
-        if len(v) > 1:
-            raise ValueError(
-                "Please select only one provider. "
-                "The feature to combine providers results is not available "
-                "for this tool."
-            )
-        return v
 
     def _parse_response(self, response: list) -> str:
         formatted_result = []

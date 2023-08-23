@@ -22,8 +22,6 @@ class EdenAiExplicitImageTool(EdenaiTool):
 
     """
 
-    edenai_api_key: Optional[str] = None
-
     name = "edenai_image_explicit_content_detection"
 
     description = (
