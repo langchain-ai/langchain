@@ -21,7 +21,7 @@ def _create_client(
     try:
         import meilisearch
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "Could not import meilisearch python package. "
             "Please install it with `pip install meilisearch`."
         )

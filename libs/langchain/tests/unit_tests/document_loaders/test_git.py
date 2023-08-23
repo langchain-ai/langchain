@@ -23,7 +23,7 @@ def init_repo(tmpdir: py.path.local, dir_name: str) -> str:
     git.add([sample_file])
     git.commit(m="Initial commit")
 
-    return repo_dir
+    return str(repo_dir)
 
 
 @pytest.mark.requires("git")
