@@ -230,13 +230,11 @@ def index(
             raise ValueError(
                 f"Vectorstore {vector_store} does not have required method {method}"
             )
-        
+
     if type(vector_store).delete == VectorStore.delete:
         # Checking if the vectorstore has overridden the default delete method
         # implementation which just raises a NotImplementedError
-        raise ValueError(
-            f"Vectorstore has not implemented the delete method"
-        )
+        raise ValueError("Vectorstore has not implemented the delete method")
 
     if isinstance(docs_source, BaseLoader):
         try:
