@@ -46,7 +46,7 @@ class MyScaleSettings(BaseSettings):
         table (str) : Table name to operate on.
                       Defaults to 'vector_table'.
         metric (str) : Metric to compute distance,
-                       supported are ('l2', 'cosine', 'ip'). Defaults to 'cosine'.
+                       supported are ('L2', 'Cosine', 'IP'). Defaults to 'Cosine'.
         column_map (Dict) : Column type map to project column name onto langchain
                             semantics. Must have keys: `text`, `id`, `vector`,
                             must be same size to number of columns. For example:
