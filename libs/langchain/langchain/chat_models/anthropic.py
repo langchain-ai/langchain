@@ -36,6 +36,12 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
             model = ChatAnthropic(model="<model_name>", anthropic_api_key="my-api-key")
     """
 
+    class Config:
+        """Configuration for this pydantic object."""
+
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
+
     @property
     def lc_secrets(self) -> Dict[str, str]:
         return {"anthropic_api_key": "ANTHROPIC_API_KEY"}
