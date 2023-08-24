@@ -13,10 +13,10 @@ class SingleFileFacebookMessengerChatLoader(BaseChatLoader):
     """A chat loader for loading Facebook Messenger chat data from a single file.
 
     Args:
-        file_path (Union[Path, str]): The path to the chat file.
+        path (Union[Path, str]): The path to the chat file.
 
     Attributes:
-        file_path (Path): The path to the chat file.
+        path (Path): The path to the chat file.
 
     """
 
@@ -48,11 +48,11 @@ class FolderFacebookMessengerChatLoader(BaseChatLoader):
     """A chat loader for loading Facebook Messenger chat data from a folder.
 
     Args:
-        directory_path (Union[str, Path]): The path to the directory
+        path (Union[str, Path]): The path to the directory
             containing the chat files.
 
     Attributes:
-        directory_path (Path): The path to the directory containing the chat files.
+        path (Path): The path to the directory containing the chat files.
 
     """
 
@@ -72,8 +72,6 @@ class FolderFacebookMessengerChatLoader(BaseChatLoader):
             if _dir.is_dir():
                 for _file in _dir.iterdir():
                     if _file.suffix.lower() == ".json":
-                        file_loader = SingleFileFacebookMessengerChatLoader(
-                            file_path=_file
-                        )
+                        file_loader = SingleFileFacebookMessengerChatLoader(path=_file)
                         for result in file_loader.lazy_load():
                             yield result
