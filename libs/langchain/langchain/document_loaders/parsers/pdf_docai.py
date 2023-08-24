@@ -51,7 +51,7 @@ class DocAIPdfLoader(BaseBlobParser):
         self._processor_name = processor_name
         self._client: Optional["DocumentProcessorServiceClient"] = None
 
-    def lazy_parse(self, blob: Blob, **kwargs: Any) -> Iterator[Document]:
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Parses a blob lazily.
 
         Args:
