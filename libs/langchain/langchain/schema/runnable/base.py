@@ -1527,6 +1527,13 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
     def lc_namespace(self) -> List[str]:
         return self.__class__.__module__.split(".")[:-1]
 
+    def _merge_config(self, config: Optional[RunnableConfig]) -> RunnableConfig:
+        copy = cast(RunnableConfig, dict(self.config))
+        if config:
+            for key in config:
+                copy[key] = config[key] or copy.get(key)
+        return copy
+
     def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
         return self.__class__(
             bound=self.bound, config=self.config, kwargs={**self.kwargs, **kwargs}
@@ -1552,7 +1559,7 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
     ) -> Output:
         return self.bound.invoke(
             input,
-            cast(RunnableConfig, {**self.config, **(config or {})}),
+            self._merge_config(config),
             **{**self.kwargs, **kwargs},
         )
 
@@ -1564,7 +1571,7 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
     ) -> Output:
         return await self.bound.ainvoke(
             input,
-            cast(RunnableConfig, {**self.config, **(config or {})}),
+            self._merge_config(config),
             **{**self.kwargs, **kwargs},
         )
 
@@ -1576,13 +1583,10 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
     ) -> List[Output]:
         configs = cast(
             List[RunnableConfig],
-            [{**self.config, **(conf or {})} for conf in config]
+            [self._merge_config(conf) for conf in config]
             if isinstance(config, list)
             else [
-                patch_config(
-                    cast(RunnableConfig, {**self.config, **(config or {})}),
-                    deep_copy_locals=True,
-                )
+                patch_config(self._merge_config(config), deep_copy_locals=True)
                 for _ in range(len(inputs))
             ],
         )
@@ -1596,13 +1600,10 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
     ) -> List[Output]:
         configs = cast(
             List[RunnableConfig],
-            [{**self.config, **(conf or {})} for conf in config]
+            [self._merge_config(conf) for conf in config]
             if isinstance(config, list)
             else [
-                patch_config(
-                    cast(RunnableConfig, {**self.config, **(config or {})}),
-                    deep_copy_locals=True,
-                )
+                patch_config(self._merge_config(config), deep_copy_locals=True)
                 for _ in range(len(inputs))
             ],
         )
@@ -1616,7 +1617,7 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
     ) -> Iterator[Output]:
         yield from self.bound.stream(
             input,
-            cast(RunnableConfig, {**self.config, **(config or {})}),
+            self._merge_config(config),
             **{**self.kwargs, **kwargs},
         )
 
@@ -1628,7 +1629,7 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
     ) -> AsyncIterator[Output]:
         async for item in self.bound.astream(
             input,
-            cast(RunnableConfig, {**self.config, **(config or {})}),
+            self._merge_config(config),
             **{**self.kwargs, **kwargs},
         ):
             yield item
@@ -1641,7 +1642,7 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
     ) -> Iterator[Output]:
         yield from self.bound.transform(
             input,
-            cast(RunnableConfig, {**self.config, **(config or {})}),
+            self._merge_config(config),
             **{**self.kwargs, **kwargs},
         )
 
@@ -1653,7 +1654,7 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
     ) -> AsyncIterator[Output]:
         async for item in self.bound.atransform(
             input,
-            cast(RunnableConfig, {**self.config, **(config or {})}),
+            self._merge_config(config),
             **{**self.kwargs, **kwargs},
         ):
             yield item
