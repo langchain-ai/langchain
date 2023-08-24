@@ -1,7 +1,6 @@
 from operator import itemgetter
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
-from langchain.callbacks.tracers.stdout import ConsoleCallbackHandler
 
 import pytest
 from freezegun import freeze_time
@@ -12,6 +11,7 @@ from langchain import PromptTemplate
 from langchain.callbacks.manager import Callbacks
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import Run
+from langchain.callbacks.tracers.stdout import ConsoleCallbackHandler
 from langchain.chat_models.fake import FakeListChatModel
 from langchain.llms.fake import FakeListLLM, FakeStreamingListLLM
 from langchain.load.dump import dumpd, dumps
