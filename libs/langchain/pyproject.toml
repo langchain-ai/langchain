@@ -125,7 +125,6 @@ newspaper3k = {version = "^0.2.8", optional = true}
 amazon-textract-caller = {version = "<2", optional = true}
 xata = {version = "^1.0.0a7", optional = true}
 xmltodict = {version = "^0.13.0", optional = true}
-google-api-core = {version = "^2.11.1", optional = true}
 markdownify = {version = "^0.11.6", optional = true}
 assemblyai = {version = "^0.17.0", optional = true}
 
@@ -307,7 +306,7 @@ extended_testing = [
  "chardet",
  "esprima",
  "jq",
- "pdfminer.six",
+ "pdfminer-six",
  "pgvector",
  "pypdf",
  "pymupdf",
@@ -321,7 +320,7 @@ extended_testing = [
  "telethon",
  "psychicapi",
  "gql",
- "requests_toolbelt",
+ "requests-toolbelt",
  "html2text",
  "py-trello",
  "scikit-learn",
@@ -331,7 +330,7 @@ extended_testing = [
  "sympy",
  "rapidfuzz",
  "openai",
- "rank_bm25",
+ "rank-bm25",
  "geopandas",
  "jinja2",
  "gitpython",
