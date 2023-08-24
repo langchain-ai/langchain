@@ -1,5 +1,3 @@
-"""Load data generation chain."""
-
 from typing import Any, Dict, List, Optional
 
 from langchain.chains.base import Chain
