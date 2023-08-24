@@ -1,50 +1,35 @@
+
 import asyncio
-from typing import Any, Dict, Optional
-
-from langchain.chains.comprehend_moderation.base_moderation_exceptions import (
-    BaseModerationError,
-    ModerationPiiError,
-)
-
+from typing import Dict, Any, Optional
+from langchain.chains.comprehend_moderation.base_moderation_exceptions import ModerationPiiError
 
 class ComprehendPII:
-    def __init__(
-        self,
-        client,
-        force_base_exception: bool = False,
-        callback: Optional[Any] = None,
-        unique_id: Optional[str] = None,
-        chain_id: str = None,
-    ) -> None:
+
+    def __init__(self, 
+                 client, 
+                 callback: Optional[Any] = None,
+                 unique_id: Optional[str] = None,
+                 chain_id: str = None) -> None:
         self.client = client
-        self.force_base_exception = force_base_exception
-        self.moderation_beacon = {
-            "moderation_chain_id": chain_id,
-            "moderation_type": "PII",
-            "moderation_status": "LABELS_NOT_FOUND",
-        }
+        self.moderation_beacon = { 'moderation_chain_id': chain_id,
+                                   'moderation_type': 'PII', 
+                                   'moderation_status': 'LABELS_NOT_FOUND' } 
         self.callback = callback
-        self.unique_id = unique_id
+        self.unique_id = unique_id        
 
-    def validate(self, prompt_value, config: Dict[str, Any] = None) -> str:
-        from langchain.chains.comprehend_moderation.base_moderation_enums import (
-            BaseModerationActions,
-        )
-
+    def validate(self, prompt_value, config: Dict[str, Any]=None) -> str:
+        from langchain.chains.comprehend_moderation.base_moderation_enums import BaseModerationActions
+        
         if config:
             action = config.get("action", BaseModerationActions.STOP)
-            if action not in [BaseModerationActions.STOP, BaseModerationActions.ALLOW]:
+            if action not in [BaseModerationActions.STOP, BaseModerationActions.ALLOW]:                
                 raise ValueError("Action can either be stop or allow")
-
-            return (
-                self._contains_pii(prompt_value=prompt_value, config=config)
-                if action == BaseModerationActions.STOP
-                else self._detect_pii(prompt_value=prompt_value, config=config)
-            )
-        else:
+            
+            return self._contains_pii(prompt_value=prompt_value, config=config) if action == BaseModerationActions.STOP else self._detect_pii(prompt_value=prompt_value, config=config)
+        else:            
             return self._contains_pii(prompt_value=prompt_value)
 
-    def _contains_pii(self, prompt_value, config: Dict[str, Any] = None):
+    def _contains_pii(self, prompt_value, config: Dict[str, Any]=None):
         """
         Checks if the given prompt text contains Personally Identifiable Information (PII) labels above a specified threshold.
 
@@ -56,45 +41,39 @@ class ComprehendPII:
             int: 1 if PII labels are detected above the threshold, 0 otherwise.
 
         Note:
-            - The provided client should be initialized with valid AWS credentials.
+            - The provided client should be initialized with valid AWS credentials.            
         """
-        pii_identified = self.client.contains_pii_entities(
-            Text=prompt_value, LanguageCode="en"
-        )
+        pii_identified = self.client.contains_pii_entities(Text=prompt_value, LanguageCode='en')
 
         if self.callback and self.callback.pii_callback:
-            self.moderation_beacon["moderation_input"] = prompt_value
-            self.moderation_beacon["moderation_output"] = pii_identified
-
+            self.moderation_beacon['moderation_input'] = prompt_value 
+            self.moderation_beacon['moderation_output'] = pii_identified
+        
         threshold = config.get("threshold", 0.5) if config else 0.5
         pii_labels = config.get("labels", []) if config else []
         pii_found = False
-        for entity in pii_identified["Labels"]:
-            if (entity["Score"] >= threshold and entity["Name"] in pii_labels) or (
-                entity["Score"] >= threshold and not pii_labels
-            ):
+        for entity in pii_identified['Labels']:
+            if (entity["Score"] >= threshold and entity['Name'] in pii_labels) or (entity["Score"] >= threshold and not pii_labels):
                 pii_found = True
                 break
-
+                
         if self.callback and self.callback.pii_callback:
             if pii_found:
-                self.moderation_beacon["moderation_status"] = "LABELS_FOUND"
-            asyncio.create_task(
-                self.callback.on_after_pii(self.moderation_beacon, self.unique_id)
-            )
+                self.moderation_beacon['moderation_status'] = 'LABELS_FOUND'            
+            asyncio.create_task(self.callback.on_after_pii(self.moderation_beacon, self.unique_id))
         if pii_found:
-            raise ModerationPiiError if not self.force_base_exception else BaseModerationError
+            raise ModerationPiiError       
         return prompt_value
-
+    
     def _detect_pii(self, prompt_value, config: Dict[str, Any]) -> str:
         """
         Detects and handles Personally Identifiable Information (PII) entities in the given prompt text using Amazon Comprehend's
         detect_pii_entities API. The function provides options to redact or stop processing based on the identified PII entities
         and a provided configuration.
-
+        
         Args:
             prompt_value (str): The input text to be checked for PII entities.
-            config (Dict[str, Any]): A configuration specifying how to handle PII entities.
+            config (Dict[str, Any]): A configuration specifying how to handle PII entities. 
 
         Returns:
             str: The processed prompt text with redacted PII entities or raised exceptions.
@@ -106,62 +85,46 @@ class ComprehendPII:
             - If PII is not found in the prompt, the original prompt is returned.
             - The client should be initialized with valid AWS credentials.
         """
-        pii_identified = self.client.detect_pii_entities(
-            Text=prompt_value, LanguageCode="en"
-        )
-
+        pii_identified = self.client.detect_pii_entities(Text=prompt_value,LanguageCode='en')
+        
         if self.callback and self.callback.pii_callback:
-            self.moderation_beacon["moderation_input"] = prompt_value
-            self.moderation_beacon["moderation_output"] = pii_identified
-
-        if (pii_identified["Entities"]) == []:
+            self.moderation_beacon['moderation_input'] = prompt_value 
+            self.moderation_beacon['moderation_output'] = pii_identified
+        
+        if (pii_identified['Entities']) == []:
             if self.callback and self.callback.pii_callback:
-                asyncio.create_task(
-                    self.callback.on_after_pii(self.moderation_beacon, self.unique_id)
-                )
+                asyncio.create_task(self.callback.on_after_pii(self.moderation_beacon, self.unique_id))
             return prompt_value
-
+        
         pii_found = False
-        if not config and pii_identified["Entities"]:
-            for entity in pii_identified["Entities"]:
+        if not config and pii_identified['Entities']:
+            for entity in pii_identified['Entities']:
                 if entity["Score"] >= 0.5:
                     pii_found = True
                     break
-
-            if self.callback and self.callback.pii_callback:
+                    
+            if self.callback and self.callback.pii_callback:                
                 if pii_found:
-                    self.moderation_beacon["moderation_status"] = "LABELS_FOUND"
-                asyncio.create_task(
-                    self.callback.on_after_pii(self.moderation_beacon, self.unique_id)
-                )
+                    self.moderation_beacon['moderation_status'] = 'LABELS_FOUND' 
+                asyncio.create_task(self.callback.on_after_pii(self.moderation_beacon, self.unique_id))
             if pii_found:
-                raise ModerationPiiError if not self.force_base_exception else BaseModerationError
-        else:
+                raise ModerationPiiError
+        else:            
             threshold = config.get("threshold", 0.5)
             pii_labels = config.get("labels", [])
-            mask_marker = config.get("mask_character", "*")
+            mask_marker = config.get("mask_character", "*")                        
             pii_found = False
-
-            for entity in pii_identified["Entities"]:
-                if (
-                    pii_labels
-                    and entity["Type"] in pii_labels
-                    and entity["Score"] >= threshold
-                ) or (not pii_labels and entity["Score"] >= threshold):
+            
+            for entity in pii_identified['Entities']:
+                if  (pii_labels and entity['Type'] in pii_labels and entity["Score"] >= threshold) or (not pii_labels and entity["Score"] >= threshold):
                     pii_found = True
-                    char_offset_begin = entity["BeginOffset"]
-                    char_offset_end = entity["EndOffset"]
-                    prompt_value = (
-                        prompt_value[:char_offset_begin]
-                        + mask_marker * (char_offset_end - char_offset_begin)
-                        + prompt_value[char_offset_end:]
-                    )
-
+                    char_offset_begin = entity['BeginOffset']
+                    char_offset_end = entity['EndOffset']
+                    prompt_value = prompt_value[:char_offset_begin] + mask_marker *(char_offset_end-char_offset_begin) + prompt_value[char_offset_end:]
+                    
             if self.callback and self.callback.pii_callback:
                 if pii_found:
-                    self.moderation_beacon["moderation_status"] = "LABELS_FOUND"
-                asyncio.create_task(
-                    self.callback.on_after_pii(self.moderation_beacon, self.unique_id)
-                )
-
+                    self.moderation_beacon['moderation_status'] = 'LABELS_FOUND'
+                asyncio.create_task(self.callback.on_after_pii(self.moderation_beacon, self.unique_id))
+        
         return prompt_value
