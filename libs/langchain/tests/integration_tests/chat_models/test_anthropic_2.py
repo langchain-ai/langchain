@@ -9,6 +9,18 @@ os.environ["ANTHROPIC_API_KEY"] = "foo"
 
 
 @pytest.mark.requires("anthropic")
+def test_anthropic_model_name_param() -> None:
+    llm = ChatAnthropic(model_name="foo")
+    assert llm.model == "foo"
+
+
+@pytest.mark.requires("anthropic")
+def test_anthropic_model_param() -> None:
+    llm = ChatAnthropic(model="foo")
+    assert llm.model == "foo"
+
+
+@pytest.mark.requires("anthropic")
 def test_anthropic_model_kwargs() -> None:
     llm = ChatAnthropic(model_kwargs={"foo": "bar"})
     assert llm.model_kwargs == {"foo": "bar"}

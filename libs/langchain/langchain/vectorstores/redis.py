@@ -1,5 +1,3 @@
-"""Wrapper around Redis vector database."""
-
 from __future__ import annotations
 
 import json
@@ -96,7 +94,7 @@ def _default_relevance_score(val: float) -> float:
 
 
 class Redis(VectorStore):
-    """Wrapper around Redis vector database.
+    """`Redis` vector store.
 
     To use, you should have the ``redis`` python package installed.
 
@@ -184,7 +182,7 @@ class Redis(VectorStore):
             from redis.commands.search.field import TextField, VectorField
             from redis.commands.search.indexDefinition import IndexDefinition, IndexType
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import redis python package. "
                 "Please install it with `pip install redis`."
             )
@@ -612,7 +610,7 @@ class Redis(VectorStore):
 
 
 class RedisVectorStoreRetriever(VectorStoreRetriever):
-    """Retriever for Redis VectorStore."""
+    """Retriever for `Redis` vector store."""
 
     vectorstore: Redis
     """Redis VectorStore."""

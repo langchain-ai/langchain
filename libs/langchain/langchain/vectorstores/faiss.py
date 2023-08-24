@@ -1,4 +1,3 @@
-"""Wrapper around FAISS vector database."""
 from __future__ import annotations
 
 import operator
@@ -65,7 +64,7 @@ def _len_check_if_sized(x: Any, y: Any, x_name: str, y_name: str) -> None:
 
 
 class FAISS(VectorStore):
-    """Wrapper around FAISS vector database.
+    """`Meta Faiss` vector store.
 
     To use, you must have the ``faiss`` python package installed.
 
