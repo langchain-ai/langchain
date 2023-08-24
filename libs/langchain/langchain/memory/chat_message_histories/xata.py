@@ -37,7 +37,7 @@ class XataChatMessageHistory(BaseChatMessageHistory):
             self._create_table_if_not_exists()
 
     def _create_table_if_not_exists(self) -> None:
-        r = self._client.table().get_schema()
+        r = self._client.table().get_schema(self._table_name)
         if r.status_code <= 299:
             return
         if r.status_code != 404:
@@ -47,20 +47,18 @@ class XataChatMessageHistory(BaseChatMessageHistory):
         r = self._client.table().create(self._table_name)
         if r.status_code > 299:
             raise Exception(f"Error creating table in Xata: {r.status_code} {r}")
-        self._client.table().set_schema(
+        r = self._client.table().set_schema(
             self._table_name,
             payload={
-                "schema": {
-                    "columns": [
-                        {"name": "sessionId", "type": "string"},
-                        {"name": "type", "type": "string"},
-                        {"name": "role", "type": "string"},
-                        {"name": "content", "type": "text"},
-                        {"name": "name", "type": "string"},
-                        {"name": "additionalKwargs", "type": "text"},
-                    ]
-                }
-            },
+                "columns": [
+                    {"name": "sessionId", "type": "string"},
+                    {"name": "type", "type": "string"},
+                    {"name": "role", "type": "string"},
+                    {"name": "content", "type": "text"},
+                    {"name": "name", "type": "string"},
+                    {"name": "additionalKwargs", "type": "text"},
+                ]
+            }
         )
         if r.status_code > 299:
             raise Exception(f"Error setting table schema in Xata: {r.status_code} {r}")
@@ -79,11 +77,11 @@ class XataChatMessageHistory(BaseChatMessageHistory):
                 "name": msg["data"].get("name"),
             },
         )
-        if r.status_code != 200:
+        if r.status_code > 299:
             raise Exception(f"Error adding message to Xata: {r.status_code} {r}")
 
     @property
-    def messages(self) -> List[BaseMessage]:
+    def messages(self) -> List[BaseMessage]:  # type: ignore
         r = self._client.data().query(
             self._table_name,
             payload={
@@ -95,7 +93,7 @@ class XataChatMessageHistory(BaseChatMessageHistory):
         )
         if r.status_code != 200:
             raise Exception(f"Error running query: {r.status_code} {r}")
-        messages = messages_from_dict(
+        msgs = messages_from_dict(
             [
                 {
                     "type": m["type"],
@@ -109,7 +107,7 @@ class XataChatMessageHistory(BaseChatMessageHistory):
                 for m in r["records"]
             ]
         )
-        return messages
+        return msgs
 
     def clear(self) -> None:
         """Delete session from Xata table."""
