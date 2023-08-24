@@ -21,10 +21,10 @@ from langchain.utils.utils import build_extra_kwargs
 class _AnthropicCommon(BaseLanguageModel):
     client: Any = None  #: :meta private:
     async_client: Any = None  #: :meta private:
-    model: str = "claude-2"
+    model: str = Field(default="claude-2", alias="model_name")
     """Model name to use."""
 
-    max_tokens_to_sample: int = 256
+    max_tokens_to_sample: int = Field(default=256, alias="max_tokens")
     """Denotes the number of tokens to predict per generation."""
 
     temperature: Optional[float] = None
@@ -144,6 +144,7 @@ class Anthropic(LLM, _AnthropicCommon):
 
             import anthropic
             from langchain.llms import Anthropic
+
             model = Anthropic(model="<model_name>", anthropic_api_key="my-api-key")
 
             # Simplest invocation, automatically wrapped with HUMAN_PROMPT
@@ -156,6 +157,12 @@ class Anthropic(LLM, _AnthropicCommon):
             prompt = f"{anthropic.HUMAN_PROMPT} {prompt}{anthropic.AI_PROMPT}"
             response = model(prompt)
     """
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
 
     @root_validator()
     def raise_warning(cls, values: Dict) -> Dict:
