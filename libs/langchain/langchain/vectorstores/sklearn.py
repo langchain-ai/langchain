@@ -21,7 +21,7 @@ DEFAULT_FETCH_K = 20  # Number of Documents to initially fetch during MMR search
 
 
 class BaseSerializer(ABC):
-    """Abstract base class for saving and loading data."""
+    """Base class for serializing data."""
 
     def __init__(self, persist_path: str) -> None:
         self.persist_path = persist_path
@@ -57,7 +57,7 @@ class JsonSerializer(BaseSerializer):
 
 
 class BsonSerializer(BaseSerializer):
-    """Serializes data in binary json using the bson python package."""
+    """Serializes data in binary json using the `bson` python package."""
 
     def __init__(self, persist_path: str) -> None:
         super().__init__(persist_path)
@@ -77,7 +77,7 @@ class BsonSerializer(BaseSerializer):
 
 
 class ParquetSerializer(BaseSerializer):
-    """Serializes data in Apache Parquet format using the pyarrow package."""
+    """Serializes data in `Apache Parquet` format using the `pyarrow` package."""
 
     def __init__(self, persist_path: str) -> None:
         super().__init__(persist_path)
@@ -125,8 +125,8 @@ class SKLearnVectorStoreException(RuntimeError):
 
 
 class SKLearnVectorStore(VectorStore):
-    """A simple in-memory vector store based on the scikit-learn library
-    NearestNeighbors implementation."""
+    """Simple in-memory vector store based on the `scikit-learn` library
+    `NearestNeighbors` implementation."""
 
     def __init__(
         self,

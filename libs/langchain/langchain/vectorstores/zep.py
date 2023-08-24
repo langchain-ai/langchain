@@ -22,8 +22,7 @@ logger = logging.getLogger()
 
 @dataclass
 class CollectionConfig:
-    """
-    A configuration class for a Zep Collection.
+    """Configuration for a `Zep Collection`.
 
     If the collection does not exist, it will be created.
 
@@ -46,9 +45,9 @@ class CollectionConfig:
 
 
 class ZepVectorStore(VectorStore):
-    """
-    ZepVectorStore is a VectorStore implementation that uses the Zep long-term memory
-    store as a backend. It provides methods for adding texts or documents to the store,
+    """`Zep` vector store.
+
+    It provides methods for adding texts or documents to the store,
     searching for similar documents, and deleting documents.
 
     Search scores are calculated using cosine similarity normalized to [0, 1].
