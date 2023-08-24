@@ -1,7 +1,7 @@
 import asyncio
 import warnings
 from typing import Dict, Any, Optional
-from langchain.chains.comprehend_moderation.base_moderation_exceptions import ModerationIntentionError
+from langchain_experimental.comprehend_moderation.base_moderation_exceptions import ModerationIntentionError
 
 class ComprehendIntent():        
 
@@ -50,7 +50,7 @@ class ComprehendIntent():
             config = {"threshold": 0.7}
             checked_prompt = check_intent(comprehend_client, prompt_text, config)
         """
-        from langchain.chains.comprehend_moderation.base_moderation_enums import BaseModerationActions
+        from langchain_experimental.comprehend_moderation.base_moderation_enums import BaseModerationActions
         
         threshold = config.get("threshold", 0.5) if config else 0.5
         action = config.get("action", BaseModerationActions.STOP) if config else BaseModerationActions.STOP
