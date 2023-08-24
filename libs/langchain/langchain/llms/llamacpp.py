@@ -261,16 +261,10 @@ class LlamaCpp(LLM):
                     "Could not import LlamaGrammar from the llama-cpp-python library."
                     "Ensure that the version installed supports LlamaGrammar."
                 )
-            try:
-                grammar = LlamaGrammar.from_file(
-                    self.grammar_path  # type: ignore[arg-type]
-                )
-                kwargs["grammar"] = grammar
-            except Exception as e:
-                raise ValueError(
-                    f"Could not load grammar from path: {self.grammar_path}."
-                    f"Received error {e}"
-                )
+            grammar = LlamaGrammar.from_file(
+                self.grammar_path  # type: ignore[arg-type]
+            )
+            kwargs["grammar"] = grammar
 
         if self.streaming:
             # If streaming is enabled, we use the stream
