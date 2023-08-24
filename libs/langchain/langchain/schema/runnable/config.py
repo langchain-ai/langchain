@@ -107,7 +107,11 @@ def patch_config(
     if deep_copy_locals:
         config["_locals"] = deepcopy(config["_locals"])
     if callbacks is not None:
+        # If we're replacing callbacks we need to unset run_name and run_id
+        # As those should apply only to the same run as the original callbacks
         config["callbacks"] = callbacks
+        config["run_name"] = None
+        config["run_id"] = None
     if recursion_limit is not None:
         config["recursion_limit"] = recursion_limit
     return config
