@@ -65,10 +65,7 @@ class RunnableRetry(RunnableBinding[Input, Output]):
         return self._patch_config(config, retry_state)
 
     def invoke(
-        self,
-        input: Input,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Any | None
+        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
         for attempt in self._sync_retrying():
             with attempt:
@@ -80,7 +77,7 @@ class RunnableRetry(RunnableBinding[Input, Output]):
         return result
 
     async def ainvoke(
-        self, input: Input, config: RunnableConfig | None = None, **kwargs: Any | None
+        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
         async for attempt in self._async_retrying():
             with attempt:
