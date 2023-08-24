@@ -1,4 +1,3 @@
-"""Wrapper around Qdrant vector database."""
 from __future__ import annotations
 
 import asyncio
@@ -40,7 +39,7 @@ if TYPE_CHECKING:
 
 
 class QdrantException(Exception):
-    """Base class for all the Qdrant related exceptions"""
+    """`Qdrant` related exceptions."""
 
 
 def sync_call_fallback(method: Callable) -> Callable:
@@ -68,7 +67,7 @@ def sync_call_fallback(method: Callable) -> Callable:
 
 
 class Qdrant(VectorStore):
-    """Wrapper around Qdrant vector database.
+    """`Qdrant` vector store.
 
     To use you should have the ``qdrant-client`` package installed.
 
@@ -102,7 +101,7 @@ class Qdrant(VectorStore):
         try:
             import qdrant_client
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import qdrant-client python package. "
                 "Please install it with `pip install qdrant-client`."
             )

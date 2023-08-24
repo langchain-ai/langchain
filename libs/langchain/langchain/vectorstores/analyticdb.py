@@ -1,4 +1,3 @@
-"""VectorStore wrapper around a Postgres/PGVector database."""
 from __future__ import annotations
 
 import logging
@@ -25,7 +24,7 @@ Base = declarative_base()  # type: Any
 
 
 class AnalyticDB(VectorStore):
-    """VectorStore implementation using AnalyticDB.
+    """`AnalyticDB` (distributed PostgreSQL) vector store.
 
     AnalyticDB is a distributed full postgresql syntax cloud-native database.
     - `connection_string` is a postgres connection string.

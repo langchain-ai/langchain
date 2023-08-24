@@ -27,14 +27,19 @@ jobs:
     name: Pydantic v1/v2 compatibility - Python ${{ matrix.python-version }}
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }}
+
+      - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
         uses: "./.github/actions/poetry_setup"
         with:
           python-version: ${{ matrix.python-version }}
-          working-directory: ${{ inputs.working-directory }}
           poetry-version: ${{ env.POETRY_VERSION }}
+          working-directory: ${{ inputs.working-directory }}
           cache-key: pydantic-cross-compat
-          install-command: poetry install
+
+      - name: Install dependencies
+        shell: bash
+        run: poetry install
+
       - name: Install the opposite major version of pydantic
         # If normal tests use pydantic v1, here we'll use v2, and vice versa.
         shell: bash
