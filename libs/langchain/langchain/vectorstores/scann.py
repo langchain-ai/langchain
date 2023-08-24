@@ -22,7 +22,7 @@ def normalize(x: np.ndarray) -> np.ndarray:
     return x
 
 
-def _dependable_scann_import() -> Any:
+def dependable_scann_import() -> Any:
     """
     Import `scann` if available, otherwise raise error.
     """
@@ -312,7 +312,7 @@ class ScaNN(VectorStore):
         normalize_L2: bool = False,
         **kwargs: Any,
     ) -> ScaNN:
-        scann = _dependable_scann_import()
+        scann = dependable_scann_import()
         distance_strategy = kwargs.get(
             "distance_strategy", DistanceStrategy.EUCLIDEAN_DISTANCE
         )
@@ -474,7 +474,7 @@ class ScaNN(VectorStore):
         scann_path = path / "{index_name}.scann".format(index_name=index_name)
         scann_path.mkdir(exist_ok=True, parents=True)
         # load index separately since it is not picklable
-        scann = _dependable_scann_import()
+        scann = dependable_scann_import()
         index = scann.scann_ops_pybind.load_searcher(str(scann_path))
 
         # load docstore and index_to_docstore_id

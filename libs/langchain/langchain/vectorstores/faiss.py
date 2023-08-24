@@ -27,7 +27,7 @@ from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import DistanceStrategy, maximal_marginal_relevance
 
 
-def _dependable_faiss_import(no_avx2: Optional[bool] = None) -> Any:
+def dependable_faiss_import(no_avx2: Optional[bool] = None) -> Any:
     """
     Import faiss if available, otherwise raise error.
     If FAISS_NO_AVX2 environment variable is set, it will be considered
@@ -115,7 +115,7 @@ class FAISS(VectorStore):
         metadatas: Optional[Iterable[dict]] = None,
         ids: Optional[List[str]] = None,
     ) -> List[str]:
-        faiss = _dependable_faiss_import()
+        faiss = dependable_faiss_import()
 
         if not isinstance(self.docstore, AddableMixin):
             raise ValueError(
@@ -212,7 +212,7 @@ class FAISS(VectorStore):
             List of documents most similar to the query text and L2 distance
             in float for each. Lower score represents more similarity.
         """
-        faiss = _dependable_faiss_import()
+        faiss = dependable_faiss_import()
         vector = np.array([embedding], dtype=np.float32)
         if self._normalize_L2:
             faiss.normalize_L2(vector)
@@ -554,7 +554,7 @@ class FAISS(VectorStore):
         distance_strategy: DistanceStrategy = DistanceStrategy.EUCLIDEAN_DISTANCE,
         **kwargs: Any,
     ) -> FAISS:
-        faiss = _dependable_faiss_import()
+        faiss = dependable_faiss_import()
         if distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
             index = faiss.IndexFlatIP(len(embeddings[0]))
         else:
@@ -661,7 +661,7 @@ class FAISS(VectorStore):
         path.mkdir(exist_ok=True, parents=True)
 
         # save index separately since it is not picklable
-        faiss = _dependable_faiss_import()
+        faiss = dependable_faiss_import()
         faiss.write_index(
             self.index, str(path / "{index_name}.faiss".format(index_name=index_name))
         )
@@ -688,7 +688,7 @@ class FAISS(VectorStore):
         """
         path = Path(folder_path)
         # load index separately since it is not picklable
-        faiss = _dependable_faiss_import()
+        faiss = dependable_faiss_import()
         index = faiss.read_index(
             str(path / "{index_name}.faiss".format(index_name=index_name))
         )

@@ -15,7 +15,7 @@ logger = logging.getLogger()
 DEBUG = False
 
 
-def _has_mul_sub_str(s: str, *args: Any) -> bool:
+def has_mul_sub_str(s: str, *args: Any) -> bool:
     """
     Check if a string has multiple substrings.
     Args:
@@ -31,7 +31,7 @@ def _has_mul_sub_str(s: str, *args: Any) -> bool:
     return True
 
 
-def _debug_output(s: Any) -> None:
+def debug_output(s: Any) -> None:
     """
     Print a debug message if DEBUG is True.
     Args:
@@ -41,7 +41,7 @@ def _debug_output(s: Any) -> None:
         print(s)
 
 
-def _get_named_result(connection: Any, query: str) -> List[dict[str, Any]]:
+def get_named_result(connection: Any, query: str) -> List[dict[str, Any]]:
     """
     Get a named result from a query.
     Args:
@@ -61,7 +61,7 @@ def _get_named_result(connection: Any, query: str) -> List[dict[str, Any]]:
             k = columns[idx][0]
             r[k] = datum
         result.append(r)
-    _debug_output(result)
+    debug_output(result)
     cursor.close()
     return result
 
@@ -186,7 +186,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         self.must_escape = ("\\", "'")
         self.embedding_function = embedding
         self.dist_order = "DESC"
-        _debug_output(self.config)
+        debug_output(self.config)
 
         # Create a connection to StarRocks
         self.connection = pymysql.connect(
@@ -198,8 +198,8 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
             **kwargs,
         )
 
-        _debug_output(self.schema)
-        _get_named_result(self.connection, self.schema)
+        debug_output(self.schema)
+        get_named_result(self.connection, self.schema)
 
     def escape_str(self, value: str) -> str:
         return "".join(f"{self.BS}{c}" if c in self.must_escape else c for c in value)
@@ -234,8 +234,8 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
 
     def _insert(self, transac: Iterable, column_names: Iterable[str]) -> None:
         _insert_query = self._build_insert_sql(transac, column_names)
-        _debug_output(_insert_query)
-        _get_named_result(self.connection, _insert_query)
+        debug_output(_insert_query)
+        get_named_result(self.connection, _insert_query)
 
     def add_texts(
         self,
@@ -341,8 +341,8 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         _repr += f"\033[0m|\033[96m{columns[2]:24s}\033[0m|\n"
         _repr += "-" * (width * fields + 1) + "\n"
         q_str = f"DESC {self.config.database}.{self.config.table}"
-        _debug_output(q_str)
-        rs = _get_named_result(self.connection, q_str)
+        debug_output(q_str)
+        rs = get_named_result(self.connection, q_str)
         for r in rs:
             _repr += f"|\033[94m{r['Field']:24s}\033[0m|\033[96m{r['Type']:24s}"
             _repr += f"\033[0m|\033[96m{r['Key']:24s}\033[0m|\n"
@@ -369,7 +369,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
             LIMIT {topk}
             """
 
-        _debug_output(q_str)
+        debug_output(q_str)
         return q_str
 
     def similarity_search(
@@ -425,7 +425,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
                     page_content=r[self.config.column_map["document"]],
                     metadata=json.loads(r[self.config.column_map["metadata"]]),
                 )
-                for r in _get_named_result(self.connection, q_str)
+                for r in get_named_result(self.connection, q_str)
             ]
         except Exception as e:
             logger.error(f"\033[91m\033[1m{type(e)}\033[0m \033[95m{str(e)}\033[0m")
@@ -462,7 +462,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
                     ),
                     r["dist"],
                 )
-                for r in _get_named_result(self.connection, q_str)
+                for r in get_named_result(self.connection, q_str)
             ]
         except Exception as e:
             logger.error(f"\033[91m\033[1m{type(e)}\033[0m \033[95m{str(e)}\033[0m")
@@ -472,7 +472,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         """
         Helper function: Drop data
         """
-        _get_named_result(
+        get_named_result(
             self.connection,
             f"DROP TABLE IF EXISTS {self.config.database}.{self.config.table}",
         )

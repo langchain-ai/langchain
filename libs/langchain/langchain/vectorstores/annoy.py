@@ -20,7 +20,7 @@ INDEX_METRICS = frozenset(["angular", "euclidean", "manhattan", "hamming", "dot"
 DEFAULT_METRIC = "angular"
 
 
-def _dependable_annoy_import() -> Any:
+def dependable_annoy_import() -> Any:
     """Import annoy if available, otherwise raise error."""
     try:
         import annoy
@@ -300,7 +300,7 @@ class Annoy(VectorStore):
                     f"Expected one of {list(INDEX_METRICS)}"
                 )
             )
-        annoy = _dependable_annoy_import()
+        annoy = dependable_annoy_import()
         if not embeddings:
             raise ValueError("embeddings must be provided to build AnnoyIndex")
         f = len(embeddings[0])
@@ -439,7 +439,7 @@ class Annoy(VectorStore):
         """
         path = Path(folder_path)
         # load index separately since it is not picklable
-        annoy = _dependable_annoy_import()
+        annoy = dependable_annoy_import()
         # load docstore and index_to_docstore_id
         with open(path / "index.pkl", "rb") as file:
             docstore, index_to_docstore_id, config_object = pickle.load(file)
