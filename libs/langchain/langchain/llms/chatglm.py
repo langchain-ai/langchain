@@ -1,9 +1,11 @@
 import logging
-from typing import Any, List, Mapping, Optional
-
+from typing import Any, List, Mapping, Optional, Dict
+import json
 import requests
-
-from langchain.callbacks.manager import CallbackManagerForLLMRun
+import asyncio
+import aiohttp
+from langchain.callbacks.manager import (CallbackManagerForLLMRun, 
+                                         AsyncCallbackManagerForLLMRun)
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
@@ -53,14 +55,6 @@ class ChatGLM(LLM):
             **{"endpoint_url": self.endpoint_url},
             **{"model_kwargs": _model_kwargs},
         }
-    @staticmethod
-    def _generate_token():
-        if not self.api_key:
-            raise Exception(
-                "api_key not provided, you could provide it with `shell: export API_KEY=xxx` or `code: zhipuai.api_key=xxx`"
-            )
-
-        return jwt_token.generate_token(self.api_key)
 
     def _call(
         self,
@@ -98,7 +92,8 @@ class ChatGLM(LLM):
             raise Exception("Must install zhipuai, use`pip install zhipuai`")
         if not self.api_key:
             raise Exception(
-                "api_key not provided, you could provide it with `shell: export API_KEY=xxx` or `code: zhipuai.api_key=xxx`"
+                "api_key not provided, you could provide it with "
+                "`shell: export API_KEY=xxx` or `code: zhipuai.api_key=xxx`"
             )
         jwt_api_key_ = jwt_token.generate_token(self.api_key)
         headers.update({"Authorization": jwt_api_key_})
@@ -147,4 +142,5 @@ class ChatGLM(LLM):
             text = enforce_stop_tokens(text, stop)
         if self.with_history:
             self.history = self.history + [[None, parsed_response["data"]["choices"]]]
+        
         return text
