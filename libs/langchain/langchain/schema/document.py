@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Sequence
+from typing import Any, List, Sequence
 
 from langchain.load.serializable import Serializable
 from langchain.pydantic_v1 import Field
@@ -16,6 +16,16 @@ class Document(Serializable):
     """Arbitrary metadata about the page content (e.g., source, relationships to other
         documents, etc.).
     """
+
+    @property
+    def lc_serializable(self) -> bool:
+        """Return whether or not the class is serializable."""
+        return True
+
+    @property
+    def lc_namespace(self) -> List[str]:
+        """Return the namespace of the langchain object."""
+        return self.__class__.__module__.split(".")[:-1]
 
 
 class BaseDocumentTransformer(ABC):
