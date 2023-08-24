@@ -1,12 +1,10 @@
-import examples as examples
 import pytest
-from pydantic.types import conlist
 
 from langchain import FewShotPromptTemplate
 from langchain.chat_models import ChatOpenAI
-from langchain.data_generation.base import SyntheticDataGenerator
-from langchain.data_generation.openai import create_openai_data_generator, OPENAI_TEMPLATE
-from langchain.data_generation.prompts import SYNTHETIC_FEW_SHOT_PREFIX, SYNTHETIC_FEW_SHOT_SUFFIX, DEFAULT_PROMPT
+from langchain.chains.data_generation.base import SyntheticDataGenerator
+from langchain.chains.data_generation.openai import create_openai_data_generator, OPENAI_TEMPLATE
+from langchain.chains.data_generation.prompts import SYNTHETIC_FEW_SHOT_PREFIX, SYNTHETIC_FEW_SHOT_SUFFIX
 from pydantic import BaseModel
 
 
@@ -68,7 +66,10 @@ def synthetic_data_generator():
 @pytest.mark.requires("openai")
 def test_generate_synthetic(synthetic_data_generator: SyntheticDataGenerator):
     synthetic_results = synthetic_data_generator.generate(subject="medical_billing",
-                                                          extra="make sure the names are different", runs=10)
+                                                          extra="""the name must be chosen at random. Make it 
+                                                                 something you wouldn't normally choose. The CPT 
+                                                                 codes must make sense with the ICD-10 code""",
+                                                          runs=10)
     assert len(synthetic_results) == 10
     for row in synthetic_results:
         assert isinstance(row, MedicalBilling)
@@ -79,7 +80,8 @@ def test_generate_synthetic(synthetic_data_generator: SyntheticDataGenerator):
 @pytest.mark.asyncio
 async def test_agenerate_synthetic(synthetic_data_generator: SyntheticDataGenerator):
     synthetic_results = await synthetic_data_generator.agenerate(subject="medical_billing",
-                                                                 extra="Each value is different than the one before it.",
+                                                                 extra="""the name must be chosen at random. Make it 
+                                                                 something you wouldn't normally choose.""",
                                                                  runs=10)
     assert len(synthetic_results) == 10
     for row in synthetic_results:

@@ -4,7 +4,7 @@ from pydantic.main import BaseModel
 
 from langchain import BasePromptTemplate, PromptTemplate
 from langchain.chains.openai_functions import create_structured_output_chain
-from langchain.data_generation.base import SyntheticDataGenerator
+from langchain.chains.data_generation.base import SyntheticDataGenerator
 from langchain.schema import BaseLLMOutputParser
 from langchain.schema.language_model import BaseLanguageModel
 
