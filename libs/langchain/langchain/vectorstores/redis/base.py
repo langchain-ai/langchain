@@ -77,10 +77,12 @@ class Redis(VectorStore):
     and have a running Redis Enterprise or Redis-Stack server
 
     For production use cases, it is recommended to use Redis Enterprise
-    as the scaling, performance, stability and availability is much better than Redis-Stack.
+    as the scaling, performance, stability and availability is much
+    better than Redis-Stack.
 
     For testing and prototyping, however, this is not required.
-    Redis-Stack is available as a docker container the full vector search API available.
+    Redis-Stack is available as a docker container the full vector
+    search API available.
 
     .. code-block:: bash
         # to run redis stack in docker locally
@@ -90,7 +92,7 @@ class Redis(VectorStore):
     - redis://<host>:<port> # simple connection
     - redis://<username>:<password>@<host>:<port> # connection with authentication
     - rediss://<host>:<port> # connection with SSL
-    - rediss://<username>:<password>@<host>:<port> # connection with SSL and authentication
+    - rediss://<username>:<password>@<host>:<port> # connection with SSL and auth
 
 
     Examples:
@@ -193,7 +195,7 @@ class Redis(VectorStore):
     schema according to the following rules:
         - All strings are indexed as text fields
         - All numbers are indexed as numeric fields
-        - All lists of strings are indexed as tag fields (multi-valued, joined by ',')
+        - All lists of strings are indexed as tag fields (joined by ',')
         - All None values are not indexed but still stored in Redis these are
             not retrievable through the interface here, but the raw Redis client
             can be used to retrieve them.
@@ -224,8 +226,8 @@ class Redis(VectorStore):
             )
 
     When connecting to an existing index where a custom schema has been applied, it's
-    important to pass in the same schema to the ``from_existing_index`` method. Otherwise,
-    the schema for newly added samples will be incorrect.
+    important to pass in the same schema to the ``from_existing_index`` method.
+    Otherwise, the schema for newly added samples will be incorrect.
 
     """
 
@@ -308,20 +310,20 @@ class Redis(VectorStore):
         Args:
             texts (List[str]): List of texts to add to the vectorstore.
             embedding (Embeddings): Embeddings to use for the vectorstore.
-            metadatas (Optional[List[dict]], optional): Optional list of metadata dicts
-                to add to the vectorstore. Defaults to None.
-            index_name (Optional[str], optional): Optional name of the index to create or add to.
-                Defaults to None.
+            metadatas (Optional[List[dict]], optional): Optional list of metadata
+                dicts to add to the vectorstore. Defaults to None.
+            index_name (Optional[str], optional): Optional name of the index to
+                create or add to. Defaults to None.
             index_schema (Optional[Union[Dict[str, str], str, os.PathLike]], optional):
-                Optional fields to index within the metadata. Overrides generated schema.
-                Defaults to None.
-            vector_schema (Optional[Dict[str, Union[str, int]]], optional): Optional vector
-                schema to use. Defaults to None.
+                Optional fields to index within the metadata. Overrides generated
+                schema. Defaults to None.
+            vector_schema (Optional[Dict[str, Union[str, int]]], optional): Optional
+                vector schema to use. Defaults to None.
             **kwargs (Any): Additional keyword arguments to pass to the Redis client.
 
         Returns:
-            Tuple[Redis, List[str]]: Tuple of the Redis instance and the keys of the newly
-                created documents.
+            Tuple[Redis, List[str]]: Tuple of the Redis instance and the keys of
+                the newly created documents.
 
         Raises:
             ValueError: If the number of metadatas does not match the number of texts.
@@ -404,16 +406,17 @@ class Redis(VectorStore):
 
         Args:
             texts (List[str]): List of texts to add to the vectorstore.
-            embedding (Embeddings): Embedding model class (i.e. OpenAIEmbeddings) for embedding queries.
+            embedding (Embeddings): Embedding model class (i.e. OpenAIEmbeddings)
+                for embedding queries.
             metadatas (Optional[List[dict]], optional): Optional list of metadata dicts
                 to add to the vectorstore. Defaults to None.
-            index_name (Optional[str], optional): Optional name of the index to create or add to.
-                Defaults to None.
+            index_name (Optional[str], optional): Optional name of the index to create
+                or add to. Defaults to None.
             index_schema (Optional[Union[Dict[str, str], str, os.PathLike]], optional):
-                Optional fields to index within the metadata. Overrides generated schema.
-                Defaults to None.
-            vector_schema (Optional[Dict[str, Union[str, int]]], optional): Optional vector
-                schema to use. Defaults to None.
+                Optional fields to index within the metadata. Overrides generated
+                schema. Defaults to None.
+            vector_schema (Optional[Dict[str, Union[str, int]]], optional): Optional
+                vector schema to use. Defaults to None.
             **kwargs (Any): Additional keyword arguments to pass to the Redis client.
 
         Returns:
@@ -458,13 +461,14 @@ class Redis(VectorStore):
                 )
 
         Args:
-            embedding (Embeddings): Embedding model class (i.e. OpenAIEmbeddings) for embedding queries.
+            embedding (Embeddings): Embedding model class (i.e. OpenAIEmbeddings)
+                for embedding queries.
             index_name (str): Name of the index to connect to.
             index_schema (Optional[Union[Dict[str, str], str, os.PathLike]], optional):
-                Optional fields to index within the metadata. Overrides generated schema.
-                Defaults to None.
-            vector_schema (Optional[Dict[str, Union[str, int]]], optional): Optional vector
-                schema to use. Defaults to None.
+                Optional fields to index within the metadata. Overrides generated
+                schema. Defaults to None.
+            vector_schema (Optional[Dict[str, Union[str, int]]], optional): Optional
+                vector schema to use. Defaults to None.
             **kwargs (Any): Additional keyword arguments to pass to the Redis client.
 
         Returns:
@@ -629,7 +633,7 @@ class Redis(VectorStore):
 
         # type check for metadata
         if metadatas:
-            if isinstance(metadatas, list) and len(metadatas) != len(texts):  # type: ignore
+            if isinstance(metadatas, list) and len(metadatas) != len(texts):  # type: ignore # lint: disable=line-too-long
                 raise ValueError("Number of metadatas must match number of texts")
             if not (isinstance(metadatas, list) and isinstance(metadatas[0], dict)):
                 raise ValueError("Metadatas must be a list of dicts")
@@ -678,7 +682,7 @@ class Redis(VectorStore):
                 similarity, the smaller the angle, the higher the similarity.
 
         Returns:
-            List[Document]: A list of documents that are most similar to the query text,
+            List[Document]: A list of documents that are most similar to the query text
                 including the match score for each document.
 
         Note:
@@ -711,7 +715,7 @@ class Redis(VectorStore):
 
         # Perform vector search
         # ignore type because redis-py is wrong about bytes
-        results = self.client.ft(self.index_name).search(redis_query, params_dict)  # type: ignore
+        results = self.client.ft(self.index_name).search(redis_query, params_dict)  # type: ignore # lint: disable=line-too-long
 
         # Prepare document results
         docs_with_scores: List[Tuple[Document, float]] = []
@@ -747,10 +751,12 @@ class Redis(VectorStore):
             k (int): The number of documents to return. Default is 4.
             filter (RedisFilterExpression, optional): Optional metadata filter.
                 Defaults to None.
-            return_metadata (bool, optional): Whether to return metadata. Defaults to True.
+            return_metadata (bool, optional): Whether to return metadata.
+                Defaults to True.
 
         Returns:
-            List[Document]: A list of documents that are most similar to the query text.
+            List[Document]: A list of documents that are most similar to the query
+                text.
 
         """
         docs = self._similarity_search(
@@ -782,7 +788,7 @@ class Redis(VectorStore):
 
         # Perform vector search
         # ignore type because redis-py is wrong about bytes
-        results = self.client.ft(self.index_name).search(redis_query, params_dict)  # type: ignore
+        results = self.client.ft(self.index_name).search(redis_query, params_dict)  # type: ignore # lint: disable=line-too-long
 
         # Prepare document results
         docs = []
@@ -803,7 +809,8 @@ class Redis(VectorStore):
         by this class.
 
         Args:
-            result (Document): redis.commands.search.Document object returned from Redis.
+            result (Document): redis.commands.search.Document object returned
+                from Redis.
 
         Returns:
             Dict[str, Any]: Collected metadata.
@@ -814,10 +821,12 @@ class Redis(VectorStore):
             try:
                 meta[key] = getattr(result, key)
             except AttributeError:
-                # warning about attribute missing and then set attribute to none in metadata
+                # warning about attribute missing
                 logger.warning(
-                    f"Metadata key {key} not found in metadata. Setting to None. \n"
-                    + f"Metadata fields defined for this instance: {self._schema.metadata_keys}"
+                    f"Metadata key {key} not found in metadata. "
+                    + "Setting to None. \n"
+                    + "Metadata fields defined for this instance: "
+                    + f"{self._schema.metadata_keys}"
                 )
                 meta[key] = None
         return meta
@@ -872,7 +881,8 @@ class Redis(VectorStore):
                 "Could not import redis python package. "
                 "Please install it with `pip install redis`."
             ) from e
-        base_query = f"@{self._schema.content_vector_key}:[VECTOR_RANGE $score_threshold $vector]"
+        vector_key = self._schema.content_vector_key
+        base_query = f"@{vector_key}:[VECTOR_RANGE $score_threshold $vector]"
 
         if filter:
             base_query = "(" + base_query + " " + str(filter) + ")"
@@ -912,7 +922,8 @@ class Redis(VectorStore):
         query_prefix = "*"
         if filter:
             query_prefix = f"{str(filter)}"
-        base_query = f"({query_prefix})=>[KNN {k} @{self._schema.content_vector_key} $vector AS score]"
+        vector_key = self._schema.content_vector_key
+        base_query = f"({query_prefix})=>[KNN {k} @{vector_key} $vector AS score]"
 
         query = (
             Query(base_query).return_fields(*return_fields).sort_by("score").dialect(2)
@@ -1036,7 +1047,8 @@ def _generate_field_schema(data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Generate a schema for the search index in Redis based on the input metadata.
 
-    Given a dictionary of metadata, this function categorizes each metadata field into one of the three categories:
+    Given a dictionary of metadata, this function categorizes each metadata
+        field into one of the three categories:
     - text: The field contains textual data.
     - numeric: The field contains numeric data (either integer or float).
     - tag: The field contains list of tags (strings).
@@ -1050,7 +1062,8 @@ def _generate_field_schema(data: Dict[str, Any]) -> Dict[str, Any]:
             Each key maps to a list of fields that belong to that category.
 
     Raises:
-        ValueError: If a metadata field cannot be categorized into any of the three known types.
+        ValueError: If a metadata field cannot be categorized into any of
+            the three known types.
     """
     result: Dict[str, Any] = {
         "text": [],
@@ -1076,8 +1089,9 @@ def _generate_field_schema(data: Dict[str, Any]) -> Dict[str, Any]:
             if not value or isinstance(value[0], str):
                 result["tag"].append({"name": key})
             else:
+                name = type(value[0]).__name__
                 raise ValueError(
-                    f"List/tuple values should contain strings: '{key}': {type(value[0]).__name__}"
+                    f"List/tuple values should contain strings: '{key}': {name}"
                 )
             continue
 
@@ -1087,8 +1101,10 @@ def _generate_field_schema(data: Dict[str, Any]) -> Dict[str, Any]:
             continue
 
         # Unable to classify the field value
+        name = type(value).__name__
         raise ValueError(
-            f"Could not generate Redis index field type mapping for metadata: '{key}': {type(value).__name__}"
+            "Could not generate Redis index field type mapping "
+            + f"for metadata: '{key}': {name}"
         )
 
     return result
@@ -1116,7 +1132,8 @@ def _prepare_metadata(metadata: Dict[str, Any]) -> Dict[str, Any]:
 
     def raise_error(key: str, value: Any) -> None:
         raise ValueError(
-            f"Metadata value for key '{key}' must be a string, int, float, or list of strings. Got {type(value).__name__}"
+            f"Metadata value for key '{key}' must be a string, int, "
+            + f"float, or list of strings. Got {type(value).__name__}"
         )
 
     clean_meta: Dict[str, Union[str, float, int]] = {}
