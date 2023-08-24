@@ -6,7 +6,7 @@ sidebar_position: 0
 
 Like document loaders, chat loaders are utilities designed to help load conversations from popular communication platforms such as Facebook, Slack, Discord, etc. These are loaded into memory as LangChain chat message objects. Such utilities facilitate tasks such as fine-tuning a language model to match your personal style or voice. 
 
-This brief guide will illustrate the process using [OpenAI's fine-tuning API](https://platform.openai.com/docs/guides/fine-tuning) comprised of six steps:
+This brief guide will illustrate the process using [OpenAI's fine-tuning API](https://platform.openai.com/docs/guides/fine-tuning) in six steps:
 
 1. Export your Facebook Messenger chat data in a compatible format for your intended chat loader.
 2. Load the chat data into memory as LangChain chat message objects. Assign a person to the "AI" role and optionally filter, group, and merge messages.
@@ -174,6 +174,12 @@ for tok in chain.stream({"input": "What classes are you taking?"}):
 
 # The usual - Potions, Transfiguration, Defense Against the Dark Arts. What about you?
 ```
+
+And that's it! You've successfully fine-tuned a model and used it in LangChain.
+
+## Supported Chat Loaders
+
+LangChain currently supports the following chat loaders. Feel free to contribute more!
 
 import DocCardList from "@theme/DocCardList";
 
