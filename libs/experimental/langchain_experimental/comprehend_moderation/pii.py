@@ -1,7 +1,7 @@
 
 import asyncio
 from typing import Dict, Any, Optional
-from langchain.chains.comprehend_moderation.base_moderation_exceptions import ModerationPiiError
+from langchain_experimental.comprehend_moderation.base_moderation_exceptions import ModerationPiiError
 
 class ComprehendPII:
 
@@ -18,7 +18,7 @@ class ComprehendPII:
         self.unique_id = unique_id        
 
     def validate(self, prompt_value, config: Dict[str, Any]=None) -> str:
-        from langchain.chains.comprehend_moderation.base_moderation_enums import BaseModerationActions
+        from langchain_experimental.comprehend_moderation.base_moderation_enums import BaseModerationActions
         
         if config:
             action = config.get("action", BaseModerationActions.STOP)

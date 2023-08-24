@@ -4,9 +4,9 @@ from langchain.prompts.base import StringPromptValue
 from langchain.prompts.chat import ChatPromptValue
 from langchain.schema import HumanMessage, AIMessage
 from langchain.callbacks.manager import CallbackManagerForChainRun
-from langchain.chains.comprehend_moderation.intent import ComprehendIntent
-from langchain.chains.comprehend_moderation.pii import ComprehendPII
-from langchain.chains.comprehend_moderation.toxicity import ComprehendToxicity
+from langchain_experimental.comprehend_moderation import (ComprehendPII, 
+                                                       ComprehendToxicity, 
+                                                       ComprehendIntent)
 
 class BaseModeration:
     
@@ -92,7 +92,7 @@ class BaseModeration:
             self.run_manager.on_text(message)
                 
     def moderate(self, prompt: Any) -> str:
-        from langchain.chains.comprehend_moderation.base_moderation_exceptions \
+        from langchain_experimental.comprehend_moderation.base_moderation_exceptions \
         import (ModerationPiiError,
                 ModerationToxicityError,
                 ModerationIntentionError)                                                                                          

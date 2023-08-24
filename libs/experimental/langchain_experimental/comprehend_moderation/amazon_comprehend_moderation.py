@@ -3,7 +3,7 @@ from typing import List
 from langchain.chains.base import Chain
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.pydantic_v1 import root_validator
-from langchain.chains.comprehend_moderation import BaseModeration, BaseModerationCallbackHandler
+from langchain_experimental.comprehend_moderation import BaseModeration, BaseModerationCallbackHandler
 
 class AmazonComprehendModerationChain(Chain):
     

@@ -2,7 +2,7 @@ import asyncio
 import warnings
 import importlib
 from typing import Dict, Any, List, Optional
-from langchain.chains.comprehend_moderation.base_moderation_exceptions import ModerationToxicityError
+from langchain_experimental.comprehend_moderation.base_moderation_exceptions import ModerationToxicityError
 
 class ComprehendToxicity:        
 
@@ -121,7 +121,7 @@ class ComprehendToxicity:
                 self.moderation_beacon['moderation_output'] = response
             
             if config: 
-                from langchain.chains.comprehend_moderation.base_moderation_enums import BaseModerationActions
+                from langchain_experimental.comprehend_moderation.base_moderation_enums import BaseModerationActions
                 toxicity_found = False
                 action = config.get("action", BaseModerationActions.STOP)
                 if action not in [BaseModerationActions.STOP, BaseModerationActions.ALLOW]:
