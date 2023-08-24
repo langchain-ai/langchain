@@ -9,28 +9,26 @@ Like document loaders, chat loaders are utilities designed to help load conversa
 This brief guide will illustrate the process using [OpenAI's fine-tuning API](https://platform.openai.com/docs/guides/fine-tuning) comprised of six steps:
 
 1. Export your Facebook Messenger chat data in a compatible format for your intended chat loader.
-2. Load the chat data into memory as LangChain chat message objects.
-    - Optional: You can filter and group messages to mold your desired style or improve the quality of the fine-tuned model.
+2. Load the chat data into memory as LangChain chat message objects. Assign a person to the "AI" role and optionally filter, group, and merge messages.
 3. Export these acquired messages in a format expected by the fine-tuning API.
 4. Upload this data to OpenAI.
 5. Fine-tune your model.
 6. Implement the fine-tuned model in LangChain.
 
-This guide is not wholly comprehensive but is designed to take you through the fundamentals and get you started on the process.
+This guide is not wholly comprehensive but is designed to take you through the fundamentals of going from raw data to fine-tuned model.
 
-We will demonstrate the procedure through an example of fine-tuning a `gpt-3.5-turbo` model to adopt the voice of a user. 
-
-Let's go over each step using an example from Facebook Messenger:
+We will demonstrate the procedure through an example of fine-tuning a `gpt-3.5-turbo` model on Facebook Messenger data. 
 
 ### 1. Export your chat data
 
 To export your Facebook messenger data, you can follow the [instructions here](https://www.zapptales.com/en/download-facebook-messenger-chat-history-how-to/). 
 
 :::important JSON format
-You must select JSON format (instead of HTML) to be compatible with the current loader.
+You must select "JSON format" (instead of HTML) when exporting your data to be compatible with the current loader.
 :::
 
 OpenAI requires at least 10 examples to fine-tune your model, but they recommend between 50-100 for more optimal results.
+You can use the example data stored at [this google drive link](https://drive.google.com/file/d/1rh1s1o2i7B-Sk1v9o8KNgivLVGwJ-osV/view?usp=sharing) to test the process.
 
 ### 2. Load the chat
 
@@ -63,7 +61,7 @@ alternating_sessions = list(map_ai_messages(merged_sessions, "My Name"))
 
 ### 3. Export messages to OpenAI format
 
-Convert the chat messages to dictionaries using the `convert_messages_for_finetuning()` function. Then, group the data into chunks for better context modeling and overlap management.
+Convert the chat messages to dictionaries using the `convert_messages_for_finetuning` function. Then, group the data into chunks for better context modeling and overlap management.
 
 ```python
 from langchain.adapters.openai import convert_messages_for_finetuning
@@ -94,8 +92,10 @@ len(message_groups)
 Ensure you have set your OpenAI API key by following these [instructions](https://platform.openai.com/account/api-keys). 
 
 ```python
+import time
 import json
 import io
+
 import openai
 
 my_file = io.BytesIO()
@@ -107,6 +107,15 @@ training_file = openai.File.create(
   file=my_file,
   purpose='fine-tune'
 )
+
+# Wait while the file is processed
+status = openai.File.retrieve(training_file.id).status
+start_time = time.time()
+while status != "processed":
+    print(f"Status=[{status}]... {time.time() - start_time:.2f}s", end="\r", flush=True)
+    time.sleep(5)
+    status = openai.File.retrieve(training_file.id).status
+print(f"File {training_file.id} ready afer {time.time() - start_time:.2f} seconds.")
 ```
 
 The file is uploaded to OpenAI’s servers. An audit is performed to ensure data compliance, so you may have to wait a few minutes for the dataset to be ready for use.
@@ -124,16 +133,45 @@ job = openai.FineTuningJob.create(
 
 This might take a while. Check the status with `openai.FineTuningJob.retrieve(job.id).status` and wait for it to report `succeeded`.
 
+```python
+# It may take 10-20+ minutes to complete training.
+status = openai.FineTuningJob.retrieve(job.id).status
+start_time = time.time()
+while status != "succeeded":
+    print(f"Status=[{status}]... {time.time() - start_time:.2f}s", end="\r", flush=True)
+    time.sleep(5)
+    job = openai.FineTuningJob.retrieve(job.id)
+    status = job.status
+```
+
 ### 6. Use the model in LangChain
 
 You're almost there! Use the fine-tuned model in LangChain.
 
 ```python
-from langchain import chat_models, prompts
+from langchain import chat_models
 
 model_name = job.fine_tuned_model
 # Example: ft:gpt-3.5-turbo-0613:personal::5mty86jblapsed
 model = chat_models.ChatOpenAI(model=model_name)
+```
+
+```python
+from langchain.prompts import ChatPromptTemplate
+from langchain.schema.output_parser import StrOutputParser 
+
+prompt = ChatPromptTemplate.from_messages(
+    [
+        ("human", "{input}"),
+    ]
+)
+
+chain = prompt | model | StrOutputParser()
+
+for tok in chain.stream({"input": "What classes are you taking?"}):
+    print(tok, end="", flush=True)
+
+# The usual - Potions, Transfiguration, Defense Against the Dark Arts. What about you?
 ```
 
 import DocCardList from "@theme/DocCardList";
