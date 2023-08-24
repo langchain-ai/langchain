@@ -140,7 +140,7 @@ class GigaChat(SimpleChatModel):
                     "Giga error: %i %s", response.status_code, response.text
                 )
             if response.status_code == 401:
-                self.token = None
+                self.token = ""
             raise ValueError(
                 f"Can't get response from GigaChat. Error code: {response.status_code}"
             )
