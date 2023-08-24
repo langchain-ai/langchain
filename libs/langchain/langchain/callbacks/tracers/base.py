@@ -13,7 +13,12 @@ from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.tracers.schemas import Run
 from langchain.load.dump import dumpd
 from langchain.schema.document import Document
-from langchain.schema.output import ChatGeneration, LLMResult, GenerationChunk, ChatGenerationChunk
+from langchain.schema.output import (
+    ChatGeneration,
+    ChatGenerationChunk,
+    GenerationChunk,
+    LLMResult,
+)
 
 logger = logging.getLogger(__name__)
 

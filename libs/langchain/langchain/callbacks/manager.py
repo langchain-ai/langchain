@@ -49,7 +49,7 @@ from langchain.schema import (
     LLMResult,
 )
 from langchain.schema.messages import BaseMessage, get_buffer_string
-from langchain.schema.output import GenerationChunk, ChatGenerationChunk
+from langchain.schema.output import ChatGenerationChunk, GenerationChunk
 
 if TYPE_CHECKING:
     from langsmith import Client as LangSmithClient
