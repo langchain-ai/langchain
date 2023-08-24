@@ -88,7 +88,10 @@ class GraphCypherQAChain(Chain):
         if not qa_llm and not llm:
             raise ValueError("Either `llm` or `qa_llm` parameters must be provided")
         if cypher_llm and qa_llm and llm:
-            raise ValueError("You can specify up to two of 'cypher_llm', 'qa_llm', and 'llm', but not all three simultaneously.")
+            raise ValueError(
+                "You can specify up to two of 'cypher_llm', 'qa_llm'"
+                ", and 'llm', but not all three simultaneously."
+            )
 
         qa_chain = LLMChain(llm=qa_llm or llm, prompt=qa_prompt)
         cypher_generation_chain = LLMChain(llm=cypher_llm or llm, prompt=cypher_prompt)
