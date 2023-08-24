@@ -1,15 +1,26 @@
 from __future__ import annotations
 
-from typing import Any, AsyncIterator, Dict, Iterator, Mapping, Optional, Union
-
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForChainRun,
-    CallbackManagerForChainRun,
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncIterator,
+    Dict,
+    Iterator,
+    Mapping,
+    Optional,
+    Union,
 )
+
 from langchain.load.serializable import Serializable
 from langchain.schema.runnable.base import Input, Output, Runnable
 from langchain.schema.runnable.config import RunnableConfig
 from langchain.schema.runnable.passthrough import RunnablePassthrough
+
+if TYPE_CHECKING:
+    from langchain.callbacks.manager import (
+        AsyncCallbackManagerForChainRun,
+        CallbackManagerForChainRun,
+    )
 
 
 class PutLocalVar(RunnablePassthrough):

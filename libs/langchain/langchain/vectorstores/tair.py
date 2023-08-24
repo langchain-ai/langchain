@@ -1,4 +1,3 @@
-"""Wrapper around Tair Vector."""
 from __future__ import annotations
 
 import json
@@ -19,7 +18,7 @@ def _uuid_key() -> str:
 
 
 class Tair(VectorStore):
-    """Wrapper around Tair Vector store."""
+    """`Tair` vector store."""
 
     def __init__(
         self,

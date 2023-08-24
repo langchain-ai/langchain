@@ -1,4 +1,3 @@
-"""Wrapper around weaviate vector database."""
 from __future__ import annotations
 
 import json
@@ -25,7 +24,7 @@ if TYPE_CHECKING:
 
 
 class Marqo(VectorStore):
-    """Wrapper around Marqo database.
+    """`Marqo` vector store.
 
     Marqo indexes have their own models associated with them to generate your
     embeddings. This means that you can selected from a range of different models

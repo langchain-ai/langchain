@@ -3,10 +3,11 @@ from __future__ import annotations
 from concurrent.futures import Executor, ThreadPoolExecutor
 from contextlib import contextmanager
 from copy import deepcopy
-from typing import Any, Dict, Generator, List, Optional, TypedDict
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, TypedDict
 
-from langchain.callbacks.base import BaseCallbackManager, Callbacks
-from langchain.callbacks.manager import AsyncCallbackManager, CallbackManager
+if TYPE_CHECKING:
+    from langchain.callbacks.base import BaseCallbackManager, Callbacks
+    from langchain.callbacks.manager import AsyncCallbackManager, CallbackManager
 
 
 class RunnableConfig(TypedDict, total=False):
@@ -41,12 +42,6 @@ class RunnableConfig(TypedDict, total=False):
     ThreadPoolExecutor's default. This is ignored if an executor is provided.
     """
 
-    executor: Executor
-    """
-    Externally-managed executor to use for parallel calls. If not provided, a new
-    ThreadPoolExecutor will be created.
-    """
-
     recursion_limit: int
     """
     Maximum number of times a call can recurse. If not provided, defaults to 10.
@@ -71,7 +66,6 @@ def patch_config(
     *,
     deep_copy_locals: bool = False,
     callbacks: Optional[BaseCallbackManager] = None,
-    executor: Optional[Executor] = None,
     recursion_limit: Optional[int] = None,
 ) -> RunnableConfig:
     config = ensure_config(config)
@@ -79,14 +73,14 @@ def patch_config(
         config["_locals"] = deepcopy(config["_locals"])
     if callbacks is not None:
         config["callbacks"] = callbacks
-    if executor is not None:
-        config["executor"] = executor
     if recursion_limit is not None:
         config["recursion_limit"] = recursion_limit
     return config
 
 
 def get_callback_manager_for_config(config: RunnableConfig) -> CallbackManager:
+    from langchain.callbacks.manager import CallbackManager
+
     return CallbackManager.configure(
         inheritable_callbacks=config.get("callbacks"),
         inheritable_tags=config.get("tags"),
@@ -97,6 +91,8 @@ def get_callback_manager_for_config(config: RunnableConfig) -> CallbackManager:
 def get_async_callback_manager_for_config(
     config: RunnableConfig,
 ) -> AsyncCallbackManager:
+    from langchain.callbacks.manager import AsyncCallbackManager
+
     return AsyncCallbackManager.configure(
         inheritable_callbacks=config.get("callbacks"),
         inheritable_tags=config.get("tags"),
@@ -106,8 +102,5 @@ def get_async_callback_manager_for_config(
 
 @contextmanager
 def get_executor_for_config(config: RunnableConfig) -> Generator[Executor, None, None]:
-    if config.get("executor"):
-        yield config["executor"]
-    else:
-        with ThreadPoolExecutor(max_workers=config.get("max_concurrency")) as executor:
-            yield executor
+    with ThreadPoolExecutor(max_workers=config.get("max_concurrency")) as executor:
+        yield executor
