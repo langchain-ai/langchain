@@ -23,6 +23,7 @@ def test_discord_chat_loader() -> None:
     loader = discord.DiscordChatLoader(str(chat_path))
 
     chat_sessions = loader.load()
+    chat_sessions = list(utils.merge_chat_runs(chat_sessions))
     chat_sessions = list(utils.map_ai_messages(chat_sessions, sender="reporterbob"))
     assert chat_sessions, "Chat sessions should not be empty"
 

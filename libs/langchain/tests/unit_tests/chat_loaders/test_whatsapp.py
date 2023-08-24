@@ -7,8 +7,9 @@ def test_whatsapp_chat_loader() -> None:
     chat_path = pathlib.Path(__file__).parent / "data" / "whatsapp_chat.txt"
     loader = whatsapp.WhatsAppChatLoader(str(chat_path))
 
-    chat_sessions = loader.lazy_load()
-    chat_sessions = list(utils.map_ai_messages(chat_sessions, sender="Dr. Feather"))
+    chat_sessions = list(
+        utils.map_ai_messages(loader.lazy_load(), sender="Dr. Feather")
+    )
     assert chat_sessions, "Chat sessions should not be empty"
 
     assert chat_sessions[0]["messages"], "Chat messages should not be empty"

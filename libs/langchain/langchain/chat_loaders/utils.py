@@ -1,9 +1,10 @@
 """Utilities for chat loaders."""
 from copy import deepcopy
-from typing import Iterable, Iterator
+from typing import Iterable, Iterator, List
 
 from langchain import schema
 from langchain.chat_loaders.base import ChatSession
+from langchain.schema.messages import BaseMessage
 
 
 def merge_chat_runs_in_session(
@@ -19,18 +20,22 @@ def merge_chat_runs_in_session(
     Returns:
         A chat session with merged chat runs.
     """
-    messages = []
+    messages: List[BaseMessage] = []
     for message in chat_session["messages"]:
         if not messages:
             messages.append(deepcopy(message))
-            continue
-        if (
+        elif (
             isinstance(message, type(messages[-1]))
-            and messages[-1].get("sender") is not None
-            and messages[-1].get("sender") == message.get("sender")
+            and messages[-1].additional_kwargs.get("sender") is not None
+            and messages[-1].additional_kwargs["sender"]
+            == message.additional_kwargs.get("sender")
         ):
-            messages[-1]["content"] += delimiter + message["content"]
-            messages[-1]["events"].extend(message["events"])
+            messages[-1].content = (
+                messages[-1].content + delimiter + message.content
+            ).strip()
+            messages[-1].additional_kwargs.get("events", []).extend(
+                message.additional_kwargs.get("events") or []
+            )
         else:
             messages.append(deepcopy(message))
     return ChatSession(messages=messages)

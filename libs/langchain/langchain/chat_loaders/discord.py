@@ -89,7 +89,7 @@ class DiscordChatLoader(chat_loaders.BaseChatLoader):
                     )
                 )
                 current_timestamp = line.strip()[1:-1]
-
+                current_content = []
             else:
                 current_content.append("\n" + line.strip())
 

@@ -48,9 +48,10 @@ def test_telegram_chat_loader(path: str) -> None:
                     zip_file.write(file_path, arcname=file_path.name)
             source_path = zip_path
         loader = telegram.TelegramChatLoader(str(source_path))
-        chat_sessions = loader.load()
+        chat_sessions_ = loader.lazy_load()
+        chat_sessions_ = utils.merge_chat_runs(chat_sessions_)
         chat_sessions = list(
-            utils.map_ai_messages(chat_sessions, sender="Batman & Robin")
+            utils.map_ai_messages(chat_sessions_, sender="Batman & Robin")
         )
         assert len(chat_sessions) == 1
         session = chat_sessions[0]
