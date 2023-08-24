@@ -11,7 +11,7 @@ from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
 
 
-def _dependable_usearch_import() -> Any:
+def dependable_usearch_import() -> Any:
     """
     Import usearch if available, otherwise raise error.
     """
@@ -170,7 +170,7 @@ class USearch(VectorStore):
             documents.append(Document(page_content=text, metadata=metadata))
 
         docstore = InMemoryDocstore(dict(zip(ids, documents)))
-        usearch = _dependable_usearch_import()
+        usearch = dependable_usearch_import()
         index = usearch.Index(ndim=len(embeddings[0]), metric=metric)
         index.add(np.array(ids), np.array(embeddings))
         return cls(embedding, index, docstore, ids.tolist())
