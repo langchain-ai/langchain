@@ -1,4 +1,3 @@
-"""Wrapper around Vectara vector database."""
 from __future__ import annotations
 
 import json
@@ -18,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class Vectara(VectorStore):
-    """Implementation of Vector Store using Vectara.
+    """`Vectara API` vector store.
 
      See (https://vectara.com).
 
@@ -426,7 +425,7 @@ class Vectara(VectorStore):
 
 
 class VectaraRetriever(VectorStoreRetriever):
-    """Retriever class for Vectara."""
+    """Retriever class for `Vectara`."""
 
     vectorstore: Vectara
     """Vectara vectorstore."""
