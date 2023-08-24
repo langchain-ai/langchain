@@ -185,4 +185,3 @@ class SparkSQL:
         except Exception as e:
             """Format the error message"""
             return f"Error: {e}"
-
