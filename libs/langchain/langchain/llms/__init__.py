@@ -21,6 +21,7 @@ from typing import Dict, Type
 
 from langchain.llms.ai21 import AI21
 from langchain.llms.aleph_alpha import AlephAlpha
+from langchain.llms.alicloud_pai_eas import AliCloudPaiEAS
 from langchain.llms.amazon_api_gateway import AmazonAPIGateway
 from langchain.llms.anthropic import Anthropic
 from langchain.llms.anyscale import Anyscale
@@ -89,6 +90,7 @@ from langchain.llms.xinference import Xinference
 __all__ = [
     "AI21",
     "AlephAlpha",
+    "AliCloudPaiEAS",
     "AmazonAPIGateway",
     "Anthropic",
     "Anyscale",
@@ -162,6 +164,7 @@ __all__ = [
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "ai21": AI21,
     "aleph_alpha": AlephAlpha,
+    "alicloud_pai_eas": AliCloudPaiEAS,
     "amazon_api_gateway": AmazonAPIGateway,
     "amazon_bedrock": Bedrock,
     "anthropic": Anthropic,
