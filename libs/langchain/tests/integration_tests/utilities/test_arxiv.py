@@ -15,6 +15,17 @@ def api_client() -> ArxivAPIWrapper:
     return ArxivAPIWrapper()
 
 
+def test_is_arxiv_identifier(api_client: ArxivAPIWrapper) -> None:
+    """Test that is_arxiv_identifier returns True for valid arxiv identifiers"""
+    assert api_client.is_arxiv_identifier("1605.08386v1")
+    assert api_client.is_arxiv_identifier("0705.0123")
+    assert api_client.is_arxiv_identifier("2308.07912")
+    assert api_client.is_arxiv_identifier("9603067")
+    assert not api_client.is_arxiv_identifier("12345")
+    assert not api_client.is_arxiv_identifier("0705.012")
+    assert not api_client.is_arxiv_identifier("0705.012300")
+    assert not api_client.is_arxiv_identifier("1605.08386w1")
+
 def test_run_success_paper_name(api_client: ArxivAPIWrapper) -> None:
     """Test a query of paper name that returns the correct answer"""
 
