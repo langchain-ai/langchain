@@ -1,26 +1,26 @@
-import logging
 import json
-import requests
+import logging
 from typing import Any, Dict, List, Mapping, Optional
 
+import requests
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
+from langchain.llms.utils import enforce_stop_tokens
 from langchain.pydantic_v1 import root_validator
 from langchain.utils import get_from_dict_or_env
-from langchain.llms.utils import enforce_stop_tokens
-from langchain.callbacks.manager import CallbackManagerForLLMRun
-
 
 logger = logging.getLogger(__name__)
 
 
 class AliCloudPaiEAS(LLM):
     """PAI-EAS Service URL"""
+
     eas_service_url: str
-    
+
     """PAI-EAS Service TOKEN"""
-    eas_service_token: str = None
-    
+    eas_service_token: str
+
     """PAI-EAS Service Infer Params"""
     max_new_tokens: Optional[int] = 512
     temperature: Optional[float] = 0.95
@@ -35,14 +35,10 @@ class AliCloudPaiEAS(LLM):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["eas_service_url"] = get_from_dict_or_env(
-            values,
-            "eas_service_url",
-            "EAS_SERVICE_URL"
+            values, "eas_service_url", "EAS_SERVICE_URL"
         )
         values["eas_service_token"] = get_from_dict_or_env(
-            values,
-            "eas_service_token",
-            "EAS_SERVICE_TOKEN"
+            values, "eas_service_token", "EAS_SERVICE_TOKEN"
         )
 
         return values
@@ -59,7 +55,7 @@ class AliCloudPaiEAS(LLM):
             "max_new_tokens": self.max_new_tokens,
             "temperature": self.temperature,
             "top_k": self.top_k,
-            "top_p": self.top_p
+            "top_p": self.top_p,
         }
 
     @property
@@ -117,7 +113,7 @@ class AliCloudPaiEAS(LLM):
         }
 
         body = {
-            "input_ids":  f"{prompt}",
+            "input_ids": f"{prompt}",
         }
 
         # add params to body
@@ -125,8 +121,7 @@ class AliCloudPaiEAS(LLM):
             body[key] = value
 
         # make request
-        response = requests.post(self.eas_service_url, headers=headers,
-                                 json=body)
+        response = requests.post(self.eas_service_url, headers=headers, json=body)
 
         if response.status_code != 200:
             raise Exception(
@@ -135,4 +130,3 @@ class AliCloudPaiEAS(LLM):
             )
 
         return json.loads(response.text)
-    
