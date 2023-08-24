@@ -62,6 +62,9 @@ class VLLM(BaseLLM):
     dtype: str = "auto"
     """The data type for the model weights and activations."""
 
+    vllm_kwargs: dict = {}
+    """Arbitrary keyword arguments for vllm.LLM."""
+
     client: Any  #: :meta private:
 
     @root_validator()
@@ -81,6 +84,7 @@ class VLLM(BaseLLM):
             tensor_parallel_size=values["tensor_parallel_size"],
             trust_remote_code=values["trust_remote_code"],
             dtype=values["dtype"],
+            **values['vllm_kwargs']
         )
 
         return values
