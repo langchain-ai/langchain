@@ -22,7 +22,7 @@ def _assert_messages_are_equal(
         )
 
 
-@pytest.mark.requires("bs4")
+@pytest.mark.requires("beautifulsoup4")
 @pytest.mark.parametrize(
     "path",
     [
