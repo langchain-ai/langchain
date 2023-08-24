@@ -90,8 +90,8 @@ class PromptGuard(LLM):
         _run_manager = run_manager or CallbackManagerForLLMRun.get_noop_manager()
 
         # sanitize the prompt by replacing the sensitive information with a placeholder
-        sanitize_response: pg.SanitizeResponse = pg.sanitize(prompt)
-        sanitized_prompt_value_str = sanitize_response.sanitized_text
+        sanitize_response: pg.SanitizeResponse = pg.sanitize([prompt])
+        sanitized_prompt_value_str = sanitize_response.sanitized_texts[0]
 
         # TODO: Add in callbacks once child runs for LLMs are supported by LangSmith.
         # call the LLM with the sanitized prompt and get the response
