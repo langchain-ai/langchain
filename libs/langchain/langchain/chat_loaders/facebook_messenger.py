@@ -20,9 +20,9 @@ class SingleFileFacebookMessengerChatLoader(BaseChatLoader):
 
     """
 
-    def __init__(self, file_path: Union[Path, str]) -> None:
+    def __init__(self, path: Union[Path, str]) -> None:
         super().__init__()
-        self.file_path = file_path if isinstance(file_path, Path) else Path(file_path)
+        self.file_path = path if isinstance(path, Path) else Path(path)
 
     def lazy_load(self) -> Iterator[ChatSession]:
         """Lazy loads the chat data from the file.
@@ -56,11 +56,9 @@ class FolderFacebookMessengerChatLoader(BaseChatLoader):
 
     """
 
-    def __init__(self, directory_path: Union[str, Path]) -> None:
+    def __init__(self, path: Union[str, Path]) -> None:
         super().__init__()
-        self.directory_path = (
-            Path(directory_path) if isinstance(directory_path, str) else directory_path
-        )
+        self.directory_path = Path(path) if isinstance(path, str) else path
 
     def lazy_load(self) -> Iterator[ChatSession]:
         """Lazy loads the chat data from the folder.

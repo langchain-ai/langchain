@@ -14,14 +14,14 @@ logger = logging.getLogger(__name__)
 class SlackChatLoader(chat_loaders.BaseChatLoader):
     def __init__(
         self,
-        zip_path: Union[str, Path],
+        path: Union[str, Path],
     ):
         """
         Initialize the chat loader with the path to the exported Slack dump zip file.
 
-        :param zip_path: Path to the exported Slack dump zip file.
+        :param path: Path to the exported Slack dump zip file.
         """
-        self.zip_path = zip_path if isinstance(zip_path, Path) else Path(zip_path)
+        self.zip_path = path if isinstance(path, Path) else Path(path)
         if not self.zip_path.exists():
             raise FileNotFoundError(f"File {self.zip_path} not found")
 
