@@ -93,5 +93,5 @@ def test_telegram_chat_loader(path: str) -> None:
         "telegram_chat_json/result.json",
     ],
 )
-def test_telegram_chat_loader(path: str) -> None:
+def test_telegram_chat_loader_html(path: str) -> None:
     _check_telegram_chat_loader(path)
