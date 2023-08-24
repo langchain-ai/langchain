@@ -1,6 +1,6 @@
 from enum import Enum
 from functools import wraps
-from typing import Any, Callable, ClassVar, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from langchain.utilities.redis import TokenEscaper
 

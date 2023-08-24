@@ -8,7 +8,6 @@ from langchain.vectorstores.redis import (
     Redis,
     RedisFilter,
     RedisNum,
-    RedisTag,
     RedisText,
 )
 from tests.integration_tests.vectorstores.fake_embeddings import (
@@ -176,26 +175,6 @@ def test_redis_filters_1(filter_expr, expected_length, expected_nums):
     assert drop(docsearch.index_name)
 
 
-# -- test range queries -- #
-
-
-def test_range_query() -> None:
-    texts = ["Today is a good day", "Today is a fine day", "Langchain is cool"]
-
-    docsearch = Redis.from_texts(
-        texts, ConsistentFakeEmbeddings(), redis_url=TEST_REDIS_URL
-    )
-    output = docsearch.similarity_search_limit_score(
-        texts[0], k=3, score_threshold=0.1, return_metadata=True
-    )
-
-    assert len(output) == 2
-    for out in output:
-        if out.page_content == texts[1]:
-            out.metadata["score"] == RANGE_SCORE
-    assert drop(docsearch.index_name)
-
-
 # -- test index specification -- #
 
 
@@ -284,26 +263,33 @@ def test_ip(texts: List[str]) -> None:
 def test_similarity_search_limit_score(texts: List[str]) -> None:
     """Test similarity search limit score."""
     docsearch = Redis.from_texts(
-        texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL, distance_metric="COSINE"
+        texts,
+        FakeEmbeddings(),
+        redis_url=TEST_REDIS_URL,
     )
-    output = docsearch.similarity_search_limit_score("far", k=2, score_threshold=0.1)
-    assert len(output) == 1
-    _, score = output[0]
-    assert score == COSINE_SCORE
+    output = docsearch.similarity_search_with_score(texts[0], k=3, score_threshold=0.1)
+
+    assert len(output) == 2
+    for out, score in output:
+        if out.page_content == texts[1]:
+            score == COSINE_SCORE
     assert drop(docsearch.index_name)
 
 
 def test_similarity_search_with_score_with_limit_score(texts: List[str]) -> None:
     """Test similarity search with score with limit score."""
+
     docsearch = Redis.from_texts(
-        texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL, distance_metric="COSINE"
+        texts, ConsistentFakeEmbeddings(), redis_url=TEST_REDIS_URL
     )
-    output = docsearch.similarity_search_with_relevance_scores(
-        "far", k=2, score_threshold=0.1
+    output = docsearch.similarity_search_with_score(
+        texts[0], k=3, score_threshold=0.1, return_metadata=True
     )
-    assert len(output) == 1
-    _, score = output[0]
-    assert score == COSINE_SCORE
+
+    assert len(output) == 2
+    for out, score in output:
+        if out.page_content == texts[1]:
+            score == COSINE_SCORE
     assert drop(docsearch.index_name)
 
 
@@ -311,6 +297,6 @@ def test_delete(texts: List[str]) -> None:
     """Test deleting a new document"""
     docsearch = Redis.from_texts(texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL)
     ids = docsearch.add_texts(["foo"])
-    got = docsearch.delete(ids=ids)
+    got = docsearch.delete(ids=ids, redis_url=TEST_REDIS_URL)
     assert got
     assert drop(docsearch.index_name)

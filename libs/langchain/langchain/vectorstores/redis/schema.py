@@ -2,10 +2,9 @@ import os
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
-from uuid import uuid4
 
+import numpy as np
 import yaml
-from pydantic import BaseModel, Field, root_validator, validator
 
 # ignore type error here as it's a redis-py type problem
 from redis.commands.search.field import (  # type: ignore
@@ -16,6 +15,9 @@ from redis.commands.search.field import (  # type: ignore
     VectorField,
 )
 from typing_extensions import Literal
+
+from langchain.pydantic_v1 import BaseModel, Field, validator
+from langchain.vectorstores.redis.constants import REDIS_VECTOR_DTYPE_MAP
 
 
 class RedisDistanceMetric(str, Enum):
@@ -84,8 +86,16 @@ class RedisVectorField(BaseModel):
     distance_metric: RedisDistanceMetric = Field(default="COSINE")
     initial_cap: int = Field(default=20000)
 
-    @validator("datatype", "distance_metric", pre=True)
+    @validator("distance_metric", pre=True)
     def uppercase_strings(cls, v):
+        return v.upper()
+
+    @validator("datatype", pre=True)
+    def uppercase_and_check_dtype(cls, v):
+        if v.upper() not in REDIS_VECTOR_DTYPE_MAP:
+            raise ValueError(
+                f"datatype must be one of {REDIS_VECTOR_DTYPE_MAP.keys()}. Got {v}"
+            )
         return v.upper()
 
 
@@ -175,6 +185,11 @@ class RedisModel(BaseModel):
             if field.name == self.content_vector_key:
                 return field
         raise ValueError("No content_vector field found")
+
+    @property
+    def vector_dtype(self) -> np.dtype:
+        # should only ever be called after pydantic has validated the schema
+        return REDIS_VECTOR_DTYPE_MAP[self.content_vector.datatype]
 
     @property
     def is_empty(self) -> bool:

@@ -1,4 +1,6 @@
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
+
+import numpy as np
 
 # required modules
 REDIS_REQUIRED_MODULES = [
@@ -8,3 +10,9 @@ REDIS_REQUIRED_MODULES = [
 
 # distance metrics
 REDIS_DISTANCE_METRICS: List[str] = ["COSINE", "IP", "L2"]
+
+# supported vector datatypes
+REDIS_VECTOR_DTYPE_MAP: Dict[str, Any] = {
+    "FLOAT32": np.float32,
+    "FLOAT64": np.float64,
+}
