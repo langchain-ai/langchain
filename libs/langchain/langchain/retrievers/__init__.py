@@ -24,7 +24,6 @@ from langchain.retrievers.bm25 import BM25Retriever
 from langchain.retrievers.chaindesk import ChaindeskRetriever
 from langchain.retrievers.chatgpt_plugin_retriever import ChatGPTPluginRetriever
 from langchain.retrievers.contextual_compression import ContextualCompressionRetriever
-from langchain.retrievers.dashvector import DashVectorRetriever
 from langchain.retrievers.docarray import DocArrayRetriever
 from langchain.retrievers.elastic_search_bm25 import ElasticSearchBM25Retriever
 from langchain.retrievers.ensemble import EnsembleRetriever
@@ -67,7 +66,6 @@ __all__ = [
     "ChatGPTPluginRetriever",
     "ContextualCompressionRetriever",
     "ChaindeskRetriever",
-    "DashVectorRetriever",
     "ElasticSearchBM25Retriever",
     "GoogleCloudEnterpriseSearchRetriever",
     "KNNRetriever",
