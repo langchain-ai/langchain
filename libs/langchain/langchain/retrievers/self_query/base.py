@@ -9,6 +9,7 @@ from langchain.chains.query_constructor.ir import StructuredQuery, Visitor
 from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.pydantic_v1 import BaseModel, Field, root_validator
 from langchain.retrievers.self_query.chroma import ChromaTranslator
+from langchain.retrievers.self_query.dashvector import DashvectorTranslator
 from langchain.retrievers.self_query.deeplake import DeepLakeTranslator
 from langchain.retrievers.self_query.elasticsearch import ElasticsearchTranslator
 from langchain.retrievers.self_query.myscale import MyScaleTranslator
@@ -19,6 +20,7 @@ from langchain.schema import BaseRetriever, Document
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.vectorstores import (
     Chroma,
+    DashVector,
     DeepLake,
     ElasticsearchStore,
     MyScale,
@@ -35,6 +37,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     BUILTIN_TRANSLATORS: Dict[Type[VectorStore], Type[Visitor]] = {
         Pinecone: PineconeTranslator,
         Chroma: ChromaTranslator,
+        DashVector: DashvectorTranslator,
         Weaviate: WeaviateTranslator,
         Qdrant: QdrantTranslator,
         MyScale: MyScaleTranslator,
