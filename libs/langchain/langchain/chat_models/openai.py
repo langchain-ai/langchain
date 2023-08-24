@@ -400,7 +400,6 @@ class ChatOpenAI(BaseChatModel):
             if run_manager:
                 await run_manager.on_llm_new_token(token=chunk.content, chunk=chunk)
 
-
     async def _agenerate(
         self,
         messages: List[BaseMessage],

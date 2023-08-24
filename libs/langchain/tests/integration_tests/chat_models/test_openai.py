@@ -203,15 +203,14 @@ async def test_async_chat_openai_streaming_with_function() -> None:
     """Test ChatOpenAI wrapper with multiple completions."""
 
     class MyCustomAsyncHandler(AsyncCallbackHandler):
-
-        def on_llm_new_token(self,
-                             token: str,
-                             chunk: ChatGenerationChunk,
-                             **kwargs: Any,
-                             ) -> Any:
+        def on_llm_new_token(
+            self,
+            token: str,
+            chunk: ChatGenerationChunk,
+            **kwargs: Any,
+        ) -> Any:
             print(f"I just got a token: {token}")
             print(f"I just got a chunk: {chunk}")
-
 
     json_schema = {
         "title": "Person",
