@@ -341,7 +341,7 @@
         "HugeGraph QA Chain": "https://python.langchain.com/docs/use_cases/more/graph/graph_hugegraph_qa",
         "GraphSparqlQAChain": "https://python.langchain.com/docs/use_cases/more/graph/graph_sparql_qa",
         "ArangoDB QA chain": "https://python.langchain.com/docs/use_cases/more/graph/graph_arangodb_qa",
-        "Graph DB QA chain": "https://python.langchain.com/docs/use_cases/more/graph/graph_cypher_qa",
+        "Neo4j DB QA chain": "https://python.langchain.com/docs/use_cases/more/graph/graph_cypher_qa",
         "How to use a SmartLLMChain": "https://python.langchain.com/docs/use_cases/more/self_check/smart_llm",
         "Multi-Agent Simulated Environment: Petting Zoo": "https://python.langchain.com/docs/use_cases/agent_simulations/petting_zoo",
         "Multi-agent decentralized speaker selection": "https://python.langchain.com/docs/use_cases/agent_simulations/multiagent_bidding",
@@ -3202,10 +3202,10 @@
         "Graph QA": "https://python.langchain.com/docs/use_cases/more/graph/graph_qa"
     },
     "GraphCypherQAChain": {
-        "Graph DB QA chain": "https://python.langchain.com/docs/use_cases/more/graph/graph_cypher_qa"
+        "Neo4j DB QA chain": "https://python.langchain.com/docs/use_cases/more/graph/graph_cypher_qa"
     },
     "Neo4jGraph": {
-        "Graph DB QA chain": "https://python.langchain.com/docs/use_cases/more/graph/graph_cypher_qa"
+        "Neo4j DB QA chain": "https://python.langchain.com/docs/use_cases/more/graph/graph_cypher_qa"
     },
     "LLMBashChain": {
         "Bash chain": "https://python.langchain.com/docs/use_cases/more/code_writing/llm_bash"
