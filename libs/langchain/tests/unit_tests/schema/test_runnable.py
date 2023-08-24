@@ -21,7 +21,12 @@ from langchain.prompts.chat import (
     SystemMessagePromptTemplate,
 )
 from langchain.schema.document import Document
-from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
+from langchain.schema.messages import (
+    AIMessage,
+    AIMessageChunk,
+    HumanMessage,
+    SystemMessage,
+)
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.retriever import BaseRetriever
 from langchain.schema.runnable import (
@@ -794,7 +799,7 @@ def test_map_stream() -> None:
     assert streamed_chunks[0] in [
         {"passthrough": prompt.invoke({"question": "What is your name?"})},
         {"llm": "i"},
-        {"chat": "i"},
+        {"chat": AIMessageChunk(content="i")},
     ]
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + 1
     assert all(len(c.keys()) == 1 for c in streamed_chunks)
@@ -841,7 +846,11 @@ def test_map_stream_iterator_input() -> None:
         else:
             final_value += chunk
 
-    assert streamed_chunks[0] in [{"passthrough": "i"}, {"llm": "i"}, {"chat": "i"}]
+    assert streamed_chunks[0] in [
+        {"passthrough": "i"},
+        {"llm": "i"},
+        {"chat": AIMessageChunk(content="i")},
+    ]
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + len(llm_res)
     assert all(len(c.keys()) == 1 for c in streamed_chunks)
     assert final_value is not None
@@ -885,7 +894,7 @@ async def test_map_astream() -> None:
     assert streamed_chunks[0] in [
         {"passthrough": prompt.invoke({"question": "What is your name?"})},
         {"llm": "i"},
-        {"chat": "i"},
+        {"chat": AIMessageChunk(content="i")},
     ]
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + 1
     assert all(len(c.keys()) == 1 for c in streamed_chunks)
@@ -933,7 +942,11 @@ async def test_map_astream_iterator_input() -> None:
         else:
             final_value += chunk
 
-    assert streamed_chunks[0] in [{"passthrough": "i"}, {"llm": "i"}, {"chat": "i"}]
+    assert streamed_chunks[0] in [
+        {"passthrough": "i"},
+        {"llm": "i"},
+        {"chat": AIMessageChunk(content="i")},
+    ]
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + len(llm_res)
     assert all(len(c.keys()) == 1 for c in streamed_chunks)
     assert final_value is not None

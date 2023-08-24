@@ -43,7 +43,7 @@ llm("Tell me a joke")
 </CodeOutputBlock>
 
 ### `generate`: batch calls, richer outputs
-`generate` lets you can call the model with a list of strings, getting back a more complete response than just the text. This complete response can include things like multiple top responses and other LLM provider-specific information:
+`generate` lets you call the model with a list of strings, getting back a more complete response than just the text. This complete response can include things like multiple top responses and other LLM provider-specific information:
 
 ```python
 llm_result = llm.generate(["Tell me a joke", "Tell me a poem"]*15)

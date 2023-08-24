@@ -6,7 +6,7 @@ on:
     - cron:  '0 13 * * *'
 
 env:
-  POETRY_VERSION: "1.4.2"
+  POETRY_VERSION: "1.5.1"
 
 jobs:
   build:
@@ -29,7 +29,7 @@ jobs:
         uses: "./.github/actions/poetry_setup"
         with:
           python-version: ${{ matrix.python-version }}
-          poetry-version: "1.4.2"
+          poetry-version: ${{ env.POETRY_VERSION }}
           working-directory: libs/langchain
           install-command: |
             echo "Running scheduled tests, installing dependencies with poetry..."

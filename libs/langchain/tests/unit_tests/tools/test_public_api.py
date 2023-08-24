@@ -2,6 +2,11 @@
 from langchain.tools import __all__ as public_api
 
 _EXPECTED = [
+    "AINAppOps",
+    "AINOwnerOps",
+    "AINRuleOps",
+    "AINTransfer",
+    "AINValueOps",
     "AIPluginTool",
     "APIOperation",
     "ArxivQueryRun",
