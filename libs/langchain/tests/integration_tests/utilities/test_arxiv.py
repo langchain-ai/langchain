@@ -31,8 +31,13 @@ def test_run_success_paper_name(api_client: ArxivAPIWrapper) -> None:
 
     output = api_client.run("Heat-bath random walks with Markov bases")
     assert "Probability distributions for Markov chains based quantum walks" in output
-    assert "Transformations of random walks on groups via Markov stopping times" in output
-    assert "Recurrence of Multidimensional Persistent Random Walks. Fourier and Series Criteria" in output
+    assert (
+        "Transformations of random walks on groups via Markov stopping times" in output
+    )
+    assert (
+        "Recurrence of Multidimensional Persistent Random Walks. Fourier and Series Criteria"
+        in output
+    )
 
 def test_run_success_arxiv_identifier(api_client: ArxivAPIWrapper) -> None:
     """Test a query of an arxiv identifier returns the correct answer"""
@@ -46,7 +51,9 @@ def test_run_success_multiple_arxiv_identifiers(api_client: ArxivAPIWrapper) -> 
     output = api_client.run("1605.08386v1 2212.00794v2 2308.07912")
     assert "Heat-bath random walks with Markov bases" in output
     assert "Scaling Language-Image Pre-training via Masking" in output
-    assert "Ultra-low mass PBHs in the early universe can explain the PTA signal" in output
+    assert (
+        "Ultra-low mass PBHs in the early universe can explain the PTA signal" in output
+    )
 
 def test_run_returns_several_docs(api_client: ArxivAPIWrapper) -> None:
     """Test that returns several docs"""
