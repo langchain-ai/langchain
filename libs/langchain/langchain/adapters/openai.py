@@ -209,14 +209,17 @@ class ChatCompletion:
             )
 
 
-def _has_assistant_message(messages: Sequence[BaseMessage]) -> bool:
-    return any([isinstance(m, AIMessage) for m in messages["messages"]])
+def _has_assistant_message(session: ChatSession) -> bool:
+    """Check if chat session has an assistant message."""
+    return any([isinstance(m, AIMessage) for m in session["messages"]])
 
 
 def convert_messages_for_finetuning(
-    messages: Iterable[ChatSession],
+    sessions: Iterable[ChatSession],
 ) -> List[List[dict]]:
-    messages = [m for m in messages if _has_assistant_message(m)]
+    """Convert messages to a list of lists of dictionaries for fine-tuning."""
     return [
-        [convert_message_to_dict(m) for m in m_list["messages"]] for m_list in messages
+        [convert_message_to_dict(s) for s in session["messages"]]
+        for session in sessions
+        if _has_assistant_message(session)
     ]
