@@ -2,7 +2,7 @@
 import os
 from typing import List
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Query, Session
 
 from langchain.docstore.document import Document
 from langchain.vectorstores.pgvector import PGVector
@@ -184,6 +184,30 @@ def test_pgvector_with_filter_in_set() -> None:
         (Document(page_content="foo", metadata={"page": "0"}), 0.0),
         (Document(page_content="baz", metadata={"page": "2"}), 0.0013003906671379406),
     ]
+
+
+def test_pgvector_delete_docs() -> None:
+    """Add and delete documents."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    docsearch = PGVector.from_texts(
+        texts=texts,
+        collection_name="test_collection_filter",
+        embedding=FakeEmbeddingsWithAdaDimension(),
+        metadatas=metadatas,
+        ids=["1", "2", "3"],
+        connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
+    )
+    docsearch.delete(["1", "2"])
+    with docsearch._make_session() as session:
+        records = list(session.query(docsearch.EmbeddingStore).all())
+        assert sorted(record.custom_id for record in records) == ["3"]
+
+    docsearch.delete(["2", "3"])  # Should not raise on missing ids
+    with docsearch._make_session() as session:
+        records = list(session.query(docsearch.EmbeddingStore).all())
+        assert sorted(record.custom_id for record in records) == []
 
 
 def test_pgvector_relevance_score() -> None:
