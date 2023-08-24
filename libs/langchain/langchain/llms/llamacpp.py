@@ -113,6 +113,9 @@ class LlamaCpp(LLM):
     streaming: bool = True
     """Whether to stream the results, token by token."""
 
+    grammar_path: Optional[str] = None
+    """grammar_path: Path to the .gbnf file."""
+
     verbose: bool = True
     """Print verbose output to stderr."""
 
@@ -246,13 +249,30 @@ class LlamaCpp(LLM):
                 llm = LlamaCpp(model_path="/path/to/local/llama/model.bin")
                 llm("This is a prompt.")
         """
+        if self.grammar_path:
+            try:
+                from llama_cpp import LlamaGrammar
+
+                grammar = LlamaGrammar.from_file(
+                    self.grammar_path  # type: ignore[arg-type]
+                )
+                kwargs["grammar"] = grammar
+            except Exception as e:
+                raise ValueError(
+                    f"Could not load grammar from path: {self.grammar_path}."
+                    f"Received error {e}"
+                )
+
         if self.streaming:
             # If streaming is enabled, we use the stream
             # method that yields as they are generated
             # and return the combined strings from the first choices's text:
             combined_text_output = ""
             for chunk in self._stream(
-                prompt=prompt, stop=stop, run_manager=run_manager, **kwargs
+                prompt=prompt,
+                stop=stop,
+                run_manager=run_manager,
+                **kwargs,
             ):
                 combined_text_output += chunk.text
             return combined_text_output
