@@ -28,6 +28,7 @@ class ArcGISLoader(BaseLoader):
         out_fields: Optional[Union[List[str], str]] = None,
         return_geometry: bool = False,
         return_all_records: bool = True,
+        lyr_desc: str = None,
         **kwargs: Any,
     ):
         try:
@@ -55,7 +56,7 @@ class ArcGISLoader(BaseLoader):
             self.url = layer.url
             self.layer = layer
 
-        self.layer_properties = self._get_layer_properties()
+        self.layer_properties = self._get_layer_properties(lyr_desc)
 
         self.where = where
 
@@ -70,21 +71,22 @@ class ArcGISLoader(BaseLoader):
         self.return_all_records = return_all_records
         self.kwargs = kwargs
 
-    def _get_layer_properties(self) -> dict:
+    def _get_layer_properties(self, lyr_desc: str) -> dict:
         """Get the layer properties from the FeatureLayer."""
         import arcgis
 
         layer_number_pattern = re.compile(r"/\d+$")
         props = self.layer.properties
 
-        try:
-            if self.BEAUTIFULSOUP:
-                lyr_desc = self.BEAUTIFULSOUP(props["description"]).text
-            else:
-                lyr_desc = props["description"]
-            lyr_desc = lyr_desc or _NOT_PROVIDED
-        except KeyError:
-            lyr_desc = _NOT_PROVIDED
+        if lyr_desc is None:
+            try: # retrieve description from the FeatureLayer if the user has not provided one
+                if self.BEAUTIFULSOUP:
+                    lyr_desc = self.BEAUTIFULSOUP(props["description"]).text
+                else:
+                    lyr_desc = props["description"]
+                lyr_desc = lyr_desc or _NOT_PROVIDED
+            except KeyError:
+                lyr_desc = _NOT_PROVIDED
         try:
             item_id = props["serviceItemId"]
             item = self.gis.content.get(item_id) or arcgis.features.FeatureLayer(
