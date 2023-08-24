@@ -174,7 +174,11 @@ async def test_async_chat_openai_streaming_with_function() -> None:
 
     class MyCustomAsyncHandler(AsyncCallbackHandler):
 
-        def on_llm_new_token(self, token: str, chunk: ChatGenerationChunk, **kwargs: Any,) -> Any:
+        def on_llm_new_token(self,
+                             token: str,
+                             chunk: ChatGenerationChunk,
+                             **kwargs: Any,
+                             ) -> Any:
             print(f"I just got a token: {token}")
             print(f"I just got a chunk: {chunk}")
 

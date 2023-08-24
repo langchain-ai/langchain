@@ -53,8 +53,8 @@ class LLMManagerMixin:
 
         Args:
             token (str): The new token.
-            chunk (GenerationChunk | ChatGenerationChunk): The new generated chunk, containing
-                content and other information.
+            chunk (GenerationChunk | ChatGenerationChunk): The new generated chunk,
+            containing content and other information.
         """
 
     def on_llm_end(
