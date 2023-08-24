@@ -3,7 +3,8 @@ from __future__ import annotations
 from concurrent.futures import Executor, ThreadPoolExecutor
 from contextlib import contextmanager
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, TypedDict
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional
+from typing_extensions import TypedDict
 
 if TYPE_CHECKING:
     from langchain.callbacks.base import BaseCallbackManager, Callbacks
@@ -48,7 +49,7 @@ class RunnableConfig(TypedDict, total=False):
     """
 
 
-def ensure_config(config: Optional[RunnableConfig]) -> RunnableConfig:
+def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
     empty = RunnableConfig(
         tags=[],
         metadata={},

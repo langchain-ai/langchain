@@ -113,6 +113,104 @@ class FakeRetriever(BaseRetriever):
 
 
 @pytest.mark.asyncio
+async def test_with_config(mocker: MockerFixture) -> None:
+    fake = FakeRunnable()
+    spy = mocker.spy(fake, "invoke")
+
+    assert fake.with_config(tags=["a-tag"]).invoke("hello") == 5
+    assert spy.call_args_list == [
+        mocker.call("hello", dict(tags=["a-tag"])),
+    ]
+    spy.reset_mock()
+
+    assert [
+        *fake.with_config(tags=["a-tag"]).stream(
+            "hello", dict(metadata={"key": "value"})
+        )
+    ] == [5]
+    assert spy.call_args_list == [
+        mocker.call("hello", dict(tags=["a-tag"], metadata={"key": "value"})),
+    ]
+    spy.reset_mock()
+
+    assert fake.with_config(recursion_limit=5).batch(
+        ["hello", "wooorld"], [dict(tags=["a-tag"]), dict(metadata={"key": "value"})]
+    ) == [5, 7]
+
+    assert len(spy.call_args_list) == 2
+    for i, call in enumerate(spy.call_args_list):
+        assert call.args[0] == ("hello" if i == 0 else "wooorld")
+        if i == 0:
+            assert call.args[1].get("recursion_limit") == 5
+            assert call.args[1].get("tags") == ["a-tag"]
+            assert call.args[1].get("metadata") == {}
+        else:
+            assert call.args[1].get("recursion_limit") == 5
+            assert call.args[1].get("tags") == []
+            assert call.args[1].get("metadata") == {"key": "value"}
+
+    spy.reset_mock()
+
+    assert fake.with_config(metadata={"a": "b"}).batch(
+        ["hello", "wooorld"], dict(tags=["a-tag"])
+    ) == [5, 7]
+    assert len(spy.call_args_list) == 2
+    for i, call in enumerate(spy.call_args_list):
+        assert call.args[0] == ("hello" if i == 0 else "wooorld")
+        assert call.args[1].get("tags") == ["a-tag"]
+        assert call.args[1].get("metadata") == {"a": "b"}
+    spy.reset_mock()
+
+    assert (
+        await fake.with_config(metadata={"a": "b"}).ainvoke(
+            "hello", config={"callbacks": []}
+        )
+        == 5
+    )
+    assert spy.call_args_list == [
+        mocker.call("hello", dict(callbacks=[], metadata={"a": "b"})),
+    ]
+    spy.reset_mock()
+
+    assert [
+        part async for part in fake.with_config(metadata={"a": "b"}).astream("hello")
+    ] == [5]
+    assert spy.call_args_list == [
+        mocker.call("hello", dict(metadata={"a": "b"})),
+    ]
+    spy.reset_mock()
+
+    assert await fake.with_config(recursion_limit=5, tags=["c"]).abatch(
+        ["hello", "wooorld"], dict(metadata={"key": "value"})
+    ) == [
+        5,
+        7,
+    ]
+    assert spy.call_args_list == [
+        mocker.call(
+            "hello",
+            dict(
+                metadata={"key": "value"},
+                tags=["c"],
+                callbacks=None,
+                _locals={},
+                recursion_limit=5,
+            ),
+        ),
+        mocker.call(
+            "wooorld",
+            dict(
+                metadata={"key": "value"},
+                tags=["c"],
+                callbacks=None,
+                _locals={},
+                recursion_limit=5,
+            ),
+        ),
+    ]
+
+
+@pytest.mark.asyncio
 async def test_default_method_implementations(mocker: MockerFixture) -> None:
     fake = FakeRunnable()
     spy = mocker.spy(fake, "invoke")
@@ -1123,6 +1221,14 @@ async def test_map_astream_iterator_input() -> None:
     assert final_value.get("chat").content == "i'm a chatbot"
     assert final_value.get("llm") == "i'm a textbot"
     assert final_value.get("passthrough") == llm_res
+
+
+def test_with_config_with_config() -> None:
+    llm = FakeListLLM(responses=["i'm a textbot"])
+
+    assert dumpd(
+        llm.with_config({"metadata": {"a": "b"}}).with_config(tags=["a-tag"])
+    ) == dumpd(llm.with_config({"metadata": {"a": "b"}, "tags": ["a-tag"]}))
 
 
 def test_bind_bind() -> None:
