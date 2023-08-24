@@ -103,7 +103,7 @@ class MyScaleTranslator(Visitor):
         value = comparison.value
         comp = comparison.comparator
 
-        value = f"'{value}'" if type(value) is str else value
+        value = f"'{value}'" if isinstance(value, str) else value
 
         # convert timestamp for datetime objects
         if type(value) is datetime.date:
