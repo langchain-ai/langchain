@@ -22,6 +22,7 @@ def _assert_messages_are_equal(
         )
 
 
+@pytest.mark.requires("bs4")
 @pytest.mark.parametrize(
     "path",
     [
@@ -33,7 +34,6 @@ def _assert_messages_are_equal(
         "telegram_chat_json/result.json",
     ],
 )
-@pytest.mark.requires("bs4")
 def test_telegram_chat_loader(path: str) -> None:
     _data_dir = pathlib.Path(__file__).parent / "data"
     source_path = _data_dir / path
