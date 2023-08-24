@@ -41,6 +41,7 @@ from langchain.schema.runnable import (
     RunnableSequence,
     RunnableWithFallbacks,
 )
+from tenacity import RetryError, Retrying, retry_if_exception_type, stop_after_attempt
 
 
 class FakeTracer(BaseTracer):
@@ -141,7 +142,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
         else:
             assert call.args[2].get("tags") == ["b-tag"]
             assert call.args[2].get("max_concurrency") == 5
-    spy_seq_step.reset_mock()
+    mocker.stop(spy_seq_step)
 
     assert [
         *fake.with_config(tags=["a-tag"]).stream(
@@ -1423,3 +1424,42 @@ def test_recursive_lambda() -> None:
 
     with pytest.raises(RecursionError):
         runnable.invoke(0, {"recursion_limit": 9})
+
+
+def test_retrying(mocker: MockerFixture) -> None:
+    def _lambda(x: int) -> Union[int, Runnable]:
+        if x == 1:
+            raise ValueError("x is 1")
+        elif x == 2:
+            raise RuntimeError("x is 2")
+        else:
+            return x
+
+    _lambda_mock = mocker.Mock(side_effect=_lambda)
+    runnable = RunnableLambda(_lambda_mock)
+
+    with pytest.raises(ValueError):
+        runnable.invoke(1)
+
+    assert _lambda_mock.call_count == 1
+    _lambda_mock.reset_mock()
+
+    with pytest.raises(RetryError):
+        runnable.with_retry(
+            Retrying(
+                stop=stop_after_attempt(2), retry=retry_if_exception_type((ValueError,))
+            )
+        ).invoke(1)
+
+    assert _lambda_mock.call_count == 2
+    _lambda_mock.reset_mock()
+
+    with pytest.raises(RuntimeError):
+        runnable.with_retry(
+            Retrying(
+                stop=stop_after_attempt(2), retry=retry_if_exception_type((ValueError,))
+            )
+        ).invoke(2)
+
+    assert _lambda_mock.call_count == 1
+    _lambda_mock.reset_mock()

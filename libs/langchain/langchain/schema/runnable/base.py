@@ -27,6 +27,8 @@ from typing import (
     cast,
 )
 
+from tenacity import BaseRetrying
+
 if TYPE_CHECKING:
     from langchain.callbacks.manager import (
         AsyncCallbackManagerForChainRun,
@@ -225,6 +227,14 @@ class Runnable(Generic[Input, Output], ABC):
         return RunnableBinding(
             bound=self, config={**(config or {}), **kwargs}, kwargs={}
         )
+
+    def with_retry(
+        self,
+        retry: BaseRetrying,
+    ) -> Runnable[Input, Output]:
+        from langchain.schema.runnable.retry import RunnableRetry
+
+        return RunnableRetry(bound=self, retry=retry, kwargs={}, config={})
 
     def map(self) -> Runnable[List[Input], List[Output]]:
         """
