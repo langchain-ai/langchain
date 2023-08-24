@@ -139,7 +139,6 @@ class Pinecone(VectorStore):
             chunk_metadatas = metadatas[i : i + embedding_chunk_size]
             embeddings = self._embed_documents(chunk_texts)
             async_res = [
-                # TODO: add tenacity retry logic
                 self._index.upsert(
                     vectors=list(batch),
                     namespace=namespace,
