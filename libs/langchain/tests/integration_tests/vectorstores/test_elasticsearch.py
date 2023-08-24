@@ -5,6 +5,7 @@ import uuid
 from typing import Generator, List, Union
 
 import pytest
+from elasticsearch.helpers import BulkIndexError
 
 from langchain.docstore.document import Document
 from langchain.vectorstores.elasticsearch import ElasticsearchStore
@@ -480,6 +481,8 @@ class TestElasticsearch:
                 document={"text_field": text, "metadata": {}},
             )
 
+        docsearch.client.indices.refresh(index=index_name)
+
         def assert_query(query_body: dict, query: str) -> dict:
             assert query_body == {
                 "knn": {
@@ -574,3 +577,33 @@ class TestElasticsearch:
         docsearch.delete([ids[3]])
         output = docsearch.similarity_search("gni", k=10)
         assert len(output) == 0
+
+    def test_elasticsearch_indexing_exception_error(
+        self,
+        elasticsearch_connection: dict,
+        index_name: str,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """Test bulk exception logging is giving better hints."""
+
+        docsearch = ElasticsearchStore(
+            embedding=ConsistentFakeEmbeddings(),
+            **elasticsearch_connection,
+            index_name=index_name,
+        )
+
+        docsearch.client.indices.create(
+            index=index_name,
+            mappings={"properties": {}},
+            settings={"index": {"default_pipeline": "not-existing-pipeline"}},
+        )
+
+        texts = ["foo"]
+
+        with pytest.raises(BulkIndexError):
+            docsearch.add_texts(texts)
+
+        error_reason = "pipeline with id [not-existing-pipeline] does not exist"
+        log_message = f"First error reason: {error_reason}"
+
+        assert log_message in caplog.text
