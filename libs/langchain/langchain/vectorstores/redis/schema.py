@@ -38,7 +38,7 @@ class TextFieldSchema(RedisField):
     withsuffixtrie: bool = False
     no_index: bool = False
 
-    def as_field(self):
+    def as_field(self) -> TextField:
         return TextField(
             self.name,
             weight=self.weight,
@@ -54,7 +54,7 @@ class TagFieldSchema(RedisField):
     case_sensitive: bool = False
     no_index: bool = False
 
-    def as_field(self):
+    def as_field(self) -> TagField:
         return TagField(
             self.name,
             separator=self.separator,
@@ -67,14 +67,14 @@ class TagFieldSchema(RedisField):
 class NumericFieldSchema(RedisField):
     no_index: bool = False
 
-    def as_field(self):
+    def as_field(self) -> NumericField:
         return NumericField(self.name, sortable=self.sortable, no_index=self.no_index)
 
 
 class GeoFieldSchema(RedisField):
     no_index: bool = False
 
-    def as_field(self):
+    def as_field(self) -> GeoField:
         return GeoField(self.name, sortable=self.sortable, no_index=self.no_index)
 
 
@@ -87,11 +87,11 @@ class RedisVectorField(BaseModel):
     initial_cap: int = Field(default=20000)
 
     @validator("distance_metric", pre=True)
-    def uppercase_strings(cls, v):
+    def uppercase_strings(cls, v: str) -> str:
         return v.upper()
 
     @validator("datatype", pre=True)
-    def uppercase_and_check_dtype(cls, v):
+    def uppercase_and_check_dtype(cls, v: str) -> str:
         if v.upper() not in REDIS_VECTOR_DTYPE_MAP:
             raise ValueError(
                 f"datatype must be one of {REDIS_VECTOR_DTYPE_MAP.keys()}. Got {v}"
@@ -103,7 +103,7 @@ class FlatVectorField(RedisVectorField):
     algorithm: Literal["FLAT"] = "FLAT"
     block_size: int = Field(default=1000)
 
-    def as_field(self):
+    def as_field(self) -> VectorField:
         return VectorField(
             self.name,
             self.algorithm,
@@ -124,7 +124,7 @@ class HNSWVectorField(RedisVectorField):
     ef_runtime: int = Field(default=10)
     epsilon: float = Field(default=0.8)
 
-    def as_field(self):
+    def as_field(self) -> VectorField:
         return VectorField(
             self.name,
             self.algorithm,
@@ -153,7 +153,7 @@ class RedisModel(BaseModel):
     content_key: str = "content"
     content_vector_key: str = "content_vector"
 
-    def add_content_field(self):
+    def add_content_field(self) -> None:
         if self.text is None:
             self.text = []
         for field in self.text:
@@ -161,7 +161,7 @@ class RedisModel(BaseModel):
                 return
         self.text.append(TextFieldSchema(name=self.content_key))
 
-    def add_vector_field(self, vector_field: Dict[str, Any]):
+    def add_vector_field(self, vector_field: Dict[str, Any]) -> None:
         # catch case where user inputted no vector field spec
         # in the index schema
         if self.vector is None:
@@ -174,7 +174,8 @@ class RedisModel(BaseModel):
             self.vector.append(HNSWVectorField(**vector_field))  # type: ignore
         else:
             raise ValueError(
-                f"algorithm must be either FLAT or HNSW. Got {vector_field['algorithm']}"
+                f"algorithm must be either FLAT or HNSW. Got "
+                f"{vector_field['algorithm']}"
             )
 
     @property

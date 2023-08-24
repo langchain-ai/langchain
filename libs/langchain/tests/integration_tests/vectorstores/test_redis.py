@@ -1,5 +1,5 @@
 """Test Redis functionality."""
-from typing import Any, List
+from typing import Any, Dict, List, Optional
 
 import pytest
 
@@ -10,6 +10,7 @@ from langchain.vectorstores.redis import (
     RedisNum,
     RedisText,
 )
+from langchain.vectorstores.redis.filters import RedisFilterExpression
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
     FakeEmbeddings,
@@ -44,7 +45,7 @@ def convert_bytes(data: Any) -> Any:
     return data
 
 
-def make_dict(values: List[Any]):
+def make_dict(values: List[Any]) -> dict:
     i = 0
     di = {}
     while i < len(values) - 1:
@@ -149,7 +150,11 @@ def test_redis_add_texts_to_existing() -> None:
         "alternative-number-not-equals-2",
     ],
 )
-def test_redis_filters_1(filter_expr, expected_length, expected_nums):
+def test_redis_filters_1(
+    filter_expr: RedisFilterExpression,
+    expected_length: int,
+    expected_nums: Optional[list],
+) -> None:
     metadata = [
         {"name": "joe", "num": 1, "text": "foo"},
         {"name": "john", "num": 2, "text": "bar"},
@@ -219,9 +224,9 @@ def test_index_specification_generation() -> None:
 
 # -- test distance metrics -- #
 
-cosine_schema = {"distance_metric": "cosine"}
-ip_schema = {"distance_metric": "IP"}
-l2_schema = {"distance_metric": "L2"}
+cosine_schema: Dict = {"distance_metric": "cosine"}
+ip_schema: Dict = {"distance_metric": "IP"}
+l2_schema: Dict = {"distance_metric": "L2"}
 
 
 def test_cosine(texts: List[str]) -> None:

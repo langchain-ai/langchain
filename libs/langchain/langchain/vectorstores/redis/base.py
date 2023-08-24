@@ -253,7 +253,7 @@ class Redis(VectorStore):
         self._check_deprecated_kwargs(kwargs)
         try:
             # TODO use importlib to check if redis is installed
-            import redis
+            import redis  # noqa: F401
 
         except ImportError as e:
             raise ImportError(
@@ -633,7 +633,7 @@ class Redis(VectorStore):
 
         # type check for metadata
         if metadatas:
-            if isinstance(metadatas, list) and len(metadatas) != len(texts):  # type: ignore # lint: disable=line-too-long
+            if isinstance(metadatas, list) and len(metadatas) != len(texts):  # type: ignore  # noqa: E501
                 raise ValueError("Number of metadatas must match number of texts")
             if not (isinstance(metadatas, list) and isinstance(metadatas[0], dict)):
                 raise ValueError("Metadatas must be a list of dicts")
@@ -715,7 +715,7 @@ class Redis(VectorStore):
 
         # Perform vector search
         # ignore type because redis-py is wrong about bytes
-        results = self.client.ft(self.index_name).search(redis_query, params_dict)  # type: ignore # lint: disable=line-too-long
+        results = self.client.ft(self.index_name).search(redis_query, params_dict)  # type: ignore  # noqa: E501
 
         # Prepare document results
         docs_with_scores: List[Tuple[Document, float]] = []
@@ -788,7 +788,7 @@ class Redis(VectorStore):
 
         # Perform vector search
         # ignore type because redis-py is wrong about bytes
-        results = self.client.ft(self.index_name).search(redis_query, params_dict)  # type: ignore # lint: disable=line-too-long
+        results = self.client.ft(self.index_name).search(redis_query, params_dict)  # type: ignore  # noqa: E501
 
         # Prepare document results
         docs = []
@@ -835,7 +835,7 @@ class Redis(VectorStore):
         self,
         query: str,
         k: int = 4,
-        filter=filter,
+        filter: Optional[RedisFilterExpression] = None,
         score_threshold: Optional[float] = None,
         with_metadata: bool = True,
         with_score: bool = False,

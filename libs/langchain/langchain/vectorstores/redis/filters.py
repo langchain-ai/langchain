@@ -49,7 +49,9 @@ class RedisFilterField:
             return False
         return self._field == other._field and self._value == other._value
 
-    def _set_value(self, val: Any, val_type: type, operator: RedisFilterOperator):
+    def _set_value(
+        self, val: Any, val_type: type, operator: RedisFilterOperator
+    ) -> None:
         # check that the operator is supported by this class
         if operator not in self.OPERATORS:
             raise ValueError(
@@ -59,7 +61,8 @@ class RedisFilterField:
 
         if not isinstance(val, val_type):
             raise TypeError(
-                f"Right side argument passed to operator {self.OPERATORS[operator]} with left side "
+                f"Right side argument passed to operator {self.OPERATORS[operator]} "
+                f"with left side "
                 f"argument {self.__class__.__name__} must be of type {val_type}"
             )
         self._value = val
@@ -68,7 +71,7 @@ class RedisFilterField:
 
 def check_operator_misuse(func: Callable) -> Callable:
     @wraps(func)
-    def wrapper(instance: Any, *args: List[Any], **kwargs: Dict[str, Any]):
+    def wrapper(instance: Any, *args: List[Any], **kwargs: Dict[str, Any]) -> Any:
         # Extracting 'other' from positional arguments or keyword arguments
         other = kwargs.get("other") if "other" in kwargs else None
         if not other:
@@ -79,7 +82,8 @@ def check_operator_misuse(func: Callable) -> Callable:
 
         if isinstance(other, type(instance)):
             raise ValueError(
-                "Equality operators are overridden for FilterExpression creation. Use .equals() for equality checks"
+                "Equality operators are overridden for FilterExpression creation. Use "
+                ".equals() for equality checks"
             )
         return func(instance, *args, **kwargs)
 
@@ -105,13 +109,14 @@ class RedisTag(RedisFilterField):
         """Create a RedisTag FilterField
 
         Args:
-            field (str): The name of the RedisTag field in the index to be queried against
+            field (str): The name of the RedisTag field in the index to be queried
+                against.
         """
         super().__init__(field)
 
     def _set_tag_value(
         self, other: Union[List[str], str], operator: RedisFilterOperator
-    ):
+    ) -> None:
         if isinstance(other, list):
             if not all(isinstance(tag, str) for tag in other):
                 raise ValueError("All tags must be strings")
@@ -154,7 +159,8 @@ class RedisTag(RedisFilterField):
     def __str__(self) -> str:
         if not self._value:
             raise ValueError(
-                f"Operator must be used before calling __str__. Operators are {self.OPERATORS.values()}"
+                f"Operator must be used before calling __str__. Operators are "
+                f"{self.OPERATORS.values()}"
             )
         """Return the Redis Query syntax for a RedisTag filter expression"""
         return self.OPERATOR_MAP[self._operator] % (
@@ -164,7 +170,7 @@ class RedisTag(RedisFilterField):
 
 
 class RedisNum(RedisFilterField):
-    """A RedisNum is a RedisFilterField representing a numeric field in a Redis index."""
+    """A RedisFilterField representing a numeric field in a Redis index."""
 
     OPERATORS: Dict[RedisFilterOperator, str] = {
         RedisFilterOperator.EQ: "==",
@@ -187,7 +193,8 @@ class RedisNum(RedisFilterField):
         """Return the Redis Query syntax for a Numeric filter expression"""
         if not self._value:
             raise ValueError(
-                f"Operator must be used before calling __str__. Operators are {self.OPERATORS.values()}"
+                f"Operator must be used before calling __str__. Operators are "
+                f"{self.OPERATORS.values()}"
             )
 
         if (
@@ -341,7 +348,8 @@ class RedisText(RedisFilterField):
     def __str__(self) -> str:
         if not self._value:
             raise ValueError(
-                f"Operator must be used before calling __str__. Operators are {self.OPERATORS.values()}"
+                f"Operator must be used before calling __str__. Operators are "
+                f"{self.OPERATORS.values()}"
             )
 
         try:
@@ -394,12 +402,12 @@ class RedisFilterExpression:
         self._left = left
         self._right = right
 
-    def __and__(self, other) -> "RedisFilterExpression":
+    def __and__(self, other: "RedisFilterExpression") -> "RedisFilterExpression":
         return RedisFilterExpression(
             operator=RedisFilterOperator.AND, left=self, right=other
         )
 
-    def __or__(self, other) -> "RedisFilterExpression":
+    def __or__(self, other: "RedisFilterExpression") -> "RedisFilterExpression":
         return RedisFilterExpression(
             operator=RedisFilterOperator.OR, left=self, right=other
         )
