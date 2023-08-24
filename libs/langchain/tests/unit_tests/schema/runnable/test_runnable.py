@@ -1,6 +1,7 @@
 from operator import itemgetter
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
+from langchain.callbacks.tracers.stdout import ConsoleCallbackHandler
 
 import pytest
 from freezegun import freeze_time
@@ -123,6 +124,25 @@ async def test_with_config(mocker: MockerFixture) -> None:
     ]
     spy.reset_mock()
 
+    fake_1 = RunnablePassthrough()
+    fake_2 = RunnablePassthrough()
+    spy_seq_step = mocker.spy(fake_1.__class__, "invoke")
+
+    sequence = fake_1.with_config(tags=["a-tag"]) | fake_2.with_config(
+        tags=["b-tag"], max_concurrency=5
+    )
+    assert sequence.invoke("hello") == "hello"
+    assert len(spy_seq_step.call_args_list) == 2
+    for i, call in enumerate(spy_seq_step.call_args_list):
+        assert call.args[1] == "hello"
+        if i == 0:
+            assert call.args[2].get("tags") == ["a-tag"]
+            assert call.args[2].get("max_concurrency") is None
+        else:
+            assert call.args[2].get("tags") == ["b-tag"]
+            assert call.args[2].get("max_concurrency") == 5
+    spy_seq_step.reset_mock()
+
     assert [
         *fake.with_config(tags=["a-tag"]).stream(
             "hello", dict(metadata={"key": "value"})
@@ -161,14 +181,15 @@ async def test_with_config(mocker: MockerFixture) -> None:
         assert call.args[1].get("metadata") == {"a": "b"}
     spy.reset_mock()
 
+    handler = ConsoleCallbackHandler()
     assert (
         await fake.with_config(metadata={"a": "b"}).ainvoke(
-            "hello", config={"callbacks": []}
+            "hello", config={"callbacks": [handler]}
         )
         == 5
     )
     assert spy.call_args_list == [
-        mocker.call("hello", dict(callbacks=[], metadata={"a": "b"})),
+        mocker.call("hello", dict(callbacks=[handler], metadata={"a": "b"})),
     ]
     spy.reset_mock()
 
