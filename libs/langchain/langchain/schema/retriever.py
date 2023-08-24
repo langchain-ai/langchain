@@ -4,6 +4,7 @@ import warnings
 from abc import ABC, abstractmethod
 from inspect import signature
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from uuid import UUID
 
 from langchain.load.dump import dumpd
 from langchain.load.serializable import Serializable
@@ -164,6 +165,7 @@ class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
         callbacks: Callbacks = None,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Retrieve documents relevant to a query.
@@ -193,6 +195,7 @@ class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
         run_manager = callback_manager.on_retriever_start(
             dumpd(self),
             query,
+            run_id=run_id,
             **kwargs,
         )
         try:
@@ -220,6 +223,7 @@ class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
         callbacks: Callbacks = None,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Asynchronously get documents relevant to a query.
@@ -249,6 +253,7 @@ class BaseRetriever(Serializable, Runnable[str, List[Document]], ABC):
         run_manager = await callback_manager.on_retriever_start(
             dumpd(self),
             query,
+            run_id=run_id,
             **kwargs,
         )
         try:

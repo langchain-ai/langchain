@@ -3,7 +3,9 @@ from __future__ import annotations
 from concurrent.futures import Executor, ThreadPoolExecutor
 from contextlib import contextmanager
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Union
+from uuid import UUID
+
 from typing_extensions import TypedDict
 
 if TYPE_CHECKING:
@@ -30,6 +32,16 @@ class RunnableConfig(TypedDict, total=False):
     """
     Callbacks for this call and any sub-calls (eg. a Chain calling an LLM).
     Tags are passed to all callbacks, metadata is passed to handle*Start callbacks.
+    """
+
+    run_name: str
+    """
+    Name for the tracer run for this call. Defaults to the name of the class.
+    """
+
+    run_id: UUID
+    """
+    Unique ID for the tracer run for this call. Defaults to uuid4().
     """
 
     _locals: Dict[str, Any]
@@ -60,6 +72,28 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
     if config is not None:
         empty.update(config)
     return empty
+
+
+def get_config_list(
+    config: Optional[Union[RunnableConfig, List[RunnableConfig]]], length: int
+) -> List[RunnableConfig]:
+    """
+    Helper method to get a list of configs from a single config or a list of
+    configs, useful for subclasses overriding batch() or abatch().
+    """
+    if length < 1:
+        raise ValueError(f"length must be >= 1, but got {length}")
+    if isinstance(config, list) and len(config) != length:
+        raise ValueError(
+            f"config must be a list of the same length as inputs, "
+            f"but got {len(config)} configs for {length} inputs"
+        )
+
+    return (
+        list(map(ensure_config, config))
+        if isinstance(config, list)
+        else [patch_config(config, deep_copy_locals=True) for _ in range(length)]
+    )
 
 
 def patch_config(
