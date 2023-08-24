@@ -23,10 +23,10 @@ class PromptGuard(LLM):
     Example:
         .. code-block:: python
 
-            from langchain.llms import PromptGuardLLM
+            from langchain.llms import PromptGuard
             from langchain.chat_models import ChatOpenAI
 
-            prompt_guard_llm = PromptGuardLLM(base_llm=ChatOpenAI())
+            prompt_guard_llm = PromptGuard(base_llm=ChatOpenAI())
     """
 
     base_llm: BaseLanguageModel

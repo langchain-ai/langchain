@@ -127,6 +127,7 @@ xata = {version = "^1.0.0a7", optional = true}
 xmltodict = {version = "^0.13.0", optional = true}
 google-api-core = {version = "^2.11.1", optional = true}
 markdownify = {version = "^0.11.6", optional = true}
+assemblyai = {version = "^0.17.0", optional = true}
 
 
 [tool.poetry.group.test.dependencies]
@@ -299,6 +300,7 @@ all = [
 # merge-conflicts
 extended_testing = [
  "amazon-textract-caller",
+ "assemblyai",
  "beautifulsoup4",
  "bibtexparser",
  "cassio",
@@ -391,4 +393,4 @@ ignore-regex = '.*(Stati Uniti|Tense=Pres).*'
 # whats is a typo but used frequently in queries so kept as is
 # aapply - async apply
 # unsecure - typo but part of API, decided to not bother for now
-ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon'
+ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate'

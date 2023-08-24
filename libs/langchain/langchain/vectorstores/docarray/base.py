@@ -33,6 +33,8 @@ def _check_docarray_import() -> None:
 
 
 class DocArrayIndex(VectorStore, ABC):
+    """Base class for `DocArray` based vector stores."""
+
     def __init__(
         self,
         doc_index: "BaseDocIndex",
@@ -67,7 +69,7 @@ class DocArrayIndex(VectorStore, ABC):
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> List[str]:
-        """Run more texts through the embeddings and add to the vectorstore.
+        """Embed texts and add to the vector store.
 
         Args:
             texts: Iterable of strings to add to the vectorstore.
