@@ -179,14 +179,18 @@ class SparkSQL:
 
         If the statement throws an error, the error message is returned.
         """
+        use_pyspark_exception = True
+
         try:
             from pyspark.errors import PySparkException
         except ImportError:
-            raise ValueError(
-                "pyspark is not installed. Please install it with `pip install pyspark`"
-            )
+            use_pyspark_exception = False
+
         try:
             return self.run(command, fetch)
-        except PySparkException as e:
-            """Format the error message"""
-            return f"Error: {e}"
+        except Exception as e:
+            if use_pyspark_exception and isinstance(e, PySparkException):
+                """Format the error message"""
+                return f"Error: {e}"
+            else:
+                return f"An error occurred: {e}"
