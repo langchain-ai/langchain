@@ -22,7 +22,6 @@ def test_create_lc_store(file_store: LocalFileStore) -> None:
     docstore = create_lc_store(file_store)
     docstore.mset([("key1", Document(page_content="hello", metadata={"key": "value"}))])
     fetched_doc = cast(Document, docstore.mget(["key1"])[0])
-
     assert fetched_doc.page_content == "hello"
     assert fetched_doc.metadata == {"key": "value"}
 
@@ -32,5 +31,6 @@ def test_create_kv_store(file_store: LocalFileStore) -> None:
     docstore = create_kv_docstore(file_store)
     docstore.mset([("key1", Document(page_content="hello", metadata={"key": "value"}))])
     fetched_doc = docstore.mget(["key1"])[0]
+    assert isinstance(fetched_doc, Document)
     assert fetched_doc.page_content == "hello"
     assert fetched_doc.metadata == {"key": "value"}
