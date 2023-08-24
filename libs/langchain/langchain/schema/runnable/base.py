@@ -210,7 +210,20 @@ class Runnable(Generic[Input, Output], ABC):
         """
         Bind arguments to a Runnable, returning a new Runnable.
         """
-        return RunnableBinding(bound=self, kwargs=kwargs)
+        return RunnableBinding(bound=self, kwargs=kwargs, config={})
+
+    def with_config(
+        self,
+        config: Optional[RunnableConfig] = None,
+        # Sadly Unpack is not well supported by mypy so this will have to be untyped
+        **kwargs: Any,
+    ) -> Runnable[Input, Output]:
+        """
+        Bind config to a Runnable, returning a new Runnable.
+        """
+        return RunnableBinding(
+            bound=self, config={**(config or {}), **kwargs}, kwargs={}
+        )
 
     def map(self) -> Runnable[List[Input], List[Output]]:
         """
@@ -1479,6 +1492,8 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
 
     kwargs: Mapping[str, Any]
 
+    config: Mapping[str, Any] = Field(default_factory=dict)
+
     class Config:
         arbitrary_types_allowed = True
 
@@ -1491,7 +1506,21 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
         return self.__class__.__module__.split(".")[:-1]
 
     def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
-        return self.__class__(bound=self.bound, kwargs={**self.kwargs, **kwargs})
+        return self.__class__(
+            bound=self.bound, config=self.config, kwargs={**self.kwargs, **kwargs}
+        )
+
+    def with_config(
+        self,
+        config: Optional[RunnableConfig] = None,
+        # Sadly Unpack is not well supported by mypy so this will have to be untyped
+        **kwargs: Any,
+    ) -> Runnable[Input, Output]:
+        return self.__class__(
+            bound=self.bound,
+            kwargs=self.kwargs,
+            config={**self.config, **(config or {}), **kwargs},
+        )
 
     def invoke(
         self,
@@ -1499,7 +1528,9 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Output:
-        return self.bound.invoke(input, config, **{**self.kwargs, **kwargs})
+        return self.bound.invoke(
+            input, {**self.config, **(config or {})}, **{**self.kwargs, **kwargs}
+        )
 
     async def ainvoke(
         self,
@@ -1507,7 +1538,9 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Output:
-        return await self.bound.ainvoke(input, config, **{**self.kwargs, **kwargs})
+        return await self.bound.ainvoke(
+            input, {**self.config, **(config or {})}, **{**self.kwargs, **kwargs}
+        )
 
     def batch(
         self,
@@ -1515,7 +1548,15 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
         **kwargs: Optional[Any],
     ) -> List[Output]:
-        return self.bound.batch(inputs, config, **{**self.kwargs, **kwargs})
+        configs = (
+            [{**self.config, **(conf or {})} for conf in config]
+            if isinstance(config, list)
+            else [
+                patch_config({**self.config, **(config or {})}, deep_copy_locals=True)
+                for _ in range(len(inputs))
+            ]
+        )
+        return self.bound.batch(inputs, configs, **{**self.kwargs, **kwargs})
 
     async def abatch(
         self,
@@ -1523,7 +1564,19 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
         **kwargs: Optional[Any],
     ) -> List[Output]:
-        return await self.bound.abatch(inputs, config, **{**self.kwargs, **kwargs})
+        configs = (
+            [{**self.config, **(conf or {})} for conf in config]
+            if isinstance(config, list)
+            else [
+                patch_config({**self.config, **(config or {})}, deep_copy_locals=True)
+                for _ in range(len(inputs))
+            ]
+        )
+        return await self.bound.abatch(
+            inputs,
+            [{**self.config, **(conf or {})} for conf in configs],
+            **{**self.kwargs, **kwargs},
+        )
 
     def stream(
         self,
@@ -1531,7 +1584,9 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Iterator[Output]:
-        yield from self.bound.stream(input, config, **{**self.kwargs, **kwargs})
+        yield from self.bound.stream(
+            input, {**self.config, **(config or {})}, **{**self.kwargs, **kwargs}
+        )
 
     async def astream(
         self,
@@ -1540,7 +1595,7 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
         async for item in self.bound.astream(
-            input, config, **{**self.kwargs, **kwargs}
+            input, {**self.config, **(config or {})}, **{**self.kwargs, **kwargs}
         ):
             yield item
 
@@ -1550,7 +1605,9 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Iterator[Output]:
-        yield from self.bound.transform(input, config, **{**self.kwargs, **kwargs})
+        yield from self.bound.transform(
+            input, {**self.config, **(config or {})}, **{**self.kwargs, **kwargs}
+        )
 
     async def atransform(
         self,
@@ -1559,9 +1616,12 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
         **kwargs: Any,
     ) -> AsyncIterator[Output]:
         async for item in self.bound.atransform(
-            input, config, **{**self.kwargs, **kwargs}
+            input, {**self.config, **(config or {})}, **{**self.kwargs, **kwargs}
         ):
             yield item
+
+
+RunnableBinding.update_forward_refs(RunnableConfig=RunnableConfig)
 
 
 def coerce_to_runnable(
