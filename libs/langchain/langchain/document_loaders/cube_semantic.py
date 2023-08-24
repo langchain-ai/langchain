@@ -126,7 +126,7 @@ class CubeSemanticLoader(BaseLoader):
         docs = []
 
         for cube in cubes:
-            if cube.get("type") != "view":
+            if cube.get("type") != "view" and cube.get("type") != "cube":
                 continue
 
             cube_name = cube.get("name")
