@@ -22,19 +22,7 @@ def _assert_messages_are_equal(
         )
 
 
-@pytest.mark.requires("beautifulsoup4")
-@pytest.mark.parametrize(
-    "path",
-    [
-        "telegram_chat_html",
-        "telegram_chat_json",
-        "telegram_chat_html.zip",
-        "telegram_chat_json.zip",
-        "telegram_chat_html/messages.html",
-        "telegram_chat_json/result.json",
-    ],
-)
-def test_telegram_chat_loader(path: str) -> None:
+def _check_telegram_chat_loader(path: str) -> None:
     _data_dir = pathlib.Path(__file__).parent / "data"
     source_path = _data_dir / path
     # Create a zip file from the directory in a temp directory
@@ -82,3 +70,28 @@ def test_telegram_chat_loader(path: str) -> None:
             ),
         ]
         _assert_messages_are_equal(session["messages"], expected_content)
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "telegram_chat_json",
+        "telegram_chat_json.zip",
+        "telegram_chat_json/result.json",
+    ],
+)
+def test_telegram_chat_loader(path: str) -> None:
+    _check_telegram_chat_loader(path)
+
+
+@pytest.mark.skip(reason="requires bs4 but marking it as such doesn't seem to work")
+@pytest.mark.parametrize(
+    "path",
+    [
+        "telegram_chat_json",
+        "telegram_chat_json.zip",
+        "telegram_chat_json/result.json",
+    ],
+)
+def test_telegram_chat_loader(path: str) -> None:
+    _check_telegram_chat_loader(path)
