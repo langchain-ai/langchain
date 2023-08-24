@@ -342,6 +342,7 @@ extended_testing = [
  "faiss-cpu",
  "openapi-schema-pydantic",
  "markdownify",
+ "arxiv",
 ]
 
 [tool.ruff]
