@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.270"
+version = "0.0.271"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -125,6 +125,9 @@ newspaper3k = {version = "^0.2.8", optional = true}
 amazon-textract-caller = {version = "<2", optional = true}
 xata = {version = "^1.0.0a7", optional = true}
 xmltodict = {version = "^0.13.0", optional = true}
+google-api-core = {version = "^2.11.1", optional = true}
+markdownify = {version = "^0.11.6", optional = true}
+assemblyai = {version = "^0.17.0", optional = true}
 
 
 [tool.poetry.group.test.dependencies]
@@ -297,6 +300,7 @@ all = [
 # merge-conflicts
 extended_testing = [
  "amazon-textract-caller",
+ "assemblyai",
  "beautifulsoup4",
  "bibtexparser",
  "cassio",
@@ -337,6 +341,7 @@ extended_testing = [
  "xmltodict",
  "faiss-cpu",
  "openapi-schema-pydantic",
+ "markdownify",
 ]
 
 [tool.ruff]
@@ -388,4 +393,4 @@ ignore-regex = '.*(Stati Uniti|Tense=Pres).*'
 # whats is a typo but used frequently in queries so kept as is
 # aapply - async apply
 # unsecure - typo but part of API, decided to not bother for now
-ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon'
+ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate'
