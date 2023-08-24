@@ -1,16 +1,31 @@
 from __future__ import annotations
 
 import importlib
-from typing import (Any, AsyncIterator, Dict, Iterable, List, Mapping,
-                    Sequence, Union, overload)
+from typing import (
+    Any,
+    AsyncIterator,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Sequence,
+    Union,
+    overload,
+)
 
 from typing_extensions import Literal
 
 from langchain.chat_loaders.base import ChatSession
-from langchain.schema.messages import (AIMessage, AIMessageChunk, BaseMessage,
-                                       BaseMessageChunk, ChatMessage,
-                                       FunctionMessage, HumanMessage,
-                                       SystemMessage)
+from langchain.schema.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    BaseMessageChunk,
+    ChatMessage,
+    FunctionMessage,
+    HumanMessage,
+    SystemMessage,
+)
 
 
 async def aenumerate(
