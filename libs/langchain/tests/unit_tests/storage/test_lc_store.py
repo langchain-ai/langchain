@@ -1,5 +1,5 @@
 import tempfile
-from typing import Generator
+from typing import Generator, cast
 
 import pytest
 
