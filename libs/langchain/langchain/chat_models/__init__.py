@@ -22,6 +22,7 @@ from langchain.chat_models.anyscale import ChatAnyscale
 from langchain.chat_models.azure_openai import AzureChatOpenAI
 from langchain.chat_models.ernie import ErnieBotChat
 from langchain.chat_models.fake import FakeListChatModel
+from langchain.chat_models.gigachat import GigaChat
 from langchain.chat_models.google_palm import ChatGooglePalm
 from langchain.chat_models.human import HumanInputChatModel
 from langchain.chat_models.jinachat import JinaChat
@@ -45,4 +46,5 @@ __all__ = [
     "ChatAnyscale",
     "ChatLiteLLM",
     "ErnieBotChat",
+    "GigaChat",
 ]

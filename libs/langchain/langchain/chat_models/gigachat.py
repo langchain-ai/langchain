@@ -5,15 +5,12 @@ GigaChatModel for GigaChat.
 
 import logging
 import os
-from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union
+from typing import Any, Dict, Iterator, List, Optional, Union
 
 import requests
 from tenacity import retry, stop_after_attempt
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chat_models.base import SimpleChatModel
 from langchain.schema.messages import (
     AIMessage,
@@ -159,18 +156,7 @@ class GigaChat(SimpleChatModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         yield ChatGenerationChunk(
-            message=AIMessageChunk(content="Async is not supported yet")
-        )
-
-    async def _astream(
-        self,
-        messages: List[BaseMessage],
-        stop: Union[List[str], None] = None,
-        run_manager: Union[AsyncCallbackManagerForLLMRun, None] = None,
-        **kwargs: Any,
-    ) -> AsyncIterator[ChatGenerationChunk]:
-        yield ChatGenerationChunk(
-            message=AIMessageChunk(content="Async is not supported yet")
+            message=AIMessageChunk(content="Async stream is not supported yet")
         )
 
     @property
