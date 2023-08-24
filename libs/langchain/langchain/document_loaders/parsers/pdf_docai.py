@@ -268,6 +268,6 @@ class DocAIPdfLoader(BaseBlobParser):
         cls, *, client: "DocumentProcessorServiceClient", processor_name: str
     ) -> "DocumentProcessorServiceClient":
         """Creates a DocumentProcessorServiceClient with a pre-existing client."""
-        parser = cls(processor_name=processor_name)
+        parser = cls(processor_name=processor_name, client=client)
         parser._client = client
         return parser
