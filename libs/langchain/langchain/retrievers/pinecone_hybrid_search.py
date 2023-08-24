@@ -29,13 +29,13 @@ def create_index(
     ids: Optional[List[str]] = None,
     metadatas: Optional[List[dict]] = None,
 ) -> None:
-    """
-    Create a Pinecone index from a list of contexts.
-    Modifies the index argument in-place.
+    """Create an index from a list of contexts.
+
+    It modifies the index argument in-place!
 
     Args:
         contexts: List of contexts to embed.
-        index: Pinecone index to use.
+        index: Index to use.
         embeddings: Embeddings model to use.
         sparse_encoder: Sparse encoder to use.
         ids: List of ids to use for the documents.
@@ -95,7 +95,7 @@ def create_index(
 
 
 class PineconeHybridSearchRetriever(BaseRetriever):
-    """Pinecone Hybrid Search Retriever."""
+    """`Pinecone Hybrid Search` retriever."""
 
     embeddings: Embeddings
     """Embeddings model to use."""
