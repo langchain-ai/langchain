@@ -77,8 +77,10 @@ def create_agent(
         **kwargs
     )
 
+
 # DEPRECATED: Kept for backwards compatibility.
 create_conversational_retrieval_agent = create_agent
+
 
 def _get_default_system_message() -> SystemMessage:
     return SystemMessage(
