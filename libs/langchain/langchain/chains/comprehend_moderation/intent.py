@@ -72,7 +72,7 @@ class ComprehendIntent():
                 intent_found = True
                 break                
         
-        if self.callback and self.callback:
+        if self.callback and self.callback.intent_callback:
             if intent_found:
                 self.moderation_beacon['moderation_status'] = 'LABELS_FOUND'
             asyncio.create_task(self.callback.on_after_intent(self.moderation_beacon, self.unique_id))
