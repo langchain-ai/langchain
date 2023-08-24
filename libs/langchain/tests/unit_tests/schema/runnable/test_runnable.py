@@ -42,7 +42,6 @@ from langchain.schema.runnable import (
     RunnableSequence,
     RunnableWithFallbacks,
 )
-from tenacity import RetryError, Retrying, retry_if_exception_type, stop_after_attempt
 
 
 class FakeTracer(BaseTracer):
