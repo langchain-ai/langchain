@@ -2,7 +2,7 @@ import pathlib
 from typing import Sequence
 
 from langchain import schema
-from langchain.chat_loaders import discord
+from langchain.chat_loaders import discord, utils
 
 
 def _assert_messages_are_equal(
@@ -20,9 +20,10 @@ def _assert_messages_are_equal(
 
 def test_discord_chat_loader() -> None:
     chat_path = pathlib.Path(__file__).parent / "data" / "discord_chat.txt"
-    loader = discord.DiscordChatLoader(str(chat_path), user_name="reporterbob")
+    loader = discord.DiscordChatLoader(str(chat_path))
 
     chat_sessions = loader.load()
+    chat_sessions = list(utils.map_ai_messages(chat_sessions, sender="reporterbob"))
     assert chat_sessions, "Chat sessions should not be empty"
 
     assert chat_sessions[0]["messages"], "Chat messages should not be empty"

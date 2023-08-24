@@ -3,7 +3,7 @@ import logging
 import re
 import zipfile
 from pathlib import Path
-from typing import Dict, Iterator, List, Optional, Union
+from typing import Dict, Iterator, List, Union
 
 from langchain import schema
 from langchain.chat_loaders import base as chat_loaders
@@ -15,18 +15,15 @@ class SlackChatLoader(chat_loaders.BaseChatLoader):
     def __init__(
         self,
         zip_path: Union[str, Path],
-        user_id: Optional[str] = None,
     ):
         """
         Initialize the chat loader with the path to the exported Slack dump zip file.
 
         :param zip_path: Path to the exported Slack dump zip file.
-        :param user_id: User ID who will be mapped to the "AI" role.
         """
         self.zip_path = zip_path if isinstance(zip_path, Path) else Path(zip_path)
         if not self.zip_path.exists():
             raise FileNotFoundError(f"File {self.zip_path} not found")
-        self.user_id = user_id
 
     def _load_single_chat_session(
         self, messages: List[Dict]
@@ -48,16 +45,6 @@ class SlackChatLoader(chat_loaders.BaseChatLoader):
                 results[-1].content += "\n\n" + text
                 results[-1].additional_kwargs["events"].append(
                     {"message_time": timestamp}
-                )
-            elif sender == self.user_id:
-                results.append(
-                    schema.AIMessage(
-                        content=text,
-                        additional_kwargs={
-                            "sender": sender,
-                            "events": [{"message_time": timestamp}],
-                        },
-                    )
                 )
             else:
                 results.append(

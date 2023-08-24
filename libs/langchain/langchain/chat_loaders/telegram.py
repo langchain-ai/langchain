@@ -3,7 +3,7 @@ import logging
 import os
 import zipfile
 from pathlib import Path
-from typing import Iterator, List, Optional, Union
+from typing import Iterator, List, Union
 
 from bs4 import BeautifulSoup
 
@@ -14,33 +14,40 @@ logger = logging.getLogger(__name__)
 
 
 class TelegramChatLoader(chat_loaders.BaseChatLoader):
+    """A loading utility for converting telegram conversations
+    to LangChain chat messages.
+
+    To export, use the Telegram Desktop app from
+    https://desktop.telegram.org/, select a conversation, click the three dots
+    in the top right corner, and select "Export chat history". Then select
+    "Machine-readable JSON" (preferred) to export. Note: the 'lite' versions of
+    the desktop app (like "Telegram for MacOS") do not support exporting chat
+    history.
+    """
+
     def __init__(
         self,
         path: Union[str, Path],
-        user_name: Optional[str] = None,
     ):
-        """
-        Initialize the chat loader with the path to the exported Telegram chat file
-        or directory.
+        """Initialize the TelegramChatLoader.
 
-        To export, use the Telegram Desktop app from https://desktop.telegram.org/,
-        select a conversation, click the three dots in the top right corner, and
-        select "Export chat history". Then select "Machine-readable JSON"
-        (preferred) to export.
-
-        Note: the 'lite' versions of the desktop app (like "Telegram for MacOS")
-        do not support exporting chat history.
-
-        :param path: Path to the exported Telegram chat zip, directory, json,
-            or HTML file.
-        :param user_name: Name of the user who will be mapped to the "AI" role.
+        Args:
+            path (Union[str, Path]): Path to the exported Telegram chat zip,
+                 directory, json, or HTML file.
         """
         self.path = path if isinstance(path, str) else str(path)
-        self.user_name = user_name
 
     def _load_single_chat_session_html(
         self, file_path: str
     ) -> chat_loaders.ChatSession:
+        """Load a single chat session from an HTML file.
+
+        Args:
+            file_path (str): Path to the HTML file.
+
+        Returns:
+            chat_loaders.ChatSession: The loaded chat session.
+        """
         with open(file_path, "r", encoding="utf-8") as file:
             soup = BeautifulSoup(file, "html.parser")
 
@@ -57,12 +64,8 @@ class TelegramChatLoader(chat_loaders.BaseChatLoader):
             else:
                 from_name = from_name_element.text.strip()
             text = message.select_one(".text").text.strip()
-
-            message_cls = (
-                schema.AIMessage if from_name == self.user_name else schema.HumanMessage
-            )
             results.append(
-                message_cls(
+                schema.HumanMessage(
                     content=text,
                     additional_kwargs={
                         "sender": from_name,
@@ -77,6 +80,14 @@ class TelegramChatLoader(chat_loaders.BaseChatLoader):
     def _load_single_chat_session_json(
         self, file_path: str
     ) -> chat_loaders.ChatSession:
+        """Load a single chat session from a JSON file.
+
+        Args:
+            file_path (str): Path to the JSON file.
+
+        Returns:
+            chat_loaders.ChatSession: The loaded chat session.
+        """
         with open(file_path, "r", encoding="utf-8") as file:
             data = json.load(file)
 
@@ -87,11 +98,8 @@ class TelegramChatLoader(chat_loaders.BaseChatLoader):
             timestamp = message.get("date", "")
             from_name = message.get("from", "")
 
-            message_cls = (
-                schema.AIMessage if from_name == self.user_name else schema.HumanMessage
-            )
             results.append(
-                message_cls(
+                schema.HumanMessage(
                     content=text,
                     additional_kwargs={
                         "sender": from_name,
@@ -103,6 +111,14 @@ class TelegramChatLoader(chat_loaders.BaseChatLoader):
         return chat_loaders.ChatSession(messages=results)
 
     def _iterate_files(self, path: str) -> Iterator[str]:
+        """Iterate over files in a directory or zip file.
+
+        Args:
+            path (str): Path to the directory or zip file.
+
+        Yields:
+            str: Path to each file.
+        """
         if os.path.isfile(path) and path.endswith((".html", ".json")):
             yield path
         elif os.path.isdir(path):
@@ -117,10 +133,11 @@ class TelegramChatLoader(chat_loaders.BaseChatLoader):
                         yield zip_file.extract(file)
 
     def lazy_load(self) -> Iterator[chat_loaders.ChatSession]:
-        """
-        Lazy load the messages from the chat file and yield them in the required format.
+        """Lazy load the messages from the chat file and yield them
+        in as chat sessions.
 
-        :return: Iterator of chat sessions containing messages.
+        Yields:
+            chat_loaders.ChatSession: The loaded chat session.
         """
         for file_path in self._iterate_files(self.path):
             if file_path.endswith(".html"):

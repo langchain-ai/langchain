@@ -7,7 +7,7 @@ from typing import Sequence
 import pytest
 
 from langchain import schema
-from langchain.chat_loaders import telegram
+from langchain.chat_loaders import telegram, utils
 
 
 def _assert_messages_are_equal(
@@ -47,10 +47,11 @@ def test_telegram_chat_loader(path: str) -> None:
                 for file_path in original_path.iterdir():
                     zip_file.write(file_path, arcname=file_path.name)
             source_path = zip_path
-        loader = telegram.TelegramChatLoader(
-            str(source_path), user_name="Batman & Robin"
-        )
+        loader = telegram.TelegramChatLoader(str(source_path))
         chat_sessions = loader.load()
+        chat_sessions = list(
+            utils.map_ai_messages(chat_sessions, sender="Batman & Robin")
+        )
         assert len(chat_sessions) == 1
         session = chat_sessions[0]
         assert len(session["messages"]) > 0

@@ -12,19 +12,18 @@ logger = logging.getLogger(__name__)
 
 
 class WhatsAppChatLoader(chat_loaders.BaseChatLoader):
-    def __init__(self, path: str, user_name: str):
-        """
-        Initialize the chat loader with the path to the exported chat file or directory.
+    def __init__(self, path: str):
+        """Initialize the WhatsAppChatLoader.
+
+        Args:
+            path (str): Path to the exported WhatsApp chat
+                zip directory, folder, or file.
 
         To generate the dump, open the chat, click the three dots in the top
         right corner, and select "More". Then select "Export chat" and
         choose "Without media".
-
-        :param path: Path to the exported WhatsApp chat zip directory, folder, or file.
-        :param user_name: Name of the user who will be mapped to the "AI" role.
         """
         self.path = path
-        self.user_name = user_name
         ignore_lines = [
             "This message was deleted",
             "<Media omitted>",
@@ -42,6 +41,14 @@ class WhatsAppChatLoader(chat_loaders.BaseChatLoader):
         )
 
     def _load_single_chat_session(self, file_path: str) -> chat_loaders.ChatSession:
+        """Load a single chat session from a file.
+
+        Args:
+            file_path (str): Path to the chat file.
+
+        Returns:
+            ChatSession: The loaded chat session.
+        """
         with open(file_path, "r", encoding="utf-8") as file:
             txt = file.read()
 
@@ -63,32 +70,29 @@ class WhatsAppChatLoader(chat_loaders.BaseChatLoader):
             if result:
                 timestamp, sender, text = result.groups()
                 if not self._ignore_lines.match(text.strip()):
-                    if sender == self.user_name:
-                        results.append(
-                            schema.AIMessage(
-                                content=text,
-                                additional_kwargs={
-                                    "sender": sender,
-                                    "events": [{"message_time": timestamp}],
-                                },
-                            )
+                    results.append(
+                        schema.HumanMessage(
+                            role=sender,
+                            content=text,
+                            additional_kwargs={
+                                "sender": sender,
+                                "events": [{"message_time": timestamp}],
+                            },
                         )
-                    else:
-                        results.append(
-                            schema.HumanMessage(
-                                role=sender,
-                                content=text,
-                                additional_kwargs={
-                                    "sender": sender,
-                                    "events": [{"message_time": timestamp}],
-                                },
-                            )
-                        )
+                    )
             else:
                 logger.debug(f"Could not parse line: {line}")
         return chat_loaders.ChatSession(messages=results)
 
     def _iterate_files(self, path: str) -> Iterator[str]:
+        """Iterate over the files in a directory or zip file.
+
+        Args:
+            path (str): Path to the directory or zip file.
+
+        Yields:
+            str: The path to each file.
+        """
         if os.path.isfile(path):
             yield path
         elif os.path.isdir(path):
@@ -103,9 +107,10 @@ class WhatsAppChatLoader(chat_loaders.BaseChatLoader):
                         yield zip_file.extract(file)
 
     def lazy_load(self) -> Iterator[chat_loaders.ChatSession]:
-        """
-        Lazy load the messages from the chat file and yield them in the required format.
+        """Lazy load the messages from the chat file and yield
+        them as chat sessions.
 
-        :return: Iterator of dictionaries containing message role and content.
+        Yields:
+            Iterator[ChatSession]: The loaded chat sessions.
         """
         yield self._load_single_chat_session(self.path)

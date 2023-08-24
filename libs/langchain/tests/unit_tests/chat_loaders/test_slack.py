@@ -1,6 +1,6 @@
 import pathlib
 
-from langchain.chat_loaders import slack
+from langchain.chat_loaders import slack, utils
 
 
 def test_slack_chat_loader() -> None:
@@ -10,9 +10,10 @@ def test_slack_chat_loader() -> None:
         / "examples"
         / "slack_export.zip"
     )
-    loader = slack.SlackChatLoader(str(chat_path), user_id="U0500003428")
+    loader = slack.SlackChatLoader(str(chat_path))
 
-    chat_sessions = loader.load()
+    chat_sessions = loader.lazy_load()
+    chat_sessions = list(utils.map_ai_messages(chat_sessions, sender="U0500003428"))
     assert chat_sessions, "Chat sessions should not be empty"
 
     assert chat_sessions[1]["messages"], "Chat messages should not be empty"
