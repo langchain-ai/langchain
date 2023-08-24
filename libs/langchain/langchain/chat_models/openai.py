@@ -315,7 +315,10 @@ class ChatOpenAI(BaseChatModel):
                 chunk_content = chunk.additional_kwargs.get("function_call", None)
                 token = (
                     chunk_content["arguments"]
-                    if chunk_content is not None
+                    if (
+                        chunk_content is not None
+                        and chunk_content.get("arguments") is not None
+                    )
                     else chunk.content
                 )
                 run_manager.on_llm_new_token(token)
@@ -401,7 +404,10 @@ class ChatOpenAI(BaseChatModel):
                 chunk_content = chunk.additional_kwargs.get("function_call", None)
                 token = (
                     chunk_content["arguments"]
-                    if chunk_content is not None
+                    if (
+                        chunk_content is not None
+                        and chunk_content.get("arguments") is not None
+                    )
                     else chunk.content
                 )
                 await run_manager.on_llm_new_token(token)
