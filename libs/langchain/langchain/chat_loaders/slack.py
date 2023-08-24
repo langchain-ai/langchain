@@ -31,6 +31,8 @@ class SlackChatLoader(chat_loaders.BaseChatLoader):
         results: List[Union[schema.AIMessage, schema.HumanMessage]] = []
         previous_sender = None
         for message in messages:
+            if not isinstance(message, dict):
+                continue
             text = message.get("text", "")
             timestamp = message.get("ts", "")
             sender = message.get("user", "")
