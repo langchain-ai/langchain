@@ -223,7 +223,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         metadata = {
             "source": f"https://docs.google.com/document/d/{id}/edit",
             "title": f"{file.get('name')}",
-            "when" : f"{file.get('modifiedTime')}",
+            "when": f"{file.get('modifiedTime')}",
         }
         return Document(page_content=text, metadata=metadata)
 

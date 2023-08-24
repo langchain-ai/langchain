@@ -338,7 +338,9 @@ class ConfluenceLoader(BaseLoader):
                     ),
                     before_sleep=before_sleep_log(logger, logging.WARNING),
                 )(self.confluence.get_page_by_id)
-                page = get_page(page_id=page_id, expand=f"{content_format.value},version")
+                page = get_page(
+                    page_id=page_id, expand=f"{content_format.value},version"
+                )
                 if not include_restricted_content and not self.is_public_page(page):
                     continue
                 doc = self.process_page(
@@ -510,10 +512,10 @@ class ConfluenceLoader(BaseLoader):
             "id": page["id"],
             "source": self.base_url.strip("/") + page["_links"]["webui"],
         }
-        
+
         if "version" in page and "when" in page["version"]:
             metadata["when"] = page["version"]["when"]
-        
+
         return Document(
             page_content=text,
             metadata=metadata,
