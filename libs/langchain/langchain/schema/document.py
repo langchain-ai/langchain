@@ -22,11 +22,6 @@ class Document(Serializable):
         """Return whether or not the class is serializable."""
         return True
 
-    @property
-    def lc_namespace(self) -> List[str]:
-        """Return the namespace of the langchain object."""
-        return self.__class__.__module__.split(".")[:-1]
-
 
 class BaseDocumentTransformer(ABC):
     """Abstract base class for document transformation systems.
