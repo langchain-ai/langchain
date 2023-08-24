@@ -16,7 +16,7 @@ class WikipediaLoader(BaseLoader):
     def __init__(
         self,
         query: str,
-        lang: str = "en",
+        lang: str = "ru",
         load_max_docs: Optional[int] = 100,
         load_all_available_meta: Optional[bool] = False,
         doc_content_chars_max: Optional[int] = 4000,

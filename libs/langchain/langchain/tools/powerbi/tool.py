@@ -101,7 +101,9 @@ class QueryPowerBITool(BaseTool):
         if error is not None and "TokenExpired" in error:
             self.session_cache[
                 tool_input
-            ] = "Срок действия или недействительность токена аутентификации истек, пожалуйста, попробуйте повторно аутентифицироваться."
+            ] = "Срок действия или недействительность \
+токена аутентификации истек, пожалуйста,\
+попробуйте повторно аутентифицироваться."
             return self.session_cache[tool_input]
 
         iterations = kwargs.get("iterations", 0)
