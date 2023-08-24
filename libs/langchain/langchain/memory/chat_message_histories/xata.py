@@ -58,7 +58,7 @@ class XataChatMessageHistory(BaseChatMessageHistory):
                     {"name": "name", "type": "string"},
                     {"name": "additionalKwargs", "type": "text"},
                 ]
-            }
+            },
         )
         if r.status_code > 299:
             raise Exception(f"Error setting table schema in Xata: {r.status_code} {r}")
