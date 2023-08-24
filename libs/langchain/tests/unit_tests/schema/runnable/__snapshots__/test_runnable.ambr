@@ -2081,8 +2081,7 @@
                   "stop": [
                     "Thought:"
                   ]
-                },
-                "config": {}
+                }
               }
             },
             "llm": {
