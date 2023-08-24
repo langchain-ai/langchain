@@ -3,9 +3,8 @@ from typing import Generator
 
 import pytest
 
-from langchain.docstore._kw_storage import create_kw_docstore
-from langchain.load.dump import dumpd
 from langchain.schema import Document
+from langchain.storage._lc_store import create_lc_store
 from langchain.storage.file_system import LocalFileStore
 
 
@@ -18,10 +17,10 @@ def file_store() -> Generator[LocalFileStore, None, None]:
         yield store
 
 
-def test_create_docstore(file_store: LocalFileStore) -> None:
+def test_create_lc_store(file_store: LocalFileStore) -> None:
     """Test that a docstore is created from a base store."""
-    docstore = create_kw_docstore(file_store)
+    docstore = create_lc_store(file_store)
     docstore.mset([("key1", Document(page_content="hello", metadata={"key": "value"}))])
-    fetched_doc = docstore.mget(["key1"])
-    assert fetched_doc[0].page_content == "hello"
-    assert dumpd(fetched_doc) == ""
+    fetched_doc = docstore.mget(["key1"])[0]
+    assert fetched_doc.page_content == "hello"
+    assert fetched_doc.metadata == {"key": "value"}
