@@ -2,7 +2,7 @@
 import os
 from typing import List
 
-from sqlalchemy.orm import Query, Session
+from sqlalchemy.orm import Session
 
 from langchain.docstore.document import Document
 from langchain.vectorstores.pgvector import PGVector
