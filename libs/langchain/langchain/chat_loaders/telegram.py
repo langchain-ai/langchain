@@ -5,8 +5,6 @@ import zipfile
 from pathlib import Path
 from typing import Iterator, List, Union
 
-from bs4 import BeautifulSoup
-
 from langchain import schema
 from langchain.chat_loaders import base as chat_loaders
 
@@ -48,6 +46,13 @@ class TelegramChatLoader(chat_loaders.BaseChatLoader):
         Returns:
             chat_loaders.ChatSession: The loaded chat session.
         """
+        try:
+            from bs4 import BeautifulSoup
+        except ImportError:
+            raise ImportError(
+                "Please install the 'beautifulsoup4' package to load Telegram HTML files."
+                " You can do this by running 'pip install beautifulsoup4' in your terminal."
+            )
         with open(file_path, "r", encoding="utf-8") as file:
             soup = BeautifulSoup(file, "html.parser")
 
