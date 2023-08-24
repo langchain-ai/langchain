@@ -3,7 +3,7 @@ import logging
 import re
 import zipfile
 from pathlib import Path
-from typing import Dict, Iterator, List, Union
+from typing import Dict, Iterator, List, Optional, Union
 
 from langchain import schema
 from langchain.chat_loaders import base as chat_loaders
@@ -13,7 +13,10 @@ logger = logging.getLogger(__name__)
 
 class SlackChatLoader(chat_loaders.BaseChatLoader):
     def __init__(
-        self, zip_path: Union[str, Path], user_id: str, merge_runs: bool = True
+        self,
+        zip_path: Union[str, Path],
+        user_id: Optional[str] = None,
+        merge_runs: bool = True,
     ):
         """
         Initialize the chat loader with the path to the exported Slack dump zip file.
