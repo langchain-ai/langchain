@@ -15,9 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class DiscordChatLoader(chat_loaders.BaseChatLoader):
-    def __init__(
-        self, path: str, user_name: Optional[str] = None, merge_runs: bool = True
-    ):
+    def __init__(self, path: str, user_name: Optional[str] = None):
         """
         Initialize the chat loader with the path to the exported Discord chat file.
 
@@ -27,12 +25,9 @@ class DiscordChatLoader(chat_loaders.BaseChatLoader):
 
         :param path: Path to the exported Discord chat text file.
         :param user_name: Name of the user who will be mapped to the "AI" role.
-        :param merge_runs: Whether to merge message 'runs' into a single message.
-            A message run is a sequence of messages from the same sender.
         """
         self.path = path
         self.user_name = user_name
-        self.merge_runs = merge_runs
         self._message_line_regex = re.compile(
             r"(.+?) — (\w{3,9} \d{1,2}(?:st|nd|rd|th)?(?:, \d{4})? \d{1,2}:\d{2} (?:AM|PM)|Today at \d{1,2}:\d{2} (?:AM|PM)|Yesterday at \d{1,2}:\d{2} (?:AM|PM))",  # noqa
             flags=re.DOTALL,
@@ -76,25 +71,21 @@ class DiscordChatLoader(chat_loaders.BaseChatLoader):
                     line[len(current_sender) + len(current_timestamp) + 4 :].strip()
                 ]
             elif re.match(r"\[\d{1,2}:\d{2} (?:AM|PM)\]", line.strip()):
-                if self.merge_runs:
-                    current_content.append("\n")
-                    continue
-                else:  # Create a new message
-                    message_class = (
-                        schema.AIMessage
-                        if current_sender == self.user_name
-                        else schema.HumanMessage
+                message_class = (
+                    schema.AIMessage
+                    if current_sender == self.user_name
+                    else schema.HumanMessage
+                )
+                results.append(
+                    message_class(
+                        content="".join(current_content).strip(),
+                        additional_kwargs={
+                            "sender": current_sender,
+                            "events": [{"message_time": current_timestamp}],
+                        },
                     )
-                    results.append(
-                        message_class(
-                            content="".join(current_content).strip(),
-                            additional_kwargs={
-                                "sender": current_sender,
-                                "events": [{"message_time": current_timestamp}],
-                            },
-                        )
-                    )
-                    current_timestamp = line.strip()[1:-1]
+                )
+                current_timestamp = line.strip()[1:-1]
 
             else:
                 current_content.append("\n" + line.strip())
