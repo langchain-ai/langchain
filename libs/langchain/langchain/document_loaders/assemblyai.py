@@ -43,6 +43,7 @@ class AssemblyAIAudioTranscriptLoader(BaseLoader):
     def __init__(
         self,
         file_path: str,
+        *,
         transcript_format: TranscriptFormat = TranscriptFormat.TEXT,
         config: Optional[assemblyai.TranscriptionConfig] = None,
         api_key: Optional[str] = None,
