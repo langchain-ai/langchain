@@ -1,4 +1,3 @@
-"""VectorStore wrapper around a Postgres/PGVector database."""
 from __future__ import annotations
 
 import enum
@@ -46,12 +45,14 @@ _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain"
 
 
 class BaseModel(Base):
+    """Base model for the SQL stores."""
+
     __abstract__ = True
     uuid = sqlalchemy.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
 
 class PGVector(VectorStore):
-    """VectorStore implementation using Postgres and pgvector.
+    """`Postgres`/`PGVector` vector store.
 
     To use, you should have the ``pgvector`` python package installed.
 

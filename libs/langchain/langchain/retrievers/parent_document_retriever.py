@@ -11,7 +11,7 @@ from langchain.vectorstores.base import VectorStore
 
 
 class ParentDocumentRetriever(BaseRetriever):
-    """Fetches small chunks, then fetches their parent documents.
+    """Retrieve small chunks then retrieve their parent documents.
 
     When splitting documents for retrieval, there are often conflicting desires:
 
@@ -97,7 +97,7 @@ class ParentDocumentRetriever(BaseRetriever):
     def add_documents(
         self,
         documents: List[Document],
-        ids: Optional[List[str]],
+        ids: Optional[List[str]] = None,
         add_to_docstore: bool = True,
     ) -> None:
         """Adds documents to the docstore and vectorstores.
