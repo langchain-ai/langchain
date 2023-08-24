@@ -1,31 +1,16 @@
 from __future__ import annotations
 
 import importlib
-from typing import (
-    Any,
-    AsyncIterator,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    Sequence,
-    Union,
-    overload,
-)
+from typing import (Any, AsyncIterator, Dict, Iterable, List, Mapping,
+                    Sequence, Union, overload)
 
 from typing_extensions import Literal
 
 from langchain.chat_loaders.base import ChatSession
-from langchain.schema.messages import (
-    AIMessage,
-    AIMessageChunk,
-    BaseMessage,
-    BaseMessageChunk,
-    ChatMessage,
-    FunctionMessage,
-    HumanMessage,
-    SystemMessage,
-)
+from langchain.schema.messages import (AIMessage, AIMessageChunk, BaseMessage,
+                                       BaseMessageChunk, ChatMessage,
+                                       FunctionMessage, HumanMessage,
+                                       SystemMessage)
 
 
 async def aenumerate(
@@ -209,11 +194,13 @@ class ChatCompletion:
             )
 
 
-def _has_assistant_message(messages):
+def _has_assistant_message(messages: Sequence[BaseMessage]) -> bool:
     return any([isinstance(m, AIMessage) for m in messages["messages"]])
 
 
-def convert_messages_for_finetuning(messages: List[ChatSession]):
+def convert_messages_for_finetuning(
+    messages: Iterable[ChatSession],
+) -> List[List[dict]]:
     messages = [m for m in messages if _has_assistant_message(m)]
     return [
         [convert_message_to_dict(m) for m in m_list["messages"]] for m_list in messages
