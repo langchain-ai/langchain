@@ -15,12 +15,14 @@ if TYPE_CHECKING:
 
 
 class Tigris(VectorStore):
+    """`Tigris` vector store."""
+
     def __init__(self, client: TigrisClient, embeddings: Embeddings, index_name: str):
-        """Initialize Tigris vector store"""
+        """Initialize Tigris vector store."""
         try:
             import tigrisdb  # noqa: F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import tigrisdb python package. "
                 "Please install it with `pip install tigrisdb`"
             )

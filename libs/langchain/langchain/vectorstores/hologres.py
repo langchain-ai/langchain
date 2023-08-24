@@ -1,4 +1,3 @@
-"""VectorStore wrapper around a Hologres database."""
 from __future__ import annotations
 
 import json
@@ -16,7 +15,7 @@ _LANGCHAIN_DEFAULT_TABLE_NAME = "langchain_pg_embedding"
 
 
 class HologresWrapper:
-    """Wrapper around Hologres service."""
+    """`Hologres API` wrapper."""
 
     def __init__(self, connection_string: str, ndims: int, table_name: str) -> None:
         """Initialize the wrapper.
@@ -114,7 +113,7 @@ document text);"""
 
 
 class Hologres(VectorStore):
-    """VectorStore implementation using Hologres.
+    """`Hologres API` vector store.
 
     - `connection_string` is a hologres connection string.
     - `embedding_function` any embedding function implementing
