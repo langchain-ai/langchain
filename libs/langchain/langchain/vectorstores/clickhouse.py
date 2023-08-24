@@ -8,10 +8,9 @@ from hashlib import sha1
 from threading import Thread
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
-from pydantic import BaseSettings
-
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
+from langchain.pydantic_v1 import BaseSettings
 from langchain.vectorstores.base import VectorStore
 
 logger = logging.getLogger()

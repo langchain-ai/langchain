@@ -41,7 +41,6 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
         "langsmith",
         "numexpr",
         "numpy",
-        "openapi-schema-pydantic",
         "pydantic",
         "python",
         "requests",

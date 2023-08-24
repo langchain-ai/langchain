@@ -9,10 +9,11 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 import aiohttp
 import requests
 from aiohttp import ServerTimeoutError
-from pydantic import BaseModel, Field, root_validator, validator
 from requests.exceptions import Timeout
 
-_LOGGER = logging.getLogger(__name__)
+from langchain.pydantic_v1 import BaseModel, Field, root_validator, validator
+
+logger = logging.getLogger(__name__)
 
 BASE_URL = os.getenv("POWERBI_BASE_URL", "https://api.powerbi.com/v1.0/myorg")
 
@@ -120,7 +121,7 @@ class PowerBIDataset(BaseModel):
                     table for table in fixed_tables if table not in self.table_names
                 ]
                 if non_existing_tables:
-                    _LOGGER.warning(
+                    logger.warning(
                         "Table(s) %s not found in dataset.",
                         ", ".join(non_existing_tables),
                     )
@@ -130,7 +131,7 @@ class PowerBIDataset(BaseModel):
                 return tables if tables else None
             if isinstance(table_names, str) and table_names != "":
                 if table_names not in self.table_names:
-                    _LOGGER.warning("Table %s not found in dataset.", table_names)
+                    logger.warning("Table %s not found in dataset.", table_names)
                     return None
                 return [fix_table_name(table_names)]
         return self.table_names
@@ -177,10 +178,10 @@ class PowerBIDataset(BaseModel):
             )
             self.schemas[table] = json_to_md(result["results"][0]["tables"][0]["rows"])
         except Timeout:
-            _LOGGER.warning("Timeout while getting table info for %s", table)
+            logger.warning("Timeout while getting table info for %s", table)
             self.schemas[table] = "unknown"
         except Exception as exc:  # pylint: disable=broad-exception-caught
-            _LOGGER.warning("Error while getting table info for %s: %s", table, exc)
+            logger.warning("Error while getting table info for %s: %s", table, exc)
             self.schemas[table] = "unknown"
 
     async def _aget_schema(self, table: str) -> None:
@@ -191,10 +192,10 @@ class PowerBIDataset(BaseModel):
             )
             self.schemas[table] = json_to_md(result["results"][0]["tables"][0]["rows"])
         except ServerTimeoutError:
-            _LOGGER.warning("Timeout while getting table info for %s", table)
+            logger.warning("Timeout while getting table info for %s", table)
             self.schemas[table] = "unknown"
         except Exception as exc:  # pylint: disable=broad-exception-caught
-            _LOGGER.warning("Error while getting table info for %s: %s", table, exc)
+            logger.warning("Error while getting table info for %s: %s", table, exc)
             self.schemas[table] = "unknown"
 
     def _create_json_content(self, command: str) -> dict[str, Any]:
@@ -207,7 +208,7 @@ class PowerBIDataset(BaseModel):
 
     def run(self, command: str) -> Any:
         """Execute a DAX command and return a json representing the results."""
-        _LOGGER.debug("Running command: %s", command)
+        logger.debug("Running command: %s", command)
         response = requests.post(
             self.request_url,
             json=self._create_json_content(command),
@@ -222,7 +223,7 @@ class PowerBIDataset(BaseModel):
 
     async def arun(self, command: str) -> Any:
         """Execute a DAX command and return the result asynchronously."""
-        _LOGGER.debug("Running command: %s", command)
+        logger.debug("Running command: %s", command)
         if self.aiosession:
             async with self.aiosession.post(
                 self.request_url,

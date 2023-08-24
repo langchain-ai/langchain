@@ -7,6 +7,7 @@ MIT License
 from collections import deque
 from typing import (
     Any,
+    AsyncContextManager,
     AsyncGenerator,
     AsyncIterator,
     Awaitable,
@@ -15,6 +16,7 @@ from typing import (
     Generic,
     Iterator,
     List,
+    Optional,
     Tuple,
     TypeVar,
     Union,
@@ -64,43 +66,56 @@ def py_anext(
     return anext_impl()
 
 
+class NoLock:
+    """Dummy lock that provides the proper interface but no protection"""
+
+    async def __aenter__(self) -> None:
+        pass
+
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
+        return False
+
+
 async def tee_peer(
     iterator: AsyncIterator[T],
     # the buffer specific to this peer
     buffer: Deque[T],
     # the buffers of all peers, including our own
     peers: List[Deque[T]],
+    lock: AsyncContextManager[Any],
 ) -> AsyncGenerator[T, None]:
     """An individual iterator of a :py:func:`~.tee`"""
     try:
         while True:
             if not buffer:
-                # Another peer produced an item while we were waiting for the lock.
-                # Proceed with the next loop iteration to yield the item.
-                if buffer:
-                    continue
-                try:
-                    item = await iterator.__anext__()
-                except StopAsyncIteration:
-                    break
-                else:
-                    # Append to all buffers, including our own. We'll fetch our
-                    # item from the buffer again, instead of yielding it directly.
-                    # This ensures the proper item ordering if any of our peers
-                    # are fetching items concurrently. They may have buffered their
-                    # item already.
-                    for peer_buffer in peers:
-                        peer_buffer.append(item)
+                async with lock:
+                    # Another peer produced an item while we were waiting for the lock.
+                    # Proceed with the next loop iteration to yield the item.
+                    if buffer:
+                        continue
+                    try:
+                        item = await iterator.__anext__()
+                    except StopAsyncIteration:
+                        break
+                    else:
+                        # Append to all buffers, including our own. We'll fetch our
+                        # item from the buffer again, instead of yielding it directly.
+                        # This ensures the proper item ordering if any of our peers
+                        # are fetching items concurrently. They may have buffered their
+                        # item already.
+                        for peer_buffer in peers:
+                            peer_buffer.append(item)
             yield buffer.popleft()
     finally:
-        # this peer is done – remove its buffer
-        for idx, peer_buffer in enumerate(peers):  # pragma: no branch
-            if peer_buffer is buffer:
-                peers.pop(idx)
-                break
-        # if we are the last peer, try and close the iterator
-        if not peers and hasattr(iterator, "aclose"):
-            await iterator.aclose()
+        async with lock:
+            # this peer is done – remove its buffer
+            for idx, peer_buffer in enumerate(peers):  # pragma: no branch
+                if peer_buffer is buffer:
+                    peers.pop(idx)
+                    break
+            # if we are the last peer, try and close the iterator
+            if not peers and hasattr(iterator, "aclose"):
+                await iterator.aclose()
 
 
 class Tee(Generic[T]):
@@ -145,6 +160,8 @@ class Tee(Generic[T]):
         self,
         iterable: AsyncIterator[T],
         n: int = 2,
+        *,
+        lock: Optional[AsyncContextManager[Any]] = None,
     ):
         self._iterator = iterable.__aiter__()  # before 3.10 aiter() doesn't exist
         self._buffers: List[Deque[T]] = [deque() for _ in range(n)]
@@ -153,6 +170,7 @@ class Tee(Generic[T]):
                 iterator=self._iterator,
                 buffer=buffer,
                 peers=self._buffers,
+                lock=lock if lock is not None else NoLock(),
             )
             for buffer in self._buffers
         )

@@ -190,6 +190,7 @@ def trace_as_chain_group(
     *,
     project_name: Optional[str] = None,
     example_id: Optional[Union[str, UUID]] = None,
+    run_id: Optional[UUID] = None,
     tags: Optional[List[str]] = None,
 ) -> Generator[CallbackManager, None, None]:
     """Get a callback manager for a chain group in a context manager.
@@ -202,6 +203,7 @@ def trace_as_chain_group(
             Defaults to None.
         example_id (str or UUID, optional): The ID of the example.
             Defaults to None.
+        run_id (UUID, optional): The ID of the run.
         tags (List[str], optional): The inheritable tags to apply to all runs.
             Defaults to None.
 
@@ -229,7 +231,7 @@ def trace_as_chain_group(
         inheritable_tags=tags,
     )
 
-    run_manager = cm.on_chain_start({"name": group_name}, {})
+    run_manager = cm.on_chain_start({"name": group_name}, {}, run_id=run_id)
     yield run_manager.get_child()
     run_manager.on_chain_end({})
 
@@ -241,6 +243,7 @@ async def atrace_as_chain_group(
     *,
     project_name: Optional[str] = None,
     example_id: Optional[Union[str, UUID]] = None,
+    run_id: Optional[UUID] = None,
     tags: Optional[List[str]] = None,
 ) -> AsyncGenerator[AsyncCallbackManager, None]:
     """Get an async callback manager for a chain group in a context manager.
@@ -253,6 +256,7 @@ async def atrace_as_chain_group(
             Defaults to None.
         example_id (str or UUID, optional): The ID of the example.
             Defaults to None.
+        run_id (UUID, optional): The ID of the run.
         tags (List[str], optional): The inheritable tags to apply to all runs.
             Defaults to None.
     Returns:
@@ -276,7 +280,7 @@ async def atrace_as_chain_group(
     )
     cm = AsyncCallbackManager.configure(inheritable_callbacks=cb, inheritable_tags=tags)
 
-    run_manager = await cm.on_chain_start({"name": group_name}, {})
+    run_manager = await cm.on_chain_start({"name": group_name}, {}, run_id=run_id)
     try:
         yield run_manager.get_child()
     finally:
@@ -711,11 +715,11 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
 class CallbackManagerForChainRun(ParentRunManager, ChainManagerMixin):
     """Callback manager for chain run."""
 
-    def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
+    def on_chain_end(self, outputs: Union[Dict[str, Any], Any], **kwargs: Any) -> None:
         """Run when chain ends running.
 
         Args:
-            outputs (Dict[str, Any]): The outputs of the chain.
+            outputs (Union[Dict[str, Any], Any]): The outputs of the chain.
         """
         _handle_event(
             self.handlers,
@@ -793,11 +797,13 @@ class CallbackManagerForChainRun(ParentRunManager, ChainManagerMixin):
 class AsyncCallbackManagerForChainRun(AsyncParentRunManager, ChainManagerMixin):
     """Async callback manager for chain run."""
 
-    async def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
+    async def on_chain_end(
+        self, outputs: Union[Dict[str, Any], Any], **kwargs: Any
+    ) -> None:
         """Run when chain ends running.
 
         Args:
-            outputs (Dict[str, Any]): The outputs of the chain.
+            outputs (Union[Dict[str, Any], Any]): The outputs of the chain.
         """
         await _ahandle_event(
             self.handlers,
@@ -1140,7 +1146,7 @@ class CallbackManager(BaseCallbackManager):
     def on_chain_start(
         self,
         serialized: Dict[str, Any],
-        inputs: Dict[str, Any],
+        inputs: Union[Dict[str, Any], Any],
         run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> CallbackManagerForChainRun:
@@ -1148,7 +1154,7 @@ class CallbackManager(BaseCallbackManager):
 
         Args:
             serialized (Dict[str, Any]): The serialized chain.
-            inputs (Dict[str, Any]): The inputs to the chain.
+            inputs (Union[Dict[str, Any], Any]): The inputs to the chain.
             run_id (UUID, optional): The ID of the run. Defaults to None.
 
         Returns:
@@ -1429,7 +1435,7 @@ class AsyncCallbackManager(BaseCallbackManager):
     async def on_chain_start(
         self,
         serialized: Dict[str, Any],
-        inputs: Dict[str, Any],
+        inputs: Union[Dict[str, Any], Any],
         run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> AsyncCallbackManagerForChainRun:
@@ -1437,7 +1443,7 @@ class AsyncCallbackManager(BaseCallbackManager):
 
         Args:
             serialized (Dict[str, Any]): The serialized chain.
-            inputs (Dict[str, Any]): The inputs to the chain.
+            inputs (Union[Dict[str, Any], Any]): The inputs to the chain.
             run_id (UUID, optional): The ID of the run. Defaults to None.
 
         Returns:

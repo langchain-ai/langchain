@@ -24,7 +24,8 @@ def mock_feature_layer():  # type: ignore
     ]
     feature_layer.url = "https://example.com/layer_url"
     feature_layer.properties = {
-        "description": "<html><body>Some HTML content</body></html>"
+        "description": "<html><body>Some HTML content</body></html>",
+        "name": "test",
     }
     return feature_layer
 

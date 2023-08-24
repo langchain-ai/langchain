@@ -3,9 +3,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Sequence
 
-from pydantic import Field
-
 from langchain.load.serializable import Serializable
+from langchain.pydantic_v1 import Field
 
 
 class Document(Serializable):
