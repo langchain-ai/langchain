@@ -19,8 +19,7 @@
 [![Open Issues](https://img.shields.io/github/issues-raw/langchain-ai/langchain)](https://github.com/ai-forever/gigachain/issues)
 -->
 
-
-Ищете версию на JS/TS? Ознакомьтесь с [LangChain.js](https://github.com/hwchase17/langchainjs).
+<!-- Ищете версию на JS/TS? Ознакомьтесь с [LangChain.js](https://github.com/hwchase17/langchainjs).-->
 
 💡Данная библиотека является адаптированной версией библиотеки [LangChain](https://github.com/langchain-ai/langchain) для русского языка с поддержкой GigaChat.
 
@@ -56,7 +55,7 @@ or
 from langchain.schema import HumanMessage, SystemMessage
 from langchain.chat_models.gigachat import GigaChat
 
-chat = GigaChat()
+chat = GigaChat(user=<user_name>, password=<password>)
 
 messages = [
     SystemMessage(
@@ -149,6 +148,12 @@ Please see [here](https://python.langchain.com) for full documentation on:
 [BETA] Генеративные модели традиционно сложно оценивать с помощью стандартных метрик. Один из новых способов оценки - использование самих языковых моделей для этой цели. GigaChain предоставляет некоторые запросы и цепочки для помощи в этом.
 
 Для получения более подробной информации о данных концепциях, пожалуйста, обратитесь к нашей [полной документации](https://python.langchain.com).
+
+## 💁 Примеры использования, адаптированные для GigaChat
+
+- [Асинхронная работа с LLM](docs/extras/modules/model_io/models/llms/async_llm.ipynb)
+- [Ответы на вопросы по статьям из wikipedia](docs/extras/integrations/retrievers/wikipedia.ipynb)
+- [Игра в стиле DnD с GPT-3.5 и GigaChat](docs/extras/use_cases/agent_simulations/multi_llm_thre_player_dnd.ipynb)
 
 ## 💁 Помощь
 
