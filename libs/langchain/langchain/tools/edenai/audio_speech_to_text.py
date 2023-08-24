@@ -34,6 +34,7 @@ class EdenAiSpeechToTextTool(EdenaiTool):
         "Useful for when you have to convert audio to text."
         "Input should be a url to an audio file."
     )
+    is_async = True
 
     language: Optional[str] = "en"
     speakers: Optional[int]

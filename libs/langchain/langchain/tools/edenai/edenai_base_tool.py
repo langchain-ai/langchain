@@ -25,6 +25,7 @@ class EdenaiTool(BaseTool):
     feature: str
     subfeature: str
     edenai_api_key: Optional[str] = None
+    is_async: bool = False
 
     providers: list[str]
     """provider to use for the API call."""
@@ -76,12 +77,12 @@ class EdenaiTool(BaseTool):
         response = requests.post(url, json=payload, headers=headers)
 
         self._raise_on_error(response)
+        if self.is_async is False:
+            key = self.providers[0] if payload.get("response_as_dict") else 0
 
-        key = self.providers[0] if payload.get("response_as_dict") else 0
-
-        provider_response = response.json()[key]
-        if provider_response["status"] == "fail":
-            raise ValueError(provider_response["error"]["message"])
+            provider_response = response.json()[key]
+            if provider_response["status"] == "fail":
+                raise ValueError(provider_response["error"]["message"])
 
         try:
             data = response.json()
