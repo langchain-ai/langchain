@@ -3,7 +3,7 @@ import logging
 import os
 import zipfile
 from pathlib import Path
-from typing import Iterator, List, Union
+from typing import Iterator, List, Optional, Union
 
 from bs4 import BeautifulSoup
 
@@ -14,7 +14,12 @@ logger = logging.getLogger(__name__)
 
 
 class TelegramChatLoader(chat_loaders.BaseChatLoader):
-    def __init__(self, path: Union[str, Path], user_name: str, merge_runs: bool = True):
+    def __init__(
+        self,
+        path: Union[str, Path],
+        user_name: Optional[str] = None,
+        merge_runs: bool = True,
+    ):
         """
         Initialize the chat loader with the path to the exported Telegram chat file
         or directory.
@@ -62,20 +67,14 @@ class TelegramChatLoader(chat_loaders.BaseChatLoader):
                 results[-1].additional_kwargs["events"].append(
                     {"message_time": timestamp}
                 )
-            elif from_name == self.user_name:
-                results.append(
-                    schema.AIMessage(
-                        content=text,
-                        additional_kwargs={
-                            "sender": from_name,
-                            "events": [{"message_time": timestamp}],
-                        },
-                    )
-                )
             else:
+                message_cls = (
+                    schema.AIMessage
+                    if from_name == self.user_name
+                    else schema.HumanMessage
+                )
                 results.append(
-                    schema.HumanMessage(
-                        role=from_name,
+                    message_cls(
                         content=text,
                         additional_kwargs={
                             "sender": from_name,
@@ -100,27 +99,20 @@ class TelegramChatLoader(chat_loaders.BaseChatLoader):
             text = message.get("text", "")
             timestamp = message.get("date", "")
             from_name = message.get("from", "")
-            from_id = message.get("from_id", "")
 
             if from_name == previous_sender and self.merge_runs:
                 results[-1].content += "\n\n" + text
                 results[-1].additional_kwargs["events"].append(
                     {"message_time": timestamp}
                 )
-            elif from_id == self.user_name:
-                results.append(
-                    schema.AIMessage(
-                        content=text,
-                        additional_kwargs={
-                            "sender": from_name,
-                            "events": [{"message_time": timestamp}],
-                        },
-                    )
-                )
             else:
+                message_cls = (
+                    schema.AIMessage
+                    if from_name == self.user_name
+                    else schema.HumanMessage
+                )
                 results.append(
-                    schema.HumanMessage(
-                        role=from_name,
+                    message_cls(
                         content=text,
                         additional_kwargs={
                             "sender": from_name,

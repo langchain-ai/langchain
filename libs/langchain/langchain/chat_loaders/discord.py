@@ -1,6 +1,12 @@
+"""Class that helps load chat messages from a Discord chat.
+
+To get the chat messages, just highlight them in the app,
+right click, and select "Copy". Then paste in a text file.
+
+"""
 import logging
 import re
-from typing import Iterator, List, Union
+from typing import Iterator, List, Optional, Union
 
 from langchain import schema
 from langchain.chat_loaders import base as chat_loaders
@@ -9,7 +15,9 @@ logger = logging.getLogger(__name__)
 
 
 class DiscordChatLoader(chat_loaders.BaseChatLoader):
-    def __init__(self, path: str, user_name: str, merge_runs: bool = True):
+    def __init__(
+        self, path: str, user_name: Optional[str] = None, merge_runs: bool = True
+    ):
         """
         Initialize the chat loader with the path to the exported Discord chat file.
 
