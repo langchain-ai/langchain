@@ -37,8 +37,8 @@ def test_telegram_chat_loader(path: str) -> None:
     _data_dir = pathlib.Path(__file__).parent / "data"
     source_path = _data_dir / path
     # Create a zip file from the directory in a temp directory
-    with tempfile.TemporaryDirectory() as temp_dir:
-        temp_dir = pathlib.Path(temp_dir)
+    with tempfile.TemporaryDirectory() as temp_dir_:
+        temp_dir = pathlib.Path(temp_dir_)
         if path.endswith(".zip"):
             # Make a new zip file
             zip_path = temp_dir / "telegram_chat.zip"

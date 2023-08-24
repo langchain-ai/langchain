@@ -36,7 +36,11 @@ class SingleFileFacebookMessengerChatLoader(BaseChatLoader):
                 message_class = AIMessage
             else:
                 message_class = HumanMessage
-            messages.append(message_class(content=m["content"]))
+            messages.append(
+                message_class(
+                    content=m["content"], extra_kwargs={"sender": m["sender_name"]}
+                )
+            )
         yield ChatSession(messages=messages)
 
 

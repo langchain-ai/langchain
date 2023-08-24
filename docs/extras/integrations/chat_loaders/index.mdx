@@ -1,0 +1,160 @@
+---
+sidebar_position: 0
+---
+
+# Chat loaders
+
+Similar to document loaders, chat loaders are utilities that help load conversations from common communications platforms (like Slack, Discord, and Facebook) into memory as LangChain chat message objects.
+This helps can help with things like fine-tuning an LLM to match your personal style or voice. 
+
+The following is a short example of how to do so using [OpenAI's fine-tuning API](https://platform.openai.com/docs/guides/fine-tuning). It has six main steps:
+
+1. Export your chat data to a format compatible with your desired chat loader.
+2. Load the chat data into memory as LangChain chat message objects.
+    - Optionally filter and group messages to match your desired style or to improve the quality of the fine-tuned model.
+3. Export the messages to the format expected by the fine-tuning API.
+4. Upload the data to OpenAI.
+5. Fine-tune the model.
+6. Use the model in LangChain.
+
+Let's review each step below using an example from Discord.This is not meant to be a comprehensive guide, but rather a starting point to demonstrate how to connect the dots.
+
+We will fine-tune a `gpt-3.5-turbo` model to adopt the voice of use (or you!). To do this, we want to map your user ID to an "AI Message".
+We will be loading from 1 on 1 conversation so the other user will take the role of the human.
+
+### 1. Export your chat data
+
+In the case of the [Discord chat loader](./discord), you can get chat messages from a DM simply by highlighting the messages you want to export and copying them to your clipboard. 
+Then, you can paste them into a text file and save it as a `.txt` file. OpenAI requires at least 10 examples to fine-tune a model but recommends between 50-100 for better results.
+
+Below is a truncated portion of the data we will use for this example. You can find the full file [here](./discord_chats.txt).
+
+
+```txt
+alkingtower — 08/11/2023 12:15 PM
+Hello Reporter Bob
+
+reporterbob — 08/11/2023 1:30 PM
+Hi @talkingtower! I'm Bob, a journalist. I'm writing a piece about famous landmarks.
+[1:00 PM]
+
+talkingtower — 08/16/2023 1:42 PM
+Interesting! But I'm just a tower. 😉
+[1:11 PM]
+
+reporterbob — 08/11/2023 7:12 PM
+Oops! How about some virtual coffee?
+[7:50 PM]
+Got a fresh pot brewing.
+
+talkingtower — 08/11/2023 8:03 PM
+Of course! Virtual coffee sounds good.
+
+...
+```
+
+### 2. Load the chat
+
+Now that we have our chat data, we can load it into memory as messages. We will use the DiscordChatLoader:
+
+```python
+from langchain.chat_loaders import discord
+
+loader = discord.DiscordChatLoader(
+    path="./discord_chats.txt", 
+    user_name="talkingtower",
+)
+
+sessions = loader.load()
+```
+
+We have chosen to assign the user "talkingtower" to the "AI". Since we are loading from a single discord conversation, we only load a
+single "session" containing a list of the messages.
+
+### 3. Export messages to OpenAI format
+
+Next, use the openai adapter to convert the chat messages to the format expected by the fine-tuning API.
+We will first convert the chat messages to dictionaries:
+
+```python
+from langchain.adapters import openai as openai_adapter
+
+openai_messages = openai_adapter.convert_messages_for_finetuning(sessions)[0]
+```
+
+Next, group the data into chunks. Larger chunks provide more context for each response, which could lead to fewer hallucinations.
+Since our dataset is fairly small, we will overlap our chunks to make sure we have at least 10 training examples. You can 
+experiment with different ways of grouping data to see how they impact the model's behavior.
+
+```python
+# Our chat is alternating, we will make each datapoint a group of 8 messages,
+# with 4 messages overlapping
+chunk_size = 8
+overlap = 4
+message_groups = [
+    conversation_messages[i: i + chunk_size] 
+    for conversation_messages in openai_messages
+    for i in range(0, len(conversation_messages) - chunk_size + 1, chunk_size - overlap)
+]
+```
+
+With the data grouped, it's now time to upload to OpenAI. 
+
+### 4. Upload the data to OpenAI
+
+To upload the data, you will need an OpenAI API key. You can find instructions on how to get one [here](https://platform.openai.com/account/api-keys).
+Once you have your `OPENAI_API_KEY` environment variable set to the correct api key, run the following code.
+
+```python
+import json
+import io
+
+import openai
+
+
+my_file = io.BytesIO()
+for group in message_groups:
+    my_file.write((json.dumps({"messages": group}) + "\n").encode('utf-8'))
+
+my_file.seek(0)
+training_file = openai.File.create(
+  file=my_file,
+  purpose='fine-tune'
+)
+```
+
+This will upload the training dataset to OpenAI's server. Once uploaded, they will perform an audit to ensure the content complies with their terms and conditions, so it may take a few moments for the
+dataset to be ready. You can check the status by calling `openai.File.retrieve(training_file.id).status` and waiting until it is `processed`.
+
+Once the file is processed, it's time to fine-tune the model.
+
+### 5. Fine-tune the model
+
+Use the file ID to train the model. In our case, we will be starting from the `gpt-3.5-turbo` base model.
+
+```python
+job = openai.FineTuningJob.create(
+    training_file=training_file.id,
+    model="gpt-3.5-turbo",
+)
+```
+
+This could take several minutes to complete. You can check the status by calling `openai.FineTuningJob.retrieve(job.id).status` and waiting until it is `succeeded`.
+
+### 6. Use the model in LangChain
+
+You're almost there! Now that the model is trained, you can use it in LangChain. First, you will need to create a new model in LangChain using the model ID from the fine-tuning job:
+
+```python
+from langchain import chat_models, prompts
+
+model_name = ftj.fine_tuned_model
+# Example: ft:gpt-3.5-turbo-0613:personal::5mty86jblapsed
+llm = chat_models.ChatOpenAI(model=model_name)
+print(llm.predict("Hi i'm reporterbob"))
+```
+
+
+import DocCardList from "@theme/DocCardList";
+
+<DocCardList />

@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class WhatsAppChatLoader(chat_loaders.BaseChatLoader):
-    def __init__(self, path: str, user_name: str, merge_runs: bool = True):
+    def __init__(self, path: str, user_name: str):
         """
         Initialize the chat loader with the path to the exported chat file or directory.
 
@@ -22,12 +22,9 @@ class WhatsAppChatLoader(chat_loaders.BaseChatLoader):
 
         :param path: Path to the exported WhatsApp chat zip directory, folder, or file.
         :param user_name: Name of the user who will be mapped to the "AI" role.
-        :param merge_runs: Whether to merge message 'runs' into a single message.
-            A message run is a sequence of messages from the same sender.
         """
         self.path = path
         self.user_name = user_name
-        self.merge_runs = merge_runs
         ignore_lines = [
             "This message was deleted",
             "<Media omitted>",
@@ -61,18 +58,12 @@ class WhatsAppChatLoader(chat_loaders.BaseChatLoader):
         if current_message:
             chat_lines.append(current_message)
         results: List[Union[messages.HumanMessage, messages.AIMessage]] = []
-        previous_sender = None
         for line in chat_lines:
             result = self._message_line_regex.match(line.strip())
             if result:
                 timestamp, sender, text = result.groups()
                 if not self._ignore_lines.match(text.strip()):
-                    if sender == previous_sender and self.merge_runs:
-                        results[-1].content += "\n\n" + text
-                        results[-1].additional_kwargs["events"].append(
-                            {"message_time": timestamp}
-                        )
-                    elif sender == self.user_name:
+                    if sender == self.user_name:
                         results.append(
                             schema.AIMessage(
                                 content=text,
@@ -93,7 +84,6 @@ class WhatsAppChatLoader(chat_loaders.BaseChatLoader):
                                 },
                             )
                         )
-                    previous_sender = sender
             else:
                 logger.debug(f"Could not parse line: {line}")
         return chat_loaders.ChatSession(messages=results)

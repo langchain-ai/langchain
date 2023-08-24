@@ -18,7 +18,6 @@ class TelegramChatLoader(chat_loaders.BaseChatLoader):
         self,
         path: Union[str, Path],
         user_name: Optional[str] = None,
-        merge_runs: bool = True,
     ):
         """
         Initialize the chat loader with the path to the exported Telegram chat file
@@ -35,12 +34,9 @@ class TelegramChatLoader(chat_loaders.BaseChatLoader):
         :param path: Path to the exported Telegram chat zip, directory, json,
             or HTML file.
         :param user_name: Name of the user who will be mapped to the "AI" role.
-        :param merge_runs: Whether to merge message 'runs' into a single message.
-            A message run is a sequence of messages from the same sender.
         """
         self.path = path if isinstance(path, str) else str(path)
         self.user_name = user_name
-        self.merge_runs = merge_runs
 
     def _load_single_chat_session_html(
         self, file_path: str
@@ -62,26 +58,18 @@ class TelegramChatLoader(chat_loaders.BaseChatLoader):
                 from_name = from_name_element.text.strip()
             text = message.select_one(".text").text.strip()
 
-            if from_name == previous_sender and self.merge_runs:
-                results[-1].content += "\n\n" + text
-                results[-1].additional_kwargs["events"].append(
-                    {"message_time": timestamp}
+            message_cls = (
+                schema.AIMessage if from_name == self.user_name else schema.HumanMessage
+            )
+            results.append(
+                message_cls(
+                    content=text,
+                    additional_kwargs={
+                        "sender": from_name,
+                        "events": [{"message_time": timestamp}],
+                    },
                 )
-            else:
-                message_cls = (
-                    schema.AIMessage
-                    if from_name == self.user_name
-                    else schema.HumanMessage
-                )
-                results.append(
-                    message_cls(
-                        content=text,
-                        additional_kwargs={
-                            "sender": from_name,
-                            "events": [{"message_time": timestamp}],
-                        },
-                    )
-                )
+            )
             previous_sender = from_name
 
         return chat_loaders.ChatSession(messages=results)
@@ -93,34 +81,24 @@ class TelegramChatLoader(chat_loaders.BaseChatLoader):
             data = json.load(file)
 
         messages = data.get("messages", [])
-        results: List[Union[schema.AIMessage, schema.HumanMessage]] = []
-        previous_sender = None
+        results: List[schema.BaseMessage] = []
         for message in messages:
             text = message.get("text", "")
             timestamp = message.get("date", "")
             from_name = message.get("from", "")
 
-            if from_name == previous_sender and self.merge_runs:
-                results[-1].content += "\n\n" + text
-                results[-1].additional_kwargs["events"].append(
-                    {"message_time": timestamp}
+            message_cls = (
+                schema.AIMessage if from_name == self.user_name else schema.HumanMessage
+            )
+            results.append(
+                message_cls(
+                    content=text,
+                    additional_kwargs={
+                        "sender": from_name,
+                        "events": [{"message_time": timestamp}],
+                    },
                 )
-            else:
-                message_cls = (
-                    schema.AIMessage
-                    if from_name == self.user_name
-                    else schema.HumanMessage
-                )
-                results.append(
-                    message_cls(
-                        content=text,
-                        additional_kwargs={
-                            "sender": from_name,
-                            "events": [{"message_time": timestamp}],
-                        },
-                    )
-                )
-            previous_sender = from_name
+            )
 
         return chat_loaders.ChatSession(messages=results)
 

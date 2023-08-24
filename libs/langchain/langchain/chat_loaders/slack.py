@@ -16,21 +16,17 @@ class SlackChatLoader(chat_loaders.BaseChatLoader):
         self,
         zip_path: Union[str, Path],
         user_id: Optional[str] = None,
-        merge_runs: bool = True,
     ):
         """
         Initialize the chat loader with the path to the exported Slack dump zip file.
 
         :param zip_path: Path to the exported Slack dump zip file.
         :param user_id: User ID who will be mapped to the "AI" role.
-        :param merge_runs: Whether to merge message 'runs' into a single message.
-            A message run is a sequence of messages from the same sender.
         """
         self.zip_path = zip_path if isinstance(zip_path, Path) else Path(zip_path)
         if not self.zip_path.exists():
             raise FileNotFoundError(f"File {self.zip_path} not found")
         self.user_id = user_id
-        self.merge_runs = merge_runs
 
     def _load_single_chat_session(
         self, messages: List[Dict]
@@ -48,7 +44,7 @@ class SlackChatLoader(chat_loaders.BaseChatLoader):
             )
             if skip_pattern.match(text):
                 continue
-            if sender == previous_sender and self.merge_runs:
+            if sender == previous_sender:
                 results[-1].content += "\n\n" + text
                 results[-1].additional_kwargs["events"].append(
                     {"message_time": timestamp}
