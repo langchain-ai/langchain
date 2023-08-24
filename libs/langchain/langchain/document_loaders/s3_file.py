@@ -1,6 +1,6 @@
 import os
 import tempfile
-from typing import List, Any
+from typing import Any, List
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -10,7 +10,7 @@ from langchain.document_loaders.unstructured import UnstructuredFileLoader
 class S3FileLoader(BaseLoader):
     """Load from `Amazon AWS S3` file."""
 
-    def __init__(self, bucket: str, key: str, **kwargs: Any):
+    def __init__(self, bucket: str, key: str, **boto_kwargs: Any):
         """Initialize with bucket and key name.
 
         Args:
@@ -19,7 +19,7 @@ class S3FileLoader(BaseLoader):
         """
         self.bucket = bucket
         self.key = key
-        self.boto_kwargs = kwargs
+        self.boto_kwargs = boto_kwargs
 
     def load(self) -> List[Document]:
         """Load documents."""

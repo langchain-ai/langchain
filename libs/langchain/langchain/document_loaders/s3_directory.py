@@ -1,4 +1,4 @@
-from typing import List, Any
+from typing import Any, List
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
