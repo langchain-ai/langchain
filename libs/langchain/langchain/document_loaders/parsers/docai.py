@@ -7,7 +7,7 @@ pip install google-cloud-documentai-toolbox
 import logging
 import time
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Iterator, List, Optional, Sequence
+from typing import TYPE_CHECKING, Iterator, List, Optional, Sequence
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseBlobParser
@@ -30,26 +30,54 @@ class DocAIParsingResults:
     parsed_path: str
 
 
-class DocAIPdfLoader(BaseBlobParser):
+class DocAIParser(BaseBlobParser):
     def __init__(
         self,
         *,
-        location: str = "us",
+        client: Optional["DocumentProcessorServiceClient"] = None,
+        location: Optional[str] = None,
+        gcs_output_path: Optional[str] = None,
         processor_name: Optional[str] = None,
     ):
         """Initializes the parser.
 
         Args:
+            client: a DocumentProcessorServiceClient to use
             location: a GCP location where a DOcAI parser is located
+            gcs_output_path: a path on GCS to store parsing results
             processor_name: name of a processor
-        """
-        from google.api_core.client_options import ClientOptions
 
-        self._options = ClientOptions(
-            api_endpoint=f"{location}-documentai.googleapis.com"
-        )
+        You should provide either a client or location (and then a client
+            would be instantiated).
+        """
+        if client and location:
+            raise ValueError(
+                "You should provide either a client or a location but not both "
+                "of them."
+            )
+        if not client and not location:
+            raise ValueError(
+                "You must specify either a client or a location to instantiate "
+                "a client."
+            )
+
+        self._gcs_output_path = gcs_output_path
         self._processor_name = processor_name
-        self._client: Optional["DocumentProcessorServiceClient"] = None
+        if client:
+            self._client = client
+        else:
+            try:
+                from google.api_core.client_options import ClientOptions
+                from google.cloud.documentai import DocumentProcessorServiceClient
+            except ImportError:
+                raise ImportError(
+                    "documentai package not found, please install it with"
+                    " `pip install google-cloud-documentai`"
+                )
+            options = ClientOptions(
+                api_endpoint=f"{location}-documentai.googleapis.com"
+            )
+            self._client = DocumentProcessorServiceClient(client_options=options)
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Parses a blob lazily.
@@ -60,11 +88,14 @@ class DocAIPdfLoader(BaseBlobParser):
         This is a long-running operations! A recommended way is to batch
             documents together and use `batch_parse` method.
         """
-        gcs_output_path: str = kwargs["gcs_output_path"]
-        yield from self.batch_parse([blob], gcs_output_path=gcs_output_path)
+        yield from self.batch_parse([blob], gcs_output_path=self._gcs_output_path)
 
     def batch_parse(
-        self, blobs: Sequence[Blob], gcs_output_path: str, timeout_min: int = 60
+        self,
+        blobs: Sequence[Blob],
+        gcs_output_path: Optional[str] = None,
+        timeout_min: int = 60,
+        check_in_interval_sec: int = 60,
     ) -> Iterator[Document]:
         """Parses a list of blobs lazily.
 
@@ -72,19 +103,24 @@ class DocAIPdfLoader(BaseBlobParser):
             blobs: a list of blobs to parse
             gcs_output_path: a path on GCS to store parsing results
             timeout_min: a timeout to wait for DocAI to complete, in minutes
+            check_in_interval_sec: an interval (in sec) to wait until next check
+                whether parsing operations have been completed
         This is a long-running operations! A recommended way is to decouple
             parsing from creating Langchain Documents:
             >>> operations = parser.docai_parse(blobs, gcs_path)
             >>> parser.is_running(operations)
             You can get operations names and save them:
-            >>> names = [op.name for op in operations]
+            >>> names = [op.operation.name for op in operations]
             And when all operations are finished, you can use their results:
             >>> operations = parser.operations_from_names(operation_names)
             >>> results = parser.get_results(operations)
             >>> docs = parser.parse_from_results(results)
         """
-        operations = self.docai_parse(blobs, gcs_output_path=gcs_output_path)
-        operation_names = [op.name for op in operations]  # type: ignore[attr-defined]
+        output_path = gcs_output_path if gcs_output_path else self._gcs_output_path
+        if output_path is None:
+            raise ValueError("An output path on GCS should be provided!")
+        operations = self.docai_parse(blobs, gcs_output_path=output_path)
+        operation_names = [op.operation.name for op in operations]
         logger.debug(
             f"Started parsing with DocAI, submitted operations {operation_names}"
         )
@@ -93,7 +129,7 @@ class DocAIPdfLoader(BaseBlobParser):
             is_running = self.is_running(operations)
             if not is_running:
                 break
-            time.sleep(60)
+            time.sleep(check_in_interval_sec)
             time_elapsed += 1
             if time_elapsed > timeout_min:
                 raise ValueError(
@@ -135,20 +171,6 @@ class DocAIPdfLoader(BaseBlobParser):
                     page_number += 1
             yield from docs
 
-    @property
-    def client(self) -> "DocumentProcessorServiceClient":
-        """Returns a docai client to be used by the parser."""
-        try:
-            from google.cloud.documentai import DocumentProcessorServiceClient
-        except ImportError:
-            raise ImportError(
-                "documentai package not found, please install it with"
-                " `pip install google-cloud-documentai`"
-            )
-        if self._client:
-            return self._client
-        return DocumentProcessorServiceClient(client_options=self._options)
-
     def operations_from_names(self, operation_names: List[str]) -> List["Operation"]:
         """Initializes Long-Running Operations from their names."""
         try:
@@ -164,20 +186,20 @@ class DocAIPdfLoader(BaseBlobParser):
         operations = []
         for name in operation_names:
             request = GetOperationRequest(name=name)
-            operations.append(self.client.get_operation(request=request))
+            operations.append(self._client.get_operation(request=request))
         return operations
 
     def is_running(self, operations: List["Operation"]) -> bool:
         for op in operations:
-            if not op.done:  # type: ignore[truthy-function]
-                return False
-        return True
+            if not op.done():
+                return True
+        return False
 
     def docai_parse(
         self,
         blobs: Sequence[Blob],
-        gcs_output_path: str,
         *,
+        gcs_output_path: Optional[str] = None,
         batch_size: int = 4000,
         enable_native_pdf_parsing: bool = True,
     ) -> List["Operation"]:
@@ -204,6 +226,9 @@ class DocAIPdfLoader(BaseBlobParser):
 
         if not self._processor_name:
             raise ValueError("Processor name is not defined, aborting!")
+        output_path = gcs_output_path if gcs_output_path else self._gcs_output_path
+        if output_path is None:
+            raise ValueError("An output path on GCS should be provided!")
 
         operations = []
         for batch in batch_iterate(size=batch_size, iterable=blobs):
@@ -220,7 +245,7 @@ class DocAIPdfLoader(BaseBlobParser):
             )
 
             gcs_output_config = documentai.DocumentOutputConfig.GcsOutputConfig(
-                gcs_uri=gcs_output_path, field_mask=None
+                gcs_uri=output_path, field_mask=None
             )
             output_config = documentai.DocumentOutputConfig(
                 gcs_output_config=gcs_output_config
@@ -240,7 +265,7 @@ class DocAIPdfLoader(BaseBlobParser):
                 document_output_config=output_config,
                 process_options=process_options,
             )
-            operations.append(self.client.batch_process_documents(request))
+            operations.append(self._client.batch_process_documents(request))
         return operations
 
     def get_results(self, operations: List["Operation"]) -> List[DocAIParsingResults]:
@@ -254,7 +279,10 @@ class DocAIPdfLoader(BaseBlobParser):
 
         results = []
         for op in operations:
-            metadata = BatchProcessMetadata.deserialize(op.metadata.value)
+            if isinstance(op.metadata, BatchProcessMetadata):
+                metadata = op.metadata
+            else:
+                metadata = BatchProcessMetadata.deserialize(op.metadata.value)
             for status in metadata.individual_process_statuses:
                 source = status.input_gcs_source
                 output = status.output_gcs_destination
@@ -262,12 +290,3 @@ class DocAIPdfLoader(BaseBlobParser):
                     DocAIParsingResults(source_path=source, parsed_path=output)
                 )
         return results
-
-    @classmethod
-    def from_components(
-        cls, *, client: "DocumentProcessorServiceClient", processor_name: str
-    ) -> "DocumentProcessorServiceClient":
-        """Creates a DocumentProcessorServiceClient with a pre-existing client."""
-        parser = cls(processor_name=processor_name, client=client)
-        parser._client = client
-        return parser
