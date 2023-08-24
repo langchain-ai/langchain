@@ -104,6 +104,10 @@ class Pinecone(VectorStore):
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
+        Upsert optimization is done by chunking the embeddings and upserting them.
+        This is done to avoid memory issues and optimize using HTTP based embeddings.
+        For OpenAI embeddings, use pool_threads>4 when constructing the pinecone.Index,
+        embedding_chunk_size>1000 and batch_size~64 for best performance.
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
@@ -368,7 +372,8 @@ class Pinecone(VectorStore):
         elif len(indexes) == 0:
             raise ValueError(
                 "No active indexes found in your Pinecone project, "
-                "are you sure you're using the right API key and environment?"
+                "are you sure you're using the right Pinecone API key and Environment? "
+                "Please double check your Pinecone dashboard."
             )
         else:
             raise ValueError(
@@ -441,7 +446,7 @@ class Pinecone(VectorStore):
         embedding: Embeddings,
         text_key: str = "text",
         namespace: Optional[str] = None,
-        pool_threads: int = 1,
+        pool_threads: int = 4,
     ) -> Pinecone:
         """Load pinecone vectorstore from index name."""
         return cls.get_pinecone(
