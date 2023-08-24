@@ -4,9 +4,9 @@ from langchain.prompts.base import StringPromptValue
 from langchain.prompts.chat import ChatPromptValue
 from langchain.schema import HumanMessage, AIMessage
 from langchain.callbacks.manager import CallbackManagerForChainRun
-from langchain.chains.comprehend_moderation import (ComprehendPII, 
-                                                       ComprehendToxicity, 
-                                                       ComprehendIntent)
+from langchain.chains.comprehend_moderation.intent import ComprehendIntent
+from langchain.chains.comprehend_moderation.pii import ComprehendPII
+from langchain.chains.comprehend_moderation.toxicity import ComprehendToxicity
 
 class BaseModeration:
     
