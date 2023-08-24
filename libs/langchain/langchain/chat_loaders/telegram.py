@@ -93,7 +93,7 @@ class TelegramChatLoader(chat_loaders.BaseChatLoader):
             data = json.load(file)
 
         messages = data.get("messages", [])
-        results: List[Union[schema.AIMessage, schema.HumanMessage]] = []
+        results: List[schema.BaseMessage] = []
         previous_sender = None
         for message in messages:
             text = message.get("text", "")

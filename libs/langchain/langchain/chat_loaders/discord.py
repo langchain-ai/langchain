@@ -6,7 +6,7 @@ right click, and select "Copy". Then paste in a text file.
 """
 import logging
 import re
-from typing import Iterator, List, Optional, Union
+from typing import Iterator, List, Optional
 
 from langchain import schema
 from langchain.chat_loaders import base as chat_loaders
@@ -44,7 +44,7 @@ class DiscordChatLoader(chat_loaders.BaseChatLoader):
         with open(file_path, "r", encoding="utf-8") as file:
             lines = file.readlines()
 
-        results: List[Union[schema.HumanMessage, schema.AIMessage]] = []
+        results: List[schema.BaseMessage] = []
         current_sender = None
         current_timestamp = None
         current_content = []
