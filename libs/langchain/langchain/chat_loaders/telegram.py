@@ -50,8 +50,9 @@ class TelegramChatLoader(chat_loaders.BaseChatLoader):
             from bs4 import BeautifulSoup
         except ImportError:
             raise ImportError(
-                "Please install the 'beautifulsoup4' package to load Telegram HTML files."
-                " You can do this by running 'pip install beautifulsoup4' in your terminal."
+                "Please install the 'beautifulsoup4' package to load"
+                " Telegram HTML files. You can do this by running"
+                "'pip install beautifulsoup4' in your terminal."
             )
         with open(file_path, "r", encoding="utf-8") as file:
             soup = BeautifulSoup(file, "html.parser")
