@@ -114,7 +114,11 @@ class LlamaCpp(LLM):
     """Whether to stream the results, token by token."""
 
     grammar_path: Optional[str] = None
-    """grammar_path: Path to the .gbnf file."""
+    """
+    grammar_path: Path to the .gbnf file that defines formal grammars
+    for constraining model outputs. For instance, the grammar can be used
+    to force the model to generate valid JSON or to speak exclusively in emojis.
+    """
 
     verbose: bool = True
     """Print verbose output to stderr."""
@@ -252,7 +256,12 @@ class LlamaCpp(LLM):
         if self.grammar_path:
             try:
                 from llama_cpp import LlamaGrammar
-
+            except ImportError:
+                raise ImportError(
+                    "Could not import LlamaGrammar from the llama-cpp-python library."
+                    "Ensure that the version installed supports LlamaGrammar."
+                )
+            try:
                 grammar = LlamaGrammar.from_file(
                     self.grammar_path  # type: ignore[arg-type]
                 )
