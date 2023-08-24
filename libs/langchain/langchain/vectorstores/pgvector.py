@@ -172,22 +172,22 @@ class PGVector(VectorStore):
             
     def delete(
         self,
+        uuids: Optional[List[str]] = None,
         ids: Optional[List[str]] = None,
-        custom_ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
         self.logger.debug("Trying to delete vectors by ids")
         with Session(self._conn) as session:
-            if ids is not None:
-                for id in ids:
+            if uuids is not None:
+                for id in uuids:
                     stmt = delete(self.EmbeddingStore).where(
                         self.EmbeddingStore.uuid == id
                     )
                     session.execute(stmt)
-            if custom_ids is not None:
-                for cid in custom_ids:
+            if ids is not None:
+                for id in ids:
                     stmt = delete(self.EmbeddingStore).where(
-                        self.EmbeddingStore.custom_id == cid
+                        self.EmbeddingStore.custom_id == id
                     )
                     session.execute(stmt)
             session.commit()
