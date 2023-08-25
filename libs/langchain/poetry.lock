@@ -1163,7 +1163,7 @@ graph = ["gremlinpython (==3.4.6)"]
 name = "cassio"
 version = "0.1.0"
 description = "A framework-agnostic Python library to seamlessly integrate Apache Cassandra(R) with ML/LLM/genAI workloads."
-category = "main"optional = false
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "cassio-0.1.0-py3-none-any.whl", hash = "sha256:32839d07b7d67c2a48b2efe951af4b330a8a3f0dfd9dfb53cd09ee75dbd03b5a"},
@@ -10447,4 +10447,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "a890b5a7938c4a15cf89f09b117483a635a16bf20178510100cfe8bb56eb13e7"
+content-hash = "42f299cf73785afbff0276ca4a2312839d406596938006341e0411f304d479a2"
