@@ -149,7 +149,7 @@ class AmazonComprehendModerationChain(Chain):
 
     def _call(
         self,
-        inputs: Dict[str, Any] = None,
+        inputs: Dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
         """
