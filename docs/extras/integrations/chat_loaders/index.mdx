@@ -6,10 +6,11 @@ sidebar_position: 0
 
 Like document loaders, chat loaders are utilities designed to help load conversations from popular communication platforms such as Facebook, Slack, Discord, etc. These are loaded into memory as LangChain chat message objects. Such utilities facilitate tasks such as fine-tuning a language model to match your personal style or voice. 
 
-This brief guide will illustrate the process using [OpenAI's fine-tuning API](https://platform.openai.com/docs/guides/fine-tuning) in six steps:
+This brief guide will illustrate the process using [OpenAI's fine-tuning API](https://platform.openai.com/docs/guides/fine-tuning) comprised of six steps:
 
 1. Export your Facebook Messenger chat data in a compatible format for your intended chat loader.
-2. Load the chat data into memory as LangChain chat message objects. Assign a person to the "AI" role and optionally filter, group, and merge messages.
+2. Load the chat data into memory as LangChain chat message objects. (_this is what is covered in each integration notebook in this section of the documentation_).
+    - Assign a person to the "AI" role and optionally filter, group, and merge messages.
 3. Export these acquired messages in a format expected by the fine-tuning API.
 4. Upload this data to OpenAI.
 5. Fine-tune your model.
@@ -90,7 +91,8 @@ len(message_groups)
 
 ### 4. Upload the data to OpenAI
 
-Ensure you have set your OpenAI API key by following these [instructions](https://platform.openai.com/account/api-keys). 
+Ensure you have set your OpenAI API key by following these [instructions](https://platform.openai.com/account/api-keys), then upload the training file.
+An audit is performed to ensure data compliance, so you may have to wait a few minutes for the dataset to become ready for use.
 
 ```python
 import time
@@ -119,7 +121,7 @@ while status != "processed":
 print(f"File {training_file.id} ready after {time.time() - start_time:.2f} seconds.")
 ```
 
-The file is uploaded to OpenAI’s servers. An audit is performed to ensure data compliance, so you may have to wait a few minutes for the dataset to be ready for use.
+Once this is done, you can proceed to the model training!
 
 ### 5. Fine-tune the model
 
