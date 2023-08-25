@@ -302,6 +302,11 @@ class RedisSemanticCache(BaseCache):
 
     # TODO - implement a TTL policy in Redis
 
+    DEFAULT_SCHEMA = {
+        "content_key": "prompt",
+        "text": [{"name": "return_val"}, {"name": "prompt"}, {"name": "llm_string"}],
+    }
+
     def __init__(
         self, redis_url: str, embedding: Embeddings, score_threshold: float = 0.2
     ):
@@ -349,15 +354,18 @@ class RedisSemanticCache(BaseCache):
                 embedding=self.embedding,
                 index_name=index_name,
                 redis_url=self.redis_url,
+                schema=self.DEFAULT_SCHEMA,
             )
         except ValueError:
             redis = RedisVectorstore(
                 embedding_function=self.embedding.embed_query,
                 index_name=index_name,
                 redis_url=self.redis_url,
+                index_schema=self.DEFAULT_SCHEMA,
             )
             _embedding = self.embedding.embed_query(text="test")
             redis._create_index(dim=len(_embedding))
+            print(redis.index_name)
             self._cache_dict[index_name] = redis
 
         return self._cache_dict[index_name]
@@ -376,15 +384,14 @@ class RedisSemanticCache(BaseCache):
         llm_cache = self._get_llm_cache(llm_string)
         generations = []
         # Read from a Hash
-        results = llm_cache.similarity_search_limit_score(
+        results = llm_cache.similarity_search(
             query=prompt,
             k=1,
-            score_threshold=self.score_threshold,
+            distance_threshold=self.score_threshold,
         )
         if results:
             for document in results:
-                for text in document.metadata["return_val"]:
-                    generations.append(Generation(text=text))
+                generations.append(Generation(text=document.metadata["return_val"]))
         return generations if generations else None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
