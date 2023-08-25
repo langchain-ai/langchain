@@ -141,7 +141,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         llm_run = self.run_map.get(run_id_)
         if llm_run is None or llm_run.run_type != "llm":
             raise TracerException(f"No LLM Run found to be traced for {run_id}")
-        event_kwargs = {"token": token}
+        event_kwargs: Dict[str, Any] = {"token": token}
         if chunk:
             event_kwargs["chunk"] = chunk
         llm_run.events.append(
