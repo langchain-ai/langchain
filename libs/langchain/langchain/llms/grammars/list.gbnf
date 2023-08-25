@@ -1,9 +1,11 @@
-root ::= "[" items "]" EOF
+root ::= "[" items ws* "]" EOF
 
-items ::= item (", " item)*
+items ::= item ("," ws* item)*
 
 item ::= word
 
-word ::= [a-zA-Z]+
+word ::= "\"" [a-zA-Z]+ "\""
+
+ws ::= " "
 
 EOF ::= "\n"
