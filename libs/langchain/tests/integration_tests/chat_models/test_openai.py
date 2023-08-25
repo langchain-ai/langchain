@@ -1,8 +1,6 @@
 """Test ChatOpenAI wrapper."""
 from typing import Any
 
-from typing import Any
-
 import pytest
 
 from langchain.callbacks.base import AsyncCallbackHandler
