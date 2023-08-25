@@ -34,7 +34,7 @@ def push(
     new_repo_description: str = "",
 ) -> str:
     """
-    Pushes an object to the hub and returns the new commit hash.
+    Pushes an object to the hub and returns the URL it can be viewed at in a browser.
 
     :param repo_full_name: The full name of the repo to push to in the format of
         `owner/repo`.
@@ -51,15 +51,14 @@ def push(
     """
     client = _get_client(api_url=api_url, api_key=api_key)
     manifest_json = dumps(object)
-    resp = client.push(
+    message = client.push(
         repo_full_name,
         manifest_json,
         parent_commit_hash=parent_commit_hash,
         new_repo_is_public=new_repo_is_public,
         new_repo_description=new_repo_description,
     )
-    commit_hash: str = resp["commit"]["commit_hash"]
-    return commit_hash
+    return message
 
 
 def pull(
