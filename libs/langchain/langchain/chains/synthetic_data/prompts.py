@@ -10,4 +10,6 @@ Preferences:
 Sentence:
 """
 
-SENTENCE_PROMPT = PromptTemplate(template=sentence_template, input_variables=["fields", "preferences"])
+SENTENCE_PROMPT = PromptTemplate(
+    template=sentence_template, input_variables=["fields", "preferences"]
+)

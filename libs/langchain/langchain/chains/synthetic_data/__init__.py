@@ -28,7 +28,11 @@ def create_data_generation_chain(
 class DatasetGenerator:
     """Generates synthetic dataset with a given language model."""
 
-    def __init__(self, llm: BaseLanguageModel, sentence_preferences: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        llm: BaseLanguageModel,
+        sentence_preferences: Optional[Dict[str, Any]] = None,
+    ):
         self.generator = create_data_generation_chain(llm)
         self.sentence_preferences = sentence_preferences or {}
 
@@ -37,10 +41,7 @@ class DatasetGenerator:
         for fields in fields_collection:
             results.append(
                 self.generator(
-                    {
-                        "fields": fields, 
-                        "preferences": self.sentence_preferences
-                    }
+                    {"fields": fields, "preferences": self.sentence_preferences}
                 )
             )
         return results
