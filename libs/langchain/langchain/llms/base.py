@@ -27,7 +27,6 @@ from typing import (
 )
 
 import yaml
-from pydantic_v1 import Field, root_validator, validator
 from tenacity import (
     RetryCallState,
     before_sleep_log,
@@ -50,6 +49,7 @@ from langchain.callbacks.manager import (
 from langchain.load.dump import dumpd
 from langchain.prompts.base import StringPromptValue
 from langchain.prompts.chat import ChatPromptValue
+from langchain.pydantic_v1 import Field, root_validator, validator
 from langchain.schema import (
     Generation,
     LLMResult,
@@ -528,9 +528,13 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 f" argument of type {type(prompts)}."
             )
         # Create callback managers
-        if isinstance(callbacks, list) and (
-            isinstance(callbacks[0], (list, BaseCallbackManager))
-            or callbacks[0] is None
+        if (
+            isinstance(callbacks, list)
+            and callbacks
+            and (
+                isinstance(callbacks[0], (list, BaseCallbackManager))
+                or callbacks[0] is None
+            )
         ):
             # We've received a list of callbacks args to apply to each input
             assert len(callbacks) == len(prompts)

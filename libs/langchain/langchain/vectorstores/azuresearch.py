@@ -1,4 +1,3 @@
-"""Wrapper around Azure Cognitive Search."""
 from __future__ import annotations
 
 import base64
@@ -18,7 +17,6 @@ from typing import (
 )
 
 import numpy as np
-from pydantic_v1 import root_validator
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -26,6 +24,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
+from langchain.pydantic_v1 import root_validator
 from langchain.schema import BaseRetriever
 from langchain.utils import get_from_env
 from langchain.vectorstores.base import VectorStore
@@ -177,7 +176,7 @@ def _get_search_client(
 
 
 class AzureSearch(VectorStore):
-    """Azure Cognitive Search vector store."""
+    """`Azure Cognitive Search` vector store."""
 
     def __init__(
         self,
@@ -526,7 +525,7 @@ class AzureSearch(VectorStore):
 
 
 class AzureSearchVectorStoreRetriever(BaseRetriever):
-    """Retriever that uses Azure Search to find similar documents."""
+    """Retriever that uses `Azure Cognitive Search`."""
 
     vectorstore: AzureSearch
     """Azure Search instance used to find similar documents."""

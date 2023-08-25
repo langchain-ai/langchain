@@ -2,10 +2,9 @@
 import warnings
 from typing import Any, Dict, List, Optional
 
-from pydantic_v1 import root_validator
-
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.embeddings.base import Embeddings
+from langchain.pydantic_v1 import root_validator
 from langchain.schema import BaseRetriever, Document
 from langchain.vectorstores.milvus import Milvus
 
@@ -13,7 +12,7 @@ from langchain.vectorstores.milvus import Milvus
 
 
 class MilvusRetriever(BaseRetriever):
-    """Retriever that uses the Milvus API."""
+    """`Milvus API` retriever."""
 
     embedding_function: Embeddings
     collection_name: str = "LangChainCollection"

@@ -1,4 +1,3 @@
-"""Wrapper around Cassandra vector-store capabilities, based on cassIO."""
 from __future__ import annotations
 
 import typing

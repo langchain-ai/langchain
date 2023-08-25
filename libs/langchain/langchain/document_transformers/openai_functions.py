@@ -1,11 +1,10 @@
 """Document transformers that use OpenAI Functions models"""
 from typing import Any, Dict, Optional, Sequence, Type, Union
 
-from pydantic_v1 import BaseModel
-
 from langchain.chains.llm import LLMChain
 from langchain.chains.openai_functions import create_tagging_chain
 from langchain.prompts import ChatPromptTemplate
+from langchain.pydantic_v1 import BaseModel
 from langchain.schema import BaseDocumentTransformer, Document
 from langchain.schema.language_model import BaseLanguageModel
 

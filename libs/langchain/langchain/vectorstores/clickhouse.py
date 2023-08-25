@@ -1,5 +1,3 @@
-"""Wrapper around open source ClickHouse VectorSearch capability."""
-
 from __future__ import annotations
 
 import json
@@ -8,10 +6,9 @@ from hashlib import sha1
 from threading import Thread
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
-from pydantic_v1 import BaseSettings
-
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
+from langchain.pydantic_v1 import BaseSettings
 from langchain.vectorstores.base import VectorStore
 
 logger = logging.getLogger()
@@ -34,7 +31,7 @@ def has_mul_sub_str(s: str, *args: Any) -> bool:
 
 
 class ClickhouseSettings(BaseSettings):
-    """ClickHouse Client Configuration
+    """`ClickHouse` client configuration.
 
     Attribute:
         clickhouse_host (str) : An URL to connect to MyScale backend.
@@ -102,7 +99,7 @@ class ClickhouseSettings(BaseSettings):
 
 
 class Clickhouse(VectorStore):
-    """Wrapper around ClickHouse vector database
+    """`ClickHouse VectorSearch` vector store.
 
     You need a `clickhouse-connect` python package, and a valid account
     to connect to ClickHouse.
@@ -131,7 +128,7 @@ class Clickhouse(VectorStore):
         try:
             from clickhouse_connect import get_client
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import clickhouse connect python package. "
                 "Please install it with `pip install clickhouse-connect`."
             )

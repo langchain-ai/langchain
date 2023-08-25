@@ -4,9 +4,8 @@ import os
 from functools import partial
 from typing import Any, Dict, List, Optional
 
-from pydantic_v1 import BaseModel, Extra, root_validator
-
 from langchain.embeddings.base import Embeddings
+from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 
 
 class BedrockEmbeddings(BaseModel, Embeddings):

@@ -2,10 +2,10 @@ import json
 from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 import requests
-from pydantic_v1 import Extra
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import BaseLLM
+from langchain.pydantic_v1 import Extra
 from langchain.schema import LLMResult
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.output import GenerationChunk
@@ -23,7 +23,7 @@ def _stream_response_to_generation_chunk(
 
 
 class _OllamaCommon(BaseLanguageModel):
-    base_url = "http://localhost:11434"
+    base_url: str = "http://localhost:11434"
     """Base url the model is hosted under."""
 
     model: str = "llama2"
@@ -144,9 +144,35 @@ class _OllamaCommon(BaseLanguageModel):
             )
         return response.iter_lines(decode_unicode=True)
 
+    def _stream_with_aggregation(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        verbose: bool = False,
+        **kwargs: Any,
+    ) -> GenerationChunk:
+        final_chunk: Optional[GenerationChunk] = None
+        for stream_resp in self._create_stream(prompt, stop, **kwargs):
+            if stream_resp:
+                chunk = _stream_response_to_generation_chunk(stream_resp)
+                if final_chunk is None:
+                    final_chunk = chunk
+                else:
+                    final_chunk += chunk
+                if run_manager:
+                    run_manager.on_llm_new_token(
+                        chunk.text,
+                        verbose=verbose,
+                    )
+        if final_chunk is None:
+            raise ValueError("No data received from Ollama stream.")
+
+        return final_chunk
+
 
 class Ollama(BaseLLM, _OllamaCommon):
-    """Ollama locally run large language models.
+    """Ollama locally runs large language models.
 
     To use, follow the instructions at https://ollama.ai/.
 
@@ -191,20 +217,13 @@ class Ollama(BaseLLM, _OllamaCommon):
         # TODO: add caching here.
         generations = []
         for prompt in prompts:
-            final_chunk: Optional[GenerationChunk] = None
-            for stream_resp in self._create_stream(prompt, stop, **kwargs):
-                if stream_resp:
-                    chunk = _stream_response_to_generation_chunk(stream_resp)
-                    if final_chunk is None:
-                        final_chunk = chunk
-                    else:
-                        final_chunk += chunk
-                    if run_manager:
-                        run_manager.on_llm_new_token(
-                            chunk.text,
-                            verbose=self.verbose,
-                        )
-
+            final_chunk = super()._stream_with_aggregation(
+                prompt,
+                stop=stop,
+                run_manager=run_manager,
+                verbose=self.verbose,
+                **kwargs,
+            )
             generations.append([final_chunk])
         return LLMResult(generations=generations)
 

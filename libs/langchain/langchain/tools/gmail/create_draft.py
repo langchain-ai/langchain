@@ -2,9 +2,8 @@ import base64
 from email.message import EmailMessage
 from typing import List, Optional, Type
 
-from pydantic_v1 import BaseModel, Field
-
 from langchain.callbacks.manager import CallbackManagerForToolRun
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.gmail.base import GmailBaseTool
 
 
