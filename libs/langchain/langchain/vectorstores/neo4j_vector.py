@@ -38,6 +38,8 @@ class Neo4jVector(VectorStore):
         url: Neo4j connection url
         username: Neo4j username.
         password: Neo4j password
+        database: Optionally provide Neo4j database
+                  Defaults to "neo4j"
         embedding_function: Any embedding function implementing
             `langchain.embeddings.base.Embeddings` interface.
         distance_strategy: The distance strategy to use. (default: COSINE)
@@ -123,7 +125,11 @@ class Neo4jVector(VectorStore):
 
         # Delete existing data if flagged
         if pre_delete_collection:
-            self.query(f"MATCH (n:{self.node_label}) DETACH DELETE n")
+            self.query(
+                f"MATCH (n:`{self.node_label}`) "
+                "CALL { WITH n DETACH DELETE n } "
+                "IN TRANSACTIONS OF 10000 ROWS;"
+            )
 
     def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
         """
@@ -136,9 +142,6 @@ class Neo4jVector(VectorStore):
 
         Returns:
             List[Dict[str, Any]]: List of dictionaries containing the query results.
-
-        Raises:
-            ValueError: If the generated Cypher statement is not valid.
         """
         from neo4j.exceptions import CypherSyntaxError
 
@@ -147,7 +150,7 @@ class Neo4jVector(VectorStore):
                 data = session.run(query, params)
                 return [r.data() for r in data]
             except CypherSyntaxError as e:
-                raise ValueError(f"Generated Cypher Statement is not valid\n{e}")
+                raise ValueError(f"Cypher Statement is not valid\n{e}")
 
     def verify_version(self) -> None:
         """
@@ -298,11 +301,11 @@ class Neo4jVector(VectorStore):
 
         import_query = (
             "UNWIND $data AS row "
-            f"CREATE (c:{self.node_label}) "
-            f"SET c.{self.embedding_node_property} = row.embedding "
-            "SET c.id = row.id "
-            f"SET c.{self.text_node_property} = row.text "
-            "SET c += row.metadata "
+            "CALL { WITH row "
+            f"MERGE (c:`{self.node_label}` {{id: row.id}}) "
+            f"SET c.`{self.embedding_node_property}` = row.embedding "
+            f"SET c.`{self.text_node_property}` = row.text "
+            "SET c += row.metadata } IN TRANSACTIONS OF 1000 ROWS"
         )
 
         parameters = {
@@ -402,9 +405,9 @@ class Neo4jVector(VectorStore):
         read_query = (
             "CALL db.index.vector.queryNodes($index, $k, $embedding) "
             "YIELD node, score "
-            f"RETURN node.{self.text_node_property} AS text, score, "
-            f"node {{.*, {self.text_node_property}: Null, "
-            f"{self.embedding_node_property}: Null, id: Null }} AS metadata"
+            f"RETURN node.`{self.text_node_property}` AS text, score, "
+            f"node {{.*, `{self.text_node_property}`: Null, "
+            f"`{self.embedding_node_property}`: Null, id: Null }} AS metadata"
         )
 
         parameters = {"index": self.index_name, "k": k, "embedding": embedding}
@@ -457,8 +460,8 @@ class Neo4jVector(VectorStore):
     ) -> Neo4jVector:
         """
         Return Neo4jVector initialized from texts and embeddings.
-        Neo4j credentials are required in the form of
-        `url`, `username`, and `password` parameters.
+        Neo4j credentials are required in the form of `url`, `username`,
+        and `password` and optional `database` parameters.
         """
         embeddings = embedding.embed_documents(list(texts))
 
@@ -490,8 +493,8 @@ class Neo4jVector(VectorStore):
         generated embeddings.
 
         Return Neo4jVector initialized from documents and embeddings.
-        Neo4j credentials are required in the form of
-        `url`, `username`, and `password` parameters.
+        Neo4j credentials are required in the form of `url`, `username`,
+        and `password` and optional `database` parameters.
 
         Example:
             .. code-block:: python
@@ -533,11 +536,11 @@ class Neo4jVector(VectorStore):
         **kwargs: Any,
     ) -> Neo4jVector:
         """
-        Get instance of an existing Neo4j vector index.This method will
+        Get instance of an existing Neo4j vector index. This method will
         return the instance of the store without inserting any new
         embeddings.
-        Neo4j credentials are required in the form of
-        `url`, `username`, and `password` parameters along with
+        Neo4j credentials are required in the form of `url`, `username`,
+        and `password` and optional `database` parameters along with
         the `index_name` definition.
         """
 
@@ -581,8 +584,8 @@ class Neo4jVector(VectorStore):
     ) -> Neo4jVector:
         """
         Return Neo4jVector initialized from documents and embeddings.
-        Neo4j credentials are required in the form of
-        `url`, `username`, and `password` parameters.
+        Neo4j credentials are required in the form of `url`, `username`,
+        and `password` and optional `database` parameters.
         """
 
         texts = [d.page_content for d in documents]
