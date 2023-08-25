@@ -1,4 +1,3 @@
-"""Wrapper around ChromaDB embeddings platform."""
 from __future__ import annotations
 
 import logging
@@ -50,7 +49,7 @@ def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
 
 
 class Chroma(VectorStore):
-    """Wrapper around ChromaDB embeddings platform.
+    """`ChromaDB` vector store.
 
     To use, you should have the ``chromadb`` python package installed.
 
@@ -76,12 +75,12 @@ class Chroma(VectorStore):
         client: Optional[chromadb.Client] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
     ) -> None:
-        """Initialize with Chroma client."""
+        """Initialize with a Chroma client."""
         try:
             import chromadb
             import chromadb.config
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import chromadb python package. "
                 "Please install it with `pip install chromadb`."
             )
