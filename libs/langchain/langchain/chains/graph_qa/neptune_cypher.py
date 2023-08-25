@@ -18,6 +18,30 @@ from langchain.pydantic_v1 import Field
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 
 
+def trim_query(query: str) -> str:
+    keywords = (
+        "MATCH",
+        "CREATE",
+        "MERGE",
+        "WITH",
+        "UNWIND",
+        "RETURN",
+        "DELETE",
+        "OPTIONAL",
+        "CALL",
+        "//",
+    )
+
+    lines = query.split("\n")
+    new_query = ""
+
+    for line in lines:
+        if line.strip().upper().startswith(keywords):
+            new_query += line + "\n"
+
+    return new_query
+
+
 def extract_cypher(text: str) -> str:
     """Extract Cypher code from text using Regex."""
     # The pattern to find Cypher code enclosed in triple backticks
@@ -108,6 +132,7 @@ class NeptuneOpenCypherQAChain(Chain):
 
         # Extract Cypher code if it is wrapped in backticks
         generated_cypher = extract_cypher(generated_cypher)
+        generated_cypher = trim_query(generated_cypher)
 
         _run_manager.on_text("Generated Cypher:", end="\n", verbose=self.verbose)
         _run_manager.on_text(

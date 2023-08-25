@@ -1,7 +1,4 @@
-import json
-from typing import Any, Dict, List, Tuple, Union
-
-import requests
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 
 class NeptuneQueryException(Exception):
@@ -23,8 +20,7 @@ class NeptuneQueryException(Exception):
 
 
 class NeptuneGraph:
-    """Neptune wrapper for graph operations. This version
-    does not support Sigv4 signing of requests.
+    """Neptune wrapper for graph operations.
 
     Example:
         .. code-block:: python
@@ -35,25 +31,61 @@ class NeptuneGraph:
         )
     """
 
-    def __init__(self, host: str, port: int = 8182, use_https: bool = True) -> None:
+    def __init__(
+        self,
+        host: str,
+        port: int = 8182,
+        use_https: bool = True,
+        client: Any = None,
+        credentials_profile_name: Optional[str] = None,
+        region_name: Optional[str] = None,
+    ) -> None:
         """Create a new Neptune graph wrapper instance."""
 
-        if use_https:
-            self.summary_url = (
-                f"https://{host}:{port}/pg/statistics/summary?mode=detailed"
-            )
-            self.query_url = f"https://{host}:{port}/openCypher"
-        else:
-            self.summary_url = (
-                f"http://{host}:{port}/pg/statistics/summary?mode=detailed"
-            )
-            self.query_url = f"http://{host}:{port}/openCypher"
+        try:
+            if client is not None:
+                self.client = client
+            else:
+                import boto3
 
-        # Set schema
+                if credentials_profile_name is not None:
+                    session = boto3.Session(profile_name=credentials_profile_name)
+                else:
+                    # use default credentials
+                    session = boto3.Session()
+
+                client_params = {}
+                if region_name:
+                    client_params["region_name"] = region_name
+
+                protocol = "https" if use_https else "http"
+
+                client_params["endpoint_url"] = f"{protocol}://{host}:{port}"
+
+                self.client = session.client("neptune-db", **client_params)
+
+        except ImportError:
+            raise ModuleNotFoundError(
+                "Could not import boto3 python package. "
+                "Please install it with `pip install boto3`."
+            )
+
+        except Exception as e:
+            raise ValueError(
+                "Could not load credentials to authenticate with AWS client. "
+                "Please check that credentials in the specified "
+                "profile name are valid."
+            ) from e
+
         try:
             self._refresh_schema()
-        except NeptuneQueryException:
-            raise ValueError("Could not get schema for Neptune database")
+        except Exception as e:
+            raise NeptuneQueryException(
+                {
+                    "message": "Could not get schema for Neptune database",
+                    "detail": str(e),
+                }
+            )
 
     @property
     def get_schema(self) -> str:
@@ -62,32 +94,12 @@ class NeptuneGraph:
 
     def query(self, query: str, params: dict = {}) -> Dict[str, Any]:
         """Query Neptune database."""
-        response = requests.post(url=self.query_url, data={"query": query})
-        if response.ok:
-            results = json.loads(response.content.decode())
-            return results
-        else:
-            raise NeptuneQueryException(
-                {
-                    "message": "The generated query failed to execute",
-                    "details": response.content.decode(),
-                }
-            )
+        return self.client.execute_open_cypher_query(openCypherQuery=query)
 
     def _get_summary(self) -> Dict:
-        response = requests.get(url=self.summary_url)
-        if not response.ok:
-            raise NeptuneQueryException(
-                {
-                    "message": (
-                        "Summary API is not available for this instance of Neptune,"
-                        "ensure the engine version is >=1.2.1.0"
-                    ),
-                    "details": response.content.decode(),
-                }
-            )
+        response = self.client.get_propertygraph_summary()
         try:
-            summary = response.json()["payload"]["graphSummary"]
+            summary = response["payload"]["graphSummary"]
         except Exception:
             raise NeptuneQueryException(
                 {
@@ -101,6 +113,7 @@ class NeptuneGraph:
     def _get_labels(self) -> Tuple[List[str], List[str]]:
         """Get node and edge labels from the Neptune statistics summary"""
         summary = self._get_summary()
+        print(summary)
         n_labels = summary["nodeLabels"]
         e_labels = summary["edgeLabels"]
         return n_labels, e_labels
