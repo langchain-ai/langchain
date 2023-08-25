@@ -910,10 +910,6 @@ class CassandraSemanticCache(BaseCache):
     def _get_embedding_dimension(self) -> int:
         return len(self._get_embedding(text="This is a sample sentence."))
 
-    def clear(self, **kwargs: Any) -> None:
-        """Clear the *whole* semantic cache."""
-        self.table.clear()
-
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache based on prompt and llm_string."""
         embedding_vector = self._get_embedding(text=prompt)
@@ -948,13 +944,15 @@ class CassandraSemanticCache(BaseCache):
         If there are hits, return (document_id, cached_entry)
         """
         prompt_embedding: List[float] = self._get_embedding(text=prompt)
-        hits = list(self.table.metric_ann_search(
-            vector=prompt_embedding,
-            metadata={"_llm_string_hash": _hash(llm_string)},
-            n=1,
-            metric=self.distance_metric,
-            metric_threshold=self.score_threshold,
-        ))
+        hits = list(
+            self.table.metric_ann_search(
+                vector=prompt_embedding,
+                metadata={"_llm_string_hash": _hash(llm_string)},
+                n=1,
+                metric=self.distance_metric,
+                metric_threshold=self.score_threshold,
+            )
+        )
         if hits:
             hit = hits[0]
             generations_str = hit["body_blob"]
@@ -981,3 +979,7 @@ class CassandraSemanticCache(BaseCache):
         with that ID. This is for the second step.
         """
         self.table.delete(row_id=document_id)
+
+    def clear(self, **kwargs: Any) -> None:
+        """Clear the *whole* semantic cache."""
+        self.table.clear()

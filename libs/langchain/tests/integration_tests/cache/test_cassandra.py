@@ -1,16 +1,15 @@
 """Test Cassandra caches. Requires a running vector-capable Cassandra cluster."""
 import os
-import pytest
 import time
-from typing import Iterator, Tuple, Any
+from typing import Any, Iterator, Tuple
+
+import pytest
 
 import langchain
 from langchain.cache import CassandraCache, CassandraSemanticCache
 from langchain.schema import Generation, LLMResult
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
-from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 from tests.unit_tests.llms.fake_llm import FakeLLM
-
 
 
 @pytest.fixture(scope="module")
