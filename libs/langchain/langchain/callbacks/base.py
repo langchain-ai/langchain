@@ -43,8 +43,8 @@ class LLMManagerMixin:
     def on_llm_new_token(
         self,
         token: str,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
         *,
+        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
@@ -323,6 +323,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         self,
         token: str,
         *,
+        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
         tags: Optional[List[str]] = None,

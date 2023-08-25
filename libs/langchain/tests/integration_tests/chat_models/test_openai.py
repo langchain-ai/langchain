@@ -1,5 +1,5 @@
 """Test ChatOpenAI wrapper."""
-from typing import Any
+from typing import Any, List, Optional, Union
 
 import pytest
 
@@ -16,7 +16,7 @@ from langchain.schema import (
     LLMResult,
 )
 from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
-from langchain.schema.output import ChatGenerationChunk
+from langchain.schema.output import ChatGenerationChunk, GenerationChunk
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
@@ -201,14 +201,22 @@ async def test_async_chat_openai_streaming_with_function() -> None:
     """Test ChatOpenAI wrapper with multiple completions."""
 
     class MyCustomAsyncHandler(AsyncCallbackHandler):
+        def __init__(self) -> None:
+            super().__init__()
+            self._captured_tokens: List[str] = []
+            self._captured_chunks: List[
+                Optional[Union[ChatGenerationChunk, GenerationChunk]]
+            ] = []
+
         def on_llm_new_token(
             self,
             token: str,
-            chunk: ChatGenerationChunk,
+            *,
+            chunk: Optional[Union[ChatGenerationChunk, GenerationChunk]] = None,
             **kwargs: Any,
         ) -> Any:
-            print(f"I just got a token: {token}")
-            print(f"I just got a chunk: {chunk}")
+            self._captured_tokens.append(token)
+            self._captured_chunks.append(chunk)
 
     json_schema = {
         "title": "Person",
@@ -284,6 +292,9 @@ async def test_async_chat_openai_streaming_with_function() -> None:
             assert isinstance(generation, ChatGeneration)
             assert isinstance(generation.text, str)
             assert generation.text == generation.message.content
+    assert len(callback_handler._captured_tokens) > 0
+    assert len(callback_handler._captured_chunks) > 0
+    assert all([chunk is not None for chunk in callback_handler._captured_chunks])
 
 
 def test_chat_openai_extra_kwargs() -> None:
