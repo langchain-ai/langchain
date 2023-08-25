@@ -721,7 +721,7 @@ class Redis(VectorStore):
         tags.extend(self._get_retriever_tags())
         return RedisVectorStoreRetriever(vectorstore=self, **kwargs, tags=tags)
 
-    @deprecated("0.0.267", alternative="similarity_search(distance_threshold=0.1)")
+    @deprecated("0.0.272", alternative="similarity_search(distance_threshold=0.1)")
     def similarity_search_limit_score(
         self, query: str, k: int = 4, score_threshold: float = 0.2, **kwargs: Any
     ) -> List[Document]:
@@ -904,7 +904,10 @@ class Redis(VectorStore):
                 metadata = {"id": result.id}
                 metadata.update(self._collect_metadata(result))
 
-            docs.append(Document(page_content=result.content, metadata=metadata))
+            content_key = self._schema.content_key
+            docs.append(
+                Document(page_content=getattr(result, content_key), metadata=metadata)
+            )
         return docs
 
     def _collect_metadata(self, result: "Document") -> Dict[str, Any]:
