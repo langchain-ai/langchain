@@ -5,6 +5,7 @@ from pydantic.main import BaseModel
 from langchain import BasePromptTemplate, PromptTemplate
 from langchain.chains.openai_functions import create_structured_output_chain
 from langchain.chains.data_generation.base import SyntheticDataGenerator
+from langchain.chat_models import ChatOpenAI
 from langchain.schema import BaseLLMOutputParser
 from langchain.schema.language_model import BaseLanguageModel
 
@@ -15,7 +16,7 @@ OPENAI_TEMPLATE = PromptTemplate(
 
 def create_openai_data_generator(
         output_schema: Union[Dict[str, Any], Type[BaseModel]],
-        llm: BaseLanguageModel,
+        llm: ChatOpenAI,
         prompt: BasePromptTemplate,
         output_parser: Optional[BaseLLMOutputParser] = None,
         **kwargs: Any
@@ -30,7 +31,7 @@ def create_openai_data_generator(
     Args:
         output_schema (Union[Dict[str, Any], Type[BaseModel]]): Schema for expected output. This can be either
             a dictionary representing a valid JsonSchema or a Pydantic BaseModel class.
-        llm (BaseLanguageModel): Language model to use. Should support the OpenAI function-calling API.
+        llm (ChatOpenAI): OpenAI language model to use.
         prompt (BasePromptTemplate): Template to be used for generating prompts.
         output_parser (Optional[BaseLLMOutputParser], optional): Parser for processing model outputs. If none
             is provided, a default will be inferred from the function types.
