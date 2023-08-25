@@ -36,7 +36,8 @@ class ComprehendToxicity:
             Exception: If the maximum sentence size exceeds the 5KB limit.
 
         Note:
-            This function ensures that the NLTK punkt tokenizer is downloaded if not already present.
+            This function ensures that the NLTK punkt tokenizer is downloaded if not
+            already present.
 
         Returns:
             None
@@ -62,19 +63,18 @@ class ComprehendToxicity:
         Split a paragraph into chunks of sentences, respecting the maximum size limit.
 
         Args:
-            paragraph (str): The input paragraph to be split into chunks.
-            max_size (int, optional): The maximum size limit in bytes for each chunk. Defaults to 1024.
+            paragraph (str): The input paragraph to be split into chunks
+            max_size (int, optional): The maximum size limit in bytes for each chunk
+                                      Defaults to 1024.
 
         Returns:
-            List[List[str]]: A list of chunks, where each chunk is a list of sentences.
+            List[List[str]]: A list of chunks, where each chunk is a list of sentences
 
         Note:
-            This function validates the maximum sentence size based on service limits using the 'toxicity_init_validate'
-            function. It uses the NLTK sentence tokenizer to split the paragraph into sentences.
+            This function validates the maximum sentence size based on service limits
+            using the 'toxicity_init_validate' function. It uses the NLTK sentence
+            tokenizer to split the paragraph into sentences.
 
-        Example:
-            paragraph = "This is a sample paragraph. It contains multiple sentences. ..."
-            chunks = split_paragraph(paragraph, max_size=2048)
         """
 
         # validate max. sentence size based on Service limits
@@ -89,7 +89,8 @@ class ComprehendToxicity:
         for sentence in sentences:
             sentence_size = len(sentence.encode("utf-8"))
 
-            # If adding a new sentence exceeds max_size or current_chunk has 10 sentences, start a new chunk
+            # If adding a new sentence exceeds max_size or
+            # current_chunk has 10 sentences, start a new chunk
             if (current_size + sentence_size > max_size) or (len(current_chunk) >= 10):
                 if current_chunk:  # Avoid appending empty chunks
                     chunks.append(current_chunk)
@@ -109,7 +110,8 @@ class ComprehendToxicity:
         self, prompt_value: str, config: Optional[Dict[str, Any]] = None
     ) -> str:
         """
-        Check the toxicity of a given text prompt using AWS Comprehend service and apply actions based on configuration.
+        Check the toxicity of a given text prompt using AWS Comprehend service
+        and apply actions based on configuration.
 
         Args:
             prompt_value (str): The text content to be checked for toxicity.
@@ -119,7 +121,8 @@ class ComprehendToxicity:
             str: The original prompt_value if allowed or no toxicity found.
 
         Raises:
-            ValueError: If the prompt contains toxic labels and cannot be processed based on the configuration.
+            ValueError: If the prompt contains toxic labels and cannot be
+                        processed based on the configuration.
         """
 
         chunks = self._split_paragraph(prompt_value=prompt_value)
@@ -133,7 +136,7 @@ class ComprehendToxicity:
                 self.moderation_beacon["moderation_output"] = response
 
             if config:
-                from langchain_experimental.comprehend_moderation.base_moderation_enums import (
+                from langchain_experimental.comprehend_moderation.base_moderation_enums import (  # noqa: E501
                     BaseModerationActions,
                 )
 
@@ -165,7 +168,8 @@ class ComprehendToxicity:
                 if action == BaseModerationActions.ALLOW:
                     if not toxicity_labels:
                         warnings.warn(
-                            "You have allowed toxic content without specifying any toxicity labels."
+                            "You have allowed toxic content without specifying "
+                            "any toxicity labels."
                         )
                     else:
                         for item in response["ResultList"]:

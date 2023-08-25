@@ -13,62 +13,53 @@ from langchain_experimental.pydantic_v1 import root_validator
 
 
 class AmazonComprehendModerationChain(Chain):
-
-    """
-    A subclass of Chain, designed to apply moderation to LLMs.
-
-    Attributes:
-        - moderation_config (Optional[Dict[str, Any]]): Configuration settings for moderation. Defaults to None.
-        - output_key (str): Key used to fetch/store the output in data containers. Defaults to "output".
-        - input_key (str): Key used to fetch/store the input in data containers. Defaults to "input".
-        - client (Optional[Any]): Placeholder for a Boto3 client object for connection to Amazon Comprehend.
-        - moderation_callback (Optional[BaseModerationCallbackHandler]): Placeholder for a potential callback method or function. Defaults to None.
-
-    Methods:
-        __init__: Constructor method for initializing the ModerationChain object.
-
-    Raises:
-        - ValueError
-        - ModuleNotFoundError
-        - BaseModerationError
-        - ModerationPiiError
-        - ModerationToxicityError
-        - ModerationIntentionError
-
-    Note: The `output_key` and `input_key` are considered private and should not be modified directly by external users.
-    """
+    """A subclass of Chain, designed to apply moderation to LLMs."""
 
     output_key: str = "output"  #: :meta private:
+    """Key used to fetch/store the output in data containers. Defaults to `output`"""
+
     input_key: str = "input"  #: :meta private:
+    """Key used to fetch/store the input in data containers. Defaults to `input`"""
+
     moderation_config: Optional[Dict[str, Any]] = None
+    """Configuration settings for moderation"""
+
     client: Optional[Any]
+    """boto3 client object for connection to Amazon Comprehend"""
+
     moderation_callback: Optional[BaseModerationCallbackHandler] = None
+    """Callback handler for moderation, this is different 
+    from regular callbacks which can be used in addition to this."""
+
     unique_id: Optional[str] = None
+    """A unique id that can be used to identify or group a user or session"""
 
     @root_validator(pre=True)
     def create_client(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Creates an Amazon Comprehend client using Boto3 based on the provided configuration values.
+        Creates an Amazon Comprehend client
 
         Args:
             values (Dict[str, Any]): A dictionary containing configuration values.
 
         Returns:
-            Dict[str, Any]: A dictionary with the updated configuration values, including the Amazon Comprehend client.
+            Dict[str, Any]: A dictionary with the updated configuration values,
+                            including the Amazon Comprehend client.
 
         Raises:
             ModuleNotFoundError: If the 'boto3' package is not installed.
-            ValueError: If there is an issue importing 'boto3' or loading AWS credentials.
+            ValueError: If there is an issue importing 'boto3' or loading
+                        AWS credentials.
 
-        Example usage:
-        ===================
-        config = {
-            "credentials_profile_name": "my-profile",
-            "region_name": "us-west-2"
-        }
-        updated_config = create_client(config)
-        comprehend_client = updated_config["client"]
-        ==================
+        Example:
+        .. code-block:: python
+
+            config = {
+                "credentials_profile_name": "my-profile",
+                "region_name": "us-west-2"
+            }
+            updated_config = create_client(config)
+            comprehend_client = updated_config["client"]
         """
 
         if values.get("client") is not None:
@@ -106,21 +97,17 @@ class AmazonComprehendModerationChain(Chain):
         """
         Returns a list of output keys.
 
-        This method defines the output keys that will be used to access the output values produced by
-        the chain or function. It ensures that the specified keys are available to access the outputs.
+        This method defines the output keys that will be used to access the output
+        values produced by the chain or function. It ensures that the specified keys
+        are available to access the outputs.
 
         Returns:
             List[str]: A list of output keys.
 
         Note:
-            This method is considered private and may not be intended for direct external use.
+            This method is considered private and may not be intended for direct
+            external use.
 
-        Example usage:
-        ========================
-        chain = AmazonComprehendModeration()
-        output_keys_list = chain.output_keys()
-        print(output_keys_list)
-        ========================
         """
         return [self.output_key]
 
@@ -129,21 +116,16 @@ class AmazonComprehendModerationChain(Chain):
         """
         Returns a list of input keys expected by the prompt.
 
-        This method defines the input keys that the prompt expects in order to perform its processing.
-        It ensures that the specified keys are available for providing input to the prompt.
+        This method defines the input keys that the prompt expects in order to perform
+        its processing. It ensures that the specified keys are available for providing
+        input to the prompt.
 
         Returns:
             List[str]: A list of input keys.
 
         Note:
-            This method is considered private and may not be intended for direct external use.
-
-        Example usage:
-        ======================
-        chain = AmazonComprehendModeration()
-        input_keys_list = chain.input_keys()
-        print(input_keys_list)
-        =======================
+            This method is considered private and may not be intended for direct
+            external use.
         """
         return [self.input_key]
 
@@ -153,37 +135,29 @@ class AmazonComprehendModerationChain(Chain):
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
         """
-        Executes the guardrailed moderation process on the input text and returns the processed output.
+        Executes the moderation process on the input text and returns the processed
+        output.
 
-        This internal method performs the guardrailed moderation process on the input text. It converts the input prompt
-        value to plain text, applies the specified filters, and then converts the filtered output back to a suitable
-        prompt value object. Additionally, it provides the option to log information about the run using the provided
-        `run_manager`.
+        This internal method performs the moderation process on the input text. It
+        converts the input prompt value to plain text, applies the specified filters,
+        and then converts the filtered output back to a suitable prompt value object.
+        Additionally, it provides the option to log information about the run using
+        the provided `run_manager`.
 
         Args:
-            inputs (Dict[str, Any], optional): A dictionary containing input values. Default is None.
-            run_manager (Optional[CallbackManagerForChainRun], optional): A run manager to handle run-related events. Default is None.
+            inputs: A dictionary containing input values
+            run_manager: A run manager to handle run-related events. Default is None
 
         Returns:
-            Dict[str, str]: A dictionary containing the processed output of the guardrailed moderation process.
-
-        Example usage:
-        ```
-        input_prompt = StringPromptValue(text="Original text.")
-        inputs = {"input_key": input_prompt}
-        output = self._call(inputs=inputs)
-        print(output)  # Outputs the processed output dictionary.
-        ```
-
-        Note:
-            To log information about the run using the `run_manager`, call methods on it, as demonstrated in the example.
+            Dict[str, str]: A dictionary containing the processed output of the
+                            moderation process.
 
         Raises:
-            ValueError: If there is an error during the guardrailed moderation process.
+            ValueError: If there is an error during the moderation process
         """
 
         if run_manager:
-            run_manager.on_text(f"Running AmazonComprehendModerationChain...\n")
+            run_manager.on_text("Running AmazonComprehendModerationChain...\n")
 
         moderation = BaseModeration(
             client=self.client,

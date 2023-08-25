@@ -15,7 +15,8 @@ class BaseModerationCallbackHandler:
             )
         ):
             raise NotImplementedError(
-                "Subclasses must override at least one of on_after_pii(), on_after_toxicity(), or on_after_intent() functions."
+                "Subclasses must override at least one of on_after_pii(), "
+                "on_after_toxicity(), or on_after_intent() functions."
             )
 
     def _is_method_unchanged(
@@ -44,7 +45,8 @@ class BaseModerationCallbackHandler:
     @property
     def pii_callback(self) -> bool:
         return (
-            self.on_after_pii.__func__ is not BaseModerationCallbackHandler.on_after_pii  # type: ignore
+            self.on_after_pii.__func__  # type: ignore
+            is not BaseModerationCallbackHandler.on_after_pii
         )
 
     @property
