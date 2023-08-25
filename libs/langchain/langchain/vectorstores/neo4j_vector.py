@@ -5,7 +5,6 @@ import logging
 import uuid
 from typing import (
     Any,
-    Callable,
     Dict,
     Iterable,
     List,
