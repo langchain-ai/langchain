@@ -16,7 +16,7 @@ def create_data_generation_chain(
 
     Args:
         llm: The language model to use.
-        verbose: Whether to print the prompt or not.
+        prompt: Prompt to feed the language model with. If not provided, the default one will be used.
     """
     prompt = prompt or SENTENCE_PROMPT
     return LLMChain(
