@@ -294,7 +294,7 @@ class Neo4jVector(VectorStore):
             f"CREATE (c:{self.node_label}) "
             f"SET c.{self.embedding_node_property} = row.embedding "
             "SET c.id = row.id "
-            "SET c.text = row.text "
+            f"SET c.{self.text_node_property} = row.text "
             "SET c += row.metadata "
         )
 
@@ -407,8 +407,8 @@ class Neo4jVector(VectorStore):
         read_query = (
             "CALL db.index.vector.queryNodes($index, $k, $embedding) "
             "YIELD node, score "
-            "RETURN node.text AS text, score, "
-            f"node {{.*, text: Null, {self.embedding_node_property}: Null }} AS metadata"
+            f"RETURN node.{self.text_node_property} AS text, score, "
+            f"node {{.*, {self.text_node_property}: Null, {self.embedding_node_property}: Null }} AS metadata"
         )
 
         parameters = {"index": self.index_name, "k": k, "embedding": embedding}
