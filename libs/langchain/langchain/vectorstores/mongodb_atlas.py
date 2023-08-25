@@ -32,7 +32,7 @@ DEFAULT_INSERT_BATCH_SIZE = 100
 
 
 class MongoDBAtlasVectorSearch(VectorStore):
-    """Wrapper around MongoDB Atlas Vector Search.
+    """`MongoDB Atlas Vector Search` vector store.
 
     To use, you should have both:
     - the ``pymongo`` python package installed
