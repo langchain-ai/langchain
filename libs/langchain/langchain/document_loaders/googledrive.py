@@ -200,7 +200,11 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         creds = self._load_credentials()
         service = build("drive", "v3", credentials=creds)
 
-        file = service.files().get(fileId=id, supportsAllDrives=True).execute()
+        file = (
+            service.files()
+            .get(fileId=id, supportsAllDrives=True, fields="modifiedTime,name")
+            .execute()
+        )
         request = service.files().export_media(fileId=id, mimeType="text/plain")
         fh = BytesIO()
         downloader = MediaIoBaseDownload(fh, request)
@@ -219,6 +223,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         metadata = {
             "source": f"https://docs.google.com/document/d/{id}/edit",
             "title": f"{file.get('name')}",
+            "when": f"{file.get('modifiedTime')}",
         }
         return Document(page_content=text, metadata=metadata)
 

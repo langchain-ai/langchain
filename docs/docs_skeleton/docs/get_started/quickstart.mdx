@@ -107,7 +107,7 @@ import PromptTemplateChatModel from "@snippets/get_started/quickstart/prompt_tem
 <PromptTemplateLLM/>
 
 However, the advantages of using these over raw string formatting are several.
-You can "partial" out variables - eg you can format only some of the variables at a time.
+You can "partial" out variables - e.g. you can format only some of the variables at a time.
 You can compose them together, easily combining different templates into a single prompt.
 For explanations of these functionalities, see the [section on prompts](/docs/modules/model_io/prompts) for more detail.
 
@@ -121,12 +121,12 @@ Let's take a look at this below:
 
 ChatPromptTemplates can also include other things besides ChatMessageTemplates - see the [section on prompts](/docs/modules/model_io/prompts) for more detail.
 
-## Output Parsers
+## Output parsers
 
 OutputParsers convert the raw output of an LLM into a format that can be used downstream.
 There are few main type of OutputParsers, including:
 
-- Convert text from LLM -> structured information (eg JSON)
+- Convert text from LLM -> structured information (e.g. JSON)
 - Convert a ChatMessage into just a string
 - Convert the extra information returned from a call besides the message (like OpenAI function invocation) into a string.
 
@@ -149,7 +149,7 @@ import LLMChain from "@snippets/get_started/quickstart/llm_chain.mdx"
 
 <LLMChain/>
 
-## Next Steps
+## Next steps
 
 This is it!
 We've now gone over how to create the core building block of LangChain applications - the LLMChains.
