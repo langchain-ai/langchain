@@ -113,7 +113,6 @@ class NeptuneGraph:
     def _get_labels(self) -> Tuple[List[str], List[str]]:
         """Get node and edge labels from the Neptune statistics summary"""
         summary = self._get_summary()
-        print(summary)
         n_labels = summary["nodeLabels"]
         e_labels = summary["edgeLabels"]
         return n_labels, e_labels
