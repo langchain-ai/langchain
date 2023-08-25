@@ -292,7 +292,7 @@ class Anthropic(LLM, _AnthropicCommon):
             chunk = GenerationChunk(text=token.completion)
             yield chunk
             if run_manager:
-                run_manager.on_llm_new_token(chunk.completion)
+                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
 
     async def _astream(
         self,
