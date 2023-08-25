@@ -75,8 +75,7 @@ class Neo4jVector(VectorStore):
         embedding_node_property: str = "embedding",
         text_node_property: str = "text",
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
-        logger: Optional[logging.Logger] = None,
-        relevance_score_fn: Optional[Callable[[float], float]] = None,
+        logger: Optional[logging.Logger] = None
     ) -> None:
         try:
             import neo4j
@@ -113,7 +112,6 @@ class Neo4jVector(VectorStore):
         self.embedding_node_property = embedding_node_property
         self.text_node_property = text_node_property
         self.logger = logger or logging.getLogger(__name__)
-        self.override_relevance_score_fn = relevance_score_fn
 
         # Calculate embedding dimension
         self.embedding_dimension = len(embedding_function.embed_query("test"))
@@ -613,30 +611,3 @@ class Neo4jVector(VectorStore):
             ids=ids,
             **kwargs,
         )
-
-    def _select_relevance_score_fn(self) -> Callable[[float], float]:
-        """
-        The 'correct' relevance function
-        may differ depending on a few things, including:
-        - the distance / similarity metric used by the VectorStore
-        - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
-        - embedding dimensionality
-        - etc.
-        """
-        if self.override_relevance_score_fn is not None:
-            return self.override_relevance_score_fn
-
-        # Default strategy is to rely on distance strategy provided
-        # in vectorstore constructor
-        if self._distance_strategy == DistanceStrategy.COSINE:
-            return self._cosine_relevance_score_fn
-        elif self._distance_strategy == DistanceStrategy.EUCLIDEAN:
-            return self._euclidean_relevance_score_fn
-        elif self._distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
-            return self._max_inner_product_relevance_score_fn
-        else:
-            raise ValueError(
-                "No supported normalization function"
-                f" for distance_strategy of {self._distance_strategy}."
-                "Consider providing relevance_score_fn to PGVector constructor."
-            )
