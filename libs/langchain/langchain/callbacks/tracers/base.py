@@ -13,7 +13,12 @@ from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.tracers.schemas import Run
 from langchain.load.dump import dumpd
 from langchain.schema.document import Document
-from langchain.schema.output import ChatGeneration, LLMResult
+from langchain.schema.output import (
+    ChatGeneration,
+    ChatGenerationChunk,
+    GenerationChunk,
+    LLMResult,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +127,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
     def on_llm_new_token(
         self,
         token: str,
+        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
@@ -139,7 +145,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             {
                 "name": "new_token",
                 "time": datetime.utcnow(),
-                "kwargs": {"token": token},
+                "kwargs": {"token": token, "chunk": chunk.dict() if chunk else None},
             },
         )
 
