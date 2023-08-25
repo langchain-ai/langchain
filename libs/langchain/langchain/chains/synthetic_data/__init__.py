@@ -1,10 +1,12 @@
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.synthetic_data.prompts import SENTENCE_PROMPT
-from langchain.prompts import PromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
+
+if TYPE_CHECKING:
+    from langchain.chains.base import Chain
+    from langchain.schema.language_model import BaseLanguageModel
+    from langchain.prompts import PromptTemplate
 
 
 def create_data_generation_chain(
