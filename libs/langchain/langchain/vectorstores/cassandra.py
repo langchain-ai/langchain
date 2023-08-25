@@ -1,4 +1,3 @@
-"""Wrapper around Cassandra vector-store capabilities, based on cassIO."""
 from __future__ import annotations
 
 import typing
@@ -19,8 +18,9 @@ CVST = TypeVar("CVST", bound="Cassandra")
 
 
 class Cassandra(VectorStore):
-    """Wrapper around Cassandra embeddings platform.
+    """`Cassandra` vector store.
 
+    It based on the Cassandra vector-store capabilities, based on cassIO.
     There is no notion of a default table name, since each embedding
     function implies its own vector dimension, which is part of the schema.
 
