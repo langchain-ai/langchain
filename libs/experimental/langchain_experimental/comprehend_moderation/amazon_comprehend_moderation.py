@@ -1,12 +1,17 @@
-from typing import Optional, List, Dict, Any, Callable
-from typing import List
-from langchain.chains.base import Chain
+from typing import Any, Callable, Dict, List, Optional
+
 from langchain.callbacks.manager import CallbackManagerForChainRun
-from langchain.pydantic_v1 import root_validator
-from langchain_experimental.comprehend_moderation import BaseModeration, BaseModerationCallbackHandler
+from langchain.chains.base import Chain
+
+from langchain_experimental.comprehend_moderation import (
+    BaseModeration,
+    BaseModerationCallbackHandler,
+)
+from langchain_experimental.pydantic_v1 import root_validator
+
 
 class AmazonComprehendModerationChain(Chain):
-    
+
     """
     A subclass of Chain, designed to apply moderation to LLMs.
 
@@ -27,16 +32,17 @@ class AmazonComprehendModerationChain(Chain):
         - ModerationPiiError
         - ModerationToxicityError
         - ModerationIntentionError
-        
+
     Note: The `output_key` and `input_key` are considered private and should not be modified directly by external users.
     """
+
     output_key: str = "output"  #: :meta private:
-    input_key: str = "input"    #: :meta private:
-    moderation_config: Optional[Dict[str, Any]] = None     
+    input_key: str = "input"  #: :meta private:
+    moderation_config: Optional[Dict[str, Any]] = None
     client: Optional[Any]
     moderation_callback: Optional[BaseModerationCallbackHandler] = None
     unique_id: Optional[str] = None
-    
+
     @root_validator(pre=True)
     def create_client(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -62,7 +68,7 @@ class AmazonComprehendModerationChain(Chain):
         comprehend_client = updated_config["client"]
         ==================
         """
-        
+
         if values.get("client") is not None:
             return values
         try:
@@ -91,8 +97,8 @@ class AmazonComprehendModerationChain(Chain):
                 "Could not load credentials to authenticate with AWS client. "
                 "Please check that credentials in the specified "
                 "profile name are valid."
-            ) from e 
-    
+            ) from e
+
     @property
     def output_keys(self) -> List[str]:
         """
@@ -115,10 +121,9 @@ class AmazonComprehendModerationChain(Chain):
         ========================
         """
         return [self.output_key]
-      
+
     @property
     def input_keys(self) -> List[str]:
-        
         """
         Returns a list of input keys expected by the prompt.
 
@@ -139,7 +144,6 @@ class AmazonComprehendModerationChain(Chain):
         =======================
         """
         return [self.input_key]
-    
 
     def _call(
         self,
@@ -175,15 +179,17 @@ class AmazonComprehendModerationChain(Chain):
         Raises:
             ValueError: If there is an error during the guardrailed moderation process.
         """
-        
+
         if run_manager:
             run_manager.on_text(f"Running AmazonComprehendModerationChain...\n")
-            
-        moderation = BaseModeration(client=self.client, 
-                                    config=self.moderation_config, 
-                                    moderation_callback=self.moderation_callback,
-                                    unique_id=self.unique_id,
-                                    run_manager=run_manager)
+
+        moderation = BaseModeration(
+            client=self.client,
+            config=self.moderation_config,
+            moderation_callback=self.moderation_callback,
+            unique_id=self.unique_id,
+            run_manager=run_manager,
+        )
         response = moderation.moderate(prompt=inputs[self.input_keys[0]])
 
         return {self.output_key: response}

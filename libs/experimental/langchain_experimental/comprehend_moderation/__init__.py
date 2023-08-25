@@ -1,3 +1,6 @@
+from langchain_experimental.comprehend_moderation.amazon_comprehend_moderation import (
+    AmazonComprehendModerationChain,
+)
 from langchain_experimental.comprehend_moderation.base_moderation import BaseModeration
 from langchain_experimental.comprehend_moderation.base_moderation_callbacks import (
     BaseModerationCallbackHandler,
@@ -18,4 +21,5 @@ __all__ = [
     "ComprehendIntent",
     "ComprehendToxicity",
     "BaseModerationCallbackHandler",
+    "AmazonComprehendModerationChain",
 ]

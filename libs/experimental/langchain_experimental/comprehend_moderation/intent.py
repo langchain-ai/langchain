@@ -1,29 +1,36 @@
 import asyncio
 import warnings
-from typing import Dict, Any, Optional
-from langchain_experimental.comprehend_moderation.base_moderation_exceptions import ModerationIntentionError
+from typing import Any, Dict, Optional
 
-class ComprehendIntent():        
+from langchain_experimental.comprehend_moderation.base_moderation_exceptions import (
+    ModerationIntentionError,
+)
 
-    def __init__(self, 
-                 client, 
-                 callback: Optional[Any] = None,
-                 unique_id: Optional[str] = None,
-                 chain_id: str = None) -> None:
+
+class ComprehendIntent:
+    def __init__(
+        self,
+        client,
+        callback: Optional[Any] = None,
+        unique_id: Optional[str] = None,
+        chain_id: str = None,
+    ) -> None:
         self.client = client
-        self.moderation_beacon = { 'moderation_chain_id': chain_id,
-                                   'moderation_type': 'Intent', 
-                                   'moderation_status': 'LABELS_NOT_FOUND' }
+        self.moderation_beacon = {
+            "moderation_chain_id": chain_id,
+            "moderation_type": "Intent",
+            "moderation_status": "LABELS_NOT_FOUND",
+        }
         self.callback = callback
         self.unique_id = unique_id
-    
+
     def _get_arn(self) -> str:
         region_name = self.client.meta.region_name
         service = "comprehend"
         intent_endpoint = "document-classifier-endpoint/prompt-intent"
         return f"arn:aws:{service}:{region_name}:aws:{intent_endpoint}"
-   
-    def validate(self, prompt_value, config: Dict[str, Any]=None):
+
+    def validate(self, prompt_value, config: Dict[str, Any] = None):
         """
         Check and validate the intent of the given prompt text.
 
@@ -50,32 +57,47 @@ class ComprehendIntent():
             config = {"threshold": 0.7}
             checked_prompt = check_intent(comprehend_client, prompt_text, config)
         """
-        from langchain_experimental.comprehend_moderation.base_moderation_enums import BaseModerationActions
-        
+        from langchain_experimental.comprehend_moderation.base_moderation_enums import (
+            BaseModerationActions,
+        )
+
         threshold = config.get("threshold", 0.5) if config else 0.5
-        action = config.get("action", BaseModerationActions.STOP) if config else BaseModerationActions.STOP
+        action = (
+            config.get("action", BaseModerationActions.STOP)
+            if config
+            else BaseModerationActions.STOP
+        )
         intent_found = False
-        
+
         if action == BaseModerationActions.ALLOW:
-            warnings.warn("You have allowed content with Harmful content. Defaulting to STOP action...")
+            warnings.warn(
+                "You have allowed content with Harmful content. Defaulting to STOP action..."
+            )
             action = BaseModerationActions.STOP
-                            
-        endpoint_arn = self._get_arn()        
-        response = self.client.classify_document(Text=prompt_value, EndpointArn=endpoint_arn)
-        
+
+        endpoint_arn = self._get_arn()
+        response = self.client.classify_document(
+            Text=prompt_value, EndpointArn=endpoint_arn
+        )
+
         if self.callback and self.callback.intent_callback:
-            self.moderation_beacon['moderation_input'] = prompt_value 
-            self.moderation_beacon['moderation_output'] = response
-        
-        for class_result in response['Classes']:
-            if class_result['Score'] >= threshold and class_result['Name'] == 'UNDESIRED_PROMPT':
+            self.moderation_beacon["moderation_input"] = prompt_value
+            self.moderation_beacon["moderation_output"] = response
+
+        for class_result in response["Classes"]:
+            if (
+                class_result["Score"] >= threshold
+                and class_result["Name"] == "UNDESIRED_PROMPT"
+            ):
                 intent_found = True
-                break                
-        
+                break
+
         if self.callback and self.callback.intent_callback:
             if intent_found:
-                self.moderation_beacon['moderation_status'] = 'LABELS_FOUND'
-            asyncio.create_task(self.callback.on_after_intent(self.moderation_beacon, self.unique_id))
+                self.moderation_beacon["moderation_status"] = "LABELS_FOUND"
+            asyncio.create_task(
+                self.callback.on_after_intent(self.moderation_beacon, self.unique_id)
+            )
         if intent_found:
             raise ModerationIntentionError
         return prompt_value
