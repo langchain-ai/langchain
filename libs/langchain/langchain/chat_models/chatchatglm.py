@@ -1,10 +1,10 @@
 """ChatGLM chat wrapper."""
 from __future__ import annotations
 
+import copy
 import logging
 import sys
-import copy
-from aiostream.stream import list as alist
+
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -19,6 +19,7 @@ from typing import (
     Union,
 )
 
+from aiostream.stream import list as alist
 from pydantic import Field, root_validator
 
 from langchain.callbacks.manager import (
@@ -69,7 +70,6 @@ def _create_retry_decorator(
         Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
     ] = None,
 ) -> Callable[[Any], Any]:
-    import zhipuai
 
     errors = [
         Exception,

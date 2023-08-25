@@ -1,11 +1,9 @@
 import logging
 from typing import Any, List, Mapping, Optional, Dict
-import json
+
 import requests
-import asyncio
-import aiohttp
-from langchain.callbacks.manager import (CallbackManagerForLLMRun, 
-                                         AsyncCallbackManagerForLLMRun)
+
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
@@ -86,10 +84,9 @@ class ChatGLM(LLM):
             "Content-Type": "application/json; charset=UTF-8",
         }
         try:
-            import zhipuai
             from zhipuai.utils import jwt_token
         except Exception as e:
-            raise Exception("Must install zhipuai, use`pip install zhipuai`")
+            raise Exception("Must install zhipuai, use`pip install zhipuai`", e)
         if not self.api_key:
             raise Exception(
                 "api_key not provided, you could provide it with "
