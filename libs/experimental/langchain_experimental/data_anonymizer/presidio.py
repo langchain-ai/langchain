@@ -1,8 +1,8 @@
 from presidio_analyzer import AnalyzerEngine
 from presidio_anonymizer import AnonymizerEngine
 from presidio_anonymizer.entities import OperatorConfig
-from libs.experimental.langchain_experimental.data_anonymizer import AnonymizerBase
-from utils import pseudoanonymizer_mapping
+from langchain_experimental.data_anonymizer.base import AnonymizerBase
+from langchain_experimental.data_anonymizer.utils import pseudoanonymizer_mapping
 from typing import Any, Dict, List
 
 
@@ -26,18 +26,22 @@ class PresidioAnonymizer(AnonymizerBase):
                 for field, faker_function in pseudoanonymizer_mapping.items()
             }
 
-        self.analyzer = AnalyzerEngine()
-        self.anonymizer = AnonymizerEngine()
+        self._analyzer = AnalyzerEngine()
+        self._anonymizer = AnonymizerEngine()
 
     def _anonymize(self, text: str) -> str:
-        results = self.analyzer.analyze(
+        results = self._analyzer.analyze(
             text,
             entities=self.analyzed_fields,
             language=self.language,
         )
 
-        return self.anonymizer.anonymize(
+        return self._anonymizer.anonymize(
             text,
             analyzer_results=results,
             operators=self.operators,
         ).text
+
+    def add_recognizer(self, recognizer: Any) -> None:
+        """Add a recognizer to the analyzer"""
+        self._analyzer.registry.add_recognizer(recognizer)
