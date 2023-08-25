@@ -65,8 +65,9 @@ class DockerImage:
     def __repr__(self) -> str:
         return f"DockerImage(name={self.name})"
 
-    @staticmethod
+    @classmethod
     def from_tag(
+        cls,
         repository: str,
         tag: str = "latest",
         auth_config: Optional[Dict[str, str]] = None,
@@ -80,10 +81,11 @@ class DockerImage:
         docker_client.images.pull(
             repository=repository, tag=tag, auth_config=auth_config
         )
-        return DockerImage(name=f"{repository}:{tag}")
+        return cls(name=f"{repository}:{tag}")
 
-    @staticmethod
+    @classmethod
     def from_dockerfile(
+        cls,
         dockerfile_path: Union[Path, str],
         name: Union[str, Callable[[], str]] = generate_langchain_container_tag,
         **kwargs: Any,
@@ -114,7 +116,7 @@ class DockerImage:
         else:
             raise ValueError(f"Invalid parameter: dockerfile: {dockerfile}")
 
-        return DockerImage(name=img_name)
+        return cls(name=img_name)
 
 
 class DockerContainer:
