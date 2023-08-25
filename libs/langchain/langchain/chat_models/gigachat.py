@@ -163,3 +163,6 @@ class GigaChat(SimpleChatModel):
     def _identifying_params(self) -> Dict[str, Any]:
         """Returns parameters identifying the model."""
         return {}
+
+    def get_num_tokens(self, text: str) -> int:
+        return round(len(text) / 4.6)
