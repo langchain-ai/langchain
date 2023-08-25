@@ -101,7 +101,7 @@ class EdenaiTool(BaseTool):
             data = response.json()
             return self._parse_response(data)
         except Exception as e:
-            raise RuntimeError(f"An error occured while running tool: {e}")
+            raise RuntimeError(f"An error occurred while running tool: {e}")
 
     def _raise_on_error(self, response: requests.Response) -> None:
         if response.status_code >= 500:
