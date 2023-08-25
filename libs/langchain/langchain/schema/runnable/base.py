@@ -1555,6 +1555,13 @@ class RunnableBinding(Serializable, Runnable[Input, Output]):
             config={**self.config, **(config or {}), **kwargs},
         )
 
+    def with_retry(self, retry: BaseRetrying) -> Runnable[Input, Output]:
+        return self.__class__(
+            bound=self.bound.with_retry(retry),
+            kwargs=self.kwargs,
+            config=self.config,
+        )
+
     def invoke(
         self,
         input: Input,
