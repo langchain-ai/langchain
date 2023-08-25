@@ -94,7 +94,7 @@ class DocAIParser(BaseBlobParser):
         self,
         blobs: Sequence[Blob],
         gcs_output_path: Optional[str] = None,
-        timeout_min: int = 60,
+        timeout_sec: int = 3600,
         check_in_interval_sec: int = 60,
     ) -> Iterator[Document]:
         """Parses a list of blobs lazily.
@@ -102,9 +102,9 @@ class DocAIParser(BaseBlobParser):
         Args:
             blobs: a list of blobs to parse
             gcs_output_path: a path on GCS to store parsing results
-            timeout_min: a timeout to wait for DocAI to complete, in minutes
-            check_in_interval_sec: an interval (in sec) to wait until next check
-                whether parsing operations have been completed
+            timeout_sec: a timeout to wait for DocAI to complete, in seconds
+            check_in_interval_sec: an interval to wait until next check
+                whether parsing operations have been completed, in seconds
         This is a long-running operations! A recommended way is to decouple
             parsing from creating Langchain Documents:
             >>> operations = parser.docai_parse(blobs, gcs_path)
@@ -130,8 +130,8 @@ class DocAIParser(BaseBlobParser):
             if not is_running:
                 break
             time.sleep(check_in_interval_sec)
-            time_elapsed += 1
-            if time_elapsed > timeout_min:
+            time_elapsed += check_in_interval_sec
+            if time_elapsed > timeout_sec:
                 raise ValueError(
                     "Timeout exceeded! Check operations " f"{operation_names} later!"
                 )
