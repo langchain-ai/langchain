@@ -374,20 +374,11 @@ class RedisFilterExpression:
 
         >>> from langchain.vectorstores.redis import RedisTag, RedisNum
         >>> brand_is_nike = RedisTag("brand") == "nike"
-        >>> price_is_over_100 = RedisNum("price") < 100
-        >>> filter = brand_is_nike & price_is_over_100
+        >>> price_is_under_100 = RedisNum("price") < 100
+        >>> filter = brand_is_nike & price_is_under_100
         >>> print(str(filter))
         (@brand:{nike} @price:[-inf (100)])
 
-    This can be combined with the VectorQuery class to create a query:
-
-        >>> from redisvl.query import VectorQuery
-        >>> v = VectorQuery(
-        ...     vector=[0.1, 0.1, 0.5, ...],
-        ...     vector_field_name="product_embedding",
-        ...     return_fields=["product_id", "brand", "price"],
-        ...     filter_expression=filter,
-        ... )
     """
 
     def __init__(

@@ -16,3 +16,5 @@ REDIS_VECTOR_DTYPE_MAP: Dict[str, Any] = {
     "FLOAT32": np.float32,
     "FLOAT64": np.float64,
 }
+
+REDIS_TAG_SEPARATOR = ","

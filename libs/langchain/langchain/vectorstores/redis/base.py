@@ -37,6 +37,7 @@ from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 from langchain.vectorstores.redis.constants import (
     REDIS_REQUIRED_MODULES,
+    REDIS_TAG_SEPARATOR,
 )
 
 logger = logging.getLogger(__name__)
@@ -199,11 +200,12 @@ class Redis(VectorStore):
     schema according to the following rules:
         - All strings are indexed as text fields
         - All numbers are indexed as numeric fields
-        - All lists of strings are indexed as tag fields (joined by ',')
+        - All lists of strings are indexed as tag fields (joined by
+            langchain.vectorstores.redis.constants.REDIS_TAG_SEPARATOR)
         - All None values are not indexed but still stored in Redis these are
             not retrievable through the interface here, but the raw Redis client
             can be used to retrieve them.
-        - All other types are not indexed and not stored in Redis
+        - All other types are not indexed
 
     To override these rules, you can pass in a custom index schema like the following
 
@@ -231,7 +233,8 @@ class Redis(VectorStore):
 
     When connecting to an existing index where a custom schema has been applied, it's
     important to pass in the same schema to the ``from_existing_index`` method.
-    Otherwise, the schema for newly added samples will be incorrect.
+    Otherwise, the schema for newly added samples will be incorrect and metadata
+    will not be returned.
 
     """
 
@@ -247,7 +250,7 @@ class Redis(VectorStore):
         self,
         redis_url: str,
         index_name: str,
-        embedding_function: Callable,
+        embedding: Embeddings,
         index_schema: Optional[Union[Dict[str, str], str, os.PathLike]] = None,
         vector_schema: Optional[Dict[str, Union[str, int]]] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
@@ -266,7 +269,7 @@ class Redis(VectorStore):
             ) from e
 
         self.index_name = index_name
-        self.embedding_function = embedding_function
+        self._embeddings = embedding
         try:
             redis_client = get_client(redis_url=redis_url, **kwargs)
             # check if redis has redisearch module installed
@@ -277,6 +280,11 @@ class Redis(VectorStore):
         self.client = redis_client
         self.relevance_score_fn = relevance_score_fn
         self._schema = self._get_schema_with_defaults(index_schema, vector_schema)
+
+    @property
+    def embeddings(self) -> Optional[Embeddings]:
+        """Access the query embedding object if available."""
+        return self._embeddings
 
     @classmethod
     def from_texts_return_keys(
@@ -397,7 +405,7 @@ class Redis(VectorStore):
         instance = cls(
             redis_url,
             index_name,
-            embedding.embed_query,
+            embedding,
             index_schema=index_schema,
             vector_schema=vector_schema,
             **kwargs,
@@ -545,7 +553,7 @@ class Redis(VectorStore):
         return cls(
             redis_url,
             index_name,
-            embedding.embed_query,
+            embedding,
             index_schema=schema,
             **kwargs,
         )
@@ -695,7 +703,7 @@ class Redis(VectorStore):
             key = keys_or_ids[i] if keys_or_ids else _redis_key(prefix)
             metadata = metadatas[i] if metadatas else {}
             metadata = _prepare_metadata(metadata) if clean_metadata else metadata
-            embedding = embeddings[i] if embeddings else self.embedding_function(text)
+            embedding = embeddings[i] if embeddings else self._embeddings.embed_query(text)
             pipeline.hset(
                 key,
                 mapping={
@@ -950,7 +958,7 @@ class Redis(VectorStore):
         with_distance: bool = False,
     ) -> Tuple["Query", Dict[str, Any]]:
         # Creates embedding vector from user query
-        embedding = self.embedding_function(query)
+        embedding = self.embeddings.embed_query(query)
 
         # Creates Redis query
         params_dict: Dict[str, Union[str, bytes, float]] = {
@@ -1270,7 +1278,7 @@ def _prepare_metadata(metadata: Dict[str, Any]) -> Dict[str, Any]:
         # if it's a list/tuple of strings, we join it
         elif isinstance(value, (list, tuple)):
             if not value or isinstance(value[0], str):
-                clean_meta[key] = ",".join(value)
+                clean_meta[key] = REDIS_TAG_SEPARATOR.join(value)
             else:
                 raise_error(key, value)
         else:
