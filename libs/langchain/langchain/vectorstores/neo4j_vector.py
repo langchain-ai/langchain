@@ -74,7 +74,7 @@ class Neo4jVector(VectorStore):
         embedding_node_property: str = "embedding",
         text_node_property: str = "text",
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
-        logger: Optional[logging.Logger] = None
+        logger: Optional[logging.Logger] = None,
     ) -> None:
         try:
             import neo4j
