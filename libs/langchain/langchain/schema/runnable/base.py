@@ -944,7 +944,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         gathered_input = None
         if streaming_start_index == 0:
             final_pipeline = steps[streaming_start_index].transform(
-                input, patch_config(config, run_manager.get_child())
+                input, patch_config(config, callbacks=run_manager.get_child())
             )
         else:
             try:
@@ -958,11 +958,12 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                     gathered_input = step.invoke(
                         gathered_input,
                         # mark each step as a child run
-                        patch_config(config, run_manager.get_child()),
+                        patch_config(config, callbacks=run_manager.get_child()),
                     )
                 # stream the first of the last steps with the final non-streaming input
                 final_pipeline = steps[streaming_start_index].stream(
-                    gathered_input, patch_config(config, run_manager.get_child())
+                    gathered_input,
+                    patch_config(config, callbacks=run_manager.get_child()),
                 )
             except (KeyboardInterrupt, Exception) as e:
                 run_manager.on_chain_error(e)
@@ -1024,7 +1025,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         gathered_input = None
         if streaming_start_index == 0:
             final_pipeline = steps[0].atransform(
-                input, patch_config(config, run_manager.get_child())
+                input, patch_config(config, callbacks=run_manager.get_child())
             )
         else:
             try:
@@ -1038,11 +1039,12 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                     gathered_input = await step.ainvoke(
                         gathered_input,
                         # mark each step as a child run
-                        patch_config(config, run_manager.get_child()),
+                        patch_config(config, callbacks=run_manager.get_child()),
                     )
                 # stream the first of the last steps with the final non-streaming input
                 final_pipeline = steps[streaming_start_index].astream(
-                    gathered_input, patch_config(config, run_manager.get_child())
+                    gathered_input,
+                    patch_config(config, callbacks=run_manager.get_child()),
                 )
             except (KeyboardInterrupt, Exception) as e:
                 await run_manager.on_chain_error(e)
