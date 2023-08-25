@@ -171,7 +171,7 @@ class Neo4jVector(VectorStore):
         If the index doesn't exist, `None` is returned.
 
         Returns:
-            int or None: The embedding dimension of the existing index if found, else `None`.
+            int or None: The embedding dimension of the existing index if found.
         """
 
         index_information = self.query(
@@ -408,7 +408,8 @@ class Neo4jVector(VectorStore):
             "CALL db.index.vector.queryNodes($index, $k, $embedding) "
             "YIELD node, score "
             f"RETURN node.{self.text_node_property} AS text, score, "
-            f"node {{.*, {self.text_node_property}: Null, {self.embedding_node_property}: Null }} AS metadata"
+            f"node {{.*, {self.text_node_property}: Null, "
+            f"{self.embedding_node_property}: Null }} AS metadata"
         )
 
         parameters = {"index": self.index_name, "k": k, "embedding": embedding}
