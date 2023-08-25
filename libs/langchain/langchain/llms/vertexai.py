@@ -231,8 +231,6 @@ class VertexAIModelGarden(_VertexAIBase, LLM):
     """Large language models served from Vertex AI Model Garden."""
 
     client: "PredictionServiceClient" = None  #: :meta private:
-    project: str
-    "A GCP project where endpoint is hosted."
     endpoint_id: str
     "A name of an endpoint where the model has been deployed."
     allowed_model_args: Optional[List[str]] = None
@@ -243,15 +241,20 @@ class VertexAIModelGarden(_VertexAIBase, LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
-        from google.cloud.aiplatform.gapic import PredictionServiceClient
-
         try:
-            client_options = {
-                "api_endpoint": f"{values['location']}-aiplatform.googleapis.com"
-            }
-            values["client"] = PredictionServiceClient(client_options=client_options)
+            from google.cloud.aiplatform.gapic import PredictionServiceClient
         except ImportError:
             raise_vertex_import_error()
+
+        if values["project"] is None:
+            raise ValueError(
+                "A GCP project should be provided to run inference on Model Garden!"
+            )
+
+        client_options = {
+            "api_endpoint": f"{values['location']}-aiplatform.googleapis.com"
+        }
+        values["client"] = PredictionServiceClient(client_options=client_options)
         return values
 
     @property
@@ -288,8 +291,14 @@ class VertexAIModelGarden(_VertexAIBase, LLM):
         **kwargs: Any,
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
-        from google.protobuf import json_format
-        from google.protobuf.struct_pb2 import Value
+        try:
+            from google.protobuf import json_format
+            from google.protobuf.struct_pb2 import Value
+        except ImportError:
+            raise ImportError(
+                "protobuf package not found, please install it with"
+                " `pip install protobuf`"
+            )
 
         instances = []
         for prompt in prompts:
