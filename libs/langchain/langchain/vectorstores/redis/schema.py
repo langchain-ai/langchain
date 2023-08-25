@@ -8,7 +8,6 @@ import yaml
 
 # ignore type error here as it's a redis-py type problem
 from redis.commands.search.field import (  # type: ignore
-    GeoField,
     NumericField,
     TagField,
     TextField,
@@ -69,13 +68,6 @@ class NumericFieldSchema(RedisField):
 
     def as_field(self) -> NumericField:
         return NumericField(self.name, sortable=self.sortable, no_index=self.no_index)
-
-
-class GeoFieldSchema(RedisField):
-    no_index: bool = False
-
-    def as_field(self) -> GeoField:
-        return GeoField(self.name, sortable=self.sortable, no_index=self.no_index)
 
 
 class RedisVectorField(BaseModel):
@@ -146,7 +138,6 @@ class RedisModel(BaseModel):
     text: List[TextFieldSchema] = [TextFieldSchema(name="content")]
     tag: Optional[List[TagFieldSchema]] = None
     numeric: Optional[List[NumericFieldSchema]] = None
-    geo: Optional[List[GeoFieldSchema]] = None
 
     # filled by default_vector_schema
     vector: Optional[List[Union[FlatVectorField, HNSWVectorField]]] = None
@@ -178,6 +169,36 @@ class RedisModel(BaseModel):
                 f"{vector_field['algorithm']}"
             )
 
+    def as_dict(self) -> Dict[str, List[Any]]:
+        schemas: Dict[str, List[Any]] = {"text": [], "tag": [], "numeric": []}
+        # iter over all class attributes
+        for attr, attr_value in self.__dict__.items():
+            # only non-empty lists
+            if isinstance(attr_value, list) and len(attr_value) > 0:
+                field_values: List[Dict[str, Any]] = []
+                # iterate over all fields in each category (tag, text, etc)
+                for val in attr_value:
+                    value: Dict[str, Any] = {}
+                    # iterate over values within each field to extract
+                    # settings for that field (i.e. name, weight, etc)
+                    for field, field_value in val.__dict__.items():
+                        # make enums into strings
+                        if isinstance(field_value, Enum):
+                            value[field] = field_value.value
+                        # don't write null values
+                        elif field_value is not None:
+                            value[field] = field_value
+                    field_values.append(value)
+
+                schemas[attr] = field_values
+
+        schema: Dict[str, List[Any]] = {}
+        # only write non-empty lists from defaults
+        for k, v in schemas.items():
+            if len(v) > 0:
+                schema[k] = v
+        return schema
+
     @property
     def content_vector(self) -> Union[FlatVectorField, HNSWVectorField]:
         if not self.vector:
@@ -195,8 +216,7 @@ class RedisModel(BaseModel):
     @property
     def is_empty(self) -> bool:
         return all(
-            field is None
-            for field in [self.tag, self.text, self.numeric, self.geo, self.vector]
+            field is None for field in [self.tag, self.text, self.numeric, self.vector]
         )
 
     def get_fields(self) -> List["RedisField"]:
@@ -241,6 +261,12 @@ def read_schema(
     elif isinstance(index_schema, Path):
         with open(index_schema, "rb") as f:
             return yaml.safe_load(f)
+    elif isinstance(index_schema, str):
+        if Path(index_schema).resolve().is_file():
+            with open(index_schema, "rb") as f:
+                return yaml.safe_load(f)
+        else:
+            raise FileNotFoundError(f"index_schema file {index_schema} does not exist")
     else:
         raise TypeError(
             f"index_schema must be a dict, or path to a yaml file "

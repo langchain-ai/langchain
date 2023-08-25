@@ -1,4 +1,5 @@
 """Test Redis functionality."""
+import os
 from typing import Any, Dict, List, Optional
 
 import pytest
@@ -78,15 +79,40 @@ def test_redis_new_vector(texts: List[str]) -> None:
 
 def test_redis_from_existing(texts: List[str]) -> None:
     """Test adding a new document"""
-    Redis.from_texts(
+    docsearch = Redis.from_texts(
         texts, FakeEmbeddings(), index_name=TEST_INDEX_NAME, redis_url=TEST_REDIS_URL
     )
+    schema = docsearch.schema
+
+    # write schema for the next test
+    docsearch.write_schema("test_schema.yml")
+
     # Test creating from an existing
     docsearch2 = Redis.from_existing_index(
-        FakeEmbeddings(), index_name=TEST_INDEX_NAME, redis_url=TEST_REDIS_URL
+        FakeEmbeddings(),
+        index_name=TEST_INDEX_NAME,
+        redis_url=TEST_REDIS_URL,
+        schema=schema,
     )
     output = docsearch2.similarity_search("foo", k=1, return_metadata=False)
     assert output == TEST_SINGLE_RESULT
+
+
+def test_redis_add_texts_to_existing() -> None:
+    """Test adding a new document"""
+    # Test creating from an existing with yaml from file
+    docsearch = Redis.from_existing_index(
+        FakeEmbeddings(),
+        index_name=TEST_INDEX_NAME,
+        redis_url=TEST_REDIS_URL,
+        schema="test_schema.yml",
+    )
+    docsearch.add_texts(["foo"])
+    output = docsearch.similarity_search("foo", k=2, return_metadata=False)
+    assert output == TEST_RESULT
+    assert drop(TEST_INDEX_NAME)
+    # remove the test_schema.yml file
+    os.remove("test_schema.yml")
 
 
 def test_redis_from_texts_return_keys(texts: List[str]) -> None:
@@ -110,18 +136,6 @@ def test_redis_from_documents(texts: List[str]) -> None:
     assert drop(docsearch.index_name)
 
 
-def test_redis_add_texts_to_existing() -> None:
-    """Test adding a new document"""
-    # Test creating from an existing
-    docsearch = Redis.from_existing_index(
-        FakeEmbeddings(), index_name=TEST_INDEX_NAME, redis_url=TEST_REDIS_URL
-    )
-    docsearch.add_texts(["foo"])
-    output = docsearch.similarity_search("foo", k=2, return_metadata=False)
-    assert output == TEST_RESULT
-    assert drop(TEST_INDEX_NAME)
-
-
 # -- test filters -- #
 
 
@@ -137,6 +151,10 @@ def test_redis_add_texts_to_existing() -> None:
         (RedisNum("num") <= 2, 2, [1, 2]),
         (RedisNum("num") != 2, 2, [1, 3]),
         (RedisFilter.num("num") != 2, 2, [1, 3]),
+        (RedisFilter.tag("category") == "a", 3, None),
+        (RedisFilter.tag("category") == "b", 2, None),
+        (RedisFilter.tag("category") == "c", 2, None),
+        (RedisFilter.tag("category") == ["b", "c"], 3, None),
     ],
     ids=[
         "text-filter-equals-foo",
@@ -148,6 +166,10 @@ def test_redis_add_texts_to_existing() -> None:
         "number-filter-less-equals-2",
         "number-filter-not-equals-2",
         "alternative-number-not-equals-2",
+        "tag-filter-equals-a",
+        "tag-filter-equals-b",
+        "tag-filter-equals-c",
+        "tag-filter-equals-b-or-c",
     ],
 )
 def test_redis_filters_1(
@@ -156,9 +178,9 @@ def test_redis_filters_1(
     expected_nums: Optional[list],
 ) -> None:
     metadata = [
-        {"name": "joe", "num": 1, "text": "foo"},
-        {"name": "john", "num": 2, "text": "bar"},
-        {"name": "jane", "num": 3, "text": "baz"},
+        {"name": "joe", "num": 1, "text": "foo", "category": ["a", "b"]},
+        {"name": "john", "num": 2, "text": "bar", "category": ["a", "c"]},
+        {"name": "jane", "num": 3, "text": "baz", "category": ["b", "c", "a"]},
     ]
     documents = [Document(page_content="foo", metadata=m) for m in metadata]
     docsearch = Redis.from_documents(
@@ -176,7 +198,6 @@ def test_redis_filters_1(
                 or int(out.metadata["num"]) in expected_nums
             )
 
-    # assuming that after each test case you want to drop the index
     assert drop(docsearch.index_name)
 
 
@@ -265,30 +286,28 @@ def test_ip(texts: List[str]) -> None:
     assert drop(docsearch.index_name)
 
 
-def test_similarity_search_limit_score(texts: List[str]) -> None:
+def test_similarity_search_limit_distance(texts: List[str]) -> None:
     """Test similarity search limit score."""
     docsearch = Redis.from_texts(
         texts,
         FakeEmbeddings(),
         redis_url=TEST_REDIS_URL,
     )
-    output = docsearch.similarity_search_with_score(texts[0], k=3, score_threshold=0.1)
+    output = docsearch.similarity_search(texts[0], k=3, distance_threshold=0.1)
 
+    # can't check score but length of output should be 2
     assert len(output) == 2
-    for out, score in output:
-        if out.page_content == texts[1]:
-            score == COSINE_SCORE
     assert drop(docsearch.index_name)
 
 
-def test_similarity_search_with_score_with_limit_score(texts: List[str]) -> None:
+def test_similarity_search_with_score_with_limit_distance(texts: List[str]) -> None:
     """Test similarity search with score with limit score."""
 
     docsearch = Redis.from_texts(
         texts, ConsistentFakeEmbeddings(), redis_url=TEST_REDIS_URL
     )
     output = docsearch.similarity_search_with_score(
-        texts[0], k=3, score_threshold=0.1, return_metadata=True
+        texts[0], k=3, distance_threshold=0.1, return_metadata=True
     )
 
     assert len(output) == 2

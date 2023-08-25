@@ -19,8 +19,12 @@ from typing import (
     Union,
 )
 
+import yaml
+
+from langchain._api import deprecated
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
 )
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -272,7 +276,7 @@ class Redis(VectorStore):
 
         self.client = redis_client
         self.relevance_score_fn = relevance_score_fn
-        self._schema = self._get_schema(index_schema, vector_schema)
+        self._schema = self._get_schema_with_defaults(index_schema, vector_schema)
 
     @classmethod
     def from_texts_return_keys(
@@ -293,7 +297,16 @@ class Redis(VectorStore):
             3. Adds the documents to the newly created Redis index.
             4. Returns the keys of the newly created documents once stored.
 
-        This is intended to be a quick way to get started.
+        This method will generate schema based on the metadata passed in
+        if the `index_schema` is not defined. If the `index_schema` is defined,
+        it will compare against the generated schema and warn if there are
+        differences. If you are purposefully defining the schema for the
+        metadata, then you can ignore that warning.
+
+        To examine the schema options, initialize an instance of this class
+        and print out the schema using the `Redis.schema`` property. This
+        will include the content and content_vector classes which are
+        always present in the langchain schema.
 
         Example:
             .. code-block:: python
@@ -301,10 +314,10 @@ class Redis(VectorStore):
                 from langchain.vectorstores import Redis
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
-                redisearch, keys = RediSearch.from_texts_return_keys(
+                redis, keys = Redis.from_texts_return_keys(
                     texts,
                     embeddings,
-                    redis_url="redis://username:password@localhost:6379"
+                    redis_url="redis://localhost:6379"
                 )
 
         Args:
@@ -328,10 +341,26 @@ class Redis(VectorStore):
         Raises:
             ValueError: If the number of metadatas does not match the number of texts.
         """
+        try:
+            # TODO use importlib to check if redis is installed
+            import redis  # noqa: F401
+
+            from langchain.vectorstores.redis.schema import read_schema
+
+        except ImportError as e:
+            raise ImportError(
+                "Could not import redis python package. "
+                "Please install it with `pip install redis`."
+            ) from e
+
         redis_url = get_from_dict_or_env(kwargs, "redis_url", "REDIS_URL")
 
         if "redis_url" in kwargs:
             kwargs.pop("redis_url")
+
+        # flag to use generated schema
+        if "generate" in kwargs:
+            kwargs.pop("generate")
 
         # Name of the search index if not given
         if not index_name:
@@ -339,19 +368,29 @@ class Redis(VectorStore):
 
         # type check for metadata
         if metadatas:
-            # TODO: Loop through more than just 1
+            if isinstance(metadatas, list) and len(metadatas) != len(texts):  # type: ignore  # noqa: E501
+                raise ValueError("Number of metadatas must match number of texts")
+            if not (isinstance(metadatas, list) and isinstance(metadatas[0], dict)):
+                raise ValueError("Metadatas must be a list of dicts")
+
             generated_schema = _generate_field_schema(metadatas[0])
             if index_schema:
+                # read in the schema solely to compare to the generated schema
+                user_schema = read_schema(index_schema)
+
                 # the very rare case where a super user decides to pass the index
                 # schema and a document loader is used that has metadata which
                 # we need to map into fields.
-                if index_schema != generated_schema:
+                if user_schema != generated_schema:
                     logger.warning(
-                        "index_schema does not match generated schema from metadata.\n"
-                        + f"index_schema: {index_schema}\n"
+                        "`index_schema` does not match generated metadata schema.\n"
+                        + "If you meant to manually override the schema, please "
+                        + "ignore this message.\n"
+                        + f"index_schema: {user_schema}\n"
                         + f"generated_schema: {generated_schema}\n"
                     )
             else:
+                # use the generated schema
                 index_schema = generated_schema
 
         # Create instance
@@ -391,6 +430,18 @@ class Redis(VectorStore):
             1. Embeds documents.
             2. Creates a new Redis index if it doesn't already exist
             3. Adds the documents to the newly created Redis index.
+
+        This method will generate schema based on the metadata passed in
+        if the `index_schema` is not defined. If the `index_schema` is defined,
+        it will compare against the generated schema and warn if there are
+        differences. If you are purposefully defining the schema for the
+        metadata, then you can ignore that warning.
+
+        To examine the schema options, initialize an instance of this class
+        and print out the schema using the `Redis.schema`` property. This
+        will include the content and content_vector classes which are
+        always present in the langchain schema.
+
 
         Example:
             .. code-block:: python
@@ -442,8 +493,7 @@ class Redis(VectorStore):
         cls,
         embedding: Embeddings,
         index_name: str,
-        index_schema: Optional[Union[Dict[str, str], str, os.PathLike]] = None,
-        vector_schema: Optional[Dict[str, Union[str, int]]] = None,
+        schema: Union[Dict[str, str], str, os.PathLike],
         **kwargs: Any,
     ) -> Redis:
         """Connect to an existing Redis index.
@@ -454,7 +504,7 @@ class Redis(VectorStore):
                 from langchain.vectorstores import Redis
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
-                redisearch = RediSearch.from_existing_index(
+                redisearch = Redis.from_existing_index(
                     embeddings,
                     index_name="my-index",
                     redis_url="redis://username:password@localhost:6379"
@@ -464,11 +514,9 @@ class Redis(VectorStore):
             embedding (Embeddings): Embedding model class (i.e. OpenAIEmbeddings)
                 for embedding queries.
             index_name (str): Name of the index to connect to.
-            index_schema (Optional[Union[Dict[str, str], str, os.PathLike]], optional):
-                Optional fields to index within the metadata. Overrides generated
-                schema. Defaults to None.
-            vector_schema (Optional[Dict[str, Union[str, int]]], optional): Optional
-                vector schema to use. Defaults to None.
+            schema (Union[Dict[str, str], str, os.PathLike]): Schema of the index
+                and the vector schema. Can be a dict, or path to yaml file
+
             **kwargs (Any): Additional keyword arguments to pass to the Redis client.
 
         Returns:
@@ -479,13 +527,6 @@ class Redis(VectorStore):
             ImportError: If the redis python package is not installed.
         """
         redis_url = get_from_dict_or_env(kwargs, "redis_url", "REDIS_URL")
-        try:
-            import redis  # noqa: F401
-        except ImportError:
-            raise ImportError(
-                "Could not import redis python package. "
-                "Please install it with `pip install redis`."
-            )
         try:
             # We need to first remove redis_url from kwargs,
             # otherwise passing it to Redis will result in an error.
@@ -505,10 +546,19 @@ class Redis(VectorStore):
             redis_url,
             index_name,
             embedding.embed_query,
-            index_schema=index_schema,
-            vector_schema=vector_schema,
+            index_schema=schema,
             **kwargs,
         )
+
+    @property
+    def schema(self) -> Dict[str, List[Any]]:
+        """Return the schema of the index."""
+        return self._schema.as_dict()
+
+    def write_schema(self, path: Union[str, os.PathLike]) -> None:
+        """Write the schema to a yaml file."""
+        with open(path, "w+") as f:
+            yaml.dump(self.schema, f)
 
     @staticmethod
     def delete(
@@ -666,6 +716,12 @@ class Redis(VectorStore):
         pipeline.execute()
         return ids
 
+    def as_retriever(self, **kwargs: Any) -> RedisVectorStoreRetriever:
+        tags = kwargs.pop("tags", None) or []
+        tags.extend(self._get_retriever_tags())
+        return RedisVectorStoreRetriever(vectorstore=self, **kwargs, tags=tags)
+
+    @deprecated("0.0.267", alternative="similarity_search(distance_threshold=0.1)")
     def similarity_search_limit_score(
         self, query: str, k: int = 4, score_threshold: float = 0.2, **kwargs: Any
     ) -> List[Document]:
@@ -673,13 +729,13 @@ class Redis(VectorStore):
         Returns the most similar indexed documents to the query text within the
         score_threshold range.
 
+        Deprecated: Use similarity_search with distance_threshold instead.
+
         Args:
             query (str): The query text for which to find similar documents.
             k (int): The number of documents to return. Default is 4.
-            score_threshold (float): The minimum matching score required for a document
-                to be considered a match. Defaults to 0.2.
-                Because the similarity calculation algorithm is based on cosine
-                similarity, the smaller the angle, the higher the similarity.
+            score_threshold (float): The minimum matching *distance* required
+                for a document to be considered a match. Defaults to 0.2.
 
         Returns:
             List[Document]: A list of documents that are most similar to the query text
@@ -691,7 +747,7 @@ class Redis(VectorStore):
 
         """
         return self.similarity_search(
-            query, k=k, score_threshold=score_threshold, **kwargs
+            query, k=k, distance_threshold=score_threshold, **kwargs
         )
 
     def similarity_search_with_score(
@@ -702,20 +758,63 @@ class Redis(VectorStore):
         return_metadata: bool = True,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        """Run similarity search with distance."""
+        """Run similarity search with **vector distance**.
+
+        The "scores" returned from this function are the raw vector
+        distances from the query vector. For similarity scores, use
+        ``similarity_search_with_relevance_scores``.
+
+        Args:
+            query (str): The query text for which to find similar documents.
+            k (int): The number of documents to return. Default is 4.
+            filter (RedisFilterExpression, optional): Optional metadata filter.
+                Defaults to None.
+            return_metadata (bool, optional): Whether to return metadata.
+                Defaults to True.
+
+        Returns:
+            List[Tuple[Document, float]]: A list of documents that are
+                most similar to the query with the distance for each document.
+        """
+        try:
+            import redis
+
+        except ImportError as e:
+            raise ImportError(
+                "Could not import redis python package. "
+                "Please install it with `pip install redis`."
+            ) from e
+
+        if "score_threshold" in kwargs:
+            logger.warning(
+                "score_threshold is deprecated. Use distance_threshold instead."
+                + "score_threshold should only be used in "
+                + "similarity_search_with_relevance_scores."
+                + "score_threshold will be removed in a future release.",
+            )
 
         redis_query, params_dict = self._prepare_query(
             query,
             k=k,
             filter=filter,
             with_metadata=return_metadata,
-            with_score=True,
+            with_distance=True,
             **kwargs,
         )
 
         # Perform vector search
         # ignore type because redis-py is wrong about bytes
-        results = self.client.ft(self.index_name).search(redis_query, params_dict)  # type: ignore  # noqa: E501
+        try:
+            results = self.client.ft(self.index_name).search(redis_query, params_dict)  # type: ignore  # noqa: E501
+        except redis.exceptions.ResponseError as e:
+            # split error message and see if it starts with "Syntax"
+            if str(e).split(" ")[0] == "Syntax":
+                raise ValueError(
+                    "Query failed with syntax error. "
+                    + "This is likely due to malformation of "
+                    + "filter, vector, or query argument"
+                ) from e
+            raise e
 
         # Prepare document results
         docs_with_scores: List[Tuple[Document, float]] = []
@@ -726,15 +825,10 @@ class Redis(VectorStore):
                 metadata.update(self._collect_metadata(result))
 
             doc = Document(page_content=result.content, metadata=metadata)
-            score = self._calculate_fp_distance(result.score)
-            docs_with_scores.append((doc, score))
+            distance = self._calculate_fp_distance(result.distance)
+            docs_with_scores.append((doc, distance))
 
         return docs_with_scores
-
-    def as_retriever(self, **kwargs: Any) -> RedisVectorStoreRetriever:
-        tags = kwargs.pop("tags", None) or []
-        tags.extend(self._get_retriever_tags())
-        return RedisVectorStoreRetriever(vectorstore=self, **kwargs, tags=tags)
 
     def similarity_search(
         self,
@@ -742,6 +836,7 @@ class Redis(VectorStore):
         k: int = 4,
         filter: Optional[RedisFilterExpression] = None,
         return_metadata: bool = True,
+        distance_threshold: Optional[float] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Run similarity search
@@ -753,42 +848,53 @@ class Redis(VectorStore):
                 Defaults to None.
             return_metadata (bool, optional): Whether to return metadata.
                 Defaults to True.
+            distance_threshold (Optional[float], optional): Distance threshold
+                for vector distance from query vector. Defaults to None.
 
         Returns:
             List[Document]: A list of documents that are most similar to the query
                 text.
 
         """
-        docs = self._similarity_search(
-            query,
-            k=k,
-            filter=filter,
-            return_metadata=return_metadata,
-        )
-        return docs  # type: ignore
+        try:
+            import redis
 
-    def _similarity_search(
-        self,
-        query: str,
-        k: int = 4,
-        filter: Optional[RedisFilterExpression] = None,
-        score_threshold: Optional[float] = None,
-        return_metadata: bool = True,
-        **kwargs: Any,
-    ) -> List[Document]:
-        """Run similarity search."""
+        except ImportError as e:
+            raise ImportError(
+                "Could not import redis python package. "
+                "Please install it with `pip install redis`."
+            ) from e
+
+        if "score_threshold" in kwargs:
+            logger.warning(
+                "score_threshold is deprecated. Use distance_threshold instead."
+                + "score_threshold should only be used in "
+                + "similarity_search_with_relevance_scores."
+                + "score_threshold will be removed in a future release.",
+            )
+
         redis_query, params_dict = self._prepare_query(
             query,
             k=k,
             filter=filter,
-            score_threshold=score_threshold,
+            distance_threshold=distance_threshold,
             with_metadata=return_metadata,
-            with_score=False,
+            with_distance=False,
         )
 
         # Perform vector search
         # ignore type because redis-py is wrong about bytes
-        results = self.client.ft(self.index_name).search(redis_query, params_dict)  # type: ignore  # noqa: E501
+        try:
+            results = self.client.ft(self.index_name).search(redis_query, params_dict)  # type: ignore  # noqa: E501
+        except redis.exceptions.ResponseError as e:
+            # split error message and see if it starts with "Syntax"
+            if str(e).split(" ")[0] == "Syntax":
+                raise ValueError(
+                    "Query failed with syntax error. "
+                    + "This is likely due to malformation of "
+                    + "filter, vector, or query argument"
+                ) from e
+            raise e
 
         # Prepare document results
         docs = []
@@ -836,9 +942,9 @@ class Redis(VectorStore):
         query: str,
         k: int = 4,
         filter: Optional[RedisFilterExpression] = None,
-        score_threshold: Optional[float] = None,
+        distance_threshold: Optional[float] = None,
         with_metadata: bool = True,
-        with_score: bool = False,
+        with_distance: bool = False,
     ) -> Tuple["Query", Dict[str, Any]]:
         # Creates embedding vector from user query
         embedding = self.embedding_function(query)
@@ -850,13 +956,13 @@ class Redis(VectorStore):
 
         # prepare return fields including score
         return_fields = [self._schema.content_key]
-        if with_score:
-            return_fields.append("score")
+        if with_distance:
+            return_fields.append("distance")
         if with_metadata:
             return_fields.extend(self._schema.metadata_keys)
 
-        if score_threshold:
-            params_dict["score_threshold"] = score_threshold
+        if distance_threshold:
+            params_dict["distance_threshold"] = distance_threshold
             return (
                 self._prepare_range_query(
                     k, filter=filter, return_fields=return_fields
@@ -882,17 +988,17 @@ class Redis(VectorStore):
                 "Please install it with `pip install redis`."
             ) from e
         vector_key = self._schema.content_vector_key
-        base_query = f"@{vector_key}:[VECTOR_RANGE $score_threshold $vector]"
+        base_query = f"@{vector_key}:[VECTOR_RANGE $distance_threshold $vector]"
 
         if filter:
             base_query = "(" + base_query + " " + str(filter) + ")"
 
-        query_string = base_query + "=>{$yield_distance_as: score}"
+        query_string = base_query + "=>{$yield_distance_as: distance}"
 
         return (
             Query(query_string)
             .return_fields(*return_fields)
-            .sort_by("score")
+            .sort_by("distance")
             .paging(0, k)
             .dialect(2)
         )
@@ -923,14 +1029,18 @@ class Redis(VectorStore):
         if filter:
             query_prefix = f"{str(filter)}"
         vector_key = self._schema.content_vector_key
-        base_query = f"({query_prefix})=>[KNN {k} @{vector_key} $vector AS score]"
+        base_query = f"({query_prefix})=>[KNN {k} @{vector_key} $vector AS distance]"
 
         query = (
-            Query(base_query).return_fields(*return_fields).sort_by("score").dialect(2)
+            Query(base_query)
+            .return_fields(*return_fields)
+            .sort_by("distance")
+            .paging(0, k)
+            .dialect(2)
         )
         return query
 
-    def _get_schema(
+    def _get_schema_with_defaults(
         self,
         index_schema: Optional[Union[Dict[str, str], str, os.PathLike]] = None,
         vector_schema: Optional[Dict[str, Union[str, int]]] = None,
@@ -955,6 +1065,14 @@ class Redis(VectorStore):
         try:
             # see if user overrode the content vector
             schema.content_vector
+            # if user overrode the content vector, check if they
+            # also passed vector schema. This won't be used since
+            # the index schema overrode the content vector
+            if vector_schema:
+                logger.warning(
+                    "`vector_schema` is ignored since content_vector is "
+                    + "overridden in `index_schema`."
+                )
 
         # user did not override content vector
         except ValueError:
@@ -996,19 +1114,19 @@ class Redis(VectorStore):
                 definition=IndexDefinition(prefix=[prefix], index_type=IndexType.HASH),
             )
 
-    def _calculate_fp_distance(self, score: str) -> float:
+    def _calculate_fp_distance(self, distance: str) -> float:
         """Calculate the distance based on the vector datatype
 
         Two datatypes supported:
         - FLOAT32
         - FLOAT64
 
-        if it's FLOAT32, we need to round the score to 4 decimal places
+        if it's FLOAT32, we need to round the distance to 4 decimal places
         otherwise, round to 7 decimal places.
         """
         if self._schema.content_vector.datatype == "FLOAT32":
-            return round(float(score), 4)
-        return round(float(score), 7)
+            return round(float(distance), 4)
+        return round(float(distance), 7)
 
     def _check_deprecated_kwargs(self, kwargs: Mapping[str, Any]) -> None:
         """Check for deprecated kwargs."""
@@ -1163,17 +1281,23 @@ class RedisVectorStoreRetriever(VectorStoreRetriever):
     vectorstore: Redis
     """Redis VectorStore."""
     search_type: str = "similarity"
-    """Type of search to perform. Can be either 'similarity' or 'similarity_limit'."""
+    """Type of search to perform. Can be either
+    'similarity',
+    'similarity_distance_threshold',
+    'similarity_score_threshold'
+    """
 
     search_kwargs: Dict[str, Any] = {
         "k": 4,
-        "score_threshold": 0.2,
+        "score_threshold": 0.9,
+        # set to None to avoid distance used in score_threshold search
+        "distance_threshold": None,
     }
     """Default search kwargs."""
 
     allowed_search_types = [
         "similarity",
-        "similarity_limit",
+        "similarity_distance_threshold",
         "similarity_score_threshold",
     ]
     """Allowed search types."""
@@ -1182,6 +1306,31 @@ class RedisVectorStoreRetriever(VectorStoreRetriever):
         """Configuration for this pydantic object."""
 
         arbitrary_types_allowed = True
+
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> List[Document]:
+        if self.search_type == "similarity":
+            docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
+
+        elif self.search_type == "similarity_distance_threshold":
+            if self.search_kwargs["distance_threshold"] is None:
+                raise ValueError(
+                    "distance_threshold must be provided for "
+                    + "similarity_distance_threshold retriever"
+                )
+            docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
+
+        elif self.search_type == "similarity_score_threshold":
+            docs_and_similarities = (
+                self.vectorstore.similarity_search_with_relevance_scores(
+                    query, **self.search_kwargs
+                )
+            )
+            docs = [doc for doc, _ in docs_and_similarities]
+        else:
+            raise ValueError(f"search_type of {self.search_type} not allowed.")
+        return docs
 
     async def _aget_relevant_documents(
         self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
