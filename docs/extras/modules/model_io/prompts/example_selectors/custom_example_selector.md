@@ -1,6 +1,6 @@
 # Custom example selector
 
-In this tutorial, we'll create a custom example selector that selects every alternate example from a given list of examples.
+In this tutorial, we'll create a custom example selector that selects examples randomly from a given list of examples.
 
 An `ExampleSelector` must implement two methods:
 
@@ -9,9 +9,8 @@ An `ExampleSelector` must implement two methods:
 
 Let's implement a custom `ExampleSelector` that just selects two examples at random.
 
-:::{note}
+**Note:**
 Take a look at the current set of example selector implementations supported in LangChain [here](/docs/modules/model_io/prompts/example_selectors/).
-:::
 
 <!-- TODO(shreya): Add the correct link. -->
 
@@ -51,7 +50,6 @@ examples = [
 
 # Initialize example selector.
 example_selector = CustomExampleSelector(examples)
-
 
 # Select examples
 example_selector.select_examples({"foo": "foo"})
