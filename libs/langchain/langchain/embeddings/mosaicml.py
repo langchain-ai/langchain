@@ -80,9 +80,7 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
 
         try:
             if response.status_code == 429:
-                if (
-                    not is_retry
-                ):
+                if not is_retry:
                     import time
 
                     time.sleep(self.retry_sleep)

@@ -139,9 +139,7 @@ class MosaicML(LLM):
 
         try:
             if response.status_code == 429:
-                if (
-                    not is_retry
-                ):
+                if not is_retry:
                     import time
 
                     time.sleep(self.retry_sleep)
@@ -173,7 +171,7 @@ class MosaicML(LLM):
                     text = output_item
             else:
                 raise ValueError(f"Unexpected response type: {parsed_response}")
-        
+
             # Older versions of the API include the input in the output response
             if text.startswith(prompt):
                 text = text[len(prompt) :]
