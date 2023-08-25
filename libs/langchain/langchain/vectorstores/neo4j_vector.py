@@ -367,18 +367,6 @@ class Neo4jVector(VectorStore):
         docs = self.similarity_search_with_score_by_vector(embedding=embedding, k=k)
         return docs
 
-    @property
-    def distance_strategy(self) -> Any:
-        if self._distance_strategy == "euclidean":
-            return self.EmbeddingStore.embedding.l2_distance
-        elif self._distance_strategy == "cosine":
-            return self.EmbeddingStore.embedding.cosine_distance
-        else:
-            raise ValueError(
-                f"Got unexpected value for distance: {self._distance_strategy}. "
-                f"Should be one of `l2`, `cosine`, `inner`."
-            )
-
     def similarity_search_with_score_by_vector(
         self, embedding: List[float], k: int = 4
     ) -> List[Tuple[Document, float]]:
