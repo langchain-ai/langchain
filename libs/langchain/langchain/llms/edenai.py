@@ -49,11 +49,16 @@ class EdenAI(LLM):
     available models are shown on https://docs.edenai.co/ under 'available providers'
     """
 
-    params: Dict[str, Any]
+    # Optional parameters to add depending of choosen feature
+    # see api reference for more infos
+    temperature: Optional[float] = Field(default=None, ge=0, le=1)  # for text
+    max_tokens: Optional[int] = Field(default=None, ge=0)  # for text
+    resolution: Optional[Literal["256x256", "512x512", "1024x1024"]] = None  # for image
+
+    params: Dict[str, Any] = Field(default_factory=dict)
     """
-    Parameters to pass to above subfeature (excluding 'providers' & 'text')
-    ref text: https://docs.edenai.co/reference/text_generation_create
-    ref image: https://docs.edenai.co/reference/text_generation_create
+    DEPRECATED: use temperature, max_tokens, resolution directly
+    optional parameters to pass to api
     """
 
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -124,7 +129,6 @@ class EdenAI(LLM):
 
         Returns:
             json formatted str response.
-
         """
         stops = None
         if self.stop_sequences is not None and stop is not None:
@@ -141,13 +145,19 @@ class EdenAI(LLM):
             "Authorization": f"Bearer {self.edenai_api_key}",
             "User-Agent": self.get_user_agent(),
         }
-        payload = {
-            **self.params,
+        payload: Dict[str, Any] = {
             "providers": self.provider,
             "text": prompt,
+            "max_tokens": self.max_tokens,
+            "temperature": self.temperature,
+            "resolution": self.resolution,
+            **self.params,
             **kwargs,
             "num_images": 1,  # always limit to 1 (ignored for text)
         }
+
+        # filter None values to not pass them to the http payload
+        payload = {k: v for k, v in payload.items() if v is not None}
 
         if self.model is not None:
             payload["settings"] = {self.provider: self.model}
@@ -211,13 +221,19 @@ class EdenAI(LLM):
             "Authorization": f"Bearer {self.edenai_api_key}",
             "User-Agent": self.get_user_agent(),
         }
-        payload = {
-            **self.params,
+        payload: Dict[str, Any] = {
             "providers": self.provider,
             "text": prompt,
+            "max_tokens": self.max_tokens,
+            "temperature": self.temperature,
+            "resolution": self.resolution,
+            **self.params,
             **kwargs,
             "num_images": 1,  # always limit to 1 (ignored for text)
         }
+
+        # filter `None` values to not pass them to the http payload as null
+        payload = {k: v for k, v in payload.items() if v is not None}
 
         if self.model is not None:
             payload["settings"] = {self.provider: self.model}
