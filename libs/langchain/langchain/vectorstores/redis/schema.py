@@ -25,10 +25,9 @@ class RedisDistanceMetric(str, Enum):
     ip = "IP"
 
 
+
 class RedisField(BaseModel):
     name: str = Field(...)
-    sortable: Optional[bool] = False
-
 
 class TextFieldSchema(RedisField):
     weight: float = 1
@@ -36,6 +35,8 @@ class TextFieldSchema(RedisField):
     phonetic_matcher: Optional[str] = None
     withsuffixtrie: bool = False
     no_index: bool = False
+    sortable: Optional[bool] = False
+
 
     def as_field(self) -> TextField:
         return TextField(
@@ -52,6 +53,8 @@ class TagFieldSchema(RedisField):
     separator: str = ","
     case_sensitive: bool = False
     no_index: bool = False
+    sortable: Optional[bool] = False
+
 
     def as_field(self) -> TagField:
         return TagField(
@@ -65,13 +68,14 @@ class TagFieldSchema(RedisField):
 
 class NumericFieldSchema(RedisField):
     no_index: bool = False
+    sortable: Optional[bool] = False
+
 
     def as_field(self) -> NumericField:
         return NumericField(self.name, sortable=self.sortable, no_index=self.no_index)
 
 
-class RedisVectorField(BaseModel):
-    name: str = Field(...)
+class RedisVectorField(RedisField):
     dims: int = Field(...)
     algorithm: object = Field(...)
     datatype: str = Field(default="FLOAT32")
@@ -138,6 +142,7 @@ class RedisModel(BaseModel):
     text: List[TextFieldSchema] = [TextFieldSchema(name="content")]
     tag: Optional[List[TagFieldSchema]] = None
     numeric: Optional[List[NumericFieldSchema]] = None
+    extra: Optional[List[RedisField]] = None
 
     # filled by default_vector_schema
     vector: Optional[List[Union[FlatVectorField, HNSWVectorField]]] = None
@@ -225,7 +230,7 @@ class RedisModel(BaseModel):
             return redis_fields
 
         for field_name in self.__fields__.keys():
-            if field_name not in ["content_key", "content_vector_key"]:
+            if field_name not in ["content_key", "content_vector_key", "extra"]:
                 field_group = getattr(self, field_name)
                 if field_group is not None:
                     for field in field_group:

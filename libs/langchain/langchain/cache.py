@@ -305,10 +305,12 @@ class RedisSemanticCache(BaseCache):
     DEFAULT_SCHEMA = {
         "content_key": "prompt",
         "text": [
-            {"name": "return_val"},
             {"name": "prompt"},
+        ],
+        "extra": [
+            {"name": "return_val"},
             {"name": "llm_string"}
-            ],
+        ]
     }
 
     def __init__(
@@ -413,7 +415,6 @@ class RedisSemanticCache(BaseCache):
                 )
                 return
         llm_cache = self._get_llm_cache(llm_string)
-        # Write to vectorstore
         metadata = {
             "llm_string": llm_string,
             "prompt": prompt,
