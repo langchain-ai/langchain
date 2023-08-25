@@ -88,7 +88,8 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
                     return self._embed(input, is_retry=True)
 
                 raise ValueError(
-                    f"Error raised by inference API: rate limit exceeded.\nResponse: {response.text}"
+                    f"Error raised by inference API: rate limit exceeded.\nResponse: "
+                    f"{response.text}"
                 )
 
             parsed_response = response.json()

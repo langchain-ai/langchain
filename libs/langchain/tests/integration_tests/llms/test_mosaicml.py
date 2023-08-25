@@ -1,6 +1,5 @@
 """Test MosaicML API wrapper."""
 import re
-import time
 
 import pytest
 

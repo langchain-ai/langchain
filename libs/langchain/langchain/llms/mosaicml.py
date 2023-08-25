@@ -147,7 +147,8 @@ class MosaicML(LLM):
                     return self._call(prompt, stop, run_manager, is_retry=True)
 
                 raise ValueError(
-                    f"Error raised by inference API: rate limit exceeded.\nResponse: {response.text}"
+                    f"Error raised by inference API: rate limit exceeded.\nResponse: "
+                    f"{response.text}"
                 )
 
             parsed_response = response.json()
