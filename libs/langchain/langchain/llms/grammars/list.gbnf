@@ -1,0 +1,9 @@
+root ::= "[" items "]" EOF
+
+items ::= item (", " item)*
+
+item ::= word
+
+word ::= [a-zA-Z]+
+
+EOF ::= "\n"
