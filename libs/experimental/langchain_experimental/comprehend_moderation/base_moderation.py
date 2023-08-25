@@ -37,15 +37,18 @@ class BaseModeration:
             input_text = prompt
         elif isinstance(prompt, ChatPromptValue):
             """
-            We will just check the last message in the message Chain of a ChatPromptTemplate.
-            The typical chronology is SystemMessage > HumanMessage > AIMessage and so on. However
-            assuming that with every chat the chain is invoked we will only check the last message.
-            This is assuming that all previous messages have been checked already. Only HumanMessage and
-            AIMessage will be checked. We can perhaps loop through and take advantage of the
-            additional_kwargs property in the HumanMessage and AIMessage schema to mark messages
-            that have been moderated. However that means that this class could generate multiple
-            text chunks and moderate() logics would need to be updated. This also means some complexity
-            in re-constructing the prompt while keeping the messages in sequence.
+            We will just check the last message in the message Chain of a
+            ChatPromptTemplate. The typical chronology is
+            SystemMessage > HumanMessage > AIMessage and so on. However assuming
+            that with every chat the chain is invoked we will only check the last
+            message. This is assuming that all previous messages have been checked
+            already. Only HumanMessage and AIMessage will be checked. We can perhaps
+            loop through and take advantage of the additional_kwargs property in the
+            HumanMessage and AIMessage schema to mark messages that have been moderated.
+            However that means that this class could generate multiple text chunks
+            and moderate() logics would need to be updated. This also means some
+            complexity in re-constructing the prompt while keeping the messages in
+            sequence.
             """
             message = prompt.messages[-1]
             self.chat_message_index = len(prompt.messages) - 1
@@ -102,7 +105,7 @@ class BaseModeration:
             self.run_manager.on_text(message)
 
     def moderate(self, prompt: Any) -> str:
-        from langchain_experimental.comprehend_moderation.base_moderation_exceptions import (
+        from langchain_experimental.comprehend_moderation.base_moderation_exceptions import (  # noqa: E501
             ModerationIntentionError,
             ModerationPiiError,
             ModerationToxicityError,
@@ -115,17 +118,17 @@ class BaseModeration:
             # perform moderation
             if self.config is None:
                 # In absence of config Action will default to STOP only
-                self._log_message_for_verbose(f"Running pii validation...\n")
+                self._log_message_for_verbose("Running pii validation...\n")
                 pii_validate = self._moderation_class(moderation_class=ComprehendPII)
                 output_text = pii_validate(prompt_value=input_text)
 
-                self._log_message_for_verbose(f"Running toxicity validation...\n")
+                self._log_message_for_verbose("Running toxicity validation...\n")
                 toxicity_validate = self._moderation_class(
                     moderation_class=ComprehendToxicity
                 )
                 output_text = toxicity_validate(prompt_value=output_text)
 
-                self._log_message_for_verbose(f"Running intent validation...\n")
+                self._log_message_for_verbose("Running intent validation...\n")
                 intent_validate = self._moderation_class(
                     moderation_class=ComprehendIntent
                 )

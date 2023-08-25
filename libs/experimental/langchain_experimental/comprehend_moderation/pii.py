@@ -47,7 +47,8 @@ class ComprehendPII:
         self, prompt_value: str, config: Optional[Dict[str, Any]] = None
     ) -> str:
         """
-        Checks if the given prompt text contains Personally Identifiable Information (PII) labels above a specified threshold.
+        Checks for Personally Identifiable Information (PII) labels above a
+        specified threshold.
 
         Args:
             prompt_value (str): The input text to be checked for PII labels.
@@ -89,19 +90,23 @@ class ComprehendPII:
 
     def _detect_pii(self, prompt_value: str, config: Optional[Dict[str, Any]]) -> str:
         """
-        Detects and handles Personally Identifiable Information (PII) entities in the given prompt text using Amazon Comprehend's
-        detect_pii_entities API. The function provides options to redact or stop processing based on the identified PII entities
-        and a provided configuration.
+        Detects and handles Personally Identifiable Information (PII) entities in the
+        given prompt text using Amazon Comprehend's detect_pii_entities API. The
+        function provides options to redact or stop processing based on the identified
+        PII entities and a provided configuration.
 
         Args:
             prompt_value (str): The input text to be checked for PII entities.
-            config (Dict[str, Any]): A configuration specifying how to handle PII entities.
+            config (Dict[str, Any]): A configuration specifying how to handle
+                                     PII entities.
 
         Returns:
-            str: The processed prompt text with redacted PII entities or raised exceptions.
+            str: The processed prompt text with redacted PII entities or raised
+                 exceptions.
 
         Raises:
-            ValueError: If the prompt contains configured PII entities for stopping processing.
+            ValueError: If the prompt contains configured PII entities for
+                        stopping processing.
 
         Note:
             - If PII is not found in the prompt, the original prompt is returned.
