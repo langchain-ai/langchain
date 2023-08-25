@@ -645,10 +645,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
         **kwargs: Optional[Any],
     ) -> List[Output]:
-        from langchain.callbacks.manager import (
-            AsyncCallbackManager,
-            AsyncCallbackManagerForChainRun,
-        )
+        from langchain.callbacks.manager import AsyncCallbackManager
 
         # setup callbacks
         configs = self._get_config_list(config, len(inputs))
