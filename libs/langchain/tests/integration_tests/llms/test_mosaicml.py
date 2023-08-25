@@ -73,7 +73,8 @@ def test_short_retry_does_not_loop() -> None:
     with pytest.raises(
         ValueError,
         match=re.escape(
-            "Error raised by inference API: rate limit exceeded.\nResponse: You have reached maximum request limit.\n"
+            "Error raised by inference API: rate limit exceeded.\nResponse: You have "
+            "reached maximum request limit.\n"
         ),
     ):
         for _ in range(10):
