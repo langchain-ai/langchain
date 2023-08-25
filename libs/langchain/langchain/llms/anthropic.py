@@ -289,9 +289,10 @@ class Anthropic(LLM, _AnthropicCommon):
         for token in self.client.completions.create(
             prompt=self._wrap_prompt(prompt), stop_sequences=stop, stream=True, **params
         ):
-            yield GenerationChunk(text=token.completion)
+            chunk = GenerationChunk(text=token.completion)
+            yield chunk
             if run_manager:
-                run_manager.on_llm_new_token(token.completion)
+                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
 
     async def _astream(
         self,
@@ -324,9 +325,10 @@ class Anthropic(LLM, _AnthropicCommon):
             stream=True,
             **params,
         ):
-            yield GenerationChunk(text=token.completion)
+            chunk = GenerationChunk(text=token.completion)
+            yield chunk
             if run_manager:
-                await run_manager.on_llm_new_token(token.completion)
+                await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate number of tokens."""
