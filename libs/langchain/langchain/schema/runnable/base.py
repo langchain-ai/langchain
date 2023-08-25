@@ -1118,7 +1118,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         async def input_aiter() -> AsyncIterator[Input]:
             yield input
 
-        async for chunk in self.atransform(input_aiter(), config):
+        async for chunk in self.atransform(input_aiter(), config, **kwargs):
             yield chunk
 
 
