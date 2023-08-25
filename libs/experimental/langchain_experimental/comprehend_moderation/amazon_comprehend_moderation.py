@@ -27,6 +27,19 @@ class AmazonComprehendModerationChain(Chain):
     client: Optional[Any]
     """boto3 client object for connection to Amazon Comprehend"""
 
+    region_name: Optional[str] = None
+    """The aws region e.g., `us-west-2`. Fallsback to AWS_DEFAULT_REGION env variable
+    or region specified in ~/.aws/config in case it is not provided here.
+    """
+
+    credentials_profile_name: Optional[str] = None
+    """The name of the profile in the ~/.aws/credentials or ~/.aws/config files, which
+    has either access keys or role information specified.
+    If not specified, the default credential profile or, if on an EC2 instance,
+    credentials from IMDS will be used.
+    See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
+    """
+
     moderation_callback: Optional[BaseModerationCallbackHandler] = None
     """Callback handler for moderation, this is different 
     from regular callbacks which can be used in addition to this."""
