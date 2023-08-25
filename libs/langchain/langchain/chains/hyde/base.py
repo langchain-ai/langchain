@@ -7,13 +7,13 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 import numpy as np
-from pydantic_v1 import Extra
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.hyde.prompts import PROMPT_MAP
 from langchain.chains.llm import LLMChain
 from langchain.embeddings.base import Embeddings
+from langchain.pydantic_v1 import Extra
 from langchain.schema.language_model import BaseLanguageModel
 
 

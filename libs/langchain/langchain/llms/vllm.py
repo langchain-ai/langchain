@@ -1,10 +1,9 @@
 from typing import Any, Dict, List, Optional
 
-from pydantic_v1 import root_validator
-
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import BaseLLM
 from langchain.llms.openai import BaseOpenAI
+from langchain.pydantic_v1 import root_validator
 from langchain.schema.output import Generation, LLMResult
 
 
@@ -60,6 +59,9 @@ class VLLM(BaseLLM):
     logprobs: Optional[int] = None
     """Number of log probabilities to return per output token."""
 
+    dtype: str = "auto"
+    """The data type for the model weights and activations."""
+
     client: Any  #: :meta private:
 
     @root_validator()
@@ -78,6 +80,7 @@ class VLLM(BaseLLM):
             model=values["model"],
             tensor_parallel_size=values["tensor_parallel_size"],
             trust_remote_code=values["trust_remote_code"],
+            dtype=values["dtype"],
         )
 
         return values

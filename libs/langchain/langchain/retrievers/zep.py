@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from pydantic_v1 import root_validator
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
+from langchain.pydantic_v1 import root_validator
 from langchain.schema import BaseRetriever, Document
 
 if TYPE_CHECKING:
@@ -15,7 +14,7 @@ if TYPE_CHECKING:
 
 
 class ZepRetriever(BaseRetriever):
-    """Retriever for the Zep long-term memory store.
+    """`Zep` long-term memory store retriever.
 
     Search your user's long-term chat history with Zep.
 

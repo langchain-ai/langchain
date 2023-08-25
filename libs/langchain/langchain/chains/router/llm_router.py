@@ -3,8 +3,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Type, cast
 
-from pydantic_v1 import root_validator
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
@@ -12,6 +10,7 @@ from langchain.callbacks.manager import (
 from langchain.chains import LLMChain
 from langchain.chains.router.base import RouterChain
 from langchain.output_parsers.json import parse_and_check_json_markdown
+from langchain.pydantic_v1 import root_validator
 from langchain.schema import BaseOutputParser, BasePromptTemplate, OutputParserException
 from langchain.schema.language_model import BaseLanguageModel
 
@@ -83,7 +82,7 @@ class LLMRouterChain(RouterChain):
 
 
 class RouterOutputParser(BaseOutputParser[Dict[str, str]]):
-    """Parser for output of router chain int he multi-prompt chain."""
+    """Parser for output of router chain in the multi-prompt chain."""
 
     default_destination: str = "DEFAULT"
     next_inputs_type: Type = str

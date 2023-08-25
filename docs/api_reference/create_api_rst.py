@@ -150,7 +150,8 @@ def _load_package_modules(
 
         relative_module_name = file_path.relative_to(package_path)
 
-        if relative_module_name.name.startswith("_"):
+        # Skip if any module part starts with an underscore
+        if any(part.startswith("_") for part in relative_module_name.parts):
             continue
 
         # Get the full namespace of the module
@@ -227,7 +228,7 @@ Classes
     :toctree: {module}
 """
 
-            for class_ in classes:
+            for class_ in sorted(classes, key=lambda c: c["qualified_name"]):
                 if not class_["is_public"]:
                     continue
 

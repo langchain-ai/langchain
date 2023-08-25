@@ -3,10 +3,10 @@ from datetime import datetime
 from typing import Dict, Iterator, List, Literal, Optional, Union
 
 import requests
-from pydantic_v1 import BaseModel, root_validator, validator
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.pydantic_v1 import BaseModel, root_validator, validator
 from langchain.utils import get_from_dict_or_env
 
 

@@ -2,8 +2,8 @@ import json
 from typing import List
 
 import requests
-from pydantic_v1 import BaseModel, Field
 
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema import Document
 
 
@@ -14,7 +14,7 @@ class BraveSearchWrapper(BaseModel):
     """The API key to use for the Brave search engine."""
     search_kwargs: dict = Field(default_factory=dict)
     """Additional keyword arguments to pass to the search request."""
-    base_url = "https://api.search.brave.com/res/v1/web/search"
+    base_url: str = "https://api.search.brave.com/res/v1/web/search"
     """The base URL for the Brave search engine."""
 
     def run(self, query: str) -> str:

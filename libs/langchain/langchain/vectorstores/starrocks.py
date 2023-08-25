@@ -1,5 +1,3 @@
-"""Wrapper around open source StarRocks VectorSearch capability."""
-
 from __future__ import annotations
 
 import json
@@ -8,10 +6,9 @@ from hashlib import sha1
 from threading import Thread
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-from pydantic_v1 import BaseSettings
-
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
+from langchain.pydantic_v1 import BaseSettings
 from langchain.vectorstores.base import VectorStore
 
 logger = logging.getLogger()
@@ -70,7 +67,7 @@ def get_named_result(connection: Any, query: str) -> List[dict[str, Any]]:
 
 
 class StarRocksSettings(BaseSettings):
-    """StarRocks Client Configuration
+    """StarRocks client configuration.
 
     Attribute:
         StarRocks_host (str) : An URL to connect to MyScale backend.
@@ -122,7 +119,7 @@ class StarRocksSettings(BaseSettings):
 
 
 class StarRocks(VectorStore):
-    """Wrapper around StarRocks vector database
+    """`StarRocks` vector store.
 
     You need a `pymysql` python package, and a valid account
     to connect to StarRocks.

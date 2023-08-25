@@ -17,8 +17,6 @@ from typing import (
     Union,
 )
 
-from pydantic_v1 import Field, root_validator
-
 from langchain.adapters.openai import convert_dict_to_message, convert_message_to_dict
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -26,6 +24,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.base import create_base_retry_decorator
+from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import ChatGeneration, ChatResult
 from langchain.schema.messages import (
     AIMessageChunk,
@@ -308,10 +307,16 @@ class ChatOpenAI(BaseChatModel):
         ):
             if len(chunk["choices"]) == 0:
                 continue
-            delta = chunk["choices"][0]["delta"]
-            chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
+            choice = chunk["choices"][0]
+            chunk = _convert_delta_to_message_chunk(
+                choice["delta"], default_chunk_class
+            )
+            finish_reason = choice.get("finish_reason")
+            generation_info = (
+                dict(finish_reason=finish_reason) if finish_reason is not None else None
+            )
             default_chunk_class = chunk.__class__
-            yield ChatGenerationChunk(message=chunk)
+            yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
             if run_manager:
                 run_manager.on_llm_new_token(chunk.content)
 
@@ -382,10 +387,16 @@ class ChatOpenAI(BaseChatModel):
         ):
             if len(chunk["choices"]) == 0:
                 continue
-            delta = chunk["choices"][0]["delta"]
-            chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
+            choice = chunk["choices"][0]
+            chunk = _convert_delta_to_message_chunk(
+                choice["delta"], default_chunk_class
+            )
+            finish_reason = choice.get("finish_reason")
+            generation_info = (
+                dict(finish_reason=finish_reason) if finish_reason is not None else None
+            )
             default_chunk_class = chunk.__class__
-            yield ChatGenerationChunk(message=chunk)
+            yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
             if run_manager:
                 await run_manager.on_llm_new_token(chunk.content)
 
