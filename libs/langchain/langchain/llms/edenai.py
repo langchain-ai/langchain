@@ -165,7 +165,13 @@ class EdenAI(LLM):
                 f"{response.status_code}: {response.text}"
             )
 
-        output = self._format_output(response.json())
+        data = response.json()
+        provider_response = data[self.provider]
+        if provider_response.get("status") == "fail":
+            err_msg = provider_response.get("error", {}).get("message")
+            raise Exception(err_msg)
+
+        output = self._format_output(data)
 
         if stops is not None:
             output = enforce_stop_tokens(output, stops)
@@ -231,6 +237,10 @@ class EdenAI(LLM):
                     )
 
                 response_json = await response.json()
+                provider_response = response_json[self.provider]
+                if provider_response.get("status") == "fail":
+                    err_msg = provider_response.get("error", {}).get("message")
+                    raise Exception(err_msg)
 
                 output = self._format_output(response_json)
                 if stops is not None:

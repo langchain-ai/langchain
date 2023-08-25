@@ -73,6 +73,11 @@ class EdenAiEmbeddings(BaseModel, Embeddings):
 
         temp = response.json()
 
+        provider_response = temp[self.provider]
+        if provider_response.get("status") == "fail":
+            err_msg = provider_response.get("error", {}).get("message")
+            raise Exception(err_msg)
+
         embeddings = []
         for embed_item in temp[self.provider]["items"]:
             embedding = embed_item["embedding"]
