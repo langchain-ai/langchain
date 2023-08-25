@@ -93,7 +93,8 @@ def create_qa_with_structure_chain(
     return chain
 
 
-def create_qa_with_sources_chain(llm: BaseLanguageModel, verbose: bool = False, **kwargs: Any) -> LLMChain:
+def create_qa_with_sources_chain(
+    llm: BaseLanguageModel, verbose: bool = False, **kwargs: Any) -> LLMChain:
     """Create a question answering chain that returns an answer with sources.
 
     Args:
@@ -104,4 +105,5 @@ def create_qa_with_sources_chain(llm: BaseLanguageModel, verbose: bool = False, 
     Returns:
         Chain (LLMChain) that can be used to answer questions with citations.
     """
-    return create_qa_with_structure_chain(llm, AnswerWithSources, verbose=verbose, **kwargs)
+    return create_qa_with_structure_chain(
+        llm, AnswerWithSources, verbose=verbose, **kwargs)
