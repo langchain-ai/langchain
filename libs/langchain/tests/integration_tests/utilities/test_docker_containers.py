@@ -20,17 +20,17 @@ def test_generate_langchain_container_tag() -> None:
 
 def test_docker_image_throws_for_bad_name() -> None:
     with pytest.raises(ValueError):
-        DockerImage(name="riddiculus_docker_image_which_should_not_exist_42")
+        DockerImage(name="docker_image_which_should_not_exist_42")
 
 
 def run_container_cowsay(image: DockerImage) -> None:
     """Helper for testing - runs cowsay command and verifies it works."""
-    # note that our cowsay adds moo prefix as commands are executed
+    # note that our `cowsay` adds moo prefix as commands are executed
     # by ENTRYPOINT defined in dockerfile.
     try:
         container = DockerContainer(image)
         ret_code, log = container.spawn_run("I like langchain!")
-        assert ret_code == 0, "Cowsay should return 0"
+        assert ret_code == 0
         assert (
             log.find(b"moo I like langchain") >= 0
         ), "Cowsay should say same words with moo"
@@ -64,9 +64,9 @@ def test_docker_spawn_run_works() -> None:
 
 def test_docker_spawn_run_return_nonzero_status_code() -> None:
     container = DockerContainer(DockerImage.from_tag("alpine"))
-    status_code, logs = container.spawn_run("sh -c 'echo langusta && exit 1'")
+    status_code, logs = container.spawn_run("sh -c 'echo hey && exit 1'")
     assert status_code == 1
-    assert logs.find(b"langusta") >= 0
+    assert logs.find(b"hey") >= 0
 
 
 def test_docker_container_background_run_works() -> None:
