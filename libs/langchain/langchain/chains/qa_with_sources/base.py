@@ -124,7 +124,7 @@ class BaseQAWithSourcesChain(Chain, ABC):
             answer, sources = re.split(
                 r"SOURCES?[:\s]|QUESTION:\s", answer, flags=re.IGNORECASE
             )[:2]
-            sources = re.split(r"\n", sources)[0].strip()
+            sources = re.split(r"\n", sources)[0]
         else:
             sources = ""
         return answer, sources
