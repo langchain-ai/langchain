@@ -162,12 +162,12 @@ class Neo4jVector(VectorStore):
 
     def retrieve_existing_index(self) -> Optional[int]:
         """
-        Check if the vector index exists in the Neo4j database 
+        Check if the vector index exists in the Neo4j database
         and returns its embedding dimension.
 
         This method queries the Neo4j database for existing indexes
         and attempts to retrieve the dimension of the vector index
-        with the specified name. If the index exists, its dimension is returned. 
+        with the specified name. If the index exists, its dimension is returned.
         If the index doesn't exist, `None` is returned.
 
         Returns:
@@ -386,13 +386,13 @@ class Neo4jVector(VectorStore):
         self, embedding: List[float], k: int = 4
     ) -> List[Tuple[Document, float]]:
         """
-        Perform a similarity search in the Neo4j database using a 
+        Perform a similarity search in the Neo4j database using a
         given vector and return the top k similar documents with their scores.
 
-        This method uses a Cypher query to find the top k documents that 
+        This method uses a Cypher query to find the top k documents that
         are most similar to a given embedding. The similarity is measured
-        using a vector index in the Neo4j database. The results are returned 
-        as a list of tuples, each containing a Document object and 
+        using a vector index in the Neo4j database. The results are returned
+        as a list of tuples, each containing a Document object and
         its similarity score.
 
         Args:
@@ -400,7 +400,7 @@ class Neo4jVector(VectorStore):
             k (int, optional): The number of top similar documents to retrieve.
 
         Returns:
-            List[Tuple[Document, float]]: A list of tuples, each containing 
+            List[Tuple[Document, float]]: A list of tuples, each containing
                                 a Document object and its similarity score.
         """
 
