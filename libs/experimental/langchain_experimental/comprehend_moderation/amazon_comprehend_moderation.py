@@ -1,10 +1,12 @@
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 
-from langchain_experimental.comprehend_moderation import (
+from langchain_experimental.comprehend_moderation.base_moderation import (
     BaseModeration,
+)
+from langchain_experimental.comprehend_moderation.base_moderation_callbacks import (
     BaseModerationCallbackHandler,
 )
 from langchain_experimental.pydantic_v1 import root_validator
