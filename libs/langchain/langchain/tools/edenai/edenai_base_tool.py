@@ -77,29 +77,9 @@ class EdenaiTool(BaseTool):
         response = requests.post(url, json=payload, headers=headers)
 
         self._raise_on_error(response)
-        if self.is_async is False:
-            if payload.get("response_as_dict"):
-                key = self.providers[0]
-                provider_response = response.json()[key]
-                provider_response_error = provider_response
-
-            else:
-                provider_response = response.json()[0]
-                if "provider" in provider_response.keys():
-                    provider_response_error = provider_response
-                else:
-                    provider_response_error = provider_response[self.providers[0]]
-            provider_response = response.json()[key]
-            if provider_response["status"] == "fail":
-                raise ValueError(f"unexpected error{provider_response_error}")
-
-            provider_response = response.json()[key]
-            if provider_response["status"] == "fail":
-                raise ValueError(provider_response_error["error"]["message"])
 
         try:
-            data = response.json()
-            return self._parse_response(data)
+            return self._parse_response(response.json())
         except Exception as e:
             raise RuntimeError(f"An error occurred while running tool: {e}")
 
@@ -113,6 +93,16 @@ class EdenaiTool(BaseTool):
                 f"EdenAI returned an unexpected response with status "
                 f"{response.status_code}: {response.text}"
             )
+
+        # case where edenai call succeeded but provider returned an error
+        # (eg: rate limit, server error, etc.)
+        if self.is_async is False:
+            # async call are different and only return a job_id,
+            # not the provider response directly
+            provider_response = response.json()[0]
+            if provider_response.get("status") == "fail":
+                err_msg = provider_response["error"]["message"]
+                raise ValueError(err_msg)
 
     @abstractmethod
     def _parse_response(self, response: Any) -> str:
