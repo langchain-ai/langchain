@@ -8,8 +8,9 @@ clicking on the 'sandbox' toggle.
 
 You'll then need to set EDENAI_API_KEY environment variable to your api key.
 """
-from langchain.tools.edenai import EdenAiTextToSpeechTool
 from urllib.parse import urlparse
+
+from langchain.tools.edenai import EdenAiTextToSpeechTool
 
 
 def test_edenai_call() -> None:

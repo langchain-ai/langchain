@@ -78,11 +78,24 @@ class EdenaiTool(BaseTool):
 
         self._raise_on_error(response)
         if self.is_async is False:
-            key = self.providers[0] if payload.get("response_as_dict") else 0
+            if payload.get("response_as_dict"):
+                key = self.providers[0]
+                provider_response = response.json()[key]
+                provider_response_error = provider_response
+
+            else:
+                provider_response = response.json()[0]
+                if "provider" in provider_response.keys():
+                    provider_response_error = provider_response
+                else:
+                    provider_response_error = provider_response[self.providers[0]]
+            provider_response = response.json()[key]
+            if provider_response["status"] == "fail":
+                raise ValueError(f"unexpected error{provider_response_error}")
 
             provider_response = response.json()[key]
             if provider_response["status"] == "fail":
-                raise ValueError(provider_response["error"]["message"])
+                raise ValueError(provider_response_error["error"]["message"])
 
         try:
             data = response.json()

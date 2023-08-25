@@ -15,9 +15,11 @@ def test_edenai_call() -> None:
     """Test simple call to edenai's identity parser endpoint."""
     id_parser = EdenAiParsingIDTool(providers=["amazon"], language="en")
 
-    output = id_parser("https://www.citizencard.com/images/citizencard-uk-id-card-2023.jpg")
+    output = id_parser(
+        "https://www.citizencard.com/images/citizencard-uk-id-card-2023.jpg"
+    )
 
-    assert id_parser.name== "edenai_identity_parsing"
+    assert id_parser.name == "edenai_identity_parsing"
     assert id_parser.feature == "ocr"
     assert id_parser.subfeature == "identity_parser"
     assert isinstance(output, str)
