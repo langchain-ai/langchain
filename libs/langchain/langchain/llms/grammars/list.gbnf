@@ -2,9 +2,13 @@ root ::= "[" items ws* "]" EOF
 
 items ::= item ("," ws* item)*
 
-item ::= word
+item ::= string
 
-word ::= "\"" [a-zA-Z]+ "\""
+string  ::=
+  "\"" (
+    [^"\\] |
+    "\\" (["\\/bfnrt] | "u" [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F])
+  )* "\"" ws*
 
 ws ::= " "
 
