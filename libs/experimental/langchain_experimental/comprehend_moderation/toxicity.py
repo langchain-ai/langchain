@@ -129,7 +129,7 @@ class ComprehendToxicity:
                 TextSegments=segments, LanguageCode="en"
             )
             if self.callback and self.callback.toxicity_callback:
-                self.moderation_beacon["moderation_input"] = segments
+                self.moderation_beacon["moderation_input"] = segments  # type: ignore
                 self.moderation_beacon["moderation_output"] = response
 
             if config:

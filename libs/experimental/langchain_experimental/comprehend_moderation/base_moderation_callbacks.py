@@ -44,19 +44,19 @@ class BaseModerationCallbackHandler:
     @property
     def pii_callback(self) -> bool:
         return (
-            self.on_after_pii.__func__ is not BaseModerationCallbackHandler.on_after_pii
+            self.on_after_pii.__func__ is not BaseModerationCallbackHandler.on_after_pii  # type: ignore
         )
 
     @property
     def toxicity_callback(self) -> bool:
         return (
-            self.on_after_toxicity.__func__
+            self.on_after_toxicity.__func__  # type: ignore
             is not BaseModerationCallbackHandler.on_after_toxicity
         )
 
     @property
     def intent_callback(self) -> bool:
         return (
-            self.on_after_intent.__func__
+            self.on_after_intent.__func__  # type: ignore
             is not BaseModerationCallbackHandler.on_after_intent
         )

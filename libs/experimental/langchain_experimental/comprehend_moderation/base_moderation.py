@@ -1,5 +1,5 @@
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.prompts.base import StringPromptValue
@@ -14,7 +14,7 @@ from langchain_experimental.comprehend_moderation.toxicity import ComprehendToxi
 class BaseModeration:
     def __init__(
         self,
-        client,
+        client: Any,
         config: Optional[Dict[str, Any]] = None,
         moderation_callback: Optional[Any] = None,
         unique_id: Optional[str] = None,
@@ -89,7 +89,7 @@ class BaseModeration:
                 "Must be a PromptValue, str, or list of BaseMessages."
             )
 
-    def _moderation_class(self, moderation_class):
+    def _moderation_class(self, moderation_class: Any) -> Callable:
         return moderation_class(
             client=self.client,
             callback=self.moderation_callback,
@@ -97,7 +97,7 @@ class BaseModeration:
             chain_id=self.chain_id,
         ).validate
 
-    def _log_message_for_verbose(self, message: str):
+    def _log_message_for_verbose(self, message: str) -> None:
         if self.run_manager:
             self.run_manager.on_text(message)
 

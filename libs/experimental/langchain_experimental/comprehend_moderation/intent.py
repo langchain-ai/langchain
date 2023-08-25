@@ -10,10 +10,10 @@ from langchain_experimental.comprehend_moderation.base_moderation_exceptions imp
 class ComprehendIntent:
     def __init__(
         self,
-        client,
+        client: Any,
         callback: Optional[Any] = None,
         unique_id: Optional[str] = None,
-        chain_id: str = None,
+        chain_id: Optional[str] = None,
     ) -> None:
         self.client = client
         self.moderation_beacon = {
@@ -30,7 +30,9 @@ class ComprehendIntent:
         intent_endpoint = "document-classifier-endpoint/prompt-intent"
         return f"arn:aws:{service}:{region_name}:aws:{intent_endpoint}"
 
-    def validate(self, prompt_value, config: Dict[str, Any] = None):
+    def validate(
+        self, prompt_value: str, config: Optional[Dict[str, Any]] = None
+    ) -> str:
         """
         Check and validate the intent of the given prompt text.
 

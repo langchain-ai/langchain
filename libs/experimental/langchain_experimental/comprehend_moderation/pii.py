@@ -9,10 +9,10 @@ from langchain_experimental.comprehend_moderation.base_moderation_exceptions imp
 class ComprehendPII:
     def __init__(
         self,
-        client,
+        client: Any,
         callback: Optional[Any] = None,
         unique_id: Optional[str] = None,
-        chain_id: str = None,
+        chain_id: Optional[str] = None,
     ) -> None:
         self.client = client
         self.moderation_beacon = {
@@ -23,7 +23,9 @@ class ComprehendPII:
         self.callback = callback
         self.unique_id = unique_id
 
-    def validate(self, prompt_value, config: Dict[str, Any] = None) -> str:
+    def validate(
+        self, prompt_value: str, config: Optional[Dict[str, Any]] = None
+    ) -> str:
         from langchain_experimental.comprehend_moderation.base_moderation_enums import (
             BaseModerationActions,
         )
@@ -41,7 +43,9 @@ class ComprehendPII:
         else:
             return self._contains_pii(prompt_value=prompt_value)
 
-    def _contains_pii(self, prompt_value, config: Dict[str, Any] = None):
+    def _contains_pii(
+        self, prompt_value: str, config: Optional[Dict[str, Any]] = None
+    ) -> str:
         """
         Checks if the given prompt text contains Personally Identifiable Information (PII) labels above a specified threshold.
 
@@ -50,7 +54,7 @@ class ComprehendPII:
             config (Dict[str, Any]): Configuration for PII check and actions.
 
         Returns:
-            int: 1 if PII labels are detected above the threshold, 0 otherwise.
+            str: the original prompt
 
         Note:
             - The provided client should be initialized with valid AWS credentials.
@@ -83,7 +87,7 @@ class ComprehendPII:
             raise ModerationPiiError
         return prompt_value
 
-    def _detect_pii(self, prompt_value, config: Dict[str, Any]) -> str:
+    def _detect_pii(self, prompt_value: str, config: Optional[Dict[str, Any]]) -> str:
         """
         Detects and handles Personally Identifiable Information (PII) entities in the given prompt text using Amazon Comprehend's
         detect_pii_entities API. The function provides options to redact or stop processing based on the identified PII entities
@@ -134,9 +138,9 @@ class ComprehendPII:
             if pii_found:
                 raise ModerationPiiError
         else:
-            threshold = config.get("threshold", 0.5)
-            pii_labels = config.get("labels", [])
-            mask_marker = config.get("mask_character", "*")
+            threshold = config.get("threshold", 0.5)  # type: ignore
+            pii_labels = config.get("labels", [])  # type: ignore
+            mask_marker = config.get("mask_character", "*")  # type: ignore
             pii_found = False
 
             for entity in pii_identified["Entities"]:
