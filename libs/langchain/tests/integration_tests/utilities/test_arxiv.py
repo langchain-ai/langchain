@@ -15,17 +15,6 @@ def api_client() -> ArxivAPIWrapper:
     return ArxivAPIWrapper()
 
 
-def test_is_arxiv_identifier(api_client: ArxivAPIWrapper) -> None:
-    """Test that is_arxiv_identifier returns True for valid arxiv identifiers"""
-    assert api_client.is_arxiv_identifier("1605.08386v1")
-    assert api_client.is_arxiv_identifier("0705.0123")
-    assert api_client.is_arxiv_identifier("2308.07912")
-    assert api_client.is_arxiv_identifier("9603067")
-    assert not api_client.is_arxiv_identifier("12345")
-    assert not api_client.is_arxiv_identifier("0705.012")
-    assert not api_client.is_arxiv_identifier("0705.012300")
-    assert not api_client.is_arxiv_identifier("1605.08386w1")
-
 def test_run_success_paper_name(api_client: ArxivAPIWrapper) -> None:
     """Test a query of paper name that returns the correct answer"""
 
@@ -35,15 +24,17 @@ def test_run_success_paper_name(api_client: ArxivAPIWrapper) -> None:
         "Transformations of random walks on groups via Markov stopping times" in output
     )
     assert (
-        "Recurrence of Multidimensional Persistent Random Walks. Fourier and Series Criteria"
-        in output
+        "Recurrence of Multidimensional Persistent Random Walks. Fourier and Series "
+        "Criteria" in output
     )
+
 
 def test_run_success_arxiv_identifier(api_client: ArxivAPIWrapper) -> None:
     """Test a query of an arxiv identifier returns the correct answer"""
 
     output = api_client.run("1605.08386v1")
     assert "Heat-bath random walks with Markov bases" in output
+
 
 def test_run_success_multiple_arxiv_identifiers(api_client: ArxivAPIWrapper) -> None:
     """Test a query of multiple arxiv identifiers that returns the correct answer"""
@@ -83,6 +74,7 @@ def test_load_success_paper_name(api_client: ArxivAPIWrapper) -> None:
     assert len(docs) == 3
     assert_docs(docs)
 
+
 def test_load_success_arxiv_identifier(api_client: ArxivAPIWrapper) -> None:
     """Test a query of an arxiv identifier that returns one document"""
 
@@ -90,12 +82,14 @@ def test_load_success_arxiv_identifier(api_client: ArxivAPIWrapper) -> None:
     assert len(docs) == 1
     assert_docs(docs)
 
+
 def test_load_success_multiple_arxiv_identifiers(api_client: ArxivAPIWrapper) -> None:
     """Test a query of arxiv identifiers that returns the correct answer"""
 
     docs = api_client.load("1605.08386v1 2212.00794v2 2308.07912")
     assert len(docs) == 3
     assert_docs(docs)
+
 
 def test_load_returns_no_result(api_client: ArxivAPIWrapper) -> None:
     """Test that returns no docs"""
