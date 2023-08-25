@@ -7,24 +7,23 @@ fake = Faker()
 # Source: https://microsoft.github.io/presidio/supported_entities/
 pseudoanonymizer_mapping = {
     # Global entities
-    "PERSON": lambda: fake.name(),
-    "EMAIL_ADDRESS": lambda: fake.email(),
-    "PHONE_NUMBER": lambda: fake.phone_number(),
-    "IBAN_CODE": lambda: fake.iban(),
-    "CREDIT_CARD": lambda: fake.credit_card_number(),
-    "CRYPTO": lambda: "bc1"
-    + "".join(fake.random_choices(string.ascii_lowercase + \
-              string.digits, length=26)),
-    "IP_ADDRESS": lambda: fake.ipv4_public(),
-    "LOCATION": lambda: fake.address(),
-    "DATE_TIME": lambda: fake.iso8601(),
-    "NRP": lambda: fake.random_number(digits=8, fix_len=True),
-    "MEDICAL_LICENSE": lambda: fake.bothify(text="??######").upper(),
-    "URL": lambda: fake.url(),
+    "PERSON": lambda _: fake.name(),
+    "EMAIL_ADDRESS": lambda _: fake.email(),
+    "PHONE_NUMBER": lambda _: fake.phone_number(),
+    "IBAN_CODE": lambda _: fake.iban(),
+    "CREDIT_CARD": lambda _: fake.credit_card_number(),
+    "CRYPTO": lambda _: "bc1"
+    + "".join(fake.random_choices(string.ascii_lowercase + string.digits, length=26)),
+    "IP_ADDRESS": lambda _: fake.ipv4_public(),
+    "LOCATION": lambda _: fake.address(),
+    "DATE_TIME": lambda _: fake.iso8601(),
+    "NRP": lambda _: str(fake.random_number(digits=8, fix_len=True)),
+    "MEDICAL_LICENSE": lambda _: fake.bothify(text="??######").upper(),
+    "URL": lambda _: fake.url(),
     # US-specific entities
-    "US_BANK_NUMBER": lambda: fake.bban(),
-    "US_DRIVER_LICENSE": lambda: fake.random_number(digits=9, fix_len=True),
-    "US_ITIN": lambda: fake.bothify(text="9##-7#-####"),
-    "US_PASSPORT": lambda: fake.bothify(text="#####??").upper(),
-    "US_SSN": lambda: fake.ssn(),
+    "US_BANK_NUMBER": lambda _: fake.bban(),
+    "US_DRIVER_LICENSE": lambda _: str(fake.random_number(digits=9, fix_len=True)),
+    "US_ITIN": lambda _: fake.bothify(text="9##-7#-####"),
+    "US_PASSPORT": lambda _: fake.bothify(text="#####??").upper(),
+    "US_SSN": lambda _: fake.ssn(),
 }
