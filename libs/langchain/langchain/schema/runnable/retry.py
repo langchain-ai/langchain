@@ -8,8 +8,8 @@ from langchain.schema.runnable.config import RunnableConfig, patch_config
 if TYPE_CHECKING:
     from langchain.callbacks.manager import (
         AsyncCallbackManager as AsyncCallbackManagerT,
-        CallbackManager as CallbackManagerT,
     )
+    from langchain.callbacks.manager import CallbackManager as CallbackManagerT
 
     T = TypeVar("T", CallbackManagerT, AsyncCallbackManagerT)
 else:
