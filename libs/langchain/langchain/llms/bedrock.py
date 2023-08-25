@@ -2,12 +2,10 @@ import json
 from abc import ABC
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import BaseModel, Extra, root_validator
-
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.pydantic_v1 import Extra, root_validator
+from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 
 
 class LLMInputOutputAdapter:
@@ -123,6 +121,9 @@ class BedrockBase(BaseModel, ABC):
             **{"model_kwargs": _model_kwargs},
         }
 
+    def _get_provider(self) -> str:
+        return self.model_id.split(".")[0]
+
     def _prepare_input_and_invoke(
         self,
         prompt: str,
@@ -132,7 +133,7 @@ class BedrockBase(BaseModel, ABC):
     ) -> str:
         _model_kwargs = self.model_kwargs or {}
 
-        provider = self.model_id.split(".")[0]
+        provider = self._get_provider()
         params = {**_model_kwargs, **kwargs}
         input_body = LLMInputOutputAdapter.prepare_input(provider, prompt, params)
         body = json.dumps(input_body)

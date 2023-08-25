@@ -17,60 +17,43 @@ from langchain.schema.messages import (
 from langchain.schema.output import ChatGeneration, ChatGenerationChunk, ChatResult
 
 
-class ChatAnthropicMessageConverter:
-    """Class to the format the prompts in the expected format for the Anthropic model.
+def convert_messages_to_prompt_anthropic(
+    messages: List[BaseMessage],
+    human_prompt: str = "\n\nHuman:",
+    ai_prompt: str = "\n\nAssistant:",
+) -> str:
+    """Format a list of messages into a full prompt for the Anthropic model
+    Args:
+        messages (List[BaseMessage]): List of BaseMessage to combine.
+        human_prompt (str, optional): Human prompt tag. Defaults to "\n\nHuman:".
+        ai_prompt (str, optional): AI prompt tag. Defaults to "\n\nAssistant:".
+    Returns:
+        str: Combined string with necessary human_prompt and ai_prompt tags.
+    """
 
-    It also provides helper methods to convert the messages."""
+    messages = messages.copy()  # don't mutate the original list
 
-    def __init__(
-        self, human_prompt: Optional[str] = None, ai_prompt: Optional[str] = None
-    ) -> None:
-        self.human_prompt = human_prompt if human_prompt else "\n\nHuman:"
-        self.ai_prompt = ai_prompt if ai_prompt else "\n\nAssistant:"
+    if not isinstance(messages[-1], AIMessage):
+        messages.append(AIMessage(content=""))
 
-    def _convert_one_message_to_text(self, message: BaseMessage) -> str:
+    def _convert_one_message_to_text(message: BaseMessage) -> str:
         if isinstance(message, ChatMessage):
             message_text = f"\n\n{message.role.capitalize()}: {message.content}"
         elif isinstance(message, HumanMessage):
-            message_text = f"{self.human_prompt} {message.content}"
+            message_text = f"{human_prompt} {message.content}"
         elif isinstance(message, AIMessage):
-            message_text = f"{self.ai_prompt} {message.content}"
+            message_text = f"{ai_prompt} {message.content}"
         elif isinstance(message, SystemMessage):
-            message_text = f"{self.human_prompt} <admin>{message.content}</admin>"
+            message_text = f"{human_prompt} <admin>{message.content}</admin>"
         else:
             raise ValueError(f"Got unknown type {message}")
         return message_text
 
-    def _convert_messages_to_text(self, messages: List[BaseMessage]) -> str:
-        """Format a list of strings into a single string with necessary newlines.
+    text = "".join(_convert_one_message_to_text(message) for message in messages)
 
-        Args:
-            messages (List[BaseMessage]): List of BaseMessage to combine.
-
-        Returns:
-            str: Combined string with necessary newlines.
-        """
-        return "".join(
-            self._convert_one_message_to_text(message) for message in messages
-        )
-
-    def convert_messages_to_prompt(self, messages: List[BaseMessage]) -> str:
-        """Format a list of messages into a full prompt for the Anthropic model
-
-        Args:
-            messages (List[BaseMessage]): List of BaseMessage to combine.
-
-        Returns:
-            str: Combined string with necessary HUMAN_PROMPT and AI_PROMPT tags.
-        """
-        messages = messages.copy()  # don't mutate the original list
-
-        if not isinstance(messages[-1], AIMessage):
-            messages.append(AIMessage(content=""))
-        text = self._convert_messages_to_text(messages)
-        return (
-            text.rstrip()
-        )  # trim off the trailing ' ' that might come from the "Assistant: "
+    return (
+        text.rstrip()
+    )  # trim off the trailing ' ' that might come from the "Assistant: "
 
 
 class ChatAnthropic(BaseChatModel, _AnthropicCommon):
@@ -107,6 +90,20 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
     def lc_serializable(self) -> bool:
         return True
 
+    def _convert_messages_to_prompt(self, messages: List[BaseMessage]) -> str:
+        """Format a list of messages into a full prompt for the Anthropic model
+        Args:
+            messages (List[BaseMessage]): List of BaseMessage to combine.
+        Returns:
+            str: Combined string with necessary HUMAN_PROMPT and AI_PROMPT tags.
+        """
+        prompt_params = {}
+        if self.HUMAN_PROMPT:
+            prompt_params["human_prompt"] = self.HUMAN_PROMPT
+        if self.AI_PROMPT:
+            prompt_params["ai_prompt"] = self.AI_PROMPT
+        return convert_messages_to_prompt_anthropic(messages=messages, **prompt_params)
+
     def _stream(
         self,
         messages: List[BaseMessage],
@@ -114,9 +111,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        prompt = ChatAnthropicMessageConverter(
-            human_prompt=self.HUMAN_PROMPT, ai_prompt=self.AI_PROMPT
-        ).convert_messages_to_prompt(messages)
+        prompt = self._convert_messages_to_prompt(messages=messages)
         params: Dict[str, Any] = {"prompt": prompt, **self._default_params, **kwargs}
         if stop:
             params["stop_sequences"] = stop
@@ -135,9 +130,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        prompt = ChatAnthropicMessageConverter(
-            human_prompt=self.HUMAN_PROMPT, ai_prompt=self.AI_PROMPT
-        ).convert_messages_to_prompt(messages)
+        prompt = self._convert_messages_to_prompt(messages=messages)
         params: Dict[str, Any] = {"prompt": prompt, **self._default_params, **kwargs}
         if stop:
             params["stop_sequences"] = stop
@@ -161,9 +154,9 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
             for chunk in self._stream(messages, stop, run_manager, **kwargs):
                 completion += chunk.text
         else:
-            prompt = ChatAnthropicMessageConverter(
-                human_prompt=self.HUMAN_PROMPT, ai_prompt=self.AI_PROMPT
-            ).convert_messages_to_prompt(messages)
+            prompt = self._convert_messages_to_prompt(
+                messages=messages,
+            )
             params: Dict[str, Any] = {
                 "prompt": prompt,
                 **self._default_params,
@@ -188,9 +181,9 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
             async for chunk in self._astream(messages, stop, run_manager, **kwargs):
                 completion += chunk.text
         else:
-            prompt = ChatAnthropicMessageConverter(
-                human_prompt=self.HUMAN_PROMPT, ai_prompt=self.AI_PROMPT
-            ).convert_messages_to_prompt(messages)
+            prompt = self._convert_messages_to_prompt(
+                messages=messages,
+            )
             params: Dict[str, Any] = {
                 "prompt": prompt,
                 **self._default_params,
