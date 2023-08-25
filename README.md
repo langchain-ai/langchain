@@ -149,10 +149,11 @@ Please see [here](https://python.langchain.com) for full documentation on:
 
 Для получения более подробной информации о данных концепциях, пожалуйста, обратитесь к нашей [полной документации](https://python.langchain.com).
 
-## 💁 Примеры использования, адаптированные для GigaChat
+## 📚 Примеры использования, адаптированные для GigaChat
 
 - [Асинхронная работа с LLM](docs/extras/modules/model_io/models/llms/async_llm.ipynb)
 - [Ответы на вопросы по статьям из wikipedia](docs/extras/integrations/retrievers/wikipedia.ipynb)
+- [Суммаризация map-reduce](docs/extras/use_cases/summarization.ipynb) (см. раздел map/reduce)
 - [Игра в стиле DnD с GPT-3.5 и GigaChat](docs/extras/use_cases/agent_simulations/multi_llm_thre_player_dnd.ipynb)
 
 ## 💁 Помощь
