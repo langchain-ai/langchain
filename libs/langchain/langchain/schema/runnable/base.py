@@ -266,7 +266,6 @@ class Runnable(Generic[Input, Output], ABC):
             dumpd(self),
             input,
             run_type=run_type,
-            run_id=config.get("run_id"),
             name=config.get("run_name"),
         )
         try:
@@ -309,7 +308,6 @@ class Runnable(Generic[Input, Output], ABC):
             dumpd(self),
             input,
             run_type=run_type,
-            run_id=config.get("run_id"),
             name=config.get("run_name"),
         )
         try:
@@ -368,7 +366,6 @@ class Runnable(Generic[Input, Output], ABC):
             dumpd(self),
             {"input": ""},
             run_type=run_type,
-            run_id=config.get("run_id"),
             name=config.get("run_name"),
         )
         try:
@@ -450,7 +447,6 @@ class Runnable(Generic[Input, Output], ABC):
             dumpd(self),
             {"input": ""},
             run_type=run_type,
-            run_id=config.get("run_id"),
             name=config.get("run_name"),
         )
         try:
@@ -528,7 +524,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
         callback_manager = get_callback_manager_for_config(config)
         # start the root run
         run_manager = callback_manager.on_chain_start(
-            dumpd(self), input, run_id=config.get("run_id"), name=config.get("run_name")
+            dumpd(self), input, name=config.get("run_name")
         )
         first_error = None
         for runnable in self.runnables:
@@ -562,7 +558,7 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
         callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self), input, run_id=config.get("run_id"), name=config.get("run_name")
+            dumpd(self), input, name=config.get("run_name")
         )
 
         first_error = None
@@ -613,7 +609,6 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
             cm.on_chain_start(
                 dumpd(self),
                 input if isinstance(input, dict) else {"input": input},
-                run_id=config.get("run_id"),
                 name=config.get("run_name"),
             )
             for cm, input, config in zip(callback_managers, inputs, configs)
@@ -675,7 +670,6 @@ class RunnableWithFallbacks(Serializable, Runnable[Input, Output]):
                 cm.on_chain_start(
                     dumpd(self),
                     input,
-                    run_id=config.get("run_id"),
                     name=config.get("run_name"),
                 )
                 for cm, input, config in zip(callback_managers, inputs, configs)
@@ -784,7 +778,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         callback_manager = get_callback_manager_for_config(config)
         # start the root run
         run_manager = callback_manager.on_chain_start(
-            dumpd(self), input, run_id=config.get("run_id"), name=config.get("run_name")
+            dumpd(self), input, name=config.get("run_name")
         )
 
         # invoke all steps in sequence
@@ -814,7 +808,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self), input, run_id=config.get("run_id"), name=config.get("run_name")
+            dumpd(self), input, name=config.get("run_name")
         )
 
         # invoke all steps in sequence
@@ -860,7 +854,6 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
             cm.on_chain_start(
                 dumpd(self),
                 input,
-                run_id=config.get("run_id"),
                 name=config.get("run_name"),
             )
             for cm, input, config in zip(callback_managers, inputs, configs)
@@ -917,7 +910,6 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
                 cm.on_chain_start(
                     dumpd(self),
                     input,
-                    run_id=config.get("run_id"),
                     name=config.get("run_name"),
                 )
                 for cm, input, config in zip(callback_managers, inputs, configs)
@@ -957,7 +949,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         callback_manager = get_callback_manager_for_config(config)
         # start the root run
         run_manager = callback_manager.on_chain_start(
-            dumpd(self), input, run_id=config.get("run_id"), name=config.get("run_name")
+            dumpd(self), input, name=config.get("run_name")
         )
 
         steps = [self.first] + self.middle + [self.last]
@@ -1026,7 +1018,7 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
         callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self), input, run_id=config.get("run_id"), name=config.get("run_name")
+            dumpd(self), input, name=config.get("run_name")
         )
 
         steps = [self.first] + self.middle + [self.last]
@@ -1159,7 +1151,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
         )
         # start the root run
         run_manager = callback_manager.on_chain_start(
-            dumpd(self), input, run_id=config.get("run_id"), name=config.get("run_name")
+            dumpd(self), input, name=config.get("run_name")
         )
 
         # gather results from all steps
@@ -1200,7 +1192,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
         callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self), input, run_id=config.get("run_id"), name=config.get("run_name")
+            dumpd(self), input, name=config.get("run_name")
         )
 
         # gather results from all steps

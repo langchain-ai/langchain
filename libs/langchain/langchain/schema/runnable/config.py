@@ -4,7 +4,6 @@ from concurrent.futures import Executor, ThreadPoolExecutor
 from contextlib import contextmanager
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Union
-from uuid import UUID
 
 from typing_extensions import TypedDict
 
@@ -37,11 +36,6 @@ class RunnableConfig(TypedDict, total=False):
     run_name: str
     """
     Name for the tracer run for this call. Defaults to the name of the class.
-    """
-
-    run_id: UUID
-    """
-    Unique ID for the tracer run for this call. Defaults to uuid4().
     """
 
     _locals: Dict[str, Any]

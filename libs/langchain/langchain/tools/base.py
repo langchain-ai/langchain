@@ -8,7 +8,6 @@ from abc import abstractmethod
 from functools import partial
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
-from uuid import UUID
 
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
@@ -298,7 +297,6 @@ class ChildTool(BaseTool):
         *,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
-        run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
         """Run the tool."""
@@ -322,7 +320,6 @@ class ChildTool(BaseTool):
             {"name": self.name, "description": self.description},
             tool_input if isinstance(tool_input, str) else str(tool_input),
             color=start_color,
-            run_id=run_id,
             **kwargs,
         )
         try:
@@ -373,7 +370,6 @@ class ChildTool(BaseTool):
         *,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
-        run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
         """Run the tool asynchronously."""
@@ -396,7 +392,6 @@ class ChildTool(BaseTool):
             {"name": self.name, "description": self.description},
             tool_input if isinstance(tool_input, str) else str(tool_input),
             color=start_color,
-            run_id=run_id,
             **kwargs,
         )
         try:
