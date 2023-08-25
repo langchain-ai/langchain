@@ -5,6 +5,7 @@ import logging
 import uuid
 from typing import (
     Any,
+    Callable,
     Dict,
     Iterable,
     List,
@@ -40,6 +41,8 @@ class Neo4jVector(VectorStore):
         embedding_function: Any embedding function implementing
             `langchain.embeddings.base.Embeddings` interface.
         distance_strategy: The distance strategy to use. (default: COSINE)
+        pre_delete_collection: If True, will delete existing data if it exists.
+            (default: False). Useful for testing.
 
     Example:
         .. code-block:: python
@@ -75,6 +78,8 @@ class Neo4jVector(VectorStore):
         text_node_property: str = "text",
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         logger: Optional[logging.Logger] = None,
+        pre_delete_collection: bool = False,
+        relevance_score_fn: Optional[Callable[[float], float]] = None,
     ) -> None:
         try:
             import neo4j
@@ -111,9 +116,14 @@ class Neo4jVector(VectorStore):
         self.embedding_node_property = embedding_node_property
         self.text_node_property = text_node_property
         self.logger = logger or logging.getLogger(__name__)
+        self.override_relevance_score_fn = relevance_score_fn
 
         # Calculate embedding dimension
-        self.embedding_dimension = len(embedding_function.embed_query("test"))
+        self.embedding_dimension = len(embedding_function.embed_query("foo"))
+
+        # Delete existing data if flagged
+        if pre_delete_collection:
+            self.query(f"MATCH (n:{self.node_label}) DETACH DELETE n")
 
     def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
         """
@@ -394,7 +404,7 @@ class Neo4jVector(VectorStore):
             "YIELD node, score "
             f"RETURN node.{self.text_node_property} AS text, score, "
             f"node {{.*, {self.text_node_property}: Null, "
-            f"{self.embedding_node_property}: Null }} AS metadata"
+            f"{self.embedding_node_property}: Null, id: Null }} AS metadata"
         )
 
         parameters = {"index": self.index_name, "k": k, "embedding": embedding}
@@ -586,3 +596,28 @@ class Neo4jVector(VectorStore):
             ids=ids,
             **kwargs,
         )
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        """
+        The 'correct' relevance function
+        may differ depending on a few things, including:
+        - the distance / similarity metric used by the VectorStore
+        - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
+        - embedding dimensionality
+        - etc.
+        """
+        if self.override_relevance_score_fn is not None:
+            return self.override_relevance_score_fn
+
+        # Default strategy is to rely on distance strategy provided
+        # in vectorstore constructor
+        if self._distance_strategy == DistanceStrategy.COSINE:
+            return lambda x: x
+        elif self._distance_strategy == DistanceStrategy.EUCLIDEAN:
+            return lambda x: x
+        else:
+            raise ValueError(
+                "No supported normalization function"
+                f" for distance_strategy of {self._distance_strategy}."
+                "Consider providing relevance_score_fn to PGVector constructor."
+            )
