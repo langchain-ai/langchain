@@ -30,12 +30,10 @@ def test_redis_cache() -> None:
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
     langchain.llm_cache.update("foo", llm_string, [Generation(text="fizz")])
     output = llm.generate(["foo"])
-    print(output)
     expected_output = LLMResult(
         generations=[[Generation(text="fizz")]],
         llm_output={},
     )
-    print(expected_output)
     assert output == expected_output
     langchain.llm_cache.redis.flushall()
 
@@ -79,6 +77,27 @@ def test_redis_semantic_cache() -> None:
     assert output != expected_output
     langchain.llm_cache.clear(llm_string=llm_string)
 
+import time
+def test_redis_semantic_cache_multi() -> None:
+    langchain.llm_cache = RedisSemanticCache(
+        embedding=FakeEmbeddings(), redis_url=REDIS_TEST_URL, score_threshold=0.1
+    )
+    llm = FakeLLM()
+    params = llm.dict()
+    params["stop"] = None
+    llm_string = str(sorted([(k, v) for k, v in params.items()]))
+    langchain.llm_cache.update("foo", llm_string, [Generation(text="fizz"), Generation(text="Buzz")])
+    output = llm.generate(
+        ["bar"]
+    )  # foo and bar will have the same embedding produced by FakeEmbeddings
+    expected_output = LLMResult(
+        generations=[[Generation(text="fizz"), Generation(text="Buzz")]],
+        llm_output={},
+    )
+    time.sleep(10)
+    assert output == expected_output
+    # clear the cache
+    #langchain.llm_cache.clear(llm_string=llm_string)
 
 def test_redis_semantic_cache_chat() -> None:
     import redis

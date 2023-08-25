@@ -304,7 +304,11 @@ class RedisSemanticCache(BaseCache):
 
     DEFAULT_SCHEMA = {
         "content_key": "prompt",
-        "text": [{"name": "return_val"}, {"name": "prompt"}, {"name": "llm_string"}],
+        "text": [
+            {"name": "return_val"},
+            {"name": "prompt"},
+            {"name": "llm_string"}
+            ],
     }
 
     def __init__(
@@ -358,7 +362,7 @@ class RedisSemanticCache(BaseCache):
             )
         except ValueError:
             redis = RedisVectorstore(
-                embedding_function=self.embedding.embed_query,
+                embedding=self.embedding,
                 index_name=index_name,
                 redis_url=self.redis_url,
                 index_schema=self.DEFAULT_SCHEMA,
@@ -391,7 +395,7 @@ class RedisSemanticCache(BaseCache):
         )
         if results:
             for document in results:
-                generations.append(Generation(text=document.metadata["return_val"]))
+                generations.extend(_load_generations_from_json(document.metadata["return_val"]))
         return generations if generations else None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
@@ -413,7 +417,8 @@ class RedisSemanticCache(BaseCache):
         metadata = {
             "llm_string": llm_string,
             "prompt": prompt,
-            "return_val": [generation.text for generation in return_val],
+            "return_val":
+                _dump_generations_to_json([g for g in return_val]),
         }
         llm_cache.add_texts(texts=[prompt], metadatas=[metadata])
 
