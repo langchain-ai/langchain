@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import enum
 import logging
 import uuid
 from typing import (
@@ -17,16 +16,14 @@ from typing import (
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
-
-
-class DistanceStrategy(str, enum.Enum):
-    """Enumerator of the Distance strategies."""
-
-    EUCLIDEAN = "euclidean"
-    COSINE = "cosine"
-
+from langchain.vectorstores.utils import DistanceStrategy
 
 DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.COSINE
+
+distance_mapping = {
+    DistanceStrategy.EUCLIDEAN_DISTANCE: "euclidean",
+    DistanceStrategy.COSINE: "cosine",
+}
 
 
 class Neo4jVector(VectorStore):
@@ -92,6 +89,15 @@ class Neo4jVector(VectorStore):
                 "Please install it with `pip install neo4j`."
             )
 
+        # Allow only cosine and euclidean distance strategies
+        if distance_strategy not in [
+            DistanceStrategy.EUCLIDEAN_DISTANCE,
+            DistanceStrategy.COSINE,
+        ]:
+            raise ValueError(
+                "distance_strategy must be either 'EUCLIDEAN_DISTANCE' or 'COSINE'"
+            )
+
         self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
         self._database = database
         self.schema = ""
@@ -113,14 +119,13 @@ class Neo4jVector(VectorStore):
         self.verify_version()
 
         self.embedding = embedding
-        self._distance_strategy = distance_strategy.value
+        self._distance_strategy = distance_strategy
         self.index_name = index_name
         self.node_label = node_label
         self.embedding_node_property = embedding_node_property
         self.text_node_property = text_node_property
         self.logger = logger or logging.getLogger(__name__)
         self.override_relevance_score_fn = relevance_score_fn
-
         # Calculate embedding dimension
         self.embedding_dimension = len(embedding.embed_query("foo"))
 
@@ -235,7 +240,7 @@ class Neo4jVector(VectorStore):
             "node_label": self.node_label,
             "embedding_node_property": self.embedding_node_property,
             "embedding_dimension": self.embedding_dimension,
-            "similarity_metric": self._distance_strategy,
+            "similarity_metric": distance_mapping[self._distance_strategy],
         }
         self.query(index_query, parameters)
 

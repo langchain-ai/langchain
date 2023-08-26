@@ -49,6 +49,21 @@ def test_neo4jvector() -> None:
     assert output == [Document(page_content="foo")]
 
 
+def test_neo4jvector_euclidean() -> None:
+    """Test euclidean distance"""
+    docsearch = Neo4jVector.from_texts(
+        texts=texts,
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        pre_delete_collection=True,
+        distance_strategy="EUCLIDEAN_DISTANCE",
+    )
+    output = docsearch.similarity_search("foo", k=1)
+    assert output == [Document(page_content="foo")]
+
+
 def test_neo4jvector_embeddings() -> None:
     """Test end to end construction with embeddings and search."""
     text_embeddings = FakeEmbeddingsWithOsDimension().embed_documents(texts)
