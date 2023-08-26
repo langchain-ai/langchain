@@ -284,7 +284,7 @@ class ChatChatGLM(BaseChatModel):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator(skip_on_failure=True)
+    @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["chatglm_api_key"] = get_from_dict_or_env(
@@ -574,12 +574,12 @@ class ChatChatGLM(BaseChatModel):
         if sys.version_info[1] <= 7:
             return super().get_num_tokens_from_messages(messages)
         model, encoding = self._get_encoding_model()
-        if model.startswith("gpt-3.5-turbo-0301"):
+        if model.startswith("chatglm_pro"):
             # every message follows <im_start>{role/name}\n{content}<im_end>\n
             tokens_per_message = 4
             # if there's a name, the role is omitted
             tokens_per_name = -1
-        elif model.startswith("gpt-3.5-turbo") or model.startswith("gpt-4"):
+        elif model.startswith("chatglm_std") or model.startswith("chatglm_lite"):
             tokens_per_message = 3
             tokens_per_name = 1
         else:
