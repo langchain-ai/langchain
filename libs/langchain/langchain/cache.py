@@ -307,10 +307,7 @@ class RedisSemanticCache(BaseCache):
         "text": [
             {"name": "prompt"},
         ],
-        "extra": [
-            {"name": "return_val"},
-            {"name": "llm_string"}
-        ]
+        "extra": [{"name": "return_val"}, {"name": "llm_string"}],
     }
 
     def __init__(
@@ -371,7 +368,6 @@ class RedisSemanticCache(BaseCache):
             )
             _embedding = self.embedding.embed_query(text="test")
             redis._create_index(dim=len(_embedding))
-            print(redis.index_name)
             self._cache_dict[index_name] = redis
 
         return self._cache_dict[index_name]
@@ -397,7 +393,8 @@ class RedisSemanticCache(BaseCache):
         )
         if results:
             for document in results:
-                generations.extend(_load_generations_from_json(document.metadata["return_val"]))
+                r_val = _load_generations_from_json(document.metadata["return_val"])
+                generations.extend(r_val)
         return generations if generations else None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
@@ -415,11 +412,11 @@ class RedisSemanticCache(BaseCache):
                 )
                 return
         llm_cache = self._get_llm_cache(llm_string)
+        r_val = _dump_generations_to_json([g for g in return_val])
         metadata = {
             "llm_string": llm_string,
             "prompt": prompt,
-            "return_val":
-                _dump_generations_to_json([g for g in return_val]),
+            "return_val": r_val,
         }
         llm_cache.add_texts(texts=[prompt], metadatas=[metadata])
 

@@ -1,12 +1,15 @@
 """Test Redis cache functionality."""
-import pytest
 import time
 import uuid
+
+import pytest
 
 import langchain
 from langchain.cache import RedisCache, RedisSemanticCache
 from langchain.schema import Generation, LLMResult
-from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings, ConsistentFakeEmbeddings
+from tests.integration_tests.vectorstores.fake_embeddings import (
+    FakeEmbeddings,
+)
 from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
@@ -92,7 +95,9 @@ def test_redis_semantic_cache_multi() -> None:
     params = llm.dict()
     params["stop"] = None
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
-    langchain.llm_cache.update("foo", llm_string, [Generation(text="fizz"), Generation(text="Buzz")])
+    langchain.llm_cache.update(
+        "foo", llm_string, [Generation(text="fizz"), Generation(text="Buzz")]
+    )
     output = llm.generate(
         ["bar"]
     )  # foo and bar will have the same embedding produced by FakeEmbeddings
@@ -104,9 +109,8 @@ def test_redis_semantic_cache_multi() -> None:
     # clear the cache
     langchain.llm_cache.clear(llm_string=llm_string)
 
-def test_redis_semantic_cache_chat() -> None:
-    import redis
 
+def test_redis_semantic_cache_chat() -> None:
     langchain.llm_cache = RedisSemanticCache(
         embedding=FakeEmbeddings(), redis_url=REDIS_TEST_URL, score_threshold=0.1
     )
@@ -135,14 +139,16 @@ def test_redis_semantic_cache_chat() -> None:
             [[random_string()], [random_string(), random_string()]],
         ),
     ],
+    ids=[
+        "single_prompt_single_generation",
+        "single_prompt_multiple_generations",
+        "single_prompt_multiple_generations",
+        "multiple_prompts_multiple_generations",
+    ],
 )
-def test_redis_semantic_cache_hit(
-    prompts,  generations
-) -> None:
-    import redis
-
+def test_redis_semantic_cache_hit(prompts, generations) -> None:
     langchain.llm_cache = RedisSemanticCache(
-        embedding=ConsistentFakeEmbeddings(), redis_url=REDIS_TEST_URL, score_threshold=0.1
+        embedding=FakeEmbeddings(), redis_url=REDIS_TEST_URL, score_threshold=0.1
     )
 
     llm = FakeLLM()
@@ -159,7 +165,8 @@ def test_redis_semantic_cache_hit(
     ]
     for prompt_i, llm_generations_i in zip(prompts, llm_generations):
         langchain.llm_cache.update(prompt_i, llm_string, llm_generations_i)
-
+    llm.generate(prompts)
+    time.sleep(5)
     assert llm.generate(prompts) == LLMResult(
         generations=llm_generations, llm_output={}
     )

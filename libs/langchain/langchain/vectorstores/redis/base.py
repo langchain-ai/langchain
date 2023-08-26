@@ -703,7 +703,9 @@ class Redis(VectorStore):
             key = keys_or_ids[i] if keys_or_ids else _redis_key(prefix)
             metadata = metadatas[i] if metadatas else {}
             metadata = _prepare_metadata(metadata) if clean_metadata else metadata
-            embedding = embeddings[i] if embeddings else self._embeddings.embed_query(text)
+            embedding = (
+                embeddings[i] if embeddings else self._embeddings.embed_query(text)
+            )
             pipeline.hset(
                 key,
                 mapping={

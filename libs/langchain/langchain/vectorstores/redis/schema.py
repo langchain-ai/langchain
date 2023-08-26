@@ -25,9 +25,9 @@ class RedisDistanceMetric(str, Enum):
     ip = "IP"
 
 
-
 class RedisField(BaseModel):
     name: str = Field(...)
+
 
 class TextFieldSchema(RedisField):
     weight: float = 1
@@ -36,7 +36,6 @@ class TextFieldSchema(RedisField):
     withsuffixtrie: bool = False
     no_index: bool = False
     sortable: Optional[bool] = False
-
 
     def as_field(self) -> TextField:
         return TextField(
@@ -55,7 +54,6 @@ class TagFieldSchema(RedisField):
     no_index: bool = False
     sortable: Optional[bool] = False
 
-
     def as_field(self) -> TagField:
         return TagField(
             self.name,
@@ -69,7 +67,6 @@ class TagFieldSchema(RedisField):
 class NumericFieldSchema(RedisField):
     no_index: bool = False
     sortable: Optional[bool] = False
-
 
     def as_field(self) -> NumericField:
         return NumericField(self.name, sortable=self.sortable, no_index=self.no_index)

@@ -332,28 +332,21 @@ def test_redis_as_retriever() -> None:
         texts, ConsistentFakeEmbeddings(), redis_url=TEST_REDIS_URL
     )
 
-    retriever = docsearch.as_retriever(
-        search_type="similarity",
-        search_kwargs={"k": 3}
-    )
+    retriever = docsearch.as_retriever(search_type="similarity", search_kwargs={"k": 3})
     results = retriever.get_relevant_documents("foo")
     assert len(results) == 3
     assert all([d.page_content == "foo" for d in results])
 
     assert drop(docsearch.index_name)
 
+
 def test_redis_retriever_distance_threshold() -> None:
     texts = ["foo", "bar", "baz"]
-    docsearch = Redis.from_texts(
-        texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL
-    )
+    docsearch = Redis.from_texts(texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL)
 
     retriever = docsearch.as_retriever(
         search_type="similarity_distance_threshold",
-        search_kwargs={
-            "k": 3,
-            "distance_threshold": 0.1
-        }
+        search_kwargs={"k": 3, "distance_threshold": 0.1},
     )
     results = retriever.get_relevant_documents("foo")
     assert len(results) == 2
@@ -363,16 +356,11 @@ def test_redis_retriever_distance_threshold() -> None:
 
 def test_redis_retriever_score_threshold() -> None:
     texts = ["foo", "bar", "baz"]
-    docsearch = Redis.from_texts(
-        texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL
-    )
+    docsearch = Redis.from_texts(texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL)
 
     retriever = docsearch.as_retriever(
         search_type="similarity_score_threshold",
-        search_kwargs={
-            "k": 3,
-            "score_threshold": 0.91
-        }
+        search_kwargs={"k": 3, "score_threshold": 0.91},
     )
     results = retriever.get_relevant_documents("foo")
     assert len(results) == 2
