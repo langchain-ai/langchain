@@ -1,4 +1,3 @@
-"""Wrapper around Activeloop Deep Lake."""
 from __future__ import annotations
 
 import logging
@@ -24,9 +23,9 @@ logger = logging.getLogger(__name__)
 
 
 class DeepLake(VectorStore):
-    """Wrapper around Deep Lake, a data lake for deep learning applications.
+    """`Activeloop Deep Lake` vector store.
 
-    We integrated deeplake's similarity search and filtering for fast prototyping,
+    We integrated deeplake's similarity search and filtering for fast prototyping.
     Now, it supports Tensor Query Language (TQL) for production use cases
     over billion rows.
 
@@ -126,7 +125,7 @@ class DeepLake(VectorStore):
         self.verbose = verbose
 
         if _DEEPLAKE_INSTALLED is False:
-            raise ValueError(
+            raise ImportError(
                 "Could not import deeplake python package. "
                 "Please install it with `pip install deeplake[enterprise]`."
             )
@@ -135,7 +134,7 @@ class DeepLake(VectorStore):
             kwargs.get("runtime") == {"tensor_db": True}
             and version_compare(deeplake.__version__, "3.6.7") == -1
         ):
-            raise ValueError(
+            raise ImportError(
                 "To use tensor_db option you need to update deeplake to `3.6.7`. "
                 f"Currently installed deeplake version is {deeplake.__version__}. "
             )

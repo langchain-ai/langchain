@@ -53,14 +53,6 @@ class ChatGLM(LLM):
             **{"endpoint_url": self.endpoint_url},
             **{"model_kwargs": _model_kwargs},
         }
-    @staticmethod
-    def _generate_token():
-        if not self.api_key:
-            raise Exception(
-                "api_key not provided, you could provide it with `shell: export API_KEY=xxx` or `code: zhipuai.api_key=xxx`"
-            )
-
-        return jwt_token.generate_token(self.api_key)
 
     def _call(
         self,
@@ -92,13 +84,13 @@ class ChatGLM(LLM):
             "Content-Type": "application/json; charset=UTF-8",
         }
         try:
-            import zhipuai
             from zhipuai.utils import jwt_token
         except Exception as e:
-            raise Exception("Must install zhipuai, use`pip install zhipuai`")
+            raise Exception("Must install zhipuai, use`pip install zhipuai`", e)
         if not self.api_key:
             raise Exception(
-                "api_key not provided, you could provide it with `shell: export API_KEY=xxx` or `code: zhipuai.api_key=xxx`"
+                "api_key not provided, you could provide it with "
+                "`shell: export API_KEY=xxx` or `code: zhipuai.api_key=xxx`"
             )
         jwt_api_key_ = jwt_token.generate_token(self.api_key)
         headers.update({"Authorization": jwt_api_key_})
@@ -147,4 +139,5 @@ class ChatGLM(LLM):
             text = enforce_stop_tokens(text, stop)
         if self.with_history:
             self.history = self.history + [[None, parsed_response["data"]["choices"]]]
+
         return text

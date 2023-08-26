@@ -1,4 +1,3 @@
-"""Wrapper around USearch vector database."""
 from __future__ import annotations
 
 from typing import Any, Dict, Iterable, List, Optional, Tuple
@@ -27,7 +26,8 @@ def dependable_usearch_import() -> Any:
 
 
 class USearch(VectorStore):
-    """Wrapper around USearch vector database.
+    """`USearch` vector store.
+
     To use, you should have the ``usearch`` python package installed.
     """
 
