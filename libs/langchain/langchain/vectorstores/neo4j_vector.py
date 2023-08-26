@@ -124,6 +124,11 @@ class Neo4jVector(VectorStore):
 
         # Verify if the version support vector index
         self.verify_version()
+        # Create unique constraint for faster import
+        self.query(
+            "CREATE CONSTRAINT IF NOT EXISTS "
+            "FOR (n:`{self.node_label}`) REQUIRE n.id IS UNIQUE;"
+        )
 
         self.embedding = embedding
         self._distance_strategy = distance_strategy
