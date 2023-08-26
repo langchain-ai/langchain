@@ -49,7 +49,7 @@ jobs:
 
           if [[ "$REGULAR_VERSION" == "1" ]]; then
             PYDANTIC_DEP="<2"
-            TEST_WITH_VERSION="2"
+            TEST_WITH_VERSION="1"
           elif [[ "$REGULAR_VERSION" == "2" ]]; then
             PYDANTIC_DEP="<2"
             TEST_WITH_VERSION="1"
