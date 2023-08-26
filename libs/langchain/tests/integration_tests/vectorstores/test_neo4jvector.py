@@ -14,6 +14,11 @@ OS_TOKEN_COUNT = 1536
 
 texts = ["foo", "bar", "baz"]
 
+"""
+cd tests/integration_tests/vectorstores/docker-compose
+docker-compose -f neo4j.yml up
+"""
+
 
 class FakeEmbeddingsWithOsDimension(FakeEmbeddings):
     """Fake embeddings functionality for testing."""
@@ -57,6 +62,53 @@ def test_neo4jvector_embeddings() -> None:
         pre_delete_collection=True,
     )
     output = docsearch.similarity_search("foo", k=1)
+    assert output == [Document(page_content="foo")]
+
+
+def test_neo4jvector_catch_wrong_index_name() -> None:
+    """Test if index name is misspelled, but node label and property are correct."""
+    text_embeddings = FakeEmbeddingsWithOsDimension().embed_documents(texts)
+    text_embedding_pairs = list(zip(texts, text_embeddings))
+    docsearch = Neo4jVector.from_embeddings(
+        text_embeddings=text_embedding_pairs,
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        pre_delete_collection=True,
+    )
+    existing = Neo4jVector.from_existing_index(
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        index_name="test",
+    )
+    output = existing.similarity_search("foo", k=1)
+    assert output == [Document(page_content="foo")]
+
+
+def test_neo4jvector_catch_wrong_node_label() -> None:
+    """Test if node label is misspelled, but index name is correct."""
+    text_embeddings = FakeEmbeddingsWithOsDimension().embed_documents(texts)
+    text_embedding_pairs = list(zip(texts, text_embeddings))
+    docsearch = Neo4jVector.from_embeddings(
+        text_embeddings=text_embedding_pairs,
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        pre_delete_collection=True,
+    )
+    existing = Neo4jVector.from_existing_index(
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        index_name="vector",
+        node_label="test",
+    )
+    output = existing.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
 
 

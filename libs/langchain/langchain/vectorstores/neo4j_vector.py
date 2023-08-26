@@ -126,11 +126,18 @@ class Neo4jVector(VectorStore):
 
         # Delete existing data if flagged
         if pre_delete_collection:
+            from neo4j.exceptions import DatabaseError
+
             self.query(
                 f"MATCH (n:`{self.node_label}`) "
                 "CALL { WITH n DETACH DELETE n } "
                 "IN TRANSACTIONS OF 10000 ROWS;"
             )
+            # Delete index
+            try:
+                self.query(f"DROP INDEX {self.index_name}")
+            except DatabaseError:  # Index didn't exist yet
+                pass
 
     def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
         """
@@ -187,11 +194,18 @@ class Neo4jVector(VectorStore):
 
         index_information = self.query(
             "SHOW INDEXES YIELD name, type, labelsOrTypes, properties, options "
-            "WHERE type = 'VECTOR' AND name = $index_name "
+            "WHERE type = 'VECTOR' AND ( name = $index_name "
+            "OR (labelsOrTypes[0] = $node_label AND "
+            "properties[0] = $embedding_node_property))"
             "RETURN name, labelsOrTypes, properties, options ",
-            {"index_name": self.index_name},
+            {
+                "index_name": self.index_name,
+                "node_label": self.node_label,
+                "embedding_node_property": self.embedding_node_property,
+            },
         )
         try:
+            self.index_name = index_information[0]["name"]
             self.node_label = index_information[0]["labelsOrTypes"][0]
             self.embedding_node_property = index_information[0]["properties"][0]
             embedding_dimension = index_information[0]["options"]["indexConfig"][
