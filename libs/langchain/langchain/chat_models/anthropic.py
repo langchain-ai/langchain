@@ -32,9 +32,15 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         .. code-block:: python
 
             import anthropic
-            from langchain.llms import Anthropic
+            from langchain.chat_models import ChatAnthropic
             model = ChatAnthropic(model="<model_name>", anthropic_api_key="my-api-key")
     """
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
