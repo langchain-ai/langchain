@@ -40,7 +40,7 @@ class Neo4jVector(VectorStore):
         password: Neo4j password
         database: Optionally provide Neo4j database
                   Defaults to "neo4j"
-        embedding_function: Any embedding function implementing
+        embedding: Any embedding function implementing
             `langchain.embeddings.base.Embeddings` interface.
         distance_strategy: The distance strategy to use. (default: COSINE)
         pre_delete_collection: If True, will delete existing data if it exists.
@@ -72,7 +72,8 @@ class Neo4jVector(VectorStore):
         username: str,
         password: str,
         url: str,
-        embedding_function: Embeddings,
+        embedding: Embeddings,
+        *,
         database: str = "neo4j",
         index_name: str = "vector",
         node_label: str = "Chunk",
@@ -86,7 +87,7 @@ class Neo4jVector(VectorStore):
         try:
             import neo4j
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import neo4j python package. "
                 "Please install it with `pip install neo4j`."
             )
@@ -111,7 +112,7 @@ class Neo4jVector(VectorStore):
         # Verify if the version support vector index
         self.verify_version()
 
-        self.embedding_function = embedding_function
+        self.embedding = embedding
         self._distance_strategy = distance_strategy.value
         self.index_name = index_name
         self.node_label = node_label
@@ -121,7 +122,7 @@ class Neo4jVector(VectorStore):
         self.override_relevance_score_fn = relevance_score_fn
 
         # Calculate embedding dimension
-        self.embedding_dimension = len(embedding_function.embed_query("foo"))
+        self.embedding_dimension = len(embedding.embed_query("foo"))
 
         # Delete existing data if flagged
         if pre_delete_collection:
@@ -226,7 +227,7 @@ class Neo4jVector(VectorStore):
 
     @property
     def embeddings(self) -> Embeddings:
-        return self.embedding_function
+        return self.embedding
 
     @classmethod
     def __from(
@@ -251,7 +252,7 @@ class Neo4jVector(VectorStore):
             username=username,
             password=password,
             url=url,
-            embedding_function=embedding,
+            embedding=embedding,
             **kwargs,
         )
 
@@ -338,7 +339,7 @@ class Neo4jVector(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        embeddings = self.embedding_function.embed_documents(list(texts))
+        embeddings = self.embedding.embed_documents(list(texts))
         return self.add_embeddings(
             texts=texts, embeddings=embeddings, metadatas=metadatas, ids=ids, **kwargs
         )
@@ -358,7 +359,7 @@ class Neo4jVector(VectorStore):
         Returns:
             List of Documents most similar to the query.
         """
-        embedding = self.embedding_function.embed_query(text=query)
+        embedding = self.embedding.embed_query(text=query)
         return self.similarity_search_by_vector(
             embedding=embedding,
             k=k,
@@ -376,7 +377,7 @@ class Neo4jVector(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        embedding = self.embedding_function.embed_query(query)
+        embedding = self.embedding.embed_query(query)
         docs = self.similarity_search_with_score_by_vector(embedding=embedding, k=k)
         return docs
 
@@ -548,7 +549,7 @@ class Neo4jVector(VectorStore):
             username=username,
             password=password,
             url=url,
-            embedding_function=embedding,
+            embedding=embedding,
             index_name=index_name,
             distance_strategy=distance_strategy,
             **kwargs,
