@@ -34,8 +34,8 @@ retriever = db.as_retriever()
 docs = retriever.get_relevant_documents("what did he say about ketanji brown jackson")
 ```
 
-## Maximum Marginal Relevance Retrieval
-By default, the vectorstore retriever uses similarity search. If the underlying vectorstore support maximum marginal relevance search, you can specify that as the search type.
+## Maximum marginal relevance retrieval
+By default, the vector store retriever uses similarity search. If the underlying vector store supports maximum marginal relevance search, you can specify that as the search type.
 
 
 ```python
@@ -47,9 +47,9 @@ retriever = db.as_retriever(search_type="mmr")
 docs = retriever.get_relevant_documents("what did he say about ketanji brown jackson")
 ```
 
-## Similarity Score Threshold Retrieval
+## Similarity score threshold retrieval
 
-You can also a retrieval method that sets a similarity score threshold and only returns documents with a score above that threshold
+You can also a retrieval method that sets a similarity score threshold and only returns documents with a score above that threshold.
 
 
 ```python
