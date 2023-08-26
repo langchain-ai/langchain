@@ -4,8 +4,6 @@ from typing import List
 
 import pytest
 
-import pytest
-
 import langchain
 from langchain.cache import RedisCache, RedisSemanticCache
 from langchain.embeddings.base import Embeddings
@@ -175,7 +173,6 @@ def test_redis_semantic_cache_hit(
         print(llm_generations_i)
         langchain.llm_cache.update(prompt_i, llm_string, llm_generations_i)
     llm.generate(prompts)
-    time.sleep(5)
     assert llm.generate(prompts) == LLMResult(
         generations=llm_generations, llm_output={}
     )

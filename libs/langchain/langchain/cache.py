@@ -414,7 +414,7 @@ class RedisSemanticCache(BaseCache):
                 )
                 return
         llm_cache = self._get_llm_cache(llm_string)
-        r_val = _dump_generations_to_json([g for g in return_val])
+        _dump_generations_to_json([g for g in return_val])
         metadata = {
             "llm_string": llm_string,
             "prompt": prompt,
