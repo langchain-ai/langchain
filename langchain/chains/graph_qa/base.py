@@ -76,3 +76,4 @@ class GraphQAChain(Chain):
         )
         result = self.qa_chain({"question": question, "context": context})
         return {self.output_key: result[self.qa_chain.output_key]}
+

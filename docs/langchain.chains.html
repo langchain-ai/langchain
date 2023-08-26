@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>langchain.chains package &#8212; langchain_oss 0.0.01 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b3523f8e" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=039e1c02" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=10ae0503"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="langchain.chains.api package" href="langchain.chains.api.html" />
+    <link rel="prev" title="langchain.callbacks.tracers package" href="langchain.callbacks.tracers.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="langchain-chains-package">
+<h1>langchain.chains package<a class="headerlink" href="#langchain-chains-package" title="Permalink to this heading">¶</a></h1>
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this heading">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="langchain.chains.api.html">langchain.chains.api package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.api.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.api.html#langchain-chains-api-base-module">langchain.chains.api.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.api.html#langchain-chains-api-news-docs-module">langchain.chains.api.news_docs module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.api.html#langchain-chains-api-open-meteo-docs-module">langchain.chains.api.open_meteo_docs module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.api.html#langchain-chains-api-podcast-docs-module">langchain.chains.api.podcast_docs module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.api.html#langchain-chains-api-prompt-module">langchain.chains.api.prompt module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.api.html#langchain-chains-api-tmdb-docs-module">langchain.chains.api.tmdb_docs module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.api.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="langchain.chains.chat_vector_db.html">langchain.chains.chat_vector_db package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.chat_vector_db.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.chat_vector_db.html#langchain-chains-chat-vector-db-prompts-module">langchain.chains.chat_vector_db.prompts module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.chat_vector_db.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="langchain.chains.combine_documents.html">langchain.chains.combine_documents package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.combine_documents.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.combine_documents.html#langchain-chains-combine-documents-base-module">langchain.chains.combine_documents.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.combine_documents.html#langchain-chains-combine-documents-map-reduce-module">langchain.chains.combine_documents.map_reduce module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.combine_documents.html#langchain-chains-combine-documents-map-rerank-module">langchain.chains.combine_documents.map_rerank module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.combine_documents.html#langchain-chains-combine-documents-refine-module">langchain.chains.combine_documents.refine module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.combine_documents.html#langchain-chains-combine-documents-stuff-module">langchain.chains.combine_documents.stuff module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.combine_documents.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="langchain.chains.constitutional_ai.html">langchain.chains.constitutional_ai package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.constitutional_ai.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.constitutional_ai.html#langchain-chains-constitutional-ai-base-module">langchain.chains.constitutional_ai.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.constitutional_ai.html#langchain-chains-constitutional-ai-models-module">langchain.chains.constitutional_ai.models module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.constitutional_ai.html#langchain-chains-constitutional-ai-principles-module">langchain.chains.constitutional_ai.principles module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.constitutional_ai.html#langchain-chains-constitutional-ai-prompts-module">langchain.chains.constitutional_ai.prompts module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.constitutional_ai.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="langchain.chains.conversation.html">langchain.chains.conversation package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.conversation.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.conversation.html#langchain-chains-conversation-base-module">langchain.chains.conversation.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.conversation.html#langchain-chains-conversation-memory-module">langchain.chains.conversation.memory module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.conversation.html#langchain-chains-conversation-prompt-module">langchain.chains.conversation.prompt module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.conversation.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="langchain.chains.conversational_retrieval.html">langchain.chains.conversational_retrieval package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.conversational_retrieval.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.conversational_retrieval.html#langchain-chains-conversational-retrieval-base-module">langchain.chains.conversational_retrieval.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.conversational_retrieval.html#langchain-chains-conversational-retrieval-prompts-module">langchain.chains.conversational_retrieval.prompts module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.conversational_retrieval.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="langchain.chains.graph_qa.html">langchain.chains.graph_qa package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.graph_qa.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.graph_qa.html#langchain-chains-graph-qa-base-module">langchain.chains.graph_qa.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.graph_qa.html#langchain-chains-graph-qa-prompts-module">langchain.chains.graph_qa.prompts module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.graph_qa.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="langchain.chains.hyde.html">langchain.chains.hyde package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.hyde.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.hyde.html#langchain-chains-hyde-base-module">langchain.chains.hyde.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.hyde.html#langchain-chains-hyde-prompts-module">langchain.chains.hyde.prompts module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.hyde.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="langchain.chains.llm_bash.html">langchain.chains.llm_bash package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.llm_bash.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.llm_bash.html#langchain-chains-llm-bash-base-module">langchain.chains.llm_bash.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.llm_bash.html#langchain-chains-llm-bash-prompt-module">langchain.chains.llm_bash.prompt module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.llm_bash.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="langchain.chains.llm_checker.html">langchain.chains.llm_checker package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.llm_checker.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.llm_checker.html#langchain-chains-llm-checker-base-module">langchain.chains.llm_checker.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.llm_checker.html#langchain-chains-llm-checker-prompt-module">langchain.chains.llm_checker.prompt module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.llm_checker.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="langchain.chains.llm_math.html">langchain.chains.llm_math package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.llm_math.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.llm_math.html#langchain-chains-llm-math-base-module">langchain.chains.llm_math.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.llm_math.html#langchain-chains-llm-math-prompt-module">langchain.chains.llm_math.prompt module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.llm_math.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="langchain.chains.llm_summarization_checker.html">langchain.chains.llm_summarization_checker package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.llm_summarization_checker.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.llm_summarization_checker.html#langchain-chains-llm-summarization-checker-base-module">langchain.chains.llm_summarization_checker.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.llm_summarization_checker.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="langchain.chains.natbot.html">langchain.chains.natbot package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.natbot.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.natbot.html#langchain-chains-natbot-base-module">langchain.chains.natbot.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.natbot.html#langchain-chains-natbot-crawler-module">langchain.chains.natbot.crawler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.natbot.html#langchain-chains-natbot-prompt-module">langchain.chains.natbot.prompt module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.natbot.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="langchain.chains.pal.html">langchain.chains.pal package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.pal.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.pal.html#langchain-chains-pal-base-module">langchain.chains.pal.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.pal.html#langchain-chains-pal-colored-object-prompt-module">langchain.chains.pal.colored_object_prompt module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.pal.html#langchain-chains-pal-math-prompt-module">langchain.chains.pal.math_prompt module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.pal.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="langchain.chains.qa_generation.html">langchain.chains.qa_generation package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.qa_generation.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.qa_generation.html#langchain-chains-qa-generation-base-module">langchain.chains.qa_generation.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.qa_generation.html#langchain-chains-qa-generation-prompt-module">langchain.chains.qa_generation.prompt module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.qa_generation.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="langchain.chains.qa_with_sources.html">langchain.chains.qa_with_sources package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.qa_with_sources.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.qa_with_sources.html#langchain-chains-qa-with-sources-base-module">langchain.chains.qa_with_sources.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.qa_with_sources.html#langchain-chains-qa-with-sources-loading-module">langchain.chains.qa_with_sources.loading module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.qa_with_sources.html#langchain-chains-qa-with-sources-map-reduce-prompt-module">langchain.chains.qa_with_sources.map_reduce_prompt module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.qa_with_sources.html#langchain-chains-qa-with-sources-refine-prompts-module">langchain.chains.qa_with_sources.refine_prompts module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.qa_with_sources.html#langchain-chains-qa-with-sources-retrieval-module">langchain.chains.qa_with_sources.retrieval module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.qa_with_sources.html#langchain-chains-qa-with-sources-stuff-prompt-module">langchain.chains.qa_with_sources.stuff_prompt module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.qa_with_sources.html#langchain-chains-qa-with-sources-vector-db-module">langchain.chains.qa_with_sources.vector_db module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.qa_with_sources.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="langchain.chains.question_answering.html">langchain.chains.question_answering package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.question_answering.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.question_answering.html#langchain-chains-question-answering-map-reduce-prompt-module">langchain.chains.question_answering.map_reduce_prompt module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.question_answering.html#langchain-chains-question-answering-map-rerank-prompt-module">langchain.chains.question_answering.map_rerank_prompt module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.question_answering.html#langchain-chains-question-answering-refine-prompts-module">langchain.chains.question_answering.refine_prompts module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.question_answering.html#langchain-chains-question-answering-stuff-prompt-module">langchain.chains.question_answering.stuff_prompt module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.question_answering.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="langchain.chains.retrieval_qa.html">langchain.chains.retrieval_qa package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.retrieval_qa.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.retrieval_qa.html#langchain-chains-retrieval-qa-base-module">langchain.chains.retrieval_qa.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.retrieval_qa.html#langchain-chains-retrieval-qa-prompt-module">langchain.chains.retrieval_qa.prompt module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.retrieval_qa.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="langchain.chains.sql_database.html">langchain.chains.sql_database package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.sql_database.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.sql_database.html#langchain-chains-sql-database-base-module">langchain.chains.sql_database.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.sql_database.html#langchain-chains-sql-database-prompt-module">langchain.chains.sql_database.prompt module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.sql_database.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="langchain.chains.summarize.html">langchain.chains.summarize package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.summarize.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.summarize.html#langchain-chains-summarize-map-reduce-prompt-module">langchain.chains.summarize.map_reduce_prompt module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.summarize.html#langchain-chains-summarize-refine-prompts-module">langchain.chains.summarize.refine_prompts module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.summarize.html#langchain-chains-summarize-stuff-prompt-module">langchain.chains.summarize.stuff_prompt module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="langchain.chains.summarize.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading">¶</a></h2>
+</section>
+<section id="langchain-chains-base-module">
+<h2>langchain.chains.base module<a class="headerlink" href="#langchain-chains-base-module" title="Permalink to this heading">¶</a></h2>
+</section>
+<section id="langchain-chains-llm-module">
+<h2>langchain.chains.llm module<a class="headerlink" href="#langchain-chains-llm-module" title="Permalink to this heading">¶</a></h2>
+</section>
+<section id="langchain-chains-llm-requests-module">
+<h2>langchain.chains.llm_requests module<a class="headerlink" href="#langchain-chains-llm-requests-module" title="Permalink to this heading">¶</a></h2>
+</section>
+<section id="langchain-chains-loading-module">
+<h2>langchain.chains.loading module<a class="headerlink" href="#langchain-chains-loading-module" title="Permalink to this heading">¶</a></h2>
+</section>
+<section id="langchain-chains-mapreduce-module">
+<h2>langchain.chains.mapreduce module<a class="headerlink" href="#langchain-chains-mapreduce-module" title="Permalink to this heading">¶</a></h2>
+</section>
+<section id="langchain-chains-moderation-module">
+<h2>langchain.chains.moderation module<a class="headerlink" href="#langchain-chains-moderation-module" title="Permalink to this heading">¶</a></h2>
+</section>
+<section id="langchain-chains-prompt-selector-module">
+<h2>langchain.chains.prompt_selector module<a class="headerlink" href="#langchain-chains-prompt-selector-module" title="Permalink to this heading">¶</a></h2>
+</section>
+<section id="langchain-chains-sequential-module">
+<h2>langchain.chains.sequential module<a class="headerlink" href="#langchain-chains-sequential-module" title="Permalink to this heading">¶</a></h2>
+</section>
+<section id="langchain-chains-transform-module">
+<h2>langchain.chains.transform module<a class="headerlink" href="#langchain-chains-transform-module" title="Permalink to this heading">¶</a></h2>
+</section>
+<section id="module-contents">
+<h2>Module contents<a class="headerlink" href="#module-contents" title="Permalink to this heading">¶</a></h2>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">langchain_oss</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">langchain</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="langchain.html">langchain package</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="modules.html">langchain</a><ul>
+  <li><a href="langchain.html">langchain package</a><ul>
+      <li>Previous: <a href="langchain.callbacks.tracers.html" title="previous chapter">langchain.callbacks.tracers package</a></li>
+      <li>Next: <a href="langchain.chains.api.html" title="next chapter">langchain.chains.api package</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, aiswarya.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.1.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+      |
+      <a href="_sources/langchain.chains.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
