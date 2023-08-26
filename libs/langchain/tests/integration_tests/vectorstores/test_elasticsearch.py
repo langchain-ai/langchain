@@ -5,7 +5,6 @@ import uuid
 from typing import Generator, List, Union
 
 import pytest
-from elasticsearch.helpers import BulkIndexError
 
 from langchain.docstore.document import Document
 from langchain.vectorstores.elasticsearch import ElasticsearchStore
@@ -585,6 +584,7 @@ class TestElasticsearch:
         caplog: pytest.LogCaptureFixture,
     ) -> None:
         """Test bulk exception logging is giving better hints."""
+        from elasticsearch.helpers import BulkIndexError
 
         docsearch = ElasticsearchStore(
             embedding=ConsistentFakeEmbeddings(),

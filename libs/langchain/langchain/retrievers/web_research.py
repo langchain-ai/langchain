@@ -61,7 +61,7 @@ class QuestionListOutputParser(PydanticOutputParser):
         super().__init__(pydantic_object=LineList)
 
     def parse(self, text: str) -> LineList:
-        lines = re.findall(r"\d+\..*?\n", text)
+        lines = re.findall(r"\d+\..*?(?:\n|$)", text)
         return LineList(lines=lines)
 
 

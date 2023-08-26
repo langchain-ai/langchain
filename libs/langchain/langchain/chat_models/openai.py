@@ -321,7 +321,7 @@ class ChatOpenAI(BaseChatModel):
             yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
             if run_manager:
                 run_manager.on_llm_new_token(
-                    chunk.content, model=model, prompt_tokens=prompt_tokens
+                    chunk.content, chunk=chunk, model=model, prompt_tokens=prompt_tokens
                 )
 
     def _generate(
@@ -405,7 +405,7 @@ class ChatOpenAI(BaseChatModel):
             yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
             if run_manager:
                 await run_manager.on_llm_new_token(
-                    chunk.content, model=model, prompt_tokens=prompt_tokens
+                    chunk.content, chunk=chunk, model=model, prompt_tokens=prompt_tokens
                 )
 
     async def _agenerate(
