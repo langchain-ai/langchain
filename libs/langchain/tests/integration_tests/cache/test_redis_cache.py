@@ -1,13 +1,17 @@
 """Test Redis cache functionality."""
-import time
 import uuid
+from typing import List
+
+import pytest
 
 import pytest
 
 import langchain
 from langchain.cache import RedisCache, RedisSemanticCache
+from langchain.embeddings.base import Embeddings
 from langchain.schema import Generation, LLMResult
 from tests.integration_tests.vectorstores.fake_embeddings import (
+    ConsistentFakeEmbeddings,
     FakeEmbeddings,
 )
 from tests.unit_tests.llms.fake_chat_model import FakeChatModel
@@ -124,6 +128,7 @@ def test_redis_semantic_cache_chat() -> None:
     langchain.llm_cache.clear(llm_string=llm_string)
 
 
+@pytest.mark.parametrize("embedding", [ConsistentFakeEmbeddings()])
 @pytest.mark.parametrize(
     "prompts,  generations",
     [
@@ -146,9 +151,11 @@ def test_redis_semantic_cache_chat() -> None:
         "multiple_prompts_multiple_generations",
     ],
 )
-def test_redis_semantic_cache_hit(prompts, generations) -> None:
+def test_redis_semantic_cache_hit(
+    embedding: Embeddings, prompts: List[str], generations: List[List[str]]
+) -> None:
     langchain.llm_cache = RedisSemanticCache(
-        embedding=FakeEmbeddings(), redis_url=REDIS_TEST_URL, score_threshold=0.1
+        embedding=embedding, redis_url=REDIS_TEST_URL
     )
 
     llm = FakeLLM()
@@ -164,6 +171,8 @@ def test_redis_semantic_cache_hit(prompts, generations) -> None:
         for prompt_i_generations in generations
     ]
     for prompt_i, llm_generations_i in zip(prompts, llm_generations):
+        print(prompt_i)
+        print(llm_generations_i)
         langchain.llm_cache.update(prompt_i, llm_string, llm_generations_i)
     llm.generate(prompts)
     time.sleep(5)

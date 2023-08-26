@@ -960,7 +960,7 @@ class Redis(VectorStore):
         with_distance: bool = False,
     ) -> Tuple["Query", Dict[str, Any]]:
         # Creates embedding vector from user query
-        embedding = self.embeddings.embed_query(query)
+        embedding = self._embeddings.embed_query(query)
 
         # Creates Redis query
         params_dict: Dict[str, Union[str, bytes, float]] = {

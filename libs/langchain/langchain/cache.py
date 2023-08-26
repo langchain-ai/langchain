@@ -33,6 +33,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    List,
     Optional,
     Sequence,
     Tuple,
@@ -357,14 +358,14 @@ class RedisSemanticCache(BaseCache):
                 embedding=self.embedding,
                 index_name=index_name,
                 redis_url=self.redis_url,
-                schema=self.DEFAULT_SCHEMA,
+                schema=cast(Dict, self.DEFAULT_SCHEMA),
             )
         except ValueError:
             redis = RedisVectorstore(
                 embedding=self.embedding,
                 index_name=index_name,
                 redis_url=self.redis_url,
-                index_schema=self.DEFAULT_SCHEMA,
+                index_schema=cast(Dict, self.DEFAULT_SCHEMA),
             )
             _embedding = self.embedding.embed_query(text="test")
             redis._create_index(dim=len(_embedding))
@@ -384,7 +385,7 @@ class RedisSemanticCache(BaseCache):
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string."""
         llm_cache = self._get_llm_cache(llm_string)
-        generations = []
+        generations: List = []
         # Read from a Hash
         results = llm_cache.similarity_search(
             query=prompt,
@@ -393,8 +394,9 @@ class RedisSemanticCache(BaseCache):
         )
         if results:
             for document in results:
-                r_val = _load_generations_from_json(document.metadata["return_val"])
-                generations.extend(r_val)
+                generations.extend(
+                    _load_generations_from_json(document.metadata["return_val"])
+                )
         return generations if generations else None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
@@ -416,7 +418,7 @@ class RedisSemanticCache(BaseCache):
         metadata = {
             "llm_string": llm_string,
             "prompt": prompt,
-            "return_val": r_val,
+            "return_val": _dump_generations_to_json([g for g in return_val]),
         }
         llm_cache.add_texts(texts=[prompt], metadatas=[metadata])
 

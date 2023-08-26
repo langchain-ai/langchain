@@ -82,7 +82,7 @@ def test_redis_from_existing(texts: List[str]) -> None:
     docsearch = Redis.from_texts(
         texts, FakeEmbeddings(), index_name=TEST_INDEX_NAME, redis_url=TEST_REDIS_URL
     )
-    schema = docsearch.schema
+    schema: Dict = docsearch.schema
 
     # write schema for the next test
     docsearch.write_schema("test_schema.yml")
