@@ -1,5 +1,5 @@
 import logging
-from typing import Any, List, Mapping, Optional, Dict
+from typing import Any, List, Mapping, Optional
 
 import requests
 
@@ -139,5 +139,5 @@ class ChatGLM(LLM):
             text = enforce_stop_tokens(text, stop)
         if self.with_history:
             self.history = self.history + [[None, parsed_response["data"]["choices"]]]
-        
+
         return text

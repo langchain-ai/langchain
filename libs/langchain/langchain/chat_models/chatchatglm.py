@@ -4,7 +4,6 @@ from __future__ import annotations
 import copy
 import logging
 import sys
-
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -70,9 +69,8 @@ def _create_retry_decorator(
         Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
     ] = None,
 ) -> Callable[[Any], Any]:
-
     errors = [
-        Exception,
+        BaseException,
     ]
     return create_base_retry_decorator(
         error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
@@ -89,19 +87,25 @@ async def acompletion_with_retry(
 
     @retry_decorator
     async def _completion_with_retry(**kwargs: Any) -> Any:
-        # Use ChatGLM's async api 
+        # Use ChatGLM's async api
         # https://open.bigmodel.cn/api/paas/v3/model-api/chatglm_pro/invoke
         m_kwargs = copy.deepcopy(kwargs)
-        if (len(kwargs["messages"]) >= 2 and len(kwargs["messages"])//2 
-            and kwargs["messages"][-1]["role"] == kwargs["messages"][-2]["role"]):
-            m_kwargs["prompt"] = ([msg for msg in kwargs["messages"][:-2]] 
-                                  + [kwargs["messages"][-1]])
+        if (
+            len(kwargs["messages"]) >= 2
+            and len(kwargs["messages"]) // 2
+            and kwargs["messages"][-1]["role"] == kwargs["messages"][-2]["role"]
+        ):
+            m_kwargs["prompt"] = [msg for msg in kwargs["messages"][:-2]] + [
+                kwargs["messages"][-1]
+            ]
         else:
             m_kwargs["prompt"] = kwargs["messages"]
         if m_kwargs.get("streaming") or m_kwargs.get("stream"):
-            async def async_gen(**m_kwargs):
+
+            async def async_gen(**m_kwargs: Any) -> Any:
                 for event in llm.client.sse_invoke(**m_kwargs).events():
                     yield event.data
+
             return alist(async_gen(**m_kwargs))
         else:
             return llm.client.invoke(**m_kwargs)
@@ -248,7 +252,7 @@ class ChatChatGLM(BaseChatModel):
     when using one of the many model providers that expose an ChatGLM-like 
     API but with different models. In those cases, in order to avoid erroring 
     when tiktoken is called, you can specify a model name to use here."""
-    
+
     class Config:
         """Configuration for this pydantic object."""
 
@@ -306,6 +310,7 @@ class ChatChatGLM(BaseChatModel):
         )
         try:
             import zhipuai
+
             zhipuai.api_key = values["chatglm_api_key"]
         except ImportError:
             raise ValueError(
@@ -348,16 +353,21 @@ class ChatChatGLM(BaseChatModel):
         @retry_decorator
         def _completion_with_retry(**kwargs: Any) -> Any:
             m_kwargs = copy.deepcopy(kwargs)
-            if (len(kwargs["messages"]) >= 2 and len(kwargs["messages"])//2 
-                and kwargs["messages"][-1]["role"] == kwargs["messages"][-2]["role"]):
-                m_kwargs["prompt"] = ([msg for msg in kwargs["messages"][:-2]] 
-                                    + [kwargs["messages"][-1]])
+            if (
+                len(kwargs["messages"]) >= 2
+                and len(kwargs["messages"]) // 2
+                and kwargs["messages"][-1]["role"] == kwargs["messages"][-2]["role"]
+            ):
+                m_kwargs["prompt"] = [msg for msg in kwargs["messages"][:-2]] + [
+                    kwargs["messages"][-1]
+                ]
             else:
                 m_kwargs["prompt"] = kwargs["messages"]
             if m_kwargs.get("streaming") or m_kwargs.get("stream"):
                 return self.client.sse_invoke(**m_kwargs)
             else:
                 return self.client.invoke(**m_kwargs)
+
         return _completion_with_retry(**kwargs)
 
     def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
@@ -390,7 +400,6 @@ class ChatChatGLM(BaseChatModel):
         ).events():
             delta = {"role": "assistant", "content": event.data}
             chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
-            default_chunk_class = chunk.__class__
             yield ChatGenerationChunk(message=chunk)
             if run_manager:
                 run_manager.on_llm_new_token(chunk.content)
@@ -465,7 +474,6 @@ class ChatChatGLM(BaseChatModel):
             else:
                 delta = {"role": "assistant", "content": ""}
             chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
-            default_chunk_class = chunk.__class__
             yield ChatGenerationChunk(message=chunk)
             if run_manager:
                 await run_manager.on_llm_new_token(chunk.content)
@@ -513,8 +521,9 @@ class ChatChatGLM(BaseChatModel):
         }
         if self.chatglm_proxy:
             import zhipuai
+
             zhipuai.api_key = self.chatglm_api_key
-            # zhipuai.proxy = {"http": self.chatglm_proxy, "https": self.chatglm_proxy} 
+            # zhipuai.proxy = {"http": self.chatglm_proxy, "https": self.chatglm_proxy}
             # type: ignore[assignment]  # noqa: E501
         return {**self._default_params, **chatglm_creds}
 
