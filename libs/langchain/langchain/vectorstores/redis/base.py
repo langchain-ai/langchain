@@ -703,7 +703,9 @@ class Redis(VectorStore):
             key = keys_or_ids[i] if keys_or_ids else _redis_key(prefix)
             metadata = metadatas[i] if metadatas else {}
             metadata = _prepare_metadata(metadata) if clean_metadata else metadata
-            embedding = embeddings[i] if embeddings else self._embeddings.embed_query(text)
+            embedding = (
+                embeddings[i] if embeddings else self._embeddings.embed_query(text)
+            )
             pipeline.hset(
                 key,
                 mapping={
@@ -958,7 +960,7 @@ class Redis(VectorStore):
         with_distance: bool = False,
     ) -> Tuple["Query", Dict[str, Any]]:
         # Creates embedding vector from user query
-        embedding = self.embeddings.embed_query(query)
+        embedding = self._embeddings.embed_query(query)
 
         # Creates Redis query
         params_dict: Dict[str, Union[str, bytes, float]] = {
