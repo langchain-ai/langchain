@@ -69,7 +69,7 @@ def test_neo4jvector_catch_wrong_index_name() -> None:
     """Test if index name is misspelled, but node label and property are correct."""
     text_embeddings = FakeEmbeddingsWithOsDimension().embed_documents(texts)
     text_embedding_pairs = list(zip(texts, text_embeddings))
-    docsearch = Neo4jVector.from_embeddings(
+    Neo4jVector.from_embeddings(
         text_embeddings=text_embedding_pairs,
         embedding=FakeEmbeddingsWithOsDimension(),
         url=url,
@@ -92,7 +92,7 @@ def test_neo4jvector_catch_wrong_node_label() -> None:
     """Test if node label is misspelled, but index name is correct."""
     text_embeddings = FakeEmbeddingsWithOsDimension().embed_documents(texts)
     text_embedding_pairs = list(zip(texts, text_embeddings))
-    docsearch = Neo4jVector.from_embeddings(
+    Neo4jVector.from_embeddings(
         text_embeddings=text_embedding_pairs,
         embedding=FakeEmbeddingsWithOsDimension(),
         url=url,
