@@ -82,12 +82,9 @@ class JSONLoader(BaseLoader):
         for i, sample in enumerate(data, len(docs) + 1):
             text = self._get_text(sample=sample)
             metadata = self._get_metadata(
-                sample=sample,
-                source=str(self.file_path),
-                seq_num=i
+                sample=sample, source=str(self.file_path), seq_num=i
             )
             docs.append(Document(page_content=text, metadata=metadata))
-
 
     def _get_text(self, sample: Any) -> str:
         """Convert sample to string format"""
@@ -111,7 +108,9 @@ class JSONLoader(BaseLoader):
         else:
             return str(content) if content is not None else ""
 
-    def _get_metadata(self, sample, **additional_fields):
+    def _get_metadata(
+        self, sample: Dict[str, Any], **additional_fields: Any
+    ) -> Dict[str, Any]:
         """
         Return a metadata dictionary base on the existence of metadata_func
         :param sample: single data payload
@@ -138,7 +137,7 @@ class JSONLoader(BaseLoader):
                     with the key `{self._content_key}`"
             )
 
-    def _validate_metadata_func(self, data):
+    def _validate_metadata_func(self, data: Any) -> None:
         """Check if the metadata_func output is valid"""
 
         sample = data.first()

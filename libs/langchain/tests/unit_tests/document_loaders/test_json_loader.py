@@ -275,23 +275,23 @@ def test_json_meta_01(
 @pytest.mark.parametrize(
     "patch_func,patch_func_value,kwargs",
     (
-            # JSON content.
-            (
-                    "pathlib.Path.read_text",
-                    '[{"text": "value1"}, {"text": "value2"}]',
-                    {"jq_schema": ".[]", "content_key": "text"},
-            ),
-            # JSON Lines content.
-            (
-                    "pathlib.Path.open",
-                    io.StringIO(
-                        """
+        # JSON content.
+        (
+            "pathlib.Path.read_text",
+            '[{"text": "value1"}, {"text": "value2"}]',
+            {"jq_schema": ".[]", "content_key": "text"},
+        ),
+        # JSON Lines content.
+        (
+            "pathlib.Path.open",
+            io.StringIO(
+                """
                         {"text": "value1"}
                         {"text": "value2"}
                         """
-                    ),
-                    {"jq_schema": ".", "content_key": "text", "json_lines": True},
             ),
+            {"jq_schema": ".", "content_key": "text", "json_lines": True},
+        ),
     ),
 )
 def test_json_meta_02(
