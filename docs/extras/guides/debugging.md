@@ -8,7 +8,7 @@ Here's a few different tools and functionalities to aid in debugging.
 
 ## Tracing
 
-Platforms with tracing capabilities like [LangSmith](/docs/guides/langsmith/) and [WandB](/docs/ecosystem/integrations/agent_with_wandb_tracing) are the most comprehensive solutions for debugging. These platforms make it easy to not only log and visualize LLM apps, but also to actively debug, test and refine them.
+Platforms with tracing capabilities like [LangSmith](https://docs.smith.langchain.com/) and [WandB](https://docs.wandb.ai/ref/python/integrations/wandbtracer) are the most comprehensive solutions for debugging. These platforms make it easy to not only log and visualize LLM apps, but also to actively debug, test and refine them.
 
 For anyone building production-grade LLM applications, we highly recommend using a platform like this.
 
@@ -656,6 +656,6 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
 
 ## Other callbacks
 
-`Callbacks` are what we use to execute any functionality within a component outside the primary component logic. All of the above solutions use `Callbacks` under the hood to log intermediate steps of components. There's a number of `Callbacks` relevant for debugging that come with LangChain out of the box, like the [FileCallbackHandler](/docs/modules/callbacks/how_to/filecallbackhandler). You can also implement your own callbacks to execute custom functionality.
+`Callbacks` are what we use to execute any functionality within a component outside the primary component logic. All of the above solutions use `Callbacks` under the hood to log intermediate steps of components. There's a number of `Callbacks` relevant for debugging that come with LangChain out of the box, like the [FileCallbackHandler](https://python.langchain.com/docs/modules/callbacks/filecallbackhandler). You can also implement your own callbacks to execute custom functionality.
 
-See here for more info on [Callbacks](/docs/modules/callbacks/), how to use them, and customize them.
+See here for more info on [Callbacks](https://python.langchain.com/docs/modules/callbacks/), how to use them, and customize them.
