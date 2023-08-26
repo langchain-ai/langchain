@@ -636,7 +636,7 @@ class Neo4jVector(VectorStore):
         # in vectorstore constructor
         if self._distance_strategy == DistanceStrategy.COSINE:
             return lambda x: x
-        elif self._distance_strategy == DistanceStrategy.EUCLIDEAN:
+        elif self._distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
             return lambda x: x
         else:
             raise ValueError(

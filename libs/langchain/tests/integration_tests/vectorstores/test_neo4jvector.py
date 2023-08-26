@@ -4,6 +4,7 @@ from typing import List
 
 from langchain.docstore.document import Document
 from langchain.vectorstores import Neo4jVector
+from langchain.vectorstores.utils import DistanceStrategy
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 url = os.environ.get("NEO4J_URL", "bolt://localhost:7687")
@@ -58,7 +59,7 @@ def test_neo4jvector_euclidean() -> None:
         username=username,
         password=password,
         pre_delete_collection=True,
-        distance_strategy="EUCLIDEAN_DISTANCE",
+        distance_strategy=DistanceStrategy.EUCLIDEAN_DISTANCE,
     )
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
