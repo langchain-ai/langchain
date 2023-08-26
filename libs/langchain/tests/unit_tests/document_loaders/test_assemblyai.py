@@ -1,10 +1,8 @@
 import pytest
 from pytest_mock import MockerFixture
 
-from langchain.document_loaders.assemblyai import (
-    AssemblyAIAudioTranscriptLoader,
-    TranscriptFormat,
-)
+from langchain.document_loaders import AssemblyAIAudioTranscriptLoader
+from langchain.document_loaders.assemblyai import TranscriptFormat
 
 
 @pytest.mark.requires("assemblyai")

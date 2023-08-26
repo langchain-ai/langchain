@@ -117,13 +117,7 @@ class Runnable(Generic[Input, Output], ABC):
             return [self.invoke(inputs[0], configs[0], **kwargs)]
 
         with get_executor_for_config(configs[0]) as executor:
-            return list(
-                executor.map(
-                    partial(self.invoke, **kwargs),
-                    inputs,
-                    (patch_config(c, executor=executor) for c in configs),
-                )
-            )
+            return list(executor.map(partial(self.invoke, **kwargs), inputs, configs))
 
     async def abatch(
         self,
@@ -852,18 +846,15 @@ class RunnableSequence(Serializable, Runnable[Input, Output]):
 
         # invoke
         try:
-            with get_executor_for_config(configs[0]) as executor:
-                for step in self.steps:
-                    inputs = step.batch(
-                        inputs,
-                        [
-                            # each step a child run of the corresponding root run
-                            patch_config(
-                                config, callbacks=rm.get_child(), executor=executor
-                            )
-                            for rm, config in zip(run_managers, configs)
-                        ],
-                    )
+            for step in self.steps:
+                inputs = step.batch(
+                    inputs,
+                    [
+                        # each step a child run of the corresponding root run
+                        patch_config(config, callbacks=rm.get_child())
+                        for rm, config in zip(run_managers, configs)
+                    ],
+                )
         # finish the root runs
         except (KeyboardInterrupt, Exception) as e:
             for rm in run_managers:
@@ -1152,7 +1143,6 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
                             config,
                             deep_copy_locals=True,
                             callbacks=run_manager.get_child(),
-                            executor=executor,
                         ),
                     )
                     for step in steps.values()
@@ -1219,9 +1209,7 @@ class RunnableMap(Serializable, Runnable[Input, Dict[str, Any]]):
                     name,
                     step.transform(
                         input_copies.pop(),
-                        patch_config(
-                            config, callbacks=run_manager.get_child(), executor=executor
-                        ),
+                        patch_config(config, callbacks=run_manager.get_child()),
                     ),
                 )
                 for name, step in steps.items()
