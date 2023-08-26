@@ -174,7 +174,6 @@ def test_neo4jvector_relevance_score() -> None:
     )
 
     output = docsearch.similarity_search_with_relevance_scores("foo", k=3)
-    print(output)
     assert output == [
         (Document(page_content="foo", metadata={"page": "0"}), 1.0),
         (Document(page_content="bar", metadata={"page": "1"}), 0.9998376369476318),

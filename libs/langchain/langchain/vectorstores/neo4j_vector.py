@@ -15,6 +15,7 @@ from typing import (
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
+from langchain.utils import get_from_env
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import DistanceStrategy
 
@@ -66,11 +67,11 @@ class Neo4jVector(VectorStore):
 
     def __init__(
         self,
-        username: str,
-        password: str,
-        url: str,
         embedding: Embeddings,
         *,
+        username: str = None,
+        password: str = None,
+        url: str = None,
         database: str = "neo4j",
         index_name: str = "vector",
         node_label: str = "Chunk",
@@ -97,6 +98,12 @@ class Neo4jVector(VectorStore):
             raise ValueError(
                 "distance_strategy must be either 'EUCLIDEAN_DISTANCE' or 'COSINE'"
             )
+
+        # Handle if the credentials are environment variables
+        url = get_from_env("url", "NEO4J_URL", url)
+        username = get_from_env("username", "NEO4J_USERNAME", username)
+        password = get_from_env("password", "NEO4J_PASSWORD", password)
+        database = get_from_env("database", "NEO4J_DATABASE", database)
 
         self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
         self._database = database
@@ -254,9 +261,6 @@ class Neo4jVector(VectorStore):
         texts: List[str],
         embeddings: List[List[float]],
         embedding: Embeddings,
-        username: str,
-        password: str,
-        url: str,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
@@ -268,9 +272,6 @@ class Neo4jVector(VectorStore):
             metadatas = [{} for _ in texts]
 
         store = cls(
-            username=username,
-            password=password,
-            url=url,
             embedding=embedding,
             **kwargs,
         )
@@ -500,9 +501,6 @@ class Neo4jVector(VectorStore):
         cls,
         text_embeddings: List[Tuple[str, List[float]]],
         embedding: Embeddings,
-        url: str,
-        username: str,
-        password: str,
         metadatas: Optional[List[dict]] = None,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         ids: Optional[List[str]] = None,
@@ -549,9 +547,6 @@ class Neo4jVector(VectorStore):
         cls: Type[Neo4jVector],
         embedding: Embeddings,
         index_name: str,
-        username: str,
-        password: str,
-        url: str,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         **kwargs: Any,
     ) -> Neo4jVector:
@@ -565,9 +560,6 @@ class Neo4jVector(VectorStore):
         """
 
         store = cls(
-            username=username,
-            password=password,
-            url=url,
             embedding=embedding,
             index_name=index_name,
             distance_strategy=distance_strategy,
