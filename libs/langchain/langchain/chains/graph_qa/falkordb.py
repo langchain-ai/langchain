@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional
 
-from FalkorDB import FalkorDB
+from langchain.graphs import FalkorDBGraph
 from pydantic import Field
 
 from langchain.base_language import BaseLanguageModel
