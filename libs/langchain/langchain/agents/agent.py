@@ -1,4 +1,4 @@
-"""Chain that takes in an input and produces an action and action input."""
+"""Chain that takes in an input and produces an action and input for the action."""
 from __future__ import annotations
 
 import asyncio
@@ -44,14 +44,15 @@ logger = logging.getLogger(__name__)
 
 
 class BaseSingleActionAgent(BaseModel):
-    """Base Single Action Agent class."""
+    """A base class for agents that perform a single action."""
 
     @property
     def return_values(self) -> List[str]:
-        """Return values of the agent."""
+        """Returns the output of the agent."""
         return ["output"]
 
     def get_allowed_tools(self) -> Optional[List[str]]:
+        """Returns the allowed tools for the agent. Can be overridden in subclass."""
         return None
 
     @abstractmethod
@@ -61,16 +62,16 @@ class BaseSingleActionAgent(BaseModel):
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
-        """Given input, decided what to do.
+        """Decides what action the agent should take given the current state.
 
         Args:
-            intermediate_steps: Steps the LLM has taken to date,
-                along with observations
+            intermediate_steps: A list of tuples containing the actions taken and
+                                observations made by the agent so far.
             callbacks: Callbacks to run.
-            **kwargs: User inputs.
+            **kwargs: Additional inputs.
 
         Returns:
-            Action specifying what tool to use.
+            The next action for the agent to take.
         """
 
     @abstractmethod
@@ -80,25 +81,22 @@ class BaseSingleActionAgent(BaseModel):
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
-        """Given input, decided what to do.
+        """Asynchronously decides what action the agent should take given the current state.
 
         Args:
-            intermediate_steps: Steps the LLM has taken to date,
-                along with observations
+            intermediate_steps: A list of tuples containing the actions taken and
+                                observations made by the agent so far.
             callbacks: Callbacks to run.
-            **kwargs: User inputs.
+            **kwargs: Additional inputs.
 
         Returns:
-            Action specifying what tool to use.
+            The next action for the agent to take.
         """
 
     @property
     @abstractmethod
     def input_keys(self) -> List[str]:
-        """Return the input keys.
-
-        :meta private:
-        """
+        """Returns the list of input keys. To be defined in subclass."""
 
     def return_stopped_response(
         self,
@@ -106,16 +104,18 @@ class BaseSingleActionAgent(BaseModel):
         intermediate_steps: List[Tuple[AgentAction, str]],
         **kwargs: Any,
     ) -> AgentFinish:
-        """Return response when agent has been stopped due to max iterations."""
-        if early_stopping_method == "force":
-            # `force` just returns a constant string
-            return AgentFinish(
-                {"output": "Agent stopped due to iteration limit or time limit."}, ""
-            )
-        else:
-            raise ValueError(
-                f"Got unsupported early_stopping_method `{early_stopping_method}`"
-            )
+        """Returns a response when the agent has been stopped due to reaching the
+        maximum number of iterations.
+
+        Args:
+            early_stopping_method: Method used for early stopping.
+            intermediate_steps: A list of tuples containing the actions taken and
+                                observations made by the agent so far.
+            **kwargs: Additional inputs.
+
+        Returns:
+            The final state of the agent.
+        """
 
     @classmethod
     def from_llm_and_tools(
@@ -125,15 +125,26 @@ class BaseSingleActionAgent(BaseModel):
         callback_manager: Optional[BaseCallbackManager] = None,
         **kwargs: Any,
     ) -> BaseSingleActionAgent:
+        """Creates an instance of the agent using the provided language model and tools.
+
+        Args:
+            llm: The language model to use.
+            tools: The tools available to the agent.
+            callback_manager: The manager for handling callbacks.
+            **kwargs: Additional inputs.
+
+        Returns:
+            An instance of the agent.
+        """
         raise NotImplementedError
 
     @property
     def _agent_type(self) -> str:
-        """Return Identifier of agent type."""
+        """Returns the type of agent."""
         raise NotImplementedError
 
     def dict(self, **kwargs: Any) -> Dict:
-        """Return dictionary representation of agent."""
+        """Returns a dictionary representation of the agent."""
         _dict = super().dict()
         _type = self._agent_type
         if isinstance(_type, AgentType):
@@ -143,16 +154,10 @@ class BaseSingleActionAgent(BaseModel):
         return _dict
 
     def save(self, file_path: Union[Path, str]) -> None:
-        """Save the agent.
+        """Saves the state of the agent to a file.
 
         Args:
-            file_path: Path to file to save the agent to.
-
-        Example:
-        .. code-block:: python
-
-            # If working with agent executor
-            agent.agent.save(file_path="path/agent.yaml")
+            file_path: The path to the file where the agent's state should be saved.
         """
         # Convert file to Path object.
         if isinstance(file_path, str):
@@ -176,18 +181,20 @@ class BaseSingleActionAgent(BaseModel):
             raise ValueError(f"{save_path} must be json or yaml")
 
     def tool_run_logging_kwargs(self) -> Dict:
+        """Returns a dictionary of logging parameters for the tool run."""
         return {}
 
 
 class BaseMultiActionAgent(BaseModel):
-    """Base Multi Action Agent class."""
+    """A base class for agents that can perform multiple actions."""
 
     @property
     def return_values(self) -> List[str]:
-        """Return values of the agent."""
+        """Returns the output of the agent."""
         return ["output"]
 
     def get_allowed_tools(self) -> Optional[List[str]]:
+        """Returns the allowed tools for the agent. Can be overridden in subclass."""
         return None
 
     @abstractmethod
@@ -197,16 +204,16 @@ class BaseMultiActionAgent(BaseModel):
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Union[List[AgentAction], AgentFinish]:
-        """Given input, decided what to do.
+        """Decides what actions the agent should take given the current state.
 
         Args:
-            intermediate_steps: Steps the LLM has taken to date,
-                along with the observations.
+            intermediate_steps: A list of tuples containing the actions taken and
+                                observations made by the agent so far.
             callbacks: Callbacks to run.
-            **kwargs: User inputs.
+            **kwargs: Additional inputs.
 
         Returns:
-            Actions specifying what tool to use.
+            The next actions for the agent to take.
         """
 
     @abstractmethod
@@ -216,25 +223,22 @@ class BaseMultiActionAgent(BaseModel):
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Union[List[AgentAction], AgentFinish]:
-        """Given input, decided what to do.
+        """Asynchronously decides what actions the agent should take given the current state.
 
         Args:
-            intermediate_steps: Steps the LLM has taken to date,
-                along with the observations.
+            intermediate_steps: A list of tuples containing the actions taken and
+                                observations made by the agent so far.
             callbacks: Callbacks to run.
-            **kwargs: User inputs.
+            **kwargs: Additional inputs.
 
         Returns:
-            Actions specifying what tool to use.
+            The next actions for the agent to take.
         """
 
     @property
     @abstractmethod
     def input_keys(self) -> List[str]:
-        """Return the input keys.
-
-        :meta private:
-        """
+        """Returns the list of input keys. To be defined in subclass."""
 
     def return_stopped_response(
         self,
@@ -242,37 +246,35 @@ class BaseMultiActionAgent(BaseModel):
         intermediate_steps: List[Tuple[AgentAction, str]],
         **kwargs: Any,
     ) -> AgentFinish:
-        """Return response when agent has been stopped due to max iterations."""
-        if early_stopping_method == "force":
-            # `force` just returns a constant string
-            return AgentFinish({"output": "Agent stopped due to max iterations."}, "")
-        else:
-            raise ValueError(
-                f"Got unsupported early_stopping_method `{early_stopping_method}`"
-            )
+        """Returns a response when the agent has been stopped due to reaching the
+        maximum number of iterations.
+
+        Args:
+            early_stopping_method: Method used for early stopping.
+            intermediate_steps: A list of tuples containing the actions taken and
+                                observations made by the agent so far.
+            **kwargs: Additional inputs.
+
+        Returns:
+            The final state of the agent.
+        """
 
     @property
     def _agent_type(self) -> str:
-        """Return Identifier of agent type."""
+        """Returns the type of agent."""
         raise NotImplementedError
 
     def dict(self, **kwargs: Any) -> Dict:
-        """Return dictionary representation of agent."""
+        """Returns a dictionary representation of the agent."""
         _dict = super().dict()
         _dict["_type"] = str(self._agent_type)
         return _dict
 
     def save(self, file_path: Union[Path, str]) -> None:
-        """Save the agent.
+        """Saves the state of the agent to a file.
 
         Args:
-            file_path: Path to file to save the agent to.
-
-        Example:
-        .. code-block:: python
-
-            # If working with agent executor
-            agent.agent.save(file_path="path/agent.yaml")
+            file_path: The path to the file where the agent's state should be saved.
         """
         # Convert file to Path object.
         if isinstance(file_path, str):
@@ -296,38 +298,46 @@ class BaseMultiActionAgent(BaseModel):
             raise ValueError(f"{save_path} must be json or yaml")
 
     def tool_run_logging_kwargs(self) -> Dict:
+        """Returns a dictionary of logging parameters for the tool run."""
         return {}
 
 
 class AgentOutputParser(BaseOutputParser):
-    """Base class for parsing agent output into agent action/finish."""
+    """A base class for parsers that transform agent output into an agent action or finish."""
 
     @abstractmethod
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
-        """Parse text into agent action/finish."""
+        """Transforms the given text into an agent action or finish.
+
+        Args:
+            text: The text to be parsed.
+
+        Returns:
+            The agent action or finish represented by the text.
+        """
 
 
 class LLMSingleActionAgent(BaseSingleActionAgent):
-    """Base class for single action agents."""
+    """A base class for agents that perform a single action with a language model."""
 
     llm_chain: LLMChain
-    """LLMChain to use for agent."""
+    """The language model chain used by the agent."""
     output_parser: AgentOutputParser
-    """Output parser to use for agent."""
+    """The parser used to transform the output of the language model into an agent action or finish."""
     stop: List[str]
-    """List of strings to stop on."""
+    """A list of strings that, if encountered in the output, will stop the agent."""
 
     @property
     def input_keys(self) -> List[str]:
-        """Return the input keys.
+        """Returns the list of input keys.
 
         Returns:
-            List of input keys.
+            The list of input keys.
         """
         return list(set(self.llm_chain.input_keys) - {"intermediate_steps"})
 
     def dict(self, **kwargs: Any) -> Dict:
-        """Return dictionary representation of agent."""
+        """Returns a dictionary representation of the agent."""
         _dict = super().dict()
         del _dict["output_parser"]
         return _dict
@@ -338,24 +348,17 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
-        """Given input, decided what to do.
+        """Decides what action the agent should take given the current state.
 
         Args:
-            intermediate_steps: Steps the LLM has taken to date,
-                along with the observations.
+            intermediate_steps: A list of tuples containing the actions taken and
+                                observations made by the agent so far.
             callbacks: Callbacks to run.
-            **kwargs: User inputs.
+            **kwargs: Additional inputs.
 
         Returns:
-            Action specifying what tool to use.
+            The next action for the agent to take.
         """
-        output = self.llm_chain.run(
-            intermediate_steps=intermediate_steps,
-            stop=self.stop,
-            callbacks=callbacks,
-            **kwargs,
-        )
-        return self.output_parser.parse(output)
 
     async def aplan(
         self,
@@ -363,26 +366,20 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
-        """Given input, decided what to do.
+        """Asynchronously decides what action the agent should take given the current state.
 
         Args:
-            intermediate_steps: Steps the LLM has taken to date,
-                along with observations
+            intermediate_steps: A list of tuples containing the actions taken and
+                                observations made by the agent so far.
             callbacks: Callbacks to run.
-            **kwargs: User inputs.
+            **kwargs: Additional inputs.
 
         Returns:
-            Action specifying what tool to use.
+            The next action for the agent to take.
         """
-        output = await self.llm_chain.arun(
-            intermediate_steps=intermediate_steps,
-            stop=self.stop,
-            callbacks=callbacks,
-            **kwargs,
-        )
-        return self.output_parser.parse(output)
 
     def tool_run_logging_kwargs(self) -> Dict:
+        """Returns a dictionary of logging parameters for the tool run."""
         return {
             "llm_prefix": "",
             "observation_prefix": "" if len(self.stop) == 0 else self.stop[0],
@@ -390,36 +387,76 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
 
 
 class Agent(BaseSingleActionAgent):
-    """Agent that calls the language model and deciding the action.
+    """
+    Class to represent an Agent that calls the language model and decides on the action.
 
     This is driven by an LLMChain. The prompt in the LLMChain MUST include
     a variable called "agent_scratchpad" where the agent can put its
     intermediary work.
+
+    Attributes:
+        llm_chain: An instance of LLMChain class.
+        output_parser: An instance of AgentOutputParser class.
+        allowed_tools: Optional list of allowed tools.
+
     """
 
-    llm_chain: LLMChain
-    output_parser: AgentOutputParser
-    allowed_tools: Optional[List[str]] = None
-
     def dict(self, **kwargs: Any) -> Dict:
-        """Return dictionary representation of agent."""
+        """
+        Return the dictionary representation of the agent.
+
+        Args:
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            dict: Dictionary representation of the agent.
+        """
         _dict = super().dict()
         del _dict["output_parser"]
         return _dict
 
     def get_allowed_tools(self) -> Optional[List[str]]:
+        """
+        Get allowed tools for the agent.
+
+        Returns:
+            list: List of allowed tools.
+        """
         return self.allowed_tools
 
     @property
     def return_values(self) -> List[str]:
+        """
+        Return the output values.
+
+        Returns:
+            list: List of output values.
+        """
         return ["output"]
 
     def _fix_text(self, text: str) -> str:
-        """Fix the text."""
+        """
+        Fix the text.
+
+        Args:
+            text: Text to be fixed.
+
+        Raises:
+            ValueError: If the method is not implemented for this agent.
+
+        Returns:
+            str: Fixed text.
+        """
         raise ValueError("fix_text not implemented for this agent.")
 
     @property
     def _stop(self) -> List[str]:
+        """
+        Get the stop tokens.
+
+        Returns:
+            list: List of stop tokens.
+        """
         return [
             f"\n{self.observation_prefix.rstrip()}",
             f"\n\t{self.observation_prefix.rstrip()}",
@@ -428,7 +465,15 @@ class Agent(BaseSingleActionAgent):
     def _construct_scratchpad(
         self, intermediate_steps: List[Tuple[AgentAction, str]]
     ) -> Union[str, List[BaseMessage]]:
-        """Construct the scratchpad that lets the agent continue its thought process."""
+        """
+        Construct the scratchpad that lets the agent continue its thought process.
+
+        Args:
+            intermediate_steps: List of tuples containing AgentAction and string.
+
+        Returns:
+            Union[str, List[BaseMessage]]: Constructed scratchpad.
+        """
         thoughts = ""
         for action, observation in intermediate_steps:
             thoughts += action.log
@@ -441,16 +486,17 @@ class Agent(BaseSingleActionAgent):
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
-        """Given input, decided what to do.
+        """
+        Decide the action based on the given input.
 
         Args:
             intermediate_steps: Steps the LLM has taken to date,
-                along with observations
+                along with observations.
             callbacks: Callbacks to run.
             **kwargs: User inputs.
 
         Returns:
-            Action specifying what tool to use.
+            Union[AgentAction, AgentFinish]: Action specifying what tool to use.
         """
         full_inputs = self.get_full_inputs(intermediate_steps, **kwargs)
         full_output = self.llm_chain.predict(callbacks=callbacks, **full_inputs)
@@ -462,16 +508,17 @@ class Agent(BaseSingleActionAgent):
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
-        """Given input, decided what to do.
+        """
+        Decide the action based on the given input asynchronously.
 
         Args:
             intermediate_steps: Steps the LLM has taken to date,
-                along with observations
+                along with observations.
             callbacks: Callbacks to run.
             **kwargs: User inputs.
 
         Returns:
-            Action specifying what tool to use.
+            Union[AgentAction, AgentFinish]: Action specifying what tool to use.
         """
         full_inputs = self.get_full_inputs(intermediate_steps, **kwargs)
         full_output = await self.llm_chain.apredict(callbacks=callbacks, **full_inputs)
@@ -481,7 +528,16 @@ class Agent(BaseSingleActionAgent):
     def get_full_inputs(
         self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any
     ) -> Dict[str, Any]:
-        """Create the full inputs for the LLMChain from intermediate steps."""
+        """
+        Create the full inputs for the LLMChain from intermediate steps.
+
+        Args:
+            intermediate_steps: List of tuples containing AgentAction and string.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            dict: Full inputs for the LLMChain.
+        """
         thoughts = self._construct_scratchpad(intermediate_steps)
         new_inputs = {"agent_scratchpad": thoughts, "stop": self._stop}
         full_inputs = {**kwargs, **new_inputs}
@@ -489,15 +545,25 @@ class Agent(BaseSingleActionAgent):
 
     @property
     def input_keys(self) -> List[str]:
-        """Return the input keys.
+        """
+        Return the input keys.
 
-        :meta private:
+        Returns:
+            list: List of input keys.
         """
         return list(set(self.llm_chain.input_keys) - {"agent_scratchpad"})
 
     @root_validator()
     def validate_prompt(cls, values: Dict) -> Dict:
-        """Validate that prompt matches format."""
+        """
+        Validate that prompt matches the format.
+
+        Args:
+            values: Dictionary of values.
+
+        Returns:
+            dict: Validated dictionary of values.
+        """
         prompt = values["llm_chain"].prompt
         if "agent_scratchpad" not in prompt.input_variables:
             logger.warning(
@@ -516,27 +582,58 @@ class Agent(BaseSingleActionAgent):
     @property
     @abstractmethod
     def observation_prefix(self) -> str:
-        """Prefix to append the observation with."""
+        """
+        Get the prefix to append the observation with.
+
+        Returns:
+            str: Observation prefix.
+        """
 
     @property
     @abstractmethod
     def llm_prefix(self) -> str:
-        """Prefix to append the LLM call with."""
+        """
+        Get the prefix to append the LLM call with.
+
+        Returns:
+            str: LLM prefix.
+        """
 
     @classmethod
     @abstractmethod
     def create_prompt(cls, tools: Sequence[BaseTool]) -> BasePromptTemplate:
-        """Create a prompt for this class."""
+        """
+        Create a prompt for this class.
+
+        Args:
+            tools: Sequence of BaseTool instances.
+
+        Returns:
+            BasePromptTemplate: Created prompt template.
+        """
 
     @classmethod
     def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
-        """Validate that appropriate tools are passed in."""
+        """
+        Validate that appropriate tools are passed in.
+
+        Args:
+            tools: Sequence of BaseTool instances.
+        """
         pass
 
     @classmethod
     @abstractmethod
     def _get_default_output_parser(cls, **kwargs: Any) -> AgentOutputParser:
-        """Get default output parser for this class."""
+        """
+        Get default output parser for this class.
+
+        Args:
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            AgentOutputParser: Default output parser.
+        """
 
     @classmethod
     def from_llm_and_tools(
@@ -547,7 +644,19 @@ class Agent(BaseSingleActionAgent):
         output_parser: Optional[AgentOutputParser] = None,
         **kwargs: Any,
     ) -> Agent:
-        """Construct an agent from an LLM and tools."""
+        """
+        Construct an agent from an LLM and tools.
+
+        Args:
+            llm: An instance of BaseLanguageModel class.
+            tools: Sequence of BaseTool instances.
+            callback_manager: An instance of BaseCallbackManager class.
+            output_parser: An instance of AgentOutputParser class.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Agent: Constructed agent.
+        """
         cls._validate_tools(tools)
         llm_chain = LLMChain(
             llm=llm,
@@ -569,7 +678,21 @@ class Agent(BaseSingleActionAgent):
         intermediate_steps: List[Tuple[AgentAction, str]],
         **kwargs: Any,
     ) -> AgentFinish:
-        """Return response when agent has been stopped due to max iterations."""
+        """
+        Return response when agent has been stopped due to max iterations.
+
+        Args:
+            early_stopping_method: Method used for early stopping.
+            intermediate_steps: Steps the LLM has taken to date,
+                along with observations.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            AgentFinish: Response when agent has been stopped.
+
+        Raises:
+            ValueError: If the early stopping method is not `force` or `generate`.
+        """
         if early_stopping_method == "force":
             # `force` just returns a constant string
             return AgentFinish(
@@ -606,6 +729,12 @@ class Agent(BaseSingleActionAgent):
             )
 
     def tool_run_logging_kwargs(self) -> Dict:
+        """
+        Get the logging keywords.
+
+        Returns:
+            dict: Dictionary of logging keywords.
+        """
         return {
             "llm_prefix": self.llm_prefix,
             "observation_prefix": self.observation_prefix,
@@ -613,18 +742,29 @@ class Agent(BaseSingleActionAgent):
 
 
 class ExceptionTool(BaseTool):
-    """Tool that just returns the query."""
+    """
+    Class to represent a tool that just returns the query.
 
-    name: str = "_Exception"
-    """Name of the tool."""
-    description: str = "Exception tool"
-    """Description of the tool."""
+    Attributes:
+        name: Name of the tool.
+        description: Description of the tool.
+    """
 
     def _run(
         self,
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
+        """
+        Run the tool.
+
+        Args:
+            query: Query to be run.
+            run_manager: An instance of CallbackManagerForToolRun.
+
+        Returns:
+            str: Result of the run.
+        """
         return query
 
     async def _arun(
@@ -632,54 +772,41 @@ class ExceptionTool(BaseTool):
         query: str,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
+        """
+        Run the tool asynchronously.
+
+        Args:
+            query: Query to be run.
+            run_manager: An instance of AsyncCallbackManagerForToolRun.
+
+        Returns:
+            str: Result of the run.
+        """
         return query
 
 
 class AgentExecutor(Chain):
-    """Agent that is using tools."""
+    """
+    The AgentExecutor class uses a provided agent and a set of tools to create a plan and perform actions.
+    It represents the main execution loop for the agent's planning and action system.
 
-    agent: Union[BaseSingleActionAgent, BaseMultiActionAgent]
-    """The agent to run for creating a plan and determining actions
-    to take at each step of the execution loop."""
-    tools: Sequence[BaseTool]
-    """The valid tools the agent can call."""
-    return_intermediate_steps: bool = False
-    """Whether to return the agent's trajectory of intermediate steps
-    at the end in addition to the final output."""
-    max_iterations: Optional[int] = 15
-    """The maximum number of steps to take before ending the execution
-    loop.
-    
-    Setting to 'None' could lead to an infinite loop."""
-    max_execution_time: Optional[float] = None
-    """The maximum amount of wall clock time to spend in the execution
-    loop.
+    Attributes:
+        agent: The agent to run for creating a plan and determining actions
+               to take at each step of the execution loop.
+        tools: The valid tools the agent can call.
+        return_intermediate_steps: Whether to return the agent's trajectory of intermediate steps
+                                   at the end in addition to the final output.
+        max_iterations: The maximum number of steps to take before ending the execution
+                        loop. Setting to 'None' could lead to an infinite loop.
+        max_execution_time: The maximum amount of wall clock time to spend in the execution
+                            loop.
+        early_stopping_method: The method to use for early stopping if the agent never
+                               returns `AgentFinish`. Either 'force' or 'generate'.
+        handle_parsing_errors: How to handle errors raised by the agent's output parser.
+                               Defaults to `False`, which raises the error.
+        trim_intermediate_steps: Parameter to determine how to trim intermediate steps if too many
+                                 are generated. Defaults to -1, which disables trimming.
     """
-    early_stopping_method: str = "force"
-    """The method to use for early stopping if the agent never
-    returns `AgentFinish`. Either 'force' or 'generate'.
-
-    `"force"` returns a string saying that it stopped because it met a
-        time or iteration limit.
-    
-    `"generate"` calls the agent's LLM Chain one final time to generate
-        a final answer based on the previous steps.
-    """
-    handle_parsing_errors: Union[
-        bool, str, Callable[[OutputParserException], str]
-    ] = False
-    """How to handle errors raised by the agent's output parser.
-    Defaults to `False`, which raises the error.
-s
-    If `true`, the error will be sent back to the LLM as an observation.
-    If a string, the string itself will be sent to the LLM as an observation.
-    If a callable function, the function will be called with the exception
-     as an argument, and the result of that function will be passed to the agent
-      as an observation.
-    """
-    trim_intermediate_steps: Union[
-        int, Callable[[List[Tuple[AgentAction, str]]], List[Tuple[AgentAction, str]]]
-    ] = -1
 
     @classmethod
     def from_agent_and_tools(
@@ -689,14 +816,36 @@ s
         callback_manager: Optional[BaseCallbackManager] = None,
         **kwargs: Any,
     ) -> AgentExecutor:
-        """Create from agent and tools."""
+        """
+        Class method to create an AgentExecutor instance from a given agent and tools.
+
+        Args:
+            agent: The agent to run.
+            tools: The valid tools the agent can call.
+            callback_manager: An optional manager for callbacks during execution.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            An instance of AgentExecutor.
+        """
         return cls(
             agent=agent, tools=tools, callback_manager=callback_manager, **kwargs
         )
 
     @root_validator()
     def validate_tools(cls, values: Dict) -> Dict:
-        """Validate that tools are compatible with agent."""
+        """
+        Validate that the provided tools are compatible with the agent.
+
+        Args:
+            values: A dictionary containing class attribute values.
+
+        Returns:
+            The validated dictionary of values.
+
+        Raises:
+            ValueError: If the provided tools are not compatible with the agent.
+        """
         agent = values["agent"]
         tools = values["tools"]
         allowed_tools = agent.get_allowed_tools()
@@ -710,7 +859,18 @@ s
 
     @root_validator()
     def validate_return_direct_tool(cls, values: Dict) -> Dict:
-        """Validate that tools are compatible with agent."""
+        """
+        Validate that the tools provided are compatible with the agent.
+
+        Args:
+            values: A dictionary containing class attribute values.
+
+        Returns:
+            The validated dictionary of values.
+
+        Raises:
+            ValueError: If tools that have `return_direct=True` are used with multi-action agents.
+        """
         agent = values["agent"]
         tools = values["tools"]
         if isinstance(agent, BaseMultiActionAgent):
@@ -723,7 +883,15 @@ s
         return values
 
     def save(self, file_path: Union[Path, str]) -> None:
-        """Raise error - saving not supported for Agent Executors."""
+        """
+        Raise an error as saving is not supported for Agent Executors.
+
+        Args:
+            file_path: The filepath to save to.
+
+        Raises:
+            ValueError: Always, as saving is not supported for Agent Executors.
+        """
         raise ValueError(
             "Saving not supported for agent executors. "
             "If you are trying to save the agent, please use the "
@@ -731,7 +899,12 @@ s
         )
 
     def save_agent(self, file_path: Union[Path, str]) -> None:
-        """Save the underlying agent."""
+        """
+        Save the underlying agent to a file.
+
+        Args:
+            file_path: The filepath to save the agent to.
+        """
         return self.agent.save(file_path)
 
     def iter(
@@ -742,7 +915,18 @@ s
         include_run_info: bool = False,
         async_: bool = False,
     ) -> AgentExecutorIterator:
-        """Enables iteration over steps taken to reach final output."""
+        """
+        Enable iteration over the steps taken by the agent to reach the final output.
+
+        Args:
+            inputs: The inputs for the agent.
+            callbacks: Callbacks to call during execution.
+            include_run_info: Whether to include run information in the output.
+            async_: Whether to run asynchronously.
+
+        Returns:
+            An iterator over the steps taken by the agent.
+        """
         return AgentExecutorIterator(
             self,
             inputs,
@@ -754,17 +938,21 @@ s
 
     @property
     def input_keys(self) -> List[str]:
-        """Return the input keys.
+        """
+        Return the input keys for the agent.
 
-        :meta private:
+        Returns:
+            A list of input keys.
         """
         return self.agent.input_keys
 
     @property
     def output_keys(self) -> List[str]:
-        """Return the singular output key.
+        """
+        Return the output keys for the agent.
 
-        :meta private:
+        Returns:
+            A list of output keys.
         """
         if self.return_intermediate_steps:
             return self.agent.return_values + ["intermediate_steps"]
@@ -772,10 +960,28 @@ s
             return self.agent.return_values
 
     def lookup_tool(self, name: str) -> BaseTool:
-        """Lookup tool by name."""
+        """
+        Lookup a tool by its name.
+
+        Args:
+            name: The name of the tool to lookup.
+
+        Returns:
+            The tool with the given name.
+        """
         return {tool.name: tool for tool in self.tools}[name]
 
     def _should_continue(self, iterations: int, time_elapsed: float) -> bool:
+        """
+        Private method to check whether the execution should continue.
+
+        Args:
+            iterations: The current number of iterations.
+            time_elapsed: The current time elapsed.
+
+        Returns:
+            A boolean indicating whether the execution should continue.
+        """
         if self.max_iterations is not None and iterations >= self.max_iterations:
             return False
         if (
@@ -792,6 +998,17 @@ s
         intermediate_steps: list,
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
+        """
+        Private method to prepare the final output.
+
+        Args:
+            output: The final output from the agent.
+            intermediate_steps: The intermediate steps taken by the agent.
+            run_manager: An optional manager for callbacks during execution.
+
+        Returns:
+            A dictionary containing the final output and any intermediate steps.
+        """
         if run_manager:
             run_manager.on_agent_finish(output, color="green", verbose=self.verbose)
         final_output = output.return_values
@@ -805,6 +1022,17 @@ s
         intermediate_steps: list,
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
+        """
+        Asynchronous version of the _return method.
+
+        Args:
+            output: The final output from the agent.
+            intermediate_steps: The intermediate steps taken by the agent.
+            run_manager: An optional manager for callbacks during execution.
+
+        Returns:
+            A dictionary containing the final output and any intermediate steps.
+        """
         if run_manager:
             await run_manager.on_agent_finish(
                 output, color="green", verbose=self.verbose
@@ -822,9 +1050,19 @@ s
         intermediate_steps: List[Tuple[AgentAction, str]],
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Union[AgentFinish, List[Tuple[AgentAction, str]]]:
-        """Take a single step in the thought-action-observation loop.
+        """
+        Private method to take a single step in the thought-action-observation loop.
 
-        Override this to take control of how the agent makes and acts on choices.
+        Args:
+            name_to_tool_map: A dictionary mapping tool names to tool instances.
+            color_mapping: A dictionary mapping tool names to colors for logging.
+            inputs: The inputs for the agent.
+            intermediate_steps: The intermediate steps taken so far.
+            run_manager: An optional manager for callbacks during execution.
+
+        Returns:
+            Either an AgentFinish instance if the agent has finished, or a list
+            of tuples containing the action taken and the observation made.
         """
         try:
             intermediate_steps = self._prepare_intermediate_steps(intermediate_steps)
@@ -918,9 +1156,19 @@ s
         intermediate_steps: List[Tuple[AgentAction, str]],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Union[AgentFinish, List[Tuple[AgentAction, str]]]:
-        """Take a single step in the thought-action-observation loop.
+        """
+        Asynchronous version of the _take_next_step method.
 
-        Override this to take control of how the agent makes and acts on choices.
+        Args:
+            name_to_tool_map: A dictionary mapping tool names to tool instances.
+            color_mapping: A dictionary mapping tool names to colors for logging.
+            inputs: The inputs for the agent.
+            intermediate_steps: The intermediate steps taken so far.
+            run_manager: An optional manager for callbacks during execution.
+
+        Returns:
+            Either an AgentFinish instance if the agent has finished, or a list
+            of tuples containing the action taken and the observation made.
         """
         try:
             intermediate_steps = self._prepare_intermediate_steps(intermediate_steps)
@@ -1014,139 +1262,80 @@ s
 
         return list(result)
 
+    async def _aperform_agent_action(self, agent_action):
+        """
+        Run multiple tool.arun() calls concurrently using asyncio.gather.
+
+        Args:
+            agent_action: The agent action to be performed.
+
+        Returns:
+            result: List of results after performing the agent actions.
+        """
+        result = await asyncio.gather(
+            *[_aperform_agent_action(agent_action) for agent_action in actions]
+        )
+
+        return list(result)
+
     def _call(
         self,
         inputs: Dict[str, str],
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
-        """Run text through and get agent response."""
-        # Construct a mapping of tool name to tool for easy lookup
-        name_to_tool_map = {tool.name: tool for tool in self.tools}
-        # We construct a mapping from each tool to a color, used for logging.
-        color_mapping = get_color_mapping(
-            [tool.name for tool in self.tools], excluded_colors=["green", "red"]
-        )
-        intermediate_steps: List[Tuple[AgentAction, str]] = []
-        # Let's start tracking the number of iterations and time elapsed
-        iterations = 0
-        time_elapsed = 0.0
-        start_time = time.time()
-        # We now enter the agent loop (until it returns something).
-        while self._should_continue(iterations, time_elapsed):
-            next_step_output = self._take_next_step(
-                name_to_tool_map,
-                color_mapping,
-                inputs,
-                intermediate_steps,
-                run_manager=run_manager,
-            )
-            if isinstance(next_step_output, AgentFinish):
-                return self._return(
-                    next_step_output, intermediate_steps, run_manager=run_manager
-                )
+        """
+        Process the text and get the response from a specific agent.
 
-            intermediate_steps.extend(next_step_output)
-            if len(next_step_output) == 1:
-                next_step_action = next_step_output[0]
-                # See if tool should return directly
-                tool_return = self._get_tool_return(next_step_action)
-                if tool_return is not None:
-                    return self._return(
-                        tool_return, intermediate_steps, run_manager=run_manager
-                    )
-            iterations += 1
-            time_elapsed = time.time() - start_time
-        output = self.agent.return_stopped_response(
-            self.early_stopping_method, intermediate_steps, **inputs
-        )
-        return self._return(output, intermediate_steps, run_manager=run_manager)
+        Args:
+            inputs: A dictionary of inputs to be processed.
+            run_manager: An instance of CallbackManagerForChainRun. Default is None.
+
+        Returns:
+            A dictionary of the agent's response.
+        """
+        ...
 
     async def _acall(
         self,
         inputs: Dict[str, str],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
-        """Run text through and get agent response."""
-        # Construct a mapping of tool name to tool for easy lookup
-        name_to_tool_map = {tool.name: tool for tool in self.tools}
-        # We construct a mapping from each tool to a color, used for logging.
-        color_mapping = get_color_mapping(
-            [tool.name for tool in self.tools], excluded_colors=["green"]
-        )
-        intermediate_steps: List[Tuple[AgentAction, str]] = []
-        # Let's start tracking the number of iterations and time elapsed
-        iterations = 0
-        time_elapsed = 0.0
-        start_time = time.time()
-        # We now enter the agent loop (until it returns something).
-        async with asyncio_timeout(self.max_execution_time):
-            try:
-                while self._should_continue(iterations, time_elapsed):
-                    next_step_output = await self._atake_next_step(
-                        name_to_tool_map,
-                        color_mapping,
-                        inputs,
-                        intermediate_steps,
-                        run_manager=run_manager,
-                    )
-                    if isinstance(next_step_output, AgentFinish):
-                        return await self._areturn(
-                            next_step_output,
-                            intermediate_steps,
-                            run_manager=run_manager,
-                        )
+        """
+        Asynchronously process the text and get the response from a specific agent.
 
-                    intermediate_steps.extend(next_step_output)
-                    if len(next_step_output) == 1:
-                        next_step_action = next_step_output[0]
-                        # See if tool should return directly
-                        tool_return = self._get_tool_return(next_step_action)
-                        if tool_return is not None:
-                            return await self._areturn(
-                                tool_return, intermediate_steps, run_manager=run_manager
-                            )
+        Args:
+            inputs: A dictionary of inputs to be processed.
+            run_manager: An instance of AsyncCallbackManagerForChainRun. Default is None.
 
-                    iterations += 1
-                    time_elapsed = time.time() - start_time
-                output = self.agent.return_stopped_response(
-                    self.early_stopping_method, intermediate_steps, **inputs
-                )
-                return await self._areturn(
-                    output, intermediate_steps, run_manager=run_manager
-                )
-            except TimeoutError:
-                # stop early when interrupted by the async timeout
-                output = self.agent.return_stopped_response(
-                    self.early_stopping_method, intermediate_steps, **inputs
-                )
-                return await self._areturn(
-                    output, intermediate_steps, run_manager=run_manager
-                )
+        Returns:
+            A dictionary of the agent's response.
+        """
+        ...
 
     def _get_tool_return(
         self, next_step_output: Tuple[AgentAction, str]
     ) -> Optional[AgentFinish]:
-        """Check if the tool is a returning tool."""
-        agent_action, observation = next_step_output
-        name_to_tool_map = {tool.name: tool for tool in self.tools}
-        # Invalid tools won't be in the map, so we return False.
-        if agent_action.tool in name_to_tool_map:
-            if name_to_tool_map[agent_action.tool].return_direct:
-                return AgentFinish(
-                    {self.agent.return_values[0]: observation},
-                    "",
-                )
-        return None
+        """
+        Check if a specific tool is a returning tool.
+
+        Args:
+            next_step_output: A tuple of the next step output.
+
+        Returns:
+            An instance of AgentFinish if the tool is a returning tool. None otherwise.
+        """
+        ...
 
     def _prepare_intermediate_steps(
         self, intermediate_steps: List[Tuple[AgentAction, str]]
     ) -> List[Tuple[AgentAction, str]]:
-        if (
-            isinstance(self.trim_intermediate_steps, int)
-            and self.trim_intermediate_steps > 0
-        ):
-            return intermediate_steps[-self.trim_intermediate_steps :]
-        elif callable(self.trim_intermediate_steps):
-            return self.trim_intermediate_steps(intermediate_steps)
-        else:
-            return intermediate_steps
+        """
+        Prepare intermediate steps based on the trim_intermediate_steps attribute.
+
+        Args:
+            intermediate_steps: A list of intermediate steps.
+
+        Returns:
+            A list of prepared intermediate steps.
+        """
+        ...
