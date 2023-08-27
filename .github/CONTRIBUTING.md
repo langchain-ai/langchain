@@ -44,7 +44,7 @@ If you are adding an issue, please try to keep it focused on a single, modular b
 If two issues are related, or blocking, please link them rather than combining them.
 
 We will try to keep these issues as up to date as possible, though
-with the rapid rate of develop in this field some may get out of date.
+with the rapid rate of development in this field some may get out of date.
 If you notice this happening, please let us know.
 
 ### 🙋Getting Help
@@ -87,7 +87,7 @@ This will install all requirements for running the package, examples, linting, f
 
 ❗Note: If during installation you receive a `WheelFileValidationError` for `debugpy`, please make sure you are running Poetry v1.5.1. This bug was present in older versions of Poetry (e.g. 1.4.1) and has been resolved in newer releases. If you are still seeing this bug on v1.5.1, you may also try disabling "modern installation" (`poetry config installer.modern-installation false`) and re-installing requirements. See [this `debugpy` issue](https://github.com/microsoft/debugpy/issues/1246) for more details.
 
-Now, you should be able to run the common tasks in the following section. To double check, run `make test`, all tests should pass. If they don't you may need to pip install additional dependencies, such as `numexpr` and `openapi_schema_pydantic`.
+Now assuming `make` and `pytest` are installed, you should be able to run the common tasks in the following section. To double check, run `make test` under `libs/langchain`, all tests should pass. If they don't, you may need to pip install additional dependencies, such as `numexpr` and `openapi_schema_pydantic`.
 
 ## ✅ Common Tasks
 
@@ -134,7 +134,7 @@ We recognize linting can be annoying - if you do not want to do it, please conta
 ### Spellcheck
 
 Spellchecking for this project is done via [codespell](https://github.com/codespell-project/codespell).
-Note that `codespell` finds common typos, so could have false-positive (correctly spelled but rarely used) and false-negatives (not finding misspelled) words.
+Note that `codespell` finds common typos, so it could have false-positive (correctly spelled but rarely used) and false-negatives (not finding misspelled) words.
 
 To check spelling for this project:
 
