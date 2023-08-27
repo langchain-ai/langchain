@@ -1,6 +1,5 @@
 from typing import Any, List, Optional
 
-from langchain import BasePromptTemplate
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.openai_functions.utils import (
@@ -14,6 +13,7 @@ from langchain.output_parsers.openai_functions import (
 )
 from langchain.prompts import ChatPromptTemplate
 from langchain.pydantic_v1 import BaseModel
+from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 
 
