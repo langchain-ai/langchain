@@ -48,7 +48,7 @@ class FalkorDBGraph:
     def get_schema(self) -> str:
         """Returns the schema of the FalkorDB database"""
         return self.schema
-    
+
     def refresh_schema(self):
         """Refreshes the schema of the FalkorDB database"""
         self.schema = {
