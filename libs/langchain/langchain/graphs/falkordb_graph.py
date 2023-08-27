@@ -49,7 +49,7 @@ class FalkorDBGraph:
         """Returns the schema of the FalkorDB database"""
         return self.schema
 
-    def refresh_schema(self):
+    def refresh_schema(self) -> None:
         """Refreshes the schema of the FalkorDB database"""
         self.schema = {
             "nodes": self.query(node_properties_query),
