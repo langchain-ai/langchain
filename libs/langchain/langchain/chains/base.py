@@ -140,6 +140,10 @@ class Chain(Serializable, Runnable[Dict[str, Any], Dict[str, Any]], ABC):
                 "callback_manager is deprecated. Please use callbacks instead.",
                 DeprecationWarning,
             )
+            if values.get("callbacks") is not None:
+                raise ValueError(
+                    "Cannot specify both callback_manager and callbacks. Choose one."
+                )
             values["callbacks"] = values.pop("callback_manager", None)
         return values
 
