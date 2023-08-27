@@ -298,6 +298,7 @@ class ChatPromptValue(PromptValue):
 
 class BaseChatPromptTemplate(BasePromptTemplate, ABC):
     """Base class for chat prompt templates."""
+
     llm_kwargs: dict = Field(default_factory=dict)
 
     @property
@@ -488,9 +489,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
     @classmethod
     def from_messages(
-        cls,
-        messages: Sequence[MessageLikeRepresentation],
-        **kwargs: Any
+        cls, messages: Sequence[MessageLikeRepresentation], **kwargs: Any
     ) -> ChatPromptTemplate:
         """Create a chat prompt template from a variety of message formats.
 

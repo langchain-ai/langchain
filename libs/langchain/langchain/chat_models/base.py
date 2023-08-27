@@ -419,7 +419,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
         llm_kwargs = prompts[0].llm_kwargs
         for prompt in prompts:
             if prompt.llm_kwargs != llm_kwargs:
-                raise ValueError("All prompt kwargs must be the same when calling in batch")
+                raise ValueError(
+                    "All prompt kwargs must be the same when calling in batch"
+                )
         kwargs = {**llm_kwargs, **kwargs}
         prompt_messages = [p.to_messages() for p in prompts]
         return self.generate(prompt_messages, stop=stop, callbacks=callbacks, **kwargs)
@@ -434,7 +436,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
         llm_kwargs = prompts[0].llm_kwargs
         for prompt in prompts:
             if prompt.llm_kwargs != llm_kwargs:
-                raise ValueError("All prompt kwargs must be the same when calling in batch")
+                raise ValueError(
+                    "All prompt kwargs must be the same when calling in batch"
+                )
         kwargs = {**llm_kwargs, **kwargs}
         prompt_messages = [p.to_messages() for p in prompts]
         return await self.agenerate(

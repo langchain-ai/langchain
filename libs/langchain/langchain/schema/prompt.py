@@ -3,9 +3,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import List
 
-from langchain.pydantic_v1 import Field
-
 from langchain.load.serializable import Serializable
+from langchain.pydantic_v1 import Field
 from langchain.schema.messages import BaseMessage
 
 
@@ -15,6 +14,7 @@ class PromptValue(Serializable, ABC):
     PromptValues can be converted to both LLM (pure text-generation) inputs and
         ChatModel inputs.
     """
+
     llm_kwargs: dict = Field(default_factory=dict)
 
     @property
