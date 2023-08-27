@@ -127,7 +127,7 @@ class Neo4jVector(VectorStore):
         # Create unique constraint for faster import
         self.query(
             "CREATE CONSTRAINT IF NOT EXISTS "
-            f"FOR (n:`{self.node_label}`) REQUIRE n.id IS UNIQUE;"
+            f"FOR (n:`{node_label}`) REQUIRE n.id IS UNIQUE;"
         )
 
         self.embedding = embedding
