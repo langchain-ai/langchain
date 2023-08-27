@@ -160,7 +160,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
             yield self.invoke(input, config=config, stop=stop, **kwargs)
         else:
             config = config or {}
-            messages = self._convert_input(input).to_messages()
+            prompt = self._convert_input(input)
+            messages = prompt.to_messages()
+            # kwargs from prompt defer to kwargs passed in
+            kwargs = {**prompt.llm_kwargs, **kwargs}
             params = self._get_invocation_params(stop=stop, **kwargs)
             options = {"stop": stop, **kwargs}
             callback_manager = CallbackManager.configure(
@@ -207,7 +210,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
             yield self.invoke(input, config=config, stop=stop, **kwargs)
         else:
             config = config or {}
-            messages = self._convert_input(input).to_messages()
+            prompt = self._convert_input(input)
+            messages = prompt.to_messages()
+            # prompt kwargs defer to kwargs passed in
+            kwargs = {**prompt.llm_kwargs, **kwargs}
             params = self._get_invocation_params(stop=stop, **kwargs)
             options = {"stop": stop, **kwargs}
             callback_manager = AsyncCallbackManager.configure(
@@ -410,6 +416,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> LLMResult:
+        llm_kwargs = prompts[0].llm_kwargs
+        for prompt in prompts:
+            if prompt.llm_kwargs != llm_kwargs:
+                raise ValueError("All prompt kwargs must be the same when calling in batch")
+        kwargs = {**llm_kwargs, **kwargs}
         prompt_messages = [p.to_messages() for p in prompts]
         return self.generate(prompt_messages, stop=stop, callbacks=callbacks, **kwargs)
 
@@ -420,6 +431,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessageChunk], ABC):
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> LLMResult:
+        llm_kwargs = prompts[0].llm_kwargs
+        for prompt in prompts:
+            if prompt.llm_kwargs != llm_kwargs:
+                raise ValueError("All prompt kwargs must be the same when calling in batch")
+        kwargs = {**llm_kwargs, **kwargs}
         prompt_messages = [p.to_messages() for p in prompts]
         return await self.agenerate(
             prompt_messages, stop=stop, callbacks=callbacks, **kwargs

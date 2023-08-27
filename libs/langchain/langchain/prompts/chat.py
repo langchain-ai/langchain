@@ -298,6 +298,7 @@ class ChatPromptValue(PromptValue):
 
 class BaseChatPromptTemplate(BasePromptTemplate, ABC):
     """Base class for chat prompt templates."""
+    llm_kwargs: dict = Field(default_factory=dict)
 
     @property
     def lc_attributes(self) -> Dict:
@@ -330,7 +331,7 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
             PromptValue.
         """
         messages = self.format_messages(**kwargs)
-        return ChatPromptValue(messages=messages)
+        return ChatPromptValue(messages=messages, llm_kwargs=self.llm_kwargs)
 
     @abstractmethod
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
@@ -489,6 +490,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
     def from_messages(
         cls,
         messages: Sequence[MessageLikeRepresentation],
+        **kwargs: Any
     ) -> ChatPromptTemplate:
         """Create a chat prompt template from a variety of message formats.
 
@@ -534,7 +536,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             ):
                 input_vars.update(_message.input_variables)
 
-        return cls(input_variables=sorted(input_vars), messages=_messages)
+        return cls(input_variables=sorted(input_vars), messages=_messages, **kwargs)
 
     def format(self, **kwargs: Any) -> str:
         """Format the chat template into a string.

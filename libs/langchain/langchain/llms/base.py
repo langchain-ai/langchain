@@ -334,7 +334,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             # model doesn't implement streaming, so use default implementation
             yield self.invoke(input, config=config, stop=stop, **kwargs)
         else:
-            prompt = self._convert_input(input).to_string()
+            prompt_value = self._convert_input(input)
+            prompt = prompt_value.to_string()
+            kwargs = {**prompt_value.llm_kwargs, **kwargs}
             config = config or {}
             params = self.dict()
             params["stop"] = stop
@@ -381,7 +383,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             # model doesn't implement streaming, so use default implementation
             yield await self.ainvoke(input, config=config, stop=stop, **kwargs)
         else:
-            prompt = self._convert_input(input).to_string()
+            prompt_value = self._convert_input(input)
+            prompt = prompt_value.to_string()
+            kwargs = {**prompt_value.llm_kwargs, **kwargs}
             config = config or {}
             params = self.dict()
             params["stop"] = stop
@@ -463,6 +467,11 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         callbacks: Optional[Union[Callbacks, List[Callbacks]]] = None,
         **kwargs: Any,
     ) -> LLMResult:
+        llm_kwargs = prompts[0].llm_kwargs
+        for prompt in prompts:
+            if prompt.llm_kwargs != llm_kwargs:
+                raise ValueError("All prompt kwargs must be the same when calling in batch")
+        kwargs = {**llm_kwargs, **kwargs}
         prompt_strings = [p.to_string() for p in prompts]
         return self.generate(prompt_strings, stop=stop, callbacks=callbacks, **kwargs)
 
@@ -473,6 +482,11 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         callbacks: Optional[Union[Callbacks, List[Callbacks]]] = None,
         **kwargs: Any,
     ) -> LLMResult:
+        llm_kwargs = prompts[0].llm_kwargs
+        for prompt in prompts:
+            if prompt.llm_kwargs != llm_kwargs:
+                raise ValueError("All prompt kwargs must be the same when calling in batch")
+        kwargs = {**llm_kwargs, **kwargs}
         prompt_strings = [p.to_string() for p in prompts]
         return await self.agenerate(
             prompt_strings, stop=stop, callbacks=callbacks, **kwargs
