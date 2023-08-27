@@ -124,11 +124,6 @@ class Neo4jVector(VectorStore):
 
         # Verify if the version support vector index
         self.verify_version()
-        # Create unique constraint for faster import
-        self.query(
-            "CREATE CONSTRAINT IF NOT EXISTS "
-            f"FOR (n:`{node_label}`) REQUIRE n.id IS UNIQUE;"
-        )
 
         self.embedding = embedding
         self._distance_strategy = distance_strategy
@@ -272,6 +267,7 @@ class Neo4jVector(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
+        create_id_index: bool = True,
         **kwargs: Any,
     ) -> Neo4jVector:
         if ids is None:
@@ -299,6 +295,13 @@ class Neo4jVector(VectorStore):
                 "dimensions do not match.\n"
                 f"Embedding function dimension: {store.embedding_dimension}\n"
                 f"Vector index dimension: {embedding_dimension}"
+            )
+
+        # Create unique constraint for faster import
+        if create_id_index:
+            store.query(
+                "CREATE CONSTRAINT IF NOT EXISTS "
+                f"FOR (n:`{store.node_label}`) REQUIRE n.id IS UNIQUE;"
             )
 
         store.add_embeddings(
