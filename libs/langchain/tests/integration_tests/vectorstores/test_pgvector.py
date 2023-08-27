@@ -1,6 +1,6 @@
 """Test PGVector functionality."""
 import os
-from typing import List
+from typing import Any, List
 
 from sqlalchemy.orm import Session
 
@@ -279,3 +279,87 @@ def test_pgvector_retriever_search_threshold_custom_normalization_fn() -> None:
     )
     output = retriever.get_relevant_documents("foo")
     assert output == []
+
+
+def test_pgvector_update_documents_addition() -> None:
+    documents = [
+        Document(page_content="foo", metadata={"page": "0"}),
+        Document(page_content="bar", metadata={"page": "1"}),
+    ]
+    pgvector = PGVector.from_documents(
+        embedding=FakeEmbeddingsWithAdaDimension(),
+        documents=documents,
+        collection_name="test_collection_update",
+        connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
+    )
+
+    documents.append(Document(page_content="baz", metadata={"page": "2"}))
+    pgvector.update_documents(documents)
+
+    with pgvector._make_session() as session:
+        collection = pgvector.get_collection(session)
+        if collection is None:
+            assert False, "Expected a CollectionStore object but received None"
+        filter_by = pgvector.EmbeddingStore.collection_id == collection.uuid
+        records: List[Any] = session.query(pgvector.EmbeddingStore).filter(filter_by)
+        assert len(records) == 3
+        assert records[0].document == "foo" and records[0].cmetadata == {"page": "0"}
+        assert records[1].document == "bar" and records[1].cmetadata == {"page": "1"}
+        assert records[2].document == "baz" and records[2].cmetadata == {"page": "2"}
+
+
+def test_pgvector_update_documents_modification() -> None:
+    documents = [
+        Document(page_content="foo", metadata={"page": "0"}),
+        Document(page_content="bar", metadata={"page": "1"}),
+    ]
+    pgvector = PGVector.from_documents(
+        embedding=FakeEmbeddingsWithAdaDimension(),
+        documents=documents,
+        collection_name="test_collection_update",
+        connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
+    )
+
+    documents[1].page_content = "baz"
+    pgvector.update_documents(documents)
+
+    with pgvector._make_session() as session:
+        collection = pgvector.get_collection(session)
+        if collection is None:
+            assert False, "Expected a CollectionStore object but received None"
+        filter_by = pgvector.EmbeddingStore.collection_id == collection.uuid
+        records: List[Any] = session.query(pgvector.EmbeddingStore).filter(filter_by)
+        assert len(records) == 2
+        assert records[0].document == "foo" and records[0].cmetadata == {"page": "0"}
+        assert records[1].document == "baz" and records[1].cmetadata == {"page": "1"}
+
+
+def test_pgvector_update_documents_deletion() -> None:
+    documents = [
+        Document(page_content="foo", metadata={"page": "0"}),
+        Document(page_content="bar", metadata={"page": "1"}),
+    ]
+    pgvector = PGVector.from_documents(
+        embedding=FakeEmbeddingsWithAdaDimension(),
+        documents=documents,
+        collection_name="test_collection_update",
+        connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
+    )
+
+    documents = documents[:-1]
+    pgvector.update_documents(documents)
+
+    with pgvector._make_session() as session:
+        collection = pgvector.get_collection(session)
+        if collection is None:
+            assert False, "Expected a CollectionStore object but received None"
+        filter_by = pgvector.EmbeddingStore.collection_id == collection.uuid
+        records: List[Any] = session.query(pgvector.EmbeddingStore).filter(filter_by)
+        assert (
+            len(records) == 1
+            and records[0].document == "foo"
+            and records[0].cmetadata == {"page": "0"}
+        )

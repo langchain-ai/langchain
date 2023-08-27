@@ -301,6 +301,46 @@ class PGVector(VectorStore):
             texts=texts, embeddings=embeddings, metadatas=metadatas, ids=ids, **kwargs
         )
 
+    def update_documents(
+        self,
+        documents: List[Document],
+        **kwargs: Any,
+    ) -> None:
+        """
+        Update documents in the collection, optimizing model calls for embeddings.
+        Remove collection documents that are not present in the input documents.
+
+        Args:
+            documents: Iterable of Documents to update.
+            kwargs: vectorstore specific parameters
+        """
+        if not documents:
+            raise ValueError("Invalid input documents")
+
+        with Session(self._conn) as session:
+            collection = self.get_collection(session)
+            if not collection:
+                raise ValueError("Collection not found")
+
+            filter_by = self.EmbeddingStore.collection_id == collection.uuid
+            results: List[Any] = session.query(self.EmbeddingStore).filter(filter_by)
+
+            present_documents_contents = set(res.document for res in results)
+            updated_documents_contents = set(doc.page_content for doc in documents)
+
+            for res in results:
+                if res.document not in updated_documents_contents:
+                    session.delete(res)
+
+            new_docs, new_metadatas = [], []
+            for doc in documents:
+                if doc.page_content not in present_documents_contents:
+                    new_docs.append(doc.page_content)
+                    new_metadatas.append(doc.metadata)
+            self.add_texts(new_docs, new_metadatas, **kwargs)
+
+            session.commit()
+
     def similarity_search(
         self,
         query: str,
