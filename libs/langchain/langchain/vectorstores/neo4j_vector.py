@@ -188,11 +188,11 @@ class Neo4jVector(VectorStore):
         """
         version = self.query("CALL dbms.components()")[0]["versions"][0]
         if "aura" in version:
-            version_tuple = tuple(map(int, version.split("-")[0].split(".")))
-            target_version = (5, 11)
+            version_tuple = tuple(map(int, version.split("-")[0].split("."))) + (0,)
         else:
             version_tuple = tuple(map(int, version.split(".")))
-            target_version = (5, 11, 0)
+
+        target_version = (5, 11, 0)
 
         if version_tuple < target_version:
             raise ValueError(
