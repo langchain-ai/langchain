@@ -5,7 +5,7 @@ import pytest
 
 from langchain.tools.edenai import EdenAiTextModerationTool
 
-tool = EdenAiTextModerationTool(providers=["openai"], language="en")
+tool = EdenAiTextModerationTool(providers=["openai"], language="en", edenai_api_key="fake_key")
 
 
 @pytest.fixture
