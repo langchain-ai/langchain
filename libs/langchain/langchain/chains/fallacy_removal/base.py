@@ -1,7 +1,4 @@
-"""Chain for applying removals of logical fallacies as described \
-https://arxiv.org/pdf/2212.07425.pdf to the outputs of any other chain. \
-Modeled after Constitutional AI and in same format, but applying logical fallacies \
-as generalized rules to remove in output"""
+"""Chain for applying removals of logical fallacies as described""" # flake8: noqa due to unsorted import 
 from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
