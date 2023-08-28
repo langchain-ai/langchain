@@ -1,5 +1,4 @@
 """Chain for applying removals of logical fallacies as described""" 
-from typing import Any, Dict, List, Optional
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.fallacy_removal.fallacies import FALLACIES
@@ -11,6 +10,7 @@ from langchain.chains.fallacy_removal.prompts import (
 from langchain.chains.llm import LLMChain
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
+from typing import Any, Dict, List, Optional
 
 
 class FallacyChain(Chain):
