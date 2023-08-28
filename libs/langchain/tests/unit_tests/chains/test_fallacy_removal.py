@@ -20,7 +20,7 @@ Fallacy Revision: Better text"""
 #     """Test parsing of fallacy critique text."""
 #     for text in [TEXT_ONE, TEXT_TWO, TEXT_THREE]:
 #         fallacy_critique = FallacyChain._parse_critique(text)
-# 
+#
 #         assert (
 #             fallacy_critique.strip() == "This text is bad."
 #        ), f"Failed on {text} with {fallacy_critique}"

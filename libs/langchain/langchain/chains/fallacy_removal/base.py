@@ -1,4 +1,4 @@
-"""Chain for applying removals of logical fallacies.""" 
+"""Chain for applying removals of logical fallacies."""
 # flake8: noqa
 from __future__ import annotations
 
@@ -7,9 +7,9 @@ from typing import Any, Dict, List, Optional
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.fallacy_removal.fallacies import FALLACIES
-from langchain.chains.fallacy_removal.models import LogicalFallacy 
+from langchain.chains.fallacy_removal.models import LogicalFallacy
 from langchain.chains.fallacy_removal.prompts import (
-    FALLACY_CRITIQUE_PROMPT, 
+    FALLACY_CRITIQUE_PROMPT,
     FALLACY_REVISION_PROMPT,
 )
 from langchain.chains.llm import LLMChain
@@ -59,9 +59,7 @@ class FallacyChain(Chain):
     return_intermediate_steps: bool = False
 
     @classmethod
-    def get_principles(
-        cls, names: Optional[List[str]] = None
-    ) -> List[LogicalFallacy]:
+    def get_principles(cls, names: Optional[List[str]] = None) -> List[LogicalFallacy]:
         if names is None:
             return list(FALLACIES.values())
         else:
@@ -167,8 +165,9 @@ class FallacyChain(Chain):
         final_output: Dict[str, Any] = {"output": response}
         if self.return_intermediate_steps:
             final_output["initial_output"] = initial_response
-            final_output["fallacy_critiques_and_revisions"] = \
-            fallacy_critiques_and_revisions
+            final_output[
+                "fallacy_critiques_and_revisions"
+            ] = fallacy_critiques_and_revisions
         return final_output
 
     @staticmethod
