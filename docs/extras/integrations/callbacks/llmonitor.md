@@ -2,7 +2,7 @@
 
 [LLMonitor](https://llmonitor.com) is an open-source observability platform that provides cost tracking, user tracking and powerful agent tracing.
 
-<video controls width='900' >
+<video controls width='100%' >
   <source src='https://llmonitor.com/videos/demo-annotated.mp4'/>
 </video>
 
