@@ -18,11 +18,13 @@ def test_generate_langchain_container_tag() -> None:
     assert tag != new_tag, "Tags should be different"
 
 
+@pytest.mark.requires("docker")
 def test_docker_image_throws_for_bad_name() -> None:
     with pytest.raises(ValueError):
         DockerImage(name="docker_image_which_should_not_exist_42")
 
 
+@pytest.mark.requires("docker")
 def run_container_cowsay(image: DockerImage) -> None:
     """Helper for testing - runs cowsay command and verifies it works."""
     # note that our `cowsay` adds moo prefix as commands are executed
@@ -39,18 +41,21 @@ def run_container_cowsay(image: DockerImage) -> None:
         docker_client.images.remove(image.name)
 
 
+@pytest.mark.requires("docker")
 def test_build_image_from_dockerfile() -> None:
     dockerfile_path = Path(__file__).parent / "docker_test_data/Dockerfile"
     image = DockerImage.from_dockerfile(dockerfile_path, name="cow")
     run_container_cowsay(image)
 
 
+@pytest.mark.requires("docker")
 def test_build_image_from_dockerfile_dirpath() -> None:
     dockerfile_dir = Path(__file__).parent / "docker_test_data/"
     image = DockerImage.from_dockerfile(dockerfile_dir)
     run_container_cowsay(image)
 
 
+@pytest.mark.requires("docker")
 def test_docker_spawn_run_works() -> None:
     container = DockerContainer(DockerImage.from_tag("alpine"))
     status_code, logs = container.spawn_run(["echo", "hello", "world"])
@@ -62,6 +67,7 @@ def test_docker_spawn_run_works() -> None:
     assert logs.find(b"good bye") >= 0
 
 
+@pytest.mark.requires("docker")
 def test_docker_spawn_run_return_nonzero_status_code() -> None:
     container = DockerContainer(DockerImage.from_tag("alpine"))
     status_code, logs = container.spawn_run("sh -c 'echo hey && exit 1'")
@@ -69,6 +75,7 @@ def test_docker_spawn_run_return_nonzero_status_code() -> None:
     assert logs.find(b"hey") >= 0
 
 
+@pytest.mark.requires("docker")
 def test_docker_container_background_run_works() -> None:
     client = get_docker_client()
     container_name: str
