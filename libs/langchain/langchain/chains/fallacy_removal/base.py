@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
-from langchain.chains.fallacy_removal.fallacies import AFALLACIES
+from langchain.chains.fallacy_removal.fallacies import FALLACIES
 from langchain.chains.fallacy_removal.models import LogicalFallacy 
 from langchain.chains.fallacy_removal.prompts import (
     FALLACY_CRITIQUE_PROMPT, 
@@ -62,9 +62,9 @@ class FallacyChain(Chain):
         cls, names: Optional[List[str]] = None
     ) -> List[LogicalFallacy]:
         if names is None:
-            return list(AFALLACIES.values())
+            return list(FALLACIES.values())
         else:
-            return [AFALLACIES[name] for name in names]
+            return [FALLACIES[name] for name in names]
 
     @classmethod
     def from_llm(
