@@ -56,7 +56,10 @@ async def test_zero_distance_pairwise_async(distance: StringDistance) -> None:
     assert result["score"] == 0
 
 
-valid_distances = [distance for distance in StringDistance if distance != StringDistance.HAMMING]
+valid_distances = [
+    distance for distance in StringDistance if distance != StringDistance.HAMMING
+]
+
 
 @pytest.mark.requires("rapidfuzz")
 @pytest.mark.parametrize("distance", valid_distances)
