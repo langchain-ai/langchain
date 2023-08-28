@@ -5,7 +5,7 @@ description = "LangChain mono-repo"
 authors = []
 license = "MIT"
 readme = "README.md"
-repository = "https://www.github.com/hwchase17/langchain"
+repository = "https://www.github.com/langchain-ai/langchain"
 
 
 [tool.poetry.dependencies]
@@ -40,4 +40,4 @@ ignore-regex = '.*(Stati Uniti|Tense=Pres).*'
 # whats is a typo but used frequently in queries so kept as is
 # aapply - async apply
 # unsecure - typo but part of API, decided to not bother for now
-ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon'
+ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate'

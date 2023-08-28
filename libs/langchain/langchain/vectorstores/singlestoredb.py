@@ -1,5 +1,3 @@
-"""Wrapper around SingleStore DB."""
-
 from __future__ import annotations
 
 import json
@@ -35,8 +33,7 @@ ORDERING_DIRECTIVE: dict = {
 
 
 class SingleStoreDB(VectorStore):
-    """
-    This class serves as a Pythonic interface to the SingleStore DB database.
+    """`SingleStore DB` vector store.
 
     The prerequisite for using this class is the installation of the ``singlestoredb``
     Python package.

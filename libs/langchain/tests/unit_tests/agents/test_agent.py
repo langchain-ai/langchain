@@ -257,3 +257,26 @@ def test_agent_lookup_tool() -> None:
     )
 
     assert agent.lookup_tool("Search") == tools[0]
+
+
+def test_agent_invalid_tool() -> None:
+    """Test agent invalid tool and correct suggestions."""
+    fake_llm = FakeListLLM(responses=["FooBarBaz\nAction: Foo\nAction Input: Bar"])
+    tools = [
+        Tool(
+            name="Search",
+            func=lambda x: x,
+            description="Useful for searching",
+            return_direct=True,
+        ),
+    ]
+    agent = initialize_agent(
+        tools=tools,
+        llm=fake_llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        return_intermediate_steps=True,
+        max_iterations=1,
+    )
+
+    resp = agent("when was langchain made")
+    resp["intermediate_steps"][0][1] == "Foo is not a valid tool, try one of [Search]."

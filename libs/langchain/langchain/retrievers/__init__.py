@@ -1,3 +1,23 @@
+"""**Retriever** class returns Documents given a text **query**.
+
+It is more general than a vector store. A retriever does not need to be able to
+store documents, only to return (or retrieve) it. Vector stores can be used as
+the backbone of a retriever, but there are other types of retrievers as well.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    BaseRetriever --> <name>Retriever  # Examples: ArxivRetriever, MergerRetriever
+
+**Main helpers:**
+
+.. code-block::
+
+    Document, Serializable, Callbacks,
+    CallbackManagerForRetrieverRun, AsyncCallbackManagerForRetrieverRun
+"""
+
 from langchain.retrievers.arxiv import ArxivRetriever
 from langchain.retrievers.azure_cognitive_search import AzureCognitiveSearchRetriever
 from langchain.retrievers.bm25 import BM25Retriever
@@ -20,8 +40,11 @@ from langchain.retrievers.merger_retriever import MergerRetriever
 from langchain.retrievers.metal import MetalRetriever
 from langchain.retrievers.milvus import MilvusRetriever
 from langchain.retrievers.multi_query import MultiQueryRetriever
+from langchain.retrievers.multi_vector import MultiVectorRetriever
+from langchain.retrievers.parent_document_retriever import ParentDocumentRetriever
 from langchain.retrievers.pinecone_hybrid_search import PineconeHybridSearchRetriever
 from langchain.retrievers.pubmed import PubMedRetriever
+from langchain.retrievers.re_phraser import RePhraseQueryRetriever
 from langchain.retrievers.remote_retriever import RemoteLangChainRetriever
 from langchain.retrievers.self_query.base import SelfQueryRetriever
 from langchain.retrievers.svm import SVMRetriever
@@ -66,6 +89,9 @@ __all__ = [
     "ZepRetriever",
     "ZillizRetriever",
     "DocArrayRetriever",
+    "RePhraseQueryRetriever",
     "WebResearchRetriever",
     "EnsembleRetriever",
+    "ParentDocumentRetriever",
+    "MultiVectorRetriever",
 ]

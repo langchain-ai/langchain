@@ -7,6 +7,8 @@ if TYPE_CHECKING:
 
 
 class SparkSQL:
+    """SparkSQL is a utility class for interacting with Spark SQL."""
+
     def __init__(
         self,
         spark_session: Optional[SparkSession] = None,
@@ -16,10 +18,26 @@ class SparkSQL:
         include_tables: Optional[List[str]] = None,
         sample_rows_in_table_info: int = 3,
     ):
+        """Initialize a SparkSQL object.
+
+        Args:
+            spark_session: A SparkSession object.
+              If not provided, one will be created.
+            catalog: The catalog to use.
+              If not provided, the default catalog will be used.
+            schema: The schema to use.
+              If not provided, the default schema will be used.
+            ignore_tables: A list of tables to ignore.
+              If not provided, all tables will be used.
+            include_tables: A list of tables to include.
+              If not provided, all tables will be used.
+            sample_rows_in_table_info: The number of rows to include in the table info.
+              Defaults to 3.
+        """
         try:
             from pyspark.sql import SparkSession
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "pyspark is not installed. Please install it with `pip install pyspark`"
             )
 
@@ -162,13 +180,7 @@ class SparkSQL:
         If the statement throws an error, the error message is returned.
         """
         try:
-            from pyspark.errors import PySparkException
-        except ImportError:
-            raise ValueError(
-                "pyspark is not installed. Please install it with `pip install pyspark`"
-            )
-        try:
             return self.run(command, fetch)
-        except PySparkException as e:
+        except Exception as e:
             """Format the error message"""
             return f"Error: {e}"

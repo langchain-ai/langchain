@@ -32,7 +32,7 @@ DEFAULT_INSERT_BATCH_SIZE = 100
 
 
 class MongoDBAtlasVectorSearch(VectorStore):
-    """Wrapper around MongoDB Atlas Vector Search.
+    """`MongoDB Atlas Vector Search` vector store.
 
     To use, you should have both:
     - the ``pymongo`` python package installed
@@ -142,7 +142,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             for t, m, embedding in zip(texts, metadatas, embeddings)
         ]
         # insert the documents in MongoDB Atlas
-        insert_result = self._collection.insert_many(to_insert)
+        insert_result = self._collection.insert_many(to_insert)  # type: ignore
         return insert_result.inserted_ids
 
     def _similarity_search_with_score(
@@ -170,7 +170,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         ]
         if post_filter_pipeline is not None:
             pipeline.extend(post_filter_pipeline)
-        cursor = self._collection.aggregate(pipeline)
+        cursor = self._collection.aggregate(pipeline)  # type: ignore[arg-type]
         docs = []
         for res in cursor:
             text = res.pop(self._text_key)

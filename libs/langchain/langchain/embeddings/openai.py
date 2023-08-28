@@ -16,7 +16,6 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import BaseModel, Extra, Field, root_validator
 from tenacity import (
     AsyncRetrying,
     before_sleep_log,
@@ -27,6 +26,7 @@ from tenacity import (
 )
 
 from langchain.embeddings.base import Embeddings
+from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain.utils import get_from_dict_or_env, get_pydantic_field_names
 
 logger = logging.getLogger(__name__)
@@ -295,7 +295,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         if self.openai_api_type in ("azure", "azure_ad", "azuread"):
             openai_args["engine"] = self.deployment
         if self.openai_proxy:
-            import openai
+            try:
+                import openai
+            except ImportError:
+                raise ImportError(
+                    "Could not import openai python package. "
+                    "Please install it with `pip install openai`."
+                )
 
             openai.proxy = {
                 "http": self.openai_proxy,
@@ -338,17 +344,17 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 disallowed_special=self.disallowed_special,
             )
             for j in range(0, len(token), self.embedding_ctx_length):
-                tokens += [token[j : j + self.embedding_ctx_length]]
-                indices += [i]
+                tokens.append(token[j : j + self.embedding_ctx_length])
+                indices.append(i)
 
-        batched_embeddings = []
+        batched_embeddings: List[List[float]] = []
         _chunk_size = chunk_size or self.chunk_size
 
         if self.show_progress_bar:
             try:
-                import tqdm
+                from tqdm.auto import tqdm
 
-                _iter = tqdm.tqdm(range(0, len(tokens), _chunk_size))
+                _iter = tqdm(range(0, len(tokens), _chunk_size))
             except ImportError:
                 _iter = range(0, len(tokens), _chunk_size)
         else:
@@ -360,7 +366,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 input=tokens[i : i + _chunk_size],
                 **self._invocation_params,
             )
-            batched_embeddings += [r["embedding"] for r in response["data"]]
+            batched_embeddings.extend(r["embedding"] for r in response["data"])
 
         results: List[List[List[float]]] = [[] for _ in range(len(texts))]
         num_tokens_in_batch: List[List[int]] = [[] for _ in range(len(texts))]
@@ -419,10 +425,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 disallowed_special=self.disallowed_special,
             )
             for j in range(0, len(token), self.embedding_ctx_length):
-                tokens += [token[j : j + self.embedding_ctx_length]]
-                indices += [i]
+                tokens.append(token[j : j + self.embedding_ctx_length])
+                indices.append(i)
 
-        batched_embeddings = []
+        batched_embeddings: List[List[float]] = []
         _chunk_size = chunk_size or self.chunk_size
         for i in range(0, len(tokens), _chunk_size):
             response = await async_embed_with_retry(
@@ -430,7 +436,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 input=tokens[i : i + _chunk_size],
                 **self._invocation_params,
             )
-            batched_embeddings += [r["embedding"] for r in response["data"]]
+            batched_embeddings.extend(r["embedding"] for r in response["data"])
 
         results: List[List[List[float]]] = [[] for _ in range(len(texts))]
         num_tokens_in_batch: List[List[int]] = [[] for _ in range(len(texts))]
@@ -453,42 +459,6 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             embeddings[i] = (average / np.linalg.norm(average)).tolist()
 
         return embeddings
-
-    def _embedding_func(self, text: str, *, engine: str) -> List[float]:
-        """Call out to OpenAI's embedding endpoint."""
-        # handle large input text
-        if len(text) > self.embedding_ctx_length:
-            return self._get_len_safe_embeddings([text], engine=engine)[0]
-        else:
-            if self.model.endswith("001"):
-                # See: https://github.com/openai/openai-python/issues/418#issuecomment-1525939500
-                # replace newlines, which can negatively affect performance.
-                text = text.replace("\n", " ")
-            return embed_with_retry(
-                self,
-                input=[text],
-                **self._invocation_params,
-            )[
-                "data"
-            ][0]["embedding"]
-
-    async def _aembedding_func(self, text: str, *, engine: str) -> List[float]:
-        """Call out to OpenAI's embedding endpoint."""
-        # handle large input text
-        if len(text) > self.embedding_ctx_length:
-            return (await self._aget_len_safe_embeddings([text], engine=engine))[0]
-        else:
-            if self.model.endswith("001"):
-                # See: https://github.com/openai/openai-python/issues/418#issuecomment-1525939500
-                # replace newlines, which can negatively affect performance.
-                text = text.replace("\n", " ")
-            return (
-                await async_embed_with_retry(
-                    self,
-                    input=[text],
-                    **self._invocation_params,
-                )
-            )["data"][0]["embedding"]
 
     def embed_documents(
         self, texts: List[str], chunk_size: Optional[int] = 0
@@ -533,8 +503,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             Embedding for the text.
         """
-        embedding = self._embedding_func(text, engine=self.deployment)
-        return embedding
+        return self.embed_documents([text])[0]
 
     async def aembed_query(self, text: str) -> List[float]:
         """Call out to OpenAI's embedding endpoint async for embedding query text.
@@ -545,5 +514,5 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             Embedding for the text.
         """
-        embedding = await self._aembedding_func(text, engine=self.deployment)
-        return embedding
+        embeddings = await self.aembed_documents([text])
+        return embeddings[0]

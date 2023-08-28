@@ -1,4 +1,24 @@
-"""Functionality for splitting text."""
+"""**Text Splitters** are classes for splitting text.
+
+
+**Class hierarchy:**
+
+.. code-block::
+
+    BaseDocumentTransformer --> TextSplitter --> <name>TextSplitter  # Example: CharacterTextSplitter
+                                                 RecursiveCharacterTextSplitter -->  <name>TextSplitter
+
+Note: **MarkdownHeaderTextSplitter** does not derive from TextSplitter.
+
+
+**Main helpers:**
+
+.. code-block::
+
+    Document, Tokenizer, Language, LineType, HeaderType
+
+"""  # noqa: E501
+
 from __future__ import annotations
 
 import copy
@@ -261,15 +281,21 @@ class TextSplitter(BaseDocumentTransformer, ABC):
 class CharacterTextSplitter(TextSplitter):
     """Splitting text that looks at characters."""
 
-    def __init__(self, separator: str = "\n\n", **kwargs: Any) -> None:
+    def __init__(
+        self, separator: str = "\n\n", is_separator_regex: bool = False, **kwargs: Any
+    ) -> None:
         """Create a new TextSplitter."""
         super().__init__(**kwargs)
         self._separator = separator
+        self._is_separator_regex = is_separator_regex
 
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
         # First we naively split the large input into a bunch of smaller ones.
-        splits = _split_text_with_regex(text, self._separator, self._keep_separator)
+        separator = (
+            self._separator if self._is_separator_regex else re.escape(self._separator)
+        )
+        splits = _split_text_with_regex(text, separator, self._keep_separator)
         _separator = "" if self._keep_separator else self._separator
         return self._merge_splits(splits, _separator)
 
@@ -566,7 +592,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
     def count_tokens(self, *, text: str) -> int:
         return len(self._encode(text))
 
-    _max_length_equal_32_bit_integer = 2**32
+    _max_length_equal_32_bit_integer: int = 2**32
 
     def _encode(self, text: str) -> List[int]:
         token_ids_with_start_and_end_token_ids = self.tokenizer.encode(
@@ -609,11 +635,13 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         self,
         separators: Optional[List[str]] = None,
         keep_separator: bool = True,
+        is_separator_regex: bool = False,
         **kwargs: Any,
     ) -> None:
         """Create a new TextSplitter."""
         super().__init__(keep_separator=keep_separator, **kwargs)
         self._separators = separators or ["\n\n", "\n", " ", ""]
+        self._is_separator_regex = is_separator_regex
 
     def _split_text(self, text: str, separators: List[str]) -> List[str]:
         """Split incoming text and return chunks."""
@@ -622,15 +650,18 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         separator = separators[-1]
         new_separators = []
         for i, _s in enumerate(separators):
+            _separator = _s if self._is_separator_regex else re.escape(_s)
             if _s == "":
                 separator = _s
                 break
-            if re.search(_s, text):
+            if re.search(_separator, text):
                 separator = _s
                 new_separators = separators[i + 1 :]
                 break
 
-        splits = _split_text_with_regex(text, separator, self._keep_separator)
+        _separator = separator if self._is_separator_regex else re.escape(separator)
+        splits = _split_text_with_regex(text, _separator, self._keep_separator)
+
         # Now go merging things, recursively splitting longer texts.
         _good_splits = []
         _separator = "" if self._keep_separator else separator
@@ -660,7 +691,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         cls, language: Language, **kwargs: Any
     ) -> RecursiveCharacterTextSplitter:
         separators = cls.get_separators_for_language(language)
-        return cls(separators=separators, **kwargs)
+        return cls(separators=separators, is_separator_regex=True, **kwargs)
 
     @staticmethod
     def get_separators_for_language(language: Language) -> List[str]:
@@ -801,7 +832,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 # Split along section titles
                 "\n=+\n",
                 "\n-+\n",
-                "\n\*+\n",
+                "\n\\*+\n",
                 # Split along directive markers
                 "\n\n.. *\n\n",
                 # Split by the normal type of lines
@@ -900,7 +931,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 # End of code block
                 "```\n",
                 # Horizontal lines
-                "\n\*\*\*+\n",
+                "\n\\*\\*\\*+\n",
                 "\n---+\n",
                 "\n___+\n",
                 # Note that this splitter doesn't handle horizontal lines defined
@@ -913,19 +944,19 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         elif language == Language.LATEX:
             return [
                 # First, try to split along Latex sections
-                "\n\\\chapter{",
-                "\n\\\section{",
-                "\n\\\subsection{",
-                "\n\\\subsubsection{",
+                "\n\\\\chapter{",
+                "\n\\\\section{",
+                "\n\\\\subsection{",
+                "\n\\\\subsubsection{",
                 # Now split by environments
-                "\n\\\begin{enumerate}",
-                "\n\\\begin{itemize}",
-                "\n\\\begin{description}",
-                "\n\\\begin{list}",
-                "\n\\\begin{quote}",
-                "\n\\\begin{quotation}",
-                "\n\\\begin{verse}",
-                "\n\\\begin{verbatim}",
+                "\n\\\\begin{enumerate}",
+                "\n\\\\begin{itemize}",
+                "\n\\\\begin{description}",
+                "\n\\\\begin{list}",
+                "\n\\\\begin{quote}",
+                "\n\\\\begin{quotation}",
+                "\n\\\\begin{verse}",
+                "\n\\\\begin{verbatim}",
                 # Now split by math environments
                 "\n\\\begin{align}",
                 "$$",
