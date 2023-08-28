@@ -14,7 +14,7 @@ FALLACIES: Dict[str, LogicalFallacy] = {
     "adpopulum": LogicalFallacy(
         name="adpopulum",
         fallacy_critique_request="Identify ways in which the assistant’s last response may be asserting that something must be true or correct simply because many people believe it or do it, without actual facts or evidence to support the conclusion.",
-        fallacy_revision_request="Please rewrite the assistant response to remove any assertation that something must be true or correct simply because many people believe it or do it, without actual facts or evidence to support the conclusion.",
+        fallacy_revision_request="Please rewrite the assistant response to remove any assertion that something must be true or correct simply because many people believe it or do it, without actual facts or evidence to support the conclusion.",
     ),
     "appealtoemotion": LogicalFallacy(
         name="appealtoemotion",
