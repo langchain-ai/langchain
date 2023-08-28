@@ -417,8 +417,6 @@ class Runnable(Generic[Input, Output], ABC):
                 output = func(input, run_manager=run_managers)  # type: ignore[call-arg]
             else:
                 output = func(input)  # type: ignore[call-arg]
-
-            print("output", output)
         except Exception as e:
             for run_manager in run_managers:
                 run_manager.on_chain_error(e)
@@ -489,7 +487,6 @@ class Runnable(Generic[Input, Output], ABC):
                 output = await func(input, run_manager=run_managers)  # type: ignore
             else:
                 output = await func(input)  # type: ignore[call-arg]
-            print("output", output)
         except Exception as e:
             await asyncio.gather(
                 *(run_manager.on_chain_error(e) for run_manager in run_managers)
