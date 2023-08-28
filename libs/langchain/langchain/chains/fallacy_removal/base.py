@@ -111,13 +111,13 @@ class FallacyChain(Chain):
         )
         fallacy_critiques_and_revisions = []
         for logical_fallacy in self.logical_fallacies:
-            # Do critique
+            # Fallacy critique below
 
             fallacy_raw_critique = self.fallacy_critique_chain.run(
                 input_prompt=input_prompt,
                 output_from_model=response,
                 fallacy_critique_request=logical_fallacy.fallacy_critique_request,
-                callbacks=_run_manager.get_child("fallacy"),
+                callbacks=_run_manager.get_child("fallacy_critique"),
             )
             fallacy_critique = self._parse_critique(
                 output_string=fallacy_raw_critique,
@@ -125,7 +125,7 @@ class FallacyChain(Chain):
 
             # if the fallacy critique contains "No fallacy critique needed", then it's the only output
             if "no fallacy critique needed" in fallacy_critique.lower():
-                fallacy_critiques_and_revisions.append((critique, ""))
+                fallacy_critiques_and_revisions.append((fallacy_critique, ""))
                 continue
 
             fallacy_revision = self.revision_chain.run(
@@ -134,7 +134,7 @@ class FallacyChain(Chain):
                 fallacy_critique_request=logical_fallacy.fallacy_critique_request,
                 fallacy_critique=fallacy_critique,
                 revision_request=logical_fallacy.fallacy_revision_request,
-                callbacks=_run_manager.get_child("revision"),
+                callbacks=_run_manager.get_child("fallacy_revision"),
             ).strip()
             response = fallacy_revision
             fallacy_critiques_and_revisions.append((fallacy_critique, fallacy_revision))
