@@ -1799,6 +1799,6 @@ def _configure(
             for handler in callback_manager.handlers
         ):
             callback_manager.add_handler(open_ai, True)
-        if run_collector_ is not None:
-            callback_manager.add_handler(run_collector_, False)
+    if run_collector_ is not None:
+        callback_manager.add_handler(run_collector_, False)
     return callback_manager
