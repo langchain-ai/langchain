@@ -2,7 +2,11 @@ from abc import ABC, abstractmethod
 
 
 class AnonymizerBase(ABC):
-    """Base abstract class for anonymizers"""
+    """
+    Base abstract class for anonymizers.
+    It is public and non-virtual because it allows
+        wrapping the behavior for all methods in a base class.
+    """
 
     def anonymize(self, text: str) -> str:
         """Anonymize text"""
