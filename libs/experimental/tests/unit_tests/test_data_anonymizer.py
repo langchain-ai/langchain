@@ -2,8 +2,6 @@ from typing import List
 
 import pytest
 
-from langchain_experimental.data_anonymizer import PresidioAnonymizer
-
 
 @pytest.mark.requires("presidio_analyzer", "presidio_anonymizer", "faker")
 @pytest.mark.parametrize(
@@ -12,6 +10,8 @@ from langchain_experimental.data_anonymizer import PresidioAnonymizer
 )
 def test_anonymize(analyzed_fields: List[str], should_contain: bool) -> None:
     """Test anonymizing a name in a simple sentence"""
+    from langchain_experimental.data_anonymizer import PresidioAnonymizer
+
     text = "Hello, my name is John Doe."
     anonymizer = PresidioAnonymizer(analyzed_fields=analyzed_fields)
     anonymized_text = anonymizer.anonymize(text)
@@ -21,6 +21,8 @@ def test_anonymize(analyzed_fields: List[str], should_contain: bool) -> None:
 @pytest.mark.requires("presidio_analyzer", "presidio_anonymizer", "faker")
 def test_anonymize_multiple() -> None:
     """Test anonymizing multiple items in a sentence"""
+    from langchain_experimental.data_anonymizer import PresidioAnonymizer
+
     text = "John Smith's phone number is 313-666-7440 and email is johnsmith@gmail.com"
     anonymizer = PresidioAnonymizer()
     anonymized_text = anonymizer.anonymize(text)
@@ -31,6 +33,8 @@ def test_anonymize_multiple() -> None:
 @pytest.mark.requires("presidio_analyzer", "presidio_anonymizer", "faker")
 def test_anonymize_with_custom_operator() -> None:
     """Test anonymize a name with a custom operator"""
+    from langchain_experimental.data_anonymizer import PresidioAnonymizer
+
     from presidio_anonymizer.entities import OperatorConfig
 
     custom_operator = {"PERSON": OperatorConfig("replace", {"new_value": "<name>"})}
@@ -47,6 +51,8 @@ def test_add_recognizer_operator() -> None:
     """
     Test add recognizer and anonymize a new type of entity and with a custom operator
     """
+    from langchain_experimental.data_anonymizer import PresidioAnonymizer
+
     from presidio_analyzer import PatternRecognizer
     from presidio_anonymizer.entities import OperatorConfig
 
