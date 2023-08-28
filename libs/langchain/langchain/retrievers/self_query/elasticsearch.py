@@ -8,6 +8,7 @@ from langchain.chains.query_constructor.ir import (
     StructuredQuery,
     Visitor,
 )
+from langchain.chains.query_constructor.schema import VirtualColumnName
 
 
 class ElasticsearchTranslator(Visitor):
@@ -49,6 +50,11 @@ class ElasticsearchTranslator(Visitor):
         return {"bool": {self._format_func(operation.operator): args}}
 
     def visit_comparison(self, comparison: Comparison) -> Dict:
+        if type(comparison.attribute) is VirtualColumnName:
+            raise TypeError(
+                "`VirtualColumnName` is not supported for `QdrantTranslator`s!"
+            )
+
         # ElasticsearchStore filters require to target
         # the metadata object field
         field = f"metadata.{comparison.attribute}"

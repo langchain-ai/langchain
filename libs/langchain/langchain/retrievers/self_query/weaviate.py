@@ -8,6 +8,7 @@ from langchain.chains.query_constructor.ir import (
     StructuredQuery,
     Visitor,
 )
+from langchain.chains.query_constructor.schema import VirtualColumnName
 
 
 class WeaviateTranslator(Visitor):
@@ -29,6 +30,10 @@ class WeaviateTranslator(Visitor):
         return {"operator": self._format_func(operation.operator), "operands": args}
 
     def visit_comparison(self, comparison: Comparison) -> Dict:
+        if type(comparison.attribute) is VirtualColumnName:
+            raise TypeError(
+                "`VirtualColumnName` is not supported for `QdrantTranslator`s!"
+            )
         return {
             "path": [comparison.attribute],
             "operator": self._format_func(comparison.comparator),

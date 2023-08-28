@@ -1,6 +1,7 @@
 import datetime
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Dict, Optional, Sequence, Union
 
+from langchain.chains.query_constructor.schema import AttributeInfo, VirtualColumnName
 from langchain.utils import check_package_version
 
 try:
@@ -61,11 +62,21 @@ class QueryTransformer(Transformer):
         *args: Any,
         allowed_comparators: Optional[Sequence[Comparator]] = None,
         allowed_operators: Optional[Sequence[Operator]] = None,
+        attribute_info: Optional[Sequence[AttributeInfo]] = None,
         **kwargs: Any,
     ):
         super().__init__(*args, **kwargs)
         self.allowed_comparators = allowed_comparators
         self.allowed_operators = allowed_operators
+        self.virtual_column_names: Optional[Dict[str, VirtualColumnName]]
+        if attribute_info:
+            self.virtual_column_names = {
+                str(i.name): i.name
+                for i in attribute_info
+                if type(i.name) is VirtualColumnName
+            }
+        else:
+            self.virtual_column_names = None
 
     def program(self, *items: Any) -> tuple:
         return items
@@ -73,7 +84,11 @@ class QueryTransformer(Transformer):
     def func_call(self, func_name: Any, args: list) -> FilterDirective:
         func = self._match_func_name(str(func_name))
         if isinstance(func, Comparator):
-            return Comparison(comparator=func, attribute=args[0], value=args[1])
+            _attr_name = args[0]
+            if self.virtual_column_names:
+                if args[0] in self.virtual_column_names:
+                    _attr_name = self.virtual_column_names[args[0]]
+            return Comparison(comparator=func, attribute=_attr_name, value=args[1])
         elif len(args) == 1 and func in (Operator.AND, Operator.OR):
             return args[0]
         else:
@@ -134,6 +149,7 @@ class QueryTransformer(Transformer):
 def get_parser(
     allowed_comparators: Optional[Sequence[Comparator]] = None,
     allowed_operators: Optional[Sequence[Operator]] = None,
+    attribute_info: Optional[Sequence[AttributeInfo]] = None,
 ) -> Lark:
     """
     Returns a parser for the query language.
@@ -151,6 +167,8 @@ def get_parser(
             "Cannot import lark, please install it with 'pip install lark'."
         )
     transformer = QueryTransformer(
-        allowed_comparators=allowed_comparators, allowed_operators=allowed_operators
+        allowed_comparators=allowed_comparators,
+        allowed_operators=allowed_operators,
+        attribute_info=attribute_info,
     )
     return Lark(GRAMMAR, parser="lalr", transformer=transformer, start="program")

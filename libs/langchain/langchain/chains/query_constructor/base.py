@@ -20,7 +20,7 @@ from langchain.chains.query_constructor.prompt import (
     EXAMPLES_WITH_LIMIT,
     SCHEMA_WITH_LIMIT,
 )
-from langchain.chains.query_constructor.schema import AttributeInfo
+from langchain.chains.query_constructor.schema import AttributeInfo, VirtualColumnName
 from langchain.output_parsers.json import parse_and_check_json_markdown
 from langchain.schema import BaseOutputParser, BasePromptTemplate, OutputParserException
 from langchain.schema.language_model import BaseLanguageModel
@@ -58,6 +58,7 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
         cls,
         allowed_comparators: Optional[Sequence[Comparator]] = None,
         allowed_operators: Optional[Sequence[Operator]] = None,
+        attribute_info: Optional[Sequence[AttributeInfo]] = None,
     ) -> StructuredQueryOutputParser:
         """
         Create a structured query output parser from components.
@@ -70,7 +71,9 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
             a structured query output parser
         """
         ast_parser = get_parser(
-            allowed_comparators=allowed_comparators, allowed_operators=allowed_operators
+            allowed_comparators=allowed_comparators,
+            allowed_operators=allowed_operators,
+            attribute_info=attribute_info,
         )
         return cls(ast_parse=ast_parser.parse)
 
@@ -78,7 +81,14 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
 def _format_attribute_info(info: Sequence[AttributeInfo]) -> str:
     info_dicts = {}
     for i in info:
-        i_dict = dict(i)
+        if type(i.name) is VirtualColumnName:
+            i_dict = {
+                "name": str(i.name),
+                "description": i.description,
+                "type": i.type,
+            }
+        else:
+            i_dict = dict(i)
         info_dicts[i_dict.pop("name")] = i_dict
     return json.dumps(info_dicts, indent=4).replace("{", "{{").replace("}", "}}")
 
@@ -113,7 +123,9 @@ def _get_prompt(
         i=len(examples) + 1, content=document_contents, attributes=attribute_str
     )
     output_parser = StructuredQueryOutputParser.from_components(
-        allowed_comparators=allowed_comparators, allowed_operators=allowed_operators
+        allowed_comparators=allowed_comparators,
+        allowed_operators=allowed_operators,
+        attribute_info=attribute_info,
     )
     return FewShotPromptTemplate(
         examples=examples,

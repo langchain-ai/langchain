@@ -1,6 +1,7 @@
 import datetime
 import re
-from typing import Any, Callable, Dict, Tuple
+import warnings
+from typing import Any, Callable, Dict, Optional, Tuple
 
 from langchain.chains.query_constructor.ir import (
     Comparator,
@@ -10,6 +11,7 @@ from langchain.chains.query_constructor.ir import (
     StructuredQuery,
     Visitor,
 )
+from langchain.chains.query_constructor.schema import VirtualColumnName
 
 
 def DEFAULT_COMPOSER(op_name: str) -> Callable:
@@ -76,8 +78,21 @@ class MyScaleTranslator(Visitor):
         Comparator.LIKE: DEFAULT_COMPOSER("ILIKE"),
     }
 
-    def __init__(self, metadata_key: str = "metadata") -> None:
+    def __init__(self, metadata_key: Optional[str] = None) -> None:
+        """Create translator based on metadata key.
+        If None, then raw_name will be used."""
         super().__init__()
+        if metadata_key:
+            print(metadata_key)
+            warnings.warn(
+                "WARNING: `metadata_key` will be deprecated! "
+                "Tables created using MyScale vectorstore need to use "
+                "`VirtualColumnName`s in `AttributeInfo` to create schemas. "
+                "Please check the newest documentation on MyScale Self-Querying "
+                "Retrivier! https://python.langchain.com/docs/modules/"
+                "data_connection/retrievers/self_query/myscale_self_query"
+                "#testing-it-out-with-self-query-retrievers-existing-functionalities"
+            )
         self.metadata_key = metadata_key
 
     def visit_operation(self, operation: Operation) -> Dict:
@@ -87,18 +102,25 @@ class MyScaleTranslator(Visitor):
         return self.map_dict[func](*args)
 
     def visit_comparison(self, comparison: Comparison) -> Dict:
-        regex = "\((.*?)\)"
-        matched = re.search("\(\w+\)", comparison.attribute)
-
-        # If arbitrary function is applied to an attribute
-        if matched:
-            attr = re.sub(
-                regex,
-                f"({self.metadata_key}.{matched.group(0)[1:-1]})",
-                comparison.attribute,
-            )
+        # NOTE: now the arbitrary function column is replaced by virtual column names
+        if type(comparison.attribute) is VirtualColumnName:
+            attr = comparison.attribute()
         else:
-            attr = f"{self.metadata_key}.{comparison.attribute}"
+            if self.metadata_key:
+                regex = "\((.*?)\)"
+                matched = re.search("\(\w+\)", comparison.attribute)
+
+                # If arbitrary function is applied to an attribute
+                if matched:
+                    attr = re.sub(
+                        regex,
+                        f"({self.metadata_key}.{matched.group(0)[1:-1]})",
+                        comparison.attribute,
+                    )
+                else:
+                    attr = f"{self.metadata_key}.{comparison.attribute}"
+            else:
+                attr = comparison.attribute
         value = comparison.value
         comp = comparison.comparator
 
@@ -106,7 +128,8 @@ class MyScaleTranslator(Visitor):
 
         # convert timestamp for datetime objects
         if type(value) is datetime.date:
-            attr = f"parseDateTime32BestEffort({attr})"
+            if type(comparison.attribute) is not VirtualColumnName:
+                attr = f"parseDateTime32BestEffort({attr})"
             value = f"parseDateTime32BestEffort('{value.strftime('%Y-%m-%d')}')"
 
         # string pattern match
@@ -117,7 +140,6 @@ class MyScaleTranslator(Visitor):
     def visit_structured_query(
         self, structured_query: StructuredQuery
     ) -> Tuple[str, dict]:
-        print(structured_query)
         if structured_query.filter is None:
             kwargs = {}
         else:

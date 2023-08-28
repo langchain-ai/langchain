@@ -7,6 +7,8 @@ from typing import Any, List, Optional, Sequence, Union
 
 from pydantic_v1 import BaseModel
 
+from langchain.chains.query_constructor.schema import VirtualColumnName
+
 
 class Visitor(ABC):
     """Defines interface for IR translation using visitor pattern."""
@@ -97,7 +99,7 @@ class Comparison(FilterDirective):
     """A comparison to a value."""
 
     comparator: Comparator
-    attribute: str
+    attribute: Union[str, VirtualColumnName]
     value: Any
 
 
