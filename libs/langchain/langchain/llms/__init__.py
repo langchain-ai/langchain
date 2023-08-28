@@ -85,6 +85,7 @@ from langchain.llms.vertexai import VertexAI
 from langchain.llms.vllm import VLLM, VLLMOpenAI
 from langchain.llms.writer import Writer
 from langchain.llms.xinference import Xinference
+from langchain.chat_models.gigachat import GigaChat
 
 __all__ = [
     "AI21",
@@ -112,6 +113,7 @@ __all__ = [
     "Fireworks",
     "FireworksChat",
     "ForefrontAI",
+    "GigaChat"
     "GPT4All",
     "GooglePalm",
     "GooseAI",
@@ -183,6 +185,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "edenai": EdenAI,
     "fake-list": FakeListLLM,
     "forefrontai": ForefrontAI,
+    "gigachat": GigaChat,
     "google_palm": GooglePalm,
     "gooseai": GooseAI,
     "gpt4all": GPT4All,
