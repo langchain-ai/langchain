@@ -10,7 +10,6 @@ from langchain.chains.query_constructor.ir import (
     StructuredQuery,
     Visitor,
 )
-from langchain.chains.query_constructor.schema import VirtualColumnName
 
 if TYPE_CHECKING:
     from qdrant_client.http import models as rest
@@ -56,8 +55,10 @@ class QdrantTranslator(Visitor):
                 "Cannot import qdrant_client. Please install with `pip install "
                 "qdrant-client`."
             ) from e
-        
-        assert type(comparison.attribute) is str, "`VirtualColumnName` is not supported for `QdrantTranslator`s!"
+
+        assert (
+            type(comparison.attribute) is str
+        ), "`VirtualColumnName` is not supported for `QdrantTranslator`s!"
 
         self._validate_func(comparison.comparator)
         attribute = self.metadata_key + "." + comparison.attribute
