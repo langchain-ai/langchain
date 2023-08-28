@@ -1,4 +1,7 @@
-from langchain.output_parsers.list import CommaSeparatedListOutputParser
+from langchain.output_parsers.list import (
+    CommaSeparatedListOutputParser,
+    NumberedListOutputParser,
+)
 
 
 def test_single_item() -> None:
@@ -11,3 +14,21 @@ def test_multiple_items() -> None:
     """Test that a string with multiple comma-separated items is parsed to a list."""
     parser = CommaSeparatedListOutputParser()
     assert parser.parse("foo, bar, baz") == ["foo", "bar", "baz"]
+
+
+def test_numbered_list(self) -> None:
+    parser = NumberedListOutputParser()
+    text1 = (
+        "Your response should be a numbered list with each item on a new line. "
+        "For example: \n\n1. foo\n\n2. bar\n\n3. baz"
+    )
+
+    text2 = "Items:\n\n1. apple\n\n2. banana\n\n3. cherry"
+
+    text3 = "No items in the list."
+
+    pattern = r"\d+\.\s([^\n]+)"
+
+    self.assertEqual(parser.parse(text1), ["foo", "bar", "baz"])
+    self.assertEqual(parser.parse(text2), ["apple", "banana", "cherry"])
+    self.assertEqual(parser.parse(text3), [])
