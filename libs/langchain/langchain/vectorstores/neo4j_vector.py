@@ -27,6 +27,12 @@ distance_mapping = {
 }
 
 
+def check_if_not_null(props, values):
+    for prop, value in zip(props, values):
+        if not value:
+            raise ValueError(f"Parameter `{prop}` must not be None or empty string")
+
+
 class Neo4jVector(VectorStore):
     """`Neo4j` vector index.
 
@@ -125,6 +131,17 @@ class Neo4jVector(VectorStore):
 
         # Verify if the version support vector index
         self.verify_version()
+
+        # Verify that required values are not null
+        check_if_not_null(
+            [
+                "index_name",
+                "node_label",
+                "embedding_node_property",
+                "text_node_property",
+            ],
+            [index_name, node_label, embedding_node_property, text_node_property],
+        )
 
         self.embedding = embedding
         self._distance_strategy = distance_strategy
