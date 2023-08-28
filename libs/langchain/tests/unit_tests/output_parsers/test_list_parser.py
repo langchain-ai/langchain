@@ -16,7 +16,7 @@ def test_multiple_items() -> None:
     assert parser.parse("foo, bar, baz") == ["foo", "bar", "baz"]
 
 
-def test_numbered_list(self) -> None:
+def test_numbered_list() -> None:
     parser = NumberedListOutputParser()
     text1 = (
         "Your response should be a numbered list with each item on a new line. "
@@ -27,6 +27,6 @@ def test_numbered_list(self) -> None:
 
     text3 = "No items in the list."
 
-    self.assertEqual(parser.parse(text1), ["foo", "bar", "baz"])
-    self.assertEqual(parser.parse(text2), ["apple", "banana", "cherry"])
-    self.assertEqual(parser.parse(text3), [])
+    assert parser.parse(text1) == ["foo", "bar", "baz"]
+    assert parser.parse(text2) == ["apple", "banana", "cherry"]
+    assert parser.parse(text3) == []
