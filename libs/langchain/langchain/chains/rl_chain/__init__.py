@@ -13,7 +13,7 @@ from langchain.chains.rl_chain.base import (
 from langchain.chains.rl_chain.pick_best_chain import PickBest
 
 
-def configure_logger():
+def configure_logger() -> None:
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
     ch = logging.StreamHandler()
