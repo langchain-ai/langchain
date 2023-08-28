@@ -1419,7 +1419,14 @@ class GoogleDriveUtilities(Serializable, BaseModel):
                     result.append("- " if "bullet" in node["paragraphMarker"] else "")
                     return result
                 if "paragraph" in node:
-                    result.append("- " if "bullet" in node["paragraph"] else "")
+                    prefix=""
+                    named_style_type= node['paragraph']["paragraphStyle"]["namedStyleType"]
+                    level=re.match("HEADING_([1-9])",named_style_type)
+                    if level:
+                        prefix = f"{'#' * int(level[1])} "
+                    if "bullet" in node["paragraph"]:
+                        prefix +="- "
+                    result.append(prefix)
                 if "table" in node:
                     col_size = [0 for _ in range(node["table"]["columns"])]
                     rows = [[] for _ in range(node["table"]["rows"])]

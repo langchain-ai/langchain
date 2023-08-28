@@ -11,7 +11,9 @@ from pytest_mock import MockerFixture
 
 from langchain import PromptTemplate
 from langchain.schema import Document
+#from langchain_googledrive.utilities import GoogleDriveAPIWrapper
 from langchain.utilities import GoogleDriveAPIWrapper
+#from langchain_googledrive.utilities.google_drive import TYPE_CONV_MAPPING, GoogleDriveUtilities
 from langchain.utilities.google_drive import TYPE_CONV_MAPPING, GoogleDriveUtilities
 
 try:
