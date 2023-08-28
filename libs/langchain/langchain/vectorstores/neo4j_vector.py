@@ -27,7 +27,7 @@ distance_mapping = {
 }
 
 
-def check_if_not_null(props, values):
+def check_if_not_null(props, values) -> None:
     for prop, value in zip(props, values):
         if not value:
             raise ValueError(f"Parameter `{prop}` must not be None or empty string")
@@ -229,9 +229,12 @@ class Neo4jVector(VectorStore):
 
         index_information = self.query(
             "SHOW INDEXES YIELD name, type, labelsOrTypes, properties, options "
-            "WHERE type = 'VECTOR' AND ( name = $index_name "
-            "OR (labelsOrTypes[0] = $node_label AND "
-            "properties[0] = $embedding_node_property))"
+            "WHERE type = 'VECTOR' AND name = $index_name "
+            "RETURN name, labelsOrTypes, properties, options "
+            "UNION "
+            "SHOW INDEXES YIELD name, type, labelsOrTypes, properties, options "
+            "WHERE labelsOrTypes[0] = $node_label AND "
+            "properties[0] = $embedding_node_property "
             "RETURN name, labelsOrTypes, properties, options ",
             {
                 "index_name": self.index_name,
