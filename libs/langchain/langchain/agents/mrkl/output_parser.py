@@ -38,7 +38,8 @@ class MRKLOutputParser(AgentOutputParser):
         includes_answer = FINAL_ANSWER_ACTION in text
         if action_match:
             if includes_answer:
-                # check if the agent has hallucinated a next question after the final answer
+                # check if the agent has hallucinated a next question
+                # after the final answer
                 regex = r"\nQuestion\s *\d *\s*:"
                 question_match = re.search(regex, text, re.DOTALL)
                 if question_match:
