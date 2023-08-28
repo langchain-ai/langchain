@@ -1,27 +1,31 @@
-"""Chain for applying removals of logical fallacies as described https://arxiv.org/pdf/2212.07425.pdf to the outputs of any other chain. \
-Modeled after Constitutional AI and in same format, but applying logical fallacies as generalized rules to remove in output"""
+"""Chain for applying removals of logical fallacies as described \
+https://arxiv.org/pdf/2212.07425.pdf to the outputs of any other chain. \
+Modeled after Constitutional AI and in same format, but applying logical fallacies \
+as generalized rules to remove in output"""
 from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.fallacy_removal.models import LogicalFallacy 
 from langchain.chains.fallacy_removal.fallacies import FALLACIES
-from langchain.chains.fallacy_removal.prompts import FALLACY_CRITIQUE_PROMPT, FALLACY_REVISION_PROMPT
+from langchain.chains.fallacy_removal.prompts \
+import FALLACY_CRITIQUE_PROMPT, FALLACY_REVISION_PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 
 
 class FallacyChain(Chain):
-    """Chain for applying logical fallacy evaluations, modeled after Constitutional AI and in same format, but applying logical fallacies as generalized rules to remove in output
+    """Chain for applying logical fallacy evaluations, modeled after Constitutional AI \
+    and in same format, but applying logical fallacies as generalized rules to remove \
+    in output 
 
     Example:
         .. code-block:: python
 
             from langchain.llms import OpenAI
             from langchain.chains import LLMChain, FallacyChain
-            from langchain.chains.fallacy_removal.models \
-                import LogicalFallacy
+            from langchain.chains.fallacy_removal.models import LogicalFallacy
 
             llm = OpenAI()
 
@@ -123,7 +127,7 @@ class FallacyChain(Chain):
                 output_string=fallacy_raw_critique,
             ).strip()
 
-            # if the fallacy critique contains "No fallacy critique needed", then it's the only output
+            # if fallacy critique contains "No fallacy critique needed" then done
             if "no fallacy critique needed" in fallacy_critique.lower():
                 fallacy_critiques_and_revisions.append((fallacy_critique, ""))
                 continue
@@ -160,7 +164,8 @@ class FallacyChain(Chain):
         final_output: Dict[str, Any] = {"output": response}
         if self.return_intermediate_steps:
             final_output["initial_output"] = initial_response
-            final_output["fallacy_critiques_and_revisions"] = fallacy_critiques_and_revisions
+            final_output["fallacy_critiques_and_revisions"] = \
+            fallacy_critiques_and_revisions
         return final_output
 
     @staticmethod
