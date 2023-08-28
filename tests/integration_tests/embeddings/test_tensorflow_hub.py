@@ -1,5 +1,5 @@
 """Test TensorflowHub embeddings."""
-from langchain.embeddings import TensorflowHubEmbeddings
+from langchain_xfyun.embeddings import TensorflowHubEmbeddings
 
 
 def test_tensorflowhub_embedding_documents() -> None:

@@ -8,4 +8,4 @@ This test is intended to catch errors in the import process.
 
 def test_import_storage() -> None:
     """Attempt to import storage modules."""
-    from langchain.storage.redis import RedisStore  # noqa
+    from langchain_xfyun.storage.redis import RedisStore  # noqa

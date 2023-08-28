@@ -6,9 +6,9 @@ from typing import Any
 import pytest
 
 from langchain import LLMChain
-from langchain.chains.api.base import APIChain
-from langchain.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
-from langchain.utilities.requests import TextRequestsWrapper
+from langchain_xfyun.chains.api.base import APIChain
+from langchain_xfyun.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
+from langchain_xfyun.utilities.requests import TextRequestsWrapper
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

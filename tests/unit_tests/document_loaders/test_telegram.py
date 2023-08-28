@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from langchain.document_loaders import TelegramChatApiLoader, TelegramChatFileLoader
+from langchain_xfyun.document_loaders import TelegramChatApiLoader, TelegramChatFileLoader
 
 
 def test_telegram_chat_file_loader() -> None:

@@ -1,6 +1,6 @@
 """Test DeepInfra API wrapper."""
 
-from langchain.embeddings import DeepInfraEmbeddings
+from langchain_xfyun.embeddings import DeepInfraEmbeddings
 
 
 def test_deepinfra_call() -> None:

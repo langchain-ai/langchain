@@ -1,7 +1,7 @@
 """Test embaas embeddings."""
 import responses
 
-from langchain.embeddings.embaas import EMBAAS_API_URL, EmbaasEmbeddings
+from langchain_xfyun.embeddings.embaas import EMBAAS_API_URL, EmbaasEmbeddings
 
 
 def test_embaas_embed_documents() -> None:

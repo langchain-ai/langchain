@@ -8,10 +8,10 @@ import pytest
 from langsmith.client import Client
 from langsmith.schemas import Dataset, Example
 
-from langchain.chains.base import Chain
-from langchain.chains.transform import TransformChain
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.smith.evaluation.runner_utils import (
+from langchain_xfyun.chains.base import Chain
+from langchain_xfyun.chains.transform import TransformChain
+from langchain_xfyun.schema.language_model import BaseLanguageModel
+from langchain_xfyun.smith.evaluation.runner_utils import (
     InputFormatError,
     _get_messages,
     _get_prompt,

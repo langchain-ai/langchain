@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from langchain.document_loaders import UnstructuredODTLoader
+from langchain_xfyun.document_loaders import UnstructuredODTLoader
 
 
 def test_unstructured_odt_loader() -> None:

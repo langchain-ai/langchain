@@ -4,10 +4,10 @@ from typing import Iterator
 
 import pytest
 
-from langchain.document_loaders.base import BaseBlobParser
-from langchain.document_loaders.blob_loaders import Blob
-from langchain.document_loaders.parsers.generic import MimeTypeBasedParser
-from langchain.schema import Document
+from langchain_xfyun.document_loaders.base import BaseBlobParser
+from langchain_xfyun.document_loaders.blob_loaders import Blob
+from langchain_xfyun.document_loaders.parsers.generic import MimeTypeBasedParser
+from langchain_xfyun.schema import Document
 
 
 class TestMimeBasedParser:

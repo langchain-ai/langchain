@@ -5,9 +5,9 @@ from unittest import mock
 
 import pytest
 
-from langchain.document_transformers.nuclia_text_transform import NucliaTextTransformer
-from langchain.schema.document import Document
-from langchain.tools.nuclia.tool import NucliaUnderstandingAPI
+from langchain_xfyun.document_transformers.nuclia_text_transform import NucliaTextTransformer
+from langchain_xfyun.schema.document import Document
+from langchain_xfyun.tools.nuclia.tool import NucliaUnderstandingAPI
 
 
 def fakerun(**args: Any) -> Any:

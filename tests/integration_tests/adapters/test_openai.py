@@ -3,7 +3,7 @@ from typing import Any
 import openai
 import pytest
 
-from langchain.adapters import openai as lcopenai
+from langchain_xfyun.adapters import openai as lcopenai
 
 
 def _test_no_stream(**kwargs: Any) -> None:

@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from langchain.document_loaders import UnstructuredTSVLoader
+from langchain_xfyun.document_loaders import UnstructuredTSVLoader
 
 EXAMPLE_DIRECTORY = file_path = Path(__file__).parent.parent / "examples"
 

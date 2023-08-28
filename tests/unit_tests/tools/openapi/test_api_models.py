@@ -8,7 +8,7 @@ import pytest
 
 # Keep at top of file to ensure that pydantic test can be skipped before
 # pydantic v1 related imports are attempted by openapi_schema_pydantic.
-from langchain.pydantic_v1 import _PYDANTIC_MAJOR_VERSION
+from langchain_xfyun.pydantic_v1 import _PYDANTIC_MAJOR_VERSION
 
 if _PYDANTIC_MAJOR_VERSION != 1:
     pytest.skip(
@@ -19,12 +19,12 @@ if _PYDANTIC_MAJOR_VERSION != 1:
 import pytest
 import yaml
 
-from langchain.tools.openapi.utils.api_models import (
+from langchain_xfyun.tools.openapi.utils.api_models import (
     APIOperation,
     APIRequestBody,
     APIRequestBodyProperty,
 )
-from langchain.tools.openapi.utils.openapi_utils import HTTPVerb, OpenAPISpec
+from langchain_xfyun.tools.openapi.utils.openapi_utils import HTTPVerb, OpenAPISpec
 
 SPECS_DIR = Path(__file__).parents[2] / "examples" / "test_specs"
 

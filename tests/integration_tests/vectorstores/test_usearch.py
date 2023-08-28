@@ -1,8 +1,8 @@
 """Test USearch functionality."""
 import pytest
 
-from langchain.docstore.document import Document
-from langchain.vectorstores.usearch import USearch
+from langchain_xfyun.docstore.document import Document
+from langchain_xfyun.vectorstores.usearch import USearch
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 

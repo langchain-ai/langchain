@@ -3,8 +3,8 @@ from typing import Any, List, Union
 
 import pytest
 
-from langchain.prompts import PromptTemplate
-from langchain.prompts.chat import (
+from langchain_xfyun.prompts import PromptTemplate
+from langchain_xfyun.prompts.chat import (
     AIMessagePromptTemplate,
     BaseMessagePromptTemplate,
     ChatMessage,
@@ -15,7 +15,7 @@ from langchain.prompts.chat import (
     SystemMessagePromptTemplate,
     _convert_to_message,
 )
-from langchain.schema.messages import (
+from langchain_xfyun.schema.messages import (
     AIMessage,
     BaseMessage,
     HumanMessage,

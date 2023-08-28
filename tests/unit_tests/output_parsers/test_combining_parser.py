@@ -1,7 +1,7 @@
 """Test in memory docstore."""
-from langchain.output_parsers.combining import CombiningOutputParser
-from langchain.output_parsers.regex import RegexParser
-from langchain.output_parsers.structured import ResponseSchema, StructuredOutputParser
+from langchain_xfyun.output_parsers.combining import CombiningOutputParser
+from langchain_xfyun.output_parsers.regex import RegexParser
+from langchain_xfyun.output_parsers.structured import ResponseSchema, StructuredOutputParser
 
 DEF_EXPECTED_RESULT = {
     "answer": "Paris",

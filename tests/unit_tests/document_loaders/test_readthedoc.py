@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from langchain.document_loaders.readthedocs import ReadTheDocsLoader
+from langchain_xfyun.document_loaders.readthedocs import ReadTheDocsLoader
 
 PARENT_DIR = Path(__file__).parent / "test_docs" / "readthedocs"
 

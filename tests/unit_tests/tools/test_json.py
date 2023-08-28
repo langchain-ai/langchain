@@ -1,7 +1,7 @@
 """Test functionality of JSON tools."""
 from pathlib import Path
 
-from langchain.tools.json.tool import JsonSpec
+from langchain_xfyun.tools.json.tool import JsonSpec
 
 
 def test_json_spec_from_file(tmp_path: Path) -> None:

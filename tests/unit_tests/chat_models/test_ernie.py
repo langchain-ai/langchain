@@ -1,5 +1,5 @@
-from langchain.chat_models.ernie import _convert_message_to_dict
-from langchain.schema.messages import AIMessage, HumanMessage
+from langchain_xfyun.chat_models.ernie import _convert_message_to_dict
+from langchain_xfyun.schema.messages import AIMessage, HumanMessage
 
 
 def test__convert_dict_to_message_human() -> None:

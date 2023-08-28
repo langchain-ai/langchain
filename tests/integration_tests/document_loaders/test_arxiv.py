@@ -2,8 +2,8 @@ from typing import List
 
 import pytest
 
-from langchain.document_loaders.arxiv import ArxivLoader
-from langchain.schema import Document
+from langchain_xfyun.document_loaders.arxiv import ArxivLoader
+from langchain_xfyun.schema import Document
 
 
 def assert_docs(docs: List[Document]) -> None:

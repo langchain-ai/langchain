@@ -3,20 +3,20 @@ from typing import Any, List, Optional, Union
 
 import pytest
 
-from langchain.callbacks.base import AsyncCallbackHandler
-from langchain.callbacks.manager import CallbackManager
-from langchain.chains.openai_functions import (
+from langchain_xfyun.callbacks.base import AsyncCallbackHandler
+from langchain_xfyun.callbacks.manager import CallbackManager
+from langchain_xfyun.chains.openai_functions import (
     create_openai_fn_chain,
 )
-from langchain.chat_models.openai import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain.schema import (
+from langchain_xfyun.chat_models.openai import ChatOpenAI
+from langchain_xfyun.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
+from langchain_xfyun.schema import (
     ChatGeneration,
     ChatResult,
     LLMResult,
 )
-from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
-from langchain.schema.output import ChatGenerationChunk, GenerationChunk
+from langchain_xfyun.schema.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_xfyun.schema.output import ChatGenerationChunk, GenerationChunk
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 

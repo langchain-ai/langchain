@@ -3,9 +3,9 @@ from typing import Any, Dict, List, Optional
 
 import pytest
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
-from langchain.chains.base import Chain
-from langchain.schema import RUN_KEY, BaseMemory
+from langchain_xfyun.callbacks.manager import CallbackManagerForChainRun
+from langchain_xfyun.chains.base import Chain
+from langchain_xfyun.schema import RUN_KEY, BaseMemory
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 

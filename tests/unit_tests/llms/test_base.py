@@ -7,8 +7,8 @@ except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
 import langchain
-from langchain.cache import InMemoryCache, SQLAlchemyCache
-from langchain.schema import Generation, LLMResult
+from langchain_xfyun.cache import InMemoryCache, SQLAlchemyCache
+from langchain_xfyun.schema import Generation, LLMResult
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

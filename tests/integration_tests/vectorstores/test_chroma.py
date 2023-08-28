@@ -1,8 +1,8 @@
 """Test Chroma functionality."""
 import pytest
 
-from langchain.docstore.document import Document
-from langchain.vectorstores import Chroma
+from langchain_xfyun.docstore.document import Document
+from langchain_xfyun.vectorstores import Chroma
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
     FakeEmbeddings,

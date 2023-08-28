@@ -1,15 +1,15 @@
 """Test Graph Database Chain."""
 import os
 
-from langchain.chains.graph_qa.cypher import GraphCypherQAChain
-from langchain.chains.loading import load_chain
-from langchain.graphs import Neo4jGraph
-from langchain.graphs.neo4j_graph import (
+from langchain_xfyun.chains.graph_qa.cypher import GraphCypherQAChain
+from langchain_xfyun.chains.loading import load_chain
+from langchain_xfyun.graphs import Neo4jGraph
+from langchain_xfyun.graphs.neo4j_graph import (
     node_properties_query,
     rel_properties_query,
     rel_query,
 )
-from langchain.llms.openai import OpenAI
+from langchain_xfyun.llms.openai import OpenAI
 
 
 def test_connect_neo4j() -> None:

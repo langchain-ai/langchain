@@ -8,7 +8,7 @@ readme = "README.md"
 repository = "https://github.com/vsxd/langchain-xfyun"
 
 [tool.poetry.scripts]
-langchain-xfyun-server = "langchain-xfyun.server:main"
+langchain-xfyun-server = "langchain_xfyun.server:main"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"

@@ -1,6 +1,6 @@
 import pytest
 
-from langchain.document_loaders import RSSFeedLoader
+from langchain_xfyun.document_loaders import RSSFeedLoader
 
 
 @pytest.mark.requires("feedparser", "newspaper")

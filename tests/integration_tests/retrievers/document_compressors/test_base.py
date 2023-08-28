@@ -1,12 +1,12 @@
 """Integration test for compression pipelines."""
-from langchain.document_transformers import EmbeddingsRedundantFilter
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.retrievers.document_compressors import (
+from langchain_xfyun.document_transformers import EmbeddingsRedundantFilter
+from langchain_xfyun.embeddings import OpenAIEmbeddings
+from langchain_xfyun.retrievers.document_compressors import (
     DocumentCompressorPipeline,
     EmbeddingsFilter,
 )
-from langchain.schema import Document
-from langchain.text_splitter import CharacterTextSplitter
+from langchain_xfyun.schema import Document
+from langchain_xfyun.text_splitter import CharacterTextSplitter
 
 
 def test_document_compressor_pipeline() -> None:

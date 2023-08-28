@@ -1,8 +1,8 @@
 from typing import List, Type
 
-import langchain.tools
-from langchain.tools import __all__ as tools_all
-from langchain.tools.base import BaseTool, StructuredTool
+import langchain_xfyun.tools
+from langchain_xfyun.tools import __all__ as tools_all
+from langchain_xfyun.tools.base import BaseTool, StructuredTool
 
 _EXCLUDE = {
     BaseTool,

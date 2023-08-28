@@ -1,7 +1,7 @@
 """Integration test for Serper.dev's Google Search API Wrapper."""
 import pytest
 
-from langchain.utilities.google_serper import GoogleSerperAPIWrapper
+from langchain_xfyun.utilities.google_serper import GoogleSerperAPIWrapper
 
 
 def test_search_call() -> None:

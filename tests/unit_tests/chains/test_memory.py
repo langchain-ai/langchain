@@ -1,12 +1,12 @@
 import pytest
 
-from langchain.chains.conversation.memory import (
+from langchain_xfyun.chains.conversation.memory import (
     ConversationBufferMemory,
     ConversationBufferWindowMemory,
     ConversationSummaryMemory,
 )
-from langchain.memory import ReadOnlySharedMemory, SimpleMemory
-from langchain.schema import BaseMemory
+from langchain_xfyun.memory import ReadOnlySharedMemory, SimpleMemory
+from langchain_xfyun.schema import BaseMemory
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

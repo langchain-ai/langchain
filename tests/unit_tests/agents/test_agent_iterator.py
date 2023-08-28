@@ -1,13 +1,13 @@
 import pytest
 
-from langchain.agents import (
+from langchain_xfyun.agents import (
     AgentExecutor,
     AgentExecutorIterator,
     AgentType,
     initialize_agent,
 )
-from langchain.agents.tools import Tool
-from langchain.llms import FakeListLLM
+from langchain_xfyun.agents.tools import Tool
+from langchain_xfyun.llms import FakeListLLM
 from tests.unit_tests.agents.test_agent import _get_agent
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 

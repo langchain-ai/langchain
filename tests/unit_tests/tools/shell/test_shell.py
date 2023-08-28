@@ -2,7 +2,7 @@ import warnings
 
 import pytest
 
-from langchain.tools.shell.tool import ShellInput, ShellTool
+from langchain_xfyun.tools.shell.tool import ShellInput, ShellTool
 
 # Test data
 test_commands = ["echo 'Hello, World!'", "echo 'Another command'"]

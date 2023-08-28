@@ -4,7 +4,7 @@ from typing import Any, Mapping, cast
 
 import pytest
 
-from langchain.chat_models.azure_openai import AzureChatOpenAI
+from langchain_xfyun.chat_models.azure_openai import AzureChatOpenAI
 
 os.environ["OPENAI_API_KEY"] = "test"
 os.environ["OPENAI_API_BASE"] = "https://oai.azure.com/"

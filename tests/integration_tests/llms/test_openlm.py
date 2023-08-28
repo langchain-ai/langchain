@@ -1,4 +1,4 @@
-from langchain.llms.openlm import OpenLM
+from langchain_xfyun.llms.openlm import OpenLM
 
 
 def test_openlm_call() -> None:

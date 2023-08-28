@@ -1,6 +1,6 @@
 import pytest as pytest
 
-from langchain.document_loaders.web_base import WebBaseLoader
+from langchain_xfyun.document_loaders.web_base import WebBaseLoader
 
 
 class TestWebBaseLoader:

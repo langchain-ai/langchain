@@ -1,6 +1,6 @@
 import pytest
 
-from langchain.document_loaders.confluence import ConfluenceLoader
+from langchain_xfyun.document_loaders.confluence import ConfluenceLoader
 
 try:
     from atlassian import Confluence  # noqa: F401

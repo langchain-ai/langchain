@@ -1,13 +1,13 @@
 from typing import Dict, Tuple
 
-from langchain.chains.query_constructor.ir import (
+from langchain_xfyun.chains.query_constructor.ir import (
     Comparator,
     Comparison,
     Operation,
     Operator,
     StructuredQuery,
 )
-from langchain.retrievers.self_query.deeplake import DeepLakeTranslator
+from langchain_xfyun.retrievers.self_query.deeplake import DeepLakeTranslator
 
 DEFAULT_TRANSLATOR = DeepLakeTranslator()
 

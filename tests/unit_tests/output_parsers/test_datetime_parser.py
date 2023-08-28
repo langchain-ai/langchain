@@ -1,7 +1,7 @@
 from datetime import datetime
 from time import sleep
 
-from langchain.output_parsers.datetime import DatetimeOutputParser
+from langchain_xfyun.output_parsers.datetime import DatetimeOutputParser
 
 
 def test_datetime_output_parser_parse() -> None:

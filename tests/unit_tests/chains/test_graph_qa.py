@@ -1,4 +1,4 @@
-from langchain.chains.graph_qa.cypher import extract_cypher
+from langchain_xfyun.chains.graph_qa.cypher import extract_cypher
 
 
 def test_no_backticks() -> None:

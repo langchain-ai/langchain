@@ -5,7 +5,7 @@ from typing import List, Optional, Set, Type
 
 import pytest
 
-from langchain.schema import BaseOutputParser
+from langchain_xfyun.schema import BaseOutputParser
 
 
 def non_abstract_subclasses(

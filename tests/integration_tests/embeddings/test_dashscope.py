@@ -1,7 +1,7 @@
 """Test dashscope embeddings."""
 import numpy as np
 
-from langchain.embeddings.dashscope import DashScopeEmbeddings
+from langchain_xfyun.embeddings.dashscope import DashScopeEmbeddings
 
 
 def test_dashscope_embedding_documents() -> None:

@@ -1,7 +1,7 @@
 """Integration test for Github Wrapper."""
 import pytest
 
-from langchain.utilities.github import GitHubAPIWrapper
+from langchain_xfyun.utilities.github import GitHubAPIWrapper
 
 # Make sure you have set the following env variables:
 # GITHUB_REPOSITORY

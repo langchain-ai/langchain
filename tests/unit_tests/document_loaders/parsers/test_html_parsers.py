@@ -3,8 +3,8 @@ from pathlib import Path
 
 import pytest
 
-from langchain.document_loaders.blob_loaders import Blob
-from langchain.document_loaders.parsers.html import BS4HTMLParser
+from langchain_xfyun.document_loaders.blob_loaders import Blob
+from langchain_xfyun.document_loaders.parsers.html import BS4HTMLParser
 
 HERE = Path(__file__).parent
 EXAMPLES = HERE.parent.parent.parent / "integration_tests" / "examples"

@@ -7,8 +7,8 @@ from uuid import uuid4
 
 import pytest
 
-from langchain.docstore.document import Document
-from langchain.retrievers.weaviate_hybrid_search import WeaviateHybridSearchRetriever
+from langchain_xfyun.docstore.document import Document
+from langchain_xfyun.retrievers.weaviate_hybrid_search import WeaviateHybridSearchRetriever
 
 logging.basicConfig(level=logging.DEBUG)
 

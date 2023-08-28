@@ -1,8 +1,8 @@
 """Test Zilliz functionality."""
 from typing import List, Optional
 
-from langchain.docstore.document import Document
-from langchain.vectorstores import Zilliz
+from langchain_xfyun.docstore.document import Document
+from langchain_xfyun.vectorstores import Zilliz
 from tests.integration_tests.vectorstores.fake_embeddings import (
     FakeEmbeddings,
     fake_texts,

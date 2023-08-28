@@ -4,12 +4,12 @@ from typing import Tuple
 
 import pytest
 
-from langchain.agents.mrkl.base import ZeroShotAgent
-from langchain.agents.mrkl.output_parser import MRKLOutputParser
-from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
-from langchain.agents.tools import Tool
-from langchain.prompts import PromptTemplate
-from langchain.schema import AgentAction, OutputParserException
+from langchain_xfyun.agents.mrkl.base import ZeroShotAgent
+from langchain_xfyun.agents.mrkl.output_parser import MRKLOutputParser
+from langchain_xfyun.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
+from langchain_xfyun.agents.tools import Tool
+from langchain_xfyun.prompts import PromptTemplate
+from langchain_xfyun.schema import AgentAction, OutputParserException
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

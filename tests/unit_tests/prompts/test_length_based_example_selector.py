@@ -1,8 +1,8 @@
 """Test functionality related to length based selector."""
 import pytest
 
-from langchain.prompts.example_selector.length_based import LengthBasedExampleSelector
-from langchain.prompts.prompt import PromptTemplate
+from langchain_xfyun.prompts.example_selector.length_based import LengthBasedExampleSelector
+from langchain_xfyun.prompts.prompt import PromptTemplate
 
 EXAMPLES = [
     {"question": "Question: who are you?\nAnswer: foo"},

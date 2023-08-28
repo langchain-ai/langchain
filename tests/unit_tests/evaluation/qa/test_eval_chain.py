@@ -4,13 +4,13 @@ from typing import Type
 
 import pytest
 
-from langchain.chains.llm import LLMChain
-from langchain.evaluation.qa.eval_chain import (
+from langchain_xfyun.chains.llm import LLMChain
+from langchain_xfyun.evaluation.qa.eval_chain import (
     ContextQAEvalChain,
     CotQAEvalChain,
     QAEvalChain,
 )
-from langchain.evaluation.schema import StringEvaluator
+from langchain_xfyun.evaluation.schema import StringEvaluator
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

@@ -2,7 +2,7 @@ import shutil
 import tempfile
 import unittest
 
-from langchain.graphs import KuzuGraph
+from langchain_xfyun.graphs import KuzuGraph
 
 EXPECTED_SCHEMA = """
 Node properties: [{'properties': [('name', 'STRING')], 'label': 'Movie'}, {'properties': [('name', 'STRING'), ('birthDate', 'STRING')], 'label': 'Person'}]

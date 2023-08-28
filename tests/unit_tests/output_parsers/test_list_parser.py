@@ -1,4 +1,4 @@
-from langchain.output_parsers.list import CommaSeparatedListOutputParser
+from langchain_xfyun.output_parsers.list import CommaSeparatedListOutputParser
 
 
 def test_single_item() -> None:

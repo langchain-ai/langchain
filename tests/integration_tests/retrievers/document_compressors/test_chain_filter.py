@@ -1,7 +1,7 @@
 """Integration test for llm-based relevant doc filtering."""
-from langchain.chat_models import ChatOpenAI
-from langchain.retrievers.document_compressors import LLMChainFilter
-from langchain.schema import Document
+from langchain_xfyun.chat_models import ChatOpenAI
+from langchain_xfyun.retrievers.document_compressors import LLMChainFilter
+from langchain_xfyun.schema import Document
 
 
 def test_llm_chain_filter() -> None:

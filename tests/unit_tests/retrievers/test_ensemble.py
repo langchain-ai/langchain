@@ -1,8 +1,8 @@
 import pytest
 
-from langchain.retrievers.bm25 import BM25Retriever
-from langchain.retrievers.ensemble import EnsembleRetriever
-from langchain.schema import Document
+from langchain_xfyun.retrievers.bm25 import BM25Retriever
+from langchain_xfyun.retrievers.ensemble import EnsembleRetriever
+from langchain_xfyun.schema import Document
 
 
 @pytest.mark.requires("rank_bm25")

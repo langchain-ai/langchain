@@ -1,8 +1,8 @@
 """Test Clarifai vector store functionality."""
 import time
 
-from langchain.docstore.document import Document
-from langchain.vectorstores import Clarifai
+from langchain_xfyun.docstore.document import Document
+from langchain_xfyun.vectorstores import Clarifai
 
 
 def test_clarifai_with_from_texts() -> None:

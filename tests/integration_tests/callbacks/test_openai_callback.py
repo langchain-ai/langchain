@@ -3,9 +3,9 @@ import asyncio
 
 import pytest
 
-from langchain.agents import AgentType, initialize_agent, load_tools
-from langchain.callbacks import get_openai_callback
-from langchain.llms import OpenAI
+from langchain_xfyun.agents import AgentType, initialize_agent, load_tools
+from langchain_xfyun.callbacks import get_openai_callback
+from langchain_xfyun.llms import OpenAI
 
 
 @pytest.mark.asyncio

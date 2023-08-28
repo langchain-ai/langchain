@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain_xfyun.embeddings.openai import OpenAIEmbeddings
 
 os.environ["OPENAI_API_KEY"] = "foo"
 

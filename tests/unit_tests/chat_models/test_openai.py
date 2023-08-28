@@ -5,9 +5,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from langchain.adapters.openai import convert_dict_to_message
-from langchain.chat_models.openai import ChatOpenAI
-from langchain.schema.messages import (
+from langchain_xfyun.adapters.openai import convert_dict_to_message
+from langchain_xfyun.chat_models.openai import ChatOpenAI
+from langchain_xfyun.schema.messages import (
     AIMessage,
     FunctionMessage,
     HumanMessage,

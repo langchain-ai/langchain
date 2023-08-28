@@ -2,10 +2,10 @@ from pathlib import Path
 
 import pytest
 
-from langchain.document_loaders.concurrent import ConcurrentLoader
-from langchain.document_loaders.generic import GenericLoader
-from langchain.document_loaders.parsers import LanguageParser
-from langchain.text_splitter import Language
+from langchain_xfyun.document_loaders.concurrent import ConcurrentLoader
+from langchain_xfyun.document_loaders.generic import GenericLoader
+from langchain_xfyun.document_loaders.parsers import LanguageParser
+from langchain_xfyun.text_splitter import Language
 
 
 def test_language_loader_for_python() -> None:

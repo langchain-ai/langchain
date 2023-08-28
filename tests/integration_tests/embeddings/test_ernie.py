@@ -1,6 +1,6 @@
 import pytest
 
-from langchain.embeddings.ernie import ErnieEmbeddings
+from langchain_xfyun.embeddings.ernie import ErnieEmbeddings
 
 
 def test_embedding_documents_1() -> None:

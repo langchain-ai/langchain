@@ -4,7 +4,7 @@ import time
 
 import pytest
 
-from langchain.document_loaders import EverNoteLoader
+from langchain_xfyun.document_loaders import EverNoteLoader
 
 
 @pytest.mark.requires("lxml", "html2text")

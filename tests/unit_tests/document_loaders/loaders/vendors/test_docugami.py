@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from langchain.document_loaders import DocugamiLoader
+from langchain_xfyun.document_loaders import DocugamiLoader
 
 DOCUGAMI_XML_PATH = Path(__file__).parent / "test_data" / "docugami-example.xml"
 

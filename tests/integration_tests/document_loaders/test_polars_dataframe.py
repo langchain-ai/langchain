@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from langchain.document_loaders import PolarsDataFrameLoader
-from langchain.schema import Document
+from langchain_xfyun.document_loaders import PolarsDataFrameLoader
+from langchain_xfyun.schema import Document
 
 if TYPE_CHECKING:
     import polars as pl

@@ -1,6 +1,6 @@
 """Utils for LLM Tests."""
 
-from langchain.llms.base import BaseLLM
+from langchain_xfyun.llms.base import BaseLLM
 
 
 def assert_llm_equality(llm: BaseLLM, loaded_llm: BaseLLM) -> None:

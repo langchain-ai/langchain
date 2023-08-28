@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from langchain.llms.loading import load_llm
-from langchain.llms.octoai_endpoint import OctoAIEndpoint
+from langchain_xfyun.llms.loading import load_llm
+from langchain_xfyun.llms.octoai_endpoint import OctoAIEndpoint
 from tests.integration_tests.llms.utils import assert_llm_equality
 
 

@@ -2,12 +2,12 @@
 
 import pytest
 
-from langchain.chat_models.google_palm import (
+from langchain_xfyun.chat_models.google_palm import (
     ChatGooglePalm,
     ChatGooglePalmError,
     _messages_to_prompt_dict,
 )
-from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_xfyun.schema.messages import AIMessage, HumanMessage, SystemMessage
 
 
 def test_messages_to_prompt_dict_with_valid_messages() -> None:

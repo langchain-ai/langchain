@@ -5,16 +5,16 @@ import pytest
 from langsmith import Client as Client
 from langsmith.schemas import DataType
 
-from langchain.callbacks.tracers.evaluation import wait_for_all_evaluators
-from langchain.chains.llm import LLMChain
-from langchain.chat_models import ChatOpenAI
-from langchain.evaluation import EvaluatorType
-from langchain.llms.openai import OpenAI
-from langchain.prompts.chat import ChatPromptTemplate
-from langchain.schema.messages import BaseMessage, HumanMessage
-from langchain.smith import RunEvalConfig, run_on_dataset
-from langchain.smith.evaluation import InputFormatError
-from langchain.smith.evaluation.runner_utils import arun_on_dataset
+from langchain_xfyun.callbacks.tracers.evaluation import wait_for_all_evaluators
+from langchain_xfyun.chains.llm import LLMChain
+from langchain_xfyun.chat_models import ChatOpenAI
+from langchain_xfyun.evaluation import EvaluatorType
+from langchain_xfyun.llms.openai import OpenAI
+from langchain_xfyun.prompts.chat import ChatPromptTemplate
+from langchain_xfyun.schema.messages import BaseMessage, HumanMessage
+from langchain_xfyun.smith import RunEvalConfig, run_on_dataset
+from langchain_xfyun.smith.evaluation import InputFormatError
+from langchain_xfyun.smith.evaluation.runner_utils import arun_on_dataset
 
 
 def _check_all_feedback_passed(_project_name: str, client: Client) -> None:

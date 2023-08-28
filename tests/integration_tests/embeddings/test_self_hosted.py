@@ -1,7 +1,7 @@
 """Test self-hosted embeddings."""
 from typing import Any
 
-from langchain.embeddings import (
+from langchain_xfyun.embeddings import (
     SelfHostedEmbeddings,
     SelfHostedHuggingFaceEmbeddings,
     SelfHostedHuggingFaceInstructEmbeddings,

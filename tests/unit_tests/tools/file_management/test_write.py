@@ -3,10 +3,10 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from langchain.tools.file_management.utils import (
+from langchain_xfyun.tools.file_management.utils import (
     INVALID_PATH_TEMPLATE,
 )
-from langchain.tools.file_management.write import WriteFileTool
+from langchain_xfyun.tools.file_management.write import WriteFileTool
 
 
 def test_write_file_with_root_dir() -> None:

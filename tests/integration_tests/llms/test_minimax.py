@@ -1,5 +1,5 @@
 """Test Minimax API wrapper."""
-from langchain.llms.minimax import Minimax
+from langchain_xfyun.llms.minimax import Minimax
 
 
 def test_minimax_call() -> None:

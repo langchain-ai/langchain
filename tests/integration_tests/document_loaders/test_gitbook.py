@@ -2,7 +2,7 @@ from typing import Optional
 
 import pytest
 
-from langchain.document_loaders.gitbook import GitbookLoader
+from langchain_xfyun.document_loaders.gitbook import GitbookLoader
 
 
 class TestGitbookLoader:

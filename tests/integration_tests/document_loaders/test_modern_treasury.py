@@ -1,4 +1,4 @@
-from langchain.document_loaders.modern_treasury import ModernTreasuryLoader
+from langchain_xfyun.document_loaders.modern_treasury import ModernTreasuryLoader
 
 
 def test_modern_treasury_loader() -> None:

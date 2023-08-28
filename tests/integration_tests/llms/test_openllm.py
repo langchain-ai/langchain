@@ -1,5 +1,5 @@
 """Test OpenLLM wrapper."""
-from langchain.llms.openllm import OpenLLM
+from langchain_xfyun.llms.openllm import OpenLLM
 
 
 def test_openllm_llm_local() -> None:

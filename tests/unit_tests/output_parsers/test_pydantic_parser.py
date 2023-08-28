@@ -2,9 +2,9 @@
 from enum import Enum
 from typing import Optional
 
-from langchain.output_parsers.pydantic import PydanticOutputParser
-from langchain.pydantic_v1 import BaseModel, Field
-from langchain.schema import OutputParserException
+from langchain_xfyun.output_parsers.pydantic import PydanticOutputParser
+from langchain_xfyun.pydantic_v1 import BaseModel, Field
+from langchain_xfyun.schema import OutputParserException
 
 
 class Actions(Enum):

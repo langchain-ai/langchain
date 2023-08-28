@@ -1,10 +1,10 @@
-import langchain.utilities.promptguard as pgf
+import langchain_xfyun.utilities.promptguard as pgf
 from langchain import LLMChain, PromptTemplate
-from langchain.llms import OpenAI
-from langchain.llms.promptguard import PromptGuard
-from langchain.memory import ConversationBufferWindowMemory
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableMap
+from langchain_xfyun.llms import OpenAI
+from langchain_xfyun.llms.promptguard import PromptGuard
+from langchain_xfyun.memory import ConversationBufferWindowMemory
+from langchain_xfyun.schema.output_parser import StrOutputParser
+from langchain_xfyun.schema.runnable import RunnableMap
 
 prompt_template = """
 As an AI assistant, you will answer questions according to given context.

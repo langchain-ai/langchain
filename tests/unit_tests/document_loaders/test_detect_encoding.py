@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from langchain.document_loaders import DirectoryLoader, TextLoader
-from langchain.document_loaders.helpers import detect_file_encodings
+from langchain_xfyun.document_loaders import DirectoryLoader, TextLoader
+from langchain_xfyun.document_loaders.helpers import detect_file_encodings
 
 
 @pytest.mark.requires("chardet")

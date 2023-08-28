@@ -3,9 +3,9 @@
 
 import pytest
 
-from langchain.callbacks.manager import CallbackManager
-from langchain.chat_models.jinachat import JinaChat
-from langchain.schema import (
+from langchain_xfyun.callbacks.manager import CallbackManager
+from langchain_xfyun.chat_models.jinachat import JinaChat
+from langchain_xfyun.schema import (
     BaseMessage,
     ChatGeneration,
     HumanMessage,

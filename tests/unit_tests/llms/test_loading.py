@@ -2,7 +2,7 @@
 from pathlib import Path
 from unittest.mock import patch
 
-from langchain.llms.loading import load_llm
+from langchain_xfyun.llms.loading import load_llm
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

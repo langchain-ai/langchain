@@ -6,10 +6,10 @@ from typing import Generator, Iterator
 
 import pytest
 
-from langchain.document_loaders.base import BaseBlobParser
-from langchain.document_loaders.blob_loaders import Blob, FileSystemBlobLoader
-from langchain.document_loaders.generic import GenericLoader
-from langchain.schema import Document
+from langchain_xfyun.document_loaders.base import BaseBlobParser
+from langchain_xfyun.document_loaders.blob_loaders import Blob, FileSystemBlobLoader
+from langchain_xfyun.document_loaders.generic import GenericLoader
+from langchain_xfyun.schema import Document
 
 
 @pytest.fixture

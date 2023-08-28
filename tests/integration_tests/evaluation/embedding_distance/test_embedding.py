@@ -3,7 +3,7 @@ from typing import Tuple
 import numpy as np
 import pytest
 
-from langchain.evaluation.embedding_distance import (
+from langchain_xfyun.evaluation.embedding_distance import (
     EmbeddingDistance,
     EmbeddingDistanceEvalChain,
     PairwiseEmbeddingDistanceEvalChain,

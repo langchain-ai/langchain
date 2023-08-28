@@ -1,4 +1,4 @@
-from langchain.agents import __all__ as agents_all
+from langchain_xfyun.agents import __all__ as agents_all
 
 _EXPECTED = [
     "Agent",

@@ -1,8 +1,8 @@
 """Test in memory docstore."""
 import pytest
 
-from langchain.docstore.document import Document
-from langchain.docstore.in_memory import InMemoryDocstore
+from langchain_xfyun.docstore.document import Document
+from langchain_xfyun.docstore.in_memory import InMemoryDocstore
 
 
 def test_document_found() -> None:

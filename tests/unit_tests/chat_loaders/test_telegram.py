@@ -7,7 +7,7 @@ from typing import Sequence
 import pytest
 
 from langchain import schema
-from langchain.chat_loaders import telegram, utils
+from langchain_xfyun.chat_loaders import telegram, utils
 
 
 def _assert_messages_are_equal(

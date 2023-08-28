@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING, List
 import pytest
 from pytest_mock import MockerFixture
 
-from langchain.retrievers import ZepRetriever
-from langchain.schema import Document
+from langchain_xfyun.retrievers import ZepRetriever
+from langchain_xfyun.schema import Document
 
 if TYPE_CHECKING:
     from zep_python import MemorySearchResult, ZepClient

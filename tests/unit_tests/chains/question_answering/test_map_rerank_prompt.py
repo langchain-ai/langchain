@@ -1,7 +1,7 @@
 """Test map_rerank parser"""
 import pytest
 
-from langchain.chains.question_answering.map_rerank_prompt import output_parser
+from langchain_xfyun.chains.question_answering.map_rerank_prompt import output_parser
 
 GOOD_SCORE = "foo bar answer.\nScore: 80"
 SCORE_WITH_EXPLANATION = "foo bar answer.\nScore: 80 (fully answers the question, but could provide more detail on the specific error message)"  # noqa: E501

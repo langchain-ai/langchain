@@ -87,15 +87,15 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
 
 def test_imports() -> None:
     """Test that you can import all top level things okay."""
-    from langchain.agents import OpenAIFunctionsAgent  # noqa: F401
-    from langchain.callbacks import OpenAICallbackHandler  # noqa: F401
-    from langchain.chains import LLMChain  # noqa: F401
-    from langchain.chat_models import ChatOpenAI  # noqa: F401
-    from langchain.document_loaders import BSHTMLLoader  # noqa: F401
-    from langchain.embeddings import OpenAIEmbeddings  # noqa: F401
-    from langchain.llms import OpenAI  # noqa: F401
-    from langchain.retrievers import VespaRetriever  # noqa: F401
-    from langchain.schema import BasePromptTemplate  # noqa: F401
-    from langchain.tools import DuckDuckGoSearchResults  # noqa: F401
-    from langchain.utilities import SerpAPIWrapper  # noqa: F401
-    from langchain.vectorstores import FAISS  # noqa: F401
+    from langchain_xfyun.agents import OpenAIFunctionsAgent  # noqa: F401
+    from langchain_xfyun.callbacks import OpenAICallbackHandler  # noqa: F401
+    from langchain_xfyun.chains import LLMChain  # noqa: F401
+    from langchain_xfyun.chat_models import ChatOpenAI  # noqa: F401
+    from langchain_xfyun.document_loaders import BSHTMLLoader  # noqa: F401
+    from langchain_xfyun.embeddings import OpenAIEmbeddings  # noqa: F401
+    from langchain_xfyun.llms import OpenAI  # noqa: F401
+    from langchain_xfyun.retrievers import VespaRetriever  # noqa: F401
+    from langchain_xfyun.schema import BasePromptTemplate  # noqa: F401
+    from langchain_xfyun.tools import DuckDuckGoSearchResults  # noqa: F401
+    from langchain_xfyun.utilities import SerpAPIWrapper  # noqa: F401
+    from langchain_xfyun.vectorstores import FAISS  # noqa: F401

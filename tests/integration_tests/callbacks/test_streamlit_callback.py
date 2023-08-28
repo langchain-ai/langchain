@@ -2,15 +2,15 @@
 
 import pytest
 
-from langchain.agents import AgentType, initialize_agent, load_tools
+from langchain_xfyun.agents import AgentType, initialize_agent, load_tools
 
 # Import the internal StreamlitCallbackHandler from its module - and not from
 # the `langchain.callbacks.streamlit` package - so that we don't end up using
 # Streamlit's externally-provided callback handler.
-from langchain.callbacks.streamlit.streamlit_callback_handler import (
+from langchain_xfyun.callbacks.streamlit.streamlit_callback_handler import (
     StreamlitCallbackHandler,
 )
-from langchain.llms import OpenAI
+from langchain_xfyun.llms import OpenAI
 
 
 @pytest.mark.requires("streamlit")

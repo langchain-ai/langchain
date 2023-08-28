@@ -3,8 +3,8 @@ from typing import List
 
 import pytest
 
-from langchain.document_loaders import PubMedLoader
-from langchain.schema import Document
+from langchain_xfyun.document_loaders import PubMedLoader
+from langchain_xfyun.schema import Document
 
 xmltodict = pytest.importorskip("xmltodict")
 

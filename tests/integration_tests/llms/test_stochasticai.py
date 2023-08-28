@@ -1,6 +1,6 @@
 """Test StochasticAI API wrapper."""
 
-from langchain.llms.stochasticai import StochasticAI
+from langchain_xfyun.llms.stochasticai import StochasticAI
 
 
 def test_stochasticai_call() -> None:

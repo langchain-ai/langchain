@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from langchain.document_loaders.python import PythonLoader
+from langchain_xfyun.document_loaders.python import PythonLoader
 
 
 @pytest.mark.parametrize("filename", ["default-encoding.py", "non-utf8-encoding.py"])

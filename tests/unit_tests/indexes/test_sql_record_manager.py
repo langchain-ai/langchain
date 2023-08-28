@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from langchain.indexes._sql_record_manager import SQLRecordManager, UpsertionRecord
+from langchain_xfyun.indexes._sql_record_manager import SQLRecordManager, UpsertionRecord
 
 
 @pytest.fixture()

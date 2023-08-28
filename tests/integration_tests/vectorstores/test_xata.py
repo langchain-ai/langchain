@@ -6,9 +6,9 @@ https://python.langchain.com/docs/integrations/vectorstores/xata
 """
 import os
 
-from langchain.docstore.document import Document
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.vectorstores.xata import XataVectorStore
+from langchain_xfyun.docstore.document import Document
+from langchain_xfyun.embeddings.openai import OpenAIEmbeddings
+from langchain_xfyun.vectorstores.xata import XataVectorStore
 
 
 class TestXata:

@@ -3,11 +3,11 @@ from typing import Any, List
 
 import pytest
 
-from langchain.agents.load_tools import load_tools
-from langchain.schema import Document
-from langchain.tools import PubmedQueryRun
-from langchain.tools.base import BaseTool
-from langchain.utilities import PubMedAPIWrapper
+from langchain_xfyun.agents.load_tools import load_tools
+from langchain_xfyun.schema import Document
+from langchain_xfyun.tools import PubmedQueryRun
+from langchain_xfyun.tools.base import BaseTool
+from langchain_xfyun.utilities import PubMedAPIWrapper
 
 xmltodict = pytest.importorskip("xmltodict")
 

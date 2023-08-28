@@ -1,10 +1,10 @@
 """Test for CombinedMemory class"""
-# from langchain.prompts import PromptTemplate
+# from langchain_xfyun.prompts import PromptTemplate
 from typing import List
 
 import pytest
 
-from langchain.memory import CombinedMemory, ConversationBufferMemory
+from langchain_xfyun.memory import CombinedMemory, ConversationBufferMemory
 
 
 @pytest.fixture()

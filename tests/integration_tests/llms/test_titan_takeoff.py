@@ -3,7 +3,7 @@
 
 import responses
 
-from langchain.llms.titan_takeoff import TitanTakeoff
+from langchain_xfyun.llms.titan_takeoff import TitanTakeoff
 
 
 @responses.activate

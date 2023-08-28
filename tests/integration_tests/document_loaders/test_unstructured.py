@@ -2,7 +2,7 @@ import os
 from contextlib import ExitStack
 from pathlib import Path
 
-from langchain.document_loaders import (
+from langchain_xfyun.document_loaders import (
     UnstructuredAPIFileIOLoader,
     UnstructuredAPIFileLoader,
     UnstructuredFileLoader,

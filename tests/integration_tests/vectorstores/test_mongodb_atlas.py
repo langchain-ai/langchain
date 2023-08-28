@@ -7,9 +7,9 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.mongodb_atlas import MongoDBAtlasVectorSearch
+from langchain_xfyun.docstore.document import Document
+from langchain_xfyun.embeddings.base import Embeddings
+from langchain_xfyun.vectorstores.mongodb_atlas import MongoDBAtlasVectorSearch
 
 if TYPE_CHECKING:
     from pymongo import MongoClient

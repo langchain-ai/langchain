@@ -2,10 +2,10 @@
 
 from typing import Any, Dict, List, Optional
 
-from langchain.agents import AgentExecutor, AgentType, initialize_agent
-from langchain.agents.tools import Tool
-from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import LLM
+from langchain_xfyun.agents import AgentExecutor, AgentType, initialize_agent
+from langchain_xfyun.agents.tools import Tool
+from langchain_xfyun.callbacks.manager import CallbackManagerForLLMRun
+from langchain_xfyun.llms.base import LLM
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 

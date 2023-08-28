@@ -1,6 +1,6 @@
 import pytest
 
-from langchain.document_loaders.bigquery import BigQueryLoader
+from langchain_xfyun.document_loaders.bigquery import BigQueryLoader
 
 try:
     from google.cloud import bigquery  # noqa: F401

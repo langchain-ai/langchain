@@ -1,6 +1,6 @@
 """Test the cohere reranker."""
 
-from langchain.retrievers.document_compressors.cohere_rerank import CohereRerank
+from langchain_xfyun.retrievers.document_compressors.cohere_rerank import CohereRerank
 
 
 def test_cohere_reranker_init() -> None:

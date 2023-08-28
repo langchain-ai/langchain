@@ -3,9 +3,9 @@ from unittest.mock import MagicMock, patch
 
 import responses
 
-from langchain.document_loaders import EmbaasBlobLoader, EmbaasLoader
-from langchain.document_loaders.blob_loaders import Blob
-from langchain.document_loaders.embaas import EMBAAS_DOC_API_URL
+from langchain_xfyun.document_loaders import EmbaasBlobLoader, EmbaasLoader
+from langchain_xfyun.document_loaders.blob_loaders import Blob
+from langchain_xfyun.document_loaders.embaas import EMBAAS_DOC_API_URL
 
 
 @responses.activate

@@ -1,6 +1,6 @@
 """Test huggingface embeddings."""
 
-from langchain.embeddings.huggingface import (
+from langchain_xfyun.embeddings.huggingface import (
     HuggingFaceEmbeddings,
     HuggingFaceInstructEmbeddings,
 )

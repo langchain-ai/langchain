@@ -1,4 +1,4 @@
-from langchain.document_loaders.larksuite import LarkSuiteDocLoader
+from langchain_xfyun.document_loaders.larksuite import LarkSuiteDocLoader
 
 DOMAIN = ""
 ACCESS_TOKEN = ""

@@ -4,10 +4,10 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator
 
-from langchain.output_parsers import RegexParser
-from langchain.prompts.few_shot import FewShotPromptTemplate
-from langchain.prompts.loading import load_prompt
-from langchain.prompts.prompt import PromptTemplate
+from langchain_xfyun.output_parsers import RegexParser
+from langchain_xfyun.prompts.few_shot import FewShotPromptTemplate
+from langchain_xfyun.prompts.loading import load_prompt
+from langchain_xfyun.prompts.prompt import PromptTemplate
 
 EXAMPLE_DIR = Path("tests/unit_tests/examples").absolute()
 

@@ -4,7 +4,7 @@ from typing import AsyncGenerator, Tuple
 
 import pytest_asyncio
 
-from langchain.llms import Xinference
+from langchain_xfyun.llms import Xinference
 
 
 @pytest_asyncio.fixture

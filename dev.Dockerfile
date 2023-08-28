@@ -38,7 +38,7 @@ ARG PYTHON_VIRTUALENV_HOME
 COPY pyproject.toml poetry.toml ./
 
 # Copy the langchain library for installation
-COPY langchain-xfyun/ langchain-xfyun/
+COPY langchain_xfyun/ langchain_xfyun/
 
 # Install the Poetry dependencies (this layer will be cached as long as the dependencies don't change)
 RUN poetry install --no-interaction --no-ansi --with dev,test,docs

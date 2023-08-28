@@ -1,6 +1,6 @@
 """Test DeepInfra API wrapper."""
 
-from langchain.llms.deepinfra import DeepInfra
+from langchain_xfyun.llms.deepinfra import DeepInfra
 
 
 def test_deepinfra_call() -> None:

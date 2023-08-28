@@ -4,9 +4,9 @@ from typing import List
 import numpy as np
 import pytest
 
-from langchain.docstore.document import Document
-from langchain.vectorstores.singlestoredb import SingleStoreDB
-from langchain.vectorstores.utils import DistanceStrategy
+from langchain_xfyun.docstore.document import Document
+from langchain_xfyun.vectorstores.singlestoredb import SingleStoreDB
+from langchain_xfyun.vectorstores.utils import DistanceStrategy
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 TEST_SINGLESTOREDB_URL = "root:pass@localhost:3306/db"

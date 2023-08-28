@@ -1,8 +1,8 @@
 # flake8: noqa
 """Test sentence_transformer embeddings."""
 
-from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
-from langchain.vectorstores import Chroma
+from langchain_xfyun.embeddings.sentence_transformer import SentenceTransformerEmbeddings
+from langchain_xfyun.vectorstores import Chroma
 
 
 def test_sentence_transformer_embedding_documents() -> None:

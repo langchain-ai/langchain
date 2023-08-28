@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from langchain.chains.openai_functions.openapi import get_openapi_chain
+from langchain_xfyun.chains.openai_functions.openapi import get_openapi_chain
 
 
 def test_openai_opeanapi() -> None:

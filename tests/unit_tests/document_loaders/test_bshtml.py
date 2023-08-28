@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from langchain.document_loaders.html_bs import BSHTMLLoader
+from langchain_xfyun.document_loaders.html_bs import BSHTMLLoader
 
 HERE = Path(__file__).parent
 EXAMPLES = HERE.parent.parent / "integration_tests" / "examples"

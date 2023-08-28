@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from langchain.llms.loading import load_llm
-from langchain.llms.promptlayer_openai import PromptLayerOpenAIChat
+from langchain_xfyun.llms.loading import load_llm
+from langchain_xfyun.llms.promptlayer_openai import PromptLayerOpenAIChat
 
 
 def test_promptlayer_openai_chat_call() -> None:

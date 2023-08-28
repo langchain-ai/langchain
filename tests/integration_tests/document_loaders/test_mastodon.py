@@ -1,5 +1,5 @@
 """Tests for the Mastodon toots loader"""
-from langchain.document_loaders import MastodonTootsLoader
+from langchain_xfyun.document_loaders import MastodonTootsLoader
 
 
 def test_mastodon_toots_loader() -> None:

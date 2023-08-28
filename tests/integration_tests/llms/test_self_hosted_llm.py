@@ -2,7 +2,7 @@
 import pickle
 from typing import Any, List, Optional
 
-from langchain.llms import SelfHostedHuggingFaceLLM, SelfHostedPipeline
+from langchain_xfyun.llms import SelfHostedHuggingFaceLLM, SelfHostedPipeline
 
 model_reqs = ["pip:./", "transformers", "torch"]
 

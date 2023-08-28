@@ -3,10 +3,10 @@ from typing import List, Tuple
 
 import pytest
 
-from langchain.callbacks.base import BaseCallbackHandler
-from langchain.callbacks.manager import AsyncCallbackManager, CallbackManager
-from langchain.callbacks.stdout import StdOutCallbackHandler
-from langchain.schema import AgentAction, AgentFinish, LLMResult
+from langchain_xfyun.callbacks.base import BaseCallbackHandler
+from langchain_xfyun.callbacks.manager import AsyncCallbackManager, CallbackManager
+from langchain_xfyun.callbacks.stdout import StdOutCallbackHandler
+from langchain_xfyun.schema import AgentAction, AgentFinish, LLMResult
 from tests.unit_tests.callbacks.fake_callback_handler import (
     BaseFakeCallbackHandler,
     FakeAsyncCallbackHandler,

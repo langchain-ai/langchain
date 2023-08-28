@@ -1,4 +1,4 @@
-from langchain.schema.messages import AIMessageChunk, HumanMessageChunk
+from langchain_xfyun.schema.messages import AIMessageChunk, HumanMessageChunk
 
 
 def test_message_chunks() -> None:

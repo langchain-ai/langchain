@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from langchain.llms.huggingface_endpoint import HuggingFaceEndpoint
-from langchain.llms.loading import load_llm
+from langchain_xfyun.llms.huggingface_endpoint import HuggingFaceEndpoint
+from langchain_xfyun.llms.loading import load_llm
 from tests.integration_tests.llms.utils import assert_llm_equality
 
 

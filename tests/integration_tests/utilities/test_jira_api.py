@@ -1,5 +1,5 @@
 """Integration test for JIRA API Wrapper."""
-from langchain.utilities.jira import JiraAPIWrapper
+from langchain_xfyun.utilities.jira import JiraAPIWrapper
 
 
 def test_search() -> None:

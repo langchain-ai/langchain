@@ -1,5 +1,5 @@
 """Test Awa Embedding"""
-from langchain.embeddings.awa import AwaEmbeddings
+from langchain_xfyun.embeddings.awa import AwaEmbeddings
 
 
 def test_awa_embedding_documents() -> None:

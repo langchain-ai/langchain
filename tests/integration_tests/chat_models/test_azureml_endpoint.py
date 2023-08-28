@@ -1,10 +1,10 @@
 """Test AzureML Chat Endpoint wrapper."""
 
-from langchain.chat_models.azureml_endpoint import (
+from langchain_xfyun.chat_models.azureml_endpoint import (
     AzureMLChatOnlineEndpoint,
     LlamaContentFormatter,
 )
-from langchain.schema import (
+from langchain_xfyun.schema import (
     AIMessage,
     BaseMessage,
     ChatGeneration,

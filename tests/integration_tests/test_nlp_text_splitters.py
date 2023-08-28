@@ -1,7 +1,7 @@
 """Test text splitting functionality using NLTK and Spacy based sentence splitters."""
 import pytest
 
-from langchain.text_splitter import NLTKTextSplitter, SpacyTextSplitter
+from langchain_xfyun.text_splitter import NLTKTextSplitter, SpacyTextSplitter
 
 
 def test_nltk_text_splitting_args() -> None:

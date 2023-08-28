@@ -7,7 +7,7 @@ from unittest import mock
 
 import pytest
 
-from langchain.tools.nuclia.tool import NucliaUnderstandingAPI
+from langchain_xfyun.tools.nuclia.tool import NucliaUnderstandingAPI
 
 README_PATH = Path(__file__).parents[4] / "README.md"
 

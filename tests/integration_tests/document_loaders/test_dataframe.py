@@ -1,8 +1,8 @@
 import pandas as pd
 import pytest
 
-from langchain.document_loaders import DataFrameLoader
-from langchain.schema import Document
+from langchain_xfyun.document_loaders import DataFrameLoader
+from langchain_xfyun.schema import Document
 
 
 @pytest.fixture

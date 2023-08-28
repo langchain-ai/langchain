@@ -2,9 +2,9 @@
 from pathlib import Path
 from typing import Iterator
 
-from langchain.document_loaders.base import BaseBlobParser
-from langchain.document_loaders.blob_loaders import Blob
-from langchain.document_loaders.parsers.pdf import (
+from langchain_xfyun.document_loaders.base import BaseBlobParser
+from langchain_xfyun.document_loaders.blob_loaders import Blob
+from langchain_xfyun.document_loaders.parsers.pdf import (
     PDFMinerParser,
     PDFPlumberParser,
     PyMuPDFParser,

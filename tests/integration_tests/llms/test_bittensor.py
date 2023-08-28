@@ -1,6 +1,6 @@
 """Test Bittensor Validator Endpoint wrapper."""
 
-from langchain.llms import NIBittensorLLM
+from langchain_xfyun.llms import NIBittensorLLM
 
 
 def test_bittensor_call() -> None:

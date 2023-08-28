@@ -3,8 +3,8 @@ from typing import Any, Callable, Type
 import pytest
 
 from langchain import PromptTemplate
-from langchain.llms import FakeListLLM
-from langchain.schema.runnable import (
+from langchain_xfyun.llms import FakeListLLM
+from langchain_xfyun.schema.runnable import (
     GetLocalVar,
     PutLocalVar,
     RunnablePassthrough,

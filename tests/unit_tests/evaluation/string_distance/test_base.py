@@ -1,6 +1,6 @@
 import pytest
 
-from langchain.evaluation.string_distance import (
+from langchain_xfyun.evaluation.string_distance import (
     PairwiseStringDistanceEvalChain,
     StringDistance,
     StringDistanceEvalChain,

@@ -2,7 +2,7 @@ import unittest
 
 import pytest
 
-from langchain.document_loaders.parsers.language.javascript import JavaScriptSegmenter
+from langchain_xfyun.document_loaders.parsers.language.javascript import JavaScriptSegmenter
 
 
 @pytest.mark.requires("esprima")

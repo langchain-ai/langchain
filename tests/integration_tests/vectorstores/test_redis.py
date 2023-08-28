@@ -4,14 +4,14 @@ from typing import Any, Dict, List, Optional
 
 import pytest
 
-from langchain.docstore.document import Document
-from langchain.vectorstores.redis import (
+from langchain_xfyun.docstore.document import Document
+from langchain_xfyun.vectorstores.redis import (
     Redis,
     RedisFilter,
     RedisNum,
     RedisText,
 )
-from langchain.vectorstores.redis.filters import RedisFilterExpression
+from langchain_xfyun.vectorstores.redis.filters import RedisFilterExpression
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
     FakeEmbeddings,

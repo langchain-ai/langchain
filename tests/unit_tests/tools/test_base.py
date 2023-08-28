@@ -7,13 +7,13 @@ from typing import Any, List, Optional, Type, Union
 
 import pytest
 
-from langchain.agents.tools import Tool, tool
-from langchain.callbacks.manager import (
+from langchain_xfyun.agents.tools import Tool, tool
+from langchain_xfyun.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain.pydantic_v1 import BaseModel
-from langchain.tools.base import (
+from langchain_xfyun.pydantic_v1 import BaseModel
+from langchain_xfyun.tools.base import (
     BaseTool,
     SchemaAnnotationError,
     StructuredTool,

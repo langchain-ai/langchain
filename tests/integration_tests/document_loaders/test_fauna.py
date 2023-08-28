@@ -1,6 +1,6 @@
 import unittest
 
-from langchain.document_loaders.fauna import FaunaLoader
+from langchain_xfyun.document_loaders.fauna import FaunaLoader
 
 try:
     import fauna  # noqa: F401

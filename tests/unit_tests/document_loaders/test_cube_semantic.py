@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock, Mock, patch
 
-from langchain.document_loaders import CubeSemanticLoader
+from langchain_xfyun.document_loaders import CubeSemanticLoader
 
 MODULE_PATH = "langchain.document_loaders.cube_semantic.CubeSemanticLoader"
 

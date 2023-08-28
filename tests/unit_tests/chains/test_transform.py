@@ -3,7 +3,7 @@ from typing import Dict
 
 import pytest
 
-from langchain.chains.transform import TransformChain
+from langchain_xfyun.chains.transform import TransformChain
 
 
 def dummy_transform(inputs: Dict[str, str]) -> Dict[str, str]:

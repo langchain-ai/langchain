@@ -5,13 +5,13 @@ import re
 
 import pytest
 
-from langchain.evaluation.comparison.eval_chain import (
+from langchain_xfyun.evaluation.comparison.eval_chain import (
     LabeledPairwiseStringEvalChain,
     PairwiseStringEvalChain,
     PairwiseStringResultOutputParser,
     resolve_pairwise_criteria,
 )
-from langchain.evaluation.criteria.eval_chain import Criteria
+from langchain_xfyun.evaluation.criteria.eval_chain import Criteria
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

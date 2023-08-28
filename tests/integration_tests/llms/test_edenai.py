@@ -8,7 +8,7 @@ clicking on the 'sandbox' toggle.
 
 You'll then need to set EDENAI_API_KEY environment variable to your api key.
 """
-from langchain.llms import EdenAI
+from langchain_xfyun.llms import EdenAI
 
 
 def test_edenai_call() -> None:

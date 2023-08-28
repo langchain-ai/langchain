@@ -1,6 +1,6 @@
 """Test Modal API wrapper."""
 
-from langchain.llms.modal import Modal
+from langchain_xfyun.llms.modal import Modal
 
 
 def test_modal_call() -> None:

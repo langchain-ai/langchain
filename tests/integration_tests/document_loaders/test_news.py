@@ -3,7 +3,7 @@ import random
 import pytest
 import requests
 
-from langchain.document_loaders import NewsURLLoader
+from langchain_xfyun.document_loaders import NewsURLLoader
 
 
 def get_random_news_url() -> str:

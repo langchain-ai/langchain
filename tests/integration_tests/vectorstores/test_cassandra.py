@@ -3,8 +3,8 @@ from typing import List, Optional, Type
 
 from cassandra.cluster import Cluster
 
-from langchain.docstore.document import Document
-from langchain.vectorstores import Cassandra
+from langchain_xfyun.docstore.document import Document
+from langchain_xfyun.vectorstores import Cassandra
 from tests.integration_tests.vectorstores.fake_embeddings import (
     AngularTwoDimensionalEmbeddings,
     ConsistentFakeEmbeddings,

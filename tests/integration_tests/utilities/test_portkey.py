@@ -1,6 +1,6 @@
 import json
 
-from langchain.utilities import Portkey
+from langchain_xfyun.utilities import Portkey
 
 
 def test_Config() -> None:

@@ -1,7 +1,7 @@
 """Tests for the Playwright URL loader"""
 import pytest
 
-from langchain.document_loaders import PlaywrightURLLoader
+from langchain_xfyun.document_loaders import PlaywrightURLLoader
 
 
 def test_playwright_url_loader() -> None:

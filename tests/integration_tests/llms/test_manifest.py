@@ -1,5 +1,5 @@
 """Test manifest integration."""
-from langchain.llms.manifest import ManifestWrapper
+from langchain_xfyun.llms.manifest import ManifestWrapper
 
 
 def test_manifest_wrapper() -> None:

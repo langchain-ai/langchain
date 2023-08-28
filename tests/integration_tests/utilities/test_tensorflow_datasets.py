@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from langchain.pydantic_v1 import ValidationError
-from langchain.schema.document import Document
-from langchain.utilities.tensorflow_datasets import TensorflowDatasets
+from langchain_xfyun.pydantic_v1 import ValidationError
+from langchain_xfyun.schema.document import Document
+from langchain_xfyun.utilities.tensorflow_datasets import TensorflowDatasets
 
 if TYPE_CHECKING:
     import tensorflow as tf  # noqa: E402

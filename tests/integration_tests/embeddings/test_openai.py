@@ -5,7 +5,7 @@ import numpy as np
 import openai
 import pytest
 
-from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain_xfyun.embeddings.openai import OpenAIEmbeddings
 
 
 @pytest.mark.scheduled

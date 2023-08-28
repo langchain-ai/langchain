@@ -3,8 +3,8 @@ import os
 from typing import Any
 from unittest import mock
 
-from langchain.document_loaders.nuclia import NucliaLoader
-from langchain.tools.nuclia.tool import NucliaUnderstandingAPI
+from langchain_xfyun.document_loaders.nuclia import NucliaLoader
+from langchain_xfyun.tools.nuclia.tool import NucliaUnderstandingAPI
 
 
 def fakerun(**args: Any) -> Any:

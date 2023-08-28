@@ -1,13 +1,13 @@
 """Test RetrievalQA functionality."""
 from pathlib import Path
 
-from langchain.chains import RetrievalQA
-from langchain.chains.loading import load_chain
-from langchain.document_loaders import TextLoader
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.llms import OpenAI
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.vectorstores import FAISS
+from langchain_xfyun.chains import RetrievalQA
+from langchain_xfyun.chains.loading import load_chain
+from langchain_xfyun.document_loaders import TextLoader
+from langchain_xfyun.embeddings.openai import OpenAIEmbeddings
+from langchain_xfyun.llms import OpenAI
+from langchain_xfyun.text_splitter import CharacterTextSplitter
+from langchain_xfyun.vectorstores import FAISS
 
 
 def test_retrieval_qa_saving_loading(tmp_path: Path) -> None:

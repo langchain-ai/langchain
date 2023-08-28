@@ -1,8 +1,8 @@
 """Unittests for langchain.agents.chat package."""
 from typing import Tuple
 
-from langchain.agents.structured_chat.output_parser import StructuredChatOutputParser
-from langchain.schema import AgentAction
+from langchain_xfyun.agents.structured_chat.output_parser import StructuredChatOutputParser
+from langchain_xfyun.schema import AgentAction
 
 output_parser = StructuredChatOutputParser()
 

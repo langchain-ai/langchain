@@ -4,8 +4,8 @@ from typing import List
 
 import pytest
 
-from langchain.docstore.document import Document
-from langchain.text_splitter import (
+from langchain_xfyun.docstore.document import Document
+from langchain_xfyun.text_splitter import (
     CharacterTextSplitter,
     Language,
     MarkdownHeaderTextSplitter,

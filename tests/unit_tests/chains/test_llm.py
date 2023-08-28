@@ -5,10 +5,10 @@ from unittest.mock import patch
 
 import pytest
 
-from langchain.chains.llm import LLMChain
-from langchain.chains.loading import load_chain
-from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import BaseOutputParser
+from langchain_xfyun.chains.llm import LLMChain
+from langchain_xfyun.chains.loading import load_chain
+from langchain_xfyun.prompts.prompt import PromptTemplate
+from langchain_xfyun.schema import BaseOutputParser
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

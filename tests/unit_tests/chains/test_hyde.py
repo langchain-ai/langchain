@@ -3,15 +3,15 @@ from typing import Any, List, Optional
 
 import numpy as np
 
-from langchain.callbacks.manager import (
+from langchain_xfyun.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
-from langchain.chains.hyde.prompts import PROMPT_MAP
-from langchain.embeddings.base import Embeddings
-from langchain.llms.base import BaseLLM
-from langchain.schema import Generation, LLMResult
+from langchain_xfyun.chains.hyde.base import HypotheticalDocumentEmbedder
+from langchain_xfyun.chains.hyde.prompts import PROMPT_MAP
+from langchain_xfyun.embeddings.base import Embeddings
+from langchain_xfyun.llms.base import BaseLLM
+from langchain_xfyun.schema import Generation, LLMResult
 
 
 class FakeEmbeddings(Embeddings):

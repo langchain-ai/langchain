@@ -1,7 +1,7 @@
 """Integration test for Dataforseo API Wrapper."""
 import pytest
 
-from langchain.utilities.dataforseo_api_search import DataForSeoAPIWrapper
+from langchain_xfyun.utilities.dataforseo_api_search import DataForSeoAPIWrapper
 
 
 def test_search_call() -> None:

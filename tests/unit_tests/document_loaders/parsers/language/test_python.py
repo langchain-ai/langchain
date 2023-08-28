@@ -1,6 +1,6 @@
 import unittest
 
-from langchain.document_loaders.parsers.language.python import PythonSegmenter
+from langchain_xfyun.document_loaders.parsers.language.python import PythonSegmenter
 
 
 class TestPythonSegmenter(unittest.TestCase):

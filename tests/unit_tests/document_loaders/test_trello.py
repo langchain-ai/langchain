@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from langchain.document_loaders.trello import TrelloLoader
+from langchain_xfyun.document_loaders.trello import TrelloLoader
 
 
 def list_to_objects(dict_list: list) -> list:

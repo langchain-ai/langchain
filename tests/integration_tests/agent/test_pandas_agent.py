@@ -4,9 +4,9 @@ import numpy as np
 import pytest
 from pandas import DataFrame
 
-from langchain.agents import create_pandas_dataframe_agent
-from langchain.agents.agent import AgentExecutor
-from langchain.llms import OpenAI
+from langchain_xfyun.agents import create_pandas_dataframe_agent
+from langchain_xfyun.agents.agent import AgentExecutor
+from langchain_xfyun.llms import OpenAI
 
 
 @pytest.fixture(scope="module")

@@ -1,12 +1,12 @@
 """Test conversation chain and memory."""
 import pytest
 
-from langchain.chains.conversation.base import ConversationChain
-from langchain.memory.buffer import ConversationBufferMemory
-from langchain.memory.buffer_window import ConversationBufferWindowMemory
-from langchain.memory.summary import ConversationSummaryMemory
-from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import BaseMemory
+from langchain_xfyun.chains.conversation.base import ConversationChain
+from langchain_xfyun.memory.buffer import ConversationBufferMemory
+from langchain_xfyun.memory.buffer_window import ConversationBufferWindowMemory
+from langchain_xfyun.memory.summary import ConversationSummaryMemory
+from langchain_xfyun.prompts.prompt import PromptTemplate
+from langchain_xfyun.schema import BaseMemory
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

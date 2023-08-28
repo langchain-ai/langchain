@@ -8,11 +8,11 @@ from uuid import uuid4
 import pytest
 from freezegun import freeze_time
 
-from langchain.callbacks.manager import CallbackManager
-from langchain.callbacks.tracers.base import BaseTracer, TracerException
-from langchain.callbacks.tracers.schemas import Run
-from langchain.schema import LLMResult
-from langchain.schema.messages import HumanMessage
+from langchain_xfyun.callbacks.manager import CallbackManager
+from langchain_xfyun.callbacks.tracers.base import BaseTracer, TracerException
+from langchain_xfyun.callbacks.tracers.schemas import Run
+from langchain_xfyun.schema import LLMResult
+from langchain_xfyun.schema.messages import HumanMessage
 
 SERIALIZED = {"id": ["llm"]}
 SERIALIZED_CHAT = {"id": ["chat_model"]}

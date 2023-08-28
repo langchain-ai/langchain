@@ -5,7 +5,7 @@ import uuid
 
 import pytest
 
-from langchain.storage.redis import RedisStore
+from langchain_xfyun.storage.redis import RedisStore
 
 if typing.TYPE_CHECKING:
     from redis import Redis

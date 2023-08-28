@@ -3,9 +3,9 @@ from uuid import uuid4
 
 import pytest
 
-from langchain.callbacks import OpenAICallbackHandler
-from langchain.llms.openai import BaseOpenAI
-from langchain.schema import LLMResult
+from langchain_xfyun.callbacks import OpenAICallbackHandler
+from langchain_xfyun.llms.openai import BaseOpenAI
+from langchain_xfyun.schema import LLMResult
 
 
 @pytest.fixture

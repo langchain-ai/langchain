@@ -4,7 +4,7 @@ import sys
 import numpy as np
 import pytest
 
-from langchain.tools.python.tool import (
+from langchain_xfyun.tools.python.tool import (
     PythonAstREPLTool,
     PythonREPLTool,
     sanitize_input,

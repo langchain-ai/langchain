@@ -1,8 +1,8 @@
 import logging
 import os
 
-from langchain.docstore.document import Document
-from langchain.document_loaders import RocksetLoader
+from langchain_xfyun.docstore.document import Document
+from langchain_xfyun.document_loaders import RocksetLoader
 
 logger = logging.getLogger(__name__)
 

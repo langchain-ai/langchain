@@ -4,11 +4,11 @@ from typing import Optional
 
 from cassandra.cluster import Cluster
 
-from langchain.memory import ConversationBufferMemory
-from langchain.memory.chat_message_histories.cassandra import (
+from langchain_xfyun.memory import ConversationBufferMemory
+from langchain_xfyun.memory.chat_message_histories.cassandra import (
     CassandraChatMessageHistory,
 )
-from langchain.schema.messages import AIMessage, HumanMessage
+from langchain_xfyun.schema.messages import AIMessage, HumanMessage
 
 
 def _chat_message_history(

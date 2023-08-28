@@ -1,7 +1,7 @@
 """Test functionality related to prompts."""
 import pytest
 
-from langchain.prompts.prompt import PromptTemplate
+from langchain_xfyun.prompts.prompt import PromptTemplate
 
 
 def test_prompt_valid() -> None:

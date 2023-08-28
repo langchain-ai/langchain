@@ -3,7 +3,7 @@ from typing import Any
 
 import pytest
 
-from langchain.document_loaders import SitemapLoader
+from langchain_xfyun.document_loaders import SitemapLoader
 
 
 def test_sitemap() -> None:

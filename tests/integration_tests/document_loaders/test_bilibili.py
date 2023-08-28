@@ -1,4 +1,4 @@
-from langchain.document_loaders import BiliBiliLoader
+from langchain_xfyun.document_loaders import BiliBiliLoader
 
 
 def test_bilibili_loader() -> None:

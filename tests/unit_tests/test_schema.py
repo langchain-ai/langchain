@@ -2,7 +2,7 @@
 
 import unittest
 
-from langchain.schema.messages import (
+from langchain_xfyun.schema.messages import (
     AIMessage,
     HumanMessage,
     SystemMessage,

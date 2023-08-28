@@ -8,29 +8,29 @@ from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
 
 from langchain import PromptTemplate
-from langchain.callbacks.manager import Callbacks
-from langchain.callbacks.tracers.base import BaseTracer
-from langchain.callbacks.tracers.schemas import Run
-from langchain.chat_models.fake import FakeListChatModel
-from langchain.llms.fake import FakeListLLM, FakeStreamingListLLM
-from langchain.load.dump import dumpd, dumps
-from langchain.output_parsers.list import CommaSeparatedListOutputParser
-from langchain.prompts.chat import (
+from langchain_xfyun.callbacks.manager import Callbacks
+from langchain_xfyun.callbacks.tracers.base import BaseTracer
+from langchain_xfyun.callbacks.tracers.schemas import Run
+from langchain_xfyun.chat_models.fake import FakeListChatModel
+from langchain_xfyun.llms.fake import FakeListLLM, FakeStreamingListLLM
+from langchain_xfyun.load.dump import dumpd, dumps
+from langchain_xfyun.output_parsers.list import CommaSeparatedListOutputParser
+from langchain_xfyun.prompts.chat import (
     ChatPromptTemplate,
     ChatPromptValue,
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain.schema.document import Document
-from langchain.schema.messages import (
+from langchain_xfyun.schema.document import Document
+from langchain_xfyun.schema.messages import (
     AIMessage,
     AIMessageChunk,
     HumanMessage,
     SystemMessage,
 )
-from langchain.schema.output_parser import BaseOutputParser, StrOutputParser
-from langchain.schema.retriever import BaseRetriever
-from langchain.schema.runnable import (
+from langchain_xfyun.schema.output_parser import BaseOutputParser, StrOutputParser
+from langchain_xfyun.schema.retriever import BaseRetriever
+from langchain_xfyun.schema.runnable import (
     RouterRunnable,
     Runnable,
     RunnableConfig,

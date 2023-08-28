@@ -1,6 +1,6 @@
 import pathlib
 
-from langchain.chat_loaders import utils, whatsapp
+from langchain_xfyun.chat_loaders import utils, whatsapp
 
 
 def test_whatsapp_chat_loader() -> None:

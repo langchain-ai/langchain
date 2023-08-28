@@ -4,12 +4,12 @@ from unittest.mock import patch
 
 import pytest
 
-from langchain.document_loaders.base import BaseLoader
-from langchain.embeddings.base import Embeddings
-from langchain.indexes import index
-from langchain.indexes._sql_record_manager import SQLRecordManager
-from langchain.schema import Document
-from langchain.vectorstores.base import VST, VectorStore
+from langchain_xfyun.document_loaders.base import BaseLoader
+from langchain_xfyun.embeddings.base import Embeddings
+from langchain_xfyun.indexes import index
+from langchain_xfyun.indexes._sql_record_manager import SQLRecordManager
+from langchain_xfyun.schema import Document
+from langchain_xfyun.vectorstores.base import VST, VectorStore
 
 
 class ToyLoader(BaseLoader):

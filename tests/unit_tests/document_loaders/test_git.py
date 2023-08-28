@@ -3,7 +3,7 @@ import os
 import py
 import pytest
 
-from langchain.document_loaders import GitLoader
+from langchain_xfyun.document_loaders import GitLoader
 
 
 def init_repo(tmpdir: py.path.local, dir_name: str) -> str:

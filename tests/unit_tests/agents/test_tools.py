@@ -5,16 +5,16 @@ from unittest.mock import MagicMock, Mock
 
 import pytest
 
-from langchain.agents import load_tools
-from langchain.agents.agent import Agent
-from langchain.agents.chat.base import ChatAgent
-from langchain.agents.conversational.base import ConversationalAgent
-from langchain.agents.conversational_chat.base import ConversationalChatAgent
-from langchain.agents.mrkl.base import ZeroShotAgent
-from langchain.agents.react.base import ReActDocstoreAgent, ReActTextWorldAgent
-from langchain.agents.self_ask_with_search.base import SelfAskWithSearchAgent
-from langchain.agents.tools import Tool, tool
-from langchain.tools.base import ToolException
+from langchain_xfyun.agents import load_tools
+from langchain_xfyun.agents.agent import Agent
+from langchain_xfyun.agents.chat.base import ChatAgent
+from langchain_xfyun.agents.conversational.base import ConversationalAgent
+from langchain_xfyun.agents.conversational_chat.base import ConversationalChatAgent
+from langchain_xfyun.agents.mrkl.base import ZeroShotAgent
+from langchain_xfyun.agents.react.base import ReActDocstoreAgent, ReActTextWorldAgent
+from langchain_xfyun.agents.self_ask_with_search.base import SelfAskWithSearchAgent
+from langchain_xfyun.agents.tools import Tool, tool
+from langchain_xfyun.tools.base import ToolException
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 

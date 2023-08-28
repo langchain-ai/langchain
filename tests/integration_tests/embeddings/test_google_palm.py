@@ -3,7 +3,7 @@
 Note: This test must be run with the GOOGLE_API_KEY environment variable set to a
       valid API key.
 """
-from langchain.embeddings.google_palm import GooglePalmEmbeddings
+from langchain_xfyun.embeddings.google_palm import GooglePalmEmbeddings
 
 
 def test_google_palm_embedding_documents() -> None:

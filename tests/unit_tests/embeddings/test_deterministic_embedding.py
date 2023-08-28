@@ -1,4 +1,4 @@
-from langchain.embeddings import DeterministicFakeEmbedding
+from langchain_xfyun.embeddings import DeterministicFakeEmbedding
 
 
 def test_deterministic_fake_embeddings() -> None:

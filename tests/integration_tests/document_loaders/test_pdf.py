@@ -3,7 +3,7 @@ from typing import Sequence, Union
 
 import pytest
 
-from langchain.document_loaders import (
+from langchain_xfyun.document_loaders import (
     AmazonTextractPDFLoader,
     MathpixPDFLoader,
     PDFMinerLoader,

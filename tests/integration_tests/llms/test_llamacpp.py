@@ -6,7 +6,7 @@ from urllib.request import urlretrieve
 
 import pytest
 
-from langchain.llms import LlamaCpp
+from langchain_xfyun.llms import LlamaCpp
 
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 

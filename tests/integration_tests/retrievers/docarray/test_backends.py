@@ -2,7 +2,7 @@ from typing import Any
 
 import pytest
 
-from langchain.retrievers import DocArrayRetriever
+from langchain_xfyun.retrievers import DocArrayRetriever
 from tests.integration_tests.retrievers.docarray.fixtures import (  # noqa: F401
     init_elastic,
     init_hnsw,

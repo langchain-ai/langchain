@@ -1,6 +1,6 @@
 """Test Aleph Alpha API wrapper."""
 
-from langchain.llms.aleph_alpha import AlephAlpha
+from langchain_xfyun.llms.aleph_alpha import AlephAlpha
 
 
 def test_aleph_alpha_call() -> None:

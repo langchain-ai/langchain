@@ -5,13 +5,13 @@ from typing import Any, List
 import pytest
 
 from langchain import PromptTemplate
-from langchain.chains.combine_documents.reduce import (
+from langchain_xfyun.chains.combine_documents.reduce import (
     _collapse_docs,
     _split_list_of_docs,
 )
-from langchain.chains.qa_with_sources import load_qa_with_sources_chain
-from langchain.docstore.document import Document
-from langchain.schema import format_document
+from langchain_xfyun.chains.qa_with_sources import load_qa_with_sources_chain
+from langchain_xfyun.docstore.document import Document
+from langchain_xfyun.schema import format_document
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

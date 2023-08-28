@@ -6,7 +6,7 @@ from typing import Generator
 
 import pytest
 
-from langchain.document_loaders.blob_loaders import FileSystemBlobLoader
+from langchain_xfyun.document_loaders.blob_loaders import FileSystemBlobLoader
 
 
 @pytest.fixture

@@ -1,5 +1,5 @@
 """Test jina embeddings."""
-from langchain.embeddings.jina import JinaEmbeddings
+from langchain_xfyun.embeddings.jina import JinaEmbeddings
 
 
 def test_jina_embedding_documents() -> None:

@@ -3,8 +3,8 @@ import time
 
 import pytest
 
-from langchain.document_loaders import BlockchainDocumentLoader
-from langchain.document_loaders.blockchain import BlockchainType
+from langchain_xfyun.document_loaders import BlockchainDocumentLoader
+from langchain_xfyun.document_loaders.blockchain import BlockchainType
 
 if "ALCHEMY_API_KEY" in os.environ:
     alchemyKeySet = True

@@ -1,8 +1,8 @@
 import random
 import string
 
-from langchain.docstore.document import Document
-from langchain.document_loaders.pyspark_dataframe import PySparkDataFrameLoader
+from langchain_xfyun.docstore.document import Document
+from langchain_xfyun.document_loaders.pyspark_dataframe import PySparkDataFrameLoader
 
 
 def test_pyspark_loader_load_valid_data() -> None:

@@ -1,6 +1,6 @@
 """Test CerebriumAI API wrapper."""
 
-from langchain.llms.cerebriumai import CerebriumAI
+from langchain_xfyun.llms.cerebriumai import CerebriumAI
 
 
 def test_cerebriumai_call() -> None:

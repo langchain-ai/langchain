@@ -4,7 +4,7 @@ from typing import Any
 from unittest import mock
 from unittest.mock import MagicMock
 
-from langchain.callbacks.streamlit import StreamlitCallbackHandler
+from langchain_xfyun.callbacks.streamlit import StreamlitCallbackHandler
 
 
 class TestImport(unittest.TestCase):

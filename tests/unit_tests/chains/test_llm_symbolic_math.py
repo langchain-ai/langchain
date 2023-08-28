@@ -2,8 +2,8 @@
 
 import pytest
 
-from langchain.chains.llm_symbolic_math.base import LLMSymbolicMathChain
-from langchain.chains.llm_symbolic_math.prompt import _PROMPT_TEMPLATE
+from langchain_xfyun.chains.llm_symbolic_math.base import LLMSymbolicMathChain
+from langchain_xfyun.chains.llm_symbolic_math.prompt import _PROMPT_TEMPLATE
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

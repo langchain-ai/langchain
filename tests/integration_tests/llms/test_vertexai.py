@@ -7,7 +7,7 @@ pip install google-cloud-aiplatform>=1.25.0
 Your end-user credentials would be used to make the calls (make sure you've run 
 `gcloud auth login` first).
 """
-from langchain.llms import VertexAI
+from langchain_xfyun.llms import VertexAI
 
 
 def test_vertex_call() -> None:

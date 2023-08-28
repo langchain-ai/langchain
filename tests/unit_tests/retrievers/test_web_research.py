@@ -2,7 +2,7 @@ from typing import List
 
 import pytest
 
-from langchain.retrievers.web_research import QuestionListOutputParser
+from langchain_xfyun.retrievers.web_research import QuestionListOutputParser
 
 
 @pytest.mark.parametrize(

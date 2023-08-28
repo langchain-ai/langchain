@@ -9,10 +9,10 @@ from urllib.error import HTTPError
 
 import pytest
 
-from langchain.agents import AgentType, initialize_agent
-from langchain.agents.agent_toolkits.ainetwork.toolkit import AINetworkToolkit
-from langchain.chat_models import ChatOpenAI
-from langchain.tools.ainetwork.utils import authenticate
+from langchain_xfyun.agents import AgentType, initialize_agent
+from langchain_xfyun.agents.agent_toolkits.ainetwork.toolkit import AINetworkToolkit
+from langchain_xfyun.chat_models import ChatOpenAI
+from langchain_xfyun.tools.ainetwork.utils import authenticate
 
 
 class Match(Enum):

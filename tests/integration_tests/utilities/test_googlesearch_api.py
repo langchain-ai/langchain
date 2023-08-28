@@ -1,5 +1,5 @@
 """Integration test for Google Search API Wrapper."""
-from langchain.utilities.google_search import GoogleSearchAPIWrapper
+from langchain_xfyun.utilities.google_search import GoogleSearchAPIWrapper
 
 
 def test_call() -> None:

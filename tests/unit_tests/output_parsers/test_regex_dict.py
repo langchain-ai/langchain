@@ -1,5 +1,5 @@
 """Test in memory docstore."""
-from langchain.output_parsers.regex_dict import RegexDictParser
+from langchain_xfyun.output_parsers.regex_dict import RegexDictParser
 
 DEF_EXPECTED_RESULT = {"action": "Search", "action_input": "How to use this class?"}
 

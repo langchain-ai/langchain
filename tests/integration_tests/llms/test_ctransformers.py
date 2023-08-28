@@ -1,7 +1,7 @@
 """Test C Transformers wrapper."""
 import pytest
 
-from langchain.llms import CTransformers
+from langchain_xfyun.llms import CTransformers
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 

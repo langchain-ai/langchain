@@ -6,7 +6,7 @@ from tempfile import TemporaryDirectory
 
 import pytest
 
-from langchain.tools.file_management.utils import (
+from langchain_xfyun.tools.file_management.utils import (
     FileValidationError,
     get_validated_relative_path,
 )

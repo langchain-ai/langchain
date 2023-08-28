@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING
 import pytest
 from pytest_mock import MockerFixture
 
-from langchain.memory.chat_message_histories import ZepChatMessageHistory
-from langchain.schema.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_xfyun.memory.chat_message_histories import ZepChatMessageHistory
+from langchain_xfyun.schema.messages import AIMessage, HumanMessage, SystemMessage
 
 if TYPE_CHECKING:
     from zep_python import ZepClient

@@ -3,7 +3,7 @@ from typing import Any, Dict
 
 import pytest
 
-from langchain.tools.requests.tool import (
+from langchain_xfyun.tools.requests.tool import (
     RequestsDeleteTool,
     RequestsGetTool,
     RequestsPatchTool,
@@ -11,7 +11,7 @@ from langchain.tools.requests.tool import (
     RequestsPutTool,
     _parse_input,
 )
-from langchain.utilities.requests import TextRequestsWrapper
+from langchain_xfyun.utilities.requests import TextRequestsWrapper
 
 
 class _MockTextRequestsWrapper(TextRequestsWrapper):

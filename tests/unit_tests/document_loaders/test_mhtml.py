@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from langchain.document_loaders.mhtml import MHTMLLoader
+from langchain_xfyun.document_loaders.mhtml import MHTMLLoader
 
 HERE = Path(__file__).parent
 EXAMPLES = HERE.parent.parent / "integration_tests" / "examples"

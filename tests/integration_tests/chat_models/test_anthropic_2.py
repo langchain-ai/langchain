@@ -3,7 +3,7 @@ import os
 
 import pytest
 
-from langchain.chat_models import ChatAnthropic
+from langchain_xfyun.chat_models import ChatAnthropic
 
 os.environ["ANTHROPIC_API_KEY"] = "foo"
 

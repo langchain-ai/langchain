@@ -1,6 +1,6 @@
 """Test Nebula API wrapper."""
 from langchain import LLMChain, PromptTemplate
-from langchain.llms.symblai_nebula import Nebula
+from langchain_xfyun.llms.symblai_nebula import Nebula
 
 
 def test_symblai_nebula_call() -> None:

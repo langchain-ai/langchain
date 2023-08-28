@@ -7,11 +7,11 @@ from typing import List, Type
 
 import pytest
 
-from langchain.tools.amadeus.base import AmadeusBaseTool
-from langchain.tools.base import BaseTool
-from langchain.tools.gmail.base import GmailBaseTool
-from langchain.tools.office365.base import O365BaseTool
-from langchain.tools.playwright.base import BaseBrowserTool
+from langchain_xfyun.tools.amadeus.base import AmadeusBaseTool
+from langchain_xfyun.tools.base import BaseTool
+from langchain_xfyun.tools.gmail.base import GmailBaseTool
+from langchain_xfyun.tools.office365.base import O365BaseTool
+from langchain_xfyun.tools.playwright.base import BaseBrowserTool
 
 
 def get_non_abstract_subclasses(cls: Type[BaseTool]) -> List[Type[BaseTool]]:

@@ -1,6 +1,6 @@
 import pytest
 
-from langchain.document_loaders import YoutubeLoader
+from langchain_xfyun.document_loaders import YoutubeLoader
 
 
 @pytest.mark.parametrize(

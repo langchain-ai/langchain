@@ -8,14 +8,14 @@ from urllib.request import HTTPError
 
 import pytest
 
-from langchain.llms.azureml_endpoint import (
+from langchain_xfyun.llms.azureml_endpoint import (
     AzureMLOnlineEndpoint,
     ContentFormatterBase,
     DollyContentFormatter,
     HFContentFormatter,
     OSSContentFormatter,
 )
-from langchain.llms.loading import load_llm
+from langchain_xfyun.llms.loading import load_llm
 
 
 def test_gpt2_call() -> None:

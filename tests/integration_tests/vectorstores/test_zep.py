@@ -7,9 +7,9 @@ from uuid import uuid4
 import pytest
 from pytest_mock import MockerFixture
 
-from langchain.schema import Document
-from langchain.vectorstores import ZepVectorStore
-from langchain.vectorstores.zep import CollectionConfig
+from langchain_xfyun.schema import Document
+from langchain_xfyun.vectorstores import ZepVectorStore
+from langchain_xfyun.vectorstores.zep import CollectionConfig
 
 if TYPE_CHECKING:
     from zep_python.document import Document as ZepDocument

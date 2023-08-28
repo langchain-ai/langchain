@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from langchain.document_loaders import EtherscanLoader
+from langchain_xfyun.document_loaders import EtherscanLoader
 
 if "ETHERSCAN_API_KEY" in os.environ:
     etherscan_key_set = True

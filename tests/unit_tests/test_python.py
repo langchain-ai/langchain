@@ -3,8 +3,8 @@ import sys
 
 import pytest
 
-from langchain.tools.python.tool import PythonAstREPLTool, PythonREPLTool
-from langchain.utilities import PythonREPL
+from langchain_xfyun.tools.python.tool import PythonAstREPLTool, PythonREPLTool
+from langchain_xfyun.utilities import PythonREPL
 
 _SAMPLE_CODE = """
 ```

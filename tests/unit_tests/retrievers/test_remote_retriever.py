@@ -2,8 +2,8 @@ from typing import Any, Dict
 
 from pytest_mock import MockerFixture
 
-from langchain.retrievers import RemoteLangChainRetriever
-from langchain.schema import Document
+from langchain_xfyun.retrievers import RemoteLangChainRetriever
+from langchain_xfyun.schema import Document
 
 
 class MockResponse:

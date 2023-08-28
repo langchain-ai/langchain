@@ -1,8 +1,8 @@
 import pytest
 
-from langchain.embeddings import FakeEmbeddings
-from langchain.retrievers.svm import SVMRetriever
-from langchain.schema import Document
+from langchain_xfyun.embeddings import FakeEmbeddings
+from langchain_xfyun.retrievers.svm import SVMRetriever
+from langchain_xfyun.schema import Document
 
 
 class TestSVMRetriever:

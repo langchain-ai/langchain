@@ -1,5 +1,5 @@
 """Test DeepSparse wrapper."""
-from langchain.llms import DeepSparse
+from langchain_xfyun.llms import DeepSparse
 
 
 def test_deepsparse_call() -> None:

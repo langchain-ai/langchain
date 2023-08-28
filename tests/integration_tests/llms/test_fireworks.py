@@ -4,19 +4,19 @@ from pathlib import Path
 import pytest
 
 from langchain import LLMChain, PromptTemplate
-from langchain.chains import RetrievalQA
-from langchain.document_loaders import TextLoader
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.llms import OpenAIChat
-from langchain.llms.fireworks import Fireworks, FireworksChat
-from langchain.llms.loading import load_llm
-from langchain.prompts.chat import (
+from langchain_xfyun.chains import RetrievalQA
+from langchain_xfyun.document_loaders import TextLoader
+from langchain_xfyun.embeddings.openai import OpenAIEmbeddings
+from langchain_xfyun.llms import OpenAIChat
+from langchain_xfyun.llms.fireworks import Fireworks, FireworksChat
+from langchain_xfyun.llms.loading import load_llm
+from langchain_xfyun.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
 )
-from langchain.schema import LLMResult
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.vectorstores import DeepLake
+from langchain_xfyun.schema import LLMResult
+from langchain_xfyun.text_splitter import CharacterTextSplitter
+from langchain_xfyun.vectorstores import DeepLake
 
 
 def test_fireworks_call() -> None:

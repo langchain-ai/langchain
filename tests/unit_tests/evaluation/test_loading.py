@@ -3,9 +3,9 @@ from typing import List
 
 import pytest
 
-from langchain.embeddings.fake import FakeEmbeddings
-from langchain.evaluation.loading import EvaluatorType, load_evaluators
-from langchain.evaluation.schema import PairwiseStringEvaluator, StringEvaluator
+from langchain_xfyun.embeddings.fake import FakeEmbeddings
+from langchain_xfyun.evaluation.loading import EvaluatorType, load_evaluators
+from langchain_xfyun.evaluation.schema import PairwiseStringEvaluator, StringEvaluator
 from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 from tests.unit_tests.llms.fake_llm import FakeLLM
 

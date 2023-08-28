@@ -1,6 +1,6 @@
 """Test ForefrontAI API wrapper."""
 
-from langchain.llms.forefrontai import ForefrontAI
+from langchain_xfyun.llms.forefrontai import ForefrontAI
 
 
 def test_forefrontai_call() -> None:

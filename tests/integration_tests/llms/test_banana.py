@@ -1,6 +1,6 @@
 """Test BananaDev API wrapper."""
 
-from langchain.llms.bananadev import Banana
+from langchain_xfyun.llms.bananadev import Banana
 
 
 def test_banana_call() -> None:

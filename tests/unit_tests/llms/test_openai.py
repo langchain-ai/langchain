@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from langchain.llms.openai import OpenAI
+from langchain_xfyun.llms.openai import OpenAI
 from tests.unit_tests.callbacks.fake_callback_handler import (
     FakeAsyncCallbackHandler,
     FakeCallbackHandler,

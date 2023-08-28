@@ -1,5 +1,5 @@
 """Integration test for Wolfram Alpha API Wrapper."""
-from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
+from langchain_xfyun.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 
 
 def test_call() -> None:

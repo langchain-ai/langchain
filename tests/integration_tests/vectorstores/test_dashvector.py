@@ -1,7 +1,7 @@
 from time import sleep
 
-from langchain.schema import Document
-from langchain.vectorstores import DashVector
+from langchain_xfyun.schema import Document
+from langchain_xfyun.vectorstores import DashVector
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 texts = ["foo", "bar", "baz"]

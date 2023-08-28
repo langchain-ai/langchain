@@ -1,5 +1,5 @@
-from langchain.output_parsers import ResponseSchema, StructuredOutputParser
-from langchain.schema import OutputParserException
+from langchain_xfyun.output_parsers import ResponseSchema, StructuredOutputParser
+from langchain_xfyun.schema import OutputParserException
 
 
 def test_parse() -> None:

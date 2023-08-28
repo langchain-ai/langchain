@@ -1,5 +1,5 @@
-from langchain.embeddings import FakeEmbeddings
-from langchain.retrievers.knn import KNNRetriever
+from langchain_xfyun.embeddings import FakeEmbeddings
+from langchain_xfyun.retrievers.knn import KNNRetriever
 
 
 class TestKNNRetriever:

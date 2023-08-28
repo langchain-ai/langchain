@@ -13,10 +13,10 @@ SEARCH_ENGINE_ID - the ID of the search engine to use for the test
 
 import pytest
 
-from langchain.retrievers.google_cloud_enterprise_search import (
+from langchain_xfyun.retrievers.google_cloud_enterprise_search import (
     GoogleCloudEnterpriseSearchRetriever,
 )
-from langchain.schema import Document
+from langchain_xfyun.schema import Document
 
 
 @pytest.mark.requires("google_api_core")

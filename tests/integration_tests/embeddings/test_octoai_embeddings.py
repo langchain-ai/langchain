@@ -1,6 +1,6 @@
 """Test octoai embeddings."""
 
-from langchain.embeddings.octoai_embeddings import (
+from langchain_xfyun.embeddings.octoai_embeddings import (
     OctoAIEmbeddings,
 )
 

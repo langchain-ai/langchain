@@ -3,9 +3,9 @@ import tempfile
 
 import pytest
 
-from langchain.docstore.document import Document
-from langchain.docstore.in_memory import InMemoryDocstore
-from langchain.vectorstores.annoy import Annoy
+from langchain_xfyun.docstore.document import Document
+from langchain_xfyun.docstore.in_memory import InMemoryDocstore
+from langchain_xfyun.vectorstores.annoy import Annoy
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 

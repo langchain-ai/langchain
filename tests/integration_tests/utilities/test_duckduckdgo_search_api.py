@@ -1,6 +1,6 @@
 import pytest
 
-from langchain.tools.ddg_search.tool import DuckDuckGoSearchRun
+from langchain_xfyun.tools.ddg_search.tool import DuckDuckGoSearchRun
 
 
 def ddg_installed() -> bool:

@@ -3,8 +3,8 @@ from typing import List
 
 import pytest
 
-from langchain.retrievers import ArxivRetriever
-from langchain.schema import Document
+from langchain_xfyun.retrievers import ArxivRetriever
+from langchain_xfyun.schema import Document
 
 
 @pytest.fixture

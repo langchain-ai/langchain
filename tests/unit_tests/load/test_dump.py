@@ -4,14 +4,14 @@ from typing import Any, Dict
 
 import pytest
 
-from langchain.callbacks.tracers.langchain import LangChainTracer
-from langchain.chains.llm import LLMChain
-from langchain.chat_models.openai import ChatOpenAI
-from langchain.llms.openai import OpenAI
-from langchain.load.dump import dumps
-from langchain.load.serializable import Serializable
-from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain.prompts.prompt import PromptTemplate
+from langchain_xfyun.callbacks.tracers.langchain import LangChainTracer
+from langchain_xfyun.chains.llm import LLMChain
+from langchain_xfyun.chat_models.openai import ChatOpenAI
+from langchain_xfyun.llms.openai import OpenAI
+from langchain_xfyun.load.dump import dumps
+from langchain_xfyun.load.serializable import Serializable
+from langchain_xfyun.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
+from langchain_xfyun.prompts.prompt import PromptTemplate
 
 
 class Person(Serializable):

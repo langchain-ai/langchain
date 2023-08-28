@@ -5,9 +5,9 @@ from typing import List
 import pytest
 
 import langchain
-from langchain.cache import RedisCache, RedisSemanticCache
-from langchain.embeddings.base import Embeddings
-from langchain.schema import Generation, LLMResult
+from langchain_xfyun.cache import RedisCache, RedisSemanticCache
+from langchain_xfyun.embeddings.base import Embeddings
+from langchain_xfyun.schema import Generation, LLMResult
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
     FakeEmbeddings,

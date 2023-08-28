@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from langchain.document_loaders.rss import RSSFeedLoader
+from langchain_xfyun.document_loaders.rss import RSSFeedLoader
 
 
 def test_rss_loader() -> None:

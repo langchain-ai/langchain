@@ -3,8 +3,8 @@ from typing import Dict
 
 import pytest
 
-from langchain.docstore.document import Document
-from langchain.vectorstores.marqo import Marqo
+from langchain_xfyun.docstore.document import Document
+from langchain_xfyun.vectorstores.marqo import Marqo
 
 DEFAULT_MARQO_URL = "http://localhost:8882"
 DEFAULT_MARQO_API_KEY = ""

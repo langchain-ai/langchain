@@ -3,8 +3,8 @@ from typing import Callable, Optional
 
 import pytest
 
-from langchain.embeddings.base import Embeddings
-from langchain.vectorstores import Qdrant
+from langchain_xfyun.embeddings.base import Embeddings
+from langchain_xfyun.vectorstores import Qdrant
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
 )

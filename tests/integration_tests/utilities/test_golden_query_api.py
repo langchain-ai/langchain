@@ -1,7 +1,7 @@
 """Integration test for Golden API Wrapper."""
 import json
 
-from langchain.utilities.golden_query import GoldenQueryAPIWrapper
+from langchain_xfyun.utilities.golden_query import GoldenQueryAPIWrapper
 
 
 def test_call() -> None:

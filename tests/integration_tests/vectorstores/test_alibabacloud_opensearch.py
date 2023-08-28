@@ -1,7 +1,7 @@
 from typing import List
 
-from langchain.schema import Document
-from langchain.vectorstores.alibabacloud_opensearch import (
+from langchain_xfyun.schema import Document
+from langchain_xfyun.vectorstores.alibabacloud_opensearch import (
     AlibabaCloudOpenSearch,
     AlibabaCloudOpenSearchSettings,
 )

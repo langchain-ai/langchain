@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from langchain.vectorstores import SKLearnVectorStore
+from langchain_xfyun.vectorstores import SKLearnVectorStore
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 
