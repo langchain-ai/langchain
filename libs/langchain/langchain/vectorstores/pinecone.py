@@ -1,4 +1,3 @@
-"""Wrapper around Pinecone vector database."""
 from __future__ import annotations
 
 import logging
@@ -17,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class Pinecone(VectorStore):
-    """Wrapper around Pinecone vector database.
+    """`Pinecone` vector store.
 
     To use, you should have the ``pinecone-client`` python package installed.
 

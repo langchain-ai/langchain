@@ -228,7 +228,7 @@ Classes
     :toctree: {module}
 """
 
-            for class_ in classes:
+            for class_ in sorted(classes, key=lambda c: c["qualified_name"]):
                 if not class_["is_public"]:
                     continue
 

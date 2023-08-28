@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 class ZepRetriever(BaseRetriever):
-    """Retriever for the Zep long-term memory store.
+    """`Zep` long-term memory store retriever.
 
     Search your user's long-term chat history with Zep.
 

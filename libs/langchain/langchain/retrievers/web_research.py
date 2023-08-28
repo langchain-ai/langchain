@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 class SearchQueries(BaseModel):
-    """Search queries to run to research for the user's goal."""
+    """Search queries to research for the user's goal."""
 
     queries: List[str] = Field(
         ..., description="List of search queries to look up on Google"
@@ -61,12 +61,12 @@ class QuestionListOutputParser(PydanticOutputParser):
         super().__init__(pydantic_object=LineList)
 
     def parse(self, text: str) -> LineList:
-        lines = re.findall(r"\d+\..*?\n", text)
+        lines = re.findall(r"\d+\..*?(?:\n|$)", text)
         return LineList(lines=lines)
 
 
 class WebResearchRetriever(BaseRetriever):
-    """Retriever for web research based on the Google Search API."""
+    """`Google Search API` retriever."""
 
     # Inputs
     vectorstore: VectorStore = Field(
