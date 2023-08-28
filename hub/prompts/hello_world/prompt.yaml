@@ -1,0 +1,4 @@
+input_variables: []
+output_parser: null
+template: 'Say hello world.'
+template_format: f-string
