@@ -1,8 +1,6 @@
-from typing import Dict, List
+from typing import List
 
 import pytest
-from presidio_analyzer import PatternRecognizer
-from presidio_anonymizer.entities import OperatorConfig
 
 from langchain_experimental.data_anonymizer import PresidioAnonymizer
 
@@ -31,23 +29,17 @@ def test_anonymize_multiple() -> None:
 
 
 @pytest.mark.requires("presidio_analyzer", "presidio_anonymizer", "faker")
-@pytest.mark.parametrize(
-    "custom_operator,expected",
-    [
-        (
-            {"PERSON": OperatorConfig("replace", {"new_value": "<name>"})},
-            "<name> was here.",
-        )
-    ],
-)
-def test_anonymize_with_custom_operator(
-    custom_operator: Dict[str, OperatorConfig], expected: str
-) -> None:
+def test_anonymize_with_custom_operator() -> None:
     """Test anonymize a name with a custom operator"""
-    text = "Jane Doe was here."
+    from presidio_anonymizer.entities import OperatorConfig
+
+    custom_operator = {"PERSON": OperatorConfig("replace", {"new_value": "<name>"})}
     anonymizer = PresidioAnonymizer(operators=custom_operator)
+
+    text = "Jane Doe was here."
+
     anonymized_text = anonymizer.anonymize(text)
-    assert anonymized_text == expected
+    assert anonymized_text == "<name> was here."
 
 
 @pytest.mark.requires("presidio_analyzer", "presidio_anonymizer", "faker")
@@ -55,6 +47,9 @@ def test_add_recognizer_operator() -> None:
     """
     Test add recognizer and anonymize a new type of entity and with a custom operator
     """
+    from presidio_analyzer import PatternRecognizer
+    from presidio_anonymizer.entities import OperatorConfig
+
     anonymizer = PresidioAnonymizer(analyzed_fields=[])
     titles_list = ["Sir", "Madam", "Professor"]
     custom_recognizer = PatternRecognizer(
