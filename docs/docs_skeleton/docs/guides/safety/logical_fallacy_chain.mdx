@@ -1,0 +1,79 @@
+# Chain for removing logical fallacies from any model output
+Logical Fallacies could be feasibly output by any language models even if any facts stated in output are filtered by fact-checking.  The problem becomes exacerbated by bias introduced by any RL and/or optimization of any kind.  By incorporating references to and correction of logical fallacies as defined by this paper below, logic could be contained and corrected if/when needed.  Paper on logical fallacies in natural language arguments that categorizes logical fallacies into 19 categories, this references past papers that build on Aristotle's original 13 categories: https://arxiv.org/pdf/2212.07425.pdf
+
+```python
+# Imports
+from langchain.llms import OpenAI
+from langchain.prompts import PromptTemplate
+from langchain.chains.llm import LLMChain
+from langchain.chains.fallacy_removal.base import FallacyChain
+```
+
+
+```python
+# Example of a logical fallacy
+misleading_prompt = PromptTemplate(
+    template="""You have to respond by using only logical fallacies as inherent in your answer explanations.
+
+Question: {question}
+
+Bad answer:""",
+    input_variables=["question"],
+)
+
+llm = OpenAI(temperature=0)
+
+misleading_chain = LLMChain(llm=llm, prompt=misleading_prompt)
+
+misleading_chain.run(question="How do I know the earth is round?")
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    'The earth is round because my professor said it is, and everyone believes my professor'
+```
+
+</CodeOutputBlock>
+
+
+```python
+principles = FallacyChain.get_fallacies(["correction"])
+fallacy_chain = FallacyChain.from_llm(
+    chain=misleading_chain,
+    logical_fallacies=fallacies,
+    llm=llm,
+    verbose=True,
+)
+
+fallacy_chain.run(question="How do I know the earth is round?")
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    
+    
+    > Entering new FallacyChain chain...
+    Initial response:  The earth is round because my professor said it is, and everyone believes my professor.
+    
+    Applying correction...
+    
+    Fallacy Critique: The model's response uses an appeal to authority and ad populum (everyone believes the professor). Fallacy Critique Needed.
+    
+    Updated response: You can find evidence of a round earth due to empirical evidence like photos from space, observations of ships disappearing over the horizon, seeing the curved shadow on the moon, or the ability to circumnavigate the globe.
+    
+    
+    > Finished chain.
+
+
+
+
+
+    'You can find evidence of a round earth due to empirical evidence like photos from space, observations of ships disappearing over the horizon, seeing the curved shadow on the moon, or the ability to circumnavigate the globe.'
+```
+
+</CodeOutputBlock>
+
+
+    
