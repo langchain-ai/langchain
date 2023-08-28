@@ -1,6 +1,9 @@
+from typing import Dict, List
+
 import pytest
 from presidio_analyzer import PatternRecognizer
 from presidio_anonymizer.entities import OperatorConfig
+
 from langchain_experimental.data_anonymizer import PresidioAnonymizer
 
 
@@ -8,7 +11,7 @@ from langchain_experimental.data_anonymizer import PresidioAnonymizer
     "analyzed_fields,should_contain",
     [(["PERSON"], False), (["PHONE_NUMBER"], True), (None, False)],
 )
-def test_anonymize(analyzed_fields, should_contain):
+def test_anonymize(analyzed_fields: List[str], should_contain: bool) -> None:
     """Test anonymizing a name in a simple sentence"""
     text = "Hello, my name is John Doe."
     anonymizer = PresidioAnonymizer(analyzed_fields=analyzed_fields)
@@ -16,7 +19,7 @@ def test_anonymize(analyzed_fields, should_contain):
     assert ("John Doe" in anonymized_text) == should_contain
 
 
-def test_anonymize_multiple():
+def test_anonymize_multiple() -> None:
     """Test anonymizing multiple items in a sentence"""
     text = "John Smith's phone number is 313-666-7440 and email is johnsmith@gmail.com"
     anonymizer = PresidioAnonymizer()
@@ -34,7 +37,9 @@ def test_anonymize_multiple():
         )
     ],
 )
-def test_anonymize_with_custom_operator(custom_operator, expected):
+def test_anonymize_with_custom_operator(
+    custom_operator: Dict[str, OperatorConfig], expected: str
+) -> None:
     """Test anonymize a name with a custom operator"""
     text = "Jane Doe was here."
     anonymizer = PresidioAnonymizer(operators=custom_operator)
@@ -42,8 +47,10 @@ def test_anonymize_with_custom_operator(custom_operator, expected):
     assert anonymized_text == expected
 
 
-def test_add_recognizer_operator():
-    """Test add recognizer and anonymize a new type of entity and with a custom operator"""
+def test_add_recognizer_operator() -> None:
+    """
+    Test add recognizer and anonymize a new type of entity and with a custom operator
+    """
     anonymizer = PresidioAnonymizer(analyzed_fields=[])
     titles_list = ["Sir", "Madam", "Professor"]
     custom_recognizer = PatternRecognizer(

@@ -1,4 +1,5 @@
 import string
+
 from faker import Faker
 
 fake = Faker()

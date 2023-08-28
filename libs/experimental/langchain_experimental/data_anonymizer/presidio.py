@@ -1,12 +1,13 @@
-from presidio_analyzer import AnalyzerEngine
+from typing import Dict, List, Optional
+
+from presidio_analyzer import AnalyzerEngine, EntityRecognizer
 from presidio_anonymizer import AnonymizerEngine
 from presidio_anonymizer.entities import OperatorConfig
+
 from langchain_experimental.data_anonymizer.base import AnonymizerBase
 from langchain_experimental.data_anonymizer.faker_presidio_mapping import (
     PSEUDOANONYMIZER_MAPPING,
 )
-from typing import Dict, List
-from presidio_analyzer import EntityRecognizer
 
 
 class PresidioAnonymizer(AnonymizerBase):
@@ -16,15 +17,17 @@ class PresidioAnonymizer(AnonymizerBase):
         self,
         analyzed_fields: List[str] = list(PSEUDOANONYMIZER_MAPPING.keys()),
         language: str = "en",
-        operators: Dict[str, OperatorConfig] = None,
+        operators: Optional[Dict[str, OperatorConfig]] = None,
     ):
         """
         Args:
-            analyzed_fields: List of fields to detect and then anonymize. Defaults to all fields.
+            analyzed_fields: List of fields to detect and then anonymize.
+                Defaults to all fields.
             language: Language to use for analysis. Defaults to english.
             operators: Operators to use for anonymization.
                 Operators allow for custom anonymization of detected PII.
-                Learn more: https://microsoft.github.io/presidio/tutorial/10_simple_anonymization/
+                Learn more:
+                https://microsoft.github.io/presidio/tutorial/10_simple_anonymization/
         """
         self.analyzed_fields = analyzed_fields
         self.language = language
