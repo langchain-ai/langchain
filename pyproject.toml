@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-xfyun"
-version = "0.274.1"
+version = "0.0.274-beta1"
 description = "在LangChain中流畅地使用讯飞星火大模型"
 authors = []
 license = "MIT"
@@ -8,7 +8,7 @@ readme = "README.md"
 repository = "https://github.com/vsxd/langchain-xfyun"
 
 [tool.poetry.scripts]
-langchain-server = "langchain.server:main"
+langchain-xfyun-server = "langchain-xfyun.server:main"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
@@ -343,6 +343,11 @@ extended_testing = [
  "openapi-schema-pydantic",
  "markdownify",
 ]
+
+[[tool.poetry.source]]
+name = "mirrors"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
+priority = "default"
 
 [tool.ruff]
 select = [

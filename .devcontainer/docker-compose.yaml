@@ -1,14 +1,14 @@
 version: '3'
 services:
-  langchain:
+  langchain-xfyun:
     build:
-      dockerfile: libs/langchain/dev.Dockerfile
+      dockerfile: langchain-xfyun/dev.Dockerfile
       context: ..
     volumes:
    # Update this to wherever you want VS Code to mount the folder of your project
       - ..:/workspaces:cached
     networks:
-      - langchain-network 
+      - langchain-xfyun-network 
   #   environment:
   #     MONGO_ROOT_USERNAME: root
   #     MONGO_ROOT_PASSWORD: example123
@@ -26,7 +26,7 @@ services:
   #     - langchain-network
 
 networks:
-  langchain-network:
+  langchain-xfyun-network:
     driver: bridge
     
     
