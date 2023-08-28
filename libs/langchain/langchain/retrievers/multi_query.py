@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import List
 
@@ -148,7 +149,7 @@ class MultiQueryRetriever(BaseRetriever):
         # Create a dictionary with page_content as keys to remove duplicates
         # TODO: Add Document ID property (e.g., UUID)
         unique_documents_dict = {
-            (doc.page_content, tuple(sorted(doc.metadata.items()))): doc
+            (doc.page_content, json.dumps(doc.metadata, sort_keys=True)): doc
             for doc in documents
         }
 
