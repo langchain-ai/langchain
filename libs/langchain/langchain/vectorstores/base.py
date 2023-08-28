@@ -89,8 +89,10 @@ class VectorStore(ABC):
         """Run more texts through the embeddings and add to the vectorstore."""
         raise NotImplementedError
     
-    def add_documents(self, documents: List[Document], batch_size: int = 100, **kwargs: Any) -> List[str]:
-        """Run more documents through the embeddings and add to the vectorstore in batches.
+    def add_documents(self, documents: List[Document], batch_size: int = 100, **kwargs: Any
+    ) -> List[str]:
+        """Run more documents through the embeddings and add to the vectorstore
+        in batches.
 
         Args:
             documents (List[Document]: Documents to add to the vectorstore.
@@ -111,7 +113,8 @@ class VectorStore(ABC):
     async def aadd_documents(
         self, documents: List[Document], batch_size: int = 100, **kwargs: Any
     ) -> List[str]:
-        """Run more documents through the embeddings and add to the vectorstore in batches.
+        """Run more documents through the embeddings and add to the vectorstore
+        in batches.
         
         Args:
             documents (List[Document]: Documents to add to the vectorstore.
