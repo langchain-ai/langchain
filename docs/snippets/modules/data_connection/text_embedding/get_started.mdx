@@ -31,7 +31,7 @@ embeddings_model = OpenAIEmbeddings()
 #### Embed list of texts
 
 ```python
-embeddings = embedding_model.embed_documents(
+embeddings = embeddings_model.embed_documents(
     [
         "Hi there!",
         "Oh, hello!",
@@ -56,7 +56,7 @@ len(embeddings), len(embeddings[0])
 Embed a single piece of text for the purpose of comparing to other embedded pieces of texts.
 
 ```python
-embedded_query = embedding_model.embed_query("What was the name mentioned in the conversation?")
+embedded_query = embeddings_model.embed_query("What was the name mentioned in the conversation?")
 embedded_query[:5]
 ```
 

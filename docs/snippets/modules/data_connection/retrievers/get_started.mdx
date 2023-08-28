@@ -1,30 +1,46 @@
-The `BaseRetriever` class in LangChain is as follows:
+The public API of the `BaseRetriever` class in LangChain is as follows:
 
 ```python
 from abc import ABC, abstractmethod
-from typing import List
+from typing import Any, List
 from langchain.schema import Document
+from langchain.callbacks.manager import Callbacks
 
 class BaseRetriever(ABC):
-    @abstractmethod
-    def get_relevant_documents(self, query: str) -> List[Document]:
-        """Get texts relevant for a query.
-
+    ...
+    def get_relevant_documents(
+        self, query: str, *, callbacks: Callbacks = None, **kwargs: Any
+    ) -> List[Document]:
+        """Retrieve documents relevant to a query.
         Args:
-            query: string to find relevant texts for
-
+            query: string to find relevant documents for
+            callbacks: Callback manager or list of callbacks
         Returns:
             List of relevant documents
         """
+        ...
+
+    async def aget_relevant_documents(
+        self, query: str, *, callbacks: Callbacks = None, **kwargs: Any
+    ) -> List[Document]:
+        """Asynchronously get documents relevant to a query.
+        Args:
+            query: string to find relevant documents for
+            callbacks: Callback manager or list of callbacks
+        Returns:
+            List of relevant documents
+        """
+        ...
 ```
 
-It's that simple! The `get_relevant_documents` method can be implemented however you see fit.
+It's that simple! You can call `get_relevant_documents` or the async `get_relevant_documents` methods to retrieve documents relevant to a query, where "relevance" is defined by
+the specific retriever object you are calling.
 
 Of course, we also help construct what we think useful Retrievers are. The main type of Retriever that we focus on is a Vectorstore retriever. We will focus on that for the rest of this guide.
 
 In order to understand what a vectorstore retriever is, it's important to understand what a Vectorstore is. So let's look at that.
 
-By default, LangChain uses [Chroma](../../ecosystem/chroma.md) as the vectorstore to index and search embeddings. To walk through this tutorial, we'll first need to install `chromadb`.
+By default, LangChain uses [Chroma](/docs/ecosystem/integrations/chroma.html) as the vectorstore to index and search embeddings. To walk through this tutorial, we'll first need to install `chromadb`.
 
 ```
 pip install chromadb
@@ -50,7 +66,7 @@ from langchain.chains import RetrievalQA
 from langchain.llms import OpenAI
 ```
 
-Next in the generic setup, let's specify the document loader we want to use. You can download the `state_of_the_union.txt` file [here](https://github.com/hwchase17/langchain/blob/master/docs/modules/state_of_the_union.txt)
+Next in the generic setup, let's specify the document loader we want to use. You can download the `state_of_the_union.txt` file [here](https://github.com/hwchase17/langchain/blob/master/docs/extras/modules/state_of_the_union.txt)
 
 
 ```python
@@ -142,6 +158,22 @@ index.vectorstore.as_retriever()
 ```
 
 </CodeOutputBlock>
+
+It can also be convenient to filter the vectorstore by the metadata associated with documents, particularly when your vectorstore has multiple sources.  This can be done using the `query` method like so:
+
+
+```python
+index.query("Summarize the general content of this document.", retriever_kwargs={"search_kwargs": {"filter": {"source": "../state_of_the_union.txt"}}})
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    " The document is a speech given by President Trump to the nation on the occasion of his 245th birthday. The speech highlights the importance of American values and the challenges facing the country, including the ongoing conflict in Ukraine, the ongoing trade war with China, and the ongoing conflict in Syria. The speech also discusses the importance of investing in emerging technologies and American manufacturing, and calls on Congress to pass the Bipartisan Innovation Act and other important legislation."
+```
+
+</CodeOutputBlock>
+
 
 ## Walkthrough
 

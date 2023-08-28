@@ -1,4 +1,4 @@
-## Using PyPDF
+# Using PyPDF
 
 Load PDF using `pypdf` into array of documents, where each document contains the page content and metadata with `page` number.
 
@@ -284,7 +284,7 @@ for s in snippets:
         semantic_snippets[cur_idx].metadata['content_font'] = max(s[1], semantic_snippets[cur_idx].metadata['content_font'])
         continue
     
-    # if current snippet's font size > previous section's content but less tha previous section's heading than also make a new 
+    # if current snippet's font size > previous section's content but less than previous section's heading than also make a new 
     # section (e.g. title of a pdf will have the highest font size but we don't want it to subsume all sections)
     metadata={'heading':s[0], 'content_font': 0, 'heading_font': s[1]}
     metadata.update(data.metadata)
@@ -389,3 +389,17 @@ data[0]
 ```
 
 </CodeOutputBlock>
+
+## Using AmazonTextractPDFParser
+
+The AmazonTextractPDFLoader calls the [Amazon Textract Service](https://aws.amazon.com/textract/) to convert PDFs into a Document structure. The loader does pure OCR at the moment, with more features like layout support planned, depending on demand.  Single and multi-page documents are supported with up to 3000 pages and 512 MB of size.
+
+For the call to be successful an AWS account is required, similar to the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html) requirements.
+
+Besides the AWS configuration, it is very similar to the other PDF loaders, while also supporting JPEG, PNG and TIFF and non-native PDF formats.
+
+```python
+from langchain.document_loaders import AmazonTextractPDFLoader
+loader = AmazonTextractPDFLoader("example_data/alejandro_rosalez_sample-small.jpeg")
+documents = loader.load()
+```

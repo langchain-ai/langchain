@@ -15,19 +15,13 @@ inputs:
     description: Poetry version
     required: true
 
-  install-command:
-    description: Command run for installing dependencies
-    required: false
-    default: poetry install
-
   cache-key:
     description: Cache key to use for manual handling of caching
     required: true
 
   working-directory:
-    description: Directory to run install-command in
-    required: false
-    default: ""
+    description: Directory whose poetry.lock file should be cached
+    required: true
 
 runs:
   using: composite
@@ -38,39 +32,35 @@ runs:
         python-version: ${{ inputs.python-version }}
 
     - uses: actions/cache@v3
-      id: cache-pip
-      name: Cache Pip ${{ inputs.python-version }}
+      id: cache-bin-poetry
+      name: Cache Poetry binary - Python ${{ inputs.python-version }}
       env:
-        SEGMENT_DOWNLOAD_TIMEOUT_MIN: "15"
+        SEGMENT_DOWNLOAD_TIMEOUT_MIN: "1"
+      with:
+        path: |
+          /opt/pipx/venvs/poetry
+          /opt/pipx_bin/poetry
+        # This step caches the poetry installation, so make sure it's keyed on the poetry version as well.
+        key: bin-poetry-${{ runner.os }}-${{ runner.arch }}-py-${{ inputs.python-version }}-${{ inputs.poetry-version }}
+
+    - name: Install poetry
+      if: steps.cache-bin-poetry.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        POETRY_VERSION: ${{ inputs.poetry-version }}
+        PYTHON_VERSION: ${{ inputs.python-version }}
+      run: pipx install "poetry==$POETRY_VERSION" --python "python$PYTHON_VERSION" --verbose
+
+    - name: Restore pip and poetry cached dependencies
+      uses: actions/cache@v3
+      env:
+        SEGMENT_DOWNLOAD_TIMEOUT_MIN: "4"
+        WORKDIR: ${{ inputs.working-directory == '' && '.' || inputs.working-directory }}
       with:
         path: |
           ~/.cache/pip
-        key: pip-${{ runner.os }}-${{ runner.arch }}-py-${{ inputs.python-version }}
-
-    - run: pipx install poetry==${{ inputs.poetry-version }} --python python${{ inputs.python-version }}
-      shell: bash
-
-    - name: Check Poetry File
-      shell: bash
-      run: |
-        poetry check
-
-    - name: Check lock file
-      shell: bash
-      run: |
-        poetry lock --check
-
-    - uses: actions/cache@v3
-      id: cache-poetry
-      env:
-        SEGMENT_DOWNLOAD_TIMEOUT_MIN: "15"
-      with:
-        path: |
           ~/.cache/pypoetry/virtualenvs
           ~/.cache/pypoetry/cache
           ~/.cache/pypoetry/artifacts
-        key: poetry-${{ runner.os }}-${{ runner.arch }}-py-${{ inputs.python-version }}-poetry-${{ inputs.poetry-version }}-${{ inputs.cache-key }}-${{ hashFiles('poetry.lock') }}
-
-    - run: ${{ inputs.install-command }}
-      working-directory: ${{ inputs.working-directory }}
-      shell: bash
+          ${{ env.WORKDIR }}/.venv
+        key: py-deps-${{ runner.os }}-${{ runner.arch }}-py-${{ inputs.python-version }}-poetry-${{ inputs.poetry-version }}-${{ inputs.cache-key }}-${{ hashFiles(format('{0}/**/poetry.lock', env.WORKDIR)) }}
