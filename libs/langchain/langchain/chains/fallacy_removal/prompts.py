@@ -86,7 +86,8 @@ FALLACY_CRITIQUE_PROMPT = FewShotPromptTemplate(
     prefix="Below is a conversation between a human and an \
     AI assistant. If there is no material critique of the \
     model output, append to the end of the Fallacy Critique: \
-    'No fallacy critique needed.' If there is material critique \
+    'No fallacy critique needed.' If there is material \
+    critique \
     of the model output, append to the end of the Fallacy \
     Critique: 'Fallacy Critique needed.'",
     suffix="""Human: {input_prompt}
