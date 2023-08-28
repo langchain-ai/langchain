@@ -25,3 +25,18 @@ Here is the output schema:
 ```
 {schema}
 ```"""
+
+
+XML_FORMAT_INSTRUCTIONS = """The output should be formatted as a XML file.
+Always mention the encoding of the file in the first line.
+Output should conform to the tags below.
+
+As an example, for the tags ["foo", "bar", "baz"], 
+the string "<foo>\n   <bar>\n      <baz></baz>\n   </bar>\n</foo>" is a well-formatted instance of the schema. 
+The string "<foo>\n   <bar>\n   </foo>" is not well-formatted.
+The string "<foo>\n   <tag>\n   </tag>\n</foo>" is not well-formatted.
+
+Here are the output tags:
+```
+{tags}
+```"""
