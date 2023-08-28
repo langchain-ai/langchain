@@ -3,17 +3,17 @@ from langchain.chains.fallacy_removal.base import FallacyChain
 
 TEXT_ONE = """ This text is bad.
 
-Revision request: Make it better.
+Fallacy Revision Request: Make it better.
 
-Revision:"""
+Fallacy Revision:"""
 
 TEXT_TWO = """ This text is bad.\n\n"""
 
 TEXT_THREE = """ This text is bad.
 
-Revision request: Make it better.
+Fallacy Revision request: Make it better.
 
-Revision: Better text"""
+Fallacy Revision: Better text"""
 
 
 def test_fallacy_critique_parsing() -> None:
