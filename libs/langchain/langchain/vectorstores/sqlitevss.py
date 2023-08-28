@@ -14,13 +14,12 @@ from typing import (
     Type,
 )
 
-
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
 
 if TYPE_CHECKING:
-    import sqlite_vss
+    import sqlite_vss  # noqa  # pylint: disable=unused-import
 
 logger = logging.getLogger(__name__)
 
@@ -34,16 +33,17 @@ class SQLiteVSS(VectorStore):
             from langchain.embeddings.openai import OpenAIEmbeddings
             ...
     """
+
     def __init__(
         self,
         table: str,
         connection: Optional[sqlite3.Connection],
         embedding: Embeddings,
-        db_file: str = "vss.db"
+        db_file: str = "vss.db",
     ):
         """Initialize with sqlite client with vss extension."""
         try:
-            import sqlite_vss
+            import sqlite_vss  # noqa  # pylint: disable=unused-import
         except ImportError:
             raise ImportError(
                 "Could not import sqlite_vss python package. "
@@ -51,12 +51,10 @@ class SQLiteVSS(VectorStore):
             )
 
         if not connection:
-            self.create_connection(db_file)
+            connection = self.create_connection(db_file)
 
         if not isinstance(embedding, Embeddings):
-            warnings.warn(
-                "embeddings input must be Embeddings object."
-            )
+            warnings.warn("embeddings input must be Embeddings object.")
 
         self._connection = connection
         self._table = table
@@ -64,11 +62,12 @@ class SQLiteVSS(VectorStore):
 
         self.create_table_if_not_exists()
 
-    def create_table_if_not_exists(self):
+    def create_table_if_not_exists(self) -> None:
         self._connection.execute(
             f"""
             CREATE TABLE IF NOT EXISTS {self._table}
             (
+              text_id INT PRIMARY KEY AUTOINCREMENT,
               text text,
               metadata blob,
               text_embedding blob
@@ -101,13 +100,16 @@ class SQLiteVSS(VectorStore):
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
-    ) -> None:
+    ) -> List[str]:
         """Add more texts to the vectorstore index.
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
             kwargs: vectorstore specific parameters
         """
+        max_id = self._connection.execute(
+            f"SELECT max(text_id) as text_id FROM {self._table}"
+        ).fetchone()["text_id"]
         embeds = self._embedding.embed_documents(list(texts))
         if not metadatas:
             metadatas = [{} for _ in texts]
@@ -118,9 +120,15 @@ class SQLiteVSS(VectorStore):
         self._connection.executemany(
             f"INSERT INTO {self._table}(text, metadata, text_embedding) "
             f"VALUES (?,?,?)",
-            data_input
+            data_input,
         )
         self._connection.commit()
+
+        # pulling every ids we just inserted
+        results = self._connection.execute(
+            f"SELECT text_id FROM {self._table} WHERE text_id > {max_id}"
+        )
+        return [row["text_id"] for row in results]
 
     def similarity_search_with_score_by_vector(
         self, embedding: List[float], k: int = 4, **kwargs: Any
@@ -131,7 +139,7 @@ class SQLiteVSS(VectorStore):
                 metadata,
                 distance
             FROM {self._table} e
-            INNER JOIN vss_{self._table} v on v.rowid = e.rowid  
+            INNER JOIN vss_{self._table} v on v.text_id = e.text_id  
             WHERE vss_search(
               v.text_embedding,
               vss_search_params('{json.dumps(embedding)}', {k})
@@ -144,8 +152,7 @@ class SQLiteVSS(VectorStore):
         documents = []
         for row in results:
             doc = Document(
-                page_content=row["text"],
-                metadata=json.loads(row["metadata"])
+                page_content=row["text"], metadata=json.loads(row["metadata"])
             )
             score = self._euclidean_relevance_score_fn(row["distance"])
             documents.append((doc, score))
@@ -156,10 +163,9 @@ class SQLiteVSS(VectorStore):
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """Return docs most similar to query."""
-        embedding = self.embeddings.embed_query(query)
+        embedding = self._embedding.embed_query(query)
         documents = self.similarity_search_with_score_by_vector(
-            embedding=embedding,
-            k=k
+            embedding=embedding, k=k
         )
         return [doc for doc, _ in documents]
 
@@ -167,10 +173,9 @@ class SQLiteVSS(VectorStore):
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query."""
-        embedding = self.embeddings.embed_query(query)
+        embedding = self._embedding.embed_query(query)
         documents = self.similarity_search_with_score_by_vector(
-            embedding=embedding,
-            k=k
+            embedding=embedding, k=k
         )
         return documents
 
@@ -178,8 +183,7 @@ class SQLiteVSS(VectorStore):
         self, embedding: List[float], k: int = 4, **kwargs: Any
     ) -> List[Document]:
         documents = self.similarity_search_with_score_by_vector(
-            embedding=embedding,
-            k=k
+            embedding=embedding, k=k
         )
         return [doc for doc, _ in documents]
 
@@ -188,27 +192,21 @@ class SQLiteVSS(VectorStore):
         cls: Type[SQLiteVSS],
         texts: List[str],
         embedding: Embeddings,
-        index: str = None,
-        db_file: str = "vss.db",
         metadatas: Optional[List[dict]] = None,
+        table: str = "langchain",
+        db_file: str = "vss.db",
         **kwargs: Any,
     ) -> SQLiteVSS:
         """Return VectorStore initialized from texts and embeddings."""
         connection = cls.create_connection(db_file)
         vss = cls(
-            table=index,
-            connection=connection,
-            db_file=db_file,
-            embedding=embedding
+            table=table, connection=connection, db_file=db_file, embedding=embedding
         )
-        vss.add_texts(
-            texts=texts,
-            metadatas=metadatas
-        )
+        vss.add_texts(texts=texts, metadatas=metadatas)
         return vss
 
     @staticmethod
-    def create_connection(db_file):
+    def create_connection(db_file: str) -> sqlite3.Connection:
         connection = sqlite3.connect(db_file)
         connection.row_factory = sqlite3.Row
         connection.enable_load_extension(True)
@@ -216,7 +214,7 @@ class SQLiteVSS(VectorStore):
         connection.enable_load_extension(False)
         return connection
 
-    def get_dimensionality(self):
+    def get_dimensionality(self) -> int:
         """
         Function that does a dummy embedding to figure out how many dimensions
         this embedding function returns. Needed for the virtual table DDL.

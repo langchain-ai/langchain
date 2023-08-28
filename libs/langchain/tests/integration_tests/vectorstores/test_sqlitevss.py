@@ -1,12 +1,13 @@
 from typing import List, Optional
 
+import pytest
+
 from langchain.docstore.document import Document
 from langchain.vectorstores import SQLiteVSS
 from tests.integration_tests.vectorstores.fake_embeddings import (
     FakeEmbeddings,
     fake_texts,
 )
-import pytest
 
 
 def _sqlite_vss_from_texts(
@@ -17,7 +18,7 @@ def _sqlite_vss_from_texts(
         FakeEmbeddings(),
         metadatas=metadatas,
         table="test",
-        db_file=":memory:"
+        db_file=":memory:",
     )
 
 

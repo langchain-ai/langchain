@@ -62,7 +62,7 @@ from langchain.vectorstores.rocksetdb import Rockset
 from langchain.vectorstores.scann import ScaNN
 from langchain.vectorstores.singlestoredb import SingleStoreDB
 from langchain.vectorstores.sklearn import SKLearnVectorStore
-from langchain.vectorstores.sqlite_vss import SQLiteVSS
+from langchain.vectorstores.sqlitevss import SQLiteVSS
 from langchain.vectorstores.starrocks import StarRocks
 from langchain.vectorstores.supabase import SupabaseVectorStore
 from langchain.vectorstores.tair import Tair
