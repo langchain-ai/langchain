@@ -8,7 +8,7 @@ Model: {output_from_model}
 
 Fallacy Critique Request: {fallacy_critique_request}
 
-Critique: {fallacy}""",
+Fallacy Critique: {fallacy}""",
     input_variables=[
         "input_prompt",
         "output_from_model",
@@ -37,32 +37,32 @@ examples = [
 ]
 
 FALLACY_CRITIQUE_PROMPT = FewShotPromptTemplate(
-    example_prompt=critique_example,
+    example_prompt=fallacy_critique_example,
     examples=[
         {k: v for k, v in e.items() if k != "fallacy_revision_request"} for e in examples
     ],
-    prefix="Below is a conversation between a human and an AI model. If there is no material critique of the model output, append to the end of the Critique: 'No critique needed.' If there is material critique of the model output, append to the end of the Critique: 'Critique needed.'",
+    prefix="Below is a conversation between a human and an AI assistant. If there is no material critique of the model output, append to the end of the Fallacy Critique: 'No fallacy critique needed.' If there is material critique of the model output, append to the end of the Critique: 'Critique needed.'",
     suffix="""Human: {input_prompt}
 Model: {output_from_model}
 
 Fallacy Critique Request: {fallacy_critique_request}
 
-Fallacy:""",
+Fallacy Critique:""",
     example_separator="\n === \n",
     input_variables=["input_prompt", "output_from_model", "fallacy_critique_request"],
 )
 
 FALLACY_REVISION_PROMPT = FewShotPromptTemplate(
-    example_prompt=critique_example,
+    example_prompt=fallacy_critique_example,
     examples=examples,
-    prefix="Below is a conversation between a human and an AI model.",
+    prefix="Below is a conversation between a human and an AI assistant.",
     suffix="""Human: {input_prompt}
 
 Model: {output_from_model}
 
 Fallacy Critique Request: {fallacy_critique_request}
 
-Fallacy: {fallacy}
+Fallacy Critique: {fallacy}
 
 If the fallacy critique does not identify anything worth changing, ignore the Fallacy Revision Request and do not make any revisions. Instead, return "No revisions needed".
 
