@@ -5,7 +5,7 @@ from typing import Dict
 
 from langchain.chains.fallacy_removal.models import LogicalFallacy
 
-PRINCIPLES: Dict[str, LogicalFallacy] = {
+FALLACIES: Dict[str, LogicalFallacy] = {
     "adhominem": LogicalFallacy(
         name="adhominem",
         fallacy_critique_request="Identify any feasible ways in which the assistant’s last response is attacking the character or personal traits of the person making an argument rather than addressing the actual argument and evidence.",
