@@ -8,6 +8,7 @@ from typing import (
     Iterator,
     Mapping,
     Optional,
+    Sequence,
     Union,
 )
 
@@ -24,7 +25,7 @@ if TYPE_CHECKING:
 
 
 class PutLocalVar(RunnablePassthrough):
-    key: Union[str, Mapping[str, str]]
+    key: Union[str, Sequence[str], Mapping[str, str]]
     """The key(s) to use for storing the input variable(s) in local state.
     
     If a string is provided then the entire input is stored under that key. If a 
@@ -52,13 +53,17 @@ class PutLocalVar(RunnablePassthrough):
                 config["_locals"][self.key] = input
             else:
                 config["_locals"][self.key] += input
-        elif isinstance(self.key, Mapping):
+        elif isinstance(self.key, (Sequence, Mapping)):
             if not isinstance(input, Mapping):
                 raise TypeError(
                     f"Received key of type Mapping but input of type {type(input)}. "
                     f"input is expected to be of type Mapping when key is Mapping."
                 )
-            for input_key, put_key in self.key.items():
+            if not isinstance(self.key, Mapping):
+                key_map = {key: key for key in self.key}
+            else:
+                key_map = self.key
+            for input_key, put_key in key_map.items():
                 if put_key not in config["_locals"] or replace:
                     config["_locals"][put_key] = input[input_key]
                 else:
