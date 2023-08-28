@@ -547,9 +547,8 @@ class Tool(BaseTool):
         **kwargs: Any,
     ) -> Tool:
         """Initialize tool from a function."""
-        assert (
-            func is not None or coroutine is not None
-        ), "Function and/or coroutine must be provided"
+        if func is None and coroutine is None:
+            raise ValueError("Function and/or coroutine must be provided")
         return cls(
             name=name,
             func=func,
@@ -676,22 +675,25 @@ class StructuredTool(BaseTool):
                 tool = StructuredTool.from_function(add)
                 tool.run(1, 2) # 3
         """
-        assert (
-            func is not None or coroutine is not None
-        ), "Function and/or coroutine must be provided"
+        if func is None and coroutine is None:
+            raise ValueError("Function and/or coroutine must be provided")
 
         name = name or (func if func is not None else coroutine).__name__
         description = description or (func if func is not None else coroutine).__doc__
-        assert (
-            description is not None
-        ), "Function must have a docstring if description not provided."
+        if description is None:
+            raise ValueError(
+                "Function must have a docstring if description not provided."
+            )
 
         # Description example:
         # search_api(query: str) - Searches the API for the query.
         description = f"{name}{signature(func)} - {description.strip()}"
         _args_schema = args_schema
         if _args_schema is None and infer_schema:
-            _args_schema = create_schema_from_function(f"{name}Schema", func)
+            if func is not None:
+                _args_schema = create_schema_from_function(f"{name}Schema", func)
+            else:
+                _args_schema = create_schema_from_function(f"{name}Schema", coroutine)
         return cls(
             name=name,
             func=func,
@@ -758,7 +760,11 @@ def tool(
                 )
             # If someone doesn't want a schema applied, we must treat it as
             # a simple string->string function
-            assert func.__doc__ is not None, "Function must have a docstring"
+            if func.__doc__ is None:
+                raise ValueError(
+                    "Function must have a docstring if "
+                    "description not provided and infer_schema is False."
+                )
             return Tool(
                 name=tool_name,
                 func=func,
