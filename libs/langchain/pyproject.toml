@@ -342,7 +342,7 @@ extended_testing = [
  "faiss-cpu",
  "openapi-schema-pydantic",
  "vowpal-wabbit-next",
- "sentence-transformers"
+ "sentence-transformers",
  "markdownify",
 ]
 
