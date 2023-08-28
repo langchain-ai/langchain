@@ -49,6 +49,7 @@ from langchain.schema import (
     LLMResult,
 )
 from langchain.schema.messages import BaseMessage, get_buffer_string
+from langchain.schema.output import ChatGenerationChunk, GenerationChunk
 
 if TYPE_CHECKING:
     from langsmith import Client as LangSmithClient
@@ -592,6 +593,8 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
     def on_llm_new_token(
         self,
         token: str,
+        *,
+        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
         **kwargs: Any,
     ) -> None:
         """Run when LLM generates a new token.
@@ -607,6 +610,7 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
             tags=self.tags,
+            chunk=chunk,
             **kwargs,
         )
 
@@ -655,6 +659,8 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
     async def on_llm_new_token(
         self,
         token: str,
+        *,
+        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
         **kwargs: Any,
     ) -> None:
         """Run when LLM generates a new token.
@@ -667,6 +673,7 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
             "on_llm_new_token",
             "ignore_llm",
             token,
+            chunk=chunk,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
             tags=self.tags,
