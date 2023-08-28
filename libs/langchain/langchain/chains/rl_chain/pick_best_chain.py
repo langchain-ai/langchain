@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 SENTINEL = object()
 
 
-class PickBestFeatureEmbedder(base.Embedder):
+class PickBestFeatureEmbedder(base.Embedder[PickBest.Event]):
     """
     Text Embedder class that embeds the `BasedOn` and `ToSelectFrom` inputs into a format that can be used by the learning policy
 
@@ -25,7 +25,7 @@ class PickBestFeatureEmbedder(base.Embedder):
         model name (Any, optional): The type of embeddings to be used for feature representation. Defaults to BERT SentenceTransformer.
     """  # noqa E501
 
-    def __init__(self, model: Optional[Any] = None, *args, **kwargs):
+    def __init__(self, model: Optional[Any] = None, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
         if model is None:
@@ -88,7 +88,7 @@ class PickBestFeatureEmbedder(base.Embedder):
         return example_string[:-1]
 
 
-class PickBest(base.RLChain):
+class PickBest(base.RLChain[PickBest.Event]):
     """
     `PickBest` is a class designed to leverage the Vowpal Wabbit (VW) model for reinforcement learning with a context, with the goal of modifying the prompt before the LLM call.
 
@@ -131,7 +131,7 @@ class PickBest(base.RLChain):
             self.probability = probability
             self.score = score
 
-    class Event(base.Event):
+    class Event(base.Event[PickBest.Selected]):
         def __init__(
             self,
             inputs: Dict[str, Any],
@@ -146,8 +146,8 @@ class PickBest(base.RLChain):
     def __init__(
         self,
         feature_embedder: Optional[PickBestFeatureEmbedder] = None,
-        *args,
-        **kwargs,
+        *args: Any,
+        **kwargs: Any,
     ):
         vw_cmd = kwargs.get("vw_cmd", [])
         if not vw_cmd:
@@ -170,7 +170,7 @@ class PickBest(base.RLChain):
 
         super().__init__(feature_embedder=feature_embedder, *args, **kwargs)
 
-    def _call_before_predict(self, inputs: Dict[str, Any]) -> PickBest.Event:
+    def _call_before_predict(self, inputs: Dict[str, Any]) -> Event:
         context, actions = base.get_based_on_and_to_select_from(inputs=inputs)
         if not actions:
             raise ValueError(
@@ -198,7 +198,7 @@ class PickBest(base.RLChain):
 
     def _call_after_predict_before_llm(
         self, inputs: Dict[str, Any], event: Event, prediction: List[Tuple[int, float]]
-    ) -> Tuple[Dict[str, Any], PickBest.Event]:
+    ) -> Tuple[Dict[str, Any], Event]:
         import numpy as np
 
         prob_sum = sum(prob for _, prob in prediction)
@@ -218,8 +218,8 @@ class PickBest(base.RLChain):
         return next_chain_inputs, event
 
     def _call_after_llm_before_scoring(
-        self, llm_response: str, event: PickBest.Event
-    ) -> Tuple[Dict[str, Any], PickBest.Event]:
+        self, llm_response: str, event: Event
+    ) -> Tuple[Dict[str, Any], Event]:
         next_chain_inputs = event.inputs.copy()
         # only one key, value pair in event.to_select_from
         value = next(iter(event.to_select_from.values()))
@@ -232,7 +232,7 @@ class PickBest(base.RLChain):
         return next_chain_inputs, event
 
     def _call_after_scoring_before_learning(
-        self, event: PickBest.Event, score: Optional[float]
+        self, event: Event, score: Optional[float]
     ) -> Event:
         event.selected.score = score
         return event

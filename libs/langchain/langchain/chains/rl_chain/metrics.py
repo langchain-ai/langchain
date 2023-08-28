@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -6,11 +6,11 @@ if TYPE_CHECKING:
 
 class MetricsTracker:
     def __init__(self, step: int):
-        self._history = []
-        self._step = step
-        self._i = 0
-        self._num = 0
-        self._denom = 0
+        self._history: List[Dict[str, Union[int, float]]] = []
+        self._step: int = step
+        self._i: int = 0
+        self._num: float = 0
+        self._denom: float = 0
 
     @property
     def score(self) -> float:

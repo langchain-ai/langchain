@@ -4,7 +4,7 @@ import logging
 import os
 import shutil
 from pathlib import Path
-from typing import TYPE_CHECKING, Sequence, Union
+from typing import TYPE_CHECKING, List, Union
 
 if TYPE_CHECKING:
     import vowpal_wabbit_next as vw
@@ -22,7 +22,7 @@ class ModelRepository:
         self.folder = Path(folder)
         self.model_path = self.folder / "latest.vw"
         self.with_history = with_history
-        if reset and self.has_history:
+        if reset and self.has_history():
             logger.warning(
                 "There is non empty history which is recommended to be cleaned up"
             )
@@ -44,7 +44,7 @@ class ModelRepository:
         if self.with_history:  # write history
             shutil.copyfile(self.model_path, self.folder / f"model-{self.get_tag()}.vw")
 
-    def load(self, commandline: Sequence[str]) -> "vw.Workspace":
+    def load(self, commandline: List[str]) -> "vw.Workspace":
         import vowpal_wabbit_next as vw
 
         model_data = None
