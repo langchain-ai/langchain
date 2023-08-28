@@ -45,5 +45,5 @@ __all__ = [
     "RetryOutputParser",
     "RetryWithErrorOutputParser",
     "StructuredOutputParser",
-    "XMLOutputParser"
+    "XMLOutputParser",
 ]
