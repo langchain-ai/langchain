@@ -1,21 +1,26 @@
 from pathlib import Path
-from typing import Tuple
+from typing import Any, Generator, Tuple
 
 import pytest
+from sqlalchemy import Column, Integer, Text
+from sqlalchemy.orm import DeclarativeBase
 
 from langchain.memory.chat_message_histories import SQLChatMessageHistory
+from langchain.memory.chat_message_histories.sql import DefaultMessageConverter
 from langchain.schema.messages import AIMessage, HumanMessage
 
 
-# @pytest.fixture(params=[("SQLite"), ("postgresql")])
-@pytest.fixture(params=[("SQLite")])
-def sql_histories(request, tmp_path: Path):  # type: ignore
-    if request.param == "SQLite":
-        file_path = tmp_path / "db.sqlite3"
-        con_str = f"sqlite:///{file_path}"
-    elif request.param == "postgresql":
-        con_str = "postgresql://postgres:postgres@localhost/postgres"
+@pytest.fixture()
+def con_str(tmp_path: Path) -> str:
+    file_path = tmp_path / "db.sqlite3"
+    con_str = f"sqlite:///{file_path}"
+    return con_str
 
+
+@pytest.fixture()
+def sql_histories(
+    con_str: str,
+) -> Generator[Tuple[SQLChatMessageHistory, SQLChatMessageHistory], None, None]:
     message_history = SQLChatMessageHistory(
         session_id="123", connection_string=con_str, table_name="test_table"
     )
@@ -24,7 +29,7 @@ def sql_histories(request, tmp_path: Path):  # type: ignore
         session_id="456", connection_string=con_str, table_name="test_table"
     )
 
-    yield (message_history, other_history)
+    yield message_history, other_history
     message_history.clear()
     other_history.clear()
 
@@ -83,3 +88,24 @@ def test_clear_messages(
     sql_history.clear()
     assert len(sql_history.messages) == 0
     assert len(other_history.messages) == 1
+
+
+def test_model_no_session_id_field_error(con_str: str) -> None:
+    class Base(DeclarativeBase):
+        pass
+
+    class Model(Base):
+        __tablename__ = "test_table"
+        id = Column(Integer, primary_key=True)
+        test_field = Column(Text)
+
+    class CustomMessageConverter(DefaultMessageConverter):
+        def get_sql_model_class(self) -> Any:
+            return Model
+
+    with pytest.raises(ValueError):
+        SQLChatMessageHistory(
+            "test",
+            con_str,
+            custom_message_converter=CustomMessageConverter("test_table"),
+        )
