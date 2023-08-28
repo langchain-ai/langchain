@@ -8,8 +8,9 @@ from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.fallacy_removal.fallacies import FALLACIES
 from langchain.chains.fallacy_removal.models import LogicalFallacy 
-from langchain.chains.fallacy_removal.prompts \
-import FALLACY_CRITIQUE_PROMPT, FALLACY_REVISION_PROMPT
+from langchain.chains.fallacy_removal.prompts import (
+FALLACY_CRITIQUE_PROMPT, 
+FALLACY_REVISION_PROMPT)
 from langchain.chains.llm import LLMChain
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
@@ -41,7 +42,8 @@ class FallacyChain(Chain):
                 logical_fallacies=[
                     LogicalFallacy(
                         fallacy_critique_request="Tell if this answer meets criteria.",
-                        fallacy_revision_request="Give an answer that meets better criteria.",
+                        fallacy_revision_request=\
+                        "Give an answer that meets better criteria.",
                     )
                 ],
             )
