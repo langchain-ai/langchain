@@ -15,6 +15,7 @@ from typing import (
 
 from typing_extensions import Literal
 
+from langchain.chat_loaders.base import ChatSession
 from langchain.schema.messages import (
     AIMessage,
     AIMessageChunk,
@@ -206,3 +207,19 @@ class ChatCompletion:
                 _convert_message_chunk_to_delta(c, i)
                 async for i, c in aenumerate(model_config.astream(converted_messages))
             )
+
+
+def _has_assistant_message(session: ChatSession) -> bool:
+    """Check if chat session has an assistant message."""
+    return any([isinstance(m, AIMessage) for m in session["messages"]])
+
+
+def convert_messages_for_finetuning(
+    sessions: Iterable[ChatSession],
+) -> List[List[dict]]:
+    """Convert messages to a list of lists of dictionaries for fine-tuning."""
+    return [
+        [convert_message_to_dict(s) for s in session["messages"]]
+        for session in sessions
+        if _has_assistant_message(session)
+    ]
