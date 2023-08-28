@@ -5,7 +5,7 @@ fake = Faker()
 
 # Listed  entities supported by Microsoft Presidio (for now, global and US only)
 # Source: https://microsoft.github.io/presidio/supported_entities/
-pseudoanonymizer_mapping = {
+PSEUDOANONYMIZER_MAPPING = {
     # Global entities
     "PERSON": lambda _: fake.name(),
     "EMAIL_ADDRESS": lambda _: fake.email(),
