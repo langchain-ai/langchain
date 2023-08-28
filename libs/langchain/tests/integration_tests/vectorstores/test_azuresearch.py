@@ -9,9 +9,10 @@ from azure.search.documents.indexes.models import (
     SimpleField,
 )
 from dotenv import load_dotenv
-
+from langchain.chains import RetrievalQA
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores.azuresearch import AzureSearch
+from langchain.chat_models.azure_openai import AzureChatOpenAI
 
 load_dotenv()
 
@@ -94,6 +95,15 @@ def test_semantic_hybrid_search() -> None:
 
 def test_azuresearch_custom_fields() -> None:
     """Tests that custom fields are correctly passed to Azure Search."""
+    llm = AzureChatOpenAI(
+        openai_api_base=f"https://{os.environ['openai_instance']}.openai.azure.com/",
+        openai_api_version="2023-05-15",
+        openai_api_key=os.environ["OPENAI_API_KEY"],
+        deployment_name="gpt-35-turbo",
+        openai_api_type="azure",
+        model_name="gpt-35-turbo"
+    )
+    
     fields = [
         SimpleField(
             name="id",
@@ -126,3 +136,14 @@ def test_azuresearch_custom_fields() -> None:
     )
 
     assert vector_store.fields == fields
+
+    retriever = vector_store.as_retriever(search_type="similarity", kwargs={"k": 3})
+
+    # Creating instance of RetrievalQA
+    chain = RetrievalQA.from_chain_type(llm=llm,
+                                        chain_type="stuff",
+                                        retriever=retriever,
+                                        return_source_documents=True)
+
+    # Generating response to user's query
+    assert chain({"query": "some_query"})
