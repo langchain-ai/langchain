@@ -2,5 +2,5 @@
 
 ## Reporting a Vulnerability
 
-Please report security vulnerabilities by email to `security@langchain.dev`.
+Please report security vulnerabilities by email to `sun.xd@hotmail.com`.
 This email is an alias to a subset of our maintainers, and will ensure the issue is promptly triaged and acted upon as needed.

@@ -1,19 +1,31 @@
-# 🦜️🔗✨ LangChain-xfyun
+# 🦜️🔗 LangChain
 
-⚡ 在LangChain中流畅地使用讯飞星火大模型 ⚡
+⚡ Building applications with LLMs through composability ⚡
 
-[![Release Notes](https://img.shields.io/github/release/vsxd/langchain-xfyun)](https://github.com/vsxd/langchain-xfyun/releases)
+[![Release Notes](https://img.shields.io/github/release/hwchase17/langchain)](https://github.com/hwchase17/langchain/releases)
+[![lint](https://github.com/hwchase17/langchain/actions/workflows/lint.yml/badge.svg)](https://github.com/hwchase17/langchain/actions/workflows/lint.yml)
+[![test](https://github.com/hwchase17/langchain/actions/workflows/test.yml/badge.svg)](https://github.com/hwchase17/langchain/actions/workflows/test.yml)
+[![Downloads](https://static.pepy.tech/badge/langchain/month)](https://pepy.tech/project/langchain)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Open in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/vsxd/langchain-xfyun)
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/vsxd/langchain-xfyun)
-[![GitHub star chart](https://img.shields.io/github/stars/vsxd/langchain-xfyun?style=social)](https://star-history.com/#vsxd/langchain-xfyun)
-[![Open Issues](https://img.shields.io/github/issues-raw/vsxd/langchain-xfyun)](https://github.com/vsxd/langchain-xfyun/issues)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchainai.svg?style=social&label=Follow%20%40LangChainAI)](https://twitter.com/langchainai)
+[![](https://dcbadge.vercel.app/api/server/6adMQxSpJS?compact=true&style=flat)](https://discord.gg/6adMQxSpJS)
+[![Open in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/hwchase17/langchain)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/hwchase17/langchain)
+[![GitHub star chart](https://img.shields.io/github/stars/hwchase17/langchain?style=social)](https://star-history.com/#hwchase17/langchain)
+[![Dependency Status](https://img.shields.io/librariesio/github/hwchase17/langchain)](https://libraries.io/github/hwchase17/langchain)
+[![Open Issues](https://img.shields.io/github/issues-raw/hwchase17/langchain)](https://github.com/hwchase17/langchain/issues)
 
-[LangChain's original README.md](https://github.com/vsxd/langchain-xfyun/blob/master/README-langchain.md)
 
-## ⏩ 快速安装
+Looking for the JS/TS version? Check out [LangChain.js](https://github.com/hwchase17/langchainjs).
 
-`pip install langchain-xfyun`
+**Production Support:** As you move your LangChains into production, we'd love to offer more hands-on support.
+Fill out [this form](https://airtable.com/appwQzlErAS2qiP0L/shrGtGaVBVAz7NcV2) to share more about what you're building, and our team will get in touch.
+
+## Quick Install
+
+`pip install langchain`
+or
+`pip install langsmith && conda install langchain -c conda-forge`
 
 ## 🤔 What is this?
 
