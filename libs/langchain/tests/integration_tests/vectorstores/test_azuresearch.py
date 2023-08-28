@@ -2,13 +2,14 @@ import os
 import time
 
 import pytest
-from dotenv import load_dotenv
 from azure.search.documents.indexes.models import (
-            SearchableField,
-            SearchField,
-            SearchFieldDataType,
-            SimpleField,
-        )
+    SearchableField,
+    SearchField,
+    SearchFieldDataType,
+    SimpleField,
+)
+from dotenv import load_dotenv
+
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores.azuresearch import AzureSearch
 
@@ -94,26 +95,26 @@ def test_semantic_hybrid_search() -> None:
 def test_azuresearch_custom_fields() -> None:
     """Tests that custom fields are correctly passed to Azure Search."""
     fields = [
-            SimpleField(
-                name="id",
-                type=SearchFieldDataType.String,
-                key=True,
-                filterable=True,
-            ),
-            SearchableField(
-                name="text",
-                type=SearchFieldDataType.String,
-                searchable=True,
-            ),
-            SearchField(
-                name="embedding",
-                type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
-                searchable=True,
-                vector_search_dimensions=1536,
-                vector_search_configuration="default",
-            )
-        ]
-    
+        SimpleField(
+            name="id",
+            type=SearchFieldDataType.String,
+            key=True,
+            filterable=True,
+        ),
+        SearchableField(
+            name="text",
+            type=SearchFieldDataType.String,
+            searchable=True,
+        ),
+        SearchField(
+            name="embedding",
+            type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
+            searchable=True,
+            vector_search_dimensions=1536,
+            vector_search_configuration="default",
+        ),
+    ]
+
     # Create Embeddings
     embeddings: OpenAIEmbeddings = OpenAIEmbeddings(model=model, chunk_size=1)
     vector_store: AzureSearch = AzureSearch(
