@@ -6,8 +6,8 @@ from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
-from langchain.chains.fallacy_removal.models import LogicalFallacy 
 from langchain.chains.fallacy_removal.fallacies import FALLACIES
+from langchain.chains.fallacy_removal.models import LogicalFallacy 
 from langchain.chains.fallacy_removal.prompts \
 import FALLACY_CRITIQUE_PROMPT, FALLACY_REVISION_PROMPT
 from langchain.chains.llm import LLMChain
@@ -74,8 +74,8 @@ class FallacyChain(Chain):
         **kwargs: Any,
     ) -> "FallacyChain":
         """Create a chain from an LLM."""
-        fallacy_critique_chain = LLMChain(llm=llm, prompt=critique_prompt)
-        fallacy_revision_chain = LLMChain(llm=llm, prompt=revision_prompt)
+        fallacy_critique_chain = LLMChain(llm=llm, prompt=fallacy_critique_prompt)
+        fallacy_revision_chain = LLMChain(llm=llm, prompt=fallacy_revision_prompt)
         return cls(
             chain=chain,
             fallacy_critique_chain=fallacy_critique_chain,
