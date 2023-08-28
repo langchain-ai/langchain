@@ -6,7 +6,7 @@ from typing import Dict
 
 from langchain.chains.fallacy_removal.models import LogicalFallacy
 
-FALLACIES: Dict[str, LogicalFallacy] = {
+AFALLACIES: Dict[str, LogicalFallacy] = {
     "adhominem": LogicalFallacy(
         name="adhominem",
         fallacy_critique_request="Identify any feasible ways in which \
