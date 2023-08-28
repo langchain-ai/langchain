@@ -263,20 +263,28 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         self,
         inputs: List[LanguageModelInput],
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
-        max_concurrency: Optional[int] = None,
+        *,
+        return_exceptions: bool = False,
         **kwargs: Any,
     ) -> List[str]:
         config = get_config_list(config, len(inputs))
+        max_concurrency = config[0].get("max_concurrency")
 
         if max_concurrency is None:
-            llm_result = self.generate_prompt(
-                [self._convert_input(input) for input in inputs],
-                callbacks=[c.get("callbacks") for c in config],
-                tags=[c.get("tags") for c in config],
-                metadata=[c.get("metadata") for c in config],
-                **kwargs,
-            )
-            return [g[0].text for g in llm_result.generations]
+            try:
+                llm_result = self.generate_prompt(
+                    [self._convert_input(input) for input in inputs],
+                    callbacks=[c.get("callbacks") for c in config],
+                    tags=[c.get("tags") for c in config],
+                    metadata=[c.get("metadata") for c in config],
+                    **kwargs,
+                )
+                return [g[0].text for g in llm_result.generations]
+            except Exception as e:
+                if return_exceptions:
+                    return cast(List[str], [e for _ in inputs])
+                else:
+                    raise e
         else:
             batches = [
                 inputs[i : i + max_concurrency]
@@ -285,33 +293,43 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             return [
                 output
                 for batch in batches
-                for output in self.batch(batch, config=config, **kwargs)
+                for output in self.batch(
+                    batch, config=config, return_exceptions=return_exceptions, **kwargs
+                )
             ]
 
     async def abatch(
         self,
         inputs: List[LanguageModelInput],
         config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
-        max_concurrency: Optional[int] = None,
+        *,
+        return_exceptions: bool = False,
         **kwargs: Any,
     ) -> List[str]:
         if type(self)._agenerate == BaseLLM._agenerate:
             # model doesn't implement async batch, so use default implementation
             return await asyncio.get_running_loop().run_in_executor(
-                None, self.batch, inputs, config, max_concurrency
+                None, partial(self.batch, **kwargs), inputs, config
             )
 
         config = get_config_list(config, len(inputs))
+        max_concurrency = config[0].get("max_concurrency")
 
         if max_concurrency is None:
-            llm_result = await self.agenerate_prompt(
-                [self._convert_input(input) for input in inputs],
-                callbacks=[c.get("callbacks") for c in config],
-                tags=[c.get("tags") for c in config],
-                metadata=[c.get("metadata") for c in config],
-                **kwargs,
-            )
-            return [g[0].text for g in llm_result.generations]
+            try:
+                llm_result = await self.agenerate_prompt(
+                    [self._convert_input(input) for input in inputs],
+                    callbacks=[c.get("callbacks") for c in config],
+                    tags=[c.get("tags") for c in config],
+                    metadata=[c.get("metadata") for c in config],
+                    **kwargs,
+                )
+                return [g[0].text for g in llm_result.generations]
+            except Exception as e:
+                if return_exceptions:
+                    return cast(List[str], [e for _ in inputs])
+                else:
+                    raise e
         else:
             batches = [
                 inputs[i : i + max_concurrency]
