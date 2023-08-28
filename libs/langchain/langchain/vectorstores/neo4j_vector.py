@@ -27,7 +27,7 @@ distance_mapping = {
 }
 
 
-def check_if_not_null(props, values) -> None:
+def check_if_not_null(props: List[str], values: List[Any]) -> None:
     for prop, value in zip(props, values):
         if not value:
             raise ValueError(f"Parameter `{prop}` must not be None or empty string")
