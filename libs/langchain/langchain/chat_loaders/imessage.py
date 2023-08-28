@@ -9,13 +9,16 @@ copy the file to a different location, change the permissions of the file, or
 grant full disk access for your terminal emulator in System Settings > Security
 and Privacy > Full Disk Access.
 """
+from __future__ import annotations
 
-import sqlite3
 from pathlib import Path
-from typing import Iterator, List, Optional, Union
+from typing import TYPE_CHECKING, Iterator, List, Optional, Union
 
 from langchain import schema
 from langchain.chat_loaders import base as chat_loaders
+
+if TYPE_CHECKING:
+    import sqlite3
 
 
 class IMessageChatLoader(chat_loaders.BaseChatLoader):
@@ -33,9 +36,16 @@ class IMessageChatLoader(chat_loaders.BaseChatLoader):
         self.db_path = path if isinstance(path, Path) else Path(path)
         if not self.db_path.exists():
             raise FileNotFoundError(f"File {self.db_path} not found")
+        try:
+            pass  # type: ignore
+        except ImportError as e:
+            raise ImportError(
+                "The sqlite3 module is required to load iMessage chats.\n"
+                "Please install it with `pip install pysqlite3`"
+            ) from e
 
     def _load_single_chat_session(
-        self, cursor, chat_id: int
+        self, cursor: "sqlite3.Cursor", chat_id: int
     ) -> chat_loaders.ChatSession:
         """
         Load a single chat session from the iMessage chat.db.
@@ -83,6 +93,7 @@ class IMessageChatLoader(chat_loaders.BaseChatLoader):
         Yields:
             ChatSession: Loaded chat session.
         """
+
         try:
             conn = sqlite3.connect(self.db_path)
         except sqlite3.OperationalError as e:
