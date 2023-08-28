@@ -1,4 +1,4 @@
-"""Unit tests for the Fallacy Removal chain - WIP since the tests can only run with proper input"""
+"""Unit tests for Fallacy Removal chain - WIP for proper input"""
 # from langchain.chains.fallacy_removal.base import FallacyChain
 
 TEXT_ONE = """ This text is bad.
