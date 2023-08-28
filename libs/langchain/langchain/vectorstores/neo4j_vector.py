@@ -445,7 +445,9 @@ class Neo4jVector(VectorStore):
             f"`{self.embedding_node_property}`: Null, id: Null }} AS metadata"
         )
 
-        retrieval_query = self.retrieval_query if self.retrieval_query else default_retrieval
+        retrieval_query = (
+            self.retrieval_query if self.retrieval_query else default_retrieval
+        )
 
         read_query = (
             "CALL db.index.vector.queryNodes($index, $k, $embedding) "
