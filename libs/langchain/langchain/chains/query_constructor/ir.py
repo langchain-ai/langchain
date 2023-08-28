@@ -5,9 +5,8 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, List, Optional, Sequence, Union
 
-from pydantic_v1 import BaseModel
-
 from langchain.chains.query_constructor.schema import VirtualColumnName
+from langchain.pydantic_v1 import BaseModel
 
 
 class Visitor(ABC):

@@ -1,4 +1,3 @@
-"""Wrapper around DashVector vector database."""
 from __future__ import annotations
 
 import logging
@@ -23,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 class DashVector(VectorStore):
-    """Wrapper around DashVector vector database.
+    """`DashVector` vector store.
 
     To use, you should have the ``dashvector`` python package installed.
 

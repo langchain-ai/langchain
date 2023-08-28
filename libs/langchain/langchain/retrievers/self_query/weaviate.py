@@ -12,7 +12,7 @@ from langchain.chains.query_constructor.schema import VirtualColumnName
 
 
 class WeaviateTranslator(Visitor):
-    """Translate the internal query language elements to valid filters."""
+    """Translate `Weaviate` internal query language elements to valid filters."""
 
     allowed_operators = [Operator.AND, Operator.OR]
     """Subset of allowed logical operators."""

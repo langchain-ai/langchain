@@ -1,9 +1,8 @@
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic_v1 import Extra, root_validator
-
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
+from langchain.pydantic_v1 import Extra, root_validator
 from langchain.utils import get_from_dict_or_env
 
 
@@ -29,8 +28,6 @@ class NLPCloud(LLM):
     """Language to use (multilingual addon)"""
     temperature: float = 0.7
     """What sampling temperature to use."""
-    min_length: int = 1
-    """The minimum number of tokens to generate in the completion."""
     max_length: int = 256
     """The maximum number of tokens to generate in the completion."""
     length_no_input: bool = True
@@ -47,14 +44,8 @@ class NLPCloud(LLM):
     """The number of highest probability tokens to keep for top-k filtering."""
     repetition_penalty: float = 1.0
     """Penalizes repeated tokens. 1.0 means no penalty."""
-    length_penalty: float = 1.0
-    """Exponential penalty to the length."""
-    do_sample: bool = True
-    """Whether to use sampling (True) or greedy decoding."""
     num_beams: int = 1
     """Number of beams for beam search."""
-    early_stopping: bool = False
-    """Whether to stop beam search at num_beams sentences."""
     num_return_sequences: int = 1
     """How many completions to generate for each prompt."""
 
@@ -92,7 +83,6 @@ class NLPCloud(LLM):
         """Get the default parameters for calling NLPCloud API."""
         return {
             "temperature": self.temperature,
-            "min_length": self.min_length,
             "max_length": self.max_length,
             "length_no_input": self.length_no_input,
             "remove_input": self.remove_input,
@@ -101,10 +91,7 @@ class NLPCloud(LLM):
             "top_p": self.top_p,
             "top_k": self.top_k,
             "repetition_penalty": self.repetition_penalty,
-            "length_penalty": self.length_penalty,
-            "do_sample": self.do_sample,
             "num_beams": self.num_beams,
-            "early_stopping": self.early_stopping,
             "num_return_sequences": self.num_return_sequences,
         }
 

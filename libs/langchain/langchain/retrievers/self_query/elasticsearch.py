@@ -12,7 +12,7 @@ from langchain.chains.query_constructor.schema import VirtualColumnName
 
 
 class ElasticsearchTranslator(Visitor):
-    """Translate the internal query language elements to valid filters."""
+    """Translate `Elasticsearch` internal query language elements to valid filters."""
 
     allowed_comparators = [
         Comparator.EQ,

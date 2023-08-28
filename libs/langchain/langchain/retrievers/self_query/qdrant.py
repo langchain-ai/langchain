@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 class QdrantTranslator(Visitor):
-    """Translate the internal query language elements to valid filters."""
+    """Translate `Qdrant` internal query language elements to valid filters."""
 
     allowed_comparators = (
         Comparator.EQ,
@@ -56,11 +56,8 @@ class QdrantTranslator(Visitor):
                 "Cannot import qdrant_client. Please install with `pip install "
                 "qdrant-client`."
             ) from e
-
-        if type(comparison.attribute) is VirtualColumnName:
-            raise TypeError(
-                "`VirtualColumnName` is not supported for `QdrantTranslator`s!"
-            )
+        
+        assert type(comparison.attribute) is str, "`VirtualColumnName` is not supported for `QdrantTranslator`s!"
 
         self._validate_func(comparison.comparator)
         attribute = self.metadata_key + "." + comparison.attribute

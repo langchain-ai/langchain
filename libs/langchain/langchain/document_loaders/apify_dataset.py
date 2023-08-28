@@ -1,9 +1,8 @@
 from typing import Any, Callable, Dict, List
 
-from pydantic_v1 import BaseModel, root_validator
-
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.pydantic_v1 import BaseModel, root_validator
 
 
 class ApifyDatasetLoader(BaseLoader, BaseModel):

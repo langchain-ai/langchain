@@ -7,8 +7,6 @@ import re
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic_v1 import Extra, root_validator
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
@@ -26,6 +24,7 @@ from langchain.chains.qa_with_sources.map_reduce_prompt import (
     QUESTION_PROMPT,
 )
 from langchain.docstore.document import Document
+from langchain.pydantic_v1 import Extra, root_validator
 from langchain.schema import BasePromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 
@@ -121,9 +120,11 @@ class BaseQAWithSourcesChain(Chain, ABC):
 
     def _split_sources(self, answer: str) -> Tuple[str, str]:
         """Split sources from answer."""
-        if re.search(r"SOURCES:\s", answer):
-            answer, sources = re.split(r"SOURCES:\s|QUESTION:\s", answer)[:2]
-            sources = re.split(r"\n", sources)[0]
+        if re.search(r"SOURCES?[:\s]", answer, re.IGNORECASE):
+            answer, sources = re.split(
+                r"SOURCES?[:\s]|QUESTION:\s", answer, flags=re.IGNORECASE
+            )[:2]
+            sources = re.split(r"\n", sources)[0].strip()
         else:
             sources = ""
         return answer, sources

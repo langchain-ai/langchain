@@ -6,14 +6,13 @@ import re
 import sys
 from contextlib import redirect_stdout
 from io import StringIO
-from typing import Any, Dict, Optional
-
-from pydantic_v1 import Field, root_validator
+from typing import Any, Dict, Optional, Type
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
+from langchain.pydantic_v1 import BaseModel, Field, root_validator
 from langchain.tools.base import BaseTool
 from langchain.utilities import PythonREPL
 
@@ -43,8 +42,8 @@ def sanitize_input(query: str) -> str:
 class PythonREPLTool(BaseTool):
     """A tool for running python code in a REPL."""
 
-    name = "Python_REPL"
-    description = (
+    name: str = "Python_REPL"
+    description: str = (
         "A Python shell. Use this to execute python commands. "
         "Input should be a valid python command. "
         "If you want to see the output of a value, you should print it out "
@@ -78,11 +77,15 @@ class PythonREPLTool(BaseTool):
         return result
 
 
+class PythonInputs(BaseModel):
+    query: str = Field(description="code snippet to run")
+
+
 class PythonAstREPLTool(BaseTool):
     """A tool for running python code in a REPL."""
 
-    name = "python_repl_ast"
-    description = (
+    name: str = "python_repl_ast"
+    description: str = (
         "A Python shell. Use this to execute python commands. "
         "Input should be a valid python command. "
         "When using this tool, sometimes output is abbreviated - "
@@ -91,6 +94,7 @@ class PythonAstREPLTool(BaseTool):
     globals: Optional[Dict] = Field(default_factory=dict)
     locals: Optional[Dict] = Field(default_factory=dict)
     sanitize_input: bool = True
+    args_schema: Type[BaseModel] = PythonInputs
 
     @root_validator(pre=True)
     def validate_python_version(cls, values: Dict) -> Dict:

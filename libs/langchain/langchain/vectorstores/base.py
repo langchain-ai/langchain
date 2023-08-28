@@ -1,5 +1,3 @@
-"""Interface for vector stores."""
-
 from __future__ import annotations
 
 import asyncio
@@ -22,14 +20,13 @@ from typing import (
     TypeVar,
 )
 
-from pydantic_v1 import Field, root_validator
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
+from langchain.pydantic_v1 import Field, root_validator
 from langchain.schema import BaseRetriever
 
 logger = logging.getLogger(__name__)
@@ -38,7 +35,7 @@ VST = TypeVar("VST", bound="VectorStore")
 
 
 class VectorStore(ABC):
-    """Interface for vector stores."""
+    """Interface for vector store."""
 
     @abstractmethod
     def add_texts(
@@ -521,7 +518,7 @@ class VectorStore(ABC):
 
 
 class VectorStoreRetriever(BaseRetriever):
-    """Retriever class for VectorStore."""
+    """Base Retriever class for VectorStore."""
 
     vectorstore: VectorStore
     """VectorStore to use for retrieval."""

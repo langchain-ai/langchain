@@ -1,6 +1,10 @@
 {
   "redirects": [
     {
+      "source": "/docs/modules/data_connection/caching_embeddings(/?)",
+      "destination": "/docs/modules/data_connection/text_embedding/caching_embeddings"
+    },
+    {
       "source": "/en/latest/additional_resources/youtube.html",
       "destination": "/docs/additional_resources/youtube"
     },
@@ -166,7 +170,7 @@
     },
     {
       "source": "/docs/integrations/deeplake",
-      "destination": "/docs/integrations/providers/deeplake"
+      "destination": "/docs/integrations/providers/activeloop_deeplake"
     },
     {
       "source": "/docs/integrations/diffbot",
