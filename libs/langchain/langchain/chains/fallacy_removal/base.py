@@ -1,4 +1,4 @@
-"""Chain for applying removals of logical fallacies as described""" 
+"""Chain for applying removals of logical fallacies.""" 
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
