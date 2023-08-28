@@ -1,4 +1,5 @@
 """Chain for applying removals of logical fallacies.""" 
+# flake8: noqa
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
