@@ -340,8 +340,8 @@ class Pinecone(VectorStore):
         embedding: Union[Embeddings, Callable],
         text_key: str,
         namespace: Optional[str] = None,
-        pool_threads: int = 4,
         distance_strategy: Optional[DistanceStrategy] = DistanceStrategy.COSINE,
+        pool_threads: int = 4,
         **kwargs: Any,
     ) -> Pinecone:
         """Return a Pinecone instance.
@@ -390,12 +390,12 @@ class Pinecone(VectorStore):
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         batch_size: int = 32,
-        embeddings_chunk_size: int = 1000,
         text_key: str = "text",
-        pool_threads: int = 4,
         namespace: Optional[str] = None,
         index_name: Optional[str] = None,
         upsert_kwargs: Optional[dict] = None,
+        pool_threads: int = 4,
+        embeddings_chunk_size: int = 1000,
         **kwargs: Any,
     ) -> Pinecone:
         """Construct Pinecone wrapper from raw documents.
@@ -425,15 +425,20 @@ class Pinecone(VectorStore):
                 )
         """
         pinecone = cls.get_pinecone(
-            index_name, embedding, text_key, namespace, pool_threads, **kwargs
+            index_name,
+            embedding,
+            text_key,
+            namespace,
+            pool_threads=pool_threads,
+            **kwargs,
         )
         pinecone.add_texts(
             texts,
             metadatas,
             ids,
             namespace,
-            batch_size,
-            embeddings_chunk_size,
+            batch_size=batch_size,
+            embedding_chunk_size=embeddings_chunk_size,
             **(upsert_kwargs or {}),
         )
         return pinecone
@@ -449,7 +454,7 @@ class Pinecone(VectorStore):
     ) -> Pinecone:
         """Load pinecone vectorstore from index name."""
         return cls.get_pinecone(
-            index_name, embedding, text_key, namespace, pool_threads
+            index_name, embedding, text_key, namespace, pool_threads=pool_threads
         )
 
     def delete(
