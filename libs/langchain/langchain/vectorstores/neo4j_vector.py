@@ -80,6 +80,7 @@ class Neo4jVector(VectorStore):
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         logger: Optional[logging.Logger] = None,
         pre_delete_collection: bool = False,
+        retrieval_query: str = "",
         relevance_score_fn: Optional[Callable[[float], float]] = None,
     ) -> None:
         try:
@@ -133,6 +134,7 @@ class Neo4jVector(VectorStore):
         self.text_node_property = text_node_property
         self.logger = logger or logging.getLogger(__name__)
         self.override_relevance_score_fn = relevance_score_fn
+        self.retrieval_query = retrieval_query
         # Calculate embedding dimension
         self.embedding_dimension = len(embedding.embed_query("foo"))
 
@@ -437,14 +439,18 @@ class Neo4jVector(VectorStore):
             List[Tuple[Document, float]]: A list of tuples, each containing
                                 a Document object and its similarity score.
         """
-
-        read_query = (
-            "CALL db.index.vector.queryNodes($index, $k, $embedding) "
-            "YIELD node, score "
+        default_retrieval = (
             f"RETURN node.`{self.text_node_property}` AS text, score, "
             f"node {{.*, `{self.text_node_property}`: Null, "
             f"`{self.embedding_node_property}`: Null, id: Null }} AS metadata"
         )
+
+        retrieval_query = self.retrieval_query if self.retrieval_query else default_retrieval
+
+        read_query = (
+            "CALL db.index.vector.queryNodes($index, $k, $embedding) "
+            "YIELD node, score "
+        ) + retrieval_query
 
         parameters = {"index": self.index_name, "k": k, "embedding": embedding}
 

@@ -202,3 +202,18 @@ def test_neo4jvector_retriever_search_threshold() -> None:
     assert output == [
         Document(page_content="foo", metadata={"page": "0"}),
     ]
+
+
+def test_custom_return_neo4jvector() -> None:
+    """Test end to end construction and search."""
+    docsearch = Neo4jVector.from_texts(
+        texts=["test"],
+        embedding=FakeEmbeddingsWithOsDimension(),
+        url=url,
+        username=username,
+        password=password,
+        pre_delete_collection=True,
+        retrieval_query="RETURN 'foo' AS text, score, {test: 'test'} AS metadata",
+    )
+    output = docsearch.similarity_search("foo", k=1)
+    assert output == [Document(page_content="foo", metadata={"test": "test"})]
